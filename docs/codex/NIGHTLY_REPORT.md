@@ -56,3 +56,21 @@
 - tests/test_keeper_scores.py
 - tests/test_roster_rules.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-26 01:09:56
+
+- Task attempted: Task 8, 9, 10, and 11 - Streamlit command boards: build Import Review, Team, and War Board pages using the active data pack; keep UI table-first and low-text; show validation errors/warnings, Niners official top five, forced-release pressure, keeper/drop/shop recommendations, sortable/filterable War Board, and hidden long explanations. [class:feature risk:medium mode:single scope:app/,src/services/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Allowed scope: app, src/services, tests, docs/codex
+- Acceptance checks: external build only
+- Build result: Passed
+- Files changed:
+- app/main.py
+- app/pages/01_import_review.py
+- app/pages/02_team.py
+- app/pages/03_war_board.py
+- src/services/command_board_service.py
+- tests/test_command_board_service.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.

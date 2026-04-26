@@ -18,12 +18,7 @@ def main() -> None:
     st.sidebar.write(f"Database: `{settings.database_path}`")
 
     st.subheader("Drop Deadline Command Center")
-    st.write(
-        "Official Rank controls league rules. War Score controls Niners strategy. "
-        "Pick Value uses a 1,000-point local scale."
-    )
-
-    st.info("Task 0/1 shell is ready. Import, model, and board pages come next.")
+    st.write("Use the command boards for import review, Niners pressure, and War Board sorting.")
 
 
 if __name__ == "__main__":
