@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+data_packs/*.sqlite3
+data_packs/*.db
+.codex-logs/

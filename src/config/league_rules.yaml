@@ -1,0 +1,45 @@
+league:
+  name: "Las Vegas Enginerds"
+  teams: 10
+  user_team_name: "Niners"
+  user_owner_names:
+    - "Michael Colety"
+    - "Spencer Colety"
+
+platform:
+  sleeper_status: "uncertain"
+  yahoo_status: "legacy"
+  use_runtime_api: false
+
+roster:
+  offseason_limit: 24
+  regular_season_limit: 24
+  ir_slots_regular_season: 2
+  declaration_protect_limit: 23
+  kickers_included: true
+
+keeper_rules:
+  top_five_forced_release: true
+  official_top_five_keep_limit: 4
+  official_ranking_source_default: "FantasyPros"
+  official_rank_controls_rule: true
+  private_rank_controls_strategy: true
+  free_agent_adds_between_declaration_and_draft: false
+  trades_allowed_until_declaration: true
+  top_five_shield_strategy_allowed: true
+  roster_declaration_date_status: "unknown_configurable"
+
+draft:
+  rounds: 5
+  teams: 10
+  format: "linear"
+  includes_rookies: true
+  includes_released_veterans: true
+  picks_tradeable_years: 3
+
+v1_defaults:
+  strategy_mode: "Balanced Dynasty"
+  round_1_bias: "upside-heavy"
+  late_round_bias: "upside"
+  qb_roster_default: 2
+  kicker_strategy: "last-round-or-replacement"
