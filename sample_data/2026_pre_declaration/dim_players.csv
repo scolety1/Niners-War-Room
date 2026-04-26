@@ -1,6 +1,6 @@
 player_id,player_name,merge_name,position,nfl_team,birth_date,rookie_year,height_in,weight_lb,sleeper_id,fantasypros_id,ktc_id,fantasycalc_id,pfr_id,cfb_id,active_flag,created_at,updated_at
-p_achane,De'Von Achane,devon achane,RB,MIA,2001-10-13,2023,69,188,,,,,,achade01,,1,2026-08-01,2026-08-01
-p_lamar,Lamar Jackson,lamar jackson,QB,BAL,1997-01-07,2018,74,215,,,,,,jackla00,,1,2026-08-01,2026-08-01
-p_chase_brown,Chase Brown,chase brown,RB,CIN,2000-03-21,2023,70,211,,,,,,browch05,,1,2026-08-01,2026-08-01
-p_luther_burden,Luther Burden III,luther burden iii,WR,CHI,2003-12-12,2025,71,208,,,,,,,,1,2026-08-01,2026-08-01
-p_brian_thomas,Brian Thomas Jr.,brian thomas jr,WR,JAX,2002-10-08,2024,76,205,,,,,,thombr06,,1,2026-08-01,2026-08-01
+p_achane,De'Von Achane,devon achane,RB,MIA,2001-10-13,2023,69,188,,,,,achade01,,1,2026-08-01,2026-08-01
+p_lamar,Lamar Jackson,lamar jackson,QB,BAL,1997-01-07,2018,74,215,,,,,jackla00,,1,2026-08-01,2026-08-01
+p_chase_brown,Chase Brown,chase brown,RB,CIN,2000-03-21,2023,70,211,,,,,browch05,,1,2026-08-01,2026-08-01
+p_luther_burden,Luther Burden III,luther burden iii,WR,CHI,2003-12-12,2025,71,208,,,,,,,1,2026-08-01,2026-08-01
+p_brian_thomas,Brian Thomas Jr.,brian thomas jr,WR,JAX,2002-10-08,2024,76,205,,,,,thombr06,,1,2026-08-01,2026-08-01

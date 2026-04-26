@@ -36,12 +36,18 @@ $tempDb = Join-Path $env:TEMP ("niners-war-room-check-" + [guid]::NewGuid().ToSt
 try {
     if ($python -eq "py") {
         & $python -3 scripts/init_db.py --database $tempDb
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & $python -3 -m pytest
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & $python -3 -m ruff check .
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     } else {
         & $python scripts/init_db.py --database $tempDb
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & $python -m pytest
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & $python -m ruff check .
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 } finally {
     if (Test-Path $tempDb) {

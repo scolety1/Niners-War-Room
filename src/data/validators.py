@@ -76,8 +76,8 @@ def validate_data_pack(
             continue
 
         valid_rows: list[dict[str, object]] = []
-        for row_index, raw_row in frame.iterrows():
-            row_number = int(row_index) + 2
+        for row_offset, (_, raw_row) in enumerate(frame.iterrows(), start=2):
+            row_number = row_offset
             row = {column: _clean_value(raw_row.get(column, "")) for column in schema.all_columns}
             row_errors = _validate_required_values(file_name, row, row_number)
             row_errors.extend(_validate_numeric_values(file_name, row, row_number))

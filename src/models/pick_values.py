@@ -4,7 +4,6 @@ import math
 import re
 from dataclasses import dataclass
 
-
 PICK_LABEL_PATTERN = re.compile(
     r"^(?:(?P<year>\d{4})\s+)?(?P<round>[1-9]\d*)\.(?P<slot>\d{2})$"
 )
@@ -97,7 +96,7 @@ def base_pick_value_1000(overall: int, config: PickValueConfig | None = None) ->
             return anchor_value
 
     for (left_pick, left_value), (right_pick, right_value) in zip(
-        anchors, anchors[1:]
+        anchors, anchors[1:], strict=False
     ):
         if left_pick < overall < right_pick:
             span = right_pick - left_pick

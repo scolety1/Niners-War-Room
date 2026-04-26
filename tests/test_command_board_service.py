@@ -6,7 +6,6 @@ from src.services.command_board_service import (
     build_war_board,
 )
 
-
 SAMPLE_PACK = "sample_data/2026_pre_declaration"
 
 
@@ -14,8 +13,9 @@ def test_import_review_board_exposes_validation_warnings_and_row_counts() -> Non
     board = build_import_review_board(SAMPLE_PACK)
 
     assert board.data_pack_name == "2026_pre_declaration"
-    assert board.issue_counts["error"] == 1
-    assert board.issue_rows[0]["severity"] == "error"
+    assert board.issue_counts["error"] == 0
+    assert board.issue_counts["warning"] >= 1
+    assert board.issue_rows[0]["severity"] == "warning"
     assert {"table": "rosters", "rows": 5} in board.row_counts
 
 

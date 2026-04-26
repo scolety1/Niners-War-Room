@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 from src.utils.scoring import clamp_score
 
-
 POSITION_AGE_PEAKS = {
     "QB": 29,
     "RB": 24,
