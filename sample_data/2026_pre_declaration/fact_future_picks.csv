@@ -1,0 +1,4 @@
+snapshot_date,season,pick_year,round,slot,pick_label,overall_pick,original_team_id,original_team_name,current_team_id,current_team_name,current_owner_name,certainty,source
+2026-08-01,2026,2026,1,4,2026 1.04,4,niners,Niners,niners,Niners,Michael Colety,known,sample
+2026-08-01,2026,2026,2,4,2026 2.04,14,niners,Niners,niners,Niners,Michael Colety,known,sample
+2026-08-01,2026,2027,1,4,2027 1.04,4,niners,Niners,niners,Niners,Michael Colety,projected,sample

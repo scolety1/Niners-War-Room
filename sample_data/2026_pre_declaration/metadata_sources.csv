@@ -1,0 +1,8 @@
+snapshot_date,data_pack_name,file_name,source_name,source_type,source_url_or_description,pulled_at,imported_at,review_status,notes
+2026-08-01,2026_pre_declaration,dim_players.csv,Sample Fixture,csv,Small Niners top-five fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,fact_rosters.csv,Sample Fixture,csv,Small Niners top-five fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,fact_official_rankings.csv,Sample Fixture,csv,Small Niners top-five fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,fact_future_picks.csv,Sample Fixture,csv,Small Niners pick fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,fact_pick_values.csv,Sample Fixture,csv,Small Niners pick value fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,model_outputs.csv,Sample Fixture,csv,Small deterministic output fixture,2026-08-01,2026-08-01,reviewed,fixture only
+2026-08-01,2026_pre_declaration,metadata_sources.csv,Sample Fixture,csv,Metadata for sample fixture,2026-08-01,2026-08-01,reviewed,fixture only

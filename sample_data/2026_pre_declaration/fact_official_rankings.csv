@@ -1,0 +1,6 @@
+snapshot_date,season,source,rank_source_name,rank_source_date,player_id,player_name,position,nfl_team,official_rank,rank_tier,is_rank_placeholder
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_achane,De'Von Achane,RB,MIA,1,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_lamar,Lamar Jackson,QB,BAL,2,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_chase_brown,Chase Brown,RB,CIN,3,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_luther_burden,Luther Burden III,WR,CHI,4,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_brian_thomas,Brian Thomas Jr.,WR,JAX,5,top-5,0

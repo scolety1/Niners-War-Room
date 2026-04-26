@@ -1,0 +1,6 @@
+snapshot_date,player_id,player_name,position,private_score,market_score,war_score,keeper_score,drop_candidate_score,smash_prob,hit_prob,useful_prob,replaceable_prob,miss_prob,bust_prob,pick_adjusted_value,confidence_score,risk_level,recommendation,do_not_draft_before_pick,notes
+2026-08-01,p_achane,De'Von Achane,RB,91,90,91,94,6,0.34,0.40,0.18,0.05,0.02,0.01,950,0.84,medium,keep,,sample output
+2026-08-01,p_lamar,Lamar Jackson,QB,89,88,89,92,8,0.30,0.43,0.19,0.05,0.02,0.01,920,0.88,low,keep,,sample output
+2026-08-01,p_chase_brown,Chase Brown,RB,84,82,84,86,14,0.20,0.38,0.27,0.09,0.04,0.02,820,0.72,medium,keep,,sample output
+2026-08-01,p_luther_burden,Luther Burden III,WR,82,85,84,85,15,0.22,0.34,0.26,0.10,0.05,0.03,830,0.68,medium,keep,,sample output
+2026-08-01,p_brian_thomas,Brian Thomas Jr.,WR,87,89,88,90,10,0.29,0.39,0.21,0.07,0.03,0.01,900,0.80,low,keep,,sample output

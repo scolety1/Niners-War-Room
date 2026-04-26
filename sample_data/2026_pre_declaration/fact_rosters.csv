@@ -1,0 +1,6 @@
+snapshot_date,season,league_id,team_id,team_name,owner_name,player_id,player_name,position,nfl_team,roster_status,official_rank,source
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_achane,De'Von Achane,RB,MIA,rostered,1,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_lamar,Lamar Jackson,QB,BAL,rostered,2,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_chase_brown,Chase Brown,RB,CIN,rostered,3,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_luther_burden,Luther Burden III,WR,CHI,rostered,4,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_brian_thomas,Brian Thomas Jr.,WR,JAX,rostered,5,sample
