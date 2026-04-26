@@ -37,3 +37,22 @@
 - src/models/pick_values.py
 - tests/test_pick_values.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-26 00:48:50
+
+- Task attempted: Task 5 and 6 - Player and keeper engines: implement QB/RB/WR/TE private score formulas, first-down adjustment helpers, confidence score, official top-five calculation, keeper score, drop candidate score, keeper pressure, best 23 keepers, forced release candidates, and top-five shield eligibility; verify the Niners sample identifies Achane, Lamar, Chase Brown, Luther Burden, and Brian Thomas as official top five. [class:feature risk:medium mode:single scope:src/models/,src/services/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Allowed scope: src/models, src/services, tests, docs/codex
+- Acceptance checks: external build only
+- Build result: Passed
+- Files changed:
+- src/models/confidence.py
+- src/models/keeper_scores.py
+- src/models/player_scores.py
+- src/services/roster_service.py
+- src/services/team_service.py
+- tests/test_keeper_scores.py
+- tests/test_roster_rules.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
