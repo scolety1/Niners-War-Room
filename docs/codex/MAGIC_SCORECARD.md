@@ -18,3 +18,19 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - After visual evidence:
 - None recorded after task.
 - Follow-up: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-26 00:30:47
+
+- Task: Task 4 - Pick value engine: implement the 1,000-point pick value curve, overall pick calculation, future discount, certainty adjustment, declaration adjustment placeholder, trade-up/trade-down helpers, and do-not-draft-before helper with tests for 1.01, 1.04, 2.04, 5.04, and 2027 known-pick discounts. [class:feature risk:medium mode:single scope:src/models/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Passed
+- Magic signal: moved-forward
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 2
+- Simon improvement score: not-reviewed
+- Before visual evidence:
+- None recorded before task.
+- After visual evidence:
+- None recorded after task.
+- Follow-up: Low. External build, task acceptance checks, and checkpoint loop review completed.
