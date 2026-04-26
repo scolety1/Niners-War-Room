@@ -1,40 +1,40 @@
 # Checkpoint Review
 
 ## Verdict
-YELLOW.
+YELLOW
 
 ## Progress Against Mission
-The branch is moving strongly toward the V1 Drop Deadline Command Center mission. Import, validation, SQLite loading, deterministic pick/player/keeper formulas, Niners top-five logic, and table-first Streamlit boards are in place with tests. One major mission area remains: trade, league intel, and draft room coverage.
+The branch is moving toward the V1 Drop Deadline Command Center mission. Core local CSV import, SQLite loading, deterministic scoring, pick values, official top-five logic, and table-first Streamlit command boards are in place with tests. Remaining mission work is concentrated in Trade Central, League Intel, and Draft Room.
 
 ## Safety Review
-No dangerous behavior found. Changed files stay within expected app, src, tests, docs, scripts, and sample_data scope. Sample data was added as a dated snapshot, which matches the guardrail.
+No unsafe runtime behavior found from the checkpoint data. Risk areas are `app/` UI changes after Simon/Robin YELLOW reviews and the quarantined parking polish attempt touching `app/components/tables.py` and existing pages. No live API, scraping, dependency, generated database, or data pack overwrite risk is reported.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- Completed tasks in this checkpoint window: Streamlit Import Review, Team, and War Board pages; command board service; tests for board behavior.
-- Files changed: app pages, command board service, tests, docs, plus prior import/model/sample data files since base.
-- Commits added: 7 commits since base, latest `e84a046`.
-- Queue status: 1 unchecked task remains.
+- completed tasks in this checkpoint window: Robin copy review batch 1, Simon design review batch 1, failed polish task quarantined, queue parking polish note, static check fixes
+- files changed: app pages, model/service/data modules, tests, scripts, docs/codex reports, and new sample data snapshot files
+- commits added: 13 commits since base, HEAD `2a3326c`
+- queue status: 1 unchecked mission task remains; 1 low-priority parking polish item is flagged
 
 ## Follow-Up Gate Status
-- Visual bug report: missing; should influence next tasks before expanding UI further.
-- Simon design review: missing; should influence next tasks because UI boards were just added.
-- Robin copy review: missing; low-text UI reduces risk, but review should still shape labels before more pages.
-- Joey security review: missing; no obvious security risk, but continue local-only/no API posture.
-- Next tasks should proceed cautiously, with visual/design review folded into the next checkpoint if available.
+- visual bug report: missing; should block visual-polish expansion until captured
+- Simon design review: YELLOW, continue but fix visual issues first; should influence next tasks
+- Robin copy review: YELLOW, continue but fix copy first; should influence next tasks
+- Joey security review: missing; should be obtained before broader continuation
+- next-task influence: repair-first is appropriate before implementing the remaining Trade/League/Draft batch
 
 ## Recommended Next Step
-continue.
+patch first
 
 ## Next Batch Guidance
-- Recommended next batch size: 3
-- Next work mode: mission-forward
-- The remaining task is cohesive but broad, so implement trade formulas plus one or two supporting pages/services before another checkpoint.
+- recommended next batch size: 2
+- next work mode: repair-first
+- Fix the Simon and Robin YELLOW findings and obtain or document the missing Joey/visual gates before adding the remaining V1 rooms.
 
 ## Notes For Human Reviewer
 - Working tree is clean.
-- Build passed externally.
-- No live API or scraping behavior reported.
-- Remaining work maps directly to trade, league pressure, and draft-room mission goals.
+- Build passed at current HEAD.
+- Remaining unchecked task is broad; split before execution.
+- Quarantined polish attempt should not be resumed until visual/copy gates are addressed.
