@@ -1,40 +1,40 @@
 # Checkpoint Review
 
 ## Verdict
-YELLOW
+YELLOW.
 
 ## Progress Against Mission
-The branch is moving toward the V1 Drop Deadline Command Center mission. Core local CSV import, SQLite loading, deterministic scoring, pick values, official top-five logic, and table-first Streamlit command boards are in place with tests. Remaining mission work is concentrated in Trade Central, League Intel, and Draft Room.
+The branch is moving strongly toward the V1 Drop Deadline Command Center: local CSV/SQLite import, deterministic model formulas, Niners roster logic, pick values, trade board, draft room, and league pressure views are all represented with tests and sample data. Remaining concern is review quality, not mission drift.
 
 ## Safety Review
-No unsafe runtime behavior found from the checkpoint data. Risk areas are `app/` UI changes after Simon/Robin YELLOW reviews and the quarantined parking polish attempt touching `app/components/tables.py` and existing pages. No live API, scraping, dependency, generated database, or data pack overwrite risk is reported.
+No dangerous behavior found. Risk areas are broad Streamlit and service changes across `app/`, `src/services/`, and `src/models/`; Joey security review and visual bug report are missing.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- completed tasks in this checkpoint window: Robin copy review batch 1, Simon design review batch 1, failed polish task quarantined, queue parking polish note, static check fixes
-- files changed: app pages, model/service/data modules, tests, scripts, docs/codex reports, and new sample data snapshot files
-- commits added: 13 commits since base, HEAD `2a3326c`
-- queue status: 1 unchecked mission task remains; 1 low-priority parking polish item is flagged
+- completed tasks in this checkpoint window: 6 shown, including CSV import foundation, pick values, player/keeper engines, command boards, Trade Central, League Intel, and Draft Room work
+- files changed: app pages, CSV loaders/validators, deterministic model modules, service layers, sample data pack, tests, scripts, and Codex docs
+- commits added: 18 commits since base, HEAD `2ec05cf`
+- queue status: unchecked task count is 0; only parked low-priority polish remains marked non-active
 
 ## Follow-Up Gate Status
-- visual bug report: missing; should block visual-polish expansion until captured
+- visual bug report: missing; should influence next tasks because Simon flagged visual issues
 - Simon design review: YELLOW, continue but fix visual issues first; should influence next tasks
 - Robin copy review: YELLOW, continue but fix copy first; should influence next tasks
-- Joey security review: missing; should be obtained before broader continuation
-- next-task influence: repair-first is appropriate before implementing the remaining Trade/League/Draft batch
+- Joey security review: missing; should influence next tasks before expanding scope
+- next-task influence: repair-first gate should run before more mission-forward work
 
 ## Recommended Next Step
-patch first
+patch first.
 
 ## Next Batch Guidance
 - recommended next batch size: 2
 - next work mode: repair-first
-- Fix the Simon and Robin YELLOW findings and obtain or document the missing Joey/visual gates before adding the remaining V1 rooms.
+- Fix the Simon visual issues and Robin copy issues first, then add or rerun Joey/security and visual checks before taking more feature work.
 
 ## Notes For Human Reviewer
 - Working tree is clean.
-- Build passed at current HEAD.
-- Remaining unchecked task is broad; split before execution.
-- Quarantined polish attempt should not be resumed until visual/copy gates are addressed.
+- Build passed despite prior quarantined/failed attempts in the nightly history.
+- No unchecked tasks remain.
+- Missing Joey and visual bug gates are the main checkpoint gaps.
