@@ -2,5 +2,24 @@ player_id,player_name,merge_name,position,nfl_team,birth_date,rookie_year,height
 p_achane,De'Von Achane,devon achane,RB,MIA,2001-10-13,2023,69,188,,,,,achade01,,1,2026-08-01,2026-08-01
 p_lamar,Lamar Jackson,lamar jackson,QB,BAL,1997-01-07,2018,74,215,,,,,jackla00,,1,2026-08-01,2026-08-01
 p_chase_brown,Chase Brown,chase brown,RB,CIN,2000-03-21,2023,70,211,,,,,browch05,,1,2026-08-01,2026-08-01
-p_luther_burden,Luther Burden III,luther burden iii,WR,CHI,2003-12-12,2025,71,208,,,,,,,1,2026-08-01,2026-08-01
-p_brian_thomas,Brian Thomas Jr.,brian thomas jr,WR,JAX,2002-10-08,2024,76,205,,,,,thombr06,,1,2026-08-01,2026-08-01
+p_luther_burden,Luther Burden,luther burden,WR,CHI,2003-12-12,2025,71,208,,,,,,,1,2026-08-01,2026-08-01
+p_brian_thomas,Brian Thomas,brian thomas,WR,JAC,2002-10-08,2024,76,205,,,,,thombr06,,1,2026-08-01,2026-08-01
+p_ricky_pearsall,Ricky Pearsall,ricky pearsall,WR,SF,,2024,,,,,,,,,1,2026-08-01,2026-08-01
+p_quentin_johnston,Quentin Johnston,quentin johnston,WR,LAC,,2023,,,,,,,,,1,2026-08-01,2026-08-01
+p_jakobi_meyers,Jakobi Meyers,jakobi meyers,WR,JAC,,2019,,,,,,,,,1,2026-08-01,2026-08-01
+p_david_montgomery,David Montgomery,david montgomery,RB,HOU,,2019,,,,,,,,,1,2026-08-01,2026-08-01
+p_brandon_aiyuk,Brandon Aiyuk,brandon aiyuk,WR,SF,,2020,,,,,,,,,1,2026-08-01,2026-08-01
+p_oronde_gadsden,Oronde Gadsden,oronde gadsden,TE,LAC,,2025,,,,,,,,,1,2026-08-01,2026-08-01
+p_jake_ferguson,Jake Ferguson,jake ferguson,TE,DAL,,2022,,,,,,,,,1,2026-08-01,2026-08-01
+p_jayden_higgins,Jayden Higgins,jayden higgins,WR,HOU,,2025,,,,,,,,,1,2026-08-01,2026-08-01
+p_wandale_robinson,Wan'Dale Robinson,wandale robinson,WR,TEN,,2022,,,,,,,,,1,2026-08-01,2026-08-01
+p_brenton_strange,Brenton Strange,brenton strange,TE,JAC,,2023,,,,,,,,,1,2026-08-01,2026-08-01
+p_kaleb_johnson,Kaleb Johnson,kaleb johnson,RB,PIT,,2025,,,,,,,,,1,2026-08-01,2026-08-01
+p_xavier_worthy,Xavier Worthy,xavier worthy,WR,KC,,2024,,,,,,,,,1,2026-08-01,2026-08-01
+p_jalen_coker,Jalen Coker,jalen coker,WR,CAR,,2024,,,,,,,,,1,2026-08-01,2026-08-01
+p_jerry_jeudy,Jerry Jeudy,jerry jeudy,WR,CLE,,2020,,,,,,,,,1,2026-08-01,2026-08-01
+p_romeo_doubs,Romeo Doubs,romeo doubs,WR,NE,,2022,,,,,,,,,1,2026-08-01,2026-08-01
+p_tj_hockenson,T.J. Hockenson,tj hockenson,TE,MIN,,2019,,,,,,,,,1,2026-08-01,2026-08-01
+p_daniel_jones,Daniel Jones,daniel jones,QB,IND,,2019,,,,,,,,,1,2026-08-01,2026-08-01
+p_luke_mccaffrey,Luke McCaffrey,luke mccaffrey,WR,WAS,,2024,,,,,,,,,1,2026-08-01,2026-08-01
+p_devin_singletary,Devin Singletary,devin singletary,RB,NYG,,2019,,,,,,,,,1,2026-08-01,2026-08-01

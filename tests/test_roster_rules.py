@@ -20,8 +20,8 @@ def test_niners_sample_identifies_expected_official_top_five() -> None:
         "De'Von Achane",
         "Lamar Jackson",
         "Chase Brown",
-        "Luther Burden III",
-        "Brian Thomas Jr.",
+        "Luther Burden",
+        "Brian Thomas",
     ]
 
 

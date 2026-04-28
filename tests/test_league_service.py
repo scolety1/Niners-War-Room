@@ -19,15 +19,15 @@ def test_league_intel_uses_sample_pack_keeper_pressure() -> None:
         {
             "team": "Niners",
             "pressure_level": "Medium",
-            "pressure_count": 1,
+                "pressure_count": 2,
             "forced_release_count": 1,
             "official_top_five_count": 5,
-            "roster_count": 5,
+                "roster_count": 24,
             "protect_limit": 23,
         }
     ]
     assert [row["player"] for row in board.default_release_rows] == [
-        "Luther Burden III"
+        "Luther Burden"
     ]
     assert {row["signal"] for row in board.shield_rows} == {"Shield"}
 

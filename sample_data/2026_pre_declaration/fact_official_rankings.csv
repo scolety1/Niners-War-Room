@@ -1,6 +1,25 @@
 snapshot_date,season,source,rank_source_name,rank_source_date,player_id,player_name,position,nfl_team,official_rank,rank_tier,is_rank_placeholder
-2026-08-01,2026,sample,FantasyPros,2026-07-30,p_achane,De'Von Achane,RB,MIA,1,top-5,0
-2026-08-01,2026,sample,FantasyPros,2026-07-30,p_lamar,Lamar Jackson,QB,BAL,2,top-5,0
-2026-08-01,2026,sample,FantasyPros,2026-07-30,p_chase_brown,Chase Brown,RB,CIN,3,top-5,0
-2026-08-01,2026,sample,FantasyPros,2026-07-30,p_luther_burden,Luther Burden III,WR,CHI,4,top-5,0
-2026-08-01,2026,sample,FantasyPros,2026-07-30,p_brian_thomas,Brian Thomas Jr.,WR,JAX,5,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_achane,De'Von Achane,RB,MIA,10,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_lamar,Lamar Jackson,QB,BAL,31,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_chase_brown,Chase Brown,RB,CIN,35,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_luther_burden,Luther Burden,WR,CHI,56,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_brian_thomas,Brian Thomas,WR,JAC,66,top-5,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_ricky_pearsall,Ricky Pearsall,WR,SF,91,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_quentin_johnston,Quentin Johnston,WR,LAC,94,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_jakobi_meyers,Jakobi Meyers,WR,JAC,95,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_david_montgomery,David Montgomery,RB,HOU,97,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_brandon_aiyuk,Brandon Aiyuk,WR,SF,98,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_oronde_gadsden,Oronde Gadsden,TE,LAC,104,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_jake_ferguson,Jake Ferguson,TE,DAL,109,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_jayden_higgins,Jayden Higgins,WR,HOU,113,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_wandale_robinson,Wan'Dale Robinson,WR,TEN,118,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_brenton_strange,Brenton Strange,TE,JAC,125,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_kaleb_johnson,Kaleb Johnson,RB,PIT,131,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_xavier_worthy,Xavier Worthy,WR,KC,133,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_jalen_coker,Jalen Coker,WR,CAR,147,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_jerry_jeudy,Jerry Jeudy,WR,CLE,152,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_romeo_doubs,Romeo Doubs,WR,NE,172,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_tj_hockenson,T.J. Hockenson,TE,MIN,206,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_daniel_jones,Daniel Jones,QB,IND,246,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_luke_mccaffrey,Luke McCaffrey,WR,WAS,263,roster,0
+2026-08-01,2026,sample,FantasyPros,2026-07-30,p_devin_singletary,Devin Singletary,RB,NYG,268,roster,0

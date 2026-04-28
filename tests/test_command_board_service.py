@@ -14,9 +14,8 @@ def test_import_review_board_exposes_validation_warnings_and_row_counts() -> Non
 
     assert board.data_pack_name == "2026_pre_declaration"
     assert board.issue_counts["error"] == 0
-    assert board.issue_counts["warning"] >= 1
-    assert board.issue_rows[0]["severity"] == "warning"
-    assert {"table": "rosters", "rows": 5} in board.row_counts
+    assert board.issue_counts["warning"] == 0
+    assert {"table": "rosters", "rows": 24} in board.row_counts
 
 
 def test_team_command_board_shows_niners_top_five_and_forced_release() -> None:
@@ -28,10 +27,10 @@ def test_team_command_board_shows_niners_top_five_and_forced_release() -> None:
         "De'Von Achane",
         "Lamar Jackson",
         "Chase Brown",
-        "Luther Burden III",
-        "Brian Thomas Jr.",
+        "Luther Burden",
+        "Brian Thomas",
     ]
-    assert [row["player"] for row in board.forced_release_rows] == ["Luther Burden III"]
+    assert [row["player"] for row in board.forced_release_rows] == ["Luther Burden"]
     assert board.keeper_board.pressure.forced_release_count == 1
 
 
@@ -50,6 +49,13 @@ def test_war_board_is_sorted_and_filter_metadata_is_available() -> None:
         "De'Von Achane",
         "Lamar Jackson",
     ]
-    assert board.positions == ["QB", "RB", "WR"]
+    assert board.positions == ["QB", "RB", "TE", "WR"]
     assert board.teams == ["Niners"]
-    assert board.recommendations == ["keep"]
+    assert board.recommendations == [
+        "bubble",
+        "drop",
+        "hold",
+        "keep",
+        "risk",
+        "shop",
+    ]

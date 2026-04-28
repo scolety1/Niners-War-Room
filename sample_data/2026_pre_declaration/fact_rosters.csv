@@ -1,6 +1,25 @@
 snapshot_date,season,league_id,team_id,team_name,owner_name,player_id,player_name,position,nfl_team,roster_status,official_rank,source
-2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_achane,De'Von Achane,RB,MIA,rostered,1,sample
-2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_lamar,Lamar Jackson,QB,BAL,rostered,2,sample
-2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_chase_brown,Chase Brown,RB,CIN,rostered,3,sample
-2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_luther_burden,Luther Burden III,WR,CHI,rostered,4,sample
-2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety,p_brian_thomas,Brian Thomas Jr.,WR,JAX,rostered,5,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_achane,De'Von Achane,RB,MIA,rostered,10,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_lamar,Lamar Jackson,QB,BAL,rostered,31,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_chase_brown,Chase Brown,RB,CIN,rostered,35,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_luther_burden,Luther Burden,WR,CHI,rostered,56,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_brian_thomas,Brian Thomas,WR,JAC,rostered,66,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_ricky_pearsall,Ricky Pearsall,WR,SF,rostered,91,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_quentin_johnston,Quentin Johnston,WR,LAC,rostered,94,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_jakobi_meyers,Jakobi Meyers,WR,JAC,rostered,95,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_david_montgomery,David Montgomery,RB,HOU,rostered,97,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_brandon_aiyuk,Brandon Aiyuk,WR,SF,rostered,98,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_oronde_gadsden,Oronde Gadsden,TE,LAC,rostered,104,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_jake_ferguson,Jake Ferguson,TE,DAL,rostered,109,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_jayden_higgins,Jayden Higgins,WR,HOU,rostered,113,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_wandale_robinson,Wan'Dale Robinson,WR,TEN,rostered,118,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_brenton_strange,Brenton Strange,TE,JAC,rostered,125,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_kaleb_johnson,Kaleb Johnson,RB,PIT,rostered,131,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_xavier_worthy,Xavier Worthy,WR,KC,rostered,133,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_jalen_coker,Jalen Coker,WR,CAR,rostered,147,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_jerry_jeudy,Jerry Jeudy,WR,CLE,rostered,152,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_romeo_doubs,Romeo Doubs,WR,NE,rostered,172,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_tj_hockenson,T.J. Hockenson,TE,MIN,rostered,206,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_daniel_jones,Daniel Jones,QB,IND,rostered,246,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_luke_mccaffrey,Luke McCaffrey,WR,WAS,rostered,263,sample
+2026-08-01,2026,las-vegas-enginerds,niners,Niners,Michael Colety / Spencer Colety,p_devin_singletary,Devin Singletary,RB,NYG,rostered,268,sample

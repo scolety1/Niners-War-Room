@@ -35,20 +35,25 @@ def build_team_keeper_board(
     protect_limit: int = 23,
     official_top_five_keep_limit: int = 4,
 ) -> TeamKeeperBoard:
+    top_five = official_top_five(players)
     forced_players = forced_release_candidates(
         players,
         official_top_five_keep_limit=official_top_five_keep_limit,
     )
     forced_ids = {player.player_id for player in forced_players}
+    top_five_ids = {player.player_id for player in top_five}
     decisions = [
         keeper_decision(
             player,
             is_forced_release_candidate=player.player_id in forced_ids,
-            is_top_five_shield_eligible=top_five_shield_eligibility(player, forced_ids),
+            is_top_five_shield_eligible=top_five_shield_eligibility(
+                player,
+                forced_ids,
+                official_top_five_player_ids=top_five_ids,
+            ),
         )
         for player in players
     ]
-    top_five = official_top_five(players)
     return TeamKeeperBoard(
         team_id=team_id,
         team_name=team_name,

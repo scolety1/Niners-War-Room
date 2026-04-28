@@ -141,14 +141,18 @@ def test_official_top_five_and_forced_release_candidates() -> None:
     ]
 
 
-def test_official_top_five_excludes_ranks_outside_top_five() -> None:
+def test_official_top_five_uses_best_available_official_ranks() -> None:
     players = [
         KeeperScoreInputs("p2", "Two", "RB", 90, official_rank=2),
         KeeperScoreInputs("p6", "Six", "WR", 95, official_rank=6),
         KeeperScoreInputs("p9", "Nine", "TE", 85, official_rank=9),
     ]
 
-    assert [player.player_name for player in official_top_five(players)] == ["Two"]
+    assert [player.player_name for player in official_top_five(players)] == [
+        "Two",
+        "Six",
+        "Nine",
+    ]
     assert forced_release_candidates(players) == []
 
 

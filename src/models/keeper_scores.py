@@ -97,7 +97,7 @@ def official_top_five(players: list[KeeperScoreInputs]) -> list[KeeperScoreInput
     ranked_players = [
         player
         for player in players
-        if player.official_rank is not None and player.official_rank <= 5
+        if player.official_rank is not None
     ]
     return sorted(
         ranked_players,
@@ -141,9 +141,15 @@ def top_five_shield_eligibility(
     player: KeeperScoreInputs,
     forced_release_player_ids: set[str],
     *,
+    official_top_five_player_ids: set[str] | None = None,
     minimum_keeper_score: float = 70.0,
 ) -> bool:
-    if player.official_rank is None or player.official_rank > 5:
+    if official_top_five_player_ids is None:
+        is_official_top_five = player.official_rank is not None and player.official_rank <= 5
+    else:
+        is_official_top_five = player.player_id in official_top_five_player_ids
+
+    if not is_official_top_five:
         return False
     if player.player_id in forced_release_player_ids:
         return False

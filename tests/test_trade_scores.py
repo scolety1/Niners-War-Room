@@ -29,11 +29,16 @@ def test_trade_central_uses_sample_pack_players_and_picks() -> None:
     board = build_trade_central(SAMPLE_PACK)
 
     assert board.snapshot_date == "2026-08-01"
-    assert board.player_rows[0]["player"] == "Luther Burden III"
+    assert board.player_rows[0]["player"] == "Luther Burden"
     assert board.player_rows[0]["signal"] == "Shop"
     assert board.player_rows[0]["trade_value"] == 564.4
-    assert board.path_rows[0] == {
-        "player": "Luther Burden III",
+    luther_path = next(
+        row
+        for row in board.path_rows
+        if row["player"] == "Luther Burden" and row["pick"] == "2027 1.04"
+    )
+    assert luther_path == {
+        "player": "Luther Burden",
         "signal": "Shop",
         "trade_value": 564.4,
         "pick": "2027 1.04",

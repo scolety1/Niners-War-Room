@@ -13,12 +13,11 @@ def test_required_v1_files_include_core_csvs() -> None:
     assert "metadata_sources.csv" in REQUIRED_V1_FILES
 
 
-def test_sample_data_pack_validates_with_expected_sample_roster_warnings() -> None:
+def test_sample_data_pack_validates_with_full_sample_roster() -> None:
     result = validate_data_pack("sample_data/2026_pre_declaration")
-    issues = {(issue.severity, issue.issue) for issue in result.issues}
 
     assert not result.has_errors
-    assert ("warning", "Roster count is 5; expected 24.") in issues
+    assert result.issues == ()
 
 
 def test_validation_catches_duplicate_players_and_missing_official_rank(tmp_path) -> None:
@@ -101,10 +100,10 @@ def test_load_data_pack_writes_rows_and_import_errors(tmp_path) -> None:
     roster_count = connection.execute("SELECT COUNT(*) FROM rosters").fetchone()[0]
     import_issue_count = connection.execute("SELECT COUNT(*) FROM import_errors").fetchone()[0]
 
-    assert result.inserted_rows["players"] == 5
-    assert player_count == 5
-    assert roster_count == 5
-    assert import_issue_count >= 1
+    assert result.inserted_rows["players"] == 24
+    assert player_count == 24
+    assert roster_count == 24
+    assert import_issue_count == 0
 
 
 def _write_pack(
