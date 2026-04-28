@@ -102,3 +102,20 @@
 - src/services/draft_service.py
 - tests/test_draft_service.py
 - Risks or follow-up needed: External build failed.
+
+## 2026-04-28 00:48:07
+
+- Task attempted: CAPTAIN NEXT table-first V1 completion pass: finish one useful table-first slice of V1 by improving Trade Central, League Intel, or Draft Room so it shows real sample-pack data with concise labels and no fantasy-blog prose; preserve local-first CSV/SQLite runtime, no live APIs, no scraping, no package/dependency edits, no generated database/data_pack changes, no auth/backend/payment/deploy work, and no complex ML. [class:feature risk:medium mode:single scope:app/,src/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: app, src, tests, docs/codex
+- Acceptance checks: external build only
+- Build result: Passed
+- Files changed:
+- app/pages/04_trade_central.py
+- src/models/trade_scores.py
+- src/services/trade_service.py
+- tests/test_trade_scores.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
