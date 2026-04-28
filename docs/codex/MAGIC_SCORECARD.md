@@ -82,3 +82,20 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - After visual evidence:
 - None recorded after task.
 - Follow-up: External build failed after implementation.
+
+## 2026-04-27 23:53:15
+
+- Task: CAPTAIN NEXT table-first V1 completion pass: finish one useful table-first slice of V1 by improving Trade Central, League Intel, or Draft Room so it shows real sample-pack data with concise labels and no fantasy-blog prose; preserve local-first CSV/SQLite runtime, no live APIs, no scraping, no package/dependency edits, no generated database/data_pack changes, no auth/backend/payment/deploy work, and no complex ML. [class:feature risk:medium mode:single scope:app/,src/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Failed
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 3
+- Materiality signal: impact=showpiece, surface-files=2, structural-files=2, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
+- Before visual evidence:
+- None recorded before task.
+- After visual evidence:
+- None recorded after task.
+- Follow-up: External build failed.

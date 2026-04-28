@@ -86,3 +86,19 @@
 - app/pages/02_team.py
 - app/pages/03_war_board.py
 - Risks or follow-up needed: External build failed after implementation.
+
+## 2026-04-27 23:53:15
+
+- Task attempted: CAPTAIN NEXT table-first V1 completion pass: finish one useful table-first slice of V1 by improving Trade Central, League Intel, or Draft Room so it shows real sample-pack data with concise labels and no fantasy-blog prose; preserve local-first CSV/SQLite runtime, no live APIs, no scraping, no package/dependency edits, no generated database/data_pack changes, no auth/backend/payment/deploy work, and no complex ML. [class:feature risk:medium mode:single scope:app/,src/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: app, src, tests, docs/codex
+- Acceptance checks: external build only
+- Build result: Failed
+- Files changed:
+- app/pages/05_draft_room.py
+- src/services/draft_service.py
+- tests/test_draft_service.py
+- Risks or follow-up needed: External build failed.
