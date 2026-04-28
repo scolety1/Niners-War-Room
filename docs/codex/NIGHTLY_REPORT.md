@@ -119,3 +119,19 @@
 - src/services/trade_service.py
 - tests/test_trade_scores.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-28 00:56:29
+
+- Task attempted: Task 7, 12, 13, and 14 - Trade, league, and draft rooms: implement trade score formulas, Trade Central V1, League Intel, and Draft Room V1; show shop/drop/shield candidates, keeper pressure by team, and pick value tables. [class:feature risk:medium mode:single scope:app/,src/models/,src/services/,tests/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: standard
+- Allowed scope: app, src/models, src/services, tests, docs/codex
+- Acceptance checks: external build only
+- Build result: Passed
+- Files changed:
+- app/pages/06_league_intel.py
+- src/services/league_service.py
+- tests/test_league_service.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
