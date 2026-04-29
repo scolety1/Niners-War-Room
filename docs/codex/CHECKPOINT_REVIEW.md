@@ -4,36 +4,37 @@
 YELLOW
 
 ## Progress Against Mission
-Branch is moving toward the V1 Drop Deadline Command Center mission. It has local CSV/sample data, SQLite loading, deterministic model work, table-first Streamlit pages, and the pick value curve has been aligned to the brief. Remaining work is still formula-critical.
+The branch is moving toward the V1 Drop Deadline Command Center: import, roster, draft, league, trade, pick-value, and player-score foundations are in place, with deterministic tests and local sample data. Two formula-alignment tasks remain for keeper/drop/confidence and trade scoring.
 
 ## Safety Review
-No working tree risk found; tree is clean. Risk areas are formula/model files under `src/models/` and service wiring under `src/services/`, because remaining unchecked tasks replace core scoring logic. No live API, scraping, dependency, generated data pack, auth, deploy, or backend risk is indicated.
+None found. Working tree is clean, runtime remains local-first, and no generated data packs or external API/runtime dependencies are indicated.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- completed tasks in this checkpoint window: pick value curve repair and prior V1 table/data/model slices are marked complete
-- files changed: app pages, docs, sample CSV data, data loaders/validators, model formulas, services, and tests
-- commits added: 23 commits since base, HEAD `fbf8f6a`
-- queue status: 3 unchecked formula-alignment tasks remain
+- Completed tasks in this checkpoint window: player/private score formula alignment and visual inspection checkpoint.
+- Files changed: app pages, model/service modules, sample CSV fixtures, docs, static check script, and tests.
+- Commits added: 31 commits since base; latest is `4ea8fc3 Codex visual inspect batch 1`.
+- Queue status: 2 unchecked tasks remain.
 
 ## Follow-Up Gate Status
-- visual bug report: missing; should influence next tasks only if UI work resumes
-- Simon design review: YELLOW, continue but fix visual issues first; should influence any UI task before new polish
-- Robin copy review: YELLOW, continue but fix copy first; should influence UI/docs wording before more presentation work
-- Joey security review: missing; should be collected before expanding scope
-- next-task influence: formula tasks can proceed, but avoid UI/design/copy expansion until Simon/Robin issues are addressed
+- Visual bug report: GREEN signal; 0 high, 0 medium, 0 low issues.
+- Simon design review: YELLOW; should influence next tasks, with visual/design concerns checked before more feature work.
+- Robin copy review: YELLOW; should influence next tasks, with copy cleanup considered before continuing.
+- Joey security review: missing; should be obtained or treated as an open review gap.
+- Next-task influence: yes, especially Simon/Robin cleanup and missing Joey review.
 
 ## Recommended Next Step
 continue
 
 ## Next Batch Guidance
-- recommended next batch size: 1
-- next work mode: repair-first
-- One formula-alignment task should be handled at a time because the remaining work touches deterministic scoring contracts and tests.
+- Recommended next batch size: 1
+- Next work mode: repair-first
+- Resolve Simon/Robin review concerns and the missing Joey security gate before taking on the remaining formula work.
 
 ## Notes For Human Reviewer
-- Build is green, but verdict stays YELLOW due to missing Joey review and missing visual bug report.
-- Prior quarantined/failed attempts appear superseded by later passing work.
-- Next safest task is player/private score formula alignment with hand-calculated tests.
+- Build passed and working tree is clean.
+- Remaining work is meaningful formula alignment, not parking polish.
+- Joey security review is missing.
+- Branch is not parked-ready because unchecked tasks remain.
