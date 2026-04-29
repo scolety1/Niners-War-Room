@@ -1,74 +1,70 @@
 # Robin Copy Review
 
 ## Verdict
-YELLOW.
+YELLOW
 
 ## One-Sentence Read
-The copy is clear, serious, and mission-fit, but it needs sharper in-app language around decisions so the product feels like a command center rather than a documented data workflow.
+The voice is disciplined, local-first, and appropriately skeptical of fantasy advice theater, but several product labels still need sharper separation between computed model output and actionable owner judgment.
 
 ## Mission Voice Fit
-The language matches the mission well: local-first, deterministic, private, and focused on one league and one owner. The strongest phrases are "Drop Deadline Command Center," "local-first fantasy football decision engine," and "Correctness beats polish." They set useful expectations without sounding inflated. The weaker fit is in operational labels and docs-heavy phrasing, where terms like "foundation," "engine," "board," and "review" can blur together unless the UI names the actual decision: release, keep, drop, shop, shield, pressure, pick value.
+The language mostly matches the mission: private, deterministic, table-first, and built for one fantasy football owner facing a deadline. The strongest copy uses concrete nouns like "official top five", "forced-release risk", "pick value table", "import errors", and "keeper pressure". The weaker copy appears where labels such as "recommendations", "trade options save value", "War Score", and "likely to enter the draft pool" could sound more certain than the underlying V1 model should claim.
 
 ## Delicate Wording Risks
-- "War Room" is strong and on-theme, but should stay functional and not drift into fantasy-bro hype or militarized flourish.
-- "Command Center" works because the product is deadline-driven, but it needs concrete action labels beneath it to avoid sounding grander than the V1 surface.
-- "decision engine" is acceptable, but avoid implying automated advice is authoritative or guaranteed.
-- "official top-five release logic" is clear internally, but in user-facing copy it may need "default release if nothing changes" for immediate comprehension.
-- "keeper/drop/shop recommendations" could overclaim if model output is deterministic scoring rather than expert advice. Prefer "signals," "candidates," or "actions."
-- "Trade options can save value" risks implying outcome certainty. Prefer "trade options that may preserve value" or "trade paths to inspect."
-- "likely to enter the draft pool" should be framed as model output, not certainty.
-- "league pressure" is useful, but define it through the visible table columns rather than explanatory prose.
+- "recommendations" can imply advice rather than deterministic model output. Prefer "labels", "model labels", or "review flags" where the app is showing computed output.
+- "Which trade options save value" sounds like a promise. The model can compare estimated value, but it cannot know whether a trade will save value in reality.
+- "Which players are likely to enter the draft pool" risks prediction language. If this is based on keeper pressure and roster math, say that directly.
+- "War Score" is distinctive, but it needs clear nearby support so it does not become a vague master score that hides Official Rank, Market Rank, War Room Rank, and My Rank.
+- "AcceptanceChance" is risky if presented as a probability. It should be framed as a formula label or review band unless calibrated evidence exists.
+- "POLITICAL RISK" is useful shorthand, but it may feel melodramatic unless defined as league-friction or owner-behavior risk.
+- "private score" and "private value" are mission-fit, but visible UI should make clear they are local model outputs, not secret market facts.
+- "confidence" should not read as certainty. It should stay tied to data completeness, agreement, and model separation.
 
 ## Beautiful Language Opportunities
-- Make the first-screen copy more decisive: "Default release if nothing changes" is clearer than abstract release logic.
-- Use action words as labels: Keep, Drop, Shop, Shield, Watch.
-- Replace generic page names where possible with decision-specific names: "Team" could become "Niners Roster" or "Top Five Pressure."
-- Give import states warmer precision: "Blocking errors" and "Warnings to review" are better than a flat "Import Review."
-- Keep explanations short and quiet; this product should sound like a trusted private notebook, not a fantasy advice site.
-- Use "snapshot" consistently for data packs. It supports the local-first promise and avoids live-data ambiguity.
-- Separate certainty language carefully: "projected," "modeled," "current snapshot," and "if nothing changes" should appear where the app could otherwise sound definitive.
+- Replace advice-sounding headings with audit-friendly table labels: "Model Output", "Review Label", "Source", "Assumption", "Why".
+- Make the root page sound like a serious deadline desk, not a generic app intro.
+- Use the product's strongest nouns more often: "top-five release", "declaration deadline", "keeper pressure", "pick curve", "source snapshot".
+- Put plain assumption labels near scenario controls: "Changed input", "Affected formula", "Held fixed".
+- Tighten trade copy around review rather than persuasion: "candidate", "edge", "benefit", "risk band", "manual review".
+- Give "War Room Rank" one clear definition in a side panel or expander so it does not blur into market or official rank.
+- Convert "likely" language into "flagged by keeper pressure" or "projected by current snapshot".
 
 ## Priority Rewrite
-The most important wording problem to fix next is recommendation certainty. The app should not sound like it is making expert fantasy predictions; it should present deterministic, snapshot-based decision signals. Nami should audit visible labels and table headings for words like "recommendation," "likely," "save," and "best," then revise them toward "candidate," "signal," "modeled," "default," and "current snapshot" where that better matches the underlying formulas.
+The most important wording problem is prediction and advice language around trade and draft outcomes. Nami should replace visible phrases that imply the tool knows what will happen, such as "save value", "likely to enter", and "AcceptanceChance", with language that names the calculation and keeps the owner in charge: "estimated edge", "pressure flag", "review band", "model output", and "manual review required".
 
 ## Suggested Rewrites
-- Before: "Which trade options can save value before Roster Declaration Day?"
-  After: "Which trade paths may preserve value before Roster Declaration Day?"
-
+- Before: "Which trade options save value before Roster Declaration Day?"
+  After: "Which trade candidates show positive estimated edge before Roster Declaration Day?"
 - Before: "Which players are likely to enter the draft pool?"
-  After: "Which players are projected to enter the draft pool from the current snapshot?"
-
-- Before: "keeper/drop/shop recommendations"
-  After: "keeper, drop, and shop signals"
-
-- Before: "official top-5 release pressure"
-  After: "official top-five pressure and default release"
-
-- Before: "Team"
-  After: "Niners Roster"
-
-- Before: "War Board"
-  After: "War Board" with visible action labels: "Keep," "Drop," "Shop," "Shield," "Watch"
-
-- Before: "Import Review"
-  After: "Import Review" with sections labeled "Blocking Errors," "Warnings," and "Loaded Snapshot"
+  After: "Which players are flagged as draft-pool candidates by current keeper pressure?"
+- Before: "AcceptanceChance"
+  After: "Acceptance Band"
+- Before: "recommendations"
+  After: "model labels"
+- Before: "POLITICAL RISK"
+  After: "League Friction Risk"
+- Before: "War Score"
+  After: "War Room Score"
+- Before: "private score"
+  After: "Private Model Score"
+- Before: "Trade options can save value"
+  After: "Trade candidates with estimated value edge"
 
 ## Voice Rules
-- Keep copy brief, specific, and operational.
-- Prefer decision language over product language.
-- Do not promise outcomes; describe model signals and current-snapshot logic.
-- Use "official" only for league-rule rank or release mechanics.
-- Use "market," "war room," and "my" only when the distinction matters.
-- Keep football personality restrained; no blog voice, hype voice, or joke labels.
-- Use "top-five" consistently in prose and "Top 5" only if space is tight in table headers.
-- Pair risky projections with qualifiers like "modeled," "projected," "current snapshot," or "if nothing changes."
+- Keep the voice terse, specific, and audit-ready.
+- Never make the model sound like a fantasy guru.
+- Use "model output", "review label", "source", "assumption", "confidence", and "why" near computed values.
+- Preserve separate language for Official Rank, Market Rank, War Room Rank, and My Rank.
+- Avoid prediction verbs unless the formula and assumption are visible.
+- Prefer "flagged", "estimated", "calculated", "current snapshot", and "manual review" over "knows", "will", "should", or "best".
+- Keep UI copy table-first and low-text; move explanations into expanders or side panels.
+- Use football language only when it clarifies the decision, not as decoration.
 
 ## Next 5 Copy Tasks
-- [ ] Audit visible UI labels for "recommendation," "best," "likely," and "save"; replace only where the wording overstates certainty.
-- [ ] Rename or relabel the Team page surface so "Niners," "official top five," and "default release" are visible without extra explanation.
-- [ ] Standardize action labels to Keep, Drop, Shop, Shield, and Watch; do not add playful synonyms.
-- [ ] Add concise import severity labels: Blocking Errors, Warnings, and Loaded Snapshot; avoid long instructional text.
-- [ ] Review rank column headers for clarity; preserve separate Official Rank, Market Rank, War Room Rank, and My Rank.
+- [ ] Rename any visible "AcceptanceChance" label to "Acceptance Band" or "Acceptance Score"; do not present it as a calibrated probability.
+- [ ] Review Trade Central headings and replace advice language with calculation language; keep each label under four words where possible.
+- [ ] Add or verify one short side-panel definition for War Room Score; guardrail: it must not collapse Official Rank, Market Rank, War Room Rank, and My Rank.
+- [ ] Replace visible "likely to enter the draft pool" copy with "draft-pool candidates by keeper pressure"; do not imply prediction beyond the current snapshot.
+- [ ] Audit scenario controls for assumption labels; each what-if control should name the changed input, affected formula, and held-fixed outputs.
 
 ## Stop Or Continue
 continue but fix copy first
