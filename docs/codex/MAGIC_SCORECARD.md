@@ -176,3 +176,20 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Joey verdict: missing
 - Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
 - Debug checkpoint result: FAIL (failed)
+
+## 2026-04-29 10:48:37
+
+- Task: User pain: The Niners owner cannot trust the War Room unless player scores match the written model spec exactly and can be audited. Target: player/private score formulas and tests. Change: replace the current prototype QB/RB/WR/TE private-score formulas with the brief's exact weighted heuristic formulas using normalized 0-100 feature inputs: QB draft_cap/rush_profile/start_path/passing_trait/environment, RB draft_cap/opportunity/production/receiving/elusiveness/size_durability/athleticism, WR draft_cap/age_adj_production/target_earning_efficiency/breakout_class/film_separation/size_role/athleticism/environment, and TE draft_cap/receiving_production/route_role/athleticism/film_receiving/role_path/age_timeline/environment; keep first-down adjustments modest and testable; rewrite tests with hand-calculated fixture values from the brief weights. Remove/simplify: remove placeholder scoring shortcuts and any unsupported hardcoded values outside fixtures/tests. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no player-data hardcoding outside fixtures/tests. Acceptance: formula tests use hand-calculated fixture values from the brief weights and score outputs are deterministic. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Passed
+- Magic signal: moved-forward
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 3
+- Materiality signal: impact=showpiece, surface-files=1, structural-files=1, source-lines=302, css-only=False
+- Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
+- Before visual evidence:
+- None recorded before task.
+- After visual evidence:
+- None recorded after task.
+- Follow-up: Low. External build, task acceptance checks, and checkpoint loop review completed.

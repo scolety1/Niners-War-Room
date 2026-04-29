@@ -153,3 +153,19 @@
 - tests/test_pick_values.py
 - tests/test_trade_scores.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-29 10:48:37
+
+- Task attempted: User pain: The Niners owner cannot trust the War Room unless player scores match the written model spec exactly and can be audited. Target: player/private score formulas and tests. Change: replace the current prototype QB/RB/WR/TE private-score formulas with the brief's exact weighted heuristic formulas using normalized 0-100 feature inputs: QB draft_cap/rush_profile/start_path/passing_trait/environment, RB draft_cap/opportunity/production/receiving/elusiveness/size_durability/athleticism, WR draft_cap/age_adj_production/target_earning_efficiency/breakout_class/film_separation/size_role/athleticism/environment, and TE draft_cap/receiving_production/route_role/athleticism/film_receiving/role_path/age_timeline/environment; keep first-down adjustments modest and testable; rewrite tests with hand-calculated fixture values from the brief weights. Remove/simplify: remove placeholder scoring shortcuts and any unsupported hardcoded values outside fixtures/tests. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no player-data hardcoding outside fixtures/tests. Acceptance: formula tests use hand-calculated fixture values from the brief weights and score outputs are deterministic. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: src/models, tests, docs/codex
+- Acceptance checks: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1
+- Build result: Passed
+- Files changed:
+- docs/codex/FORMULA_SPEC.md
+- src/models/player_scores.py
+- tests/test_keeper_scores.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.

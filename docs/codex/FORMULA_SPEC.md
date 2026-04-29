@@ -29,6 +29,12 @@ Use the brief's exact position formulas:
 - WR: 0.27 draft_cap, 0.21 age_adj_production, 0.17 target_earning_efficiency, 0.12 breakout_class, 0.11 film_separation, 0.05 size_role, 0.03 athleticism, 0.04 environment.
 - TE: 0.23 draft_cap, 0.22 receiving_production, 0.17 route_role, 0.12 athleticism, 0.11 film_receiving, 0.08 role_path, 0.04 age_timeline, 0.03 environment.
 
+Private-score inputs are normalized 0-100 features. First-down rate and volume adjustments are modest audit modifiers before risk penalty:
+- Rate adjustment: `clamp(((first_downs / opportunities) - position_rate_baseline) * 10, -2.0, 2.0)`, with zero rate when opportunities are zero.
+- Volume adjustment: `clamp(((first_downs - position_volume_baseline) / position_volume_baseline) * 1.5, -1.5, 1.5)`.
+- Rate baselines: QB 0.31, RB 0.24, WR 0.54, TE 0.50.
+- Volume baselines: QB 160, RB 55, WR 50, TE 38.
+
 Use the exact 50-pick base curve from the brief, including `1.01=1000`, `1.04=630`, `2.04=200`, `5.04=18`, and `5.10=12`.
 
 ## Confidence

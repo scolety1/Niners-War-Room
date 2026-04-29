@@ -24,75 +24,83 @@ from src.models.player_scores import (
 
 
 def test_position_private_scores_are_deterministic() -> None:
+    # QB: 0.40*90 + 0.30*95 + 0.15*80 + 0.10*85 + 0.05*82
+    #     + rate_adj(180/520 vs 0.31) + volume_adj(180 vs 160) - 2 = 87.65
     assert private_score(
         PlayerScoreInputs(
             position="QB",
-            production_score=92,
-            opportunity_score=90,
-            official_rank=2,
-            market_rank=4,
-            rushing_score=95,
-            environment_score=82,
+            draft_cap=90,
+            rush_profile=95,
+            start_path=80,
+            passing_trait=85,
+            environment=82,
             first_downs=180,
             first_down_opportunities=520,
             risk_penalty=2,
         )
-    ) == pytest.approx(92.03)
+    ) == pytest.approx(87.65)
+    # RB: 0.28*96 + 0.22*88 + 0.15*90 + 0.14*84 + 0.12*86
+    #     + 0.05*72 + 0.04*76 + first-down adjustments - 5 = 84.16
     assert private_score(
         PlayerScoreInputs(
             position="RB",
-            production_score=90,
-            opportunity_score=88,
-            official_rank=1,
-            market_rank=3,
-            age=23,
-            receiving_score=84,
-            environment_score=78,
+            draft_cap=96,
+            opportunity=88,
+            production=90,
+            receiving=84,
+            elusiveness=86,
+            size_durability=72,
+            athleticism=76,
             first_downs=70,
             first_down_opportunities=260,
             risk_penalty=5,
         )
-    ) == pytest.approx(86.45)
+    ) == pytest.approx(84.16)
+    # WR: 0.27*78 + 0.21*86 + 0.17*88 + 0.12*84 + 0.11*90
+    #     + 0.05*76 + 0.03*82 + 0.04*80 + first-down adjustments - 3 = 81.16
     assert private_score(
         PlayerScoreInputs(
             position="WR",
-            production_score=86,
-            opportunity_score=82,
-            official_rank=5,
-            market_rank=8,
-            target_earning_score=88,
-            breakout_score=84,
-            environment_score=80,
+            draft_cap=78,
+            age_adj_production=86,
+            target_earning_efficiency=88,
+            breakout_class=84,
+            film_separation=90,
+            size_role=76,
+            athleticism=82,
+            environment=80,
             first_downs=58,
             first_down_opportunities=100,
             risk_penalty=3,
         )
-    ) == pytest.approx(85.79)
+    ) == pytest.approx(81.16)
+    # TE: 0.23*70 + 0.22*78 + 0.17*74 + 0.12*76 + 0.11*80
+    #     + 0.08*72 + 0.04*88 + 0.03*72 + first-down adjustments - 4 = 71.48
     assert private_score(
         PlayerScoreInputs(
             position="TE",
-            production_score=78,
-            opportunity_score=74,
-            official_rank=40,
-            market_rank=45,
-            age=25,
-            target_earning_score=80,
-            breakout_score=76,
-            environment_score=72,
+            draft_cap=70,
+            receiving_production=78,
+            route_role=74,
+            athleticism=76,
+            film_receiving=80,
+            role_path=72,
+            age_timeline=88,
+            environment=72,
             first_downs=42,
             first_down_opportunities=82,
             risk_penalty=4,
         )
-    ) == pytest.approx(76.85)
+    ) == pytest.approx(71.48)
 
 
 def test_first_down_helpers_are_bounded_and_position_aware() -> None:
     assert first_down_rate(60, 100) == 0.6
     assert first_down_rate(10, 0) == 0.0
-    assert first_down_rate_adjustment("WR", 60, 100) == pytest.approx(1.2)
-    assert first_down_volume_adjustment("WR", 60) == pytest.approx(0.6)
-    assert first_down_rate_adjustment("RB", 1, 300) == -4.0
-    assert first_down_volume_adjustment("RB", 200) == 3.0
+    assert first_down_rate_adjustment("WR", 60, 100) == pytest.approx(0.6)
+    assert first_down_volume_adjustment("WR", 60) == pytest.approx(0.3)
+    assert first_down_rate_adjustment("RB", 1, 300) == -2.0
+    assert first_down_volume_adjustment("RB", 200) == 1.5
 
 
 def test_confidence_score_and_risk_level() -> None:
