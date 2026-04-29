@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.models.confidence import ConfidenceInputs, confidence_score
 from src.models.player_scores import official_rank_score
 from src.utils.scoring import clamp_score
 
@@ -17,6 +18,19 @@ class KeeperScoreInputs:
     my_rank_score: float | None = None
     confidence_score: float = 0.6
     roster_status: str = "rostered"
+    long_term_private_value: float | None = None
+    next_2_year_starter_value: float | None = None
+    scarcity_bonus: float | None = None
+    trade_liquidity: float | None = None
+    age_curve: float | None = None
+    risk_adj: float | None = None
+    build_fit: float | None = None
+    roster_redundancy: float = 0.0
+    decline_risk: float = 0.0
+    data_completeness: float | None = None
+    historical_cohort_size: float | None = None
+    market_agreement: float | None = None
+    model_separation: float | None = None
 
 
 @dataclass(frozen=True)
@@ -44,29 +58,33 @@ class KeeperPressure:
 
 
 def keeper_score(inputs: KeeperScoreInputs) -> float:
-    market = inputs.market_score if inputs.market_score is not None else inputs.private_score
-    my_rank = inputs.my_rank_score if inputs.my_rank_score is not None else inputs.private_score
-    official = official_rank_score(inputs.official_rank)
-    confidence_bonus = (clamp_score(inputs.confidence_score, 0.0, 1.0) - 0.5) * 8
-
     score = (
-        (0.46 * clamp_score(inputs.private_score))
-        + (0.22 * clamp_score(market))
-        + (0.20 * official)
-        + (0.12 * clamp_score(my_rank))
-        + confidence_bonus
+        (0.30 * _score_component(inputs.long_term_private_value))
+        + (0.20 * _score_component(inputs.next_2_year_starter_value))
+        + (0.15 * _score_component(inputs.scarcity_bonus))
+        + (0.10 * _score_component(inputs.trade_liquidity))
+        + (0.10 * _score_component(inputs.age_curve))
+        + (0.10 * _score_component(inputs.risk_adj))
+        + (0.05 * _score_component(inputs.build_fit))
     )
     return round(clamp_score(score), 2)
 
 
 def drop_candidate_score(
-    score: float,
-    *,
-    is_forced_release_candidate: bool = False,
-    roster_bubble_penalty: float = 0.0,
+    inputs: KeeperScoreInputs,
+    keeper_score_value: float | None = None,
 ) -> float:
-    forced_release_penalty = 18.0 if is_forced_release_candidate else 0.0
-    return round(clamp_score((100 - score) + forced_release_penalty + roster_bubble_penalty), 2)
+    score = keeper_score(inputs) if keeper_score_value is None else keeper_score_value
+    official_private_gap = official_rank_score(inputs.official_rank) - clamp_score(
+        inputs.private_score
+    )
+    drop_score = (
+        (0.45 * (100 - score))
+        + (0.25 * official_private_gap)
+        + (0.15 * clamp_score(inputs.roster_redundancy))
+        + (0.15 * clamp_score(inputs.decline_risk))
+    )
+    return round(clamp_score(drop_score), 2)
 
 
 def keeper_decision(
@@ -76,6 +94,7 @@ def keeper_decision(
     is_top_five_shield_eligible: bool = False,
     roster_bubble_penalty: float = 0.0,
 ) -> KeeperDecision:
+    _ = is_forced_release_candidate, roster_bubble_penalty
     score = keeper_score(inputs)
     return KeeperDecision(
         player_id=inputs.player_id,
@@ -83,12 +102,17 @@ def keeper_decision(
         position=inputs.position,
         official_rank=inputs.official_rank,
         keeper_score=score,
-        drop_candidate_score=drop_candidate_score(
-            score,
-            is_forced_release_candidate=is_forced_release_candidate,
-            roster_bubble_penalty=roster_bubble_penalty,
+        drop_candidate_score=drop_candidate_score(inputs, score),
+        confidence_score=confidence_score(
+            ConfidenceInputs(
+                data_completeness=_confidence_component(inputs.data_completeness),
+                historical_cohort_size=_confidence_component(
+                    inputs.historical_cohort_size
+                ),
+                market_agreement=_confidence_component(inputs.market_agreement),
+                model_separation=_confidence_component(inputs.model_separation),
+            )
         ),
-        confidence_score=round(clamp_score(inputs.confidence_score, 0.0, 1.0), 3),
         top_five_shield_eligible=is_top_five_shield_eligible,
     )
 
@@ -184,3 +208,11 @@ def keeper_pressure(
         pressure_count=pressure_count,
         pressure_level=pressure_level,
     )
+
+
+def _score_component(value: float | None) -> float:
+    return clamp_score(0.0 if value is None else value)
+
+
+def _confidence_component(value: float | None) -> float:
+    return clamp_score(0.0 if value is None else value, 0.0, 1.0)

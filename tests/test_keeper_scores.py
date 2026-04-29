@@ -104,20 +104,36 @@ def test_first_down_helpers_are_bounded_and_position_aware() -> None:
 
 
 def test_confidence_score_and_risk_level() -> None:
+    assert confidence_score(ConfidenceInputs()) == pytest.approx(0.0)
     assert confidence_score(
         ConfidenceInputs(
             data_completeness=0.8,
-            source_count=3,
-            rank_age_days=30,
-            projection_variance=0.2,
+            historical_cohort_size=0.6,
+            market_agreement=0.9,
+            model_separation=0.7,
         )
-    ) == pytest.approx(0.778)
+    ) == pytest.approx(0.75)
     assert risk_level(0.80) == "low"
     assert risk_level(0.60) == "medium"
     assert risk_level(0.40) == "high"
 
 
-def test_keeper_and_drop_scores_use_separate_signals() -> None:
+def test_missing_keeper_formula_components_do_not_use_placeholder_scores() -> None:
+    player = KeeperScoreInputs(
+        player_id="missing",
+        player_name="Missing Inputs",
+        position="WR",
+        private_score=95,
+        market_score=95,
+        official_rank=1,
+        confidence_score=0.95,
+    )
+
+    assert keeper_score(player) == pytest.approx(0.0)
+    assert keeper_decision(player).confidence_score == pytest.approx(0.0)
+
+
+def test_keeper_drop_and_decision_confidence_use_written_formulas() -> None:
     player = KeeperScoreInputs(
         player_id="p1",
         player_name="Starter",
@@ -127,11 +143,33 @@ def test_keeper_and_drop_scores_use_separate_signals() -> None:
         official_rank=6,
         my_rank_score=90,
         confidence_score=0.75,
+        long_term_private_value=88,
+        next_2_year_starter_value=80,
+        scarcity_bonus=70,
+        trade_liquidity=84,
+        age_curve=65,
+        risk_adj=72,
+        build_fit=90,
+        roster_redundancy=40,
+        decline_risk=20,
+        data_completeness=0.90,
+        historical_cohort_size=0.70,
+        market_agreement=0.80,
+        model_separation=0.60,
     )
 
-    assert keeper_score(player) == pytest.approx(91.51)
-    assert drop_candidate_score(91.51) == pytest.approx(8.49)
-    assert drop_candidate_score(91.51, is_forced_release_candidate=True) == pytest.approx(26.49)
+    # KeeperScore = 0.30*88 + 0.20*80 + 0.15*70 + 0.10*84
+    #             + 0.10*65 + 0.10*72 + 0.05*90 = 79.5
+    assert keeper_score(player) == pytest.approx(79.5)
+
+    # DropCandidateScore = 0.45*(100-79.5) + 0.25*(98.75-88)
+    #                    + 0.15*40 + 0.15*20 = 20.91
+    assert drop_candidate_score(player, 79.5) == pytest.approx(20.91)
+
+    decision = keeper_decision(player)
+    assert decision.drop_candidate_score == pytest.approx(20.91)
+    # Confidence = 0.35*0.90 + 0.25*0.70 + 0.20*0.80 + 0.20*0.60
+    assert decision.confidence_score == pytest.approx(0.77)
 
 
 def test_official_top_five_and_forced_release_candidates() -> None:
@@ -188,10 +226,39 @@ def test_keeper_pressure_counts_roster_and_forced_release_pressure() -> None:
 
 def _players() -> list[KeeperScoreInputs]:
     return [
-        KeeperScoreInputs("p_achane", "Achane", "RB", 91, official_rank=1, market_score=90),
-        KeeperScoreInputs("p_lamar", "Lamar", "QB", 89, official_rank=2, market_score=88),
-        KeeperScoreInputs("p_chase", "Chase Brown", "RB", 84, official_rank=3, market_score=82),
-        KeeperScoreInputs("p_burden", "Luther Burden", "WR", 76, official_rank=4, market_score=78),
-        KeeperScoreInputs("p_thomas", "Brian Thomas", "WR", 87, official_rank=5, market_score=89),
-        KeeperScoreInputs("p_other", "Other", "TE", 80, official_rank=6, market_score=81),
+        _keeper_fixture("p_achane", "Achane", "RB", 91, 1, 88),
+        _keeper_fixture("p_lamar", "Lamar", "QB", 89, 2, 86),
+        _keeper_fixture("p_chase", "Chase Brown", "RB", 84, 3, 80),
+        _keeper_fixture("p_burden", "Luther Burden", "WR", 76, 4, 68),
+        _keeper_fixture("p_thomas", "Brian Thomas", "WR", 87, 5, 84),
+        _keeper_fixture("p_other", "Other", "TE", 80, 6, 78),
     ]
+
+
+def _keeper_fixture(
+    player_id: str,
+    player_name: str,
+    position: str,
+    private_score_value: float,
+    official_rank: int,
+    formula_value: float,
+) -> KeeperScoreInputs:
+    return KeeperScoreInputs(
+        player_id,
+        player_name,
+        position,
+        private_score_value,
+        official_rank=official_rank,
+        market_score=formula_value,
+        long_term_private_value=formula_value,
+        next_2_year_starter_value=formula_value,
+        scarcity_bonus=formula_value,
+        trade_liquidity=formula_value,
+        age_curve=formula_value,
+        risk_adj=formula_value,
+        build_fit=formula_value,
+        data_completeness=0.8,
+        historical_cohort_size=0.8,
+        market_agreement=0.8,
+        model_separation=0.8,
+    )

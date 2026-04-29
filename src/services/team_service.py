@@ -91,6 +91,7 @@ def load_team_keeper_board(
             COALESCE(r.official_rank, o.official_rank) AS official_rank,
             m.private_score,
             m.market_score,
+            m.keeper_score,
             m.confidence_score
         FROM rosters r
         LEFT JOIN official_rankings o ON o.player_id = r.player_id
@@ -112,6 +113,7 @@ def load_team_keeper_board(
 
 def _row_to_keeper_input(row: sqlite3.Row) -> KeeperScoreInputs:
     private_score = row["private_score"] if row["private_score"] is not None else 50.0
+    formula_value = row["keeper_score"] if row["keeper_score"] is not None else private_score
     confidence_score = row["confidence_score"] if row["confidence_score"] is not None else 0.6
     return KeeperScoreInputs(
         player_id=str(row["player_id"]),
@@ -122,6 +124,17 @@ def _row_to_keeper_input(row: sqlite3.Row) -> KeeperScoreInputs:
         market_score=_optional_float(row["market_score"]),
         confidence_score=float(confidence_score),
         roster_status=str(row["roster_status"] or "rostered"),
+        long_term_private_value=float(formula_value),
+        next_2_year_starter_value=float(formula_value),
+        scarcity_bonus=float(formula_value),
+        trade_liquidity=float(formula_value),
+        age_curve=float(formula_value),
+        risk_adj=float(formula_value),
+        build_fit=float(formula_value),
+        data_completeness=float(confidence_score),
+        historical_cohort_size=float(confidence_score),
+        market_agreement=float(confidence_score),
+        model_separation=float(confidence_score),
     )
 
 

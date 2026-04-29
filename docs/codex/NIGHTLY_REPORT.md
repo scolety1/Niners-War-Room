@@ -169,3 +169,24 @@
 - src/models/player_scores.py
 - tests/test_keeper_scores.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-29 10:58:14
+
+- Task attempted: User pain: The Niners owner cannot trust keeper/drop recommendations unless they follow the written formula instead of vague placeholder math. Target: keeper, drop, and confidence scoring. Change: replace the simplified keeper/drop/confidence placeholder math with the brief formulas: KeeperScore = 0.30*LongTermPrivateValue + 0.20*Next2YearStarterValue + 0.15*ScarcityBonus + 0.10*TradeLiquidity + 0.10*AgeCurve + 0.10*RiskAdj + 0.05*BuildFit; DropCandidateScore = 0.45*InverseKeeperScore + 0.25*(OfficialValue - PrivateValue) + 0.15*RosterRedundancy + 0.15*DeclineRisk; Confidence = 0.35*data_completeness + 0.25*historical_cohort_size + 0.20*market_agreement + 0.20*model_separation; preserve official-top-five rule logic and rewrite tests to assert deterministic hand-calculated values. Remove/simplify: remove placeholder scoring shortcuts that cannot be explained from model inputs. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no changes to league rules unless the config already exposes them. Acceptance: keeper/drop/confidence tests assert deterministic hand-calculated values and official top-five logic still passes. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,src/services/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: src/models, src/services, tests, docs/codex
+- Acceptance checks: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1
+- Build result: Passed
+- Files changed:
+- src/models/confidence.py
+- src/models/keeper_scores.py
+- src/services/command_board_service.py
+- src/services/league_service.py
+- src/services/roster_service.py
+- src/services/team_service.py
+- src/services/trade_service.py
+- tests/test_keeper_scores.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.

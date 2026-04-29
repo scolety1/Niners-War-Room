@@ -210,3 +210,28 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Joey verdict: missing
 - Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
 - Debug checkpoint result: WARN (passed)
+
+## 2026-04-29 10:58:14
+
+- Task: User pain: The Niners owner cannot trust keeper/drop recommendations unless they follow the written formula instead of vague placeholder math. Target: keeper, drop, and confidence scoring. Change: replace the simplified keeper/drop/confidence placeholder math with the brief formulas: KeeperScore = 0.30*LongTermPrivateValue + 0.20*Next2YearStarterValue + 0.15*ScarcityBonus + 0.10*TradeLiquidity + 0.10*AgeCurve + 0.10*RiskAdj + 0.05*BuildFit; DropCandidateScore = 0.45*InverseKeeperScore + 0.25*(OfficialValue - PrivateValue) + 0.15*RosterRedundancy + 0.15*DeclineRisk; Confidence = 0.35*data_completeness + 0.25*historical_cohort_size + 0.20*market_agreement + 0.20*model_separation; preserve official-top-five rule logic and rewrite tests to assert deterministic hand-calculated values. Remove/simplify: remove placeholder scoring shortcuts that cannot be explained from model inputs. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no changes to league rules unless the config already exposes them. Acceptance: keeper/drop/confidence tests assert deterministic hand-calculated values and official top-five logic still passes. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,src/services/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Passed
+- Magic signal: moved-forward
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 8
+- Materiality signal: impact=showpiece, surface-files=7, structural-files=7, source-lines=312, css-only=False
+- Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-104838\Import-Review-mobile.png
+- Follow-up: Low. External build, task acceptance checks, and checkpoint loop review completed.

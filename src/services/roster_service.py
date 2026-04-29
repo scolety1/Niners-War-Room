@@ -15,6 +15,9 @@ from src.models.keeper_scores import (
 def keeper_inputs_from_rows(rows: Iterable[Mapping[str, object]]) -> list[KeeperScoreInputs]:
     players: list[KeeperScoreInputs] = []
     for row in rows:
+        formula_value = _optional_float(row.get("keeper_score"))
+        if formula_value is None:
+            formula_value = _optional_float(row.get("private_score"), default=50.0)
         players.append(
             KeeperScoreInputs(
                 player_id=str(row.get("player_id") or ""),
@@ -26,6 +29,36 @@ def keeper_inputs_from_rows(rows: Iterable[Mapping[str, object]]) -> list[Keeper
                 my_rank_score=_optional_float(row.get("my_rank_score")),
                 confidence_score=_optional_float(row.get("confidence_score"), default=0.6),
                 roster_status=str(row.get("roster_status") or "rostered"),
+                long_term_private_value=_optional_float(
+                    row.get("long_term_private_value"), formula_value
+                ),
+                next_2_year_starter_value=_optional_float(
+                    row.get("next_2_year_starter_value"), formula_value
+                ),
+                scarcity_bonus=_optional_float(row.get("scarcity_bonus"), formula_value),
+                trade_liquidity=_optional_float(row.get("trade_liquidity"), formula_value),
+                age_curve=_optional_float(row.get("age_curve"), formula_value),
+                risk_adj=_optional_float(row.get("risk_adj"), formula_value),
+                build_fit=_optional_float(row.get("build_fit"), formula_value),
+                roster_redundancy=_optional_float(row.get("roster_redundancy"), 0.0)
+                or 0.0,
+                decline_risk=_optional_float(row.get("decline_risk"), 0.0) or 0.0,
+                data_completeness=_optional_float(
+                    row.get("data_completeness"),
+                    _optional_float(row.get("confidence_score"), 0.0),
+                ),
+                historical_cohort_size=_optional_float(
+                    row.get("historical_cohort_size"),
+                    _optional_float(row.get("confidence_score"), 0.0),
+                ),
+                market_agreement=_optional_float(
+                    row.get("market_agreement"),
+                    _optional_float(row.get("confidence_score"), 0.0),
+                ),
+                model_separation=_optional_float(
+                    row.get("model_separation"),
+                    _optional_float(row.get("confidence_score"), 0.0),
+                ),
             )
         )
     return players
