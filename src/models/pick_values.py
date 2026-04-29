@@ -8,22 +8,78 @@ PICK_LABEL_PATTERN = re.compile(
     r"^(?:(?P<year>\d{4})\s+)?(?P<round>[1-9]\d*)\.(?P<slot>\d{2})$"
 )
 
+BRIEF_PICK_VALUE_CURVE_1000: tuple[float, ...] = (
+    1000.0,
+    820.0,
+    720.0,
+    630.0,
+    560.0,
+    500.0,
+    450.0,
+    405.0,
+    365.0,
+    330.0,
+    300.0,
+    260.0,
+    230.0,
+    200.0,
+    175.0,
+    152.0,
+    132.0,
+    115.0,
+    100.0,
+    88.0,
+    78.0,
+    69.0,
+    61.0,
+    54.0,
+    48.0,
+    43.0,
+    39.0,
+    35.0,
+    32.0,
+    29.0,
+    28.0,
+    27.0,
+    26.0,
+    25.0,
+    24.0,
+    23.0,
+    22.0,
+    21.0,
+    20.0,
+    19.0,
+    18.6,
+    18.4,
+    18.2,
+    18.0,
+    17.0,
+    16.0,
+    15.0,
+    14.0,
+    13.0,
+    12.0,
+)
+
 
 @dataclass(frozen=True)
 class PickValueConfig:
     teams_per_round: int = 10
     rounds: int = 5
     current_pick_year: int = 2026
-    annual_future_discount: float = 0.85
+    annual_future_discount: float = 0.80
     declaration_adjustment_default: float = 0.0
     certainty_adjustments: dict[str, float] | None = None
-    curve_anchors: tuple[tuple[int, float], ...] = (
-        (1, 1000.0),
-        (4, 760.0),
-        (14, 360.0),
-        (44, 60.0),
-        (50, 25.0),
-    )
+    pick_value_curve_1000: tuple[float, ...] = BRIEF_PICK_VALUE_CURVE_1000
+
+    def __post_init__(self) -> None:
+        if self.annual_future_discount < 0.80 or self.annual_future_discount > 0.82:
+            raise ValueError("Annual future discount must be between 0.80 and 0.82.")
+        expected_picks = self.teams_per_round * self.rounds
+        if len(self.pick_value_curve_1000) != expected_picks:
+            raise ValueError(
+                f"Pick value curve must contain exactly {expected_picks} values."
+            )
 
     def certainty_factor(self, certainty: str) -> float:
         adjustments = self.certainty_adjustments or {
@@ -60,7 +116,7 @@ def overall_pick(
         raise ValueError(f"Round must be between 1 and {rounds}.")
     if slot < 1 or slot > teams_per_round:
         raise ValueError(f"Slot must be between 1 and {teams_per_round}.")
-    return ((draft_round - 1) * teams_per_round) + slot
+    return (10 * (draft_round - 1)) + slot
 
 
 def format_pick_label(pick_year: int, draft_round: int, slot: int) -> str:
@@ -90,20 +146,7 @@ def base_pick_value_1000(overall: int, config: PickValueConfig | None = None) ->
     if overall < 1 or overall > max_pick:
         raise ValueError(f"Overall pick must be between 1 and {max_pick}.")
 
-    anchors = tuple(sorted(cfg.curve_anchors))
-    for anchor_pick, anchor_value in anchors:
-        if overall == anchor_pick:
-            return anchor_value
-
-    for (left_pick, left_value), (right_pick, right_value) in zip(
-        anchors, anchors[1:], strict=False
-    ):
-        if left_pick < overall < right_pick:
-            span = right_pick - left_pick
-            weight = (overall - left_pick) / span
-            return left_value + ((right_value - left_value) * weight)
-
-    raise ValueError(f"No pick value anchor covers overall pick {overall}.")
+    return cfg.pick_value_curve_1000[overall - 1]
 
 
 def future_discount(pick_year: int, config: PickValueConfig | None = None) -> float:
@@ -202,7 +245,10 @@ def do_not_draft_before_pick(
         if candidate.final_pick_value <= player_value_1000:
             return candidate.pick_label
 
-    return f"After {format_pick_label(resolved_pick_year, cfg.rounds, cfg.teams_per_round)}"
+    final_pick_label = format_pick_label(
+        resolved_pick_year, cfg.rounds, cfg.teams_per_round
+    )
+    return f"After {final_pick_label}"
 
 
 def _pick_bucket(pick_year: int, draft_round: int, config: PickValueConfig) -> str:

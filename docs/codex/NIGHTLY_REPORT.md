@@ -135,3 +135,21 @@
 - src/services/league_service.py
 - tests/test_league_service.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-28 23:17:53
+
+- Task attempted: MODEL SPEC ALIGNMENT - pick value curve repair: replace the current placeholder/interpolated pick-value curve with the exact 50-pick 1,000-point curve from the Niners War Room brief, including `1.01=1000`, `1.04=630`, `2.04=200`, `5.04=18`, and `5.10=12`; change the default annual future discount to the brief's 0.80 framework while allowing configurable 0.80-0.82 values; keep overall pick calculation as `10 * (round - 1) + slot`; update `fact_pick_values.csv` sample values only if needed to match deterministic formula outputs; rewrite pick-value tests so they assert the brief values instead of the current placeholder values. Forbidden scope: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no unrelated model changes. [class:formula risk:medium mode:single impact:standard scope:src/models/,tests/,sample_data/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: src/models, tests, sample_data, docs/codex
+- Acceptance checks: external build only
+- Build result: Passed
+- Files changed:
+- sample_data/2026_pre_declaration/fact_pick_values.csv
+- src/models/pick_values.py
+- tests/test_draft_service.py
+- tests/test_pick_values.py
+- tests/test_trade_scores.py
+- Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.

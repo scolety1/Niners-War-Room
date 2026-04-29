@@ -146,3 +146,20 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Joey verdict: missing
 - Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
 - Debug checkpoint result: FAIL (failed)
+
+## 2026-04-28 23:17:53
+
+- Task: MODEL SPEC ALIGNMENT - pick value curve repair: replace the current placeholder/interpolated pick-value curve with the exact 50-pick 1,000-point curve from the Niners War Room brief, including `1.01=1000`, `1.04=630`, `2.04=200`, `5.04=18`, and `5.10=12`; change the default annual future discount to the brief's 0.80 framework while allowing configurable 0.80-0.82 values; keep overall pick calculation as `10 * (round - 1) + slot`; update `fact_pick_values.csv` sample values only if needed to match deterministic formula outputs; rewrite pick-value tests so they assert the brief values instead of the current placeholder values. Forbidden scope: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign, no complex ML, no unrelated model changes. [class:formula risk:medium mode:single impact:standard scope:src/models/,tests/,sample_data/,docs/codex/ acceptance:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Passed
+- Magic signal: moved-forward
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 5
+- Materiality signal: impact=showpiece, surface-files=1, structural-files=1, source-lines=178, css-only=False
+- Simon improvement score: SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: mission-critical boards exist, but visual quality is unverified and polish failed quarantine.
+- Before visual evidence:
+- None recorded before task.
+- After visual evidence:
+- None recorded after task.
+- Follow-up: Low. External build, task acceptance checks, and checkpoint loop review completed.

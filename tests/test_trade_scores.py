@@ -6,7 +6,11 @@ from pytest import MonkeyPatch
 
 import src.services.trade_service as trade_service
 from src.data.validators import ValidatedDataPack
-from src.models.trade_scores import trade_asset_value, trade_path_signal, trade_value_gap
+from src.models.trade_scores import (
+    trade_asset_value,
+    trade_path_signal,
+    trade_value_gap,
+)
 from src.services.trade_service import build_trade_central
 
 SAMPLE_PACK = "sample_data/2026_pre_declaration"
@@ -19,8 +23,8 @@ def test_trade_asset_value_uses_pick_adjusted_value_and_confidence() -> None:
 
 
 def test_trade_value_gap_and_path_signal_are_deterministic() -> None:
-    assert trade_value_gap(581.4, 564.4) == 17.0
-    assert trade_path_signal(17.0) == "Even"
+    assert trade_value_gap(453.6, 564.4) == -110.8
+    assert trade_path_signal(-110.8) == "Short"
     assert trade_path_signal(195.6) == "Ask+"
     assert trade_path_signal(-204.4) == "Short"
 
@@ -43,9 +47,9 @@ def test_trade_central_uses_sample_pack_players_and_picks() -> None:
         "trade_value": 564.4,
         "pick": "2027 1.04",
         "certainty": "projected",
-        "pick_value": 581.4,
-        "value_gap": 17.0,
-        "path_signal": "Even",
+        "pick_value": 453.6,
+        "value_gap": -110.8,
+        "path_signal": "Short",
     }
 
 

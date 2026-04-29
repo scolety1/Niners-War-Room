@@ -19,8 +19,8 @@ def test_draft_room_joins_future_picks_to_snapshot_values() -> None:
         "round": 1,
         "overall_pick": 4,
         "certainty": "known",
-        "base_value": 760.0,
-        "snapshot_value": 760.0,
+        "base_value": 630.0,
+        "snapshot_value": 630.0,
         "future_discount": 1.0,
         "certainty_factor": 1.0,
         "bucket": "round-1",
@@ -34,7 +34,7 @@ def test_draft_room_team_totals_use_snapshot_values() -> None:
         {
             "team": "Niners",
             "picks": 3,
-            "snapshot_value": 1701.4,
+            "snapshot_value": 1283.6,
             "highest_pick": "2026 1.04",
         }
     ]
