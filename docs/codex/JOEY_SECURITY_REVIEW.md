@@ -1,9 +1,9 @@
 # Joey Security Review
 
-Generated: 2026-05-03 11:12:45
+Generated: 2026-05-03 11:22:44
 Project: NinersWarRoom
 Branch: codex/niners-war-room-NinersWarRoom-20260425-235452
-HEAD: d9bacce
+HEAD: 495f220
 Base branch: main
 
 ## Verdict
