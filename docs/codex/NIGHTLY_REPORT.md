@@ -323,3 +323,93 @@
 - Files changed:
 - app/main.py
 - Risks or follow-up needed: Task changed files outside declared scope: app/main.py.
+
+## 2026-05-03 05:06:44
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:13:53
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:24:13
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:35:15
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:46:45
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:55:58
+
+- Task attempted: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Task class: bugfix
+- Task risk: low
+- Task mode: single
+- Task impact: visible
+- Allowed scope: src, app-vNext/src, css, js, wine.html, index.html
+- Acceptance checks: python -m pytest, python -m ruff check .
+- Implementation scale: small
+- Build result: Blocked
+- Files changed:
+- None
+- Risks or follow-up needed: Codex changed git history or committed during implementation. Stop for human review.

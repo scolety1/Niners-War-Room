@@ -730,3 +730,153 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
 - Follow-up: Task changed files outside declared scope: app/main.py.
+
+## 2026-05-03 05:06:44
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\root-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\root-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:13:53
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:24:13
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:35:15
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:46:45
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
+
+## 2026-05-03 05:55:58
+
+- Task: Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+- Result: Blocked
+- Magic signal: needs-human-or-smaller-slice
+- Active work pack: none
+- Task class: bugfix
+- Task risk: low
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show route failure instead of command tables.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-035319\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-050442\Import-Review-mobile.png
+- Follow-up: Codex changed git history or committed during implementation. Stop for human review.
