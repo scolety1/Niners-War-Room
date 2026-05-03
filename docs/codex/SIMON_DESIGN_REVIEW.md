@@ -4,55 +4,57 @@
 RED
 
 ## One-Sentence Read
-The product may be improving under the hood, but the latest visual evidence is a blank "Not found" page, which is not a command center - it is a locked door.
+The product mission is strong, but the visible evidence is still failing the first job: show the command center, not a "Not found" embarrassment wearing a QA badge.
 
 ## Mission Fit
-The mission is a local-first, table-first Drop Deadline Command Center for keeper decisions, and the reported code direction still matches that: deterministic formulas, CSV/SQLite snapshots, import review, roster logic, trade/draft/league boards, and model audit work are all relevant. But the current inspected design does not fulfill the mission visually because the captured customer-facing routes do not show the product at all. A fantasy decision engine cannot earn trust if the first visible artifact is route failure.
+The intended direction matches the mission: local-first, deterministic, table-first fantasy decision support for the Drop Deadline Command Center. The problem is execution evidence. A tool for deadline decisions must open directly into useful command tables, especially Import Review, Draft Room, League Intel, and Model Audit. Repeated screenshot evidence saying pages show "Not found" means the design is not yet serving the owner at all, regardless of how good the formulas and docs may be.
 
 ## Taste Check
-There is no meaningful premium or modern visual quality to judge in the latest screenshots because the pages render only "Not found" on a white field. The restraint is accidental, not designed. The only taste signal here is operational: the automated visual report says "No Blocking Visual Bugs" while every inspected screenshot is blocked. That mismatch feels amateur and dangerous for a tool whose whole brand is correctness.
+The best taste decision is restraint: Streamlit, tables, local data, auditability, and separated rank concepts are right for this product. The added Model Audit direction is also appropriate for analytical software because it builds trust instead of fake drama.
+
+What is off: the current visual QA loop appears to be blessing broken route evidence. That is not a taste problem; that is a credibility problem. The app cannot feel premium, modern, or useful while screenshots are showing missing pages. A command center with missing command screens is not minimalist. It is absent.
 
 ## Visual Problems To Fix
-- All latest inspected desktop routes show only "Not found" in the top-left corner instead of command tables or page content.
-- The visual QA report claims no blocking visual bugs despite screenshots proving the product routes are unavailable.
-- The first screen has no primary job, no Niners roster context, no import status, no ranking separation, and no table surface.
-- Route identity cannot be evaluated because the actual route chrome and page headers never render.
-- The product hierarchy collapses completely: there is no visible command center, only browser-default whitespace.
-- The missing route evidence repeats across Import Review, Draft Room, League Intel, and Model Audit, so this is not a single-page blemish.
-- The current evidence makes prior design review loops unreliable because they are judging absence as success.
+- Recent Simon and Magic Scorecard evidence repeatedly says the latest screenshots show "Not found" instead of command tables.
+- The automated visual bug report claims "No Blocking Visual Bugs" while the design review evidence still reports missing product pages, so the QA surface is visually unreliable.
+- The first-screen job is not proven: the owner should immediately see actionable command tables, but current evidence suggests route capture is landing on missing content.
+- Page identity is not trustworthy yet because the route layer may be showing framework or browser failure states instead of the actual Streamlit page content.
+- The visual system cannot be judged fairly until the screenshots prove the core pages render as product surfaces rather than empty or missing routes.
+- The repair loop is producing churn in unrelated or low-impact files instead of killing the visible blocker.
+- The app risks feeling like an internal harness instead of a decision engine because the evidence trail foregrounds reports, wrappers, and failures more than the actual command board.
 
 ## Strongest Opportunities
-- Restore reliable Streamlit route capture first, then make the command table the first visible object on each page.
-- Add a visual smoke check that fails when the screenshot contains "Not found" or mostly blank white space.
-- Keep page chrome quiet: one clear page title, one compact status row, then the table.
-- Use the Model Audit page as the trust layer, but keep it secondary to the decision boards.
-- Make rank separation visible in the tables with disciplined column grouping: Official, Market, War Room, My Rank.
-- Use small, sober status badges for KEEP, DROP, SHOP, PRESSURE, and RELEASE RISK instead of large explanatory panels.
+- Make the root page a real command-board hub with the Niners top-five release question visible immediately.
+- Treat Import Review as a trust gate: compact status rows, import errors, source timestamps, and validation counts before any explanation.
+- Give each major page one dominant table and one quiet side/detail area for formulas, notes, or assumptions.
+- Use consistent page headers with one title, one terse status line, and no repeated intro bands.
+- Make Model Audit a confidence surface: formula names, inputs, outputs, source freshness, and test status in a dense scan-friendly layout.
+- Add visual proof discipline: screenshots should fail loudly when a product route shows "Not found", blank space, or wrapper-only chrome.
 
 ## Priority Fix
-Fix the route evidence failure before touching visual polish. Nami should create one narrow repair task that makes the latest visual inspection open real Streamlit pages for Import Review, Draft Room, League Intel, and Model Audit, then fail the check if the screenshot includes "Not found" or is mostly blank. Until this is fixed, every design conversation is theater with better file names.
+Fix the route evidence failure before any visual polish. The next task should make the visual inspection path load the actual Streamlit pages for root, Import Review, Draft Room, League Intel, and Model Audit, and fail the check if captured content contains "Not found" or lacks the expected page title/table. Until that is solved, design review is theater with a clipboard.
 
 ## Magic Improvement Score
-SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots still show Not found instead of the command center.
+SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: repeated latest evidence still reports "Not found" screenshots while QA says no blocking visual bugs.
 
 ## Designer Handoff
-Next batch should be evidence repair, not decoration. Keep the Streamlit app table-first, keep the low-text analytical posture, and keep formula/detail explanations behind audit panels or expanders. Change the visual QA path so the rendered screenshots prove that real pages load, then verify that the first screen on each route starts with the decision surface: import errors, Niners roster, forced top-5 release, draft values, league pressure, or model audit. The user should feel "I can make the deadline call from this screen," not "the harness says it passed, apparently."
+Keep the product quiet, analytical, and table-first. Do not add sections, hero language, cards, prediction theater, or decorative styling. The next implementer should make the app prove that every primary route renders the real command surface, then reduce visible chrome so each page has one clear title, one compact command table, and secondary detail behind an expander, drawer, or tab. The user should feel: "I can trust this before roster declaration," not "I am debugging a Streamlit demo."
 
 ## What Not To Do Next
-- Do not add new pages while current route screenshots are broken.
-- Do not add dashboards, hero sections, charts, or decorative styling to hide missing route evidence.
-- Do not treat the automated "No Blocking Visual Bugs" report as credible until it catches "Not found."
-- Do not expand backend, data packs, auth, deployment, APIs, or package scope.
-- Do not redesign the whole app before the inspected pages render real command tables.
-- Do not bury the primary decision table below intro copy or explanatory wrappers after the route fix.
-- Do not ignore mobile once the desktop route is repaired.
+- Do not add new dashboards, charts, or narrative insight cards.
+- Do not polish colors before route rendering is proven.
+- Do not add more documentation as a substitute for visible product evidence.
+- Do not expand backend, imports, formulas, auth, deployment, or package scope.
+- Do not create another broad repair pass that touches unrelated files.
+- Do not ignore mobile screenshots; the command tables must degrade cleanly.
+- Do not let automated visual QA pass when the captured page says "Not found".
 
 ## Next 5 Design Tasks
-- [ ] Repair visual inspection routing for the current Streamlit pages; guardrail: latest screenshots must show real page content, not "Not found."
-- [ ] Add a screenshot validation check for "Not found" and mostly blank white frames; guardrail: fail loudly before design review artifacts are written.
-- [ ] On Import Review, make the first visible block the import status/error table; guardrail: no large intro panel above it.
-- [ ] On Draft Room and League Intel, ensure the primary table appears above any model explanation; guardrail: explanations live in expanders or side/detail sections.
-- [ ] Review mobile screenshots after routing is fixed; guardrail: no duplicated title bands, stacked route chrome, or table controls pushing the main decision content below the fold.
+- [ ] Add a visual route smoke check that fails when root or key pages show "Not found"; guardrail: only app or visual-check script scope.
+- [ ] Verify root, Import Review, Draft Room, League Intel, and Model Audit screenshots show real page titles and at least one table; guardrail: no styling changes in this task.
+- [ ] Remove any duplicated page title or repeated intro band from one confirmed-rendering page; guardrail: one page only.
+- [ ] Move one long explanatory block on Model Audit or Import Review behind an expander; guardrail: preserve all content, change only staging.
+- [ ] Tighten one command table first screen by prioritizing decision columns over prose; guardrail: no new metrics or formulas.
 
 ## Stop Or Continue
 continue but fix visual issues first
