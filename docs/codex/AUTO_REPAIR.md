@@ -81,3 +81,12 @@
 - Repair Trigger: BUDGET_STOP: pause ship and inspect results
 - Repair Return Phase: formula-spec
 - Task: - [ ] Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]
+
+## 2026-05-03 05:04:51
+
+- State: BUDGET_STOP
+- Budget: OVER: quarantines 12/5, quality 7/3
+- Recommendation: pause ship and inspect results
+- Repair Trigger: BUDGET_STOP: pause ship and inspect results
+- Repair Return Phase: formula-spec
+- Task: - [ ] Repair lane for BUDGET_STOP in the active work pack: inspect the latest MAGIC_SCORECARD, QUALITY_QUARANTINE, Simon, Robin, Joey, Visual, and nightly report notes, then make exactly one smallest blocker-clearing repair that addresses 'pause ship and inspect results'; preserve the prior product phase, prefer reducing churn over adding features, keep No More Features Lock true. First screen: keep the current primary screen job dominant and move repaired helper/detail content behind the existing clear action. Avoid backend, secrets, package/dependency files, deployment config, generated output, broad rewrites, and unrelated files. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:src/,app-vNext/src/,css/,js/,wine.html,index.html]

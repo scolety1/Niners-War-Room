@@ -17,7 +17,7 @@ Done Signal: Core V1 formulas match the written model spec and tests assert the 
 Next Phase Criteria: Move to fixture-tests/engine-build only when formula specs and expected outputs are explicit.
 Repair Trigger: BUDGET_STOP: pause ship and inspect results
 Repair Return Phase: formula-spec
-Updated At: 2026-05-03 04:01:14
+Updated At: 2026-05-03 05:04:52
 
 ## Phase Order
 
