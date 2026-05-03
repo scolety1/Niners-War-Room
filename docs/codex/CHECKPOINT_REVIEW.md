@@ -4,29 +4,29 @@
 YELLOW
 
 ## Progress Against Mission
-The branch is moving toward the V1 Drop Deadline Command Center: core local CSV/SQLite import, deterministic formulas, Streamlit command boards, model audit, trade, draft, and league views are in place. Current work has shifted from feature buildout to small repair/polish loops.
+The branch has made strong mission progress: local CSV/SQLite foundations, deterministic formulas, sample-pack command boards, trade/draft/league views, and tests are in place. Current movement is stalled in repair-loop territory rather than new V1 capability work.
 
 ## Safety Review
-No unsafe runtime behavior found in the provided checkpoint data. Working tree is clean, no secrets/auth/payments/deploy changes are indicated, and generated data packs were not modified.
+No unsafe runtime behavior found from the checkpoint data. Working tree is clean. Watch the repeated quarantined repair attempts touching out-of-scope files like `index.html`.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- Completed tasks in this checkpoint window: 10 shown, including formula alignment, trade scoring, command boards, import foundation, and QA/review batches.
-- Files changed: app pages, deterministic model/service code, tests, docs/codex review artifacts, scripts, and sample CSV fixtures.
-- Commits added: many commits since base; HEAD is `5ffa18d`.
+- Completed tasks in this checkpoint window: 10 shown, including formula alignment, table-first V1 boards, copy/security/design reviews, and QA scorecards.
+- Files changed: app pages, model/service modules, tests, docs, scripts, and sample CSV fixtures.
+- Commits added: latest HEAD `b9ae12f` plus a long series of Codex review/repair/checkpoint commits since `main`.
 - Queue status: 3 unchecked repair tasks remain.
 
 ## Follow-Up Gate Status
-- Visual bug report: no high/medium/low issues reported; should not block, but Simon evidence still matters.
-- Simon design review: RED, continue but fix visual issues first; should influence next tasks.
-- Robin copy review: YELLOW, continue but fix copy first; should influence next tasks.
-- Accessibility review: missing; should be gathered before ship-ready GREEN.
-- Performance review: missing; should be gathered before ship-ready GREEN.
-- Joey security review: GREEN; no security-driven repair needed next.
-- Franky formula review: ignored as non-analytical/stale; should not create formula repair tasks.
-- Product truth: missing config, marked ok; no RED product truth blocker.
+- Visual bug report: no high/medium/low bugs reported; should not block, but Simon route/evidence concern still matters.
+- Simon design review: RED; should influence next tasks before broad feature work.
+- Robin copy review: YELLOW; should influence next tasks with a narrow copy repair.
+- Accessibility review: missing; should be requested or run before ship confidence.
+- Performance review: missing; should be requested or run before ship confidence.
+- Joey security review: GREEN; no security-driven repair needed.
+- Franky formula review: ignored for non-analytical phase; do not create formula repair tasks from this stale report.
+- Product truth: missing but marked ok; no configured `PRODUCT_TRUTH.md`.
 
 ## Recommended Next Step
 patch first
@@ -34,10 +34,10 @@ patch first
 ## Next Batch Guidance
 - Recommended next batch size: 1
 - Next work mode: repair-first
-- One narrow visible/copy repair should be completed and verified before continuing broader mission work because the queue is already in recovery mode and Simon/Robin are the active review constraints.
+- One narrow repair should address the active Simon/Robin concerns and avoid another broad or out-of-scope auto-repair loop.
 
 ## Notes For Human Reviewer
 - Build is passing and tree is clean.
-- Not ship-ready GREEN because 3 unchecked tasks remain.
-- Simon remains RED despite no visual bug counts.
-- Accessibility and performance reviews are still missing.
+- Do not treat Franky’s stale non-analytical report as a blocker.
+- Remaining work should be a single scoped UI/copy repair, not another feature pass.
+- Simon RED prevents calling this ready despite no visual bug counts.
