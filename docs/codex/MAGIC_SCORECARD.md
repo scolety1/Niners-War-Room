@@ -987,3 +987,19 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-105732\Import-Review-desktop.png
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-105732\Import-Review-mobile.png
 - Follow-up: Task-specific acceptance check failed.
+
+## Batch 1 QA - 2026-05-03 11:13:03
+
+- Active work pack: none
+- Batch impact mode: visible
+- Fresh QA evidence:
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-111058\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-111058\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-111058\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-111058\Import-Review-mobile.png
+- Checkpoint verdict: RED
+- Simon verdict: RED
+- Robin verdict: YELLOW
+- Joey verdict: GREEN
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest route screenshots still show missing command tables while the root is a diagnostic wrapper instead of the V1 product.
+- Debug checkpoint result: not-run (not-run)
