@@ -458,3 +458,12 @@
 - Files changed:
 - index.html
 - Risks or follow-up needed: Task-specific acceptance check failed.
+
+## 2026-05-03 12:01:15
+
+- Task attempted: User pain: the previous task was quarantined before implementation because Task-specific acceptance check failed., so the ship needs one small visible repair instead of another broad pass. Target: app/. Change: make exactly one narrow safe slice that improves a visible UI, interaction, or copy area; prefer deleting awkward complexity over adding new systems. First screen: keep the current primary screen job dominant and move any repaired detail/helper content behind the existing clear action. Remove/simplify: one repeated label, one oversized chrome area, one vague phrase, or one confusing interaction in the current surface only. Guardrails: no backend, no auth, no payments, no Firebase rules/config, no package/dependency files, no generated output, no deployment config, no secrets, and no unrelated files. Acceptance: external build or configured acceptance. Check: run the acceptance command and confirm the changed screen has one clearer visible outcome without expanding scope. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:app,scripts,docs/codex]
+
+- Build result: Quarantined
+- Files changed:
+- app/main.py
+- Risks or follow-up needed: Task-specific acceptance check failed.
