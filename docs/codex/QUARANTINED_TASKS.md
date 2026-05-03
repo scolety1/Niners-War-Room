@@ -33,3 +33,13 @@
 - Files restored before continuing:
 - app/pages/07_model_audit.py
 - Next step: Nami should avoid repeating this exact task until a human reviews the failure.
+
+## 2026-05-03 02:27:41
+
+- Batch: 1
+- Task index: 1
+- Task: User pain: the previous task was quarantined before implementation because Task-specific acceptance check failed., so the ship needs one small visible repair instead of another broad pass. Target: app/. Change: make exactly one narrow safe slice that improves a visible UI, interaction, or copy area; prefer deleting awkward complexity over adding new systems. First screen: keep the current primary screen job dominant and move any repaired detail/helper content behind the existing clear action. Remove/simplify: one repeated label, one oversized chrome area, one vague phrase, or one confusing interaction in the current surface only. Guardrails: no backend, no auth, no payments, no Firebase rules/config, no package/dependency files, no generated output, no deployment config, no secrets, and no unrelated files. Acceptance: external build or configured acceptance. Check: run the acceptance command and confirm the changed screen has one clearer visible outcome without expanding scope. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:app,scripts,docs/codex]
+- Reason: Task-specific acceptance check failed.
+- Files restored before continuing:
+- app/pages/02_team.py
+- Next step: Nami should avoid repeating this exact task until a human reviews the failure.

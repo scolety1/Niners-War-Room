@@ -336,3 +336,28 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-desktop.png
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-mobile.png
 - Follow-up: Task-specific acceptance check failed.
+
+## 2026-05-03 02:27:41
+
+- Task: User pain: the previous task was quarantined before implementation because Task-specific acceptance check failed., so the ship needs one small visible repair instead of another broad pass. Target: app/. Change: make exactly one narrow safe slice that improves a visible UI, interaction, or copy area; prefer deleting awkward complexity over adding new systems. First screen: keep the current primary screen job dominant and move any repaired detail/helper content behind the existing clear action. Remove/simplify: one repeated label, one oversized chrome area, one vague phrase, or one confusing interaction in the current surface only. Guardrails: no backend, no auth, no payments, no Firebase rules/config, no package/dependency files, no generated output, no deployment config, no secrets, and no unrelated files. Acceptance: external build or configured acceptance. Check: run the acceptance command and confirm the changed screen has one clearer visible outcome without expanding scope. [class:bugfix risk:low mode:single impact:visible surface:mixed scope:app,scripts,docs/codex]
+- Result: Quarantined
+- Magic signal: learned-from-failure
+- Active work pack: none
+- Task class: unknown
+- Task risk: unknown
+- Changed files: 1
+- Materiality signal: impact=standard, surface-files=1, structural-files=1, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: screenshots still show route failure while visual QA reports no blocking bugs.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260503-022342\Import-Review-mobile.png
+- Follow-up: Task-specific acceptance check failed.
