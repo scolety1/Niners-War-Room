@@ -4,72 +4,79 @@
 YELLOW
 
 ## One-Sentence Read
-The voice is mostly disciplined and mission-fit, but too much visible language still reads like QA machinery instead of a private decision instrument for the Niners owner.
+The voice is mostly sober, local-first, and mission-fit, but the visible product copy still leans too much toward diagnostic staging and internal build language instead of immediate drop-deadline decisions.
 
 ## Mission Voice Fit
-The strongest copy matches the mission well: "private local-first fantasy football decision engine," "Drop Deadline Command Center," "official top five," "default release," "keeper pressure," and "pick value" are concrete, useful, and specific to the product. The voice is appropriately restrained for analytical software and does not drift into fantasy-advice hype. The weak spot is staging: root and review language such as "Inspect route results," "visual evidence," "repair lane," "active work pack," and "pause ship and inspect results" belongs in internal QA notes, not in the first impression of the product.
+The language matches the core mission well when it names concrete jobs: official top five, forced release, keeper/drop, trade pressure, pick values, local CSV, SQLite, deterministic formulas. That is the right voice for a private fantasy football command table. The weaker fit is in the inspection and repair language around the product surface, where phrases like route evidence, visual QA path, diagnostic wrapper, and inspect route results can make the first experience feel like a builder checkpoint instead of a decision engine for the Niners owner.
 
 ## Delicate Wording Risks
-- "Drop Deadline Command Center" is strong as an internal/product name, but if it is the first visible phrase, it should be paired quickly with the concrete job: "Who to keep, drop, or shop."
-- "War Room Rank" and "War Score" are evocative, but they need consistent meaning. Do not let them become a catch-all score that hides formula source or uncertainty.
-- "recommendations" can imply advice rather than computed output. Prefer "model labels," "score output," or "review flags" near analytical tables.
-- "Which trade options save value" risks overclaiming. The model can estimate value impact; it cannot know a trade will save value.
-- "players are likely to enter the draft pool" should be staged as a model estimate or rule-derived projection, not certainty.
-- "Inspect route results" is customer-facing QA language. It tells the builder what to inspect instead of telling the owner what decision surface is available.
-- "ready," "evidence," "recovery," "repair," "handoff," "workflow," "active pack," and "visual route rendering" are fine in docs, but should not appear in the product UI unless explicitly inside an audit/developer panel.
-- "AI text" in MODEL_SPEC is useful internally, but public/app copy should avoid positioning the app against AI unless the user needs that trust explanation.
-- "command board" is acceptable, but repeated too often it may sound like product theater. Use table labels first: "Roster," "War Board," "Trade Central," "Draft Room," "League Intel," "Model Audit."
-- "No Blocking Visual Bugs" conflicts with reported "Not found" route captures. That copy creates false comfort and should be qualified or suppressed when route checks fail.
+- "Drop Deadline Board" is close, but softer than "Drop Deadline Command Center" and does not fully carry the urgency of the product job.
+- "Inspect route results" sounds like internal QA language, not a user action for the Niners co-owner.
+- "Route evidence/config/docs" is implementation language and should not appear near customer-facing or first-screen copy.
+- "Not found" is a plain failure state, but if it appears in the app surface it reads as broken rather than informational.
+- "Diagnostic lobby" and "waiting room with a clipboard" are useful review language, but should not become app language.
+- "Magic Scorecard" and "Magic Improvement Score" are too cute for the analytical tone if surfaced outside internal Codex docs.
+- "Recommendations" can be acceptable, but analytical screens should keep visible labels close to "model output," "score," "reason," "assumption," and "source" so the app does not sound like fantasy advice.
+- "Likely to enter the draft pool" is useful, but should be paired with source and assumption language so it does not read as a prediction claim.
+- "Trade options can save value" is a little certain; "show value gaps before the deadline" is more defensible.
+- Repair-loop phrases like "handoff," "polish," "workflow," "blocker-clearing," and "active work pack" belong in internal docs only.
 
 ## Beautiful Language Opportunities
-- The first screen can become clearer with a short, direct line: "Review the Niners top five, release pressure, keeper labels, trade leverage, and pick values from the active local snapshot."
-- Table headings can carry the product promise without prose: "Official Top Five," "Default Release," "Keep / Drop / Shop," "Trade Leverage," "Keeper Pressure," "Pick Value."
-- Empty states should be plain and useful: "No active data pack loaded" or "Run import review before scoring."
-- Audit copy can become more trustworthy by using "source," "assumption," "formula," "confidence," and "last snapshot" instead of broad phrases like "model insight."
-- Trade copy should separate computed value from human judgment: "Model edge," "Opponent benefit," "Acceptance estimate," and "Manual review required."
-- The route failure language should become product-safe: "Page unavailable in this capture" in QA docs, never "Not found" as accepted visual evidence.
+- Make the first-screen labels sharper: "Official Top Five," "Default Release," "Keeper Pressure," "Shop List," "Pick Value."
+- Replace diagnostic CTA copy with quiet operational copy such as "Open board," "Review import," or "Check audit."
+- Use "model output" and "why" near calculated recommendations to preserve trust.
+- Give every score table a short source line: active snapshot, formula version, and rank source.
+- Use fewer broad product nouns and more fantasy-specific nouns: roster, pick, keeper, drop, shop, shield, draft pool.
+- Keep explanatory copy behind details, especially formula notes and import diagnostics.
+- Let the app sound like a private front-office sheet, not a public fantasy advice blog.
+- Use labels that distinguish action from evidence: "Decision," "Reason," "Source," "Assumption," "Confidence."
 
 ## Priority Rewrite
-Fix the first-screen and route-evidence language so the product opens on the owner's decision, not the harness. The next copy pass should replace QA-forward labels like "Inspect route results" with owner-facing labels such as "Open War Board" or "Review drop deadline board," and move route status, capture notes, and repair language behind an audit or QA disclosure.
+The single most important wording problem is the first-screen and route-inspection language. Any customer-facing or primary app copy should stop talking about routes, evidence, screenshots, QA, and inspection, and instead put the Niners owner's decision job first: current official top five, default release if nothing changes, keeper/drop/shop calls, and the source snapshot behind those outputs.
 
 ## Suggested Rewrites
 - Before: "Inspect route results"
-  After: "Open War Board"
+  After: "Open command boards"
 
 - Before: "Drop Deadline Board"
-  After: "Drop Deadline Decisions"
+  After: "Drop Deadline Command Center"
 
-- Before: "Which trade options save value before Roster Declaration Day?"
-  After: "Which trade ideas may preserve value before Roster Declaration Day?"
+- Before: "Which trade options can save value before Roster Declaration Day?"
+  After: "Which trades show a value gap before Roster Declaration Day?"
 
 - Before: "Which players are likely to enter the draft pool?"
-  After: "Which players project as draft-pool candidates?"
+  After: "Which players project into the draft pool under the current assumptions?"
 
-- Before: "Display deterministic scores and recommendations."
-  After: "Display deterministic scores, labels, and source assumptions."
+- Before: "recommendations"
+  After: "model labels"
 
-- Before: "No Blocking Visual Bugs"
-  After: "No visual bugs detected by automation; route evidence still requires review."
+- Before: "ready for service"
+  After: "ready for review"
 
-- Before: "Official Rank controls league rules. It is separate from private value, market value, and War Score."
-  After: "Official Rank controls league rules. Keep it separate from Market Rank, War Room Rank, My Rank, and private value."
+- Before: "War Score"
+  After: "War Room Rank" or "War Room Score," but use one term consistently.
+
+- Before: "Not found"
+  After: "Board unavailable. Check the local Streamlit route and active snapshot."
 
 ## Voice Rules
-- Lead with the owner's decision: keep, drop, shop, trade, draft, or audit.
-- Use concrete table labels before explanatory sentences.
-- Keep analytical humility visible: "model output," "confidence," "source," "assumption," and "why."
-- Do not imply predictions are certain; say "projects," "estimates," "flags," or "recalculates."
-- Keep internal QA language out of first-screen product copy.
-- Separate product copy from implementation copy: app labels should serve the Niners owner, docs can serve builders.
-- Avoid fantasy-blog language, guru language, and hype.
-- Preserve distinct labels for Official Rank, Market Rank, War Room Rank, and My Rank.
+- Lead with the user's decision, not the app's machinery.
+- Keep first-screen copy short, concrete, and table-adjacent.
+- Separate internal build language from app language.
+- Use "model output," "assumption," "source," "confidence," and "why" around analytical claims.
+- Do not make calculated labels sound like certain predictions.
+- Keep Official Rank, Market Rank, War Room Rank, and My Rank named exactly and separately.
+- Prefer fantasy-specific nouns over broad product nouns.
+- Avoid cute labels unless they are already part of the league owner's private vocabulary.
+- Keep long formulas, caveats, and provenance behind details or audit views.
+- Never let a QA or route-inspection phrase become the primary call to action.
 
 ## Next 5 Copy Tasks
-- [ ] Replace the root CTA with an owner-facing action such as "Open War Board"; keep route inspection language behind a QA disclosure.
-- [ ] Review every visible page title for a concrete table job; avoid broad labels that do not say what the owner can decide.
-- [ ] Add or confirm assumption/source labels near scenario and score tables; do not use certainty language for projections.
-- [ ] Standardize rank column labels as Official Rank, Market Rank, War Room Rank, and My Rank wherever ranks appear.
-- [ ] Rewrite visual QA status copy so automation cannot say "No Blocking Visual Bugs" when captured routes show "Not found."
+- [ ] Replace any visible "Inspect route results" copy with a user-facing board action; guardrail: no route, QA, screenshot, or evidence language on the first screen.
+- [ ] Audit page titles for consistency; guardrail: use "Drop Deadline Command Center" for the root and short board names for pages.
+- [ ] Rename vague "recommendation" labels where possible to "model label" or "decision label"; guardrail: do not imply the model is making final advice.
+- [ ] Add or verify one compact source/assumption line on analytical tables; guardrail: keep it under one sentence and out of the main table title.
+- [ ] Review trade and draft-pool copy for prediction overreach; guardrail: use "projects," "under current assumptions," or "model output" where uncertainty matters.
 
 ## Stop Or Continue
 continue but fix copy first
