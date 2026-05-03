@@ -1,12 +1,12 @@
 # Phase State
 
-Current Phase: formula-spec
+Current Phase: repair
 Audience: Niners co-owner making keeper/drop, top-five release, trade, and draft-pick decisions.
 Product Promise: Local-first fantasy football drop-deadline command center with explainable keeper, pick, trade, and release scores.
 Primary Action: Review table-first recommendations and inspect the formulas behind each score.
 Showable Moment: Niners roster table shows official top five, forced-release pressure, keeper/drop scores, pick values, and clear recommendation labels from deterministic formulas.
 What Not To Build: No live runtime APIs, scraping, auth, payments, deployments, generic fantasy blog copy, complex ML, or auto-trading/offers.
-No More Features Lock: false
+No More Features Lock: true
 Complexity Budget: Formula-first: implement one deterministic model slice at a time with fixture tests before UI polish.
 Before/After Judgment: A score is better only if its formula, fixture inputs, expected output, and table meaning are easier to audit.
 Human Taste Note: Personal project but high trust bar; prioritize correctness and explainability over visual flash.
@@ -15,13 +15,15 @@ Parking State: ACTIVE
 Evidence Required: Static check plus hand-calculated formula tests and sample table output.
 Done Signal: Core V1 formulas match the written model spec and tests assert the actual brief values.
 Next Phase Criteria: Move to fixture-tests/engine-build only when formula specs and expected outputs are explicit.
-Repair Trigger: none
-Repair Return Phase: none
-Updated At: 2026-04-29 10:33:56
+Repair Trigger: LOOPING_QUALITY: repair active pack before fresh work
+Repair Return Phase: formula-spec
+Updated At: 2026-05-03 02:36:41
 
 ## Phase Order
 
 Website loop: brief -> foundation -> shape -> simplicity -> polish -> proof -> parked
+
+Website stage contract source: docs/codex/WEBSITE_STAGE_RULES.md when present. Use leet-website-stages.ps1 -Project NinersWarRoom -WriteReference from the fleet control room to write or refresh it.
 
 Analytical software loop: problem-brief -> data-contract -> formula-spec -> fixture-tests -> engine-build -> calibration -> dashboard -> scenario-tools -> analysis-proof -> parked
 
