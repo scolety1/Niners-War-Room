@@ -4,29 +4,29 @@
 YELLOW
 
 ## Progress Against Mission
-The branch is moving toward the V1 Drop Deadline Command Center mission: core CSV/SQLite import, deterministic formulas, roster/ranking validation, pick values, trade board, league pressure, draft room, and table-first Streamlit pages are all represented. Current progress is held back by queued repair tasks and unresolved Simon/Robin YELLOW review guidance.
+The branch is materially aligned with the V1 Drop Deadline Command Center mission: local CSV/SQLite foundations, deterministic formula engines, Streamlit command boards, sample data, and formula-focused tests are all present. Current progress is slowed by repeated quarantined repair attempts and unresolved review guidance, not by missing core architecture.
 
 ## Safety Review
-No unsafe working-tree state found. Risk is mainly process churn: repeated quarantined small repair attempts touched visible/app-adjacent files, including `index.html`, but the current working tree is clean and Joey security is GREEN.
+No unsafe runtime behavior found in the checkpoint data. Risk areas to watch: repeated attempted edits to `index.html` outside the active Streamlit app path, and repair tasks targeting broad `src/` scopes for visible UI/copy issues.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- Completed tasks in this checkpoint window: Joey security review, Robin copy review, Simon design review, visual inspect/recovery review, quality quarantine/recovery, checkpoint/reporting work
-- Files changed: broad V1 app, model, service, docs, tests, scripts, and sample data changes since base; working tree currently clean
-- Commits added: yes, latest HEAD `f92d5db` plus many checkpoint/review/task commits since base
-- Queue status: 3 unchecked repair tasks remain
+- Completed tasks in this checkpoint window: Joey security review batch 1.
+- Files changed: working tree is clean; branch contains broad app, src, tests, docs, scripts, and sample_data changes since base.
+- Commits added: latest commit is `84ab5ae Codex Joey security review batch 1`.
+- Queue status: 3 unchecked low-risk repair tasks remain.
 
 ## Follow-Up Gate Status
-- Visual bug report: GREEN signal; 0 high, 0 medium, 0 low issues, should not block next tasks
-- Simon design review: YELLOW; should influence next tasks with visual repair first
-- Robin copy review: YELLOW; should influence next tasks with copy cleanup first
-- Accessibility review: missing; should be run before final ship confidence
-- Performance review: missing; should be run before final ship confidence
-- Joey security review: GREEN; no security repair task needed
-- Franky formula review: IGNORED_NON_ANALYTICAL; do not create formula repair tasks from stale report
-- Product truth: MISSING but marked ok; no `PRODUCT_TRUTH.md` configured, not a blocker by provided status
+- Visual bug report: no high or medium issues; should not block, but visual evidence recovery remains relevant.
+- Simon design review: RED, continue but fix visual issues first; should influence next tasks.
+- Robin copy review: YELLOW, continue but fix copy first; should influence next tasks.
+- Accessibility review: missing; should be requested or run before ship confidence.
+- Performance review: missing; should be requested or run before ship confidence.
+- Joey security review: GREEN; no security repair task needed.
+- Franky formula review: ignored as non-analytical/stale; should not generate formula repair tasks.
+- Product truth: missing but marked ok; no `PRODUCT_TRUTH.md` gate configured.
 
 ## Recommended Next Step
 continue
@@ -34,10 +34,10 @@ continue
 ## Next Batch Guidance
 - Recommended next batch size: 1
 - Next work mode: repair-first
-- One narrow repair should address the Simon/Robin YELLOW guidance without expanding scope or repeating quarantined broad fixes.
+- Use one narrow app-visible repair because the queue still has unchecked repair work and prior broad repair attempts repeatedly quarantined.
 
 ## Notes For Human Reviewer
-- Build passed and working tree is clean.
-- Not ready for GREEN because 3 unchecked tasks remain.
-- Missing accessibility and performance reviews are final-confidence gaps.
-- Avoid broad repair loops; pick one visible, low-risk cleanup and verify it.
+- Build is passing and working tree is clean.
+- Do not treat stale Franky output as a formula blocker.
+- Keep next task small and inside `app/` unless there is a concrete reason to touch `src/`.
+- Simon remains the main review signal despite visual bug counts showing no high/medium issues.
