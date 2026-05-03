@@ -18,7 +18,26 @@ def main() -> None:
     st.sidebar.write(f"Database: `{settings.database_path}`")
 
     st.subheader("Drop Deadline Command Center")
-    st.write("Use the command boards for import review, Niners pressure, and War Board sorting.")
+    st.write(
+        "Start with the table that answers the current decision, then drill into the "
+        "model audit only when a score needs proof."
+    )
+
+    status_columns = st.columns(3)
+    status_columns[0].metric("Active pack", settings.active_data_pack)
+    status_columns[1].metric("Command boards", "7")
+    status_columns[2].metric("Runtime", "Local only")
+
+    st.markdown(
+        """
+        **Primary boards**
+
+        - Import Review: source checks, warnings, and pack readiness
+        - Team: Niners keeper pressure and forced-release view
+        - War Board: sortable drop, shop, hold, and shield decisions
+        - Trade Central, Draft Room, League Intel, and Model Audit for deeper proof
+        """
+    )
 
 
 if __name__ == "__main__":
