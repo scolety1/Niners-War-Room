@@ -1,58 +1,56 @@
 # Simon Design Review
 
 ## Verdict
-YELLOW
+RED
 
 ## One-Sentence Read
-The app is finally pointing at the right mission, but the surface still feels like Streamlit wearing a draft-room badge instead of a disciplined command center.
+The latest visual evidence is not a command center, it is four blank white pages saying "Not found", which is not a design issue so much as the product leaving the room.
 
 ## Mission Fit
-The direction matches the V1 mission better than before: table-first pages, model audit, import review, draft room, league intel, and deterministic service-backed views all belong in a local-first drop deadline tool. The strongest mission fit is the separation of operational surfaces: import, roster/team, war board, trade, draft, league pressure, and audit. The weak spot is presentation discipline. A command center should make the next decision obvious in the first viewport; this still risks reading as a collection of pages rather than one urgent owner workflow.
+The intended direction still matches the mission: local-first, deterministic, table-first fantasy football decision support for drop-deadline choices. The current visible evidence does not match the mission because the primary routes do not render the command tables at all. A V1 Drop Deadline Command Center must immediately show import review, roster pressure, draft/pick value, league intel, or model audit surfaces; the latest screenshots show none of that.
 
 ## Taste Check
-The premium part is the restraint: no fake fantasy-magazine hero, no prediction theater, no glossy dashboard nonsense. Good. The Model Audit page is also a correct instinct because this product earns trust through formula visibility, not vibes.
-
-What feels generic is the default Streamlit rhythm: stacked page headers, explanatory copy blocks, similar table sections, and likely too many equal-weight controls. The design needs less "here is a page about the thing" and more "this is the answer, here is the evidence, now decide." Right now the suit is tailored, but the shirt is still from the conference swag bag.
+There is no premium or modern surface to evaluate in the latest screenshots. The only visible design is default white browser space with tiny monospace "Not found" text in the corner. That reads like broken routing, broken QA capture, or both. Earlier notes suggest real command pages briefly returned, but the current evidence has regressed below generic SaaS into absent product.
 
 ## Visual Problems To Fix
-- Page identity appears too repetitive across routes: each page risks opening with the same title-plus-intro pattern before the user reaches the actual command table.
-- Route chrome and page headers appear to compete with the working surface instead of quietly orienting the user.
-- The primary decision on each page is not visually loud enough: "release risk", "keep/drop/shop", "trade shield", and "league pressure" should win the first scan.
-- Tables likely carry too much equal-weight data at once; rank, score, confidence, and action labels need a clearer visual order.
-- Audit and helper explanation content should stay behind expanders, drawers, or tabs; it must not dilute the first-screen decision surface.
-- The prior "Not found" visual evidence loop was mission-breaking. Latest report says no blocking visual bugs, but the QA system needs to keep proving real command pages, not blank routes.
-- Mobile screenshots are listed, but the product still needs deliberate mobile hierarchy: fewer columns, stronger row summaries, and no header stack before the useful table.
+- The latest Import Review desktop screenshot renders only "Not found" instead of the import validation table.
+- The latest Draft Room desktop screenshot renders only "Not found" instead of pick values, draft pool, or pick curve context.
+- The latest League Intel desktop screenshot renders only "Not found" instead of keeper pressure or team comparison data.
+- The latest Model Audit desktop screenshot renders only "Not found" instead of formula/source audit evidence.
+- The visual QA report says "No Blocking Visual Bugs" while the screenshots are visibly broken; that evidence mismatch is itself a blocker.
+- The first screen has no hierarchy, no command table, no current decision, no state, and no recovery affordance.
+- Repeated page identity cannot be assessed because the customer-facing route content is missing entirely; this is worse than double headers.
 
 ## Strongest Opportunities
-- Make every route start with a compact command strip: one page title, one primary table/action area, and only the 2-3 most important status metrics.
-- Give action labels a sober but decisive treatment: KEEP, DROP RISK, SHOP, HOLD, OFFER, AVOID should be scannable without becoming carnival badges.
-- Use progressive disclosure aggressively: formulas, import caveats, source provenance, and long explanations belong behind "Audit", "Why", or "Details".
-- Create a consistent rank comparison pattern for Official Rank, Market Rank, War Room Rank, and My Rank so the owner can see disagreement instantly.
-- Turn Model Audit into the trust anchor: source, formula, inputs, output, confidence, and test status in a compact table-first layout.
+- Restore reliable route rendering before touching layout polish.
+- Make each first screen open on one mission-critical table, not a page intro.
+- Add a compact status strip only after the table is visible: data pack, snapshot date, rule config, and validation state.
+- Use tight table hierarchy: stronger column grouping, sober status badges, frozen identity columns, and low-noise numeric emphasis.
+- Put formula explanations, source notes, and model audit details behind side panels or expanders so the command surface stays fast.
 
 ## Priority Fix
-Reduce page chrome before adding anything else. Each customer-facing app route should have exactly one compact page identity area, then the primary decision table or board immediately. Remove duplicate intro bands, repeated labels, oversized explanatory blocks, and any wrapper panel that makes the actual command surface feel buried. Nami should make the first viewport answer the route's one job before exposing details.
+Fix the visual evidence and route rendering path so the latest screenshots show real Streamlit command pages, not "Not found". Nami should make one narrow repair: verify the screenshot harness is opening the correct Streamlit routes for Import Review, Draft Room, League Intel, and Model Audit, then fail the visual check if any captured page contains "Not found" or mostly blank white space. No visual polish until the product is visible. The tuxedo can wait; the guest is currently locked outside.
 
 ## Magic Improvement Score
-SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: current evidence suggests real command pages are back, but hierarchy is still too generic and not yet command-center sharp.
+SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest screenshots show "Not found" instead of the command tables.
 
 ## Designer Handoff
-Keep the table-first analytical spine, the deterministic audit posture, and the quiet visual language. Change the first-screen hierarchy: one compact route header, one urgent decision surface, one restrained control row, then details below or behind disclosure. The result should feel like a co-owner opening the app five minutes before a deadline and instantly seeing where the risk and leverage are.
+Next batch should be evidence-first and ruthless. Keep the table-first Streamlit direction, the local data posture, and the deterministic audit surface. Change only the route/capture failure that prevents the real pages from appearing, then confirm the first viewport on each route shows the primary job: import review table, draft value table, league pressure board, or model audit table. The user should feel like the war room is back online, not like they are reading a broken QA artifact.
 
 ## What Not To Do Next
-- Do not add more pages or sections.
-- Do not add prediction cards, big KPI theater, or fantasy advice prose.
-- Do not make the UI more colorful to fake importance.
-- Do not bury the main table under explanations about the model.
-- Do not touch backend scope, data collection, auth, deployment, or packages.
-- Do not ignore mobile; table-first does not mean desktop-only.
+- Do not add new sections, dashboards, cards, charts, or decorative styling.
+- Do not redesign the app shell while the routes still capture as "Not found".
+- Do not treat the automated "No Blocking Visual Bugs" report as credible until it catches this failure.
+- Do not expand backend, data model, auth, deployment, package, or architecture scope.
+- Do not bury the first screen under explanations once the routes render again.
+- Do not ignore mobile after desktop is fixed; mobile must show usable command content, not blank route failure.
 
 ## Next 5 Design Tasks
-- [ ] On each Streamlit page, reduce the top area to one title line plus one short status line; guardrail: no duplicate page title or intro block.
-- [ ] Move long model/source explanations behind existing expanders or tabs; guardrail: first viewport must show the primary table or board.
-- [ ] Standardize action labels across tables; guardrail: no new formula semantics, only visual/copy treatment.
-- [ ] Create a compact rank comparison display for Official, Market, War Room, and My Rank; guardrail: keep all ranks separate and labeled.
-- [ ] Review mobile screenshots and collapse low-priority columns into row details; guardrail: no horizontal wall of unreadable data.
+- [ ] Repair the visual QA route targets so latest screenshots render real Streamlit pages; guardrail: no UI redesign or new pages.
+- [ ] Add a screenshot assertion that fails on "Not found" or mostly blank white pages; guardrail: evidence-only change.
+- [ ] Verify Import Review first viewport shows the import validation table before any explanatory copy; guardrail: no added feature text.
+- [ ] Verify Draft Room first viewport shows pick/player value data with clear column hierarchy; guardrail: no charts unless already present.
+- [ ] Verify Model Audit keeps formula/source detail behind expanders or panels after the audit table renders; guardrail: progressive disclosure only.
 
 ## Stop Or Continue
 continue but fix visual issues first
