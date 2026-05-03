@@ -4,40 +4,40 @@
 YELLOW
 
 ## Progress Against Mission
-The branch is substantially aligned with the V1 Drop Deadline Command Center mission: local CSV/SQLite foundations, deterministic formulas, table-first Streamlit boards, trade/draft/league views, and formula tests are in place. Current movement is mostly review-loop repair and polish rather than new mission scope.
+The branch is moving toward the V1 Drop Deadline Command Center: core local CSV/SQLite import, deterministic formulas, Streamlit command boards, model audit, trade, draft, and league views are in place. Current work has shifted from feature buildout to small repair/polish loops.
 
 ## Safety Review
-No unsafe runtime behavior found from the checkpoint data. Working tree is clean, build passed, and changed files remain within expected app/src/tests/docs/sample_data/scripts scope. Note: prior quarantined attempts touched `index.html` and `src/config/constants.py` outside the apparent Streamlit repair lane; those changes are not present in the clean working tree state.
+No unsafe runtime behavior found in the provided checkpoint data. Working tree is clean, no secrets/auth/payments/deploy changes are indicated, and generated data packs were not modified.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- Completed tasks in this checkpoint window: 10 recent completed tasks shown, including formula alignment, command boards, trade/league/draft rooms, copy/design/security review batches, and QA/checkpoint reviews.
-- Files changed: app pages, deterministic model/service modules, validation/loaders, tests, docs/codex review artifacts, scripts, and sample CSV fixtures.
-- Commits added: HEAD is `272b974`; many commits exist since base, latest is `Codex Joey security review batch 1`.
-- Queue status: 3 unchecked low-risk visible repair tasks remain.
+- Completed tasks in this checkpoint window: 10 shown, including formula alignment, trade scoring, command boards, import foundation, and QA/review batches.
+- Files changed: app pages, deterministic model/service code, tests, docs/codex review artifacts, scripts, and sample CSV fixtures.
+- Commits added: many commits since base; HEAD is `5ffa18d`.
+- Queue status: 3 unchecked repair tasks remain.
 
 ## Follow-Up Gate Status
-- Visual bug report: high 0, medium 0, low 0; should not block, but visual evidence path still shaped prior repair work.
+- Visual bug report: no high/medium/low issues reported; should not block, but Simon evidence still matters.
 - Simon design review: RED, continue but fix visual issues first; should influence next tasks.
 - Robin copy review: YELLOW, continue but fix copy first; should influence next tasks.
-- Accessibility review: missing; should be filled before final ship confidence.
-- Performance review: missing; should be filled before final ship confidence.
-- Joey security review: GREEN; no next-task blocker.
-- Franky formula review: IGNORED_NON_ANALYTICAL; do not create formula repair tasks from this stale report.
-- Product truth: MISSING but `product truth ok` is true; no configured product-truth blocker.
+- Accessibility review: missing; should be gathered before ship-ready GREEN.
+- Performance review: missing; should be gathered before ship-ready GREEN.
+- Joey security review: GREEN; no security-driven repair needed next.
+- Franky formula review: ignored as non-analytical/stale; should not create formula repair tasks.
+- Product truth: missing config, marked ok; no RED product truth blocker.
 
 ## Recommended Next Step
-continue
+patch first
 
 ## Next Batch Guidance
 - Recommended next batch size: 1
 - Next work mode: repair-first
-- Keep the next batch to one narrow visible/copy repair because Simon is RED, Robin is YELLOW, and three unchecked repair tasks remain despite a passing build.
+- One narrow visible/copy repair should be completed and verified before continuing broader mission work because the queue is already in recovery mode and Simon/Robin are the active review constraints.
 
 ## Notes For Human Reviewer
 - Build is passing and tree is clean.
-- Not ready to park because unchecked tasks remain.
-- Simon RED is the main review signal to respect next.
-- Avoid broad feature work; repair loop needs one small accepted change.
+- Not ship-ready GREEN because 3 unchecked tasks remain.
+- Simon remains RED despite no visual bug counts.
+- Accessibility and performance reviews are still missing.
