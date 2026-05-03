@@ -4,29 +4,29 @@
 RED
 
 ## Progress Against Mission
-The branch is strongly aligned with the V1 Drop Deadline Command Center mission: CSV import, SQLite loading, deterministic model formulas, table-first Streamlit boards, pick values, trade scoring, keeper pressure, and model audit work are all represented. However, the current checkpoint is not ready to park because Franky’s formula review is RED and explicitly asks for human formula review.
+The branch has moved substantially toward the V1 Drop Deadline Command Center: local CSV/SQLite import, deterministic model formulas, roster/ranking validation, pick values, command boards, trade board, league intel, draft room, and model audit work are all represented. However, Franky’s formula review is RED with an explicit stop for human formula review, so the branch is not ready to continue unattended.
 
 ## Safety Review
-No unsafe behavior found in the working tree summary. Changes stay within expected app, source, tests, docs, scripts, and sample fixture areas. No live runtime API dependency, scraping, secrets, generated data pack overwrite, auth, payments, or deploy work is indicated.
+No unsafe file behavior found. Changed files stay within app, src, tests, scripts, docs, and sample_data. No generated data packs, secrets, auth, payments, deployment config, scraping, or mandatory live API runtime changes are indicated.
 
 ## Build Result
 External build passed.
 
 ## Batch Summary
-- Completed tasks in this checkpoint window: Franky formula review batch 1.
-- Files changed: working tree clean; cumulative branch changes include app pages, model formulas, service layers, sample CSV fixtures, tests, and Codex review docs.
-- Commits added: latest commit `062887d Codex Franky formula review batch 1`.
-- Queue status: 1 unchecked low-risk visible UI/copy repair task remains.
+- Completed tasks in this checkpoint window: 10 recent completed tasks shown, including formula alignment, command boards, trade/league/draft rooms, CSV import, and review artifacts.
+- Files changed: app pages, src data/model/service modules, tests, docs/codex review/spec artifacts, scripts, and sample_data CSV fixtures.
+- Commits added: HEAD at `354b0d6`; many commits exist since base, latest is `Codex Franky formula review batch 1`.
+- Queue status: 1 unchecked low-risk visible repair task remains.
 
 ## Follow-Up Gate Status
-- Visual bug report: high 0, medium 0, low 0; no visual bug count should block next work.
-- Simon design review: RED; continue, but fix visual issues first.
-- Robin copy review: YELLOW; copy polish should shape the next visible repair.
-- Accessibility review: missing; should be collected before ship readiness.
-- Performance review: missing; should be collected before ship readiness.
-- Joey security review: GREEN; no security blocker indicated.
-- Franky formula review: RED; stop for human formula review is a blocking review signal.
-- Product truth: MISSING but marked ok; no `PRODUCT_TRUTH.md` configured, not a RED product truth status.
+- Visual bug report: no high, medium, or low visual bugs; should not drive next task.
+- Simon design review: RED, continue but fix visual issues first; should influence next tasks.
+- Robin copy review: YELLOW, continue but fix copy first; should influence next tasks after formula stop clears.
+- Accessibility review: missing; should be collected before ship.
+- Performance review: missing; should be collected before ship.
+- Joey security review: GREEN; no security blocker.
+- Franky formula review: RED, stop for human formula review; blocks unattended continuation.
+- Product truth: MISSING, but `product truth ok` is true and no `PRODUCT_TRUTH.md` is configured.
 
 ## Recommended Next Step
 stop for human review
@@ -34,10 +34,9 @@ stop for human review
 ## Next Batch Guidance
 - Recommended next batch size: 1
 - Next work mode: repair-first
-- One narrow repair is appropriate because the build passes and the tree is clean, but review gates still include Simon RED and Franky RED, with Franky requiring human formula review before more mission-forward work.
+- Franky’s RED formula gate is the dominant blocker, so the next batch should be a single narrow human-guided formula review or repair before any visible polish continues.
 
 ## Notes For Human Reviewer
 - Build passed and working tree is clean.
-- Do not treat the remaining queue item as a reason to ignore Franky’s RED.
-- Review formula correctness before allowing more formula-adjacent implementation.
-- Next automated task, if resumed, should be a single small visible repair only.
+- Do not treat the remaining UI polish task as safe to run unattended until Franky’s formula stop is resolved.
+- Simon and Robin still point to design/copy follow-up, but they are secondary to formula review.
