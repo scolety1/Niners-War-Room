@@ -1,60 +1,58 @@
 # Simon Design Review
 
 ## Verdict
-RED
+YELLOW
 
 ## One-Sentence Read
-The product mission is strong, but the visible evidence is still failing the first job: show the command center, not a "Not found" embarrassment wearing a QA badge.
+The app is finally pointing at the right mission, but the surface still feels like Streamlit wearing a draft-room badge instead of a disciplined command center.
 
 ## Mission Fit
-The intended direction matches the mission: local-first, deterministic, table-first fantasy decision support for the Drop Deadline Command Center. The problem is execution evidence. A tool for deadline decisions must open directly into useful command tables, especially Import Review, Draft Room, League Intel, and Model Audit. Repeated screenshot evidence saying pages show "Not found" means the design is not yet serving the owner at all, regardless of how good the formulas and docs may be.
+The direction matches the V1 mission better than before: table-first pages, model audit, import review, draft room, league intel, and deterministic service-backed views all belong in a local-first drop deadline tool. The strongest mission fit is the separation of operational surfaces: import, roster/team, war board, trade, draft, league pressure, and audit. The weak spot is presentation discipline. A command center should make the next decision obvious in the first viewport; this still risks reading as a collection of pages rather than one urgent owner workflow.
 
 ## Taste Check
-The best taste decision is restraint: Streamlit, tables, local data, auditability, and separated rank concepts are right for this product. The added Model Audit direction is also appropriate for analytical software because it builds trust instead of fake drama.
+The premium part is the restraint: no fake fantasy-magazine hero, no prediction theater, no glossy dashboard nonsense. Good. The Model Audit page is also a correct instinct because this product earns trust through formula visibility, not vibes.
 
-What is off: the current visual QA loop appears to be blessing broken route evidence. That is not a taste problem; that is a credibility problem. The app cannot feel premium, modern, or useful while screenshots are showing missing pages. A command center with missing command screens is not minimalist. It is absent.
+What feels generic is the default Streamlit rhythm: stacked page headers, explanatory copy blocks, similar table sections, and likely too many equal-weight controls. The design needs less "here is a page about the thing" and more "this is the answer, here is the evidence, now decide." Right now the suit is tailored, but the shirt is still from the conference swag bag.
 
 ## Visual Problems To Fix
-- Recent Simon and Magic Scorecard evidence repeatedly says the latest screenshots show "Not found" instead of command tables.
-- The automated visual bug report claims "No Blocking Visual Bugs" while the design review evidence still reports missing product pages, so the QA surface is visually unreliable.
-- The first-screen job is not proven: the owner should immediately see actionable command tables, but current evidence suggests route capture is landing on missing content.
-- Page identity is not trustworthy yet because the route layer may be showing framework or browser failure states instead of the actual Streamlit page content.
-- The visual system cannot be judged fairly until the screenshots prove the core pages render as product surfaces rather than empty or missing routes.
-- The repair loop is producing churn in unrelated or low-impact files instead of killing the visible blocker.
-- The app risks feeling like an internal harness instead of a decision engine because the evidence trail foregrounds reports, wrappers, and failures more than the actual command board.
+- Page identity appears too repetitive across routes: each page risks opening with the same title-plus-intro pattern before the user reaches the actual command table.
+- Route chrome and page headers appear to compete with the working surface instead of quietly orienting the user.
+- The primary decision on each page is not visually loud enough: "release risk", "keep/drop/shop", "trade shield", and "league pressure" should win the first scan.
+- Tables likely carry too much equal-weight data at once; rank, score, confidence, and action labels need a clearer visual order.
+- Audit and helper explanation content should stay behind expanders, drawers, or tabs; it must not dilute the first-screen decision surface.
+- The prior "Not found" visual evidence loop was mission-breaking. Latest report says no blocking visual bugs, but the QA system needs to keep proving real command pages, not blank routes.
+- Mobile screenshots are listed, but the product still needs deliberate mobile hierarchy: fewer columns, stronger row summaries, and no header stack before the useful table.
 
 ## Strongest Opportunities
-- Make the root page a real command-board hub with the Niners top-five release question visible immediately.
-- Treat Import Review as a trust gate: compact status rows, import errors, source timestamps, and validation counts before any explanation.
-- Give each major page one dominant table and one quiet side/detail area for formulas, notes, or assumptions.
-- Use consistent page headers with one title, one terse status line, and no repeated intro bands.
-- Make Model Audit a confidence surface: formula names, inputs, outputs, source freshness, and test status in a dense scan-friendly layout.
-- Add visual proof discipline: screenshots should fail loudly when a product route shows "Not found", blank space, or wrapper-only chrome.
+- Make every route start with a compact command strip: one page title, one primary table/action area, and only the 2-3 most important status metrics.
+- Give action labels a sober but decisive treatment: KEEP, DROP RISK, SHOP, HOLD, OFFER, AVOID should be scannable without becoming carnival badges.
+- Use progressive disclosure aggressively: formulas, import caveats, source provenance, and long explanations belong behind "Audit", "Why", or "Details".
+- Create a consistent rank comparison pattern for Official Rank, Market Rank, War Room Rank, and My Rank so the owner can see disagreement instantly.
+- Turn Model Audit into the trust anchor: source, formula, inputs, output, confidence, and test status in a compact table-first layout.
 
 ## Priority Fix
-Fix the route evidence failure before any visual polish. The next task should make the visual inspection path load the actual Streamlit pages for root, Import Review, Draft Room, League Intel, and Model Audit, and fail the check if captured content contains "Not found" or lacks the expected page title/table. Until that is solved, design review is theater with a clipboard.
+Reduce page chrome before adding anything else. Each customer-facing app route should have exactly one compact page identity area, then the primary decision table or board immediately. Remove duplicate intro bands, repeated labels, oversized explanatory blocks, and any wrapper panel that makes the actual command surface feel buried. Nami should make the first viewport answer the route's one job before exposing details.
 
 ## Magic Improvement Score
-SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: repeated latest evidence still reports "Not found" screenshots while QA says no blocking visual bugs.
+SCORE: 3; DIRECTION: improved; ACTIVE_PACK: none; REASON: current evidence suggests real command pages are back, but hierarchy is still too generic and not yet command-center sharp.
 
 ## Designer Handoff
-Keep the product quiet, analytical, and table-first. Do not add sections, hero language, cards, prediction theater, or decorative styling. The next implementer should make the app prove that every primary route renders the real command surface, then reduce visible chrome so each page has one clear title, one compact command table, and secondary detail behind an expander, drawer, or tab. The user should feel: "I can trust this before roster declaration," not "I am debugging a Streamlit demo."
+Keep the table-first analytical spine, the deterministic audit posture, and the quiet visual language. Change the first-screen hierarchy: one compact route header, one urgent decision surface, one restrained control row, then details below or behind disclosure. The result should feel like a co-owner opening the app five minutes before a deadline and instantly seeing where the risk and leverage are.
 
 ## What Not To Do Next
-- Do not add new dashboards, charts, or narrative insight cards.
-- Do not polish colors before route rendering is proven.
-- Do not add more documentation as a substitute for visible product evidence.
-- Do not expand backend, imports, formulas, auth, deployment, or package scope.
-- Do not create another broad repair pass that touches unrelated files.
-- Do not ignore mobile screenshots; the command tables must degrade cleanly.
-- Do not let automated visual QA pass when the captured page says "Not found".
+- Do not add more pages or sections.
+- Do not add prediction cards, big KPI theater, or fantasy advice prose.
+- Do not make the UI more colorful to fake importance.
+- Do not bury the main table under explanations about the model.
+- Do not touch backend scope, data collection, auth, deployment, or packages.
+- Do not ignore mobile; table-first does not mean desktop-only.
 
 ## Next 5 Design Tasks
-- [ ] Add a visual route smoke check that fails when root or key pages show "Not found"; guardrail: only app or visual-check script scope.
-- [ ] Verify root, Import Review, Draft Room, League Intel, and Model Audit screenshots show real page titles and at least one table; guardrail: no styling changes in this task.
-- [ ] Remove any duplicated page title or repeated intro band from one confirmed-rendering page; guardrail: one page only.
-- [ ] Move one long explanatory block on Model Audit or Import Review behind an expander; guardrail: preserve all content, change only staging.
-- [ ] Tighten one command table first screen by prioritizing decision columns over prose; guardrail: no new metrics or formulas.
+- [ ] On each Streamlit page, reduce the top area to one title line plus one short status line; guardrail: no duplicate page title or intro block.
+- [ ] Move long model/source explanations behind existing expanders or tabs; guardrail: first viewport must show the primary table or board.
+- [ ] Standardize action labels across tables; guardrail: no new formula semantics, only visual/copy treatment.
+- [ ] Create a compact rank comparison display for Official, Market, War Room, and My Rank; guardrail: keep all ranks separate and labeled.
+- [ ] Review mobile screenshots and collapse low-priority columns into row details; guardrail: no horizontal wall of unreadable data.
 
 ## Stop Or Continue
 continue but fix visual issues first
