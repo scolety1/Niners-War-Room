@@ -277,3 +277,24 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-desktop.png
 - Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-mobile.png
 - Follow-up: Static check passed after recovery; keep next work table-first and locally verifiable.
+
+## 2026-05-02 23:59:55
+
+- Task: VISUAL EVIDENCE RECOVERY - repair the Streamlit visual QA path that produced "Not found" screenshots: add or update local route evidence/config/docs so root, Import Review, Team, War Board, Trade Central, Draft Room, League Intel, and Model Audit can be verified as real Streamlit content on desktop and mobile; add a guard or documented check that fails when captured content contains "Not found" or mostly blank white space. Keep this task evidence-focused and table-first: no broad UI redesign, no new product pages, no live APIs, no scraping, no dependency/package edits, no generated database/data_pack output, no auth/backend/payment/deploy work, and no complex ML. Acceptance: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1, plus updated docs/codex/SIMON_DESIGN_REVIEW.md or visual evidence notes that explain whether the RED can move to YELLOW. [class:bugfix risk:medium mode:single impact:visible scope:app/,scripts/,docs/codex/]
+- Result: Quarantined
+- Magic signal: learned-from-failure
+- Active work pack: none
+- Task class: bugfix
+- Task risk: medium
+- Changed files: 0
+- Materiality signal: impact=visible, surface-files=0, structural-files=0, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 2; DIRECTION: flat; ACTIVE_PACK: none; REASON: formula work improved trust, but visual evidence is invalid and the current UI cannot be judged.
+- Before visual evidence:
+- None recorded before task.
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-mobile.png
+- Follow-up: Large Phase 3 task requires a concrete slice plan before implementation.
