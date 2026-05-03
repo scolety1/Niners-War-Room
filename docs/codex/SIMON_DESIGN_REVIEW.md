@@ -4,55 +4,56 @@
 RED
 
 ## One-Sentence Read
-The branch is still presenting a diagnostic wrapper and broken route captures instead of the Drop Deadline Command Center, which is not a design problem so much as the product failing to appear.
+The branch is showing a diagnostic lobby and broken board routes instead of the Drop Deadline Command Center, which is not a product screen, it is a waiting room with a clipboard.
 
 ## Mission Fit
-The mission is table-first, local-first decision support for a keeper deadline. The current root screen partially understands the restraint: plain typography, one action, a small route checklist, no fake fantasy-blog theater. But the actual Streamlit routes in the latest screenshots render as "Not found", so the user cannot see the Niners roster, forced release logic, import review, draft values, trade board, or league pressure board. That misses the mission at the first gate. A war room cannot be a sign taped to a locked door.
+The design direction only partially matches the mission. The root page understands the local-first, table-first intent, and the typography has some discipline, but the actual V1 job is missing from the first visible experience: the user cannot inspect the Niners top five, forced release logic, keeper/drop calls, trade pressure, or pick values from the captured route screenshots because the route pages render "Not found." For an analytical command center, missing command tables are mission failure.
 
 ## Taste Check
-The root page has a few correct instincts: sober spacing, minimal copy, a red action color that nods to the team without becoming fan-art, and a table-like inspection list. It feels more disciplined than generic SaaS confetti.
-
-But the hierarchy is wrong for the current phase. "Inspect route results" is now louder than the actual product, and the static root reads like a QA holding page. The mobile table also clips the runtime source column, which makes the one visible table feel unfinished. The repeated route failure screens are stark, empty, and unacceptable as product evidence.
+The best part is the restraint: off-white background, strong black type, muted red action, and a sparse table feel closer to a serious local tool than generic fantasy SaaS confetti. Good. But the current surface is too much diagnostic wrapper and not enough product. The big marketing-scale title, loud CTA, and oversized mobile table make the page feel like an inspection artifact, not a usable war room. The design has taste in ingredients, but the plate did not leave the kitchen.
 
 ## Visual Problems To Fix
-- Customer-facing route captures for Import Review, Team, War Board, Trade Central, Draft Room, League Intel, and Model Audit show "Not found" instead of command tables.
-- The root page is a diagnostic wrapper, not the V1 command center; it makes QA process the first-screen product.
-- The root CTA "Inspect route results" visually dominates more than any actual decision surface.
-- The mobile root table overflows horizontally and clips file paths, creating a cramped, amateur inspection view.
-- The visible product identity is thin: "Drop Deadline Board" is close, but the screen does not immediately answer "who do I drop, keep, or shop?"
-- There is no visible separation of Official Rank, Market Rank, War Room Rank, and My Rank in the captured route evidence because the routes are not rendering.
-- The automated visual report says no blocking visual bugs while screenshots show route failure; the inspection system is producing false comfort.
+- The captured board routes for Draft Room, Import Review, League Intel, Model Audit, Team, Trade Central, and War Board show "Not found" instead of command tables.
+- The root page is a diagnostic wrapper titled "Drop Deadline Board," not the actual V1 command center experience.
+- The first screen spends too much visual weight on the hero title and "Inspect route results" CTA while the product-critical board data sits lower and thinner.
+- On mobile, the route results table overflows horizontally; runtime source paths are clipped and the table does not feel intentionally responsive.
+- The mobile hierarchy is oversized for an operations tool: the H1, paragraph, and CTA consume too much vertical space before the user reaches the useful table.
+- The red CTA is visually dominant even though it is secondary inspection chrome, not the user's primary decision workflow.
+- The root table only surfaces three boards, which makes the product feel incomplete against the stated V1 command center scope.
+- No classic double header is visible, but the diagnostic root wrapper creates the same customer-facing problem: the real product page feels buried behind explanatory chrome.
 
 ## Strongest Opportunities
-- Make the real first screen a compact command board with the top-five status, forced release candidate, keeper pressure, and one primary sortable table.
-- Keep the visual language austere: dense tables, small status chips, restrained red accents, no decorative dashboard fluff.
-- Put import/source/model audit details behind tabs, expanders, or a secondary route so the first screen stays decision-first.
-- Use a consistent table grammar across pages: same rank columns, confidence/source columns, risk markers, and row actions.
-- Treat mobile as a review surface, not a full spreadsheet: prioritize top decision columns and hide secondary fields behind row detail.
+- Make the first visible screen a compact command board with the current top-five status, forced release candidate, import health, and next review actions above the fold.
+- Replace the loud inspection CTA with a quiet secondary control or disclosure; inspection artifacts should support the board, not star in it.
+- Use dense table hierarchy: compact headers, sticky column labels where appropriate, clear numeric alignment, and restrained status chips.
+- Give each board route a small, consistent page header and immediately show its primary table, with formulas and provenance behind details or side panels.
+- On mobile, collapse secondary columns behind row expansion instead of letting file paths and long labels wreck the grid.
+- Add a consistent "source snapshot" and "model audit" affordance that feels like trust infrastructure, not a separate documentation page pretending to be the app.
 
 ## Priority Fix
-Restore the actual Streamlit/product routes in visual capture before any design polish. The next task should make `/Import_Review`, `/Team`, `/War_Board`, `/Trade_Central`, `/Draft_Room`, `/League_Intel`, and `/Model_Audit` render their primary command tables instead of "Not found"; the root diagnostic page can remain quiet only if it links to working product surfaces and does not pretend to be the app.
+Restore the actual command board routes as the first-class product surface and demote the diagnostic root page. Nami should turn this into a small visual repair: each captured route must render its primary table immediately, the root should point quietly to those boards only if needed, and the first screen must answer "what needs a drop decision now?" before showing inspection explanation.
 
 ## Magic Improvement Score
-SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: latest route screenshots still show missing command tables while the root is a diagnostic wrapper instead of the V1 product.
+SCORE: 1; DIRECTION: regressed; ACTIVE_PACK: none; REASON: route screenshots still show missing command tables and the root is a diagnostic wrapper instead of the V1 product.
 
 ## Designer Handoff
-Next implementer: stop adding surfaces and make the existing surfaces visible. Keep the restrained typography, simple red accent, and table-first tone. Change the first impression from "QA capture page" to "drop deadline decisions are ready": top-five release status first, then the main sortable table, then secondary audit/import details behind disclosure. The user should feel they are looking at a private decision instrument, not a development placeholder with a nice button.
+Keep the restrained color, low-text posture, and table-first ambition. Change the hierarchy: the primary board must come first, with operational status, forced release, keeper/drop, and pick-value evidence visible without ceremony. Move route inspection, file paths, long explanations, and audit notes behind quiet disclosure controls. The result should feel like opening a private draft room spreadsheet that has been sharpened into a decision tool: fast, sober, and impossible to confuse with a fantasy advice blog.
 
 ## What Not To Do Next
-- Do not add more pages, sections, or cards while core routes render "Not found".
-- Do not decorate the root page to compensate for missing product screens.
-- Do not introduce big dashboard KPIs unless they are tied directly to forced release, keeper/drop, trade, league pressure, or pick value decisions.
-- Do not turn formula audit content into first-screen prose.
-- Do not ignore mobile overflow; table density still needs discipline on small screens.
-- Do not change backend scope, data architecture, auth, deployments, packages, or analytics as part of this design repair.
+- Do not add more sections to the diagnostic root page.
+- Do not polish the "Not found" state or hide it with prettier copy.
+- Do not add prediction cards, hero copy, or dashboard theater before the command tables render.
+- Do not introduce more red buttons unless the action is truly primary.
+- Do not expand backend scope, data contracts, model formulas, or package dependencies for this design repair.
+- Do not ignore mobile; the current table behavior already looks accidental.
+- Do not let documentation pages compete with the working app surface.
 
 ## Next 5 Design Tasks
-- [ ] Fix visual route rendering so every captured app route shows its primary table or empty-state table, with no "Not found" screenshots accepted.
-- [ ] Replace the root diagnostic emphasis with a quieter entry that points to the command board and keeps QA explanation behind the existing disclosure.
-- [ ] Make the primary command board first screen show top-five status, forced release candidate, and the main decision table above any explanatory content.
-- [ ] Tighten mobile table presentation by hiding or wrapping runtime/source/detail columns so no first-screen horizontal clipping appears.
-- [ ] Standardize visible rank columns across decision tables with separate labels for Official, Market, War Room, and My Rank; no merged or ambiguous rank language.
+- [ ] Make every captured board route render its primary table above the fold; guardrail: no route may show "Not found" in visual inspection.
+- [ ] Replace the root hero/CTA dominance with a compact command entry layout; guardrail: the first viewport must show board status data, not only explanation.
+- [ ] Reduce mobile type scale and CTA weight on the root screen; guardrail: useful table content must begin within the first mobile viewport.
+- [ ] Convert runtime source paths into quiet secondary metadata; guardrail: no clipped code path should appear as primary table content on mobile.
+- [ ] Add a consistent compact header pattern for all app pages; guardrail: one page title only, no duplicated intro bands, no route chrome louder than the command table.
 
 ## Stop Or Continue
 stop for human design review
