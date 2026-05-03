@@ -1,9 +1,9 @@
 # Joey Security Review
 
-Generated: 2026-04-29 11:01:14
+Generated: 2026-05-03 02:40:05
 Project: NinersWarRoom
 Branch: codex/niners-war-room-NinersWarRoom-20260425-235452
-HEAD: 2439409
+HEAD: a1d6c59
 Base branch: main
 
 ## Verdict
@@ -27,12 +27,16 @@ Joey checked the doors, windows, config files, dependency locks, secrets, auth/p
 - docs/codex/ANALYSIS_APPROVAL.md
 - docs/codex/ANALYSIS_BRIEF.md
 - docs/codex/ANALYTICAL_NUMBER_PROVENANCE.md
+- docs/codex/AUTO_REPAIR.md
 - docs/codex/CALIBRATION_PLAN.md
 - docs/codex/CHECKPOINT_REVIEW.md
 - docs/codex/DATA_CONTRACT.md
 - docs/codex/EVALUATORS.md
 - docs/codex/FIXTURE_TEST_PLAN.md
 - docs/codex/FORMULA_SPEC.md
+- docs/codex/FRANKY_FORMULA_REVIEW.json
+- docs/codex/FRANKY_FORMULA_REVIEW.md
+- docs/codex/JOEY_SECURITY_REVIEW.md
 - docs/codex/MAGIC_SCORECARD.md
 - docs/codex/NIGHTLY_REPORT.md
 - docs/codex/PHASE_STATE.md
