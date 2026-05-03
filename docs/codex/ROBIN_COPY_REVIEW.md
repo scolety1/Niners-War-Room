@@ -4,79 +4,74 @@
 YELLOW
 
 ## One-Sentence Read
-The voice is usefully restrained and mission-fit, but it still needs sharper separation between computed model output, user decisions, and internal repair language.
+The copy is mission-fit, sober, and appropriately analytical, but several app and planning phrases still lean toward internal builder language instead of crisp owner-facing decision language.
 
 ## Mission Voice Fit
-The language mostly matches the mission: private, local-first, deterministic, table-first, and focused on the Niners co-owner's roster declaration decisions. The strongest copy uses concrete nouns like "official top five", "drop candidate", "pick value", "Trade Central", and "Model Audit". The weaker copy appears in review and repair artifacts, where phrases like "ship", "magic", "polish", "active pack", "quality quarantine", and "repair lane" sound like builder process rather than a buyer-facing decision tool. For an analytical fantasy command center, the app should sound calm, exact, and auditable, not like a product hype loop or a QA harness.
+The language matches the product position well: private, local-first, deterministic, table-first, and built for one owner making deadline decisions. It avoids fantasy-blog hype and protects the difference between official rank, market rank, private model output, and user judgment. The best copy uses concrete nouns like "official top five", "default release", "keeper pressure", "pick values", and "Trade Central". The weaker copy appears in review and repair documents, where phrases like "repair lane", "active work pack", "visible outcome", and "pause ship" sound like instructions to Codex rather than language for a working decision tool.
 
 ## Delicate Wording Risks
-- "decision engine" is acceptable in technical docs, but customer-facing screens should avoid sounding like the app decides for the owner. Prefer "decision board", "model output", or "command table" when the user still makes the call.
-- "recommendations" can overstate certainty unless paired with inputs, assumptions, confidence, or "model label".
-- "Which trade options can save value" risks implying certain outcomes. Prefer "which trade options may protect value under the current model".
-- "AcceptanceChance" is potentially overconfident if it is not calibrated against real league history. Label it as a modeled estimate or heuristic score.
-- "likely to enter the draft pool" should be staged carefully as "projected draft pool" or "model-flagged release candidates" unless the app shows why.
-- "Magic Scorecard" is too cute for this analytical product and undercuts trust.
-- "War Score" and "War Room Rank" fit the brand, but should not crowd out precise rank names. Keep Official Rank, Market Rank, War Room Rank, and My Rank visibly separate.
-- Repair language such as "ship", "quarantine", "active pack", "repair lane", "polish", and "handoff" belongs in internal docs only, not app screens.
-- "No Blocking Visual Bugs" conflicts with Simon evidence reporting "Not found" screenshots. This wording sounds falsely conclusive and should be softened or made conditional.
-- "External build passed" is clear for internal reports, but it is not useful buyer-facing copy.
-- "private score" needs a visible definition near audit/detail views so it does not sound like hidden judgment.
+- "decision engine" is acceptable internally, but customer-facing surfaces should prefer "decision table", "command board", or "model output" when the user is looking at computed results.
+- "recommendations" needs care. For analytical software, use "model labels", "score labels", or "review candidates" near tables so the app does not imply certainty or advice.
+- "Which trade options can save value" may overpromise. It should say "which trade options may preserve value" or "which trade options improve the model view".
+- "players are likely to enter the draft pool" should be staged with confidence and source labels. Without visible assumptions, "likely" can sound predictive.
+- "AcceptanceChance" is risky as a naked label because it can imply prediction. It should be paired with "model estimate", "assumptions", or "manual review required".
+- "POLITICAL RISK" is vivid and useful internally, but in the UI it should be explained as league-context risk, not as a moral or personal judgment.
+- "repair active pack", "pause ship", "No More Features Lock", "blocker-clearing repair", and "visible outcome" are build-system phrases. They should stay in docs, not visible app copy.
+- "workflow", "handoff", "polish", and "manager-ready" do not appear as smoke hits, which is good. Keep them out of customer-facing copy unless the reader, action, and outcome are concrete.
+- "War Score" and "War Room Rank" need stable definitions. If both appear, the UI should not make them feel interchangeable.
+- "official top-5 release pressure" is accurate but slightly compressed. In first-screen UI, "Top-Five Release Risk" is clearer.
 
 ## Beautiful Language Opportunities
-- Make the first screen more concrete: "Niners Top Five", "Default Release", "Keeper Pressure", and "Trade Leverage" are stronger than broad explanation.
-- Use "Model Audit" to build trust with labels like "Formula", "Inputs", "Output", "Confidence", "Source", and "Assumption".
-- Replace hype words with accountable words: "computed", "loaded from", "official", "manual rank", "market rank", "sample pack", "last import".
-- Give trade copy a manual-review posture: "Review", "Shop", "Shield", "Hold", and "Offer Candidate" are better than confident advice.
-- Use compact status language on import pages: "Loaded", "Warning", "Error", "Missing rank", "Duplicate pick", "Unknown team".
-- Stage explanations behind expanders with labels like "Why this score", "Inputs used", and "League rule".
-- The mission phrase "Drop Deadline Command Center" is strong. Keep it, but pair it with tables rather than long prose.
+- Make page openings more decisive: short route title, one status line, then the table.
+- Use "Review" and "Why" labels for expandable detail instead of explanatory paragraphs above tables.
+- Replace advice-like labels with table labels that preserve humility: "Model Label", "Confidence", "Source", "Assumption", "Why".
+- Give each page one plain job: "Review import issues", "See release risk", "Compare keeper labels", "Review trade candidates", "Check league pressure", "Audit model outputs".
+- Make uncertainty useful instead of apologetic. Use copy like "Low confidence: missing market rank" or "Rank 400 source value" instead of broad caveats.
+- Tighten action labels so they feel like a command table, not a fantasy column: KEEP, DROP RISK, SHOP, HOLD, OFFER, AVOID.
+- Separate public/product language from app language. The README can say "decision engine"; the app should say "model output", "score table", and "review board".
+- Let "Drop Deadline Command Center" remain the product promise, but keep the working screens spare and concrete.
 
 ## Priority Rewrite
-The single most important wording problem is analytical certainty. Any label that sounds like advice, prediction, or guaranteed trade outcome should be reframed as deterministic model output with visible assumptions. Nami should scan app-visible labels and docs summaries for words like "save", "likely", "recommendation", "chance", and "decision engine", then rewrite them so the owner sees what was computed, from which inputs, and where manual judgment remains required.
+The most important wording problem to fix next is advice certainty in analytical labels. Any screen that shows trade, keeper, drop, draft-pool, or acceptance outputs should label them as deterministic model outputs with visible confidence, source, and assumptions. Nami should replace loose phrases like "recommendations", "likely", "save value", and "AcceptanceChance" with concrete review language that makes clear what was computed and what still needs human judgment.
 
 ## Suggested Rewrites
-- Before: "Which trade options can save value before Roster Declaration Day?"
-  After: "Which trade options may protect roster value before Roster Declaration Day?"
+- Before: "Which trade options save value before Roster Declaration Day?"
+  After: "Which trade candidates preserve model value before Roster Declaration Day?"
 
 - Before: "Which players are likely to enter the draft pool?"
-  After: "Which players are model-flagged as possible draft-pool entries?"
+  After: "Which players project as draft-pool candidates under the current assumptions?"
+
+- Before: "Keeper/drop recommendations"
+  After: "Keeper and drop labels"
 
 - Before: "AcceptanceChance"
   After: "Acceptance estimate"
 
-- Before: "No Blocking Visual Bugs"
-  After: "Automated visual check found no blocking issues in captured pages"
+- Before: "POLITICAL RISK"
+  After: "League-context risk"
 
-- Before: "Private, local-first fantasy football decision engine"
-  After: "Private, local-first fantasy football command board"
+- Before: "V1 is the Drop Deadline Command Center. It focuses on official top-5 release pressure, keeper/drop decisions, pick values, trade leverage, and league pressure using local CSV/SQLite snapshots."
+  After: "V1 is the Drop Deadline Command Center: local CSV/SQLite tables for top-five release risk, keeper/drop labels, pick values, trade candidates, and league pressure."
 
-- Before: "Review keeper/drop recommendations"
-  After: "Review keeper, drop, and shop labels"
-
-- Before: "Do not use generated AI text to make decisions."
-  After: "Do not use generated AI text as model output."
-
-- Before: "Magic Scorecard"
-  After: "Ship Scorecard" or "Quality Scorecard"
+- Before: "Review players to shop and shield targets."
+  After: "Review shop candidates and shield targets."
 
 ## Voice Rules
-- Use concrete table labels before explanatory copy.
-- Keep first-screen copy short: title, status line, primary table.
-- Separate model output from advice.
-- Pair scores with source, assumption, confidence, or "why" when space allows.
-- Keep Official Rank, Market Rank, War Room Rank, and My Rank as distinct visible terms.
-- Use "projected", "model-flagged", "computed", and "current snapshot" instead of certainty language.
-- Keep repair, QA, and builder-process language out of app-visible copy.
-- Avoid hype, fantasy-blog voice, guru language, and playful quality names.
-- Prefer "review", "compare", "filter", "audit", and "select" as user actions.
-- Hide long explanations behind "Why this score" or "Inputs used".
+- Use concrete football and table nouns: roster, pick, rank, score, label, pressure, release risk, trade candidate, draft pool.
+- Keep first-screen copy short: one title, one status line, then the table or board.
+- Say "model output", "model label", or "estimate" when the app computes a result.
+- Pair scenario and what-if copy with visible assumptions.
+- Avoid guru language: no "lock", "steal", "must", "win the trade", or certainty theater unless the rule is official and deterministic.
+- Keep internal build language out of app surfaces.
+- Use "Official Rank", "Market Rank", "War Room Rank", and "My Rank" exactly and separately.
+- Put long explanations behind "Why", "Audit", "Source", or "Details".
 
 ## Next 5 Copy Tasks
-- [ ] Audit app-visible labels for prediction language; guardrail: rewrite only labels that imply certainty, and do not change formulas or data.
-- [ ] Rename any customer-facing "AcceptanceChance" display to "Acceptance estimate"; guardrail: keep internal code identifiers unchanged unless already exposed.
-- [ ] Add or tighten one Model Audit detail label to show "Inputs", "Output", "Confidence", or "Source"; guardrail: no new model claims.
-- [ ] Replace one vague repair or QA phrase in docs with concrete evidence language; guardrail: internal docs only, no app behavior change.
-- [ ] Review the first screen for staged copy; guardrail: keep only the current page job, one status line, and table-first labels visible.
+- [ ] Replace visible "recommendations" copy with "model labels" or "review candidates"; guardrail: do not change formulas or labels, only surrounding text.
+- [ ] Audit all trade table headers for prediction language; guardrail: "AcceptanceChance" must become a humble estimate label wherever visible.
+- [ ] Tighten each Streamlit page intro to one title and one short status line; guardrail: no new explanatory blocks above the primary table.
+- [ ] Add plain assumption/source wording near draft-pool and what-if outputs; guardrail: do not invent confidence claims or new data.
+- [ ] Standardize risk labels across pages; guardrail: keep Official, Market, War Room, and My Rank distinct.
 
 ## Stop Or Continue
 continue but fix copy first
