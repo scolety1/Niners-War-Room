@@ -5,7 +5,14 @@ from pathlib import Path
 
 from src.data.validators import validate_data_pack
 from src.models.keeper_scores import KeeperDecision, KeeperScoreInputs
-from src.models.trade_scores import trade_asset_value, trade_path_signal, trade_value_gap
+from src.models.trade_scores import (
+    TRADE_LABELS,
+    TradeAsset,
+    TradeScoreInputs,
+    score_trade,
+    trade_asset_value,
+    trade_value_gap,
+)
 from src.services.team_service import build_team_keeper_board
 
 
@@ -154,6 +161,9 @@ def _player_row(
         _optional_float(row.get("pick_adjusted_value")),
         _optional_float(row.get("confidence_score")),
     )
+    market_trade_value = _market_trade_value(row, trade_value)
+    keeper_score = _decision_value(decision, "keeper_score")
+    drop_score = _decision_value(decision, "drop_candidate_score")
     return {
         "player": row.get("player_name"),
         "pos": row.get("position"),
@@ -161,16 +171,19 @@ def _player_row(
         "my_score": row.get("private_score"),
         "market_score": row.get("market_score"),
         "war_score": row.get("war_score"),
-        "keeper_score": _decision_value(decision, "keeper_score"),
-        "drop_score": _decision_value(decision, "drop_candidate_score"),
+        "keeper_score": keeper_score,
+        "drop_score": drop_score,
         "trade_value": trade_value,
+        "private_trade_value": trade_value,
+        "market_trade_value": market_trade_value,
+        "keeper_trade_value": keeper_score or 0.0,
         "confidence": row.get("confidence_score"),
         "risk": row.get("risk_level"),
         "signal": _trade_signal(
             forced_release=forced_release,
             model_signal=model_signal,
-            keeper_score=_decision_value(decision, "keeper_score"),
-            drop_score=_decision_value(decision, "drop_candidate_score"),
+            keeper_score=keeper_score,
+            drop_score=drop_score,
         ),
     }
 
@@ -229,6 +242,13 @@ def _path_rows(
     for player in candidates:
         for pick in pick_rows:
             gap = trade_value_gap(pick["snapshot_value"], player["trade_value"])
+            trade_score = score_trade(
+                TradeScoreInputs(
+                    incoming_assets=(_pick_asset(pick),),
+                    outgoing_assets=(_player_asset(player),),
+                    political_risk=_political_risk(player),
+                )
+            )
             rows.append(
                 {
                     "player": player["player"],
@@ -238,7 +258,13 @@ def _path_rows(
                     "certainty": pick["certainty"],
                     "pick_value": pick["snapshot_value"],
                     "value_gap": gap,
-                    "path_signal": trade_path_signal(gap),
+                    "private_trade_score": trade_score.private_trade_score,
+                    "market_trade_score": trade_score.market_trade_score,
+                    "keeper_impact_score": trade_score.keeper_impact_score,
+                    "niners_edge_score": trade_score.niners_edge_score,
+                    "opponent_benefit_score": trade_score.opponent_benefit_score,
+                    "acceptance_chance": trade_score.acceptance_chance,
+                    "path_signal": trade_score.label,
                 }
             )
     return sorted(
@@ -256,8 +282,50 @@ def _ordered_signals(signals: set[str]) -> list[str]:
 
 
 def _ordered_pick_signals(signals: set[str]) -> list[str]:
-    order = {"Even": 0, "Ask+": 1, "Short": 2}
+    order = {label: index for index, label in enumerate(TRADE_LABELS)}
     return sorted(signals, key=lambda signal: (order.get(signal, 99), signal))
+
+
+def _player_asset(player: dict[str, object]) -> TradeAsset:
+    return TradeAsset(
+        name=str(player["player"]),
+        private_value=float(player["private_trade_value"] or 0.0),
+        market_value=float(player["market_trade_value"] or 0.0),
+        keeper_value=float(player["keeper_trade_value"] or 0.0),
+    )
+
+
+def _pick_asset(pick: dict[str, object]) -> TradeAsset:
+    value = float(pick["snapshot_value"] or 0.0)
+    return TradeAsset(
+        name=str(pick["pick"]),
+        private_value=value,
+        market_value=value,
+        keeper_value=0.0,
+    )
+
+
+def _market_trade_value(row: dict[str, object], fallback_value: float) -> float:
+    private_score = _optional_float(row.get("private_score"))
+    market_score = _optional_float(row.get("market_score"))
+    pick_adjusted_value = _optional_float(row.get("pick_adjusted_value"))
+    confidence_score = _optional_float(row.get("confidence_score"))
+    if private_score is None or private_score <= 0 or market_score is None:
+        return fallback_value
+    market_adjusted_value = (pick_adjusted_value or 0.0) * min(
+        max(market_score / private_score, 0.5),
+        1.5,
+    )
+    return trade_asset_value(market_adjusted_value, confidence_score)
+
+
+def _political_risk(player: dict[str, object]) -> float:
+    risk = str(player.get("risk") or "").lower()
+    if risk == "high":
+        return 25.0
+    if risk == "medium":
+        return 10.0
+    return 0.0
 
 
 def _decision_value(decision: KeeperDecision | None, attribute: str) -> float | None:

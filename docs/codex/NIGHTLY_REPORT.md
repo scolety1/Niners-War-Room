@@ -190,3 +190,21 @@
 - src/services/trade_service.py
 - tests/test_keeper_scores.py
 - Risks or follow-up needed: Low. External build, task acceptance checks, and checkpoint loop review completed.
+
+## 2026-04-29 11:23:21
+
+- Task attempted: User pain: The Niners owner needs trade ideas to be explainable and manually reviewed, not magic suggestions. Target: V1 trade scoring formulas and tests. Change: implement the brief's V1 trade model formulas and tests for PrivateTradeScore, MarketTradeScore, KeeperImpactScore, NinersEdgeScore, OpponentBenefitScore, and AcceptanceChance, plus labels OFFER, CONSIDER, HOLD, DECLINE, AVOID, and POLITICAL RISK; keep trade boards table-first and deterministic, and verify player-for-pick plus shield-trade examples with hand-calculated fixtures. Remove/simplify: remove one-number trade advice that hides private value, market value, keeper impact, and opponent benefit. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign beyond wiring existing table fields, no complex ML, no auto-trading/real offers/sends. Acceptance: trade score tests include hand-calculated player-for-pick and shield-trade examples and labels remain deterministic. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,src/services/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Task class: feature
+- Task risk: medium
+- Task mode: single
+- Task impact: showpiece
+- Allowed scope: src/models, src/services, tests, docs/codex
+- Acceptance checks: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1
+- Build result: Passed
+- Files changed:
+- docs/codex/FORMULA_SPEC.md
+- docs/codex/RUNTIME_VERIFICATION.md
+- src/models/trade_scores.py
+- src/services/trade_service.py
+- tests/test_trade_scores.py
+- Risks or follow-up needed: Low. Static check passed after recovery; continue with table-first polish only.

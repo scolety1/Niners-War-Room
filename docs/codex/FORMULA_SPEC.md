@@ -22,6 +22,17 @@ Confidence:
 War score:
 `0.35*PrivateScore + 0.20*KeeperScore + 0.15*PickAdjustedValue + 0.10*ScarcityScore + 0.10*TradeLiquidity + 0.10*RiskAdjustedUpside`
 
+Trade package scores:
+- `PrivateTradeScore = IncomingPrivateValue - OutgoingPrivateValue`
+- `MarketTradeScore = IncomingMarketValue - OutgoingMarketValue`
+- `KeeperImpactScore = IncomingKeeperValue - OutgoingKeeperValue`
+- `NinersEdgeScore = 0.50*PrivateTradeScore + 0.20*MarketTradeScore + 0.30*KeeperImpactScore`
+- `OpponentBenefitScore = OutgoingOwnerValue - IncomingOwnerValue`, where `OwnerValue = 0.60*MarketValue + 0.40*KeeperValue`
+- `AcceptanceChance = clamp(50 + 0.20*OpponentBenefitScore - 0.05*NinersEdgeScore - 0.30*PoliticalRisk, 0, 100)`
+
+AcceptanceChance is a deterministic acceptance score for review bands, not a calibrated probability.
+Trade labels are deterministic: OFFER, CONSIDER, HOLD, DECLINE, AVOID, and POLITICAL RISK.
+
 ## Weights
 Use the brief's exact position formulas:
 - QB: 0.40 draft_cap, 0.30 rush_profile, 0.15 start_path, 0.10 passing_trait, 0.05 environment.

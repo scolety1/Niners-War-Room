@@ -252,3 +252,28 @@ This file is appended by Codex Fleet after checkpoint-loop tasks.
 - Joey verdict: GREEN
 - Simon improvement score: SCORE: 2; DIRECTION: flat; ACTIVE_PACK: none; REASON: formula work improved trust, but visual evidence is invalid and the current UI cannot be judged.
 - Debug checkpoint result: not-run (not-run)
+
+## 2026-04-29 11:23:21
+
+- Task: User pain: The Niners owner needs trade ideas to be explainable and manually reviewed, not magic suggestions. Target: V1 trade scoring formulas and tests. Change: implement the brief's V1 trade model formulas and tests for PrivateTradeScore, MarketTradeScore, KeeperImpactScore, NinersEdgeScore, OpponentBenefitScore, and AcceptanceChance, plus labels OFFER, CONSIDER, HOLD, DECLINE, AVOID, and POLITICAL RISK; keep trade boards table-first and deterministic, and verify player-for-pick plus shield-trade examples with hand-calculated fixtures. Remove/simplify: remove one-number trade advice that hides private value, market value, keeper impact, and opponent benefit. Guardrails: no live APIs, no scraping, no package/dependency edits, no generated SQLite/data_packs output, no auth/backend/payments/deploy work, no UI redesign beyond wiring existing table fields, no complex ML, no auto-trading/real offers/sends. Acceptance: trade score tests include hand-calculated player-for-pick and shield-trade examples and labels remain deterministic. Check: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1 [class:formula risk:medium mode:single impact:standard scope:src/models/,src/services/,tests/,docs/codex/ accept:powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1]
+- Result: Completed
+- Magic signal: useful-formula-recovery
+- Active work pack: none
+- Task class: feature
+- Task risk: medium
+- Changed files: 5
+- Materiality signal: impact=showpiece, surface-files=2, structural-files=2, source-lines=0, css-only=False
+- Simon improvement score: SCORE: 2; DIRECTION: flat; ACTIVE_PACK: none; REASON: formula work improved trust, but visual evidence is invalid and the current UI cannot be judged.
+- Before visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-mobile.png
+- After visual evidence:
+- Visual report artifacts: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Draft-Room-mobile.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-desktop.png
+- Screenshot: C:\Dev\niners-war-room\.codex-logs\visual-inspect-20260429-105815\Import-Review-mobile.png
+- Follow-up: Static check passed after recovery; keep next work table-first and locally verifiable.

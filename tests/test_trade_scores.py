@@ -7,8 +7,17 @@ from pytest import MonkeyPatch
 import src.services.trade_service as trade_service
 from src.data.validators import ValidatedDataPack
 from src.models.trade_scores import (
+    TradeAsset,
+    TradeScoreInputs,
+    acceptance_chance,
+    keeper_impact_score,
+    market_trade_score,
+    niners_edge_score,
+    opponent_benefit_score,
+    private_trade_score,
+    score_trade,
     trade_asset_value,
-    trade_path_signal,
+    trade_review_label,
     trade_value_gap,
 )
 from src.services.trade_service import build_trade_central
@@ -22,11 +31,120 @@ def test_trade_asset_value_uses_pick_adjusted_value_and_confidence() -> None:
     assert trade_asset_value(None, 0.8) == 0.0
 
 
-def test_trade_value_gap_and_path_signal_are_deterministic() -> None:
+def test_trade_value_gap_is_deterministic() -> None:
     assert trade_value_gap(453.6, 564.4) == -110.8
-    assert trade_path_signal(-110.8) == "Short"
-    assert trade_path_signal(195.6) == "Ask+"
-    assert trade_path_signal(-204.4) == "Short"
+
+
+def test_player_for_pick_trade_scores_use_hand_calculated_components() -> None:
+    inputs = TradeScoreInputs(
+        incoming_assets=(
+            TradeAsset(
+                name="2027 1.04",
+                private_value=453.6,
+                market_value=453.6,
+                keeper_value=0.0,
+            ),
+        ),
+        outgoing_assets=(
+            TradeAsset(
+                name="Luther Burden",
+                private_value=564.4,
+                market_value=585.1,
+                keeper_value=85.0,
+            ),
+        ),
+    )
+
+    assert private_trade_score(inputs) == -110.8
+    assert market_trade_score(inputs) == -131.5
+    assert keeper_impact_score(inputs) == -85.0
+    assert opponent_benefit_score(inputs) == 112.9
+    assert (
+        niners_edge_score(
+            private_trade_score_value=-110.8,
+            market_trade_score_value=-131.5,
+            keeper_impact_score_value=-85.0,
+        )
+        == -107.2
+    )
+    assert (
+        acceptance_chance(
+            niners_edge_score_value=-107.2,
+            opponent_benefit_score_value=112.9,
+        )
+        == 77.9
+    )
+
+    score = score_trade(inputs)
+    assert score.private_trade_score == -110.8
+    assert score.market_trade_score == -131.5
+    assert score.keeper_impact_score == -85.0
+    assert score.niners_edge_score == -107.2
+    assert score.opponent_benefit_score == 112.9
+    assert score.acceptance_chance == 77.9
+    assert score.label == "DECLINE"
+
+
+def test_shield_trade_scores_and_political_risk_are_hand_calculated() -> None:
+    inputs = TradeScoreInputs(
+        incoming_assets=(
+            TradeAsset(
+                name="Shield Player",
+                private_value=260.0,
+                market_value=240.0,
+                keeper_value=90.0,
+            ),
+        ),
+        outgoing_assets=(
+            TradeAsset(
+                name="2026 2.04",
+                private_value=200.0,
+                market_value=200.0,
+                keeper_value=0.0,
+            ),
+        ),
+    )
+
+    score = score_trade(inputs)
+    assert score.private_trade_score == 60.0
+    assert score.market_trade_score == 40.0
+    assert score.keeper_impact_score == 90.0
+    assert score.niners_edge_score == 65.0
+    assert score.opponent_benefit_score == -60.0
+    assert score.acceptance_chance == 34.8
+    assert score.label == "CONSIDER"
+
+    risk_score = score_trade(
+        TradeScoreInputs(
+            incoming_assets=inputs.incoming_assets,
+            outgoing_assets=inputs.outgoing_assets,
+            political_risk=80.0,
+        )
+    )
+    assert risk_score.acceptance_chance == 10.8
+    assert risk_score.label == "POLITICAL RISK"
+
+
+def test_trade_review_labels_remain_deterministic() -> None:
+    cases = [
+        (100, 10, -50, 35, 0, "OFFER"),
+        (30, 0, -100, 15, 0, "CONSIDER"),
+        (-10, 0, -200, 5, 0, "HOLD"),
+        (-100, -20, 50, 80, 0, "DECLINE"),
+        (-160, 0, 100, 100, 0, "AVOID"),
+        (100, 10, 100, 100, 70, "POLITICAL RISK"),
+    ]
+    for edge, keeper, opponent, acceptance, risk, expected in cases:
+        assert (
+            trade_review_label(
+                niners_edge_score_value=edge,
+                keeper_impact_score_value=keeper,
+                opponent_benefit_score_value=opponent,
+                acceptance_chance_value=acceptance,
+                political_risk=risk,
+            )
+            == expected
+        )
 
 
 def test_trade_central_uses_sample_pack_players_and_picks() -> None:
@@ -49,7 +167,13 @@ def test_trade_central_uses_sample_pack_players_and_picks() -> None:
         "certainty": "projected",
         "pick_value": 453.6,
         "value_gap": -110.8,
-        "path_signal": "Short",
+        "private_trade_score": -110.8,
+        "market_trade_score": -131.4,
+        "keeper_impact_score": -85.0,
+        "niners_edge_score": -107.2,
+        "opponent_benefit_score": 112.8,
+        "acceptance_chance": 74.9,
+        "path_signal": "DECLINE",
     }
 
 
