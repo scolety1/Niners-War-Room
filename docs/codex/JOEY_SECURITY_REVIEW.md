@@ -1,9 +1,9 @@
 # Joey Security Review
 
-Generated: 2026-05-03 05:06:09
+Generated: 2026-05-03 10:50:45
 Project: NinersWarRoom
 Branch: codex/niners-war-room-NinersWarRoom-20260425-235452
-HEAD: 61bf8ed
+HEAD: 1bf5a31
 Base branch: main
 
 ## Verdict
@@ -52,6 +52,7 @@ Joey checked the doors, windows, config files, dependency locks, secrets, auth/p
 - docs/codex/TASK_QUEUE.md
 - docs/codex/USER_JOB.md
 - docs/codex/VISUAL_BUGS.md
+- index.html
 - sample_data/2026_pre_declaration/dim_players.csv
 - sample_data/2026_pre_declaration/fact_future_picks.csv
 - sample_data/2026_pre_declaration/fact_official_rankings.csv
@@ -61,6 +62,7 @@ Joey checked the doors, windows, config files, dependency locks, secrets, auth/p
 - sample_data/2026_pre_declaration/model_outputs.csv
 - scripts/codex-static-check.ps1
 - scripts/load_data_pack.py
+- src/config/constants.py
 - src/data/csv_schemas.py
 - src/data/loaders.py
 - src/data/validators.py
