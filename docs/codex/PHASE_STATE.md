@@ -15,9 +15,9 @@ Parking State: ACTIVE
 Evidence Required: Static check plus hand-calculated formula tests and sample table output.
 Done Signal: Core V1 formulas match the written model spec and tests assert the actual brief values.
 Next Phase Criteria: Move to fixture-tests/engine-build only when formula specs and expected outputs are explicit.
-Repair Trigger: LOOPING_QUALITY: repair active pack before fresh work
+Repair Trigger: BUDGET_STOP: pause ship and inspect results
 Repair Return Phase: formula-spec
-Updated At: 2026-05-03 02:57:42
+Updated At: 2026-05-03 03:08:12
 
 ## Phase Order
 
