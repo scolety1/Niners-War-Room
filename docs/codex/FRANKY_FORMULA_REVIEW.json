@@ -1,0 +1,63 @@
+﻿{
+    "project":  "NinersWarRoom",
+    "branch":  "codex/niners-war-room-NinersWarRoom-20260425-235452",
+    "head":  "b7f1c8a",
+    "baseBranch":  "main",
+    "generatedAt":  "2026-05-02 23:59:56",
+    "verdict":  "RED",
+    "nextStep":  "stop for human formula review",
+    "formulaIntent":  true,
+    "formulaSensitiveChangedFiles":  [
+                                         "docs/codex/FIXTURE_TEST_PLAN.md",
+                                         "docs/codex/FORMULA_SPEC.md",
+                                         "src/models/confidence.py",
+                                         "src/models/keeper_scores.py",
+                                         "src/models/pick_values.py",
+                                         "src/models/player_scores.py",
+                                         "src/models/trade_scores.py",
+                                         "src/services/command_board_service.py",
+                                         "src/services/draft_service.py",
+                                         "src/services/league_service.py",
+                                         "src/services/roster_service.py",
+                                         "src/services/team_service.py",
+                                         "src/services/trade_service.py",
+                                         "tests/test_import_validation.py",
+                                         "tests/test_keeper_scores.py",
+                                         "tests/test_pick_values.py",
+                                         "tests/test_trade_scores.py"
+                                     ],
+    "analyticalPhaseOrDocsDetected":  true,
+    "testFilesChanged":  [
+                             "tests/test_command_board_service.py",
+                             "tests/test_draft_service.py",
+                             "tests/test_import_validation.py",
+                             "tests/test_keeper_scores.py",
+                             "tests/test_league_service.py",
+                             "tests/test_pick_values.py",
+                             "tests/test_roster_rules.py",
+                             "tests/test_trade_scores.py"
+                         ],
+    "trackedFormulaTests":  [
+                                "tests/test_import_validation.py",
+                                "tests/test_keeper_scores.py",
+                                "tests/test_pick_values.py",
+                                "tests/test_trade_scores.py"
+                            ],
+    "issueCounts":  {
+                        "red":  2,
+                        "yellow":  0,
+                        "total":  2
+                    },
+    "issues":  [
+                   {
+                       "level":  "RED",
+                       "message":  "FORMULA_SPEC.md needs concrete non-placeholder content under \u0027Inputs\u0027.",
+                       "action":  "Replace the \u0027Inputs\u0027 placeholder with specific formula evidence, not TBD/unknown/later language."
+                   },
+                   {
+                       "level":  "RED",
+                       "message":  "FORMULA_SPEC.md needs concrete non-placeholder content under \u0027Outputs\u0027.",
+                       "action":  "Replace the \u0027Outputs\u0027 placeholder with specific formula evidence, not TBD/unknown/later language."
+                   }
+               ]
+}
