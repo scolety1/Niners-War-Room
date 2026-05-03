@@ -1,9 +1,9 @@
 ﻿# Franky Formula Review
 
-Generated: 2026-05-02 23:59:56
+Generated: 2026-05-03 02:28:03
 Project: NinersWarRoom
 Branch: codex/niners-war-room-NinersWarRoom-20260425-235452
-HEAD: b7f1c8a
+HEAD: f77b540
 Base branch: main
 
 ## Verdict
