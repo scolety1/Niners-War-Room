@@ -1,0 +1,9 @@
+context,position,effective_weekly_starter_demand,weekly_replacement_rank,stash_threshold_rank,elite_anchor_rank,flex_share_assumption,source_type,notes
+steady_state,QB,10,13,18,6,0.00,model_design,"Normal keeper/trade baseline for a 10-team 1QB league; QBs are structurally replaceable outside clear starters."
+steady_state,RB,27,32,46,12,0.35,model_design,"Normal keeper/trade baseline; RB flex share is meaningful in no-PPR plus rushing/receiving first-down scoring."
+steady_state,WR,42,46,60,15,0.60,model_design,"Normal keeper/trade baseline; 3 WR plus 2 flex makes WR replacement deep even without PPR."
+steady_state,TE,11,14,18,5,0.05,model_design,"Normal keeper/trade baseline; no TE premium keeps non-elite TE replacement shallow."
+declaration_window,QB,10,12,20,5,0.00,model_design,"Post-declaration/offline-draft baseline; released supply usually makes non-elite QBs easier to replace."
+declaration_window,RB,27,36,80,12,0.35,model_design,"Post-declaration/offline-draft baseline; wider veteran/released pool makes more RBs draft-room relevant."
+declaration_window,WR,42,50,100,15,0.60,model_design,"Post-declaration/offline-draft baseline; WR demand stays broad and released veterans can beat marginal rookies."
+declaration_window,TE,11,10,20,5,0.05,model_design,"Post-declaration/offline-draft baseline; no-premium TE means only real route earners should beat available veterans."

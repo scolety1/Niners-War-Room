@@ -1,0 +1,22 @@
+asset_id,asset_name,asset_type,position,availability_status,role_tier,lve_veteran_score,win_now_score,hold_value_score,trade_liquidity_score,source_snapshot_id,source_date,is_active_benchmark,notes
+vet_qb_01,Veteran QB A,released_veteran,QB,available,starter,74,77,70,68,veteran_fixture,2026-05-05,true,Top QB same-position benchmark asset.
+vet_qb_02,Veteran QB B,free_agent,QB,available,starter,72,74,69,66,veteran_fixture,2026-05-05,true,Second QB benchmark asset.
+vet_qb_03,Veteran QB C,free_agent,QB,available,committee,70,71,68,64,veteran_fixture,2026-05-05,true,Third QB benchmark asset.
+vet_rb_01,Veteran RB A,released_veteran,RB,available,starter,76,80,70,66,veteran_fixture,2026-05-05,true,Top RB released veteran.
+vet_rb_02,Veteran RB B,released_veteran,RB,available,committee,72,75,68,65,veteran_fixture,2026-05-05,true,Second RB benchmark asset.
+vet_rb_03,Veteran RB C,free_agent,RB,available,committee,70,72,66,63,veteran_fixture,2026-05-05,true,Third RB benchmark asset.
+vet_rb_04,Veteran RB D,free_agent,RB,available,committee,68,70,64,60,veteran_fixture,2026-05-05,true,Fourth RB benchmark asset.
+vet_rb_05,Veteran RB E,free_agent,RB,available,depth,67,68,63,58,veteran_fixture,2026-05-05,true,Fifth RB benchmark asset.
+vet_rb_06,Veteran RB F,free_agent,RB,available,depth,67,67,63,58,veteran_fixture,2026-05-05,true,Sixth RB benchmark asset.
+vet_wr_01,Veteran WR A,released_veteran,WR,available,starter,78,80,72,68,veteran_fixture,2026-05-05,true,Top WR released veteran.
+vet_wr_02,Veteran WR B,released_veteran,WR,available,starter,75,78,70,66,veteran_fixture,2026-05-05,true,Second WR benchmark asset.
+vet_wr_03,Veteran WR C,free_agent,WR,available,committee,73,75,69,65,veteran_fixture,2026-05-05,true,Third WR benchmark asset.
+vet_wr_04,Veteran WR D,free_agent,WR,available,committee,72,73,68,64,veteran_fixture,2026-05-05,true,Fourth WR benchmark asset.
+vet_wr_05,Veteran WR E,free_agent,WR,available,committee,70,71,67,62,veteran_fixture,2026-05-05,true,Fifth WR benchmark asset.
+vet_wr_06,Veteran WR F,free_agent,WR,available,depth,70,70,66,61,veteran_fixture,2026-05-05,true,Sixth WR benchmark asset.
+vet_wr_07,Veteran WR G,free_agent,WR,available,depth,69,69,65,60,veteran_fixture,2026-05-05,true,Seventh WR benchmark asset.
+vet_wr_08,Veteran WR H,free_agent,WR,available,depth,69,69,65,60,veteran_fixture,2026-05-05,true,Eighth WR benchmark asset.
+vet_te_01,Veteran TE A,released_veteran,TE,available,starter,68,71,64,59,veteran_fixture,2026-05-05,true,Top TE benchmark asset.
+vet_te_02,Veteran TE B,free_agent,TE,available,committee,66,68,62,57,veteran_fixture,2026-05-05,true,Second TE benchmark asset.
+vet_te_03,Veteran TE C,free_agent,TE,available,depth,64,66,60,55,veteran_fixture,2026-05-05,true,Third TE benchmark asset.
+vet_wr_protected,Protected WR,free_agent,WR,protected,starter,90,90,90,90,veteran_fixture,2026-05-05,false,Inactive row proves protected assets are ignored.

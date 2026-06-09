@@ -1,25 +1,25 @@
-snapshot_date,player_id,player_name,position,private_score,market_score,war_score,keeper_score,drop_candidate_score,smash_prob,hit_prob,useful_prob,replaceable_prob,miss_prob,bust_prob,pick_adjusted_value,confidence_score,risk_level,recommendation,do_not_draft_before_pick,notes
-2026-08-01,p_achane,De'Von Achane,RB,91,90,91,94,6,0.34,0.40,0.18,0.05,0.02,0.01,950,0.84,medium,keep,,Explosive anchor; official top-five pressure.
-2026-08-01,p_lamar,Lamar Jackson,QB,89,88,89,92,8,0.30,0.43,0.19,0.05,0.02,0.01,920,0.88,low,keep,,Elite QB but format still discounts position.
-2026-08-01,p_chase_brown,Chase Brown,RB,84,82,84,86,14,0.20,0.38,0.27,0.09,0.04,0.02,820,0.72,medium,keep,,Young RB value; monitor top-five release math.
-2026-08-01,p_luther_burden,Luther Burden,WR,82,85,84,85,15,0.22,0.34,0.26,0.10,0.05,0.03,830,0.68,medium,keep,,Rookie upside; top-five rule creates decision pressure.
-2026-08-01,p_brian_thomas,Brian Thomas,WR,87,89,88,90,10,0.29,0.39,0.21,0.07,0.03,0.01,900,0.80,low,keep,,Core WR profile; official top-five pressure.
-2026-08-01,p_ricky_pearsall,Ricky Pearsall,WR,76,77,77,78,22,0.10,0.28,0.34,0.17,0.08,0.03,610,0.60,medium,shop,,Useful young WR; assess market before cutdown.
-2026-08-01,p_quentin_johnston,Quentin Johnston,WR,70,72,71,71,29,0.07,0.22,0.34,0.22,0.11,0.04,470,0.55,medium,shop,,Volatile profile; trade if market still buys upside.
-2026-08-01,p_jakobi_meyers,Jakobi Meyers,WR,73,74,73,74,26,0.04,0.25,0.43,0.20,0.06,0.02,520,0.70,medium,hold,,Stable depth; may be more useful than flashy.
-2026-08-01,p_david_montgomery,David Montgomery,RB,72,70,71,73,27,0.05,0.27,0.38,0.19,0.08,0.03,500,0.66,medium,hold,,Useful veteran RB; age curve matters.
-2026-08-01,p_brandon_aiyuk,Brandon Aiyuk,WR,78,80,79,81,19,0.13,0.32,0.34,0.13,0.06,0.02,690,0.64,medium,keep,,Discounted talent if health/timeline cooperates.
-2026-08-01,p_oronde_gadsden,Oronde Gadsden,TE,67,68,68,68,32,0.06,0.18,0.32,0.26,0.13,0.05,360,0.48,high,risk,,Developmental TE; requires patience.
-2026-08-01,p_jake_ferguson,Jake Ferguson,TE,70,71,70,71,29,0.04,0.23,0.39,0.23,0.08,0.03,430,0.68,medium,hold,,Useful TE but not a clear positional edge.
-2026-08-01,p_jayden_higgins,Jayden Higgins,WR,68,70,69,70,30,0.08,0.20,0.33,0.23,0.11,0.05,410,0.50,high,risk,,Rookie WR upside; confidence still low.
-2026-08-01,p_wandale_robinson,Wan'Dale Robinson,WR,66,67,66,67,33,0.03,0.18,0.38,0.27,0.10,0.04,340,0.61,medium,bubble,,Useful slot profile; ceiling question.
-2026-08-01,p_brenton_strange,Brenton Strange,TE,63,64,63,64,36,0.03,0.16,0.32,0.31,0.13,0.05,280,0.52,high,bubble,,TE depth; verify role path.
-2026-08-01,p_kaleb_johnson,Kaleb Johnson,RB,69,71,70,71,29,0.10,0.23,0.31,0.20,0.11,0.05,450,0.50,high,risk,,Rookie RB upside; role still uncertain.
-2026-08-01,p_xavier_worthy,Xavier Worthy,WR,75,79,77,78,22,0.13,0.29,0.31,0.17,0.07,0.03,620,0.60,medium,keep,,Speed/upside profile; volatile but valuable.
-2026-08-01,p_jalen_coker,Jalen Coker,WR,61,62,61,62,38,0.03,0.14,0.32,0.32,0.14,0.05,230,0.48,high,bubble,,Deep roster bet; needs role evidence.
-2026-08-01,p_jerry_jeudy,Jerry Jeudy,WR,68,69,68,69,31,0.05,0.21,0.37,0.24,0.09,0.04,400,0.63,medium,bubble,,Veteran WR depth; trade liquidity may matter.
-2026-08-01,p_romeo_doubs,Romeo Doubs,WR,62,63,62,63,37,0.03,0.16,0.34,0.30,0.12,0.05,260,0.55,medium,bubble,,Depth WR; compare against draft pool.
-2026-08-01,p_tj_hockenson,T.J. Hockenson,TE,74,75,74,75,25,0.08,0.27,0.38,0.18,0.07,0.02,560,0.62,medium,hold,,TE name value; health/timeline check.
-2026-08-01,p_daniel_jones,Daniel Jones,QB,55,56,55,56,44,0.02,0.12,0.28,0.34,0.18,0.06,120,0.58,medium,drop,,Backup QB in 1-QB format; low keeper leverage.
-2026-08-01,p_luke_mccaffrey,Luke McCaffrey,WR,58,59,58,59,41,0.03,0.13,0.30,0.34,0.15,0.05,170,0.48,high,bubble,,Developmental WR; needs clear role.
-2026-08-01,p_devin_singletary,Devin Singletary,RB,56,57,56,57,43,0.02,0.14,0.30,0.32,0.16,0.06,150,0.61,medium,drop,,Veteran depth RB; likely replaceable.
+snapshot_date,player_id,player_name,position,overall_rank,position_rank,position_rank_label,private_score,market_score,war_score,keeper_score,drop_candidate_score,veteran_base_value,win_now_value,dynasty_hold_value,horizon_retention_score,trade_value,market_trade_value,market_edge_score,market_edge_label,market_edge_warning,lve_format_fit,structural_adjustment,cross_position_replacement_baseline,lve_lineup_demand_adjustment,league_rank_signal,top_five_release_pressure,league_rank_adjustment,missing_data_penalty,risk_flags,upside_flags,floor_flags,smash_prob,hit_prob,useful_prob,replaceable_prob,miss_prob,bust_prob,pick_adjusted_value,confidence_score,risk_level,warning_status,warning_reasons,recommendation,do_not_draft_before_pick,experience_bucket,young_nfl_bridge_prior_score,young_nfl_bridge_weight,young_nfl_bridge_source,asset_lifecycle,model_version,computed_at,rank_audit,notes
+2026-08-01,p_achane,De'Von Achane,RB,,,,91,90,91,94,6,,,,,,,,,,,,,,,,,,,,,0.34,0.40,0.18,0.05,0.02,0.01,950,0.84,medium,,,keep,,,,,,,,,,Explosive anchor; official top-five pressure.
+2026-08-01,p_lamar,Lamar Jackson,QB,,,,89,88,89,92,8,,,,,,,,,,,,,,,,,,,,,0.30,0.43,0.19,0.05,0.02,0.01,920,0.88,low,,,keep,,,,,,,,,,Elite QB but format still discounts position.
+2026-08-01,p_chase_brown,Chase Brown,RB,,,,84,82,84,86,14,,,,,,,,,,,,,,,,,,,,,0.20,0.38,0.27,0.09,0.04,0.02,820,0.72,medium,,,keep,,,,,,,,,,Young RB value; monitor top-five release math.
+2026-08-01,p_luther_burden,Luther Burden,WR,,,,82,85,84,85,15,,,,,,,,,,,,,,,,,,,,,0.22,0.34,0.26,0.10,0.05,0.03,830,0.68,medium,,,keep,,,,,,,,,,Rookie upside; top-five rule creates decision pressure.
+2026-08-01,p_brian_thomas,Brian Thomas,WR,,,,87,89,88,90,10,,,,,,,,,,,,,,,,,,,,,0.29,0.39,0.21,0.07,0.03,0.01,900,0.80,low,,,keep,,,,,,,,,,Core WR profile; official top-five pressure.
+2026-08-01,p_ricky_pearsall,Ricky Pearsall,WR,,,,76,77,77,78,22,,,,,,,,,,,,,,,,,,,,,0.10,0.28,0.34,0.17,0.08,0.03,610,0.60,medium,,,shop,,,,,,,,,,Useful young WR; assess market before cutdown.
+2026-08-01,p_quentin_johnston,Quentin Johnston,WR,,,,70,72,71,71,29,,,,,,,,,,,,,,,,,,,,,0.07,0.22,0.34,0.22,0.11,0.04,470,0.55,medium,,,shop,,,,,,,,,,Volatile profile; trade if market still buys upside.
+2026-08-01,p_jakobi_meyers,Jakobi Meyers,WR,,,,73,74,73,74,26,,,,,,,,,,,,,,,,,,,,,0.04,0.25,0.43,0.20,0.06,0.02,520,0.70,medium,,,hold,,,,,,,,,,Stable depth; may be more useful than flashy.
+2026-08-01,p_david_montgomery,David Montgomery,RB,,,,72,70,71,73,27,,,,,,,,,,,,,,,,,,,,,0.05,0.27,0.38,0.19,0.08,0.03,500,0.66,medium,,,hold,,,,,,,,,,Useful veteran RB; age curve matters.
+2026-08-01,p_brandon_aiyuk,Brandon Aiyuk,WR,,,,78,80,79,81,19,,,,,,,,,,,,,,,,,,,,,0.13,0.32,0.34,0.13,0.06,0.02,690,0.64,medium,,,keep,,,,,,,,,,Discounted talent if health/timeline cooperates.
+2026-08-01,p_oronde_gadsden,Oronde Gadsden,TE,,,,67,68,68,68,32,,,,,,,,,,,,,,,,,,,,,0.06,0.18,0.32,0.26,0.13,0.05,360,0.48,high,,,risk,,,,,,,,,,Developmental TE; requires patience.
+2026-08-01,p_jake_ferguson,Jake Ferguson,TE,,,,70,71,70,71,29,,,,,,,,,,,,,,,,,,,,,0.04,0.23,0.39,0.23,0.08,0.03,430,0.68,medium,,,hold,,,,,,,,,,Useful TE but not a clear positional edge.
+2026-08-01,p_jayden_higgins,Jayden Higgins,WR,,,,68,70,69,70,30,,,,,,,,,,,,,,,,,,,,,0.08,0.20,0.33,0.23,0.11,0.05,410,0.50,high,,,risk,,,,,,,,,,Rookie WR upside; confidence still low.
+2026-08-01,p_wandale_robinson,Wan'Dale Robinson,WR,,,,66,67,66,67,33,,,,,,,,,,,,,,,,,,,,,0.03,0.18,0.38,0.27,0.10,0.04,340,0.61,medium,,,bubble,,,,,,,,,,Useful slot profile; ceiling question.
+2026-08-01,p_brenton_strange,Brenton Strange,TE,,,,63,64,63,64,36,,,,,,,,,,,,,,,,,,,,,0.03,0.16,0.32,0.31,0.13,0.05,280,0.52,high,,,bubble,,,,,,,,,,TE depth; verify role path.
+2026-08-01,p_kaleb_johnson,Kaleb Johnson,RB,,,,69,71,70,71,29,,,,,,,,,,,,,,,,,,,,,0.10,0.23,0.31,0.20,0.11,0.05,450,0.50,high,,,risk,,,,,,,,,,Rookie RB upside; role still uncertain.
+2026-08-01,p_xavier_worthy,Xavier Worthy,WR,,,,75,79,77,78,22,,,,,,,,,,,,,,,,,,,,,0.13,0.29,0.31,0.17,0.07,0.03,620,0.60,medium,,,keep,,,,,,,,,,Speed/upside profile; volatile but valuable.
+2026-08-01,p_jalen_coker,Jalen Coker,WR,,,,61,62,61,62,38,,,,,,,,,,,,,,,,,,,,,0.03,0.14,0.32,0.32,0.14,0.05,230,0.48,high,,,bubble,,,,,,,,,,Deep roster bet; needs role evidence.
+2026-08-01,p_jerry_jeudy,Jerry Jeudy,WR,,,,68,69,68,69,31,,,,,,,,,,,,,,,,,,,,,0.05,0.21,0.37,0.24,0.09,0.04,400,0.63,medium,,,bubble,,,,,,,,,,Veteran WR depth; trade liquidity may matter.
+2026-08-01,p_romeo_doubs,Romeo Doubs,WR,,,,62,63,62,63,37,,,,,,,,,,,,,,,,,,,,,0.03,0.16,0.34,0.30,0.12,0.05,260,0.55,medium,,,bubble,,,,,,,,,,Depth WR; compare against draft pool.
+2026-08-01,p_tj_hockenson,T.J. Hockenson,TE,,,,74,75,74,75,25,,,,,,,,,,,,,,,,,,,,,0.08,0.27,0.38,0.18,0.07,0.02,560,0.62,medium,,,hold,,,,,,,,,,TE name value; health/timeline check.
+2026-08-01,p_daniel_jones,Daniel Jones,QB,,,,55,56,55,56,44,,,,,,,,,,,,,,,,,,,,,0.02,0.12,0.28,0.34,0.18,0.06,120,0.58,medium,,,drop,,,,,,,,,,Backup QB in 1-QB format; low keeper leverage.
+2026-08-01,p_luke_mccaffrey,Luke McCaffrey,WR,,,,58,59,58,59,41,,,,,,,,,,,,,,,,,,,,,0.03,0.13,0.30,0.34,0.15,0.05,170,0.48,high,,,bubble,,,,,,,,,,Developmental WR; needs clear role.
+2026-08-01,p_devin_singletary,Devin Singletary,RB,,,,56,57,56,57,43,,,,,,,,,,,,,,,,,,,,,0.02,0.14,0.30,0.32,0.16,0.06,150,0.61,medium,,,drop,,,,,,,,,,Veteran depth RB; likely replaceable.

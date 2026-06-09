@@ -1,0 +1,11 @@
+issue_id,issue,severity,status,next_action,blocks_promotion
+1,Direct current-season rushing/receiving first-down data missing,high,confirmed_blocker,Ingest direct RotoWire first-down exports and replace estimated labels only after validation,true
+2,Rookie/prospect priors missing,high,confirmed_blocker,Ingest sourced prospect and rookie evidence with confidence caps,true
+3,Malik Nabers suppressed by limited evidence,high,blocked_by_prospect_and_first_down_gap,Re-audit after first-down and prospect intake,true
+4,Brian Thomas Jr. and Luther Burden suppressed by limited evidence,high,blocked_by_prospect_and_first_down_gap,Re-audit after first-down and prospect intake,true
+5,Lamar Jackson age/rushing/1QB trade-review issue,high,review_item,Audit rushing age curve and mark as trade-review not automatic sell,true
+6,Elite WR tier balance,medium,review_after_blockers,Recheck production/usage/first-down/prospect balance after intake,true
+7,Veteran age caps,medium,review_item,Audit age thresholds against research and receipts,false
+8,TE no-premium VORP,medium,review_item,Verify TE replacement baseline and route/target evidence,false
+9,Projection/market exclusion,medium,guardrail_must_hold,Verify no code paths use projection/market/rank in private value,true
+10,Missing evidence handling,medium,currently_supported,Continue preventing missing values from becoming zero or average,false

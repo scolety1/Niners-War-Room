@@ -1,0 +1,81 @@
+player_name,position,nfl_team,truth_set_group,reason_included,lifecycle_expected,roster_context,source_priority
+De'Von Achane,RB,MIA,niners_roster,Niners top-five rule player and elite RB sanity belief,year_three_nfl_bridge,required_top_five_release_pool,critical
+Lamar Jackson,QB,BAL,niners_roster,Niners top-five rule player and elite QB suppression control,established_veteran,required_top_five_release_pool,critical
+Chase Brown,RB,CIN,niners_roster,Niners top-five rule player and young RB bridge comparison,year_three_nfl_bridge,required_top_five_release_pool,critical
+Luther Burden,WR,CHI,niners_roster,Niners top-five rule player and year-one bridge stress case,year_one_nfl_bridge,required_top_five_release_pool,critical
+Brian Thomas Jr.,WR,JAX,niners_roster,Niners top-five rule player and young WR bridge control,year_two_nfl_bridge,required_top_five_release_pool,critical
+Ricky Pearsall,WR,SF,niners_roster,Niners young WR bridge and roster bubble stress case,year_two_nfl_bridge,niners_roster,high
+Quentin Johnston,WR,LAC,niners_roster,Niners young WR bridge and route-data stress case,year_three_nfl_bridge,niners_roster,high
+Jakobi Meyers,WR,JAX,niners_roster,Niners veteran WR stability and route-data stress case,established_veteran,niners_roster,high
+David Montgomery,RB,HOU,niners_roster,Niners veteran RB age and committee context,established_veteran,niners_roster,high
+Brandon Aiyuk,WR,SF,niners_roster,Niners veteran WR missing-projection and injury-context control,established_veteran,niners_roster,high
+Oronde Gadsden II,TE,LAC,niners_roster,Niners year-one TE no-premium suppression control,year_one_nfl_bridge,niners_roster,high
+Jake Ferguson,TE,DAL,niners_roster,Niners TE no-premium veteran control,established_veteran,niners_roster,high
+Jayden Higgins,WR,HOU,niners_roster,Niners year-one WR bridge and source-gap stress case,year_one_nfl_bridge,niners_roster,high
+Wan'Dale Robinson,WR,TEN,niners_roster,Niners slot WR and route-data stress case,established_veteran,niners_roster,high
+Brenton Strange,TE,JAX,niners_roster,Niners TE no-premium and young bridge stress case,year_three_nfl_bridge,niners_roster,high
+Kaleb Johnson,RB,PIT,niners_roster,Niners year-one RB bridge and production-gap stress case,year_one_nfl_bridge,niners_roster,high
+Xavier Worthy,WR,KC,niners_roster,Niners year-two WR bridge and projection control,year_two_nfl_bridge,niners_roster,high
+Jalen Coker,WR,CAR,niners_roster,Niners young WR source and route-data stress case,year_two_nfl_bridge,niners_roster,high
+Jerry Jeudy,WR,CLE,niners_roster,Niners veteran WR middle-tier comparison,established_veteran,niners_roster,high
+Romeo Doubs,WR,NE,niners_roster,Niners veteran WR role and team-mismatch review control,established_veteran,niners_roster,high
+T.J. Hockenson,TE,MIN,niners_roster,Niners established TE no-premium control,established_veteran,niners_roster,high
+Daniel Jones,QB,IND,niners_roster,Niners replaceable QB suppression control,established_veteran,niners_roster,high
+Luke McCaffrey,WR,WAS,niners_roster,Niners low-projection young WR source-gap control,year_two_nfl_bridge,niners_roster,high
+Devin Singletary,RB,NYG,niners_roster,Niners low-end veteran RB replacement control,established_veteran,niners_roster,high
+Bijan Robinson,RB,ATL,elite_rb_control,Premier dynasty RB sanity anchor,year_three_nfl_bridge,external_control,critical
+Jahmyr Gibbs,RB,DET,elite_rb_control,Elite RB tier and Bijan comparison control,year_three_nfl_bridge,external_control,critical
+Christian McCaffrey,RB,SF,elite_rb_control,Elite production with age and injury dropoff control,established_veteran,external_control,critical
+Kyren Williams,RB,LA,elite_rb_control,Productive RB with workload and injury fragility control,established_veteran,external_control,high
+Ashton Jeanty,RB,LV,young_bridge_rb_control,High-value young RB bridge and missing NFL evidence control,year_one_nfl_bridge,external_control,critical
+Breece Hall,RB,NYJ,elite_rb_control,Young RB value and role stability control,established_veteran,external_control,high
+Saquon Barkley,RB,PHI,elite_rb_control,Veteran elite RB production and age-window control,established_veteran,external_control,high
+Jonathan Taylor,RB,IND,elite_rb_control,Veteran RB production and durability control,established_veteran,external_control,high
+Josh Jacobs,RB,GB,aging_rb_control,Veteran RB age and workload-fragility control,established_veteran,external_control,high
+James Cook,RB,BUF,elite_rb_control,Efficient RB and role-share control,established_veteran,external_control,high
+Kenneth Walker III,RB,SEA,elite_rb_control,Explosive RB and durability control,established_veteran,external_control,high
+Derrick Henry,RB,BAL,aging_rb_control,Aging RB cliff and touchdown-role control,established_veteran,external_control,high
+Jaxon Smith-Njigba,WR,SEA,elite_wr_control,Elite WR sanity belief and Tee Higgins comparison,year_three_nfl_bridge,external_control,critical
+Puka Nacua,WR,LA,elite_wr_control,Elite WR sanity belief and year-three bridge control,year_three_nfl_bridge,external_control,critical
+Ja'Marr Chase,WR,CIN,elite_wr_control,Top-tier WR sanity belief,established_veteran,external_control,critical
+Justin Jefferson,WR,MIN,elite_wr_control,Core WR sanity belief and target-earning anchor,established_veteran,external_control,critical
+Amon-Ra St. Brown,WR,DET,elite_wr_control,Cornerstone WR production stability control,established_veteran,external_control,critical
+CeeDee Lamb,WR,DAL,elite_wr_control,Core WR sanity belief and target-volume control,established_veteran,external_control,critical
+Malik Nabers,WR,NYG,young_bridge_wr_control,Young elite WR bridge and core-tier control,year_two_nfl_bridge,external_control,critical
+Tee Higgins,WR,CIN,wr_comparison_control,JSN comparison and route-data limitation control,established_veteran,external_control,critical
+Nico Collins,WR,HOU,elite_wr_control,High-end WR production and injury-context control,established_veteran,external_control,high
+Garrett Wilson,WR,NYJ,elite_wr_control,Young established WR target-earning control,established_veteran,external_control,high
+Drake London,WR,ATL,elite_wr_control,Young established WR target-volume control,established_veteran,external_control,high
+Marvin Harrison Jr.,WR,ARI,young_bridge_wr_control,High draft-capital young WR bridge control,year_two_nfl_bridge,external_control,high
+Ladd McConkey,WR,LAC,young_bridge_wr_control,Year-two WR production and route-role fragility control,year_two_nfl_bridge,external_control,high
+George Pickens,WR,DAL,wr_comparison_control,Volatile WR role and team-context control,established_veteran,external_control,medium
+Chris Olave,WR,NO,wr_comparison_control,Young WR with prior stale-output concern,established_veteran,external_control,high
+Jaylen Waddle,WR,MIA,wr_comparison_control,WR2 profile and injury-context control,established_veteran,external_control,medium
+Keenan Allen,WR,LAC,aging_wr_control,Aging WR should not outrank young cornerstone RBs without receipts,established_veteran,external_control,critical
+Davante Adams,WR,LA,aging_wr_control,Aging elite-production WR dropoff control,established_veteran,external_control,high
+Tyreek Hill,WR,MIA,aging_wr_control,Aging speed WR and low-confidence control,established_veteran,external_control,high
+Mike Evans,WR,TB,aging_wr_control,Aging TD-dependent WR dropoff control,established_veteran,external_control,high
+Stefon Diggs,WR,NE,aging_wr_control,Aging WR and role-transition control,established_veteran,external_control,high
+Cooper Kupp,WR,SEA,aging_wr_control,Aging WR with route-role fragility control,established_veteran,external_control,high
+Terry McLaurin,WR,WAS,aging_wr_control,Aging but useful WR baseline control,established_veteran,external_control,medium
+Josh Allen,QB,BUF,qb_control,Elite QB exception and 1QB suppression boundary,established_veteran,external_control,critical
+Jalen Hurts,QB,PHI,qb_control,Elite rushing QB exception and 1QB suppression boundary,established_veteran,external_control,critical
+Patrick Mahomes,QB,KC,qb_control,Elite real-life QB but 1QB fantasy suppression control,established_veteran,external_control,high
+Jayden Daniels,QB,WAS,qb_control,Young rushing QB exception and bridge-style upside control,year_two_nfl_bridge,external_control,high
+Joe Burrow,QB,CIN,qb_control,Stable pocket QB suppression control,established_veteran,external_control,medium
+Brock Purdy,QB,SF,qb_control,Replaceable starter QB suppression control,established_veteran,external_control,medium
+Brock Bowers,TE,LV,te_control,Elite TE exception in no-premium format,year_two_nfl_bridge,external_control,critical
+Trey McBride,TE,ARI,te_control,Elite TE volume exception in no-premium format,established_veteran,external_control,high
+Sam LaPorta,TE,DET,te_control,Young TE value and no-premium suppression control,year_three_nfl_bridge,external_control,high
+George Kittle,TE,SF,te_control,Aging elite TE efficiency and no-premium control,established_veteran,external_control,medium
+Mark Andrews,TE,BAL,te_control,Aging TE role and injury-context control,established_veteran,external_control,medium
+Travis Kelce,TE,KC,te_control,Aging TE cliff and no-premium suppression control,established_veteran,external_control,high
+Darrell Henderson,RB,LA,low_confidence_source_gap_control,Known low-confidence/stale-player style control,established_veteran,external_control,review
+Tank Dell,WR,HOU,low_confidence_source_gap_control,Injury and route-data uncertainty control,year_three_nfl_bridge,external_control,review
+Hollywood Brown,WR,KC,low_confidence_source_gap_control,Low-confidence veteran WR control,established_veteran,external_control,review
+Amari Cooper,WR,LV,low_confidence_source_gap_control,Aging WR and missing snap/low-confidence control,established_veteran,external_control,review
+Fernando Mendoza,QB,LVR,incoming_rookie_draft_room,Incoming rookie draft-room QB control,incoming_rookie,draft_room_review,review
+Jeremiyah Love,RB,ARI,incoming_rookie_draft_room,Incoming rookie draft-room RB control,incoming_rookie,draft_room_review,review
+Carnell Tate,WR,TEN,incoming_rookie_draft_room,Incoming rookie draft-room WR control,incoming_rookie,draft_room_review,review
+Jordyn Tyson,WR,NOR,incoming_rookie_draft_room,Incoming rookie draft-room WR control,incoming_rookie,draft_room_review,review
+Kenyon Sadiq,TE,NYJ,incoming_rookie_draft_room,Incoming rookie draft-room TE control,incoming_rookie,draft_room_review,review

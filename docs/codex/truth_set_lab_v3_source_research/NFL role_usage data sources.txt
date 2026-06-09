@@ -1,0 +1,112 @@
+Availability of NFL Role/Usage Metrics
+This research investigates whether free/public data sources exist for detailed role/usage metrics such as routes run, route participation, snap share, target share, targets per route run (TPRR), yards per route run (YPRR), running-back (RB) carry share, RB target share, weighted opportunities, red‑zone carries/targets, goal‑line carries/targets and short‑yardage carries. Only sources that provide structured and exportable data (CSV, API, etc.) under permissible terms were considered. Proprietary websites that present stats in interactive tables without an export option or that prohibit scraping (e.g., PlayerProfiler, FantasyPros, 4for4, SumerSports, etc.) were excluded from “free/public” because their terms restrict reproduction or require payment[1][2].
+Free/Public Data Sources and Derivability
+Metric
+Free/Public Structured Sources
+Derivable via nflverse (play‑by‑play & snap counts)
+Notes
+Snap share
+Available via the open‑source nflreadr::load_snap_counts() function. The dataset (snap counts from Pro‑Football‑Reference) includes per‑player offensive and defensive snap counts (offense_snaps, offense_pct, defense_snaps, defense_pct, etc.) for every game[3][4]. The offense_pct field gives the percentage of offensive snaps played (i.e., snap share).
+Yes. The function returns a tidy tibble that can be saved as CSV. Snap share can also be computed as offense_snaps / team_offensive_snaps if desired.
+This is currently the best free source for snap share. Terms: data is provided under Creative Commons BY‑SA license (must attribute nflverse).
+Routes run / Route participation
+Unavailable as a structured, free export. PlayerProfiler and SumerSports display metrics such as routes run, route participation, and route %, but their terms prohibit copying or scraping; the data may only be used through paid tools[1][5]. No free CSV/API was found.
+No. The nflverse play‑by‑play and NextGen Stats datasets do not record the total routes run per player. Play‑by‑play lists targeted routes but not the number of routes a receiver ran on non‑targeted plays.
+To compute routes run, one would need access to tracking data or charting services. Without those, YPRR and TPRR cannot be calculated.
+Target share
+Not directly available in free CSV form but is derivable from play‑by‑play. nflfastR/nflreadr provide play‑by‑play data with targets (pass_attempt, air_yards, etc.).
+Yes. For each player, sum targets and divide by team total pass attempts during the selected period. Play‑by‑play data can be filtered for team and week.
+Works for WR/TE/RB target share and RB target share.
+Targets per route run (TPRR)
+Unavailable_free_public because it requires routes run counts (see above).
+No. Without routes run, TPRR cannot be derived.
+Yards per route run (YPRR)
+Unavailable_free_public (requires routes run).
+No. YPRR = receiving yards / routes run; not derivable without route counts.
+RB carry share
+Not directly available but derivable using play‑by‑play.
+Yes. Filter play‑by‑play for rushing plays by RBs, count each player’s rushing attempts and divide by team total rushing attempts.
+Rushing attempts can be identified using rush_attempt == 1 and player position.
+RB target share
+Not directly available but derivable using play‑by‑play.
+Yes. Count RB targets using pass_attempt == 1 and receiver_player_id for RBs; divide by team total pass attempts.
+Weighted opportunities
+Not directly available in a free export. Weighted opportunity formulas (e.g., touches weighted by different scoring factors) must be computed manually.
+Yes. Use play‑by‑play to compute carries and targets, then apply a weighting formula (e.g., 0.6 * carries + 1.0 * targets) depending on scoring preference.
+Red‑zone carries / Red‑zone targets
+No stand‑alone free CSV was found. Sites like 4for4 and Footballguys display red‑zone reports and may allow CSV downloads, but their content is pay‑walled and copyrighted[2].
+Yes. Play‑by‑play contains the field yardline_100 (yards from the offense’s end zone). A red‑zone carry or target is any rushing/receiving play where yardline_100 <= 20. Count by player to derive red‑zone carries/targets.
+This method also allows calculation of red‑zone market share (player red‑zone touches divided by team red‑zone plays).
+Goal‑line carries / Goal‑line targets
+Unavailable_free_public in export form.
+Yes. Derived using play‑by‑play by filtering rushing/receiving plays with yardline_100 <= 5 (for goal‑line) or <= 3 for “inside the 3‑yard line.” Count by player.
+Short‑yardage carries
+Unavailable_free_public.
+Yes. Use play‑by‑play and filter rushing plays where down and yards_to_go satisfy short‑yardage criteria (e.g., yards_to_go <= 3). Count or compute efficiency metrics.
+Red‑zone / goal‑line routes
+Unavailable. Requires routes run counts.
+No. Not derivable from nflverse data.
+Observations about other sites
+PlayerProfiler offers per‑player statistics such as Targets, Target Share, Target Rate, Snap Share, Slot Snaps, Routes Run, Route Participation, Yards Per Route Run (YPRR) and weekly splits. However, its Terms of Use explicitly state that all content is copyrighted and may not be copied, scraped or republished[1]. These metrics therefore cannot be used in a free/public product.
+Footballguys provides downloadable CSVs for snap counts and other reports (team targets and red‑zone stats). The snap counts CSV includes each player’s weekly snap counts and percentages for offense, defense and special teams[6]. However, Footballguys’ Terms of Service prohibit reproducing or exploiting content without permission[2], so using these CSVs in a public product poses licensing risk. As a result, the nflreadr snap count data is preferred because it is both free and open.
+4for4, FantasyPros, SumerSports and similar sites show red‑zone stats, routes run and advanced usage metrics, but no API/CSV export is provided and the data is behind a subscription or subject to copyright. For instance, the 4for4 red‑zone receiving table states “Download CSV,” yet the full dataset is accessible only to subscribers, and the site’s terms restrict scraping. SumerSports’ help page notes that their player‑database is interactive rather than exportable[5].
+nflreadr::load_participation() loads detailed player‑tracking participation data (used for 4th‑down models). It includes a field route describing the primary receiver’s route on targeted plays and other variables like time to throw and coverage[7]. This dataset does not provide total routes run for every player, so it cannot be used to compute route participation.
+nflreadr::load_nextgen_stats() loads Next Gen Stats weekly player data. The data dictionary lists variables such as average air yards, separation, YAC, rushing efficiency and expected yards, but there are no fields for routes run[8].
+Best Sources by Metric
+Snap share: Use nflreadr::load_snap_counts() to obtain per‑game offensive snap counts and percentages[3][4]. Data is open‑source and can be exported as CSV. Footballguys’ snap‑count CSV is another option but carries copyright restrictions.
+Route/participation proxies: There is no free dataset for routes run. In absence of route counts, analysts sometimes approximate route participation using snap share (as a proxy) combined with target share; however, this is a rough proxy. Another proxy is using Next Gen Stats avg_time_to_throw, avg_cushion and avg_separation to gauge involvement, but these metrics are not substitutes for routes run.
+Red‑zone/goal‑line usage: The most reliable free method is to derive counts from play‑by‑play data using yardline_100 filters. Rushing and passing plays inside the 20, 10 or 5 yard lines can be counted to compute red‑zone and goal‑line carries/targets, as well as market share and efficiency metrics.
+Example: nflreadr Snap Counts CSV Schema
+Calling load_snap_counts(seasons, file_type = "csv") in nflreadr returns a CSV with columns:
+Column
+Description
+game_id
+Unique ID for the game.
+player_id
+Pro‑Football‑Reference GSIS ID for the player.
+player
+Player name.
+team
+Team abbreviation.
+position
+Player position (QB, RB, WR, etc.).
+offense_snaps
+Number of offensive snaps played by the player.
+offense_pct
+Percentage of team offensive snaps played (i.e., snap share)[3].
+defense_snaps, defense_pct
+Defensive snaps and percentage.
+st_snaps, st_pct
+Special‑teams snaps and percentage.
+total_snaps, total_pct
+Total snaps and percentage.
+season_type
+REG or POST.
+week
+Week number.
+season
+Season year.
+game_date
+Date of the game.
+This schema shows that offense_pct is the key field for snap share.
+Recommendation on Manual Data Collection
+Because no free, structured sources exist for routes run, route participation, YPRR, TPRR or red‑zone/goal‑line metrics outside of play‑by‑play derivations, manually scraping or compiling player rows from proprietary websites would violate the sites’ terms and introduces legal risk. The available open data (nflverse) already allows derivation of many usage metrics (snap share, target share, carry share and red‑zone usage) without manual collection. Therefore:
+Reject manual agent‑collected data for routes run and advanced usage metrics unless the data originates from an open‑licensed dataset. Instead, derive what is possible from nflverse and clearly mark unavailable metrics.
+When necessary, approximate route involvement using snap share and target share proxies, but disclose that true route counts are unavailable in free data.
+Summary: Snap counts and play‑by‑play data from nflverse are the primary free sources for player usage. They enable calculation of snap share, carry and target share, weighted opportunities and red‑zone/goal‑line usage by filtering and aggregating plays. Metrics dependent on routes run (routes, route participation, targets per route run, yards per route run) have no free public structured source; they are available only through proprietary providers whose terms forbid scraping[1].
+[1]  Terms of Use - PlayerProfiler 
+https://www.playerprofiler.com/terms-of-use/
+[2] Terms of Service - Footballguys
+https://www.footballguys.com/terms
+[3] Data Dictionary - Snap Counts • nflreadr
+https://nflreadr.nflverse.com/articles/dictionary_snap_counts.html
+[4] Load Snap Counts from PFR — load_snap_counts • nflreadr
+https://nflreadr.nflverse.com/reference/load_snap_counts.html
+[5] Getting started with Player Database - SūmerSports Help Center
+https://help.sumersports.com/en/article/getting-started-with-player-database
+[6] Snap Counts by Team - Footballguys
+https://www.footballguys.com/stats/snap-counts/teams
+[7] Data Dictionary - Participation • nflreadr
+https://nflreadr.nflverse.com/articles/dictionary_participation.html
+[8] Data Dictionary - Next Gen Stats • nflreadr
+https://nflreadr.nflverse.com/articles/dictionary_nextgen_stats.html

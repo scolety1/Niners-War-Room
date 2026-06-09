@@ -1,0 +1,6 @@
+player_id,player_name,position,class_year,model_mode,source_snapshot_id,source_name,source_date,data_completeness_status,overall_pick,age_on_sept_1,rush_yards_per_game,adjusted_yards_per_attempt,pressure_to_sack_rate,team_touch_share,yards_after_contact_per_attempt,receiving_yards_per_route,goal_line_share,target_share,yards_per_route_run,first_downs_per_route,route_participation,receiving_yards_share,speed_score,rookie_opportunity_score
+raw_qb_dual,Raw Dual QB,QB,2026,post_draft,raw_fixture,manual_raw_fixture,2026-05-05,complete,2,21.2,72,9.6,0.14,,,,,,,,,,,84
+raw_qb_pocket,Raw Pocket QB,QB,2026,post_draft,raw_fixture,manual_raw_fixture,2026-05-05,complete,18,22.0,8,8.9,0.12,,,,,,,,,,,88
+raw_rb_workhorse,Raw Workhorse RB,RB,2026,post_draft,raw_fixture,manual_raw_fixture,2026-05-05,complete,35,21.0,,,,0.36,3.8,1.1,0.34,,,,,,86
+raw_wr_alpha,Raw Alpha WR,WR,2026,post_draft,raw_fixture,manual_raw_fixture,2026-05-05,complete,8,21.4,,,,,,,,0.31,3.1,0.13,,,,82
+raw_te_premium,Raw Premium TE,TE,2026,post_draft,raw_fixture,manual_raw_fixture,2026-05-05,complete,22,21.8,,,,,,,,,2.4,,0.68,0.19,104,76

@@ -1,0 +1,5 @@
+benchmark_id,position,benchmark_type,benchmark_score,source_snapshot_id,source_date,score_scale,benchmark_min,benchmark_max,position_cap,notes
+qb_static_pool,QB,static_position_band,72,lve_v1_fixture,2026-05-05,0-100,0,100,"-14,+3",Top available QB benchmark for fixture tests.
+rb_static_pool,RB,static_position_band,70,lve_v1_fixture,2026-05-05,0-100,0,100,"-10,+5",Top available RB/flex benchmark for fixture tests.
+wr_static_pool,WR,static_position_band,72,lve_v1_fixture,2026-05-05,0-100,0,100,"-10,+5",Top available WR/flex benchmark for fixture tests.
+te_static_pool,TE,static_position_band,66,lve_v1_fixture,2026-05-05,0-100,0,100,"-12,+3",Top available TE benchmark for fixture tests.

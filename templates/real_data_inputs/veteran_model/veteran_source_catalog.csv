@@ -1,0 +1,1 @@
+source_key,source_name,source_type,source_family,source_domain,authority_tier,priority_rank,required_for_modes,freshness_window_hours,source_format,local_path,source_url,source_path_or_url,source_date,retrieved_at,captured_at_local,effective_date,season,scoring_context,checksum_sha256,parser_version,source_notes,is_active,reliability_score,notes

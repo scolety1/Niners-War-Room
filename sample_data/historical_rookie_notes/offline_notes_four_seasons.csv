@@ -1,0 +1,21 @@
+season,rookie_pick_number,team,player,position,source,confidence,provenance_note,needs_traded_pick_review
+2022,1,Niners,Breece Hall,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2022,2,Owls,Drake London,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2022,3,Hawks,Garrett Wilson,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2022,4,Gold Rush,Kenneth Walker,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2022,5,Niners,Chris Olave,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2023,1,Niners,Bijan Robinson,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2023,2,Owls,Jahmyr Gibbs,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2023,3,Hawks,Jaxon Smith-Njigba,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2023,4,Gold Rush,Zay Flowers,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2023,5,Niners,Jordan Addison,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2024,1,Niners,Marvin Harrison Jr.,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2024,2,Owls,Malik Nabers,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2024,3,Hawks,Rome Odunze,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2024,4,Gold Rush,Brock Bowers,TE,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2024,5,Niners,Jayden Daniels,QB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2025,1,Niners,Ashton Jeanty,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2025,2,Owls,Tetairoa McMillan,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2025,3,Hawks,Omarion Hampton,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2025,4,Gold Rush,Travis Hunter,WR,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true
+2025,5,Niners,Quinshon Judkins,RB,sleeper_offline_handwritten,handwritten_note,Offline handwritten rookie draft note; verify traded-pick ownership manually,true

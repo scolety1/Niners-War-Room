@@ -1,0 +1,33 @@
+field_group,field_name,required_for_trial,target_positions,expected_type,acceptable_blank_rule,purpose
+identity,provider_player_id,true,QB/RB/WR/TE,string,blank only if provider has no stable IDs; then exact name/team/position review required,provider identity bridge
+identity,sleeper_id,false,QB/RB/WR/TE,string,blank allowed before local mapping,local app identity bridge
+identity,gsis_id,false,QB/RB/WR/TE,string,blank allowed before local mapping,nflverse identity bridge
+usage,routes_run,true,WR/TE/RB,number,blank allowed for QB or provider does not cover position,route role evidence
+usage,route_participation,true,WR/TE/RB,number,blank allowed only when routes_run and team pass plays allow derivation,route share evidence
+usage,target_share,true,WR/TE/RB,number,blank allowed only if targets and team attempts allow derivation,target earning context
+usage,targets_per_route_run,true,WR/TE/RB,number,blank allowed only if routes_run and targets allow derivation,target earning per route
+usage,yards_per_route_run,true,WR/TE/RB,number,blank allowed only if routes_run and receiving yards allow derivation,receiving efficiency per route
+usage,snap_share,true,QB/RB/WR/TE,number,blank allowed only if snap counts and team snaps allow derivation,playing-time role evidence
+usage,rb_opportunity_share,true,RB,number,blank allowed for non-RB,backfield workload share
+usage,weighted_opportunities,true,RB,number,blank allowed for non-RB or if carries/targets/red-zone fields allow derivation,RB opportunity quality
+usage,red_zone_usage,true,QB/RB/WR/TE,number,blank only if provider does not offer red-zone fields; then mark source gap,TD/first-down role
+usage,goal_line_usage,true,QB/RB/WR/TE,number,blank only if provider does not offer goal-line fields; then mark source gap,high-value TD role
+injury,current_injury_status,true,QB/RB/WR/TE,string,blank means provider does not support injury context,current risk context
+injury,injury_history_summary,true,QB/RB/WR/TE,string,blank allowed only if current status source is strong,injury durability context
+projection,projected_games,true,QB/RB/WR/TE,number,blank only if provider is role-only and projections are outside package,projection volume
+projection,projected_starts,false,QB,number,blank allowed for non-QB,starter confidence
+projection,projected_passing_yards,false,QB,number,blank allowed for non-QB,LVE projection rescore
+projection,projected_passing_tds,false,QB,number,blank allowed for non-QB,LVE projection rescore
+projection,projected_interceptions,false,QB,number,blank allowed for non-QB,LVE projection rescore
+projection,projected_rushing_attempts,true,QB/RB/WR/TE,number,blank only if provider lacks projections,rushing projection rescore
+projection,projected_rushing_yards,true,QB/RB/WR/TE,number,blank only if provider lacks projections,rushing projection rescore
+projection,projected_rushing_tds,true,QB/RB/WR/TE,number,blank only if provider lacks projections,rushing projection rescore
+projection,projected_targets,true,RB/WR/TE,number,blank only if provider lacks projections,receiving opportunity projection
+projection,projected_receptions,true,RB/WR/TE,number,blank only if provider lacks projections,no-PPR audit context only
+projection,projected_receiving_yards,true,RB/WR/TE,number,blank only if provider lacks projections,receiving projection rescore
+projection,projected_receiving_tds,true,RB/WR/TE,number,blank only if provider lacks projections,receiving projection rescore
+projection,projected_rushing_first_downs,false,QB/RB/WR/TE,number,blank allowed but must be flagged for estimate/missing,LVE first-down projection
+projection,projected_receiving_first_downs,false,RB/WR/TE,number,blank allowed but must be flagged for estimate/missing,LVE first-down projection
+source,source_name,true,QB/RB/WR/TE,string,never blank,source receipt
+source,source_url_or_contract_ref,true,QB/RB/WR/TE,string,never blank,terms and receipt evidence
+source,exported_at,true,QB/RB/WR/TE,date,never blank,freshness evidence

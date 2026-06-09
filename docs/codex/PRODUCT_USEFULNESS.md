@@ -12,7 +12,15 @@ Auto-backfilled product docs so launch gates can judge the ship against user val
 
 ## Main Friction
 
-The next concrete product friction still needs to be chosen from live preview, reports, or user feedback.
+Live review on 2026-05-08 surfaced three trust blockers:
+
+- mock drafts and Rankings are not useful until the draftable pool contains the
+  actual rookies, released veterans, free agents, and manual draftables
+- Keeper Pressure is currently too flat because it measures the rule count more
+  than how painful each team's forced top-five release actually is
+- League Targets is not yet an opportunity board; it needs to separate likely
+  forced releases, cheap targets, expensive targets, market-edge targets, and
+  avoids
 
 ## Next Useful Improvement
 
@@ -22,11 +30,12 @@ The next task should improve:
 - [x] local evaluator
 - [x] visual clarity
 - [x] copy clarity
-- [ ] formula correctness
+- [x] formula correctness
 - [x] onboarding or demo path
 - [x] repair or regression risk
 
-Specific improvement: choose one visible or deterministic friction from the latest preview/reports and make it easier to understand or use.
+Specific improvement: repair the draftable pool and pressure/target logic before
+doing broad visual customization.
 
 ## Usefulness Gate
 

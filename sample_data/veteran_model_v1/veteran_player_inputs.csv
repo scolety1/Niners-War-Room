@@ -1,0 +1,13 @@
+season,snapshot_date,player_id,player_name,position,nfl_team,age,team_id,team_name,league_rank,is_league_rank_top5,source_snapshot_id,source_name,source_date,data_quality_tier
+2026,2026-05-05,lamar_jackson,Lamar Jackson,QB,BAL,29.7,niners,Niners,31,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,patrick_mahomes,Patrick Mahomes,QB,KC,30.0,owls,Owls,44,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,devon_achane,De'Von Achane,RB,MIA,24.9,niners,Niners,10,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,chase_brown,Chase Brown,RB,CIN,26.4,niners,Niners,35,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,derrick_henry,Derrick Henry,RB,BAL,32.6,hawks,Hawks,42,true,lve_veteran_fixture,manual_fixture,2026-05-05,partial
+2026,2026-05-05,james_cook,James Cook,RB,BUF,26.9,owls,Owls,48,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,luther_burden,Luther Burden,WR,CHI,22.7,niners,Niners,56,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,brian_thomas,Brian Thomas,WR,JAX,23.9,niners,Niners,66,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,puka_nacua,Puka Nacua,WR,LAR,25.3,hawks,Hawks,8,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,tee_higgins,Tee Higgins,WR,CIN,27.6,owls,Owls,58,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified
+2026,2026-05-05,travis_kelce,Travis Kelce,TE,KC,36.9,hawks,Hawks,77,true,lve_veteran_fixture,manual_fixture,2026-05-05,estimated
+2026,2026-05-05,trey_mcbride,Trey McBride,TE,ARI,26.8,owls,Owls,34,true,lve_veteran_fixture,manual_fixture,2026-05-05,verified

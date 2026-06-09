@@ -68,6 +68,76 @@ def test_roster_service_builds_keeper_inputs_and_forced_release_candidate() -> N
     assert forced_release_candidate_names(rows) == ["Two"]
 
 
+def test_forced_release_prefers_highest_drop_score_inside_top_five() -> None:
+    players = [
+        _keeper_input("p1", "Achane", "RB", 100, 10, 94),
+        _keeper_input("p2", "Lamar", "QB", 100, 31, 92),
+        KeeperScoreInputs(
+            "p3",
+            "Chase Brown",
+            "RB",
+            50,
+            official_rank=35,
+            long_term_private_value=86,
+            next_2_year_starter_value=86,
+            scarcity_bonus=86,
+            trade_liquidity=86,
+            age_curve=86,
+            risk_adj=86,
+            build_fit=86,
+            roster_redundancy=10,
+            decline_risk=0,
+        ),
+        KeeperScoreInputs(
+            "p4",
+            "Luther Burden",
+            "WR",
+            50,
+            official_rank=56,
+            long_term_private_value=85,
+            next_2_year_starter_value=85,
+            scarcity_bonus=85,
+            trade_liquidity=85,
+            age_curve=85,
+            risk_adj=85,
+            build_fit=85,
+            roster_redundancy=0,
+            decline_risk=0,
+        ),
+        _keeper_input("p5", "Brian Thomas", "WR", 100, 66, 90),
+    ]
+
+    board = build_team_keeper_board(players)
+
+    assert [player.player_name for player in board.forced_release_candidates] == [
+        "Chase Brown"
+    ]
+
+
+def _keeper_input(
+    player_id: str,
+    player_name: str,
+    position: str,
+    private_score: float,
+    official_rank: int,
+    keeper_value: float,
+) -> KeeperScoreInputs:
+    return KeeperScoreInputs(
+        player_id,
+        player_name,
+        position,
+        private_score,
+        official_rank=official_rank,
+        long_term_private_value=keeper_value,
+        next_2_year_starter_value=keeper_value,
+        scarcity_bonus=keeper_value,
+        trade_liquidity=keeper_value,
+        age_curve=keeper_value,
+        risk_adj=keeper_value,
+        build_fit=keeper_value,
+    )
+
+
 def test_keeper_pressure_by_team_returns_team_pressure() -> None:
     rows = [
         {"team_id": "niners", "team_name": "Niners", "official_rank": rank}

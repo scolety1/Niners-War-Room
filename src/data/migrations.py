@@ -55,6 +55,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         position TEXT,
         nfl_team TEXT,
         roster_status TEXT,
+        league_rank INTEGER,
         official_rank INTEGER,
         source TEXT,
         FOREIGN KEY (team_id) REFERENCES teams(team_id),
@@ -73,6 +74,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         player_name TEXT,
         position TEXT,
         nfl_team TEXT,
+        league_rank INTEGER,
         official_rank INTEGER,
         rank_tier TEXT,
         is_rank_placeholder INTEGER DEFAULT 0,
@@ -167,11 +169,34 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         player_id TEXT,
         player_name TEXT,
         position TEXT,
+        overall_rank INTEGER,
+        position_rank INTEGER,
+        position_rank_label TEXT,
         private_score REAL,
         market_score REAL,
         war_score REAL,
         keeper_score REAL,
         drop_candidate_score REAL,
+        veteran_base_value REAL,
+        win_now_value REAL,
+        dynasty_hold_value REAL,
+        horizon_retention_score REAL,
+        trade_value REAL,
+        market_trade_value REAL,
+        market_edge_score REAL,
+        market_edge_label TEXT,
+        market_edge_warning TEXT,
+        lve_format_fit REAL,
+        structural_adjustment REAL,
+        cross_position_replacement_baseline REAL,
+        lve_lineup_demand_adjustment REAL,
+        league_rank_signal REAL,
+        top_five_release_pressure REAL,
+        league_rank_adjustment REAL,
+        missing_data_penalty REAL,
+        risk_flags TEXT,
+        upside_flags TEXT,
+        floor_flags TEXT,
         smash_prob REAL,
         hit_prob REAL,
         useful_prob REAL,
@@ -181,8 +206,13 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         pick_adjusted_value REAL,
         confidence_score REAL,
         risk_level TEXT,
+        warning_status TEXT,
+        warning_reasons TEXT,
         recommendation TEXT,
         do_not_draft_before_pick TEXT,
+        model_version TEXT,
+        computed_at TEXT,
+        rank_audit TEXT,
         notes TEXT,
         FOREIGN KEY (player_id) REFERENCES players(player_id)
     )
@@ -240,7 +270,12 @@ INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_rosters_team_id ON rosters(team_id)",
     "CREATE INDEX IF NOT EXISTS idx_rosters_player_id ON rosters(player_id)",
     "CREATE INDEX IF NOT EXISTS idx_rosters_snapshot_date ON rosters(snapshot_date)",
+    "CREATE INDEX IF NOT EXISTS idx_rosters_league_rank ON rosters(league_rank)",
     "CREATE INDEX IF NOT EXISTS idx_official_rankings_player_id ON official_rankings(player_id)",
+    (
+        "CREATE INDEX IF NOT EXISTS idx_official_rankings_league_rank "
+        "ON official_rankings(league_rank)"
+    ),
     "CREATE INDEX IF NOT EXISTS idx_official_rankings_rank ON official_rankings(official_rank)",
     "CREATE INDEX IF NOT EXISTS idx_future_picks_current_team ON future_picks(current_team_id)",
     (
@@ -251,9 +286,61 @@ INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_model_outputs_player_id ON model_outputs(player_id)",
 )
 
+ADDITIVE_COLUMNS: dict[str, tuple[tuple[str, str], ...]] = {
+    "model_outputs": (
+        ("veteran_base_value", "REAL"),
+        ("overall_rank", "INTEGER"),
+        ("position_rank", "INTEGER"),
+        ("position_rank_label", "TEXT"),
+        ("win_now_value", "REAL"),
+        ("dynasty_hold_value", "REAL"),
+        ("horizon_retention_score", "REAL"),
+        ("trade_value", "REAL"),
+        ("market_trade_value", "REAL"),
+        ("market_edge_score", "REAL"),
+        ("market_edge_label", "TEXT"),
+        ("market_edge_warning", "TEXT"),
+        ("lve_format_fit", "REAL"),
+        ("structural_adjustment", "REAL"),
+        ("cross_position_replacement_baseline", "REAL"),
+        ("lve_lineup_demand_adjustment", "REAL"),
+        ("league_rank_signal", "REAL"),
+        ("top_five_release_pressure", "REAL"),
+        ("league_rank_adjustment", "REAL"),
+        ("missing_data_penalty", "REAL"),
+        ("risk_flags", "TEXT"),
+        ("upside_flags", "TEXT"),
+        ("floor_flags", "TEXT"),
+        ("warning_status", "TEXT"),
+        ("warning_reasons", "TEXT"),
+        ("experience_bucket", "TEXT"),
+        ("young_nfl_bridge_prior_score", "REAL"),
+        ("young_nfl_bridge_weight", "REAL"),
+        ("young_nfl_bridge_source", "TEXT"),
+        ("asset_lifecycle", "TEXT"),
+        ("rank_audit", "TEXT"),
+    ),
+}
+
 
 def initialize_database(connection: sqlite3.Connection) -> None:
     for statement in SCHEMA_STATEMENTS:
         connection.execute(statement)
+    _add_missing_columns(connection)
     for statement in INDEX_STATEMENTS:
         connection.execute(statement)
+
+
+def _add_missing_columns(connection: sqlite3.Connection) -> None:
+    for table_name, columns in ADDITIVE_COLUMNS.items():
+        existing_columns = _table_columns(connection, table_name)
+        for column_name, column_type in columns:
+            if column_name not in existing_columns:
+                connection.execute(
+                    f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+                )
+
+
+def _table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
+    rows = connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {str(row[1]) for row in rows}

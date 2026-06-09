@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from src.models.confidence import ConfidenceInputs, confidence_score, risk_level
@@ -158,18 +160,57 @@ def test_keeper_drop_and_decision_confidence_use_written_formulas() -> None:
         model_separation=0.60,
     )
 
-    # KeeperScore = 0.30*88 + 0.20*80 + 0.15*70 + 0.10*84
-    #             + 0.10*65 + 0.10*72 + 0.05*90 = 79.5
-    assert keeper_score(player) == pytest.approx(79.5)
+    # KeeperScore excludes trade liquidity by policy:
+    # 0.32*88 + 0.22*80 + 0.16*70 + 0.11*65 + 0.12*72 + 0.07*90 = 79.05
+    assert keeper_score(player) == pytest.approx(79.05)
 
-    # DropCandidateScore = 0.45*(100-79.5) + 0.25*(98.75-88)
-    #                    + 0.15*40 + 0.15*20 = 20.91
-    assert drop_candidate_score(player, 79.5) == pytest.approx(20.91)
+    # DropCandidateScore = 0.45*(100-79.05) + 0.25*(100-88)
+    #                    + 0.15*40 + 0.15*20 = 21.43
+    assert drop_candidate_score(player, 79.05) == pytest.approx(21.43)
 
     decision = keeper_decision(player)
-    assert decision.drop_candidate_score == pytest.approx(20.91)
+    assert decision.drop_candidate_score == pytest.approx(21.43)
     # Confidence = 0.35*0.90 + 0.25*0.70 + 0.20*0.80 + 0.20*0.60
     assert decision.confidence_score == pytest.approx(0.77)
+
+
+def test_keeper_score_ignores_extreme_trade_liquidity() -> None:
+    base = KeeperScoreInputs(
+        player_id="p1",
+        player_name="Starter",
+        position="WR",
+        private_score=88,
+        long_term_private_value=88,
+        next_2_year_starter_value=80,
+        scarcity_bonus=70,
+        age_curve=65,
+        risk_adj=72,
+        build_fit=90,
+        trade_liquidity=0,
+    )
+    extreme_market = replace(base, trade_liquidity=100)
+
+    assert keeper_score(base) == keeper_score(extreme_market)
+
+
+def test_keeper_drop_risk_ignores_league_rank_order() -> None:
+    base = KeeperScoreInputs(
+        player_id="p1",
+        player_name="Starter",
+        position="WR",
+        private_score=88,
+        long_term_private_value=88,
+        next_2_year_starter_value=80,
+        scarcity_bonus=70,
+        age_curve=65,
+        risk_adj=72,
+        build_fit=90,
+        official_rank=1,
+    )
+    low_league_rank = replace(base, official_rank=250)
+
+    assert keeper_score(base) == keeper_score(low_league_rank)
+    assert drop_candidate_score(base) == drop_candidate_score(low_league_rank)
 
 
 def test_official_top_five_and_forced_release_candidates() -> None:

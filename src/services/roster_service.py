@@ -23,7 +23,9 @@ def keeper_inputs_from_rows(rows: Iterable[Mapping[str, object]]) -> list[Keeper
                 player_id=str(row.get("player_id") or ""),
                 player_name=str(row.get("player_name") or row.get("player_id") or ""),
                 position=str(row.get("position") or ""),
-                official_rank=_optional_int(row.get("official_rank")),
+                official_rank=_optional_int(
+                    _first_present(row.get("league_rank"), row.get("official_rank"))
+                ),
                 private_score=_optional_float(row.get("private_score"), default=50.0),
                 market_score=_optional_float(row.get("market_score")),
                 my_rank_score=_optional_float(row.get("my_rank_score")),
@@ -108,6 +110,13 @@ def _optional_int(value: object) -> int | None:
     if value is None or value == "":
         return None
     return int(value)
+
+
+def _first_present(*values: object) -> object:
+    for value in values:
+        if value is not None and value != "":
+            return value
+    return None
 
 
 def _optional_float(value: object, default: float | None = None) -> float | None:

@@ -88,7 +88,8 @@ def load_team_keeper_board(
             r.player_name,
             r.position,
             r.roster_status,
-            COALESCE(r.official_rank, o.official_rank) AS official_rank,
+            COALESCE(r.league_rank, o.league_rank, r.official_rank, o.official_rank)
+                AS official_rank,
             m.private_score,
             m.market_score,
             m.keeper_score,

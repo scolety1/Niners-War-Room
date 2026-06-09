@@ -1,0 +1,8 @@
+prompt_id,title,priority,status,goal,primary_files,constraints
+P1,Market-Gap Safety Cleanup,High,done,"Harden normalized league-rank and ADP context so partial market data cannot look like a normal edge.","src/services/market_gap_service.py; app/pages/04_trade_central.py","Review-only; no market data into private value; no active ranking mutation"
+P2,Decision Board UX Cleanup,High,done,"Reduce Decision Board clutter and keep Top-Five Rule plus key review areas easy to read.","app/pages/08_june15_review.py","No final cut/keep/trade/draft recommendations; warnings/receipts stay available"
+P3,Player Board Human-Readable Formula Table,High,done,"Make the Player Board the large understandable formula table with audit-watch notes.","app/pages/05_rankings.py","No formula changes; market columns remain context only"
+P4,TE No-Premium Interpretation Pass,Medium,done,"Make TE no-premium caps and TE manual review easier to see.","app/pages/05_rankings.py; app/pages/08_june15_review.py","Do not add TE premium logic; do not hand-tune TE scores"
+P5,Aging And Rushing-Age Manual Review Pass,Medium,done,"Surface RB age-cliff and QB rushing-age manual review warnings where decisions happen.","app/pages/05_rankings.py; app/pages/08_june15_review.py","Do not fabricate DOB or injury data"
+P6,Route Target Snap Data Gap Plan,Medium,done,"Plan admitted route/target/snap source upgrades without fake route metrics.","docs/model_v4/5-21_REMAINING_DATA_PLAN.md","No estimated route metrics labeled as real"
+P7,Final Human Review Readiness Check,Medium,done,"Run local checks and summarize what the user should review first.","tests; app pages","No app promotion; no readiness unlock"

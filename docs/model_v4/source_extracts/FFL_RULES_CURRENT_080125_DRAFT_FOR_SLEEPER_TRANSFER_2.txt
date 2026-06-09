@@ -1,0 +1,996 @@
+===== PAGE 1 =====
+Fantasy Football League Rules     
+Page 1 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+DEFINITIONS 
+ 
+FFL: The Fantasy Football League (FFL) comprised of FFL Teams, FFL Team Owners, FFL 
+Commissioner, and a FFL Website bound by a common set of Rules agreed upon by each of 
+the participants. For the purpose of this document, the FFL started at the beginning of the 
+National Football League (NFL) season in the year 2002. 
+ 
+FFL Rules: A set of standards and guidelines used to establish criteria under which the FFL 
+will be run.  All FFL Team Owners must agree to the FFL Rules prior to participation in the 
+FFL. 
+ 
+FFL Commissioner: The FFL Commissioner will oversee and manage the FFL.  
+ 
+FFL Assistant Commissioner: The person in charge of acting as FFL Commissioner in the 
+absence of the FFL Commissioner.  
+ 
+FFL Team Owner: The FFL Team Owner is the human participant in the FFL League who is 
+responsible for managing an FFL Team.  
+ 
+FFL Team: An FFL Team is a group of NFL Players assigned to a particular FFL Team 
+Owner and identified by a team name.   
+ 
+NFL Player: An NFL Player is a position player, team, or portion of a team (e.g. defense) 
+which is eligible to occupy a Roster spot on an FFL Team.   
+ 
+FFL Roster: The FFL Roster is the list of NFL Players that make up the FFL Team.  Common 
+abbreviations for FFL Roster positions: 
+QB – NFL Quarterback 
+WR – NFL Wide Receiver 
+RB – NFL Running Back 
+TE – NFL Tight End 
+K – NFL Place Kicker 
+DEF – NFL Team Defense 
+BN – FFL Bench (non-starting) Position 
+IR – NFL Player designated OUT or placed on Injured Reserve by NFL Team 
+ 
+FFL Website: The FFL Website is the official website used to manage FFL Teams, Rosters, 
+Standings, Trades, and other acquisitions during the FFL Pre- season and FFL Season.  The 
+FFL Commissioner will be responsible for managing the FFL Website. 
+ 
+FFL Pre -season: The FFL Pre -season is the annual time period beginning after the FFL 
+Commissioner officially declares the start of the FFL Pre- season and ending at the start of 
+the first NFL game of the N FL regular season.  The FFL Pre -season will not begin until the 
+FFL has successfully been set-up on the FFL Website after the annual FFL Draft.    
+ 
+
+===== PAGE 2 =====
+Fantasy Football League Rules     
+Page 2 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+FFL Season: The FFL Season is the annual time period beginning at the start of the first NFL 
+game of the NFL regular season and ending at mid-night on the day the last NFL game of the 
+NFL regular season is played.   
+ 
+FFL Regular Season: The FFL Regular Season consists of the FFL Games from the 
+beginning of the FFL Season to the beginning of the FFL Post-season.   
+ 
+FFL Post-season (playoffs): The FFL Post-season is a qualifying tournament reserved for the 
+top FFL Teams of the FFL Regular Season.   
+ 
+FFL Offseason: The offseason is the time period from the end of the FFL Season to the 
+beginning of the FFL Pre-Season. 
+ 
+FFL Game: A head -to-head competition between two FFL Teams involving one week of 
+statistics from an NFL season. 
+ 
+FFL Standings: The FFL Standings represent the rank of each FFL Team based on 
+performance during the FFL Season as compared to the other FFL Teams in the FFL.   
+ 
+FFL Starting Roster: The NFL Players on an FFL Team which are eligible to earn points for a 
+particular week of the FFL Season. 
+ 
+FFL Bench: The NFL Player s on an FFL Team which are not eligible to earn points for a 
+particular week of the FFL Season. 
+ 
+Rights: The FFL Team Owner has the Rights to each NFL Player  assigned to their FFL 
+Team.  If the NFL Player is released or Traded from the FFL Team, the FFL Team Owner 
+loses Rights to the player.  
+ 
+FFL Trade: An FFL trade is a swap of the Rights to one or more NFL Players and/or Draft 
+picks owned by one FFL Team for the Rights to one or more NFL Player s and/or Draft picks 
+owned by a second FFL Team.  For a Trade to become valid, both of the FFL Team Owners 
+must agree to all the terms of the Trade. 
+ 
+FFL Trading Deadline: The FFL Trading Deadline marks the time when Trading is no longer 
+allowed in the FFL Regular Season. 
+ 
+FFL Free-agent: An FFL Free-agent is an NFL Player whose Rights do not belong to any FFL 
+Team.   
+ 
+FFL Free-agent Pool: The FFL Free-Agent Pool is a list of all FFL Free-agents. 
+ 
+Offseason Ranking Sheet: The Offseason Ranking Sheet is the official list used by the FFL to 
+rank NFL Players. 
+ 
+
+===== PAGE 3 =====
+Fantasy Football League Rules     
+Page 3 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+Roster Declaration Day: Each FFL Team may protect the Rights of certain NFL Players on 
+their FFL Team roster for the upcoming FFL Season on Roster Declaration Day.  The Roster 
+Declaration Day is an annual event that will precede the annual Draft.   
+ 
+FFL Draft: The FFL Draft is an organized event in which FFL Teams may acquire the Rights 
+to FFL Free-agents in the FFL Offseason.  Each FFL Team will be assigned one Draft Pick in 
+each Round of the FFL Draft.   
+ 
+FFL Draft Round: A Round in the FFL Draft consists of the opportunity for each FFL Team to 
+acquire the Rights to one FFL Free-agent. 
+ 
+FFL Draft Pick: The FFL Draft Pick is an owned commodity which gives the opportunity of the 
+FFL Team Owner to acquire the Rights to an FFL Free -agent during the FFL Draft based on 
+the FFL Draft Order.  Each FFL Team will be assigned one FFL Draft Pick in each Round of 
+the FFL Draft. 
+ 
+FFL Draft Order: The Draft Order is the sequential position of each FFL Team in each Round 
+of the FFL Draft. 
+ 
+FFL Cut Day: The day Teams must  have their Rosters reduced to the allowable Roster size 
+for the Regular Season.  
+ 
+FFL Dues:   The FFL Dues are the annual assessments paid to the FFL by the FFL Team 
+Owners to allow their FFL Team to be eligible for participation and Awards. 
+ 
+FFL Fees: FFL Fees are annual assessments paid to the FFL by the Team Owners to pay for 
+administration costs associated with running the FFL.  Paid Fees become the property of the 
+FFL. 
+ 
+Awards: Awards are given to FFL Team Owner s based on the performance of their FFL 
+Team during the FFL Season. 
+
+===== PAGE 4 =====
+Fantasy Football League Rules     
+Page 4 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+RULES: 
+GENERAL 
+ 
+1. Have fun and promote an environment where all FFL participants have fun. 
+2. The Commissioner of the FFL will be Andrew Trelease. 
+3. The FFL Commissioner will be responsible for: 
+a. Collecting and distributing information to the FFL Team Owners. 
+b. Collecting FFL Dues  and Fees , and distributing Awards to the FFL 
+Team Owners. 
+c. Interpreting the Rules of the FFL. 
+d. Serving as an arbiter  in unresolved disputes between FFL Team 
+Owners. 
+e. Other duties as outlined in the FFL Rules. 
+4. The Assistant Commissioner of the FFL will be Brian Gillis. 
+5. The FFL Assistant Commissioner will be responsible for: 
+a. Performing the duties of FFL Commissioner at the request of the FFL 
+Commissioner when the FFL Commissioner is unable to perform the 
+required duties. 
+b. Serving as an arbiter  in unresolved disputes involving the FFL 
+Commissioner and other FFL Team Owners. 
+c. Other duties as outlined in the FFL Rules. 
+6. Yahoo! Sports Free Fantasy Football League will serve as the FFL Website. 
+7. Each FFL Team Owner shall not exceed the following Roster Limits: 
+• 24 Players during the FFL Offseason 
+• 28 Players during the FFL Pre-Season 
+• 24 Players plus an additional two (2) Players eligible to be placed in an 
+IR Roster position (maximum of 26 Players total). [18] 
+If a Team has more than the allowed number of NFL Players on their roster at 
+the end of the FFL Season, the NFL Player(s) currently occupying the IR 
+Roster spot(s) will be immediately automatically dropped into the Free- agent 
+Pool s uch that maximum roster limits will be maintained during the FFL 
+Offseason. [10] 
+8. The FFL shall consist of 10 FFL Teams.  
+9. If an FFL Team Owner chooses to leave the FFL, a new FFL Team Owner will 
+be found to take over the FFL Team.  
+10. The FFL Commissioner will be responsible for managing any FFL Team (s) 
+which do not have associated FFL Team Owner (s) until permanent FFL Team 
+Owner(s) can be found. 
+a. The managing responsibilities of the FFL Commissioner shall be 
+generally limited to setting Starting Rosters during the FFL Season and 
+making Roster Declarations during the FFL Offseason. 
+
+===== PAGE 5 =====
+Fantasy Football League Rules     
+Page 5 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+b. The FFL Commissioner shall not make Trades for any FFL Team that 
+does not have an associated FFL Team Owner. 
+c. The FFL Commissioner shall not release the Rights to any NFL Player  
+during the FFL Season for any FFL Team that does not have an 
+associated FFL Team Owner  unless required to do so by League 
+Rules. 
+11. An FFL Team may retain the Rights to an NFL Player  for as long at the NFL 
+Player is eligible to be picked up on the FFL Website during the FFL Season.  
+If an NFL Player  is not listed on the FFL Website during the time of the FFL 
+Season, the FFL Team will forfeit the Rights to that NFL Player.  
+12. An NFL Player may not be simultaneously assigned to more than one FFL 
+Team. 
+
+===== PAGE 6 =====
+Fantasy Football League Rules     
+Page 6 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+OFFSEASON 
+ 
+13. The Offseason Ranking Sheet will be obtained from a reputable third- party 
+source and should represent a n FF expert’s opinion of the performance of at 
+least the top 200 NFL Players for the upcoming FFL Season. 
+14. The Offseason Ranking Sheet will be acquired as soon after the end of the 
+FFL Season as practical and will remain as the official list for determining NFL 
+Player rankings on FFL Roster Declaration Day for the entire FFL Offseason. 
+15. The FFL Commissioner will be responsible for acquiring and distributing the 
+Offseason Ranking Sheet to the FFL Team Owners. 
+16. Every NFL Player on each FFL Team will be assigned a rank based on the 
+Offseason Ranking Sheet. 
+17. If any FFL Team Rosters change in the FFL Offseason  due to Trades, the 
+revised rosters will be re-ranked following the change. 
+18. Each FFL Team may retain the R ights of up to 19 (2025) and 23 (starting in 
+2026) [18] NFL Players from the current roster at the time of the annual Roster 
+Declaration Day.  In order to retain the Rights to an NFL Player for the 
+upcoming FFL Season, each of the FFL Team Owners must submit the list of 
+NFL Players they wish to protect to the FFL Commissioner.  The FFL 
+Commissioner will review the list and  verify that none of the FFL Rules have 
+been violated.  Once all of the lists have been approved by the FFL 
+Commissioner, the entire list of retained and/or released NFL Players will be 
+distributed to the FFL Team Owners. 
+a. On the Roster Declaration Day, each FFL Team may retain the Rights 
+of up to 4 of the top 5 ranked NFL Player s on their current FFL Team 
+Roster. At least one of the top 5 ranked NFL Players on each FFL 
+Team must be released to the FFL Free- agent Pool on Roster 
+Declaration Day. 
+b. All NFL Players not protected by an FFL Team by midnight on the 
+Roster Declaration Day will enter the FFL Free-agent Pool.   
+c. If an FFL Team does not participate in retaining the R ights of any NFL 
+Players by the end of the Roster Declaration Day, the FFL 
+Commissioner shall protect the top 19 (2025) and 23 (starting in 2026) 
+[18] players on the FFL Team based on the Offseason Ranking Sheet.   
+d. An FFL Team Owner is not required to protect any players on Roster 
+Declaration Day. 
+e. The Roster Declaration day should take place from one week to four 
+weeks prior to the FFL Draft.   
+
+===== PAGE 7 =====
+Fantasy Football League Rules     
+Page 7 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+ 
+19. The annual FFL Draft will consist of 5 Rounds  starting in the 2022 FFL Draft . 
+[13] 
+20. The FFL Draft Order will be based on the FFL Standings from the previous 
+FFL Season.  The Order will be determined as follows: 
+a. The first pick of the FFL Draft will go to the FFL Team with the lowest 
+rank in the FFL Standings for the FFL Regular Season in the previous 
+season. 
+b. The second pick of the FFL Draft will go to the FFL Team with the 
+second lowest rank in the FFL Standings for the FFL Regular Season in 
+the previous season. 
+c. Beginning at the end of the 2010 season, the third pick of the FFL Draft 
+will go to the FFL Team that wins the C onsolation Tournament in the 
+FFL Post-season. [5] 
+d. The tenth pick of the FFL Draft will go to the FFL Team with the highest 
+rank in the FFL Standings for the FFL Post -season in the previous 
+season (FFL champion). 
+e. The ninth pick of the FFL Draft will go to the FFL Team with the second 
+highest rank in the FFL Standings for the FFL Post -season in the 
+previous season. 
+f. Picks 4 [5] through 8 in the FFL Draft will be determined in ascending 
+order of the ranks of the remaining FFL Teams who do not qualify under 
+the provisions of a through e [5] above in the FFL Standings for the FFL 
+Regular Season in the previous season. 
+
+===== PAGE 8 =====
+Fantasy Football League Rules     
+Page 8 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+REGULAR SEASON 
+ 
+21. The FFL Regular Season includes week 1 through week 15 [14] of the NFL 
+season. 
+22. FFL Standings in the FFL Regular Season will be based on weekly head-to-
+head competition between FFL Teams, in a round-robin style tournament. 
+a. FFL Teams  will be ranked in descending order based on winning 
+percentage.   
+b. FFL Teams with equal winning percentages will be ranked in 
+descending order based on the cumulative points scored up to that 
+point in the FFL Season. 
+23. The top 8 FFL Teams in the FFL Regular Season will be determined by the 
+Standings at the end of the Regular season.   
+24. The top 8 FFL Teams at the end of the FFL Regular Season will be eligible for 
+the FFL Post-season.  The Teams that finish the Regular Season in positions 
+1-4 will play in the c hampionship tournament in weeks 16-17 [14] of the NFL 
+season. The Teams that finish the Regular Season in positions 5- 8 will play in 
+the Consolation Tournament in weeks 16-17 [14] of the NFL season.[4] 
+ 
+POST-SEASON 
+ 
+25. The FFL Post-season includes weeks 16 through 17 [14] of the NFL season. 
+26. The FFL Standings in the FFL Post-season will be based on weekly head- to-
+head competition between FFL Teams in a multi-level style tournament. 
+27. Playoff eligible teams will be seeded at the beginning of the FFL Post-season 
+based on the Standings at the end of the FFL Regular Season. 
+28. The FFL Team that wins the C hampionship Tournament in the [4]  FFL Post-
+season will be considered FFL champion for the FFL Season.   
+
+===== PAGE 9 =====
+Fantasy Football League Rules     
+Page 9 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+TRADING 
+ 
+29. An FFL Team Owner may not Trade an NFL Player  or FFL Draft Pick which 
+he/she does not have the Rights to. 
+30. There must be some perceived short-term and/or long-term value for both FFL 
+Teams involved in a Trade. 
+31. There is no limit to the number of NFL Player s and/or FFL Draft Picks that can 
+be Traded at one time.   
+32. Trades involving FFL Draft Picks: 
+a. FFL Team Owners may Trade future FFL Draft Picks from  any of the 
+next three annual FFL Drafts.  The FFL Commissioner will be 
+responsible for keeping a record of all Traded future FFL Draft Picks. 
+b. NFL Player s may be Traded for FFL Draft picks as long as Roster 
+limitations are not exceeded. 
+33. Trading is allowed in the FFL Pre- Season, Regular Season, and Post -season 
+[14]  
+34. Trades during the FFL Pre- Season, FFL Regular Season , and Post -season 
+[14] will be managed under the rules established in the FFL Website: 
+a. There will be a one- day appeal period for the FFL Commissioner and 
+FFL Team Owners to review the proposed Trade.  During this time, FFL 
+Team Owners may protest the Trade to the FFL Commissioner. 
+b. If the proposed Trade violates any of the FFL Rules, the Trade may be 
+rejected by the FFL Commissioner. 
+c. If the proposed Trade is acceptable under the FFL Rules, the Trade will 
+become effective after the appeal period.   The FFL Commissioner may 
+approve the Trade prior to the end of the appeal period in certain cases. 
+d. The FFL Assistant Commissioner will act in the role of FFL 
+Commissioner for all trades involving the FFL Team managed by the 
+FFL Commissioner.  
+35. Trading is allowed during the FFL Offseason. 
+
+===== PAGE 10 =====
+Fantasy Football League Rules     
+Page 10 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+36. During the FFL Offseason, Trades will be processed through the FFL 
+Commissioner as follows: 
+a. Proposed Trades shall be sent to the FFL Commissioner for verification. 
+b. The FFL Commissioner will acknowledge receipt of the proposed trade 
+and send notification to the remaining FFL Team Owners.  
+c. Once part b is complete, there will be a one- working day appeal period 
+for other FFL Team Owners  to protest the Trade to the FFL 
+Commissioner.   
+d. If the proposed Trade violates any of the FFL Rules, the Trade may be 
+rejected by the FFL Commissioner. 
+e. If the proposed Trade is acceptable under the FFL Rules, the Trade will 
+become effective after the appeal period.  The FFL Commissioner may 
+approve the Trade prior to the end of the appeal period in certain cases. 
+f. The FFL Assistant Commissioner will act in the role of  FFL 
+Commissioner for all Trades involving the FFL Team managed by the 
+FFL Commissioner.  
+37. Trading Ethics:  The ethical ramifications of Trade negotiations can be a 
+complex and subjective issue .  However, it is important to mention situations 
+which should be avoided by FFL Team Owners while involved in Trades or 
+Trade negotiations in order to maintain league harmony.  The following list is 
+by no means an attempt to establish ethical “rules” for Trading, nor should a 
+Trade necessarily be rejected if any of the situations occur:      
+a. If you trade an injured player, you should reveal that fact to your trading 
+partners. 
+b. If you're asked for advice you shouldn't use the information to try to 
+make your own deal without asking permission first. 
+c. You should not use the details of an offer to get a better deal with 
+another owner, without asking permission from the original owner. 
+38. Trading will be allowed during the FFL Post-season. [14] 
+
+===== PAGE 11 =====
+Fantasy Football League Rules     
+Page 11 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+FREE-AGENTS 
+ 
+39. FFL Free -agents can be picked up by FFL Team  Owners at the following 
+times: 
+a. During the FFL Draft at the time of the current Draft Pick which the FFL 
+Team Owner has the Rights to. 
+b. During the FFL Pre-Season. 
+c. During the FFL Season. 
+40. The FFL will include a waiver period for acquisition of Free-agents.   
+Starting at the beginning of the 2010 FFL Pre-Season, the FFL will utilize the 
+following waiver wire rules: [7] 
+a. Starting Waiver Priority Lottery based on order of draft.  Lottery Rules: 
+1. A random drawing will determine the Waiver Wire Priority for each team 
+at the start of the season. 
+2. The drawing will begin with highest Waiver Wire Priority position (1) and 
+end with the lowest Waiver Wire Priority position (10). 
+3. The number of lottery chances for each team will be determined by the 
+formula: Number of Teams-Draft Order Position+1 
+4. Lottery Chances for each team are exclusive of trades. [9] 
+b. Time Players are placed on Waivers: 1 day. 
+c. At the start of the FFL Pre-Season, players will: Follow normal Waiver 
+Wire rules  
+d. Waiver Priority: Continual rolling list.  Waiver claims are processed in 
+waiver priority order and each successful claim moves a manager to the 
+end of the waiver priority list. 
+ 
+Starting in 2026 FFL Pre-Season, Waiver Wire claims will be based on a 
+Free Agent Acquisition Budget (FAAB) system. 
+In a Free Agent Acquisition Budget (FAAB) waivers system, each manager 
+receives a dollar amount to place blind offers on waived players throughout 
+the season. The manager with the highest offer at the end of the waiver 
+period claims that player, and that offer amount is deducted from the 
+team's free agent budget for the season. If multiple managers place an 
+equal offer on a player, Continual rolling list tiebreak will determine the 
+winner of the claim. 
+• Starting FFL Pre-Season FAAB will be set at $100 per Team. 
+• Starting Regular Season FAAB will be set at $100 per Team. 
+• Unspent FAAB at the end of the FFL Pre-Season and Regular Season 
+will not carry over. 
+• FAAB may be traded for Players or Draft Picks among Teams.[20] 
+ 
+
+===== PAGE 12 =====
+Fantasy Football League Rules     
+Page 12 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+e. Weekly Waivers: Game Time - Tuesday: All unowned players will be 
+placed on waivers at the scheduled start time of their NFL game. In Game 
+Time Waivers, players on a bye week will be placed on waivers Monday 
+night at 5:30pm pacific time.  [10] This setting applies only to players who 
+are free agents when their games begin. All players dropped to waivers are 
+subject to the league's normal waiver process. [7] 
+
+===== PAGE 13 =====
+Fantasy Football League Rules     
+Page 13 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+DUES, FEES, AND AWARDS 
+ 
+41. Dues:  The annual dues (per team) [8] for the FFL will be: $50 per FFL Team.  
+2002-2009 Seasons - $50 
+2010 Season - $75 
+2011 Season - $100 
+2012 Season - $125 
+2013 Season - $150 
+2014 Season - $175 
+2015 Season - $200 [8] 
+2024 Season - $250 
+2025 Season - $300 
+2026 Season - $350 
+2027 Season - $400 [16] 
+ 
+42. Fees:  An annual fee of $5.00 shal l be paid to the FFL by each FFL Team for 
+administration costs associated with running the FFL.   These fees will be the 
+property of the FFL and will be managed by the FFL Commissioner. 
+43. Dues and Fees shall be paid to the FFL Commissioner prior to the start of the 
+FFL Season. 
+44. Awards: The following Awards  will be distributed at the end of each FFL 
+Season based on FFL Team performance: 
+ 
+Season 
+Each Win: 
+Regular 
+Season 
+Each Win: 
+Post 
+Season 
+Bonus: 
+1st Place 
+Regular 
+Season 
+Bonus: 
+Most Points 
+Regular 
+Season 
+Bonus: 
+Consolation 
+Tournament 
+Winner 
+Bonus: 
+Championship 
+Tournament 
+Winner 
+Bonus: 
+Week 17 
+Winner 
+2002-2007 $5.00 $5.00 $20.00 $20.00 - $50.00 - 
+2008-2009 $5.00 $5.00 $20.00 $20.00 $10.00 $50.00 $10.00 
+2010 $7.50 $7.50 $30.00 $30.00 $15.00 $75.00 $15.00 
+2011 $10.00 $10.00 $40.00 $40.00 $20.00 $100.00 $20.00 
+2012 $12.50 $12.50 $50.00 $50.00 $25.00 $125.00 $25.00 
+2013 $15.00 $15.00 $60.00 $60.00 $30.00 $150.00 $30.00 
+2014 $17.50 $17.50 $70.00 $70.00 $35.00 $175.00 $35.00 
+2015+ $20.00 $20.00 $80.00 $80.00 $40.00 $200.00 $40.00 
+[8] 
+
+===== PAGE 14 =====
+Fantasy Football League Rules     
+Page 14 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+ 
+  2024 2025 2026 2027+ 
+Regular Season Wins ($/win) $25.00 $30.00 $35.00 $40.00 
+Most Reg Season Wins Bonus  $75.00   $90.00   $105.00   $120.00  
+Most Reg Season Points Bonus  $75.00   $90.00   $105.00   $120.00  
+Playoff Wins ($/win)  $25.00   $30.00   $35.00   $40.00  
+Champion Winner  $250.00  $300.00   $350.00   $400.00  
+Consolation Winner  $25.00   $30.00   $35.00   $40.00  
+Week 17 Bonus  $     -     $     -      $     -    $     -    
+[16] 
+ 
+  
+RULE CHANGES 
+ 
+45. Rule Change Procedure: 
+a. Rule changes may be proposed by any FFL Team Owner. 
+b. A proposed Rule change must be supported by at least two Team 
+Owners before becoming eligible to be considered by the FFL. 
+c. Rule changes shall be submitted to the FFL Commissioner for review. 
+d. The FFL Commissioner will distribute the proposed Rul e change to the 
+FFL Team Owners, for discussion. 
+e. If the FFL Commissioner deems that there is enough interest in the 
+Rule change, it will be put up for a vote. 
+f. Each Team Owner will get one vote, which shall be sent to the FFL 
+Commissioner (and other FFL Team Owners if desired). 
+g. The FFL Commissioner will get two votes. 
+h. If the proposed change receives at least 6 votes, the Rule change will 
+pass. 
+i. The FFL Commissioner will determine when the Rule change takes 
+effect if not part of the original vote. 
+
+===== PAGE 15 =====
+Fantasy Football League Rules     
+Page 15 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+League Settings  
+ 
+46. Draft Type: Offline Draft   
+47. Start Scoring on: Week 1   
+48. Can't Cut List Provider: None   
+49. Max Moves: No maximum   
+50. Max Trades: No maximum   
+51. Post Draft Players: Free Agents   
+52. Roster Positions: QB, RB, RB, WR, WR, WR, TE, WR/RB/TE, WR/RB/TE, K, 
+BN, BN, BN, BN, BN, BN, BN, BN, BN, BN, BN, BN, BN, BN, (14 total Bench), 
+IR, IR [15][17]  
+Offensive Categories: 
+a. Passing Yards (30 yards per point) 
+b. Passing Touchdowns (3) 
+c. Interceptions (-1) 
+d. Rushing Yards (10 yards per point) 
+e. Rushing Touchdowns (4) 
+f. Reception Yards (10 yards per point) 
+g. Reception Touchdowns (4) 
+h. Return Yards (30 yards per point) [17] 
+i. Return Touchdowns (4) 
+j. 2-Point Conversions (2) 
+k. Fumbles Lost (-1) 
+l. Field Goals 0-19 Yards (2) 
+m. Field Goals 20-29 Yards (2) 
+n. Field Goals 30-39 Yards (2) 
+o. Field Goals 40-49 Yards (3) 
+p. Field Goals 50+ Yards (4) [15] 
+q. Point After Attempt Made (1) 
+r. Rushing or Receiving first down (0.4) [19] 
+
+===== PAGE 16 =====
+Fantasy Football League Rules     
+Page 16 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+53. Defensive Categories: (no longer applicable starting in 2024 Regular Season) 
+[15] 
+a. Sack (1) 
+b. Interception (2) 
+c. Fumble Recovery (2) 
+d. Touchdown (4) 
+e. Safety (2) 
+f. Block Kick (2) 
+g. Points Allowed 0 points (10) 
+h. Points Allowed 1-6 points (7) 
+i. Points Allowed 7-13 points (4) 
+j. Points Allowed 14-20 points (1) 
+k. Points Allowed 21-27 points (0) 
+l. Points Allowed 28-34 points (-1) 
+m. Points Allowed 35+ points (-4)   
+54. Fractional Points: Yes   
+55. Negative Points: Yes   
+
+===== PAGE 17 =====
+Fantasy Football League Rules     
+Page 17 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+Revisions 
+ 
+56. Official FFL name:  Las Vegas Enginerds [1] 
+57. Official FFL display name in the FFL Website: Las Vegas Enginerds (KHA+#).  
+The “#” indicates how many FFL Team Owners are not employees of Kimley -
+Horn and Associates, Inc. [1] 
+58. At the end of the 2006 Season, all FFL Team Owners will lose the rights to any 
+NFL Player who will be eligible to play in the TE position by the FFL Website in 
+the 2007 Season.  Exception:  A Team Owner may choose to protect the 
+Rights to at most one NFL Player who will be eligible to play in the TE position 
+by the FFL Website in the 2007 Season if that NFL Player was on the FFL 
+Owner’s Team during Week 1 of the 2006 Season AND that NFL Player is on 
+the FFL Owner’s Team at the end of the 2006 Season. [2] 
+59. The FFL Post-season includes weeks 14 through 16 of the NFL season. [3] 
+60. The Teams that finish the Regular Season in positions 1- 4 will play in the 
+Championship Tournament in weeks 15- 16 of the NFL season. The Teams 
+that finish the Regular Season in positions 5- 8 will play in the Consolation 
+Tournament in weeks 15- 16 of the NFL season. The FFL Team that wins the 
+Championship Tournament in the FFL Post -season will be considered FFL 
+champion for the FFL Season.   [4] 
+61. Beginning at the end of the 2010 season, the third pick of the 
+FFL Draft will go to the FFL Team that wins the Consolation Tournament in the 
+FFL Post-season. [5] 
+62. Beginning in the 2010 season, the FFL will include a waiver 
+period for acquisition of Free-agents. [6] 
+63. The FFL will utilize the following waiver wire rules: 
+a. Starting Waiver Priority:  Reverse Order of Draft.   
+b. Time Players are placed on Waivers: 1 day. 
+c. At the start of the Pre -Season, players will: Follow normal Waiver Wire 
+rules  
+d. Waiver Priority: Continual rolling list.  Waiver claims are processed in 
+waiver priority order and each successful claim moves a manager to the 
+end of the waiver priority list. 
+e. Weekly Waivers: Sunday and Monday blocked out. All un-owned players 
+are placed on waivers at 9:55 am PT each Sunday with the claim period 
+ending at 11:59 pm PT on Tuesday. This setting applies only to players 
+who are free agents when their  games begin. All players dropped to 
+waivers are subject to the league's normal waiver process. [7] 
+
+===== PAGE 18 =====
+Fantasy Football League Rules     
+Page 18 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+64. FFL Dues are determined by the following schedule: 
+ 
+2002-2009 Seasons - $50 
+2010 Season - $75 
+2011 Season - $100 
+2012 Season - $125 
+2013 Season - $150 
+2014 Season - $175 
+2015 Season - $200 [8] 
+ 
+Note:  Fees are $5/year. 
+ 
+Awards will be determined as follows: 
+ 
+Season 
+Each Win: 
+Regular 
+Season 
+Each Win: 
+Post 
+Season 
+Bonus: 
+1st Place 
+Regular 
+Season 
+Bonus: 
+Most Points 
+Regular 
+Season 
+Bonus: 
+Consolation 
+Tournament 
+Winner 
+Bonus: 
+Championship 
+Tournament 
+Winner 
+Bonus: 
+Week 17 
+Winner 
+2002-2007 $5.00 $5.00 $20.00 $20.00 - $50.00 - 
+2008-2009 $5.00 $5.00 $20.00 $20.00 $10.00 $50.00 $10.00 
+2010 $7.50 $7.50 $30.00 $30.00 $15.00 $75.00 $15.00 
+2011 $10.00 $10.00 $40.00 $40.00 $20.00 $100.00 $20.00 
+2012 $12.50 $12.50 $50.00 $50.00 $25.00 $125.00 $25.00 
+2013 $15.00 $15.00 $60.00 $60.00 $30.00 $150.00 $30.00 
+2014 $17.50 $17.50 $70.00 $70.00 $35.00 $175.00 $35.00 
+2015+ $20.00 $20.00 $80.00 $80.00 $40.00 $200.00 $40.00 
+[8] 
+ 
+65. Starting Waiver Priority:  Lottery based on order of draft.   
+Lottery Rules: 
+1. A random drawing will determine the Waiver Wire Priority for each team 
+at the start of the season. 
+2. The drawing will begin with highest Waiver Wire Priority position (1) and 
+end with the lowest Waiver Wire Priority position (10). 
+3. The number of lottery chances for each team will be determined by the 
+formula: Number of Teams-Draft Order Position+1 
+4. Lottery Chances for each team are exclusive of trades. [9] 
+ 
+66. Multiple Revisions: 
+a. Weekly Waiver System : Game Time - Tuesday: All unowned players 
+will be placed on waivers at the scheduled start time of their game. In 
+
+===== PAGE 19 =====
+Fantasy Football League Rules     
+Page 19 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+Game Time Waivers, players on a bye week will be placed on waivers 
+Monday night at 5:30pm pacific time.[10] 
+b. Add IR Roster Spot: Teams may have up to 17 NFL Players on their 
+roster during the FFL Offseason and up to 18 eligible NFL Players on 
+their roster (including a player eligible for the IR Roster spot) during the 
+FFL Season. If a Team has more than the allowed number of NFL 
+Players on their roster at the end of the FFL Season, the NFL Player(s) 
+currently occupying the IR Roster spot(s) will be immediately 
+automatically dropped into the Free -agent Pool such that maximum 
+roster limits will be maintained during the FFL Offseason. [10] 
+c. Roster Positions: QB, RB, RB, WR, WR, TE, WR/RB /TE, K, DEF, BN, 
+BN, BN, BN, BN, BN, BN, BN, IR [10] 
+ 
+67. Addition of two (2) FFL Roster Spots (BN): Teams may have up to 19 NFL 
+Players on their roster during the FFL Offseason and up to 20 eligible NFL 
+Players on their roster (including a player eligible for the IR Roster spot) during 
+the FFL Season. If a Team has more than the allowed number of NFL Players 
+on their roster at the end of the FFL Season, the NFL Player(s) currently 
+occupying the IR Roster spot(s) will be immediately automatically dropped into 
+the Free-agent Pool such that maximum roster limits will be maintained during 
+the FFL Offseason. [11] 
+ 
+Roster Positions: QB, RB, RB, WR, WR, TE, WR/RB/TE, K, DEF, BN, BN, BN, 
+BN, BN, BN, BN, BN, BN, BN, IR [11] 
+ 
+68. Addition of one (1) FFL Roster Spot (BN): Teams may have up to 20 NFL 
+Players on their roster during the FFL Offseason and up to 21 eligible NFL 
+Players on their roster (including a player eligible for the IR Roster spot) during 
+the FFL Season. If a Team has more than the allowed number of NFL Players 
+on their roster at the end of the FFL Season, the NFL Player(s) currently 
+occupying the IR Roster spot(s) will be immediately automatically dropped into 
+the Free-agent Pool such that maximum roster limits will be maintained during 
+the FFL Offseason. [12] 
+ 
+Roster Positions: QB, RB, RB, WR, WR, TE, WR/RB/TE, K, DEF, BN, BN, BN, 
+BN, BN, BN, BN, BN, BN, BN, BN, IR [12] 
+ 
+69. Two Revisions: 
+a. Starting in the 2021 Season, injured reserve (IR) roster spots will be 
+increased to two (2) during the FFL Pre-Season and FFL Season. 
+b. Starting in the 2022 season, the number of allowed protected 
+players at Roster Declaration Day increased to 15. The 2022 Draft 
+
+===== PAGE 20 =====
+Fantasy Football League Rules     
+Page 20 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+(and all Drafts thereafter) consist of 5 total rounds. All other FFL 
+Roster Declaration Day, FFL Draft, and FFL Roster Rules remain in 
+effect. [13] 
+70. Two revisions. 
+a. Starting in 2022 the FFL Regular Season will be weeks 1-15 of the 
+NFL season, and the FFL Post-season will be weeks 16-17 of the 
+NFL season. [14]  
+b. Starting in the 2022 FFL Regular Season there will be no Trade 
+deadline during the FFL Regular Season or Post-season. [14] 
+71. Multiple revisions
+. 
+Starting in 2024 season:  
+Remove Team Defense as a Roster position and add an additional starting 
+WR spot 
+Adjust the Kicker scoring as shown here: 
+   
+Kick Prior to 2024 Scoring 
+System 
+2024+ Scoring 
+System 
+Extra point 1 pt 1 pt 
+Field Goals:   
+1-29 yards 3 pts 2 pts 
+30-39 yards 4 pts 2 pts 
+40-49 yards 4 pts 3 pts 
+50+ yards 5 pts 4 pts 
+ 
+
+===== PAGE 21 =====
+Fantasy Football League Rules     
+Page 21 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+ 
+Starting in 2025 season:   
+Add an additional starting flex position (WR/RB/TE) spot (Roster size moves 
+to 21) 
+Prior to 2024 Starting 
+Rosters  2024 Starting Rosters 2025 Starting 
+Rosters 
+QB QB QB 
+RB RB RB 
+RB RB RB 
+WR/TE WR WR 
+WR/TE WR WR 
+TE WR WR 
+(WR/RB/TE) TE TE 
+K (WR/RB/TE) (WR/RB/TE) 
+DEF K (adjusted) (WR/RB/TE) 
+    K (adjusted) 
+Bench (11) Bench (11) Bench (11) 
+[15] 
+72.  
+Dues and Fees:  $255.00  $305.00  $355.00   $405.00  
+  2024 2025 2026 2027+ 
+Regular Season Wins ($/win) $25.00 $30.00 $35.00 $40.00 
+Most Reg Season Wins Bonus  $75.00   $90.00   $105.00   $120.00  
+Most Reg Season Points Bonus  $75.00   $90.00   $105.00   $120.00  
+Playoff Wins ($/win)  $25.00   $30.00   $35.00   $40.00  
+Champion Winner  $250.00  $300.00   $350.00   $400.00  
+Consolation Winner  $25.00   $30.00   $35.00   $40.00  
+Week 17 Bonus  $     -     $     -      $     -    $     -    
+[16] 
+73. Two Revisions: 
+a. Starting in the 2024 Season, injured reserve (IR) roster spots will be 
+increased to three (3) during the FFL Pre-Season and FFL Season. 
+b. Starting in the 2024 season, the Kick Return yards will be changed 
+to one point per 30 yards. [17] 
+74. Starting in 2025 Regular Season: 
+• Increase Roster Limit to 24 (effective immediately in 2025 Offseason). 
+• Bench spots will be increased to 14 during FFL Regular Season. 
+• Reduce IR spots to zero (0) during the FFL Pre-Season and two (2) 
+during the Regular Season. 
+
+===== PAGE 22 =====
+Fantasy Football League Rules     
+Page 22 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+• At least one of the top 5 ranked NFL Players on each FFL Team must 
+be released to the FFL Free-agent Pool on Roster Declaration Day. 
+Teams may retain the Rights of up to 19 NFL Players from their roster 
+on Roster Declaration Day. 
+Starting in 2026 Offseason: 
+• Offseason Roster Limits will be 24 prior to Roster Declaration Day. 
+• Roster Declaration Day will be three weeks after the first day of the NFL 
+draft. 
+• At least one of the top 5 ranked NFL Players on each FFL Team must 
+be released to the FFL Free-agent Pool on Roster Declaration Day. 
+Teams may retain the Rights of up to 23 NFL Players from their roster 
+on Roster Declaration Day. 
+• The FFL Draft will be held one week after Roster Declaration Day. This 
+exact day may change at the discretion of the Commissioner as 
+necessary for the benefit of the League. 
+• After the 5 Round FFL Draft, Roster Limits will increase to 28 until Cut 
+Day. 
+• The FFL Pre-Season will begin shortly after the FFL Draft. Player 
+trades, acquisitions, and drops will be allowed and will be based on the 
+setting of FFL Website. 
+• Cut Day will be one week prior to the first NFL game of the season. All 
+teams must have their Rosters reduced to 24 Players by the end of Cut 
+Day. Teams that have more than 24 Players on their Rosters after Cut 
+Day may have Players Cut from their Rosters by the Commissioner. 
+The Commissioner will cut the lowest ranked players for the Teams in 
+violation to get the Rosters down to 24. The ranking list used by the 
+Commissioner will be a legitimate third-party fantasy football ranking list 
+for the upcoming season (non-dynasty) using a similar scoring system. 
+Preferably, the list will be from the same third-party site used for the 
+Offseason Ranking List. 
+• Regular Season Rosters will be limited to 24 Players plus two (2) 
+additional IR spots. Teams must reduce the total number of Players on 
+their Rosters to 24 maximum by the end of the Regular Season. Teams 
+that have more than 24 players on their Rosters at the end of the 
+Regular Season will automatically have Players dropped who were 
+occupying IR positions at the end of the Regular Season. [18] 
+75. Starting in 2025 Regular Season a 0.4-point bonus will be given for rushing 
+and receiving first downs. [19] 
+76. Starting in 2026 FFL Pre-Season, Waiver Wire claims will be based on a Free 
+Agent Acquisition Budget (FAAB) system. 
+In a Free Agent Acquisition Budget (FAAB) waivers system, each manager 
+receives a dollar amount to place blind offers on waived players throughout the 
+
+===== PAGE 23 =====
+Fantasy Football League Rules     
+Page 23 of 23 
+Originally Ratified:  May 17, 2005 
+Revision 1: 07/01/2005; Revision 2: 11/02/2006; Revision 3: 02/13/2008; Revision 4: 02/22/2008; Revision 5: 
+05/04/2010; Revision 6: 05/17/2010; Revision 7: 07/22/2010; Revision 8: 09/29/2010; Revision 9: 07/25/2012; Revision 
+10: 09/01/2014; Revision 11: 08/16/2018; Revision 12: 08/16/2019; Revision 13: 07/28/2021; Revision 14: 01/31/22; 
+Revision 15: 02/06/24; Revision 16: 08/01/24; Revision 17: 08/22/25; Revision 18, 19, & 20: 07/29/25 
+ 
+season. The manager with the highest offer at the end of the waiver period 
+claims that player, and that offer amount is deducted from the team's free 
+agent budget for the season. If multiple managers place an equal offer on a 
+player, Continual rolling list tiebreak will determine the winner of the claim. 
+• Starting FFL Pre-Season FAAB will be set at $100 per Team. 
+• Starting Regular Season FAAB will be set at $100 per Team. 
+• Unspent FAAB at the end of the FFL Pre-Season and Regular Season 
+will not carry over. 
+• FAAB may be traded for Players or Draft Picks among Teams.[20] 
+ 

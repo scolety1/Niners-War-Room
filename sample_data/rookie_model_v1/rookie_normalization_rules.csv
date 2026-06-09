@@ -1,0 +1,23 @@
+rule_id,position,feature_name,raw_metric,transform_type,direction,min_raw,max_raw,anchor_low,anchor_high,missing_policy,source_snapshot_id,notes
+qb_draft_capital,QB,draft_capital,overall_pick,draft_pick_curve,lower_better,1,260,,,missing,normalization_v1,Nonlinear NFL draft capital curve.
+rb_draft_capital,RB,draft_capital,overall_pick,draft_pick_curve,lower_better,1,260,,,missing,normalization_v1,Nonlinear NFL draft capital curve.
+wr_draft_capital,WR,draft_capital,overall_pick,draft_pick_curve,lower_better,1,260,,,missing,normalization_v1,Nonlinear NFL draft capital curve.
+te_draft_capital,TE,draft_capital,overall_pick,draft_pick_curve,lower_better,1,260,,,missing,normalization_v1,Nonlinear NFL draft capital curve.
+qb_age_trajectory,QB,age_trajectory,age_on_sept_1,linear,younger_better,20.5,24.5,,,missing,normalization_v1,QB younger entry support curve.
+rb_age_trajectory,RB,age_trajectory,age_on_sept_1,linear,younger_better,20.0,24.0,,,missing,normalization_v1,RB younger entry support curve.
+wr_age_trajectory,WR,age_trajectory,age_on_sept_1,linear,younger_better,20.0,24.0,,,missing,normalization_v1,WR age and early breakout support curve.
+te_age_trajectory,TE,age_trajectory,age_on_sept_1,linear,younger_better,20.5,25.0,,,missing,normalization_v1,TE uses softer age penalty than WR.
+qb_rushing_profile,QB,rushing_profile,rush_yards_per_game,linear,higher_better,0,80,,,missing,normalization_v1,Simple V1 rushing production proxy until richer rushing profile exists.
+qb_passing_efficiency,QB,passing_efficiency,adjusted_yards_per_attempt,linear,higher_better,5.5,11.0,,,missing,normalization_v1,Passing efficiency proxy.
+qb_sack_avoidance,QB,sack_avoidance,pressure_to_sack_rate,linear,lower_better,0.08,0.32,,,missing,normalization_v1,Lower pressure-to-sack is better.
+rb_workload_earning,RB,workload_earning,team_touch_share,linear,higher_better,0.10,0.45,,,missing,normalization_v1,Workload share proxy.
+rb_rush_efficiency,RB,rush_efficiency,yards_after_contact_per_attempt,linear,higher_better,2.0,4.5,,,missing,normalization_v1,Rushing efficiency proxy.
+rb_receiving_impact,RB,receiving_impact,receiving_yards_per_route,linear,higher_better,0.30,1.80,,,missing,normalization_v1,Receiving impact proxy; not PPR catch volume.
+rb_goal_line_power,RB,goal_line_power,goal_line_share,linear,higher_better,0.00,0.45,,,missing,normalization_v1,Short-yardage and touchdown-role proxy.
+wr_target_earning,WR,target_earning,target_share,linear,higher_better,0.10,0.35,,,missing,normalization_v1,Target earning proxy.
+wr_efficiency_dominance,WR,efficiency_dominance,yards_per_route_run,linear,higher_better,1.20,3.50,,,missing,normalization_v1,Production and efficiency proxy.
+wr_chain_moving,WR,chain_moving,first_downs_per_route,linear,higher_better,0.04,0.16,,,missing,normalization_v1,LVE first-down fit proxy.
+te_receiving_efficiency,TE,receiving_efficiency,yards_per_route_run,linear,higher_better,0.80,2.80,,,missing,normalization_v1,TE receiving efficiency proxy.
+te_route_role,TE,route_role,route_participation,linear,higher_better,0.25,0.75,,,missing,normalization_v1,Receiving TE route-role proxy.
+te_production_volume,TE,production_volume,receiving_yards_share,linear,higher_better,0.05,0.25,,,missing,normalization_v1,TE production-volume proxy.
+te_athletic_size,TE,athletic_size,speed_score,linear,higher_better,75,115,,,missing,normalization_v1,TE athletic-size support proxy.

@@ -1,0 +1,9 @@
+heuristic_type,key,min_value,max_value,value,label,notes
+package_knob,extra_roster_spot_cost,,,4.00,,"Penalty per extra asset in a package."
+package_knob,consolidation_gap_rate,,,0.15,,"Credit for consolidating into the best asset in a package."
+package_knob,consolidation_max,,,8.00,,"Maximum package consolidation credit."
+package_knob,stud_tax_extra_asset_cost,,,3.00,,"Model-design tax per extra asset when buying a stud."
+stud_tax_rate,under_70,0,69.999,0.00,,"No stud tax under clear starter threshold."
+stud_tax_rate,starter,70,79.999,0.15,,"Moderate tax for startable assets."
+stud_tax_rate,impact,80,89.999,0.25,,"Meaningful tax for impact assets."
+stud_tax_rate,cornerstone,90,100,0.35,,"Aggressive tax for cornerstone assets."

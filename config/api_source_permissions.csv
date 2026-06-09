@@ -1,0 +1,12 @@
+source_name,access_mode,credential_env_var,enabled_by_default,private_value_allowed,notes
+sleeper,public_read_only,NINERS_SLEEPER_LEAGUE_ID,true,true,League state and identity only; trending activity remains display-only.
+nflverse,local_package_or_public_files,,false,true,Use cached structured data or explicit importer; no credential normally required.
+collegefootballdata,api_key,CFBD_API_KEY,false,true,Factual college production only after key and identity matching are configured.
+rotowire,manual_export,ROTOWIRE_EXPORT_ROOT,false,true,Use user-provided/permitted structured exports only; projections and ranks display-only.
+sportsdataio,api_key,SPORTSDATAIO_API_KEY,false,true,Paid factual feeds only if licensed; projections/salaries display-only.
+pff,manual_export,PFF_EXPORT_ROOT,false,false,Keep disabled until licensed export fields are explicitly admitted.
+fantasypros,manual_or_context_export,,false,false,Display-only market/projection context.
+dynastyprocess,public_files,,false,false,IDs may be admitted separately; values/ECR display-only.
+playerprofiler,manual_export,,false,false,Factual profile metrics require explicit admission; ADP/ranks/values display-only.
+tankathon,manual_verification,,false,false,Completed draft result verification only; mocks and big boards display-only.
+nfl_official,manual_or_public_reference,,false,true,Completed draft capital and factual measurements only.

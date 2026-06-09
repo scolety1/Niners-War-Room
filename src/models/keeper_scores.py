@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.models.confidence import ConfidenceInputs, confidence_score
-from src.models.player_scores import official_rank_score
 from src.utils.scoring import clamp_score
 
 
@@ -58,14 +57,15 @@ class KeeperPressure:
 
 
 def keeper_score(inputs: KeeperScoreInputs) -> float:
+    # Market/trade liquidity is intentionally excluded here. It belongs in
+    # trade value and market-edge views, not private keeper value.
     score = (
-        (0.30 * _score_component(inputs.long_term_private_value))
-        + (0.20 * _score_component(inputs.next_2_year_starter_value))
-        + (0.15 * _score_component(inputs.scarcity_bonus))
-        + (0.10 * _score_component(inputs.trade_liquidity))
-        + (0.10 * _score_component(inputs.age_curve))
-        + (0.10 * _score_component(inputs.risk_adj))
-        + (0.05 * _score_component(inputs.build_fit))
+        (0.32 * _score_component(inputs.long_term_private_value))
+        + (0.22 * _score_component(inputs.next_2_year_starter_value))
+        + (0.16 * _score_component(inputs.scarcity_bonus))
+        + (0.11 * _score_component(inputs.age_curve))
+        + (0.12 * _score_component(inputs.risk_adj))
+        + (0.07 * _score_component(inputs.build_fit))
     )
     return round(clamp_score(score), 2)
 
@@ -75,12 +75,10 @@ def drop_candidate_score(
     keeper_score_value: float | None = None,
 ) -> float:
     score = keeper_score(inputs) if keeper_score_value is None else keeper_score_value
-    official_private_gap = official_rank_score(inputs.official_rank) - clamp_score(
-        inputs.private_score
-    )
+    private_cut_risk = 100 - clamp_score(inputs.private_score)
     drop_score = (
         (0.45 * (100 - score))
-        + (0.25 * official_private_gap)
+        + (0.25 * private_cut_risk)
         + (0.15 * clamp_score(inputs.roster_redundancy))
         + (0.15 * clamp_score(inputs.decline_risk))
     )
@@ -154,6 +152,7 @@ def forced_release_candidates(
     return sorted(
         top_five,
         key=lambda player: (
+            -drop_candidate_score(player),
             keeper_score(player),
             player.official_rank if player.official_rank is not None else 999,
             player.player_name,

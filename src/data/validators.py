@@ -297,29 +297,38 @@ def _validate_cross_file_rules(
     ranked_player_ids = {
         str(row.get("player_id"))
         for row in ranking_rows
-        if row.get("player_id") and row.get("official_rank") is not None
+        if row.get("player_id") and _league_rank_value(row) is not None
+    }
+    ranking_by_player = {
+        str(row.get("player_id")): row
+        for row in ranking_rows
+        if row.get("player_id") is not None
     }
     for row in roster_rows:
         player_id = str(row.get("player_id") or "")
-        if row.get("official_rank") is None:
+        league_rank = _league_rank_value(row, ranking_by_player.get(player_id))
+        if league_rank is None:
             issues.append(
                 ImportIssue(
                     severity="warning",
                     file_name="fact_rosters.csv",
                     entity_type="player",
                     entity_name=str(row.get("player_name") or player_id),
-                    issue="Roster row is missing an official rank.",
-                    suggested_fix="Populate official_rank or confirm this player is unranked.",
+                    issue="Roster row is missing a league rank.",
+                    suggested_fix="Populate league rank or confirm this player is unranked.",
                 )
             )
-        if row.get("official_rank") == 400:
+        if league_rank == 400 and not _is_rank_placeholder(
+            row,
+            ranking_by_player.get(player_id),
+        ):
             issues.append(
                 ImportIssue(
                     severity="warning",
                     file_name="fact_rosters.csv",
                     entity_type="player",
                     entity_name=str(row.get("player_name") or player_id),
-                    issue="Official rank is 400.",
+                    issue="League rank is 400.",
                     suggested_fix="Confirm this is the intended placeholder or trailing rank.",
                 )
             )
@@ -330,7 +339,7 @@ def _validate_cross_file_rules(
                     file_name="fact_official_rankings.csv",
                     entity_type="player",
                     entity_name=str(row.get("player_name") or player_id),
-                    issue="Roster player is missing an official rank.",
+                    issue="Roster player is missing a league rank.",
                     suggested_fix=(
                         "Add the player to fact_official_rankings.csv or confirm unranked status."
                     ),
@@ -338,25 +347,26 @@ def _validate_cross_file_rules(
             )
 
     for row in ranking_rows:
-        if row.get("official_rank") is None:
+        league_rank = _league_rank_value(row)
+        if league_rank is None:
             issues.append(
                 ImportIssue(
                     severity="warning",
                     file_name="fact_official_rankings.csv",
                     entity_type="player",
                     entity_name=str(row.get("player_name") or row.get("player_id") or ""),
-                    issue="Official ranking row is missing an official rank.",
-                    suggested_fix="Populate official_rank or confirm this player is unranked.",
+                    issue="League ranking row is missing a league rank.",
+                    suggested_fix="Populate league rank or confirm this player is unranked.",
                 )
             )
-        if row.get("official_rank") == 400:
+        if league_rank == 400 and not _is_rank_placeholder(row):
             issues.append(
                 ImportIssue(
                     severity="warning",
                     file_name="fact_official_rankings.csv",
                     entity_type="player",
                     entity_name=str(row.get("player_name") or row.get("player_id") or ""),
-                    issue="Official rank is 400.",
+                    issue="League rank is 400.",
                     suggested_fix="Confirm this is the intended placeholder or trailing rank.",
                 )
             )
@@ -438,6 +448,34 @@ def _coerce_row(file_name: str, row: dict[str, object]) -> dict[str, object]:
         if coerced.get(column) is not None:
             coerced[column] = float(str(coerced[column]))
     return coerced
+
+
+def _league_rank_value(
+    row: dict[str, object],
+    fallback_row: dict[str, object] | None = None,
+) -> object:
+    for key in ("league_rank", "official_rank"):
+        value = row.get(key)
+        if value is not None and value != "":
+            return value
+        if fallback_row is not None:
+            fallback_value = fallback_row.get(key)
+            if fallback_value is not None and fallback_value != "":
+                return fallback_value
+    return None
+
+
+def _is_rank_placeholder(
+    row: dict[str, object],
+    fallback_row: dict[str, object] | None = None,
+) -> bool:
+    for candidate in (row, fallback_row):
+        if candidate is None:
+            continue
+        value = candidate.get("is_rank_placeholder")
+        if str(value or "").strip().lower() in {"1", "true", "yes"}:
+            return True
+    return False
 
 
 def _first_snapshot_date(rows_by_table: dict[str, list[dict[str, object]]]) -> str | None:

@@ -1,0 +1,257 @@
+{
+  "formula_version": "model_v4_review_only_0.2.1",
+  "status": "review_only",
+  "decision_ready_unlocked": false,
+  "active_rankings_affected": false,
+  "generated_rankings": false,
+  "source_documents": [
+    "docs/model_v4/FORMULA_LANE_ARCHITECTURE.md",
+    "docs/model_v4/POSITION_FORMULA_PROPOSAL.md",
+    "docs/model_v4/FEATURE_SOURCE_CONTRACT.md",
+    "docs/model_v4/RECEIPT_REQUIREMENT_CONTRACT.md",
+    "docs/model_v4/SANITY_FIXTURE_CONTRACT.csv"
+  ],
+  "lanes": [
+    "dynasty_asset_value",
+    "roster_decision_value",
+    "required_top_five_release_pain",
+    "trade_market_context",
+    "draft_value",
+    "confidence"
+  ],
+  "lane_output_fields": {
+    "dynasty_asset_value": [
+      "dynasty_asset_value",
+      "dynasty_asset_rank",
+      "position_asset_rank",
+      "asset_lifecycle",
+      "component_scores",
+      "confidence_label",
+      "warning_summary"
+    ],
+    "roster_decision_value": [
+      "roster_decision_value",
+      "roster_decision_section",
+      "roster_action_review_label",
+      "keep_priority",
+      "cut_risk",
+      "shop_context",
+      "confidence_label",
+      "warning_summary"
+    ],
+    "required_top_five_release_pain": [
+      "top_five_rule_status",
+      "required_release_candidate_pool",
+      "release_pain",
+      "release_pain_rank",
+      "default_release_review_candidate",
+      "release_pain_explanation",
+      "confidence_label"
+    ],
+    "trade_market_context": [
+      "trade_market_value",
+      "market_source_status",
+      "model_vs_market_context",
+      "market_edge_review_label",
+      "confidence_label"
+    ],
+    "draft_value": [
+      "draft_value",
+      "draft_rank",
+      "draft_asset_type",
+      "why_available",
+      "available_pool_status",
+      "confidence_label",
+      "warning_summary"
+    ],
+    "confidence": [
+      "confidence_score",
+      "confidence_label",
+      "confidence_explanation",
+      "critical_gap_summary",
+      "review_gap_summary"
+    ]
+  },
+  "position_component_weights": {
+    "RB": {
+      "production": 24,
+      "first_down_scoring_fit": 14,
+      "usage_opportunity": 24,
+      "snap_proxy_role": 8,
+      "projection": 10,
+      "age_dropoff": 12,
+      "young_player_prior": 8,
+      "injury_context_confidence_effect": 0
+    },
+    "WR": {
+      "production": 22,
+      "first_down_scoring_fit": 12,
+      "usage_opportunity": 20,
+      "snap_proxy_role": 5,
+      "projection": 19,
+      "age_dropoff": 12,
+      "young_player_prior": 10,
+      "injury_context_confidence_effect": 0
+    },
+    "QB": {
+      "production": 18,
+      "first_down_scoring_fit": 6,
+      "usage_opportunity": 10,
+      "snap_proxy_role": 4,
+      "projection": 10,
+      "age_dropoff": 7,
+      "position_scarcity_suppression": 41,
+      "young_player_prior": 4,
+      "injury_context_confidence_effect": 0
+    },
+    "TE": {
+      "production": 22,
+      "first_down_scoring_fit": 10,
+      "usage_opportunity": 24,
+      "snap_proxy_role": 8,
+      "projection": 10,
+      "age_dropoff": 10,
+      "no_premium_suppression": 10,
+      "young_player_prior": 6,
+      "injury_context_confidence_effect": 0
+    }
+  },
+  "confidence_rules": {
+    "labels": [
+      "strong",
+      "usable",
+      "review",
+      "weak",
+      "blocked"
+    ],
+    "confidence_is_score_trust_not_player_value": true,
+    "missing_critical_evidence_blocks_trust": true,
+    "missing_optional_evidence_retains_warning": true,
+    "proxy_heavy_role_evidence_retains_warning": true,
+    "local_baseline_projection_is_not_independent_forecast": true,
+    "unsourced_healthy_injury_context_cannot_boost_confidence": true,
+    "neutral_defaults_must_display_in_receipts": true,
+    "incoming_rookie_missing_all_evidence_cannot_be_strong": true,
+    "incoming_rookie_missing_all_evidence_confidence_cap": "weak"
+  },
+  "missing_evidence_policy": {
+    "established_veteran_missing_value_components_are_not_zero_production": true,
+    "missing_component_uncertainty_penalty_rate": 0.2,
+    "max_missing_component_uncertainty_penalty": 8.0,
+    "applies_only_to_evidence_adjusted_missing_not_zero": true,
+    "reason": "Missing critical evidence should not be scored as zero production, but it also should not become a ranking advantage over complete high-confidence evidence."
+  },
+  "lifecycle_rules": {
+    "incoming_rookie": {
+      "allowed_prior_inputs": [
+        "draft_capital",
+        "prospect_profile",
+        "college_production_context"
+      ],
+      "rookie_prior_weight": 1.0,
+      "nfl_evidence_weight": 0.0,
+      "review_requirement": "incoming rookies use sourced draft/prospect lane, not veteran production",
+      "missing_prior_policy": "incoming rookies with missing production, first-down, usage, snap, projection, age, and young-prior evidence stay weak/review until sourced rookie board data exists"
+    },
+    "year_one_nfl_bridge": {
+      "rookie_prior_weight_cap": 0.45,
+      "nfl_evidence_weight_floor": 0.55,
+      "decay_rule": "prior remains meaningful but secondary after NFL evidence begins"
+    },
+    "year_two_nfl_bridge": {
+      "rookie_prior_weight_cap": 0.25,
+      "nfl_evidence_weight_floor": 0.75,
+      "decay_rule": "prior becomes smaller unless NFL evidence is missing"
+    },
+    "year_three_nfl_bridge": {
+      "rookie_prior_weight_cap": 0.1,
+      "nfl_evidence_weight_floor": 0.9,
+      "decay_rule": "prior is tiny and must not override established NFL evidence"
+    },
+    "established_veteran": {
+      "draft_capital_weight": 0,
+      "prospect_profile_weight": 0,
+      "review_requirement": "draft capital is display-only and cannot score established veterans"
+    }
+  },
+  "forbidden_input_rules": {
+    "private_value_forbidden_inputs": [
+      "league_rank",
+      "roster_league_rank_top_five_status",
+      "required_top_five_release_status",
+      "trade_market_value",
+      "market_liquidity",
+      "model_vs_market_edge",
+      "roster_spot_pressure",
+      "draftable_player_availability",
+      "manual_agent_player_stat_tables",
+      "supplied_non_lve_projection_points",
+      "route_participation",
+      "routes_run",
+      "tprr",
+      "yprr"
+    ],
+    "dynasty_asset_value_forbidden_inputs": [
+      "league_rank",
+      "trade_market_value",
+      "market_liquidity",
+      "model_vs_market_edge",
+      "required_top_five_release_status",
+      "draftable_player_availability",
+      "route_participation",
+      "routes_run",
+      "tprr",
+      "yprr"
+    ],
+    "manual_agent_stat_tables": "rejected unless separately validated as structured legal source data",
+    "supplied_projection_points": "rejected when not recomputed from official LVE scoring constants"
+  },
+  "market_policy": {
+    "private_value_weight": 0,
+    "dynasty_asset_value_weight": 0,
+    "allowed_lanes": [
+      "trade_market_context"
+    ],
+    "missing_or_neutral_market_cannot_create_edge": true,
+    "receipt_requirement": "display market context separately from private football value"
+  },
+  "league_rank_policy": {
+    "dynasty_asset_value_weight": 0,
+    "allowed_lanes": [
+      "roster_decision_value",
+      "required_top_five_release_pain"
+    ],
+    "league_rank_is_rule_signal_not_player_quality": true,
+    "receipt_requirement": "display Roster's League-Rank Top Five as rule context only"
+  },
+  "route_metric_policy": {
+    "snap_share_proxy_allowed": true,
+    "snap_share_cannot_masquerade_as_route": true,
+    "metrics": {
+      "route_participation": {
+        "source_status": "unavailable_free_public",
+        "allowed_in_scoring": false
+      },
+      "routes_run": {
+        "source_status": "unavailable_free_public",
+        "allowed_in_scoring": false
+      },
+      "tprr": {
+        "source_status": "unavailable_free_public",
+        "allowed_in_scoring": false
+      },
+      "yprr": {
+        "source_status": "unavailable_free_public",
+        "allowed_in_scoring": false
+      }
+    }
+  },
+  "review_only_guardrails": {
+    "active_rankings_must_not_load_this_config": true,
+    "no_decision_ready_unlock": true,
+    "no_roster_ready_unlock": true,
+    "no_draft_ready_unlock": true,
+    "no_final_money_ready_unlock": true,
+    "phase_3c_exit": "configuration contract exists and guardrail tests pass"
+  }
+}

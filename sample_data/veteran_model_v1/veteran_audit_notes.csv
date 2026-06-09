@@ -1,0 +1,3 @@
+note_id,season,player_id,feature_name,note_scope,note_text,source_key,affects_score,created_at
+note_lamar_qb_context,2026,lamar_jackson,position_replaceability,feature,LVE 1QB suppresses generic QB scarcity but elite rushing still keeps him above replacement.,manual_fixture_2026,false,2026-05-05T08:30:00-06:00
+note_kelce_age_review,2026,travis_kelce,age_curve,validation,Age input is intentionally conservative and should be reviewed before money decisions.,manual_fixture_2026,false,2026-05-05T08:35:00-06:00

@@ -1,0 +1,41 @@
+player_name,position,nfl_team,sample_scope,reason
+Lamar Jackson,QB,BAL,minimum_20,niners_roster_qb_control
+Brian Thomas Jr.,WR,JAX,minimum_20,niners_roster_young_wr
+De'Von Achane,RB,MIA,minimum_20,niners_roster_young_rb
+Luther Burden,WR,CHI,minimum_20,niners_roster_young_bridge
+Kaleb Johnson,RB,PIT,minimum_20,niners_roster_young_bridge
+Jayden Higgins,WR,HOU,minimum_20,niners_roster_young_bridge
+Jaxon Smith-Njigba,WR,SEA,minimum_20,wr_ranking_dispute_control
+Tee Higgins,WR,CIN,minimum_20,wr_ranking_dispute_control
+Chase Brown,RB,CIN,minimum_20,rb_workload_control
+Brenton Strange,TE,JAX,minimum_20,niners_roster_te_control
+Kyren Williams,RB,LAR,minimum_20,rb_role_vs_dynasty_control
+Bijan Robinson,RB,ATL,minimum_20,elite_rb_anchor
+Jahmyr Gibbs,RB,DET,minimum_20,elite_young_rb_anchor
+Justin Jefferson,WR,MIN,minimum_20,elite_wr_anchor
+Ja'Marr Chase,WR,CIN,minimum_20,elite_wr_anchor
+CeeDee Lamb,WR,DAL,minimum_20,elite_wr_anchor
+Amon-Ra St. Brown,WR,DET,minimum_20,elite_wr_anchor
+Puka Nacua,WR,LAR,minimum_20,elite_wr_anchor
+Brock Bowers,TE,LV,minimum_20,elite_te_no_premium_control
+Josh Allen,QB,BUF,minimum_20,elite_qb_1qb_control
+Xavier Worthy,WR,KC,full_40,young_wr_speed_role_control
+Ricky Pearsall,WR,SF,full_40,young_wr_role_control
+Jalen Coker,WR,CAR,full_40,young_wr_depth_control
+Luke McCaffrey,WR,WAS,full_40,missing_projection_control
+Oronde Gadsden II,TE,LAC,full_40,young_te_control
+T.J. Hockenson,TE,MIN,full_40,established_te_no_premium_control
+Daniel Jones,QB,IND,full_40,replacement_qb_control
+David Montgomery,RB,HOU,full_40,team_mismatch_projection_control
+Jakobi Meyers,WR,JAX,full_40,stable_veteran_wr_control
+Devin Singletary,RB,NYG,full_40,low_role_rb_control
+Jerry Jeudy,WR,CLE,full_40,veteran_wr_efficiency_control
+Brandon Aiyuk,WR,SF,full_40,missing_projection_high_value_control
+Jake Ferguson,TE,DAL,full_40,replaceable_te_control
+Romeo Doubs,WR,NE,full_40,team_mismatch_projection_control
+Wan'Dale Robinson,WR,TEN,full_40,team_mismatch_projection_control
+Quentin Johnston,WR,LAC,full_40,young_wr_profile_control
+Malik Nabers,WR,NYG,full_40,elite_young_wr_anchor
+Keenan Allen,WR,LAC,full_40,older_wr_missing_projection_control
+Ashton Jeanty,RB,LV,full_40,incoming_rookie_rb_anchor
+Christian McCaffrey,RB,SF,full_40,older_elite_rb_fragility_control

@@ -1,0 +1,139 @@
+Evaluation of Paid vs Free Data for Fantasy/NFL Model Inputs
+This evaluation reviews whether the key inputs needed for NFL/fantasy analytics models can be obtained without paid data. Research prioritized official data repositories and community‑maintained datasets (e.g., nflverse/nflfastR) and avoided scraping or sources with Terms‑of‑Service (ToS) risks. Each field was classified into one of five categories:
+free_direct – freely available structured data exists.
+free_derivable – data can be derived from free sources (e.g., play‑by‑play).
+free_proxy_only – only proxy metrics are available for free; exact data require paid data.
+paid_likely_required – free sources do not provide the data; paid subscription/licensing is likely needed.
+unavailable_or_not_recommended – data are unavailable or retrieval would violate ToS.
+Data Availability Table
+Field
+Classification
+Best free source
+Derivation method (if applicable)
+Paid needed reason (if not free)
+Legal risk (for free sources)
+Confidence (0–100)
+Production (yards, TDs, completions, receptions, etc.)
+free_direct
+nflreadr/nflfastR player stats (PFR) – includes passing, rushing and receiving totals[1]
+Direct download of player‐season or player‑game stats via nflreadr::load_player_stats or nflfastR::player_stats.
+—
+Low: data come from publicly maintained PFR dataset; usage for personal analysis is allowed.
+90
+First downs (rushing and receiving first downs)
+free_direct
+nflreadr/PFR advanced stats – the load_player_stats function includes first‑down counts[1].
+Direct load; aggregated per player.
+—
+Low
+90
+Snap share (percentage of snaps played)
+free_direct
+nflreadr snap‑counts dataset from Pro Football Reference[2]
+Data provide offensive/defensive snaps and percentages (offense_snaps, offense_pct) by player and game[2].
+—
+Low: dataset is distributed through nflverse; PFR terms allow non‑commercial use.
+85
+Routes run
+paid_likely_required
+None widely available; pre‑2023 participation data came from NFL Next Gen Stats but source died, and 2023+ data in nflverse comes from FTN (paid).
+N/A
+Requires route participation charting from Next Gen Stats or FTN; not publicly released.
+High if scraped; official data require licensing.
+40
+Route participation (percentage of passing snaps where player ran a route)
+paid_likely_required
+No free structured data; same as Routes Run.
+N/A
+Derived from proprietary route charting; free proxies unavailable.
+High
+40
+Target share (percentage of team targets)
+free_derivable
+nflfastR/nflreadr play‑by‑play data.
+Sum targets per player (count of pass attempts where receiver is targeted) divided by total team pass attempts; can be computed weekly or season‑long using play‑by‑play variables (receiver_player_id, pass_attempt, complete_pass)[3].
+—
+Low: play‑by‑play data is open.
+85
+Targets per route run (TPRR)
+paid_likely_required
+None.
+Requires route data (routes run); cannot compute accurately without it.
+Paid route data needed (Next Gen Stats or FTN).
+High
+30
+Yards per route run (YPRR)
+paid_likely_required
+None.
+Requires total yards and routes run; yards available but routes run unavailable free.
+Same as above.
+High
+30
+RB opportunity share (percentage of team RB carries + targets)
+free_derivable
+nflfastR/play‑by‑play
+Compute each running back’s rush attempts (rushing plays) plus targets and divide by total team opportunities; positions can be filtered via roster data.
+—
+Low
+80
+Red‑zone usage (carries or targets inside opponent’s 20‑yard line)
+free_derivable
+nflfastR play‑by‑play
+Filter plays where yardline_100 ≤ 20 and sum rush attempts or targets per player; derive share relative to team.
+—
+Low
+80
+Goal‑line usage (touches inside the 5‑ or 10‑yard line)
+free_derivable
+nflfastR play‑by‑play
+Filter plays with yardline_100 ≤ 5 (or ≤10) and count rushes/targets per player; derive share.
+—
+Low
+80
+Injuries
+free_direct (limited)
+nflreadr injury reports dataset[4]
+Direct load of weekly injury reports (season‑level data) with player status and injury details[5]; data available 2009–2024.
+Data provider stopped after 2024; no 2025+ updates.
+Low; dataset from official reports; after 2024 data may be missing.
+70
+Projections (fantasy point projections)
+free_proxy_only
+NFL Fantasy’s projection pages[6] provide some projections; also consensus projections compiled by community (e.g., FantasyPros) but not openly licensed.
+Manual scraping or API is discouraged; projections must be copied manually or approximated by regression on historical stats.
+Accurate, timely projections from PFF, FTN, etc., are behind paywalls; free sources lack structured APIs and may violate ToS if scraped.
+Medium; copying data manually from NFL.com is likely acceptable for personal use, but automated scraping may violate ToS.
+50
+Notes on Legal Risks
+Low risk means the data is distributed under open‑source/community terms (e.g., nflverse, Pro Football Reference) and can be used for non‑commercial analysis. Users should still review PFR’s terms of use for any commercial applications.
+Medium risk applies to manually copying data from official league pages (e.g., NFL fantasy projections). Manual collection for personal analysis is generally acceptable, but automated scraping or redistribution would likely violate terms.
+High risk applies where data is proprietary or licensed (Next Gen Stats, FTN, PFF). Attempting to collect these data without permission would infringe ToS and could result in legal issues.
+What We Can Do Without Paid Data
+Core production metrics – Passing, rushing and receiving yards, touchdowns, and other box‑score stats are fully available through the nflverse/nflreadr datasets. These data include first downs and can be aggregated by game or season[1].
+Snap share – Offensive and defensive snap counts and percentages are available from Pro Football Reference via nflreadr[2]. This allows modeling of player usage without paying for premium services.
+Derived usage metrics – Using open play‑by‑play data, one can compute target share, RB opportunity share, red‑zone and goal‑line usage by filtering plays by field position and summing rushes/targets. This requires processing but no paid data.
+Injury history (through 2024) – nflreadr provides structured injury reports from 2009–2024[5]. Though the dataset is no longer updated, it can still be useful for historical modeling.
+These available fields enable building predictive models that account for player production, team usage, snap participation, and historical injuries. With some coding, the derived metrics can approximate real‑world usage patterns without incurring subscription costs.
+What Remains Weak Without Paid Data
+Routes and route‑based metrics – Variables like routes run, route participation, Targets per Route Run and Yards per Route Run depend on detailed route charting or player tracking data. According to the nflverse team, participation data after 2023 comes from FTN and does not update during the season. There is no open source for routes run, and Next Gen Stats data is proprietary. Consequently, models built solely on free data cannot capture separation, route usage or efficiency per route.
+Current injury reports – The injury dataset in nflreadr is no longer updated after 2024 due to the death of its data source. Current‑year injury status must be monitored manually through team injury reports or pay‑walled APIs.
+Forward‑looking projections – High‑quality fantasy projections are typically compiled by analysts and available via paid services (PFF, FTN, Fantasy Points, etc.). Free projections exist on NFL.com, but they are not provided in a structured format and may have limited analytics. Without paid projections, one must build their own projection models or rely on unsanctioned scraping.
+Safety of Manual ChatGPT‑Agent Collection
+Allowed: Downloading and processing data from the nflverse GitHub repositories is safe and does not violate ToS. The agent may use tools to download CSV/RDS files or call load_* functions locally.
+Caution: Manually copying projections from NFL.com for a handful of players is likely acceptable for personal use, but automating scraping or redistributing the data could breach terms. Use manual copying only for small‑scale research.
+Not allowed: Collecting routes run or participation data from FTN, Next Gen Stats or other subscription services without authorization is unsafe. The agent should not attempt to bypass paywalls or scrape these sites.
+Recommended Implementation Order
+Integrate free nflverse datasets. Start by ingesting player stats (load_player_stats) and snap counts (load_snap_counts) into your modeling pipeline. Compute production metrics, first downs and snap share.
+Derive usage metrics. Use play‑by‑play data from nflfastR to calculate target share, RB opportunity share, red‑zone and goal‑line usage. This step requires coding but no additional data purchases.
+Incorporate historical injury reports. Pull injury data through 2024 from load_injuries[5]. For 2025 onward, plan to ingest public team injury reports manually or from news feeds until a new open source emerges.
+Build internal projection model. Because high‑quality projections are not freely available, develop your own projection system using historical player performance, usage metrics, team tendencies and schedule. Alternatively, use limited free projections from NFL.com as a baseline.
+Evaluate need for paid data. Once the free‑data models are operational, assess whether adding route‑based metrics (routes run, route participation, TPRR, YPRR) would materially improve predictive accuracy. If so, consider licensing data from providers like FTN or PFF. Ensure that any paid data usage complies with licensing agreements.
+By following this order, you can build a robust analytics foundation using open data and only later decide whether investing in paid data is worthwhile.
+[1] [2] Load Snap Counts from PFR — load_snap_counts • nflreadr
+https://nflreadr.nflverse.com/reference/load_snap_counts.html
+[3] An R package to quickly obtain clean and tidy NFL play by play data • nflfastR
+https://nflfastr.com/
+[4] [5] Load Injury Reports — load_injuries • nflreadr
+https://nflreadr.nflverse.com/reference/load_injuries.html
+[6] Fantasy Football Projections | NFL Fantasy
+https://fantasy.nfl.com/research/projections

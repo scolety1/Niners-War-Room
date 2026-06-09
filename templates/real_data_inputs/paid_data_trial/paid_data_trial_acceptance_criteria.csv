@@ -1,0 +1,13 @@
+criterion,pass_rule,fail_rule,evidence_to_collect
+legal_local_export,Provider terms or written permission allow personal/local analysis export or API use,Terms prohibit local export/cache or are unclear,terms URL or saved agreement note
+no_forbidden_scraping,Data comes from documented API/download/CSV/XLS export,Only accessible by scraping rendered pages or bypassing controls,export/API documentation
+stable_numeric_fields,Two exports have matching headers and numeric fields parse cleanly,Field names drift or numeric columns contain prose/question marks,two sample exports plus validation report
+player_id_mapping,At least 95 percent of sample players map cleanly to Sleeper/nflverse and no high-value ambiguous match remains,Ambiguous identity for any high-value player or low overall mapping rate,identity mapping report
+critical_coverage_gain,At least one critical/near-critical bucket improves: role/usage, route participation, projections, injury reliability, or IDs,Provider duplicates free data without improving gaps,coverage diff report
+route_usage_value,Provider supplies routes run plus at least two of route participation target share TPRR YPRR,Provider lacks route/usage fields or only gives generic summaries,field coverage matrix
+rb_usage_value,Provider supplies numeric RB opportunity share or enough carries targets red-zone and goal-line fields to derive it,RB workload appears only as prose or team-level context,field coverage matrix
+projection_rescore_fit,Projection stat columns can be rescored into LVE no-PPR first-down format,Only provider fantasy points are available or scoring cannot be audited,projection recompute report
+injury_context_fit,Injury current status/history fields are sourced and date-stamped,Healthy labels are unsourced or stale,injury source coverage report
+receipt_compatibility,Every imported field can appear with raw value source date source status and warning,Fields cannot be audited by player,receipt preview
+model_isolation,Trial rows stay under local_exports/paid_data_trials and do not alter active model outputs,Trial mutates active rankings or data packs,git/status and output path report
+cost_to_edge,Provider fills important gaps at a cost worth testing beyond sample,Cost is high and fields do not solve actual blockers,provider scorecard

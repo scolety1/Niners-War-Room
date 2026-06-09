@@ -28,7 +28,7 @@ def test_validation_catches_duplicate_players_and_missing_official_rank(tmp_path
             "2026-08-01,2026,owls,Owls,p1,Lamar Jackson,QB,BAL,starter,1,manual",
         ],
         rankings=[
-            "2026-08-01,2026,manual,FantasyPros,2026-07-30,p2,Other Player,RB,SEA,400,,1",
+            "2026-08-01,2026,manual,FantasyPros,2026-07-30,p2,Other Player,RB,SEA,400,,0",
         ],
     )
 
@@ -36,8 +36,57 @@ def test_validation_catches_duplicate_players_and_missing_official_rank(tmp_path
     issues = {(issue.severity, issue.issue) for issue in result.issues}
 
     assert ("error", "Player appears on multiple teams.") in issues
-    assert ("warning", "Roster player is missing an official rank.") in issues
-    assert ("warning", "Official rank is 400.") in issues
+    assert ("warning", "Roster player is missing a league rank.") in issues
+    assert ("warning", "League rank is 400.") in issues
+
+
+def test_validation_accepts_confirmed_rank_400_placeholder(tmp_path) -> None:
+    pack = _write_pack(
+        tmp_path,
+        rosters=[
+            "2026-08-01,2026,niners,Niners,p1,Trailing Player,RB,BAL,starter,400,manual",
+        ],
+        rankings=[
+            "2026-08-01,2026,manual,FantasyPros,2026-07-30,p1,Trailing Player,RB,BAL,400,,1",
+        ],
+    )
+
+    result = validate_data_pack(pack, roster_limit=1)
+
+    assert not [
+        issue for issue in result.issues if issue.issue == "League rank is 400."
+    ]
+
+
+def test_validation_accepts_league_rank_without_legacy_official_rank(tmp_path) -> None:
+    pack = _write_pack(tmp_path)
+    _write_file(
+        pack / "fact_rosters.csv",
+        [
+            (
+                "snapshot_date,season,team_id,team_name,player_id,player_name,position,"
+                "nfl_team,roster_status,league_rank,source"
+            ),
+            "2026-08-01,2026,niners,Niners,p1,Lamar Jackson,QB,BAL,starter,1,manual",
+        ],
+    )
+    _write_file(
+        pack / "fact_official_rankings.csv",
+        [
+            (
+                "snapshot_date,season,source,rank_source_name,rank_source_date,player_id,"
+                "player_name,position,nfl_team,league_rank,rank_tier,is_rank_placeholder"
+            ),
+            "2026-08-01,2026,manual,FantasyPros,2026-07-30,p1,Lamar Jackson,QB,BAL,1,,0",
+        ],
+    )
+
+    result = validate_data_pack(pack, roster_limit=1)
+
+    assert not result.has_errors
+    assert not [
+        issue for issue in result.issues if "league rank" in issue.issue.lower()
+    ]
 
 
 def test_validation_catches_duplicate_draft_picks_invalid_labels_and_unknown_teams(

@@ -1,0 +1,16 @@
+season,player,position,model_rank,model_score,model_recommendation,outcome_label,outcome_score,source
+2022,Breece Hall,RB,1,89.0,top_target,hit_with_injury_context,76.0,manual_replay_fixture
+2022,Drake London,WR,3,82.0,first_round_value,useful_hold,72.0,manual_replay_fixture
+2022,Garrett Wilson,WR,2,87.0,top_target,hit,88.0,manual_replay_fixture
+2022,Kenneth Walker,RB,4,78.0,first_round_value,useful_but_role_sensitive,70.0,manual_replay_fixture
+2022,Chris Olave,WR,5,76.0,first_round_value,useful_hold,68.0,manual_replay_fixture
+2023,Bijan Robinson,RB,1,94.0,top_target,hit,86.0,manual_replay_fixture
+2023,Jahmyr Gibbs,RB,2,91.0,top_target,hit,88.0,manual_replay_fixture
+2023,Jaxon Smith-Njigba,WR,4,78.0,second_tier_value,useful_hold,66.0,manual_replay_fixture
+2023,Zay Flowers,WR,3,81.0,first_round_value,useful_hit,78.0,manual_replay_fixture
+2023,Jordan Addison,WR,5,75.0,first_round_value,useful_hold,67.0,manual_replay_fixture
+2024,Marvin Harrison Jr.,WR,1,95.0,top_target,too_early_to_close,,manual_replay_fixture
+2024,Malik Nabers,WR,2,94.0,top_target,too_early_to_close,,manual_replay_fixture
+2024,Rome Odunze,WR,3,86.0,top_target,too_early_to_close,,manual_replay_fixture
+2024,Brock Bowers,TE,4,84.0,elite_exception,too_early_to_close,,manual_replay_fixture
+2024,Jayden Daniels,QB,5,82.0,qb_elite_exception,too_early_to_close,,manual_replay_fixture

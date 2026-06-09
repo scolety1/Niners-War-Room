@@ -1,0 +1,46 @@
+id,source_phase,topic,disposition,implementation_action,confidence,scoring_impact
+A2-001,"Phase 6;Phase 10",Veteran value foundation,accept,Make role/projection the core veteran model spine,high,core scoring
+A2-002,"Phase 6;Phase 10",League rank,accept,Keep league-rank fields in forced-release exposure and strategy only,high,no direct scoring
+A2-003,"Phase 6;Phase 7;Phase 10",Public market,accept,Use market only in trade/liquidity layers and cap format mismatch,high,trade layer only
+A2-004,"Phase 9;Phase 10",Projections vs rankings,accept,Prioritize scoring-adjusted projections above generic rankings,high,core scoring
+A2-005,"Phase 9;Phase 10",Source hierarchy,accept,Encode domain-specific source tiers,high,confidence/readiness
+A2-006,"Phase 9;Phase 10",Missing data,accept,Use neutral 50 imputation plus visible confidence penalties,high,confidence first
+A2-007,"Phase 9;Phase 10",Critical blockers,accept,Enforce identity ownership league-rank and override blockers,high,readiness
+A2-008,"Phase 9;Phase 10",Manual overrides,accept,Allow input and provenance overrides only,high,provenance only
+A2-009,Phase 6,QB veteran features,accept,Update veteran registry and formulas after Phase B,medium_high,core scoring
+A2-010,"Phase 6;Phase 10",QB suppression,accept_with_lower_confidence,Use soft replacement-aware discount with elite escape hatch,medium_high,league overlay
+A2-011,Phase 6,Mobile QB injury,accept,Avoid generic mobile-QB injury penalty,medium_high,risk/confidence
+A2-012,Phase 6,RB veteran features,accept,Update veteran registry and formulas after Phase B,high,core scoring
+A2-013,Phase 6,RB rushing efficiency,accept_with_lower_confidence,Keep efficiency secondary and role-tier-aware,medium,secondary scoring
+A2-014,Phase 6,RB raw receptions,display_only,Store for reporting only,high,no direct scoring
+A2-015,Phase 6,RB career touches,display_only,Store as context only,medium_high,no direct scoring
+A2-016,Phase 6,WR veteran features,accept,Update veteran registry and formulas after Phase B,high,core scoring
+A2-017,"Phase 6;Phase 10",WR first downs,accept_with_lower_confidence,Use as league-fit overlay not duplicated core weight,medium,secondary/overlay
+A2-018,Phase 6,WR raw receptions,display_only,Store for context only,high,no direct scoring
+A2-019,Phase 6,TE veteran features,accept,Update veteran registry and formulas after Phase B,medium_high,core scoring
+A2-020,"Phase 6;Phase 10",TE suppression,accept_with_lower_confidence,Use soft no-premium discount with elite escape hatch,medium_high,league overlay
+A2-021,Phase 6,Generic TE scarcity,reject,Do not implement as scoring feature,high,no scoring
+A2-022,Phase 6,Stale NFL draft capital,display_only,Keep only as profile context,high,no direct scoring
+A2-023,"Phase 6;Phase 10",Age curves,accept,Use broad age bands not hard cliff ages,high,core/confidence
+A2-024,"Phase 6;Phase 10",Injury handling,accept,Use active status recurrence and position sensitivity,high,scoring/confidence
+A2-025,"Phase 7;Phase 10",Unified asset scale,accept,Keep unified board architecture,high,board/ranking
+A2-026,"Phase 7;Phase 10",Replacement baselines,stop_and_review,Implement steady-state and declaration-window baselines in D1,high,asset conversion
+A2-027,"Phase 7;Phase 10",Current pick optionality,accept,Represent current picks as flexible option value,medium_high,asset conversion
+A2-028,"Phase 7;Phase 10",Future pick discounts,heuristic_calibration_required,Move constants into config with calibration labels,low_medium,asset conversion
+A2-029,"Phase 7;Phase 10",Two-for-one/package math,heuristic_calibration_required,Keep conservative defaults and label calibration-required,low,trade math
+A2-030,"Phase 7;Phase 10",Package spam,accept_with_lower_confidence,Preserve package penalty with visible heuristic labels,medium,trade math
+A2-031,Phase 8,Forced-release shadow tax,accept,Keep top-five pressure architecture,high,strategy
+A2-032,Phase 8,Release opportunity cost,accept,Use private value loss as strategy anchor after real scores exist,medium_high,strategy
+A2-033,"Phase 8;Phase 10",Owner behavior,display_only,Show as scenario bands/tier guidance,low,UI/strategy only
+A2-034,Phase 8,Reacquisition planning,accept_with_lower_confidence,Keep as draft-room scenario not certainty,medium,strategy
+A2-035,Phase 8,Opponent targets,accept_with_lower_confidence,Use in League Intel after real scores exist,medium,strategy
+A2-036,Phase 9,Warning classes,accept,Use explicit readiness UX and validators,high,readiness/UI
+A2-037,Phase 9,Source catalog,accept,Upgrade schemas in Phase C,high,provenance
+A2-038,Phase 9,Model run metadata,accept,Extend generated run metadata,high,provenance/readiness
+A2-039,Phase 10,Generated outputs,accept,Commit raw inputs registries notes and generate outputs locally,high,process
+A2-040,Phase 10,First-down double-counting,accept_with_lower_confidence,Use first downs as residual role confidence unless projection misses them,medium_high,scoring guardrail
+A2-041,Phase 10,Depth charts,accept_with_lower_confidence,Use as context/warning not primary score,medium_high,confidence/context
+A2-042,Phase 10,Contracts,accept_with_lower_confidence,Use as secondary job-security context only,medium,confidence/context
+A2-043,Phase 10,Coefficient truth,accept,Tag every coefficient with provenance class,high,process
+A2-044,Phase 10,Hard gates,reject,Replace hard ceilings/cliffs with soft penalties and exception gates,high,scoring guardrail
+A2-045,Phase 10,Decision readiness,accept,Keep readiness gate strict,high,UX/readiness
