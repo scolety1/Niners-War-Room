@@ -61,6 +61,7 @@ def test_live_draft_room_state_is_separate_from_source_data() -> None:
 
     assert "live-draft-room::" in text
     assert "Session/local mock" in text
+    assert "Session/local mock state only; source data is not mutated." in text
     assert "Never writes to active data packs." in text
     assert "Read-only input for session state." in text
     assert "path.write_text" not in text
@@ -93,6 +94,35 @@ def test_live_draft_room_has_required_controls_without_forbidden_copy() -> None:
         "defer",
     ):
         assert forbidden not in text
+
+
+def test_live_draft_room_wires_shared_player_detail_card_read_only() -> None:
+    text = _page_text()
+    helper_start = text.index("def _render_live_player_detail")
+    helper_end = text.index("def _render_best_remaining", helper_start)
+    helper_text = text[helper_start:helper_end]
+
+    assert "from app.components.player_detail_card import render_player_detail_card" in text
+    assert (
+        "from src.services.player_detail_card_service import build_player_detail_card_payload"
+        in text
+    )
+    assert "Selected player detail" in text
+    assert "Selected Player Detail:" in text
+    assert 'build_player_detail_card_payload(detail_row, context="live_draft_room")' in text
+    assert "render_player_detail_card(payload)" in text
+    assert "Legal Pool Pending" in helper_text
+    assert "does not mark or replace picks" in helper_text
+
+    for state_mutation in (
+        "mark_player_drafted",
+        "replace_drafted_player_at_pick",
+        "undo_pick",
+        "reset_mock",
+        "st.session_state[",
+        "st.rerun",
+    ):
+        assert state_mutation not in helper_text
 
 
 def test_decision_board_is_not_modified_by_live_draft_room_page() -> None:

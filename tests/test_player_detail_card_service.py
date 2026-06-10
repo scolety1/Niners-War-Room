@@ -6,6 +6,7 @@ from src.services.player_detail_card_service import (
     DISPLAY_ONLY_NOTE,
     DRAFT_PREP_CONTEXT,
     LEGACY_COMPARISON_ONLY_NOTE,
+    LIVE_DRAFT_ROOM_CONTEXT,
     build_player_detail_card_payload,
 )
 
@@ -74,7 +75,7 @@ def test_raw_receipts_are_available_for_advanced_display() -> None:
 
 def test_unsupported_context_fails_closed() -> None:
     with pytest.raises(ValueError, match="Unsupported player detail card context"):
-        build_player_detail_card_payload(_rankings_row(), context="live_draft_room")
+        build_player_detail_card_payload(_rankings_row(), context="roster_decisions")
 
 
 def test_draft_prep_payload_maps_context_only_fields() -> None:
@@ -120,6 +121,45 @@ def test_draft_prep_payload_missing_fields_do_not_invent_draftable_status() -> N
     assert payload.roster_status == "-"
     assert payload.nwr_score == "-"
     assert payload.draft_prep_context_metrics == ()
+
+
+def test_live_draft_room_payload_maps_mock_state_context() -> None:
+    payload = build_player_detail_card_payload(
+        _live_draft_room_row(),
+        context=LIVE_DRAFT_ROOM_CONTEXT,
+    )
+
+    assert payload.context == "live_draft_room"
+    assert payload.player == "Jeremiyah Love"
+    assert payload.position == "RB"
+    assert payload.team == "ARI"
+    assert payload.nwr_score == "75.31"
+    assert payload.source_type == "Rookie"
+    assert payload.roster_status == "Available"
+    assert "Best Remaining / Scouting Pool" in payload.why_text
+    assert "Legal Pool Pending" in payload.why_text
+    assert "does not mutate source data" in payload.display_only_note
+    assert _metric_value(payload.live_draft_room_context_metrics, "Legal Pool Status") == (
+        "Legal Pool Pending"
+    )
+    assert _metric_value(payload.live_draft_room_context_metrics, "Selected Pick") == "1.03"
+    assert _metric_note(payload.live_draft_room_context_metrics, "Drafted Status") == (
+        "session/local mock state"
+    )
+
+
+def test_live_draft_room_payload_missing_fields_do_not_crash_or_invent_legal_status() -> None:
+    payload = build_player_detail_card_payload(
+        {"player": "Unknown Live Player"},
+        context=LIVE_DRAFT_ROOM_CONTEXT,
+    )
+
+    assert payload.player == "Unknown Live Player"
+    assert payload.roster_status == "-"
+    assert payload.nwr_score == "-"
+    assert _metric_value(payload.live_draft_room_context_metrics, "Legal Pool Status") == (
+        "Legal Pool Pending"
+    )
 
 
 def _rankings_row(**overrides: object) -> dict[str, object]:
@@ -177,6 +217,34 @@ def _draft_prep_row(**overrides: object) -> dict[str, object]:
         "source_path": "local_exports/model_v4/draft_prep/latest/scouting.csv",
         "source_column": "nwr_rookie_score",
         "lineage_class": "review_v4_dynasty_asset",
+    }
+    row.update(overrides)
+    return row
+
+
+def _live_draft_room_row(**overrides: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "player": "Jeremiyah Love",
+        "position": "RB",
+        "nfl_team": "ARI",
+        "asset_type": "rookie",
+        "asset_lifecycle": "rookie_draftable",
+        "stats_model_value": "75.31",
+        "draft_status": "available",
+        "drafted_pick": "",
+        "current_pick_context": "1.03",
+        "selected_pick_context": "1.03",
+        "legal_pool_status": "Legal Pool Pending",
+        "scouting_pool_status": "Mock/scouting mode",
+        "hide_drafted_status": "Drafted rows hidden",
+        "mock_state_context": "Session/local mock state only; source data is not mutated.",
+        "best_remaining_context": "Selected from Best Remaining / Scouting Pool.",
+        "trust_status": "Source/context only",
+        "warning_flags": "source_limited_evidence_cap",
+        "allowed_use": "mock_live_tracking_and_scouting_context_only",
+        "blocked_use": "do_not_use_as_private_value_or_final_draft_recommendation",
+        "source_path": "local_exports/model_v4/draft_prep/latest/scouting.csv",
+        "source_column": "stats_model_value",
     }
     row.update(overrides)
     return row

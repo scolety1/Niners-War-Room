@@ -21,6 +21,7 @@ from app.components.draft_session import (
     selected_pick_number,
     state_from_session,
 )
+from app.components.player_detail_card import render_player_detail_card
 from src.config.settings import get_settings
 from src.services.draft_state_service import (
     DraftBoardState,
@@ -54,6 +55,7 @@ from src.services.mock_draft_storage_service import (
     load_mock_draft,
     save_mock_draft,
 )
+from src.services.player_detail_card_service import build_player_detail_card_payload
 
 DRAFT_PREP_ROOT = REPO_ROOT / "local_exports/model_v4/draft_prep/latest"
 SCOUTING_PREP_POOL_ROWS = DRAFT_PREP_ROOT / "scouting_prep_pool_review_rows.csv"
@@ -415,7 +417,75 @@ def _render_pick_assignment(
     return state
 
 
-def _render_best_remaining(state: DraftBoardState) -> None:
+def _pick_label_for_overall(state: DraftBoardState, overall_pick: int | None) -> str:
+    if overall_pick is None:
+        return MISSING
+    for pick in state.picks:
+        if pick.overall_pick == overall_pick:
+            return pick.pick_label
+    return MISSING
+
+
+def _render_live_player_detail(
+    frame: pd.DataFrame,
+    *,
+    state: DraftBoardState,
+    selected_pick: int | None,
+    hide_drafted: bool,
+) -> None:
+    if frame.empty:
+        return
+    detail_frame = frame.head(250).copy()
+    choices = {
+        (
+            f"{row.player} | {row.position} | {row.asset_type} | "
+            f"{row.draft_status}"
+        ): index
+        for index, row in detail_frame.iterrows()
+    }
+    selected_label = st.selectbox(
+        "Selected player detail",
+        list(choices),
+        index=0 if choices else None,
+        help=(
+            "Read-only player context from the mock/scouting board. Viewing this card "
+            "does not mark or replace picks."
+        ),
+    )
+    if not choices:
+        return
+    detail_row = detail_frame.loc[choices[str(selected_label)]].to_dict()
+    current = current_draft_pick(state)
+    warning_text = _clean_text(detail_row.get("warning"))
+    if warning_text:
+        detail_row["data_needed"] = f"Review scouting warning summary: {warning_text}"
+    detail_row.update(
+        {
+            "source_type": detail_row.get("asset_type", ""),
+            "draftable_status": detail_row.get("asset_lifecycle", ""),
+            "drafted_status": detail_row.get("draft_status", ""),
+            "current_pick_context": current.pick_label if current else "Done",
+            "selected_pick_context": _pick_label_for_overall(state, selected_pick),
+            "legal_pool_status": "Legal Pool Pending",
+            "scouting_pool_status": "Mock/scouting mode",
+            "hide_drafted_status": (
+                "Drafted rows hidden" if hide_drafted else "Drafted rows visible"
+            ),
+            "mock_state_context": "Session/local mock state only; source data is not mutated.",
+            "best_remaining_context": "Selected from Best Remaining / Scouting Pool.",
+            "trust_status": "Source/context only",
+            "source_path": str(SCOUTING_PREP_POOL_ROWS),
+            "source_column": "stats_model_value",
+            "allowed_use": "mock_live_tracking_and_scouting_context_only",
+            "blocked_use": "do_not_use_as_private_value_or_final_draft_recommendation",
+        }
+    )
+    payload = build_player_detail_card_payload(detail_row, context="live_draft_room")
+    with st.expander(f"Selected Player Detail: {payload.player}", expanded=False):
+        render_player_detail_card(payload)
+
+
+def _render_best_remaining(state: DraftBoardState, *, selected_pick: int | None) -> None:
     st.subheader("Best Remaining / Scouting Pool")
     filter_cols = st.columns(3)
     with filter_cols[0]:
@@ -457,6 +527,12 @@ def _render_best_remaining(state: DraftBoardState) -> None:
         ].head(200),
         use_container_width=True,
         hide_index=True,
+    )
+    _render_live_player_detail(
+        frame,
+        state=state,
+        selected_pick=selected_pick,
+        hide_drafted=hide_drafted,
     )
 
     position_rows = best_remaining_by_position(state, limit_per_position=3)
@@ -666,7 +742,7 @@ def main() -> None:
             dirty_key_value=dirty_key_value,
         )
 
-    _render_best_remaining(st.session_state[session_key])
+    _render_best_remaining(st.session_state[session_key], selected_pick=selected_pick)
     _render_my_picks_and_recent(st.session_state[session_key])
     _render_downloads_and_details(st.session_state[session_key], session_key)
 

@@ -14,10 +14,12 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "NWR / private model context",
         "Rankings context",
         "Draft Prep context",
+        "Live Draft Room context",
         "Trust, warnings, and data needed",
         "User / history context",
         "Legacy / context disclosure",
         "Advanced source receipts",
+        "Draft state is session/local mock state and does not mutate source data.",
     ):
         assert required in text
 

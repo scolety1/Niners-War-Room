@@ -54,6 +54,18 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
                 use_container_width=True,
                 hide_index=True,
             )
+    elif payload.context == "live_draft_room":
+        st.markdown("**Live Draft Room context**")
+        st.caption(payload.display_only_note)
+        if payload.live_draft_room_context_metrics:
+            st.dataframe(
+                _metrics_frame(payload.live_draft_room_context_metrics),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.write("Live Draft Room context is not available from current source rows.")
+        st.info("Draft state is session/local mock state and does not mutate source data.")
 
     st.markdown("**Trust, warnings, and data needed**")
     st.write(f"Trust: {payload.trust_status}")

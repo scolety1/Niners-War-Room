@@ -9,6 +9,7 @@ from app.components.human_labels import human_label
 MISSING = "-"
 RANKINGS_CONTEXT = "rankings"
 DRAFT_PREP_CONTEXT = "draft_prep"
+LIVE_DRAFT_ROOM_CONTEXT = "live_draft_room"
 OUTCOME_IN_DEVELOPMENT_NOTE = (
     "Outcome percentage model in development. No estimated percentages are shown until "
     "the private model supports these fields."
@@ -101,6 +102,7 @@ class PlayerDetailCardPayload:
     private_model_metrics: tuple[PlayerDetailMetric, ...] = ()
     ranking_context_metrics: tuple[PlayerDetailMetric, ...] = ()
     draft_prep_context_metrics: tuple[PlayerDetailMetric, ...] = ()
+    live_draft_room_context_metrics: tuple[PlayerDetailMetric, ...] = ()
     user_context_metrics: tuple[PlayerDetailMetric, ...] = ()
     receipts: tuple[PlayerDetailReceipt, ...] = ()
     raw_warning_flags: str = ""
@@ -117,6 +119,8 @@ def build_player_detail_card_payload(
         return _build_rankings_payload(row)
     if context == DRAFT_PREP_CONTEXT:
         return _build_draft_prep_payload(row)
+    if context == LIVE_DRAFT_ROOM_CONTEXT:
+        return _build_live_draft_room_payload(row)
     raise ValueError(f"Unsupported player detail card context: {context}")
 
 
@@ -300,6 +304,99 @@ def _build_draft_prep_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload
         display_only_note=(
             "Draft Prep source status, prior draft history, spreadsheet highlights, and "
             "pick-window labels are display-only/context-only and never private model value."
+        ),
+    )
+
+
+def _build_live_draft_room_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
+    player = _clean(row.get("player"), missing="Player")
+    position = _clean(row.get("position"))
+    age = _clean(row.get("age"))
+    team = _clean(row.get("nfl_team"))
+    source_type = _display_text(_first(row, "source_type", "asset_type"))
+    draftable_status = _display_text(_first(row, "draftable_status", "asset_lifecycle"))
+    drafted_status = _display_text(row.get("drafted_status") or row.get("draft_status"))
+    drafted_pick = _clean(row.get("drafted_pick"))
+    current_pick = _clean(row.get("current_pick_context"))
+    selected_pick = _clean(row.get("selected_pick_context"))
+    legal_pool_status = _clean(row.get("legal_pool_status"), missing="Legal Pool Pending")
+    scouting_pool_status = _clean(row.get("scouting_pool_status"), missing="Scouting pool")
+    hide_drafted_status = _clean(row.get("hide_drafted_status"))
+    mock_state_context = _clean(
+        row.get("mock_state_context"),
+        missing="Session/local mock state only.",
+    )
+    best_remaining_context = _clean(
+        row.get("best_remaining_context"),
+        missing="Selected from Best Remaining / Scouting Pool.",
+    )
+    trust = _clean(row.get("trust_status"), missing="Source/context only")
+    score = _score_text(_first(row, "nwr_draft_value", "stats_model_value", "nwr_rookie_score"))
+    warning_flags = _joined_warnings(row)
+    warnings = _warning_flags(warning_flags)
+    data_needed = _data_needed(row, warnings, score)
+
+    why_bits = [
+        best_remaining_context,
+        f"Selected pick: {selected_pick}." if selected_pick != MISSING else "",
+        f"Drafted pick: {drafted_pick}." if drafted_pick != MISSING else "",
+        "Legal Pool Pending until dropped/released veteran data is supplied.",
+    ]
+    why_text = " ".join(bit for bit in why_bits if bit)
+
+    private_metrics = (
+        PlayerDetailMetric("NWR Draft Value / Scouting Score", score),
+        PlayerDetailMetric("Trust", trust),
+        PlayerDetailMetric("Lineage", _clean(row.get("lineage_class"))),
+    )
+    live_metrics = (
+        PlayerDetailMetric("Legal Pool Status", legal_pool_status, "source status"),
+        PlayerDetailMetric("Scouting Pool Status", scouting_pool_status, "source/context only"),
+        PlayerDetailMetric("Drafted Status", drafted_status, "session/local mock state"),
+        PlayerDetailMetric("Drafted Pick", drafted_pick, "session/local mock state"),
+        PlayerDetailMetric("Current Pick", current_pick, "session/local mock state"),
+        PlayerDetailMetric("Selected Pick", selected_pick, "session/local mock state"),
+        PlayerDetailMetric("Hide Drafted", hide_drafted_status, "display setting"),
+        PlayerDetailMetric("Source Type", source_type, "context-only"),
+        PlayerDetailMetric("Draftable Status", draftable_status, "source status"),
+        PlayerDetailMetric("Mock State", mock_state_context, "read-only display"),
+    )
+
+    return PlayerDetailCardPayload(
+        context=LIVE_DRAFT_ROOM_CONTEXT,
+        player=player,
+        position=position,
+        age=age,
+        team=team,
+        roster_status=drafted_status if drafted_status != MISSING else draftable_status,
+        source_type=source_type,
+        nwr_score=score,
+        trust_status=trust,
+        warning_summary=_warning_summary(warnings),
+        warning_messages=tuple(_human_warning(flag) for flag in warnings),
+        data_needed=tuple(data_needed),
+        source_path=_clean(row.get("source_path")),
+        source_column=_clean(row.get("source_column")),
+        lineage_class=_clean(row.get("lineage_class")),
+        allowed_use=_clean(row.get("allowed_use")),
+        blocked_use=_clean(row.get("blocked_use")),
+        context_tags=tuple(
+            tag
+            for tag in (legal_pool_status, drafted_status, source_type)
+            if tag != MISSING
+        ),
+        why_text=why_text,
+        private_model_metrics=tuple(
+            metric for metric in private_metrics if metric.value != MISSING
+        ),
+        live_draft_room_context_metrics=tuple(
+            metric for metric in live_metrics if metric.value != MISSING
+        ),
+        receipts=_receipts(row, warning_flags),
+        raw_warning_flags=warning_flags,
+        display_only_note=(
+            "Live Draft Room player context is source/context only. Draft state is "
+            "session/local mock state and does not mutate source data."
         ),
     )
 
