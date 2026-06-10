@@ -47,6 +47,8 @@ def test_candidate_guardrails_and_coverage_pass() -> None:
         "players_moved_more_than_12",
         "players_moved_more_than_24",
         "non_elite_qb_suspicious_lifts",
+        "stafford_old_pocket_qb_horizon_cap_applied",
+        "elite_rushing_qbs_not_penalized_by_old_qb_cap",
         "aging_wr_generic_boosts",
         "te_score_changes",
         "rb_score_changes",
@@ -80,10 +82,17 @@ def test_candidate_uses_no_banned_input_receipts() -> None:
             str(row.get(column, ""))
             for column in (
                 "candidate_evidence_fields_used",
+                "old_qb_horizon_evidence_fields",
                 "candidate_source_policy",
             )
         )
-        evidence_fields = str(row.get("candidate_evidence_fields_used", ""))
+        evidence_fields = "|".join(
+            str(row.get(column, ""))
+            for column in (
+                "candidate_evidence_fields_used",
+                "old_qb_horizon_evidence_fields",
+            )
+        )
         assert not any(fragment in evidence_fields for fragment in blocked)
         assert "legacy_blocked" in receipts
 
@@ -99,9 +108,20 @@ def test_candidate_wr_qb_v2_behavior_is_narrow() -> None:
     assert _candidate_adjustment(result, "Davante Adams") == 0
     assert _candidate_adjustment(result, "Patrick Mahomes") > 0
     assert _candidate_adjustment(result, "Jalen Hurts") > 0
+    assert _candidate_adjustment(result, "Matthew Stafford") < 0
+    assert _row(result.rows, "Matthew Stafford")["old_qb_horizon_cap"] == 23.5
+    assert "old_pocket_qb_horizon_cap_applied" in str(
+        _row(result.rows, "Matthew Stafford")["old_qb_horizon_reason_codes"]
+    )
+    assert _candidate_adjustment(result, "Aaron Rodgers") == 0
     assert _candidate_adjustment(result, "Jared Goff") == 0
     assert _candidate_adjustment(result, "Baker Mayfield") == 0
     assert _candidate_adjustment(result, "Jaxson Dart") == 0
+
+    for player in ("Josh Allen", "Jalen Hurts", "Lamar Jackson"):
+        assert "old_pocket_qb_horizon_cap_applied" not in str(
+            _row(result.rows, player)["old_qb_horizon_reason_codes"]
+        )
 
 
 def test_candidate_does_not_change_rb_or_te_scores() -> None:

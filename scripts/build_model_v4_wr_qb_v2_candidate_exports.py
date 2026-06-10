@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.services.model_v4_wr_qb_v2_candidate_service import (  # noqa: E402
     DEFAULT_OUTPUT_ROOT,
+    MODEL_VERSION,
     build_wr_qb_v2_candidate,
     write_wr_qb_v2_candidate_exports,
 )
@@ -20,7 +21,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "candidate_model": "model_v4_wr_qb_v2_candidate",
+                "candidate_model": MODEL_VERSION,
                 "output_root": str(DEFAULT_OUTPUT_ROOT),
                 "production_hash_before": result.production_hash_before,
                 "production_hash_after": result.production_hash_after,

@@ -10,13 +10,16 @@ from src.services.full_player_board_value_service import (
     FULL_PLAYER_BOARD_HEADER,
 )
 
-MODEL_VERSION = "model_v4_wr_qb_v2_candidate"
+MODEL_VERSION = "model_v4_wr_qb_v2_old_pocket_qb_guardrail"
 SOURCE_POLICY = (
     "uses_private_current_components_only;"
     "market_league_adp_public_projection_rotowire_rankings_prior_draft_legacy_blocked"
 )
 DEFAULT_COMPONENT_ROWS = Path(
     "local_exports/model_v4/current_value/latest/current_player_value_full_board_review_rows.csv"
+)
+DEFAULT_AGE_ROWS = Path(
+    "local_exports/active_veteran_model_public_sources/veteran_player_inputs.csv"
 )
 DEFAULT_OUTPUT_ROOT = Path("local_exports/model_v4/current_value/candidates/wr_qb_v2")
 DEFAULT_HISTORICAL_METRICS = Path(
@@ -60,6 +63,10 @@ WATCH_PLAYERS = (
     "Christian McCaffrey",
     "Derrick Henry",
     "Travis Kelce",
+    "Matthew Stafford",
+    "Aaron Rodgers",
+    "Kirk Cousins",
+    "Russell Wilson",
 )
 
 CANDIDATE_COLUMNS = (
@@ -73,6 +80,9 @@ CANDIDATE_COLUMNS = (
     "candidate_confidence_trust_impact",
     "candidate_false_positive_warning",
     "candidate_source_policy",
+    "old_qb_horizon_cap",
+    "old_qb_horizon_reason_codes",
+    "old_qb_horizon_evidence_fields",
 )
 BOARD_HEADER = FULL_PLAYER_BOARD_HEADER + CANDIDATE_COLUMNS
 
@@ -110,6 +120,9 @@ REASON_HEADER = (
     "evidence_fields_used",
     "confidence_trust_impact",
     "false_positive_warning",
+    "old_qb_horizon_cap",
+    "old_qb_horizon_reason_codes",
+    "old_qb_horizon_evidence_fields",
 )
 
 SUMMARY_HEADER = (
@@ -145,11 +158,13 @@ def build_wr_qb_v2_candidate(
     *,
     production_board_path: str | Path = DEFAULT_FULL_PLAYER_BOARD_ROWS,
     component_rows_path: str | Path = DEFAULT_COMPONENT_ROWS,
+    age_rows_path: str | Path = DEFAULT_AGE_ROWS,
     candidate_board_path: str | Path | None = None,
     historical_metrics_path: str | Path = DEFAULT_HISTORICAL_METRICS,
 ) -> CandidateBuildResult:
     production_path = Path(production_board_path)
     component_path = Path(component_rows_path)
+    age_path = Path(age_rows_path)
     output_path = Path(
         candidate_board_path
         or DEFAULT_OUTPUT_ROOT / "full_player_board_value_review_rows.csv"
@@ -157,9 +172,10 @@ def build_wr_qb_v2_candidate(
     production_hash_before = _sha256(production_path)
     production_rows = _read_rows(production_path)
     component_lookup = _component_lookup(_read_rows(component_path))
+    age_lookup = _age_lookup(_read_rows(age_path))
     historical_metrics = _read_rows(Path(historical_metrics_path))
 
-    candidate_rows = _candidate_rows(production_rows, component_lookup, output_path)
+    candidate_rows = _candidate_rows(production_rows, component_lookup, age_lookup, output_path)
     top_40_diff = _top_40_diff(production_rows, candidate_rows)
     watch_row_diff = tuple(
         row
@@ -225,6 +241,7 @@ def write_wr_qb_v2_candidate_exports(
 def _candidate_rows(
     production_rows: list[dict[str, str]],
     component_lookup: dict[str, dict[str, str]],
+    age_lookup: dict[str, dict[str, str]],
     output_path: Path,
 ) -> list[dict[str, object]]:
     adjusted = []
@@ -234,7 +251,8 @@ def _candidate_rows(
         base_score_value = _base_score_value(row)
         base_score = _float(base_score_value)
         component = component_lookup.get(_row_key(row), {})
-        adjustment = _candidate_adjustment(row, component, base_score)
+        age_row = age_lookup.get(_row_key(row), {})
+        adjustment = _candidate_adjustment(row, component, age_row, base_score)
         candidate_score = adjustment["candidate_score"]
         candidate.update(
             {
@@ -259,6 +277,13 @@ def _candidate_rows(
                 "candidate_confidence_trust_impact": adjustment["confidence_trust_impact"],
                 "candidate_false_positive_warning": adjustment["false_positive_warning"],
                 "candidate_source_policy": SOURCE_POLICY,
+                "old_qb_horizon_cap": adjustment["old_qb_horizon_cap"],
+                "old_qb_horizon_reason_codes": "|".join(
+                    adjustment["old_qb_horizon_reason_codes"]
+                ),
+                "old_qb_horizon_evidence_fields": "|".join(
+                    adjustment["old_qb_horizon_evidence_fields"]
+                ),
                 "_candidate_score": candidate_score,
             }
         )
@@ -272,6 +297,7 @@ def _candidate_rows(
 def _candidate_adjustment(
     row: dict[str, str],
     component: dict[str, str],
+    age_row: dict[str, str],
     base_score: float | None,
 ) -> dict[str, object]:
     if base_score is None:
@@ -285,7 +311,12 @@ def _candidate_adjustment(
     if position == "WR":
         return _wr_adjustment(row, component, base_score)
     if position == "QB":
-        return _qb_adjustment(row, component, base_score)
+        return _old_qb_horizon_overlay(
+            row,
+            component,
+            age_row,
+            _qb_adjustment(row, component, base_score),
+        )
     return _adjustment(
         base_score,
         ("not_wr_or_qb",),
@@ -425,6 +456,112 @@ def _qb_adjustment(
     )
 
 
+def _old_qb_horizon_overlay(
+    row: dict[str, str],
+    component: dict[str, str],
+    age_row: dict[str, str],
+    adjustment: dict[str, object],
+) -> dict[str, object]:
+    candidate_score = _float(adjustment["candidate_score"])
+    if candidate_score is None:
+        return _with_old_qb_receipt(
+            adjustment,
+            "",
+            ("unscored_or_hidden",),
+            ("position",),
+        )
+    age = _float(age_row.get("age"))
+    if age is None:
+        return _with_old_qb_receipt(
+            adjustment,
+            "",
+            ("qb_age_source_missing_no_guardrail_cap",),
+            ("position", "nwr_dynasty_score", "age"),
+        )
+
+    role = component.get("role_archetype", "")
+    first_down = _float(component.get("imported_first_down_points")) or 0.0
+    vorp = _float(component.get("positive_vorp_points")) or 0.0
+    review = _float(component.get("review_scoring_points")) or 0.0
+    is_pocket = "pocket" in role
+    evidence_fields = (
+        "position",
+        "age",
+        "role_archetype",
+        "positive_vorp_points",
+        "review_scoring_points",
+        "imported_first_down_points",
+        "nwr_dynasty_score",
+        "warning_flags",
+    )
+    if not is_pocket:
+        return _with_old_qb_receipt(
+            adjustment,
+            "",
+            ("qb_age_horizon_not_pocket_or_rushing_profile",),
+            evidence_fields,
+        )
+    if age < 37.0:
+        return _with_old_qb_receipt(
+            adjustment,
+            "",
+            ("qb_age_horizon_under_old_pocket_threshold",),
+            evidence_fields,
+        )
+
+    retained_value_receipt = first_down >= 8.0 and vorp >= 55.0 and review >= 300.0
+    if retained_value_receipt:
+        return _with_old_qb_receipt(
+            adjustment,
+            "",
+            ("old_pocket_qb_exception_receipt_present",),
+            evidence_fields,
+        )
+
+    cap = 12.0 if age >= 40.0 else 23.5
+    if first_down >= 4.0:
+        cap = max(cap, 27.5)
+    capped_score = min(candidate_score, cap)
+    reason = (
+        "old_pocket_qb_horizon_cap_applied"
+        if capped_score < candidate_score
+        else "old_pocket_qb_already_below_horizon_cap"
+    )
+    next_adjustment = dict(adjustment)
+    next_adjustment["candidate_score"] = round(capped_score, 4)
+    next_adjustment["reason_codes"] = tuple(
+        str(code)
+        for code in (
+            *adjustment["reason_codes"],
+            reason,
+            "one_qb_passing_td_deemphasized_horizon",
+        )
+    )
+    if capped_score < candidate_score:
+        next_adjustment["confidence_trust_impact"] = (
+            "old_pocket_qb_horizon_cap;1qb_passing_td_deemphasized"
+        )
+    return _with_old_qb_receipt(
+        next_adjustment,
+        cap,
+        (reason, "one_qb_passing_td_deemphasized_horizon"),
+        evidence_fields,
+    )
+
+
+def _with_old_qb_receipt(
+    adjustment: dict[str, object],
+    cap: object,
+    reason_codes: tuple[str, ...],
+    evidence_fields: tuple[str, ...],
+) -> dict[str, object]:
+    next_adjustment = dict(adjustment)
+    next_adjustment["old_qb_horizon_cap"] = cap
+    next_adjustment["old_qb_horizon_reason_codes"] = reason_codes
+    next_adjustment["old_qb_horizon_evidence_fields"] = evidence_fields
+    return next_adjustment
+
+
 def _adjustment(
     candidate_score: float | None,
     reason_codes: tuple[str, ...],
@@ -438,6 +575,9 @@ def _adjustment(
         "evidence_fields": evidence_fields,
         "confidence_trust_impact": confidence_trust_impact,
         "false_positive_warning": false_positive_warning,
+        "old_qb_horizon_cap": "",
+        "old_qb_horizon_reason_codes": (),
+        "old_qb_horizon_evidence_fields": (),
     }
 
 
@@ -522,6 +662,13 @@ def _reason_rows(candidate_rows: list[dict[str, object]]) -> tuple[dict[str, obj
                 "evidence_fields_used": row.get("candidate_evidence_fields_used", ""),
                 "confidence_trust_impact": row.get("candidate_confidence_trust_impact", ""),
                 "false_positive_warning": row.get("candidate_false_positive_warning", ""),
+                "old_qb_horizon_cap": row.get("old_qb_horizon_cap", ""),
+                "old_qb_horizon_reason_codes": row.get(
+                    "old_qb_horizon_reason_codes", ""
+                ),
+                "old_qb_horizon_evidence_fields": row.get(
+                    "old_qb_horizon_evidence_fields", ""
+                ),
             }
         )
     return tuple(output)
@@ -623,6 +770,22 @@ def _guardrails(
             _non_elite_qb_lifts(diff_rows),
             0,
             "Goff/Baker/Dart generic floor fixed.",
+        )
+    )
+    gates.append(
+        _gate(
+            "stafford_old_pocket_qb_horizon_cap_applied",
+            _player_reason(candidate_rows, "Matthew Stafford", "old_qb_horizon_reason_codes"),
+            "contains_old_pocket_cap",
+            "General old-pocket QB horizon guardrail should apply to Stafford receipts.",
+        )
+    )
+    gates.append(
+        _gate(
+            "elite_rushing_qbs_not_penalized_by_old_qb_cap",
+            _elite_rushing_qb_cap_changes(diff_rows, candidate_rows),
+            0,
+            "Allen/Hurts/Lamar-style profiles are not capped by the old-pocket overlay.",
         )
     )
     gates.append(
@@ -780,6 +943,8 @@ def _gate(
         status = "pass" if (_float(observed) or 0.0) >= float(expected[2:]) else "fail"
     elif isinstance(expected, str) and expected == "not_71":
         status = "pass" if observed != 71 else "fail"
+    elif isinstance(expected, str) and expected == "contains_old_pocket_cap":
+        status = "pass" if "old_pocket_qb_horizon_cap_applied" in str(observed) else "fail"
     else:
         status = "pass" if observed == expected else "fail"
     return {
@@ -829,6 +994,8 @@ def _movement_classification(prod: dict[str, str], cand: dict[str, object]) -> s
         "undercompressed_elite" in reasons or "hybrid_qb_difference_gap" in reasons
     ):
         return "intended_qb_improvement"
+    if position == "QB" and "old_pocket_qb_horizon_cap_applied" in reasons:
+        return "intended_old_pocket_qb_horizon_guardrail"
     return "needs_human_review"
 
 
@@ -836,6 +1003,14 @@ def _component_lookup(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
     return {
         row.get("normalized_player_name") or _norm(row.get("player_name", "")): row
         for row in rows
+    }
+
+
+def _age_lookup(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    return {
+        _row_key(row): row
+        for row in rows
+        if row.get("position") == "QB" and row.get("age")
     }
 
 
@@ -883,6 +1058,31 @@ def _non_elite_qb_lifts(diff_rows: tuple[dict[str, object], ...]) -> int:
         1
         for row in diff_rows
         if row["player"] in non_elite and (_float(row["rank_delta"]) or 0.0) < -12
+    )
+
+
+def _player_reason(
+    rows: list[dict[str, object]],
+    player: str,
+    reason_column: str,
+) -> str:
+    row = next((row for row in rows if row.get("player_name") == player), {})
+    return str(row.get(reason_column, ""))
+
+
+def _elite_rushing_qb_cap_changes(
+    diff_rows: tuple[dict[str, object], ...],
+    candidate_rows: list[dict[str, object]],
+) -> int:
+    elite_rushing = {"Josh Allen", "Jalen Hurts", "Lamar Jackson"}
+    rows_by_player = {str(row.get("player_name", "")): row for row in candidate_rows}
+    return sum(
+        1
+        for row in diff_rows
+        if row["player"] in elite_rushing
+        and (_float(row["score_delta"]) or 0.0) < 0
+        and "old_pocket_qb_horizon_cap_applied"
+        in str(rows_by_player.get(str(row["player"]), {}).get("old_qb_horizon_reason_codes", ""))
     )
 
 
