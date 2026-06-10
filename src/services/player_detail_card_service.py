@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from app.components.demo_source_labels import demo_source_label
 from app.components.human_labels import human_label
 
 MISSING = "-"
@@ -40,6 +41,22 @@ WARNING_EXPLANATIONS = {
     "licensed_route_metrics_not_available": "Route metrics source is not available.",
     "missing_or_review_first_down_evidence": "Missing first-down evidence.",
     "partial_first_down_confidence_cap": "First-down evidence is partial.",
+    "one_qb_context_balance_upper_band_guard_v2": "1QB context balance guard is active.",
+    "one_qb_small_vorp_gap_cap": "1QB small VORP gap cap is active.",
+    "one_qb_replacement_level_qb_cap": "1QB replacement-level QB cap is active.",
+    "te_upper_band_guard_v2_elite_exception": (
+        "No-premium TE elite exception is active; review the private evidence receipts."
+    ),
+    "no_premium_te_small_gap_cap": "No-premium TE small-gap cap is active.",
+    "rb_dynasty_age_curve_after_27_active": "RB dynasty age curve is active after age 27.",
+    "rb_dynasty_age_curve_30_plus_active": "RB 30-plus age cliff is active.",
+    "rb_extreme_age_cliff_active": "RB late-career age cliff is active.",
+    "wr_dynasty_age_curve_after_30_active": "WR dynasty age curve is active after age 30.",
+    "wr_mid_30s_age_cliff_active": "WR mid-30s age cliff is active.",
+    "te_no_premium_age_curve_after_30_active": (
+        "No-premium TE age curve is active after age 30."
+    ),
+    "te_age_33_plus_cliff_active": "TE 33-plus age cliff is active.",
     "missing_lifecycle_or_role_shape_evidence": "Missing lifecycle or role-shape evidence.",
     "missing_efficiency_context_evidence": "Missing efficiency context.",
     "source_limited_evidence_cap": "Source coverage is limited.",
@@ -49,7 +66,6 @@ WARNING_EXPLANATIONS = {
     "identity_review_cap": "Identity verification cap is active.",
     "rb_age_cliff_guardrail_unavailable": "RB age-risk evidence needs verification.",
     "qb_rushing_age_caution_unavailable": "QB rushing-age evidence needs verification.",
-    "no_premium_te_small_gap_cap": "No-premium TE replacement gap needs verification.",
     "no_premium_te_replacement_level_cap": (
         "No-premium TE replacement baseline needs verification."
     ),
@@ -142,10 +158,16 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
     confidence_cap = _clean(row.get("confidence_cap"))
     confidence_status = _clean(row.get("confidence_status"))
     source_type = _clean(_first(row, "score_type", "lineage_class", "model_source_status"))
+    source_note = (
+        "Ranked by private NWR Dynasty Score from admitted Model v4 current-player "
+        "lineage. Roster/team tags, market rank, league rank, and legacy scores are "
+        "display-only context and do not affect this score."
+    )
     why_text = _clean(
         _first(row, "manual_review_notes", "raw_source_repair_notes"),
         missing="",
-    ) or "Explanation not available from current source rows."
+    )
+    why_text = f"{source_note} {why_text}".strip()
 
     private_metrics = (
         PlayerDetailMetric("NWR Dynasty Score", score),
@@ -155,6 +177,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         PlayerDetailMetric("Confidence Status", confidence_status),
         PlayerDetailMetric("Lineage", _clean(row.get("lineage_class"))),
     )
+    candidate_metrics = _candidate_model_metrics(row)
     ranking_metrics = (
         PlayerDetailMetric("Market Rank", market_rank, "display-only"),
         PlayerDetailMetric("NWR vs Market", _signed_gap(nwr_rank, market_rank), "display-only"),
@@ -181,7 +204,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         league_rank_display_only=league_rank,
         market_gap_display_only=_signed_gap(nwr_rank, market_rank),
         league_gap_display_only=_signed_gap(nwr_rank, league_rank),
-        source_path=_clean(row.get("source_path")),
+        source_path=_source_label(row.get("source_path")),
         source_column=_clean(row.get("source_column")),
         lineage_class=_clean(row.get("lineage_class")),
         allowed_use=_clean(row.get("allowed_use")),
@@ -197,11 +220,45 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         ),
         why_text=why_text,
         private_model_metrics=tuple(
-            metric for metric in private_metrics if metric.value != MISSING
+            metric for metric in (*private_metrics, *candidate_metrics) if metric.value != MISSING
         ),
         ranking_context_metrics=ranking_metrics,
         receipts=receipts,
         raw_warning_flags=warning_flags,
+    )
+
+
+def _candidate_model_metrics(row: Mapping[str, Any]) -> tuple[PlayerDetailMetric, ...]:
+    candidate_version = _clean(row.get("candidate_model_version"), missing="")
+    if not candidate_version:
+        return ()
+    return (
+        PlayerDetailMetric("Candidate Model", candidate_version, "candidate mode"),
+        PlayerDetailMetric(
+            "Base NWR Score",
+            _score_text(row.get("base_nwr_dynasty_score")),
+            "production baseline",
+        ),
+        PlayerDetailMetric(
+            "WR/QB v2 Adjustment",
+            _clean(row.get("candidate_adjustment")),
+            "candidate-only",
+        ),
+        PlayerDetailMetric(
+            "Final Candidate Score",
+            _score_text(_first(row, "nwr_dynasty_score", "candidate_score")),
+            "candidate-only",
+        ),
+        PlayerDetailMetric(
+            "WR/QB v2 Reason Codes",
+            _clean(row.get("candidate_reason_codes")),
+            "source-safe receipts",
+        ),
+        PlayerDetailMetric(
+            "Evidence / Trust Caveat",
+            _clean(row.get("candidate_confidence_trust_impact")),
+            "warnings remain visible",
+        ),
     )
 
 
@@ -283,7 +340,7 @@ def _build_draft_prep_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload
         warning_summary=_warning_summary(warnings),
         warning_messages=tuple(_human_warning(flag) for flag in warnings),
         data_needed=tuple(data_needed),
-        source_path=_clean(row.get("source_path")),
+        source_path=_source_label(row.get("source_path")),
         source_column=_clean(row.get("source_column")),
         lineage_class=_clean(row.get("lineage_class")),
         allowed_use=_clean(row.get("allowed_use")),
@@ -375,7 +432,7 @@ def _build_live_draft_room_payload(row: Mapping[str, Any]) -> PlayerDetailCardPa
         warning_summary=_warning_summary(warnings),
         warning_messages=tuple(_human_warning(flag) for flag in warnings),
         data_needed=tuple(data_needed),
-        source_path=_clean(row.get("source_path")),
+        source_path=_source_label(row.get("source_path")),
         source_column=_clean(row.get("source_column")),
         lineage_class=_clean(row.get("lineage_class")),
         allowed_use=_clean(row.get("allowed_use")),
@@ -537,9 +594,9 @@ def _roster_status(row: Mapping[str, Any], trust: str) -> str:
 
 def _receipts(row: Mapping[str, Any], warning_flags: str) -> tuple[PlayerDetailReceipt, ...]:
     receipt_fields = (
-        ("Source path", row.get("source_path")),
+        ("Source path", _source_label(row.get("source_path"))),
         ("Source column", row.get("source_column")),
-        ("Upstream source path", row.get("upstream_source_path")),
+        ("Upstream source path", _source_label(row.get("upstream_source_path"))),
         ("Upstream source column", row.get("upstream_source_column")),
         ("Lineage", row.get("lineage_class")),
         ("Model version", row.get("model_version")),
@@ -554,3 +611,7 @@ def _receipts(row: Mapping[str, Any], warning_flags: str) -> tuple[PlayerDetailR
         for label, value in receipt_fields
         if _clean(value) != MISSING
     )
+
+
+def _source_label(value: object) -> str:
+    return _clean(demo_source_label(value, fallback_prefix="Source"), missing=MISSING)
