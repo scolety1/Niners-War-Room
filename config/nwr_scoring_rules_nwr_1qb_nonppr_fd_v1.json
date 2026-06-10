@@ -1,0 +1,48 @@
+{
+  "scoring_version_id": "nwr_1qb_nonppr_fd_v1",
+  "scoring_version_name": "NWR 10-team 1QB non-PPR first-down scoring v1",
+  "league_format": {
+    "teams": 10,
+    "qb_slots": 1,
+    "rb_slots": 2,
+    "wr_slots": 3,
+    "te_slots": 1,
+    "flex_slots": 2,
+    "flex_positions": ["RB", "WR", "TE"],
+    "kicker_modeled": false,
+    "superflex": false,
+    "ppr": false,
+    "te_premium": false
+  },
+  "scoring": {
+    "pass_yd_pt": 0.03333333333333333,
+    "pass_td_pt": 3.0,
+    "pass_int_pt": -1.0,
+    "pass_1d_pt": 0.0,
+    "pass_2pt_pt": 2.0,
+    "sack_suffered_pt": 0.0,
+    "carry_pt": 0.0,
+    "rush_yd_pt": 0.1,
+    "rush_td_pt": 4.0,
+    "rush_1d_pt": 0.4,
+    "rush_2pt_pt": 2.0,
+    "rec_pt": 0.0,
+    "rec_yd_pt": 0.1,
+    "rec_td_pt": 4.0,
+    "rec_1d_pt": 0.4,
+    "rec_2pt_pt": 2.0,
+    "fumble_lost_pt": -1.0,
+    "return_yd_pt": 0.03333333333333333,
+    "return_td_pt": 4.0,
+    "special_td_pt": 4.0,
+    "fumble_recovery_td_pt": 4.0,
+    "misc_yd_pt": 0.0
+  },
+  "qualified_ppg": {
+    "min_games": 8
+  },
+  "scoring_calendar": {
+    "default_scope": "REGULAR_SEASON_ONLY",
+    "note": "Use configurable scoring calendar. Do not include NFL postseason unless explicitly configured."
+  }
+}
