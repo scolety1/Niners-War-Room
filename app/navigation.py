@@ -22,7 +22,6 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Dynasty Rankings",
         file_path="pages/05_rankings.py",
         url_path="rankings",
-        default=True,
     ),
     NavigationPageSpec(
         title="Decision Board",
@@ -52,6 +51,13 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 )
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
+    NavigationPageSpec(
+        title="Dynasty Rankings Home",
+        file_path="pages/05_rankings.py",
+        url_path="home",
+        default=True,
+        visible=False,
+    ),
     NavigationPageSpec(
         title="Review Workflow",
         file_path="pages/00_command_center.py",

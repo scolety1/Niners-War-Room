@@ -318,10 +318,7 @@ def _status_label(row: pd.Series) -> str:
 
 
 def _player_cell(row: pd.Series) -> str:
-    player = _clean_value(row.get("player"))
-    if _is_my_team(row):
-        return f"{player}  [MY TEAM]"
-    return player
+    return _clean_value(row.get("player"))
 
 
 def _assign_valid_private_ranks(frame: pd.DataFrame) -> pd.DataFrame:
@@ -427,7 +424,7 @@ def _style_dynasty_table(
     }
 
     def style_row(row: pd.Series) -> list[str]:
-        player = str(row.get("Player") or "").replace("  [MY TEAM]", "")
+        player = str(row.get("Player") or "")
         if my_team_by_player.get(player):
             return ["background-color: #fff8e6"] * len(row)
         if "NO PRIVATE SCORE" in str(row.get("Status") or ""):
@@ -531,6 +528,10 @@ else:
     summary_cols[4].metric("Outcome fields", "Planned")
 
     st.info(OUTCOME_NOTE)
+    st.caption(
+        "My Team highlighting and roster tags are display-only context and do not "
+        "affect private NWR score or rank."
+    )
 
     filter_cols = st.columns([1.4, 1.2, 1.2, 1.0])
     with filter_cols[0]:

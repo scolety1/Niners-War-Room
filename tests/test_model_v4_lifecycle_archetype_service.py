@@ -91,6 +91,10 @@ def test_phase_11e_uses_admitted_age_sidecar_without_fabricating_gaps() -> None:
     lamar = next(row for row in result.review_rows if row["player_name"] == "Lamar Jackson")
     bijan = next(row for row in result.review_rows if row["player_name"] == "Bijan Robinson")
     cmc = next(row for row in result.review_rows if row["player_name"] == "Christian McCaffrey")
+    henry = next(row for row in result.review_rows if row["player_name"] == "Derrick Henry")
+    kelce = next(row for row in result.review_rows if row["player_name"] == "Travis Kelce")
+    davante = next(row for row in result.review_rows if row["player_name"] == "Davante Adams")
+    trey = next(row for row in result.review_rows if row["player_name"] == "Trey McBride")
 
     assert result.summary["age_rows_used"] > 0
     assert lamar["age_evidence_status"] == "matched_player_age_evidence"
@@ -100,7 +104,18 @@ def test_phase_11e_uses_admitted_age_sidecar_without_fabricating_gaps() -> None:
     assert bijan["age_evidence_status"] == "matched_player_age_evidence"
     assert "rb_age_cliff_guardrail_unavailable" not in bijan["warning_flags"]
     assert "rb_age_cliff_guardrail_active" in cmc["warning_flags"]
+    assert "rb_dynasty_age_curve_30_plus_active" in cmc["warning_flags"]
+    assert float(cmc["lifecycle_modifier_review"]) < 0.7
+    assert "rb_extreme_age_cliff_active" in henry["warning_flags"]
+    assert float(henry["lifecycle_modifier_review"]) < 0.5
+    assert "te_age_33_plus_cliff_active" in kelce["warning_flags"]
+    assert float(kelce["lifecycle_modifier_review"]) < 0.4
+    assert "wr_mid_30s_age_cliff_active" in davante["warning_flags"]
+    assert float(davante["lifecycle_modifier_review"]) < 0.7
+    assert trey["warning_flags"] == ""
+    assert float(trey["lifecycle_modifier_review"]) > 1.0
     assert "lifecycle_age_sidecar_sanity" in warning_codes
+    assert "position_dynasty_age_curve_sanity" in warning_codes
 
 
 def test_phase_11e_components_and_receipts_stay_on_allowed_inputs() -> None:
@@ -149,6 +164,7 @@ def test_phase_11e_writes_sanity_fixture_warnings() -> None:
     assert {
         "lifecycle_age_sidecar_sanity",
         "rb_short_window_sanity",
+        "position_dynasty_age_curve_sanity",
         "wr_role_shape_sanity",
         "qb_rushing_age_caution_sanity",
         "te_route_requirement_sanity",

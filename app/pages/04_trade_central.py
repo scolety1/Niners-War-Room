@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.human_labels import human_label, human_labels
 from app.components.player_detail_panel import PlayerDetail, render_player_detail_panel
 from app.components.trust_status import render_page_trust_banner
@@ -88,7 +89,7 @@ def _trade_detail_options(*frames: pd.DataFrame) -> pd.DataFrame:
     return detail_frame.drop_duplicates(subset=["player"], keep="first")
 
 st.title("External Asset Reviews")
-st.caption(f"`{active_data_pack}`")
+st.caption(demo_source_label(active_data_pack))
 render_page_trust_banner(
     health,
     calibration_passed=ranking_readiness.calibration_passed,

@@ -14,6 +14,11 @@ def test_human_label_translates_required_codes() -> None:
     assert human_label("rb_age_cliff_guardrail_unavailable") == (
         "RB age-risk check needed"
     )
+    assert human_label("rb_dynasty_age_curve_30_plus_active") == (
+        "RB 30-plus age cliff active"
+    )
+    assert human_label("te_age_33_plus_cliff_active") == "TE 33-plus age cliff active"
+    assert human_label("wr_mid_30s_age_cliff_active") == "WR mid-30s age cliff active"
 
 
 def test_human_labels_preserves_unknown_codes_safely() -> None:

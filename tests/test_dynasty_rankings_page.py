@@ -44,8 +44,9 @@ def test_my_team_is_badge_and_highlight_not_separate_column() -> None:
     text = _page_text()
 
     assert '"My Team"' not in _constant_list("DEFAULT_DYNASTY_COLUMNS")
-    assert "[MY TEAM]" in text
+    assert 'statuses.append("MY TEAM")' in text
     assert "background-color: #fff8e6" in text
+    assert "roster tags are display-only context" in text
 
 
 def test_flex_filter_excludes_qb_and_includes_rb_wr_te() -> None:

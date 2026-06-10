@@ -26,6 +26,8 @@ def test_rankings_payload_maps_common_and_rankings_fields() -> None:
     assert payload.market_gap_display_only == "+11"
     assert payload.league_gap_display_only == "-48"
     assert payload.display_only_note == DISPLAY_ONLY_NOTE
+    assert "Roster/team tags" in payload.why_text
+    assert "do not affect this score" in payload.why_text
 
 
 def test_rankings_payload_keeps_legacy_score_comparison_only() -> None:
@@ -65,10 +67,11 @@ def test_raw_receipts_are_available_for_advanced_display() -> None:
     payload = build_player_detail_card_payload(_rankings_row(), context="rankings")
     receipts = {receipt.label: receipt.value for receipt in payload.receipts}
 
-    assert receipts["Source path"] == "local_exports/model_v4/current_value/latest/full.csv"
+    assert receipts["Source path"] == "Source: full.csv"
     assert receipts["Source column"] == "nwr_dynasty_score"
     assert receipts["Lineage"] == "review_v4_current_player"
     assert receipts["Allowed use"] == "review_only_full_player_board_rankings"
+    assert receipts["Upstream source path"] == "Source: current.csv"
     assert "do_not_use_as_final" in receipts["Blocked use"]
     assert "partial_first_down_confidence_cap" in receipts["Raw warnings"]
 

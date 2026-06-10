@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import pandas as pd
 import streamlit as st
 
+from app.components.demo_source_labels import demo_source_label
 from app.components.human_labels import human_labels
 
 MISSING_LABEL = "Missing"
@@ -115,7 +116,7 @@ def render_player_detail_panel(
         st.markdown("**Receipts / source pointers**")
         st.caption(
             f"Receipt pointer: {display_value(detail.receipt_pointer)} | "
-            f"Source pointer: {display_value(detail.source_pointer)}"
+            f"Source pointer: {demo_source_label(detail.source_pointer)}"
         )
         st.caption(
             "Review-only detail. This panel explains evidence and context; it "

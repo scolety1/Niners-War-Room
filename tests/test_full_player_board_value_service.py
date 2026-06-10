@@ -83,7 +83,7 @@ def test_keenan_and_darius_legacy_scores_remain_comparison_only() -> None:
     darius = _row(result.rows, "Darius Slayton")
 
     assert float(keenan["legacy_active_pack_score"]) == pytest.approx(82.4)
-    assert float(keenan[FULL_BOARD_SCORE_COLUMN]) == pytest.approx(33.1581)
+    assert float(keenan[FULL_BOARD_SCORE_COLUMN]) == pytest.approx(17.2422)
     assert keenan["lineage_class"] == "review_v4_current_player"
     assert float(keenan[FULL_BOARD_SCORE_COLUMN]) != pytest.approx(82.4)
 

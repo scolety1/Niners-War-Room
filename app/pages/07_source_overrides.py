@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.human_labels import human_label
 from src.config.settings import get_settings
 from src.services.data_pack_health_service import (
@@ -216,7 +217,7 @@ with st.expander("Data Health Details", expanded=False):
         use_container_width=True,
         hide_index=True,
     )
-    st.caption(f"Active pack path: `{active_data_pack}`")
+    st.caption(demo_source_label(active_data_pack))
 
 with st.expander("Advanced Settings", expanded=False):
     st.caption(

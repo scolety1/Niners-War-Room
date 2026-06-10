@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.trust_status import render_trust_status
 from src.config.settings import get_settings
 from src.services.data_pack_admission_service import (
@@ -54,7 +55,7 @@ health = _load_health(active_data_pack, active_fingerprint)
 admission = _load_admission(active_data_pack, active_fingerprint)
 
 st.title("Freeze")
-st.caption(f"`{active_data_pack}`")
+st.caption(demo_source_label(active_data_pack))
 st.info(
     "Freeze creates local backup copies and CSV board exports. It does not refresh "
     "Sleeper, rebuild the pack, or mutate the selected data pack."

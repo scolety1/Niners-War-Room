@@ -34,6 +34,12 @@ def apply_app_shell() -> None:
             background: var(--nwr-bg);
             color: var(--nwr-ink);
         }
+        #MainMenu,
+        footer,
+        [data-testid="stStatusWidget"] {
+            visibility: hidden;
+            height: 0;
+        }
         [data-testid="stSidebar"] {
             border-right: 1px solid var(--nwr-line);
         }

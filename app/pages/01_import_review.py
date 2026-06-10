@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import SESSION_KEY, render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.trust_status import render_trust_status
 from src.config.settings import get_settings
 from src.services.app_workflow_service import (
@@ -135,7 +136,7 @@ calibration = build_final_calibration_gate(active_data_pack)
 ranking_readiness = ranking_readiness_from_calibration(calibration)
 
 st.title("Import & Refresh")
-st.caption(f"`{active_data_pack}`")
+st.caption(demo_source_label(active_data_pack))
 admission_for_workflow = _load_admission(
     active_data_pack,
     None,

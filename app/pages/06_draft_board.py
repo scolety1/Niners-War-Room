@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # ruff: noqa: E402
+import html
 import re
 import sys
 from pathlib import Path
@@ -109,6 +110,34 @@ def _render_css() -> None:
         .source-note {
             color: #536276;
             font-size: 0.85rem;
+        }
+        .source-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+            gap: 0.55rem;
+            margin: 0.75rem 0 0.35rem;
+        }
+        .source-card {
+            border: 1px solid #d7dde8;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 0.7rem 0.75rem;
+            min-height: 82px;
+        }
+        .source-card-label {
+            color: #536276;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .source-card-value {
+            color: #1d2633;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-top: 0.28rem;
+            overflow-wrap: anywhere;
         }
         </style>
         """,
@@ -534,16 +563,31 @@ def _render_source_cards(pool_frame: pd.DataFrame, readiness_frame: pd.DataFrame
     rows = _readiness_rows(readiness_frame)
     rookie_count = int((pool_frame.get("source_type", "").astype(str) == "rookie").sum())
     veteran_count = int((pool_frame.get("source_type", "").astype(str) == "free_agent").sum())
-    cards = st.columns(6)
-    cards[0].metric("Scouting Pool Rows", len(pool_frame))
-    cards[1].metric("Rookie Rows", rookie_count or _row_count(rows["rookie_preview"]))
-    cards[2].metric(
-        "Free-Agent/Veteran Preview Rows",
-        veteran_count or _row_count(rows["fa_preview"]),
+    card_rows = (
+        ("Scouting Pool Rows", str(len(pool_frame))),
+        ("Rookie Rows", str(rookie_count or _row_count(rows["rookie_preview"]))),
+        (
+            "Free-Agent/Veteran Preview Rows",
+            str(veteran_count or _row_count(rows["fa_preview"])),
+        ),
+        ("Legal Draft Pool", "Pending"),
+        ("Dropped Veterans", "Missing"),
+        ("My Picks", "1.03, 1.04, 2.04, 2.08, 5.04"),
     )
-    cards[3].metric("Legal Draft Pool", "Pending")
-    cards[4].metric("Dropped Veterans", "Missing")
-    cards[5].metric("My Picks", "1.03, 1.04, 2.04, 2.08, 5.04")
+    st.markdown(_source_card_grid(card_rows), unsafe_allow_html=True)
+
+
+def _source_card_grid(rows: tuple[tuple[str, str], ...]) -> str:
+    cards = "".join(
+        (
+            '<div class="source-card">'
+            f'<div class="source-card-label">{html.escape(label)}</div>'
+            f'<div class="source-card-value">{html.escape(value)}</div>'
+            "</div>"
+        )
+        for label, value in rows
+    )
+    return f'<div class="source-card-grid">{cards}</div>'
 
 
 def _render_candidate_windows(pool_frame: pd.DataFrame) -> None:

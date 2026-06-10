@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from app.components.demo_source_labels import demo_source_label
 from src.config.settings import Settings
 from src.services.data_pack_catalog_service import (
     DataPackCatalogEntry,
@@ -58,7 +59,7 @@ def render_data_pack_selector(settings: Settings) -> str:
             st.metric("Data Health", "BLOCKED")
             st.caption("Review status: Blocked. Open Settings.")
         with st.expander("Pack Details", expanded=False):
-            st.caption(f"Selected path: `{current_path}`")
+            st.caption(demo_source_label(current_path))
             st.dataframe(
                 pd.DataFrame(catalog_rows(entries)),
                 use_container_width=True,

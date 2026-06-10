@@ -9,6 +9,9 @@ from src.services.player_detail_card_service import PlayerDetailCardPayload
 def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
     st.markdown(f"### {payload.player}")
     _render_header(payload)
+    st.caption(
+        "Roster/team tags are display-only context and do not affect private score."
+    )
 
     st.markdown("**Why this row appears here**")
     st.write(payload.why_text)

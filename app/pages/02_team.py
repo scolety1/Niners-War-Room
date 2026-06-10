@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.model_v4_receipts import render_model_v4_shadow_receipt_drilldown
 from app.components.trust_status import render_page_trust_banner
 from src.config.settings import get_settings
@@ -413,7 +414,7 @@ release_pain = (
 )
 
 st.title("My Team")
-st.caption(f"`{active_data_pack}`")
+st.caption(demo_source_label(active_data_pack))
 if roster_readiness.passed and not has_placeholder_scores and not v4_freeze_active:
     st.success(
         "**Roster Decisions Ready.** My Team is cleared for pre-declaration "

@@ -18,7 +18,7 @@ from src.services.model_v4_formula_contract_service import (
 DEFAULT_OUTPUT_ROOT = Path("local_exports/model_v4/current_value/latest")
 DEFAULT_DOC_PATH = Path("docs/model_v4/PHASE_11E_LIFECYCLE_ARCHETYPE_LAYER.md")
 
-LIFECYCLE_ARCHETYPE_VERSION = "model_v4_phase_11e_lifecycle_archetype_0.1.0"
+LIFECYCLE_ARCHETYPE_VERSION = "model_v4_phase_11e_lifecycle_archetype_0.2.0"
 SUPPORTED_POSITIONS = ("QB", "RB", "WR", "TE")
 
 REVIEW_HEADER = (
@@ -233,12 +233,14 @@ def _lifecycle_row(
     derived = _json(row.get("derived_evidence_json"))
     stats = factual.get("rotowire_player_stats", {})
     role_usage = derived.get("rotowire_role_usage", {})
-    archetype, modifier, fragility, role_receipts, warnings = _classify_position(
+    archetype, role_modifier, fragility, role_receipts, warnings = _classify_position(
         position, stats, role_usage
     )
     age_years = _float((age_row or {}).get("age_years_decimal"), None)
     age_months = _float((age_row or {}).get("age_total_months"), None)
     age_status = _age_status(age_row, age_years)
+    age_modifier, age_curve_warnings = _position_dynasty_age_curve(position, age_years)
+    warnings.extend(age_curve_warnings)
     if position == "QB" and "rushing" in archetype:
         if age_years is None:
             warnings.append("qb_rushing_age_caution_unavailable")
@@ -251,6 +253,7 @@ def _lifecycle_row(
             warnings.append("rb_age_cliff_guardrail_active")
         elif age_years >= 27.0:
             warnings.append("rb_age_window_caution_active")
+    modifier = round(role_modifier * age_modifier, 4)
     confidence = round(max(0.78, 1.0 - (0.04 * len(warnings))), 4)
     key = str(row.get("canonical_player_key") or "")
     player_name = str(row.get("player_name") or "")
@@ -267,7 +270,8 @@ def _lifecycle_row(
     components = _components(
         row,
         archetype,
-        modifier,
+        role_modifier,
+        age_modifier,
         confidence,
         fragility,
         age_status,
@@ -499,7 +503,8 @@ def _classify_te(
 def _components(
     row: dict[str, str],
     archetype: str,
-    modifier: float,
+    role_modifier: float,
+    age_curve_modifier: float,
     confidence: float,
     fragility: str,
     age_status: str,
@@ -551,12 +556,23 @@ def _components(
         _Component(
             "role_archetype",
             archetype,
-            modifier,
+            role_modifier,
             "formula_admitted_after_validation",
             NFL_MATRIX,
             "factual_evidence_json",
             "rotowire_player_stats",
             "local_exports/model_v4/.../lifecycle_archetype_receipts.csv",
+        ),
+        _Component(
+            "position_dynasty_age_curve",
+            age_status,
+            age_curve_modifier,
+            age_source_status,
+            age_input_file,
+            age_lane,
+            age_path,
+            age_receipt,
+            age_component_warning,
         ),
         _Component(
             "age_guardrail",
@@ -778,6 +794,94 @@ def _normalize_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
 
 
+def _position_dynasty_age_curve(
+    position: str,
+    age_years: float | None,
+) -> tuple[float, tuple[str, ...]]:
+    """Source-safe dynasty age modifier by position.
+
+    Age only comes from admitted age sidecars. Missing age stays a warning/receipt
+    issue and does not create a made-up age penalty.
+    """
+
+    if age_years is None:
+        if position == "WR":
+            return 1.0, ("wr_age_curve_unavailable",)
+        if position == "TE":
+            return 1.0, ("te_age_curve_unavailable",)
+        return 1.0, ()
+
+    if position == "RB":
+        if age_years < 27.0:
+            return 1.0, ()
+        if age_years < 28.0:
+            return 0.94, ("rb_dynasty_age_curve_after_27_active",)
+        if age_years < 29.0:
+            return 0.86, ("rb_dynasty_age_curve_after_27_active",)
+        if age_years < 30.0:
+            return 0.76, ("rb_dynasty_age_curve_after_27_active",)
+        if age_years < 31.0:
+            return 0.64, (
+                "rb_dynasty_age_curve_after_27_active",
+                "rb_dynasty_age_curve_30_plus_active",
+            )
+        if age_years < 32.0:
+            return 0.54, (
+                "rb_dynasty_age_curve_after_27_active",
+                "rb_dynasty_age_curve_30_plus_active",
+            )
+        return 0.46, (
+            "rb_dynasty_age_curve_after_27_active",
+            "rb_dynasty_age_curve_30_plus_active",
+            "rb_extreme_age_cliff_active",
+        )
+
+    if position == "WR":
+        if age_years < 30.0:
+            return 1.0, ()
+        if age_years < 31.0:
+            return 0.96, ("wr_dynasty_age_curve_after_30_active",)
+        if age_years < 32.0:
+            return 0.88, ("wr_dynasty_age_curve_after_30_active",)
+        if age_years < 33.0:
+            return 0.78, ("wr_dynasty_age_curve_after_30_active",)
+        if age_years < 34.0:
+            return 0.65, (
+                "wr_dynasty_age_curve_after_30_active",
+                "wr_mid_30s_age_cliff_active",
+            )
+        return 0.52, (
+            "wr_dynasty_age_curve_after_30_active",
+            "wr_mid_30s_age_cliff_active",
+        )
+
+    if position == "TE":
+        if age_years < 30.0:
+            return 1.0, ()
+        if age_years < 31.0:
+            return 0.92, ("te_no_premium_age_curve_after_30_active",)
+        if age_years < 32.0:
+            return 0.80, ("te_no_premium_age_curve_after_30_active",)
+        if age_years < 33.0:
+            return 0.66, ("te_no_premium_age_curve_after_30_active",)
+        if age_years < 34.0:
+            return 0.52, (
+                "te_no_premium_age_curve_after_30_active",
+                "te_age_33_plus_cliff_active",
+            )
+        if age_years < 35.0:
+            return 0.40, (
+                "te_no_premium_age_curve_after_30_active",
+                "te_age_33_plus_cliff_active",
+            )
+        return 0.30, (
+            "te_no_premium_age_curve_after_30_active",
+            "te_age_33_plus_cliff_active",
+        )
+
+    return 1.0, ()
+
+
 def _age_status(age_row: dict[str, str] | None, age_years: float | None) -> str:
     if age_row is None or age_years is None:
         return "age_not_available_in_lifecycle_age_sidecar"
@@ -790,6 +894,10 @@ def _sanity_warnings() -> tuple[dict[str, object], ...]:
             "Age guardrails use the admitted player-age sidecar when a player match exists."
         ),
         "rb_short_window_sanity": "RB archetypes are short-window and role-sensitive.",
+        "position_dynasty_age_curve_sanity": (
+            "Position-specific dynasty age curves use admitted age evidence only; "
+            "missing age stays a warning and is not fabricated."
+        ),
         "wr_role_shape_sanity": (
             "WR archetypes separate target earners from speed-dependent profiles."
         ),

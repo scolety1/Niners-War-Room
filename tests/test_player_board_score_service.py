@@ -43,7 +43,7 @@ def test_player_board_prefers_full_board_export_when_available() -> None:
         assert keenan["source_path"] == str(DEFAULT_FULL_PLAYER_BOARD_ROWS)
         assert keenan["nwr_trust_status"] == "Capped Score"
         if DEFAULT_FULL_BOARD_CURRENT_VALUE_ROWS.exists():
-            assert float(keenan["private_score"]) == pytest.approx(33.1581)
+            assert float(keenan["private_score"]) == pytest.approx(17.2422)
         else:
             assert float(keenan["private_score"]) == pytest.approx(41.6097)
     else:

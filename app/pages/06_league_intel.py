@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.trust_status import render_page_trust_banner
 from src.config.settings import get_settings
 from src.services.data_pack_health_service import build_data_pack_health_report
@@ -75,7 +76,7 @@ release_frame = pd.DataFrame(board.default_release_rows)
 target_frame = pd.DataFrame(board.target_rows)
 
 st.title("League Targets")
-st.caption(f"`{active_data_pack}`")
+st.caption(demo_source_label(active_data_pack))
 render_page_trust_banner(
     health,
     calibration_passed=ranking_readiness.calibration_passed,

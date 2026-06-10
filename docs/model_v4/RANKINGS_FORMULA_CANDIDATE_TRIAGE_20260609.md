@@ -33,9 +33,9 @@ This report is proposal-only. It does not tune formulas, change weights, modify 
 | Issue bucket | Count |
 | --- | ---: |
 | elite_player_too_low | 10 |
-| human_review_only | 12 |
+| human_review_only | 11 |
 | market_league_disagreement | 4 |
 | qb_1qb_format_sanity | 28 |
-| source_disclosure_gap | 13 |
+| source_disclosure_gap | 16 |
 | te_no_premium_format_sanity | 31 |
-| veteran_age_confidence | 5 |
+| veteran_age_confidence | 2 |

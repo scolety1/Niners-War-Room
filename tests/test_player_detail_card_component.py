@@ -20,6 +20,7 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "Legacy / context disclosure",
         "Advanced source receipts",
         "Draft state is session/local mock state and does not mutate source data.",
+        "Roster/team tags are display-only context and do not affect private score.",
     ):
         assert required in text
 

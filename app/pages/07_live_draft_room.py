@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # ruff: noqa: E402
+import html
 import re
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.demo_source_labels import demo_source_label
 from app.components.draft_session import (
     dirty_key,
     draft_state_key,
@@ -95,6 +97,34 @@ def _render_css() -> None:
         }
         .pick-grid table td {
             white-space: normal;
+        }
+        .source-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+            gap: 0.55rem;
+            margin: 0.75rem 0 0.35rem;
+        }
+        .source-card {
+            border: 1px solid #d7dde8;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 0.7rem 0.75rem;
+            min-height: 82px;
+        }
+        .source-card-label {
+            color: #536276;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .source-card-value {
+            color: #1d2633;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-top: 0.28rem;
+            overflow-wrap: anywhere;
         }
         </style>
         """,
@@ -180,13 +210,15 @@ def _render_status_cards(
     state: DraftBoardState,
     scouting_rows: int,
 ) -> None:
-    cards = st.columns(6)
-    cards[0].metric("Draft Shape", f"{DRAFT_ROUNDS} rounds x {DRAFT_TEAMS} teams")
-    cards[1].metric("Total Picks", DRAFT_TOTAL_PICKS)
-    cards[2].metric("My Picks", ", ".join(OWNED_PICK_LABELS))
-    cards[3].metric("Scouting Pool", f"{scouting_rows} rows" if scouting_rows else "Missing")
-    cards[4].metric("Legal Pool", "Pending")
-    cards[5].metric("Draft State", "Session/local mock")
+    card_rows = (
+        ("Draft Shape", f"{DRAFT_ROUNDS} rounds x {DRAFT_TEAMS} teams"),
+        ("Total Picks", str(DRAFT_TOTAL_PICKS)),
+        ("My Picks", ", ".join(OWNED_PICK_LABELS)),
+        ("Scouting Pool", f"{scouting_rows} rows" if scouting_rows else "Missing"),
+        ("Legal Pool", "Pending"),
+        ("Draft State", "Session/local mock"),
+    )
+    st.markdown(_source_card_grid(card_rows), unsafe_allow_html=True)
     if contract.available_pool_warnings:
         st.caption(
             "Active legal pool is still pending required source files; scouting rows "
@@ -200,6 +232,19 @@ def _render_status_cards(
         f"Current: {progress['current']} | Drafted: {progress['drafted']} of "
         f"{progress['total']} | Available scouting rows: {progress['available']}"
     )
+
+
+def _source_card_grid(rows: tuple[tuple[str, str], ...]) -> str:
+    cards = "".join(
+        (
+            '<div class="source-card">'
+            f'<div class="source-card-label">{html.escape(label)}</div>'
+            f'<div class="source-card-value">{html.escape(value)}</div>'
+            "</div>"
+        )
+        for label, value in rows
+    )
+    return f'<div class="source-card-grid">{cards}</div>'
 
 
 def state_progress(state: DraftBoardState) -> dict[str, object]:
@@ -413,7 +458,10 @@ def _render_pick_assignment(
             _mark_dirty(dirty_key_value)
             st.rerun()
     with undo_cols[2]:
-        st.caption("Draft state is session/local mock state only.")
+        st.caption(
+            "Undo and reset unlock after a pick is marked. Draft state is "
+            "session/local mock state only."
+        )
     return state
 
 
@@ -474,7 +522,7 @@ def _render_live_player_detail(
             "mock_state_context": "Session/local mock state only; source data is not mutated.",
             "best_remaining_context": "Selected from Best Remaining / Scouting Pool.",
             "trust_status": "Source/context only",
-            "source_path": str(SCOUTING_PREP_POOL_ROWS),
+            "source_path": demo_source_label(SCOUTING_PREP_POOL_ROWS),
             "source_column": "stats_model_value",
             "allowed_use": "mock_live_tracking_and_scouting_context_only",
             "blocked_use": "do_not_use_as_private_value_or_final_draft_recommendation",
@@ -666,14 +714,14 @@ def _render_downloads_and_details(state: DraftBoardState, session_key: str) -> N
             pd.DataFrame(
                 [
                     {
-                        "state_piece": "session state key",
-                        "value": session_key,
-                        "mutation_policy": "Never writes to active data packs.",
+                        "context": "local mock state",
+                        "value": "Session key hidden for demo",
+                        "safety": "Never writes to active data packs.",
                     },
                     {
-                        "state_piece": "scouting pool",
-                        "value": str(SCOUTING_PREP_POOL_ROWS),
-                        "mutation_policy": "Read-only input for session state.",
+                        "context": "scouting pool",
+                        "value": demo_source_label(SCOUTING_PREP_POOL_ROWS),
+                        "safety": "Read-only input for session state.",
                     },
                 ]
             ),
