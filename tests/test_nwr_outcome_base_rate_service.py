@@ -7,8 +7,10 @@ import pytest
 from src.services.nwr_outcome_base_rate_service import (
     COMPONENT_WAIVER_ID,
     SCOPE,
+    build_collapsed_v0_benchmark,
     build_limited_truth_set_base_rates,
     export_base_rate_build,
+    export_collapsed_v0_benchmark,
 )
 
 
@@ -100,6 +102,80 @@ def test_exports_are_local_internal_files(tmp_path: Path) -> None:
         "base_rate_censoring_report.csv",
         "base_rate_reliability_report.csv",
         "base_rate_leakage_guardrail_report.csv",
+    }
+    assert all(path.exists() for path in paths)
+
+
+def test_collapsed_v0_benchmark_keeps_only_safe_internal_buckets() -> None:
+    result = build_limited_truth_set_base_rates(_week_rows())
+    collapsed = build_collapsed_v0_benchmark(
+        [row.__dict__ for row in result.bucket_results]
+    )
+
+    benchmark_rows = collapsed.collapsed_benchmark
+    assert benchmark_rows
+    assert {row["bucket_family"] for row in benchmark_rows} == {
+        "position",
+        "position_cohort",
+    }
+    assert {row["outcome_label"] for row in benchmark_rows} == {
+        "same_year_difference_maker",
+        "same_year_starter",
+        "same_year_useful",
+        "same_year_replacement_or_bust",
+    }
+    assert all(row["component_waiver_id"] == COMPONENT_WAIVER_ID for row in benchmark_rows)
+    assert all(row["scope"] == SCOPE for row in benchmark_rows)
+    assert all(row["internal_only"] == "true" for row in benchmark_rows)
+    assert all("probability" not in row["benchmark_id"] for row in benchmark_rows)
+
+
+def test_collapsed_v0_benchmark_disables_age_and_next_year_and_collapses_tiers() -> None:
+    result = build_limited_truth_set_base_rates(_week_rows())
+    collapsed = build_collapsed_v0_benchmark(
+        [row.__dict__ for row in result.bucket_results]
+    )
+
+    disabled_families = {
+        row["bucket_family"]: row for row in collapsed.disabled_bucket_families
+    }
+    assert disabled_families["age_band"]["benchmark_readiness"] == "disabled_missing_age"
+    assert disabled_families["prior_finish_tier"]["recommended_action"] == (
+        "collapse_to_parent"
+    )
+    assert disabled_families["trailing_ppg_tier"]["recommended_action"] == (
+        "collapse_to_parent"
+    )
+    assert disabled_families["games_played_tier"]["recommended_action"] == (
+        "collapse_to_parent"
+    )
+    assert collapsed.disabled_outcomes[0]["outcome_label"] == "next_year_starter"
+    assert collapsed.disabled_outcomes[0]["benchmark_readiness"] == (
+        "disabled_censored_or_unstable"
+    )
+    assert any(
+        row["lineage_action"] == "collapsed_to_parent"
+        for row in collapsed.collapsed_bucket_lineage
+    )
+
+
+def test_collapsed_v0_export_is_internal_only(tmp_path: Path) -> None:
+    result = build_limited_truth_set_base_rates(_week_rows())
+    collapsed = build_collapsed_v0_benchmark(
+        [row.__dict__ for row in result.bucket_results]
+    )
+
+    paths = export_collapsed_v0_benchmark(
+        collapsed,
+        tmp_path / "sprint_4c_collapsed_v0_benchmark",
+    )
+
+    assert {path.name for path in paths} == {
+        "collapsed_v0_benchmark.csv",
+        "disabled_bucket_families.csv",
+        "disabled_outcomes.csv",
+        "collapsed_bucket_lineage.csv",
+        "benchmark_readiness_summary.csv",
     }
     assert all(path.exists() for path in paths)
 

@@ -23,6 +23,13 @@ SOURCE_MANIFEST_VERSION = "truth_set_v3_source_decisions_v1"
 LABEL_SCHEMA_VERSION = "nwr_outcome_labels_v1"
 SUPPORTED_BASE_RATE_ROW_FAMILIES = ("all_player_pre_week1", "offseason_carryover")
 EXCLUDED_ROW_FAMILIES = ("rookie_post_draft",)
+COLLAPSED_DIRECT_BENCHMARK_FAMILIES = ("position", "position_cohort")
+COLLAPSED_PARENT_ONLY_FAMILIES = (
+    "prior_finish_tier",
+    "trailing_ppg_tier",
+    "games_played_tier",
+)
+COLLAPSED_DISABLED_BUCKET_FAMILIES = ("age_band",)
 SUPPORTED_OUTCOMES = (
     "same_year_difference_maker",
     "same_year_starter",
@@ -30,6 +37,13 @@ SUPPORTED_OUTCOMES = (
     "same_year_replacement_or_bust",
     "next_year_starter",
 )
+COLLAPSED_BENCHMARK_OUTCOMES = (
+    "same_year_difference_maker",
+    "same_year_starter",
+    "same_year_useful",
+    "same_year_replacement_or_bust",
+)
+COLLAPSED_DISABLED_OUTCOMES = ("next_year_starter",)
 CANONICAL_COMPONENTS = (
     "passing_yards",
     "passing_tds",
@@ -119,6 +133,15 @@ class BaseRateBuildResult:
     leakage_guardrail_report: tuple[dict[str, Any], ...]
 
 
+@dataclass(frozen=True)
+class CollapsedBenchmarkBuildResult:
+    collapsed_benchmark: tuple[dict[str, Any], ...]
+    disabled_bucket_families: tuple[dict[str, Any], ...]
+    disabled_outcomes: tuple[dict[str, Any], ...]
+    collapsed_bucket_lineage: tuple[dict[str, Any], ...]
+    benchmark_readiness_summary: tuple[dict[str, Any], ...]
+
+
 def build_limited_truth_set_base_rates(
     week_rows: Sequence[Mapping[str, Any]],
     *,
@@ -177,6 +200,104 @@ def export_base_rate_build(
     _write_csv(paths[3], list(result.censoring_report))
     _write_csv(paths[4], list(result.reliability_report))
     _write_csv(paths[5], list(result.leakage_guardrail_report))
+    return paths
+
+
+def build_collapsed_v0_benchmark(
+    bucket_rows: Sequence[Mapping[str, Any]],
+) -> CollapsedBenchmarkBuildResult:
+    benchmark_rows: list[dict[str, Any]] = []
+    lineage_rows: list[dict[str, Any]] = []
+    disabled_family_rows = _disabled_bucket_family_rows(bucket_rows)
+    disabled_outcome_rows = _disabled_outcome_rows(bucket_rows)
+
+    for row in bucket_rows:
+        bucket_family = str(row.get("bucket_family", ""))
+        outcome = str(row.get("outcome_label", ""))
+        if outcome in COLLAPSED_DISABLED_OUTCOMES:
+            lineage_rows.append(_lineage_row(row, "disabled_outcome"))
+            continue
+        if outcome not in COLLAPSED_BENCHMARK_OUTCOMES:
+            lineage_rows.append(_lineage_row(row, "disabled_unknown_outcome"))
+            continue
+        if bucket_family in COLLAPSED_DISABLED_BUCKET_FAMILIES:
+            lineage_rows.append(_lineage_row(row, "disabled_bucket_family"))
+            continue
+        if bucket_family in COLLAPSED_PARENT_ONLY_FAMILIES:
+            lineage_rows.append(_lineage_row(row, "collapsed_to_parent"))
+            continue
+        if bucket_family not in COLLAPSED_DIRECT_BENCHMARK_FAMILIES:
+            lineage_rows.append(_lineage_row(row, "disabled_unknown_bucket_family"))
+            continue
+
+        readiness = _benchmark_readiness(row)
+        benchmark_rows.append(
+            {
+                "benchmark_id": _benchmark_id(row),
+                "source_bucket_id": str(row.get("bucket_id", "")),
+                "parent_bucket_id": str(row.get("parent_bucket_id", "")),
+                "position": str(row.get("position", "")),
+                "cohort": str(row.get("cohort", "")),
+                "row_family": str(row.get("row_family", "")),
+                "bucket_family": bucket_family,
+                "outcome_label": outcome,
+                "n_raw": str(row.get("n_raw", "")),
+                "success_raw": str(row.get("success_raw", "")),
+                "posterior_mean": str(row.get("posterior_mean", "")),
+                "ci80_low": str(row.get("ci80_low", "")),
+                "ci80_high": str(row.get("ci80_high", "")),
+                "ci95_low": str(row.get("ci95_low", "")),
+                "ci95_high": str(row.get("ci95_high", "")),
+                "reliability_flag": str(row.get("reliability_flag", "")),
+                "benchmark_readiness": readiness,
+                "component_waiver_id": str(row.get("component_waiver_id", "")),
+                "scope": str(row.get("scope", "")),
+                "internal_only": "true",
+                "disabled_reason": "",
+                "notes": _benchmark_notes(row, readiness),
+            }
+        )
+        lineage_rows.append(_lineage_row(row, "published_direct_internal_benchmark"))
+
+    return CollapsedBenchmarkBuildResult(
+        collapsed_benchmark=tuple(benchmark_rows),
+        disabled_bucket_families=tuple(disabled_family_rows),
+        disabled_outcomes=tuple(disabled_outcome_rows),
+        collapsed_bucket_lineage=tuple(lineage_rows),
+        benchmark_readiness_summary=tuple(
+            _benchmark_readiness_summary(
+                benchmark_rows,
+                disabled_family_rows,
+                disabled_outcome_rows,
+                lineage_rows,
+            )
+        ),
+    )
+
+
+def build_collapsed_v0_benchmark_from_csv(source_path: str | Path) -> CollapsedBenchmarkBuildResult:
+    rows = _read_csv_dicts(Path(source_path))
+    return build_collapsed_v0_benchmark(rows)
+
+
+def export_collapsed_v0_benchmark(
+    result: CollapsedBenchmarkBuildResult,
+    output_dir: str | Path,
+) -> tuple[Path, ...]:
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    paths = (
+        output / "collapsed_v0_benchmark.csv",
+        output / "disabled_bucket_families.csv",
+        output / "disabled_outcomes.csv",
+        output / "collapsed_bucket_lineage.csv",
+        output / "benchmark_readiness_summary.csv",
+    )
+    _write_csv(paths[0], list(result.collapsed_benchmark))
+    _write_csv(paths[1], list(result.disabled_bucket_families))
+    _write_csv(paths[2], list(result.disabled_outcomes))
+    _write_csv(paths[3], list(result.collapsed_bucket_lineage))
+    _write_csv(paths[4], list(result.benchmark_readiness_summary))
     return paths
 
 
@@ -599,6 +720,176 @@ def _reliability_rows(results: Sequence[BaseRateBucketResult]) -> list[dict[str,
             "scope": SCOPE,
         }
         for flag, count in sorted(counts.items())
+    ]
+
+
+def _disabled_bucket_family_rows(
+    bucket_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for family in (*COLLAPSED_PARENT_ONLY_FAMILIES, *COLLAPSED_DISABLED_BUCKET_FAMILIES):
+        family_rows = [row for row in bucket_rows if row.get("bucket_family") == family]
+        if family in COLLAPSED_DISABLED_BUCKET_FAMILIES:
+            readiness = "disabled_missing_age"
+            action = "disable"
+            reason = "Age/date-of-birth coverage is not registered; all rows are age_unavailable."
+        else:
+            readiness = "sparse_internal_prior"
+            action = "collapse_to_parent"
+            reason = "Child bucket signal is too sparse for direct benchmark publication."
+        rows.append(
+            {
+                "bucket_family": family,
+                "bucket_count": len(family_rows),
+                "recommended_action": action,
+                "benchmark_readiness": readiness,
+                "component_waiver_id": COMPONENT_WAIVER_ID,
+                "scope": SCOPE,
+                "internal_only": "true",
+                "disabled_reason": reason,
+            }
+        )
+    return rows
+
+
+def _disabled_outcome_rows(bucket_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for outcome in COLLAPSED_DISABLED_OUTCOMES:
+        outcome_rows = [row for row in bucket_rows if row.get("outcome_label") == outcome]
+        rows.append(
+            {
+                "outcome_label": outcome,
+                "bucket_count": len(outcome_rows),
+                "recommended_action": "disable",
+                "benchmark_readiness": "disabled_censored_or_unstable",
+                "component_waiver_id": COMPONENT_WAIVER_ID,
+                "scope": SCOPE,
+                "internal_only": "true",
+                "disabled_reason": (
+                    "Next-year starter has censored/null exclusions and is too unstable "
+                    "for the collapsed v0 benchmark."
+                ),
+            }
+        )
+    return rows
+
+
+def _lineage_row(row: Mapping[str, Any], action: str) -> dict[str, Any]:
+    reason_by_action = {
+        "published_direct_internal_benchmark": "Approved low-dimensional benchmark family.",
+        "collapsed_to_parent": "Tiered child bucket collapsed to parent-level benchmark.",
+        "disabled_bucket_family": "Bucket family disabled by Sprint 4C decision.",
+        "disabled_outcome": "Outcome disabled by Sprint 4C decision.",
+        "disabled_unknown_bucket_family": "Bucket family is outside Sprint 4C allowlist.",
+        "disabled_unknown_outcome": "Outcome is outside Sprint 4C allowlist.",
+    }
+    return {
+        "source_bucket_id": str(row.get("bucket_id", "")),
+        "parent_bucket_id": str(row.get("parent_bucket_id", "")),
+        "position": str(row.get("position", "")),
+        "row_family": str(row.get("row_family", "")),
+        "bucket_family": str(row.get("bucket_family", "")),
+        "outcome_label": str(row.get("outcome_label", "")),
+        "n_raw": str(row.get("n_raw", "")),
+        "reliability_flag": str(row.get("reliability_flag", "")),
+        "lineage_action": action,
+        "component_waiver_id": str(row.get("component_waiver_id", COMPONENT_WAIVER_ID)),
+        "scope": str(row.get("scope", SCOPE)),
+        "internal_only": "true",
+        "notes": reason_by_action.get(action, ""),
+    }
+
+
+def _benchmark_readiness(row: Mapping[str, Any]) -> str:
+    reliability = str(row.get("reliability_flag", ""))
+    n_raw = _optional_int(row.get("n_raw")) or 0
+    if reliability == "UNPUBLISHABLE" or n_raw <= 0:
+        return "disabled_too_sparse"
+    if reliability in {"A", "B", "C"}:
+        return "usable_internal_parent_prior"
+    return "sparse_internal_prior"
+
+
+def _benchmark_notes(row: Mapping[str, Any], readiness: str) -> str:
+    if readiness == "usable_internal_parent_prior":
+        return "Internal-only collapsed benchmark; not a calibrated probability."
+    if readiness == "sparse_internal_prior":
+        return "Sparse internal benchmark; use only with parent-prior context."
+    return "Disabled from benchmark use."
+
+
+def _benchmark_id(row: Mapping[str, Any]) -> str:
+    return "benchmark|" + "|".join(
+        [
+            str(row.get("row_family", "")),
+            str(row.get("position", "")),
+            str(row.get("bucket_family", "")),
+            str(row.get("outcome_label", "")),
+        ]
+    )
+
+
+def _benchmark_readiness_summary(
+    benchmark_rows: Sequence[Mapping[str, Any]],
+    disabled_family_rows: Sequence[Mapping[str, Any]],
+    disabled_outcome_rows: Sequence[Mapping[str, Any]],
+    lineage_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    readiness_counts = defaultdict(int)
+    for row in benchmark_rows:
+        readiness_counts[str(row.get("benchmark_readiness", ""))] += 1
+    lineage_counts = defaultdict(int)
+    for row in lineage_rows:
+        lineage_counts[str(row.get("lineage_action", ""))] += 1
+    return [
+        {
+            "metric": "benchmark_row_count",
+            "value": len(benchmark_rows),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Rows retained in collapsed internal benchmark.",
+        },
+        {
+            "metric": "usable_internal_parent_prior_count",
+            "value": readiness_counts.get("usable_internal_parent_prior", 0),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Retained rows with stronger internal reliability.",
+        },
+        {
+            "metric": "sparse_internal_prior_count",
+            "value": readiness_counts.get("sparse_internal_prior", 0),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Retained rows that remain sparse and parent-prior dependent.",
+        },
+        {
+            "metric": "disabled_bucket_family_count",
+            "value": len(disabled_family_rows),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Bucket family decisions recorded in disabled_bucket_families.csv.",
+        },
+        {
+            "metric": "disabled_outcome_count",
+            "value": len(disabled_outcome_rows),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Outcome decisions recorded in disabled_outcomes.csv.",
+        },
+        {
+            "metric": "collapsed_to_parent_count",
+            "value": lineage_counts.get("collapsed_to_parent", 0),
+            "component_waiver_id": COMPONENT_WAIVER_ID,
+            "scope": SCOPE,
+            "internal_only": "true",
+            "notes": "Child tier rows collapsed to parent benchmark.",
+        },
     ]
 
 
