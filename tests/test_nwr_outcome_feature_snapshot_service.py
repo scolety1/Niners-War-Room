@@ -40,6 +40,21 @@ def _candidate(features):
     )
 
 
+def _rookie_candidate(features, *, input_snapshot_date="2026-05-25T23:45:00+00:00"):
+    return build_feature_snapshot_candidate(
+        player_id="rookie:2026:testplayer",
+        player_name="Test Player",
+        position="UNK",
+        row_type="rookie_post_draft",
+        target_season=2026,
+        target_horizon="year_1",
+        features=features,
+        source_manifest="rookie_post_draft_manifest_approved_v1",
+        input_snapshot_date=input_snapshot_date,
+        cutoff_id="rookie_post_draft_2026_rookie_post_draft_manifest_approved_v1",
+    )
+
+
 def test_cutoff_dates_are_deterministic() -> None:
     assert cutoff_date("all_player_pre_week1", 2026) == "2026-09-01"
     assert cutoff_date("offseason_carryover", 2026) == "2026-02-15"
@@ -124,3 +139,57 @@ def test_identity_fields_are_not_model_features() -> None:
 
     assert candidate.legality_status == "blocked"
     assert "identity_feature_blocked" in {issue.issue_type for issue in candidate.legality_issues}
+
+
+def test_rookie_post_draft_uses_approved_manifest_timestamp() -> None:
+    candidate = _rookie_candidate(
+        [
+            _feature(
+                feature_name="draft_pick",
+                value=12,
+                source_family="official_draft_capital",
+                source_field="overall_pick",
+                source_available_at="2026-05-25T23:45:00+00:00",
+                source_max_timestamp="2026-05-25T23:45:00+00:00",
+            )
+        ]
+    )
+
+    assert candidate.legality_status == "valid"
+    assert candidate.input_snapshot_date == "2026-05-25T23:45:00+00:00"
+    assert candidate.cutoff_id == "rookie_post_draft_2026_rookie_post_draft_manifest_approved_v1"
+
+
+def test_rookie_post_draft_blocks_source_after_approved_cutoff() -> None:
+    candidate = _rookie_candidate(
+        [
+            _feature(
+                feature_name="draft_pick",
+                value=12,
+                source_family="official_draft_capital",
+                source_field="overall_pick",
+                source_available_at="2026-05-26T00:00:00+00:00",
+                source_max_timestamp="2026-05-26T00:00:00+00:00",
+            )
+        ]
+    )
+
+    issue_types = {issue.issue_type for issue in candidate.legality_issues}
+    assert candidate.legality_status == "blocked"
+    assert "post_cutoff_source_timestamp" in issue_types
+    assert "post_cutoff_source_max_timestamp" in issue_types
+
+
+def test_rookie_forbidden_features_are_rejected() -> None:
+    candidate = _rookie_candidate(
+        [
+            _feature(
+                feature_name="rookie_adp_rank",
+                source_family="official_draft_capital",
+                source_field="adp",
+            )
+        ]
+    )
+
+    assert candidate.legality_status == "blocked"
+    assert "forbidden_feature_family" in {issue.issue_type for issue in candidate.legality_issues}

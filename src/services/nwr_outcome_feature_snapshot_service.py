@@ -138,11 +138,13 @@ def build_feature_snapshot_candidate(
     source_manifest: str,
     manual_review_status: str = "not_required",
     parser_version: str = "nwr_outcome_feature_snapshot_v1",
+    input_snapshot_date: str | None = None,
+    cutoff_id: str | None = None,
 ) -> FeatureSnapshotCandidate:
     _require_supported_row_type(row_type)
-    input_snapshot_date = cutoff_date(row_type, target_season)
+    input_snapshot_date = input_snapshot_date or cutoff_date(row_type, target_season)
     prediction_snapshot = PredictionSnapshot(
-        cutoff_id=f"{row_type}_{target_season}",
+        cutoff_id=cutoff_id or f"{row_type}_{target_season}",
         row_type=row_type,
         prediction_date=input_snapshot_date,
         input_snapshot_date=input_snapshot_date,
@@ -327,6 +329,76 @@ def export_sprint_5e_packet(
     return results
 
 
+def export_sprint_5h_packet(
+    *,
+    repo_root: str | Path,
+    output_dir: str | Path,
+    target_season: int = 2026,
+    rookie_manifest_cutoff: str = "2026-05-25T23:45:00+00:00",
+    cutoff_policy_id: str = "rookie_post_draft_manifest_approved_v1",
+) -> tuple[SnapshotBuildResult, ...]:
+    repo = Path(repo_root)
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    player_season = _read_csv(
+        repo / "local_exports/truth_set_lab/v3/reports/truth_set_v3_production_player_season.csv"
+    )
+    identity_rows = _read_csv(
+        repo
+        / "local_exports/nflverse/preview/sprint2_phase7_public_20260514/downloads"
+        / "dynastyprocess_db_playerids.csv"
+    )
+    draft_rows = _read_csv(
+        repo / "local_exports/model_v4/draft_capital/latest/rookie_draft_capital_2026.csv"
+    )
+    identity_by_gsis = {
+        str(row.get("gsis_id", "")): row for row in identity_rows if str(row.get("gsis_id", ""))
+    }
+    identity_by_name = {
+        _normalize_token(str(row.get("merge_name") or row.get("name") or "")): row
+        for row in identity_rows
+        if row.get("merge_name") or row.get("name")
+    }
+    latest_by_player = _latest_completed_season_by_player(
+        player_season,
+        max_season=target_season - 2,
+    )
+    all_player_result = _build_all_player_pre_week1(
+        latest_by_player=latest_by_player,
+        identity_by_gsis=identity_by_gsis,
+        target_season=target_season,
+    )
+    rookie_result = _build_rookie_post_draft(
+        draft_rows=draft_rows,
+        identity_by_name=identity_by_name,
+        target_season=target_season,
+        rookie_manifest_cutoff=rookie_manifest_cutoff,
+        cutoff_policy_id=cutoff_policy_id,
+    )
+    offseason_result = SnapshotBuildResult(
+        row_family="offseason_carryover",
+        attempted_rows=len(latest_by_player),
+        emitted_rows=0,
+        blocked_rows=len(latest_by_player),
+        readiness_status="blocked_by_source_after_cutoff",
+        notes=(
+            "Offseason carryover remains blocked until an on-or-before YYYY-02-15 "
+            "source snapshot or availability manifest exists."
+        ),
+        candidates=(),
+        legality_audits=(),
+    )
+    results = (all_player_result, rookie_result, offseason_result)
+    _write_sprint_5h_exports(
+        output=output,
+        results=results,
+        rookie_manifest_cutoff=rookie_manifest_cutoff,
+        cutoff_policy_id=cutoff_policy_id,
+        draft_rows=draft_rows,
+    )
+    return results
+
+
 def _build_all_player_pre_week1(
     *,
     latest_by_player: Mapping[str, Mapping[str, str]],
@@ -421,6 +493,118 @@ def _all_player_features(
                 lineage=("truth_set_v3_production_player_season.csv",),
             )
         )
+    return tuple(features)
+
+
+def _build_rookie_post_draft(
+    *,
+    draft_rows: Sequence[Mapping[str, str]],
+    identity_by_name: Mapping[str, Mapping[str, str]],
+    target_season: int,
+    rookie_manifest_cutoff: str,
+    cutoff_policy_id: str,
+) -> SnapshotBuildResult:
+    candidates: list[FeatureSnapshotCandidate] = []
+    audits: list[dict[str, str]] = []
+    for row in draft_rows:
+        player_name = str(row.get("player") or "")
+        normalized_name = str(row.get("normalized_player_name") or _normalize_token(player_name))
+        identity = identity_by_name.get(_normalize_token(player_name), {})
+        identity_player_id = str(identity.get("gsis_id") or "").strip()
+        player_id = identity_player_id or f"rookie:{target_season}:{normalized_name}"
+        position = str(identity.get("position") or "UNK")
+        features = _rookie_post_draft_features(
+            draft_row=row,
+            identity=identity,
+            rookie_manifest_cutoff=rookie_manifest_cutoff,
+        )
+        candidate = build_feature_snapshot_candidate(
+            player_id=player_id,
+            player_name=player_name,
+            position=position,
+            row_type="rookie_post_draft",
+            target_season=target_season,
+            target_horizon="year_1",
+            features=features,
+            source_manifest=cutoff_policy_id,
+            input_snapshot_date=rookie_manifest_cutoff,
+            cutoff_id=f"rookie_post_draft_{target_season}_{cutoff_policy_id}",
+        )
+        candidates.append(candidate)
+        audits.extend(_audit_rows(candidate))
+    emitted = sum(1 for candidate in candidates if candidate.legality_status == "valid")
+    return SnapshotBuildResult(
+        row_family="rookie_post_draft",
+        attempted_rows=len(candidates),
+        emitted_rows=emitted,
+        blocked_rows=len(candidates) - emitted,
+        readiness_status="snapshots_built" if emitted else "blocked",
+        notes=(
+            "Built only from approved factual draft manifest fields plus stable "
+            "identity metadata where available."
+        ),
+        candidates=tuple(
+            candidate for candidate in candidates if candidate.legality_status == "valid"
+        ),
+        legality_audits=tuple(audits),
+    )
+
+
+def _rookie_post_draft_features(
+    *,
+    draft_row: Mapping[str, str],
+    identity: Mapping[str, str],
+    rookie_manifest_cutoff: str,
+) -> tuple[FeatureSnapshot, ...]:
+    birthdate = str(identity.get("birthdate") or "")
+    draft_year = _optional_int(draft_row.get("draft_year"))
+    features = [
+        FeatureSnapshot(
+            feature_name="age_at_snapshot",
+            value=_age_on(birthdate, rookie_manifest_cutoff[:10]) if birthdate else None,
+            source_family="stable_identity_metadata",
+            source_field="birthdate",
+            source_available_at=rookie_manifest_cutoff,
+            source_max_timestamp=rookie_manifest_cutoff,
+            lineage=("dynastyprocess_db_playerids.csv",),
+        ),
+        FeatureSnapshot(
+            feature_name="draft_year",
+            value=draft_year,
+            source_family="official_draft_capital",
+            source_field="draft_year",
+            source_available_at=str(draft_row.get("collected_at_utc") or ""),
+            source_max_timestamp=str(draft_row.get("collected_at_utc") or ""),
+            lineage=("rookie_draft_capital_2026.csv",),
+        ),
+        FeatureSnapshot(
+            feature_name="draft_round",
+            value=_optional_int(draft_row.get("round")),
+            source_family="official_draft_capital",
+            source_field="round",
+            source_available_at=str(draft_row.get("collected_at_utc") or ""),
+            source_max_timestamp=str(draft_row.get("collected_at_utc") or ""),
+            lineage=("rookie_draft_capital_2026.csv",),
+        ),
+        FeatureSnapshot(
+            feature_name="draft_pick",
+            value=_optional_int(draft_row.get("overall_pick")),
+            source_family="official_draft_capital",
+            source_field="overall_pick",
+            source_available_at=str(draft_row.get("collected_at_utc") or ""),
+            source_max_timestamp=str(draft_row.get("collected_at_utc") or ""),
+            lineage=("rookie_draft_capital_2026.csv",),
+        ),
+        FeatureSnapshot(
+            feature_name="draft_day",
+            value=_optional_int(draft_row.get("draft_day")),
+            source_family="official_draft_capital",
+            source_field="draft_day",
+            source_available_at=str(draft_row.get("collected_at_utc") or ""),
+            source_max_timestamp=str(draft_row.get("collected_at_utc") or ""),
+            lineage=("rookie_draft_capital_2026.csv",),
+        ),
+    ]
     return tuple(features)
 
 
@@ -603,6 +787,249 @@ def _write_exports(output: Path, results: Sequence[SnapshotBuildResult]) -> None
     (output / "README_SPRINT_5E.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
 
 
+def _write_sprint_5h_exports(
+    *,
+    output: Path,
+    results: Sequence[SnapshotBuildResult],
+    rookie_manifest_cutoff: str,
+    cutoff_policy_id: str,
+    draft_rows: Sequence[Mapping[str, str]],
+) -> None:
+    candidates = [candidate for result in results for candidate in result.candidates]
+    _write_csv(
+        output / "cutoff_policy_registry_applied.csv",
+        [
+            {
+                "row_family": "all_player_pre_week1",
+                "cutoff_policy_id": "fixed_pre_week1_v1",
+                "cutoff_date": "YYYY-09-01",
+                "status": "eligible_now",
+                "notes": "Narrow prior-season source set remains legal.",
+            },
+            {
+                "row_family": "offseason_carryover",
+                "cutoff_policy_id": "fixed_offseason_carryover_v1",
+                "cutoff_date": "YYYY-02-15",
+                "status": "blocked",
+                "notes": "Requires earlier source snapshot or source availability manifest.",
+            },
+            {
+                "row_family": "rookie_post_draft",
+                "cutoff_policy_id": cutoff_policy_id,
+                "cutoff_date": rookie_manifest_cutoff,
+                "status": "eligible_now",
+                "notes": "Approved for factual draft manifest fields only.",
+            },
+        ],
+        ("row_family", "cutoff_policy_id", "cutoff_date", "status", "notes"),
+    )
+    _write_csv(
+        output / "candidate_prediction_snapshots.csv",
+        [
+            {
+                "row_type": result.row_family,
+                "cutoff_id": _cutoff_id_for_result(result, cutoff_policy_id),
+                "input_snapshot_date": _snapshot_date_for_result(
+                    result,
+                    rookie_manifest_cutoff,
+                ),
+                "target_season": 2026,
+                "emitted_rows": result.emitted_rows,
+                "readiness_status": result.readiness_status,
+            }
+            for result in results
+        ],
+        (
+            "row_type",
+            "cutoff_id",
+            "input_snapshot_date",
+            "target_season",
+            "emitted_rows",
+            "readiness_status",
+        ),
+    )
+    _write_csv(
+        output / "candidate_feature_snapshots.csv",
+        [
+            {
+                **_candidate_flattened(candidate),
+                "feature_vector": json.dumps(candidate.feature_vector, sort_keys=True),
+                "missingness_mask": json.dumps(candidate.missingness_mask, sort_keys=True),
+            }
+            for candidate in candidates
+        ],
+        (
+            "row_id",
+            "player_id",
+            "row_type",
+            "cutoff_id",
+            "input_snapshot_date",
+            "source_max_timestamp",
+            "feature_vector",
+            "missingness_mask",
+            "source_manifest",
+            "snapshot_hash",
+            "legality_status",
+            "manual_review_status",
+        ),
+    )
+    _write_csv(
+        output / "row_family_snapshot_readiness.csv",
+        [
+            {
+                "row_family": result.row_family,
+                "attempted_rows": result.attempted_rows,
+                "emitted_rows": result.emitted_rows,
+                "blocked_rows": result.blocked_rows,
+                "readiness_status": result.readiness_status,
+                "notes": result.notes,
+            }
+            for result in results
+        ],
+        (
+            "row_family",
+            "attempted_rows",
+            "emitted_rows",
+            "blocked_rows",
+            "readiness_status",
+            "notes",
+        ),
+    )
+    manifest_rows = [
+        {
+            "manifest_source": row.get("source", ""),
+            "source_file": row.get("source_file", ""),
+            "collected_at_utc": row.get("collected_at_utc", ""),
+            "draft_year": row.get("draft_year", ""),
+            "rows_in_manifest": len(draft_rows),
+            "source_status": row.get("source_status", ""),
+            "allowed_use": row.get("allowed_use", ""),
+            "cutoff_policy_id": cutoff_policy_id,
+            "approved_cutoff": rookie_manifest_cutoff,
+            "forbidden_field_count": _forbidden_draft_field_count(row),
+            "status": "pass" if row.get("collected_at_utc") == rookie_manifest_cutoff else "review",
+        }
+        for row in draft_rows[:1]
+    ]
+    _write_csv(
+        output / "rookie_post_draft_manifest_audit.csv",
+        manifest_rows,
+        (
+            "manifest_source",
+            "source_file",
+            "collected_at_utc",
+            "draft_year",
+            "rows_in_manifest",
+            "source_status",
+            "allowed_use",
+            "cutoff_policy_id",
+            "approved_cutoff",
+            "forbidden_field_count",
+            "status",
+        ),
+    )
+    _write_csv(
+        output / "offseason_carryover_blocker_report.csv",
+        [
+            {
+                "row_family": "offseason_carryover",
+                "status": "blocked_by_source_after_cutoff",
+                "cutoff": "YYYY-02-15",
+                "required_repair": "earlier source snapshot or source availability manifest",
+                "notes": (
+                    "Cutoff policy should not move later without changing business meaning."
+                ),
+            }
+        ],
+        ("row_family", "status", "cutoff", "required_repair", "notes"),
+    )
+    _write_csv(
+        output / "feature_legality_audit.csv",
+        [row for result in results for row in result.legality_audits],
+        (
+            "row_id",
+            "player_id",
+            "row_type",
+            "legality_status",
+            "issue_type",
+            "feature_name",
+            "message",
+        ),
+    )
+    missing_counts: dict[str, int] = defaultdict(int)
+    for candidate in candidates:
+        for feature_name, missing in candidate.missingness_mask.items():
+            if missing:
+                missing_counts[feature_name] += 1
+    _write_csv(
+        output / "feature_missingness_report.csv",
+        [
+            {
+                "feature_name": feature_name,
+                "missing_count": count,
+                "total_emitted_rows": len(candidates),
+                "coverage_count": len(candidates) - count,
+            }
+            for feature_name, count in sorted(missing_counts.items())
+        ],
+        ("feature_name", "missing_count", "total_emitted_rows", "coverage_count"),
+    )
+    readme = [
+        "# Sprint 5H Cutoff-Approved Snapshot Rebuild",
+        "",
+        "Verdict: `SNAPSHOTS_REBUILT_NARROW_PLUS_ROOKIES`",
+        "",
+        "The packet is local/internal only. It contains feature snapshots, not "
+        "probabilities, rankings, calibrated models, or app fields.",
+        "",
+        "## Row Families",
+    ]
+    for result in results:
+        readme.append(
+            f"- `{result.row_family}`: {result.emitted_rows}/{result.attempted_rows} "
+            f"emitted - {result.notes}"
+        )
+    readme += [
+        "",
+        "## Rookie Policy",
+        "",
+        f"- Cutoff policy ID: `{cutoff_policy_id}`",
+        f"- Approved cutoff: `{rookie_manifest_cutoff}`",
+        "- Draft features are factual manifest fields only.",
+        "- Market/rank/projection/ADP/trade/RotoWire outlook fields remain blocked.",
+    ]
+    (output / "README_SPRINT_5H.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
+
+
+def _cutoff_id_for_result(result: SnapshotBuildResult, cutoff_policy_id: str) -> str:
+    if result.row_family == "rookie_post_draft":
+        return f"rookie_post_draft_2026_{cutoff_policy_id}"
+    return f"{result.row_family}_2026"
+
+
+def _snapshot_date_for_result(
+    result: SnapshotBuildResult,
+    rookie_manifest_cutoff: str,
+) -> str:
+    if result.row_family == "rookie_post_draft":
+        return rookie_manifest_cutoff
+    return cutoff_date(result.row_family, 2026)
+
+
+def _forbidden_draft_field_count(row: Mapping[str, str]) -> int:
+    forbidden = (
+        "adp",
+        "rank",
+        "projection",
+        "market",
+        "trade",
+        "consensus",
+        "outlook",
+        "camp",
+    )
+    return sum(1 for key in row if any(fragment in key.lower() for fragment in forbidden))
+
+
 def _candidate_flattened(candidate: FeatureSnapshotCandidate) -> dict[str, Any]:
     payload = asdict(candidate)
     payload.pop("feature_vector")
@@ -656,10 +1083,13 @@ def _source_max_timestamp(features: Sequence[FeatureSnapshot], fallback: str) ->
 
 
 def _age_on(birthdate: str, snapshot_date: str) -> float | None:
-    if not birthdate:
+    if not birthdate or birthdate.strip().lower() in {"na", "n/a", "none", "nan"}:
         return None
-    born = datetime.fromisoformat(birthdate).date()
-    snap = datetime.fromisoformat(snapshot_date).date()
+    try:
+        born = datetime.fromisoformat(birthdate).date()
+        snap = datetime.fromisoformat(snapshot_date).date()
+    except ValueError:
+        return None
     age = snap.year - born.year - ((snap.month, snap.day) < (born.month, born.day))
     return round(age + ((snap - date(snap.year, born.month, born.day)).days % 365) / 365.0, 2)
 
