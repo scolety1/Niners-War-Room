@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from src.services.nwr_outcome_internal_model_package_service import (
+    PACKAGE_METADATA,
+    _validate_metadata_contract,
     canonical_feature_vector,
     export_sprint_5t_internal_logistic_package,
     fit_regularized_logistic,
@@ -112,7 +114,52 @@ def test_metadata_contract_and_output_blocks(tmp_path: Path) -> None:
     assert metadata["app_output_block"] is True
     assert metadata["calibration_allowed"] is False
     assert metadata["production_artifact"] is False
+    assert metadata["random_seed"] == "not_used_deterministic_gradient_descent"
+    assert metadata["package_created_at_utc"]
+    assert metadata["code_version_git_commit"]
     assert "next_year_starter" not in metadata["outcomes"]
+
+
+def test_metadata_contract_blocks_bad_governance_flags() -> None:
+    valid_metadata = {
+        **PACKAGE_METADATA,
+        "feature_list": ["age_at_snapshot"],
+        "forbidden_feature_scan_passed": True,
+        "training_row_count": 1,
+        "test_row_count": 1,
+        "random_seed": "not_used_deterministic_gradient_descent",
+        "package_created_at_utc": "2026-06-12T00:00:00Z",
+        "code_version_git_commit": "abc123",
+    }
+
+    for field, bad_value in (
+        ("promotion_allowed", True),
+        ("player_output_block", False),
+        ("app_output_block", False),
+        ("calibration_allowed", True),
+        ("production_artifact", True),
+        ("feature_lineage_required", False),
+        ("renamed_feature_schema_required", False),
+        ("forbidden_feature_scan_passed", False),
+    ):
+        metadata = {**valid_metadata, field: bad_value}
+        with pytest.raises(ValueError):
+            _validate_metadata_contract(metadata)
+
+
+def test_missing_metadata_blocks_package_contract() -> None:
+    metadata = {
+        **PACKAGE_METADATA,
+        "feature_list": ["age_at_snapshot"],
+        "forbidden_feature_scan_passed": True,
+        "training_row_count": 1,
+        "test_row_count": 1,
+        "random_seed": "not_used_deterministic_gradient_descent",
+        "package_created_at_utc": "2026-06-12T00:00:00Z",
+    }
+
+    with pytest.raises(ValueError, match="code_version_git_commit"):
+        _validate_metadata_contract(metadata)
 
 
 def test_old_ambiguous_feature_names_fail_contract() -> None:
@@ -189,3 +236,26 @@ def test_exported_diagnostics_have_no_player_identifiers_or_probabilities(tmp_pa
     assert not (output / "player_level_predictions.csv").exists()
     assert not (output / "app_probability_table.csv").exists()
 
+
+def test_app_and_ranking_modules_do_not_import_internal_package_service() -> None:
+    repo = Path(__file__).resolve().parents[1]
+    searched_roots = [repo / "app", repo / "pages", repo / "streamlit_app.py"]
+    forbidden_terms = (
+        "nwr_outcome_internal_model_package_service",
+        "sprint_5t_internal_logistic_package",
+        "internal_logistic_package_metadata",
+    )
+    offenders: list[str] = []
+    for root in searched_roots:
+        if root.is_file():
+            files = [root]
+        elif root.is_dir():
+            files = list(root.rglob("*.py"))
+        else:
+            files = []
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            if any(term in text for term in forbidden_terms):
+                offenders.append(str(path.relative_to(repo)))
+
+    assert offenders == []

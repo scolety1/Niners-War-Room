@@ -3,8 +3,10 @@ from __future__ import annotations
 import csv
 import json
 import math
+import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -133,6 +135,9 @@ def export_sprint_5t_internal_logistic_package(
         "forbidden_feature_scan_passed": True,
         "training_row_count": sum(1 for row in rows if row.target_season == 2023),
         "test_row_count": sum(1 for row in rows if row.target_season == 2024),
+        "random_seed": "not_used_deterministic_gradient_descent",
+        "package_created_at_utc": _utc_now_iso(),
+        "code_version_git_commit": _git_commit(repo),
     }
     _validate_metadata_contract(metadata)
 
@@ -576,6 +581,9 @@ def _validate_metadata_contract(metadata: Mapping[str, Any]) -> None:
         "promotion_allowed",
         "calibration_allowed",
         "production_artifact",
+        "random_seed",
+        "package_created_at_utc",
+        "code_version_git_commit",
     )
     missing = [field for field in required if field not in metadata]
     if missing:
@@ -591,6 +599,20 @@ def _validate_metadata_contract(metadata: Mapping[str, Any]) -> None:
     if metadata["production_artifact"] is not False:
         raise ValueError("production_artifact must be false.")
     validate_feature_contract(metadata["feature_list"])
+    if not metadata["feature_schema_version"]:
+        raise ValueError("feature_schema_version is required.")
+    if not metadata["feature_lineage_required"]:
+        raise ValueError("feature_lineage_required must be true.")
+    if not metadata["renamed_feature_schema_required"]:
+        raise ValueError("renamed_feature_schema_required must be true.")
+    if not metadata["forbidden_feature_scan_passed"]:
+        raise ValueError("forbidden_feature_scan_passed must be true.")
+    if not metadata["random_seed"]:
+        raise ValueError("random_seed must document deterministic behavior.")
+    if not metadata["package_created_at_utc"]:
+        raise ValueError("package_created_at_utc is required.")
+    if not metadata["code_version_git_commit"]:
+        raise ValueError("code_version_git_commit is required.")
 
 
 def _fit_logistic_weights(
@@ -692,6 +714,25 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], headers: Sequence[
 
 def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _git_commit(repo: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return "unavailable"
+    return result.stdout.strip() or "unavailable"
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
