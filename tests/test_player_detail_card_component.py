@@ -15,6 +15,12 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "Rankings context",
         "Draft Prep context",
         "Live Draft Room context",
+        "Outcome Model Status",
+        "_outcome_status_frame(payload.outcome_model_statuses)",
+        "Outcome model status is not available for this player.",
+        "Outcome",
+        "Status",
+        "Help",
         "Trust, warnings, and data needed",
         "User / history context",
         "Legacy / context disclosure",
@@ -31,8 +37,22 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "Sell",
         "Cut",
         "Defer",
+        "probability_value",
+        "probability_band",
+        "sortable_value",
+        "app_probability_table",
     ):
         assert forbidden not in text
+
+
+def test_component_renders_status_labels_without_percentages() -> None:
+    text = COMPONENT.read_text(encoding="utf-8")
+
+    assert "Outcome Model Status" in text
+    assert "payload.outcome_status" in text
+    assert "_outcome_status_frame" in text
+    assert "%" not in text
+    assert ".metric(\"Outcome" not in text
 
 
 def test_rankings_page_is_wired_to_shared_player_detail_card() -> None:
