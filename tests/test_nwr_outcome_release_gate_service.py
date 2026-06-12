@@ -53,6 +53,14 @@ def test_ready_released_requires_all_gates_true() -> None:
     assert result.app_readable_payload is True
 
 
+def test_ready_released_requires_numeric_probability_payload() -> None:
+    with pytest.raises(ValueError, match="requires a numeric probability"):
+        evaluate_probability_status(
+            target="same_year_difference_maker",
+            release_gates=default_release_gates(True),
+        )
+
+
 def test_status_precedence_is_deterministic() -> None:
     gates = default_release_gates(True)
     gates["validation_gate"] = False
@@ -97,6 +105,19 @@ def test_next_year_starter_remains_blocked() -> None:
 
     assert result.status_code == "blocked_validation_gate"
     assert result.probability_payload is None
+    assert result.app_readable_payload is False
+
+
+def test_ready_internal_only_is_not_app_ready() -> None:
+    result = evaluate_probability_status(
+        target="same_year_useful",
+        evidence_status="ready_internal_only",
+        requested_probability=0.66,
+    )
+
+    assert result.status_code == "ready_internal_only"
+    assert result.probability_payload is None
+    assert result.hidden_sortable_probability is None
     assert result.app_readable_payload is False
 
 
@@ -159,6 +180,17 @@ def test_export_contract_creates_no_app_probability_or_player_export(tmp_path: P
     for path in tmp_path.glob("*.csv"):
         header = path.read_text(encoding="utf-8").splitlines()[0].split(",")
         assert not forbidden_headers.intersection(header), path.name
+
+
+def test_export_contract_rejects_app_and_ranking_output_paths(tmp_path: Path) -> None:
+    for unsafe in (
+        tmp_path / "app" / "outcome_probability",
+        tmp_path / "local_exports" / "model_v4" / "current_value" / "latest",
+        tmp_path / "local_exports" / "rankings",
+        tmp_path / "app_probability_table",
+    ):
+        with pytest.raises(ValueError, match="app|ranking"):
+            write_sprint_5af_release_gate_contract(unsafe)
 
 
 def test_export_contract_does_not_consume_internal_model_output_paths() -> None:

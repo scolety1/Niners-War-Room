@@ -139,6 +139,7 @@ def assert_monotonic_same_year_probabilities(probabilities: Mapping[str, float])
 
 def write_sprint_5af_release_gate_contract(output_dir: str | Path) -> dict[str, Path]:
     output = Path(output_dir)
+    _validate_contract_output_dir(output)
     output.mkdir(parents=True, exist_ok=True)
 
     paths = {
@@ -345,11 +346,28 @@ def _normalize_gates(gates: Mapping[str, bool]) -> dict[str, bool]:
 
 def _validate_probability(probability: float | None) -> float | None:
     if probability is None:
-        return None
+        raise ValueError("ready_released requires a numeric probability payload.")
     value = float(probability)
     if not 0 <= value <= 1:
         raise ValueError("Released probability must be between 0 and 1.")
     return value
+
+
+def _validate_contract_output_dir(output_dir: Path) -> None:
+    lower_parts = {part.lower() for part in output_dir.parts}
+    blocked_parts = {"app", "pages", "streamlit_app.py"}
+    if lower_parts.intersection(blocked_parts):
+        raise ValueError("Release gate contract exports must not be written to app paths.")
+    normalized = str(output_dir).replace("\\", "/").lower()
+    blocked_fragments = (
+        "current_value/latest",
+        "rankings",
+        "decision_board",
+        "app_probability",
+        "player_probabilities",
+    )
+    if any(fragment in normalized for fragment in blocked_fragments):
+        raise ValueError("Release gate contract exports must not target app/ranking outputs.")
 
 
 def _status_text(status_code: str) -> str:
