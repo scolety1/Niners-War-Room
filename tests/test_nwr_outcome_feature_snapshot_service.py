@@ -15,6 +15,7 @@ def _feature(
     source_field: str = "games",
     source_available_at: str = "2026-05-15",
     source_max_timestamp: str = "2026-05-15",
+    lineage: tuple[str, ...] = ("fixture.csv",),
 ):
     return FeatureSnapshot(
         feature_name=feature_name,
@@ -23,7 +24,7 @@ def _feature(
         source_field=source_field,
         source_available_at=source_available_at,
         source_max_timestamp=source_max_timestamp,
-        lineage=("fixture.csv",),
+        lineage=lineage,
     )
 
 
@@ -105,6 +106,56 @@ def test_snapshot_hash_is_deterministic_and_changes_with_payload() -> None:
 
     assert first.snapshot_hash == second.snapshot_hash
     assert first.snapshot_hash != changed.snapshot_hash
+
+
+def test_ambiguous_prior_feature_names_are_not_emitted() -> None:
+    candidate = _candidate(
+        [
+            _feature(feature_name="prior_nwr_ppg", value=12.4),
+            _feature(feature_name="prior_nwr_finish_rank", value=18),
+            _feature(feature_name="prior_games_played", value=16),
+            _feature(feature_name="prior_rushing_first_downs", value=22),
+        ]
+    )
+
+    assert "prior_nwr_ppg" not in candidate.feature_vector
+    assert "prior_nwr_finish_rank" not in candidate.feature_vector
+    assert "prior_games_played" not in candidate.feature_vector
+    assert "prior_rushing_first_downs" not in candidate.feature_vector
+    assert candidate.feature_vector["prior_season_nwr_ppg"] == 12.4
+    assert candidate.feature_vector["prior_season_nwr_finish_rank"] == 18
+    assert candidate.feature_vector["prior_completed_season_games_played"] == 16
+    assert candidate.feature_vector["prior_completed_season_rushing_first_downs"] == 22
+
+
+def test_renamed_prior_features_carry_lineage_metadata() -> None:
+    candidate = _candidate(
+        [
+            _feature(
+                feature_name="prior_nwr_ppg",
+                value=12.4,
+                lineage=(
+                    "truth_set_v3_production_player_season.csv",
+                    "source_season=2025",
+                    "target_season=2026",
+                    "derived_availability_date=2026-02-15",
+                    "source_policy_id=completed_prior_season_stats_available_feb15_v1",
+                ),
+            )
+        ]
+    )
+
+    lineage = candidate.feature_lineage["prior_season_nwr_ppg"]
+    assert lineage["source_season"] == "2025"
+    assert lineage["target_season"] == "2026"
+    assert lineage["derived_availability_date"] == "2026-02-15"
+    assert lineage["prediction_cutoff"] == "2026-09-01"
+    assert lineage["feature_family"] == "prior_nwr_scoring"
+    assert lineage["legality_status"] == "allowed_prior_completed_season_fact"
+    assert lineage["source_season_strictly_before_target"] == "yes"
+    assert lineage["derived_availability_before_cutoff"] == "yes"
+    assert lineage["target_window_overlap"] == "no"
+    assert lineage["label_supplement_source_as_feature"] == "no"
 
 
 def test_source_max_timestamp_after_cutoff_is_blocked() -> None:

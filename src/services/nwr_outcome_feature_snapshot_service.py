@@ -4,7 +4,7 @@ import csv
 import json
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -70,6 +70,23 @@ SOURCE_FAMILY_ROW_TYPES = {
     "official_draft_capital": ("rookie_post_draft",),
 }
 
+FEATURE_RENAME_MAP = {
+    "prior_nwr_ppg": "prior_season_nwr_ppg",
+    "prior_nwr_finish_rank": "prior_season_nwr_finish_rank",
+    "prior_games": "prior_completed_season_games",
+    "prior_games_played": "prior_completed_season_games_played",
+    "prior_games_active": "prior_completed_season_games_active",
+    "prior_rushing_first_downs": "prior_completed_season_rushing_first_downs",
+    "prior_receiving_first_downs": "prior_completed_season_receiving_first_downs",
+    "prior_receptions": "prior_completed_season_receptions",
+    "prior_rushing_yards": "prior_completed_season_rushing_yards",
+    "prior_receiving_yards": "prior_completed_season_receiving_yards",
+    "prior_passing_yards": "prior_completed_season_passing_yards",
+}
+
+PRIOR_COMPLETED_SEASON_POLICY_ID = "completed_prior_season_stats_available_feb15_v1"
+STABLE_IDENTITY_POLICY_ID = "stable_identity_metadata_manifest_v1"
+
 
 @dataclass(frozen=True)
 class FeatureSnapshotCandidate:
@@ -83,6 +100,7 @@ class FeatureSnapshotCandidate:
     source_max_timestamp: str
     feature_vector: dict[str, Any]
     missingness_mask: dict[str, bool]
+    feature_lineage: dict[str, dict[str, str]]
     source_manifest: str
     snapshot_hash: str
     legality_status: str
@@ -105,6 +123,10 @@ class SnapshotBuildResult:
 def cutoff_date(row_type: str, season: int) -> str:
     _require_supported_row_type(row_type)
     return CUTOFF_TEMPLATES[row_type].format(season=season)
+
+
+def canonical_feature_name(feature_name: str) -> str:
+    return FEATURE_RENAME_MAP.get(feature_name, feature_name)
 
 
 def narrow_feature_source_allowlist() -> dict[str, SourceAllowlistRule]:
@@ -143,6 +165,7 @@ def build_feature_snapshot_candidate(
 ) -> FeatureSnapshotCandidate:
     _require_supported_row_type(row_type)
     input_snapshot_date = input_snapshot_date or cutoff_date(row_type, target_season)
+    canonical_features = _canonicalize_features(features)
     prediction_snapshot = PredictionSnapshot(
         cutoff_id=cutoff_id or f"{row_type}_{target_season}",
         row_type=row_type,
@@ -154,11 +177,17 @@ def build_feature_snapshot_candidate(
         parser_version=parser_version,
         source_manifest=source_manifest,
     )
-    feature_vector = {feature.feature_name: feature.value for feature in features}
+    feature_vector = {feature.feature_name: feature.value for feature in canonical_features}
+    feature_lineage = feature_lineage_metadata(
+        canonical_features,
+        target_season=target_season,
+        prediction_cutoff=input_snapshot_date,
+        source_manifest=source_manifest,
+    )
     issues = list(
         validate_snapshot_feature_legality(
             row_type=row_type,
-            features=features,
+            features=canonical_features,
             input_snapshot_date=input_snapshot_date,
             label_available_date=prediction_snapshot.label_available_date,
         ).issues
@@ -172,7 +201,7 @@ def build_feature_snapshot_candidate(
         target_season=target_season,
         target_horizon=target_horizon,
     )
-    source_max_timestamp = _source_max_timestamp(features, input_snapshot_date)
+    source_max_timestamp = _source_max_timestamp(canonical_features, input_snapshot_date)
     payload = {
         "row_id": row_id,
         "player_id": player_id,
@@ -184,6 +213,7 @@ def build_feature_snapshot_candidate(
         "source_max_timestamp": source_max_timestamp,
         "feature_vector": feature_vector,
         "missingness_mask": missingness_mask(feature_vector),
+        "feature_lineage": feature_lineage,
         "source_manifest": source_manifest,
         "manual_review_status": manual_review_status,
     }
@@ -198,12 +228,159 @@ def build_feature_snapshot_candidate(
         source_max_timestamp=source_max_timestamp,
         feature_vector=feature_vector,
         missingness_mask=missingness_mask(feature_vector),
+        feature_lineage=feature_lineage,
         source_manifest=source_manifest,
         snapshot_hash=snapshot_hash(payload),
         legality_status="valid" if not issues else "blocked",
         manual_review_status=manual_review_status,
         legality_issues=tuple(issues),
     )
+
+
+def feature_lineage_metadata(
+    features: Sequence[FeatureSnapshot],
+    *,
+    target_season: int,
+    prediction_cutoff: str,
+    source_manifest: str,
+) -> dict[str, dict[str, str]]:
+    return {
+        feature.feature_name: _feature_lineage_metadata(
+            feature,
+            target_season=target_season,
+            prediction_cutoff=prediction_cutoff,
+            source_manifest=source_manifest,
+        )
+        for feature in features
+    }
+
+
+def _canonicalize_features(features: Sequence[FeatureSnapshot]) -> tuple[FeatureSnapshot, ...]:
+    canonical: list[FeatureSnapshot] = []
+    for feature in features:
+        canonical_name = canonical_feature_name(feature.feature_name)
+        if canonical_name == feature.feature_name:
+            canonical.append(feature)
+        else:
+            canonical.append(replace(feature, feature_name=canonical_name))
+    return tuple(canonical)
+
+
+def _feature_lineage_metadata(
+    feature: FeatureSnapshot,
+    *,
+    target_season: int,
+    prediction_cutoff: str,
+    source_manifest: str,
+) -> dict[str, str]:
+    source_season = _lineage_value(feature.lineage, "source_season")
+    if not source_season and _is_prior_completed_season_feature(feature):
+        source_season = str(target_season - 1)
+    if not source_season:
+        source_season = "not_season_bound"
+
+    derived_availability = _lineage_value(feature.lineage, "derived_availability_date")
+    if not derived_availability and _is_prior_completed_season_feature(feature):
+        derived_availability = _prior_completed_season_availability_date(target_season)
+    if not derived_availability:
+        derived_availability = feature.source_available_at or prediction_cutoff
+
+    source_policy_id = _lineage_value(feature.lineage, "source_policy_id")
+    if not source_policy_id and _is_prior_completed_season_feature(feature):
+        source_policy_id = PRIOR_COMPLETED_SEASON_POLICY_ID
+    if not source_policy_id and feature.source_family == "stable_identity_metadata":
+        source_policy_id = STABLE_IDENTITY_POLICY_ID
+    if not source_policy_id:
+        source_policy_id = source_manifest
+
+    strictly_before = _source_season_before_target(source_season, target_season)
+    availability_ok = _timestamp_on_or_before(derived_availability, prediction_cutoff)
+    blocked_supplement = feature.source_family in FORBIDDEN_SOURCE_FAMILIES
+    same_season = source_season == str(target_season)
+    legality_status = "allowed_prior_completed_season_fact"
+    if blocked_supplement:
+        legality_status = "blocked_for_modeling"
+    elif same_season:
+        legality_status = "blocked_same_season_leakage"
+    elif not availability_ok:
+        legality_status = "manual_review_required"
+
+    return {
+        "source_season": source_season,
+        "target_season": str(target_season),
+        "derived_availability_date": derived_availability,
+        "prediction_cutoff": prediction_cutoff,
+        "feature_family": _feature_family(feature),
+        "legality_status": legality_status,
+        "source_manifest_id_or_policy_id": source_policy_id,
+        "source_season_strictly_before_target": strictly_before,
+        "derived_availability_before_cutoff": "yes" if availability_ok else "no",
+        "target_window_overlap": "no" if not same_season else "yes",
+        "same_season_final_stat_leakage": "yes" if same_season else "no",
+        "label_supplement_source_as_feature": "yes" if blocked_supplement else "no",
+        "notes": _lineage_notes(feature),
+    }
+
+
+def _is_prior_completed_season_feature(feature: FeatureSnapshot) -> bool:
+    return (
+        feature.feature_name.startswith("prior_completed_season_")
+        or feature.feature_name.startswith("prior_season_nwr_")
+    )
+
+
+def _feature_family(feature: FeatureSnapshot) -> str:
+    if feature.feature_name.startswith("prior_season_nwr_"):
+        return "prior_nwr_scoring"
+    if feature.feature_name.startswith("prior_completed_season_"):
+        return "prior_completed_season_stat"
+    if feature.source_family == "stable_identity_metadata":
+        return "stable_identity_metadata"
+    if feature.source_family == "official_draft_capital":
+        return "factual_draft_capital"
+    return feature.source_family
+
+
+def _lineage_notes(feature: FeatureSnapshot) -> str:
+    if feature.feature_name.startswith("prior_season_nwr_"):
+        return (
+            "Completed prior-season NWR scoring feature; not same-season target "
+            "label and not an imported public fantasy total."
+        )
+    if feature.feature_name.startswith("prior_completed_season_"):
+        return "Completed prior-season factual production feature."
+    if feature.source_family == "stable_identity_metadata":
+        return "Stable identity metadata; not a scoring label."
+    if feature.source_family in FORBIDDEN_SOURCE_FAMILIES:
+        return "Blocked source family for prediction-time features."
+    return "Feature lineage metadata carried through snapshot contract."
+
+
+def _lineage_value(lineage: Sequence[str], key: str) -> str:
+    prefix = f"{key}="
+    for item in lineage:
+        if item.startswith(prefix):
+            return item.removeprefix(prefix)
+    return ""
+
+
+def _source_season_before_target(source_season: str, target_season: int) -> str:
+    if source_season == "not_season_bound":
+        return "not_applicable"
+    try:
+        return "yes" if int(source_season) < target_season else "no"
+    except ValueError:
+        return "unknown"
+
+
+def _timestamp_on_or_before(timestamp: str, cutoff: str) -> bool:
+    if not timestamp:
+        return False
+    return timestamp <= cutoff
+
+
+def _prior_completed_season_availability_date(target_season: int) -> str:
+    return f"{target_season}-02-15"
 
 
 def validate_snapshot_feature_legality(
@@ -450,7 +627,8 @@ def _all_player_features(
 ) -> tuple[FeatureSnapshot, ...]:
     input_snapshot_date = cutoff_date("all_player_pre_week1", target_season)
     identity_timestamp = input_snapshot_date
-    scoring_timestamp = str(season_row.get("source_date") or "")
+    scoring_timestamp = _prior_completed_season_availability_date(target_season)
+    prior_source_season = str(season_row.get("season") or target_season - 1)
     birthdate = str(identity.get("birthdate") or "")
     draft_year = _optional_int(identity.get("draft_year"))
     features = [
@@ -461,7 +639,11 @@ def _all_player_features(
             source_field="birthdate",
             source_available_at=identity_timestamp,
             source_max_timestamp=identity_timestamp,
-            lineage=("dynastyprocess_db_playerids.csv",),
+            lineage=(
+                "dynastyprocess_db_playerids.csv",
+                f"target_season={target_season}",
+                f"source_policy_id={STABLE_IDENTITY_POLICY_ID}",
+            ),
         ),
         FeatureSnapshot(
             feature_name="experience_at_snapshot",
@@ -470,17 +652,21 @@ def _all_player_features(
             source_field="draft_year",
             source_available_at=identity_timestamp,
             source_max_timestamp=identity_timestamp,
-            lineage=("dynastyprocess_db_playerids.csv",),
+            lineage=(
+                "dynastyprocess_db_playerids.csv",
+                f"target_season={target_season}",
+                f"source_policy_id={STABLE_IDENTITY_POLICY_ID}",
+            ),
         ),
     ]
     for feature_name, source_field in (
-        ("prior_games_played", "games"),
-        ("prior_rushing_first_downs", "rushing_first_downs"),
-        ("prior_receiving_first_downs", "receiving_first_downs"),
-        ("prior_receptions", "receptions"),
-        ("prior_rushing_yards", "rushing_yards"),
-        ("prior_receiving_yards", "receiving_yards"),
-        ("prior_passing_yards", "passing_yards"),
+        ("prior_completed_season_games_played", "games"),
+        ("prior_completed_season_rushing_first_downs", "rushing_first_downs"),
+        ("prior_completed_season_receiving_first_downs", "receiving_first_downs"),
+        ("prior_completed_season_receptions", "receptions"),
+        ("prior_completed_season_rushing_yards", "rushing_yards"),
+        ("prior_completed_season_receiving_yards", "receiving_yards"),
+        ("prior_completed_season_passing_yards", "passing_yards"),
     ):
         features.append(
             FeatureSnapshot(
@@ -490,7 +676,13 @@ def _all_player_features(
                 source_field=source_field,
                 source_available_at=scoring_timestamp,
                 source_max_timestamp=scoring_timestamp,
-                lineage=("truth_set_v3_production_player_season.csv",),
+                lineage=(
+                    "truth_set_v3_production_player_season.csv",
+                    f"source_season={prior_source_season}",
+                    f"target_season={target_season}",
+                    f"derived_availability_date={scoring_timestamp}",
+                    f"source_policy_id={PRIOR_COMPLETED_SEASON_POLICY_ID}",
+                ),
             )
         )
     return tuple(features)
@@ -677,6 +869,7 @@ def _write_exports(output: Path, results: Sequence[SnapshotBuildResult]) -> None
                 **_candidate_flattened(candidate),
                 "feature_vector": json.dumps(candidate.feature_vector, sort_keys=True),
                 "missingness_mask": json.dumps(candidate.missingness_mask, sort_keys=True),
+                "feature_lineage": json.dumps(candidate.feature_lineage, sort_keys=True),
             }
             for candidate in candidates
         ],
@@ -689,6 +882,7 @@ def _write_exports(output: Path, results: Sequence[SnapshotBuildResult]) -> None
             "source_max_timestamp",
             "feature_vector",
             "missingness_mask",
+            "feature_lineage",
             "source_manifest",
             "snapshot_hash",
             "legality_status",
@@ -855,6 +1049,7 @@ def _write_sprint_5h_exports(
                 **_candidate_flattened(candidate),
                 "feature_vector": json.dumps(candidate.feature_vector, sort_keys=True),
                 "missingness_mask": json.dumps(candidate.missingness_mask, sort_keys=True),
+                "feature_lineage": json.dumps(candidate.feature_lineage, sort_keys=True),
             }
             for candidate in candidates
         ],
@@ -867,6 +1062,7 @@ def _write_sprint_5h_exports(
             "source_max_timestamp",
             "feature_vector",
             "missingness_mask",
+            "feature_lineage",
             "source_manifest",
             "snapshot_hash",
             "legality_status",
@@ -1034,6 +1230,7 @@ def _candidate_flattened(candidate: FeatureSnapshotCandidate) -> dict[str, Any]:
     payload = asdict(candidate)
     payload.pop("feature_vector")
     payload.pop("missingness_mask")
+    payload.pop("feature_lineage")
     payload.pop("legality_issues")
     return payload
 
