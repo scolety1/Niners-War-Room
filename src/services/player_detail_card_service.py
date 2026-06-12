@@ -10,6 +10,7 @@ from src.services.nwr_outcome_status_display_service import (
     OutcomeStatusDisplay,
     build_default_app_status_registry,
 )
+from src.services.rankings_display_text_service import safe_data_needed_items
 
 MISSING = "-"
 RANKINGS_CONTEXT = "rankings"
@@ -171,6 +172,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         _first(row, "manual_review_notes", "raw_source_repair_notes"),
         missing="",
     )
+    why_text = _safe_review_note(why_text)
     why_text = f"{source_note} {why_text}".strip()
 
     private_metrics = (
@@ -541,7 +543,22 @@ def _warning_flags(value: Any) -> list[str]:
 
 
 def _human_warning(flag: str) -> str:
+    if flag.startswith(("unmatched_identity_join_source:", "duplicate_identity_join_source:")):
+        return "Identity source needs verification."
     return WARNING_EXPLANATIONS.get(flag, human_label(flag))
+
+
+def _safe_review_note(value: Any) -> str:
+    text = _clean(value, missing="")
+    if not text:
+        return ""
+    lowered = text.lower()
+    if "identity join" not in lowered and "missing model v4 current player row" not in lowered:
+        return text
+    safe_items = safe_data_needed_items(text.replace(";", "|"))
+    if not safe_items:
+        return "Data review notes available."
+    return "Data review notes: " + "; ".join(safe_items)
 
 
 def _warning_summary(warnings: list[str]) -> str:
@@ -551,9 +568,9 @@ def _warning_summary(warnings: list[str]) -> str:
 
 
 def _data_needed(row: Mapping[str, Any], warnings: list[str], score: str) -> list[str]:
-    existing = _clean(row.get("data_needed"), missing="")
+    existing = safe_data_needed_items(row.get("data_needed"))
     if existing:
-        return [part.strip() for part in existing.split("|") if part.strip()]
+        return existing
     needs = [_human_warning(flag) for flag in warnings]
     if score == MISSING:
         needs.insert(0, "No private NWR Dynasty Score is available.")

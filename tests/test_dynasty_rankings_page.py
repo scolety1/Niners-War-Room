@@ -92,6 +92,7 @@ def test_needs_data_language_replaces_manual_review_copy() -> None:
     assert "No Private Score" in text
     assert "Manual Review" not in text
     assert "No private NWR Dynasty Score is available." in text
+    assert "safe_data_needed_items(row.get(\"data_needed\"))" in text
 
 
 def test_trust_and_status_are_split_for_scored_warning_rows() -> None:

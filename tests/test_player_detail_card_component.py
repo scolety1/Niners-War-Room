@@ -18,7 +18,7 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "Outcome Model Status",
         "Outcome status details",
         'with st.expander("Outcome status details", expanded=False):',
-        "_outcome_status_frame(payload.outcome_model_statuses)",
+        "_render_outcome_status_details(payload.outcome_model_statuses)",
         "Outcome model status is not available for this player.",
         "Outcome",
         "Status",
@@ -53,9 +53,10 @@ def test_component_renders_status_labels_without_percentages() -> None:
     assert "Outcome Model Status" in text
     assert "payload.outcome_status" in text
     assert "expanded=False" in text
-    assert "_outcome_status_frame" in text
+    assert "_render_outcome_status_details" in text
     assert "%" not in text
     assert ".metric(\"Outcome" not in text
+    assert "_outcome_status_frame" not in text
 
 
 def test_rankings_page_is_wired_to_shared_player_detail_card() -> None:

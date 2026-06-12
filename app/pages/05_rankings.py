@@ -30,6 +30,7 @@ from src.services.player_feature_receipts_service import (
     receipt_rows_for_players,
 )
 from src.services.ranking_readiness_service import build_ranking_readiness
+from src.services.rankings_display_text_service import safe_data_needed_items
 
 AGE_ROWS = Path("local_exports/model_v4/prospect_age/latest/player_age_2026.csv")
 SLEEPER_AGE_ROWS = Path(
@@ -231,13 +232,15 @@ def _warning_count(value: object) -> str:
 
 
 def _human_warning(flag: str) -> str:
+    if flag.startswith(("unmatched_identity_join_source:", "duplicate_identity_join_source:")):
+        return "Identity source needs verification."
     return WARNING_EXPLANATIONS.get(flag, human_label(flag))
 
 
 def _data_needed(row: pd.Series) -> list[str]:
-    existing = _clean_value(row.get("data_needed"), missing="")
+    existing = safe_data_needed_items(row.get("data_needed"))
     if existing:
-        return [part.strip() for part in existing.split("|") if part.strip()]
+        return existing
     needs = [_human_warning(flag) for flag in _warning_flags(row.get("warning_reasons"))]
     if _score_value(row.get(NWR_SCORE_COLUMN)) is None:
         needs.insert(0, "No private NWR Dynasty Score is available.")

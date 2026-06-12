@@ -68,6 +68,43 @@ def test_payload_handles_missing_optional_fields_without_crashing() -> None:
     assert "Source column is missing." in payload.data_needed
 
 
+def test_rankings_payload_hides_raw_identity_join_debug_text() -> None:
+    payload = build_player_detail_card_payload(
+        _rankings_row(
+            private_score="",
+            manual_review_notes=(
+                "missing model v4 current player row; unmatched identity join key; "
+                "unmatched identity join source:C:\\local_exports\\current.csv; 1 more"
+            ),
+            warning_reasons=(
+                "missing_model_v4_current_player_row|unmatched_identity_join_key|"
+                "unmatched_identity_join_source:C:\\local_exports\\current.csv"
+            ),
+            data_needed=(
+                "('missing model v4 current player row', "
+                "'unmatched identity join key', "
+                "'unmatched identity join key')"
+            ),
+        ),
+        context="rankings",
+    )
+
+    rendered = " ".join(
+        (
+            payload.why_text,
+            " ".join(payload.warning_messages),
+            " ".join(payload.data_needed),
+        )
+    ).lower()
+
+    assert payload.data_needed == ("Needs data", "Identity match needed")
+    assert "data review notes: needs data; identity match needed" in payload.why_text.lower()
+    assert "Identity source needs verification." in payload.warning_messages
+    assert "unmatched identity join key" not in rendered
+    assert "unmatched identity join source" not in rendered
+    assert "local_exports" not in rendered
+
+
 def test_raw_receipts_are_available_for_advanced_display() -> None:
     payload = build_player_detail_card_payload(_rankings_row(), context="rankings")
     receipts = {receipt.label: receipt.value for receipt in payload.receipts}

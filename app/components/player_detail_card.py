@@ -30,11 +30,7 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
     st.caption(payload.outcome_status)
     if payload.outcome_model_statuses:
         with st.expander("Outcome status details", expanded=False):
-            st.dataframe(
-                _outcome_status_frame(payload.outcome_model_statuses),
-                use_container_width=True,
-                hide_index=True,
-            )
+            _render_outcome_status_details(payload.outcome_model_statuses)
     else:
         st.write("Outcome model status is not available for this player.")
 
@@ -145,14 +141,10 @@ def _metrics_frame(metrics: tuple[object, ...]) -> pd.DataFrame:
     )
 
 
-def _outcome_status_frame(statuses: tuple[object, ...]) -> pd.DataFrame:
-    return pd.DataFrame(
-        [
-            {
-                "Outcome": status.target_label,
-                "Status": status.status_label,
-                "Help": status.status_help,
-            }
-            for status in statuses
-        ]
-    )
+def _render_outcome_status_details(statuses: tuple[object, ...]) -> None:
+    for index, status in enumerate(statuses):
+        if index:
+            st.divider()
+        st.markdown(f"**Outcome:** {status.target_label}")
+        st.write(f"Status: {status.status_label}")
+        st.caption(f"Help: {status.status_help}")
