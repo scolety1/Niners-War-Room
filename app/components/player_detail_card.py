@@ -29,11 +29,12 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
     st.markdown("**Outcome Model Status**")
     st.caption(payload.outcome_status)
     if payload.outcome_model_statuses:
-        st.dataframe(
-            _outcome_status_frame(payload.outcome_model_statuses),
-            use_container_width=True,
-            hide_index=True,
-        )
+        with st.expander("Outcome status details", expanded=False):
+            st.dataframe(
+                _outcome_status_frame(payload.outcome_model_statuses),
+                use_container_width=True,
+                hide_index=True,
+            )
     else:
         st.write("Outcome model status is not available for this player.")
 
