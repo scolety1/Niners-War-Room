@@ -9,6 +9,7 @@ __pycache__/
 data_packs/*.sqlite3
 data_packs/*.db
 .codex-logs/
+/data/
 local_exports/
 tmp/
 .codex-tmp/
