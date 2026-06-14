@@ -79,11 +79,13 @@ The candidate CSV must include:
 Allowed values:
 
 - `ready`: no visible blockers, no manual warnings, no remaining gaps, no quarantined prohibited source terms, and source confidence is not low.
-- `manual_warning`: candidate can stay in the candidate order, but manual flags, soft flags, remaining gaps, low confidence, or quarantined warning terms remain visible.
+- `rankable_with_warning`: candidate can stay in the candidate order, but manual flags, soft flags, remaining gaps, low confidence, or quarantined warning terms must remain visible. This is not clean and not implementation approval.
+- `manual_review_required`: candidate needs a human decision before production ranking movement. This includes unresolved premium injury review, TE exception review, or other role-defining manual questions.
 - `blocked`: hard caps, source conflicts, capped/unavailable review status, or other stop conditions block production movement.
 - `unavailable`: source-safe evidence is insufficient, the row needs data, or roster-declaration context is required.
 
 `ready` does not mean app promotion is approved. It means the row has no currently visible blocker under this candidate contract.
+`rankable_with_warning` does not clear warnings. It exists so a future candidate ranking can order useful players while still displaying manual review context beside every row.
 
 ## Ordering Rules
 
@@ -136,6 +138,21 @@ Statuses that may only warn, block, or remain visible:
 - `unavailable`: remaining gap; no inference.
 - `excluded`: quarantined or blocker; never positive value.
 - `conflict_review`: blocker until resolved if it affects identity, role, injury, usage, or premium evidence.
+
+## Warning Visibility Rules
+
+Rows marked `rankable_with_warning` or `manual_review_required` must preserve:
+
+- `promotion_blockers`
+- `manual_warnings`
+- `source_confidence`
+- `evidence_basis_summary`
+- `why_ranked_here`
+- `why_not_higher`
+- `why_not_lower`
+- `source_safety_notes`
+
+Warnings must not be hidden in order to make a row look clean.
 
 ## Disqualification Rules
 

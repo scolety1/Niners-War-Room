@@ -113,6 +113,33 @@ def make_fixture(root: Path) -> Path:
         {
             "shadow_order": "3",
             "player_id": "p3",
+            "player_name": "Gamma Receiver",
+            "position": "WR",
+            "school": "Metro",
+            "current_pick_zone": "1.04",
+            "v03_candidate_pick_zone": "1.04",
+            "review_bucket": "premium_review",
+            "shadow_review_group": "premium_shadow_review",
+            "shadow_order_basis": "fixture",
+            "tag_summary": "WR_ROUTE",
+            "promotion_status": "shadow_only",
+            "production_allowed": "no",
+            "source_confidence": "medium",
+            "review_status": "review_needed",
+            "hard_caps": "",
+            "soft_flags": "SOURCE_LIMITED",
+            "manual_review_flags": "games_missed_if_available: premium_pick_injury_manual_review",
+            "manual_flag_count": "1",
+            "remaining_gap_count": "1",
+            "prohibited_sources_detected": "none",
+            "source_conflict_status": "none",
+            "best_source_safe_evidence_summary": "injury note",
+            "remaining_true_gaps": "return_status",
+            "notes": "fixture",
+        },
+        {
+            "shadow_order": "4",
+            "player_id": "p4",
             "player_name": "Gamma Passer",
             "position": "QB",
             "school": "Metro",
@@ -139,9 +166,9 @@ def make_fixture(root: Path) -> Path:
         },
     ]
     write_csv(input_root / "rookie_shadow_ranking_v03.csv", rows, fields)
-    write_csv(input_root / "rookie_shadow_ranking_premium_v03.csv", rows[:2], fields)
+    write_csv(input_root / "rookie_shadow_ranking_premium_v03.csv", rows[:3], fields)
     write_csv(input_root / "rookie_shadow_ranking_round2_v03.csv", [], fields)
-    write_csv(input_root / "rookie_shadow_ranking_5_04_watchlist_v03.csv", [rows[2]], fields)
+    write_csv(input_root / "rookie_shadow_ranking_5_04_watchlist_v03.csv", [rows[3]], fields)
     (input_root / "README_ROOKIE_SHADOW_RANKING_V03.md").write_text("# fixture\n", encoding="utf-8")
     return input_root
 
@@ -165,16 +192,19 @@ def test_candidate_export_does_not_open_1_03(tmp_path: Path) -> None:
     assert not any(row["pick_zone"] == "1.03" for row in rows)
 
 
-def test_manual_warning_and_blocked_statuses_are_preserved(tmp_path: Path) -> None:
+def test_rankable_warning_manual_review_and_blocked_statuses_are_preserved(tmp_path: Path) -> None:
     input_root = make_fixture(tmp_path)
     out = tmp_path / "out"
     candidate.build_exports(input_root=input_root, output_dir=out, strict=True)
     rows = {row["player_id"]: row for row in read_csv(out / "rookie_production_candidate_v03.csv")}
     assert rows["p1"]["production_ready_status"] == "ready"
-    assert rows["p2"]["production_ready_status"] == "manual_warning"
+    assert rows["p2"]["production_ready_status"] == "rankable_with_warning"
     assert "quarantined_sources=ranking" in rows["p2"]["manual_warnings"]
-    assert rows["p3"]["production_ready_status"] == "blocked"
-    assert "hard_caps=QB_RUSHING_NO_JOB_SECURITY" in rows["p3"]["promotion_blockers"]
+    assert "remaining_gaps=targets_per_route_run" in rows["p2"]["manual_warnings"]
+    assert rows["p3"]["production_ready_status"] == "manual_review_required"
+    assert "manual_review_required_before_ranking" in rows["p3"]["promotion_blockers"]
+    assert rows["p4"]["production_ready_status"] == "blocked"
+    assert "hard_caps=QB_RUSHING_NO_JOB_SECURITY" in rows["p4"]["promotion_blockers"]
 
 
 def test_required_split_outputs_are_written(tmp_path: Path) -> None:
@@ -222,7 +252,7 @@ if __name__ == "__main__":
     tests = [
         test_candidate_rows_are_candidate_only_and_not_app_read,
         test_candidate_export_does_not_open_1_03,
-        test_manual_warning_and_blocked_statuses_are_preserved,
+        test_rankable_warning_manual_review_and_blocked_statuses_are_preserved,
         test_required_split_outputs_are_written,
         test_strict_mode_rejects_prohibited_private_input_columns,
     ]

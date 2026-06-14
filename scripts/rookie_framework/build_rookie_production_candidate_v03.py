@@ -93,7 +93,13 @@ GROUP_ORDER = {
     "capped_shadow_review": 4,
     "unavailable_shadow_review": 5,
 }
-STATUS_ORDER = {"ready": 0, "manual_warning": 1, "unavailable": 2, "blocked": 3}
+STATUS_ORDER = {
+    "ready": 0,
+    "rankable_with_warning": 1,
+    "manual_review_required": 2,
+    "unavailable": 3,
+    "blocked": 4,
+}
 CONFIDENCE_ORDER = {"high": 0, "medium": 1, "low": 2, "": 3}
 POSITION_ORDER = {"RB": 0, "WR": 1, "TE": 2, "QB": 3}
 
@@ -149,6 +155,40 @@ def is_blank_or_none(value: str) -> bool:
     return not value.strip() or value.strip().lower() == "none"
 
 
+def has_warning_context(row: dict[str, str]) -> bool:
+    return any(
+        not is_blank_or_none(row.get(field_name, ""))
+        for field_name in [
+            "manual_review_flags",
+            "soft_flags",
+            "remaining_true_gaps",
+            "prohibited_sources_detected",
+        ]
+    ) or row.get("source_confidence", "") == "low"
+
+
+def has_late_role_path(row: dict[str, str]) -> bool:
+    tag_summary = row.get("tag_summary", "")
+    if not tag_summary:
+        return False
+    if "SOURCE_LIMITED_REVIEW" in tag_summary:
+        return False
+    if tag_summary == "TE_REPLACEABLE":
+        return False
+    return True
+
+
+def requires_manual_review_before_ranking(row: dict[str, str]) -> bool:
+    manual_flags = row.get("manual_review_flags", "")
+    if "premium_pick_injury_manual_review" in manual_flags:
+        return True
+    if "injury_history_score: manual_review_only" in manual_flags:
+        return True
+    if row.get("position") == "TE" and "TE_TOP_TWO_TARGET_PATH" in row.get("tag_summary", ""):
+        return True
+    return False
+
+
 def production_ready_status(row: dict[str, str]) -> str:
     if not is_blank_or_none(row.get("hard_caps", "")):
         return "blocked"
@@ -162,14 +202,13 @@ def production_ready_status(row: dict[str, str]) -> str:
         return "unavailable"
     if row.get("source_confidence", "") == "low" and row.get("review_bucket", "") != "5_04_watchlist":
         return "unavailable"
-    if not is_blank_or_none(row.get("manual_review_flags", "")):
-        return "manual_warning"
-    if not is_blank_or_none(row.get("remaining_true_gaps", "")):
-        return "manual_warning"
-    if not is_blank_or_none(row.get("prohibited_sources_detected", "")):
-        return "manual_warning"
-    if row.get("source_confidence", "") == "low":
-        return "manual_warning"
+    if row.get("review_bucket", "") == "5_04_watchlist" and row.get("source_confidence", "") == "low":
+        if not has_late_role_path(row):
+            return "unavailable"
+    if requires_manual_review_before_ranking(row):
+        return "manual_review_required"
+    if has_warning_context(row):
+        return "rankable_with_warning"
     return "ready"
 
 
@@ -181,9 +220,11 @@ def promotion_blockers(row: dict[str, str], status: str) -> str:
         blockers.append(f"source_conflict_status={row.get('source_conflict_status')}")
     if row.get("review_status", "") in {"capped_review", "unavailable", "needs_data", "hold_until_roster_declaration"}:
         blockers.append(f"review_status={row.get('review_status')}")
-    if status == "unavailable" and row.get("source_confidence", "") == "low":
+    if status in {"unavailable", "manual_review_required"} and row.get("source_confidence", "") == "low":
         blockers.append("low_source_confidence")
-    if not is_blank_or_none(row.get("remaining_true_gaps", "")):
+    if status == "manual_review_required":
+        blockers.append("manual_review_required_before_ranking")
+    if status in {"blocked", "unavailable", "manual_review_required"} and not is_blank_or_none(row.get("remaining_true_gaps", "")):
         blockers.append("remaining_gaps_present")
     if not blockers:
         return "none"
@@ -199,6 +240,8 @@ def manual_warnings(row: dict[str, str]) -> str:
         warnings.append(f"quarantined_sources={row.get('prohibited_sources_detected')}")
     if not is_blank_or_none(row.get("remaining_true_gaps", "")):
         warnings.append(f"remaining_gaps={row.get('remaining_true_gaps')}")
+    if row.get("source_confidence", "") == "low":
+        warnings.append("low_source_confidence")
     return "|".join(warnings) if warnings else "none"
 
 
@@ -213,6 +256,10 @@ def source_safety_notes(row: dict[str, str], status: str) -> str:
         notes.append("prohibited source context is warning-only")
     if "manual_review_only" in row.get("manual_review_flags", ""):
         notes.append("manual-only evidence is not private value")
+    if status == "rankable_with_warning":
+        notes.append("rankable only with visible warnings")
+    if status == "manual_review_required":
+        notes.append("human review required before production ranking movement")
     if status in {"blocked", "unavailable"}:
         notes.append("not eligible for promotion movement")
     return "; ".join(notes)
@@ -248,14 +295,20 @@ def why_not_higher(row: dict[str, str], status: str) -> str:
         return "Blocked by hard cap, source conflict, or capped/unavailable review status."
     if status == "unavailable":
         return "Needs data or roster declaration context before promotion movement."
-    if status == "manual_warning":
-        return "Manual warnings, gaps, soft flags, or quarantined source terms remain visible."
+    if status == "manual_review_required":
+        return "Human review is required before production ranking movement."
+    if status == "rankable_with_warning":
+        return "Rankable only with visible warnings, gaps, soft flags, and quarantined source terms."
     return "Higher rows have earlier pick-zone context or stronger source confidence."
 
 
 def why_not_lower(row: dict[str, str], status: str) -> str:
     if status == "ready":
         return "No manual warnings, blockers, or prohibited source caveats are present in the row."
+    if status == "rankable_with_warning":
+        return "No hard blocker is present, but warning context must remain displayed."
+    if status == "manual_review_required":
+        return "Manual review is still required before treating the row as production-rankable."
     if row.get("shadow_review_group") == "premium_shadow_review":
         return "Premium manual-review context remains ahead of later pick-zone candidates."
     if row.get("shadow_review_group") == "round2_shadow_review":
@@ -372,7 +425,8 @@ heads.
 
 - Total candidate rows: {len(rows)}
 - Ready rows: {status_counts.get('ready', 0)}
-- Manual-warning rows: {status_counts.get('manual_warning', 0)}
+- Rankable-with-warning rows: {status_counts.get('rankable_with_warning', 0)}
+- Manual-review-required rows: {status_counts.get('manual_review_required', 0)}
 - Blocked rows: {status_counts.get('blocked', 0)}
 - Unavailable rows: {status_counts.get('unavailable', 0)}
 - 1.03 rows: {zone_counts.get('1.03', 0)}
@@ -432,6 +486,8 @@ def build_exports(input_root: Path, output_dir: Path, strict: bool = False) -> d
         "manual_warning_rows": len(warnings),
         "source_audit_rows": len(audit),
         "ready_rows": status_counts.get("ready", 0),
+        "rankable_with_warning_rows": status_counts.get("rankable_with_warning", 0),
+        "manual_review_required_rows": status_counts.get("manual_review_required", 0),
         "blocked_rows": status_counts.get("blocked", 0),
         "unavailable_rows": status_counts.get("unavailable", 0),
     }

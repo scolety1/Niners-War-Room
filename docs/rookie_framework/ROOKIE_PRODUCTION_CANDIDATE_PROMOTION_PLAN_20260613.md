@@ -15,6 +15,13 @@ Stage B creates:
 
 The candidate exports remain `production_candidate_only=yes`, `app_read_allowed=no`, and `probabilities_created=no`.
 
+Status semantics remain conservative:
+
+- `ready` means clean candidate row with no material warnings.
+- `rankable_with_warning` means the row can be ordered only if warnings remain visible.
+- `manual_review_required` means Tim must answer a specific question before production ranking movement.
+- `blocked` and `unavailable` rows are not eligible for promotion movement.
+
 ## Candidate Export Path
 
 Local-only exports are written to:
@@ -39,6 +46,8 @@ Any future production proposal must preserve:
 
 - `1.03` empty if unsupported;
 - all `1.04` manual warnings;
+- `rankable_with_warning` warning visibility;
+- `manual_review_required` blockers;
 - source confidence;
 - hard caps;
 - soft flags;
