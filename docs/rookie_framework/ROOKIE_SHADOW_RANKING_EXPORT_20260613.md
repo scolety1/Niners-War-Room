@@ -55,6 +55,7 @@ The script produces a deterministic `shadow_order` using Step 2 review metadata 
 
 - review bucket
 - review status
+- tag/role summary
 - source confidence
 - hard-cap presence
 - remaining-gap count
@@ -65,12 +66,15 @@ The script produces a deterministic `shadow_order` using Step 2 review metadata 
 
 The ordering does not use ADP, public rankings, consensus, projections, market values, trade values, draft-kit ranks, prior league draft history, RotoWire rankings/projections, legacy `private_score`, rookie probabilities, or probability bands.
 
+The `tag_summary` column is carried through from the Step 2 review board so role/archetype context remains visible in the shadow export. It is review context only and does not change production eligibility.
+
 ## Source Safety
 
 - Prohibited source context from Step 2 remains in warning fields only.
 - Strict mode rejects prohibited private input columns such as `private_score`, ADP, market, projection, probability, or band fields.
 - Warning fields such as `prohibited_sources_detected` are preserved as warnings, not promoted.
 - Hard caps, soft flags, manual-review flags, remaining gaps, source conflicts, and review status are carried forward.
+- `tag_summary` is carried forward unchanged as review-only role/archetype context.
 
 ## What This Does Not Enable
 

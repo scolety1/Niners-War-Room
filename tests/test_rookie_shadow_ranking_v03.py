@@ -151,6 +151,15 @@ def test_shadow_rows_are_marked_shadow_only_and_not_production(tmp_path: Path) -
     assert {row["production_allowed"] for row in rows} == {"no"}
 
 
+def test_shadow_rows_preserve_tag_summary_context(tmp_path: Path) -> None:
+    input_root = make_fixture(tmp_path)
+    output_dir = tmp_path / "out"
+    shadow.build_exports(input_root=input_root, output_dir=output_dir, strict=True)
+    rows = {row["player_id"]: row for row in read_csv(output_dir / "rookie_shadow_ranking_v03.csv")}
+    assert rows["p2"]["tag_summary"] == "WR_ROUTE_EARNING"
+    assert rows["p1"]["tag_summary"] == "RB_CONTACT"
+
+
 def test_shadow_export_uses_review_metadata_not_private_inputs(tmp_path: Path) -> None:
     input_root = make_fixture(tmp_path)
     output_dir = tmp_path / "out"

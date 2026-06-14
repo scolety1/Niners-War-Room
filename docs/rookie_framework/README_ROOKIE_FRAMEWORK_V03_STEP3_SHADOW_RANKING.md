@@ -9,7 +9,7 @@ Step 3 adds a rookie-only shadow export:
 - `docs/rookie_framework/ROOKIE_SHADOW_RANKING_EXPORT_20260613.md`
 - `docs/rookie_framework/README_ROOKIE_FRAMEWORK_V03_STEP3_SHADOW_RANKING.md`
 
-The exporter reads Step 2 review-board outputs and creates local-only shadow ordering CSVs. Every row is marked `promotion_status=shadow_only` and `production_allowed=no`.
+The exporter reads Step 2 review-board outputs and creates local-only shadow ordering CSVs. Every row is marked `promotion_status=shadow_only` and `production_allowed=no`. The shadow rows also carry Step 2 `tag_summary` context so role/archetype rationale is visible during audit.
 
 ## How To Run
 
@@ -40,6 +40,8 @@ Expected files:
 - `README_ROOKIE_SHADOW_RANKING_V03.md`
 
 These files are local-only and must not be committed.
+
+Each CSV row includes `tag_summary` as review-only role/archetype context. The field is not a production score, probability, band, or app-readable recommendation.
 
 ## Validation
 
