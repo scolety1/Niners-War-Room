@@ -169,12 +169,16 @@ def has_warning_context(row: dict[str, str]) -> bool:
 
 def has_late_role_path(row: dict[str, str]) -> bool:
     tag_summary = row.get("tag_summary", "")
+    evidence_summary = row.get("best_source_safe_evidence_summary", "")
     if not tag_summary:
         return False
-    if "SOURCE_LIMITED_REVIEW" in tag_summary:
+    has_repair_context = "reconciliation_repair_context:" in evidence_summary or "source_hit_context:" in evidence_summary
+    if "SOURCE_LIMITED_REVIEW" in tag_summary and not has_repair_context:
         return False
     if tag_summary == "TE_REPLACEABLE":
         return False
+    if has_repair_context and row.get("position") in {"RB", "WR"}:
+        return True
     return True
 
 

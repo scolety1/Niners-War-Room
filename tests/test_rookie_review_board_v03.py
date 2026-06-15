@@ -281,6 +281,41 @@ def test_unavailable_gaps_remain_needs_data(tmp_path: Path) -> None:
     assert rows["p4"]["review_status"] == "watchlist_review"
 
 
+def test_reconciliation_repair_context_carries_source_safe_local_evidence() -> None:
+    row = {
+        "player_id": "prospect:2026:carnelltate:WR",
+        "player_name": "Carnell Tate",
+        "position": "WR",
+        "school": "Ohio State",
+        "tag_summary": "WR_SOURCE_LIMITED_REVIEW",
+        "soft_flags": "SOURCE_LIMITED",
+        "manual_review_flags": "",
+        "source_confidence": "low",
+        "best_source_safe_evidence_summary": "No Deep Research evidence matched.",
+        "remaining_true_gaps": "",
+        "notes": "fixture",
+    }
+    context = {
+        "tag_row": {
+            "tag_confidence": "low",
+            "soft_flag_tags": "SOURCE_LIMITED",
+            "manual_review_tags": "career_yprr_review|final_season_yprr_review",
+            "missing_data_tags": "career_yprr|final_season_yprr",
+            "evidence_summary": "target-command context from approved local normalization only",
+        },
+        "source_hit_summaries": [
+            "target_command_context: use_as_soft_flag (reception_share=0.0096); not a projection/rank"
+        ],
+    }
+    repaired = rookie_review.apply_repair_context(row, context)
+    assert repaired["best_source_safe_evidence_summary"].startswith("reconciliation_repair_context:")
+    assert "source_hit_context:" in repaired["best_source_safe_evidence_summary"]
+    assert "career_yprr: repair_context_review_only" in repaired["manual_review_flags"]
+    assert "target_command_context: use_as_soft_flag" in repaired["manual_review_flags"]
+    assert "career_yprr|final_season_yprr" == repaired["remaining_true_gaps"]
+    assert "SOURCE_SAFE_REPAIR_CONTEXT" in repaired["soft_flags"]
+
+
 def test_output_sorting_is_deterministic(tmp_path: Path) -> None:
     input_root = make_fixture(tmp_path)
     out1 = tmp_path / "out1"

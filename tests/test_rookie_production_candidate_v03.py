@@ -207,6 +207,27 @@ def test_rankable_warning_manual_review_and_blocked_statuses_are_preserved(tmp_p
     assert "hard_caps=QB_RUSHING_NO_JOB_SECURITY" in rows["p4"]["promotion_blockers"]
 
 
+def test_source_limited_5_04_rb_wr_repair_context_can_remain_rankable_with_warning() -> None:
+    row = {
+        "player_id": "prospect:2026:jadarianprice:RB",
+        "player_name": "Jadarian Price",
+        "position": "RB",
+        "current_pick_zone": "5.04",
+        "review_bucket": "5_04_watchlist",
+        "shadow_review_group": "5_04_shadow_watchlist",
+        "tag_summary": "RB_SOURCE_LIMITED_REVIEW",
+        "source_confidence": "low",
+        "review_status": "watchlist_review",
+        "hard_caps": "",
+        "soft_flags": "SOURCE_LIMITED|SOURCE_SAFE_REPAIR_CONTEXT",
+        "manual_review_flags": "goal_line_touch_share: use_as_soft_flag",
+        "remaining_true_gaps": "routes_per_game",
+        "source_conflict_status": "none",
+        "best_source_safe_evidence_summary": "reconciliation_repair_context: approved local source-safe touch context",
+    }
+    assert candidate.production_ready_status(row) == "rankable_with_warning"
+
+
 def test_required_split_outputs_are_written(tmp_path: Path) -> None:
     input_root = make_fixture(tmp_path)
     out = tmp_path / "out"

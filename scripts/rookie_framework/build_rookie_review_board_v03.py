@@ -29,6 +29,11 @@ CONFLICT_REVIEW = Path("deep_research_intake_pass_04/deep_research_conflict_revi
 ADVERSARIAL_FINDINGS = Path("v03_adversarial_audit_01/v03_adversarial_findings.csv")
 PATCH_QUEUE = Path("v03_adversarial_audit_01/v03_patch_queue.csv")
 OVERNIGHT_SUMMARY = Path("OVERNIGHT_QUEUE_FINAL_SUMMARY_20260612.md")
+REPAIR_TAGS = Path(
+    "deep_research_intake_pass_04/applied_framework_after_deep_research_pass04/"
+    "rookie_framework_v02_tags_after_deep_research_pass04.csv"
+)
+REPAIR_SOURCE_HITS = Path("local_source_search_01/local_source_hit_inventory.csv")
 
 REQUIRED_INPUTS = [
     PLAYER_BOARD,
@@ -135,6 +140,23 @@ BUCKET_ORDER = {
     "capped": 4,
     "unavailable": 5,
 }
+CONFIDENCE_ORDER = {"": 0, "low": 1, "medium": 2, "high": 3}
+REPAIR_PRIORITY_PLAYER_IDS = {
+    "prospect:2026:carnelltate:WR",
+    "prospect:2026:nicholassingleton:RB",
+    "prospect:2026:barionbrown:WR",
+    "prospect:2026:antoniowilliams:WR",
+    "prospect:2026:jadarianprice:RB",
+    "prospect:2026:kenyonsadiq:TE",
+    "prospect:2026:maxklare:TE",
+    "prospect:2026:jackvelling:TE",
+    "prospect:2026:elistowers:TE",
+    "prospect:2026:omarcooper:WR",
+}
+FIELD_REPAIR_ALIASES = {
+    "target_command_projection": "target_command_context",
+    "projected_team_target_rank": "manual_target_path_context",
+}
 
 
 class ReviewBoardError(RuntimeError):
@@ -145,6 +167,13 @@ def read_csv(path: Path) -> list[dict[str, str]]:
     if not path.exists():
         raise ReviewBoardError(f"Missing required input: {path}")
     if path.stat().st_size <= 2:
+        return []
+    with path.open("r", newline="", encoding="utf-8-sig") as handle:
+        return list(csv.DictReader(handle))
+
+
+def read_optional_csv(path: Path) -> list[dict[str, str]]:
+    if not path.exists() or path.stat().st_size <= 2:
         return []
     with path.open("r", newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
@@ -250,6 +279,135 @@ def split_pipe(value: str) -> list[str]:
     return [part.strip() for part in value.split("|") if part.strip()]
 
 
+def merge_pipe(*values: str) -> str:
+    parts: list[str] = []
+    seen = set()
+    for value in values:
+        for part in split_pipe(value):
+            if part.lower() == "none":
+                continue
+            if part not in seen:
+                parts.append(part)
+                seen.add(part)
+    return "|".join(parts)
+
+
+def stronger_confidence(current: str, repaired: str) -> str:
+    if CONFIDENCE_ORDER.get(repaired, 0) > CONFIDENCE_ORDER.get(current, 0):
+        return repaired
+    return current
+
+
+def safe_framework_field_name(field_name: str) -> str:
+    return FIELD_REPAIR_ALIASES.get(field_name, field_name)
+
+
+def review_field_from_tag(tag: str) -> str:
+    cleaned = tag.strip()
+    if cleaned.endswith("_review"):
+        cleaned = cleaned[: -len("_review")]
+    return safe_framework_field_name(cleaned)
+
+
+def evidence_is_empty(value: str) -> bool:
+    cleaned = (value or "").strip().lower()
+    return not cleaned or cleaned == "no deep research evidence matched."
+
+
+def summarize_repair_source_hits(source_hit_rows: list[dict[str, str]]) -> dict[str, list[str]]:
+    by_player: dict[str, list[str]] = defaultdict(list)
+    for row in source_hit_rows:
+        player_id = row.get("player_id", "")
+        if player_id not in REPAIR_PRIORITY_PLAYER_IDS:
+            continue
+        if row.get("extraction_candidate", "").strip().lower() not in {"yes", "true", "1"}:
+            continue
+        if row.get("display_only_allowed", "").strip().lower() not in {"yes", "true", "1"}:
+            continue
+        field = safe_framework_field_name(row.get("framework_field", "source_safe_context"))
+        status = row.get("suggested_field_status", "review_context")
+        sample = row.get("source_snippet_or_sample_value", "").strip()
+        note = row.get("notes", "").strip()
+        summary = f"{field}: {status}"
+        if sample:
+            summary += f" ({sample})"
+        if note:
+            summary += f"; {note}"
+        by_player[player_id].append(summary)
+    return by_player
+
+
+def build_repair_context(
+    repair_tag_rows: list[dict[str, str]],
+    repair_source_hit_rows: list[dict[str, str]],
+) -> dict[str, dict[str, object]]:
+    tag_by_player = {
+        row.get("player_id", ""): row
+        for row in repair_tag_rows
+        if row.get("player_id", "") in REPAIR_PRIORITY_PLAYER_IDS
+    }
+    source_hits_by_player = summarize_repair_source_hits(repair_source_hit_rows)
+    repair_context: dict[str, dict[str, object]] = {}
+    for player_id in sorted(set(tag_by_player) | set(source_hits_by_player)):
+        repair_context[player_id] = {
+            "tag_row": tag_by_player.get(player_id, {}),
+            "source_hit_summaries": source_hits_by_player.get(player_id, []),
+        }
+    return repair_context
+
+
+def apply_repair_context(row: dict[str, str], repair_context: dict[str, object]) -> dict[str, str]:
+    if not repair_context:
+        return row
+
+    tag_row = repair_context.get("tag_row", {})
+    source_hit_summaries = repair_context.get("source_hit_summaries", [])
+    if not isinstance(tag_row, dict):
+        tag_row = {}
+    if not isinstance(source_hit_summaries, list):
+        source_hit_summaries = []
+
+    tag_evidence = tag_row.get("evidence_summary", "").strip()
+    source_hit_text = " | ".join(str(item) for item in source_hit_summaries if item)
+    if tag_evidence:
+        repair_evidence = f"reconciliation_repair_context: {tag_evidence}"
+        if evidence_is_empty(row.get("best_source_safe_evidence_summary", "")):
+            row["best_source_safe_evidence_summary"] = repair_evidence
+        elif repair_evidence not in row.get("best_source_safe_evidence_summary", ""):
+            row["best_source_safe_evidence_summary"] = f"{row['best_source_safe_evidence_summary']} | {repair_evidence}"
+    if source_hit_text:
+        source_evidence = f"source_hit_context: {source_hit_text}"
+        if evidence_is_empty(row.get("best_source_safe_evidence_summary", "")):
+            row["best_source_safe_evidence_summary"] = source_evidence
+        elif source_evidence not in row.get("best_source_safe_evidence_summary", ""):
+            row["best_source_safe_evidence_summary"] = f"{row['best_source_safe_evidence_summary']} | {source_evidence}"
+
+    manual_tags = [
+        f"{review_field_from_tag(tag)}: repair_context_review_only"
+        for tag in split_pipe(tag_row.get("manual_review_tags", ""))
+    ]
+    source_hit_flags = []
+    for summary in source_hit_summaries:
+        field, _, status = str(summary).partition(":")
+        if field:
+            source_hit_flags.append(f"{field.strip()}: {status.strip().split(';')[0] or 'repair_context_review_only'}")
+
+    row["manual_review_flags"] = merge_pipe(row.get("manual_review_flags", ""), "|".join(manual_tags), "|".join(source_hit_flags))
+    row["remaining_true_gaps"] = merge_pipe(row.get("remaining_true_gaps", ""), tag_row.get("missing_data_tags", ""))
+    row["soft_flags"] = merge_pipe(row.get("soft_flags", ""), tag_row.get("soft_flag_tags", ""), "SOURCE_SAFE_REPAIR_CONTEXT")
+    row["source_confidence"] = stronger_confidence(row.get("source_confidence", ""), tag_row.get("tag_confidence", ""))
+
+    if not row.get("tag_summary") and tag_row.get("applied_tags"):
+        row["tag_summary"] = tag_row["applied_tags"]
+    row["notes"] = append_note(
+        row.get("notes", ""),
+        "Reconciliation repair carried approved source-safe local context into review fields; no production promotion.",
+    )
+    if row.get("player_id") == "prospect:2026:omarcooper:WR":
+        row["notes"] = append_note(row["notes"], "Alias repaired: Omar Cooper Jr. maps to Omar Cooper.")
+    return row
+
+
 def pick_zone(row: dict[str, str]) -> str:
     return row.get("v03_candidate_pick_zone") or row.get("current_pick_zone") or "unavailable"
 
@@ -307,13 +465,14 @@ def normalize_review_row(
     row: dict[str, str],
     source_warnings: dict[str, str],
     conflicts: dict[str, str],
+    repair_context: dict[str, dict[str, object]],
 ) -> dict[str, str]:
     player_id = row.get("player_id", "")
     bucket = review_bucket_for(row)
     notes = row.get("notes", "")
     if bucket == "premium_review":
         notes = append_note(notes, "1.03 remains empty unless source artifacts change; 1.04 remains manual-review only; no automatic promotion.")
-    return {
+    normalized = {
         "player_id": player_id,
         "player_name": row.get("player_name", ""),
         "position": row.get("position", ""),
@@ -335,6 +494,7 @@ def normalize_review_row(
         "review_status": review_status_for(row),
         "notes": notes,
     }
+    return apply_repair_context(normalized, repair_context.get(player_id, {}))
 
 
 def append_note(existing: str, addition: str) -> str:
@@ -365,10 +525,11 @@ def build_review_rows(
     player_rows: list[dict[str, str]],
     source_rows: list[dict[str, str]],
     conflict_rows: list[dict[str, str]],
+    repair_context: dict[str, dict[str, object]],
 ) -> tuple[list[dict[str, str]], list[str]]:
     source_warnings, blockers = build_source_warnings(source_rows)
     conflicts = build_conflicts(conflict_rows, source_rows)
-    rows = [normalize_review_row(row, source_warnings, conflicts) for row in player_rows]
+    rows = [normalize_review_row(row, source_warnings, conflicts, repair_context) for row in player_rows]
     invalid_statuses = sorted({row["review_status"] for row in rows} - REVIEW_STATUS_VALUES)
     if invalid_statuses:
         raise ReviewBoardError(f"Unexpected review_status values: {', '.join(invalid_statuses)}")
@@ -496,6 +657,8 @@ def load_named_inputs(input_root: Path) -> dict[str, list[dict[str, str]]]:
         "conflict_review": read_csv(input_root / CONFLICT_REVIEW),
         "adversarial_findings": read_csv(input_root / ADVERSARIAL_FINDINGS),
         "patch_queue": read_csv(input_root / PATCH_QUEUE),
+        "repair_tags": read_optional_csv(input_root / REPAIR_TAGS),
+        "repair_source_hits": read_optional_csv(input_root / REPAIR_SOURCE_HITS),
     }
 
 
@@ -550,10 +713,12 @@ def build_exports(input_root: Path, output_dir: Path, strict: bool = False) -> d
     if strict and blockers:
         raise ReviewBoardError("Market contamination blockers detected:\n" + "\n".join(blockers))
     conflicts = build_conflicts(named["conflict_review"], named["source_safety"])
+    repair_context = build_repair_context(named["repair_tags"], named["repair_source_hits"])
     review_rows, blockers_from_build = build_review_rows(
         named["player_board"],
         named["source_safety"],
         named["conflict_review"],
+        repair_context,
     )
     if strict and blockers_from_build:
         raise ReviewBoardError("Market contamination blockers detected:\n" + "\n".join(blockers_from_build))
