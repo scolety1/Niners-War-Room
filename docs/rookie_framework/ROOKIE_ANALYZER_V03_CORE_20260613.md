@@ -39,6 +39,7 @@ Generated local exports must not be committed.
 Each analyzer row includes:
 
 - `analyzer_rank`
+- `analyzer_group`
 - `player_id`
 - `player`
 - `position`
@@ -76,6 +77,7 @@ Rows missing these markers fail validation.
 
 The analyzer gives Tim practical draft-day review context. It keeps the production-candidate order separate from production rankings and adds manual decision prompts:
 
+- `analyzer_group` separates premium review, Round 2 review, 5.04 watchlist, manual-review, unavailable, and blocked rows without creating a score.
 - `best_pick_fit` describes the safest review use for the row.
 - `draft_only_if` names the condition that must be true before using the row.
 - `do_not_draft_if` names the clearest stop condition.

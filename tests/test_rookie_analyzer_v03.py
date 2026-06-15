@@ -309,6 +309,7 @@ def test_rankable_with_warning_rows_keep_visible_warning_context(tmp_path: Path)
     analyzer.build_exports(review_root, shadow_root, candidate_root, out, strict=True)
     rows = {row["player_id"]: row for row in read_csv(out / "rookie_analyzer_v03.csv")}
     assert rows["p1"]["production_ready_status"] == "rankable_with_warning"
+    assert rows["p1"]["analyzer_group"] == "premium_review"
     assert "pass_protection_grade_or_notes" in rows["p1"]["warnings"]
     assert rows["p1"]["best_pick_fit"] == "1.04_premium_warning_visible"
 
@@ -320,7 +321,17 @@ def test_manual_review_and_blocked_splits_are_written(tmp_path: Path) -> None:
     manual = read_csv(out / "rookie_analyzer_manual_review_v03.csv")
     blocked = read_csv(out / "rookie_analyzer_blocked_v03.csv")
     assert [row["player_id"] for row in manual] == ["p2"]
+    assert manual[0]["analyzer_group"] == "premium_manual_review"
     assert [row["player_id"] for row in blocked] == ["p3"]
+    assert blocked[0]["analyzer_group"] == "blocked"
+
+
+def test_analyzer_group_order_separates_review_buckets_before_blocked_rows(tmp_path: Path) -> None:
+    review_root, shadow_root, candidate_root = make_fixture(tmp_path)
+    out = tmp_path / "out"
+    analyzer.build_exports(review_root, shadow_root, candidate_root, out, strict=True)
+    rows = read_csv(out / "rookie_analyzer_v03.csv")
+    assert [row["analyzer_group"] for row in rows] == ["premium_review", "premium_manual_review", "blocked"]
 
 
 def test_required_outputs_are_written(tmp_path: Path) -> None:
@@ -379,6 +390,7 @@ if __name__ == "__main__":
         test_analyzer_rows_are_not_app_ready_and_create_no_scores_or_probabilities,
         test_rankable_with_warning_rows_keep_visible_warning_context,
         test_manual_review_and_blocked_splits_are_written,
+        test_analyzer_group_order_separates_review_buckets_before_blocked_rows,
         test_required_outputs_are_written,
         test_strict_mode_rejects_prohibited_private_input_columns,
         test_strict_mode_rejects_data_paths,

@@ -55,6 +55,7 @@ REQUIRED_CANDIDATE_INPUTS = [
 
 ANALYZER_COLUMNS = [
     "analyzer_rank",
+    "analyzer_group",
     "player_id",
     "player",
     "position",
@@ -108,7 +109,17 @@ STATUS_ORDER = {
     "unavailable": 3,
     "blocked": 4,
 }
-PICK_ZONE_ORDER = {"1.03": 0, "1.04": 1, "2.04": 2, "2.08": 3, "5.04": 4}
+ANALYZER_GROUP_ORDER = {
+    "premium_review": 0,
+    "premium_manual_review": 1,
+    "round2_review": 2,
+    "round2_manual_review": 3,
+    "5_04_watch": 4,
+    "5_04_manual_review": 5,
+    "manual_review": 6,
+    "unavailable": 7,
+    "blocked": 8,
+}
 POSITION_ORDER = {"RB": 0, "WR": 1, "TE": 2, "QB": 3}
 
 
@@ -259,13 +270,39 @@ def do_not_draft_if(candidate: dict[str, str], review: dict[str, str]) -> str:
     return "warnings cannot be explained clearly at the pick"
 
 
-def analyzer_order_key(row: dict[str, str]) -> tuple:
+def analyzer_group(candidate: dict[str, str], review: dict[str, str], shadow: dict[str, str]) -> str:
+    status = candidate.get("production_ready_status", "")
+    pick_zone = candidate.get("pick_zone", "")
+    shadow_group = shadow.get("shadow_review_group", "")
+    review_bucket = review.get("review_bucket", "")
+    if status == "blocked":
+        return "blocked"
+    if status == "unavailable":
+        return "unavailable"
+    if shadow_group == "premium_shadow_review" or pick_zone == "1.04":
+        if status == "manual_review_required":
+            return "premium_manual_review"
+        return "premium_review"
+    if shadow_group == "round2_shadow_review" or pick_zone in {"2.04", "2.08"}:
+        if status == "manual_review_required":
+            return "round2_manual_review"
+        return "round2_review"
+    if shadow_group == "5_04_shadow_watchlist" or review_bucket == "5_04_watchlist" or pick_zone == "5.04":
+        if status == "manual_review_required":
+            return "5_04_manual_review"
+        return "5_04_watch"
+    return "manual_review"
+
+
+def analyzer_order_key(item: tuple[dict[str, str], dict[str, str], dict[str, str]]) -> tuple:
+    candidate, review, shadow = item
+    group = analyzer_group(candidate, review, shadow)
     return (
-        PICK_ZONE_ORDER.get(row.get("pick_zone", ""), 99),
-        STATUS_ORDER.get(row.get("production_ready_status", ""), 99),
-        POSITION_ORDER.get(row.get("position", ""), 99),
-        int(row.get("candidate_rank", "9999") or "9999"),
-        row.get("player_name", "").lower(),
+        ANALYZER_GROUP_ORDER.get(group, 99),
+        STATUS_ORDER.get(candidate.get("production_ready_status", ""), 99),
+        POSITION_ORDER.get(candidate.get("position", ""), 99),
+        int(candidate.get("candidate_rank", "9999") or "9999"),
+        candidate.get("player_name", "").lower(),
     )
 
 
@@ -283,12 +320,11 @@ def normalize_analyzer_rows(
     if missing_shadow:
         raise RookieAnalyzerError("Candidate rows missing shadow context: " + ", ".join(missing_shadow[:10]))
 
-    ordered = sorted(candidate_rows, key=analyzer_order_key)
+    joined = [(candidate, review_by_id[candidate.get("player_id", "")], shadow_by_id[candidate.get("player_id", "")]) for candidate in candidate_rows]
+    ordered = sorted(joined, key=analyzer_order_key)
     output: list[dict[str, str]] = []
-    for index, candidate in enumerate(ordered, start=1):
+    for index, (candidate, review, shadow) in enumerate(ordered, start=1):
         player_id = candidate.get("player_id", "")
-        review = review_by_id[player_id]
-        shadow = shadow_by_id[player_id]
         warnings = clean_or_none(
             candidate.get("manual_warnings", ""),
             review.get("manual_review_flags", ""),
@@ -299,6 +335,7 @@ def normalize_analyzer_rows(
         output.append(
             {
                 "analyzer_rank": str(index),
+                "analyzer_group": analyzer_group(candidate, review, shadow),
                 "player_id": player_id,
                 "player": candidate.get("player_name", ""),
                 "position": candidate.get("position", ""),
