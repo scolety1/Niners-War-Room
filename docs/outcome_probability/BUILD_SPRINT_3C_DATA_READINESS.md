@@ -168,4 +168,3 @@ Before Sprint 4, NWR needs:
 No base rates, probabilities, rankings, app percentages, push, or deploy occurred.
 
 Forbidden/public/market/projection/rank/trade-calculator/legacy private-score fields remain blocked or manual-review-only. RotoWire factual/raw evidence still requires source-family review unless already explicitly allowed.
-

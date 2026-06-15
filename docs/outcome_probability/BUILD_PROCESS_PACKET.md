@@ -357,4 +357,3 @@ Implement schemas/validators for nwr_prediction_snapshots, nwr_training_rows, nw
 
 Every feature row must prove feature_available_timestamp <= input_snapshot_date < label_available_date. Do not use ADP, public rankings, market rank, league rank, projections, RotoWire rankings/projections/outlooks, trade calculators, prior draft history, legacy private_score, prior model outputs, or hindsight notes as model inputs. Do not create player probabilities.
 ```
-

@@ -145,4 +145,3 @@ Proceed to v0 base rates: NO. v0 base rates remain blocked until:
 - raw stat component coverage is confirmed on actual files
 - row-level leakage audits are run against selected files
 - dry-run source manifest exports show readiness
-
