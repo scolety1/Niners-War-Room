@@ -334,6 +334,19 @@ def test_analyzer_group_order_separates_review_buckets_before_blocked_rows(tmp_p
     assert [row["analyzer_group"] for row in rows] == ["premium_review", "premium_manual_review", "blocked"]
 
 
+def test_pick_fit_fields_are_export_only_and_keep_1_03_manual(tmp_path: Path) -> None:
+    review_root, shadow_root, candidate_root = make_fixture(tmp_path)
+    out = tmp_path / "out"
+    analyzer.build_exports(review_root, shadow_root, candidate_root, out, strict=True)
+    rows = {row["player_id"]: row for row in read_csv(out / "rookie_analyzer_v03.csv")}
+    assert rows["p1"]["fit_1_03"] == "trade_down_or_manual_review_only_no_player_cleared"
+    assert rows["p1"]["fit_1_04"] == "premium_fit_with_visible_warnings"
+    assert rows["p1"]["trade_down_signal"] == "yes_1_03_and_premium_bar_not_cleared"
+    assert rows["p2"]["emergency_stop_signal"] == "yes_manual_review_required"
+    assert rows["p3"]["fit_5_04"] == "do_not_use_blocked"
+    assert rows["p3"]["emergency_stop_signal"] == "yes_blocked_or_unavailable"
+
+
 def test_required_outputs_are_written(tmp_path: Path) -> None:
     review_root, shadow_root, candidate_root = make_fixture(tmp_path)
     out = tmp_path / "out"
@@ -391,6 +404,7 @@ if __name__ == "__main__":
         test_rankable_with_warning_rows_keep_visible_warning_context,
         test_manual_review_and_blocked_splits_are_written,
         test_analyzer_group_order_separates_review_buckets_before_blocked_rows,
+        test_pick_fit_fields_are_export_only_and_keep_1_03_manual,
         test_required_outputs_are_written,
         test_strict_mode_rejects_prohibited_private_input_columns,
         test_strict_mode_rejects_data_paths,

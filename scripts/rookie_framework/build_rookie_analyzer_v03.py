@@ -68,7 +68,14 @@ ANALYZER_COLUMNS = [
     "blockers",
     "evidence_summary",
     "remaining_gaps",
+    "fit_1_03",
+    "fit_1_04",
+    "fit_2_04",
+    "fit_2_08",
+    "fit_5_04",
     "best_pick_fit",
+    "trade_down_signal",
+    "emergency_stop_signal",
     "draft_only_if",
     "do_not_draft_if",
     "why_ranked_here",
@@ -233,6 +240,76 @@ def best_pick_fit(candidate: dict[str, str], review: dict[str, str]) -> str:
     return "manual_context_only"
 
 
+def fit_for_pick(candidate: dict[str, str], review: dict[str, str], pick: str) -> str:
+    status = candidate.get("production_ready_status", "")
+    pick_zone = candidate.get("pick_zone", "")
+    position = candidate.get("position", "")
+    if pick == "1.03":
+        return "trade_down_or_manual_review_only_no_player_cleared"
+    if status == "blocked":
+        return "do_not_use_blocked"
+    if status == "unavailable":
+        return "do_not_use_unavailable"
+    if status == "manual_review_required":
+        if pick_zone == pick:
+            return "manual_review_hold"
+        return "manual_review_only"
+    if pick == "1.04":
+        if pick_zone == "1.04" and status == "rankable_with_warning":
+            return "premium_fit_with_visible_warnings"
+        if pick_zone == "1.04" and status == "ready":
+            return "premium_fit_clean_ready"
+        return "not_a_1_04_fit"
+    if pick in {"2.04", "2.08"}:
+        if pick_zone in {"2.04", "2.08"} and status == "rankable_with_warning":
+            if position == "RB":
+                return "round2_rb_fit_with_visible_warnings"
+            if position == "WR":
+                return "round2_wr_fit_with_visible_warnings"
+            return "round2_exception_fit_with_visible_warnings"
+        if pick_zone == "1.04" and status == "rankable_with_warning":
+            return "premium_slip_review_with_visible_warnings"
+        return f"not_a_{pick.replace('.', '_')}_fit"
+    if pick == "5.04":
+        if pick_zone == "5.04" and status == "rankable_with_warning":
+            return "5_04_asymmetric_dart_with_visible_warnings"
+        if pick_zone in {"1.04", "2.04", "2.08"} and status == "rankable_with_warning":
+            return "falling_player_manual_review"
+        if review.get("review_status") == "hold_until_roster_declaration":
+            return "roster_declaration_hold"
+        return "not_a_5_04_fit"
+    return "manual_context_only"
+
+
+def trade_down_signal(candidate: dict[str, str], review: dict[str, str]) -> str:
+    if candidate.get("pick_zone") == "1.04" and candidate.get("production_ready_status") != "ready":
+        return "yes_1_03_and_premium_bar_not_cleared"
+    if candidate.get("production_ready_status") in {"blocked", "unavailable"}:
+        return "yes_if_only_blocked_or_unavailable_options_remain"
+    return "no"
+
+
+def emergency_stop_signal(candidate: dict[str, str], review: dict[str, str]) -> str:
+    status = candidate.get("production_ready_status", "")
+    warning_text = "|".join(
+        [
+            candidate.get("manual_warnings", ""),
+            candidate.get("promotion_blockers", ""),
+            review.get("remaining_true_gaps", ""),
+            review.get("source_conflict_status", ""),
+        ]
+    ).lower()
+    if status in {"blocked", "unavailable"}:
+        return "yes_blocked_or_unavailable"
+    if status == "manual_review_required":
+        return "yes_manual_review_required"
+    if "injury" in warning_text:
+        return "yes_injury_review_visible"
+    if "source_conflict" in warning_text and "none" not in warning_text:
+        return "yes_source_conflict_visible"
+    return "no"
+
+
 def draft_only_if(candidate: dict[str, str], review: dict[str, str]) -> str:
     status = candidate.get("production_ready_status", "")
     position = candidate.get("position", "")
@@ -348,7 +425,14 @@ def normalize_analyzer_rows(
                 "blockers": blockers,
                 "evidence_summary": candidate.get("evidence_basis_summary", ""),
                 "remaining_gaps": remaining_gaps,
+                "fit_1_03": fit_for_pick(candidate, review, "1.03"),
+                "fit_1_04": fit_for_pick(candidate, review, "1.04"),
+                "fit_2_04": fit_for_pick(candidate, review, "2.04"),
+                "fit_2_08": fit_for_pick(candidate, review, "2.08"),
+                "fit_5_04": fit_for_pick(candidate, review, "5.04"),
                 "best_pick_fit": best_pick_fit(candidate, review),
+                "trade_down_signal": trade_down_signal(candidate, review),
+                "emergency_stop_signal": emergency_stop_signal(candidate, review),
                 "draft_only_if": draft_only_if(candidate, review),
                 "do_not_draft_if": do_not_draft_if(candidate, review),
                 "why_ranked_here": candidate.get("why_ranked_here", ""),
