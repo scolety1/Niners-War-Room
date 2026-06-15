@@ -12,7 +12,9 @@ VERSION = "model_v4_roster_opportunity_cost_0.1.0"
 
 ROSTER_STATE_ROWS = MODEL_ROOT / "decision_calibration/latest/niners_roster_state_review.csv"
 CUT_KEEP_ROWS = MODEL_ROOT / "decision_pressure/latest/cut_keep_pressure_review_rows.csv"
-TRADE_AWAY_ROWS = MODEL_ROOT / "trade_review/latest/trade_away_candidate_review_rows.csv"
+TRADE_AWAY_ROWS = (
+    MODEL_ROOT / "external_asset_reviews/latest/trade_away_candidate_review_rows.csv"
+)
 STARTUP_SLOT_ROWS = MODEL_ROOT / "startup_slot_simulator/latest/startup_slot_review_rows.csv"
 PICK_BASELINE_ROWS = MODEL_ROOT / "pick_values/latest/pick_value_baselines_review.csv"
 PICK_INVENTORY_ROWS = MODEL_ROOT / "pick_trade_defer/latest/niners_pick_inventory_review_rows.csv"

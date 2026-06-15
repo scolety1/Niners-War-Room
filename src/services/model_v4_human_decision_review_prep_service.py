@@ -296,7 +296,8 @@ def _priority_trade_for_rows(rows: list[dict[str, str]]) -> tuple[dict[str, str]
         row
         for row in rows
         if row["position_fit_context"] == "premium_flex_asset_fit_review"
-        or row["trade_for_review_band"] == "elite_target_review"
+        or _external_asset_band(row)
+        in {"elite_external_asset_context_review", "elite_target_review"}
     ]
     return tuple(
         sorted(
@@ -328,14 +329,15 @@ def _trade_away_card(row: dict[str, str]) -> dict[str, object]:
 
 
 def _trade_for_card(row: dict[str, str]) -> dict[str, object]:
+    band = _external_asset_band(row)
     return _card(
-        key=row["trade_review_key"],
-        area="trade_for_target_review",
+        key=_external_asset_key(row),
+        area="external_asset_context_review",
         entity=row["asset_name"],
         position=row["position"],
-        band=row["trade_for_review_band"],
+        band=band,
         says=(
-            f"{row['asset_name']} is a {row['trade_for_review_band']} target context row "
+            f"{row['asset_name']} is a {band} external asset context row "
             f"owned by {row['current_owner_team']}."
         ),
         why=(
@@ -347,9 +349,20 @@ def _trade_for_card(row: dict[str, str]) -> dict[str, object]:
             "Decide whether price, roster timeline, and owner behavior make an "
             "inquiry worthwhile."
         ),
-        receipt="local_exports/model_v4/trade_review/latest/trade_for_candidate_review_rows.csv",
+        receipt=(
+            "local_exports/model_v4/external_asset_reviews/latest/"
+            "external_asset_context_review_rows.csv"
+        ),
         blocked="do_not_use_as_trade_offer_or_buy_call",
     )
+
+
+def _external_asset_band(row: dict[str, str]) -> str:
+    return row.get("external_asset_review_band") or row.get("trade_for_review_band", "")
+
+
+def _external_asset_key(row: dict[str, str]) -> str:
+    return row.get("external_asset_review_key") or row.get("trade_review_key", "")
 
 
 def _rookie_scout_rows(

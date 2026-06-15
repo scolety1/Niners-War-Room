@@ -17,7 +17,8 @@ def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
         "Dynasty Rankings",
         "Decision Board",
-        "Draft Room",
+        "Draft Prep",
+        "Live Draft Room",
         "External Asset Reviews",
         "Settings",
     ]
@@ -47,6 +48,7 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
         "Rookie Model Legacy Alias",
         "Historical Replay Debug",
         "Historical Replay Legacy Alias",
+        "Dynasty Rankings Home",
     }
     assert hidden_titles.isdisjoint(visible_titles)
     assert all(page.visibility == "hidden" for page in HIDDEN_ADVANCED_PAGES)
@@ -62,8 +64,12 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_exactly_one_visible_default_page() -> None:
     defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
-    assert [page.title for page in defaults] == ["Dynasty Rankings"]
+    assert [page.title for page in defaults] == []
     assert sum(1 for page in ALL_NAVIGATION_PAGES if page.default) == 1
+    default_page = next(page for page in ALL_NAVIGATION_PAGES if page.default)
+    assert default_page.title == "Dynasty Rankings Home"
+    assert default_page.file_path == "pages/05_rankings.py"
+    assert default_page.visibility == "hidden"
 
 
 def test_command_center_is_the_first_click_ui_framework() -> None:
@@ -134,7 +140,8 @@ def test_source_plumbing_is_not_direct_sidebar_inputs() -> None:
 
 def test_player_board_is_the_big_formula_table() -> None:
     player_board = (APP_DIR / "pages" / "05_rankings.py").read_text()
-    draft_room = (APP_DIR / "pages" / "06_draft_board.py").read_text()
+    draft_prep = (APP_DIR / "pages" / "06_draft_board.py").read_text()
+    live_draft_room = (APP_DIR / "pages" / "07_live_draft_room.py").read_text()
 
     assert '"Dynasty Rankings"' in player_board
     assert "Private NWR dynasty board" in player_board
@@ -146,35 +153,20 @@ def test_player_board_is_the_big_formula_table() -> None:
     assert "Outcome percentage model in development" in player_board
     assert "Advanced: feature receipts" in player_board
     assert "Draft Pool View" not in player_board
-    assert 'st.title("Draft Room")' in draft_room
-    assert "Rookie Analyzer" in draft_room
-    assert "Review-only rookie draft surface" in draft_room
-    assert "Nearby Model Value" in draft_room
-    assert "Review progress: 1 Start Here -> 2 Main Review" in draft_room
-    assert "Review progress checklist" in draft_room
-    assert "Human question: which pick windows deserve manual scouting?" in draft_room
-    assert "The human decision comes after comparing" in draft_room
-    assert "Nearby Model Value" in draft_room
-    assert "Pick Decision Lab" in draft_room
-    assert "Evidence & Risk" in draft_room
-    assert "Scout / Research" in draft_room
-    assert "rookie_research_overlay" in draft_room
-    assert "review-only. It can flag where to scout" in draft_room
-    assert "Evidence Available" in draft_room
-    assert "Trust Level" in draft_room
-    assert "Production" in draft_room
-    assert "College Team Share" in draft_room
-    assert "Landing Context" in draft_room
-    assert "low evidence should be treated as a watchlist signal" in draft_room
-    assert "Draftable Board" in draft_room
-    assert "Watchlist / Data Incomplete" in draft_room
-    assert "Research Conflicts" in draft_room
-    assert "raw score cannot masquerade as a" in draft_room
-    assert '"Startup Slot Simulator"' not in draft_room
-    assert '"Scout Queue"' not in draft_room
-    assert '"Research Overlay"' not in draft_room
-    assert '"Rookie Warnings"' not in draft_room
-    assert '"Rookie Receipts"' not in draft_room
+    assert 'st.title("Draft Prep")' in draft_prep
+    assert "Scouting prep mode" in draft_prep
+    assert "Scouting Only / Legal Pool Pending" in draft_prep
+    assert "Pick-by-Pick Candidate Windows" in draft_prep
+    assert "Scouting Prep Pool" in draft_prep
+    assert "League History Context" in draft_prep
+    assert "Mock/live draft controls now live on the separate Live Draft Room page" in draft_prep
+    assert "Draft Prep stays planning-only and does not mutate draft state" in draft_prep
+    assert "[Open Live Draft Room](/live-draft-room)" in draft_prep
+    assert 'st.title("Live Draft Room")' in live_draft_room
+    assert "Mock/live draft tracking. Draft state is separate from source data." in live_draft_room
+    assert "mark_player_drafted" in live_draft_room
+    assert "undo_pick" in live_draft_room
+    assert "reset_mock" in live_draft_room
 
 
 def test_external_asset_reviews_use_clear_review_only_labels() -> None:
