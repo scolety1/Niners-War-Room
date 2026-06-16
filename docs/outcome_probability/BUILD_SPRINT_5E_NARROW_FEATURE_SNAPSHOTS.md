@@ -92,4 +92,3 @@ The legality policy blocks:
 ## Sprint 5F / Modeling Note
 
 Later internal modeling feasibility can be reassessed after these feature snapshots are reviewed, but production/app modeling remains blocked. The next safe step is an audit of the emitted feature snapshot packet and, separately, timestamp registration for optional sources if richer snapshots are desired.
-

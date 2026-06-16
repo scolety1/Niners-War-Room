@@ -1155,4 +1155,3 @@ def git_commit(repo_root: Path) -> str:
 
 if __name__ == "__main__":
     main()
-
