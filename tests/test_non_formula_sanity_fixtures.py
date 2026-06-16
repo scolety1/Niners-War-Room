@@ -3,7 +3,10 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+import pytest
+
 from src.config.constants import DEFAULT_DATA_PACK
+from src.services.full_player_board_value_service import DEFAULT_FULL_PLAYER_BOARD_ROWS
 from src.services.player_board_score_service import build_player_board_score_rows
 
 
@@ -73,11 +76,22 @@ def test_legacy_sentinals_remain_comparison_only_and_fail_closed() -> None:
     keenan = by_player["Keenan Allen"]
     darius = by_player["Darius Slayton"]
 
-    assert keenan["source_column"] == "checkpoint_review_score"
+    expected_current_value_source = (
+        "nwr_dynasty_score"
+        if DEFAULT_FULL_PLAYER_BOARD_ROWS.exists()
+        else "checkpoint_review_score"
+    )
+
+    assert keenan["source_column"] == expected_current_value_source
     assert keenan["lineage_class"] == "review_v4_current_player"
     assert keenan["private_score"] != keenan["legacy_active_pack_score"]
     assert str(keenan["legacy_active_pack_score"]) == "82.4"
-    assert darius["private_score"] in {"", None}
+    if DEFAULT_FULL_PLAYER_BOARD_ROWS.exists():
+        assert darius["source_column"] == "nwr_dynasty_score"
+        assert darius["lineage_class"] == "review_v4_current_player"
+        assert float(darius["private_score"]) == pytest.approx(23.6148)
+    else:
+        assert darius["private_score"] in {"", None}
     assert str(darius["legacy_active_pack_score"]) == "78.88"
     assert darius["manual_decision_required"] is True
 
