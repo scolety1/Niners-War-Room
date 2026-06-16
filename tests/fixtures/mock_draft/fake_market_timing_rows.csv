@@ -1,0 +1,4 @@
+asset_id,player,position,source_name,source_type,source_timestamp,market_adp,expected_pick,sample_size,identity_match_method,stats_model_value,nwr_quality_score,rank,tier,draft_action,review_flags
+released_veteran:steady_wr,Steady Released WR,WR,fake_contract_fixture,synthetic_market_timing,2026-06-16T00:00:00,1.0,,12,asset_id,1.0,1.0,,,,
+rookie:beta_wr,Beta Rookie,WR,fake_contract_fixture,synthetic_market_timing,2026-06-16T00:00:00,99.0,,8,asset_id,99.0,99.0,999,Market Tier,market_target,
+free_agent:bench_rb,Bench RB,RB,fake_contract_fixture,synthetic_market_timing,2026-06-16T00:00:00,,,5,asset_id,,,,,,market_timing_missing_pick_value_review_required
