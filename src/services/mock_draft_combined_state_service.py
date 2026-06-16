@@ -85,6 +85,7 @@ PICK_COLUMNS = (
     "round_pick",
     "pick_label",
     "current_owner",
+    "manager",
     "original_owner",
     "is_my_pick",
     "source_status",

@@ -81,6 +81,7 @@ def simulator_pick_rows_from_snapshot(
                 "round_pick": round_pick,
                 "pick_label": str(raw.get("pick_label") or ""),
                 "current_owner": str(raw.get("current_owner") or ""),
+                "manager": str(raw.get("manager") or ""),
                 "original_owner": str(raw.get("original_owner") or ""),
                 "is_my_pick": _truthy(raw.get("is_niners_pick")),
                 "source_status": raw.get("input_status") or "",
