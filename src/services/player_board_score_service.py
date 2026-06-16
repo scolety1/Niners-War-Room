@@ -97,6 +97,7 @@ def build_player_board_score_rows(
         rows.append(
             {
                 "overall_rank": "",
+                "player_id": player_id,
                 "player": player,
                 "age": _display_age((age_lookup or {}).get(_normalize_name(player))),
                 "position": position,

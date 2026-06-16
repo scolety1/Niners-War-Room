@@ -59,18 +59,32 @@ def test_flex_filter_excludes_qb_and_includes_rb_wr_te() -> None:
 def test_outcome_columns_are_present_without_fake_percentages() -> None:
     text = _page_text()
 
-    for label in (
-        "T6 2026",
-        "T12 2026",
-        "T48 2026",
-        "T6 2027",
-        "T48 2027",
-        "T6 5Y",
-        "T48 5Y",
-    ):
-        assert label in text
-    assert "Outcome percentage model in development" in text
-    assert "display_row[outcome_column] = \"—\"" in text
+    assert "APPROVED_NUMERIC_OUTCOME_HEADS" in text
+    assert "numeric_outcome_column_labels()" in text
+    assert "[OUTCOME_HEAD_LABELS[head] for head in APPROVED_NUMERIC_OUTCOME_HEADS]" in text
+    for blocked_label in ("T6 2026", "T48 2026", "QB T6", "RB T6", "WR T6", "TE T6"):
+        assert blocked_label not in text
+    assert "joined by player_id" in text
+    assert "display_row[outcome_column] = outcome_values.get(head) or \"\"" in text
+
+
+def test_numeric_outcome_display_uses_player_id_without_visible_key() -> None:
+    text = _page_text()
+
+    assert "numeric_outcome_display_for_player(" in text
+    assert "row.get(\"player_id\")" in text
+    assert "filtered.drop(columns=[\"player_id\"], errors=\"ignore\")" in text
+    assert "\"player_id\"" not in _constant_list("DEFAULT_DYNASTY_COLUMNS")
+
+
+def test_numeric_outcomes_do_not_create_sorting_or_hidden_keys() -> None:
+    text = _page_text()
+
+    assert "outcome_sort" not in text.lower()
+    assert "hidden_outcome" not in text.lower()
+    assert "numeric_outcome_display_sort_value" not in text
+    assert 'valid_rows["_score_sort"]' in text
+    assert 'valid_rows["_name_sort"]' in text
 
 
 def test_market_and_league_context_are_display_only() -> None:
@@ -92,6 +106,7 @@ def test_needs_data_language_replaces_manual_review_copy() -> None:
     assert "No Private Score" in text
     assert "Manual Review" not in text
     assert "No private NWR Dynasty Score is available." in text
+    assert "safe_data_needed_items(row.get(\"data_needed\"))" in text
 
 
 def test_trust_and_status_are_split_for_scored_warning_rows() -> None:

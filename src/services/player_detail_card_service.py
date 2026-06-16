@@ -6,14 +6,18 @@ from typing import Any
 
 from app.components.demo_source_labels import demo_source_label
 from app.components.human_labels import human_label
+from src.services.nwr_outcome_status_display_service import (
+    OutcomeStatusDisplay,
+    build_default_app_status_registry,
+)
+from src.services.rankings_display_text_service import safe_data_needed_items
 
 MISSING = "-"
 RANKINGS_CONTEXT = "rankings"
 DRAFT_PREP_CONTEXT = "draft_prep"
 LIVE_DRAFT_ROOM_CONTEXT = "live_draft_room"
 OUTCOME_IN_DEVELOPMENT_NOTE = (
-    "Outcome percentage model in development. No estimated percentages are shown until "
-    "the private model supports these fields."
+    "Outcome model is in development. No probabilities are released yet."
 )
 DISPLAY_ONLY_NOTE = (
     "Market and league ranks are display-only context and are never used in private "
@@ -115,6 +119,7 @@ class PlayerDetailCardPayload:
     context_tags: tuple[str, ...] = ()
     why_text: str = "Explanation not available from current source rows."
     outcome_status: str = OUTCOME_IN_DEVELOPMENT_NOTE
+    outcome_model_statuses: tuple[OutcomeStatusDisplay, ...] = ()
     private_model_metrics: tuple[PlayerDetailMetric, ...] = ()
     ranking_context_metrics: tuple[PlayerDetailMetric, ...] = ()
     draft_prep_context_metrics: tuple[PlayerDetailMetric, ...] = ()
@@ -167,6 +172,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         _first(row, "manual_review_notes", "raw_source_repair_notes"),
         missing="",
     )
+    why_text = _safe_review_note(why_text)
     why_text = f"{source_note} {why_text}".strip()
 
     private_metrics = (
@@ -219,6 +225,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
             if tag
         ),
         why_text=why_text,
+        outcome_model_statuses=_outcome_model_statuses(row),
         private_model_metrics=tuple(
             metric for metric in (*private_metrics, *candidate_metrics) if metric.value != MISSING
         ),
@@ -349,6 +356,7 @@ def _build_draft_prep_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload
             tag for tag in (draftable_status, source_type, fit_band) if tag != MISSING
         ),
         why_text=why_text,
+        outcome_model_statuses=_outcome_model_statuses(row),
         private_model_metrics=tuple(
             metric for metric in private_metrics if metric.value != MISSING
         ),
@@ -443,6 +451,7 @@ def _build_live_draft_room_payload(row: Mapping[str, Any]) -> PlayerDetailCardPa
             if tag != MISSING
         ),
         why_text=why_text,
+        outcome_model_statuses=_outcome_model_statuses(row),
         private_model_metrics=tuple(
             metric for metric in private_metrics if metric.value != MISSING
         ),
@@ -464,6 +473,11 @@ def _first(row: Mapping[str, Any], *keys: str) -> Any:
         if _clean(value, missing=""):
             return value
     return ""
+
+
+def _outcome_model_statuses(row: Mapping[str, Any]) -> tuple[OutcomeStatusDisplay, ...]:
+    position = _clean(row.get("position"), missing="")
+    return tuple(build_default_app_status_registry(position=position or None))
 
 
 def _clean(value: Any, *, missing: str = MISSING) -> str:
@@ -529,7 +543,22 @@ def _warning_flags(value: Any) -> list[str]:
 
 
 def _human_warning(flag: str) -> str:
+    if flag.startswith(("unmatched_identity_join_source:", "duplicate_identity_join_source:")):
+        return "Identity source needs verification."
     return WARNING_EXPLANATIONS.get(flag, human_label(flag))
+
+
+def _safe_review_note(value: Any) -> str:
+    text = _clean(value, missing="")
+    if not text:
+        return ""
+    lowered = text.lower()
+    if "identity join" not in lowered and "missing model v4 current player row" not in lowered:
+        return text
+    safe_items = safe_data_needed_items(text.replace(";", "|"))
+    if not safe_items:
+        return "Data review notes available."
+    return "Data review notes: " + "; ".join(safe_items)
 
 
 def _warning_summary(warnings: list[str]) -> str:
@@ -539,9 +568,9 @@ def _warning_summary(warnings: list[str]) -> str:
 
 
 def _data_needed(row: Mapping[str, Any], warnings: list[str], score: str) -> list[str]:
-    existing = _clean(row.get("data_needed"), missing="")
+    existing = safe_data_needed_items(row.get("data_needed"))
     if existing:
-        return [part.strip() for part in existing.split("|") if part.strip()]
+        return existing
     needs = [_human_warning(flag) for flag in warnings]
     if score == MISSING:
         needs.insert(0, "No private NWR Dynasty Score is available.")

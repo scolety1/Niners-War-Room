@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from src.services.player_detail_card_service import (
@@ -28,6 +30,9 @@ def test_rankings_payload_maps_common_and_rankings_fields() -> None:
     assert payload.display_only_note == DISPLAY_ONLY_NOTE
     assert "Roster/team tags" in payload.why_text
     assert "do not affect this score" in payload.why_text
+    assert payload.outcome_status == (
+        "Outcome model is in development. No probabilities are released yet."
+    )
 
 
 def test_rankings_payload_keeps_legacy_score_comparison_only() -> None:
@@ -63,6 +68,43 @@ def test_payload_handles_missing_optional_fields_without_crashing() -> None:
     assert "Source column is missing." in payload.data_needed
 
 
+def test_rankings_payload_hides_raw_identity_join_debug_text() -> None:
+    payload = build_player_detail_card_payload(
+        _rankings_row(
+            private_score="",
+            manual_review_notes=(
+                "missing model v4 current player row; unmatched identity join key; "
+                "unmatched identity join source:C:\\local_exports\\current.csv; 1 more"
+            ),
+            warning_reasons=(
+                "missing_model_v4_current_player_row|unmatched_identity_join_key|"
+                "unmatched_identity_join_source:C:\\local_exports\\current.csv"
+            ),
+            data_needed=(
+                "('missing model v4 current player row', "
+                "'unmatched identity join key', "
+                "'unmatched identity join key')"
+            ),
+        ),
+        context="rankings",
+    )
+
+    rendered = " ".join(
+        (
+            payload.why_text,
+            " ".join(payload.warning_messages),
+            " ".join(payload.data_needed),
+        )
+    ).lower()
+
+    assert payload.data_needed == ("Needs data", "Identity match needed")
+    assert "data review notes: needs data; identity match needed" in payload.why_text.lower()
+    assert "Identity source needs verification." in payload.warning_messages
+    assert "unmatched identity join key" not in rendered
+    assert "unmatched identity join source" not in rendered
+    assert "local_exports" not in rendered
+
+
 def test_raw_receipts_are_available_for_advanced_display() -> None:
     payload = build_player_detail_card_payload(_rankings_row(), context="rankings")
     receipts = {receipt.label: receipt.value for receipt in payload.receipts}
@@ -74,6 +116,58 @@ def test_raw_receipts_are_available_for_advanced_display() -> None:
     assert receipts["Upstream source path"] == "Source: current.csv"
     assert "do_not_use_as_final" in receipts["Blocked use"]
     assert "partial_first_down_confidence_cap" in receipts["Raw warnings"]
+
+
+def test_player_detail_payload_returns_status_only_outcome_fields() -> None:
+    payload = build_player_detail_card_payload(_rankings_row(), context="rankings")
+
+    assert {status.target for status in payload.outcome_model_statuses} == {
+        "same_year_difference_maker",
+        "same_year_starter",
+        "same_year_useful",
+        "same_year_replacement_or_bust",
+        "next_year_starter",
+        "multi_year_targets",
+        "hazard_windows",
+    }
+    same_year = [
+        status for status in payload.outcome_model_statuses if status.target.startswith("same_year")
+    ]
+    assert {status.status_label for status in same_year} == {"In development"}
+    next_year = next(
+        status for status in payload.outcome_model_statuses if status.target == "next_year_starter"
+    )
+    assert next_year.status_label == "Blocked by release gate"
+
+    for status in payload.outcome_model_statuses:
+        assert status.probability_value is None
+        assert status.probability_band is None
+        assert status.sortable_value is None
+        assert status.is_numeric is False
+        assert status.is_released is False
+
+
+def test_kicker_player_detail_payload_marks_outcomes_not_applicable() -> None:
+    payload = build_player_detail_card_payload(
+        _rankings_row(position="K"),
+        context="rankings",
+    )
+
+    assert payload.outcome_model_statuses
+    assert {status.status_code for status in payload.outcome_model_statuses} == {
+        "not_applicable"
+    }
+
+
+def test_player_detail_service_does_not_read_internal_or_local_export_outputs() -> None:
+    import src.services.player_detail_card_service as service
+
+    service_text = Path(service.__file__).read_text(encoding="utf-8")
+
+    assert "nwr_outcome_internal_model_package_service" not in service_text
+    assert "internal_logistic" not in service_text
+    assert "read_csv" not in service_text
+    assert "local_exports/outcome_probability" not in service_text
 
 
 def test_unsupported_context_fails_closed() -> None:

@@ -26,6 +26,14 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
     else:
         st.write("No private component rows are available for this player.")
 
+    st.markdown("**Outcome Model Status**")
+    st.caption(payload.outcome_status)
+    if payload.outcome_model_statuses:
+        with st.expander("Outcome status details", expanded=False):
+            _render_outcome_status_details(payload.outcome_model_statuses)
+    else:
+        st.write("Outcome model status is not available for this player.")
+
     if payload.context == "rankings":
         st.markdown("**Rankings context**")
         st.caption(payload.display_only_note)
@@ -34,7 +42,6 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
             use_container_width=True,
             hide_index=True,
         )
-        st.info(payload.outcome_status)
     elif payload.context == "draft_prep":
         st.markdown("**Draft Prep context**")
         st.caption(payload.display_only_note)
@@ -132,3 +139,12 @@ def _metrics_frame(metrics: tuple[object, ...]) -> pd.DataFrame:
             for metric in metrics
         ]
     )
+
+
+def _render_outcome_status_details(statuses: tuple[object, ...]) -> None:
+    for index, status in enumerate(statuses):
+        if index:
+            st.divider()
+        st.markdown(f"**Outcome:** {status.target_label}")
+        st.write(f"Status: {status.status_label}")
+        st.caption(f"Help: {status.status_help}")

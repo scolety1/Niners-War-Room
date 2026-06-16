@@ -20,6 +20,14 @@ from app.components.ui_framework import page_header
 from src.config.settings import get_settings
 from src.services.data_pack_health_service import build_data_pack_health_report
 from src.services.full_player_board_value_service import DEFAULT_FULL_PLAYER_BOARD_ROWS
+from src.services.nwr_outcome_numeric_probability_display_service import (
+    APPROVED_NUMERIC_OUTCOME_HEADS,
+    DEFAULT_NUMERIC_OUTCOME_DISPLAY_ARTIFACT,
+    HEAD_POSITION,
+    load_numeric_outcome_display_rows,
+    numeric_outcome_column_labels,
+    numeric_outcome_display_for_player,
+)
 from src.services.player_board_score_service import build_player_board_score_rows
 from src.services.player_detail_card_service import build_player_detail_card_payload
 from src.services.player_feature_receipts_service import (
@@ -30,6 +38,7 @@ from src.services.player_feature_receipts_service import (
     receipt_rows_for_players,
 )
 from src.services.ranking_readiness_service import build_ranking_readiness
+from src.services.rankings_display_text_service import safe_data_needed_items
 
 AGE_ROWS = Path("local_exports/model_v4/prospect_age/latest/player_age_2026.csv")
 SLEEPER_AGE_ROWS = Path(
@@ -37,12 +46,13 @@ SLEEPER_AGE_ROWS = Path(
 )
 AGE_SOURCE_PATHS = (AGE_ROWS, SLEEPER_AGE_ROWS)
 FULL_BOARD_VALUE_ROWS = REPO_ROOT / DEFAULT_FULL_PLAYER_BOARD_ROWS
+NUMERIC_OUTCOME_DISPLAY_ARTIFACT = DEFAULT_NUMERIC_OUTCOME_DISPLAY_ARTIFACT
 
 MY_TEAM_NAME = "Niners"
 NWR_SCORE_COLUMN = "private_score"
 OUTCOME_NOTE = (
-    "Outcome percentage model in development. No estimated percentages are shown until "
-    "the private model supports these fields."
+    "Outcome percentages are display-only review fields. They do not affect NWR score, "
+    "rank, filters, sorting, or player-card decisions."
 )
 MARKET_DISPLAY_ONLY_NOTE = (
     "Market, league, ADP, consensus, projection, startup, and trade-calculator context "
@@ -65,11 +75,11 @@ DEFAULT_DYNASTY_COLUMNS = [
     "Status",
     "Data Needed",
 ]
+OUTCOME_HEAD_LABELS = numeric_outcome_column_labels()
+OUTCOME_LABEL_TO_HEAD = {label: head for head, label in OUTCOME_HEAD_LABELS.items()}
 OUTCOME_GROUP_COLUMNS = {
     "Compact": [],
-    "2026 Outcomes": ["T6 2026", "T12 2026", "T24 2026", "T36 2026", "T48 2026"],
-    "2027 Outcomes": ["T6 2027", "T12 2027", "T24 2027", "T36 2027", "T48 2027"],
-    "5-Year Outcomes": ["T6 5Y", "T12 5Y", "T24 5Y", "T36 5Y", "T48 5Y"],
+    "2026 Outcomes": [OUTCOME_HEAD_LABELS[head] for head in APPROVED_NUMERIC_OUTCOME_HEADS],
 }
 POSITION_FILTERS = ("All", "QB", "RB", "WR", "TE", "FLEX")
 PLAYER_POOL_FILTERS = ("All", "My Team", "Available", "Rookies", "Needs Data / No Private Score")
@@ -175,6 +185,15 @@ def _load_formula_board(
     )
 
 
+@st.cache_data
+def _load_numeric_outcome_displays(
+    artifact_path: str,
+    artifact_fingerprint: tuple[str, int, int, int],
+):
+    _ = artifact_fingerprint
+    return load_numeric_outcome_display_rows(artifact_path)
+
+
 def _normalize_name(value: object) -> str:
     return "".join(character for character in str(value or "").lower() if character.isalnum())
 
@@ -231,13 +250,15 @@ def _warning_count(value: object) -> str:
 
 
 def _human_warning(flag: str) -> str:
+    if flag.startswith(("unmatched_identity_join_source:", "duplicate_identity_join_source:")):
+        return "Identity source needs verification."
     return WARNING_EXPLANATIONS.get(flag, human_label(flag))
 
 
 def _data_needed(row: pd.Series) -> list[str]:
-    existing = _clean_value(row.get("data_needed"), missing="")
+    existing = safe_data_needed_items(row.get("data_needed"))
     if existing:
-        return [part.strip() for part in existing.split("|") if part.strip()]
+        return existing
     needs = [_human_warning(flag) for flag in _warning_flags(row.get("warning_reasons"))]
     if _score_value(row.get(NWR_SCORE_COLUMN)) is None:
         needs.insert(0, "No private NWR Dynasty Score is available.")
@@ -338,12 +359,22 @@ def _assign_valid_private_ranks(frame: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 
-def _dynasty_display_frame(frame: pd.DataFrame, *, outcome_group: str) -> pd.DataFrame:
+def _dynasty_display_frame(
+    frame: pd.DataFrame,
+    *,
+    outcome_group: str,
+    numeric_outcomes_by_player_id: dict,
+) -> pd.DataFrame:
     display_rows: list[dict[str, object]] = []
     for _, row in frame.iterrows():
         rank = _clean_value(row.get("nwr_rank"))
         market_rank = _clean_value(row.get("market_rank") or row.get("dynasty_startup_adp"))
         league_rank = _clean_value(row.get("league_rank"))
+        outcome_values = numeric_outcome_display_for_player(
+            row.get("player_id"),
+            row.get("position"),
+            numeric_outcomes_by_player_id,
+        )
         display_row = {
             "Rank": rank,
             "Player": _player_cell(row),
@@ -365,7 +396,11 @@ def _dynasty_display_frame(frame: pd.DataFrame, *, outcome_group: str) -> pd.Dat
             "Data Needed": _data_needed_summary(row),
         }
         for outcome_column in OUTCOME_GROUP_COLUMNS[outcome_group]:
-            display_row[outcome_column] = "—"
+            head = OUTCOME_LABEL_TO_HEAD[outcome_column]
+            if HEAD_POSITION[head] == str(row.get("position") or "").upper():
+                display_row[outcome_column] = outcome_values.get(head) or ""
+            else:
+                display_row[outcome_column] = ""
         display_rows.append(display_row)
     columns = DEFAULT_DYNASTY_COLUMNS + OUTCOME_GROUP_COLUMNS[outcome_group]
     return pd.DataFrame(display_rows, columns=columns)
@@ -478,6 +513,10 @@ formula_rows = _load_formula_board(
     str(FULL_BOARD_VALUE_ROWS),
     path_fingerprint(FULL_BOARD_VALUE_ROWS),
 )
+numeric_outcomes_by_player_id = _load_numeric_outcome_displays(
+    str(NUMERIC_OUTCOME_DISPLAY_ARTIFACT),
+    path_fingerprint(NUMERIC_OUTCOME_DISPLAY_ARTIFACT),
+)
 
 page_header(
     "Dynasty Rankings",
@@ -525,7 +564,7 @@ else:
         int(formula_frame[NWR_SCORE_COLUMN].map(_score_value).isna().sum()),
     )
     summary_cols[3].metric("My Team", int(default_visible_frame["_is_my_team"].sum()))
-    summary_cols[4].metric("Outcome fields", "Planned")
+    summary_cols[4].metric("Outcome fields", "Display-only")
 
     st.info(OUTCOME_NOTE)
     st.caption(
@@ -556,8 +595,8 @@ else:
             horizontal=True,
             key="dynasty_rankings_outcome_group",
             help=(
-                "Future outcome percentages must be private-model-only and cannot use "
-                "market, ADP, consensus, projections, startup, or trade-calculator data."
+                "Display-only approved Outcome percentages joined by player_id. They do "
+                "not affect score, rank, filtering, or sorting."
             ),
         )
     with filter_cols[3]:
@@ -606,7 +645,11 @@ else:
     if filtered.empty:
         st.warning("No rows match the current filters.")
     else:
-        display_frame = _dynasty_display_frame(filtered, outcome_group=outcome_group)
+        display_frame = _dynasty_display_frame(
+            filtered,
+            outcome_group=outcome_group,
+            numeric_outcomes_by_player_id=numeric_outcomes_by_player_id,
+        )
         st.dataframe(
             _style_dynasty_table(display_frame, filtered),
             use_container_width=True,
@@ -632,6 +675,16 @@ else:
                     "Warnings",
                     help="Compact warning count. Open player detail for human-readable data needs.",
                 ),
+                **{
+                    label: st.column_config.TextColumn(
+                        label,
+                        help=(
+                            "Display-only approved Outcome percentage. Not used for "
+                            "ranking, sorting, hidden keys, or player-card decisions."
+                        ),
+                    )
+                    for label in OUTCOME_GROUP_COLUMNS["2026 Outcomes"]
+                },
             },
         )
 
@@ -677,4 +730,8 @@ else:
             "Raw fields are for source auditing only. They do not add recommendations or "
             "change private model value."
         )
-        st.dataframe(filtered, use_container_width=True, hide_index=True)
+        st.dataframe(
+            filtered.drop(columns=["player_id"], errors="ignore"),
+            use_container_width=True,
+            hide_index=True,
+        )
