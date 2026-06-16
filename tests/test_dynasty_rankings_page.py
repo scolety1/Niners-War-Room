@@ -59,8 +59,9 @@ def test_flex_filter_excludes_qb_and_includes_rb_wr_te() -> None:
 def test_outcome_columns_are_present_without_fake_percentages() -> None:
     text = _page_text()
 
-    for label in ("QB T12", "RB T12", "RB T24", "WR T12", "WR T24", "WR T36", "TE T12"):
-        assert label in text
+    assert "APPROVED_NUMERIC_OUTCOME_HEADS" in text
+    assert "numeric_outcome_column_labels()" in text
+    assert "[OUTCOME_HEAD_LABELS[head] for head in APPROVED_NUMERIC_OUTCOME_HEADS]" in text
     for blocked_label in ("T6 2026", "T48 2026", "QB T6", "RB T6", "WR T6", "TE T6"):
         assert blocked_label not in text
     assert "joined by player_id" in text
