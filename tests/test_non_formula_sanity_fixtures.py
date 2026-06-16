@@ -131,7 +131,9 @@ def test_pick_decision_lab_context_rows_keep_equivalence_guardrails() -> None:
 
     five_four = by_pick["2026 5.04"]
     assert five_four["pick_value_score"] == ""
-    assert five_four["review_label"] == "manual_only_no_exact_model_baseline"
+    assert five_four["review_label"] == "manual_decision_required"
+    assert five_four["pick_tier"] == "manual_only_no_exact_model_baseline"
+    assert five_four["confidence_status"] == "manual_only_no_exact_model_baseline"
     assert five_four["equivalence_guardrail"] == "no_exact_equivalence_without_pick_baseline"
     assert "no exact trade-market equivalence" in five_four["trade_market_reality_context"]
 

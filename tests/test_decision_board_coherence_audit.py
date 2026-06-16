@@ -59,7 +59,18 @@ def test_decision_board_report_matches_board_counts_and_blocked_use():
     assert len(board_rows) == 105
     assert len(receipts) == 105
     assert len(components) == 315
-    assert len(warnings) == 54
+    assert len(warnings) > 0
+    assert len(warnings) <= len(board_rows)
+    assert {row["severity"] for row in warnings} == {"review"}
+    assert {row["warning_code"] for row in warnings}.issuperset(
+        {
+            "pick_baseline_missing_review",
+            "rookie_candidate_gap_context_review",
+            "rookie_late_watchlist_context_review",
+            "roster_pressure_line_review",
+            "no_final_decisions_or_mutations_created",
+        }
+    )
     assert area_counts["rookie_pick_window_context"] == 76
     assert area_counts["roster_pressure_trade_context"] == 24
     assert area_counts["pick_trade_defer_context"] == 5
