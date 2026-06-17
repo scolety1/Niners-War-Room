@@ -1,0 +1,5 @@
+team_name,manager,roster_slot,player_name,position,nfl_team,input_status
+Team 01,Manager 01,Starter,Player 01,QB,SF,review
+Team 01,Manager 01,Bench,Player 01,QB,SF,review
+Team 02,,Starter,Player 02,RB,DAL,
+Team 03,Manager 03,Starter,,WR,KC,review

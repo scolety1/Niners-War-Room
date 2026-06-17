@@ -1,0 +1,11 @@
+team_name,manager,roster_slot,player_name,position,nfl_team,input_status
+Team 01,Manager 01,Starter,Player 01,QB,SF,review
+Team 02,Manager 02,Starter,Player 02,RB,DAL,review
+Team 03,Manager 03,Starter,Player 03,WR,KC,review
+Team 04,Manager 04,Starter,Player 04,TE,DET,review
+Team 05,Manager 05,Starter,Player 05,QB,BUF,review
+Team 06,Manager 06,Starter,Player 06,RB,GB,review
+Team 07,Manager 07,Starter,Player 07,WR,MIN,review
+Team 08,Manager 08,Starter,Player 08,TE,MIA,review
+Team 09,Manager 09,Starter,Player 09,RB,CIN,review
+Team 10,Manager 10,Starter,Player 10,WR,LAR,review
