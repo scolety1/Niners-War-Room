@@ -10,13 +10,18 @@ command, public app, public port, tunnel, secret, container, or CI/CD workflow.
 
 ## Use The Right Folder
 
-HQ has not selected the normal long-term operator repo/worktree path yet.
+HQ has selected the normal long-term operator repo/worktree path.
 
-Until HQ selects one, use the path HQ gives you for that session. The expected
-path should look like a Niners War Room repo folder, for example:
+Normal operator path:
 
 ```text
-C:\Users\smcol\Documents\Vacation\Niners-War-Room-deploy-v2
+C:\Users\smcol\Documents\Vacation\Niners-War-Room-outcome
+```
+
+Normal operator branch:
+
+```text
+main
 ```
 
 If you are not sure which folder to use, stop and ask HQ before running the app.
@@ -24,10 +29,10 @@ If you are not sure which folder to use, stop and ask HQ before running the app.
 ## Start Checklist
 
 1. Open PowerShell.
-2. Go to the folder HQ told you to use:
+2. Go to the normal operator folder:
 
    ```powershell
-   Set-Location "C:\Users\smcol\Documents\Vacation\Niners-War-Room-deploy-v2"
+   Set-Location "C:\Users\smcol\Documents\Vacation\Niners-War-Room-outcome"
    ```
 
 3. Confirm you are in the right folder:
@@ -36,7 +41,23 @@ If you are not sure which folder to use, stop and ask HQ before running the app.
    git rev-parse --show-toplevel
    ```
 
-   The output should be the same folder HQ told you to use.
+   The output should be:
+
+   ```text
+   C:/Users/smcol/Documents/Vacation/Niners-War-Room-outcome
+   ```
+
+   Confirm the normal operator branch:
+
+   ```powershell
+   git branch --show-current
+   ```
+
+   The output should be:
+
+   ```text
+   main
+   ```
 
 4. If `.venv` is missing, create it:
 
