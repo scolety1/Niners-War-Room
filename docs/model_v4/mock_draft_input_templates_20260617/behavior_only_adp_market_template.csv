@@ -1,0 +1,2 @@
+asset_id,player,position,source_name,source_type,source_timestamp,market_adp,overall_adp,expected_pick,sample_size,identity_match_method,review_flags
+free_agent:example,Example Player,WR,example_source,behavior_only_market_timing,2026-06-17,25,,25,10,asset_id,review

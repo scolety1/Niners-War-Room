@@ -1,0 +1,2 @@
+player,position,source_label,review_flags,nfl_team,previous_team,previous_manager,drop_sequence,input_status
+Example Veteran,QB,declared_drop,value_neutral|declared_drop,SF,Example Team,Example Manager,1,review
