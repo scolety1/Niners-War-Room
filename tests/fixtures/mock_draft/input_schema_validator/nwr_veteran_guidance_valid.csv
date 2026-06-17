@@ -1,0 +1,2 @@
+asset_id,player,position,source_label,nwr_value_status,nwr_guidance_label,nwr_warning,draft_action,source_status
+free_agent:alpha,Alpha WR,WR,free_agent,approved_guidance,manual_watch,,manual_review,review

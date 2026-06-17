@@ -1,0 +1,2 @@
+asset_id,player,position,source_name,source_type,source_timestamp,market_adp,sample_size,identity_match_method,review_flags,nwr_quality_score,hidden_sort_key
+free_agent:alpha,Alpha WR,WR,fake,synthetic,2026-06-17,12,5,asset_id,,99,secret
