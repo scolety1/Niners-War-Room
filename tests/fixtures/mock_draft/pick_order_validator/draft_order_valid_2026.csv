@@ -1,0 +1,5 @@
+season,overall_pick,round,round_pick,pick_label,current_owner,original_owner,manager,is_niners_pick,source_status
+2026,1,1,1,1.01,Team 01,Team 01,Manager 01,false,review
+2026,2,1,2,1.02,Team 02,Team 02,Manager 02,false,review
+2026,3,1,3,1.03,Niners,Niners,Tim,true,review
+2026,4,1,4,1.04,Niners,Niners,Tim,true,review
