@@ -79,6 +79,9 @@ DEPLOY_COMMAND_PATTERNS = (
     re.compile(r"\bpublic\s+port\b", re.IGNORECASE),
     re.compile(r"\bhosted\s+route\b", re.IGNORECASE),
     re.compile(r"\bhosted\s+smoke\b", re.IGNORECASE),
+    re.compile(r"\bsecrets?\b|\bcredentials?\b", re.IGNORECASE),
+    re.compile(r"\bproduction\s+runtime\b", re.IGNORECASE),
+    re.compile(r"\bgenerated\s+artifacts?\b", re.IGNORECASE),
 )
 
 

@@ -204,3 +204,34 @@ def test_docs_can_describe_forbidden_surfaces_without_false_positive(tmp_path: P
     )
 
     assert guard.scan_repository(tmp_path) == []
+
+
+def test_guard_pattern_manifest_categories_have_temp_fixture_coverage(tmp_path: Path) -> None:
+    fixtures = {
+        "deploy_command": ("Makefile", "deploy:\n\t@echo inert validation marker\n"),
+        "platform_config": ("fly.toml", "inert platform fixture\n"),
+        "secret_credential": (
+            "tox.ini",
+            "[testenv]\ndescription = credential marker only\n",
+        ),
+        "production_runtime": (
+            "pyproject.toml",
+            "[tool.validation]\nmessage = \"production runtime marker only\"\n",
+        ),
+        "generated_artifact": (
+            "Taskfile.yml",
+            "tasks:\n  validation:\n    cmds:\n      - echo generated artifact marker only\n",
+        ),
+        "generated_path": (
+            "notes/kubernetes/readme.txt",
+            "inert hosted path segment marker only\n",
+        ),
+    }
+
+    for directory, (relative_path, content) in fixtures.items():
+        fixture_root = tmp_path / directory
+        path = fixture_root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+        assert guard.scan_repository(fixture_root), f"{directory} should be covered"
