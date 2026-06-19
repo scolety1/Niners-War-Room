@@ -86,6 +86,14 @@ ingestion, or fantasy-football lane.
 
 - `TRADING_LAB_BACKTESTING_DESIGN_GUARDRAILS_20260618.md`: design guardrails
   before any future backtesting code exists.
+- `TRADING_LAB_T19_SIMULATION_DESIGN_SPEC_PLAN_20260618.md`: T19 docs-only
+  simulation design spec plan.
+- `TRADING_LAB_SIMULATION_DESIGN_SPEC_20260618.md`: future-only simulation and
+  backtesting design specification; not approved for implementation.
+- `TRADING_LAB_BACKTESTING_IMPLEMENTATION_BLOCKERS_20260618.md`: blockers that
+  must be resolved before any future implementation proposal.
+- `TRADING_LAB_T19_NOT_IMPLEMENTED_ASSERTION_20260618.md`: explicit assertion
+  that no T19 implementation occurred.
 - `TRADING_LAB_BACKTESTING_READINESS_CHECKLIST_20260618.md`: T3 checklist for
   what must exist before any future implementation is separately approved.
 - `TRADING_LAB_BLOCKED_WORK_GATE_CHECKLIST_20260618.md`: T5 gate before future
@@ -215,6 +223,8 @@ ingestion, or fantasy-football lane.
   lock closeout.
 - `TRADING_LAB_T18_SOURCE_POLICY_CLOSEOUT_20260618.md`: T18 source policy gate
   closeout.
+- `TRADING_LAB_T19_SIMULATION_SPEC_CLOSEOUT_20260618.md`: T19 simulation
+  design spec closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 

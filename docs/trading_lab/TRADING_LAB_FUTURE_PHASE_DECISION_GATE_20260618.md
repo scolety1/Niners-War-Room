@@ -24,12 +24,21 @@ blocked work.
 ## Before Backtesting Implementation Can Be Proposed
 
 - Backtesting design guardrails are current.
+- `TRADING_LAB_SIMULATION_DESIGN_SPEC_20260618.md` has been reviewed.
+- `TRADING_LAB_BACKTESTING_IMPLEMENTATION_BLOCKERS_20260618.md` has no open
+  blockers.
 - Public data source candidate is documented.
 - Bias controls are named: survivorship, look-ahead, overfitting, revisions.
 - Transaction cost and slippage assumptions are defined.
 - Benchmark or no-action baseline is defined.
 - Generated outputs are explicitly untracked unless separately approved.
 - The proposal states no execution, no broker/API, and no advice.
+
+## T19 Design Gate Note
+
+T19 created a design specification only. It does not approve code, ingestion,
+fetching, simulation engines, backtest runners, output writers, app wiring,
+deployment, broker/API work, credentials, execution, or advice.
 
 ## Permanently Prohibited
 
