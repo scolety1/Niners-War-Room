@@ -34,18 +34,26 @@ Each lane's current local HEAD matches the corresponding `origin` branch ref.
 
 ## Post-Push Status Update
 
-After the restart board was committed and pushed, a final lane sweep found Mock
-Draft HQ dirty:
+After the restart board was committed and pushed, final lane sweeps found Mock
+Draft HQ and Trading Lab dirty:
 
 ```text
 C:\NWR\Niners-War-Room-mock-draft
  M src/services/draft_state_service.py
+ M tests/test_draft_state_service.py
+?? docs/hq/parallel_lanes/MOCK_DRAFT_SIMULATOR_SERVICE_CONTRACT.md
+
+C:\NWR\Niners-War-Room-trading-lab
+?? docs/trading_lab/TRADING_LAB_SAFE_RESEARCH_FOUNDATION_20260618.md
+?? src/trading_lab/
+?? tests/test_trading_lab_source_inventory.py
+?? tests/test_trading_lab_watchlist_contract.py
 ```
 
-`git diff --check` still passed in that lane, but the modified file changes the
-restart gate. Mock Draft HQ is now HOLD for new agents until the owner of that
-work either commits, shelves, or explicitly reports it as the active Mock Draft
-agent's controlled change.
+`git diff --check` still passed in both lanes, but these dirty files change the
+restart gate. Mock Draft HQ and Trading Lab are now HOLD for new agents until
+the owner of each workstream either commits, shelves, or explicitly reports the
+files as that lane agent's controlled active change.
 
 ## Lane Board
 
@@ -57,19 +65,21 @@ agent's controlled change.
 | Drop Decision HQ | `C:\NWR\Niners-War-Room-drop-decision` | `work/drop-decision-day-review` | `ebddf8b` | clean; `git diff --check` pass; remote matches | Read-only validation/reporting improvements only | Outcome/display changes, production decision changes, simulations, generated artifacts | Improve auditability without changing production model behavior or fantasy lane outputs | `git status --short`; `git diff --check`; targeted validation/report tests only | Yes, limited to read-only validation/reporting |
 | Outcome V1 | `C:\NWR\Niners-War-Room-outcome` | `main` | `6e47932` | clean; `git diff --check` pass; remote matches | Read-only verification only | Numeric display/model logic, probability/band changes, deploy, simulations | Outcome is sealed unless explicitly approved later | `git status --short`; `git diff --check`; read-only inspection commands | No coding; read-only verification only |
 | Deployment V2 | `C:\NWR\Niners-War-Room-deploy-v2` | `work/deployment-v2-discovery` | `04dda41` | clean; `git diff --check` pass; remote matches | Discovery/docs/validation only | Deploy, merge, production config mutation, secrets import, generated artifacts | No deployment action or production environment change is approved | `git status --short`; `git diff --check`; docs/validation checks only | Yes, limited to discovery/docs/validation |
-| Trading Lab | `C:\NWR\Niners-War-Room-trading-lab` | `work/trading-lab` | `7c137c7` | clean; `git diff --check` pass; remote matches | Research/paper-only infrastructure only | Fantasy lane edits, broker APIs, credentials, real-money trading, automated execution, investment advice | Keep Trading Lab isolated from fantasy lanes; use paper/research abstractions only | `git status --short`; `git diff --check`; docs/research validation only | Yes, limited to research/paper infrastructure |
+| Trading Lab | `C:\NWR\Niners-War-Room-trading-lab` | `work/trading-lab` | `7c137c7` | HOLD: final sweep found untracked docs, `src/trading_lab/`, and tests; `git diff --check` pass; remote matches | Reconcile or explicitly claim existing local Trading Lab files before new work | Fantasy lane edits, broker APIs, credentials, real-money trading, automated execution, investment advice; no new agent starts from this dirty tree | Keep Trading Lab isolated from fantasy lanes; use paper/research abstractions only | `git status --short`; `git diff --check`; docs/research validation only after dirty files are owned/reconciled | No new agent until dirty files are reconciled or explicitly claimed by Trading Lab |
 
 ## Restart Order Recommendation
 
 1. Drop Decision HQ: read-only validation/reporting improvements only.
-2. Trading Lab: research/paper-only infrastructure only.
-3. Deployment V2: discovery/docs/validation only, no deploy.
-4. Rookie HQ: docs or validation guards only; frozen manual kit stays protected.
-5. Outcome V1: read-only verification only.
-6. Master HQ: coordination and status docs only.
-7. Mock Draft HQ: HOLD until `src/services/draft_state_service.py` is
-   reconciled or explicitly claimed by the active Mock Draft owner; after that,
-   service/test hardening only, no real ADP import and no app wiring.
+2. Deployment V2: discovery/docs/validation only, no deploy.
+3. Rookie HQ: docs or validation guards only; frozen manual kit stays protected.
+4. Outcome V1: read-only verification only.
+5. Master HQ: coordination and status docs only.
+6. Mock Draft HQ: HOLD until the dirty service/test/doc files are reconciled or
+   explicitly claimed by the active Mock Draft owner; after that, service/test
+   hardening only, no real ADP import and no app wiring.
+7. Trading Lab: HOLD until the dirty docs/src/tests are reconciled or
+   explicitly claimed by the active Trading Lab owner; after that,
+   research/paper-only infrastructure only.
 
 ## Agent Prompt Template
 
