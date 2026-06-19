@@ -59,6 +59,24 @@ def test_missing_hosted_blocked_language_is_red(tmp_path: Path) -> None:
     assert _statuses(findings)["hosted_blocked"] == "RED"
 
 
+def test_missing_local_only_language_is_red(tmp_path: Path) -> None:
+    _write_doc(tmp_path, BASE_DOC.replace("V1 remains `local_only`.\n\n", ""))
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "RED"
+    assert _statuses(findings)["local_only"] == "RED"
+
+
+def test_missing_no_deploy_command_language_is_red(tmp_path: Path) -> None:
+    _write_doc(tmp_path, BASE_DOC.replace("No deploy command exists.\n\n", ""))
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "RED"
+    assert _statuses(findings)["no_deploy_command"] == "RED"
+
+
 def test_current_operator_path_mismatch_is_red(tmp_path: Path) -> None:
     _write_doc(
         tmp_path,
@@ -72,6 +90,15 @@ def test_current_operator_path_mismatch_is_red(tmp_path: Path) -> None:
 
     assert audit.verdict(findings) == "RED"
     assert _statuses(findings)["current_operator_path"] == "RED"
+
+
+def test_missing_normal_operator_branch_language_is_red(tmp_path: Path) -> None:
+    _write_doc(tmp_path, BASE_DOC.replace("Normal operator branch is main.\n\n", ""))
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "RED"
+    assert _statuses(findings)["normal_operator_branch"] == "RED"
 
 
 def test_legacy_vacation_path_with_current_path_is_note(tmp_path: Path) -> None:

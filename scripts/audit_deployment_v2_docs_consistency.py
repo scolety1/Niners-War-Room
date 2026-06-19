@@ -16,7 +16,7 @@ REQUIRED_PATTERNS = [
     ("hosted_blocked", "hosted deployment remains blocked", "hosted deployment"),
     ("no_deploy_command", "no deploy command", "deploy command"),
     ("current_operator_path", CURRENT_OPERATOR_PATH, CURRENT_OPERATOR_PATH),
-    ("normal_operator_branch", "main", "normal operator branch"),
+    ("normal_operator_branch", "normal operator branch", "normal operator branch"),
     (
         "deployment_v2_not_operator_path",
         "not the operator app path",
