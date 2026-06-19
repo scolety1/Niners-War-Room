@@ -127,6 +127,7 @@ EXECUTION_TEXT_PATTERNS = tuple(
     for pattern in (
         r"\bbroker\s+order\b",
         r"\bbroker\s+api\b",
+        r"\bbroker[\W_]+api\b",
         r"\border\s+endpoint\b",
         r"\bexecution\s+endpoint\b",
         r"\bautomated\s+execution\b",
@@ -137,8 +138,11 @@ EXECUTION_TEXT_PATTERNS = tuple(
         r"\breal[-\s]?money\s+trading\b",
         r"\blive\s+trading\b",
         r"\bplace\s+orders?\b",
+        r"\bplace[\W_]+orders?\b",
         r"\bsubmit\s+orders?\b",
+        r"\bsubmit[\W_]+orders?\b",
         r"\btrading\s+api\b",
+        r"\btrading[\W_]+api\b",
     )
 )
 
@@ -172,11 +176,17 @@ BROKER_CREDENTIAL_TEXT_PATTERNS = tuple(
     for pattern in (
         r"\bconnect\s+broker\b",
         r"\bbroker\s+token\b",
+        r"\bbroker[\W_]+token\b",
         r"\bbroker\s+credential\b",
+        r"\bbroker[\W_]+credential\b",
         r"\bapi\s+key\b",
+        r"\bapi[\W_]+key\b",
         r"\bapi\s+token\b",
+        r"\bapi[\W_]+token\b",
         r"\baccount\s+key\b",
+        r"\baccount[\W_]+key\b",
         r"\bsecret\s+key\b",
+        r"\bsecret[\W_]+key\b",
     )
 )
 
@@ -200,18 +210,23 @@ FUTURE_PHASE_REJECT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
         r"\bbroker\s+api\b",
+        r"\bbroker[\W_]+api\b",
         r"\bbroker\s+orders?\b",
+        r"\bbroker[\W_]+orders?\b",
         r"\border\s+endpoint\b",
         r"\bexecution\s+endpoint\b",
         r"\breal[-\s]?money\b",
         r"\blive\s+trading\b",
         r"\bplace\s+orders?\b",
+        r"\bplace[\W_]+orders?\b",
         r"\bsubmit\s+orders?\b",
+        r"\bsubmit[\W_]+orders?\b",
         r"\bauto[-\s]?execute\b",
         r"\bautomated\s+execution\b",
         r"\bcredentials?\b",
         r"\bsecret\b",
         r"\bapi\s+key\b",
+        r"\bapi[\W_]+key\b",
         r"\btoken\b",
         r"\baccount\s+key\b",
         r"\bprivate\s+brokerage\b",
@@ -233,10 +248,14 @@ FUTURE_PHASE_HOLD_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
         r"\bdata\s+ingestion\b",
+        r"\bdata[\W_]+ingestion\b",
         r"\bingest\b",
         r"\bbacktesting\s+implementation\b",
+        r"\bbacktesting[\W_]+implementation\b",
         r"\bbacktest\s+code\b",
         r"\bsimulation\s+tooling\b",
+        r"\bfuture\s+implementation\b",
+        r"\bprototype\s+implementation\b",
         r"\bgenerated\s+outputs?\b",
         r"\bgenerated\s+artifacts?\b",
         r"\bmarket\s+datasets?\b",
@@ -551,6 +570,10 @@ def validate_research_config(
                         "Secret-like values are prohibited in Trading Lab.",
                     )
                 )
+        elif isinstance(value, (list, tuple, set)):
+            text_values = _collect_text_fields(value, key_path)
+            issues.extend(_execution_text_issues(text_values))
+            issues.extend(_secret_value_text_issues(text_values))
     return tuple(issues)
 
 
@@ -594,11 +617,7 @@ def validate_manual_artifact_payload(
                 ValidationIssue(field_name, "required", f"{field_name} is required.")
             )
 
-    text_fields = {
-        str(field_name): str(value)
-        for field_name, value in payload.items()
-        if isinstance(value, str)
-    }
+    text_fields = _collect_text_fields(payload)
     issues.extend(validate_artifact_text_fields(artifact_type, text_fields))
     return tuple(issues)
 
@@ -616,15 +635,7 @@ def validate_manual_review_packet(payload: Mapping[str, object]) -> tuple[Valida
                 )
             )
 
-    text_fields: dict[str, str] = {}
-    for key, value in payload.items():
-        if isinstance(value, str):
-            text_fields[str(key)] = value
-        elif isinstance(value, Mapping):
-            for nested_key, nested_value in value.items():
-                if isinstance(nested_value, str):
-                    text_fields[f"{key}.{nested_key}"] = nested_value
-
+    text_fields = _collect_text_fields(payload)
     issues.extend(validate_artifact_text_fields("manual_review_packet", text_fields))
     return tuple(issues)
 
@@ -746,6 +757,21 @@ def _pattern_text_issues(
                 issues.append(ValidationIssue(field_name, code, message))
                 break
     return tuple(issues)
+
+
+def _collect_text_fields(value: object, path: str = "") -> dict[str, str]:
+    fields: dict[str, str] = {}
+    if isinstance(value, str):
+        fields[path or "value"] = value
+    elif isinstance(value, Mapping):
+        for key, nested_value in value.items():
+            nested_path = f"{path}.{key}" if path else str(key)
+            fields.update(_collect_text_fields(nested_value, nested_path))
+    elif isinstance(value, (list, tuple, set)):
+        for index, nested_value in enumerate(value):
+            nested_path = f"{path}[{index}]" if path else f"value[{index}]"
+            fields.update(_collect_text_fields(nested_value, nested_path))
+    return fields
 
 
 def _secret_value_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:

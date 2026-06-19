@@ -141,6 +141,8 @@ ingestion, or fantasy-football lane.
 - `TRADING_LAB_T8_SCHEMA_REGISTRY_PLAN_20260618.md`: T8 schema registry plan.
 - `TRADING_LAB_SCHEMA_REGISTRY_20260618.md`: centralized docs-only artifact
   schema registry.
+- `TRADING_LAB_T15_VALIDATOR_EDGE_CASE_PLAN_20260618.md`: T15 validation-only
+  edge-case hardening plan.
 - `TRADING_LAB_FAKE_EXAMPLE_CORPUS_20260618.md`: inline fake ACCEPT/HOLD/REJECT
   examples for docs and tests.
 - `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
@@ -191,6 +193,8 @@ ingestion, or fantasy-football lane.
 - `TRADING_LAB_T13_CLOSEOUT_20260618.md`: T13 release-readiness closeout.
 - `TRADING_LAB_T14_DOCS_TRACEABILITY_CLOSEOUT_20260618.md`: T14 docs
   traceability closeout.
+- `TRADING_LAB_T15_EDGE_CASE_CLOSEOUT_20260618.md`: T15 validator edge-case
+  closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 

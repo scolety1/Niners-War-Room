@@ -23,6 +23,7 @@ broker/API integration, deployment, app wiring, or investment advice.
 | Schema registry | T8 schema registry and fake corpus | `SCHEMA_REGISTRY`, `schema_for_artifact`, T8 tests | Prohibited field names and artifact coverage | Ready for docs/tests | Constants only, no file format | Keep examples inline unless approved |
 | Release readiness | T12 audit, Master handoff packet, next phase options, chain closeout | Docs-only audit plus full focused Trading Lab validation before commit | Confirms no execution, broker/API, credentials, data ingestion, generated outputs, deployment, or fantasy-lane work | Ready for Master review after clean push | T12 commit hash recorded in final report | Keep future phases behind explicit approval |
 | Docs traceability | T14 plan, doc traceability matrix, guardrail traceability matrix, style guide | Docs-only; full focused Trading Lab validation before commit | Maps no-advice, no-execution, no data ingestion, no deployment, no fantasy drift | Ready for maintenance | Traceability is additive, not enforcement by itself | Refresh when new docs/tests are added |
+| Validator edge cases | T15 edge-case plan and closeout | `test_trading_lab_t15_validator_edge_cases.py` | Mixed case, punctuation-separated terms, nested payload text, nested config strings, missing fields, unsupported artifact type, ambiguous future work | Ready for validation-only use | No file/schema parser approved | Keep edge cases inline and fake |
 
 ## Coverage Notes
 
