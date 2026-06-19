@@ -36,6 +36,19 @@ PROHIBITED_DEMO_TERMS = (
     "order execution",
 )
 
+FAKE_DEMO_NAMES = (
+    "Target Player",
+    "Player A",
+    "Player B",
+    "Player C",
+    "Player D",
+    "2026 2nd",
+    "2026 3rd",
+    "Team Alpha",
+    "Team Bravo",
+    "Team Charlie",
+)
+
 
 @dataclass(frozen=True)
 class NegotiationLadder:
@@ -72,7 +85,11 @@ class DemoTradePackage:
 
 
 def demo_trade_packages() -> tuple[DemoTradePackage, ...]:
-    return (
+    return generate_fake_trade_packages()
+
+
+def generate_fake_trade_packages(mode: str | None = None) -> tuple[DemoTradePackage, ...]:
+    packages = (
         DemoTradePackage(
             mode="Trade For Player",
             give=("Player A", "2026 3rd"),
@@ -125,6 +142,103 @@ def demo_trade_packages() -> tuple[DemoTradePackage, ...]:
                 rookie_mock_context="2026 2nd supports next rookie draft plan.",
             ),
         ),
+        DemoTradePackage(
+            mode="Upgrade Position",
+            give=("Player C", "2026 2nd"),
+            get=("Target Player",),
+            nwr_gain=15.8,
+            public_market_fairness="Aggressive but still plausible for Team Charlie.",
+            opponent_fit="Team Charlie wants picks and has extra starter depth.",
+            roster_impact="Turns two flexible assets into one lineup upgrade.",
+            keeper_drop_impact="Adds keeper upside but raises short-term depth risk.",
+            risk_flags=("Consolidation risk", "Higher pick cost"),
+            verdict="Good upside package if depth is expendable",
+            negotiation_ladder=NegotiationLadder(
+                opening_offer="Player C plus 2026 3rd",
+                fair_offer="Player C plus 2026 2nd",
+                max_offer="Player C plus Player D",
+                walk_away="Player B plus 2026 2nd",
+            ),
+            warnings=("Do not overpay if Target Player's role is uncertain.",),
+            roster_aftermath=RosterAftermath(
+                summary="Starting lineup improves, but bench flexibility tightens.",
+                keeper_impact="Keeper core gains ceiling.",
+                drop_pressure_impact="Drop pressure improves only if Player D stays.",
+                positional_depth_impact="Depth gets thinner at Player C's position.",
+                rookie_mock_context="2026 2nd is a meaningful draft-plan cost.",
+            ),
+        ),
+        DemoTradePackage(
+            mode="Pick Conversion",
+            give=("2026 2nd", "2026 3rd"),
+            get=("Player D",),
+            nwr_gain=7.6,
+            public_market_fairness="Fair for Team Bravo if they prefer rookie picks.",
+            opponent_fit="Team Bravo is pick-focused and can move Player D.",
+            roster_impact="Adds usable depth without moving a current starter.",
+            keeper_drop_impact="Keeper impact modest; drop pressure may increase.",
+            risk_flags=("Roster spot crowding",),
+            verdict="Useful pick-to-player conversion",
+            negotiation_ladder=NegotiationLadder(
+                opening_offer="2026 3rd",
+                fair_offer="2026 2nd",
+                max_offer="2026 2nd plus 2026 3rd",
+                walk_away="Player A",
+            ),
+            warnings=("Check drop pressure before adding Player D.",),
+            roster_aftermath=RosterAftermath(
+                summary="Depth improves, but one future roster decision gets tighter.",
+                keeper_impact="No immediate keeper upgrade.",
+                drop_pressure_impact="Adds one future drop-pressure decision.",
+                positional_depth_impact="Improves depth at a thin position.",
+                rookie_mock_context="Consumes mid-round rookie flexibility.",
+            ),
+        ),
+        DemoTradePackage(
+            mode="Drop-Pressure Trade",
+            give=("Player D", "2026 3rd"),
+            get=("2026 2nd",),
+            nwr_gain=5.1,
+            public_market_fairness="Realistic if Team Alpha needs depth.",
+            opponent_fit="Team Alpha can use Player D and values extra bench options.",
+            roster_impact="Converts a likely roster squeeze into a cleaner pick.",
+            keeper_drop_impact="Lowers drop pressure and preserves keeper flexibility.",
+            risk_flags=("Future pick uncertainty",),
+            verdict="Clean pressure-release package",
+            negotiation_ladder=NegotiationLadder(
+                opening_offer="Player D",
+                fair_offer="Player D plus 2026 3rd",
+                max_offer="Player D plus Player C",
+                walk_away="Any core keeper",
+            ),
+            warnings=("Do not include a core keeper just to clear bench pressure.",),
+            roster_aftermath=RosterAftermath(
+                summary="Roster gets easier to manage before cuts.",
+                keeper_impact="Keeper core unchanged.",
+                drop_pressure_impact="Drop pressure improves by moving a fringe asset.",
+                positional_depth_impact="Depth loss is acceptable.",
+                rookie_mock_context="Adds a better rookie pick lane.",
+            ),
+        ),
+    )
+    if mode is None:
+        return packages
+    return tuple(package for package in packages if package.mode == mode)
+
+
+def sort_packages_by_review_score(
+    packages: tuple[DemoTradePackage, ...],
+) -> tuple[DemoTradePackage, ...]:
+    return tuple(
+        sorted(
+            packages,
+            key=lambda package: (
+                package.nwr_gain,
+                "realistic" in package.public_market_fairness.lower(),
+                "improves" in package.roster_impact.lower(),
+            ),
+            reverse=True,
+        )
     )
 
 

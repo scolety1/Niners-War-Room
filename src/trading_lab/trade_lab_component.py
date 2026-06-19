@@ -11,6 +11,7 @@ from src.trading_lab.trade_lab_ui import (
     best_trade_package,
     demo_trade_packages,
     format_package_summary,
+    sort_packages_by_review_score,
 )
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
@@ -199,10 +200,7 @@ def render_trade_lab_page() -> None:
             st.write(f"Verdict: {best.verdict}")
 
         st.subheader("Ranked packages")
-        for rank, package in enumerate(
-            sorted(packages, key=lambda item: item.nwr_gain, reverse=True),
-            start=1,
-        ):
+        for rank, package in enumerate(sort_packages_by_review_score(packages), start=1):
             with st.container(border=True):
                 st.markdown(f"**#{rank}: {format_package_summary(package)}**")
                 st.write(f"Market Fairness: {package.public_market_fairness}")
