@@ -123,6 +123,27 @@ def test_deploy_ready_language_is_red(tmp_path: Path) -> None:
     assert _statuses(findings)["hosted_ready_language"] == "RED"
 
 
+def test_hosted_enabled_language_is_red(tmp_path: Path) -> None:
+    _write_doc(tmp_path, BASE_DOC + "\nHosting is enabled for operators.\n")
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "RED"
+    assert _statuses(findings)["hosted_ready_language"] == "RED"
+
+
+def test_blocked_example_hosted_ready_language_is_allowed(tmp_path: Path) -> None:
+    _write_doc(
+        tmp_path,
+        BASE_DOC
+        + "\nForbidden example: hosted deployment ready language remains blocked.\n",
+    )
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "GREEN"
+
+
 def test_json_output_groups_required_missing_notes_and_blocked_language(tmp_path: Path) -> None:
     _write_doc(
         tmp_path,

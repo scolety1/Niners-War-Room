@@ -11,6 +11,40 @@ CURRENT_OPERATOR_PATH = r"C:\NWR\Niners-War-Room-outcome"
 LEGACY_OPERATOR_PATH = r"C:\Users\smcol\Documents\Vacation\Niners-War-Room-outcome"
 DEPLOYMENT_V2_PATH = r"C:\NWR\Niners-War-Room-deploy-v2"
 NORMAL_OPERATOR_BRANCH = "main"
+HOSTED_TERMS = (
+    "hosted deployment",
+    "hosted target",
+    "hosting",
+    "public routing",
+)
+HOSTED_READY_TERMS = (
+    "ready",
+    "enabled",
+    "available",
+    "approved",
+    "unblocked",
+)
+HOSTED_READY_ALLOWED_CONTEXTS = (
+    "blocked",
+    "blocklist",
+    "forbidden",
+    "do not",
+    "does not",
+    "not ",
+    "no ",
+    "without",
+    "pending",
+    "until",
+    "yet",
+    "later",
+    "previous",
+    "non-green",
+    "violation",
+    "example",
+    "request",
+    "policy",
+    "?",
+)
 REQUIRED_PATTERNS = [
     ("local_only", "V1 remains `local_only`", "local_only"),
     ("hosted_blocked", "hosted deployment remains blocked", "hosted deployment"),
@@ -89,20 +123,11 @@ def audit_docs(docs_dir: Path) -> list[Finding]:
 def has_affirmative_hosted_ready_language(text: str) -> bool:
     for line in text.splitlines():
         lower = line.lower()
-        if "hosted deployment" not in lower or "ready" not in lower:
+        if not any(term in lower for term in HOSTED_TERMS):
             continue
-        if any(
-            allowed in lower
-            for allowed in (
-                "does not mean",
-                "not mean",
-                "not ready",
-                "no hosted deployment",
-                "not hosted deployment readiness",
-                "remains blocked",
-                "blocked",
-            )
-        ):
+        if not any(term in lower for term in HOSTED_READY_TERMS):
+            continue
+        if any(allowed in lower for allowed in HOSTED_READY_ALLOWED_CONTEXTS):
             continue
         return True
     return False
