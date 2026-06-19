@@ -122,6 +122,14 @@ ingestion, or fantasy-football lane.
 
 ## Validation Inventory And Language
 
+- `TRADING_LAB_T14_DOCS_TRACEABILITY_PLAN_20260618.md`: T14 traceability sweep
+  plan.
+- `TRADING_LAB_DOC_TRACEABILITY_MATRIX_20260618.md`: docs mapped to artifact
+  types, validators, guardrails, status, and maintenance steps.
+- `TRADING_LAB_GUARDRAIL_TRACEABILITY_MATRIX_20260618.md`: guardrails mapped
+  to docs, tests, validators, gaps, and safe improvements.
+- `TRADING_LAB_DOC_STYLE_AND_TERMS_GUIDE_20260618.md`: preferred wording,
+  prohibited wording, and safe research-only rewrite patterns.
 - `TRADING_LAB_VALIDATION_COVERAGE_MATRIX_20260618.md`: artifact-to-guardrail
   coverage matrix.
 - `TRADING_LAB_VALIDATOR_INVENTORY_20260618.md`: T6 validator inventory across
@@ -143,6 +151,12 @@ ingestion, or fantasy-football lane.
 
 ## Release Readiness
 
+- `TRADING_LAB_T13_RELEASE_READINESS_VERIFICATION_20260618.md`: T13
+  release-readiness verification.
+- `TRADING_LAB_IMPORT_SAFE_AUDIT_20260618.md`: import-safe audit for allowed
+  paths and prohibited paths.
+- `TRADING_LAB_RELEASE_READINESS_CHECKLIST_20260618.md`: manual release
+  readiness checklist.
 - `TRADING_LAB_T12_RELEASE_CANDIDATE_AUDIT_20260618.md`: T12 release-candidate
   audit for paper/research readiness.
 - `TRADING_LAB_MASTER_HANDOFF_PACKET_20260618.md`: Master HQ handoff packet and
@@ -174,6 +188,9 @@ ingestion, or fantasy-football lane.
   closeout.
 - `TRADING_LAB_T11_BLOCKED_WORK_GATE_CLOSEOUT_20260618.md`: T11 blocked-work
   gate validation closeout.
+- `TRADING_LAB_T13_CLOSEOUT_20260618.md`: T13 release-readiness closeout.
+- `TRADING_LAB_T14_DOCS_TRACEABILITY_CLOSEOUT_20260618.md`: T14 docs
+  traceability closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 
