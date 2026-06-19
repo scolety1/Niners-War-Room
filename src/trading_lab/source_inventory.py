@@ -526,17 +526,18 @@ def validate_watchlist_note(note: WatchlistNote) -> tuple[ValidationIssue, ...]:
             )
         )
 
-    issues.extend(
-        _execution_text_issues(
-            {
-                "symbol": note.symbol,
-                "research_theme": note.research_theme,
-                "hypothesis": note.hypothesis,
-                "risk_notes": note.risk_notes,
-                "public_sources": " ".join(note.public_sources),
-            }
-        )
-    )
+    text_fields = {
+        "symbol": note.symbol,
+        "research_theme": note.research_theme,
+        "hypothesis": note.hypothesis,
+        "risk_notes": note.risk_notes,
+        "public_sources": " ".join(note.public_sources),
+    }
+    issues.extend(_execution_text_issues(text_fields))
+    issues.extend(_advice_text_issues(text_fields))
+    issues.extend(_broker_credential_text_issues(text_fields))
+    issues.extend(_private_account_text_issues(text_fields))
+    issues.extend(_secret_value_text_issues(text_fields))
     return tuple(issues)
 
 

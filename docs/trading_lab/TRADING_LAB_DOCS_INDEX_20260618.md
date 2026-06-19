@@ -145,6 +145,10 @@ ingestion, or fantasy-football lane.
   edge-case hardening plan.
 - `TRADING_LAB_FAKE_EXAMPLE_CORPUS_20260618.md`: inline fake ACCEPT/HOLD/REJECT
   examples for docs and tests.
+- `TRADING_LAB_T16_FAKE_EXAMPLE_EXPANSION_PLAN_20260618.md`: T16 fake example
+  corpus expansion plan.
+- `TRADING_LAB_FAKE_EXAMPLE_CORPUS_V2_20260618.md`: expanded fake example
+  corpus for supported artifact types.
 - `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
   language rewrites.
 - `TRADING_LAB_PROHIBITED_LANGUAGE_TAXONOMY_20260618.md`: T6 taxonomy for
@@ -195,6 +199,8 @@ ingestion, or fantasy-football lane.
   traceability closeout.
 - `TRADING_LAB_T15_EDGE_CASE_CLOSEOUT_20260618.md`: T15 validator edge-case
   closeout.
+- `TRADING_LAB_T16_FAKE_EXAMPLES_CLOSEOUT_20260618.md`: T16 fake example
+  corpus closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 
