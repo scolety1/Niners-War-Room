@@ -25,3 +25,13 @@ and not investment advice.
 Policy and gate docs may mention prohibited phrases to define guardrails. Actual
 research artifacts must reject those phrases when they imply behavior,
 configuration, data flow, advice, or execution.
+
+## T17 Rewrite Lock
+
+Use `TRADING_LAB_SAFE_REWRITE_LIBRARY_20260618.md` when replacing unsafe
+language. Safe rewrites must use research questions, manual review, public
+evidence, paper-only hypotheses, risk notes, and invalidation conditions.
+
+No rewrite may preserve broker/API, credential, secret, key, token, private
+account, order, execution, automation, guaranteed-return, or production-advice
+meaning.

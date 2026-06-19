@@ -151,6 +151,10 @@ ingestion, or fantasy-football lane.
   corpus for supported artifact types.
 - `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
   language rewrites.
+- `TRADING_LAB_T17_NO_ADVICE_LOCK_PLAN_20260618.md`: T17 no-advice language
+  lock plan.
+- `TRADING_LAB_SAFE_REWRITE_LIBRARY_20260618.md`: unsafe-to-safe research-only
+  rewrite library.
 - `TRADING_LAB_PROHIBITED_LANGUAGE_TAXONOMY_20260618.md`: T6 taxonomy for
   execution, broker/API, credential, private-account, advice, automation, data,
   and generated-output language.
@@ -201,6 +205,8 @@ ingestion, or fantasy-football lane.
   closeout.
 - `TRADING_LAB_T16_FAKE_EXAMPLES_CLOSEOUT_20260618.md`: T16 fake example
   corpus closeout.
+- `TRADING_LAB_T17_NO_ADVICE_CLOSEOUT_20260618.md`: T17 no-advice language
+  lock closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 
