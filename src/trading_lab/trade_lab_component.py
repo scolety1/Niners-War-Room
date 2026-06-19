@@ -21,6 +21,7 @@ from src.trading_lab.trade_lab_ui import (
     sort_packages_by_review_score,
     training_scenarios,
 )
+from src.trading_lab.trade_provenance import ui_data_status_labels
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
 
@@ -50,6 +51,8 @@ PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS = (
     "No generated outputs.",
     "No automated trade submission or automatic decisioning.",
 )
+
+PROVENANCE_STATUS_LABELS = ui_data_status_labels()
 
 FAKE_DATA_DISCLAIMER = (
     "Desktop smoke build: fake in-memory examples only. Real integrations are "
@@ -157,6 +160,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
                 *TRADE_LAB_DATA_CHIPS,
                 FAKE_DATA_DISCLAIMER,
                 UNWIRED_INTEGRATION_NOTICE,
+                *PROVENANCE_STATUS_LABELS,
             ),
         ),
         TradeLabSection("Desktop layout", DESKTOP_SECTION_LABELS),
@@ -194,6 +198,7 @@ def render_trade_lab_page() -> None:
     st.write(" ".join(f"`{chip}`" for chip in TRADE_LAB_DATA_CHIPS))
     st.warning(FAKE_DATA_DISCLAIMER)
     st.info(UNWIRED_INTEGRATION_NOTICE)
+    st.write(" ".join(f"`{label}`" for label in PROVENANCE_STATUS_LABELS))
     with st.expander("Placeholder integration boundaries", expanded=False):
         for boundary in PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS:
             st.write(f"- {boundary}")
