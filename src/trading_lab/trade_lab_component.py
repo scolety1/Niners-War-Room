@@ -22,6 +22,7 @@ from src.trading_lab.trade_lab_ui import (
     training_scenarios,
 )
 from src.trading_lab.trade_provenance import ui_data_status_labels
+from src.trading_lab.trade_review_queue import review_queue_placeholder_labels
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
 
@@ -53,6 +54,7 @@ PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS = (
 )
 
 PROVENANCE_STATUS_LABELS = ui_data_status_labels()
+REVIEW_QUEUE_PLACEHOLDER_LABELS = review_queue_placeholder_labels()
 
 FAKE_DATA_DISCLAIMER = (
     "Desktop smoke build: fake in-memory examples only. Real integrations are "
@@ -177,6 +179,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
             "Placeholder integration boundaries",
             PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS,
         ),
+        TradeLabSection("Review queue placeholder", REVIEW_QUEUE_PLACEHOLDER_LABELS),
     )
 
 
@@ -202,6 +205,9 @@ def render_trade_lab_page() -> None:
     with st.expander("Placeholder integration boundaries", expanded=False):
         for boundary in PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS:
             st.write(f"- {boundary}")
+    with st.expander("Review queue placeholder", expanded=False):
+        for label in REVIEW_QUEUE_PLACEHOLDER_LABELS:
+            st.write(f"- {label}")
 
     left, center, right = st.columns((0.9, 1.7, 1.1), gap="large")
     with left:
