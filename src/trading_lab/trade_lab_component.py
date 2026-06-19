@@ -77,9 +77,17 @@ CENTER_SECTION_LABELS = (
 RIGHT_CONTEXT_LABELS = (
     "Roster aftermath",
     "Keeper impact",
+    "Keeper core before",
+    "Keeper core after",
     "Drop pressure impact",
+    "Drop pressure before",
+    "Drop pressure after",
     "Positional depth impact",
+    "Positional depth before",
+    "Positional depth after",
     "Rookie/mock draft context",
+    "Mock draft context placeholder",
+    "Roster risk notes",
     "Opponent fit",
     "Data status / needs data",
 )
@@ -240,9 +248,18 @@ def render_trade_lab_page() -> None:
         st.markdown("**Roster aftermath**")
         st.write(aftermath.summary)
         st.write(f"Keeper impact: {aftermath.keeper_impact}")
+        st.write(f"Keeper core before: {', '.join(aftermath.keeper_core_before)}")
+        st.write(f"Keeper core after: {', '.join(aftermath.keeper_core_after)}")
         st.write(f"Drop pressure impact: {aftermath.drop_pressure_impact}")
+        st.write(f"Drop pressure before: {aftermath.drop_pressure_before}")
+        st.write(f"Drop pressure after: {aftermath.drop_pressure_after}")
         st.write(f"Positional depth impact: {aftermath.positional_depth_impact}")
+        st.write(f"Positional depth before: {aftermath.positional_depth_before}")
+        st.write(f"Positional depth after: {aftermath.positional_depth_after}")
         st.write(f"Rookie/mock draft context: {aftermath.rookie_mock_context}")
+        st.write(f"Mock draft context placeholder: {aftermath.mock_draft_placeholder}")
+        st.write(f"Roster risk notes: {', '.join(aftermath.roster_risk_notes)}")
+        st.info(aftermath.needs_real_integration_note)
         st.write(f"Opponent fit: {best.opponent_fit}")
         st.info("Data status / needs data: using fake in-memory placeholders.")
 

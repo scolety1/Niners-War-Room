@@ -69,6 +69,15 @@ class RosterAftermath:
     drop_pressure_impact: str
     positional_depth_impact: str
     rookie_mock_context: str
+    keeper_core_before: tuple[str, ...] = ("Player A", "Player B")
+    keeper_core_after: tuple[str, ...] = ("Target Player", "Player B")
+    drop_pressure_before: str = "One bench asset likely needs review."
+    drop_pressure_after: str = "One cleaner roster path after the package."
+    positional_depth_before: str = "Depth is crowded but uneven."
+    positional_depth_after: str = "Depth is cleaner with one tradeoff to review."
+    mock_draft_placeholder: str = "Mock draft context is not wired yet."
+    roster_risk_notes: tuple[str, ...] = ("Manual roster review still required.",)
+    needs_real_integration_note: str = "Real roster integrations are not wired yet."
 
 
 @dataclass(frozen=True)
