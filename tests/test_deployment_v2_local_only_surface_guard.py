@@ -86,3 +86,64 @@ def test_guard_report_json_shape_for_blocked_surface(tmp_path: Path) -> None:
             "reason": "hosted/container/platform manifest is present",
         }
     ]
+
+
+def test_guard_flags_ci_workflow_in_temp_fixture(tmp_path: Path) -> None:
+    workflow_dir = tmp_path / ".github" / "workflows"
+    workflow_dir.mkdir(parents=True)
+    (workflow_dir / "validation.yml").write_text("inert workflow fixture\n", encoding="utf-8")
+
+    violations = guard.scan_repository(tmp_path)
+
+    assert [(violation.path.as_posix(), violation.reason) for violation in violations] == [
+        (".github/workflows/validation.yml", "CI/CD workflow file is present")
+    ]
+
+
+def test_guard_flags_forbidden_path_segment_in_temp_fixture(tmp_path: Path) -> None:
+    path = tmp_path / "notes" / "k8s" / "readme.txt"
+    path.parent.mkdir(parents=True)
+    path.write_text("inert forbidden path segment fixture\n", encoding="utf-8")
+
+    violations = guard.scan_repository(tmp_path)
+
+    assert [(violation.path.as_posix(), violation.reason) for violation in violations] == [
+        ("notes/k8s/readme.txt", "hosted/container path segment is present: k8s")
+    ]
+
+
+def test_guard_flags_public_tunnel_marker_only_in_command_surface(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text(
+        json.dumps({"scripts": {"validation": "echo inert ngrok marker"}}),
+        encoding="utf-8",
+    )
+
+    violations = guard.scan_repository(tmp_path)
+
+    assert [(violation.path.as_posix(), violation.reason) for violation in violations] == [
+        (
+            "package.json",
+            "package.json script uses deploy-oriented command: validation",
+        )
+    ]
+
+
+def test_guard_skips_local_only_artifact_dirs(tmp_path: Path) -> None:
+    for directory_name in ("data", "local_exports", ".venv"):
+        path = tmp_path / directory_name / "Dockerfile"
+        path.parent.mkdir(parents=True)
+        path.write_text("inert skipped-dir fixture\n", encoding="utf-8")
+
+    assert guard.scan_repository(tmp_path) == []
+
+
+def test_docs_can_describe_forbidden_surfaces_without_false_positive(tmp_path: Path) -> None:
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "blocked_surfaces.md").write_text(
+        "This note mentions Dockerfile, CI/CD, ngrok, and hosted routing as blocked text.\n",
+        encoding="utf-8",
+    )
+
+    assert guard.scan_repository(tmp_path) == []
