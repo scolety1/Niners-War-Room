@@ -95,6 +95,30 @@ PRIVATE_ACCOUNT_TEXT_PATTERNS = tuple(
     )
 )
 
+ADVICE_TEXT_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bbuy\s+now\b",
+        r"\bsell\s+now\b",
+        r"\bhold\s+for\s+profit\b",
+        r"\bguaranteed\s+returns?\b",
+        r"\bpersonalized\s+investment\s+advice\b",
+        r"\bfor\s+your\s+account\b",
+    )
+)
+
+BROKER_CREDENTIAL_TEXT_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bconnect\s+broker\b",
+        r"\bbroker\s+token\b",
+        r"\bbroker\s+credential\b",
+        r"\bapi\s+key\b",
+        r"\baccount\s+key\b",
+        r"\bsecret\s+key\b",
+    )
+)
+
 SECRET_FIELD_MARKERS = frozenset(
     {
         "api_key",
@@ -402,6 +426,21 @@ def validate_research_config(
     return tuple(issues)
 
 
+def validate_artifact_text_fields(
+    artifact_type: str,
+    fields: Mapping[str, str],
+) -> tuple[ValidationIssue, ...]:
+    """Validate free-text artifact fields without creating artifact-specific workflows."""
+    issues: list[ValidationIssue] = []
+    scoped_fields = {f"{artifact_type}.{field_name}": value for field_name, value in fields.items()}
+    issues.extend(_execution_text_issues(scoped_fields))
+    issues.extend(_private_account_text_issues(scoped_fields))
+    issues.extend(_secret_value_text_issues(scoped_fields))
+    issues.extend(_advice_text_issues(scoped_fields))
+    issues.extend(_broker_credential_text_issues(scoped_fields))
+    return tuple(issues)
+
+
 def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
     for field_name, value in fields.items():
@@ -412,6 +451,38 @@ def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, 
                         field_name,
                         "prohibited_execution_language",
                         "Broker, order, live-trading, or execution language is prohibited.",
+                    )
+                )
+                break
+    return tuple(issues)
+
+
+def _advice_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    for field_name, value in fields.items():
+        for pattern in ADVICE_TEXT_PATTERNS:
+            if pattern.search(value):
+                issues.append(
+                    ValidationIssue(
+                        field_name,
+                        "prohibited_advice_language",
+                        "Advice or guaranteed-return language is prohibited.",
+                    )
+                )
+                break
+    return tuple(issues)
+
+
+def _broker_credential_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    for field_name, value in fields.items():
+        for pattern in BROKER_CREDENTIAL_TEXT_PATTERNS:
+            if pattern.search(value):
+                issues.append(
+                    ValidationIssue(
+                        field_name,
+                        "prohibited_broker_credential_language",
+                        "Broker or credential language is prohibited.",
                     )
                 )
                 break
