@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +41,17 @@ def _fake_run_git(*, ancestor_returncode: int = 0, status_output: str = ""):
     return fake_run_git
 
 
+def _fake_missing_commit_run_git(_repo: Path, *args: str):
+    command = ["git", *args]
+    if args == ("rev-parse", "HEAD"):
+        return _completed(command, stdout="abc123full\n")
+    if args == ("rev-parse", "--short", "HEAD"):
+        return _completed(command, stdout="abc123\n")
+    if args == ("cat-file", "-e", "base123^{commit}"):
+        return _completed(command, returncode=1, stderr="missing commit\n")
+    raise AssertionError(f"unexpected git args: {args}")
+
+
 def test_descendant_baseline_is_green(monkeypatch) -> None:
     monkeypatch.setattr(baseline, "run_git", _fake_run_git())
 
@@ -54,6 +66,16 @@ def test_missing_baseline_argument_is_yellow() -> None:
 
     assert result.verdict == "YELLOW"
     assert result.reasons == ["baseline commit was not supplied"]
+
+
+def test_unresolved_baseline_commit_is_yellow(monkeypatch) -> None:
+    monkeypatch.setattr(baseline, "run_git", _fake_missing_commit_run_git)
+
+    result = baseline.verify_baseline(Path("."), "base123")
+
+    assert result.verdict == "YELLOW"
+    assert result.ancestor is None
+    assert result.reasons == ["baseline commit not found: base123"]
 
 
 def test_non_ancestor_baseline_is_red(monkeypatch) -> None:
@@ -84,3 +106,14 @@ def test_result_to_dict_has_json_shape(monkeypatch) -> None:
     assert output["baseline"] == "base123"
     assert output["current_head"] == {"full": "abc123full", "short": "abc123"}
     assert output["ancestor"] is True
+
+
+def test_cli_json_output_is_parseable(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(baseline, "run_git", _fake_run_git())
+
+    result = baseline.main(["base123", "--json"])
+    output = json.loads(capsys.readouterr().out)
+
+    assert result == 0
+    assert output["verdict"] == "GREEN"
+    assert output["baseline"] == "base123"
