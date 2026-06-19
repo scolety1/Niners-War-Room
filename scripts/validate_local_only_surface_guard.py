@@ -240,9 +240,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--report",
+        nargs="?",
         choices=["text", "json"],
+        const="json",
         default="text",
-        help="Output format. Text preserves the original human-readable guard output.",
+        help=(
+            "Output format. Bare --report emits JSON; text preserves the original "
+            "human-readable guard output."
+        ),
     )
     parser.add_argument(
         "root",
