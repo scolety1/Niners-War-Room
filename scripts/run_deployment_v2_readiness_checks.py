@@ -173,23 +173,51 @@ def print_human_report(results: list[CheckResult]) -> None:
 
 
 def print_json_report(results: list[CheckResult]) -> None:
-    print(
-        json.dumps(
-            {
-                "verdict": overall_verdict(results),
-                "checks": [
-                    {
-                        "name": result.name,
-                        "status": result.status,
-                        "detail": result.detail,
-                    }
-                    for result in results
-                ],
-            },
-            indent=2,
-            sort_keys=True,
-        )
-    )
+    print(json.dumps(readiness_json_report(results), indent=2, sort_keys=True))
+
+
+def readiness_json_report(results: list[CheckResult]) -> dict[str, object]:
+    by_name = {result.name: result for result in results}
+    skipped = [result.name for result in results if result.status == "SKIPPED"]
+    blockers = [result.detail for result in results if result.status in {"BLOCKED", "RED"}]
+    violations = [
+        {
+            "check": result.name,
+            "status": result.status,
+            "detail": result.detail,
+        }
+        for result in results
+        if status_rank(result.status) >= 2
+    ]
+
+    return {
+        "verdict": overall_verdict(results),
+        "branch": check_to_dict(by_name.get("branch")),
+        "head": check_to_dict(by_name.get("head")),
+        "clean_status": check_to_dict(by_name.get("status")),
+        "diff_check": check_to_dict(by_name.get("diff_check")),
+        "local_only_guard": check_to_dict(by_name.get("local_only_guard")),
+        "guard_report": check_to_dict(by_name.get("local_only_guard_report")),
+        "import_report": check_to_dict(by_name.get("import_report_comparison")),
+        "skipped_checks": skipped,
+        "blockers": blockers,
+        "violations": violations,
+        "checks": [check_to_dict(result) for result in results],
+    }
+
+
+def check_to_dict(result: CheckResult | None) -> dict[str, str]:
+    if result is None:
+        return {
+            "name": "",
+            "status": "SKIPPED",
+            "detail": "check not available",
+        }
+    return {
+        "name": result.name,
+        "status": result.status,
+        "detail": result.detail,
+    }
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -216,13 +244,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default="text",
         help="Output format for the readiness report.",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Shortcut for --report json.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     results = run_readiness_checks(Path(args.repo), args.python, args.import_zip)
-    if args.report == "json":
+    if args.json or args.report == "json":
         print_json_report(results)
     else:
         print_human_report(results)
