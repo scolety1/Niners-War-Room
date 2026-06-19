@@ -29,7 +29,7 @@ def test_transcript_includes_required_sections(monkeypatch, tmp_path: Path) -> N
     monkeypatch.setattr(
         transcript,
         "run_readiness_checks",
-        lambda _repo, _python, _zip=None: [
+        lambda _repo, _python, _zip=None, _baseline=None: [
             SimpleNamespace(name="branch", status="GREEN", detail="work/deployment-v2-discovery"),
             SimpleNamespace(name="head", status="GREEN", detail="abc123 Test"),
             SimpleNamespace(name="status", status="GREEN", detail="clean"),
@@ -41,6 +41,8 @@ def test_transcript_includes_required_sections(monkeypatch, tmp_path: Path) -> N
                 status="SKIPPED",
                 detail="no import zip supplied",
             ),
+            SimpleNamespace(name="baseline_ancestry", status="SKIPPED", detail="no baseline supplied"),
+            SimpleNamespace(name="docs_consistency_audit", status="GREEN", detail="docs ok"),
         ],
     )
     monkeypatch.setattr(
@@ -53,6 +55,7 @@ def test_transcript_includes_required_sections(monkeypatch, tmp_path: Path) -> N
 
     assert "LANE: Deployment V2" in output
     assert "READINESS RUNNER: GREEN" in output
+    assert "BASELINE ANCESTRY: SKIPPED - no baseline supplied" in output
     assert "DOCS CONSISTENCY: GREEN" in output
     assert "HOSTED DEPLOYMENT: BLOCKED" in output
     assert "FINAL VERDICT: GREEN" in output
@@ -72,7 +75,7 @@ def test_transcript_json_report_shape(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         transcript,
         "run_readiness_checks",
-        lambda _repo, _python, _zip=None: [
+        lambda _repo, _python, _zip=None, _baseline=None: [
             SimpleNamespace(name="branch", status="GREEN", detail="work/deployment-v2-discovery"),
             SimpleNamespace(name="head", status="GREEN", detail="abc123 Test"),
             SimpleNamespace(name="status", status="GREEN", detail="clean"),
@@ -80,6 +83,7 @@ def test_transcript_json_report_shape(monkeypatch, tmp_path: Path) -> None:
             SimpleNamespace(name="local_only_guard", status="GREEN", detail="passed"),
             SimpleNamespace(name="local_only_guard_report", status="GREEN", detail="verdict=GREEN"),
             SimpleNamespace(name="import_report_comparison", status="SKIPPED", detail="no zip"),
+            SimpleNamespace(name="baseline_ancestry", status="GREEN", detail="baseline ok"),
             SimpleNamespace(name="docs_consistency_audit", status="GREEN", detail="docs ok"),
         ],
     )
@@ -94,7 +98,36 @@ def test_transcript_json_report_shape(monkeypatch, tmp_path: Path) -> None:
     assert report["lane"] == "Deployment V2"
     assert report["final_verdict"] == "GREEN"
     assert report["branch"]["detail"] == "work/deployment-v2-discovery"
+    assert report["baseline_ancestry"]["status"] == "GREEN"
     assert report["hosted_deployment"] == "BLOCKED"
+
+
+def test_transcript_passes_baseline_to_readiness(monkeypatch, tmp_path: Path) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fake_readiness(_repo, _python, _zip=None, _baseline=None):
+        captured["baseline"] = _baseline
+        return [
+            SimpleNamespace(name="branch", status="GREEN", detail="work/deployment-v2-discovery"),
+            SimpleNamespace(name="head", status="GREEN", detail="abc123 Test"),
+            SimpleNamespace(name="status", status="GREEN", detail="clean"),
+            SimpleNamespace(name="diff_check", status="GREEN", detail="clean"),
+            SimpleNamespace(name="local_only_guard", status="GREEN", detail="passed"),
+            SimpleNamespace(name="local_only_guard_report", status="GREEN", detail="verdict=GREEN"),
+            SimpleNamespace(name="baseline_ancestry", status="GREEN", detail="baseline ok"),
+        ]
+
+    monkeypatch.setattr(transcript, "run_readiness_checks", fake_readiness)
+    monkeypatch.setattr(
+        transcript,
+        "audit_docs",
+        lambda _docs: [SimpleNamespace(status="GREEN", check="docs_consistency", detail="ok")],
+    )
+
+    output = transcript.build_transcript(tmp_path, sys.executable, baseline="base123")
+
+    assert captured["baseline"] == "base123"
+    assert "BASELINE ANCESTRY: GREEN - baseline ok" in output
 
 
 def test_transcript_json_cli_output_is_parseable(monkeypatch, tmp_path: Path, capsys) -> None:

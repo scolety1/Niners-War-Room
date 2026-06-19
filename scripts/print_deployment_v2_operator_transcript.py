@@ -26,8 +26,13 @@ HOSTED_BLOCKERS = [
 ]
 
 
-def build_transcript(repo: Path, python_executable: str, import_zip: str | None = None) -> str:
-    report = build_transcript_report(repo, python_executable, import_zip)
+def build_transcript(
+    repo: Path,
+    python_executable: str,
+    import_zip: str | None = None,
+    baseline: str | None = None,
+) -> str:
+    report = build_transcript_report(repo, python_executable, import_zip, baseline)
     readiness = report["readiness"]
     lines = [
         "LANE: Deployment V2",
@@ -45,6 +50,11 @@ def build_transcript(repo: Path, python_executable: str, import_zip: str | None 
             f"{readiness['local_only_guard_report']['detail']}"
         ),
         f"READINESS RUNNER: {report['readiness_verdict']}",
+        (
+            "BASELINE ANCESTRY: "
+            f"{readiness.get('baseline_ancestry', {}).get('status', 'SKIPPED')} - "
+            f"{readiness.get('baseline_ancestry', {}).get('detail', 'no baseline supplied')}"
+        ),
         f"DOCS CONSISTENCY: {report['docs_consistency']['verdict']}",
         "HOSTED DEPLOYMENT: BLOCKED",
         "V1 LOCAL-ONLY: local_only",
@@ -61,8 +71,9 @@ def build_transcript_report(
     repo: Path,
     python_executable: str,
     import_zip: str | None = None,
+    baseline: str | None = None,
 ) -> dict[str, object]:
-    readiness_results = run_readiness_checks(repo, python_executable, import_zip)
+    readiness_results = run_readiness_checks(repo, python_executable, import_zip, baseline)
     docs_findings = audit_docs(repo / "docs" / "hq" / "parallel_lanes")
     readiness = {
         result.name: {
@@ -78,6 +89,7 @@ def build_transcript_report(
         "final_verdict": final,
         "branch": readiness.get("branch", {}),
         "head": readiness.get("head", {}),
+        "baseline_ancestry": readiness.get("baseline_ancestry", {}),
         "readiness": readiness,
         "docs_consistency": {
             "verdict": docs_verdict(docs_findings),
@@ -116,6 +128,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Optional Master import verification zip for readiness comparison.",
     )
     parser.add_argument(
+        "--baseline",
+        help="Optional accepted baseline commit for readiness ancestry validation.",
+    )
+    parser.add_argument(
         "--output",
         help="Optional output path. Default prints to stdout and writes nothing.",
     )
@@ -131,11 +147,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     final_verdict = ""
     if args.json:
-        report = build_transcript_report(Path(args.repo), args.python, args.import_zip)
+        report = build_transcript_report(Path(args.repo), args.python, args.import_zip, args.baseline)
         final_verdict = str(report.get("final_verdict", ""))
         transcript = json.dumps(report, indent=2, sort_keys=True) + "\n"
     else:
-        transcript = build_transcript(Path(args.repo), args.python, args.import_zip)
+        transcript = build_transcript(Path(args.repo), args.python, args.import_zip, args.baseline)
         final_verdict = "GREEN" if "FINAL VERDICT: GREEN" in transcript else ""
     if args.output:
         Path(args.output).write_text(transcript, encoding="utf-8")
