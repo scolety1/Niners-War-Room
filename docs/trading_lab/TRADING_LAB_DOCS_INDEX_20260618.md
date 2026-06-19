@@ -101,6 +101,10 @@ ingestion, or fantasy-football lane.
   invalid transitions.
 - `TRADING_LAB_MANUAL_LIFECYCLE_SCHEMA_CONTRACT_20260618.md`: T5 formal
   lifecycle states and transitions.
+- `TRADING_LAB_T10_LIFECYCLE_VALIDATION_PLAN_20260618.md`: T10 lifecycle
+  validation plan.
+- `TRADING_LAB_LIFECYCLE_VALIDATION_EXPECTATIONS_20260618.md`: T10 lifecycle
+  transition ACCEPT/REJECT expectations.
 - `TRADING_LAB_REVIEW_CADENCE_AND_CLOSEOUT_20260618.md`: review cadence and
   closeout checklist.
 - `TRADING_LAB_MANUAL_REVIEW_PACKET_TEMPLATE_20260618.md`: T5 end-to-end
@@ -150,6 +154,8 @@ ingestion, or fantasy-football lane.
 - `TRADING_LAB_T8_SCHEMA_REGISTRY_CLOSEOUT_20260618.md`: T8 schema registry
   closeout.
 - `TRADING_LAB_T9_MANUAL_PACKET_CLOSEOUT_20260618.md`: T9 manual packet
+  closeout.
+- `TRADING_LAB_T10_LIFECYCLE_CLOSEOUT_20260618.md`: T10 lifecycle validation
   closeout.
 
 ## Ready

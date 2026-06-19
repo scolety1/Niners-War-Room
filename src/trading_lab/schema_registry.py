@@ -16,6 +16,39 @@ CORE_ARTIFACT_TYPES = (
     "blocked_work_gate",
 )
 
+LIFECYCLE_STATES = (
+    "IDEA",
+    "SOURCE_REVIEW",
+    "WATCHLIST_NOTE",
+    "RISK_REVIEW",
+    "PAPER_JOURNAL_OPEN",
+    "PAPER_REVIEW_DUE",
+    "CLOSED_LESSONS",
+    "REJECTED_PROHIBITED",
+    "HOLD_NEEDS_REVIEW",
+)
+
+VALID_LIFECYCLE_TRANSITIONS = frozenset(
+    {
+        ("IDEA", "SOURCE_REVIEW"),
+        ("SOURCE_REVIEW", "WATCHLIST_NOTE"),
+        ("WATCHLIST_NOTE", "RISK_REVIEW"),
+        ("RISK_REVIEW", "PAPER_JOURNAL_OPEN"),
+        ("PAPER_JOURNAL_OPEN", "PAPER_REVIEW_DUE"),
+        ("PAPER_REVIEW_DUE", "CLOSED_LESSONS"),
+        ("IDEA", "HOLD_NEEDS_REVIEW"),
+        ("SOURCE_REVIEW", "HOLD_NEEDS_REVIEW"),
+        ("WATCHLIST_NOTE", "HOLD_NEEDS_REVIEW"),
+        ("RISK_REVIEW", "HOLD_NEEDS_REVIEW"),
+        ("PAPER_JOURNAL_OPEN", "HOLD_NEEDS_REVIEW"),
+        ("IDEA", "REJECTED_PROHIBITED"),
+        ("SOURCE_REVIEW", "REJECTED_PROHIBITED"),
+        ("WATCHLIST_NOTE", "REJECTED_PROHIBITED"),
+        ("RISK_REVIEW", "REJECTED_PROHIBITED"),
+        ("PAPER_JOURNAL_OPEN", "REJECTED_PROHIBITED"),
+    }
+)
+
 PROHIBITED_FIELD_NAMES = frozenset(
     {
         "api_key",
@@ -125,3 +158,7 @@ def schema_for_artifact(artifact_type: str) -> ArtifactSchema | None:
 
 def prohibited_field_names_in(fields: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(field for field in fields if field.lower() in PROHIBITED_FIELD_NAMES)
+
+
+def is_valid_lifecycle_transition(from_status: str, to_status: str) -> bool:
+    return (from_status, to_status) in VALID_LIFECYCLE_TRANSITIONS

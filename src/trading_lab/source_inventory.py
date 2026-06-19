@@ -574,6 +574,35 @@ def validate_manual_review_packet(payload: Mapping[str, object]) -> tuple[Valida
     return tuple(issues)
 
 
+def validate_lifecycle_transition(
+    from_status: str,
+    to_status: str,
+    transition_note: str = "",
+) -> tuple[ValidationIssue, ...]:
+    from src.trading_lab.schema_registry import is_valid_lifecycle_transition
+
+    issues: list[ValidationIssue] = []
+    if not is_valid_lifecycle_transition(from_status, to_status):
+        issues.append(
+            ValidationIssue(
+                "transition",
+                "invalid_lifecycle_transition",
+                f"{from_status} -> {to_status} is not an allowed manual lifecycle transition.",
+            )
+        )
+    issues.extend(
+        validate_artifact_text_fields(
+            "manual_lifecycle",
+            {
+                "from_status": from_status,
+                "to_status": to_status,
+                "transition_note": transition_note,
+            },
+        )
+    )
+    return tuple(issues)
+
+
 def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
     return _pattern_text_issues(
         fields,
