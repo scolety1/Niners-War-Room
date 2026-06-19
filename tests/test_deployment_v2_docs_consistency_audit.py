@@ -38,6 +38,11 @@ def _write_doc(docs_dir: Path, text: str) -> None:
     (docs_dir / "DEPLOYMENT_V2_TEST.md").write_text(text, encoding="utf-8")
 
 
+def _write_named_doc(docs_dir: Path, name: str, text: str) -> None:
+    docs_dir.mkdir(exist_ok=True)
+    (docs_dir / name).write_text(text, encoding="utf-8")
+
+
 def _statuses(findings: list[object]) -> dict[str, str]:
     return {finding.check: finding.status for finding in findings}
 
@@ -112,6 +117,40 @@ def test_legacy_vacation_path_with_current_path_is_note(tmp_path: Path) -> None:
 
     assert audit.verdict(findings) == "GREEN"
     assert _statuses(findings)["legacy_operator_path_note"] == "NOTE"
+
+
+def test_operator_path_summary_counts_current_and_legacy_paths(tmp_path: Path) -> None:
+    _write_doc(
+        tmp_path,
+        BASE_DOC
+        + "\nHistorical path: C:\\Users\\smcol\\Documents\\Vacation\\Niners-War-Room-outcome.\n",
+    )
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert _statuses(findings)["operator_path_reference_summary"] == "NOTE"
+    summary = [
+        finding.detail
+        for finding in findings
+        if finding.check == "operator_path_reference_summary"
+    ][0]
+    assert "current desktop operator path references=1" in summary
+    assert "legacy Vacation path references=1" in summary
+
+
+def test_current_generation_legacy_operator_instruction_is_red(tmp_path: Path) -> None:
+    _write_named_doc(
+        tmp_path,
+        "DEPLOYMENT_V2_D68_TEST.md",
+        BASE_DOC
+        + "\nNormal operator path:\n"
+        + "C:\\Users\\smcol\\Documents\\Vacation\\Niners-War-Room-outcome\n",
+    )
+
+    findings = audit.audit_docs(tmp_path)
+
+    assert audit.verdict(findings) == "RED"
+    assert _statuses(findings)["legacy_operator_path_current_instruction"] == "RED"
 
 
 def test_deploy_ready_language_is_red(tmp_path: Path) -> None:

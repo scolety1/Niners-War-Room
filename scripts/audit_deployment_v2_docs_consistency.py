@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,24 @@ CURRENT_OPERATOR_PATH = r"C:\NWR\Niners-War-Room-outcome"
 LEGACY_OPERATOR_PATH = r"C:\Users\smcol\Documents\Vacation\Niners-War-Room-outcome"
 DEPLOYMENT_V2_PATH = r"C:\NWR\Niners-War-Room-deploy-v2"
 NORMAL_OPERATOR_BRANCH = "main"
+LEGACY_HISTORICAL_CONTEXTS = (
+    "historical",
+    "legacy",
+    "former",
+    "no longer",
+    "do not use",
+    "not use",
+    "source baseline",
+    "source worktree",
+)
+CURRENT_INSTRUCTION_CONTEXTS = (
+    "normal operator path",
+    "run from",
+    "set-location",
+    "recommended",
+    "use ",
+    "current",
+)
 HOSTED_TERMS = (
     "hosted deployment",
     "hosted target",
@@ -113,11 +132,58 @@ def audit_docs(docs_dir: Path) -> list[Finding]:
                     f"legacy path appears without current desktop path in {path.as_posix()}",
                 )
             )
+        legacy_current_instruction = legacy_current_instruction_detail(path, text)
+        if legacy_current_instruction:
+            findings.append(
+                Finding(
+                    "RED",
+                    "legacy_operator_path_current_instruction",
+                    legacy_current_instruction,
+                )
+            )
 
     if not findings:
         findings.append(Finding("GREEN", "docs_consistency", "Deployment V2 docs are consistent"))
 
+    findings.append(operator_path_summary(docs))
+
     return findings
+
+
+def operator_path_summary(docs: dict[Path, str]) -> Finding:
+    current_hits = sum(text.count(CURRENT_OPERATOR_PATH) for text in docs.values())
+    legacy_hits = sum(text.count(LEGACY_OPERATOR_PATH) for text in docs.values())
+    return Finding(
+        "NOTE",
+        "operator_path_reference_summary",
+        (
+            f"current desktop operator path references={current_hits}; "
+            f"legacy Vacation path references={legacy_hits}"
+        ),
+    )
+
+
+def legacy_current_instruction_detail(path: Path, text: str) -> str:
+    if not is_current_generation_doc(path):
+        return ""
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if LEGACY_OPERATOR_PATH not in line:
+            continue
+        context_lines = lines[max(0, index - 2) : min(len(lines), index + 3)]
+        context = " ".join(context_lines).lower()
+        if any(marker in context for marker in LEGACY_HISTORICAL_CONTEXTS):
+            continue
+        if any(marker in context for marker in CURRENT_INSTRUCTION_CONTEXTS):
+            return f"legacy operator path appears as current instruction in {path.as_posix()}"
+    return ""
+
+
+def is_current_generation_doc(path: Path) -> bool:
+    match = re.search(r"DEPLOYMENT_V2_D(\d+)_", path.name)
+    if match:
+        return int(match.group(1)) >= 23
+    return False
 
 
 def has_affirmative_hosted_ready_language(text: str) -> bool:
