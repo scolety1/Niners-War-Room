@@ -7,6 +7,9 @@ from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_MODES,
     TRADE_LAB_SUBTITLE,
     TRADE_LAB_TITLE,
+    WARNING_LABELS,
+    WARNING_SEVERITIES,
+    bad_trade_warning_details,
     bad_trade_warnings,
     best_trade_package,
     format_negotiation_ladder,
@@ -123,6 +126,8 @@ TRAINING_MODE_LABELS = (
     "Negotiation quality",
 )
 
+WARNING_SYSTEM_LABELS = (*WARNING_LABELS, *WARNING_SEVERITIES)
+
 
 @dataclass(frozen=True)
 class TradeLabSection:
@@ -150,6 +155,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
         ),
         TradeLabSection("Right context panel", RIGHT_CONTEXT_LABELS),
         TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
+        TradeLabSection("Bad trade detector", WARNING_SYSTEM_LABELS),
         TradeLabSection("Training Mode", TRAINING_MODE_LABELS),
     )
 
@@ -239,8 +245,11 @@ def render_trade_lab_page() -> None:
         st.caption("Warnings flag packages that need manual review before making an offer.")
         for warning in mode_context.warning_examples:
             st.warning(warning)
+        for warning in bad_trade_warning_details(best):
+            st.warning(f"[{warning.severity}] {warning.label}: {warning.message}")
         for warning in bad_trade_warnings(best):
-            st.warning(warning)
+            if warning not in {detail.message for detail in bad_trade_warning_details(best)}:
+                st.warning(warning)
 
     with right:
         st.subheader("Understand roster aftermath")

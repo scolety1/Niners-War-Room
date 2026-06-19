@@ -98,6 +98,29 @@ class DemoTradePackage:
 
 
 @dataclass(frozen=True)
+class TradeWarning:
+    label: str
+    severity: str
+    message: str
+
+
+WARNING_LABELS = (
+    "Market fair but NWR negative",
+    "NWR positive but unrealistic",
+    "Worse drop pressure",
+    "Hurts keeper structure",
+    "Gives scarce position depth",
+    "Opponent has no reason to accept",
+    "Public fantasy market source missing/stale",
+    "Includes untouchable player",
+    "Overpays for aging production",
+    "No real integration yet",
+)
+
+WARNING_SEVERITIES = ("info", "review", "caution", "walk-away")
+
+
+@dataclass(frozen=True)
 class ModeContext:
     mode: str
     user_question: str
@@ -399,11 +422,51 @@ def format_package_summary(package: DemoTradePackage) -> str:
 
 
 def bad_trade_warnings(package: DemoTradePackage) -> tuple[str, ...]:
-    warnings = list(package.warnings)
+    warnings = [warning.message for warning in bad_trade_warning_details(package)]
+    warnings.extend(package.warnings)
+    return tuple(dict.fromkeys(warnings))
+
+
+def bad_trade_warning_details(package: DemoTradePackage) -> tuple[TradeWarning, ...]:
+    warnings: list[TradeWarning] = [
+        TradeWarning(
+            "No real integration yet",
+            "info",
+            "Real values are placeholders until approved integrations are wired.",
+        )
+    ]
     if package.nwr_gain < 0:
-        warnings.append("NWR value delta is negative.")
+        warnings.append(
+            TradeWarning(
+                "Market fair but NWR negative",
+                "walk-away",
+                "NWR value delta is negative.",
+            )
+        )
     if "unrealistic" in package.public_market_fairness.lower():
-        warnings.append("Public fantasy market value says this may not be realistic.")
+        warnings.append(
+            TradeWarning(
+                "NWR positive but unrealistic",
+                "caution",
+                "Public fantasy market value says this may not be realistic.",
+            )
+        )
+    if "drop pressure improves" not in package.keeper_drop_impact.lower():
+        warnings.append(
+            TradeWarning(
+                "Worse drop pressure",
+                "review",
+                "Drop pressure does not clearly improve.",
+            )
+        )
+    if "keeper" in " ".join(package.risk_flags).lower():
+        warnings.append(
+            TradeWarning(
+                "Hurts keeper structure",
+                "caution",
+                "Package may crowd or weaken keeper structure.",
+            )
+        )
     return tuple(warnings)
 
 
