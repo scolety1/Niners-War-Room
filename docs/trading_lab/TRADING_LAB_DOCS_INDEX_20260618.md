@@ -15,8 +15,10 @@ ingestion, or fantasy-football lane.
 3. Source inventory and watchlist templates
 4. Paper, risk, and strategy journal templates
 5. Validation expectation docs
-6. Backtesting design guardrails and readiness checklist
-7. Closeout docs
+6. Schema contracts and validation inventory
+7. Backtesting design guardrails and future gates
+8. Operator workflow and manual review packets
+9. Closeout docs
 
 ## Charter And Foundation
 
@@ -34,6 +36,8 @@ ingestion, or fantasy-football lane.
   fields and fake/public-only examples.
 - `TRADING_LAB_SOURCE_INVENTORY_VALIDATION_EXAMPLES_20260618.md`: T3 examples
   showing ACCEPT, REJECT, and HOLD FOR MANUAL REVIEW outcomes.
+- `TRADING_LAB_RESEARCH_INTAKE_SCHEMA_CONTRACT_20260618.md`: T5 intake
+  fields, statuses, invalid fields, and paper-only constraints.
 
 ## Watchlist Notes
 
@@ -41,6 +45,8 @@ ingestion, or fantasy-football lane.
   fields and invalid prohibited examples.
 - `TRADING_LAB_WATCHLIST_EXAMPLES_20260618.md`: fictional safe watchlist
   examples and invalid examples.
+- `TRADING_LAB_WATCHLIST_NOTE_SCHEMA_V2_20260618.md`: T5 watchlist schema v2
+  fields, statuses, and rejection cases.
 
 ## Paper Journal
 
@@ -48,6 +54,8 @@ ingestion, or fantasy-football lane.
   journal entry fields and examples.
 - `TRADING_LAB_PAPER_JOURNAL_VALIDATION_EXPECTATIONS_20260618.md`: T3
   validation expectations for valid and invalid paper journal entries.
+- `TRADING_LAB_PAPER_JOURNAL_SCHEMA_V2_20260618.md`: T5 paper journal schema
+  v2 action statuses, review statuses, and execution wording.
 
 ## Risk Journal
 
@@ -55,6 +63,8 @@ ingestion, or fantasy-football lane.
   fields and fake examples.
 - `TRADING_LAB_RISK_JOURNAL_VALIDATION_EXPECTATIONS_20260618.md`: T3
   expectations for safe risk notes and prohibited drift.
+- `TRADING_LAB_RISK_JOURNAL_SCHEMA_V2_20260618.md`: T5 risk categories,
+  severity/probability scales, and invalid examples.
 
 ## Strategy Notes
 
@@ -62,6 +72,9 @@ ingestion, or fantasy-football lane.
   fields and fake examples.
 - `TRADING_LAB_STRATEGY_NOTE_VALIDATION_EXPECTATIONS_20260618.md`: T3
   expectations for safe strategy-note content and prohibited content.
+- `TRADING_LAB_STRATEGY_NOTE_SCHEMA_V2_20260618.md`: T5 strategy schema v2
+  validation expectations for hypotheses, assumptions, evidence, risks, and
+  invalidation notes.
 
 ## Backtesting Design
 
@@ -69,17 +82,56 @@ ingestion, or fantasy-football lane.
   before any future backtesting code exists.
 - `TRADING_LAB_BACKTESTING_READINESS_CHECKLIST_20260618.md`: T3 checklist for
   what must exist before any future implementation is separately approved.
+- `TRADING_LAB_BLOCKED_WORK_GATE_CHECKLIST_20260618.md`: T5 gate before future
+  data ingestion or backtesting can even be proposed.
+- `TRADING_LAB_FUTURE_PHASE_DECISION_GATE_20260618.md`: T6 future-phase gate
+  for proposal preconditions, required approval, and closeout expectations.
 
 ## Public Source Review
 
 - `TRADING_LAB_PUBLIC_SOURCE_REVIEW_CHECKLIST_20260618.md`: source acceptance
   checklist for public research references.
 
+## Operator Workflow And Review Packets
+
+- `TRADING_LAB_OPERATOR_MANUAL_20260618.md`: manual workflow from intake to
+  closeout.
+- `TRADING_LAB_RESEARCH_INTAKE_TEMPLATE_20260618.md`: research intake template.
+- `TRADING_LAB_MANUAL_PAPER_LIFECYCLE_20260618.md`: manual lifecycle states and
+  invalid transitions.
+- `TRADING_LAB_MANUAL_LIFECYCLE_SCHEMA_CONTRACT_20260618.md`: T5 formal
+  lifecycle states and transitions.
+- `TRADING_LAB_REVIEW_CADENCE_AND_CLOSEOUT_20260618.md`: review cadence and
+  closeout checklist.
+- `TRADING_LAB_MANUAL_REVIEW_PACKET_TEMPLATE_20260618.md`: T5 end-to-end
+  manual review packet template.
+- `TRADING_LAB_MANUAL_REVIEW_PACKET_EXAMPLES_20260618.md`: T6 valid, invalid,
+  and HOLD packet examples.
+
+## Validation Inventory And Language
+
+- `TRADING_LAB_VALIDATION_COVERAGE_MATRIX_20260618.md`: artifact-to-guardrail
+  coverage matrix.
+- `TRADING_LAB_VALIDATOR_INVENTORY_20260618.md`: T6 validator inventory across
+  docs, tests, helpers, and gaps.
+- `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
+  language rewrites.
+- `TRADING_LAB_PROHIBITED_LANGUAGE_TAXONOMY_20260618.md`: T6 taxonomy for
+  execution, broker/API, credential, private-account, advice, automation, data,
+  and generated-output language.
+
 ## Closeouts
 
 - `TRADING_LAB_T1_CLOSEOUT_20260618.md`: T1 docs-only closeout.
 - `TRADING_LAB_SAFE_RUNWAY_CLOSEOUT_20260618.md`: safe runway closeout.
 - `TRADING_LAB_T3_READINESS_CLOSEOUT_20260618.md`: T3 readiness closeout.
+- `TRADING_LAB_T4_OPERATOR_WORKFLOW_CLOSEOUT_20260618.md`: T4 operator workflow
+  closeout.
+- `TRADING_LAB_T5_SCHEMA_AND_GATES_CLOSEOUT_20260618.md`: T5 schema and gates
+  closeout.
+- `TRADING_LAB_T6_READINESS_AUDIT_20260618.md`: T6 readiness audit.
+- `TRADING_LAB_T6_VALIDATION_READINESS_CLOSEOUT_20260618.md`: T6 validation
+  readiness closeout.
 
 ## Ready
 
