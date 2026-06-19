@@ -248,6 +248,7 @@ def render_trade_lab_page() -> None:
             st.write(f"Keeper/Drop Impact: {best.keeper_drop_impact}")
             st.write(f"Risk: {', '.join(best.risk_flags)}")
             st.write(f"Verdict: {best.verdict}")
+            st.caption(best.explanation_summary)
 
         st.subheader("Ranked packages")
         for rank, package in enumerate(sort_packages_by_review_score(packages), start=1):
@@ -259,6 +260,7 @@ def render_trade_lab_page() -> None:
                 st.write(f"Keeper/Drop Impact: {package.keeper_drop_impact}")
                 st.write(f"Risk: {', '.join(package.risk_flags)}")
                 st.write(f"Verdict: {package.verdict}")
+                st.caption(package.explanation_summary)
 
         st.subheader("Negotiation ladder")
         for ladder_line in format_negotiation_ladder(best.negotiation_ladder):

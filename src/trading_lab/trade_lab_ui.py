@@ -95,15 +95,18 @@ class DemoTradePackage:
     negotiation_ladder: NegotiationLadder
     warnings: tuple[str, ...]
     roster_aftermath: RosterAftermath
+    explanation_summary: str = "Review note only."
 
 
 def _demo_package_from_review(review) -> DemoTradePackage:
+    from src.trading_lab.trade_explanations import build_trade_explanation
     from src.trading_lab.trade_negotiation import build_negotiation_ladder
     from src.trading_lab.trade_roster_effects import build_roster_aftermath
     from src.trading_lab.trade_warning_engine import build_trade_warnings
 
     package = review.package
     warnings = tuple(warning.message for warning in build_trade_warnings(review))
+    explanation = build_trade_explanation(review)
     return DemoTradePackage(
         mode=package.mode,
         give=tuple(asset.display_name for asset in package.give_side.assets),
@@ -118,6 +121,7 @@ def _demo_package_from_review(review) -> DemoTradePackage:
         negotiation_ladder=build_negotiation_ladder(review),
         warnings=warnings,
         roster_aftermath=build_roster_aftermath(review),
+        explanation_summary=explanation.summary,
     )
 
 
