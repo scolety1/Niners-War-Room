@@ -31,6 +31,21 @@ UNWIRED_INTEGRATION_NOTICE = (
     "rookie board, and mock draft integrations are not wired yet."
 )
 
+FAKE_DATA_DISCLAIMER = (
+    "Desktop smoke build: fake in-memory examples only. Real integrations are "
+    "not wired yet."
+)
+
+SCORE_LABELS = (
+    "NWR Gain",
+    "Market Fairness",
+    "Opponent Fit",
+    "Roster Impact",
+    "Keeper/Drop Impact",
+    "Risk",
+    "Verdict",
+)
+
 LEFT_CONTROL_LABELS = (
     "Trade question",
     "Mode",
@@ -48,6 +63,7 @@ LEFT_CONTROL_LABELS = (
 )
 
 CENTER_SECTION_LABELS = (
+    "Review board",
     "Best trade",
     "Ranked packages",
     "Negotiation ladder",
@@ -102,17 +118,21 @@ class TradeLabSection:
 def trade_lab_sections() -> tuple[TradeLabSection, ...]:
     return (
         TradeLabSection(
-            "Header",
+    "Header",
             (
                 TRADE_LAB_TITLE,
                 TRADE_LAB_SUBTITLE,
                 *TRADE_LAB_DATA_CHIPS,
+                FAKE_DATA_DISCLAIMER,
                 UNWIRED_INTEGRATION_NOTICE,
             ),
         ),
         TradeLabSection("Desktop layout", DESKTOP_SECTION_LABELS),
         TradeLabSection("Left control panel", LEFT_CONTROL_LABELS),
-        TradeLabSection("Center results", (*CENTER_SECTION_LABELS, *RESULT_CARD_LABELS)),
+        TradeLabSection(
+            "Center results",
+            (*CENTER_SECTION_LABELS, *RESULT_CARD_LABELS, *SCORE_LABELS),
+        ),
         TradeLabSection("Right context panel", RIGHT_CONTEXT_LABELS),
         TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
         TradeLabSection("Training Mode", TRAINING_MODE_LABELS),
@@ -133,8 +153,9 @@ def render_trade_lab_page() -> None:
     st.set_page_config(page_title=TRADE_LAB_TITLE, layout="wide")
     st.title(TRADE_LAB_TITLE)
     st.subheader(TRADE_LAB_SUBTITLE)
-    st.caption("Fantasy trade package simulator - fake demo data only")
+    st.caption("Fantasy trade package simulator - desktop review build")
     st.write(" ".join(f"`{chip}`" for chip in TRADE_LAB_DATA_CHIPS))
+    st.warning(FAKE_DATA_DISCLAIMER)
     st.info(UNWIRED_INTEGRATION_NOTICE)
 
     left, center, right = st.columns((0.9, 1.7, 1.1), gap="large")
@@ -163,16 +184,19 @@ def render_trade_lab_page() -> None:
         )
 
     with center:
-        st.subheader("Review candidate packages")
+        st.subheader("Review board")
+        st.caption("Ranked by fake NWR gain, market realism, opponent fit, and roster effect.")
         st.markdown("### Best trade")
         with st.container(border=True):
             st.markdown(f"**Package summary:** {format_package_summary(best)}")
             col_a, col_b, col_c = st.columns(3)
-            col_a.metric("NWR value gain", f"+{best.nwr_gain:.1f}")
-            col_b.metric("Public fantasy market fairness", "Realistic")
-            col_c.metric("Opponent fit", "Strong")
-            st.write(f"Roster impact: {best.roster_impact}")
-            st.write(f"Manual review verdict: {best.verdict}")
+            col_a.metric("NWR Gain", f"+{best.nwr_gain:.1f}")
+            col_b.metric("Market Fairness", "Realistic")
+            col_c.metric("Opponent Fit", "Strong")
+            st.write(f"Roster Impact: {best.roster_impact}")
+            st.write(f"Keeper/Drop Impact: {best.keeper_drop_impact}")
+            st.write(f"Risk: {', '.join(best.risk_flags)}")
+            st.write(f"Verdict: {best.verdict}")
 
         st.subheader("Ranked packages")
         for rank, package in enumerate(
@@ -181,10 +205,12 @@ def render_trade_lab_page() -> None:
         ):
             with st.container(border=True):
                 st.markdown(f"**#{rank}: {format_package_summary(package)}**")
-                st.write(f"Public fantasy market fairness: {package.public_market_fairness}")
-                st.write(f"Opponent fit: {package.opponent_fit}")
-                st.write(f"Roster impact: {package.roster_impact}")
-                st.write(f"Risk flags: {', '.join(package.risk_flags)}")
+                st.write(f"Market Fairness: {package.public_market_fairness}")
+                st.write(f"Opponent Fit: {package.opponent_fit}")
+                st.write(f"Roster Impact: {package.roster_impact}")
+                st.write(f"Keeper/Drop Impact: {package.keeper_drop_impact}")
+                st.write(f"Risk: {', '.join(package.risk_flags)}")
+                st.write(f"Verdict: {package.verdict}")
 
         st.subheader("Negotiation ladder")
         st.markdown(f"- **Opening offer:** {best.negotiation_ladder.opening_offer}")
