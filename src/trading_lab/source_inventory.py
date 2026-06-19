@@ -206,6 +206,10 @@ FUTURE_PHASE_ALLOW_RESEARCH_ONLY = "ALLOW_RESEARCH_ONLY"
 FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL = "HOLD_NEEDS_EXPLICIT_APPROVAL"
 FUTURE_PHASE_REJECT_PROHIBITED = "REJECT_PROHIBITED"
 
+SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE = "ACCEPT_PUBLIC_MANUAL_REFERENCE"
+SOURCE_POLICY_HOLD_NEEDS_REVIEW = "HOLD_NEEDS_REVIEW"
+SOURCE_POLICY_REJECT_PROHIBITED = "REJECT_PROHIBITED"
+
 FUTURE_PHASE_REJECT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
@@ -696,6 +700,60 @@ def validate_future_phase_request(request_text: str) -> tuple[ValidationIssue, .
             "future_phase_request",
             "reject_prohibited_work",
             "This proposal includes prohibited Trading Lab work.",
+        ),
+    )
+
+
+def classify_source_policy_payload(payload: Mapping[str, object]) -> str:
+    text = " ".join(_collect_text_fields(payload).values())
+    normalized = text.lower()
+    if any(
+        phrase in normalized
+        for phrase in (
+            "private brokerage",
+            "brokerage export",
+            "account balance",
+            "broker credential",
+            "api key",
+            "broker token",
+            "secret",
+        )
+    ):
+        return SOURCE_POLICY_REJECT_PROHIBITED
+    if any(
+        phrase in normalized
+        for phrase in (
+            "terms unclear",
+            "license unclear",
+            "review required",
+            "paid data",
+            "private data dump",
+            "redistribution unclear",
+        )
+    ):
+        return SOURCE_POLICY_HOLD_NEEDS_REVIEW
+    return SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE
+
+
+def validate_source_policy_payload(
+    payload: Mapping[str, object],
+) -> tuple[ValidationIssue, ...]:
+    classification = classify_source_policy_payload(payload)
+    if classification == SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE:
+        return ()
+    if classification == SOURCE_POLICY_HOLD_NEEDS_REVIEW:
+        return (
+            ValidationIssue(
+                "source_policy",
+                "hold_source_policy_review",
+                "Source policy requires manual review before use.",
+            ),
+        )
+    return (
+        ValidationIssue(
+            "source_policy",
+            "reject_prohibited_source_policy",
+            "Source policy includes prohibited source material.",
         ),
     )
 

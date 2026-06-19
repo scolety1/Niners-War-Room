@@ -34,6 +34,12 @@ ingestion, or fantasy-football lane.
 
 - `TRADING_LAB_SOURCE_INVENTORY_TEMPLATE_20260618.md`: required source review
   fields and fake/public-only examples.
+- `TRADING_LAB_T18_SOURCE_POLICY_GATE_PLAN_20260618.md`: T18 source policy gate
+  plan.
+- `TRADING_LAB_SOURCE_LICENSE_REVIEW_TEMPLATE_20260618.md`: manual license and
+  terms review template, not legal advice.
+- `TRADING_LAB_SOURCE_POLICY_DECISION_TREE_20260618.md`: ACCEPT/HOLD/REJECT
+  source policy decision tree.
 - `TRADING_LAB_SOURCE_INVENTORY_VALIDATION_EXAMPLES_20260618.md`: T3 examples
   showing ACCEPT, REJECT, and HOLD FOR MANUAL REVIEW outcomes.
 - `TRADING_LAB_RESEARCH_INTAKE_SCHEMA_CONTRACT_20260618.md`: T5 intake
@@ -207,6 +213,8 @@ ingestion, or fantasy-football lane.
   corpus closeout.
 - `TRADING_LAB_T17_NO_ADVICE_CLOSEOUT_20260618.md`: T17 no-advice language
   lock closeout.
+- `TRADING_LAB_T18_SOURCE_POLICY_CLOSEOUT_20260618.md`: T18 source policy gate
+  closeout.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 
