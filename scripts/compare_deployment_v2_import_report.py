@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -198,6 +199,49 @@ def print_result(result: ComparisonResult) -> None:
         print(f"- current HEAD: {result.current.head_short} {result.current.commit_subject}")
 
 
+def result_to_dict(result: ComparisonResult) -> dict[str, object]:
+    return {
+        "verdict": result.verdict,
+        "reasons": result.messages,
+        "report_head": None
+        if result.report is None
+        else {
+            "full": result.report.head_full,
+            "short": result.report.head_short,
+            "subject": result.report.commit_subject,
+            "verdict": result.report.verdict,
+        },
+        "current_head": None
+        if result.current is None
+        else {
+            "full": result.current.head_full,
+            "short": result.current.head_short,
+            "subject": result.current.commit_subject,
+        },
+        "ancestor_or_match": None
+        if result.current is None
+        else (
+            result.report is not None
+            and (
+                result.current.head_full == result.report.head_full
+                or bool(result.current.report_head_is_ancestor)
+            )
+        ),
+        "clean_status": None
+        if result.current is None
+        else {
+            "clean": not bool(result.current.status_short),
+            "status_short": result.current.status_short,
+        },
+        "diff_check": None
+        if result.current is None
+        else {
+            "clean": not bool(result.current.diff_check_output),
+            "output": result.current.diff_check_output,
+        },
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Compare current Deployment V2 branch state to a Master import zip report."
@@ -208,6 +252,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=".",
         help="Deployment V2 repository root. Defaults to the current working directory.",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON comparison output.",
+    )
     return parser.parse_args(argv)
 
 
@@ -217,7 +266,10 @@ def main(argv: list[str] | None = None) -> int:
     report, error = read_deployment_report(Path(args.zip_path))
     current = current_state(repo, report.head_full if report is not None else None)
     result = compare(report, current, error)
-    print_result(result)
+    if args.json:
+        print(json.dumps(result_to_dict(result), indent=2, sort_keys=True))
+    else:
+        print_result(result)
     if result.verdict == "GREEN":
         return 0
     if result.verdict == "YELLOW":
