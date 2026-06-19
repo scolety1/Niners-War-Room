@@ -66,3 +66,10 @@ approved, and never commit real files or manifest paths.
 Stop for wrong branch, dirty unexpected files, `uv.lock` changes, staged real
 data, any app/production/Outcome/Rookie/Drop Decision cross-lane edit, any
 simulation path, or ADP/market-to-private-value mixing.
+
+## Fixture Operator Practice Update
+
+Fixture-only operator practice is available for status, available assets, manual
+draft marking, undo, history, upcoming NWR picks, and state validation. It uses
+fake fixtures only, writes no files by default, and does not approve real draft
+simulation or real-input use.

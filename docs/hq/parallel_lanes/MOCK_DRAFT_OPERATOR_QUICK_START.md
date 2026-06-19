@@ -41,3 +41,18 @@ preflight result, closeout status result, focused pytest/Ruff result, and
 whether any real data was copied or committed.
 
 No simulation command belongs in this quick start.
+
+## Fixture Operator Practice
+
+Use fixture practice only:
+
+```powershell
+$uv = "C:\Users\codex-agent\.local\bin\uv.exe"
+& $uv run --locked python -B scripts/mock_draft_operator_practice.py demo
+& $uv run --locked python -B scripts/mock_draft_operator_practice.py status
+& $uv run --locked python -B scripts/mock_draft_operator_practice.py available
+& $uv run --locked python -B scripts/mock_draft_operator_practice.py validate
+```
+
+These commands are for fake fixture rehearsal only. They do not read real inputs
+or run a real simulation.

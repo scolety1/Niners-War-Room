@@ -208,3 +208,11 @@ Unsafe actions remain:
 - Needs additional runway? Yes. The next runway should be operator workflow
   design/prototype with fake fixtures only, or real-input validation once Master
   supplies confirmed local paths.
+
+## Fixture Operator Workflow Update
+
+The fixture-only operator workflow now has a command-driven practice path for
+status, available assets, manual mark drafted, undo, history, upcoming NWR picks,
+and validation. This improves practice readiness, but it still does not create a
+real draft-use mode, production UI, automated opponent algorithm, or simulation
+approval.

@@ -35,3 +35,11 @@
 
 Send branch, HEAD, status, readiness color, missing inputs, schema violations,
 validation command results, and confirmation that no simulations ran.
+
+## Fixture Operator Practice Gate
+
+Before real inputs arrive, operators may rehearse only with the fixture practice
+script. Confirm that `demo`, `status`, `available`, and `validate` run with
+fixture-only and no-real-simulation language. This does not clear the real
+draft-use HOLD; live mode still requires a GREEN real manifest and owner-approved
+inputs.
