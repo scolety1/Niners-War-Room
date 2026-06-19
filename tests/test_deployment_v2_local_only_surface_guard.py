@@ -49,3 +49,40 @@ def test_guard_flags_container_manifest_and_deploy_command(tmp_path: Path) -> No
     assert "package.json" in paths
     assert "hosted/container/platform manifest is present" in reasons
     assert "package.json deploy script exists: deploy" in reasons
+
+
+def test_guard_report_json_shape_for_clean_local_tree(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text(
+        json.dumps({"scripts": {"local": "streamlit run app/main.py"}}),
+        encoding="utf-8",
+    )
+
+    report = guard.build_report(tmp_path)
+    json_report = guard.report_to_json_dict(report)
+
+    assert json_report["verdict"] == "GREEN"
+    assert json_report["checked_path_count"] == 1
+    assert json_report["blocked_surface_count"] == 0
+    assert json_report["reason_summary"] == {}
+    assert json_report["violations"] == []
+    assert "command_surface_files" in json_report["checked_categories"]
+
+
+def test_guard_report_json_shape_for_blocked_surface(tmp_path: Path) -> None:
+    (tmp_path / "Procfile").write_text("not a real deployment fixture\n", encoding="utf-8")
+
+    report = guard.build_report(tmp_path)
+    json_report = guard.report_to_json_dict(report)
+
+    assert json_report["verdict"] == "RED"
+    assert json_report["blocked_surface_count"] == 1
+    assert json_report["reason_summary"] == {
+        "hosted/container/platform manifest is present": 1
+    }
+    assert json_report["violations"] == [
+        {
+            "path": "Procfile",
+            "reason": "hosted/container/platform manifest is present",
+        }
+    ]

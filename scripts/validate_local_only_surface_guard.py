@@ -85,6 +85,17 @@ class Violation:
     reason: str
 
 
+@dataclass(frozen=True)
+class GuardReport:
+    verdict: str
+    root: Path
+    checked_path_count: int
+    checked_categories: dict[str, object]
+    blocked_surface_count: int
+    reason_summary: dict[str, int]
+    violations: list[Violation]
+
+
 def iter_repo_files(root: Path) -> list[Path]:
     files: list[Path] = []
     for path in root.rglob("*"):
@@ -172,9 +183,66 @@ def scan_repository(root: Path) -> list[Violation]:
     return sorted(violations, key=lambda violation: violation.path.as_posix())
 
 
+def build_report(root: Path) -> GuardReport:
+    root = root.resolve()
+    files = iter_repo_files(root)
+    violations: list[Violation] = []
+
+    for path in files:
+        path_violation = path_surface_violation(root, path)
+        if path_violation is not None:
+            violations.append(path_violation)
+        violations.extend(command_surface_violations(root, path))
+
+    violations = sorted(violations, key=lambda violation: violation.path.as_posix())
+    reason_summary: dict[str, int] = {}
+    for violation in violations:
+        reason_summary[violation.reason] = reason_summary.get(violation.reason, 0) + 1
+
+    return GuardReport(
+        verdict="GREEN" if not violations else "RED",
+        root=root,
+        checked_path_count=len(files),
+        checked_categories={
+            "skipped_dirs": sorted(SKIPPED_DIRS),
+            "prohibited_exact_files": sorted(PROHIBITED_EXACT_FILES),
+            "prohibited_path_segments": sorted(PROHIBITED_PATH_SEGMENTS),
+            "command_surface_files": sorted(COMMAND_SURFACE_FILES),
+            "deploy_command_patterns": [pattern.pattern for pattern in DEPLOY_COMMAND_PATTERNS],
+        },
+        blocked_surface_count=len(violations),
+        reason_summary=dict(sorted(reason_summary.items())),
+        violations=violations,
+    )
+
+
+def report_to_json_dict(report: GuardReport) -> dict[str, object]:
+    return {
+        "verdict": report.verdict,
+        "root": str(report.root),
+        "checked_path_count": report.checked_path_count,
+        "checked_categories": report.checked_categories,
+        "blocked_surface_count": report.blocked_surface_count,
+        "reason_summary": report.reason_summary,
+        "violations": [
+            {
+                "path": violation.path.as_posix(),
+                "reason": violation.reason,
+            }
+            for violation in report.violations
+        ],
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate that Deployment V2 remains local-only and discovery-only."
+    )
+    parser.add_argument(
+        "--report",
+        choices=["text", "json"],
+        default="text",
+        help="Output format. Text preserves the original human-readable guard output.",
     )
     parser.add_argument(
         "root",
@@ -187,8 +255,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    root = Path(args.root)
-    violations = scan_repository(root)
+    report = build_report(Path(args.root))
+    violations = report.violations
+
+    if args.report == "json":
+        print(json.dumps(report_to_json_dict(report), indent=2, sort_keys=True))
+        return 0 if report.verdict == "GREEN" else 1
 
     if violations:
         print("Deployment V2 local-only surface guard failed:")
