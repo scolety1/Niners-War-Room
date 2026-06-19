@@ -187,13 +187,34 @@ def check_docs_audit(repo: Path, python_executable: str) -> CheckResult:
     return CheckResult("docs_consistency_audit", "RED", output)
 
 
+def check_schema_smoke_tests(repo: Path, python_executable: str) -> CheckResult:
+    test_file = repo / "tests" / "test_deployment_v2_validation_report_schemas.py"
+    if not test_file.exists():
+        return CheckResult("schema_smoke_tests", "SKIPPED", "schema smoke tests not present")
+
+    result = run_command(
+        repo,
+        [
+            python_executable,
+            "-m",
+            "pytest",
+            "tests/test_deployment_v2_validation_report_schemas.py",
+        ],
+    )
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode == 0:
+        return CheckResult("schema_smoke_tests", "GREEN", output)
+    return CheckResult("schema_smoke_tests", "RED", output)
+
+
 def run_readiness_checks(
     repo: Path,
     python_executable: str,
     import_zip: str | None = None,
     baseline: str | None = None,
+    all_checks: bool = False,
 ) -> list[CheckResult]:
-    return [
+    results = [
         check_branch(repo),
         check_head(repo),
         check_status(repo),
@@ -204,6 +225,9 @@ def run_readiness_checks(
         check_baseline_ancestry(repo, python_executable, baseline),
         check_docs_audit(repo, python_executable),
     ]
+    if all_checks:
+        results.append(check_schema_smoke_tests(repo, python_executable))
+    return results
 
 
 def print_human_report(results: list[CheckResult]) -> None:
@@ -242,6 +266,7 @@ def readiness_json_report(results: list[CheckResult]) -> dict[str, object]:
         "import_report": check_to_dict(by_name.get("import_report_comparison")),
         "baseline_ancestry": check_to_dict(by_name.get("baseline_ancestry")),
         "docs_audit": check_to_dict(by_name.get("docs_consistency_audit")),
+        "schema_smoke_tests": check_to_dict(by_name.get("schema_smoke_tests")),
         "skipped_checks": skipped,
         "blockers": blockers,
         "violations": violations,
@@ -296,12 +321,23 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Shortcut for --report json.",
     )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run every available safe Deployment V2 validation layer.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    results = run_readiness_checks(Path(args.repo), args.python, args.import_zip, args.baseline)
+    results = run_readiness_checks(
+        Path(args.repo),
+        args.python,
+        args.import_zip,
+        args.baseline,
+        args.all,
+    )
     if args.json or args.report == "json":
         print_json_report(results)
     else:

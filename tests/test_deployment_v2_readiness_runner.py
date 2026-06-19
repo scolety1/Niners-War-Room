@@ -153,6 +153,7 @@ def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
         "import_report",
         "baseline_ancestry",
         "docs_audit",
+        "schema_smoke_tests",
         "skipped_checks",
         "blockers",
         "violations",
@@ -162,6 +163,7 @@ def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
     assert output["branch"]["status"] == "GREEN"
     assert output["clean_status"]["detail"] == "clean"
     assert output["docs_audit"]["status"] == "GREEN"
+    assert output["schema_smoke_tests"]["status"] == "SKIPPED"
 
 
 def test_readiness_json_report_includes_non_green_checks(monkeypatch) -> None:
@@ -203,3 +205,16 @@ def test_readiness_runner_human_output_still_works(capsys) -> None:
 
     assert "Deployment V2 readiness verdict: GREEN" in output
     assert "- branch: GREEN - work/deployment-v2-discovery" in output
+
+
+def test_readiness_all_checks_adds_schema_smoke_tests(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    def fake_schema_smoke(_repo: Path, _python: str):
+        return runner.CheckResult("schema_smoke_tests", "GREEN", "schema tests passed")
+
+    monkeypatch.setattr(runner, "check_schema_smoke_tests", fake_schema_smoke)
+
+    results = runner.run_readiness_checks(Path("."), sys.executable, all_checks=True)
+
+    assert {result.name: result.status for result in results}["schema_smoke_tests"] == "GREEN"
