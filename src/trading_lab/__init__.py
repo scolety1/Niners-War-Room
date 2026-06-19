@@ -1,5 +1,14 @@
 """Research-only Trading Lab contracts and validators."""
 
+from src.trading_lab.schema_registry import (
+    ALLOWED_STATUS_BY_ARTIFACT,
+    CORE_ARTIFACT_TYPES,
+    PROHIBITED_FIELD_NAMES,
+    SCHEMA_REGISTRY,
+    ArtifactSchema,
+    prohibited_field_names_in,
+    schema_for_artifact,
+)
 from src.trading_lab.source_inventory import (
     ALLOWED_SOURCE_CATEGORIES,
     ALLOWED_SOURCE_USES,
@@ -22,14 +31,21 @@ from src.trading_lab.source_inventory import (
 __all__ = [
     "ALLOWED_SOURCE_CATEGORIES",
     "ALLOWED_SOURCE_USES",
+    "ALLOWED_STATUS_BY_ARTIFACT",
+    "CORE_ARTIFACT_TYPES",
     "MANUAL_ARTIFACT_REQUIRED_FIELDS",
-    "PROHIBITED_SOURCE_CATEGORIES",
     "PAPER_JOURNAL_REQUIRED_FIELDS",
+    "PROHIBITED_FIELD_NAMES",
+    "PROHIBITED_SOURCE_CATEGORIES",
+    "SCHEMA_REGISTRY",
+    "ArtifactSchema",
     "PaperJournalEntry",
     "ResearchSourceMetadata",
     "ValidationIssue",
     "WatchlistNote",
     "assert_valid_source_metadata",
+    "prohibited_field_names_in",
+    "schema_for_artifact",
     "validate_artifact_text_fields",
     "validate_manual_artifact_payload",
     "validate_paper_journal_entry",

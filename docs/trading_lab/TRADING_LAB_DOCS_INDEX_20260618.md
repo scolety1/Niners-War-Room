@@ -118,6 +118,11 @@ ingestion, or fantasy-football lane.
   manual artifact validators.
 - `TRADING_LAB_T7_VALIDATOR_COVERAGE_20260618.md`: T7 ACCEPT/REJECT/HOLD
   coverage summary.
+- `TRADING_LAB_T8_SCHEMA_REGISTRY_PLAN_20260618.md`: T8 schema registry plan.
+- `TRADING_LAB_SCHEMA_REGISTRY_20260618.md`: centralized docs-only artifact
+  schema registry.
+- `TRADING_LAB_FAKE_EXAMPLE_CORPUS_20260618.md`: inline fake ACCEPT/HOLD/REJECT
+  examples for docs and tests.
 - `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
   language rewrites.
 - `TRADING_LAB_PROHIBITED_LANGUAGE_TAXONOMY_20260618.md`: T6 taxonomy for
@@ -138,6 +143,8 @@ ingestion, or fantasy-football lane.
   readiness closeout.
 - `TRADING_LAB_T7_ARTIFACT_VALIDATOR_CLOSEOUT_20260618.md`: T7 artifact
   validator closeout.
+- `TRADING_LAB_T8_SCHEMA_REGISTRY_CLOSEOUT_20260618.md`: T8 schema registry
+  closeout.
 
 ## Ready
 
