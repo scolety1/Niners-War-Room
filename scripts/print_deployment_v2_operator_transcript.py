@@ -31,8 +31,9 @@ def build_transcript(
     python_executable: str,
     import_zip: str | None = None,
     baseline: str | None = None,
+    all_checks: bool = False,
 ) -> str:
-    report = build_transcript_report(repo, python_executable, import_zip, baseline)
+    report = build_transcript_report(repo, python_executable, import_zip, baseline, all_checks)
     readiness = report["readiness"]
     lines = [
         "LANE: Deployment V2",
@@ -50,6 +51,7 @@ def build_transcript(
             f"{readiness['local_only_guard_report']['detail']}"
         ),
         f"READINESS RUNNER: {report['readiness_verdict']}",
+        f"ALL CHECKS: {'yes' if report['all_checks'] else 'no'}",
         (
             "BASELINE ANCESTRY: "
             f"{readiness.get('baseline_ancestry', {}).get('status', 'SKIPPED')} - "
@@ -72,8 +74,15 @@ def build_transcript_report(
     python_executable: str,
     import_zip: str | None = None,
     baseline: str | None = None,
+    all_checks: bool = False,
 ) -> dict[str, object]:
-    readiness_results = run_readiness_checks(repo, python_executable, import_zip, baseline)
+    readiness_results = run_readiness_checks(
+        repo,
+        python_executable,
+        import_zip,
+        baseline,
+        all_checks,
+    )
     docs_findings = audit_docs(repo / "docs" / "hq" / "parallel_lanes")
     readiness = {
         result.name: {
@@ -85,6 +94,7 @@ def build_transcript_report(
     final = overall_verdict(readiness_results)
     return {
         "lane": "Deployment V2",
+        "all_checks": all_checks,
         "readiness_verdict": final,
         "final_verdict": final,
         "branch": readiness.get("branch", {}),
@@ -140,6 +150,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Emit machine-readable JSON transcript.",
     )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Use readiness runner all-checks mode.",
+    )
     return parser.parse_args(argv)
 
 
@@ -147,11 +162,23 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     final_verdict = ""
     if args.json:
-        report = build_transcript_report(Path(args.repo), args.python, args.import_zip, args.baseline)
+        report = build_transcript_report(
+            Path(args.repo),
+            args.python,
+            args.import_zip,
+            args.baseline,
+            args.all,
+        )
         final_verdict = str(report.get("final_verdict", ""))
         transcript = json.dumps(report, indent=2, sort_keys=True) + "\n"
     else:
-        transcript = build_transcript(Path(args.repo), args.python, args.import_zip, args.baseline)
+        transcript = build_transcript(
+            Path(args.repo),
+            args.python,
+            args.import_zip,
+            args.baseline,
+            args.all,
+        )
         final_verdict = "GREEN" if "FINAL VERDICT: GREEN" in transcript else ""
     if args.output:
         Path(args.output).write_text(transcript, encoding="utf-8")
