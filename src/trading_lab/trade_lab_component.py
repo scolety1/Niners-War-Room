@@ -24,6 +24,7 @@ from src.trading_lab.trade_lab_ui import (
 )
 from src.trading_lab.trade_provenance import ui_data_status_labels
 from src.trading_lab.trade_review_queue import review_queue_placeholder_labels
+from src.trading_lab.trade_scenarios import scenario_titles
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
 
@@ -57,6 +58,7 @@ PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS = (
 PROVENANCE_STATUS_LABELS = ui_data_status_labels()
 REVIEW_QUEUE_PLACEHOLDER_LABELS = review_queue_placeholder_labels()
 DISABLED_PROVIDER_STATUS_LABELS = disabled_provider_status_labels()
+SCENARIO_COVERAGE_LABELS = scenario_titles()
 
 FAKE_DATA_DISCLAIMER = (
     "Desktop smoke build: fake in-memory examples only. Real integrations are "
@@ -183,6 +185,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
         ),
         TradeLabSection("Review queue placeholder", REVIEW_QUEUE_PLACEHOLDER_LABELS),
         TradeLabSection("Disabled provider states", DISABLED_PROVIDER_STATUS_LABELS),
+        TradeLabSection("Scenario coverage", SCENARIO_COVERAGE_LABELS),
     )
 
 
