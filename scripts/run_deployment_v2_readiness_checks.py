@@ -149,6 +149,19 @@ def check_import_report(
     return CheckResult("import_report_comparison", "RED", output)
 
 
+def check_docs_audit(repo: Path, python_executable: str) -> CheckResult:
+    result = run_command(
+        repo,
+        [python_executable, "scripts/audit_deployment_v2_docs_consistency.py"],
+    )
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode == 0:
+        return CheckResult("docs_consistency_audit", "GREEN", output)
+    if result.returncode == 2:
+        return CheckResult("docs_consistency_audit", "YELLOW", output)
+    return CheckResult("docs_consistency_audit", "RED", output)
+
+
 def run_readiness_checks(
     repo: Path,
     python_executable: str,
@@ -162,6 +175,7 @@ def run_readiness_checks(
         check_local_guard_text(repo, python_executable),
         check_local_guard_report(repo, python_executable),
         check_import_report(repo, python_executable, import_zip),
+        check_docs_audit(repo, python_executable),
     ]
 
 
@@ -199,6 +213,7 @@ def readiness_json_report(results: list[CheckResult]) -> dict[str, object]:
         "local_only_guard": check_to_dict(by_name.get("local_only_guard")),
         "guard_report": check_to_dict(by_name.get("local_only_guard_report")),
         "import_report": check_to_dict(by_name.get("import_report_comparison")),
+        "docs_audit": check_to_dict(by_name.get("docs_consistency_audit")),
         "skipped_checks": skipped,
         "blockers": blockers,
         "violations": violations,

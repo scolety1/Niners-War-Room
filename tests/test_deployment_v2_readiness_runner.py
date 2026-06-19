@@ -55,6 +55,8 @@ def _fake_run_command(
             return _completed(command, stdout=json.dumps(report))
         if command[-1:] == ["scripts/validate_local_only_surface_guard.py"]:
             return _completed(command, returncode=guard_returncode, stdout=guard_output)
+        if command[-1:] == ["scripts/audit_deployment_v2_docs_consistency.py"]:
+            return _completed(command, stdout="Deployment V2 docs consistency verdict: GREEN\n")
         raise AssertionError(f"unexpected command: {command}")
 
     return fake_run_command
@@ -128,6 +130,7 @@ def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
         "local_only_guard",
         "guard_report",
         "import_report",
+        "docs_audit",
         "skipped_checks",
         "blockers",
         "violations",
@@ -136,6 +139,7 @@ def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
     assert output["verdict"] == "GREEN"
     assert output["branch"]["status"] == "GREEN"
     assert output["clean_status"]["detail"] == "clean"
+    assert output["docs_audit"]["status"] == "GREEN"
 
 
 def test_readiness_json_report_includes_non_green_checks(monkeypatch) -> None:
