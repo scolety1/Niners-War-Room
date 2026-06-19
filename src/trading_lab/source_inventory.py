@@ -66,6 +66,52 @@ PAPER_JOURNAL_REQUIRED_FIELDS = (
     "notes",
 )
 
+MANUAL_ARTIFACT_REQUIRED_FIELDS = {
+    "research_intake": (
+        "intake_id",
+        "date",
+        "research_question",
+        "paper_only_intent",
+        "status",
+    ),
+    "manual_lifecycle": (
+        "lifecycle_id",
+        "from_status",
+        "to_status",
+        "transition_reason",
+        "guardrail_check",
+    ),
+    "watchlist_note": WATCHLIST_NOTE_REQUIRED_FIELDS,
+    "strategy_note": (
+        "strategy_note_id",
+        "title",
+        "research_question",
+        "hypothesis",
+        "evidence_sources",
+        "risks",
+        "invalidation_conditions",
+        "status",
+    ),
+    "risk_journal": (
+        "risk_id",
+        "risk_category",
+        "risk_description",
+        "severity",
+        "probability",
+        "mitigation_note",
+        "status",
+    ),
+    "paper_journal": PAPER_JOURNAL_REQUIRED_FIELDS,
+    "manual_review_packet": (
+        "packet_id",
+        "research_item_id",
+        "artifact_type",
+        "source_review_summary",
+        "prohibited_language_check",
+        "closeout_status",
+    ),
+}
+
 EXECUTION_TEXT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
@@ -458,6 +504,37 @@ def validate_artifact_text_fields(
     issues.extend(_advice_text_issues(scoped_fields))
     issues.extend(_broker_credential_text_issues(scoped_fields))
     issues.extend(_data_workflow_text_issues(scoped_fields))
+    return tuple(issues)
+
+
+def validate_manual_artifact_payload(
+    artifact_type: str,
+    payload: Mapping[str, object],
+) -> tuple[ValidationIssue, ...]:
+    """Validate manual paper/research artifact payloads without side effects."""
+    issues: list[ValidationIssue] = []
+    required_fields = MANUAL_ARTIFACT_REQUIRED_FIELDS.get(artifact_type)
+    if required_fields is None:
+        return (
+            ValidationIssue(
+                "artifact_type",
+                "unknown_artifact_type",
+                f"{artifact_type} is not a supported Trading Lab artifact type.",
+            ),
+        )
+
+    for field_name in required_fields:
+        if not str(payload.get(field_name, "")).strip():
+            issues.append(
+                ValidationIssue(field_name, "required", f"{field_name} is required.")
+            )
+
+    text_fields = {
+        str(field_name): str(value)
+        for field_name, value in payload.items()
+        if isinstance(value, str)
+    }
+    issues.extend(validate_artifact_text_fields(artifact_type, text_fields))
     return tuple(issues)
 
 

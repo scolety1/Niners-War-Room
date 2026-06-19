@@ -114,6 +114,10 @@ ingestion, or fantasy-football lane.
   coverage matrix.
 - `TRADING_LAB_VALIDATOR_INVENTORY_20260618.md`: T6 validator inventory across
   docs, tests, helpers, and gaps.
+- `TRADING_LAB_T7_ARTIFACT_VALIDATOR_PLAN_20260618.md`: T7 plan for generic
+  manual artifact validators.
+- `TRADING_LAB_T7_VALIDATOR_COVERAGE_20260618.md`: T7 ACCEPT/REJECT/HOLD
+  coverage summary.
 - `TRADING_LAB_NO_ADVICE_LANGUAGE_GUIDE_20260618.md`: safe and prohibited
   language rewrites.
 - `TRADING_LAB_PROHIBITED_LANGUAGE_TAXONOMY_20260618.md`: T6 taxonomy for
@@ -132,6 +136,8 @@ ingestion, or fantasy-football lane.
 - `TRADING_LAB_T6_READINESS_AUDIT_20260618.md`: T6 readiness audit.
 - `TRADING_LAB_T6_VALIDATION_READINESS_CLOSEOUT_20260618.md`: T6 validation
   readiness closeout.
+- `TRADING_LAB_T7_ARTIFACT_VALIDATOR_CLOSEOUT_20260618.md`: T7 artifact
+  validator closeout.
 
 ## Ready
 
