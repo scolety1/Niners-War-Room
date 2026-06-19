@@ -1,0 +1,3 @@
+asset_id,player,position,market_adp_pick,market_source,opponent_likelihood_signal,allowed_use,separation_note
+rookie:fixture_a,Fixture Rookie A,WR,2.5,fixture_market,early_window,opponent_behavior_only,market_does_not_set_nwr_value
+veteran:fixture_b,Fixture Veteran B,RB,3.5,fixture_market,mid_window,opponent_behavior_only,market_does_not_set_nwr_value

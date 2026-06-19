@@ -1,106 +1,68 @@
 from __future__ import annotations
 
-import csv
-from dataclasses import dataclass
+import sys
 from pathlib import Path
 
-
-@dataclass(frozen=True)
-class InputCheck:
-    name: str
-    path: Path | None
-    required: bool
-    note: str
-    expected_headers: tuple[str, ...] = ()
-
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-INPUT_CHECKS = (
-    InputCheck(
-        name="frozen rookie mock draft input",
-        path=Path(
-            "local_exports/rookie_framework/final_post_fill_runway_20260616/"
-            "rookie_2026_mock_draft_input_20260616.csv"
-        ),
-        required=True,
-        note="Frozen rookie input must be reviewed before any mock draft run.",
-        expected_headers=("asset_id", "player", "position"),
-    ),
-    InputCheck(
-        name="dropped or available veteran pool",
-        path=None,
-        required=True,
-        note="Path is not configured yet; lane owner must provide a local snapshot.",
-    ),
-    InputCheck(
-        name="final pick order",
-        path=None,
-        required=True,
-        note="Path is not configured yet; lane owner must provide final pick order.",
-    ),
-    InputCheck(
-        name="current rosters and keepers",
-        path=None,
-        required=True,
-        note="Path is not configured yet; lane owner must provide roster snapshot.",
-    ),
-    InputCheck(
-        name="team needs and opponent tendencies",
-        path=None,
-        required=True,
-        note="Path is not configured yet; ADP/market may not fill this as NWR value.",
-    ),
-    InputCheck(
-        name="ADP/market behavior context",
-        path=None,
-        required=True,
-        note="Path is not configured yet; behavior-only source separation required.",
-    ),
-)
+
+FIXTURE_ROOT = Path("tests/fixtures/mock_draft_inputs")
 
 
 def main() -> int:
-    missing_required = 0
+    from src.services.mock_draft_input_contract import (
+        default_real_input_paths,
+        fixture_input_paths,
+        validate_input_contract,
+    )
+
     print("Mock Draft input readiness: REVIEW ONLY")
-    print("No files are written. Missing inputs are YELLOW readiness gaps.")
+    print("No simulations run. No files are written.")
+    print("ADP/market is opponent behavior, availability, and pick timing only.")
+    print("ADP/market is never NWR private quality or value.")
 
-    for check in INPUT_CHECKS:
-        if check.path is None:
-            missing_required += int(check.required)
-            print(f"YELLOW: {check.name}: not configured - {check.note}")
-            continue
+    real_report = validate_input_contract(
+        default_real_input_paths(),
+        mode="real",
+        repo_root=REPO_ROOT,
+    )
+    _print_report("Real input readiness", real_report)
 
-        full_path = REPO_ROOT / check.path
-        if not full_path.exists():
-            missing_required += int(check.required)
-            print(f"YELLOW: {check.name}: missing - {check.path}")
-            continue
-
-        header_status = _csv_header_status(full_path, check.expected_headers)
-        print(f"GREEN: {check.name}: present - {check.path}{header_status}")
-
-    if missing_required:
-        print(f"SUMMARY: YELLOW - {missing_required} required input(s) missing or unconfigured")
+    fixture_root = REPO_ROOT / FIXTURE_ROOT
+    if fixture_root.exists():
+        fixture_report = validate_input_contract(
+            fixture_input_paths(FIXTURE_ROOT),
+            mode="fixture",
+            repo_root=REPO_ROOT,
+        )
+        _print_report("Fixture contract readiness", fixture_report)
+        if fixture_report.readiness == "RED":
+            return 1
     else:
-        print("SUMMARY: GREEN - all configured required inputs are present")
+        print(f"YELLOW: Fixture contract readiness: missing {FIXTURE_ROOT}")
+
     return 0
 
 
-def _csv_header_status(path: Path, expected_headers: tuple[str, ...]) -> str:
-    if not expected_headers:
-        return ""
-    try:
-        with path.open(newline="", encoding="utf-8-sig") as handle:
-            reader = csv.reader(handle)
-            headers = next(reader, [])
-    except OSError as exc:
-        return f"; header check unavailable: {exc}"
-
-    missing = [header for header in expected_headers if header not in headers]
-    if missing:
-        return f"; headers missing: {', '.join(missing)}"
-    return "; required headers present"
+def _print_report(title: str, report: object) -> None:
+    print(f"\n=== {title}: {report.readiness} ===")
+    print(f"Policy: {report.market_policy}")
+    for row in report.rows:
+        details = []
+        if row.path:
+            details.append(f"path={row.path}")
+        details.append(f"rows={row.row_count}")
+        if row.missing_columns:
+            details.append(f"missing={','.join(row.missing_columns)}")
+        if row.blocked_columns:
+            details.append(f"blocked={','.join(row.blocked_columns)}")
+        if row.warnings:
+            details.append(f"warnings={' | '.join(row.warnings)}")
+        if row.errors:
+            details.append(f"errors={' | '.join(row.errors)}")
+        print(f"{row.readiness}: {row.label} ({'; '.join(details)})")
 
 
 if __name__ == "__main__":

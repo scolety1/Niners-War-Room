@@ -45,3 +45,27 @@ Do not run a mock draft when:
 Readiness checks may confirm whether expected paths exist and may inspect CSV
 headers with Python stdlib `csv`. They must not write outputs, create generated
 artifacts, modify `local_exports/`, import live ADP, or run simulations.
+
+## Current Runway Status
+
+GREEN:
+
+- Draft-state invariant smoke validation is available.
+- Fixture-only schema templates are available under
+  `tests/fixtures/mock_draft_inputs/`.
+- Fixture contract validation can run without real inputs.
+
+YELLOW:
+
+- Real frozen rookie input is missing locally until the local-only path exists.
+- Veteran pool, final pick order, rosters/keepers, team needs, NWR private
+  value source, and market behavior context are not configured yet.
+
+No mock draft simulation may run until real inputs are present, reviewed, and
+validated. Normal locked pytest/Ruff remain preferred; the approved ephemeral
+`uv run --with pytest --with ruff` path was used for the prior runway because
+the locked environment does not currently include pytest/Ruff.
+
+The input contract runway also used the approved ephemeral pytest/Ruff path;
+`uv.lock` remained clean. Locked validation should still be preferred if the
+locked environment later restores test and lint executables.

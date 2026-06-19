@@ -1,0 +1,3 @@
+team_id,team_name,player,position,keeper_status
+team_a,Fixture Team A,Fixture Keeper A,WR,kept
+team_niners,Niners,Fixture Keeper B,RB,kept

@@ -86,3 +86,28 @@ Master explicitly accepts manual-smoke-only validation.
 - Streamlit/app wiring.
 - Promoted or app-readable artifacts.
 - Any final draft, keep, cut, or trade recommendation.
+
+## Current Readiness Gate
+
+GREEN:
+
+- Draft-state validation invariants are implemented and covered by a manual
+  smoke fallback.
+- Mock Draft input schemas have fixture-only scaffolding.
+- Fixture contract validation is review-only and does not run simulations.
+
+YELLOW:
+
+- Real draft-day inputs remain missing or unconfigured.
+- Simulations remain blocked until the frozen rookie input, veteran pool, pick
+  order, rosters/keepers, team needs, NWR private value source, and market
+  behavior context are present and validated.
+
+Next collection checklist:
+
+1. Confirm the frozen rookie input exists at the local-only path.
+2. Provide dropped/available veteran pool.
+3. Provide final pick order and NWR/my pick ownership.
+4. Provide current rosters/keepers and team-needs notes.
+5. Provide NWR private value source separately from ADP/market context.
+6. Provide ADP/market source with behavior-only separation notes.

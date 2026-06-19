@@ -1,0 +1,3 @@
+team_id,team_name,position,need_weight,tendency_note
+team_a,Fixture Team A,RB,0.70,fixture_prefers_running_backs
+team_b,Fixture Team B,WR,0.60,fixture_prefers_receivers

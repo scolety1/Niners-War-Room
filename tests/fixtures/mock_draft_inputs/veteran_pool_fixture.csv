@@ -1,0 +1,3 @@
+asset_id,player,position,nfl_team,availability_source,review_status
+veteran:fixture_a,Fixture Veteran A,WR,FA,dropped_fixture,review_only
+veteran:fixture_b,Fixture Veteran B,RB,FA,available_fixture,review_only

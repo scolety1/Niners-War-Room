@@ -1,0 +1,3 @@
+asset_id,player,position,asset_type,nwr_private_value,source_status
+rookie:fixture_a,Fixture Rookie A,WR,Rookie,71.5,fixture_only
+rookie:fixture_b,Fixture Rookie B,RB,Rookie,68.0,fixture_only
