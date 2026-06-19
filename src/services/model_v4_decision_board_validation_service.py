@@ -13,6 +13,9 @@ DECISION_BOARD_VALIDATION_VERSION = (
 )
 DEFAULT_OUTPUT_ROOT = Path("local_exports/model_v4/decision_board_validation/latest")
 DEFAULT_DOC_PATH = Path("docs/model_v4/SPRINT_1_DECISION_BOARD_VALIDATION.md")
+REVIEW_ONLY_ALLOWED_USE = "review_only_june15_decision_context_not_final_action"
+FINAL_ACTION_BLOCKED_USE = "do_not_use_as_final_cut_keep_trade_or_draft_recommendation"
+ROSTER_PRESSURE_AREA = "roster_pressure_trade_context"
 
 SUMMARY_HEADER = (
     "summary_key",
@@ -91,15 +94,8 @@ def build_decision_board_validation(
     decision_keys = {row["decision_key"] for row in decision_rows}
     receipt_keys = {row["decision_key"] for row in receipt_rows}
     component_keys = {row["decision_key"] for row in component_rows}
-    allowed_safe = sum(
-        row["allowed_use"] == "review_only_june15_decision_context_not_final_action"
-        for row in decision_rows
-    )
-    blocked_safe = sum(
-        row["blocked_use"]
-        == "do_not_use_as_final_cut_keep_trade_or_draft_recommendation"
-        for row in decision_rows
-    )
+    allowed_safe = sum(row["allowed_use"] == REVIEW_ONLY_ALLOWED_USE for row in decision_rows)
+    blocked_safe = sum(row["blocked_use"] == FINAL_ACTION_BLOCKED_USE for row in decision_rows)
     recommendations_created = any(
         _contains_final_action_language(row) for row in decision_rows
     )
@@ -114,6 +110,7 @@ def build_decision_board_validation(
         allowed_safe=allowed_safe,
         blocked_safe=blocked_safe,
         recommendations_created=recommendations_created,
+        focus_rows=focus_rows,
         source_warning_rows=warning_rows_source,
     )
 
@@ -142,6 +139,9 @@ def build_decision_board_validation(
         "safe_allowed_use_rows": allowed_safe,
         "safe_blocked_use_rows": blocked_safe,
         "focus_rows": len(focus_rows),
+        "roster_pressure_focus_rows": sum(
+            row["decision_area"] == ROSTER_PRESSURE_AREA for row in focus_rows
+        ),
         "blocker_warnings": blocker_count,
         "final_recommendations_created": recommendations_created,
         "verdict": verdict,
@@ -283,10 +283,14 @@ def _validation_warnings(
     allowed_safe: int,
     blocked_safe: int,
     recommendations_created: bool,
+    focus_rows: tuple[dict[str, object], ...],
     source_warning_rows: list[dict[str, str]],
 ) -> tuple[dict[str, object], ...]:
     warning_rows: list[dict[str, object]] = []
     expected = len(decision_rows)
+    roster_pressure_focus_rows = [
+        row for row in focus_rows if row["decision_area"] == ROSTER_PRESSURE_AREA
+    ]
     checks = (
         (
             "receipt_coverage_missing",
@@ -313,6 +317,14 @@ def _validation_warnings(
             not recommendations_created,
             "Decision rows do not create final action recommendations.",
         ),
+        (
+            "roster_pressure_focus_review_only_guardrail",
+            _roster_pressure_focus_rows_are_safe(roster_pressure_focus_rows),
+            (
+                f"{len(roster_pressure_focus_rows)} roster pressure focus rows retain "
+                "review-only use, final-action blocking, and receipt pointers."
+            ),
+        ),
     )
     for code, passed, detail in checks:
         warning_rows.append(
@@ -337,6 +349,17 @@ def _validation_warnings(
             }
         )
     return tuple(warning_rows)
+
+
+def _roster_pressure_focus_rows_are_safe(
+    rows: list[dict[str, object]],
+) -> bool:
+    return all(
+        row["allowed_use"] == REVIEW_ONLY_ALLOWED_USE
+        and row["blocked_use"] == FINAL_ACTION_BLOCKED_USE
+        and bool(row["receipt_pointer"])
+        for row in rows
+    )
 
 
 def _contains_final_action_language(row: dict[str, str]) -> bool:
@@ -398,6 +421,7 @@ def _doc(
 - Pick rows: {result.summary["pick_rows"]}
 - Rookie candidate rows: {result.summary["rookie_candidate_rows"]}
 - Focus rows for morning review: {result.summary["focus_rows"]}
+- Roster pressure focus rows: {result.summary["roster_pressure_focus_rows"]}
 - Blocker warnings: {result.summary["blocker_warnings"]}
 - Final recommendations created: {result.summary["final_recommendations_created"]}
 
