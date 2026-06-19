@@ -14,6 +14,7 @@ class TradeExplanation:
     keeper_drop_impact: str
     risk_notes: tuple[str, ...]
     summary: str
+    trust_labels: tuple[str, ...] = ()
 
 
 def explain_nwr_edge(review: TradeReview) -> str:
@@ -57,4 +58,36 @@ def build_trade_explanation(review: TradeReview) -> TradeExplanation:
         keeper_drop_impact=explain_keeper_drop_impact(review),
         risk_notes=explain_risk_flags(review),
         summary="Review note only; compare package details before any fantasy trade discussion.",
+        trust_labels=build_trust_labels(review),
+    )
+
+
+def explain_why_nwr_likes_this(review: TradeReview) -> str:
+    return f"Why NWR likes this: fixture NWR edge is {review.score.nwr_delta:+.1f}."
+
+
+def explain_why_other_team_might_accept(review: TradeReview) -> str:
+    return f"Why the other team might accept: {review.score.opponent_fit}."
+
+
+def explain_why_market_fairness_may_mislead(review: TradeReview) -> str:
+    return (
+        "Why market fairness may be misleading: public fantasy value is separate "
+        f"from NWR value and currently labels as {review.score.market_fairness}."
+    )
+
+
+def explain_what_could_go_wrong(review: TradeReview) -> str:
+    return f"What could go wrong: {review.score.risk_label}; manual review required."
+
+
+def build_trust_labels(review: TradeReview) -> tuple[str, ...]:
+    return (
+        "Fixture-only caveat",
+        "Manual review required",
+        "NWR value and public fantasy market value are separate",
+        explain_why_nwr_likes_this(review),
+        explain_why_other_team_might_accept(review),
+        explain_why_market_fairness_may_mislead(review),
+        explain_what_could_go_wrong(review),
     )

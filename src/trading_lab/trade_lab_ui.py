@@ -96,6 +96,7 @@ class DemoTradePackage:
     warnings: tuple[str, ...]
     roster_aftermath: RosterAftermath
     explanation_summary: str = "Review note only."
+    trust_labels: tuple[str, ...] = ("Fixture-only caveat", "Manual review required")
 
 
 def _demo_package_from_review(review) -> DemoTradePackage:
@@ -122,6 +123,7 @@ def _demo_package_from_review(review) -> DemoTradePackage:
         warnings=warnings,
         roster_aftermath=build_roster_aftermath(review),
         explanation_summary=explanation.summary,
+        trust_labels=explanation.trust_labels,
     )
 
 
