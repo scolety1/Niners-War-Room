@@ -65,3 +65,27 @@ def test_transcript_output_path_is_optional_temp_only(monkeypatch, tmp_path: Pat
 
     assert result == 0
     assert output_path.read_text(encoding="utf-8") == "FINAL VERDICT: GREEN\n"
+
+
+def test_transcript_prints_to_stdout_by_default(monkeypatch, tmp_path: Path, capsys) -> None:
+    monkeypatch.setattr(
+        transcript,
+        "build_transcript",
+        lambda *_args: (
+            "LANE: Deployment V2\n"
+            "BRANCH: GREEN - work/deployment-v2-discovery\n"
+            "HEAD: GREEN - abc123 Test\n"
+            "REMAINING HOSTED BLOCKERS:\n"
+            "- hosted target\n"
+            "FINAL VERDICT: GREEN\n"
+        ),
+    )
+
+    result = transcript.main(["--repo", str(tmp_path)])
+
+    assert result == 0
+    output = capsys.readouterr().out
+    assert "BRANCH: GREEN - work/deployment-v2-discovery" in output
+    assert "HEAD: GREEN - abc123 Test" in output
+    assert "FINAL VERDICT: GREEN" in output
+    assert not any(tmp_path.iterdir())
