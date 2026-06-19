@@ -471,6 +471,34 @@ def packages_for_mode(mode: str) -> tuple[DemoTradePackage, ...]:
     return generate_fake_trade_packages()
 
 
+def safe_packages_for_review(
+    mode: str,
+    target_player: str = "Target Player",
+    outgoing_player: str = "Player A",
+    untouchable_assets: tuple[str, ...] = (),
+) -> tuple[DemoTradePackage, ...]:
+    if not target_player.strip() or not outgoing_player.strip():
+        return ()
+    packages = packages_for_mode(mode)
+    if mode not in TRADE_LAB_MODES:
+        packages = packages_for_mode("Trade For Player")
+    if untouchable_assets:
+        protected = set(untouchable_assets)
+        packages = tuple(
+            package
+            for package in packages
+            if protected.isdisjoint(package.give)
+        )
+    return packages
+
+
+def empty_state_message(mode: str) -> str:
+    return (
+        f"No fixture-backed packages available for {mode}. "
+        "Adjust fake inputs or clear untouchable assets for manual review."
+    )
+
+
 def best_trade_package(packages: tuple[DemoTradePackage, ...] | None = None) -> DemoTradePackage:
     candidates = packages or demo_trade_packages()
     return max(candidates, key=lambda package: package.nwr_gain)
