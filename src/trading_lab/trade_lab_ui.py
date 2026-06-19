@@ -56,6 +56,10 @@ class NegotiationLadder:
     fair_offer: str
     max_offer: str
     walk_away: str
+    do_not_include: tuple[str, ...] = ("Core keeper",)
+    counteroffer_ideas: tuple[str, ...] = ("Swap in 2026 3rd",)
+    if_reject: str = "Ask which roster need matters most and remove one sweetener."
+    if_ask_for_more: str = "Move up one ladder step only if NWR value stays positive."
 
 
 @dataclass(frozen=True)
@@ -392,6 +396,19 @@ def bad_trade_warnings(package: DemoTradePackage) -> tuple[str, ...]:
     if "unrealistic" in package.public_market_fairness.lower():
         warnings.append("Public fantasy market value says this may not be realistic.")
     return tuple(warnings)
+
+
+def format_negotiation_ladder(ladder: NegotiationLadder) -> tuple[str, ...]:
+    return (
+        f"Opening offer: {ladder.opening_offer}",
+        f"Fair offer: {ladder.fair_offer}",
+        f"Max offer: {ladder.max_offer}",
+        f"Walk-away line: {ladder.walk_away}",
+        f"Do-not-include assets: {', '.join(ladder.do_not_include)}",
+        f"Counteroffer ideas: {', '.join(ladder.counteroffer_ideas)}",
+        f"If they reject: {ladder.if_reject}",
+        f"If they ask for more: {ladder.if_ask_for_more}",
+    )
 
 
 def demo_payload_text() -> str:

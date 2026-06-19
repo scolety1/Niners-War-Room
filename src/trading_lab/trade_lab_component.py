@@ -9,6 +9,7 @@ from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_TITLE,
     bad_trade_warnings,
     best_trade_package,
+    format_negotiation_ladder,
     format_package_summary,
     mode_context_for,
     packages_for_mode,
@@ -98,6 +99,10 @@ NEGOTIATION_LADDER_LABELS = (
     "Fair offer",
     "Max offer",
     "Walk-away line",
+    "Do-not-include assets",
+    "Counteroffer ideas",
+    "If they reject",
+    "If they ask for more",
 )
 
 TRAINING_MODE_LABELS = (
@@ -218,10 +223,9 @@ def render_trade_lab_page() -> None:
                 st.write(f"Verdict: {package.verdict}")
 
         st.subheader("Negotiation ladder")
-        st.markdown(f"- **Opening offer:** {best.negotiation_ladder.opening_offer}")
-        st.markdown(f"- **Fair offer:** {best.negotiation_ladder.fair_offer}")
-        st.markdown(f"- **Max offer:** {best.negotiation_ladder.max_offer}")
-        st.markdown(f"- **Walk-away line:** {best.negotiation_ladder.walk_away}")
+        for ladder_line in format_negotiation_ladder(best.negotiation_ladder):
+            label, value = ladder_line.split(": ", 1)
+            st.markdown(f"- **{label}:** {value}")
 
         st.subheader("Bad trade warnings")
         st.caption("Warnings flag packages that need manual review before making an offer.")

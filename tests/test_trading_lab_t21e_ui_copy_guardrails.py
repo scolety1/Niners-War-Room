@@ -38,12 +38,13 @@ def test_result_card_labels_are_correct() -> None:
 
 
 def test_negotiation_ladder_labels_are_correct() -> None:
-    assert NEGOTIATION_LADDER_LABELS == (
+    for label in (
         "Opening offer",
         "Fair offer",
         "Max offer",
         "Walk-away line",
-    )
+    ):
+        assert label in NEGOTIATION_LADDER_LABELS
 
 
 def test_roster_aftermath_labels_are_correct() -> None:

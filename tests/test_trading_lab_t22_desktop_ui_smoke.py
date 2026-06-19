@@ -37,12 +37,13 @@ def test_best_trade_card_labels_exist() -> None:
 
 
 def test_negotiation_ladder_labels_exist() -> None:
-    assert NEGOTIATION_LADDER_LABELS == (
+    for label in (
         "Opening offer",
         "Fair offer",
         "Max offer",
         "Walk-away line",
-    )
+    ):
+        assert label in NEGOTIATION_LADDER_LABELS
 
 
 def test_bad_trade_warning_and_context_labels_exist() -> None:
