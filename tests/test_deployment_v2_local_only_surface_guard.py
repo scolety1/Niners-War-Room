@@ -206,6 +206,23 @@ def test_docs_can_describe_forbidden_surfaces_without_false_positive(tmp_path: P
     assert guard.scan_repository(tmp_path) == []
 
 
+def test_guard_allows_blocked_non_executable_docs_examples(tmp_path: Path) -> None:
+    docs_dir = tmp_path / "docs" / "hq" / "parallel_lanes"
+    docs_dir.mkdir(parents=True)
+    (docs_dir / "DEPLOYMENT_V2_BLOCKED_EXAMPLES.md").write_text(
+        (
+            "Forbidden surface examples are blocked and non-executable.\n"
+            "A hosted deployment ready phrase is listed here only as blocked language.\n"
+            "A public port phrase is listed here only as blocked language.\n"
+            "A credential phrase is listed here only as blocked language.\n"
+            "A generated artifact phrase is listed here only as blocked language.\n"
+        ),
+        encoding="utf-8",
+    )
+
+    assert guard.scan_repository(tmp_path) == []
+
+
 def test_guard_pattern_manifest_categories_have_temp_fixture_coverage(tmp_path: Path) -> None:
     fixtures = {
         "deploy_command": ("Makefile", "deploy:\n\t@echo inert validation marker\n"),
