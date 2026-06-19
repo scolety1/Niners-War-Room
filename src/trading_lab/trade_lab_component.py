@@ -46,6 +46,23 @@ RIGHT_CONTEXT_LABELS = (
     "Data status / needs data",
 )
 
+RESULT_CARD_LABELS = (
+    "Package summary",
+    "NWR value gain",
+    "Public fantasy market fairness",
+    "Opponent fit",
+    "Roster impact",
+    "Risk flags",
+    "Manual review verdict",
+)
+
+NEGOTIATION_LADDER_LABELS = (
+    "Opening offer",
+    "Fair offer",
+    "Max offer",
+    "Walk-away line",
+)
+
 TRAINING_MODE_LABELS = (
     "Training Mode",
     "Practice scenario",
@@ -67,8 +84,9 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
     return (
         TradeLabSection("Header", (TRADE_LAB_TITLE, TRADE_LAB_SUBTITLE, *TRADE_LAB_DATA_CHIPS)),
         TradeLabSection("Left control panel", LEFT_CONTROL_LABELS),
-        TradeLabSection("Center results", CENTER_SECTION_LABELS),
+        TradeLabSection("Center results", (*CENTER_SECTION_LABELS, *RESULT_CARD_LABELS)),
         TradeLabSection("Right context panel", RIGHT_CONTEXT_LABELS),
+        TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
         TradeLabSection("Training Mode", TRAINING_MODE_LABELS),
     )
 
