@@ -111,3 +111,9 @@ Next collection checklist:
 4. Provide current rosters/keepers and team-needs notes.
 5. Provide NWR private value source separately from ADP/market context.
 6. Provide ADP/market source with behavior-only separation notes.
+
+## Diagnostics Runway Note
+
+The readiness renderer, schema diagnostics, header aliases, adversarial
+fixtures, and operator packets are preflight tools only. They do not introduce a
+simulation execution path, do not create draft output, and do not wire app UI.

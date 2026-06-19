@@ -1,0 +1,2 @@
+asset_id,player,position,market_adp_pick,market_source,opponent_likelihood_signal,allowed_use,separation_note,nwr_private_value
+fixture:a,Fixture Player A,WR,10,fixture,early,opponent_behavior_only,market-only,70

@@ -69,3 +69,17 @@ the locked environment does not currently include pytest/Ruff.
 The input contract runway also used the approved ephemeral pytest/Ruff path;
 `uv.lock` remained clean. Locked validation should still be preferred if the
 locked environment later restores test and lint executables.
+
+## Diagnostics Runway Status
+
+GREEN:
+
+- Human-readable readiness rendering is available.
+- Schema diagnostics and safe header alias contracts are available.
+- Fixture and adversarial contract tests cover missing columns, contaminated
+  market/private schemas, duplicate identities, and no-simulation guardrails.
+
+YELLOW:
+
+- Real draft inputs remain missing or unconfigured.
+- Real input validation remains read-only until the user provides local paths.

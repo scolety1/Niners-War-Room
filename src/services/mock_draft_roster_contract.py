@@ -27,14 +27,18 @@ def validate_roster_contract(
             warnings=("Roster input is missing.",),
         )
     errors: list[str] = []
+    warnings: list[str] = []
     player_to_team: dict[str, str] = {}
-    available_players = {str(row.get("player") or "") for row in available_rows}
+    available_players = {_text(row.get("player")) for row in available_rows}
     for index, row in enumerate(roster_rows, start=1):
+        if _is_blank_row(row):
+            warnings.append(f"Roster row {index} is blank and was ignored.")
+            continue
         for column in ("team_id", "team_name", "player", "position", "keeper_status"):
-            if not row.get(column):
+            if not _text(row.get(column)):
                 errors.append(f"Roster row {index} missing {column}.")
-        player = str(row.get("player") or "")
-        team = str(row.get("team_id") or "")
+        player = _text(row.get("player"))
+        team = _text(row.get("team_id"))
         if player in player_to_team and player_to_team[player] != team:
             errors.append(f"Kept player appears on multiple teams: {player}.")
         player_to_team[player] = team
@@ -44,4 +48,13 @@ def validate_roster_contract(
         readiness=READINESS_RED if errors else READINESS_GREEN,
         roster_count=len(roster_rows),
         errors=tuple(errors),
+        warnings=tuple(warnings),
     )
+
+
+def _text(value: object) -> str:
+    return "" if value is None else str(value).strip()
+
+
+def _is_blank_row(row: Mapping[str, object]) -> bool:
+    return not any(_text(value) for value in row.values())

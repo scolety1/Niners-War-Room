@@ -44,5 +44,5 @@ def validate_market_separation(
 def _columns(rows: Sequence[Mapping[str, object]]) -> set[str]:
     columns: set[str] = set()
     for row in rows:
-        columns.update(str(key) for key in row)
+        columns.update(str(key).strip().lower() for key in row)
     return columns

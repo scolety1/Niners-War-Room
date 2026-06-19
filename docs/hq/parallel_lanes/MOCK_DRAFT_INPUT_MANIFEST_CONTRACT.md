@@ -20,6 +20,9 @@ Recommended path:
 - NWR private value source must stay separate from ADP/market behavior context.
 - ADP/market context may support opponent behavior, availability, and likely
   pick timing only.
+- `MOCK_DRAFT_INPUT_MANIFEST_EXAMPLE.json` is a committed fake-path example
+  only. Real manifests belong under ignored local-only paths such as
+  `local_exports/mock_draft/` or another approved operator path.
 
 ## Required Roles
 
@@ -46,3 +49,7 @@ Recommended path:
   }
 }
 ```
+
+Do not edit the committed example into a real manifest. Do not commit real
+manifest paths unless Master explicitly approves a redacted documentation-only
+summary.

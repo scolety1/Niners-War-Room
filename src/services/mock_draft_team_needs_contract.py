@@ -22,11 +22,13 @@ class TeamNeedsReport:
 def validate_team_needs_contract(rows: Sequence[Mapping[str, object]]) -> TeamNeedsReport:
     errors: list[str] = []
     for index, row in enumerate(rows, start=1):
+        if _is_blank_row(row):
+            continue
         for column in ("team_id", "team_name", "position", "need_weight", "tendency_note"):
-            if not row.get(column):
+            if not _text(row.get(column)):
                 errors.append(f"Team-need row {index} missing {column}.")
         try:
-            weight = float(str(row.get("need_weight")))
+            weight = float(_text(row.get("need_weight")))
         except (TypeError, ValueError):
             errors.append(f"Team-need row {index} has invalid need_weight.")
         else:
@@ -39,3 +41,11 @@ def validate_team_needs_contract(rows: Sequence[Mapping[str, object]]) -> TeamNe
         row_count=len(rows),
         errors=tuple(errors),
     )
+
+
+def _text(value: object) -> str:
+    return "" if value is None else str(value).strip()
+
+
+def _is_blank_row(row: Mapping[str, object]) -> bool:
+    return not any(_text(value) for value in row.values())

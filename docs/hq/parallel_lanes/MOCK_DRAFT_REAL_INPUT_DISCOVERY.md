@@ -52,3 +52,30 @@ ADP/market context remains opponent behavior, availability, and likely pick
 timing only. It must never become NWR private quality/value. Real files should
 be configured later through a local-only manifest and validated before any
 simulation work is considered.
+
+## 2026-06-19 Refresh
+
+Read-only discovery found 52 candidate CSV paths across `C:\NWR` and sibling
+worktrees. The expected frozen rookie input path remains missing.
+
+Candidate categories observed:
+
+- Mock Draft template CSVs under
+  `docs/model_v4/mock_draft_input_templates_20260617/`.
+- Mock Draft fake fixtures under `tests/fixtures/mock_draft_inputs/`.
+- Sample/template roster, veteran, and market CSVs under repository template
+  folders and sibling worktrees.
+
+Header-only examples observed:
+
+- dropped-veterans template: player, position, source label, review flags,
+  team context, and input status.
+- post-drop roster template: team/manager/player/position/team/status fields.
+- behavior-only ADP/market template: asset identity, source, market ADP,
+  expected pick, sample size, and review flags.
+- template market inputs include market value/rank fields and therefore remain
+  behavior-only unless separately reviewed.
+
+No real data was copied, moved, committed, or promoted. Files from sibling
+lanes remain read-only references. No simulations ran. Real input readiness
+remains YELLOW until user-approved local inputs are supplied.

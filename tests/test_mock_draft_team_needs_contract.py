@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 from src.services.mock_draft_team_needs_contract import validate_team_needs_contract
@@ -67,3 +68,44 @@ def test_team_needs_contract_writes_no_files(tmp_path: Path) -> None:
     before = list(tmp_path.iterdir())
     validate_team_needs_contract([])
     assert list(tmp_path.iterdir()) == before
+
+
+def test_empty_required_team_need_field_returns_red() -> None:
+    report = validate_team_needs_contract(
+        [
+            {
+                "team_id": "a",
+                "team_name": "A",
+                "position": " ",
+                "need_weight": "0.7",
+                "tendency_note": "x",
+            }
+        ]
+    )
+
+    assert report.readiness == "RED"
+
+
+def test_blank_team_need_rows_are_ignored() -> None:
+    report = validate_team_needs_contract(
+        [
+            {
+                "team_id": "",
+                "team_name": "",
+                "position": "",
+                "need_weight": "",
+                "tendency_note": "",
+            }
+        ]
+    )
+
+    assert report.readiness == "GREEN"
+
+
+def test_adversarial_missing_team_id_fixture_is_red() -> None:
+    path = Path("tests/fixtures/mock_draft_inputs/adversarial/missing_team_id.csv")
+    rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+
+    report = validate_team_needs_contract(rows)
+
+    assert report.readiness == "RED"

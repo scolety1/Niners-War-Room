@@ -33,6 +33,14 @@ def test_malformed_manifest_returns_red(tmp_path: Path) -> None:
     assert report.readiness == "RED"
 
 
+def test_adversarial_malformed_manifest_fixture_returns_red() -> None:
+    manifest = Path("tests/fixtures/mock_draft_inputs/adversarial/malformed_manifest.json")
+
+    report = validate_input_manifest(manifest)
+
+    assert report.readiness == "RED"
+
+
 def test_manifest_rejects_market_context_as_private_value(tmp_path: Path) -> None:
     payload = json.loads(FIXTURE_MANIFEST.read_text(encoding="utf-8"))
     payload["inputs"]["nwr_private_values"]["path"] = (

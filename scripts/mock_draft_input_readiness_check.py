@@ -17,6 +17,7 @@ def main() -> int:
         fixture_input_paths,
         validate_input_contract,
     )
+    from src.services.mock_draft_readiness_report import render_readiness_report
     from src.services.mock_draft_readiness_service import build_mock_draft_readiness_report
 
     print("Mock Draft input readiness: REVIEW ONLY")
@@ -25,15 +26,7 @@ def main() -> int:
     print("ADP/market is never NWR private quality or value.")
 
     aggregate = build_mock_draft_readiness_report(repo_root=REPO_ROOT)
-    print(f"\n=== Aggregate readiness: {aggregate.readiness} ===")
-    print(f"Real input readiness: {aggregate.real_input_readiness}")
-    print(f"Fixture contract readiness: {aggregate.fixture_readiness}")
-    print(f"Manifest readiness: {aggregate.manifest_readiness}")
-    print(f"Market separation readiness: {aggregate.market_separation_readiness}")
-    if aggregate.missing_real_inputs:
-        print("Missing real inputs: " + ", ".join(aggregate.missing_real_inputs))
-    if aggregate.schema_violations:
-        print("Schema violations: " + " | ".join(aggregate.schema_violations))
+    print("\n" + render_readiness_report(aggregate))
 
     real_report = validate_input_contract(
         default_real_input_paths(),

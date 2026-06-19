@@ -67,3 +67,11 @@ def test_market_separation_violation_returns_red(tmp_path: Path) -> None:
     report = build_mock_draft_readiness_report(fixture_root=temp_root)
 
     assert report.readiness == "RED"
+
+
+def test_aggregate_yellow_when_only_real_inputs_are_missing() -> None:
+    report = build_mock_draft_readiness_report()
+
+    assert report.readiness == "YELLOW"
+    assert report.fixture_readiness == "GREEN"
+    assert report.schema_violations == ()

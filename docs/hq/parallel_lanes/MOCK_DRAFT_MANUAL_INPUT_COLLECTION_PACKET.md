@@ -39,3 +39,11 @@ run simulations. Report GREEN/YELLOW/RED readiness and source-separation
 findings.”
 
 No simulation may run until inputs validate.
+
+## Diagnostics Addendum
+
+Use the manual column mapping packet before accepting messy real CSV headers.
+Run schema diagnostics and header alias checks read-only, then update the
+local-only manifest only after user approval. Fixture and adversarial tests are
+GREEN infrastructure; real-input readiness remains YELLOW until all local files
+are present.

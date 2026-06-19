@@ -26,20 +26,24 @@ def validate_available_pool_contract(
     veteran_rows: Sequence[Mapping[str, object]],
 ) -> AvailablePoolReport:
     errors: list[str] = []
+    warnings: list[str] = []
     seen: set[str] = set()
     for label, rows in (("rookie", rookie_rows), ("veteran", veteran_rows)):
         for index, row in enumerate(rows, start=1):
+            if _is_blank_row(row):
+                warnings.append(f"{label} row {index} is blank and was ignored.")
+                continue
             missing = [
                 column
                 for column in ("asset_id", "player", "position")
-                if not row.get(column)
+                if not _text(row.get(column))
             ]
             if missing:
                 errors.append(
                     f"{label} row {index} missing identity columns: "
                     f"{', '.join(missing)}."
                 )
-            asset_id = str(row.get("asset_id") or "")
+            asset_id = _text(row.get("asset_id"))
             if asset_id and asset_id in seen:
                 errors.append(f"Duplicate asset_id in available pool: {asset_id}.")
             seen.add(asset_id)
@@ -55,4 +59,13 @@ def validate_available_pool_contract(
         rookie_count=len(rookie_rows),
         veteran_count=len(veteran_rows),
         errors=tuple(errors),
+        warnings=tuple(warnings),
     )
+
+
+def _text(value: object) -> str:
+    return "" if value is None else str(value).strip()
+
+
+def _is_blank_row(row: Mapping[str, object]) -> bool:
+    return not any(_text(value) for value in row.values())

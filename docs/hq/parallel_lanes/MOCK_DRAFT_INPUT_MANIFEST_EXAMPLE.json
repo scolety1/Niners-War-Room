@@ -1,0 +1,40 @@
+{
+  "example_only": true,
+  "version": 1,
+  "review_only": true,
+  "note": "Fake paths only. Real manifests belong in ignored local-only paths and must not be committed.",
+  "inputs": {
+    "frozen_rookie_input": {
+      "role": "frozen_rookie_input",
+      "path": "C:/example/local-only/rookie_2026_mock_draft_input.csv"
+    },
+    "veteran_pool": {
+      "role": "veteran_pool",
+      "path": "C:/example/local-only/dropped_available_veterans.csv"
+    },
+    "pick_order": {
+      "role": "pick_order",
+      "path": "C:/example/local-only/final_pick_order.csv"
+    },
+    "my_picks": {
+      "role": "my_picks",
+      "path": "C:/example/local-only/nwr_my_picks.csv"
+    },
+    "rosters": {
+      "role": "rosters",
+      "path": "C:/example/local-only/current_rosters_keepers.csv"
+    },
+    "team_needs": {
+      "role": "team_needs",
+      "path": "C:/example/local-only/team_needs_opponent_tendencies.csv"
+    },
+    "nwr_private_values": {
+      "role": "nwr_private_values",
+      "path": "C:/example/local-only/nwr_private_values.csv"
+    },
+    "market_context": {
+      "role": "market_context",
+      "path": "C:/example/local-only/adp_market_behavior_context.csv"
+    }
+  }
+}

@@ -139,3 +139,32 @@ YELLOW:
 
 No simulation path exists in this schema runway. The next step is real input
 collection and validation, not simulator execution.
+
+## Safe Header Aliases
+
+Header aliasing is allowed only for identity and role-safe fields:
+
+- `player`, `player_name`, `name` -> `player`
+- `asset_id`, `player_id` -> `asset_id`
+- `pos` -> `position`
+- `team` -> `nfl_team`
+- `adp`, `market_adp`, `overall_adp` -> `market_adp_pick` for market context
+  only
+- `nwr_score`, `nwr_value`, `private_score` -> `nwr_private_value` for NWR
+  private value only
+
+Ambiguous aliases such as `value`, `score`, `rank`, and `rating` require manual
+mapping. Market aliases must never map into NWR private value, and private value
+aliases must never map into market behavior context.
+
+## Diagnostics Runway Status
+
+GREEN:
+
+- Readiness renderer, schema diagnostics, and header alias checks exist.
+- Fixture and adversarial tests cover malformed input shapes.
+
+YELLOW:
+
+- Real-input readiness remains incomplete until actual local files are supplied
+  and validated read-only.

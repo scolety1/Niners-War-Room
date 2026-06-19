@@ -39,3 +39,12 @@ source-separated. Missing inputs are YELLOW. Schema violations are RED.
 Stop for source contamination, app wiring, production rankings/sorting,
 probability/band output, promoted artifacts, Rookie/Outcome modifications, or
 any write into real input/export locations.
+
+## Current Tooling
+
+- Readiness renderer: stdout-only preflight report.
+- Schema diagnostics: header comparison and contamination detection.
+- Header aliases: safe identity aliases with manual review for ambiguous names.
+- Adversarial fixtures: fake malformed inputs for contract tests.
+
+Real draft simulation remains disallowed until real inputs validate GREEN.

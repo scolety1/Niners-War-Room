@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 from src.services.mock_draft_available_pool_contract import validate_available_pool_contract
@@ -51,3 +52,31 @@ def test_available_pool_contract_writes_no_files(tmp_path: Path) -> None:
     before = list(tmp_path.iterdir())
     validate_available_pool_contract([], [])
     assert list(tmp_path.iterdir()) == before
+
+
+def test_blank_available_pool_rows_are_warned_not_errors() -> None:
+    report = validate_available_pool_contract(
+        [{"asset_id": "", "player": "", "position": ""}],
+        [],
+    )
+
+    assert report.readiness == "GREEN"
+    assert report.warnings
+
+
+def test_duplicate_asset_ids_after_trim_are_red() -> None:
+    rookie = [{"asset_id": " fixture:a ", "player": "A", "position": "WR"}]
+    veteran = [{"asset_id": "fixture:a", "player": "B", "position": "RB"}]
+
+    report = validate_available_pool_contract(rookie, veteran)
+
+    assert report.readiness == "RED"
+
+
+def test_adversarial_duplicate_asset_fixture_is_red() -> None:
+    path = Path("tests/fixtures/mock_draft_inputs/adversarial/duplicate_asset_id.csv")
+    rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+
+    report = validate_available_pool_contract(rows[:1], rows[1:])
+
+    assert report.readiness == "RED"
