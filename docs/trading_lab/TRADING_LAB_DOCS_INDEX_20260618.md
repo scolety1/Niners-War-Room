@@ -141,6 +141,17 @@ ingestion, or fantasy-football lane.
   execution, broker/API, credential, private-account, advice, automation, data,
   and generated-output language.
 
+## Release Readiness
+
+- `TRADING_LAB_T12_RELEASE_CANDIDATE_AUDIT_20260618.md`: T12 release-candidate
+  audit for paper/research readiness.
+- `TRADING_LAB_MASTER_HANDOFF_PACKET_20260618.md`: Master HQ handoff packet and
+  chain commit summary.
+- `TRADING_LAB_NEXT_PHASE_OPTIONS_20260618.md`: safe next options and blocked
+  future work reminders.
+- `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T7-T12 chain closeout and
+  final readiness summary.
+
 ## Closeouts
 
 - `TRADING_LAB_T1_CLOSEOUT_20260618.md`: T1 docs-only closeout.
@@ -163,6 +174,8 @@ ingestion, or fantasy-football lane.
   closeout.
 - `TRADING_LAB_T11_BLOCKED_WORK_GATE_CLOSEOUT_20260618.md`: T11 blocked-work
   gate validation closeout.
+- `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
+  through T12.
 
 ## Ready
 

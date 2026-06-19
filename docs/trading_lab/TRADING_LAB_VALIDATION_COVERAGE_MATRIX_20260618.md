@@ -21,6 +21,7 @@ broker/API integration, deployment, app wiring, or investment advice.
 | Manual review packet | Manual review packet template, examples, T9 plan and expectations | `validate_manual_review_packet`, `validate_artifact_text_fields`, T6/T9 tests | Missing sections, advice, execution, private-account, broker, credential, data workflow text | Ready for manual review | No packet dataclass | Keep in-memory unless approved |
 | Blocked-work gates | Blocked-work gate, future phase gate, T11 plan and expectations | `classify_future_phase_request`, `validate_future_phase_request`, T6/T11 tests | Data ingestion, generated outputs, broker/API, credentials, execution, advice, private account data, deployment, fantasy-lane drift | Ready for proposal screening | No future phase approved | Require explicit user approval |
 | Schema registry | T8 schema registry and fake corpus | `SCHEMA_REGISTRY`, `schema_for_artifact`, T8 tests | Prohibited field names and artifact coverage | Ready for docs/tests | Constants only, no file format | Keep examples inline unless approved |
+| Release readiness | T12 audit, Master handoff packet, next phase options, chain closeout | Docs-only audit plus full focused Trading Lab validation before commit | Confirms no execution, broker/API, credentials, data ingestion, generated outputs, deployment, or fantasy-lane work | Ready for Master review after clean push | T12 commit hash recorded in final report | Keep future phases behind explicit approval |
 
 ## Coverage Notes
 
