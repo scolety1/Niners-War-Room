@@ -57,6 +57,11 @@ def _fake_run_command(
             return _completed(command, returncode=guard_returncode, stdout=guard_output)
         if command[-1:] == ["scripts/audit_deployment_v2_docs_consistency.py"]:
             return _completed(command, stdout="Deployment V2 docs consistency verdict: GREEN\n")
+        if "scripts/verify_deployment_v2_baseline_ancestry.py" in command:
+            return _completed(
+                command,
+                stdout="Deployment V2 baseline ancestry verdict: GREEN\n",
+            )
         raise AssertionError(f"unexpected command: {command}")
 
     return fake_run_command
@@ -70,6 +75,7 @@ def test_readiness_runner_clean_path_is_green(monkeypatch) -> None:
     assert runner.overall_verdict(results) == "GREEN"
     statuses = {result.name: result.status for result in results}
     assert statuses["import_report_comparison"] == "SKIPPED"
+    assert statuses["baseline_ancestry"] == "SKIPPED"
 
 
 def test_readiness_runner_dirty_status_is_not_green(monkeypatch) -> None:
@@ -86,6 +92,21 @@ def test_readiness_runner_missing_optional_import_zip_does_not_crash() -> None:
 
     assert result.status == "SKIPPED"
     assert result.detail == "no import zip supplied"
+
+
+def test_readiness_runner_missing_optional_baseline_does_not_crash() -> None:
+    result = runner.check_baseline_ancestry(Path("."), sys.executable, baseline=None)
+
+    assert result.status == "SKIPPED"
+    assert result.detail == "no baseline supplied"
+
+
+def test_readiness_runner_baseline_check_runs_when_supplied(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    results = runner.run_readiness_checks(Path("."), sys.executable, baseline="base123")
+
+    assert {result.name: result.status for result in results}["baseline_ancestry"] == "GREEN"
 
 
 def test_readiness_runner_local_guard_failure_propagates(monkeypatch) -> None:
@@ -130,6 +151,7 @@ def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
         "local_only_guard",
         "guard_report",
         "import_report",
+        "baseline_ancestry",
         "docs_audit",
         "skipped_checks",
         "blockers",
@@ -167,7 +189,7 @@ def test_readiness_json_report_tracks_skipped_import_report(monkeypatch) -> None
     output = runner.readiness_json_report(results)
 
     assert output["import_report"]["status"] == "SKIPPED"
-    assert output["skipped_checks"] == ["import_report_comparison"]
+    assert output["skipped_checks"] == ["import_report_comparison", "baseline_ancestry"]
 
 
 def test_readiness_runner_human_output_still_works(capsys) -> None:

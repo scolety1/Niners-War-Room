@@ -149,6 +149,31 @@ def check_import_report(
     return CheckResult("import_report_comparison", "RED", output)
 
 
+def check_baseline_ancestry(
+    repo: Path,
+    python_executable: str,
+    baseline: str | None,
+) -> CheckResult:
+    if not baseline:
+        return CheckResult("baseline_ancestry", "SKIPPED", "no baseline supplied")
+
+    result = run_command(
+        repo,
+        [
+            python_executable,
+            "scripts/verify_deployment_v2_baseline_ancestry.py",
+            baseline,
+            "--require-clean",
+        ],
+    )
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode == 0:
+        return CheckResult("baseline_ancestry", "GREEN", output)
+    if result.returncode == 2:
+        return CheckResult("baseline_ancestry", "YELLOW", output)
+    return CheckResult("baseline_ancestry", "RED", output)
+
+
 def check_docs_audit(repo: Path, python_executable: str) -> CheckResult:
     result = run_command(
         repo,
@@ -166,6 +191,7 @@ def run_readiness_checks(
     repo: Path,
     python_executable: str,
     import_zip: str | None = None,
+    baseline: str | None = None,
 ) -> list[CheckResult]:
     return [
         check_branch(repo),
@@ -175,6 +201,7 @@ def run_readiness_checks(
         check_local_guard_text(repo, python_executable),
         check_local_guard_report(repo, python_executable),
         check_import_report(repo, python_executable, import_zip),
+        check_baseline_ancestry(repo, python_executable, baseline),
         check_docs_audit(repo, python_executable),
     ]
 
@@ -213,6 +240,7 @@ def readiness_json_report(results: list[CheckResult]) -> dict[str, object]:
         "local_only_guard": check_to_dict(by_name.get("local_only_guard")),
         "guard_report": check_to_dict(by_name.get("local_only_guard_report")),
         "import_report": check_to_dict(by_name.get("import_report_comparison")),
+        "baseline_ancestry": check_to_dict(by_name.get("baseline_ancestry")),
         "docs_audit": check_to_dict(by_name.get("docs_consistency_audit")),
         "skipped_checks": skipped,
         "blockers": blockers,
@@ -249,6 +277,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Optional Master import verification zip for comparison.",
     )
     parser.add_argument(
+        "--baseline",
+        help="Optional accepted baseline commit to verify as an ancestor of HEAD.",
+    )
+    parser.add_argument(
         "--python",
         default=sys.executable,
         help="Python executable used to run local validation helpers.",
@@ -269,7 +301,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    results = run_readiness_checks(Path(args.repo), args.python, args.import_zip)
+    results = run_readiness_checks(Path(args.repo), args.python, args.import_zip, args.baseline)
     if args.json or args.report == "json":
         print_json_report(results)
     else:
