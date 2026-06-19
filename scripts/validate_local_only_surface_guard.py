@@ -76,6 +76,9 @@ DEPLOY_COMMAND_PATTERNS = (
     re.compile(r"\bngrok\b", re.IGNORECASE),
     re.compile(r"\bcloudflared\s+tunnel\b", re.IGNORECASE),
     re.compile(r"\blocaltunnel\b", re.IGNORECASE),
+    re.compile(r"\bpublic\s+port\b", re.IGNORECASE),
+    re.compile(r"\bhosted\s+route\b", re.IGNORECASE),
+    re.compile(r"\bhosted\s+smoke\b", re.IGNORECASE),
 )
 
 

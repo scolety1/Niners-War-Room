@@ -129,6 +129,38 @@ def test_guard_flags_public_tunnel_marker_only_in_command_surface(tmp_path: Path
     ]
 
 
+def test_guard_flags_hosted_smoke_marker_only_in_command_surface(tmp_path: Path) -> None:
+    taskfile = tmp_path / "Taskfile.yml"
+    taskfile.write_text(
+        "tasks:\n  validation:\n    cmds:\n      - echo inert hosted smoke marker\n",
+        encoding="utf-8",
+    )
+
+    violations = guard.scan_repository(tmp_path)
+
+    assert [(violation.path.as_posix(), violation.reason) for violation in violations] == [
+        (
+            "Taskfile.yml",
+            r"deploy-oriented command pattern found: \bhosted\s+smoke\b",
+        )
+    ]
+
+
+def test_guard_flags_public_route_marker_only_in_command_surface(tmp_path: Path) -> None:
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "validation:\n\t@echo inert public port and hosted route markers\n",
+        encoding="utf-8",
+    )
+
+    violations = guard.scan_repository(tmp_path)
+    reasons = {violation.reason for violation in violations}
+
+    assert {violation.path.as_posix() for violation in violations} == {"Makefile"}
+    assert r"deploy-oriented command pattern found: \bpublic\s+port\b" in reasons
+    assert r"deploy-oriented command pattern found: \bhosted\s+route\b" in reasons
+
+
 def test_guard_skips_local_only_artifact_dirs(tmp_path: Path) -> None:
     for directory_name in ("data", "local_exports", ".venv"):
         path = tmp_path / directory_name / "Dockerfile"
@@ -164,7 +196,10 @@ def test_docs_can_describe_forbidden_surfaces_without_false_positive(tmp_path: P
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     (docs_dir / "blocked_surfaces.md").write_text(
-        "This note mentions Dockerfile, CI/CD, ngrok, and hosted routing as blocked text.\n",
+        (
+            "This note mentions Dockerfile, CI/CD, ngrok, public port, hosted smoke, "
+            "and hosted routing as blocked text.\n"
+        ),
         encoding="utf-8",
     )
 
