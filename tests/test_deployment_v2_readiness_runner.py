@@ -218,3 +218,35 @@ def test_readiness_all_checks_adds_schema_smoke_tests(monkeypatch) -> None:
     results = runner.run_readiness_checks(Path("."), sys.executable, all_checks=True)
 
     assert {result.name: result.status for result in results}["schema_smoke_tests"] == "GREEN"
+
+
+def test_readiness_all_checks_failure_makes_final_non_green(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    def fake_schema_smoke(_repo: Path, _python: str):
+        return runner.CheckResult("schema_smoke_tests", "RED", "schema tests failed")
+
+    monkeypatch.setattr(runner, "check_schema_smoke_tests", fake_schema_smoke)
+
+    results = runner.run_readiness_checks(Path("."), sys.executable, all_checks=True)
+
+    assert runner.overall_verdict(results) == "RED"
+    assert {result.name: result.status for result in results}["schema_smoke_tests"] == "RED"
+
+
+def test_readiness_all_checks_json_includes_schema_and_optional_skips(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    def fake_schema_smoke(_repo: Path, _python: str):
+        return runner.CheckResult("schema_smoke_tests", "GREEN", "schema tests passed")
+
+    monkeypatch.setattr(runner, "check_schema_smoke_tests", fake_schema_smoke)
+
+    output = runner.readiness_json_report(
+        runner.run_readiness_checks(Path("."), sys.executable, all_checks=True)
+    )
+
+    assert output["schema_smoke_tests"]["status"] == "GREEN"
+    assert output["import_report"]["status"] == "SKIPPED"
+    assert output["baseline_ancestry"]["status"] == "SKIPPED"
+    assert output["skipped_checks"] == ["import_report_comparison", "baseline_ancestry"]
