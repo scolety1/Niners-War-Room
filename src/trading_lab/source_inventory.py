@@ -48,6 +48,24 @@ WATCHLIST_NOTE_REQUIRED_FIELDS = (
     "review_date",
 )
 
+PAPER_JOURNAL_REQUIRED_FIELDS = (
+    "journal_id",
+    "date",
+    "symbol_or_topic",
+    "asset_type",
+    "research_question",
+    "paper_action_type",
+    "hypothetical_entry_reference",
+    "hypothetical_exit_reference",
+    "position_sizing_hypothesis",
+    "risk_hypothesis",
+    "invalidation_condition",
+    "outcome_review_date",
+    "lessons_learned",
+    "status",
+    "notes",
+)
+
 EXECUTION_TEXT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
@@ -56,11 +74,24 @@ EXECUTION_TEXT_PATTERNS = tuple(
         r"\border\s+endpoint\b",
         r"\bexecution\s+endpoint\b",
         r"\bautomated\s+execution\b",
+        r"\bauto[-\s]?execute\b",
         r"\breal[-\s]?money\s+trading\b",
         r"\blive\s+trading\b",
         r"\bplace\s+orders?\b",
         r"\bsubmit\s+orders?\b",
         r"\btrading\s+api\b",
+    )
+)
+
+PRIVATE_ACCOUNT_TEXT_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bbrokerage\s+balance\b",
+        r"\baccount\s+balance\b",
+        r"\bprivate\s+brokerage\b",
+        r"\bbrokerage\s+export\b",
+        r"\breal[-\s]?money\s+order\s+history\b",
+        r"\baccount\s+holdings?\b",
     )
 )
 
@@ -123,6 +154,25 @@ class WatchlistNote:
     risk_notes: str
     paper_only: bool
     review_date: str
+
+
+@dataclass(frozen=True)
+class PaperJournalEntry:
+    journal_id: str
+    date: str
+    symbol_or_topic: str
+    asset_type: str
+    research_question: str
+    paper_action_type: str
+    hypothetical_entry_reference: str
+    hypothetical_exit_reference: str
+    position_sizing_hypothesis: str
+    risk_hypothesis: str
+    invalidation_condition: str
+    outcome_review_date: str
+    lessons_learned: str
+    status: str
+    notes: str
 
 
 def validate_source_metadata(source: ResearchSourceMetadata) -> tuple[ValidationIssue, ...]:
@@ -194,6 +244,65 @@ def assert_valid_source_metadata(source: ResearchSourceMetadata) -> None:
     if issues:
         detail = "; ".join(f"{issue.field}:{issue.code}" for issue in issues)
         raise ValueError(f"Invalid Trading Lab source metadata: {detail}")
+
+
+def validate_paper_journal_entry(entry: PaperJournalEntry) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    required_fields = {
+        "journal_id": entry.journal_id,
+        "date": entry.date,
+        "symbol_or_topic": entry.symbol_or_topic,
+        "asset_type": entry.asset_type,
+        "research_question": entry.research_question,
+        "paper_action_type": entry.paper_action_type,
+        "hypothetical_entry_reference": entry.hypothetical_entry_reference,
+        "hypothetical_exit_reference": entry.hypothetical_exit_reference,
+        "position_sizing_hypothesis": entry.position_sizing_hypothesis,
+        "risk_hypothesis": entry.risk_hypothesis,
+        "invalidation_condition": entry.invalidation_condition,
+        "outcome_review_date": entry.outcome_review_date,
+        "lessons_learned": entry.lessons_learned,
+        "status": entry.status,
+        "notes": entry.notes,
+    }
+    for field_name, value in required_fields.items():
+        if not str(value).strip():
+            issues.append(
+                ValidationIssue(field_name, "required", f"{field_name} is required.")
+            )
+
+    if entry.date and not _is_iso_date(entry.date):
+        issues.append(
+            ValidationIssue("date", "invalid_date", "date must use YYYY-MM-DD.")
+        )
+    if entry.outcome_review_date and not _is_iso_date(entry.outcome_review_date):
+        issues.append(
+            ValidationIssue(
+                "outcome_review_date",
+                "invalid_date",
+                "outcome_review_date must use YYYY-MM-DD.",
+            )
+        )
+
+    text_fields = {
+        "journal_id": entry.journal_id,
+        "symbol_or_topic": entry.symbol_or_topic,
+        "asset_type": entry.asset_type,
+        "research_question": entry.research_question,
+        "paper_action_type": entry.paper_action_type,
+        "hypothetical_entry_reference": entry.hypothetical_entry_reference,
+        "hypothetical_exit_reference": entry.hypothetical_exit_reference,
+        "position_sizing_hypothesis": entry.position_sizing_hypothesis,
+        "risk_hypothesis": entry.risk_hypothesis,
+        "invalidation_condition": entry.invalidation_condition,
+        "lessons_learned": entry.lessons_learned,
+        "status": entry.status,
+        "notes": entry.notes,
+    }
+    issues.extend(_execution_text_issues(text_fields))
+    issues.extend(_private_account_text_issues(text_fields))
+    issues.extend(_secret_value_text_issues(text_fields))
+    return tuple(issues)
 
 
 def validate_watchlist_note(note: WatchlistNote) -> tuple[ValidationIssue, ...]:
@@ -306,6 +415,36 @@ def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, 
                     )
                 )
                 break
+    return tuple(issues)
+
+
+def _private_account_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    for field_name, value in fields.items():
+        for pattern in PRIVATE_ACCOUNT_TEXT_PATTERNS:
+            if pattern.search(value):
+                issues.append(
+                    ValidationIssue(
+                        field_name,
+                        "prohibited_private_account_language",
+                        "Private brokerage or account-balance language is prohibited.",
+                    )
+                )
+                break
+    return tuple(issues)
+
+
+def _secret_value_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    for field_name, value in fields.items():
+        if _contains_secret_value_marker(value):
+            issues.append(
+                ValidationIssue(
+                    field_name,
+                    "secret_like_value",
+                    "Secret-like values are prohibited in Trading Lab.",
+                )
+            )
     return tuple(issues)
 
 
