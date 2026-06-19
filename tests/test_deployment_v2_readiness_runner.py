@@ -111,3 +111,69 @@ def test_readiness_runner_json_report_output_is_parseable(capsys) -> None:
     assert output["verdict"] == "GREEN"
     assert output["checks"][0]["name"] == "branch"
     assert output["checks"][1]["status"] == "SKIPPED"
+
+
+def test_readiness_json_report_has_required_keys(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    results = runner.run_readiness_checks(Path("."), sys.executable)
+    output = runner.readiness_json_report(results)
+
+    assert {
+        "verdict",
+        "branch",
+        "head",
+        "clean_status",
+        "diff_check",
+        "local_only_guard",
+        "guard_report",
+        "import_report",
+        "skipped_checks",
+        "blockers",
+        "violations",
+        "checks",
+    } <= set(output)
+    assert output["verdict"] == "GREEN"
+    assert output["branch"]["status"] == "GREEN"
+    assert output["clean_status"]["detail"] == "clean"
+
+
+def test_readiness_json_report_includes_non_green_checks(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command(status_output=" M file.txt\n"))
+
+    results = runner.run_readiness_checks(Path("."), sys.executable)
+    output = runner.readiness_json_report(results)
+
+    assert output["verdict"] == "RED"
+    assert output["clean_status"]["status"] == "RED"
+    assert output["blockers"] == ["M file.txt"]
+    assert output["violations"] == [
+        {
+            "check": "status",
+            "status": "RED",
+            "detail": "M file.txt",
+        }
+    ]
+
+
+def test_readiness_json_report_tracks_skipped_import_report(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_command", _fake_run_command())
+
+    results = runner.run_readiness_checks(Path("."), sys.executable)
+    output = runner.readiness_json_report(results)
+
+    assert output["import_report"]["status"] == "SKIPPED"
+    assert output["skipped_checks"] == ["import_report_comparison"]
+
+
+def test_readiness_runner_human_output_still_works(capsys) -> None:
+    results = [
+        runner.CheckResult("branch", "GREEN", "work/deployment-v2-discovery"),
+        runner.CheckResult("status", "GREEN", "clean"),
+    ]
+
+    runner.print_human_report(results)
+    output = capsys.readouterr().out
+
+    assert "Deployment V2 readiness verdict: GREEN" in output
+    assert "- branch: GREEN - work/deployment-v2-discovery" in output
