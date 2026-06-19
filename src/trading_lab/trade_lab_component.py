@@ -7,6 +7,8 @@ from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_MODES,
     TRADE_LAB_SUBTITLE,
     TRADE_LAB_TITLE,
+    TRAINING_MODE_DISCLAIMER,
+    TRAINING_SCORING_DIMENSIONS,
     WARNING_LABELS,
     WARNING_SEVERITIES,
     bad_trade_warning_details,
@@ -17,6 +19,7 @@ from src.trading_lab.trade_lab_ui import (
     mode_context_for,
     packages_for_mode,
     sort_packages_by_review_score,
+    training_scenarios,
 )
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
@@ -119,11 +122,9 @@ NEGOTIATION_LADDER_LABELS = (
 TRAINING_MODE_LABELS = (
     "Training Mode",
     "Practice scenario",
-    "NWR value",
-    "Market realism",
-    "Opponent fit",
-    "Roster impact",
+    *TRAINING_SCORING_DIMENSIONS,
     "Negotiation quality",
+    TRAINING_MODE_DISCLAIMER,
 )
 
 WARNING_SYSTEM_LABELS = (*WARNING_LABELS, *WARNING_SEVERITIES)
@@ -138,7 +139,7 @@ class TradeLabSection:
 def trade_lab_sections() -> tuple[TradeLabSection, ...]:
     return (
         TradeLabSection(
-    "Header",
+            "Header",
             (
                 TRADE_LAB_TITLE,
                 TRADE_LAB_SUBTITLE,
@@ -274,8 +275,12 @@ def render_trade_lab_page() -> None:
 
     st.divider()
     st.subheader("Training Mode")
-    st.write("Practice scenario placeholder")
-    st.write(
-        "Scoring dimensions: NWR value, market realism, opponent fit, "
-        "roster impact, negotiation quality."
-    )
+    st.caption(TRAINING_MODE_DISCLAIMER)
+    st.write(f"Scoring dimensions: {', '.join(TRAINING_SCORING_DIMENSIONS)}.")
+    for scenario in training_scenarios():
+        with st.container(border=True):
+            st.markdown(f"**Practice scenario:** {scenario.scenario_prompt}")
+            st.write("Choices:")
+            for choice in scenario.choices:
+                st.write(f"- {choice}")
+            st.write(f"Explanation: {scenario.explanation}")

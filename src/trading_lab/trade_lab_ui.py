@@ -118,6 +118,16 @@ WARNING_LABELS = (
 )
 
 WARNING_SEVERITIES = ("info", "review", "caution", "walk-away")
+TRAINING_SCORING_DIMENSIONS = (
+    "NWR value",
+    "market realism",
+    "opponent fit",
+    "roster impact",
+    "negotiation quality",
+)
+TRAINING_MODE_DISCLAIMER = (
+    "Training only / fake scenario. No real roster data and no automatic choices."
+)
 
 
 @dataclass(frozen=True)
@@ -127,6 +137,15 @@ class ModeContext:
     explanation: str
     relevant_controls: tuple[str, ...]
     warning_examples: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class TrainingScenario:
+    scenario_prompt: str
+    choices: tuple[str, str, str, str]
+    scoring_dimensions: tuple[str, ...]
+    explanation: str
+    disclaimer: str = TRAINING_MODE_DISCLAIMER
 
 
 MODE_CONTEXTS = {
@@ -483,6 +502,44 @@ def format_negotiation_ladder(ladder: NegotiationLadder) -> tuple[str, ...]:
     )
 
 
+def training_scenarios() -> tuple[TrainingScenario, ...]:
+    return (
+        TrainingScenario(
+            scenario_prompt="Trade for Target Player from Team Alpha.",
+            choices=(
+                "Offer Player A",
+                "Offer Player A plus 2026 3rd",
+                "Offer Player B plus 2026 2nd",
+                "Walk away",
+            ),
+            scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
+            explanation="Best practice is to start below the fair offer and protect Player B.",
+        ),
+        TrainingScenario(
+            scenario_prompt="Trade away Player B to Team Bravo.",
+            choices=(
+                "Ask for Player C",
+                "Ask for Player C plus 2026 2nd",
+                "Ask for Player D only",
+                "Keep Player B",
+            ),
+            scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
+            explanation="The pick matters because it protects future roster flexibility.",
+        ),
+        TrainingScenario(
+            scenario_prompt="Reduce drop pressure with a package to Team Charlie.",
+            choices=(
+                "Move Player D for 2026 3rd",
+                "Move Player D plus 2026 3rd for 2026 2nd",
+                "Include Player A",
+                "Make no move",
+            ),
+            scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
+            explanation="The cleanest pressure-release package avoids core players.",
+        ),
+    )
+
+
 def demo_payload_text() -> str:
     packages = demo_trade_packages()
     return " ".join(
@@ -495,5 +552,7 @@ def demo_payload_text() -> str:
             " ".join(package.opponent_fit for package in packages),
             " ".join(package.roster_impact for package in packages),
             " ".join(package.verdict for package in packages),
+            " ".join(scenario.scenario_prompt for scenario in training_scenarios()),
+            TRAINING_MODE_DISCLAIMER,
         ]
     )
