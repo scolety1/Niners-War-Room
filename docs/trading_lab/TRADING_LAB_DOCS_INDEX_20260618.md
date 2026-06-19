@@ -189,6 +189,11 @@ ingestion, or fantasy-football lane.
   future work reminders.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T7-T12 chain closeout and
   final readiness summary.
+- `TRADING_LAB_T20_FINAL_FREEZE_AUDIT_20260618.md`: T20 final freeze audit.
+- `TRADING_LAB_MASTER_ESCALATION_PACKET_20260618.md`: Master HQ escalation
+  packet for the frozen safe foundation.
+- `TRADING_LAB_SAFE_FOUNDATION_FINAL_STATUS_20260618.md`: final ready/blocked
+  status and focused validation commands.
 
 ## Closeouts
 
@@ -225,6 +230,8 @@ ingestion, or fantasy-football lane.
   closeout.
 - `TRADING_LAB_T19_SIMULATION_SPEC_CLOSEOUT_20260618.md`: T19 simulation
   design spec closeout.
+- `TRADING_LAB_T13_T20_CHAIN_CLOSEOUT_20260618.md`: T13-T20 chain closeout and
+  final freeze summary.
 - `TRADING_LAB_T7_T12_CHAIN_CLOSEOUT_20260618.md`: T12 chain closeout for T7
   through T12.
 

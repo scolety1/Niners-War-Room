@@ -28,6 +28,7 @@ broker/API integration, deployment, app wiring, or investment advice.
 | No-advice language lock | T17 plan, safe rewrite library, prohibited language taxonomy | `test_trading_lab_t17_no_advice_rewrites.py` | Buy/sell/order, broker token, API key, private balance, auto-execute, guaranteed-return language | Ready for language hygiene | Rewrite library is docs guidance, not advice | Keep rewrites as questions/risks/manual review |
 | Source policy gates | T18 source policy plan, license review template, decision tree | `test_trading_lab_t18_source_policy_gates.py` | Public source accepted, unclear license held, private brokerage/credential rejected, paid/private dump held | Ready for manual source review | Not legal advice; no downloads approved | Keep as source review gate only |
 | Simulation design gates | T19 design spec, blockers, not-implemented assertion | Docs-only; existing T11 blocked-work tests cover proposal HOLD/REJECT behavior | No ingestion, no fetching, no generated outputs, no broker/API, no execution, no implementation | HOLD before implementation | Design spec does not approve code | Require explicit user/Master approval |
+| Final freeze | T20 final freeze audit, Master escalation packet, safe foundation status, T13-T20 closeout | Docs-only; final focused Trading Lab validation before commit | Confirms all guardrails and blocked work remain in force | Ready for Master handoff after clean push | Future phases remain blocked | Stop until explicit approval |
 
 ## Coverage Notes
 
