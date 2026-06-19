@@ -203,3 +203,109 @@ def test_dirty_current_checkout_is_red() -> None:
 
     assert result.verdict == "RED"
     assert "current git status is not clean" in result.messages
+
+
+def test_valid_report_result_json_is_green() -> None:
+    report = compare_helper.ImportReport(
+        repo_path=r"C:\NWR\Niners-War-Room-deploy-v2",
+        expected_branch="work/deployment-v2-discovery",
+        current_branch="work/deployment-v2-discovery",
+        head_full="abc123",
+        head_short="abc123",
+        commit_subject="Imported branch",
+        dirty_files_exist="False",
+        untracked_files_exist="False",
+        diff_check_passed="True",
+        verdict="GREEN",
+    )
+    result = compare_helper.compare(report, _current_state(), None)
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "GREEN"
+    assert output["report_head"]["short"] == "abc123"
+    assert output["clean_status"]["clean"] is True
+
+
+def test_missing_zip_result_json_is_non_green(tmp_path: Path) -> None:
+    report, error = compare_helper.read_deployment_report(tmp_path / "missing.zip")
+    result = compare_helper.compare(report, _current_state(), error)
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "YELLOW"
+    assert "zip file missing:" in output["reasons"][0]
+
+
+def test_invalid_zip_result_json_is_non_green(tmp_path: Path) -> None:
+    zip_path = tmp_path / "invalid.zip"
+    zip_path.write_text("not a zip fixture\n", encoding="utf-8")
+
+    report, error = compare_helper.read_deployment_report(zip_path)
+    result = compare_helper.compare(report, _current_state(), error)
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "YELLOW"
+    assert "invalid zip file:" in output["reasons"][0]
+
+
+def test_missing_report_result_json_is_non_green(tmp_path: Path) -> None:
+    zip_path = tmp_path / "import_check.zip"
+    with ZipFile(zip_path, "w") as zip_file:
+        zip_file.writestr("00_MASTER_SUMMARY.md", "No Deployment V2 report")
+
+    report, error = compare_helper.read_deployment_report(zip_path)
+    result = compare_helper.compare(report, _current_state(), error)
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "YELLOW"
+    assert "missing 05_DEPLOYMENT_V2.md" in output["reasons"][0]
+
+
+def test_non_ancestor_result_json_is_non_green() -> None:
+    report = compare_helper.ImportReport(
+        repo_path=r"C:\NWR\Niners-War-Room-deploy-v2",
+        expected_branch="work/deployment-v2-discovery",
+        current_branch="work/deployment-v2-discovery",
+        head_full="abc123",
+        head_short="abc123",
+        commit_subject="Imported branch",
+        dirty_files_exist="False",
+        untracked_files_exist="False",
+        diff_check_passed="True",
+        verdict="GREEN",
+    )
+    result = compare_helper.compare(
+        report,
+        _current_state(head_full="def456", report_head_is_ancestor=False),
+        None,
+    )
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "RED"
+    assert output["ancestor_or_match"] is False
+
+
+def test_dirty_checkout_result_json_reflects_status() -> None:
+    report = compare_helper.ImportReport(
+        repo_path=r"C:\NWR\Niners-War-Room-deploy-v2",
+        expected_branch="work/deployment-v2-discovery",
+        current_branch="work/deployment-v2-discovery",
+        head_full="abc123",
+        head_short="abc123",
+        commit_subject="Imported branch",
+        dirty_files_exist="False",
+        untracked_files_exist="False",
+        diff_check_passed="True",
+        verdict="GREEN",
+    )
+    result = compare_helper.compare(
+        report,
+        _current_state(status_short=" M docs/example.md"),
+        None,
+    )
+    output = compare_helper.result_to_dict(result)
+
+    assert output["verdict"] == "RED"
+    assert output["clean_status"] == {
+        "clean": False,
+        "status_short": " M docs/example.md",
+    }
