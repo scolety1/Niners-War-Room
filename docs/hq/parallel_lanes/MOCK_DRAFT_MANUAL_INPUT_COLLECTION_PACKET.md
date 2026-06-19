@@ -24,6 +24,12 @@ Keep real files under ignored local-only paths such as `local_exports/`. Never
 commit real draft input files, `data/`, `.venv/`, logs, caches, egg-info, or
 generated exports.
 
+## Redaction Policy
+
+Public or committed reports may include role, basename, headers, row count, and
+readiness color. They must not include full private local paths or real player
+rows. Fixture mode may show fake rows only.
+
 ## Readiness Colors
 
 - GREEN: schema valid and source separation preserved.

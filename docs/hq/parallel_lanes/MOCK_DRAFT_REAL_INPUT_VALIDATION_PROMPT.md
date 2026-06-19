@@ -15,6 +15,8 @@ artifact files.
 Check headers and row counts only unless explicitly approved for deeper
 read-only validation. Preserve ADP/market as opponent behavior, availability,
 and likely pick timing only. ADP/market must never become NWR private value.
+For reports, redact full private local paths to basenames and do not print real
+player rows in committed docs or public summaries.
 
 If explicitly approved, create or update a local-only manifest in an ignored
 path such as local_exports/mock_draft/manual_input_manifest.local.json. Never
