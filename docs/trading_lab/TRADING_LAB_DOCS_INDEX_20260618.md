@@ -107,6 +107,10 @@ ingestion, or fantasy-football lane.
   manual review packet template.
 - `TRADING_LAB_MANUAL_REVIEW_PACKET_EXAMPLES_20260618.md`: T6 valid, invalid,
   and HOLD packet examples.
+- `TRADING_LAB_T9_MANUAL_PACKET_VALIDATION_PLAN_20260618.md`: T9 manual packet
+  validation plan.
+- `TRADING_LAB_MANUAL_REVIEW_PACKET_VALIDATION_EXPECTATIONS_20260618.md`: T9
+  manual packet ACCEPT/HOLD/REJECT expectations.
 
 ## Validation Inventory And Language
 
@@ -144,6 +148,8 @@ ingestion, or fantasy-football lane.
 - `TRADING_LAB_T7_ARTIFACT_VALIDATOR_CLOSEOUT_20260618.md`: T7 artifact
   validator closeout.
 - `TRADING_LAB_T8_SCHEMA_REGISTRY_CLOSEOUT_20260618.md`: T8 schema registry
+  closeout.
+- `TRADING_LAB_T9_MANUAL_PACKET_CLOSEOUT_20260618.md`: T9 manual packet
   closeout.
 
 ## Ready

@@ -112,6 +112,16 @@ MANUAL_ARTIFACT_REQUIRED_FIELDS = {
     ),
 }
 
+MANUAL_REVIEW_PACKET_REQUIRED_SECTIONS = (
+    "packet_id",
+    "intake_section",
+    "source_review_section",
+    "watchlist_section",
+    "risk_review_section",
+    "paper_journal_section",
+    "closeout_section",
+)
+
 EXECUTION_TEXT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
@@ -535,6 +545,32 @@ def validate_manual_artifact_payload(
         if isinstance(value, str)
     }
     issues.extend(validate_artifact_text_fields(artifact_type, text_fields))
+    return tuple(issues)
+
+
+def validate_manual_review_packet(payload: Mapping[str, object]) -> tuple[ValidationIssue, ...]:
+    """Validate one manual review packet as an in-memory research artifact."""
+    issues: list[ValidationIssue] = []
+    for section_name in MANUAL_REVIEW_PACKET_REQUIRED_SECTIONS:
+        if not payload.get(section_name):
+            issues.append(
+                ValidationIssue(
+                    section_name,
+                    "hold_missing_packet_section",
+                    f"{section_name} is required before packet acceptance.",
+                )
+            )
+
+    text_fields: dict[str, str] = {}
+    for key, value in payload.items():
+        if isinstance(value, str):
+            text_fields[str(key)] = value
+        elif isinstance(value, Mapping):
+            for nested_key, nested_value in value.items():
+                if isinstance(nested_value, str):
+                    text_fields[f"{key}.{nested_key}"] = nested_value
+
+    issues.extend(validate_artifact_text_fields("manual_review_packet", text_fields))
     return tuple(issues)
 
 
