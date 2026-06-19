@@ -138,6 +138,28 @@ def test_guard_skips_local_only_artifact_dirs(tmp_path: Path) -> None:
     assert guard.scan_repository(tmp_path) == []
 
 
+def test_guard_cli_root_option_scans_temp_fixture(tmp_path: Path, capsys) -> None:
+    (tmp_path / "render.yaml").write_text("inert platform fixture\n", encoding="utf-8")
+
+    result = guard.main(["--root", str(tmp_path), "--report", "json"])
+    output = json.loads(capsys.readouterr().out)
+
+    assert result == 1
+    assert output["verdict"] == "RED"
+    assert output["violations"] == [
+        {
+            "path": "render.yaml",
+            "reason": "hosted/container/platform manifest is present",
+        }
+    ]
+
+
+def test_guard_positional_root_remains_supported(tmp_path: Path) -> None:
+    (tmp_path / "notes.md").write_text("ordinary local-only notes\n", encoding="utf-8")
+
+    assert guard.main([str(tmp_path)]) == 0
+
+
 def test_docs_can_describe_forbidden_surfaces_without_false_positive(tmp_path: Path) -> None:
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()

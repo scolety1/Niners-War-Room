@@ -250,7 +250,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "root",
+        "--root",
+        dest="root_option",
+        help="Repository root to scan. Overrides the positional root when supplied.",
+    )
+    parser.add_argument(
+        "root_path",
         nargs="?",
         default=".",
         help="Repository root to scan. Defaults to the current working directory.",
@@ -260,7 +265,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    report = build_report(Path(args.root))
+    root = Path(args.root_option or args.root_path)
+    report = build_report(root)
     violations = report.violations
 
     if args.report == "json":
