@@ -40,6 +40,17 @@ UNWIRED_INTEGRATION_NOTICE = (
     "rookie board, and mock draft integrations are not wired yet."
 )
 
+PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS = (
+    "NWR private value integration: placeholder only; not wired; needs approval.",
+    "Public fantasy market value integration: placeholder only; not wired; needs approval.",
+    "Roster context integration: placeholder only; not wired; needs approval.",
+    "Drop pressure integration: placeholder only; not wired; needs approval.",
+    "Rookie board integration: placeholder only; not wired; needs approval.",
+    "Mock draft integration: placeholder only; not wired; needs approval.",
+    "No generated outputs.",
+    "No automated trade submission or automatic decisioning.",
+)
+
 FAKE_DATA_DISCLAIMER = (
     "Desktop smoke build: fake in-memory examples only. Real integrations are "
     "not wired yet."
@@ -158,6 +169,10 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
         TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
         TradeLabSection("Bad trade detector", WARNING_SYSTEM_LABELS),
         TradeLabSection("Training Mode", TRAINING_MODE_LABELS),
+        TradeLabSection(
+            "Placeholder integration boundaries",
+            PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS,
+        ),
     )
 
 
@@ -179,6 +194,9 @@ def render_trade_lab_page() -> None:
     st.write(" ".join(f"`{chip}`" for chip in TRADE_LAB_DATA_CHIPS))
     st.warning(FAKE_DATA_DISCLAIMER)
     st.info(UNWIRED_INTEGRATION_NOTICE)
+    with st.expander("Placeholder integration boundaries", expanded=False):
+        for boundary in PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS:
+            st.write(f"- {boundary}")
 
     left, center, right = st.columns((0.9, 1.7, 1.1), gap="large")
     with left:
