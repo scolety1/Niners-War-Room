@@ -116,6 +116,18 @@ class RecentDraftPickRow:
 
 
 @dataclass(frozen=True)
+class DraftPickHistoryRow:
+    overall_pick: int
+    pick_label: str
+    owner: str
+    asset_id: str
+    player: str
+    position: str
+    asset_type: str
+    asset_lifecycle: str
+
+
+@dataclass(frozen=True)
 class PickGuardrailStatus:
     selected_pick: int | None
     current_pick: int | None
@@ -147,14 +159,106 @@ def create_empty_draft_state(
 ) -> DraftBoardState:
     picks = _draft_picks_from_rows(pick_rows or [])
     available_players = _available_players_from_rows(available_rows or [])
-    return _with_recomputed_current_pick(
-        DraftBoardState(
-            picks=picks,
-            drafted_players=(),
-            available_players=available_players,
-            current_pick=1 if picks else None,
-            my_pick_numbers=tuple(pick.overall_pick for pick in picks if pick.is_my_pick),
+    return _assert_draft_state_valid(
+        _with_recomputed_current_pick(
+            DraftBoardState(
+                picks=picks,
+                drafted_players=(),
+                available_players=available_players,
+                current_pick=1 if picks else None,
+                my_pick_numbers=tuple(
+                    pick.overall_pick for pick in picks if pick.is_my_pick
+                ),
+            )
         )
+    )
+
+
+def validate_draft_state(state: DraftBoardState) -> tuple[str, ...]:
+    issues: list[str] = []
+    pick_numbers = [pick.overall_pick for pick in state.picks]
+    drafted_pick_numbers = [row.pick.overall_pick for row in state.drafted_players]
+    available_asset_ids = [row.asset_id for row in state.available_players]
+    drafted_asset_ids = [row.asset_id for row in state.drafted_players]
+
+    issues.extend(_duplicate_issue("Draft pick", pick_numbers))
+    issues.extend(_duplicate_issue("Drafted pick", drafted_pick_numbers))
+    issues.extend(_duplicate_issue("Available player asset", available_asset_ids))
+    issues.extend(_duplicate_issue("Drafted player asset", drafted_asset_ids))
+
+    pick_number_set = set(pick_numbers)
+    for drafted_pick in drafted_pick_numbers:
+        if drafted_pick not in pick_number_set:
+            issues.append(f"Drafted pick {drafted_pick} is outside the draft board.")
+
+    overlap = sorted(set(available_asset_ids).intersection(drafted_asset_ids))
+    if overlap:
+        issues.append(
+            "Player asset cannot be both available and drafted: " + ", ".join(overlap)
+        )
+
+    drafted_pick_set = set(drafted_pick_numbers)
+    expected_current_pick = next(
+        (
+            pick.overall_pick
+            for pick in state.picks
+            if pick.overall_pick not in drafted_pick_set
+        ),
+        None,
+    )
+    if state.current_pick != expected_current_pick:
+        issues.append(
+            "Current pick is inconsistent with drafted picks: "
+            f"expected {expected_current_pick}, found {state.current_pick}."
+        )
+
+    expected_my_picks = tuple(pick.overall_pick for pick in state.picks if pick.is_my_pick)
+    if state.my_pick_numbers != expected_my_picks:
+        issues.append(
+            "My pick numbers are inconsistent with pick ownership flags: "
+            f"expected {expected_my_picks}, found {state.my_pick_numbers}."
+        )
+
+    return tuple(issues)
+
+
+def assert_draft_state_valid(state: DraftBoardState) -> None:
+    issues = validate_draft_state(state)
+    if issues:
+        raise ValueError("Invalid draft state: " + " ".join(issues))
+
+
+def _assert_draft_state_valid(state: DraftBoardState) -> DraftBoardState:
+    assert_draft_state_valid(state)
+    return state
+
+
+def _duplicate_issue(label: str, values: Sequence[object]) -> tuple[str, ...]:
+    seen: set[object] = set()
+    duplicates: list[str] = []
+    for value in values:
+        if value in seen and str(value) not in duplicates:
+            duplicates.append(str(value))
+        seen.add(value)
+    if not duplicates:
+        return ()
+    return (f"{label} appears more than once: {', '.join(duplicates)}.",)
+
+
+def draft_pick_history(state: DraftBoardState) -> tuple[DraftPickHistoryRow, ...]:
+    assert_draft_state_valid(state)
+    return tuple(
+        DraftPickHistoryRow(
+            overall_pick=row.pick.overall_pick,
+            pick_label=row.pick.pick_label,
+            owner=row.pick.current_owner,
+            asset_id=row.asset_id,
+            player=row.player,
+            position=row.position,
+            asset_type=row.asset_type,
+            asset_lifecycle=row.asset_lifecycle,
+        )
+        for row in state.drafted_players
     )
 
 
@@ -164,7 +268,8 @@ def mark_player_drafted(
     *,
     overall_pick: int | None = None,
 ) -> DraftBoardState:
-    pick_number = overall_pick or state.current_pick
+    assert_draft_state_valid(state)
+    pick_number = overall_pick if overall_pick is not None else state.current_pick
     if pick_number is None:
         raise ValueError("Cannot draft a player because the draft has no current pick.")
     pick = _find_pick(state, pick_number)
@@ -196,7 +301,7 @@ def mark_player_drafted(
             row for row in state.available_players if row.asset_id != asset_id
         ),
     )
-    return _with_recomputed_current_pick(next_state)
+    return _assert_draft_state_valid(_with_recomputed_current_pick(next_state))
 
 
 def replace_drafted_player_at_pick(
@@ -205,6 +310,7 @@ def replace_drafted_player_at_pick(
     *,
     overall_pick: int,
 ) -> DraftBoardState:
+    assert_draft_state_valid(state)
     pick = _find_pick(state, overall_pick)
     existing = _drafted_at_pick(state, overall_pick)
     if existing is None:
@@ -255,7 +361,7 @@ def replace_drafted_player_at_pick(
             )
         ),
     )
-    return _with_recomputed_current_pick(next_state)
+    return _assert_draft_state_valid(_with_recomputed_current_pick(next_state))
 
 
 def undo_pick(
@@ -263,6 +369,7 @@ def undo_pick(
     *,
     overall_pick: int | None = None,
 ) -> DraftBoardState:
+    assert_draft_state_valid(state)
     if not state.drafted_players:
         return state
     pick_number = overall_pick or max(
@@ -279,21 +386,24 @@ def undo_pick(
         ),
         available_players=_sorted_available((*state.available_players, restored)),
     )
-    return _with_recomputed_current_pick(next_state)
+    return _assert_draft_state_valid(_with_recomputed_current_pick(next_state))
 
 
 def reset_mock(state: DraftBoardState) -> DraftBoardState:
+    assert_draft_state_valid(state)
     restored = [
         AvailablePlayer(
             **_available_player_payload_from_drafted(row, state=state)
         )
         for row in state.drafted_players
     ]
-    return _with_recomputed_current_pick(
-        replace(
-            state,
-            drafted_players=(),
-            available_players=_sorted_available((*state.available_players, *restored)),
+    return _assert_draft_state_valid(
+        _with_recomputed_current_pick(
+            replace(
+                state,
+                drafted_players=(),
+                available_players=_sorted_available((*state.available_players, *restored)),
+            )
         )
     )
 

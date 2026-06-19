@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from src.services.draft_state_service import (
+    AvailablePlayer,
+    assert_draft_state_valid,
     available_players_after_picks,
     best_option_rows_at_pick,
     best_options_at_pick,
@@ -12,6 +16,7 @@ from src.services.draft_state_service import (
     draft_board_export_rows,
     draft_pick_grid_cells,
     draft_pick_grid_rows,
+    draft_pick_history,
     draft_progress_summary,
     drafted_player_at_pick,
     is_my_turn,
@@ -23,6 +28,7 @@ from src.services.draft_state_service import (
     reset_mock,
     search_available_players,
     undo_pick,
+    validate_draft_state,
 )
 from src.services.draft_ux_service import DRAFT_TOTAL_PICKS, build_draft_ux_contract
 
@@ -189,6 +195,7 @@ def test_mark_player_drafted_advances_current_pick_and_removes_available_player(
 
     state = mark_player_drafted(state, "rookie:wr_1")
 
+    assert validate_draft_state(state) == ()
     assert state.current_pick == 2
     assert len(state.drafted_players) == 1
     assert state.drafted_players[0].pick.overall_pick == 1
@@ -274,10 +281,15 @@ def test_recent_drafted_players_returns_latest_picks_in_pick_order() -> None:
     state = mark_player_drafted(state, "rookie:rb_1", overall_pick=7)
 
     recent = recent_drafted_players(state)
+    history = draft_pick_history(state)
 
     assert [(row.pick_label, row.player, row.position) for row in recent] == [
         ("1.04", "Alpha WR", "WR"),
         ("1.07", "Bellcow RB", "RB"),
+    ]
+    assert [(row.overall_pick, row.asset_id, row.player) for row in history] == [
+        (4, "rookie:wr_1", "Alpha WR"),
+        (7, "rookie:rb_1", "Bellcow RB"),
     ]
 
 
@@ -328,6 +340,76 @@ def test_draft_state_rejects_duplicate_player_or_filled_pick() -> None:
         mark_player_drafted(state, "rookie:wr_1", overall_pick=2)
     with pytest.raises(ValueError, match="already has"):
         mark_player_drafted(state, "rookie:rb_1", overall_pick=1)
+
+
+def test_create_empty_draft_state_rejects_duplicate_available_assets() -> None:
+    rows = [*_available_rows(), {**_available_rows()[0], "player": "Duplicate Alpha"}]
+
+    with pytest.raises(ValueError, match="Available player asset appears more than once"):
+        create_empty_draft_state(available_rows=rows)
+
+
+def test_create_empty_draft_state_rejects_duplicate_pick_numbers() -> None:
+    rows = [*_pick_rows(), _pick_rows()[0]]
+
+    with pytest.raises(ValueError, match="Draft pick appears more than once"):
+        create_empty_draft_state(pick_rows=rows, available_rows=_available_rows())
+
+
+def test_validate_draft_state_reports_duplicate_drafted_assets_and_bad_current_pick() -> None:
+    state = create_empty_draft_state(available_rows=_available_rows())
+    state = mark_player_drafted(state, "rookie:wr_1")
+    invalid_state = replace(
+        state,
+        drafted_players=(*state.drafted_players, state.drafted_players[0]),
+        current_pick=7,
+    )
+
+    issues = validate_draft_state(invalid_state)
+
+    assert any("Drafted pick appears more than once" in issue for issue in issues)
+    assert any("Drafted player asset appears more than once" in issue for issue in issues)
+    assert any("Current pick is inconsistent" in issue for issue in issues)
+    with pytest.raises(ValueError, match="Invalid draft state"):
+        assert_draft_state_valid(invalid_state)
+
+
+def test_validate_draft_state_reports_available_and_drafted_overlap() -> None:
+    state = create_empty_draft_state(available_rows=_available_rows())
+    state = mark_player_drafted(state, "rookie:wr_1")
+    drafted = state.drafted_players[0]
+    overlap_player = AvailablePlayer(
+        asset_id=drafted.asset_id,
+        player=drafted.player,
+        position=drafted.position,
+        nfl_team=drafted.nfl_team,
+        asset_type=drafted.asset_type,
+        asset_lifecycle=drafted.asset_lifecycle,
+        why_available=drafted.why_available,
+        stats_model_value=drafted.stats_model_value,
+        market_value=drafted.market_value,
+        market_edge=drafted.market_edge,
+        confidence=drafted.confidence,
+        warning="",
+        draft_rank=1,
+        do_not_draft_before_pick=drafted.do_not_draft_before_pick,
+        recommended_range=drafted.recommended_range,
+    )
+    invalid_state = replace(
+        state,
+        available_players=(*state.available_players, overlap_player),
+    )
+
+    issues = validate_draft_state(invalid_state)
+
+    assert any("both available and drafted" in issue for issue in issues)
+
+
+def test_mark_player_drafted_rejects_invalid_explicit_pick_number() -> None:
+    state = create_empty_draft_state(available_rows=_available_rows())
+
+    with pytest.raises(ValueError, match="outside the draft board"):
+        mark_player_drafted(state, "rookie:wr_1", overall_pick=999)
 
 
 def test_replace_drafted_player_at_pick_edits_prior_pick_and_restores_old_player() -> None:
