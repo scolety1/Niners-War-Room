@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "print_deployment_v2_operator_transcript.py"
+)
+SPEC = importlib.util.spec_from_file_location(
+    "print_deployment_v2_operator_transcript",
+    MODULE_PATH,
+)
+assert SPEC is not None
+assert SPEC.loader is not None
+transcript = importlib.util.module_from_spec(SPEC)
+scripts_dir = str(Path(__file__).resolve().parents[1] / "scripts")
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
+sys.modules[SPEC.name] = transcript
+SPEC.loader.exec_module(transcript)
+
+
+def test_transcript_includes_required_sections(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        transcript,
+        "run_readiness_checks",
+        lambda _repo, _python, _zip=None: [
+            SimpleNamespace(name="branch", status="GREEN", detail="work/deployment-v2-discovery"),
+            SimpleNamespace(name="head", status="GREEN", detail="abc123 Test"),
+            SimpleNamespace(name="status", status="GREEN", detail="clean"),
+            SimpleNamespace(name="diff_check", status="GREEN", detail="clean"),
+            SimpleNamespace(name="local_only_guard", status="GREEN", detail="passed"),
+            SimpleNamespace(name="local_only_guard_report", status="GREEN", detail="verdict=GREEN"),
+            SimpleNamespace(
+                name="import_report_comparison",
+                status="SKIPPED",
+                detail="no import zip supplied",
+            ),
+        ],
+    )
+    monkeypatch.setattr(
+        transcript,
+        "audit_docs",
+        lambda _docs: [SimpleNamespace(status="GREEN", check="docs_consistency", detail="ok")],
+    )
+
+    output = transcript.build_transcript(tmp_path, sys.executable)
+
+    assert "LANE: Deployment V2" in output
+    assert "READINESS RUNNER: GREEN" in output
+    assert "DOCS CONSISTENCY: GREEN" in output
+    assert "HOSTED DEPLOYMENT: BLOCKED" in output
+    assert "FINAL VERDICT: GREEN" in output
+
+
+def test_transcript_output_path_is_optional_temp_only(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(transcript, "build_transcript", lambda *_args: "FINAL VERDICT: GREEN\n")
+    output_path = tmp_path / "transcript.txt"
+
+    result = transcript.main(["--repo", str(tmp_path), "--output", str(output_path)])
+
+    assert result == 0
+    assert output_path.read_text(encoding="utf-8") == "FINAL VERDICT: GREEN\n"
