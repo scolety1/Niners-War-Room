@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.trading_lab.trade_lab_adapters import disabled_provider_status_labels
 from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_DATA_CHIPS,
     TRADE_LAB_MODES,
@@ -55,6 +56,7 @@ PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS = (
 
 PROVENANCE_STATUS_LABELS = ui_data_status_labels()
 REVIEW_QUEUE_PLACEHOLDER_LABELS = review_queue_placeholder_labels()
+DISABLED_PROVIDER_STATUS_LABELS = disabled_provider_status_labels()
 
 FAKE_DATA_DISCLAIMER = (
     "Desktop smoke build: fake in-memory examples only. Real integrations are "
@@ -180,6 +182,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
             PLACEHOLDER_INTEGRATION_BOUNDARY_LABELS,
         ),
         TradeLabSection("Review queue placeholder", REVIEW_QUEUE_PLACEHOLDER_LABELS),
+        TradeLabSection("Disabled provider states", DISABLED_PROVIDER_STATUS_LABELS),
     )
 
 

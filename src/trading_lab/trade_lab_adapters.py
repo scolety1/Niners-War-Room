@@ -142,3 +142,47 @@ class FixtureOpponentContextProvider:
 
     def status(self) -> ProviderStatus:
         return fixture_provider_status("FixtureOpponentContextProvider")
+
+
+class DisabledNwrValueProvider:
+    def get_asset_values(self) -> tuple[FantasyAsset, ...]:
+        return ()
+
+    def status(self) -> ProviderStatus:
+        return missing_provider_status("DisabledNwrValueProvider")
+
+
+class DisabledPublicMarketProvider:
+    def get_public_value(self, asset_id: str) -> None:
+        return None
+
+    def status(self) -> ProviderStatus:
+        return missing_provider_status("DisabledPublicMarketProvider")
+
+
+class DisabledRosterContextProvider:
+    def get_roster_context(self) -> str:
+        return "Roster context not wired."
+
+    def status(self) -> ProviderStatus:
+        return missing_provider_status("DisabledRosterContextProvider")
+
+
+class DisabledRookieMockContextProvider:
+    def get_rookie_context(self, asset_id: str) -> str:
+        return "Rookie context not wired."
+
+    def get_mock_draft_context(self) -> str:
+        return "Mock draft context not wired."
+
+    def status(self) -> ProviderStatus:
+        return missing_provider_status("DisabledRookieMockContextProvider")
+
+
+def disabled_provider_status_labels() -> tuple[str, ...]:
+    return (
+        DisabledNwrValueProvider().status().status_label,
+        DisabledPublicMarketProvider().status().status_label,
+        DisabledRosterContextProvider().status().status_label,
+        DisabledRookieMockContextProvider().status().status_label,
+    )
