@@ -97,6 +97,30 @@ class DemoTradePackage:
     roster_aftermath: RosterAftermath
 
 
+def _demo_package_from_review(review) -> DemoTradePackage:
+    from src.trading_lab.trade_negotiation import build_negotiation_ladder
+    from src.trading_lab.trade_roster_effects import build_roster_aftermath
+    from src.trading_lab.trade_warning_engine import build_trade_warnings
+
+    package = review.package
+    warnings = tuple(warning.message for warning in build_trade_warnings(review))
+    return DemoTradePackage(
+        mode=package.mode,
+        give=tuple(asset.display_name for asset in package.give_side.assets),
+        get=tuple(asset.display_name for asset in package.get_side.assets),
+        nwr_gain=review.score.nwr_delta,
+        public_market_fairness=review.score.market_fairness,
+        opponent_fit=f"{review.score.opponent_fit} ({package.opponent_context.team_name})",
+        roster_impact=review.score.roster_impact,
+        keeper_drop_impact=review.score.keeper_drop_impact,
+        risk_flags=(review.score.risk_label,),
+        verdict=review.verdict,
+        negotiation_ladder=build_negotiation_ladder(review),
+        warnings=warnings,
+        roster_aftermath=build_roster_aftermath(review),
+    )
+
+
 @dataclass(frozen=True)
 class TradeWarning:
     label: str
@@ -213,6 +237,24 @@ def demo_trade_packages() -> tuple[DemoTradePackage, ...]:
 
 
 def generate_fake_trade_packages(mode: str | None = None) -> tuple[DemoTradePackage, ...]:
+    from src.trading_lab.trade_package_builder import (
+        candidate_packages_for_mode,
+        rank_candidate_packages,
+    )
+
+    if mode is None:
+        modes = tuple(mode_name for mode_name in TRADE_LAB_MODES if mode_name != "Training Mode")
+        reviews = tuple(
+            review
+            for mode_name in modes
+            for review in rank_candidate_packages(candidate_packages_for_mode(mode_name))
+        )
+    else:
+        builder_mode = "Trade For Player" if mode == "Training Mode" else mode
+        reviews = rank_candidate_packages(candidate_packages_for_mode(builder_mode))
+    if reviews:
+        return tuple(_demo_package_from_review(review) for review in reviews)
+
     packages = (
         DemoTradePackage(
             mode="Trade For Player",

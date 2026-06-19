@@ -4,7 +4,7 @@ from src.trading_lab.trade_lab_ui import RosterAftermath
 from src.trading_lab.trade_value_contracts import TradeReview
 
 REAL_ROSTER_INTEGRATION_WIRED = False
-ROSTER_INTEGRATION_STATUS = "real roster integration not wired yet"
+ROSTER_INTEGRATION_STATUS = "Real roster integrations are not wired yet."
 
 
 def estimate_keeper_impact(review: TradeReview) -> str:
