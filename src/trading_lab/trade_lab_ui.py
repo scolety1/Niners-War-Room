@@ -84,6 +84,75 @@ class DemoTradePackage:
     roster_aftermath: RosterAftermath
 
 
+@dataclass(frozen=True)
+class ModeContext:
+    mode: str
+    user_question: str
+    explanation: str
+    relevant_controls: tuple[str, ...]
+    warning_examples: tuple[str, ...]
+
+
+MODE_CONTEXTS = {
+    "Trade For Player": ModeContext(
+        mode="Trade For Player",
+        user_question="I want to trade for this player. What should I give up?",
+        explanation="Start with the target and compare realistic outgoing packages.",
+        relevant_controls=("Target player", "Opponent team", "Max offer aggressiveness"),
+        warning_examples=("Do not include core keepers too early.",),
+    ),
+    "Trade Away Player": ModeContext(
+        mode="Trade Away Player",
+        user_question="I want to trade away this player. What should I target in return?",
+        explanation="Start with the outgoing player and compare return packages.",
+        relevant_controls=("Outgoing player", "Opponent team", "Risk preference"),
+        warning_examples=("Avoid accepting a package with no rookie pick upside.",),
+    ),
+    "Upgrade Position": ModeContext(
+        mode="Upgrade Position",
+        user_question="Which package upgrades a lineup spot without overpaying?",
+        explanation="Consolidate assets into a stronger starter while protecting depth.",
+        relevant_controls=("Target player", "Allow multi-player packages", "Risk preference"),
+        warning_examples=("Do not thin scarce position depth below review threshold.",),
+    ),
+    "Consolidate Depth": ModeContext(
+        mode="Consolidate Depth",
+        user_question="How can we turn bench depth into a cleaner roster asset?",
+        explanation="Package extra players or picks to reduce future roster pressure.",
+        relevant_controls=("Allow multi-player packages", "Untouchable assets"),
+        warning_examples=("Do not consolidate into a player who creates keeper crowding.",),
+    ),
+    "Pick Conversion": ModeContext(
+        mode="Pick Conversion",
+        user_question="Which player return is worth converting rookie pick value?",
+        explanation="Compare pick cost against roster usefulness and future draft flexibility.",
+        relevant_controls=("Include picks", "Win-now vs long-term preference"),
+        warning_examples=("Do not spend the 2026 2nd unless roster impact is clear.",),
+    ),
+    "Drop-Pressure Trade": ModeContext(
+        mode="Drop-Pressure Trade",
+        user_question="Which trade reduces future cuts without losing too much value?",
+        explanation="Move fringe depth into picks or cleaner roster assets.",
+        relevant_controls=("Outgoing player", "Drop pressure placeholder"),
+        warning_examples=("Do not solve drop pressure by giving away keeper upside.",),
+    ),
+    "Opponent-Fit Trade": ModeContext(
+        mode="Opponent-Fit Trade",
+        user_question="Which team is the best trade partner?",
+        explanation="Compare fake opponent needs against package realism.",
+        relevant_controls=("Opponent team", "Target player", "Outgoing player"),
+        warning_examples=("Do not chase NWR gain if the opponent has no reason to accept.",),
+    ),
+    "Training Mode": ModeContext(
+        mode="Training Mode",
+        user_question="Can I practice judging a trade package?",
+        explanation="Review fake scenarios and score negotiation quality.",
+        relevant_controls=("Mode", "Risk preference"),
+        warning_examples=("Training scenarios are fake and do not use real roster data.",),
+    ),
+}
+
+
 def demo_trade_packages() -> tuple[DemoTradePackage, ...]:
     return generate_fake_trade_packages()
 
@@ -220,6 +289,58 @@ def generate_fake_trade_packages(mode: str | None = None) -> tuple[DemoTradePack
                 rookie_mock_context="Adds a better rookie pick lane.",
             ),
         ),
+        DemoTradePackage(
+            mode="Consolidate Depth",
+            give=("Player A", "Player D"),
+            get=("Player B",),
+            nwr_gain=9.4,
+            public_market_fairness="Balanced enough for Team Charlie to review.",
+            opponent_fit="Team Charlie needs two usable depth pieces.",
+            roster_impact="Consolidates two bench assets into one better flex option.",
+            keeper_drop_impact="Keeper impact neutral; drop pressure improves.",
+            risk_flags=("Depth consolidation",),
+            verdict="Useful if roster spots matter more than depth volume",
+            negotiation_ladder=NegotiationLadder(
+                opening_offer="Player D",
+                fair_offer="Player A plus Player D",
+                max_offer="Player A plus 2026 3rd",
+                walk_away="Player A plus 2026 2nd",
+            ),
+            warnings=("Avoid if bye-week depth is already thin.",),
+            roster_aftermath=RosterAftermath(
+                summary="Bench gets cleaner with one fewer roster decision.",
+                keeper_impact="No keeper core change.",
+                drop_pressure_impact="Drop pressure improves by one slot.",
+                positional_depth_impact="Depth volume decreases but quality rises.",
+                rookie_mock_context="No rookie pick cost in the fair offer.",
+            ),
+        ),
+        DemoTradePackage(
+            mode="Opponent-Fit Trade",
+            give=("Player C",),
+            get=("Player A", "2026 3rd"),
+            nwr_gain=6.8,
+            public_market_fairness="Close enough for Team Alpha if they need Player C.",
+            opponent_fit="Team Alpha has a need that Player C can cover.",
+            roster_impact="Adds a safer depth player and a small pick return.",
+            keeper_drop_impact="Keeper impact neutral; drop pressure modestly improves.",
+            risk_flags=("Lower ceiling",),
+            verdict="Good partner-fit package",
+            negotiation_ladder=NegotiationLadder(
+                opening_offer="Player A",
+                fair_offer="Player A plus 2026 3rd",
+                max_offer="Player A plus 2026 2nd",
+                walk_away="Player A only",
+            ),
+            warnings=("Avoid if Team Alpha no longer needs Player C's position.",),
+            roster_aftermath=RosterAftermath(
+                summary="Roster gets safer but loses some ceiling.",
+                keeper_impact="No keeper core change.",
+                drop_pressure_impact="Slightly easier drop decision later.",
+                positional_depth_impact="Improves weekly floor at a bench spot.",
+                rookie_mock_context="2026 3rd adds a small draft option.",
+            ),
+        ),
     )
     if mode is None:
         return packages
@@ -240,6 +361,17 @@ def sort_packages_by_review_score(
             reverse=True,
         )
     )
+
+
+def mode_context_for(mode: str) -> ModeContext:
+    return MODE_CONTEXTS[mode]
+
+
+def packages_for_mode(mode: str) -> tuple[DemoTradePackage, ...]:
+    packages = generate_fake_trade_packages(mode)
+    if packages:
+        return packages
+    return generate_fake_trade_packages()
 
 
 def best_trade_package(packages: tuple[DemoTradePackage, ...] | None = None) -> DemoTradePackage:

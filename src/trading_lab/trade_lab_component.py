@@ -9,8 +9,9 @@ from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_TITLE,
     bad_trade_warnings,
     best_trade_package,
-    demo_trade_packages,
     format_package_summary,
+    mode_context_for,
+    packages_for_mode,
     sort_packages_by_review_score,
 )
 
@@ -160,14 +161,14 @@ def render_trade_lab_page() -> None:
     st.info(UNWIRED_INTEGRATION_NOTICE)
 
     left, center, right = st.columns((0.9, 1.7, 1.1), gap="large")
-    packages = demo_trade_packages()
-    best = best_trade_package(packages)
-
     with left:
         st.subheader("Build the trade")
         st.caption(MODE_HELP_TEXT)
         st.markdown("**Trade question**")
-        st.selectbox("Mode", TRADE_LAB_MODES, index=0, help=MODE_HELP_TEXT)
+        selected_mode = st.selectbox("Mode", TRADE_LAB_MODES, index=0, help=MODE_HELP_TEXT)
+        mode_context = mode_context_for(selected_mode)
+        st.info(mode_context.user_question)
+        st.caption(mode_context.explanation)
         st.text_input("Target player", value="Target Player")
         st.text_input("Outgoing player", value="Player A")
         st.selectbox("Opponent team", ("Team Alpha", "Team Bravo"), index=0)
@@ -183,6 +184,12 @@ def render_trade_lab_page() -> None:
             options=("Win-now", "Balanced", "Long-term"),
             value="Balanced",
         )
+        st.markdown("**Mode-specific controls**")
+        for control in mode_context.relevant_controls:
+            st.write(f"- {control}")
+
+    packages = packages_for_mode(selected_mode)
+    best = best_trade_package(packages)
 
     with center:
         st.subheader("Review board")
@@ -218,6 +225,8 @@ def render_trade_lab_page() -> None:
 
         st.subheader("Bad trade warnings")
         st.caption("Warnings flag packages that need manual review before making an offer.")
+        for warning in mode_context.warning_examples:
+            st.warning(warning)
         for warning in bad_trade_warnings(best):
             st.warning(warning)
 
