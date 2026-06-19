@@ -1,301 +1,106 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date
 
-ALLOWED_SOURCE_CATEGORIES = frozenset(
+FANTASY_SOURCE_CATEGORIES = frozenset(
     {
-        "public_market_data",
-        "public_company_filings",
-        "public_economic_data",
-        "public_news_research",
-        "manual_paper_trade_journal",
-        "simulated_portfolio_watchlist",
+        "nwr_private_value_outputs",
+        "outcome_v1_display_values",
+        "rookie_board_values",
+        "drop_decision_roster_pressure",
+        "mock_draft_pick_player_context",
+        "public_fantasy_rankings",
+        "public_dynasty_trade_calculators",
+        "public_adp",
+        "public_dynasty_market_value",
+        "manual_opponent_roster_context",
     }
 )
 
 PROHIBITED_SOURCE_CATEGORIES = frozenset(
     {
-        "broker_credentials",
-        "account_keys",
-        "private_brokerage_data",
-        "real_money_execution_data",
-        "automated_trading_endpoint",
-        "secrets",
+        "stock_market_api",
+        "broker_api",
+        "real_money_account_data",
+        "credentials_or_secrets",
+        "paid_private_data_unapproved",
+        "unapproved_scraping",
+        "fantasy_source_as_nwr_private_score",
     }
 )
 
-ALLOWED_SOURCE_USES = frozenset(
-    {
-        "education_research",
-        "paper_trading_note",
-        "historical_analysis_design",
-        "watchlist_note",
-        "risk_journal",
-        "source_inventory",
-    }
+TRADE_PACKAGE_REQUIRED_FIELDS = (
+    "trade_mode",
+    "target_player",
+    "outgoing_player",
+    "give_assets",
+    "get_assets",
+    "picks_included",
+    "nwr_value_delta",
+    "public_market_fairness",
+    "opponent_fit_score",
+    "roster_impact_score",
+    "keeper_impact",
+    "drop_pressure_impact",
+    "rookie_pick_context",
+    "negotiation_ladder",
+    "risk_flags",
+    "verdict",
+    "review_status",
 )
 
-WATCHLIST_NOTE_REQUIRED_FIELDS = (
-    "symbol",
-    "research_theme",
-    "hypothesis",
-    "public_sources",
-    "risk_notes",
-    "paper_only",
-    "review_date",
-)
+VALID_TRADE_MODES = frozenset({"trade_for", "trade_away", "package_builder"})
+VALID_REVIEW_STATUSES = frozenset({"draft", "needs_review", "ready_for_manual_review", "rejected"})
 
-PAPER_JOURNAL_REQUIRED_FIELDS = (
-    "journal_id",
-    "date",
-    "symbol_or_topic",
-    "asset_type",
-    "research_question",
-    "paper_action_type",
-    "hypothetical_entry_reference",
-    "hypothetical_exit_reference",
-    "position_sizing_hypothesis",
-    "risk_hypothesis",
-    "invalidation_condition",
-    "outcome_review_date",
-    "lessons_learned",
-    "status",
-    "notes",
-)
-
-MANUAL_ARTIFACT_REQUIRED_FIELDS = {
-    "research_intake": (
-        "intake_id",
-        "date",
-        "research_question",
-        "paper_only_intent",
-        "status",
-    ),
-    "manual_lifecycle": (
-        "lifecycle_id",
-        "from_status",
-        "to_status",
-        "transition_reason",
-        "guardrail_check",
-    ),
-    "watchlist_note": WATCHLIST_NOTE_REQUIRED_FIELDS,
-    "strategy_note": (
-        "strategy_note_id",
-        "title",
-        "research_question",
-        "hypothesis",
-        "evidence_sources",
-        "risks",
-        "invalidation_conditions",
-        "status",
-    ),
-    "risk_journal": (
-        "risk_id",
-        "risk_category",
-        "risk_description",
-        "severity",
-        "probability",
-        "mitigation_note",
-        "status",
-    ),
-    "paper_journal": PAPER_JOURNAL_REQUIRED_FIELDS,
-    "manual_review_packet": (
-        "packet_id",
-        "research_item_id",
-        "artifact_type",
-        "source_review_summary",
-        "prohibited_language_check",
-        "closeout_status",
-    ),
-}
-
-MANUAL_REVIEW_PACKET_REQUIRED_SECTIONS = (
-    "packet_id",
-    "intake_section",
-    "source_review_section",
-    "watchlist_section",
-    "risk_review_section",
-    "paper_journal_section",
-    "closeout_section",
-)
-
-EXECUTION_TEXT_PATTERNS = tuple(
+WALL_STREET_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
-        r"\bbroker\s+order\b",
+        r"\bstocks?\b",
+        r"\bequit(?:y|ies)\b",
+        r"\bcrypto\b",
+        r"\bforex\b",
+        r"\boptions?\b",
+        r"\bmarket[-\s]?data\s+api\b",
         r"\bbroker\s+api\b",
-        r"\bbroker[\W_]+api\b",
-        r"\border\s+endpoint\b",
-        r"\bexecution\s+endpoint\b",
-        r"\bautomated\s+execution\b",
-        r"\bauto[-\s]?execute\b",
-        r"\bexecute\b",
-        r"\bautomated\s+trigger\b",
-        r"\btrigger\s+(?:an\s+)?orders?\b",
+        r"\bbrokerage\b",
+        r"\bsec\s+edgar\b",
+        r"\bfred\b",
+        r"\bnasdaq\b",
+        r"\balpaca\b",
+        r"\bpolygon\b",
+        r"\bmassive\b",
+        r"\bdatabento\b",
+        r"\btiingo\b",
+        r"\btwelve\s+data\b",
+        r"\border\s+execution\b",
         r"\breal[-\s]?money\s+trading\b",
-        r"\blive\s+trading\b",
-        r"\bplace\s+orders?\b",
-        r"\bplace[\W_]+orders?\b",
-        r"\bsubmit\s+orders?\b",
-        r"\bsubmit[\W_]+orders?\b",
-        r"\btrading\s+api\b",
-        r"\btrading[\W_]+api\b",
+        r"\binvestment\s+advice\b",
     )
 )
 
-PRIVATE_ACCOUNT_TEXT_PATTERNS = tuple(
+SECRET_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
-        r"\bbrokerage\s+balance\b",
-        r"\baccount\s+balance\b",
-        r"\bprivate\s+brokerage\b",
-        r"\bbrokerage\s+export\b",
-        r"\breal[-\s]?money\s+order\s+history\b",
-        r"\baccount\s+holdings?\b",
-    )
-)
-
-ADVICE_TEXT_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
-        r"\bbuy\s+now\b",
-        r"\bsell\s+now\b",
-        r"\bhold\s+for\s+profit\b",
-        r"\bguaranteed\s+returns?\b",
-        r"\bproduction\s+investment\s+advice\b",
-        r"\bpersonalized\s+investment\s+advice\b",
-        r"\bfor\s+your\s+account\b",
-    )
-)
-
-BROKER_CREDENTIAL_TEXT_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
-        r"\bconnect\s+broker\b",
-        r"\bbroker\s+token\b",
-        r"\bbroker[\W_]+token\b",
-        r"\bbroker\s+credential\b",
-        r"\bbroker[\W_]+credential\b",
-        r"\bapi\s+key\b",
-        r"\bapi[\W_]+key\b",
-        r"\bapi\s+token\b",
-        r"\bapi[\W_]+token\b",
-        r"\baccount\s+key\b",
-        r"\baccount[\W_]+key\b",
-        r"\bsecret\s+key\b",
-        r"\bsecret[\W_]+key\b",
-    )
-)
-
-DATA_WORKFLOW_TEXT_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
-        r"\bdata\s+ingestion\b",
-        r"\bingest\s+market\s+data\b",
-        r"\bgenerated\s+outputs?\b",
-        r"\bgenerated\s+market\s+datasets?\b",
-        r"\bwrite\s+generated\s+artifacts?\b",
-        r"\bpromote\s+generated\s+artifacts?\b",
-    )
-)
-
-FUTURE_PHASE_ALLOW_RESEARCH_ONLY = "ALLOW_RESEARCH_ONLY"
-FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL = "HOLD_NEEDS_EXPLICIT_APPROVAL"
-FUTURE_PHASE_REJECT_PROHIBITED = "REJECT_PROHIBITED"
-
-SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE = "ACCEPT_PUBLIC_MANUAL_REFERENCE"
-SOURCE_POLICY_HOLD_NEEDS_REVIEW = "HOLD_NEEDS_REVIEW"
-SOURCE_POLICY_REJECT_PROHIBITED = "REJECT_PROHIBITED"
-
-FUTURE_PHASE_REJECT_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
-        r"\bbroker\s+api\b",
-        r"\bbroker[\W_]+api\b",
-        r"\bbroker\s+orders?\b",
-        r"\bbroker[\W_]+orders?\b",
-        r"\border\s+endpoint\b",
-        r"\bexecution\s+endpoint\b",
-        r"\breal[-\s]?money\b",
-        r"\blive\s+trading\b",
-        r"\bplace\s+orders?\b",
-        r"\bplace[\W_]+orders?\b",
-        r"\bsubmit\s+orders?\b",
-        r"\bsubmit[\W_]+orders?\b",
-        r"\bauto[-\s]?execute\b",
-        r"\bautomated\s+execution\b",
-        r"\bcredentials?\b",
+        r"\bapi[\s_-]+key\b",
         r"\bsecret\b",
-        r"\bapi\s+key\b",
-        r"\bapi[\W_]+key\b",
         r"\btoken\b",
-        r"\baccount\s+key\b",
-        r"\bprivate\s+brokerage\b",
-        r"\baccount\s+balance\b",
-        r"\bbrokerage\s+export\b",
-        r"\bprivate\s+account\b",
-        r"\bproduction\s+investment\s+advice\b",
-        r"\bpersonalized\s+investment\s+advice\b",
-        r"\boutcome\b",
-        r"\brookie\b",
-        r"\bmock\s+draft\b",
-        r"\bdrop\s+decision\b",
-        r"\bdeployment\s+v2\b",
-        r"\bmaster\s+hq\b",
-    )
-)
-
-FUTURE_PHASE_HOLD_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
-        r"\bdata\s+ingestion\b",
-        r"\bdata[\W_]+ingestion\b",
-        r"\bingest\b",
-        r"\bbacktesting\s+implementation\b",
-        r"\bbacktesting[\W_]+implementation\b",
-        r"\bbacktest\s+code\b",
-        r"\bsimulation\s+tooling\b",
-        r"\bfuture\s+implementation\b",
-        r"\bprototype\s+implementation\b",
-        r"\bgenerated\s+outputs?\b",
-        r"\bgenerated\s+artifacts?\b",
-        r"\bmarket\s+datasets?\b",
-        r"\bapp\s+wiring\b",
-        r"\bdeploy\b",
-        r"\bdeployment\b",
-        r"\bci/cd\b",
-    )
-)
-
-SECRET_FIELD_MARKERS = frozenset(
-    {
-        "api_key",
-        "apikey",
-        "secret",
-        "token",
-        "password",
-        "passwd",
-        "credential",
-        "credentials",
-        "account_key",
-        "private_key",
-        "client_secret",
-        "oauth",
-        "bearer",
-        "session_cookie",
-    }
-)
-
-SECRET_VALUE_PATTERNS = tuple(
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in (
+        r"\bcredential\b",
+        r"\bpassword\b",
         r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
-        r"\bAKIA[0-9A-Z]{12,}\b",
-        r"\bASIA[0-9A-Z]{12,}\b",
         r"\bBearer\s+[A-Za-z0-9._~+/=-]{16,}\b",
+    )
+)
+
+AUTOMATED_DECISION_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bauto[-\s]?accept\b",
+        r"\bauto[-\s]?send\b",
+        r"\bauto[-\s]?execute\b",
+        r"\bautomated\s+trade\s+execution\b",
+        r"\bsubmit\s+trade\b",
     )
 )
 
@@ -308,277 +113,139 @@ class ValidationIssue:
 
 
 @dataclass(frozen=True)
-class ResearchSourceMetadata:
+class FantasySourceMetadata:
     source_id: str
-    name: str
-    category: str
-    intended_use: str
-    access_method: str
+    source_name: str
+    source_category: str
+    allowed_use: str
+    prohibited_use: str
     attribution: str
-    reviewed_on: str | None = None
     notes: str = ""
     config: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
-class WatchlistNote:
-    symbol: str
-    research_theme: str
-    hypothesis: str
-    public_sources: tuple[str, ...]
-    risk_notes: str
-    paper_only: bool
-    review_date: str
+class FantasyTradePackage:
+    trade_mode: str
+    target_player: str
+    outgoing_player: str
+    give_assets: Sequence[str]
+    get_assets: Sequence[str]
+    picks_included: Sequence[str]
+    nwr_value_delta: float
+    public_market_fairness: str
+    opponent_fit_score: float
+    roster_impact_score: float
+    keeper_impact: str
+    drop_pressure_impact: str
+    rookie_pick_context: str
+    negotiation_ladder: Mapping[str, str]
+    risk_flags: Sequence[str]
+    verdict: str
+    review_status: str
 
 
-@dataclass(frozen=True)
-class PaperJournalEntry:
-    journal_id: str
-    date: str
-    symbol_or_topic: str
-    asset_type: str
-    research_question: str
-    paper_action_type: str
-    hypothetical_entry_reference: str
-    hypothetical_exit_reference: str
-    position_sizing_hypothesis: str
-    risk_hypothesis: str
-    invalidation_condition: str
-    outcome_review_date: str
-    lessons_learned: str
-    status: str
-    notes: str
-
-
-def validate_source_metadata(source: ResearchSourceMetadata) -> tuple[ValidationIssue, ...]:
+def validate_fantasy_source_metadata(
+    source: FantasySourceMetadata,
+) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
-
-    required_fields = {
+    required = {
         "source_id": source.source_id,
-        "name": source.name,
-        "category": source.category,
-        "intended_use": source.intended_use,
-        "access_method": source.access_method,
+        "source_name": source.source_name,
+        "source_category": source.source_category,
+        "allowed_use": source.allowed_use,
+        "prohibited_use": source.prohibited_use,
         "attribution": source.attribution,
     }
-    for field_name, value in required_fields.items():
-        if not str(value).strip():
-            issues.append(
-                ValidationIssue(field_name, "required", f"{field_name} is required.")
-            )
+    issues.extend(_required_issues(required))
 
-    if source.category in PROHIBITED_SOURCE_CATEGORIES:
+    if source.source_category in PROHIBITED_SOURCE_CATEGORIES:
         issues.append(
             ValidationIssue(
-                "category",
+                "source_category",
                 "prohibited_source_category",
-                f"{source.category} is prohibited in Trading Lab.",
+                f"{source.source_category} is not allowed for Fantasy Trade Lab.",
             )
         )
-    elif source.category and source.category not in ALLOWED_SOURCE_CATEGORIES:
+    elif source.source_category and source.source_category not in FANTASY_SOURCE_CATEGORIES:
         issues.append(
             ValidationIssue(
-                "category",
+                "source_category",
                 "unknown_source_category",
-                f"{source.category} is not an allowed Trading Lab source category.",
+                f"{source.source_category} is not a recognized fantasy source category.",
             )
         )
 
-    if source.intended_use and source.intended_use not in ALLOWED_SOURCE_USES:
-        issues.append(
-            ValidationIssue(
-                "intended_use",
-                "unknown_source_use",
-                f"{source.intended_use} is not an allowed Trading Lab source use.",
-            )
+    issues.extend(
+        validate_artifact_text_fields(
+            "fantasy_source",
+            {
+                "source_id": source.source_id,
+                "source_name": source.source_name,
+                "allowed_use": source.allowed_use,
+                "prohibited_use": source.prohibited_use,
+                "attribution": source.attribution,
+                "notes": source.notes,
+            },
         )
-
-    if source.reviewed_on and not _is_iso_date(source.reviewed_on):
-        issues.append(
-            ValidationIssue(
-                "reviewed_on",
-                "invalid_date",
-                "reviewed_on must use YYYY-MM-DD when provided.",
-            )
-        )
-
-    text_fields = {
-        "source_id": source.source_id,
-        "name": source.name,
-        "access_method": source.access_method,
-        "attribution": source.attribution,
-        "notes": source.notes,
-    }
-    issues.extend(_execution_text_issues(text_fields))
+    )
     issues.extend(validate_research_config(source.config))
     return tuple(issues)
 
 
-def assert_valid_source_metadata(source: ResearchSourceMetadata) -> None:
-    issues = validate_source_metadata(source)
-    if issues:
-        detail = "; ".join(f"{issue.field}:{issue.code}" for issue in issues)
-        raise ValueError(f"Invalid Trading Lab source metadata: {detail}")
-
-
-def validate_paper_journal_entry(entry: PaperJournalEntry) -> tuple[ValidationIssue, ...]:
+def validate_trade_package(package: FantasyTradePackage) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
-    required_fields = {
-        "journal_id": entry.journal_id,
-        "date": entry.date,
-        "symbol_or_topic": entry.symbol_or_topic,
-        "asset_type": entry.asset_type,
-        "research_question": entry.research_question,
-        "paper_action_type": entry.paper_action_type,
-        "hypothetical_entry_reference": entry.hypothetical_entry_reference,
-        "hypothetical_exit_reference": entry.hypothetical_exit_reference,
-        "position_sizing_hypothesis": entry.position_sizing_hypothesis,
-        "risk_hypothesis": entry.risk_hypothesis,
-        "invalidation_condition": entry.invalidation_condition,
-        "outcome_review_date": entry.outcome_review_date,
-        "lessons_learned": entry.lessons_learned,
-        "status": entry.status,
-        "notes": entry.notes,
+    required = {
+        "trade_mode": package.trade_mode,
+        "target_player": package.target_player,
+        "outgoing_player": package.outgoing_player,
+        "public_market_fairness": package.public_market_fairness,
+        "keeper_impact": package.keeper_impact,
+        "drop_pressure_impact": package.drop_pressure_impact,
+        "rookie_pick_context": package.rookie_pick_context,
+        "verdict": package.verdict,
+        "review_status": package.review_status,
     }
-    for field_name, value in required_fields.items():
-        if not str(value).strip():
-            issues.append(
-                ValidationIssue(field_name, "required", f"{field_name} is required.")
-            )
+    issues.extend(_required_issues(required))
 
-    if entry.date and not _is_iso_date(entry.date):
+    if package.trade_mode and package.trade_mode not in VALID_TRADE_MODES:
         issues.append(
-            ValidationIssue("date", "invalid_date", "date must use YYYY-MM-DD.")
+            ValidationIssue("trade_mode", "invalid_trade_mode", "Unknown trade mode.")
         )
-    if entry.outcome_review_date and not _is_iso_date(entry.outcome_review_date):
+    if package.review_status and package.review_status not in VALID_REVIEW_STATUSES:
         issues.append(
             ValidationIssue(
-                "outcome_review_date",
-                "invalid_date",
-                "outcome_review_date must use YYYY-MM-DD.",
+                "review_status",
+                "invalid_review_status",
+                "Unknown review status.",
+            )
+        )
+    if not package.give_assets and not package.get_assets:
+        issues.append(
+            ValidationIssue(
+                "assets",
+                "assets_required",
+                "At least one give or get asset is required.",
             )
         )
 
-    text_fields = {
-        "journal_id": entry.journal_id,
-        "symbol_or_topic": entry.symbol_or_topic,
-        "asset_type": entry.asset_type,
-        "research_question": entry.research_question,
-        "paper_action_type": entry.paper_action_type,
-        "hypothetical_entry_reference": entry.hypothetical_entry_reference,
-        "hypothetical_exit_reference": entry.hypothetical_exit_reference,
-        "position_sizing_hypothesis": entry.position_sizing_hypothesis,
-        "risk_hypothesis": entry.risk_hypothesis,
-        "invalidation_condition": entry.invalidation_condition,
-        "lessons_learned": entry.lessons_learned,
-        "status": entry.status,
-        "notes": entry.notes,
-    }
-    issues.extend(_execution_text_issues(text_fields))
-    issues.extend(_private_account_text_issues(text_fields))
-    issues.extend(_secret_value_text_issues(text_fields))
+    issues.extend(validate_trade_package_payload(package.__dict__))
     return tuple(issues)
 
 
-def validate_watchlist_note(note: WatchlistNote) -> tuple[ValidationIssue, ...]:
-    issues: list[ValidationIssue] = []
-    required_fields = {
-        "symbol": note.symbol,
-        "research_theme": note.research_theme,
-        "hypothesis": note.hypothesis,
-        "risk_notes": note.risk_notes,
-        "review_date": note.review_date,
-    }
-    for field_name, value in required_fields.items():
-        if not str(value).strip():
-            issues.append(
-                ValidationIssue(field_name, "required", f"{field_name} is required.")
-            )
-
-    if not note.paper_only:
-        issues.append(
-            ValidationIssue(
-                "paper_only",
-                "paper_only_required",
-                "Watchlist notes must be paper-only research records.",
-            )
-        )
-
-    if not note.public_sources:
-        issues.append(
-            ValidationIssue(
-                "public_sources",
-                "public_source_required",
-                "At least one public source citation is required.",
-            )
-        )
-    elif any(not source.strip() for source in note.public_sources):
-        issues.append(
-            ValidationIssue(
-                "public_sources",
-                "blank_public_source",
-                "Public source citations cannot be blank.",
-            )
-        )
-
-    if note.review_date and not _is_iso_date(note.review_date):
-        issues.append(
-            ValidationIssue(
-                "review_date",
-                "invalid_date",
-                "review_date must use YYYY-MM-DD.",
-            )
-        )
-
-    text_fields = {
-        "symbol": note.symbol,
-        "research_theme": note.research_theme,
-        "hypothesis": note.hypothesis,
-        "risk_notes": note.risk_notes,
-        "public_sources": " ".join(note.public_sources),
-    }
-    issues.extend(_execution_text_issues(text_fields))
-    issues.extend(_advice_text_issues(text_fields))
-    issues.extend(_broker_credential_text_issues(text_fields))
-    issues.extend(_private_account_text_issues(text_fields))
-    issues.extend(_secret_value_text_issues(text_fields))
-    return tuple(issues)
-
-
-def validate_research_config(
-    config: Mapping[str, object],
-    *,
-    path: str = "config",
+def validate_trade_package_payload(
+    payload: Mapping[str, object],
 ) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
-    for key, value in config.items():
-        key_text = str(key)
-        key_path = f"{path}.{key_text}"
-        if _contains_secret_field_marker(key_text):
+    for field_name in TRADE_PACKAGE_REQUIRED_FIELDS:
+        value = payload.get(field_name)
+        if value is None or (isinstance(value, str) and not value.strip()):
             issues.append(
-                ValidationIssue(
-                    key_path,
-                    "secret_like_field",
-                    "Secret-like config fields are prohibited in Trading Lab.",
-                )
+                ValidationIssue(field_name, "required", f"{field_name} is required.")
             )
 
-        if isinstance(value, Mapping):
-            issues.extend(validate_research_config(value, path=key_path))
-        elif isinstance(value, str):
-            issues.extend(_execution_text_issues({key_path: value}))
-            if _contains_secret_value_marker(value):
-                issues.append(
-                    ValidationIssue(
-                        key_path,
-                        "secret_like_value",
-                        "Secret-like values are prohibited in Trading Lab.",
-                    )
-                )
-        elif isinstance(value, (list, tuple, set)):
-            text_values = _collect_text_fields(value, key_path)
-            issues.extend(_execution_text_issues(text_values))
-            issues.extend(_secret_value_text_issues(text_values))
+    text_fields = _collect_text_fields(payload)
+    issues.extend(validate_artifact_text_fields("trade_package", text_fields))
     return tuple(issues)
 
 
@@ -586,234 +253,48 @@ def validate_artifact_text_fields(
     artifact_type: str,
     fields: Mapping[str, str],
 ) -> tuple[ValidationIssue, ...]:
-    """Validate free-text artifact fields without creating artifact-specific workflows."""
     issues: list[ValidationIssue] = []
-    scoped_fields = {
-        f"{artifact_type}.{field_name}": value for field_name, value in fields.items()
-    }
-    issues.extend(_execution_text_issues(scoped_fields))
-    issues.extend(_private_account_text_issues(scoped_fields))
-    issues.extend(_secret_value_text_issues(scoped_fields))
-    issues.extend(_advice_text_issues(scoped_fields))
-    issues.extend(_broker_credential_text_issues(scoped_fields))
-    issues.extend(_data_workflow_text_issues(scoped_fields))
+    scoped = {f"{artifact_type}.{key}": value for key, value in fields.items()}
+    issues.extend(_pattern_issues(scoped, WALL_STREET_PATTERNS, "prohibited_wall_street_language"))
+    issues.extend(_pattern_issues(scoped, SECRET_PATTERNS, "secret_like_language"))
+    issues.extend(
+        _pattern_issues(
+            scoped,
+            AUTOMATED_DECISION_PATTERNS,
+            "prohibited_automated_decisioning",
+        )
+    )
     return tuple(issues)
 
 
-def validate_manual_artifact_payload(
-    artifact_type: str,
-    payload: Mapping[str, object],
-) -> tuple[ValidationIssue, ...]:
-    """Validate manual paper/research artifact payloads without side effects."""
-    issues: list[ValidationIssue] = []
-    required_fields = MANUAL_ARTIFACT_REQUIRED_FIELDS.get(artifact_type)
-    if required_fields is None:
-        return (
-            ValidationIssue(
-                "artifact_type",
-                "unknown_artifact_type",
-                f"{artifact_type} is not a supported Trading Lab artifact type.",
-            ),
-        )
+def validate_research_config(config: Mapping[str, object]) -> tuple[ValidationIssue, ...]:
+    text_fields = _collect_text_fields(config)
+    text_fields.update(_collect_key_fields(config))
+    return validate_artifact_text_fields("config", text_fields)
 
-    for field_name in required_fields:
-        if not str(payload.get(field_name, "")).strip():
+
+def _required_issues(fields: Mapping[str, object]) -> tuple[ValidationIssue, ...]:
+    issues: list[ValidationIssue] = []
+    for field_name, value in fields.items():
+        if value is None or not str(value).strip():
             issues.append(
                 ValidationIssue(field_name, "required", f"{field_name} is required.")
             )
-
-    text_fields = _collect_text_fields(payload)
-    issues.extend(validate_artifact_text_fields(artifact_type, text_fields))
     return tuple(issues)
 
 
-def validate_manual_review_packet(payload: Mapping[str, object]) -> tuple[ValidationIssue, ...]:
-    """Validate one manual review packet as an in-memory research artifact."""
-    issues: list[ValidationIssue] = []
-    for section_name in MANUAL_REVIEW_PACKET_REQUIRED_SECTIONS:
-        if not payload.get(section_name):
-            issues.append(
-                ValidationIssue(
-                    section_name,
-                    "hold_missing_packet_section",
-                    f"{section_name} is required before packet acceptance.",
-                )
-            )
-
-    text_fields = _collect_text_fields(payload)
-    issues.extend(validate_artifact_text_fields("manual_review_packet", text_fields))
-    return tuple(issues)
-
-
-def validate_lifecycle_transition(
-    from_status: str,
-    to_status: str,
-    transition_note: str = "",
-) -> tuple[ValidationIssue, ...]:
-    from src.trading_lab.schema_registry import is_valid_lifecycle_transition
-
-    issues: list[ValidationIssue] = []
-    if not is_valid_lifecycle_transition(from_status, to_status):
-        issues.append(
-            ValidationIssue(
-                "transition",
-                "invalid_lifecycle_transition",
-                f"{from_status} -> {to_status} is not an allowed manual lifecycle transition.",
-            )
-        )
-    issues.extend(
-        validate_artifact_text_fields(
-            "manual_lifecycle",
-            {
-                "from_status": from_status,
-                "to_status": to_status,
-                "transition_note": transition_note,
-            },
-        )
-    )
-    return tuple(issues)
-
-
-def classify_future_phase_request(request_text: str) -> str:
-    """Classify proposed future work without approving blocked implementation."""
-    if any(pattern.search(request_text) for pattern in FUTURE_PHASE_REJECT_PATTERNS):
-        return FUTURE_PHASE_REJECT_PROHIBITED
-    if any(pattern.search(request_text) for pattern in FUTURE_PHASE_HOLD_PATTERNS):
-        return FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL
-    return FUTURE_PHASE_ALLOW_RESEARCH_ONLY
-
-
-def validate_future_phase_request(request_text: str) -> tuple[ValidationIssue, ...]:
-    classification = classify_future_phase_request(request_text)
-    if classification == FUTURE_PHASE_ALLOW_RESEARCH_ONLY:
-        return ()
-    if classification == FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL:
-        return (
-            ValidationIssue(
-                "future_phase_request",
-                "hold_needs_explicit_approval",
-                "This future-phase proposal needs explicit approval before work begins.",
-            ),
-        )
-    return (
-        ValidationIssue(
-            "future_phase_request",
-            "reject_prohibited_work",
-            "This proposal includes prohibited Trading Lab work.",
-        ),
-    )
-
-
-def classify_source_policy_payload(payload: Mapping[str, object]) -> str:
-    text = " ".join(_collect_text_fields(payload).values())
-    normalized = text.lower()
-    if any(
-        phrase in normalized
-        for phrase in (
-            "private brokerage",
-            "brokerage export",
-            "account balance",
-            "broker credential",
-            "api key",
-            "broker token",
-            "secret",
-        )
-    ):
-        return SOURCE_POLICY_REJECT_PROHIBITED
-    if any(
-        phrase in normalized
-        for phrase in (
-            "terms unclear",
-            "license unclear",
-            "review required",
-            "paid data",
-            "private data dump",
-            "redistribution unclear",
-        )
-    ):
-        return SOURCE_POLICY_HOLD_NEEDS_REVIEW
-    return SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE
-
-
-def validate_source_policy_payload(
-    payload: Mapping[str, object],
-) -> tuple[ValidationIssue, ...]:
-    classification = classify_source_policy_payload(payload)
-    if classification == SOURCE_POLICY_ACCEPT_PUBLIC_MANUAL_REFERENCE:
-        return ()
-    if classification == SOURCE_POLICY_HOLD_NEEDS_REVIEW:
-        return (
-            ValidationIssue(
-                "source_policy",
-                "hold_source_policy_review",
-                "Source policy requires manual review before use.",
-            ),
-        )
-    return (
-        ValidationIssue(
-            "source_policy",
-            "reject_prohibited_source_policy",
-            "Source policy includes prohibited source material.",
-        ),
-    )
-
-
-def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    return _pattern_text_issues(
-        fields,
-        EXECUTION_TEXT_PATTERNS,
-        "prohibited_execution_language",
-        "Broker, order, live-trading, or execution language is prohibited.",
-    )
-
-
-def _advice_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    return _pattern_text_issues(
-        fields,
-        ADVICE_TEXT_PATTERNS,
-        "prohibited_advice_language",
-        "Advice or guaranteed-return language is prohibited.",
-    )
-
-
-def _broker_credential_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    return _pattern_text_issues(
-        fields,
-        BROKER_CREDENTIAL_TEXT_PATTERNS,
-        "prohibited_broker_credential_language",
-        "Broker or credential language is prohibited.",
-    )
-
-
-def _private_account_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    return _pattern_text_issues(
-        fields,
-        PRIVATE_ACCOUNT_TEXT_PATTERNS,
-        "prohibited_private_account_language",
-        "Private brokerage or account-balance language is prohibited.",
-    )
-
-
-def _data_workflow_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    return _pattern_text_issues(
-        fields,
-        DATA_WORKFLOW_TEXT_PATTERNS,
-        "prohibited_data_workflow_language",
-        "Data ingestion or generated-output language is prohibited.",
-    )
-
-
-def _pattern_text_issues(
+def _pattern_issues(
     fields: Mapping[str, str],
     patterns: tuple[re.Pattern[str], ...],
     code: str,
-    message: str,
 ) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
     for field_name, value in fields.items():
         for pattern in patterns:
             if pattern.search(value):
-                issues.append(ValidationIssue(field_name, code, message))
+                issues.append(
+                    ValidationIssue(field_name, code, "Text contains prohibited language.")
+                )
                 break
     return tuple(issues)
 
@@ -833,33 +314,16 @@ def _collect_text_fields(value: object, path: str = "") -> dict[str, str]:
     return fields
 
 
-def _secret_value_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
-    issues: list[ValidationIssue] = []
-    for field_name, value in fields.items():
-        if _contains_secret_value_marker(value):
-            issues.append(
-                ValidationIssue(
-                    field_name,
-                    "secret_like_value",
-                    "Secret-like values are prohibited in Trading Lab.",
-                )
-            )
-    return tuple(issues)
-
-
-def _contains_secret_field_marker(value: str) -> bool:
-    normalized = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
-    parts = frozenset(part for part in normalized.split("_") if part)
-    return normalized in SECRET_FIELD_MARKERS or bool(parts & SECRET_FIELD_MARKERS)
-
-
-def _contains_secret_value_marker(value: str) -> bool:
-    return any(pattern.search(value) for pattern in SECRET_VALUE_PATTERNS)
-
-
-def _is_iso_date(value: str) -> bool:
-    try:
-        date.fromisoformat(value)
-    except ValueError:
-        return False
-    return True
+def _collect_key_fields(value: object, path: str = "") -> dict[str, str]:
+    fields: dict[str, str] = {}
+    if isinstance(value, Mapping):
+        for key, nested_value in value.items():
+            key_text = str(key)
+            nested_path = f"{path}.{key_text}" if path else key_text
+            fields[f"{nested_path}.__key__"] = key_text
+            fields.update(_collect_key_fields(nested_value, nested_path))
+    elif isinstance(value, (list, tuple, set)):
+        for index, nested_value in enumerate(value):
+            nested_path = f"{path}[{index}]" if path else f"value[{index}]"
+            fields.update(_collect_key_fields(nested_value, nested_path))
+    return fields

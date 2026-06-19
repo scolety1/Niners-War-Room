@@ -2,153 +2,61 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.trading_lab.source_inventory import MANUAL_ARTIFACT_REQUIRED_FIELDS
+from src.trading_lab.source_inventory import TRADE_PACKAGE_REQUIRED_FIELDS
 
-CORE_ARTIFACT_TYPES = (
-    "source_inventory",
-    "research_intake",
-    "manual_lifecycle",
-    "watchlist_note",
-    "strategy_note",
-    "risk_journal",
-    "paper_journal",
-    "manual_review_packet",
-    "blocked_work_gate",
-)
-
-LIFECYCLE_STATES = (
-    "IDEA",
-    "SOURCE_REVIEW",
-    "WATCHLIST_NOTE",
-    "RISK_REVIEW",
-    "PAPER_JOURNAL_OPEN",
-    "PAPER_REVIEW_DUE",
-    "CLOSED_LESSONS",
-    "REJECTED_PROHIBITED",
-    "HOLD_NEEDS_REVIEW",
-)
-
-VALID_LIFECYCLE_TRANSITIONS = frozenset(
+FANTASY_TRADE_ARTIFACT_TYPES = frozenset(
     {
-        ("IDEA", "SOURCE_REVIEW"),
-        ("SOURCE_REVIEW", "WATCHLIST_NOTE"),
-        ("WATCHLIST_NOTE", "RISK_REVIEW"),
-        ("RISK_REVIEW", "PAPER_JOURNAL_OPEN"),
-        ("PAPER_JOURNAL_OPEN", "PAPER_REVIEW_DUE"),
-        ("PAPER_REVIEW_DUE", "CLOSED_LESSONS"),
-        ("IDEA", "HOLD_NEEDS_REVIEW"),
-        ("SOURCE_REVIEW", "HOLD_NEEDS_REVIEW"),
-        ("WATCHLIST_NOTE", "HOLD_NEEDS_REVIEW"),
-        ("RISK_REVIEW", "HOLD_NEEDS_REVIEW"),
-        ("PAPER_JOURNAL_OPEN", "HOLD_NEEDS_REVIEW"),
-        ("IDEA", "REJECTED_PROHIBITED"),
-        ("SOURCE_REVIEW", "REJECTED_PROHIBITED"),
-        ("WATCHLIST_NOTE", "REJECTED_PROHIBITED"),
-        ("RISK_REVIEW", "REJECTED_PROHIBITED"),
-        ("PAPER_JOURNAL_OPEN", "REJECTED_PROHIBITED"),
+        "fantasy_source",
+        "trade_package",
+        "trade_for_review",
+        "trade_away_review",
+        "opponent_fit_review",
+        "roster_aftermath_review",
     }
 )
 
 PROHIBITED_FIELD_NAMES = frozenset(
     {
-        "api_key",
-        "token",
-        "secret",
-        "password",
+        "stock_symbol",
+        "ticker",
         "broker_account",
-        "account_balance",
-        "private_brokerage_export",
-        "order_id",
-        "execution_endpoint",
+        "api_key",
+        "secret",
+        "token",
+        "order_execution",
+        "real_money_account",
     }
 )
-
-ALLOWED_STATUS_BY_ARTIFACT = {
-    "research_intake": (
-        "IDEA",
-        "SOURCE_REVIEW",
-        "HOLD_NEEDS_REVIEW",
-        "REJECTED_PROHIBITED",
-        "READY_FOR_WATCHLIST_NOTE",
-        "CLOSED_NO_ACTION",
-    ),
-    "manual_lifecycle": (
-        "IDEA",
-        "SOURCE_REVIEW",
-        "WATCHLIST_NOTE",
-        "RISK_REVIEW",
-        "PAPER_JOURNAL_OPEN",
-        "PAPER_REVIEW_DUE",
-        "CLOSED_LESSONS",
-        "REJECTED_PROHIBITED",
-        "HOLD_NEEDS_REVIEW",
-    ),
-    "watchlist_note": (
-        "OBSERVE",
-        "NEEDS_MORE_PUBLIC_EVIDENCE",
-        "READY_FOR_RISK_REVIEW",
-        "HOLD_NEEDS_REVIEW",
-        "CLOSED_LESSONS",
-        "REJECTED_PROHIBITED",
-    ),
-    "strategy_note": (
-        "DRAFT_RESEARCH",
-        "SOURCE_REVIEW",
-        "RISK_REVIEW",
-        "PAPER_TEST_DESIGN_ONLY",
-        "HOLD_NEEDS_REVIEW",
-        "CLOSED_LESSONS",
-        "REJECTED_PROHIBITED",
-    ),
-    "risk_journal": (
-        "OPEN",
-        "MITIGATED",
-        "HOLD_NEEDS_REVIEW",
-        "CLOSED_LESSONS",
-        "REJECTED_PROHIBITED",
-    ),
-    "paper_journal": (
-        "OPEN",
-        "REVIEW_DUE",
-        "REVIEWED_LESSONS_CAPTURED",
-        "HOLD_NEEDS_REVIEW",
-        "REJECTED_PROHIBITED",
-    ),
-    "manual_review_packet": (
-        "ACCEPT",
-        "HOLD_NEEDS_REVIEW",
-        "REJECTED_PROHIBITED",
-        "CLOSED_LESSONS",
-    ),
-    "blocked_work_gate": (
-        "ALLOW_RESEARCH_ONLY",
-        "HOLD_NEEDS_EXPLICIT_APPROVAL",
-        "REJECT_PROHIBITED",
-    ),
-    "source_inventory": (
-        "ACCEPT",
-        "HOLD_FOR_MANUAL_REVIEW",
-        "REJECT",
-    ),
-}
 
 
 @dataclass(frozen=True)
 class ArtifactSchema:
     artifact_type: str
     required_fields: tuple[str, ...]
-    optional_fields: tuple[str, ...]
-    allowed_statuses: tuple[str, ...]
+    purpose: str
 
 
 SCHEMA_REGISTRY = {
-    artifact_type: ArtifactSchema(
-        artifact_type=artifact_type,
-        required_fields=MANUAL_ARTIFACT_REQUIRED_FIELDS.get(artifact_type, ()),
-        optional_fields=("notes", "operator", "review_date"),
-        allowed_statuses=ALLOWED_STATUS_BY_ARTIFACT.get(artifact_type, ()),
-    )
-    for artifact_type in CORE_ARTIFACT_TYPES
+    "trade_package": ArtifactSchema(
+        artifact_type="trade_package",
+        required_fields=TRADE_PACKAGE_REQUIRED_FIELDS,
+        purpose=(
+            "Compare NWR value delta, public fantasy fairness, opponent fit, "
+            "and roster aftermath."
+        ),
+    ),
+    "fantasy_source": ArtifactSchema(
+        artifact_type="fantasy_source",
+        required_fields=(
+            "source_id",
+            "source_name",
+            "source_category",
+            "allowed_use",
+            "prohibited_use",
+            "attribution",
+        ),
+        purpose="Review future fantasy-football source eligibility without ingestion.",
+    ),
 }
 
 
@@ -156,9 +64,6 @@ def schema_for_artifact(artifact_type: str) -> ArtifactSchema | None:
     return SCHEMA_REGISTRY.get(artifact_type)
 
 
-def prohibited_field_names_in(fields: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(field for field in fields if field.lower() in PROHIBITED_FIELD_NAMES)
-
-
-def is_valid_lifecycle_transition(from_status: str, to_status: str) -> bool:
-    return (from_status, to_status) in VALID_LIFECYCLE_TRANSITIONS
+def prohibited_field_names_in(fields: list[str] | tuple[str, ...] | set[str]) -> tuple[str, ...]:
+    normalized = {field.lower() for field in fields}
+    return tuple(sorted(normalized & PROHIBITED_FIELD_NAMES))
