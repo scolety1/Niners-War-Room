@@ -121,3 +121,21 @@ Market files must not contain NWR private value columns.
   promoted artifacts are allowed.
 - Contract checks are read-only and do not write `data/`, `local_exports/`, or
   generated artifacts.
+
+## Current Runway Status
+
+GREEN:
+
+- Fixture-only schema templates exist for contract validation.
+- Input contract checks can validate fixture shapes without real data.
+- Market context and NWR private value remain separate schema families.
+
+YELLOW:
+
+- Real draft inputs remain missing or unconfigured until local files are
+  provided and reviewed.
+- Normal locked pytest/Ruff remain unavailable in the current locked
+  environment, so the approved ephemeral validation path is used.
+
+No simulation path exists in this schema runway. The next step is real input
+collection and validation, not simulator execution.

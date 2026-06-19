@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "review_only": true,
+  "inputs": {
+    "frozen_rookie_input": {
+      "role": "frozen_rookie_input",
+      "path": "tests/fixtures/mock_draft_inputs/rookie_input_fixture.csv"
+    },
+    "veteran_pool": {
+      "role": "veteran_pool",
+      "path": "tests/fixtures/mock_draft_inputs/veteran_pool_fixture.csv"
+    },
+    "pick_order": {
+      "role": "pick_order",
+      "path": "tests/fixtures/mock_draft_inputs/pick_order_fixture.csv"
+    },
+    "my_picks": {
+      "role": "my_picks",
+      "path": "tests/fixtures/mock_draft_inputs/my_picks_fixture.csv"
+    },
+    "rosters": {
+      "role": "rosters",
+      "path": "tests/fixtures/mock_draft_inputs/rosters_fixture.csv"
+    },
+    "team_needs": {
+      "role": "team_needs",
+      "path": "tests/fixtures/mock_draft_inputs/team_needs_fixture.csv"
+    },
+    "nwr_private_values": {
+      "role": "nwr_private_values",
+      "path": "tests/fixtures/mock_draft_inputs/nwr_private_values_fixture.csv"
+    },
+    "market_context": {
+      "role": "market_context",
+      "path": "tests/fixtures/mock_draft_inputs/market_context_fixture.csv"
+    }
+  }
+}

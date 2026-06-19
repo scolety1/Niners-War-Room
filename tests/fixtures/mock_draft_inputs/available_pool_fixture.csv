@@ -1,0 +1,3 @@
+asset_id,player,position,source_label,pool_source
+rookie:fixture_a,Fixture Rookie A,WR,rookie,fixture
+veteran:fixture_b,Fixture Veteran B,RB,veteran,fixture
