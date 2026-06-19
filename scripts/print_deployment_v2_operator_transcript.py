@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -26,26 +27,25 @@ HOSTED_BLOCKERS = [
 
 
 def build_transcript(repo: Path, python_executable: str, import_zip: str | None = None) -> str:
-    readiness_results = run_readiness_checks(repo, python_executable, import_zip)
-    docs_findings = audit_docs(repo / "docs" / "hq" / "parallel_lanes")
-    readiness = {result.name: result for result in readiness_results}
+    report = build_transcript_report(repo, python_executable, import_zip)
+    readiness = report["readiness"]
     lines = [
         "LANE: Deployment V2",
-        f"BRANCH: {readiness['branch'].status} - {readiness['branch'].detail}",
-        f"HEAD: {readiness['head'].status} - {readiness['head'].detail}",
-        f"STATUS: {readiness['status'].status} - {readiness['status'].detail}",
-        f"DIFF CHECK: {readiness['diff_check'].status} - {readiness['diff_check'].detail}",
+        f"BRANCH: {readiness['branch']['status']} - {readiness['branch']['detail']}",
+        f"HEAD: {readiness['head']['status']} - {readiness['head']['detail']}",
+        f"STATUS: {readiness['status']['status']} - {readiness['status']['detail']}",
+        f"DIFF CHECK: {readiness['diff_check']['status']} - {readiness['diff_check']['detail']}",
         (
             "LOCAL-ONLY GUARD: "
-            f"{readiness['local_only_guard'].status} - {readiness['local_only_guard'].detail}"
+            f"{readiness['local_only_guard']['status']} - {readiness['local_only_guard']['detail']}"
         ),
         (
             "REPORT MODE: "
-            f"{readiness['local_only_guard_report'].status} - "
-            f"{readiness['local_only_guard_report'].detail}"
+            f"{readiness['local_only_guard_report']['status']} - "
+            f"{readiness['local_only_guard_report']['detail']}"
         ),
-        f"READINESS RUNNER: {overall_verdict(readiness_results)}",
-        f"DOCS CONSISTENCY: {docs_verdict(docs_findings)}",
+        f"READINESS RUNNER: {report['readiness_verdict']}",
+        f"DOCS CONSISTENCY: {report['docs_consistency']['verdict']}",
         "HOSTED DEPLOYMENT: BLOCKED",
         "V1 LOCAL-ONLY: local_only",
         "DEPLOY SURFACE ADDED: no",
@@ -53,8 +53,48 @@ def build_transcript(repo: Path, python_executable: str, import_zip: str | None 
         "REMAINING HOSTED BLOCKERS:",
     ]
     lines.extend(f"- {blocker}" for blocker in HOSTED_BLOCKERS)
-    lines.append(f"FINAL VERDICT: {overall_verdict(readiness_results)}")
+    lines.append(f"FINAL VERDICT: {report['final_verdict']}")
     return "\n".join(lines) + "\n"
+
+
+def build_transcript_report(
+    repo: Path,
+    python_executable: str,
+    import_zip: str | None = None,
+) -> dict[str, object]:
+    readiness_results = run_readiness_checks(repo, python_executable, import_zip)
+    docs_findings = audit_docs(repo / "docs" / "hq" / "parallel_lanes")
+    readiness = {
+        result.name: {
+            "status": result.status,
+            "detail": result.detail,
+        }
+        for result in readiness_results
+    }
+    final = overall_verdict(readiness_results)
+    return {
+        "lane": "Deployment V2",
+        "readiness_verdict": final,
+        "final_verdict": final,
+        "branch": readiness.get("branch", {}),
+        "head": readiness.get("head", {}),
+        "readiness": readiness,
+        "docs_consistency": {
+            "verdict": docs_verdict(docs_findings),
+            "findings": [
+                {
+                    "status": finding.status,
+                    "check": finding.check,
+                    "detail": finding.detail,
+                }
+                for finding in docs_findings
+            ],
+        },
+        "hosted_deployment": "BLOCKED",
+        "remaining_blockers": HOSTED_BLOCKERS,
+        "deploy_surface_added": False,
+        "other_lane_touched": False,
+    }
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -79,17 +119,29 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--output",
         help="Optional output path. Default prints to stdout and writes nothing.",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON transcript.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    transcript = build_transcript(Path(args.repo), args.python, args.import_zip)
+    final_verdict = ""
+    if args.json:
+        report = build_transcript_report(Path(args.repo), args.python, args.import_zip)
+        final_verdict = str(report.get("final_verdict", ""))
+        transcript = json.dumps(report, indent=2, sort_keys=True) + "\n"
+    else:
+        transcript = build_transcript(Path(args.repo), args.python, args.import_zip)
+        final_verdict = "GREEN" if "FINAL VERDICT: GREEN" in transcript else ""
     if args.output:
         Path(args.output).write_text(transcript, encoding="utf-8")
     else:
         print(transcript, end="")
-    return 0 if "FINAL VERDICT: GREEN" in transcript else 1
+    return 0 if final_verdict == "GREEN" else 1
 
 
 if __name__ == "__main__":

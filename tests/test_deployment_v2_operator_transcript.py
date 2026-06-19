@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -65,6 +66,56 @@ def test_transcript_output_path_is_optional_temp_only(monkeypatch, tmp_path: Pat
 
     assert result == 0
     assert output_path.read_text(encoding="utf-8") == "FINAL VERDICT: GREEN\n"
+
+
+def test_transcript_json_report_shape(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        transcript,
+        "run_readiness_checks",
+        lambda _repo, _python, _zip=None: [
+            SimpleNamespace(name="branch", status="GREEN", detail="work/deployment-v2-discovery"),
+            SimpleNamespace(name="head", status="GREEN", detail="abc123 Test"),
+            SimpleNamespace(name="status", status="GREEN", detail="clean"),
+            SimpleNamespace(name="diff_check", status="GREEN", detail="clean"),
+            SimpleNamespace(name="local_only_guard", status="GREEN", detail="passed"),
+            SimpleNamespace(name="local_only_guard_report", status="GREEN", detail="verdict=GREEN"),
+            SimpleNamespace(name="import_report_comparison", status="SKIPPED", detail="no zip"),
+            SimpleNamespace(name="docs_consistency_audit", status="GREEN", detail="docs ok"),
+        ],
+    )
+    monkeypatch.setattr(
+        transcript,
+        "audit_docs",
+        lambda _docs: [SimpleNamespace(status="GREEN", check="docs_consistency", detail="ok")],
+    )
+
+    report = transcript.build_transcript_report(tmp_path, sys.executable)
+
+    assert report["lane"] == "Deployment V2"
+    assert report["final_verdict"] == "GREEN"
+    assert report["branch"]["detail"] == "work/deployment-v2-discovery"
+    assert report["hosted_deployment"] == "BLOCKED"
+
+
+def test_transcript_json_cli_output_is_parseable(monkeypatch, tmp_path: Path, capsys) -> None:
+    monkeypatch.setattr(
+        transcript,
+        "build_transcript_report",
+        lambda *_args: {
+            "lane": "Deployment V2",
+            "final_verdict": "GREEN",
+            "branch": {"status": "GREEN"},
+            "head": {"status": "GREEN"},
+            "remaining_blockers": ["hosted target"],
+        },
+    )
+
+    result = transcript.main(["--repo", str(tmp_path), "--json"])
+
+    assert result == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["lane"] == "Deployment V2"
+    assert output["final_verdict"] == "GREEN"
 
 
 def test_transcript_prints_to_stdout_by_default(monkeypatch, tmp_path: Path, capsys) -> None:
