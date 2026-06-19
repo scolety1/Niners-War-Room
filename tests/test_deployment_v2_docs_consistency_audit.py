@@ -94,3 +94,31 @@ def test_deploy_ready_language_is_red(tmp_path: Path) -> None:
 
     assert audit.verdict(findings) == "RED"
     assert _statuses(findings)["hosted_ready_language"] == "RED"
+
+
+def test_json_output_groups_required_missing_notes_and_blocked_language(tmp_path: Path) -> None:
+    _write_doc(
+        tmp_path,
+        BASE_DOC.replace("No deploy command exists.\n\n", "")
+        + "\nHosted deployment is ready for operators.\n"
+        + "\nHistorical path: C:\\Users\\smcol\\Documents\\Vacation\\Niners-War-Room-outcome.\n",
+    )
+
+    report = audit.findings_to_dict(audit.audit_docs(tmp_path))
+
+    assert report["verdict"] == "RED"
+    assert {item["check"] for item in report["required_phrases"]} >= {
+        "local_only",
+        "hosted_blocked",
+        "no_deploy_command",
+    }
+    assert report["missing_phrases"] == [
+        {
+            "status": "RED",
+            "check": "no_deploy_command",
+            "detail": "missing required docs language: deploy command",
+        }
+    ]
+    assert report["blocked_language_hits"][0]["check"] == "hosted_ready_language"
+    assert report["historical_path_notes"][0]["check"] == "legacy_operator_path_note"
+    assert report["notes"][0]["status"] == "NOTE"

@@ -11,6 +11,18 @@ CURRENT_OPERATOR_PATH = r"C:\NWR\Niners-War-Room-outcome"
 LEGACY_OPERATOR_PATH = r"C:\Users\smcol\Documents\Vacation\Niners-War-Room-outcome"
 DEPLOYMENT_V2_PATH = r"C:\NWR\Niners-War-Room-deploy-v2"
 NORMAL_OPERATOR_BRANCH = "main"
+REQUIRED_PATTERNS = [
+    ("local_only", "V1 remains `local_only`", "local_only"),
+    ("hosted_blocked", "hosted deployment remains blocked", "hosted deployment"),
+    ("no_deploy_command", "no deploy command", "deploy command"),
+    ("current_operator_path", CURRENT_OPERATOR_PATH, CURRENT_OPERATOR_PATH),
+    ("normal_operator_branch", "main", "normal operator branch"),
+    (
+        "deployment_v2_not_operator_path",
+        "not the operator app path",
+        "not the operator app path",
+    ),
+]
 
 
 @dataclass(frozen=True)
@@ -37,20 +49,7 @@ def audit_docs(docs_dir: Path) -> list[Finding]:
     if not docs:
         return [Finding("RED", "docs_present", f"no Deployment V2 docs found in {docs_dir}")]
 
-    required_patterns = [
-        ("local_only", "V1 remains `local_only`", "local_only"),
-        ("hosted_blocked", "hosted deployment remains blocked", "hosted deployment"),
-        ("no_deploy_command", "no deploy command", "deploy command"),
-        ("current_operator_path", CURRENT_OPERATOR_PATH, CURRENT_OPERATOR_PATH),
-        ("normal_operator_branch", "main", "normal operator branch"),
-        (
-            "deployment_v2_not_operator_path",
-            "not the operator app path",
-            "not the operator app path",
-        ),
-    ]
-
-    for check, pattern, detail in required_patterns:
+    for check, pattern, detail in REQUIRED_PATTERNS:
         if pattern.lower() not in lower_joined:
             findings.append(Finding("RED", check, f"missing required docs language: {detail}"))
 
@@ -119,8 +118,57 @@ def verdict(findings: list[Finding]) -> str:
 
 
 def findings_to_dict(findings: list[Finding]) -> dict[str, object]:
+    missing_phrases = [
+        finding for finding in findings if finding.status == "RED" and finding.check in {
+            check for check, _pattern, _detail in REQUIRED_PATTERNS
+        }
+    ]
+    notes = [finding for finding in findings if finding.status == "NOTE"]
+    blocked_language_hits = [
+        finding for finding in findings if finding.check == "hosted_ready_language"
+    ]
+    historical_path_notes = [
+        finding for finding in findings if finding.check == "legacy_operator_path_note"
+    ]
+
     return {
         "verdict": verdict(findings),
+        "required_phrases": [
+            {"check": check, "pattern": pattern, "detail": detail}
+            for check, pattern, detail in REQUIRED_PATTERNS
+        ],
+        "missing_phrases": [
+            {
+                "status": finding.status,
+                "check": finding.check,
+                "detail": finding.detail,
+            }
+            for finding in missing_phrases
+        ],
+        "notes": [
+            {
+                "status": finding.status,
+                "check": finding.check,
+                "detail": finding.detail,
+            }
+            for finding in notes
+        ],
+        "blocked_language_hits": [
+            {
+                "status": finding.status,
+                "check": finding.check,
+                "detail": finding.detail,
+            }
+            for finding in blocked_language_hits
+        ],
+        "historical_path_notes": [
+            {
+                "status": finding.status,
+                "check": finding.check,
+                "detail": finding.detail,
+            }
+            for finding in historical_path_notes
+        ],
         "findings": [
             {
                 "status": finding.status,
