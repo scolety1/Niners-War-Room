@@ -157,6 +157,8 @@ def demo_payload_text() -> str:
             " ".join(TRADE_LAB_MODES),
             " ".join(TRADE_LAB_DATA_CHIPS),
             " ".join(format_package_summary(package) for package in packages),
+            " ".join(package.opponent_fit for package in packages),
+            " ".join(package.roster_impact for package in packages),
             " ".join(package.verdict for package in packages),
         ]
     )
