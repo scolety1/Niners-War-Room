@@ -84,6 +84,10 @@ ingestion, or fantasy-football lane.
   what must exist before any future implementation is separately approved.
 - `TRADING_LAB_BLOCKED_WORK_GATE_CHECKLIST_20260618.md`: T5 gate before future
   data ingestion or backtesting can even be proposed.
+- `TRADING_LAB_T11_BLOCKED_WORK_GATE_PLAN_20260618.md`: T11 plan for
+  validation-only future request classification.
+- `TRADING_LAB_BLOCKED_WORK_GATE_VALIDATION_EXPECTATIONS_20260618.md`: T11
+  ALLOW/HOLD/REJECT expectations for future work requests.
 - `TRADING_LAB_FUTURE_PHASE_DECISION_GATE_20260618.md`: T6 future-phase gate
   for proposal preconditions, required approval, and closeout expectations.
 
@@ -157,6 +161,8 @@ ingestion, or fantasy-football lane.
   closeout.
 - `TRADING_LAB_T10_LIFECYCLE_CLOSEOUT_20260618.md`: T10 lifecycle validation
   closeout.
+- `TRADING_LAB_T11_BLOCKED_WORK_GATE_CLOSEOUT_20260618.md`: T11 blocked-work
+  gate validation closeout.
 
 ## Ready
 

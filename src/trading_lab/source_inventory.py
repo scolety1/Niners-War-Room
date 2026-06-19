@@ -192,6 +192,61 @@ DATA_WORKFLOW_TEXT_PATTERNS = tuple(
     )
 )
 
+FUTURE_PHASE_ALLOW_RESEARCH_ONLY = "ALLOW_RESEARCH_ONLY"
+FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL = "HOLD_NEEDS_EXPLICIT_APPROVAL"
+FUTURE_PHASE_REJECT_PROHIBITED = "REJECT_PROHIBITED"
+
+FUTURE_PHASE_REJECT_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bbroker\s+api\b",
+        r"\bbroker\s+orders?\b",
+        r"\border\s+endpoint\b",
+        r"\bexecution\s+endpoint\b",
+        r"\breal[-\s]?money\b",
+        r"\blive\s+trading\b",
+        r"\bplace\s+orders?\b",
+        r"\bsubmit\s+orders?\b",
+        r"\bauto[-\s]?execute\b",
+        r"\bautomated\s+execution\b",
+        r"\bcredentials?\b",
+        r"\bsecret\b",
+        r"\bapi\s+key\b",
+        r"\btoken\b",
+        r"\baccount\s+key\b",
+        r"\bprivate\s+brokerage\b",
+        r"\baccount\s+balance\b",
+        r"\bbrokerage\s+export\b",
+        r"\bprivate\s+account\b",
+        r"\bproduction\s+investment\s+advice\b",
+        r"\bpersonalized\s+investment\s+advice\b",
+        r"\boutcome\b",
+        r"\brookie\b",
+        r"\bmock\s+draft\b",
+        r"\bdrop\s+decision\b",
+        r"\bdeployment\s+v2\b",
+        r"\bmaster\s+hq\b",
+    )
+)
+
+FUTURE_PHASE_HOLD_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bdata\s+ingestion\b",
+        r"\bingest\b",
+        r"\bbacktesting\s+implementation\b",
+        r"\bbacktest\s+code\b",
+        r"\bsimulation\s+tooling\b",
+        r"\bgenerated\s+outputs?\b",
+        r"\bgenerated\s+artifacts?\b",
+        r"\bmarket\s+datasets?\b",
+        r"\bapp\s+wiring\b",
+        r"\bdeploy\b",
+        r"\bdeployment\b",
+        r"\bci/cd\b",
+    )
+)
+
 SECRET_FIELD_MARKERS = frozenset(
     {
         "api_key",
@@ -601,6 +656,36 @@ def validate_lifecycle_transition(
         )
     )
     return tuple(issues)
+
+
+def classify_future_phase_request(request_text: str) -> str:
+    """Classify proposed future work without approving blocked implementation."""
+    if any(pattern.search(request_text) for pattern in FUTURE_PHASE_REJECT_PATTERNS):
+        return FUTURE_PHASE_REJECT_PROHIBITED
+    if any(pattern.search(request_text) for pattern in FUTURE_PHASE_HOLD_PATTERNS):
+        return FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL
+    return FUTURE_PHASE_ALLOW_RESEARCH_ONLY
+
+
+def validate_future_phase_request(request_text: str) -> tuple[ValidationIssue, ...]:
+    classification = classify_future_phase_request(request_text)
+    if classification == FUTURE_PHASE_ALLOW_RESEARCH_ONLY:
+        return ()
+    if classification == FUTURE_PHASE_HOLD_NEEDS_EXPLICIT_APPROVAL:
+        return (
+            ValidationIssue(
+                "future_phase_request",
+                "hold_needs_explicit_approval",
+                "This future-phase proposal needs explicit approval before work begins.",
+            ),
+        )
+    return (
+        ValidationIssue(
+            "future_phase_request",
+            "reject_prohibited_work",
+            "This proposal includes prohibited Trading Lab work.",
+        ),
+    )
 
 
 def _execution_text_issues(fields: Mapping[str, str]) -> tuple[ValidationIssue, ...]:
