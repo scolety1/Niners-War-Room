@@ -47,12 +47,12 @@ The V0 dataset names are:
 | Dataset | Candidate nflreadpy functions | Purpose |
 | --- | --- | --- |
 | `weekly_stats` | `import_weekly_data`, `load_player_stats` | Weekly player production |
-| `season_stats` | `import_seasonal_data`, `load_seasonal_data` | Season-level player production |
+| `season_stats` | `import_seasonal_data`, `load_player_stats`, `load_seasonal_data` | Season-level player production |
 | `rosters` | `import_rosters`, `load_rosters` | Player identity/team/position context |
-| `weekly_rosters` | `import_weekly_rosters`, `load_weekly_rosters` | Week-specific roster identity context |
+| `weekly_rosters` | `import_weekly_rosters`, `load_rosters_weekly`, `load_weekly_rosters` | Week-specific roster identity context |
 | `snap_counts` | `import_snap_counts`, `load_snap_counts` | Snap-count context |
 | `participation` | `import_participation`, `load_participation` | Participation/routes-like context where supported |
-| `opportunity` | `import_player_stats`, `load_opportunity`, `import_opportunity` | Opportunity/targets/carries/routes-like context where supported |
+| `opportunity` | `import_player_stats`, `load_ff_opportunity`, `load_opportunity`, `import_opportunity` | Opportunity/targets/carries/routes-like context where supported |
 
 If a dataset function is not present in the installed `nflreadpy`, V0 marks that dataset `skipped` instead of inventing data.
 
@@ -93,8 +93,10 @@ The report and metadata include:
 - row counts
 - column counts
 - field-name summaries
+- likely player ID/name/team/season/week/position fields
 - SHA256 values for local raw CSV outputs
 - identity matching for the standard NWR sample player set
+- structured identity matches with original query, source matched name, match type, and source field
 - quarantined field warnings
 - explicit guardrails
 
@@ -137,6 +139,16 @@ The identity check searches loaded name fields for:
 
 Identity matching is a source-audit check only. It does not create player aliases or repair any Lane Exchange package.
 
+V0 includes one explicit sample-check alias:
+
+```text
+Brian Thomas <-> Brian Thomas Jr
+```
+
+This alias affects report matching only. It does not rewrite source data and does not create a Lane Exchange alias package.
+
+The identity check searches common name fields including `player_name`, `player_display_name`, `full_name`, and `player`. The `player` field is needed for snap-count datasets.
+
 ## Guardrails
 
 - Raw stats outputs stay local-only outside Git.
@@ -165,6 +177,9 @@ Test coverage includes:
 - raw CSV output into temp directories
 - SHA/row/column summaries
 - quarantine-field detection
+- Brian Thomas / Brian Thomas Jr alias identity reporting
+- snap-count identity matching from the `player` field
+- likely player ID/name/team/season/week/position field-role reporting
 - missing `nflreadpy` fails safely
 - skipped unsupported optional loader functions
 - no Lane Exchange package or approval metadata is created

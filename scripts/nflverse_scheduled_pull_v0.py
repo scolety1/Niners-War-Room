@@ -37,6 +37,19 @@ SAMPLE_PLAYERS = (
     "Brian Thomas",
     "Alec Pierce",
 )
+SAMPLE_PLAYER_ALIASES = {
+    "Brian Thomas": ("Brian Thomas Jr",),
+    "Brian Thomas Jr": ("Brian Thomas",),
+}
+PLAYER_NAME_FIELDS = {
+    "player_name",
+    "player_display_name",
+    "display_name",
+    "football_name",
+    "full_name",
+    "name",
+    "player",
+}
 QUARANTINE_FIELD_PATTERNS = (
     "fantasy_points",
     "fantasy_points_ppr",
@@ -83,6 +96,7 @@ class DatasetSpec:
     function_names: tuple[str, ...]
     file_name: str
     required: bool = False
+    loader_kwargs: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -96,8 +110,10 @@ class DatasetResult:
     byte_count: int
     sha256: str
     field_names: list[str]
+    field_roles: dict[str, list[str]]
     quarantined_fields: list[str]
     matched_players: list[str]
+    identity_matches: list[dict[str, str]]
     missing_sample_players: list[str]
     warning: str = ""
     error: str = ""
@@ -120,8 +136,9 @@ DATASET_SPECS = {
     ),
     "season_stats": DatasetSpec(
         name="season_stats",
-        function_names=("import_seasonal_data", "load_seasonal_data"),
+        function_names=("import_seasonal_data", "load_player_stats", "load_seasonal_data"),
         file_name="season_stats.csv",
+        loader_kwargs={"summary_level": "reg"},
     ),
     "rosters": DatasetSpec(
         name="rosters",
@@ -130,7 +147,7 @@ DATASET_SPECS = {
     ),
     "weekly_rosters": DatasetSpec(
         name="weekly_rosters",
-        function_names=("import_weekly_rosters", "load_weekly_rosters"),
+        function_names=("import_weekly_rosters", "load_rosters_weekly", "load_weekly_rosters"),
         file_name="weekly_rosters.csv",
     ),
     "snap_counts": DatasetSpec(
@@ -147,6 +164,7 @@ DATASET_SPECS = {
         name="opportunity",
         function_names=(
             "import_player_stats",
+            "load_ff_opportunity",
             "load_opportunity",
             "import_opportunity",
         ),
@@ -302,12 +320,14 @@ def _load_dataset(
 
     output_path = snapshot_dir / spec.file_name
     try:
-        frame = _call_loader(loader, seasons)
+        frame = _call_loader(loader, seasons, spec.loader_kwargs or {})
         rows, fields = _frame_to_rows(frame)
         body = _csv_bytes(rows, fields)
         output_path.write_bytes(body)
+        field_roles = _field_roles(fields)
         quarantined = _quarantined_fields(fields)
-        matched, missing = _identity_matches(rows, fields, sample_players)
+        identity_matches, missing = _identity_matches(rows, fields, sample_players)
+        matched = [match["query"] for match in identity_matches]
         return DatasetResult(
             name=spec.name,
             function_name=function_name,
@@ -318,8 +338,10 @@ def _load_dataset(
             byte_count=len(body),
             sha256=_sha256(body),
             field_names=fields,
+            field_roles=field_roles,
             quarantined_fields=quarantined,
             matched_players=matched,
+            identity_matches=identity_matches,
             missing_sample_players=missing,
             warning=_dataset_warning(spec.name, quarantined),
         )
@@ -335,8 +357,10 @@ def _load_dataset(
             byte_count=0,
             sha256=_sha256(b""),
             field_names=[],
+            field_roles={},
             quarantined_fields=[],
             matched_players=[],
+            identity_matches=[],
             missing_sample_players=list(sample_players),
             error=f"{type(exc).__name__}: {exc}",
         )
@@ -350,11 +374,23 @@ def _find_loader(nflreadpy: Any, spec: DatasetSpec) -> tuple[str, Any | None]:
     return "", None
 
 
-def _call_loader(loader: Any, seasons: list[int]) -> Any:
-    try:
-        return loader(seasons)
-    except TypeError:
-        return loader(years=seasons)
+def _call_loader(loader: Any, seasons: list[int], kwargs: dict[str, Any]) -> Any:
+    attempts = (
+        lambda: loader(seasons, **kwargs),
+        lambda: loader(seasons),
+        lambda: loader(seasons=seasons, **kwargs),
+        lambda: loader(seasons=seasons),
+        lambda: loader(years=seasons, **kwargs),
+        lambda: loader(years=seasons),
+    )
+    last_error: TypeError | None = None
+    for attempt in attempts:
+        try:
+            return attempt()
+        except TypeError as exc:
+            last_error = exc
+    assert last_error is not None
+    raise last_error
 
 
 def _frame_to_rows(frame: Any) -> tuple[list[dict[str, Any]], list[str]]:
@@ -418,33 +454,91 @@ def _quarantined_fields(fields: list[str]) -> list[str]:
     return sorted(set(quarantined))
 
 
+def _field_roles(fields: list[str]) -> dict[str, list[str]]:
+    roles = {
+        "player_id": [],
+        "player_name": [],
+        "team": [],
+        "season": [],
+        "week": [],
+        "position": [],
+    }
+    for field in fields:
+        lower = field.lower()
+        if lower in PLAYER_NAME_FIELDS:
+            roles["player_name"].append(field)
+        if lower in {
+            "player_id",
+            "gsis_id",
+            "sleeper_id",
+            "pfr_player_id",
+            "pfr_id",
+            "espn_id",
+            "sportraradar_id",
+            "sportradar_id",
+            "yahoo_id",
+            "rotowire_id",
+            "fantasy_data_id",
+        } or ("player" in lower and lower.endswith("_id")):
+            roles["player_id"].append(field)
+        if lower in {"team", "recent_team", "opponent", "opponent_team", "club_code"}:
+            roles["team"].append(field)
+        if lower in {"season", "season_type", "game_type"}:
+            roles["season"].append(field)
+        if lower in {"week", "game_week"}:
+            roles["week"].append(field)
+        if lower in {"position", "position_group", "ngs_position", "depth_chart_position"}:
+            roles["position"].append(field)
+    return {role: columns for role, columns in roles.items() if columns}
+
+
 def _identity_matches(
     rows: list[dict[str, Any]], fields: list[str], sample_players: tuple[str, ...]
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[dict[str, str]], list[str]]:
     name_fields = [
         field
         for field in fields
-        if field.lower()
-        in {
-            "player_name",
-            "player_display_name",
-            "display_name",
-            "football_name",
-            "full_name",
-            "name",
-        }
+        if field.lower() in PLAYER_NAME_FIELDS
     ]
     if not name_fields:
         return [], list(sample_players)
 
-    available = set()
+    available: dict[str, dict[str, str]] = {}
     for row in rows:
         for field in name_fields:
             if row.get(field):
-                available.add(_norm(row[field]))
-    matched = [name for name in sample_players if _norm(name) in available]
-    missing = [name for name in sample_players if _norm(name) not in available]
-    return matched, missing
+                source_name = str(row[field])
+                available.setdefault(
+                    _norm(source_name),
+                    {"matched_name": source_name, "field": field},
+                )
+
+    matches: list[dict[str, str]] = []
+    missing: list[str] = []
+    for query in sample_players:
+        candidates = (query, *SAMPLE_PLAYER_ALIASES.get(query, ()))
+        match = _match_identity_candidate(query, candidates, available)
+        if match:
+            matches.append(match)
+        else:
+            missing.append(query)
+    return matches, missing
+
+
+def _match_identity_candidate(
+    query: str, candidates: tuple[str, ...], available: dict[str, dict[str, str]]
+) -> dict[str, str] | None:
+    for candidate in candidates:
+        source = available.get(_norm(candidate))
+        if source:
+            return {
+                "query": query,
+                "matched_name": source["matched_name"],
+                "match_type": "exact" if _norm(candidate) == _norm(query) else "alias",
+                "matched_on": candidate,
+                "source_field": source["field"],
+            }
+    return None
 
 
 def _dataset_warning(name: str, quarantined_fields: list[str]) -> str:
@@ -467,8 +561,10 @@ def _skipped_dataset_result(spec: DatasetSpec, reason: str) -> DatasetResult:
         byte_count=0,
         sha256=_sha256(b""),
         field_names=[],
+        field_roles={},
         quarantined_fields=[],
         matched_players=[],
+        identity_matches=[],
         missing_sample_players=list(SAMPLE_PLAYERS),
         warning=reason,
     )
@@ -523,8 +619,10 @@ def _metadata_payload(
                 "sha256": result.sha256,
                 "field_names": result.field_names,
                 "field_name_summary": result.field_names[:60],
+                "field_roles": result.field_roles,
                 "quarantined_fields": result.quarantined_fields,
                 "matched_sample_players": result.matched_players,
+                "identity_matches": result.identity_matches,
                 "missing_sample_players": result.missing_sample_players,
                 "warning": result.warning,
                 "error": result.error,
@@ -584,6 +682,12 @@ def _markdown_report(metadata: dict[str, Any], results: list[DatasetResult]) -> 
             f"- `{result.name}`: matched {len(result.matched_players)} of "
             f"{len(SAMPLE_PLAYERS)} sample players."
         )
+        for match in result.identity_matches:
+            if match["match_type"] == "alias":
+                lines.append(
+                    f"  - `{match['query']}` matched source `{match['matched_name']}` "
+                    f"via alias `{match['matched_on']}` in `{match['source_field']}`."
+                )
         if result.missing_sample_players:
             lines.append(
                 f"  Missing: {', '.join(result.missing_sample_players)}"
@@ -596,6 +700,12 @@ def _markdown_report(metadata: dict[str, Any], results: list[DatasetResult]) -> 
             continue
         preview = ", ".join(result.field_names[:40])
         lines.append(f"- `{result.name}` ({result.column_count} fields): {preview}")
+        if result.field_roles:
+            role_summary = "; ".join(
+                f"{role}: {', '.join(columns)}"
+                for role, columns in result.field_roles.items()
+            )
+            lines.append(f"  Likely roles: {role_summary}")
     lines.extend(["", "## Guardrails", ""])
     lines.extend(f"- {item}" for item in _guardrail_lines())
     return "\n".join(lines) + "\n"

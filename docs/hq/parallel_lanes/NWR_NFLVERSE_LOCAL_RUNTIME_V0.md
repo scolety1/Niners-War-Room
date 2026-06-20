@@ -118,7 +118,7 @@ Brian Thomas Jr, Alec Pierce
 
 `Brian Thomas` without suffix was missing because nflverse uses `Brian Thomas Jr` in these pulled datasets.
 
-`snap_counts` returned a `player` name field, but V0 identity matching does not currently inspect that field. This should be handled in a follow-up puller polish before treating snap-count identity results as meaningful.
+`snap_counts` returned a `player` name field. The follow-up puller polish now inspects `player` as a name field, so future reports can match snap-count identities without changing raw data.
 
 ## Quarantined Field Warnings
 
@@ -158,14 +158,17 @@ load_participation
 load_ff_opportunity
 ```
 
-Before a full all-dataset live pull, Master should approve a small puller compatibility update for:
+The follow-up puller compatibility polish added support for:
 
 - `season_stats`: use `load_player_stats(..., summary_level="reg")`
 - `weekly_rosters`: include `load_rosters_weekly`
 - `opportunity`: include `load_ff_opportunity`
 - `snap_counts` identity matching: include the `player` field
+- structured identity reporting for original query, matched source name, source field, and exact-vs-alias match type
+- Brian Thomas / Brian Thomas Jr report-only alias matching
+- likely player ID/name/team/season/week/position field-role summaries
 
-This is a code polish only; it must not create Lane Exchange packages or approvals.
+This is report/puller compatibility only; it does not create Lane Exchange packages or approvals.
 
 ## Install Plan If Runtime Is Missing Later
 
@@ -192,6 +195,6 @@ Do not install into any NWR repo virtual environment unless Tim/Master explicitl
 
 ## Master Verdict
 
-GREEN for local-only runtime reuse and limited live-pull validation.
+GREEN for local-only runtime reuse, limited live-pull validation, and puller compatibility polish.
 
-YELLOW for full scheduled nflverse coverage until the compatibility polish is approved and a full all-dataset pull is reviewed.
+YELLOW for full scheduled nflverse coverage until a full all-dataset pull is reviewed.

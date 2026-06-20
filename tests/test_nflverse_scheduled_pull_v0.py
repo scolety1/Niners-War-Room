@@ -48,14 +48,27 @@ def test_nflverse_pull_writes_snapshot_manifest_and_report(tmp_path: Path) -> No
     assert datasets["weekly_stats"]["matched_sample_players"] == [
         "Drake Maye",
         "Jaylen Warren",
+        "Brian Thomas Jr",
         "Brian Thomas",
     ]
+    assert {
+        "query": "Brian Thomas",
+        "matched_name": "Brian Thomas Jr",
+        "match_type": "alias",
+        "matched_on": "Brian Thomas Jr",
+        "source_field": "player_name",
+    } in datasets["weekly_stats"]["identity_matches"]
+    assert datasets["weekly_stats"]["field_roles"]["player_name"] == ["player_name"]
+    assert datasets["weekly_stats"]["field_roles"]["player_id"] == ["player_id"]
+    assert datasets["weekly_stats"]["field_roles"]["team"] == ["team"]
 
     weekly_body = (result.snapshot_dir / "weekly_stats.csv").read_bytes()
     assert datasets["weekly_stats"]["sha256"] == hashlib.sha256(weekly_body).hexdigest()
     report = result.report_path.read_text(encoding="utf-8")
     assert "Stats are display/stat context only" in report
     assert "latest_approved" in report
+    assert "Brian Thomas` matched source `Brian Thomas Jr`" in report
+    assert str(result.snapshot_dir).startswith(str(tmp_path))
 
 
 def test_skip_live_creates_report_without_raw_dataset_files(tmp_path: Path) -> None:
@@ -125,6 +138,31 @@ def test_loader_warning_is_reported_for_missing_optional_function(tmp_path: Path
     assert "no supported nflreadpy function" in dataset["warning"]
 
 
+def test_snap_counts_player_field_identity_matching(tmp_path: Path) -> None:
+    result = PULLER.run_nflverse_pull(
+        seasons=[2024, 2025],
+        output_root=tmp_path,
+        dataset_names=["snap_counts"],
+        snapshot_label="snap_identity",
+        loader_module=FakeNflreadpy(),
+    )
+
+    metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
+    dataset = metadata["datasets"][0]
+    assert dataset["status"] == "ok"
+    assert dataset["matched_sample_players"] == ["Brian Thomas Jr", "Brian Thomas", "Alec Pierce"]
+    assert {
+        "query": "Brian Thomas",
+        "matched_name": "Brian Thomas Jr",
+        "match_type": "alias",
+        "matched_on": "Brian Thomas Jr",
+        "source_field": "player",
+    } in dataset["identity_matches"]
+    assert dataset["field_roles"]["player_name"] == ["player"]
+    assert dataset["field_roles"]["position"] == ["position"]
+    assert dataset["field_roles"]["team"] == ["team"]
+
+
 class FakeFrame:
     def __init__(self, rows: list[dict[str, Any]]) -> None:
         self._rows = rows
@@ -167,7 +205,7 @@ class FakeNflreadpy:
                     "season": 2025,
                     "week": 1,
                     "player_id": "p3",
-                    "player_name": "Brian Thomas",
+                    "player_name": "Brian Thomas Jr",
                     "team": "JAX",
                     "passing_yards": 0,
                     "targets": 8,
@@ -190,5 +228,30 @@ class FakeNflreadpy:
                     "carries": 54,
                     "receptions": 0,
                 }
+            ]
+        )
+
+    def import_snap_counts(self, seasons: list[int]) -> FakeFrame:
+        assert seasons == [2024, 2025]
+        return FakeFrame(
+            [
+                {
+                    "season": 2025,
+                    "week": 1,
+                    "player": "Brian Thomas Jr",
+                    "position": "WR",
+                    "team": "JAX",
+                    "offense_snaps": 55,
+                    "offense_pct": 0.82,
+                },
+                {
+                    "season": 2025,
+                    "week": 1,
+                    "player": "Alec Pierce",
+                    "position": "WR",
+                    "team": "IND",
+                    "offense_snaps": 48,
+                    "offense_pct": 0.74,
+                },
             ]
         )
