@@ -7,6 +7,17 @@ TRADE_LAB_SUBTITLE = (
     "Find realistic fantasy trades where market says fair, but NWR says we win."
 )
 
+TRADE_LAB_FIRST_SCREEN_HELP_TEXT = (
+    "Use fixture examples to review what to offer, what to ask for, and which "
+    "package has the best NWR edge while still looking realistic."
+)
+
+TRADE_LAB_REVIEW_QUESTIONS = (
+    "I want this player. What should I offer?",
+    "I want to move this player. What should I ask for?",
+    "Which package gives me the best NWR edge while still looking realistic?",
+)
+
 TRADE_LAB_MODES = (
     "Trade For Player",
     "Trade Away Player",
@@ -622,6 +633,8 @@ def demo_payload_text() -> str:
         [
             TRADE_LAB_TITLE,
             TRADE_LAB_SUBTITLE,
+            TRADE_LAB_FIRST_SCREEN_HELP_TEXT,
+            " ".join(TRADE_LAB_REVIEW_QUESTIONS),
             " ".join(TRADE_LAB_MODES),
             " ".join(TRADE_LAB_DATA_CHIPS),
             " ".join(format_package_summary(package) for package in packages),

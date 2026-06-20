@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from src.trading_lab.trade_lab_adapters import disabled_provider_status_labels
 from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_DATA_CHIPS,
+    TRADE_LAB_FIRST_SCREEN_HELP_TEXT,
     TRADE_LAB_MODES,
+    TRADE_LAB_REVIEW_QUESTIONS,
     TRADE_LAB_SUBTITLE,
     TRADE_LAB_TITLE,
     TRAINING_MODE_DISCLAIMER,
@@ -61,8 +63,8 @@ DISABLED_PROVIDER_STATUS_LABELS = disabled_provider_status_labels()
 SCENARIO_COVERAGE_LABELS = scenario_titles()
 
 FAKE_DATA_DISCLAIMER = (
-    "Desktop smoke build: fake in-memory examples only. Real integrations are "
-    "not wired yet."
+    "Fixture-only review build: fake in-memory examples only, using fake players, "
+    "picks, teams, and values. Real integrations are not wired yet."
 )
 
 SCORE_LABELS = (
@@ -163,6 +165,8 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
             (
                 TRADE_LAB_TITLE,
                 TRADE_LAB_SUBTITLE,
+                TRADE_LAB_FIRST_SCREEN_HELP_TEXT,
+                *TRADE_LAB_REVIEW_QUESTIONS,
                 *TRADE_LAB_DATA_CHIPS,
                 FAKE_DATA_DISCLAIMER,
                 UNWIRED_INTEGRATION_NOTICE,
@@ -203,7 +207,11 @@ def render_trade_lab_page() -> None:
     st.set_page_config(page_title=TRADE_LAB_TITLE, layout="wide")
     st.title(TRADE_LAB_TITLE)
     st.subheader(TRADE_LAB_SUBTITLE)
-    st.caption("Fantasy trade package simulator - desktop review build")
+    st.caption(TRADE_LAB_FIRST_SCREEN_HELP_TEXT)
+    st.markdown("**What this page answers**")
+    for question in TRADE_LAB_REVIEW_QUESTIONS:
+        st.write(f"- {question}")
+    st.caption("Manual review required. Fixture-only values are for desktop review.")
     st.write(" ".join(f"`{chip}`" for chip in TRADE_LAB_DATA_CHIPS))
     st.warning(FAKE_DATA_DISCLAIMER)
     st.info(UNWIRED_INTEGRATION_NOTICE)
