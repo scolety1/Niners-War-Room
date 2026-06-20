@@ -123,13 +123,18 @@ RIGHT_CONTEXT_LABELS = (
 
 RESULT_CARD_LABELS = (
     "Package summary",
+    "Give",
+    "Get",
     "NWR value gain",
     "Public fantasy market fairness",
     "Opponent fit",
     "Roster impact",
     "Risk flags",
     "Manual review verdict",
+    "Fixture-only caveat",
 )
+
+BEST_TRADE_CARD_LABELS = RESULT_CARD_LABELS
 
 NEGOTIATION_LADDER_LABELS = (
     "Opening offer",
@@ -263,16 +268,19 @@ def render_trade_lab_page() -> None:
         st.markdown("### Best trade")
         with st.container(border=True):
             st.markdown(f"**Package summary:** {format_package_summary(best)}")
+            st.write(f"**Give:** {' + '.join(best.give)}")
+            st.write(f"**Get:** {' + '.join(best.get)}")
             col_a, col_b, col_c = st.columns(3)
             col_a.metric("NWR Gain", f"+{best.nwr_gain:.1f}")
-            col_b.metric("Market Fairness", "Realistic")
-            col_c.metric("Opponent Fit", "Strong")
+            col_b.metric("Market Fairness", best.public_market_fairness)
+            col_c.metric("Opponent Fit", best.opponent_fit)
             st.write(f"Roster Impact: {best.roster_impact}")
             st.write(f"Keeper/Drop Impact: {best.keeper_drop_impact}")
             st.write(f"Risk: {', '.join(best.risk_flags)}")
             st.write(f"Verdict: {best.verdict}")
             st.caption(best.explanation_summary)
             st.caption(" | ".join(best.trust_labels[:3]))
+            st.caption("Fixture-only caveat: values are for manual desktop review.")
 
         st.subheader("Ranked packages")
         for rank, package in enumerate(sort_packages_by_review_score(packages), start=1):
