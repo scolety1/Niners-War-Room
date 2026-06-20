@@ -178,6 +178,9 @@ class ModeContext:
     explanation: str
     relevant_controls: tuple[str, ...]
     warning_examples: tuple[str, ...]
+    input_focus: str = "Use the fixture inputs to frame the trade question."
+    output_meaning: str = "Outputs are ranked fixture packages for manual comparison."
+    fixture_caveat: str = "Fixture-only; real integrations are not wired."
 
 
 @dataclass(frozen=True)
@@ -196,6 +199,8 @@ MODE_CONTEXTS = {
         explanation="Start with the target and compare realistic outgoing packages.",
         relevant_controls=("Target player", "Opponent team", "Max offer aggressiveness"),
         warning_examples=("Do not include core keepers too early.",),
+        input_focus="Target player, opponent team, and max offer aggressiveness matter most.",
+        output_meaning="Shows fixture offers to start, fair-up, or walk away from.",
     ),
     "Trade Away Player": ModeContext(
         mode="Trade Away Player",
@@ -203,6 +208,8 @@ MODE_CONTEXTS = {
         explanation="Start with the outgoing player and compare return packages.",
         relevant_controls=("Outgoing player", "Opponent team", "Risk preference"),
         warning_examples=("Avoid accepting a package with no rookie pick upside.",),
+        input_focus="Outgoing player and desired return shape matter most.",
+        output_meaning="Shows fixture return targets and do-not-accept-below guidance.",
     ),
     "Upgrade Position": ModeContext(
         mode="Upgrade Position",
@@ -210,6 +217,8 @@ MODE_CONTEXTS = {
         explanation="Consolidate assets into a stronger starter while protecting depth.",
         relevant_controls=("Target player", "Allow multi-player packages", "Risk preference"),
         warning_examples=("Do not thin scarce position depth below review threshold.",),
+        input_focus="Target upgrade, package size, and risk tolerance matter most.",
+        output_meaning="Shows fixture consolidation options for a stronger starter.",
     ),
     "Consolidate Depth": ModeContext(
         mode="Consolidate Depth",
@@ -217,6 +226,8 @@ MODE_CONTEXTS = {
         explanation="Package extra players or picks to reduce future roster pressure.",
         relevant_controls=("Allow multi-player packages", "Untouchable assets"),
         warning_examples=("Do not consolidate into a player who creates keeper crowding.",),
+        input_focus="Bench depth, package size, and untouchable assets matter most.",
+        output_meaning="Shows fixture packages that trade quantity for cleaner roster shape.",
     ),
     "Pick Conversion": ModeContext(
         mode="Pick Conversion",
@@ -224,6 +235,8 @@ MODE_CONTEXTS = {
         explanation="Compare pick cost against roster usefulness and future draft flexibility.",
         relevant_controls=("Include picks", "Win-now vs long-term preference"),
         warning_examples=("Do not spend the 2026 2nd unless roster impact is clear.",),
+        input_focus="Pick inclusion and timeline preference matter most.",
+        output_meaning="Shows fixture pick-to-player or player-to-pick tradeoffs.",
     ),
     "Drop-Pressure Trade": ModeContext(
         mode="Drop-Pressure Trade",
@@ -231,6 +244,8 @@ MODE_CONTEXTS = {
         explanation="Move fringe depth into picks or cleaner roster assets.",
         relevant_controls=("Outgoing player", "Drop pressure placeholder"),
         warning_examples=("Do not solve drop pressure by giving away keeper upside.",),
+        input_focus="Outgoing fringe asset and drop-pressure label matter most.",
+        output_meaning="Shows fixture packages that may reduce future roster cuts.",
     ),
     "Opponent-Fit Trade": ModeContext(
         mode="Opponent-Fit Trade",
@@ -238,6 +253,8 @@ MODE_CONTEXTS = {
         explanation="Compare fake opponent needs against package realism.",
         relevant_controls=("Opponent team", "Target player", "Outgoing player"),
         warning_examples=("Do not chase NWR gain if the opponent has no reason to accept.",),
+        input_focus="Opponent team, opponent needs, and give/get fit matter most.",
+        output_meaning="Shows fixture packages that might be realistic for another manager.",
     ),
     "Training Mode": ModeContext(
         mode="Training Mode",
@@ -245,6 +262,8 @@ MODE_CONTEXTS = {
         explanation="Review fake scenarios and score negotiation quality.",
         relevant_controls=("Mode", "Risk preference"),
         warning_examples=("Training scenarios are fake and do not use real roster data.",),
+        input_focus="Scenario prompt and A/B/C/D choice matter most.",
+        output_meaning="Shows what to learn from a fixture practice trade.",
     ),
 }
 
@@ -479,6 +498,17 @@ def sort_packages_by_review_score(
 
 def mode_context_for(mode: str) -> ModeContext:
     return MODE_CONTEXTS[mode]
+
+
+def mode_guidance_lines(mode: str) -> tuple[str, ...]:
+    context = mode_context_for(mode)
+    return (
+        f"Question: {context.user_question}",
+        f"When to use it: {context.explanation}",
+        f"Input focus: {context.input_focus}",
+        f"Output meaning: {context.output_meaning}",
+        f"Caveat: {context.fixture_caveat}",
+    )
 
 
 def packages_for_mode(mode: str) -> tuple[DemoTradePackage, ...]:

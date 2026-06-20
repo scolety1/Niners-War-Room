@@ -20,6 +20,7 @@ from src.trading_lab.trade_lab_ui import (
     format_negotiation_ladder,
     format_package_summary,
     mode_context_for,
+    mode_guidance_lines,
     packages_for_mode,
     sort_packages_by_review_score,
     training_scenarios,
@@ -232,6 +233,8 @@ def render_trade_lab_page() -> None:
         mode_context = mode_context_for(selected_mode)
         st.info(mode_context.user_question)
         st.caption(mode_context.explanation)
+        for guidance_line in mode_guidance_lines(selected_mode):
+            st.caption(guidance_line)
         st.text_input("Target player", value="Target Player")
         st.text_input("Outgoing player", value="Player A")
         st.selectbox("Opponent team", ("Team Alpha", "Team Bravo"), index=0)
