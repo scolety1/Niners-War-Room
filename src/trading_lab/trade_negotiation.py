@@ -3,6 +3,23 @@ from __future__ import annotations
 from src.trading_lab.trade_lab_ui import NegotiationLadder
 from src.trading_lab.trade_value_contracts import TradeReview
 
+NEGOTIATION_REVIEW_NOTE = (
+    "Manual fantasy negotiation guidance only; fixture-only until real data is wired."
+)
+
+NEGOTIATION_POLISH_LABELS = (
+    "Opener",
+    "Fair offer",
+    "Max offer",
+    "Walk-away line",
+    "Do-not-include assets",
+    "Counteroffer ideas",
+    "If they reject",
+    "If they ask for more",
+    "Manual-only negotiation note",
+    "Fixture-only caveat",
+)
+
 
 def _asset_names(review: TradeReview) -> tuple[str, ...]:
     return tuple(asset.display_name for asset in review.package.give_side.assets)

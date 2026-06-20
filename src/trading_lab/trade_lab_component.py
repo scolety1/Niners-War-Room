@@ -26,6 +26,7 @@ from src.trading_lab.trade_lab_ui import (
     sort_packages_by_review_score,
     training_scenarios,
 )
+from src.trading_lab.trade_negotiation import NEGOTIATION_POLISH_LABELS, NEGOTIATION_REVIEW_NOTE
 from src.trading_lab.trade_provenance import ui_data_status_labels
 from src.trading_lab.trade_review_queue import review_queue_placeholder_labels
 from src.trading_lab.trade_scenarios import scenario_titles
@@ -188,6 +189,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
         ),
         TradeLabSection("Right context panel", RIGHT_CONTEXT_LABELS),
         TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
+        TradeLabSection("Negotiation guidance polish", NEGOTIATION_POLISH_LABELS),
         TradeLabSection("Bad trade detector", WARNING_SYSTEM_LABELS),
         TradeLabSection("Training Mode", TRAINING_MODE_LABELS),
         TradeLabSection(
@@ -298,6 +300,7 @@ def render_trade_lab_page() -> None:
                 st.caption(" | ".join(package.trust_labels[:3]))
 
         st.subheader("Negotiation ladder")
+        st.caption(NEGOTIATION_REVIEW_NOTE)
         for ladder_line in format_negotiation_ladder(best.negotiation_ladder):
             label, value = ladder_line.split(": ", 1)
             st.markdown(f"- **{label}:** {value}")
