@@ -33,6 +33,9 @@ The local hub may also include a Master-owned local-only registry outside Git:
 C:\NWR_SHARED_DATA\lane_exchange_registry\lane_exchange_v0_registry.json
 ```
 
+This is the only official Lane Exchange V0 registry path. A registry nested
+under `C:\NWR_SHARED_DATA\lane_exchange\` is not official.
+
 The registry is an operational index of lane/package ownership. The Master
 contract remains the source of truth; the registry must not override this
 document.
