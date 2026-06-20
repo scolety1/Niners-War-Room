@@ -29,6 +29,10 @@ from src.trading_lab.trade_lab_ui import (
 from src.trading_lab.trade_negotiation import NEGOTIATION_POLISH_LABELS, NEGOTIATION_REVIEW_NOTE
 from src.trading_lab.trade_provenance import ui_data_status_labels
 from src.trading_lab.trade_review_queue import review_queue_placeholder_labels
+from src.trading_lab.trade_roster_effects import (
+    ROSTER_AFTERMATH_POLISH_LABELS,
+    roster_aftermath_why_this_matters,
+)
 from src.trading_lab.trade_scenarios import scenario_titles
 
 ROUTE_WIRING_STATUS = "isolated_streamlit_page"
@@ -188,6 +192,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
             (*CENTER_SECTION_LABELS, *RESULT_CARD_LABELS, *SCORE_LABELS),
         ),
         TradeLabSection("Right context panel", RIGHT_CONTEXT_LABELS),
+        TradeLabSection("Roster aftermath polish", ROSTER_AFTERMATH_POLISH_LABELS),
         TradeLabSection("Negotiation ladder", NEGOTIATION_LADDER_LABELS),
         TradeLabSection("Negotiation guidance polish", NEGOTIATION_POLISH_LABELS),
         TradeLabSection("Bad trade detector", WARNING_SYSTEM_LABELS),
@@ -320,6 +325,7 @@ def render_trade_lab_page() -> None:
         aftermath = best.roster_aftermath
         st.markdown("**Roster aftermath**")
         st.write(aftermath.summary)
+        st.caption(roster_aftermath_why_this_matters())
         st.write(f"Keeper impact: {aftermath.keeper_impact}")
         st.write(f"Keeper core before: {', '.join(aftermath.keeper_core_before)}")
         st.write(f"Keeper core after: {', '.join(aftermath.keeper_core_after)}")

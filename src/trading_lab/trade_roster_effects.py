@@ -5,6 +5,22 @@ from src.trading_lab.trade_value_contracts import TradeReview
 
 REAL_ROSTER_INTEGRATION_WIRED = False
 ROSTER_INTEGRATION_STATUS = "Real roster integrations are not wired yet."
+ROSTER_AFTERMATH_POLISH_LABELS = (
+    "Keeper core impact",
+    "Drop pressure impact",
+    "Position depth impact",
+    "Rookie/mock context placeholder",
+    "Roster risk notes",
+    "Why this matters",
+    "Fixture-only caveat",
+)
+
+
+def roster_aftermath_why_this_matters() -> str:
+    return (
+        "Why this matters: a fantasy trade can win on value but still hurt keeper "
+        "structure, depth, future cuts, or rookie pick flexibility."
+    )
 
 
 def estimate_keeper_impact(review: TradeReview) -> str:
