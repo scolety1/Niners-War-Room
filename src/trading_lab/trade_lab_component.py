@@ -353,3 +353,4 @@ def render_trade_lab_page() -> None:
             for choice in scenario.choices:
                 st.write(f"- {choice}")
             st.write(f"Explanation: {scenario.explanation}")
+            st.write(f"What you should learn: {scenario.learning_note}")

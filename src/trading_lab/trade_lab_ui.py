@@ -189,6 +189,7 @@ class TrainingScenario:
     choices: tuple[str, str, str, str]
     scoring_dimensions: tuple[str, ...]
     explanation: str
+    learning_note: str
     disclaimer: str = TRAINING_MODE_DISCLAIMER
 
 
@@ -631,6 +632,7 @@ def training_scenarios() -> tuple[TrainingScenario, ...]:
             ),
             scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
             explanation="Best practice is to start below the fair offer and protect Player B.",
+            learning_note="Learn how opener, fair offer, and walk-away line differ.",
         ),
         TrainingScenario(
             scenario_prompt="Trade away Player B to Team Bravo.",
@@ -642,6 +644,7 @@ def training_scenarios() -> tuple[TrainingScenario, ...]:
             ),
             scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
             explanation="The pick matters because it protects future roster flexibility.",
+            learning_note="Learn how to compare player-heavy and pick-heavy returns.",
         ),
         TrainingScenario(
             scenario_prompt="Reduce drop pressure with a package to Team Charlie.",
@@ -653,6 +656,7 @@ def training_scenarios() -> tuple[TrainingScenario, ...]:
             ),
             scoring_dimensions=TRAINING_SCORING_DIMENSIONS,
             explanation="The cleanest pressure-release package avoids core players.",
+            learning_note="Learn when roster cleanup is worth more than bench depth.",
         ),
     )
 
