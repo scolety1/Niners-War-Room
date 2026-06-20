@@ -18,6 +18,19 @@ COMPARISON_COLUMNS = (
     "primary warning",
 )
 
+PACKAGE_BOARD_LABELS = (
+    "Rank",
+    "Give",
+    "Get",
+    "NWR edge",
+    "Market realism",
+    "Opponent fit",
+    "Roster impact",
+    "Keeper/drop impact",
+    "Primary warning",
+    "Selected package explanation",
+)
+
 
 @dataclass(frozen=True)
 class PackageComparisonRow:
@@ -64,3 +77,13 @@ def build_package_comparison_rows(
 
 def comparison_rows_for_mode(mode: str) -> tuple[PackageComparisonRow, ...]:
     return build_package_comparison_rows(packages_for_mode(mode))
+
+
+def package_board_summary_lines(mode: str) -> tuple[str, ...]:
+    rows = comparison_rows_for_mode(mode)
+    return tuple(
+        f"Rank #{row.rank}: Give {row.give} / Get {row.get} / "
+        f"NWR edge {row.nwr_gain:+.1f} / Market realism {row.public_market_fairness} / "
+        f"Primary warning {row.primary_warning}"
+        for row in rows
+    )

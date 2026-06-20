@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.trading_lab.trade_comparison import PACKAGE_BOARD_LABELS
 from src.trading_lab.trade_lab_adapters import disabled_provider_status_labels
 from src.trading_lab.trade_lab_ui import (
     TRADE_LAB_DATA_CHIPS,
@@ -196,6 +197,7 @@ def trade_lab_sections() -> tuple[TradeLabSection, ...]:
         TradeLabSection("Review queue placeholder", REVIEW_QUEUE_PLACEHOLDER_LABELS),
         TradeLabSection("Disabled provider states", DISABLED_PROVIDER_STATUS_LABELS),
         TradeLabSection("Scenario coverage", SCENARIO_COVERAGE_LABELS),
+        TradeLabSection("Package board polish", PACKAGE_BOARD_LABELS),
     )
 
 
