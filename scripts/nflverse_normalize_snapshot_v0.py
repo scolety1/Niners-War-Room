@@ -52,11 +52,13 @@ DATASET_TIMING_POLICY = {
         ),
     },
     "season_stats": {
-        "source_timing_class": "offseason_refresh_only",
+        "source_timing_class": "unknown_timing_yellow",
         "live_use_allowed": False,
         "timing_notes": (
-            "Season stats are season-level historical/offseason context and are not "
-            "live draft-day decision inputs."
+            "Season stats may be season-to-date live/in-season display candidates "
+            "when built from a current player-stats source, but final season "
+            "aggregates remain offseason/finalized context. Require explicit "
+            "as-of/source freshness before live use."
         ),
     },
     "rosters": {
@@ -147,16 +149,19 @@ BASIC_STAT_COLUMNS = [
     "passing_tds",
     "passing_interceptions",
     "passing_first_downs",
+    "passing_2pt_conversions",
     "carries",
     "rushing_attempts",
     "rushing_yards",
     "rushing_tds",
     "rushing_first_downs",
+    "rushing_2pt_conversions",
     "targets",
     "receptions",
     "receiving_yards",
     "receiving_tds",
     "receiving_first_downs",
+    "receiving_2pt_conversions",
     "air_yards",
     "passing_air_yards",
     "receiving_air_yards",
@@ -173,6 +178,11 @@ BASIC_STAT_COLUMNS = [
     "rushing_fumbles_lost",
     "receiving_fumbles_lost",
     "return_yards",
+    "punt_returns",
+    "punt_return_yards",
+    "kickoff_returns",
+    "kickoff_return_yards",
+    "special_teams_tds",
     "pass_attempt",
     "rec_attempt",
     "rush_attempt",

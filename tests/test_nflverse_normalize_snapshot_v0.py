@@ -114,6 +114,45 @@ def test_quarantined_fields_are_excluded_from_display_packages(tmp_path: Path) -
     assert "target_share" in result.quarantine_summary["weekly_stats"]
 
 
+def test_scoring_aligned_display_fields_are_kept_without_kicker_scope(
+    tmp_path: Path,
+) -> None:
+    snapshot = _write_snapshot(tmp_path / "snapshot", include_season_stats=True)
+
+    result = NORMALIZER.normalize_snapshot(
+        snapshot_dir=snapshot,
+        output_root=tmp_path / "lane_exchange",
+        write_candidates=False,
+        snapshot_label="scoring_fields",
+    )
+
+    weekly = _package(result, "stats_context/player_weekly_stats_display_context")
+    season = _package(result, "stats_context/player_season_stats_display_context")
+
+    weekly_qb = weekly.rows[0]
+    weekly_rb = weekly.rows[1]
+    season_qb = season.rows[0]
+
+    assert weekly_qb["passing_2pt_conversions"] == "1"
+    assert weekly_qb["punt_returns"] == "1"
+    assert weekly_qb["punt_return_yards"] == "12"
+    assert weekly_qb["kickoff_returns"] == "2"
+    assert weekly_qb["kickoff_return_yards"] == "45"
+    assert weekly_qb["special_teams_tds"] == "1"
+    assert weekly_rb["rushing_2pt_conversions"] == "1"
+    assert weekly_rb["receiving_2pt_conversions"] == "1"
+    assert season_qb["passing_2pt_conversions"] == "2"
+    assert season_qb["punt_return_yards"] == "15"
+    assert season_qb["kickoff_return_yards"] == "62"
+    assert season_qb["special_teams_tds"] == "1"
+
+    for row in (weekly_qb, weekly_rb, season_qb):
+        assert "fg_made" not in row
+        assert "fg_att" not in row
+        assert "pat_made" not in row
+        assert "pat_att" not in row
+
+
 def test_expanded_dataset_candidates_are_display_only_and_policy_filtered(
     tmp_path: Path,
 ) -> None:
@@ -197,8 +236,9 @@ def test_source_timing_classes_are_applied_by_dataset(tmp_path: Path) -> None:
 
     assert weekly.rows[0]["source_timing_class"] == "live_draft_day_candidate"
     assert weekly.rows[0]["live_use_allowed"] is True
-    assert season.rows[0]["source_timing_class"] == "offseason_refresh_only"
+    assert season.rows[0]["source_timing_class"] == "unknown_timing_yellow"
     assert season.rows[0]["live_use_allowed"] is False
+    assert "season-to-date" in season.rows[0]["timing_notes"]
 
     snap_row = next(row for row in usage.rows if row["source_dataset"] == "snap_counts")
     opportunity_row = next(
@@ -361,6 +401,16 @@ def _write_snapshot(
                 "completions": "21",
                 "passing_yards": "240",
                 "passing_tds": "2",
+                "passing_2pt_conversions": "1",
+                "punt_returns": "1",
+                "punt_return_yards": "12",
+                "kickoff_returns": "2",
+                "kickoff_return_yards": "45",
+                "special_teams_tds": "1",
+                "fg_made": "1",
+                "fg_att": "1",
+                "pat_made": "3",
+                "pat_att": "3",
                 "passing_epa": "4.2",
                 "fantasy_points_ppr": "22.1",
                 "target_share": "",
@@ -376,9 +426,11 @@ def _write_snapshot(
                 "team": "PIT",
                 "carries": "12",
                 "rushing_yards": "70",
+                "rushing_2pt_conversions": "1",
                 "targets": "4",
                 "receptions": "3",
                 "receiving_yards": "28",
+                "receiving_2pt_conversions": "1",
                 "wopr": "0.1",
                 "rank_score": "forbidden",
             },
@@ -423,6 +475,14 @@ def _write_snapshot(
                     "team": "NE",
                     "attempts": "500",
                     "passing_yards": "3900",
+                    "passing_2pt_conversions": "2",
+                    "punt_return_yards": "15",
+                    "kickoff_return_yards": "62",
+                    "special_teams_tds": "1",
+                    "fg_made": "2",
+                    "fg_att": "2",
+                    "pat_made": "20",
+                    "pat_att": "21",
                     "fantasy_points": "300",
                 }
             ],

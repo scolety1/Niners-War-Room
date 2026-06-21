@@ -41,7 +41,7 @@ Candidate manifests and `latest_candidate.json` pointers now include:
 | Dataset | Timing class | Live use allowed | Notes |
 | --- | --- | --- | --- |
 | `weekly_stats` | `live_draft_day_candidate` | true | Display-only weekly stats if refreshed; subject to corrections/staleness. |
-| `season_stats` | `offseason_refresh_only` | false | Season-level historical/offseason context. |
+| `season_stats` | `unknown_timing_yellow` | false | Season-to-date summaries may be live/in-season display candidates when built from a current player-stats source, but final season aggregates remain offseason/finalized context. Require explicit as-of/source freshness before live use. |
 | `rosters` | `live_draft_day_candidate` | true | Current roster metadata if refreshed; stale data must be visible. |
 | `weekly_rosters` | `live_draft_day_candidate` | true | Weekly roster/status context if current source supports it. |
 | `snap_counts` | `live_draft_day_candidate` | true | After-game snap context; not projections. |
@@ -75,6 +75,19 @@ source policy approves a separate live source.
 - Stats are not simulations.
 - Stats are not final draft decisions.
 - Stats must not alter Mock Draft logic.
+
+## Season Stats Correction
+
+The original V1 policy classified `season_stats` as broadly
+`offseason_refresh_only`. That was too coarse.
+
+Corrected rule:
+
+- Season-to-date summaries can be live/in-season display candidates when built
+  from a current player-stats source and labeled with an explicit as-of cutoff.
+- Final full-season aggregates remain offseason/finalized historical context.
+- Until the normalizer or consumer can prove which mode applies, `season_stats`
+  rows are classified as `unknown_timing_yellow` and `live_use_allowed=false`.
 
 ## Recommended Next Step
 
