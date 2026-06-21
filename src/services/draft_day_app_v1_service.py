@@ -64,6 +64,14 @@ LANE_PROP_FOLDERS = {
     "decision_board": APP_PROP_ROOT / "decision_board",
 }
 
+LANE_PROP_PRIMARY_FILES = {
+    "outcome_columns": "outcome_player_context.csv",
+    "trading_lab": "trade_helper_context.csv",
+    "rookie_hq": "rookie_overlay_context.csv",
+    "mock_draft": "availability_context.csv",
+    "decision_board": "decision_flags_context.csv",
+}
+
 
 @dataclass(frozen=True)
 class FrozenBoardBundle:
@@ -206,22 +214,34 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for lane, folder in LANE_PROP_FOLDERS.items():
         files = sorted(folder.glob("*")) if folder.exists() else []
+        primary = lane_prop_path(lane, LANE_PROP_PRIMARY_FILES[lane])
         rows.append(
             {
                 "lane": lane,
-                "status": "GREEN" if files else "YELLOW-HOLD",
+                "status": "GREEN" if primary and primary.exists() else "YELLOW-HOLD",
                 "path": str(folder),
                 "file_count": str(len([path for path in files if path.is_file()])),
+                "primary_file": primary.name if primary else LANE_PROP_PRIMARY_FILES[lane],
                 "source_rule": "Must reference frozen Final Draft Board V1.",
             }
         )
     return rows
 
 
+def lane_prop_path(lane: str, file_name: str) -> Path | None:
+    folder = LANE_PROP_FOLDERS.get(lane)
+    if folder is None:
+        return None
+    return folder / file_name
+
+
 def first_lane_prop_csv(lane: str) -> Path | None:
     folder = LANE_PROP_FOLDERS.get(lane)
     if folder is None or not folder.exists():
         return None
+    primary = lane_prop_path(lane, LANE_PROP_PRIMARY_FILES.get(lane, ""))
+    if primary and primary.exists():
+        return primary
     candidates = [
         path
         for path in sorted(folder.glob("*.csv"))
@@ -244,6 +264,37 @@ def load_lane_prop_frame(lane: str) -> tuple[pd.DataFrame, Path | None]:
     if path is None:
         return pd.DataFrame(), None
     return pd.read_csv(path).fillna(""), path
+
+
+def load_lane_prop_file(lane: str, file_name: str) -> tuple[pd.DataFrame, Path | None]:
+    path = lane_prop_path(lane, file_name)
+    if path is None or not path.exists():
+        return pd.DataFrame(), path
+    return pd.read_csv(path).fillna(""), path
+
+
+def lane_prop_file_rows() -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for lane, folder in LANE_PROP_FOLDERS.items():
+        for path in sorted(folder.glob("*")) if folder.exists() else []:
+            if path.is_dir():
+                continue
+            row_count = ""
+            if path.suffix.lower() == ".csv":
+                try:
+                    row_count = str(pd.read_csv(path).shape[0])
+                except (OSError, pd.errors.ParserError, UnicodeDecodeError):
+                    row_count = "unreadable"
+            rows.append(
+                {
+                    "lane": lane,
+                    "file_name": path.name,
+                    "status": "GREEN" if path.exists() else "YELLOW-HOLD",
+                    "row_count": row_count,
+                    "path": str(path),
+                }
+            )
+    return rows
 
 
 def pinned_manifest_hash() -> str | None:

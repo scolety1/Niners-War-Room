@@ -16,7 +16,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_frame
+from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 
 bundle = load_frozen_board()
 
@@ -32,8 +32,10 @@ page_header(
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
-prop_frame, prop_path = load_lane_prop_frame("trading_lab")
-if prop_path is None:
+prop_frame, prop_path = load_lane_prop_file("trading_lab", "trade_helper_context.csv")
+pick_frame, pick_path = load_lane_prop_file("trading_lab", "pick_context.csv")
+tier_frame, tier_path = load_lane_prop_file("trading_lab", "trade_tier_values.csv")
+if prop_path is None or prop_frame.empty:
     render_yellow_hold("Trading Lab props are missing; package compare is board-context only.")
 else:
     st.caption(f"Trading Lab props loaded: {prop_path}")
@@ -50,12 +52,35 @@ def _package_rows(names: list[str]) -> pd.DataFrame:
 def _package_summary(names: list[str]) -> dict[str, object]:
     rows = _package_rows(names)
     score = pd.to_numeric(rows.get("final_board_score_visible", 0), errors="coerce").fillna(0)
+    prop_rows = (
+        prop_frame.loc[prop_frame["player"].astype(str).isin(names)]
+        if not prop_frame.empty
+        else rows
+    )
     return {
         "players": ", ".join(names) if names else "none",
         "count": len(names),
         "best_rank": int(rows["final_board_rank"].min()) if len(rows) else "",
         "visible_score_sum": round(float(score.sum()), 2),
         "tiers": ", ".join(sorted(set(rows.get("final_tier", pd.Series(dtype=str)).astype(str)))),
+        "tier_movement": " | ".join(
+            sorted(set(prop_rows.get("tier_movement_note", pd.Series(dtype=str)).astype(str)))
+        ),
+        "scarcity": " | ".join(
+            sorted(set(prop_rows.get("position_scarcity_note", pd.Series(dtype=str)).astype(str)))
+        ),
+        "pick_context": " | ".join(
+            sorted(set(prop_rows.get("pick_window_note", pd.Series(dtype=str)).astype(str)))
+        ),
+        "verdict_band": " | ".join(
+            sorted(
+                set(
+                    prop_rows.get(
+                        "verdict_band_input_status", pd.Series(dtype=str)
+                    ).astype(str)
+                )
+            )
+        ),
     }
 
 
@@ -74,3 +99,16 @@ st.caption(
     "Visible score sums are context only. They are not a trade simulator, private value, "
     "or final trade advice."
 )
+if not prop_frame.empty:
+    st.subheader("Selected Trade Helper Rows")
+    selected_names = set(give + get)
+    selected_props = prop_frame.loc[prop_frame["player"].astype(str).isin(selected_names)]
+    st.dataframe(selected_props, use_container_width=True, hide_index=True)
+if pick_path and not pick_frame.empty:
+    st.subheader("Pick Context")
+    st.caption(f"Display-only pick context: {pick_path}")
+    st.dataframe(pick_frame.head(40), use_container_width=True, hide_index=True)
+if tier_path and not tier_frame.empty:
+    st.subheader("Tier Values")
+    st.caption(f"Display-only tier context: {tier_path}")
+    st.dataframe(tier_frame, use_container_width=True, hide_index=True)

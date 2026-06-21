@@ -19,7 +19,7 @@ from app.components.draft_day_v1 import (
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_frozen_board,
-    load_lane_prop_frame,
+    load_lane_prop_file,
     manual_review_frame,
 )
 
@@ -44,8 +44,10 @@ if flags.empty:
 else:
     st.dataframe(flags, use_container_width=True, hide_index=True)
 
-prop_frame, prop_path = load_lane_prop_frame("decision_board")
-if prop_path is None:
+prop_frame, prop_path = load_lane_prop_file("decision_board", "decision_flags_context.csv")
+cards_frame, cards_path = load_lane_prop_file("decision_board", "manual_review_cards.csv")
+risk_frame, risk_path = load_lane_prop_file("decision_board", "risk_notes_context.csv")
+if prop_path is None or prop_frame.empty:
     render_yellow_hold("Decision Board props are missing. Frozen risk notes remain available.")
 else:
     st.caption(f"Decision Board props loaded: {prop_path}")
@@ -60,6 +62,14 @@ else:
     else:
         display = prop_frame
     st.dataframe(display, use_container_width=True, hide_index=True)
+if cards_path and not cards_frame.empty:
+    st.subheader("Manual Review Cards")
+    st.caption(f"Decision prop cards: {cards_path}")
+    st.dataframe(cards_frame, use_container_width=True, hide_index=True)
+if risk_path and not risk_frame.empty:
+    st.subheader("Risk Notes Context")
+    st.caption(f"Decision risk props: {risk_path}")
+    st.dataframe(risk_frame.head(66), use_container_width=True, hide_index=True)
 
 st.subheader("Top Board Context")
 render_final_board_table(bundle.frame.head(20), key="decision_board_top_context")

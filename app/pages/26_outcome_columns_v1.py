@@ -16,7 +16,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_frame
+from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 
 bundle = load_frozen_board()
 
@@ -32,8 +32,11 @@ page_header(
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
-prop_frame, prop_path = load_lane_prop_frame("outcome_columns")
-if prop_path is None:
+prop_frame, prop_path = load_lane_prop_file("outcome_columns", "outcome_player_context.csv")
+metadata_frame, metadata_path = load_lane_prop_file(
+    "outcome_columns", "outcome_column_metadata.csv"
+)
+if prop_path is None or prop_frame.empty:
     render_yellow_hold(
         "Outcome props are missing. No outcome columns are released in this app view."
     )
@@ -51,3 +54,7 @@ if join_columns:
 else:
     display = prop_frame
 st.dataframe(display, use_container_width=True, hide_index=True)
+if metadata_path and not metadata_frame.empty:
+    st.subheader("Outcome Display Rules")
+    st.caption(f"Display-only metadata: {metadata_path}")
+    st.dataframe(metadata_frame, use_container_width=True, hide_index=True)

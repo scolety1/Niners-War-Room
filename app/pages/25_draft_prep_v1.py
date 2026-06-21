@@ -57,6 +57,10 @@ st.code(
         [
             f"Local frozen package: {LOCAL_FROZEN_BOARD_ROOT}",
             f"Repo-safe frozen copy: {REPO_SAFE_FROZEN_BOARD_PATH}",
+            "Static fallback: docs/draft_day_exports/final_board_v1_20260622/OPEN_THIS_FIRST.html",
+            "Frozen zip fallback: C:\\NWR_SHARED_DATA\\draft_day_exports"
+            "\\nwr_final_draft_board_v1_frozen_20260622.zip",
+            "Local Streamlit URL: http://127.0.0.1:8501/rankings",
             f"App prop root: {APP_PROP_ROOT}",
         ]
     )

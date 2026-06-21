@@ -24,6 +24,7 @@ from src.services.draft_day_app_v1_service import (
     LOCAL_FROZEN_BOARD_ROOT,
     PINNED_SNAPSHOT_MANIFEST,
     draft_day_status_rows,
+    lane_prop_file_rows,
     load_frozen_board,
     pinned_manifest_hash,
 )
@@ -68,6 +69,9 @@ st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=Tru
 st.subheader("Lane Prop Status")
 render_lane_status_table()
 
+st.subheader("Lane Prop Files")
+st.dataframe(pd.DataFrame(lane_prop_file_rows()), use_container_width=True, hide_index=True)
+
 st.subheader("Source Paths")
 st.code(
     "\n".join(
@@ -91,6 +95,7 @@ st.markdown(
     """
     - Use `streamlit run app/main.py` for the connected local app.
     - Use the repo-safe static export only as a fallback.
+    - External asset/trade context is merged here as Settings / Data Health plus Trading Lab props.
     - No hosted deployment, public access, or GitHub Pages is enabled by this app contract.
     - Vendor research remains YELLOW-HOLD and is not a safe board signal.
     """

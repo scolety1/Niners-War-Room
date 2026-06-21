@@ -10,7 +10,9 @@ from src.services.draft_day_app_v1_service import (
     REQUIRED_VISIBLE_FIELDS,
     display_board_frame,
     hidden_sort_columns,
+    lane_prop_status_rows,
     load_frozen_board,
+    load_lane_prop_file,
     normalize_board_frame,
     validate_frozen_board,
 )
@@ -71,3 +73,21 @@ def test_frozen_board_validation_requires_core_visible_fields() -> None:
 def test_draft_day_v1_pages_compile() -> None:
     for path in Path("app/pages").glob("*_v1.py"):
         py_compile.compile(str(path), doraise=True)
+
+
+def test_lane_prop_status_uses_primary_context_files_when_available() -> None:
+    rows = {row["lane"]: row for row in lane_prop_status_rows()}
+
+    assert rows["outcome_columns"]["primary_file"] == "outcome_player_context.csv"
+    assert rows["trading_lab"]["primary_file"] == "trade_helper_context.csv"
+    assert rows["mock_draft"]["primary_file"] == "availability_context.csv"
+
+
+def test_specific_lane_prop_file_loader_handles_present_and_missing_files() -> None:
+    frame, path = load_lane_prop_file("outcome_columns", "outcome_player_context.csv")
+    missing_frame, missing_path = load_lane_prop_file("outcome_columns", "missing.csv")
+
+    assert path is not None
+    assert frame.empty or "player" in frame.columns
+    assert missing_path is not None
+    assert missing_frame.empty

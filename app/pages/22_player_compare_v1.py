@@ -17,7 +17,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_frame
+from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 
 bundle = load_frozen_board()
 
@@ -43,15 +43,29 @@ compare = bundle.frame.loc[bundle.frame["player"].astype(str).isin(selected)].co
 render_final_board_table(compare, key="player_compare_board")
 
 st.subheader("Lane Prop Context")
-for lane in ("outcome_columns", "trading_lab", "rookie_hq", "decision_board"):
-    prop_frame, prop_path = load_lane_prop_frame(lane)
+prop_files = {
+    "outcome_columns": "outcome_player_context.csv",
+    "trading_lab": "trade_helper_context.csv",
+    "rookie_hq": "rookie_overlay_context.csv",
+    "decision_board": "decision_flags_context.csv",
+}
+for lane, file_name in prop_files.items():
+    prop_frame, prop_path = load_lane_prop_file(lane, file_name)
     if prop_path is None:
         render_yellow_hold(f"{lane} props are missing.")
         continue
+    if prop_frame.empty:
+        render_yellow_hold(f"{lane} props are missing: {prop_path}.")
+        continue
     st.caption(f"{lane} props: {prop_path}")
-    join_columns = [column for column in ("player", "position") if column in prop_frame.columns]
+    join_columns = [
+        column
+        for column in ("player", "position", "final_board_rank")
+        if column in prop_frame.columns
+    ]
     if not join_columns:
         st.dataframe(prop_frame.head(25), use_container_width=True, hide_index=True)
         continue
-    context = pd.merge(compare[["player", "position"]], prop_frame, on=join_columns, how="left")
+    base_columns = [column for column in join_columns if column in compare.columns]
+    context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
     st.dataframe(context, use_container_width=True, hide_index=True)

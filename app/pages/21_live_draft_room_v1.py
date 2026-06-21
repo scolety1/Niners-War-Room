@@ -13,6 +13,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.draft_day_v1 import (
     filter_board_frame,
     render_final_board_table,
+    render_lane_status_table,
     render_source_of_truth_badge,
     stop_if_board_blocked,
 )
@@ -21,6 +22,7 @@ from src.services.draft_day_app_v1_service import (
     best_available_frame,
     display_board_frame,
     load_frozen_board,
+    load_lane_prop_file,
 )
 
 TAKEN_KEY = "draft_day_v1_taken_players"
@@ -69,6 +71,9 @@ summary_cols[3].metric("Best available rank", best_rank)
 st.subheader("Best Available Overall")
 render_final_board_table(available.head(20), key="live_best_available")
 
+st.subheader("Lane Prop Status")
+render_lane_status_table()
+
 st.subheader("Best Available By Position")
 position_rows = []
 for _position, group in available.groupby("position", dropna=False):
@@ -87,3 +92,11 @@ else:
 st.subheader("Filtered Available Board")
 filtered = filter_board_frame(available, key_prefix="live_draft_room_v1")
 render_final_board_table(filtered, key="live_filtered_available")
+
+availability_frame, availability_path = load_lane_prop_file(
+    "mock_draft", "availability_context.csv"
+)
+if availability_path and not availability_frame.empty:
+    st.subheader("Mock Draft Availability Context")
+    st.caption(f"Display-only availability props: {availability_path}")
+    st.dataframe(availability_frame.head(40), use_container_width=True, hide_index=True)
