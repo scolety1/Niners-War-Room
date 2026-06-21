@@ -21,6 +21,7 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
     normalize_board_frame,
+    outcome_display_coverage_counts,
     outcome_prop_match_counts,
     validate_frozen_board,
 )
@@ -171,6 +172,7 @@ def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
             "position": "WR" if index % 2 else "RB",
             "nwr_dynasty_score": "50.0",
             "is_rookie": "1" if index < 10 else "0",
+            "player_id": str(1000 + index),
         }
         for index in range(EXPECTED_DYNASTY_ROW_COUNT)
     ]
@@ -179,8 +181,29 @@ def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
     path = root / draft_day_service.DYNASTY_BOARD_FILE_NAME
     pd.DataFrame(rows).to_csv(path, index=False)
     source_hash = draft_day_service.file_sha256(path)
+    outcome_path = tmp_path / draft_day_service.OUTCOME_NUMERIC_DISPLAY_FILE_NAME
+    outcome_rows = [
+        {
+            "player_id": str(1000 + index),
+            "player_display_name": f"Player {index + 1}",
+            "position": "WR" if index % 2 else "RB",
+            "outcome_status": "available",
+            "qb_t12_display_pct": "",
+            "rb_t12_display_pct": "20%" if index % 2 == 0 else "",
+            "rb_t24_display_pct": "40%" if index % 2 == 0 else "",
+            "wr_t12_display_pct": "30%" if index % 2 else "",
+            "wr_t24_display_pct": "50%" if index % 2 else "",
+            "wr_t36_display_pct": "70%" if index % 2 else "",
+            "te_t12_display_pct": "",
+        }
+        for index in range(EXPECTED_DYNASTY_ROW_COUNT)
+    ]
+    pd.DataFrame(outcome_rows).to_csv(outcome_path, index=False)
+    outcome_hash = draft_day_service.file_sha256(outcome_path)
     monkeypatch.setenv("NWR_DYNASTY_RANKINGS_ROOT", str(root))
     monkeypatch.setattr(draft_day_service, "EXPECTED_DYNASTY_RANKINGS_HASH", source_hash)
+    monkeypatch.setattr(draft_day_service, "OUTCOME_NUMERIC_DISPLAY_PATH", outcome_path)
+    monkeypatch.setattr(draft_day_service, "EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH", outcome_hash)
 
     bundle = draft_day_service.load_dynasty_rankings()
 
@@ -189,6 +212,14 @@ def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
     assert bundle.veteran_count > 0
     assert bundle.rookie_count > 0
     assert bundle.source_hash == source_hash
+    assert outcome_display_coverage_counts(bundle.frame) == {
+        "rows": EXPECTED_DYNASTY_ROW_COUNT,
+        "available": EXPECTED_DYNASTY_ROW_COUNT,
+        "not_enough_information": 0,
+    }
+    display = display_dynasty_rankings_frame(bundle.frame)
+    assert "QB T12" in display.columns
+    assert display["RB T12"].isin({"20%", "Not enough information."}).all()
 
 
 def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
@@ -207,6 +238,14 @@ def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
                 "league_rank": "88",
                 "pool_status": "AVAILABLE",
                 "data_needed": "None",
+                "outcome_availability_display_only": "Available",
+                "qb_t12_display_only": "Not enough information.",
+                "rb_t12_display_only": "Not enough information.",
+                "rb_t24_display_only": "Not enough information.",
+                "wr_t12_display_only": "65%",
+                "wr_t24_display_only": "86%",
+                "wr_t36_display_only": "93%",
+                "te_t12_display_only": "Not enough information.",
                 "source_path": r"C:\local\source.csv",
                 "blocked_use": "draft_sort_override",
                 "candidate_evidence_fields_used": "technical",
@@ -219,6 +258,24 @@ def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
     assert "Player" in display.columns
     assert "NWR Dynasty Score" in display.columns
     assert "Market Rank (Display-Only)" in display.columns
+    assert "Outcome Availability (Display-Only)" in display.columns
+    assert "WR T12" in display.columns
+    assert display.loc[0, "WR T12"] == "65%"
     assert "source_path" not in display.columns
     assert "blocked_use" not in display.columns
     assert "candidate_evidence_fields_used" not in display.columns
+
+
+def test_outcome_display_context_uses_not_enough_information_for_missing_values() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "outcome_availability_display_only": "Not enough information.",
+                "qb_t12_display_only": "Not enough information.",
+            }
+        ]
+    )
+
+    counts = outcome_display_coverage_counts(frame)
+
+    assert counts == {"rows": 1, "available": 0, "not_enough_information": 1}

@@ -10,44 +10,58 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.draft_day_v1 import (
-    render_final_board_table,
     render_source_of_truth_badge,
     render_yellow_hold,
     stop_if_board_blocked,
 )
+from app.components.draft_workflow import render_draft_workflow
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 
 bundle = load_frozen_board()
+availability_frame, availability_path = load_lane_prop_file(
+    "mock_draft",
+    "availability_context.csv",
+)
+pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
+nwr_frame, nwr_path = load_lane_prop_file("mock_draft", "nwr_pick_windows.csv")
 
 page_header(
     "Mock Draft",
     eyebrow="Draft-Day App V1",
     description=(
-        "Reference-only shell. It can point at the frozen board, but it does not alter "
-        "Mock Draft simulator logic or the pinned snapshot."
+        "Manual mock selection workflow using the frozen board and reference-only Mock Draft "
+        "props. Simulator/model valuation logic remains unchanged."
     ),
-    status_items=(("Reference only", "review"), ("Simulator logic unchanged", "safe")),
+    status_items=(
+        ("Manual mock mode", "review"),
+        ("Simulator logic unchanged", "safe"),
+        ("No automatic recommendations", "safe"),
+    ),
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
-prop_frame, prop_path = load_lane_prop_file("mock_draft", "availability_context.csv")
-pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
-nwr_frame, nwr_path = load_lane_prop_file("mock_draft", "nwr_pick_windows.csv")
-if prop_path is None or prop_frame.empty:
-    render_yellow_hold("Mock Draft props are missing. Use the frozen board as reference only.")
+if pick_path is None or pick_frame.empty:
+    render_yellow_hold("Mock Draft pick props are missing, so manual mock selection is blocked.")
+elif nwr_path is None or nwr_frame.empty:
+    render_yellow_hold("NWR pick windows are missing, so pick highlights are limited.")
 else:
-    st.caption(f"Availability props loaded: {prop_path}")
-    st.dataframe(prop_frame.head(50), use_container_width=True, hide_index=True)
-if pick_path and not pick_frame.empty:
-    st.subheader("Pick Order Context")
-    st.caption(f"Reference-only pick props: {pick_path}")
-    st.dataframe(pick_frame, use_container_width=True, hide_index=True)
-if nwr_path and not nwr_frame.empty:
-    st.subheader("NWR Pick Windows")
-    st.caption(f"Reference-only NWR pick windows: {nwr_path}")
-    st.dataframe(nwr_frame, use_container_width=True, hide_index=True)
+    render_draft_workflow(
+        mode_label="Mock Draft manual practice",
+        board_frame=bundle.frame,
+        pick_frame=pick_frame,
+        nwr_picks_frame=nwr_frame,
+        session_key="draft_day_v1_mock_draft_workflow",
+        source_caption=(
+            f"Ranking source: {bundle.source_path}. Mock Draft pick props: {pick_path}. "
+            "This is manual practice state, not a simulator run."
+        ),
+    )
 
-st.subheader("Frozen Board Reference")
-render_final_board_table(bundle.frame.head(30), key="mock_draft_reference_board")
+with st.expander("Reference-only availability context", expanded=False):
+    if availability_path and not availability_frame.empty:
+        st.caption(f"Display-only Mock Draft availability props: {availability_path}")
+        st.dataframe(availability_frame, use_container_width=True, hide_index=True)
+    else:
+        render_yellow_hold("Mock Draft availability props are missing.")

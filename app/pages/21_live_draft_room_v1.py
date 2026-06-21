@@ -4,99 +4,57 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.draft_day_v1 import (
-    filter_board_frame,
-    render_final_board_table,
     render_lane_status_table,
     render_source_of_truth_badge,
+    render_yellow_hold,
     stop_if_board_blocked,
 )
+from app.components.draft_workflow import render_draft_workflow
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import (
-    best_available_frame,
-    display_board_frame,
-    load_frozen_board,
-    load_lane_prop_file,
-)
-
-TAKEN_KEY = "draft_day_v1_taken_players"
+from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 
 bundle = load_frozen_board()
+pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
+nwr_frame, nwr_path = load_lane_prop_file("mock_draft", "nwr_pick_windows.csv")
 
 page_header(
     "Live Draft Room",
     eyebrow="Draft-Day App V1",
     description=(
-        "Reference board for live drafting. Taken-player marking is session-state only "
-        "and never mutates the frozen source CSV."
+        "One frozen-board ranking table plus an interactive draft board. Picked-player "
+        "state is session-only and never mutates the frozen source CSV."
     ),
     status_items=(
-        ("Session-only taken list", "safe"),
-        ("Frozen board order", "safe"),
-        ("No source mutation", "safe"),
+        ("Frozen 66-row board", "safe"),
+        ("Session-only draft state", "safe"),
+        ("Manual pick controls", "review"),
     ),
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
-if TAKEN_KEY not in st.session_state:
-    st.session_state[TAKEN_KEY] = []
-
-players = bundle.frame["player"].astype(str).tolist() if "player" in bundle.frame.columns else []
-control_cols = st.columns([2, 1, 1])
-selected = control_cols[0].multiselect(
-    "Mark players taken in this local session",
-    players,
-    default=st.session_state[TAKEN_KEY],
-)
-if control_cols[1].button("Apply taken list"):
-    st.session_state[TAKEN_KEY] = selected
-if control_cols[2].button("Clear taken list"):
-    st.session_state[TAKEN_KEY] = []
-
-available = best_available_frame(bundle.frame, st.session_state[TAKEN_KEY])
-summary_cols = st.columns(4)
-summary_cols[0].metric("Board rows", len(bundle.frame))
-summary_cols[1].metric("Taken in session", len(st.session_state[TAKEN_KEY]))
-summary_cols[2].metric("Available", len(available))
-best_rank = int(available["final_board_rank"].min()) if len(available) else 0
-summary_cols[3].metric("Best available rank", best_rank)
-
-st.subheader("Best Available Overall")
-render_final_board_table(available.head(20), key="live_best_available")
-
-st.subheader("Lane Prop Status")
-render_lane_status_table()
-
-st.subheader("Best Available By Position")
-position_rows = []
-for _position, group in available.groupby("position", dropna=False):
-    first = group.sort_values("final_board_rank", kind="stable").head(1)
-    if not first.empty:
-        position_rows.append(first)
-if position_rows:
-    st.dataframe(
-        display_board_frame(pd.concat(position_rows, ignore_index=True)),
-        use_container_width=True,
-        hide_index=True,
-    )
+if pick_path is None or pick_frame.empty:
+    render_yellow_hold("Pick order props are missing, so the live draft board cannot be shown.")
+elif nwr_path is None or nwr_frame.empty:
+    render_yellow_hold("NWR pick window props are missing, so NWR pick highlights are limited.")
 else:
-    st.info("No available players remain after session taken-list filters.")
+    render_draft_workflow(
+        mode_label="Live Draft Room",
+        board_frame=bundle.frame,
+        pick_frame=pick_frame,
+        nwr_picks_frame=nwr_frame,
+        session_key="draft_day_v1_live_draft_workflow",
+        source_caption=(
+            f"Ranking source: {bundle.source_path}. Pick order: {pick_path}. "
+            "Sorting is visible and user-controlled."
+        ),
+    )
 
-st.subheader("Filtered Available Board")
-filtered = filter_board_frame(available, key_prefix="live_draft_room_v1")
-render_final_board_table(filtered, key="live_filtered_available")
-
-availability_frame, availability_path = load_lane_prop_file(
-    "mock_draft", "availability_context.csv"
-)
-if availability_path and not availability_frame.empty:
-    st.subheader("Mock Draft Availability Context")
-    st.caption(f"Display-only availability props: {availability_path}")
-    st.dataframe(availability_frame.head(40), use_container_width=True, hide_index=True)
+with st.expander("Lane prop status", expanded=False):
+    render_lane_status_table()

@@ -16,12 +16,12 @@ APP_DIR = Path("app")
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
         "Live Draft Room",
-        "Final Board / Dynasty Rankings",
+        "Dynasty Rankings",
         "Player Compare",
         "Trading Lab",
         "Mock Draft",
         "Draft Prep",
-        "Outcome Columns",
+        "Outcome Diagnostics",
         "Decision Board",
         "Settings / Data Health",
     ]
@@ -74,7 +74,7 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_exactly_one_visible_default_page() -> None:
     defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
-    assert [page.title for page in defaults] == ["Final Board / Dynasty Rankings"]
+    assert [page.title for page in defaults] == ["Dynasty Rankings"]
     assert sum(1 for page in ALL_NAVIGATION_PAGES if page.default) == 1
 
 
@@ -152,6 +152,7 @@ def test_draft_day_v1_rankings_page_splits_dynasty_and_final_board_sources() -> 
     assert "Dynasty Rankings / Final Draft Board" in final_board
     assert "Dynasty Rankings shows the approved full veteran-plus-rookie" in final_board
     assert "Final Draft Board remains the frozen 66-row source" in final_board
+    assert "Outcome columns are display-only" in final_board
     assert "Dynasty Rankings (Full)" in final_board
     assert "Final Draft Board (Frozen 66)" in final_board
     assert "load_dynasty_rankings" in final_board

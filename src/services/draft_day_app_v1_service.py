@@ -11,6 +11,7 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOARD_FILE_NAME = "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
 DYNASTY_BOARD_FILE_NAME = "full_player_board_value_review_rows.csv"
+OUTCOME_NUMERIC_DISPLAY_FILE_NAME = "numeric_outcome_display_v1.csv"
 
 LOCAL_FROZEN_BOARD_ROOT = Path(
     r"C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622"
@@ -35,6 +36,16 @@ LOCAL_DYNASTY_RANKINGS_ROOT = (
 LOCAL_DYNASTY_RANKINGS_PATH = LOCAL_DYNASTY_RANKINGS_ROOT / DYNASTY_BOARD_FILE_NAME
 EXPECTED_DYNASTY_RANKINGS_HASH = (
     "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
+)
+OUTCOME_NUMERIC_DISPLAY_PATH = (
+    Path(r"C:\NWR\Niners-War-Room-outcome")
+    / "app"
+    / "generated"
+    / "outcome_probability"
+    / OUTCOME_NUMERIC_DISPLAY_FILE_NAME
+)
+EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH = (
+    "1fb63fec25f7893ed09004830c7eb4e5ed32c6622c08876849fb61a2e4826cb0"
 )
 PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
@@ -113,6 +124,24 @@ DYNASTY_DISPLAY_COLUMNS = (
     "league_rank",
     "pool_status",
     "data_needed",
+    "outcome_availability_display_only",
+    "qb_t12_display_only",
+    "rb_t12_display_only",
+    "rb_t24_display_only",
+    "wr_t12_display_only",
+    "wr_t24_display_only",
+    "wr_t36_display_only",
+    "te_t12_display_only",
+)
+OUTCOME_NOT_ENOUGH_INFORMATION = "Not enough information."
+APPROVED_OUTCOME_DISPLAY_FIELDS = (
+    ("qb_t12_display_pct", "qb_t12_display_only", "QB T12"),
+    ("rb_t12_display_pct", "rb_t12_display_only", "RB T12"),
+    ("rb_t24_display_pct", "rb_t24_display_only", "RB T24"),
+    ("wr_t12_display_pct", "wr_t12_display_only", "WR T12"),
+    ("wr_t24_display_pct", "wr_t24_display_only", "WR T24"),
+    ("wr_t36_display_pct", "wr_t36_display_only", "WR T36"),
+    ("te_t12_display_pct", "te_t12_display_only", "TE T12"),
 )
 
 
@@ -163,6 +192,36 @@ class DynastyRankingsBundle:
             return 0
         rookie_mask = self.frame["is_rookie"].astype(str).str.lower().isin({"1", "true", "yes"})
         return int(rookie_mask.sum())
+
+
+@dataclass(frozen=True)
+class OutcomeDisplayBundle:
+    frame: pd.DataFrame
+    source_path: Path | None
+    source_label: str
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    source_hash: str | None
+
+    @property
+    def loaded(self) -> bool:
+        return self.source_path is not None and self.frame.shape[0] > 0 and not self.errors
+
+    @property
+    def row_count(self) -> int:
+        return int(self.frame.shape[0])
+
+    @property
+    def available_count(self) -> int:
+        if "outcome_status" not in self.frame.columns:
+            return 0
+        return int(self.frame["outcome_status"].astype(str).eq("available").sum())
+
+    @property
+    def unavailable_count(self) -> int:
+        if "outcome_status" not in self.frame.columns:
+            return self.row_count
+        return int(~self.frame["outcome_status"].astype(str).eq("available").sum())
 
 
 def resolve_frozen_board_path() -> tuple[Path | None, str, tuple[str, ...]]:
@@ -331,7 +390,7 @@ def load_dynasty_rankings() -> DynastyRankingsBundle:
             "Approved dynasty rankings hash mismatch: expected "
             f"{EXPECTED_DYNASTY_RANKINGS_HASH}; found {source_hash}."
         )
-    normalized = normalize_dynasty_rankings_frame(frame)
+    normalized = integrate_outcome_display_context(normalize_dynasty_rankings_frame(frame))
     return DynastyRankingsBundle(
         frame=normalized,
         source_path=path,
@@ -359,6 +418,122 @@ def validate_dynasty_rankings(frame: pd.DataFrame) -> tuple[str, ...]:
             f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
         )
     return tuple(errors)
+
+
+def load_outcome_numeric_display() -> OutcomeDisplayBundle:
+    path = OUTCOME_NUMERIC_DISPLAY_PATH
+    if not path.exists():
+        return OutcomeDisplayBundle(
+            frame=pd.DataFrame(),
+            source_path=None,
+            source_label="missing approved Outcome V1 numeric display",
+            errors=(f"Approved Outcome V1 numeric display was not found at {path}.",),
+            warnings=(),
+            source_hash=None,
+        )
+    frame = pd.read_csv(path, dtype=str).fillna("")
+    source_hash = file_sha256(path)
+    errors = list(validate_outcome_numeric_display(frame))
+    if source_hash != EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH:
+        errors.append(
+            "Approved Outcome V1 numeric display hash mismatch: expected "
+            f"{EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH}; found {source_hash}."
+        )
+    return OutcomeDisplayBundle(
+        frame=frame,
+        source_path=path,
+        source_label="approved Outcome V1 numeric display",
+        errors=tuple(errors),
+        warnings=(),
+        source_hash=source_hash,
+    )
+
+
+def validate_outcome_numeric_display(frame: pd.DataFrame) -> tuple[str, ...]:
+    errors: list[str] = []
+    required = (
+        "player_id",
+        "player_display_name",
+        "position",
+        "outcome_status",
+        *(source for source, _target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+    )
+    missing = [column for column in required if column not in frame.columns]
+    if missing:
+        errors.append(f"Missing Outcome V1 display fields: {', '.join(missing)}.")
+    hidden_like = hidden_sort_columns(frame.columns)
+    if hidden_like:
+        errors.append(
+            f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
+        )
+    blocked_heads = [
+        column
+        for column in frame.columns
+        if "top_6" in column.lower() or "top6" in column.lower()
+    ]
+    if blocked_heads:
+        errors.append(f"Blocked unapproved Outcome heads are present: {', '.join(blocked_heads)}.")
+    return tuple(errors)
+
+
+def integrate_outcome_display_context(frame: pd.DataFrame) -> pd.DataFrame:
+    outcome = load_outcome_numeric_display()
+    result = frame.copy()
+    result["outcome_availability_display_only"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS:
+        result[target] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if not outcome.loaded or "player_id" not in result.columns:
+        return result
+
+    outcome_columns = [
+        "player_id",
+        "outcome_status",
+        *(source for source, _target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+    ]
+    outcome_frame = outcome.frame.loc[:, outcome_columns].copy()
+    merged = result.merge(
+        outcome_frame,
+        on="player_id",
+        how="left",
+        suffixes=("", "_outcome"),
+    )
+    merged["outcome_availability_display_only"] = merged["outcome_status"].map(
+        outcome_availability_label
+    )
+    for source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS:
+        merged[target] = merged[source].map(outcome_probability_display)
+    return merged.drop(
+        columns=[
+            "outcome_status",
+            *(source for source, _target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+        ],
+        errors="ignore",
+    )
+
+
+def outcome_probability_display(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
+
+
+def outcome_availability_label(value: object) -> str:
+    if str(value or "").strip().lower() == "available":
+        return "Available"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def outcome_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
+    rows = int(frame.shape[0])
+    if "outcome_availability_display_only" not in frame.columns:
+        return {"rows": rows, "available": 0, "not_enough_information": rows}
+    available = int(frame["outcome_availability_display_only"].astype(str).eq("Available").sum())
+    return {
+        "rows": rows,
+        "available": available,
+        "not_enough_information": rows - available,
+    }
 
 
 def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -464,6 +639,14 @@ DYNASTY_DISPLAY_LABELS = {
     "warning_flags": "Warnings",
     "pool_status": "Status",
     "data_needed": "Data Needed",
+    "outcome_availability_display_only": "Outcome Availability (Display-Only)",
+    "qb_t12_display_only": "QB T12",
+    "rb_t12_display_only": "RB T12",
+    "rb_t24_display_only": "RB T24",
+    "wr_t12_display_only": "WR T12",
+    "wr_t24_display_only": "WR T24",
+    "wr_t36_display_only": "WR T36",
+    "te_t12_display_only": "TE T12",
 }
 
 

@@ -99,10 +99,8 @@ def test_rankings_has_visible_route_and_hidden_root_alias() -> None:
     hidden_defaults = [page for page in HIDDEN_ADVANCED_PAGES if page.default]
 
     assert visible_rankings.url_path == "rankings"
-    assert visible_rankings.default is False
-    assert [(page.title, page.url_path) for page in hidden_defaults] == [
-        ("Dynasty Rankings Home", "home")
-    ]
+    assert visible_rankings.default is True
+    assert hidden_defaults == []
 
 
 def test_team_and_roster_tags_are_display_only_for_private_score() -> None:
