@@ -11,6 +11,8 @@ from src.services.draft_day_app_v1_service import (
     REPO_SAFE_FROZEN_BOARD_ROOT,
     REQUIRED_VISIBLE_FIELDS,
     display_board_frame,
+    display_lane_prop_frame,
+    extract_prop_status,
     hidden_sort_columns,
     lane_prop_status_rows,
     load_frozen_board,
@@ -35,6 +37,34 @@ def test_hidden_sort_and_private_value_columns_are_blocked() -> None:
     columns = ["player", "final_board_rank", "hidden_sort_key", "private_value_score"]
 
     assert hidden_sort_columns(columns) == ("hidden_sort_key", "private_value_score")
+
+
+def test_lane_prop_status_parser_handles_direct_and_heading_formats() -> None:
+    assert extract_prop_status("Status: YELLOW-HOLD\n") == "YELLOW-HOLD"
+    assert extract_prop_status("Verdict: GREEN\n") == "GREEN"
+    assert extract_prop_status("## Verdict\n\nGREEN\n") == "GREEN"
+
+
+def test_lane_prop_display_hides_technical_guardrail_columns() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "player": "Example Player",
+                "position": "WR",
+                "tier_movement_note": "same tier",
+                "final_board_rank_override_allowed": "false",
+                "hidden_sort_field_created": "false",
+                "private_value_created": "false",
+            }
+        ]
+    )
+
+    display = display_lane_prop_frame(frame)
+
+    assert "tier_movement_note" in display.columns
+    assert "hidden_sort_field_created" not in display.columns
+    assert "private_value_created" not in display.columns
+    assert "final_board_rank_override_allowed" not in display.columns
 
 
 def test_normalized_display_frame_uses_visible_board_fields_only() -> None:

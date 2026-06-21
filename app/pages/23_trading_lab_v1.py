@@ -16,7 +16,11 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
+from src.services.draft_day_app_v1_service import (
+    display_lane_prop_frame,
+    load_frozen_board,
+    load_lane_prop_file,
+)
 
 bundle = load_frozen_board()
 
@@ -103,7 +107,7 @@ if not prop_frame.empty:
     st.subheader("Selected Trade Helper Rows")
     selected_names = set(give + get)
     selected_props = prop_frame.loc[prop_frame["player"].astype(str).isin(selected_names)]
-    st.dataframe(selected_props, use_container_width=True, hide_index=True)
+    st.dataframe(display_lane_prop_frame(selected_props), use_container_width=True, hide_index=True)
 if pick_path and not pick_frame.empty:
     st.subheader("Pick Context")
     st.caption(f"Display-only pick context: {pick_path}")
@@ -111,4 +115,4 @@ if pick_path and not pick_frame.empty:
 if tier_path and not tier_frame.empty:
     st.subheader("Tier Values")
     st.caption(f"Display-only tier context: {tier_path}")
-    st.dataframe(tier_frame, use_container_width=True, hide_index=True)
+    st.dataframe(display_lane_prop_frame(tier_frame), use_container_width=True, hide_index=True)

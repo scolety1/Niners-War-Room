@@ -17,7 +17,11 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
+from src.services.draft_day_app_v1_service import (
+    display_lane_prop_frame,
+    load_frozen_board,
+    load_lane_prop_file,
+)
 
 bundle = load_frozen_board()
 
@@ -64,8 +68,12 @@ for lane, file_name in prop_files.items():
         if column in prop_frame.columns
     ]
     if not join_columns:
-        st.dataframe(prop_frame.head(25), use_container_width=True, hide_index=True)
+        st.dataframe(
+            display_lane_prop_frame(prop_frame).head(25),
+            use_container_width=True,
+            hide_index=True,
+        )
         continue
     base_columns = [column for column in join_columns if column in compare.columns]
     context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
-    st.dataframe(context, use_container_width=True, hide_index=True)
+    st.dataframe(display_lane_prop_frame(context), use_container_width=True, hide_index=True)

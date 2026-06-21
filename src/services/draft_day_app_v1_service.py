@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -75,6 +76,20 @@ LANE_PROP_PRIMARY_FILES = {
     "mock_draft": "availability_context.csv",
     "decision_board": "decision_flags_context.csv",
 }
+
+LANE_STATUS_FILES = {
+    "outcome_columns": "OUTCOME_APP_PROP_STATUS.md",
+    "trading_lab": "TRADING_LAB_APP_PROP_STATUS.md",
+    "rookie_hq": "ROOKIE_HQ_APP_PROP_STATUS.md",
+    "mock_draft": "MOCK_DRAFT_APP_PROP_STATUS.md",
+    "decision_board": "DECISION_BOARD_APP_PROP_STATUS.md",
+}
+
+PROP_TECHNICAL_DISPLAY_COLUMNS = (
+    "final_board_rank_override_allowed",
+    "hidden_sort_field_created",
+    "private_value_created",
+)
 
 
 @dataclass(frozen=True)
@@ -229,6 +244,13 @@ def display_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.loc[:, available].rename(columns=DISPLAY_LABELS)
 
 
+def display_lane_prop_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    technical = [column for column in PROP_TECHNICAL_DISPLAY_COLUMNS if column in frame.columns]
+    if not technical:
+        return frame.copy()
+    return frame.drop(columns=technical)
+
+
 DISPLAY_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
@@ -266,10 +288,13 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
         folder, source_label = lane_prop_folder(lane)
         files = sorted(folder.glob("*")) if folder.exists() else []
         primary = lane_prop_path(lane, LANE_PROP_PRIMARY_FILES[lane])
+        status = lane_prop_status_from_folder(lane, folder)
+        if status == "MISSING":
+            status = "GREEN" if primary and primary.exists() else "YELLOW-HOLD"
         rows.append(
             {
                 "lane": lane,
-                "status": "GREEN" if primary and primary.exists() else "YELLOW-HOLD",
+                "status": status,
                 "path": str(folder),
                 "file_count": str(len([path for path in files if path.is_file()])),
                 "primary_file": primary.name if primary else LANE_PROP_PRIMARY_FILES[lane],
@@ -278,6 +303,39 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
             }
         )
     return rows
+
+
+def lane_prop_status_from_folder(lane: str, folder: Path) -> str:
+    status_file_name = LANE_STATUS_FILES.get(lane)
+    if not status_file_name:
+        return "MISSING"
+    status_path = folder / status_file_name
+    if not status_path.exists():
+        return "MISSING"
+    try:
+        text = status_path.read_text(encoding="utf-8-sig")
+    except OSError:
+        return "YELLOW-HOLD"
+    return extract_prop_status(text) or "YELLOW-HOLD"
+
+
+def extract_prop_status(text: str) -> str | None:
+    normalized = text.replace("\r\n", "\n")
+    direct = re.search(
+        r"(?im)^(?:Status|Verdict|Final verdict):\s*`?(GREEN|YELLOW-HOLD|YELLOW|RED)`?\s*$",
+        normalized,
+    )
+    if direct:
+        value = direct.group(1).upper()
+        return "YELLOW-HOLD" if value == "YELLOW" else value
+    heading = re.search(
+        r"(?ims)^##\s+Verdict\s*\n+\s*`?(GREEN|YELLOW-HOLD|YELLOW|RED)`?\s*$",
+        normalized,
+    )
+    if heading:
+        value = heading.group(1).upper()
+        return "YELLOW-HOLD" if value == "YELLOW" else value
+    return None
 
 
 def lane_prop_path(lane: str, file_name: str) -> Path | None:
