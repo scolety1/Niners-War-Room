@@ -48,7 +48,7 @@ Recovered advanced-stat CSV candidates:
 
 Total copied source CSVs: 52.
 
-Corrected organized archive source records: 97 core RotoWire/FantasyPros CSVs,
+Corrected organized archive source records: 100 core RotoWire/FantasyPros CSVs,
 plus 35 adjacent CSV inventory records.
 
 ## Year Coverage Summary
@@ -62,15 +62,19 @@ High-level inferred coverage:
 - FantasyPros QB/WR/TE: likely 2017-2025 coverage.
 - FantasyPros RB: likely 2017-2025 coverage plus one partial/unknown low-confidence file.
 - RotoWire rushing/receiving: likely 2021-2025 coverage.
-- RotoWire passing advanced: likely 2021-2025 coverage.
-- RotoWire passing basic/fantasy/red-zone: likely 2021, 2023, 2024, and 2025
-  coverage.
+- RotoWire passing: likely 2021-2025 coverage across basic, advanced, fantasy,
+  and red-zone exports.
 
 Key uncertainties:
 
 - RotoWire 2021 passing is present. RotoWire 2022 passing advanced is present
   from Downloads `rotowire-passing-advanced-stats (1).csv`.
-- The remaining RotoWire passing gap is 2022 basic, fantasy, and red-zone.
+- RotoWire 2022 passing basic, fantasy, and red-zone are present from Downloads
+  `rotowire-passing-basic-stats (1).csv`,
+  `rotowire-passing-fantasy-stats.csv`, and
+  `rotowire-passing-redzone-stats.csv`.
+- No expected RotoWire 2021-2025 passing/rushing/receiving file is currently
+  missing from the organized archive matrix.
 - Two RotoWire receiving files infer to 2025 but differ by hash and row scope:
   one under Duplicates Review and one under Downloads.
 - FantasyPros RB base file has only three rows and should not be treated as a
