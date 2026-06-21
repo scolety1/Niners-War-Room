@@ -14,6 +14,10 @@ Archive root:
 
 `C:\NWR_SHARED_DATA\vendor_archive_recovery\rotowire_fantasypros_advanced_20260621`
 
+Corrected organized archive root:
+
+`C:\NWR_SHARED_DATA\vendor_archive_recovery\rotowire_fantasypros_stats_organized_20260621_v2`
+
 Local-only outputs:
 
 - `ARCHIVE_MANIFEST.csv`
@@ -22,6 +26,8 @@ Local-only outputs:
 - `FIELD_COVERAGE_COMPARISON.md`
 - `VENDOR_ARCHIVE_RECOVERY_RECOMMENDATION.md`
 - `source_copies\`
+- Organized archive: `00_manifests\`, `01_originals\`, `02_canonical\`,
+  `03_reports\`, `04_quarantine\`, and `05_adjacent_inventory\`
 
 Raw vendor CSVs remain local-only under `C:\NWR_SHARED_DATA` and are not
 committed.
@@ -42,6 +48,9 @@ Recovered advanced-stat CSV candidates:
 
 Total copied source CSVs: 52.
 
+Corrected organized archive source records: 96 core RotoWire/FantasyPros CSVs,
+plus 35 adjacent CSV inventory records.
+
 ## Year Coverage Summary
 
 No recovered advanced CSV had a dependable explicit season/year column. Year
@@ -53,17 +62,20 @@ High-level inferred coverage:
 - FantasyPros QB/WR/TE: likely 2017-2025 coverage.
 - FantasyPros RB: likely 2017-2025 coverage plus one partial/unknown low-confidence file.
 - RotoWire rushing/receiving: likely 2021-2025 coverage.
-- RotoWire passing: likely 2022-2025 coverage.
+- RotoWire passing: likely 2021, 2023, 2024, and 2025 coverage.
 
 Key uncertainties:
 
-- Apparent RotoWire 2022 passing is present; the apparent RotoWire passing gap
-  is 2021 if matching rushing/receiving season coverage is expected.
+- RotoWire 2021 passing is present. The apparent RotoWire passing gap is 2022
+  across passing basic, advanced, fantasy, and red-zone exports.
 - Two RotoWire receiving files infer to 2025 but differ by hash and row scope:
   one under Duplicates Review and one under Downloads.
 - FantasyPros RB base file has only three rows and should not be treated as a
   complete season export.
 - FantasyPros filename suffix gaps do not by themselves prove missing seasons.
+- Downloads `rotowire-passing-basic-stats.csv` and
+  `rotowire-passing-advanced-stats.csv` are exact duplicates of existing
+  Duplicates Review 2021 passing exports.
 
 ## Field Categories
 
