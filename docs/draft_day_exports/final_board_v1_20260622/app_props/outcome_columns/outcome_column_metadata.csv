@@ -1,0 +1,8 @@
+display_column,source_column,position_scope,display_use,sort_behavior,value_behavior,rank_behavior,approved_outcome_head,source_artifact
+QB T12,qb_t12_display_pct,QB,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+RB T12,rb_t12_display_pct,RB,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+RB T24,rb_t24_display_pct,RB,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+WR T12,wr_t12_display_pct,WR,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+WR T24,wr_t24_display_pct,WR,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+WR T36,wr_t36_display_pct,WR,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv
+TE T12,te_t12_display_pct,TE,display_only,none,not_private_value,does_not_override_final_board_rank,true,C:\NWR\Niners-War-Room-outcome\app\generated\outcome_probability\numeric_outcome_display_v1.csv

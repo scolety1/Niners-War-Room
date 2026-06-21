@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,20 +8,23 @@ from pathlib import Path
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+BOARD_FILE_NAME = "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
 
 LOCAL_FROZEN_BOARD_ROOT = Path(
     r"C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622"
 )
-LOCAL_FROZEN_BOARD_PATH = LOCAL_FROZEN_BOARD_ROOT / "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
-REPO_SAFE_FROZEN_BOARD_PATH = (
+LOCAL_FROZEN_BOARD_PATH = LOCAL_FROZEN_BOARD_ROOT / BOARD_FILE_NAME
+REPO_SAFE_FROZEN_BOARD_ROOT = (
     REPO_ROOT
     / "docs"
     / "draft_day_exports"
     / "final_board_v1_20260622"
-    / "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
 )
+REPO_SAFE_FROZEN_BOARD_PATH = REPO_SAFE_FROZEN_BOARD_ROOT / BOARD_FILE_NAME
 
-APP_PROP_ROOT = Path(r"C:\NWR_SHARED_DATA\draft_day_app_props\20260622")
+LOCAL_APP_PROP_ROOT = Path(r"C:\NWR_SHARED_DATA\draft_day_app_props\20260622")
+REPO_SAFE_APP_PROP_ROOT = REPO_SAFE_FROZEN_BOARD_ROOT / "app_props"
+APP_PROP_ROOT = LOCAL_APP_PROP_ROOT
 EXPECTED_ROW_COUNT = 66
 PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
@@ -56,13 +60,13 @@ DISPLAY_ONLY_COLUMNS = tuple(
     )
 )
 
-LANE_PROP_FOLDERS = {
-    "outcome_columns": APP_PROP_ROOT / "outcome_columns",
-    "trading_lab": APP_PROP_ROOT / "trading_lab",
-    "rookie_hq": APP_PROP_ROOT / "rookie_hq",
-    "mock_draft": APP_PROP_ROOT / "mock_draft",
-    "decision_board": APP_PROP_ROOT / "decision_board",
-}
+LANE_NAMES = (
+    "outcome_columns",
+    "trading_lab",
+    "rookie_hq",
+    "mock_draft",
+    "decision_board",
+)
 
 LANE_PROP_PRIMARY_FILES = {
     "outcome_columns": "outcome_player_context.csv",
@@ -92,14 +96,60 @@ class FrozenBoardBundle:
 
 def resolve_frozen_board_path() -> tuple[Path | None, str, tuple[str, ...]]:
     warnings: list[str] = []
-    if LOCAL_FROZEN_BOARD_PATH.exists():
-        return LOCAL_FROZEN_BOARD_PATH, "local frozen board", tuple(warnings)
-    if REPO_SAFE_FROZEN_BOARD_PATH.exists():
-        warnings.append(
-            "Using GitHub-safe frozen board copy because the local-only frozen package is missing."
-        )
-        return REPO_SAFE_FROZEN_BOARD_PATH, "repo-safe frozen board copy", tuple(warnings)
+    for path, label, warning in frozen_board_candidates():
+        if path.exists():
+            if warning:
+                warnings.append(warning)
+            return path, label, tuple(warnings)
     return None, "missing frozen board", tuple(warnings)
+
+
+def frozen_board_candidates() -> tuple[tuple[Path, str, str], ...]:
+    candidates: list[tuple[Path, str, str]] = []
+    env_root = os.environ.get("NWR_DRAFT_DAY_DATA_ROOT")
+    if env_root:
+        candidates.append(
+            (
+                Path(env_root) / BOARD_FILE_NAME,
+                "environment frozen board",
+                "Using NWR_DRAFT_DAY_DATA_ROOT frozen board.",
+            )
+        )
+    candidates.extend(
+        [
+            (LOCAL_FROZEN_BOARD_PATH, "local frozen board", ""),
+            (
+                REPO_SAFE_FROZEN_BOARD_PATH,
+                "repo-safe frozen board copy",
+                "Using GitHub-safe frozen board copy because local-only data is missing.",
+            ),
+        ]
+    )
+    return tuple(candidates)
+
+
+def app_prop_root_candidates() -> tuple[tuple[Path, str], ...]:
+    candidates: list[tuple[Path, str]] = []
+    env_root = os.environ.get("NWR_DRAFT_DAY_APP_PROPS_ROOT")
+    if env_root:
+        candidates.append((Path(env_root), "environment app props"))
+    candidates.extend(
+        [
+            (LOCAL_APP_PROP_ROOT, "local app props"),
+            (REPO_SAFE_APP_PROP_ROOT, "repo-safe app props"),
+        ]
+    )
+    return tuple(candidates)
+
+
+def lane_prop_folder(lane: str) -> tuple[Path, str]:
+    primary_file = LANE_PROP_PRIMARY_FILES[lane]
+    for root, label in app_prop_root_candidates():
+        folder = root / lane
+        if (folder / primary_file).exists():
+            return folder, label
+    first_root, first_label = app_prop_root_candidates()[0]
+    return first_root / lane, first_label
 
 
 def load_frozen_board() -> FrozenBoardBundle:
@@ -212,7 +262,8 @@ def best_available_frame(frame: pd.DataFrame, taken_players: Iterable[str]) -> p
 
 def lane_prop_status_rows() -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for lane, folder in LANE_PROP_FOLDERS.items():
+    for lane in LANE_NAMES:
+        folder, source_label = lane_prop_folder(lane)
         files = sorted(folder.glob("*")) if folder.exists() else []
         primary = lane_prop_path(lane, LANE_PROP_PRIMARY_FILES[lane])
         rows.append(
@@ -222,6 +273,7 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
                 "path": str(folder),
                 "file_count": str(len([path for path in files if path.is_file()])),
                 "primary_file": primary.name if primary else LANE_PROP_PRIMARY_FILES[lane],
+                "source_label": source_label,
                 "source_rule": "Must reference frozen Final Draft Board V1.",
             }
         )
@@ -229,15 +281,17 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
 
 
 def lane_prop_path(lane: str, file_name: str) -> Path | None:
-    folder = LANE_PROP_FOLDERS.get(lane)
-    if folder is None:
+    if lane not in LANE_PROP_PRIMARY_FILES:
         return None
+    folder, _source_label = lane_prop_folder(lane)
     return folder / file_name
 
 
 def first_lane_prop_csv(lane: str) -> Path | None:
-    folder = LANE_PROP_FOLDERS.get(lane)
-    if folder is None or not folder.exists():
+    if lane not in LANE_PROP_PRIMARY_FILES:
+        return None
+    folder, _source_label = lane_prop_folder(lane)
+    if not folder.exists():
         return None
     primary = lane_prop_path(lane, LANE_PROP_PRIMARY_FILES.get(lane, ""))
     if primary and primary.exists():
@@ -275,7 +329,8 @@ def load_lane_prop_file(lane: str, file_name: str) -> tuple[pd.DataFrame, Path |
 
 def lane_prop_file_rows() -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for lane, folder in LANE_PROP_FOLDERS.items():
+    for lane in LANE_NAMES:
+        folder, source_label = lane_prop_folder(lane)
         for path in sorted(folder.glob("*")) if folder.exists() else []:
             if path.is_dir():
                 continue
@@ -292,6 +347,7 @@ def lane_prop_file_rows() -> list[dict[str, str]]:
                     "status": "GREEN" if path.exists() else "YELLOW-HOLD",
                     "row_count": row_count,
                     "path": str(path),
+                    "source_label": source_label,
                 }
             )
     return rows

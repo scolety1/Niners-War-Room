@@ -7,6 +7,8 @@ import pandas as pd
 
 from src.services.draft_day_app_v1_service import (
     EXPECTED_ROW_COUNT,
+    REPO_SAFE_APP_PROP_ROOT,
+    REPO_SAFE_FROZEN_BOARD_ROOT,
     REQUIRED_VISIBLE_FIELDS,
     display_board_frame,
     hidden_sort_columns,
@@ -91,3 +93,17 @@ def test_specific_lane_prop_file_loader_handles_present_and_missing_files() -> N
     assert frame.empty or "player" in frame.columns
     assert missing_path is not None
     assert missing_frame.empty
+
+
+def test_repo_contained_fallback_mode_loads_board_and_props(monkeypatch) -> None:
+    monkeypatch.setenv("NWR_DRAFT_DAY_DATA_ROOT", str(REPO_SAFE_FROZEN_BOARD_ROOT))
+    monkeypatch.setenv("NWR_DRAFT_DAY_APP_PROPS_ROOT", str(REPO_SAFE_APP_PROP_ROOT))
+
+    bundle = load_frozen_board()
+    prop_rows = {row["lane"]: row for row in lane_prop_status_rows()}
+
+    assert bundle.loaded
+    assert bundle.row_count == EXPECTED_ROW_COUNT
+    assert str(bundle.source_path).endswith("FINAL_DRAFT_BOARD_V1_FROZEN.csv")
+    assert prop_rows["outcome_columns"]["status"] == "GREEN"
+    assert prop_rows["trading_lab"]["status"] == "GREEN"

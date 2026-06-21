@@ -1,0 +1,5 @@
+final_tier,tier_order_display,rank_min,rank_max,row_count,visible_score_min,visible_score_max,positions_in_tier,trade_context_label,package_comparison_note,hidden_sort_field_created,private_value_created
+Tier 1 - Priority Draft Targets,1,1,12,12,77.7,96.0,"RB, WR",premium target context,Use as visible tier context only; do not compute private trade value.,no,no
+Tier 2 - Strong Draft Considers,2,13,30,18,57.0,76.55,"RB, WR",strong consideration context,Use as visible tier context only; do not compute private trade value.,no,no
+Tier 3 - Value/Need Dependent,3,31,50,20,40.0,56.53,"QB, RB, WR",value or need dependent context,Use as visible tier context only; do not compute private trade value.,no,no
+Tier 4 - Manual Review / Discount Only,4,51,66,16,5.81,38.5,"QB, RB, TE, WR",manual review or discount-only context,Use as visible tier context only; do not compute private trade value.,no,no

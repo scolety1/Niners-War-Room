@@ -17,8 +17,9 @@ from app.components.draft_day_v1 import (
 )
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
-    APP_PROP_ROOT,
+    LOCAL_APP_PROP_ROOT,
     LOCAL_FROZEN_BOARD_ROOT,
+    REPO_SAFE_APP_PROP_ROOT,
     REPO_SAFE_FROZEN_BOARD_PATH,
     draft_day_status_rows,
     load_frozen_board,
@@ -61,7 +62,10 @@ st.code(
             "Frozen zip fallback: C:\\NWR_SHARED_DATA\\draft_day_exports"
             "\\nwr_final_draft_board_v1_frozen_20260622.zip",
             "Local Streamlit URL: http://127.0.0.1:8501/rankings",
-            f"App prop root: {APP_PROP_ROOT}",
+            "Env override data root: NWR_DRAFT_DAY_DATA_ROOT",
+            "Env override prop root: NWR_DRAFT_DAY_APP_PROPS_ROOT",
+            f"Local app prop root: {LOCAL_APP_PROP_ROOT}",
+            f"Repo app prop fallback: {REPO_SAFE_APP_PROP_ROOT}",
         ]
     )
 )

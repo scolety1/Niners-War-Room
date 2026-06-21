@@ -18,11 +18,13 @@ from app.components.draft_day_v1 import (
 )
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
-    APP_PROP_ROOT,
     DISPLAY_ONLY_COLUMNS,
     EXPECTED_PINNED_MANIFEST_HASH,
+    LOCAL_APP_PROP_ROOT,
     LOCAL_FROZEN_BOARD_ROOT,
     PINNED_SNAPSHOT_MANIFEST,
+    REPO_SAFE_APP_PROP_ROOT,
+    REPO_SAFE_FROZEN_BOARD_ROOT,
     draft_day_status_rows,
     lane_prop_file_rows,
     load_frozen_board,
@@ -77,7 +79,11 @@ st.code(
     "\n".join(
         [
             f"Frozen package: {LOCAL_FROZEN_BOARD_ROOT}",
-            f"App prop root: {APP_PROP_ROOT}",
+            f"Repo fallback package: {REPO_SAFE_FROZEN_BOARD_ROOT}",
+            f"Local app prop root: {LOCAL_APP_PROP_ROOT}",
+            f"Repo app prop fallback: {REPO_SAFE_APP_PROP_ROOT}",
+            "Env override data root: NWR_DRAFT_DAY_DATA_ROOT",
+            "Env override prop root: NWR_DRAFT_DAY_APP_PROPS_ROOT",
             f"Pinned manifest: {PINNED_SNAPSHOT_MANIFEST}",
         ]
     )
