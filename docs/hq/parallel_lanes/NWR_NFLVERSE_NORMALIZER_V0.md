@@ -30,6 +30,8 @@ Candidate writes are disabled by default. The script performs dry-run/report mod
 | --- | --- | --- |
 | `stats_context/player_weekly_stats_display_context` | `weekly_stats.csv` | Supported when present |
 | `stats_context/player_season_stats_display_context` | `season_stats.csv` | Optional; skipped with YELLOW warning if missing |
+| `stats_context/player_roster_display_context` | `rosters.csv` | Optional; skipped with YELLOW warning if missing/unsupported |
+| `stats_context/player_weekly_roster_display_context` | `weekly_rosters.csv` | Optional; skipped with YELLOW warning if missing/unsupported |
 | `stats_context/player_usage_context` | `snap_counts.csv`, `participation.csv`, `opportunity.csv` | Supported from whichever files are present |
 | `stats_context/player_stats_crosscheck_report` | snapshot metadata and dataset summaries | Always produced for source audit |
 
@@ -43,10 +45,12 @@ V0 permits only boring display/stat context fields:
 - season
 - week
 - opponent
+- roster metadata such as status, jersey number, birth date, height, weight, college, and years of experience
 - passing attempts, completions, yards, TD, INT
 - rushing attempts/carries, yards, TD
 - targets, receptions, receiving yards, receiving TD
 - first downs
+- air yards, YAC, sacks, fumbles, and return context
 - snap counts and snap percentages
 - routes or participation fields only as display/usage context when clearly labeled
 
@@ -63,6 +67,7 @@ These fields are excluded from display candidate CSVs and retained only in local
 
 - `fantasy_points`
 - `fantasy_points_ppr`
+- `headshot_url`
 - EPA
 - CPOE
 - PACR/RACR
@@ -81,6 +86,8 @@ These fields are excluded from display candidate CSVs and retained only in local
 - anything that looks like model scoring or private value
 
 Quarantined fields are recorded in the normalizer report and candidate manifests, but they are not copied into display candidate data.
+
+`years_exp` is allowed only as display roster metadata. It is not treated as an expected-value field and is not approved for private value, ranking, sorting, model training, or draft decisions.
 
 ## Manifest Policy
 
@@ -137,10 +144,13 @@ Loaded datasets:
 Because `season_stats.csv` is not present in that snapshot, V0 should produce:
 
 - weekly display candidate
+- roster display candidate
 - usage display candidate
 - crosscheck report candidate
 
 and should skip the season display candidate with a YELLOW warning.
+
+V1 expansion adds optional candidates for `weekly_rosters`, `participation`, and `opportunity` when those files are present in a later local snapshot. Missing or unsupported expanded datasets are recorded as YELLOW skips in warnings and crosscheck rows.
 
 ## Guardrails
 

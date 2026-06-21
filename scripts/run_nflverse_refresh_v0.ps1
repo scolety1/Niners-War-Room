@@ -3,7 +3,15 @@ param(
     [string]$SharedRoot = "C:\NWR_SHARED_DATA",
     [string]$NflreadpyPath = "C:\NWR_SHARED_DATA\vendor_spikes\nflverse\scratch\pydeps",
     [string[]]$Seasons = @("2024", "2025"),
-    [string[]]$Datasets = @("weekly_stats", "season_stats", "snap_counts"),
+    [string[]]$Datasets = @(
+        "weekly_stats",
+        "season_stats",
+        "rosters",
+        "weekly_rosters",
+        "snap_counts",
+        "participation",
+        "opportunity"
+    ),
     [string]$SnapshotLabel = "",
     [switch]$WriteCandidates
 )

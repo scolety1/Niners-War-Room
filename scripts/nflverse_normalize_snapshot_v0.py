@@ -15,6 +15,8 @@ DEFAULT_OUTPUT_ROOT = Path(r"C:\NWR_SHARED_DATA\lane_exchange")
 PACKAGE_NAMES = (
     "stats_context/player_weekly_stats_display_context",
     "stats_context/player_season_stats_display_context",
+    "stats_context/player_roster_display_context",
+    "stats_context/player_weekly_roster_display_context",
     "stats_context/player_usage_context",
     "stats_context/player_stats_crosscheck_report",
 )
@@ -41,15 +43,31 @@ BLOCKED_USE_TEXT = (
     "model_training"
 )
 IDENTITY_COLUMNS = [
+    "gsis_id",
     "player_id",
+    "pfr_id",
+    "pfr_player_id",
+    "espn_id",
+    "sportradar_id",
+    "yahoo_id",
+    "rotowire_id",
+    "fantasy_data_id",
+    "sleeper_id",
+    "smart_id",
     "player_name",
     "player_display_name",
     "player",
     "full_name",
+    "football_name",
+    "first_name",
+    "last_name",
     "position",
     "position_group",
+    "ngs_position",
     "team",
     "recent_team",
+    "posteam",
+    "possession_team",
     "opponent",
     "opponent_team",
     "season",
@@ -75,8 +93,48 @@ BASIC_STAT_COLUMNS = [
     "receiving_yards",
     "receiving_tds",
     "receiving_first_downs",
+    "air_yards",
+    "passing_air_yards",
+    "receiving_air_yards",
+    "pass_air_yards",
+    "rec_air_yards",
+    "passing_yards_after_catch",
+    "receiving_yards_after_catch",
+    "yards_after_catch",
+    "sacks",
+    "sack_fumbles",
+    "passing_sacks",
+    "rushing_fumbles",
+    "receiving_fumbles",
+    "rushing_fumbles_lost",
+    "receiving_fumbles_lost",
+    "return_yards",
+    "pass_attempt",
+    "rec_attempt",
+    "rush_attempt",
+    "pass_completions",
+    "pass_yards_gained",
+    "rec_yards_gained",
+    "rush_yards_gained",
+    "pass_touchdown",
+    "rec_touchdown",
+    "rush_touchdown",
+    "pass_first_down",
+    "rec_first_down",
+    "rush_first_down",
+    "pass_interception",
+    "rec_interception",
+    "rec_fumble_lost",
+    "rush_fumble_lost",
+    "total_yards_gained",
+    "total_touchdown",
+    "total_first_down",
 ]
 USAGE_COLUMNS = [
+    "game_id",
+    "nflverse_game_id",
+    "old_game_id",
+    "play_id",
     "offense_snaps",
     "offense_pct",
     "defense_snaps",
@@ -89,15 +147,48 @@ USAGE_COLUMNS = [
     "pass_routes",
     "run_block_snaps",
     "pass_block_snaps",
+    "offense_formation",
+    "offense_personnel",
+    "players_on_play",
+    "offense_players",
+    "defense_players",
+    "n_offense",
+    "n_defense",
+    "ngs_air_yards",
+    "was_pressure",
+    "offense_names",
+    "defense_names",
+    "offense_positions",
+    "defense_positions",
+    "offense_numbers",
+    "defense_numbers",
+]
+ROSTER_COLUMNS = [
+    *IDENTITY_COLUMNS,
+    "depth_chart_position",
+    "jersey_number",
+    "status",
+    "status_description_abbr",
+    "birth_date",
+    "height",
+    "weight",
+    "college",
+    "years_exp",
+    "entry_year",
+    "rookie_year",
+    "draft_club",
+    "draft_number",
 ]
 QUARANTINE_PATTERNS = (
     "fantasy_points",
+    "headshot_url",
     "epa",
     "cpoe",
     "pacr",
     "racr",
     "wopr",
     "_exp",
+    "expected",
     "_diff",
     "share",
     "rank",
@@ -111,6 +202,9 @@ QUARANTINE_PATTERNS = (
     "probability",
     "projection",
 )
+QUARANTINE_ALLOWED_EXACT_FIELDS = {
+    "years_exp",
+}
 
 
 class NormalizationError(ValueError):
@@ -314,6 +408,56 @@ def _build_packages(
     else:
         warnings.append("season_stats.csv missing; season display package skipped as YELLOW.")
 
+    if "rosters" in datasets:
+        roster = datasets["rosters"]
+        packages.append(
+            PackageDraft(
+                package_name="stats_context/player_roster_display_context",
+                data_file="player_roster_display_context.csv",
+                rows=_safe_stat_rows(
+                    roster,
+                    allowed_columns=ROSTER_COLUMNS,
+                    context_type="roster_display",
+                ),
+                source_datasets=["rosters"],
+                notes=(
+                    "Display-only player roster metadata. Age/experience fields are "
+                    "context only and not private value."
+                ),
+            )
+        )
+    else:
+        _append_missing_dataset_warning(
+            warnings,
+            "rosters",
+            "player_roster_display_context",
+        )
+
+    if "weekly_rosters" in datasets:
+        weekly_roster = datasets["weekly_rosters"]
+        packages.append(
+            PackageDraft(
+                package_name="stats_context/player_weekly_roster_display_context",
+                data_file="player_weekly_roster_display_context.csv",
+                rows=_safe_stat_rows(
+                    weekly_roster,
+                    allowed_columns=ROSTER_COLUMNS,
+                    context_type="weekly_roster_display",
+                ),
+                source_datasets=["weekly_rosters"],
+                notes=(
+                    "Display-only weekly roster/team/status context. No private value "
+                    "or hidden sorting use is approved."
+                ),
+            )
+        )
+    else:
+        _append_missing_dataset_warning(
+            warnings,
+            "weekly_rosters",
+            "player_weekly_roster_display_context",
+        )
+
     usage_sources = [
         name
         for name in ("snap_counts", "participation", "opportunity")
@@ -424,6 +568,24 @@ def _crosscheck_rows(
                 "allowed_use": "source_audit_only",
                 "blocked_use": BLOCKED_USE_TEXT,
                 "notes": "Optional season_stats.csv missing; package skipped.",
+            }
+        )
+    for name in ("rosters", "weekly_rosters", "participation", "opportunity"):
+        if name in datasets:
+            continue
+        rows.append(
+            {
+                "source_dataset": name,
+                "source_file": f"{name}.csv",
+                "source_row_count": 0,
+                "source_column_count": 0,
+                "safe_display_field_count": 0,
+                "quarantined_field_count": 0,
+                "quarantined_fields": "",
+                "approval_status": "candidate",
+                "allowed_use": "source_audit_only",
+                "blocked_use": BLOCKED_USE_TEXT,
+                "notes": f"YELLOW: Optional {name}.csv missing or unsupported; package skipped.",
             }
         )
     for warning in warnings:
@@ -609,6 +771,15 @@ def _source_warnings(metadata: dict[str, Any]) -> list[str]:
     return warnings
 
 
+def _append_missing_dataset_warning(
+    warnings: list[str], dataset_name: str, package_short_name: str
+) -> None:
+    warnings.append(
+        f"YELLOW: {dataset_name}.csv missing or unsupported; "
+        f"{package_short_name} package skipped."
+    )
+
+
 def _read_csv(path: Path) -> tuple[list[dict[str, str]], list[str]]:
     with path.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
@@ -634,11 +805,13 @@ def _quarantined_fields(fields: list[str]) -> list[str]:
 
 def _is_quarantined(field: str) -> bool:
     lower = field.lower()
+    if lower in QUARANTINE_ALLOWED_EXACT_FIELDS:
+        return False
     return any(pattern in lower for pattern in QUARANTINE_PATTERNS)
 
 
 def _is_allowed_display_field(field: str) -> bool:
-    return field in set(IDENTITY_COLUMNS + BASIC_STAT_COLUMNS + USAGE_COLUMNS)
+    return field in set(IDENTITY_COLUMNS + BASIC_STAT_COLUMNS + USAGE_COLUMNS + ROSTER_COLUMNS)
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:

@@ -87,7 +87,7 @@ def test_skip_live_creates_report_without_raw_dataset_files(tmp_path: Path) -> N
     metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
     dataset = metadata["datasets"][0]
     assert dataset["status"] == "skipped"
-    assert dataset["warning"] == "skip_live requested"
+    assert dataset["warning"] == "YELLOW: skip_live requested"
     assert metadata["skip_live"] is True
 
 
@@ -135,7 +135,39 @@ def test_loader_warning_is_reported_for_missing_optional_function(tmp_path: Path
     metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
     dataset = metadata["datasets"][0]
     assert dataset["status"] == "skipped"
-    assert "no supported nflreadpy function" in dataset["warning"]
+    assert "YELLOW: no supported nflreadpy function" in dataset["warning"]
+
+
+def test_expanded_dataset_loaders_are_supported_and_soft_quarantined(tmp_path: Path) -> None:
+    result = PULLER.run_nflverse_pull(
+        seasons=[2025],
+        output_root=tmp_path,
+        dataset_names=["rosters", "weekly_rosters", "participation", "opportunity"],
+        snapshot_label="expanded",
+        loader_module=ExpandedFakeNflreadpy(),
+    )
+
+    metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
+    datasets = {row["name"]: row for row in metadata["datasets"]}
+
+    assert datasets["rosters"]["status"] == "ok"
+    assert datasets["rosters"]["function_name"] == "load_rosters"
+    assert "years_exp" not in datasets["rosters"]["quarantined_fields"]
+    assert "headshot_url" in datasets["rosters"]["quarantined_fields"]
+    assert datasets["weekly_rosters"]["function_name"] == "load_rosters_weekly"
+    assert datasets["participation"]["function_name"] == "load_participation"
+    assert datasets["opportunity"]["function_name"] == "load_ff_opportunity"
+    assert "pass_completions_exp" in datasets["opportunity"]["quarantined_fields"]
+    assert "total_fantasy_points" in datasets["opportunity"]["quarantined_fields"]
+    assert datasets["opportunity"]["warning"].startswith("YELLOW:")
+
+    for file_name in (
+        "rosters.csv",
+        "weekly_rosters.csv",
+        "participation.csv",
+        "opportunity.csv",
+    ):
+        assert (result.snapshot_dir / file_name).exists()
 
 
 def test_snap_counts_player_field_identity_matching(tmp_path: Path) -> None:
@@ -253,5 +285,75 @@ class FakeNflreadpy:
                     "offense_snaps": 48,
                     "offense_pct": 0.74,
                 },
+            ]
+        )
+
+
+class ExpandedFakeNflreadpy:
+    __version__ = "0.1.5-test"
+
+    def load_rosters(self, seasons: list[int]) -> FakeFrame:
+        assert seasons == [2025]
+        return FakeFrame(
+            [
+                {
+                    "season": 2025,
+                    "team": "NE",
+                    "position": "QB",
+                    "full_name": "Drake Maye",
+                    "gsis_id": "00-0039999",
+                    "years_exp": 1,
+                    "headshot_url": "https://example.invalid/maye.png",
+                }
+            ]
+        )
+
+    def load_rosters_weekly(self, seasons: list[int]) -> FakeFrame:
+        assert seasons == [2025]
+        return FakeFrame(
+            [
+                {
+                    "season": 2025,
+                    "week": 1,
+                    "team": "PIT",
+                    "position": "RB",
+                    "full_name": "Jaylen Warren",
+                    "status": "ACT",
+                    "years_exp": 4,
+                }
+            ]
+        )
+
+    def load_participation(self, seasons: list[int]) -> FakeFrame:
+        assert seasons == [2025]
+        return FakeFrame(
+            [
+                {
+                    "nflverse_game_id": "2025_01_NE_PIT",
+                    "play_id": 42,
+                    "possession_team": "NE",
+                    "route": "go",
+                    "offense_players": "00-0039999",
+                }
+            ]
+        )
+
+    def load_ff_opportunity(self, seasons: list[int]) -> FakeFrame:
+        assert seasons == [2025]
+        return FakeFrame(
+            [
+                {
+                    "season": 2025,
+                    "week": 1,
+                    "posteam": "JAX",
+                    "player_id": "p3",
+                    "full_name": "Brian Thomas Jr",
+                    "position": "WR",
+                    "rec_attempt": 9,
+                    "rec_air_yards": 110,
+                    "receptions": 6,
+                    "pass_completions_exp": 2.1,
+                    "total_fantasy_points": 18.4,
+                }
             ]
         )

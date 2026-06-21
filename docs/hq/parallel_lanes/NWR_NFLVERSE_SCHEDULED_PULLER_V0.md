@@ -110,6 +110,7 @@ V0 flags these fields as quarantined:
 
 - `fantasy_points`
 - `fantasy_points_ppr`
+- `headshot_url`
 - expected/diff fields
 - EPA
 - CPOE
@@ -118,6 +119,8 @@ V0 flags these fields as quarantined:
 - target share, air-yard share, route share, snap share, and other share/advanced efficiency fields
 
 Quarantined fields are not deleted from local raw snapshots, but they are blocked from private value or hidden decision logic unless a later source policy approves them.
+
+Roster `years_exp` is allowed as display-only metadata even though expected-value fields ending in `_exp` remain quarantined.
 
 ## Sample Identity Set
 

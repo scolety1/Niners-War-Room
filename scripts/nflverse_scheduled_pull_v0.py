@@ -53,7 +53,9 @@ PLAYER_NAME_FIELDS = {
 QUARANTINE_FIELD_PATTERNS = (
     "fantasy_points",
     "fantasy_points_ppr",
+    "headshot_url",
     "_exp",
+    "expected",
     "_diff",
     "epa",
     "cpoe",
@@ -67,6 +69,9 @@ QUARANTINE_FIELD_PATTERNS = (
     "snap_share",
     "share",
 )
+QUARANTINE_ALLOWED_EXACT_FIELDS = {
+    "years_exp",
+}
 FORBIDDEN_USE = (
     "private_value",
     "veteran_private_values",
@@ -449,6 +454,8 @@ def _quarantined_fields(fields: list[str]) -> list[str]:
     quarantined: list[str] = []
     for field in fields:
         lower = field.lower()
+        if lower in QUARANTINE_ALLOWED_EXACT_FIELDS:
+            continue
         if any(pattern in lower for pattern in QUARANTINE_FIELD_PATTERNS):
             quarantined.append(field)
     return sorted(set(quarantined))
@@ -545,8 +552,8 @@ def _dataset_warning(name: str, quarantined_fields: list[str]) -> str:
     if not quarantined_fields:
         return ""
     return (
-        f"{name} contains fields quarantined from private value/hidden sorting until "
-        f"later source policy approval: {', '.join(quarantined_fields[:20])}"
+        f"YELLOW: {name} contains fields quarantined from private value/hidden sorting "
+        f"until later source policy approval: {', '.join(quarantined_fields[:20])}"
     )
 
 
@@ -566,7 +573,7 @@ def _skipped_dataset_result(spec: DatasetSpec, reason: str) -> DatasetResult:
         matched_players=[],
         identity_matches=[],
         missing_sample_players=list(SAMPLE_PLAYERS),
-        warning=reason,
+        warning=f"YELLOW: {reason}",
     )
 
 

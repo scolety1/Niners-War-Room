@@ -28,6 +28,8 @@ Disabled Scheduler V0 prepares local runner scripts and operator instructions fo
 
 Candidate generation is opt-in through `-WriteCandidates`. Without that flag, refresh runners create raw snapshots and reports only.
 
+The nflverse runner requests the expanded V1 display/stat dataset set by default: `weekly_stats`, `season_stats`, `rosters`, `weekly_rosters`, `snap_counts`, `participation`, and `opportunity`. Unsupported local-runtime datasets are soft-skipped with YELLOW warnings.
+
 ## Proposed Schedules
 
 | Job | Proposed cadence | Local timing | Notes |

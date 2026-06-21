@@ -50,7 +50,12 @@ def test_write_candidates_creates_latest_candidate_only(tmp_path: Path) -> None:
     )
 
     package_names = {package.package_name for package in result.packages}
-    assert package_names == set(NORMALIZER.PACKAGE_NAMES)
+    assert package_names == {
+        "stats_context/player_weekly_stats_display_context",
+        "stats_context/player_season_stats_display_context",
+        "stats_context/player_usage_context",
+        "stats_context/player_stats_crosscheck_report",
+    }
     for package_name in package_names:
         source_lane, short_name = package_name.split("/", 1)
         package_root = output_root / source_lane / short_name
@@ -103,6 +108,65 @@ def test_quarantined_fields_are_excluded_from_display_packages(tmp_path: Path) -
     assert "target_share" in result.quarantine_summary["weekly_stats"]
 
 
+def test_expanded_dataset_candidates_are_display_only_and_policy_filtered(
+    tmp_path: Path,
+) -> None:
+    snapshot = _write_snapshot(
+        tmp_path / "snapshot",
+        include_season_stats=True,
+        include_expanded_datasets=True,
+    )
+
+    result = NORMALIZER.normalize_snapshot(
+        snapshot_dir=snapshot,
+        output_root=tmp_path / "lane_exchange",
+        write_candidates=False,
+        snapshot_label="expanded",
+    )
+
+    roster = _package(result, "stats_context/player_roster_display_context")
+    weekly_roster = _package(result, "stats_context/player_weekly_roster_display_context")
+    usage = _package(result, "stats_context/player_usage_context")
+
+    assert len(roster.rows) == 1
+    assert len(weekly_roster.rows) == 1
+    assert roster.rows[0]["years_exp"] == "1"
+    assert roster.rows[0]["birth_date"] == "2002-08-30"
+    assert "headshot_url" not in roster.rows[0]
+    assert weekly_roster.rows[0]["status"] == "ACT"
+
+    opportunity_row = next(
+        row for row in usage.rows if row["source_dataset"] == "opportunity"
+    )
+    assert opportunity_row["rec_attempt"] == "9"
+    assert opportunity_row["rec_air_yards"] == "110"
+    assert "pass_completions_exp" not in opportunity_row
+    assert "total_fantasy_points" not in opportunity_row
+
+    participation_row = next(
+        row for row in usage.rows if row["source_dataset"] == "participation"
+    )
+    assert participation_row["route"] == "go"
+    assert participation_row["offense_players"] == "00-0039999"
+
+    for package in (roster, weekly_roster, usage):
+        for row in package.rows:
+            assert row["approval_status"] == "candidate"
+            assert row["allowed_use"] == "display_stat_context_only"
+            serialized = ",".join(row)
+            assert "fantasy_points" not in serialized
+            assert "headshot_url" not in serialized
+            assert "pass_completions_exp" not in serialized
+            assert "_diff" not in serialized
+            assert "target_share" not in serialized
+            assert "rank" not in serialized.lower()
+
+    assert "years_exp" not in result.quarantine_summary["rosters"]
+    assert "headshot_url" in result.quarantine_summary["rosters"]
+    assert "pass_completions_exp" in result.quarantine_summary["opportunity"]
+    assert "total_fantasy_points" in result.quarantine_summary["opportunity"]
+
+
 def test_missing_optional_season_stats_is_yellow_not_crash(tmp_path: Path) -> None:
     snapshot = _write_snapshot(tmp_path / "snapshot", include_season_stats=False)
 
@@ -143,7 +207,12 @@ def _package(result: Any, package_name: str) -> Any:
     return next(package for package in result.packages if package.package_name == package_name)
 
 
-def _write_snapshot(snapshot: Path, *, include_season_stats: bool = False) -> Path:
+def _write_snapshot(
+    snapshot: Path,
+    *,
+    include_season_stats: bool = False,
+    include_expanded_datasets: bool = False,
+) -> Path:
     snapshot.mkdir(parents=True)
     _write_json(
         snapshot / "snapshot_metadata.json",
@@ -165,6 +234,40 @@ def _write_snapshot(snapshot: Path, *, include_season_stats: bool = False) -> Pa
                     "column_count": 9,
                     "warning": "",
                 },
+                *(
+                    [
+                        {
+                            "name": "rosters",
+                            "status": "ok",
+                            "row_count": 1,
+                            "column_count": 8,
+                            "warning": "roster quarantine fields exist",
+                        },
+                        {
+                            "name": "weekly_rosters",
+                            "status": "ok",
+                            "row_count": 1,
+                            "column_count": 8,
+                            "warning": "",
+                        },
+                        {
+                            "name": "participation",
+                            "status": "ok",
+                            "row_count": 1,
+                            "column_count": 5,
+                            "warning": "",
+                        },
+                        {
+                            "name": "opportunity",
+                            "status": "ok",
+                            "row_count": 1,
+                            "column_count": 12,
+                            "warning": "opportunity quarantine fields exist",
+                        },
+                    ]
+                    if include_expanded_datasets
+                    else []
+                ),
             ],
         },
     )
@@ -245,6 +348,67 @@ def _write_snapshot(snapshot: Path, *, include_season_stats: bool = False) -> Pa
                     "attempts": "500",
                     "passing_yards": "3900",
                     "fantasy_points": "300",
+                }
+            ],
+        )
+    if include_expanded_datasets:
+        _write_csv(
+            snapshot / "rosters.csv",
+            [
+                {
+                    "season": "2025",
+                    "team": "NE",
+                    "position": "QB",
+                    "full_name": "Drake Maye",
+                    "gsis_id": "00-0039999",
+                    "birth_date": "2002-08-30",
+                    "years_exp": "1",
+                    "headshot_url": "https://example.invalid/maye.png",
+                }
+            ],
+        )
+        _write_csv(
+            snapshot / "weekly_rosters.csv",
+            [
+                {
+                    "season": "2025",
+                    "week": "1",
+                    "team": "PIT",
+                    "position": "RB",
+                    "full_name": "Jaylen Warren",
+                    "status": "ACT",
+                    "years_exp": "4",
+                }
+            ],
+        )
+        _write_csv(
+            snapshot / "participation.csv",
+            [
+                {
+                    "nflverse_game_id": "2025_01_NE_PIT",
+                    "play_id": "42",
+                    "possession_team": "NE",
+                    "route": "go",
+                    "offense_players": "00-0039999",
+                }
+            ],
+        )
+        _write_csv(
+            snapshot / "opportunity.csv",
+            [
+                {
+                    "season": "2025",
+                    "week": "1",
+                    "posteam": "JAX",
+                    "player_id": "p3",
+                    "full_name": "Brian Thomas Jr",
+                    "position": "WR",
+                    "rec_attempt": "9",
+                    "rec_air_yards": "110",
+                    "receptions": "6",
+                    "pass_completions_exp": "2.1",
+                    "total_fantasy_points": "18.4",
+                    "target_share": "0.22",
                 }
             ],
         )

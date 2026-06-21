@@ -58,6 +58,8 @@ def test_nflverse_runner_uses_local_only_pythonpath_and_restores_it() -> None:
     assert "$env:PYTHONPATH = $OriginalPythonPath" in nflverse
     assert "--seasons $Seasons" in nflverse
     assert "--datasets $Datasets" in nflverse
+    for dataset in ("rosters", "weekly_rosters", "participation", "opportunity"):
+        assert dataset in nflverse
 
 
 def test_runbook_uses_disabled_task_examples_only() -> None:
