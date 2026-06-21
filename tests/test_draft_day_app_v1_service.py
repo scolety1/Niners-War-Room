@@ -18,6 +18,7 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
     normalize_board_frame,
+    outcome_prop_match_counts,
     validate_frozen_board,
 )
 
@@ -65,6 +66,23 @@ def test_lane_prop_display_hides_technical_guardrail_columns() -> None:
     assert "hidden_sort_field_created" not in display.columns
     assert "private_value_created" not in display.columns
     assert "final_board_rank_override_allowed" not in display.columns
+
+
+def test_outcome_prop_match_counts_uses_match_status() -> None:
+    frame = pd.DataFrame(
+        [
+            {"player": "Matched Player", "match_status": "matched_name_position"},
+            {"player": "Unmatched Player", "match_status": "unmatched_no_outcome_row"},
+        ]
+    )
+
+    assert outcome_prop_match_counts(frame) == {"rows": 2, "matched": 1, "unmatched": 1}
+
+
+def test_outcome_prop_match_counts_holds_without_match_status() -> None:
+    frame = pd.DataFrame([{"player": "Unknown Player"}])
+
+    assert outcome_prop_match_counts(frame) == {"rows": 1, "matched": 0, "unmatched": 1}
 
 
 def test_normalized_display_frame_uses_visible_board_fields_only() -> None:
@@ -135,5 +153,5 @@ def test_repo_contained_fallback_mode_loads_board_and_props(monkeypatch) -> None
     assert bundle.loaded
     assert bundle.row_count == EXPECTED_ROW_COUNT
     assert str(bundle.source_path).endswith("FINAL_DRAFT_BOARD_V1_FROZEN.csv")
-    assert prop_rows["outcome_columns"]["status"] == "GREEN"
+    assert prop_rows["outcome_columns"]["status"] == "YELLOW-HOLD"
     assert prop_rows["trading_lab"]["status"] == "GREEN"

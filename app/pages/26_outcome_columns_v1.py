@@ -16,7 +16,11 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
+from src.services.draft_day_app_v1_service import (
+    load_frozen_board,
+    load_lane_prop_file,
+    outcome_prop_match_counts,
+)
 
 bundle = load_frozen_board()
 
@@ -43,6 +47,20 @@ if prop_path is None or prop_frame.empty:
     st.stop()
 
 st.caption(f"Outcome props loaded: {prop_path}")
+match_counts = outcome_prop_match_counts(prop_frame)
+metric_columns = st.columns(3)
+metric_columns[0].metric("Context rows", match_counts["rows"])
+metric_columns[1].metric("Matched", match_counts["matched"])
+metric_columns[2].metric("Unmatched", match_counts["unmatched"])
+if match_counts["unmatched"]:
+    render_yellow_hold(
+        "Outcome props are partial: "
+        f"{match_counts['matched']} matched / {match_counts['unmatched']} unmatched. "
+        "Unmatched rows remain blank/manual review, and Outcome fields do not override "
+        "final_board_rank."
+    )
+else:
+    st.success("Outcome props cover all loaded context rows as display-only evidence.")
 join_columns = [column for column in ("player", "position") if column in prop_frame.columns]
 if join_columns:
     display = pd.merge(

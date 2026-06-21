@@ -251,6 +251,14 @@ def display_lane_prop_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.drop(columns=technical)
 
 
+def outcome_prop_match_counts(frame: pd.DataFrame) -> dict[str, int]:
+    rows = int(frame.shape[0])
+    if "match_status" not in frame.columns:
+        return {"rows": rows, "matched": 0, "unmatched": rows}
+    matched = int(frame["match_status"].astype(str).eq("matched_name_position").sum())
+    return {"rows": rows, "matched": matched, "unmatched": rows - matched}
+
+
 DISPLAY_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
