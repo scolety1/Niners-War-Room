@@ -33,6 +33,7 @@ from scripts.build_backtest_dataset_v0 import (
     _num,
     _prepare_season_stats,
     _safe_div,
+    _snap_features,
     _source_warnings,
 )
 
@@ -245,6 +246,12 @@ def build_backtest_v1_dataset(
     season_stats = _prepare_season_stats(frames["season_stats"], feature_seasons)
     labels = _build_labels(frames["season_stats"], seasons[1:])
     baseline = _build_baseline_features(season_stats)
+    snap_features = _snap_features(frames.get("snap_counts", pd.DataFrame()))
+    baseline = _merge_on_keys(
+        baseline,
+        snap_features,
+        ["player_name_norm", "position", "recent_team", "feature_season"],
+    )
     expanded = _build_expanded_features(
         baseline=baseline,
         season_stats=season_stats,
@@ -256,6 +263,11 @@ def build_backtest_v1_dataset(
         opportunity_pass=frames.get("opportunity_pass", pd.DataFrame()),
         opportunity_rush=frames.get("opportunity_rush", pd.DataFrame()),
         team_stats=frames.get("team_stats", pd.DataFrame()),
+    )
+    expanded = _merge_on_keys(
+        expanded,
+        snap_features,
+        ["player_name_norm", "position", "recent_team", "feature_season"],
     )
     expanded = _merge_on_keys(
         expanded,

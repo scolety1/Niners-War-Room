@@ -71,6 +71,38 @@ def test_v1_dataset_creates_missingness_indicators_and_blocks_leakage(tmp_path: 
     assert not (tmp_path / "fake_v1" / "latest_approved.json").exists()
 
 
+def test_v1_dataset_preserves_snap_count_features(tmp_path: Path) -> None:
+    seasons = [2018, 2019, 2020, 2021, 2022]
+    result = build_backtest_v1_dataset(
+        seasons=seasons,
+        output_root=tmp_path,
+        run_label="fake_v1_snaps",
+        frames={
+            "season_stats": _season_stats(seasons),
+            "rosters": _rosters(seasons[:-1]),
+            "weekly_rosters": _weekly_rosters(seasons[:-1]),
+            "snap_counts": _snap_counts(seasons[:-1]),
+            "depth_charts": pd.DataFrame(),
+            "draft_picks": pd.DataFrame(),
+            "team_stats": pd.DataFrame(),
+            "opportunity_pass": pd.DataFrame(),
+            "opportunity_rush": pd.DataFrame(),
+        },
+    )
+
+    baseline = pd.read_csv(result.baseline_path)
+    clean = pd.read_csv(result.clean_expanded_path)
+    rb_rows = clean[clean["position"] == "RB"]
+    wr_rows = clean[clean["position"] == "WR"]
+
+    assert baseline.loc[baseline["position"] == "RB", "offense_snaps"].gt(0).all()
+    assert rb_rows["offense_snaps"].gt(0).all()
+    assert rb_rows["offense_pct"].gt(0).all()
+    assert rb_rows["snap_pct_missing"].eq(0).all()
+    assert wr_rows["offense_snaps"].gt(0).all()
+    assert wr_rows["offense_pct"].gt(0).all()
+
+
 def test_v1_runner_rejects_blocked_feature_columns() -> None:
     labels = pd.DataFrame(
         {
@@ -185,4 +217,27 @@ def _weekly_rosters(seasons: list[int]) -> pd.DataFrame:
                         "status": "ACT",
                     }
                 )
+    return pd.DataFrame(rows)
+
+
+def _snap_counts(seasons: list[int]) -> pd.DataFrame:
+    rows = []
+    for season in seasons:
+        for player, position, team, snaps, pct in (
+            ("QB One", "QB", "SF", 900, 0.95),
+            ("RB One", "RB", "SF", 650, 0.68),
+            ("WR One", "WR", "SF", 800, 0.82),
+            ("TE One", "TE", "SF", 700, 0.72),
+        ):
+            rows.append(
+                {
+                    "season": season,
+                    "week": 1,
+                    "player": player,
+                    "position": position,
+                    "team": team,
+                    "offense_snaps": snaps,
+                    "offense_pct": pct,
+                }
+            )
     return pd.DataFrame(rows)
