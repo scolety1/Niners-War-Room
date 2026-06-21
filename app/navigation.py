@@ -19,33 +19,49 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Dynasty Rankings",
-        file_path="pages/05_rankings.py",
-        url_path="rankings",
-    ),
-    NavigationPageSpec(
-        title="Decision Board",
-        file_path="pages/08_june15_review.py",
-        url_path="decision-board",
-    ),
-    NavigationPageSpec(
-        title="Draft Prep",
-        file_path="pages/06_draft_board.py",
-        url_path="draft-room",
-    ),
-    NavigationPageSpec(
         title="Live Draft Room",
-        file_path="pages/07_live_draft_room.py",
+        file_path="pages/21_live_draft_room_v1.py",
         url_path="live-draft-room",
     ),
     NavigationPageSpec(
-        title="External Asset Reviews",
-        file_path="pages/04_trade_central.py",
-        url_path="trade-review",
+        title="Final Board / Dynasty Rankings",
+        file_path="pages/20_final_board_v1.py",
+        url_path="rankings",
+        default=True,
     ),
     NavigationPageSpec(
-        title="Settings",
-        file_path="pages/07_source_overrides.py",
+        title="Player Compare",
+        file_path="pages/22_player_compare_v1.py",
+        url_path="player-compare",
+    ),
+    NavigationPageSpec(
+        title="Trading Lab",
+        file_path="pages/23_trading_lab_v1.py",
+        url_path="trading-lab",
+    ),
+    NavigationPageSpec(
+        title="Mock Draft",
+        file_path="pages/24_mock_draft_v1.py",
+        url_path="mock-draft",
+    ),
+    NavigationPageSpec(
+        title="Draft Prep",
+        file_path="pages/25_draft_prep_v1.py",
+        url_path="draft-room",
+    ),
+    NavigationPageSpec(
+        title="Outcome Columns",
+        file_path="pages/26_outcome_columns_v1.py",
+        url_path="outcome-columns",
+    ),
+    NavigationPageSpec(
+        title="Decision Board",
+        file_path="pages/27_decision_board_v1.py",
+        url_path="decision-board",
+    ),
+    NavigationPageSpec(
+        title="Settings / Data Health",
+        file_path="pages/28_settings_data_health_v1.py",
         url_path="settings",
     ),
 )
@@ -53,9 +69,44 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Dynasty Rankings Home",
-        file_path="pages/05_rankings.py",
+        file_path="pages/20_final_board_v1.py",
         url_path="home",
-        default=True,
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy Dynasty Rankings",
+        file_path="legacy_pages/05_rankings_legacy.py",
+        url_path="legacy-rankings",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy Draft Prep",
+        file_path="pages/06_draft_board.py",
+        url_path="legacy-draft-room",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy Live Draft Room",
+        file_path="pages/07_live_draft_room.py",
+        url_path="legacy-live-draft-room",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy Decision Board",
+        file_path="pages/08_june15_review.py",
+        url_path="legacy-decision-board",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy External Asset Reviews",
+        file_path="pages/04_trade_central.py",
+        url_path="legacy-external-asset-reviews",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Legacy Settings",
+        file_path="pages/07_source_overrides.py",
+        url_path="legacy-settings",
         visible=False,
     ),
     NavigationPageSpec(

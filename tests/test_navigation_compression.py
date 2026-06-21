@@ -15,11 +15,15 @@ APP_DIR = Path("app")
 
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
-        "Dynasty Rankings",
+        "Live Draft Room",
+        "Final Board / Dynasty Rankings",
+        "Player Compare",
+        "Trading Lab",
+        "Mock Draft",
+        "Draft Prep",
+        "Outcome Columns",
         "Decision Board",
-        "Draft Room",
-        "External Asset Reviews",
-        "Settings",
+        "Settings / Data Health",
     ]
 
 
@@ -28,6 +32,13 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
     visible_titles = {page.title for page in VISIBLE_NAVIGATION_PAGES}
 
     assert hidden_titles == {
+        "Dynasty Rankings Home",
+        "Legacy Dynasty Rankings",
+        "Legacy Draft Prep",
+        "Legacy Live Draft Room",
+        "Legacy Decision Board",
+        "Legacy External Asset Reviews",
+        "Legacy Settings",
         "Import & Refresh",
         "Review Workflow",
         "Command Center Legacy Alias",
@@ -62,7 +73,7 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_exactly_one_visible_default_page() -> None:
     defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
-    assert [page.title for page in defaults] == ["Dynasty Rankings"]
+    assert [page.title for page in defaults] == ["Final Board / Dynasty Rankings"]
     assert sum(1 for page in ALL_NAVIGATION_PAGES if page.default) == 1
 
 
@@ -132,49 +143,20 @@ def test_source_plumbing_is_not_direct_sidebar_inputs() -> None:
     assert "Pack Details" in data_pack_selector
 
 
-def test_player_board_is_the_big_formula_table() -> None:
-    player_board = (APP_DIR / "pages" / "05_rankings.py").read_text()
-    draft_room = (APP_DIR / "pages" / "06_draft_board.py").read_text()
+def test_draft_day_v1_final_board_replaces_stale_visible_rankings() -> None:
+    final_board = (APP_DIR / "pages" / "20_final_board_v1.py").read_text()
+    draft_prep = (APP_DIR / "pages" / "25_draft_prep_v1.py").read_text()
+    legacy_player_board = (APP_DIR / "legacy_pages" / "05_rankings_legacy.py").read_text()
 
-    assert '"Dynasty Rankings"' in player_board
-    assert "Private NWR dynasty board" in player_board
-    assert "DEFAULT_DYNASTY_COLUMNS" in player_board
-    assert '"NWR Dynasty Score"' in player_board
-    assert '"Market Rank"' in player_board
-    assert '"League Rank"' in player_board
-    assert "Market display-only" in player_board
-    assert "Outcome percentage model in development" in player_board
-    assert "Advanced: feature receipts" in player_board
-    assert "Draft Pool View" not in player_board
-    assert 'st.title("Draft Room")' in draft_room
-    assert "Rookie Analyzer" in draft_room
-    assert "Review-only rookie draft surface" in draft_room
-    assert "Nearby Model Value" in draft_room
-    assert "Review progress: 1 Start Here -> 2 Main Review" in draft_room
-    assert "Review progress checklist" in draft_room
-    assert "Human question: which pick windows deserve manual scouting?" in draft_room
-    assert "The human decision comes after comparing" in draft_room
-    assert "Nearby Model Value" in draft_room
-    assert "Pick Decision Lab" in draft_room
-    assert "Evidence & Risk" in draft_room
-    assert "Scout / Research" in draft_room
-    assert "rookie_research_overlay" in draft_room
-    assert "review-only. It can flag where to scout" in draft_room
-    assert "Evidence Available" in draft_room
-    assert "Trust Level" in draft_room
-    assert "Production" in draft_room
-    assert "College Team Share" in draft_room
-    assert "Landing Context" in draft_room
-    assert "low evidence should be treated as a watchlist signal" in draft_room
-    assert "Draftable Board" in draft_room
-    assert "Watchlist / Data Incomplete" in draft_room
-    assert "Research Conflicts" in draft_room
-    assert "raw score cannot masquerade as a" in draft_room
-    assert '"Startup Slot Simulator"' not in draft_room
-    assert '"Scout Queue"' not in draft_room
-    assert '"Research Overlay"' not in draft_room
-    assert '"Rookie Warnings"' not in draft_room
-    assert '"Rookie Receipts"' not in draft_room
+    assert "Final Board / Dynasty Rankings" in final_board
+    assert "Frozen Final Draft Board V1 is the source of truth" in final_board
+    assert "Legacy rankings hold" in final_board
+    assert "render_final_board_table" in final_board
+    assert "Draft Prep" in draft_prep
+    assert "Readiness Checklist" in draft_prep
+    assert "Lane Prop Status" in draft_prep
+    assert '"Dynasty Rankings"' in legacy_player_board
+    assert "Private NWR dynasty board" in legacy_player_board
 
 
 def test_external_asset_reviews_use_clear_review_only_labels() -> None:

@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+import py_compile
+from pathlib import Path
+
+import pandas as pd
+
+from src.services.draft_day_app_v1_service import (
+    EXPECTED_ROW_COUNT,
+    REQUIRED_VISIBLE_FIELDS,
+    display_board_frame,
+    hidden_sort_columns,
+    load_frozen_board,
+    normalize_board_frame,
+    validate_frozen_board,
+)
+
+
+def test_frozen_board_loader_contract_is_green_in_local_hq_context() -> None:
+    bundle = load_frozen_board()
+
+    assert bundle.loaded
+    assert bundle.row_count == EXPECTED_ROW_COUNT
+    assert not bundle.errors
+    for field in REQUIRED_VISIBLE_FIELDS:
+        assert field in bundle.frame.columns
+    assert "source_file" not in bundle.frame.columns
+
+
+def test_hidden_sort_and_private_value_columns_are_blocked() -> None:
+    columns = ["player", "final_board_rank", "hidden_sort_key", "private_value_score"]
+
+    assert hidden_sort_columns(columns) == ("hidden_sort_key", "private_value_score")
+
+
+def test_normalized_display_frame_uses_visible_board_fields_only() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "final_board_rank": 2,
+                "final_tier": "T2",
+                "position_rank": "WR1",
+                "player": "Example WR",
+                "position": "WR",
+                "nfl_team": "SF",
+                "model_posture_used": "safe_no_snap_no_depth_rank",
+                "candidate_status": "RESEARCH_CANDIDATE_ONLY",
+                "risk_notes": "manual check",
+                "needs_manual_review": "true",
+                "source_file": r"C:\NWR_SHARED_DATA\local.csv",
+            }
+        ]
+    )
+
+    normalized = normalize_board_frame(frame)
+    display = display_board_frame(normalized)
+
+    assert "source_file" not in normalized.columns
+    assert "Final Board Rank" in display.columns
+    assert "Risk Notes" in display.columns
+
+
+def test_frozen_board_validation_requires_core_visible_fields() -> None:
+    frame = pd.DataFrame({"final_board_rank": [1]})
+    errors = validate_frozen_board(frame)
+
+    assert any("Expected 66 frozen board rows" in error for error in errors)
+    assert any("Missing required visible fields" in error for error in errors)
+
+
+def test_draft_day_v1_pages_compile() -> None:
+    for path in Path("app/pages").glob("*_v1.py"):
+        py_compile.compile(str(path), doraise=True)

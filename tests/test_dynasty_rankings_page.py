@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-PAGE = Path("app/pages/05_rankings.py")
+PAGE = Path("app/legacy_pages/05_rankings_legacy.py")
 
 
 def _page_text() -> str:
