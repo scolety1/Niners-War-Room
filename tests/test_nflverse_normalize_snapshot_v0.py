@@ -76,6 +76,9 @@ def test_write_candidates_creates_latest_candidate_only(tmp_path: Path) -> None:
         assert manifest["contains_market_data"] is False
         assert manifest["contains_adp"] is False
         assert manifest["not_latest_approved"] is True
+        assert "source_timing_summary" in manifest
+        assert "source_timing_classes" in manifest
+        assert "live_use_allowed" in manifest
         assert manifest["row_count"] == len(rows)
         assert pointer["row_count"] == len(rows)
         assert manifest["sha256"] == hashlib.sha256(data_path.read_bytes()).hexdigest()
@@ -103,6 +106,9 @@ def test_quarantined_fields_are_excluded_from_display_packages(tmp_path: Path) -
         assert "rank" not in serialized.lower()
         assert row["allowed_use"] == "display_stat_context_only"
         assert "private_value" in row["blocked_use"]
+        assert "source_timing_class" in row
+        assert "live_use_allowed" in row
+        assert "timing_notes" in row
 
     assert "fantasy_points_ppr" in result.quarantine_summary["weekly_stats"]
     assert "target_share" in result.quarantine_summary["weekly_stats"]
@@ -148,6 +154,9 @@ def test_expanded_dataset_candidates_are_display_only_and_policy_filtered(
     )
     assert participation_row["route"] == "go"
     assert participation_row["offense_players"] == "00-0039999"
+    assert participation_row["source_timing_class"] == "historical_backtest_only"
+    assert participation_row["live_use_allowed"] is False
+    assert "does not update during the season" in participation_row["timing_notes"]
 
     for package in (roster, weekly_roster, usage):
         for row in package.rows:
@@ -165,6 +174,73 @@ def test_expanded_dataset_candidates_are_display_only_and_policy_filtered(
     assert "headshot_url" in result.quarantine_summary["rosters"]
     assert "pass_completions_exp" in result.quarantine_summary["opportunity"]
     assert "total_fantasy_points" in result.quarantine_summary["opportunity"]
+
+
+def test_source_timing_classes_are_applied_by_dataset(tmp_path: Path) -> None:
+    snapshot = _write_snapshot(
+        tmp_path / "snapshot",
+        include_season_stats=True,
+        include_expanded_datasets=True,
+    )
+
+    result = NORMALIZER.normalize_snapshot(
+        snapshot_dir=snapshot,
+        output_root=tmp_path / "lane_exchange",
+        write_candidates=True,
+        snapshot_label="timing",
+    )
+
+    weekly = _package(result, "stats_context/player_weekly_stats_display_context")
+    season = _package(result, "stats_context/player_season_stats_display_context")
+    usage = _package(result, "stats_context/player_usage_context")
+    crosscheck = _package(result, "stats_context/player_stats_crosscheck_report")
+
+    assert weekly.rows[0]["source_timing_class"] == "live_draft_day_candidate"
+    assert weekly.rows[0]["live_use_allowed"] is True
+    assert season.rows[0]["source_timing_class"] == "offseason_refresh_only"
+    assert season.rows[0]["live_use_allowed"] is False
+
+    snap_row = next(row for row in usage.rows if row["source_dataset"] == "snap_counts")
+    opportunity_row = next(
+        row for row in usage.rows if row["source_dataset"] == "opportunity"
+    )
+    assert snap_row["source_timing_class"] == "live_draft_day_candidate"
+    assert snap_row["live_use_allowed"] is True
+    assert opportunity_row["source_timing_class"] == "unknown_timing_yellow"
+    assert opportunity_row["live_use_allowed"] is False
+
+    participation_crosscheck = next(
+        row for row in crosscheck.rows if row["source_dataset"] == "participation"
+    )
+    assert participation_crosscheck["source_timing_class"] == "historical_backtest_only"
+    assert participation_crosscheck["live_use_allowed"] is False
+
+    usage_manifest_path = (
+        tmp_path
+        / "lane_exchange"
+        / "stats_context"
+        / "player_usage_context"
+        / "timing"
+        / "manifest.json"
+    )
+    usage_manifest = json.loads(usage_manifest_path.read_text(encoding="utf-8"))
+    assert usage_manifest["live_use_allowed"] is False
+    assert usage_manifest["source_timing_classes"] == [
+        "historical_backtest_only",
+        "live_draft_day_candidate",
+        "unknown_timing_yellow",
+    ]
+    assert (
+        usage_manifest["source_timing_summary"]["participation"]["live_use_allowed"]
+        is False
+    )
+    assert not (
+        tmp_path
+        / "lane_exchange"
+        / "stats_context"
+        / "player_usage_context"
+        / "latest_approved.json"
+    ).exists()
 
 
 def test_missing_optional_season_stats_is_yellow_not_crash(tmp_path: Path) -> None:

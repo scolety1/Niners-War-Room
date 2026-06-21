@@ -42,6 +42,70 @@ BLOCKED_USE_TEXT = (
     "private_value,hidden_sort,draft_recommendation,final_draft_decision,"
     "model_training"
 )
+DATASET_TIMING_POLICY = {
+    "weekly_stats": {
+        "source_timing_class": "live_draft_day_candidate",
+        "live_use_allowed": True,
+        "timing_notes": (
+            "Weekly stats may be live/draft-day display candidates when refreshed; "
+            "subject to stat corrections and stale-snapshot warnings."
+        ),
+    },
+    "season_stats": {
+        "source_timing_class": "offseason_refresh_only",
+        "live_use_allowed": False,
+        "timing_notes": (
+            "Season stats are season-level historical/offseason context and are not "
+            "live draft-day decision inputs."
+        ),
+    },
+    "rosters": {
+        "source_timing_class": "live_draft_day_candidate",
+        "live_use_allowed": True,
+        "timing_notes": (
+            "Roster metadata may be live/draft-day display context when refreshed "
+            "from the current source; stale data must be visible."
+        ),
+    },
+    "weekly_rosters": {
+        "source_timing_class": "live_draft_day_candidate",
+        "live_use_allowed": True,
+        "timing_notes": (
+            "Weekly roster metadata may be live/draft-day display context when the "
+            "current week/source supports it; stale data must be visible."
+        ),
+    },
+    "snap_counts": {
+        "source_timing_class": "live_draft_day_candidate",
+        "live_use_allowed": True,
+        "timing_notes": (
+            "Snap counts may be refreshed after games and used as display-only "
+            "historical/weekly context; they are not projections."
+        ),
+    },
+    "participation": {
+        "source_timing_class": "historical_backtest_only",
+        "live_use_allowed": False,
+        "timing_notes": (
+            "Participation data from 2023 onward is courtesy of FTN via nflverse "
+            "and is provided after all post-season games are completed; it does "
+            "not update during the season."
+        ),
+    },
+    "opportunity": {
+        "source_timing_class": "unknown_timing_yellow",
+        "live_use_allowed": False,
+        "timing_notes": (
+            "Opportunity timing requires source-specific freshness review before "
+            "live use; keep display-only/backtest review until confirmed."
+        ),
+    },
+    "normalizer_warning": {
+        "source_timing_class": "display_only",
+        "live_use_allowed": False,
+        "timing_notes": "Normalizer warning/audit row only.",
+    },
+}
 IDENTITY_COLUMNS = [
     "gsis_id",
     "player_id",
@@ -505,6 +569,7 @@ def _safe_stat_rows(
     dataset: Dataset, *, allowed_columns: list[str], context_type: str
 ) -> list[dict[str, Any]]:
     allowed = [column for column in allowed_columns if column in dataset.fields]
+    timing = _dataset_timing(dataset.name)
     rows: list[dict[str, Any]] = []
     for index, row in enumerate(dataset.rows, start=1):
         safe = {
@@ -516,6 +581,9 @@ def _safe_stat_rows(
             "approval_status": "candidate",
             "allowed_use": "display_stat_context_only",
             "blocked_use": BLOCKED_USE_TEXT,
+            "source_timing_class": timing["source_timing_class"],
+            "live_use_allowed": timing["live_use_allowed"],
+            "timing_notes": timing["timing_notes"],
         }
         for column in allowed:
             if _is_quarantined(column):
@@ -533,6 +601,7 @@ def _crosscheck_rows(
     rows: list[dict[str, Any]] = []
     for name in sorted(datasets):
         dataset = datasets[name]
+        timing = _dataset_timing(name)
         rows.append(
             {
                 "source_dataset": name,
@@ -551,10 +620,14 @@ def _crosscheck_rows(
                 "approval_status": "candidate",
                 "allowed_use": "source_audit_and_display_context_review_only",
                 "blocked_use": BLOCKED_USE_TEXT,
+                "source_timing_class": timing["source_timing_class"],
+                "live_use_allowed": timing["live_use_allowed"],
+                "timing_notes": timing["timing_notes"],
                 "notes": "Quarantined fields are excluded from display candidate packages.",
             }
         )
     if "season_stats" not in datasets:
+        timing = _dataset_timing("season_stats")
         rows.append(
             {
                 "source_dataset": "season_stats",
@@ -567,12 +640,16 @@ def _crosscheck_rows(
                 "approval_status": "candidate",
                 "allowed_use": "source_audit_only",
                 "blocked_use": BLOCKED_USE_TEXT,
+                "source_timing_class": timing["source_timing_class"],
+                "live_use_allowed": timing["live_use_allowed"],
+                "timing_notes": timing["timing_notes"],
                 "notes": "Optional season_stats.csv missing; package skipped.",
             }
         )
     for name in ("rosters", "weekly_rosters", "participation", "opportunity"):
         if name in datasets:
             continue
+        timing = _dataset_timing(name)
         rows.append(
             {
                 "source_dataset": name,
@@ -585,10 +662,14 @@ def _crosscheck_rows(
                 "approval_status": "candidate",
                 "allowed_use": "source_audit_only",
                 "blocked_use": BLOCKED_USE_TEXT,
+                "source_timing_class": timing["source_timing_class"],
+                "live_use_allowed": timing["live_use_allowed"],
+                "timing_notes": timing["timing_notes"],
                 "notes": f"YELLOW: Optional {name}.csv missing or unsupported; package skipped.",
             }
         )
     for warning in warnings:
+        timing = _dataset_timing("normalizer_warning")
         rows.append(
             {
                 "source_dataset": "normalizer_warning",
@@ -601,6 +682,9 @@ def _crosscheck_rows(
                 "approval_status": "candidate",
                 "allowed_use": "source_audit_only",
                 "blocked_use": BLOCKED_USE_TEXT,
+                "source_timing_class": timing["source_timing_class"],
+                "live_use_allowed": timing["live_use_allowed"],
+                "timing_notes": timing["timing_notes"],
                 "notes": warning,
             }
         )
@@ -648,6 +732,9 @@ def _write_candidate_package(
         "updated_at": datetime.now(UTC).isoformat(),
         "allowed_use": DISPLAY_ALLOWED_USE,
         "forbidden_use": FORBIDDEN_USE,
+        "source_timing_summary": _package_timing_summary(package.source_datasets),
+        "source_timing_classes": _package_timing_classes(package.source_datasets),
+        "live_use_allowed": _package_live_use_allowed(package.source_datasets),
         "notes": "latest_candidate only; latest_approved was not created or updated.",
     }
     _write_json(package_root / "latest_candidate.json", pointer)
@@ -689,6 +776,10 @@ def _manifest(
         "not_simulation_approval": True,
         "not_model_training_approval": True,
         "source_datasets": package.source_datasets,
+        "source_timing_summary": _package_timing_summary(package.source_datasets),
+        "source_timing_classes": _package_timing_classes(package.source_datasets),
+        "live_use_allowed": _package_live_use_allowed(package.source_datasets),
+        "timing_notes": _package_timing_notes(package.source_datasets),
         "quarantined_fields_by_dataset": quarantine_summary,
         "source_warnings": warnings,
         "notes": package.notes,
@@ -723,14 +814,24 @@ def _markdown_report(
         "",
         "## Package Counts",
         "",
-        "| Package | Rows | Candidate path |",
-        "| --- | ---: | --- |",
+        "| Package | Rows | Timing classes | Live use allowed | Candidate path |",
+        "| --- | ---: | --- | --- | --- |",
     ]
     for package in packages:
         path = candidate_paths.get(package.package_name)
         lines.append(
             f"| `{package.package_name}` | {len(package.rows)} | "
+            f"`{', '.join(_package_timing_classes(package.source_datasets))}` | "
+            f"{_package_live_use_allowed(package.source_datasets)} | "
             f"{f'`{path}`' if path else 'dry-run only'} |"
+        )
+    lines.extend(["", "## Source Timing Summary", ""])
+    for dataset in sorted(quarantine_summary):
+        timing = _dataset_timing(dataset)
+        lines.append(
+            f"- `{dataset}`: `{timing['source_timing_class']}`, "
+            f"live_use_allowed={timing['live_use_allowed']}. "
+            f"{timing['timing_notes']}"
         )
     lines.extend(["", "## Quarantine Summary", ""])
     for dataset, fields in sorted(quarantine_summary.items()):
@@ -769,6 +870,46 @@ def _source_warnings(metadata: dict[str, Any]) -> list[str]:
         if error:
             warnings.append(f"{dataset.get('name')}: {error}")
     return warnings
+
+
+def _dataset_timing(dataset_name: str) -> dict[str, Any]:
+    return DATASET_TIMING_POLICY.get(
+        dataset_name,
+        {
+            "source_timing_class": "unknown_timing_yellow",
+            "live_use_allowed": False,
+            "timing_notes": (
+                "Dataset timing is not classified; keep display-only/backtest review "
+                "until Tim/Master/QA approval."
+            ),
+        },
+    )
+
+
+def _package_timing_summary(source_datasets: list[str]) -> dict[str, dict[str, Any]]:
+    return {dataset: _dataset_timing(dataset) for dataset in source_datasets}
+
+
+def _package_timing_classes(source_datasets: list[str]) -> list[str]:
+    return sorted(
+        {
+            str(_dataset_timing(dataset)["source_timing_class"])
+            for dataset in source_datasets
+        }
+    )
+
+
+def _package_live_use_allowed(source_datasets: list[str]) -> bool:
+    if not source_datasets:
+        return False
+    return all(bool(_dataset_timing(dataset)["live_use_allowed"]) for dataset in source_datasets)
+
+
+def _package_timing_notes(source_datasets: list[str]) -> list[str]:
+    return [
+        f"{dataset}: {_dataset_timing(dataset)['timing_notes']}"
+        for dataset in source_datasets
+    ]
 
 
 def _append_missing_dataset_warning(
