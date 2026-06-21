@@ -24,10 +24,11 @@ Repo scaffold files:
 
 ## Readiness Status
 
-YELLOW, not GREEN, because sklearn is not installed in the current runtime and
-the current Backtest V1 artifact was built before the snap-count repair. The
-runner falls back to numpy ridge and the snap-fixed variant is planned, but it
-requires a regenerated snap-fixed dataset before any full tuning claim.
+YELLOW, not GREEN, because the current Backtest V1 artifact was built before
+the snap-count repair. A local-only sklearn environment is available, and the
+runner still keeps numpy ridge as the dry-run fallback/control. The snap-fixed
+variant is planned, but it requires a regenerated snap-fixed dataset before any
+full tuning claim.
 
 The scaffold supports:
 
@@ -137,10 +138,12 @@ Dry-run scope:
 - position-metric rows: 12
 - year-metric rows: 24
 
-sklearn status:
+Tooling status:
 
-- unavailable in current runtime
-- fallback used: `numpy_ridge`
+- local-only env: `C:\NWR_SHARED_DATA\tool_envs\overnight_tune_v0`
+- sklearn: available in local-only env
+- pandas: available in local-only env
+- dry-run model used: `numpy_ridge`
 
 ## Metric Priority
 
@@ -164,7 +167,7 @@ preflight state.
 Recommended later command:
 
 ```powershell
-& 'C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' scripts\run_overnight_tune_v0.py --full-run --confirm-full-run --dataset-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --output-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --positions QB RB WR TE --time-budget-minutes 480 --resume
+& 'C:\NWR_SHARED_DATA\tool_envs\overnight_tune_v0\Scripts\python.exe' scripts\run_overnight_tune_v0.py --full-run --confirm-full-run --dataset-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --output-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --positions QB RB WR TE --time-budget-minutes 480 --resume
 ```
 
 Before running snap-fixed variants, regenerate the Backtest V1 dataset with the
@@ -196,8 +199,6 @@ Completed:
 Remaining before full tuning:
 
 - regenerate snap-fixed V1 artifact if snap variants are required
-- optionally create a local-only sklearn environment under
-  `C:\NWR_SHARED_DATA\tool_envs\overnight_tune_v0`
 - rerun preflight guard checks
 
 ## Verdict
