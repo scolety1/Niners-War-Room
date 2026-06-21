@@ -10,6 +10,7 @@ import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOARD_FILE_NAME = "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
+DYNASTY_BOARD_FILE_NAME = "full_player_board_value_review_rows.csv"
 
 LOCAL_FROZEN_BOARD_ROOT = Path(
     r"C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622"
@@ -27,6 +28,14 @@ LOCAL_APP_PROP_ROOT = Path(r"C:\NWR_SHARED_DATA\draft_day_app_props\20260622")
 REPO_SAFE_APP_PROP_ROOT = REPO_SAFE_FROZEN_BOARD_ROOT / "app_props"
 APP_PROP_ROOT = LOCAL_APP_PROP_ROOT
 EXPECTED_ROW_COUNT = 66
+EXPECTED_DYNASTY_ROW_COUNT = 240
+LOCAL_DYNASTY_RANKINGS_ROOT = (
+    REPO_ROOT / "local_exports" / "model_v4" / "current_value" / "latest"
+)
+LOCAL_DYNASTY_RANKINGS_PATH = LOCAL_DYNASTY_RANKINGS_ROOT / DYNASTY_BOARD_FILE_NAME
+EXPECTED_DYNASTY_RANKINGS_HASH = (
+    "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
+)
 PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
     r"\20260620_controlled_sim_v1\pinned_snapshot_manifest.json"
@@ -91,6 +100,21 @@ PROP_TECHNICAL_DISPLAY_COLUMNS = (
     "private_value_created",
 )
 
+DYNASTY_DISPLAY_COLUMNS = (
+    "nwr_rank",
+    "player_name",
+    "position",
+    "age",
+    "nfl_team",
+    "nwr_dynasty_score",
+    "trust_status",
+    "warning_flags",
+    "market_rank",
+    "league_rank",
+    "pool_status",
+    "data_needed",
+)
+
 
 @dataclass(frozen=True)
 class FrozenBoardBundle:
@@ -107,6 +131,38 @@ class FrozenBoardBundle:
     @property
     def row_count(self) -> int:
         return int(self.frame.shape[0])
+
+
+@dataclass(frozen=True)
+class DynastyRankingsBundle:
+    frame: pd.DataFrame
+    source_path: Path | None
+    source_label: str
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    source_hash: str | None
+
+    @property
+    def loaded(self) -> bool:
+        return self.source_path is not None and self.frame.shape[0] > 0 and not self.errors
+
+    @property
+    def row_count(self) -> int:
+        return int(self.frame.shape[0])
+
+    @property
+    def veteran_count(self) -> int:
+        if "is_rookie" not in self.frame.columns:
+            return 0
+        rookie_mask = self.frame["is_rookie"].astype(str).str.lower().isin({"1", "true", "yes"})
+        return int((~rookie_mask).sum())
+
+    @property
+    def rookie_count(self) -> int:
+        if "is_rookie" not in self.frame.columns:
+            return 0
+        rookie_mask = self.frame["is_rookie"].astype(str).str.lower().isin({"1", "true", "yes"})
+        return int(rookie_mask.sum())
 
 
 def resolve_frozen_board_path() -> tuple[Path | None, str, tuple[str, ...]]:
@@ -227,6 +283,128 @@ def normalize_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return normalized.reset_index(drop=True)
 
 
+def dynasty_rankings_candidates() -> tuple[tuple[Path, str, str], ...]:
+    candidates: list[tuple[Path, str, str]] = []
+    env_root = os.environ.get("NWR_DYNASTY_RANKINGS_ROOT")
+    if env_root:
+        candidates.append(
+            (
+                Path(env_root) / DYNASTY_BOARD_FILE_NAME,
+                "environment dynasty rankings",
+                "Using NWR_DYNASTY_RANKINGS_ROOT full dynasty rankings.",
+            )
+        )
+    candidates.append((LOCAL_DYNASTY_RANKINGS_PATH, "approved local dynasty rankings", ""))
+    return tuple(candidates)
+
+
+def resolve_dynasty_rankings_path() -> tuple[Path | None, str, tuple[str, ...]]:
+    warnings: list[str] = []
+    for path, label, warning in dynasty_rankings_candidates():
+        if path.exists():
+            if warning:
+                warnings.append(warning)
+            return path, label, tuple(warnings)
+    return None, "missing approved dynasty rankings", tuple(warnings)
+
+
+def load_dynasty_rankings() -> DynastyRankingsBundle:
+    path, label, warnings = resolve_dynasty_rankings_path()
+    if path is None:
+        return DynastyRankingsBundle(
+            frame=pd.DataFrame(),
+            source_path=None,
+            source_label=label,
+            errors=(
+                "Approved full dynasty rankings CSV was not found. Expected "
+                f"{LOCAL_DYNASTY_RANKINGS_PATH}.",
+            ),
+            warnings=warnings,
+            source_hash=None,
+        )
+
+    frame = pd.read_csv(path, dtype=str).fillna("")
+    source_hash = file_sha256(path)
+    errors = list(validate_dynasty_rankings(frame))
+    if source_hash != EXPECTED_DYNASTY_RANKINGS_HASH:
+        errors.append(
+            "Approved dynasty rankings hash mismatch: expected "
+            f"{EXPECTED_DYNASTY_RANKINGS_HASH}; found {source_hash}."
+        )
+    normalized = normalize_dynasty_rankings_frame(frame)
+    return DynastyRankingsBundle(
+        frame=normalized,
+        source_path=path,
+        source_label=label,
+        errors=tuple(errors),
+        warnings=warnings,
+        source_hash=source_hash,
+    )
+
+
+def validate_dynasty_rankings(frame: pd.DataFrame) -> tuple[str, ...]:
+    errors: list[str] = []
+    if frame.shape[0] != EXPECTED_DYNASTY_ROW_COUNT:
+        errors.append(
+            f"Expected {EXPECTED_DYNASTY_ROW_COUNT} dynasty ranking rows; found "
+            f"{frame.shape[0]}."
+        )
+    required = ("nwr_rank", "player_name", "position", "nwr_dynasty_score", "is_rookie")
+    missing = [column for column in required if column not in frame.columns]
+    if missing:
+        errors.append(f"Missing dynasty ranking fields: {', '.join(missing)}.")
+    hidden_like = hidden_sort_columns(frame.columns)
+    if hidden_like:
+        errors.append(
+            f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
+        )
+    return tuple(errors)
+
+
+def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    if "nwr_rank" in normalized.columns:
+        normalized["_rank_sort_visible"] = pd.to_numeric(
+            normalized["nwr_rank"], errors="coerce"
+        )
+        normalized = normalized.sort_values(
+            by=["_rank_sort_visible", "player_name"],
+            ascending=[True, True],
+            na_position="last",
+            kind="stable",
+        ).drop(columns=["_rank_sort_visible"])
+    return normalized.reset_index(drop=True)
+
+
+def display_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    available = [column for column in DYNASTY_DISPLAY_COLUMNS if column in frame.columns]
+    display = frame.loc[:, available].copy()
+    if "warning_flags" in display.columns:
+        display["warning_flags"] = display["warning_flags"].map(warning_summary)
+    if "market_rank" in display.columns:
+        display = display.rename(columns={"market_rank": "Market Rank (Display-Only)"})
+    if "league_rank" in display.columns:
+        display = display.rename(columns={"league_rank": "League Rank (Display-Only)"})
+    return display.rename(columns=DYNASTY_DISPLAY_LABELS)
+
+
+def warning_summary(value: object) -> str:
+    flags = [flag for flag in str(value or "").split("|") if flag]
+    if not flags:
+        return "0"
+    return f"{len(flags)} warning{'s' if len(flags) != 1 else ''}"
+
+
+def file_sha256(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def display_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "final_board_rank",
@@ -273,6 +451,19 @@ DISPLAY_LABELS = {
     "final_board_score_visible": "Visible Board Score",
     "source_status": "Source Status",
     "guardrail_status": "Guardrail Status",
+}
+
+DYNASTY_DISPLAY_LABELS = {
+    "nwr_rank": "Dynasty Rank",
+    "player_name": "Player",
+    "position": "Pos",
+    "age": "Age",
+    "nfl_team": "NFL Team",
+    "nwr_dynasty_score": "NWR Dynasty Score",
+    "trust_status": "Trust",
+    "warning_flags": "Warnings",
+    "pool_status": "Status",
+    "data_needed": "Data Needed",
 }
 
 

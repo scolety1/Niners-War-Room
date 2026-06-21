@@ -26,7 +26,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Final Board / Dynasty Rankings",
         file_path="pages/20_final_board_v1.py",
-        url_path="rankings",
+        url_path="draft-day-home",
         default=True,
     ),
     NavigationPageSpec(
@@ -71,6 +71,12 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Dynasty Rankings Home",
         file_path="pages/20_final_board_v1.py",
         url_path="home",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Dynasty Rankings URL Alias",
+        file_path="pages/20_final_board_v1.py",
+        url_path="rankings",
         visible=False,
     ),
     NavigationPageSpec(

@@ -5,12 +5,15 @@ from pathlib import Path
 
 import pandas as pd
 
+import src.services.draft_day_app_v1_service as draft_day_service
 from src.services.draft_day_app_v1_service import (
+    EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_ROW_COUNT,
     REPO_SAFE_APP_PROP_ROOT,
     REPO_SAFE_FROZEN_BOARD_ROOT,
     REQUIRED_VISIBLE_FIELDS,
     display_board_frame,
+    display_dynasty_rankings_frame,
     display_lane_prop_frame,
     extract_prop_status,
     hidden_sort_columns,
@@ -155,3 +158,67 @@ def test_repo_contained_fallback_mode_loads_board_and_props(monkeypatch) -> None
     assert str(bundle.source_path).endswith("FINAL_DRAFT_BOARD_V1_FROZEN.csv")
     assert prop_rows["outcome_columns"]["status"] == "YELLOW-HOLD"
     assert prop_rows["trading_lab"]["status"] == "GREEN"
+
+
+def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    rows = [
+        {
+            "nwr_rank": str(index + 1),
+            "player_name": f"Player {index + 1}",
+            "position": "WR" if index % 2 else "RB",
+            "nwr_dynasty_score": "50.0",
+            "is_rookie": "1" if index < 10 else "0",
+        }
+        for index in range(EXPECTED_DYNASTY_ROW_COUNT)
+    ]
+    root = tmp_path / "dynasty"
+    root.mkdir()
+    path = root / draft_day_service.DYNASTY_BOARD_FILE_NAME
+    pd.DataFrame(rows).to_csv(path, index=False)
+    source_hash = draft_day_service.file_sha256(path)
+    monkeypatch.setenv("NWR_DYNASTY_RANKINGS_ROOT", str(root))
+    monkeypatch.setattr(draft_day_service, "EXPECTED_DYNASTY_RANKINGS_HASH", source_hash)
+
+    bundle = draft_day_service.load_dynasty_rankings()
+
+    assert bundle.loaded
+    assert bundle.row_count == EXPECTED_DYNASTY_ROW_COUNT
+    assert bundle.veteran_count > 0
+    assert bundle.rookie_count > 0
+    assert bundle.source_hash == source_hash
+
+
+def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "nwr_rank": "1",
+                "player_name": "Example Veteran",
+                "position": "WR",
+                "age": "25",
+                "nfl_team": "SF",
+                "nwr_dynasty_score": "80.0",
+                "trust_status": "Scored",
+                "warning_flags": "missing_role_evidence|partial_first_down_confidence_cap",
+                "market_rank": "99",
+                "league_rank": "88",
+                "pool_status": "AVAILABLE",
+                "data_needed": "None",
+                "source_path": r"C:\local\source.csv",
+                "blocked_use": "draft_sort_override",
+                "candidate_evidence_fields_used": "technical",
+            }
+        ]
+    )
+    display = display_dynasty_rankings_frame(frame)
+
+    assert "Dynasty Rank" in display.columns
+    assert "Player" in display.columns
+    assert "NWR Dynasty Score" in display.columns
+    assert "Market Rank (Display-Only)" in display.columns
+    assert "source_path" not in display.columns
+    assert "blocked_use" not in display.columns
+    assert "candidate_evidence_fields_used" not in display.columns

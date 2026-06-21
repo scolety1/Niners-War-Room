@@ -33,6 +33,7 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
 
     assert hidden_titles == {
         "Dynasty Rankings Home",
+        "Dynasty Rankings URL Alias",
         "Legacy Dynasty Rankings",
         "Legacy Draft Prep",
         "Legacy Live Draft Room",
@@ -143,14 +144,17 @@ def test_source_plumbing_is_not_direct_sidebar_inputs() -> None:
     assert "Pack Details" in data_pack_selector
 
 
-def test_draft_day_v1_final_board_replaces_stale_visible_rankings() -> None:
+def test_draft_day_v1_rankings_page_splits_dynasty_and_final_board_sources() -> None:
     final_board = (APP_DIR / "pages" / "20_final_board_v1.py").read_text()
     draft_prep = (APP_DIR / "pages" / "25_draft_prep_v1.py").read_text()
     legacy_player_board = (APP_DIR / "legacy_pages" / "05_rankings_legacy.py").read_text()
 
-    assert "Final Board / Dynasty Rankings" in final_board
-    assert "Frozen Final Draft Board V1 is the source of truth" in final_board
-    assert "Legacy rankings hold" in final_board
+    assert "Dynasty Rankings / Final Draft Board" in final_board
+    assert "Dynasty Rankings shows the approved full veteran-plus-rookie" in final_board
+    assert "Final Draft Board remains the frozen 66-row source" in final_board
+    assert "Dynasty Rankings (Full)" in final_board
+    assert "Final Draft Board (Frozen 66)" in final_board
+    assert "load_dynasty_rankings" in final_board
     assert "render_final_board_table" in final_board
     assert "Draft Prep" in draft_prep
     assert "Readiness Checklist" in draft_prep

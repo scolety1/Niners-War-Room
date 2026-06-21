@@ -17,6 +17,7 @@ Write-Host ""
 
 $pythonCandidates = @(
     (Join-Path $repoRoot ".venv\Scripts\python.exe"),
+    "C:\NWR_SHARED_DATA\tool_envs\nwr_streamlit_preview\Scripts\python.exe",
     "python",
     "py"
 )
