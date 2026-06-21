@@ -140,7 +140,7 @@ def _season_stats(seasons: list[int]) -> pd.DataFrame:
             rows.append(
                 {
                     "player_id": player_id,
-                    "player_name": player_name,
+                    "player_name": player_name.replace(" ", "."),
                     "player_display_name": player_name,
                     "position": position,
                     "season": season,

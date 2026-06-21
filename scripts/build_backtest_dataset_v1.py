@@ -30,6 +30,7 @@ from scripts.build_backtest_dataset_v0 import (
     _import_nflreadpy,
     _load_frames,
     _merge_on_keys,
+    _norm_name,
     _num,
     _prepare_season_stats,
     _safe_div,
@@ -246,6 +247,7 @@ def build_backtest_v1_dataset(
     season_stats = _prepare_season_stats(frames["season_stats"], feature_seasons)
     labels = _build_labels(frames["season_stats"], seasons[1:])
     baseline = _build_baseline_features(season_stats)
+    baseline = _add_snap_display_name_join_key(baseline, season_stats)
     snap_features = _snap_features(frames.get("snap_counts", pd.DataFrame()))
     baseline = _merge_on_keys(
         baseline,
@@ -264,6 +266,7 @@ def build_backtest_v1_dataset(
         opportunity_rush=frames.get("opportunity_rush", pd.DataFrame()),
         team_stats=frames.get("team_stats", pd.DataFrame()),
     )
+    expanded = _add_snap_display_name_join_key(expanded, season_stats)
     expanded = _merge_on_keys(
         expanded,
         snap_features,
@@ -445,6 +448,23 @@ def _season_stat_extras(season_stats: pd.DataFrame) -> pd.DataFrame:
     for column in columns[2:]:
         extras[column] = _num(season_stats, column)
     return extras[columns]
+
+
+def _add_snap_display_name_join_key(
+    frame: pd.DataFrame, season_stats: pd.DataFrame
+) -> pd.DataFrame:
+    display_names = season_stats[["player_id", "feature_season"]].copy()
+    display_names["player_name_norm"] = season_stats.get(
+        "player_display_name", season_stats.get("player_name", "")
+    ).map(_norm_name)
+    display_names = display_names.drop_duplicates(["player_id", "feature_season"])
+    output = frame.drop(columns=["player_name_norm"], errors="ignore").merge(
+        display_names, on=["player_id", "feature_season"], how="left"
+    )
+    output["player_name_norm"] = output["player_name_norm"].fillna(
+        output["player_name"].map(_norm_name)
+    )
+    return output
 
 
 def _add_v1_rates_and_missingness(frame: pd.DataFrame) -> pd.DataFrame:

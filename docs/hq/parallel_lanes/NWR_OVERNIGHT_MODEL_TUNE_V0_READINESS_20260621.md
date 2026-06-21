@@ -2,9 +2,8 @@
 
 Owner: Master/Main HQ
 
-Status: YELLOW readiness. The scaffold, feature registry, blocked-field guards,
-checkpointing, and dry run are in place. Full overnight tuning has not been
-started. No tuned model is approved or promoted.
+Status: GREEN for pre-tune scaffold and snap-fixed input readiness. Full
+overnight tuning has not been started. No tuned model is approved or promoted.
 
 ## Scope
 
@@ -24,11 +23,9 @@ Repo scaffold files:
 
 ## Readiness Status
 
-YELLOW, not GREEN, because the current Backtest V1 artifact was built before
-the snap-count repair. A local-only sklearn environment is available, and the
-runner still keeps numpy ridge as the dry-run fallback/control. The snap-fixed
-variant is planned, but it requires a regenerated snap-fixed dataset before any
-full tuning claim.
+GREEN for overnight tune input readiness after regenerating Backtest V1 with
+the repaired snap-count join. A local-only sklearn environment is available,
+and the runner still keeps numpy ridge as the dry-run fallback/control.
 
 The scaffold supports:
 
@@ -62,25 +59,32 @@ Variant-plan summary:
 - `SAFE_BASELINE`: ready
 - `SAFE_EXPANDED`: ready
 - `SAFE_NO_SNAP`: ready
-- `SAFE_SNAP_FIXED`: planned, not ready from current artifact
+- `SAFE_SNAP_FIXED`: ready
 - `VENDOR_YELLOW_CHALLENGER`: planned isolated research only
 
 ## Snap Audit Impact
 
-The snap audit repair is present in code, but the current V1 artifact still has
-near-zero populated snap coverage:
+The snap audit repair is present in code. A follow-up repair now builds the
+snap join key from `player_display_name`, because nflverse season stats use
+abbreviated `player_name` values while snap counts use full names.
 
-- QB: 0 populated snap rows
-- RB: 1 populated snap row
-- TE: 0 populated snap rows
-- WR: 2 populated snap rows
+Regenerated local-only dataset:
+
+`C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621\backtest_v1_snap_fixed_regenerated_20260621_0415`
+
+Snap coverage by position:
+
+- QB: 412 of 424 rows, 97.2%
+- RB: 725 of 789 rows, 91.9%
+- TE: 649 of 681 rows, 95.3%
+- WR: 1,147 of 1,214 rows, 94.5%
 
 Therefore:
 
 - no-snap variants are required controls for overnight tuning
-- snap-fixed variants should be included only after regenerating the V1 dataset
-  with the repaired builder and verifying historical snap coverage
-- Backtest V1 conclusions involving snap share remain provisional
+- snap-fixed variants are usable for overnight tuning
+- Backtest V1 conclusions involving old pre-regeneration snap share remain
+  provisional, but the regenerated tune inputs are snap-fixed
 
 ## Vendor Challenger Status
 
@@ -114,7 +118,8 @@ blocked vendor rank-like fields are rejected.
 
 ## Dry-Run Result
 
-Dry run completed locally with numpy ridge fallback.
+Dry run completed locally with numpy ridge fallback. A post-regeneration dry
+run also consumed `SAFE_SNAP_FIXED` variants successfully.
 
 Local dry-run files:
 
@@ -131,12 +136,13 @@ Local dry-run files:
 
 Dry-run scope:
 
-- variants: `safe_baseline`, `safe_expanded`, `safe_no_snap`
+- variants: `safe_baseline`, `safe_expanded`, `safe_no_snap`,
+  `safe_snap_fixed`
 - positions: QB, RB, WR, TE
 - model: `numpy_ridge`
-- prediction rows: 2,814
-- position-metric rows: 12
-- year-metric rows: 24
+- latest dry-run prediction rows: 3,752
+- latest position-metric rows: 16
+- latest year-metric rows: 32
 
 Tooling status:
 
@@ -170,8 +176,8 @@ Recommended later command:
 & 'C:\NWR_SHARED_DATA\tool_envs\overnight_tune_v0\Scripts\python.exe' scripts\run_overnight_tune_v0.py --full-run --confirm-full-run --dataset-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --output-root 'C:\NWR_SHARED_DATA\backtests\overnight_model_tune_v0_20260621' --positions QB RB WR TE --time-budget-minutes 480 --resume
 ```
 
-Before running snap-fixed variants, regenerate the Backtest V1 dataset with the
-snap repair and rebuild the tune registry.
+This command uses the rebuilt tune manifest that points at the regenerated
+snap-fixed dataset. Keep no-snap variants in the run as controls.
 
 ## Stop Conditions
 
@@ -193,17 +199,17 @@ Stop if any of the following occurs:
 Completed:
 
 - `pytest tests/test_overnight_tune_v0.py`: passed
+- `pytest tests/test_backtest_feature_cleanup_v1.py`: passed
 - `ruff check scripts/build_overnight_tune_dataset_v0.py scripts/run_overnight_tune_v0.py tests/test_overnight_tune_v0.py`: passed
+- `ruff check scripts/build_backtest_dataset_v1.py tests/test_backtest_feature_cleanup_v1.py`: passed
 - local-only dry run: passed
+- local-only snap-fixed dry run: passed
 
 Remaining before full tuning:
 
-- regenerate snap-fixed V1 artifact if snap variants are required
 - rerun preflight guard checks
 
 ## Verdict
 
-YELLOW for overnight tuning readiness.
-
-GREEN for scaffold creation, blocked-field guards, local-only dry run, and
-safe documentation.
+GREEN for overnight tuning input readiness, scaffold creation, blocked-field
+guards, snap-fixed input readiness, local-only dry run, and safe documentation.
