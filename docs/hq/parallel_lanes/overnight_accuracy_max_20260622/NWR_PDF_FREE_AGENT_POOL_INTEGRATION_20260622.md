@@ -48,7 +48,19 @@ Sleeper ADP remains display-only and YELLOW source-risk. The app recalculates av
 
 ## Candidate Model Impact
 
-No source-truth rank was changed. PDF free agents receive candidate values only where an internal full-dynasty or tuned-candidate value exists. If no internal value is available, Candidate Value and Candidate Rank show `Not enough information`, while the player remains draftable/selectable.
+No source-truth rank was changed. PDF free agents receive candidate values only where an internal full-dynasty, tuned-candidate, or internal model-v4 review audit value exists. If no internal value is available, Candidate Value and Candidate Rank show `Not enough information`, while the player remains draftable/selectable.
+
+Tyreek Hill matched a current internal model-v4 Phase 7C review audit row and is now ranked in the expanded draftable pool as review-only candidate context. He appears as a PDF free agent with `Not on frozen board` for Final Board Rank, Candidate Rank 13, Candidate Value 43.51, Low confidence, and an age/receipt review caveat. The PDF rank and ADP were not used for that internal value.
+
+## Draft Decision Layer
+
+The final on-clock cheat sheet was rebuilt from the expanded draftable pool:
+
+- `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/FINAL_DRAFT_PICK_WINDOW_CHEAT_SHEET_20260622.md`
+- `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/expanded_pool_top_candidate_best_available.csv`
+- `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/expanded_pool_key_free_agent_sanity.csv`
+
+The cheat sheet includes best options at 1.03, 1.04, 1.09, 2.04, and 2.08; best rookie/prospect; best veteran/free-agent review; value-if-falls names; and human-review warnings.
 
 ## Remaining Caveats
 

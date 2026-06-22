@@ -23,6 +23,8 @@ Live Draft Room now has `Show PDF free agents` and `Show K/DST` controls. PDF-on
 
 Detailed audit: `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/NWR_PDF_FREE_AGENT_POOL_INTEGRATION_20260622.md`.
 
+Final on-clock cheat sheet: `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/FINAL_DRAFT_PICK_WINDOW_CHEAT_SHEET_20260622.md`.
+
 ## Historical Data Found
 
 The run used internal rookie replay fixtures, model v4 replay reports, current full dynasty board, current frozen board, current emergency/historical tuned overlays, and proxy dropped-veteran cohorts. No outside market/projection/trade-calculator sources were used.

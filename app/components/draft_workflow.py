@@ -63,11 +63,15 @@ def render_draft_workflow(
         session_key=session_key,
     )
     st.caption(
-        "Tuned V2 Candidate Best Available is review-only and does not replace Final "
-        "Board Rank. No verified full historical dropped-veteran panel exists, so use "
-        "human judgment. ADP/range context is display-only price context and does not "
-        "drive NWR rank."
+        "How to use: Candidate Rank = review-only rookie/veteran comparison | "
+        "Final Board Rank = frozen baseline | ADP Range = display-only available-pool "
+        "price context | Current Pick Value = reach/value context, not model truth | "
+        "Outcome/Horizon = partial display-only context | Human Review flags matter "
+        "when confidence is low."
     )
+    pdf_watch = _pdf_free_agent_watch_caption(board_frame)
+    if pdf_watch:
+        st.caption(pdf_watch)
     st.subheader("Main Ranking Table")
     st.dataframe(
         display_ranking_frame(
@@ -328,6 +332,36 @@ def _non_pdf_row_count(frame: pd.DataFrame) -> int:
     if "source_group" not in frame.columns:
         return int(frame.shape[0])
     return int((~frame["source_group"].astype(str).eq("LVE PDF Free Agent")).sum())
+
+
+def _pdf_free_agent_watch_caption(frame: pd.DataFrame) -> str:
+    if "source_group" not in frame.columns:
+        return ""
+    pdf = frame.loc[frame["source_group"].astype(str).eq("LVE PDF Free Agent")].copy()
+    if pdf.empty:
+        return ""
+    pdf["_candidate_rank_sort"] = pd.to_numeric(
+        pdf.get("cross_asset_candidate_rank", pd.Series(dtype=str)),
+        errors="coerce",
+    )
+    ranked = pdf.loc[pdf["_candidate_rank_sort"].notna()].sort_values(
+        ["_candidate_rank_sort", "player"],
+        kind="stable",
+    )
+    if ranked.empty:
+        return (
+            "PDF FA watch: PDF free agents are draftable, but none currently have enough "
+            "internal candidate value for Candidate Rank. Missing values show Not enough "
+            "information."
+        )
+    top = ranked.iloc[0]
+    return (
+        "PDF FA watch: "
+        f"{top.get('player', 'Top PDF free agent')} is included "
+        f"(Candidate Rank {top.get('cross_asset_candidate_rank', 'Not enough information')}, "
+        f"Final Board Rank {top.get('final_board_rank', 'Not on frozen board')}, "
+        f"Confidence {top.get('confidence_band', 'Not enough information')})."
+    )
 
 
 def _sync_pick_slot_selectbox(
