@@ -1,0 +1,12 @@
+metric,value
+frozen_rows,66
+frozen_rank_contiguous,True
+frozen_duplicate_player_position_rows,0
+outcome_supported_rows,12
+outcome_gap_rows,54
+manual_review_rows,36
+top_tier_rows,30
+team_label_issue_rows_needs_data_or_unknown,10
+role_depth_needs_data_rows,43
+dynasty_rows,240
+dynasty_overlap_frozen_name_position,12

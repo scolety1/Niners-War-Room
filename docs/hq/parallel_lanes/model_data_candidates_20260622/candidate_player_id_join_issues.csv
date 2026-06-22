@@ -1,0 +1,67 @@
+final_board_rank,player,position,nfl_team,frozen_has_player_id,dynasty_player_id,dynasty_join_status,outcome_match_status,candidate_join_risk,recommended_future_fix,apply_to_live_artifacts
+1,Jeremiyah Love,RB,ARI,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+2,Makai Lemon,WR,PHI,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+3,Carnell Tate,WR,TEN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+4,KC Concepcion,WR,CLE,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+5,Jadarian Price,RB,SEA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+6,Denzel Boston,WR,CLE,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+7,Germie Bernard,WR,PIT,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+8,Chris Bell,WR,MIA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+9,Zachariah Branch,WR,ATL,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+10,Antonio Williams,WR,WAS,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+11,Jonah Coleman,RB,DEN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+12,Skyler Bell,WR,BUF,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+13,Brenen Thompson,WR,LAC,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+14,Elijah Sarratt,WR,BAL,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+15,Emmett Johnson,RB,KC,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+16,Kaytron Allen,RB,WAS,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+17,Adam Randall,RB,BAL,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+18,Josh Cameron,WR,JAX,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+19,Nicholas Singleton,RB,TEN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+20,Barion Brown,WR,NO,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+21,Demond Claiborne,RB,MIN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+22,Lewis Bond,WR,HOU,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+23,J'Mari Taylor,RB,JAX,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+24,Eric McAlister,WR,FA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+25,Kentrel Bullock,RB,CIN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+26,Kejon Owens,RB,MIN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+27,Sieh Bangura,RB,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+28,Chris Brazzell,WR,CAR,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+29,Robert Henry Jr.,RB,WAS,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+30,Seth McGowan,RB,IND,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+31,Zay Flowers,WR,BAL,NO,9997,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+32,Jacob De Jesus,WR,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+33,Omar Cooper,WR,NYJ,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+34,Chris Olave,WR,NO,NO,8144,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+35,Dominic Richardson,RB,DAL,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+36,Devin Voisin,WR,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+37,Hank Beatty,WR,TEN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+38,O'Mega Blake,WR,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+39,Emmanuel Henderson,WR,SEA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+40,Drake Maye,QB,NE,NO,11564,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+41,Roman Hemby,RB,LV,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+42,Jameson Williams,WR,DET,NO,8148,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+43,Chase Roberts,WR,LV,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+44,Barika Kpeenu,RB,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+45,Jordan Hudson,WR,DAL,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+46,Kevin Coleman,WR,MIA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+47,Alec Pierce,WR,IND,NO,8142,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+48,Donaven Mcculley,WR,MIA,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+49,Caullin Lacy,WR,NYJ,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+50,Deion Burks,WR,IND,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+51,Trebor Pena,WR,JAC,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+52,Braylon James,WR,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+53,Jordyn Tyson,WR,NO,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+54,Jaylen Warren,RB,PIT,NO,8228,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+55,Eli Stowers,TE,PHI,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+56,Kaelon Black,RB,SF,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+57,Sam Roush,TE,CHI,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+58,Jamal Haynes,RB,CIN,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+59,Jamarion Miller,RB,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+60,Dak Prescott,QB,DAL,NO,3294,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+61,Chip Trayanum,RB,needs_data,NO,,NO_DYNASTY_MATCH,unmatched_no_outcome_row,HIGH_NAME_ONLY_NO_PLAYER_ID,Add stable player_id bridge to frozen board and all app props; do not patch live tonight.,NO
+62,Rashee Rice,WR,KC,NO,10229,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+63,Brian Thomas,WR,JAX,NO,11631,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+64,Keenan Allen,WR,UNKNOWN,NO,1479,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+65,Brock Purdy,QB,SF,NO,8183,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
+66,Darren Waller,TE,UNKNOWN,NO,2505,MATCHED_NAME_POSITION,matched_name_position,LOW,Carry dynasty player_id into future bridge only after source-policy review.,NO
