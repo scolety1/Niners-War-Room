@@ -39,32 +39,32 @@ def render_draft_workflow(
     state = st.session_state[session_key]
 
     summary = workflow_summary(board_frame, pick_frame, state)
-    st.caption(
-        "Pick a player from the table, assign to current pick or a chosen pick slot, "
-        "undo if needed. This is session-only draft tracking and does not mutate source data."
-    )
-    st.caption(source_caption)
     current_owner = f" - {summary.current_pick_owner}" if summary.current_pick_owner else ""
     st.caption(
         " | ".join(
             (
-                f"Frozen board rows: {len(board_frame)}",
+                "Source: Frozen Board",
+                f"Rows: {len(board_frame)}",
                 f"Drafted: {summary.drafted_count}",
                 f"Available: {summary.available_count}",
                 f"Current pick: {summary.current_pick_label}{current_owner}",
             )
         )
     )
-    st.caption(
-        "Default order is Final Board Rank ascending. Visible Score uses mixed source bases "
-        "(rookie board score vs dropped-veteran candidate value), so rank and asset type are "
-        "the safer live-draft reading."
-    )
 
-    filtered = _render_filters(board_frame, state, session_key=session_key)
+    current_pick = current_pick_number(pick_frame, state)
+    filtered, show_drafted_players = _render_filters(
+        board_frame,
+        state,
+        session_key=session_key,
+    )
     st.subheader("Main Ranking Table")
     st.dataframe(
-        display_ranking_frame(filtered),
+        display_ranking_frame(
+            filtered,
+            show_drafted_context=show_drafted_players,
+            current_pick=current_pick,
+        ),
         use_container_width=True,
         hide_index=True,
         key=f"{session_key}_ranking_table",
@@ -104,20 +104,33 @@ def render_draft_workflow(
                 key=f"{session_key}_history",
             )
 
+    with st.expander("Source / diagnostics", expanded=False):
+        st.caption(source_caption)
+        st.caption(
+            "Picked-player state is session-only and does not mutate the frozen board. "
+            "Picked players are hidden by default so the main table stays focused on available "
+            "players."
+        )
+        st.caption(
+            "Visible Score is intentionally hidden from the default table because rookies and "
+            "dropped veterans use different score bases. ADP/range/current-pick value are "
+            "display-only context and do not drive sorting, model value, or rankings."
+        )
+
 
 def _render_filters(
     board_frame: pd.DataFrame,
     state: dict[str, list[dict[str, object]]],
     *,
     session_key: str,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, bool]:
     frame = with_workflow_columns(board_frame, state)
     with st.container():
-        filter_cols = st.columns([1, 1, 1, 1, 1, 1])
-        status_filter = filter_cols[0].selectbox(
-            "Draft status",
-            ["Available only", "All", "Drafted only"],
-            key=f"{session_key}_draft_status",
+        filter_cols = st.columns([1.4, 1, 1, 1, 1])
+        search = filter_cols[0].text_input(
+            "Search player",
+            key=f"{session_key}_search",
+            placeholder="Type a player",
         )
         position_values = _values(frame, "position")
         position = filter_cols[1].selectbox(
@@ -133,45 +146,38 @@ def _render_filters(
             ["All", *asset_values],
             key=f"{session_key}_asset_type",
         )
-        action_values = _values(frame, "draft_action_display_only")
-        action = filter_cols[4].selectbox(
-            "Target/watch/avoid",
-            ["All", *action_values],
-            key=f"{session_key}_action",
+        show_drafted_players = filter_cols[4].toggle(
+            "Show drafted players",
+            value=False,
+            key=f"{session_key}_show_drafted_players",
         )
-        manual_only = filter_cols[5].checkbox(
+
+        sort_cols = st.columns([1, 1, 1, 1])
+        manual_only = sort_cols[0].checkbox(
             "Manual review",
             key=f"{session_key}_manual_review",
         )
-
-        sort_cols = st.columns([1, 1, 2])
-        sort_by = sort_cols[0].selectbox(
+        sort_by = sort_cols[1].selectbox(
             "Sort by",
             [
                 "Final Board Rank",
                 "Player",
                 "Position",
+                "Position Rank",
                 "Tier",
-                "Visible Board Score",
-                "Draft Status",
             ],
             key=f"{session_key}_sort_by",
         )
-        ascending = sort_cols[1].toggle("Ascending", value=True, key=f"{session_key}_ascending")
-        search = sort_cols[2].text_input("Search player", key=f"{session_key}_search")
+        ascending = sort_cols[2].toggle("Ascending", value=True, key=f"{session_key}_ascending")
 
-    if status_filter == "Available only":
+    if not show_drafted_players:
         frame = available_board_frame(board_frame, state)
-    elif status_filter == "Drafted only":
-        frame = frame.loc[frame["draft_status"] == "Drafted"].copy()
     if position != "All" and "position" in frame.columns:
         frame = frame.loc[frame["position"].astype(str) == position].copy()
     if tier != "All" and "final_tier" in frame.columns:
         frame = frame.loc[frame["final_tier"].astype(str) == tier].copy()
     if asset_type != "All" and "asset_type" in frame.columns:
         frame = frame.loc[frame["asset_type"].astype(str) == asset_type].copy()
-    if action != "All" and "draft_action_display_only" in frame.columns:
-        frame = frame.loc[frame["draft_action_display_only"].astype(str) == action].copy()
     if manual_only and "needs_manual_review" in frame.columns:
         frame = frame.loc[
             frame["needs_manual_review"].astype(str).str.lower().isin({"true", "yes", "1"})
@@ -180,7 +186,7 @@ def _render_filters(
         frame = frame.loc[
             frame["player"].astype(str).str.contains(search, case=False, na=False)
         ].copy()
-    return sort_workflow_frame(frame, sort_by, ascending=ascending)
+    return sort_workflow_frame(frame, sort_by, ascending=ascending), show_drafted_players
 
 
 def _render_pick_controls(

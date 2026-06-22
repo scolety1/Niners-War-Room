@@ -36,7 +36,6 @@ page_header(
         ("Manual pick controls", "review"),
     ),
 )
-render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
 if pick_path is None or pick_frame.empty:
@@ -52,9 +51,13 @@ else:
         session_key="draft_day_v1_live_draft_workflow",
         source_caption=(
             f"Ranking source: {bundle.source_path}. Pick order: {pick_path}. "
-            "Sorting is visible and user-controlled."
+            "Default live-draft order is Final Board Rank ascending. Sleeper ADP context, "
+            "when present, is display-only and does not drive rank or sort."
         ),
     )
+
+with st.expander("Frozen board source / guardrails", expanded=False):
+    render_source_of_truth_badge(bundle)
 
 with st.expander("Lane prop status", expanded=False):
     render_lane_status_table()

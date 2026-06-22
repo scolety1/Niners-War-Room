@@ -4,6 +4,8 @@ import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import date
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -63,6 +65,11 @@ PINNED_SNAPSHOT_MANIFEST = Path(
 EXPECTED_PINNED_MANIFEST_HASH = (
     "5780156F09FBDA61FB906715C7341DB1B6D320C8D8EFA588070F19C4C50F45CE"
 )
+ROSTER_AGE_CONTEXT_PATH = Path(
+    r"C:\NWR_SHARED_DATA\lane_exchange\stats_context\player_roster_display_context"
+    r"\20260621_011500_timing_metadata_v1\player_roster_display_context.csv"
+)
+AGE_AS_OF_DATE = date(2026, 6, 22)
 
 REQUIRED_VISIBLE_FIELDS = (
     "final_board_rank",
@@ -427,6 +434,7 @@ def normalize_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
         normalized["age"] = normalized["age"].map(age_display_value)
     else:
         normalized["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    normalized = enrich_display_age_from_roster_context(normalized, name_column="player")
     return normalized.reset_index(drop=True)
 
 
@@ -779,7 +787,7 @@ def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFra
                 "position_rank": row.get("position_rank", ""),
                 "player_name": row.get("player", ""),
                 "position": row.get("position", ""),
-                "age": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "age": row.get("age", OUTCOME_NOT_ENOUGH_INFORMATION),
                 "nfl_team": row.get("nfl_team", ""),
                 "asset_type_display": row.get("asset_type", "Draft-board only"),
                 "availability_status": row.get("availability_status", ""),
@@ -871,6 +879,10 @@ def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
         normalized["age"] = normalized["age"].map(age_display_value)
     else:
         normalized["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    normalized = enrich_display_age_from_roster_context(
+        normalized,
+        name_column="player_name",
+    )
     if "nwr_rank" in normalized.columns:
         normalized["_rank_sort_visible"] = pd.to_numeric(
             normalized["nwr_rank"], errors="coerce"
@@ -906,6 +918,69 @@ def age_display_value(value: object) -> str:
         return f"{float(text):.1f}"
     except ValueError:
         return text
+
+
+def enrich_display_age_from_roster_context(
+    frame: pd.DataFrame,
+    *,
+    name_column: str,
+) -> pd.DataFrame:
+    """Fill missing display age from approved roster DOB context without mutating sources."""
+
+    if frame.empty or name_column not in frame.columns or "position" not in frame.columns:
+        return frame
+    lookup = roster_age_context_lookup()
+    if not lookup:
+        return frame
+    enriched = frame.copy()
+    if "age" not in enriched.columns:
+        enriched["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for index, row in enriched.iterrows():
+        current = age_display_value(row.get("age"))
+        if current != OUTCOME_NOT_ENOUGH_INFORMATION:
+            enriched.at[index, "age"] = current
+            continue
+        key = _player_identity_key(row.get(name_column), row.get("position"))
+        enriched.at[index, "age"] = lookup.get(key, OUTCOME_NOT_ENOUGH_INFORMATION)
+    return enriched
+
+
+@lru_cache(maxsize=1)
+def roster_age_context_lookup() -> dict[tuple[str, str], str]:
+    if not ROSTER_AGE_CONTEXT_PATH.exists():
+        return {}
+    try:
+        frame = pd.read_csv(ROSTER_AGE_CONTEXT_PATH, dtype=str).fillna("")
+    except Exception:
+        return {}
+    lookup: dict[tuple[str, str], str] = {}
+    required = {"full_name", "position", "birth_date"}
+    if not required.issubset(frame.columns):
+        return {}
+    if "live_use_allowed" in frame.columns:
+        frame = frame.loc[frame["live_use_allowed"].astype(str).str.lower().eq("true")].copy()
+    for row in frame.to_dict("records"):
+        age = age_from_birth_date(row.get("birth_date"))
+        if age == OUTCOME_NOT_ENOUGH_INFORMATION:
+            continue
+        key = _player_identity_key(row.get("full_name"), row.get("position"))
+        if key != ("", ""):
+            lookup[key] = age
+    return lookup
+
+
+def age_from_birth_date(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    try:
+        born = date.fromisoformat(text[:10])
+    except ValueError:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    years = (AGE_AS_OF_DATE - born).days / 365.2425
+    if years <= 0:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return f"{years:.1f}"
 
 
 def asset_type_display(row: dict[str, object], board_row: dict[str, object]) -> str:

@@ -1,31 +1,43 @@
 from __future__ import annotations
 
+import json
+import re
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 Assignment = dict[str, object]
 WorkflowState = dict[str, list[Assignment]]
+NOT_ENOUGH_INFORMATION = "Not enough information"
+SLEEPER_ADP_POINTER_PATH = Path(
+    r"C:\NWR_SHARED_DATA\lane_exchange\market_behavior\sleeper_adp_display_context"
+    r"\latest_candidate.json"
+)
 
-VISIBLE_RANKING_COLUMNS = (
-    "draft_status",
-    "assigned_pick",
+CORE_RANKING_COLUMNS = (
     "final_board_rank",
     "player",
     "position",
     "nfl_team",
     "age",
-    "asset_type",
-    "availability_status",
-    "draft_action_display_only",
-    "final_board_score_visible",
-    "final_tier",
     "position_rank",
-    "warning_severity_display_only",
+    "asset_type",
+    "adp_display_only",
+    "adp_range_display_only",
+    "current_pick_value_display_only",
+    "source_label_display_only",
+    "final_tier",
     "risk_notes",
     "needs_manual_review",
+)
+
+DRAFTED_CONTEXT_COLUMNS = (
+    "draft_status",
+    "assigned_pick",
 )
 
 DRAFT_BOARD_COLUMNS = (
@@ -54,6 +66,10 @@ RANKING_LABELS = {
     "nfl_team": "NFL Team",
     "age": "Age",
     "asset_type": "Asset Type",
+    "adp_display_only": "ADP (Display-Only)",
+    "adp_range_display_only": "ADP Range (Display-Only)",
+    "current_pick_value_display_only": "Current Pick Value (Display-Only)",
+    "source_label_display_only": "Source",
     "availability_status": "Board Availability",
     "final_board_score_visible": "Visible Score (Mixed Basis)",
     "draft_action_display_only": "Draft Action (Display-Only)",
@@ -82,6 +98,7 @@ VISIBLE_SORT_COLUMNS = {
     "Player": "player",
     "Position": "position",
     "Tier": "final_tier",
+    "Position Rank": "position_rank",
     "Visible Board Score": "final_board_score_visible",
     "Draft Status": "draft_status",
 }
@@ -165,10 +182,50 @@ def available_board_frame(board: pd.DataFrame, state: WorkflowState) -> pd.DataF
     return frame.loc[frame["draft_status"] == "Available"].copy()
 
 
-def display_ranking_frame(frame: pd.DataFrame) -> pd.DataFrame:
-    columns = [column for column in VISIBLE_RANKING_COLUMNS if column in frame.columns]
-    display = frame.loc[:, columns].copy()
+def display_ranking_frame(
+    frame: pd.DataFrame,
+    *,
+    show_drafted_context: bool = False,
+    current_pick: int | None = None,
+) -> pd.DataFrame:
+    contextual = with_display_context(frame, current_pick=current_pick)
+    visible_columns = list(CORE_RANKING_COLUMNS)
+    if show_drafted_context:
+        visible_columns = [*DRAFTED_CONTEXT_COLUMNS, *visible_columns]
+    columns = [column for column in visible_columns if column in contextual.columns]
+    display = contextual.loc[:, columns].copy()
     return display.rename(columns=RANKING_LABELS)
+
+
+def with_display_context(
+    frame: pd.DataFrame,
+    *,
+    current_pick: int | None = None,
+) -> pd.DataFrame:
+    contextual = frame.copy()
+    adp_lookup = sleeper_adp_display_lookup()
+    adp_values: list[str] = []
+    range_values: list[str] = []
+    current_pick_values: list[str] = []
+    source_values: list[str] = []
+    for row in contextual.to_dict("records"):
+        key = _adp_key(row.get("player"), row.get("position"))
+        adp_row = adp_lookup.get(key, {})
+        adp_text = str(
+            adp_row.get("adp") or row.get("adp_display_only") or ""
+        ).strip()
+        range_text = str(
+            adp_row.get("range") or row.get("adp_range_display_only") or ""
+        ).strip()
+        adp_values.append(adp_text or NOT_ENOUGH_INFORMATION)
+        range_values.append(range_text or NOT_ENOUGH_INFORMATION)
+        current_pick_values.append(current_pick_value_label(current_pick, adp_text))
+        source_values.append(source_label_for_row(row, adp_row))
+    contextual["adp_display_only"] = adp_values
+    contextual["adp_range_display_only"] = range_values
+    contextual["current_pick_value_display_only"] = current_pick_values
+    contextual["source_label_display_only"] = source_values
+    return contextual
 
 
 def sort_workflow_frame(
@@ -196,6 +253,110 @@ def sort_workflow_frame(
             kind="stable",
         )
     return sorted_frame.reset_index(drop=True)
+
+
+@lru_cache(maxsize=1)
+def sleeper_adp_display_lookup() -> dict[str, dict[str, str]]:
+    if not SLEEPER_ADP_POINTER_PATH.exists():
+        return {}
+    try:
+        pointer = json.loads(SLEEPER_ADP_POINTER_PATH.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    allowed = {str(value) for value in pointer.get("allowed_use", [])}
+    blocked = {str(value) for value in pointer.get("blocked_use", [])}
+    if "display_only" not in allowed or "rankings" not in blocked:
+        return {}
+    snapshot_path = Path(str(pointer.get("snapshot_path", "")))
+    data_file = str(pointer.get("data_file", ""))
+    source_path = snapshot_path / data_file
+    if not source_path.exists():
+        return {}
+    try:
+        frame = pd.read_csv(source_path, dtype=str).fillna("")
+    except Exception:
+        return {}
+    lookup: dict[str, dict[str, str]] = {}
+    for row in frame.to_dict("records"):
+        key = _adp_key(row.get("player_name"), row.get("position"))
+        if not key:
+            continue
+        preferred = _display_adp(row.get("preferred_adp_for_nwr"))
+        adp_range = _adp_source_field_range(row)
+        lookup[key] = {
+            "adp": preferred,
+            "range": adp_range,
+            "source_risk": str(row.get("source_risk", "")),
+        }
+    return lookup
+
+
+def source_label_for_row(row: dict[str, object], adp_row: dict[str, str]) -> str:
+    source = str(row.get("source_label_display_only") or "Frozen Board")
+    if adp_row:
+        risk = adp_row.get("source_risk") or "display-only"
+        risk_label = "YELLOW" if "YELLOW" in risk else risk
+        source = f"{source} + ADP ({risk_label})"
+    return source
+
+
+def current_pick_value_label(current_pick: int | None, adp_text: str) -> str:
+    if current_pick is None:
+        return NOT_ENOUGH_INFORMATION
+    try:
+        adp = float(str(adp_text).strip())
+    except ValueError:
+        return NOT_ENOUGH_INFORMATION
+    delta = float(current_pick) - adp
+    if delta <= -12:
+        return "Reach"
+    if delta <= -4:
+        return "Slight reach"
+    if delta < 4:
+        return "Fair"
+    if delta < 12:
+        return "Value"
+    return "Steal"
+
+
+def _adp_source_field_range(row: dict[str, object]) -> str:
+    values = [
+        _meaningful_adp(row.get(column))
+        for column in ("adp_dynasty_std", "adp_dynasty", "adp_std")
+    ]
+    numeric_values = [value for value in values if value is not None]
+    if len(numeric_values) < 2:
+        return NOT_ENOUGH_INFORMATION
+    minimum = min(numeric_values)
+    maximum = max(numeric_values)
+    if minimum == maximum:
+        return f"{minimum:.1f}"
+    return f"{minimum:.1f}-{maximum:.1f}"
+
+
+def _display_adp(value: object) -> str:
+    numeric = _meaningful_adp(value)
+    if numeric is None:
+        return NOT_ENOUGH_INFORMATION
+    return f"{numeric:.1f}"
+
+
+def _meaningful_adp(value: object) -> float | None:
+    try:
+        numeric = float(str(value).strip())
+    except ValueError:
+        return None
+    if numeric <= 0 or numeric >= 900:
+        return None
+    return numeric
+
+
+def _adp_key(name: object, position: object) -> str:
+    normalized_name = re.sub(r"[^a-z0-9]+", "", str(name or "").casefold())
+    normalized_position = str(position or "").strip().upper()
+    if not normalized_name or not normalized_position:
+        return ""
+    return f"{normalized_name}|{normalized_position}"
 
 
 def player_select_options(frame: pd.DataFrame) -> dict[str, str]:

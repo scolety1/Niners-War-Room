@@ -34,6 +34,11 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "nfl_team": "SF",
                 "age": "23.4" if index == 0 else "Not enough information",
                 "asset_type": "rookie" if index < 10 else "veteran",
+                "adp_display_only": "10.0" if index == 0 else "Not enough information",
+                "adp_range_display_only": (
+                    "8.0-12.0" if index == 0 else "Not enough information"
+                ),
+                "source_label_display_only": "Frozen Board",
                 "availability_status": "rookie_pool",
                 "final_board_score_visible": f"{90 - index:.2f}",
                 "draft_action_display_only": "target" if index < 5 else "watch",
@@ -179,27 +184,45 @@ def test_display_frames_do_not_expose_internal_or_hidden_columns() -> None:
     assert "source_file" not in display.columns
     assert not any("hidden" in column.lower() for column in display.columns)
     assert "Final Board Rank" in display.columns
-    assert "Draft Status" in display.columns
+    assert "Draft Status" not in display.columns
 
 
 def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     board = _board(2)
     workflow = with_workflow_columns(board, empty_workflow_state())
-    display = display_ranking_frame(workflow)
+    display = display_ranking_frame(workflow, current_pick=5)
 
-    assert list(display.columns[:10]) == [
-        "Draft Status",
-        "Assigned Pick",
+    assert list(display.columns[:12]) == [
         "Final Board Rank",
         "Player",
         "Pos",
         "NFL Team",
         "Age",
+        "Position Rank",
         "Asset Type",
-        "Board Availability",
-        "Draft Action (Display-Only)",
+        "ADP (Display-Only)",
+        "ADP Range (Display-Only)",
+        "Current Pick Value (Display-Only)",
+        "Source",
+        "Final Tier",
     ]
-    assert "Visible Score (Mixed Basis)" in display.columns
+    assert "Visible Score (Mixed Basis)" not in display.columns
+    assert "Board Availability" not in display.columns
+    assert "Draft Action (Display-Only)" not in display.columns
+    assert display.loc[0, "Current Pick Value (Display-Only)"] == "Slight reach"
+
+
+def test_drafted_context_only_appears_when_toggle_context_is_requested() -> None:
+    board = _board(2)
+    workflow = with_workflow_columns(board, empty_workflow_state())
+
+    default_display = display_ranking_frame(workflow)
+    expanded_display = display_ranking_frame(workflow, show_drafted_context=True)
+
+    assert "Draft Status" not in default_display.columns
+    assert "Assigned Pick" not in default_display.columns
+    assert "Draft Status" in expanded_display.columns
+    assert "Assigned Pick" in expanded_display.columns
 
 
 def test_current_pick_advances_and_recomputes_after_remove_or_undo() -> None:
