@@ -225,6 +225,15 @@ UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "te_t12_display_only",
 )
 OUTCOME_NOT_ENOUGH_INFORMATION = "Not enough information"
+OUTCOME_NOT_APPLICABLE = "N/A"
+OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE = "Position-applicable only"
+OUTCOME_DISPLAY_MODE_ALL = "All outcome columns"
+OUTCOME_DISPLAY_MODE_HIDE = "Hide"
+OUTCOME_DISPLAY_MODES = (
+    OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
+    OUTCOME_DISPLAY_MODE_ALL,
+    OUTCOME_DISPLAY_MODE_HIDE,
+)
 APPROVED_OUTCOME_DISPLAY_FIELDS = (
     ("qb_t12_display_pct", "qb_t12_display_only", "QB T12"),
     ("rb_t12_display_pct", "rb_t12_display_only", "RB T12"),
@@ -234,6 +243,10 @@ APPROVED_OUTCOME_DISPLAY_FIELDS = (
     ("wr_t36_display_pct", "wr_t36_display_only", "WR T36"),
     ("te_t12_display_pct", "te_t12_display_only", "TE T12"),
 )
+OUTCOME_DISPLAY_FIELD_POSITIONS = {
+    target: label.split(" ", maxsplit=1)[0]
+    for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
+}
 
 
 @dataclass(frozen=True)
@@ -609,7 +622,8 @@ def integrate_outcome_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     )
     for source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS:
         merged[target] = merged[source].map(outcome_probability_display)
-    return merged.drop(
+    display = apply_position_aware_outcome_values(merged)
+    return display.drop(
         columns=[
             "outcome_status",
             *(source for source, _target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
@@ -629,6 +643,48 @@ def outcome_availability_label(value: object) -> str:
     if str(value or "").strip().lower() == "available":
         return "Available"
     return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def outcome_display_targets() -> tuple[str, ...]:
+    return tuple(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS)
+
+
+def outcome_targets_for_positions(positions: Iterable[object]) -> tuple[str, ...]:
+    normalized = {str(position or "").strip().upper() for position in positions}
+    return tuple(
+        target
+        for target, position in OUTCOME_DISPLAY_FIELD_POSITIONS.items()
+        if position in normalized
+    )
+
+
+def apply_position_aware_outcome_values(frame: pd.DataFrame) -> pd.DataFrame:
+    """Render wrong-position Outcome heads as N/A without changing source artifacts."""
+
+    if frame.empty or "position" not in frame.columns:
+        return frame.copy()
+    display = frame.copy()
+    for target, target_position in OUTCOME_DISPLAY_FIELD_POSITIONS.items():
+        if target not in display.columns:
+            continue
+        applicable = display["position"].astype(str).str.upper().eq(target_position)
+        display.loc[~applicable, target] = OUTCOME_NOT_APPLICABLE
+        display.loc[applicable, target] = display.loc[applicable, target].map(
+            outcome_probability_display
+        )
+    return display
+
+
+def outcome_columns_for_display(
+    *,
+    outcome_mode: str,
+    selected_positions: Iterable[object],
+) -> tuple[str, ...]:
+    if outcome_mode == OUTCOME_DISPLAY_MODE_HIDE:
+        return ()
+    if outcome_mode == OUTCOME_DISPLAY_MODE_ALL:
+        return outcome_display_targets()
+    return outcome_targets_for_positions(selected_positions)
 
 
 def outcome_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
@@ -757,6 +813,8 @@ def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> p
 def display_unified_player_board_frame(
     frame: pd.DataFrame,
     view_mode: str = UNIFIED_REVIEW_VIEW,
+    outcome_mode: str = OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
+    selected_positions: Iterable[object] | None = None,
 ) -> pd.DataFrame:
     if view_mode == FULL_DYNASTY_VIEW:
         display_columns = FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS
@@ -764,8 +822,28 @@ def display_unified_player_board_frame(
         display_columns = ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS
     else:
         display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
+    selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
+    outcome_targets = set(
+        outcome_columns_for_display(
+            outcome_mode=outcome_mode,
+            selected_positions=selected_positions,
+        )
+    )
+    if outcome_mode == OUTCOME_DISPLAY_MODE_HIDE:
+        display_columns = tuple(
+            column
+            for column in display_columns
+            if column not in outcome_display_targets()
+            and column != "outcome_availability_display_only"
+        )
+    else:
+        display_columns = tuple(
+            column
+            for column in display_columns
+            if column not in outcome_display_targets() or column in outcome_targets
+        )
     available = [column for column in display_columns if column in frame.columns]
-    display = frame.loc[:, available].copy()
+    display = apply_position_aware_outcome_values(frame).loc[:, available].copy()
     if "warning_flags" in display.columns:
         display["warning_flags"] = display["warning_flags"].map(warning_summary)
     if "age" in display.columns:

@@ -12,7 +12,10 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
+    APPROVED_OUTCOME_DISPLAY_FIELDS,
     FULL_DYNASTY_VIEW,
+    OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
+    OUTCOME_DISPLAY_MODES,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
@@ -23,6 +26,7 @@ from src.services.draft_day_app_v1_service import (
     frozen_board_outcome_support_counts,
     load_dynasty_rankings,
     load_frozen_board,
+    outcome_columns_for_display,
     outcome_display_coverage_counts,
     sort_unified_player_board_for_view,
 )
@@ -63,7 +67,7 @@ def _view_base_frame(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
     return filtered
 
 
-def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataFrame, str]:
+def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataFrame, str, str]:
     filtered = _view_base_frame(frame, view_mode)
     filter_row_one = st.columns([1.4, 1.2, 1.2, 1.0])
     search = filter_row_one[0].text_input(
@@ -116,6 +120,16 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         key="dynasty_rankings_ascending",
     )
     _render_age_filter(filter_row_two[3], filtered)
+    outcome_mode = st.selectbox(
+        "Outcome columns",
+        OUTCOME_DISPLAY_MODES,
+        index=OUTCOME_DISPLAY_MODES.index(OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE),
+        key="dynasty_rankings_outcome_columns",
+        help=(
+            "Outcome columns are display-only. Position-applicable mode hides other-position "
+            "heads; all-outcome mode shows wrong-position heads as N/A."
+        ),
+    )
 
     if search:
         mask = pd.Series(False, index=filtered.index)
@@ -159,7 +173,7 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         ].copy()
 
     filtered = _sort_player_board(filtered, sort_by, ascending=ascending, view_mode=view_mode)
-    return filtered, sort_by
+    return filtered, sort_by, outcome_mode
 
 
 def _render_age_filter(container: st.delta_generator.DeltaGenerator, frame: pd.DataFrame) -> None:
@@ -200,6 +214,19 @@ def _column_values(frame: pd.DataFrame, column: str) -> list[str]:
     if column not in frame.columns:
         return []
     return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
+
+
+def _outcome_head_caption(frame: pd.DataFrame, outcome_mode: str) -> str:
+    targets = outcome_columns_for_display(
+        outcome_mode=outcome_mode,
+        selected_positions=frame.get("position", pd.Series(dtype=str)).tolist(),
+    )
+    labels_by_target = {
+        target: f"{label} (Display-Only)"
+        for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
+    }
+    labels = [labels_by_target[target] for target in targets if target in labels_by_target]
+    return ", ".join(labels) if labels else "Hidden"
 
 
 def _default_sort_label(view_mode: str) -> str:
@@ -314,14 +341,20 @@ view_mode = st.radio(
     horizontal=True,
     key="dynasty_rankings_view_mode",
 )
-filtered_board, sort_by = _apply_player_filters(unified_board, view_mode)
+filtered_board, sort_by, outcome_mode = _apply_player_filters(unified_board, view_mode)
 
 st.caption(
     f"Rows shown: {int(filtered_board.shape[0])} | View: {view_mode} | Sort: {sort_by} | "
-    "Outcome columns are display-only; missing values show Not enough information."
+    f"Outcome columns: {outcome_mode}. Outcome is display-only and does not drive sort."
 )
+st.caption(f"Visible Outcome heads: {_outcome_head_caption(filtered_board, outcome_mode)}")
 st.dataframe(
-    display_unified_player_board_frame(filtered_board, view_mode=view_mode),
+    display_unified_player_board_frame(
+        filtered_board,
+        view_mode=view_mode,
+        outcome_mode=outcome_mode,
+        selected_positions=filtered_board.get("position", pd.Series(dtype=str)).tolist(),
+    ),
     use_container_width=True,
     hide_index=True,
     key="dynasty_unified_player_board_table",

@@ -10,6 +10,9 @@ from src.services.draft_day_app_v1_service import (
     EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_ROW_COUNT,
     FULL_DYNASTY_VIEW,
+    OUTCOME_DISPLAY_MODE_ALL,
+    OUTCOME_DISPLAY_MODE_HIDE,
+    OUTCOME_NOT_APPLICABLE,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     REPO_SAFE_APP_PROP_ROOT,
     REPO_SAFE_FROZEN_BOARD_ROOT,
@@ -27,8 +30,10 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
     normalize_board_frame,
+    outcome_columns_for_display,
     outcome_display_coverage_counts,
     outcome_prop_match_counts,
+    outcome_targets_for_positions,
     sort_unified_player_board_for_view,
     validate_frozen_board,
 )
@@ -226,7 +231,7 @@ def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
     }
     display = display_dynasty_rankings_frame(bundle.frame)
     assert "QB T12" in display.columns
-    assert display["RB T12"].isin({"20%", OUTCOME_NOT_ENOUGH_INFORMATION}).all()
+    assert display["RB T12"].isin({"20%", OUTCOME_NOT_APPLICABLE}).all()
 
 
 def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
@@ -271,6 +276,82 @@ def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
     assert "source_path" not in display.columns
     assert "blocked_use" not in display.columns
     assert "candidate_evidence_fields_used" not in display.columns
+
+
+def test_position_aware_outcome_targets_follow_player_position() -> None:
+    assert outcome_targets_for_positions(["WR"]) == (
+        "wr_t12_display_only",
+        "wr_t24_display_only",
+        "wr_t36_display_only",
+    )
+    assert outcome_targets_for_positions(["RB"]) == (
+        "rb_t12_display_only",
+        "rb_t24_display_only",
+    )
+    assert outcome_targets_for_positions(["QB"]) == ("qb_t12_display_only",)
+    assert outcome_targets_for_positions(["TE"]) == ("te_t12_display_only",)
+
+
+def test_position_aware_display_hides_wrong_position_columns_by_mode() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "nwr_rank": "1",
+                "player_name": "Example WR",
+                "position": "WR",
+                "nfl_team": "SF",
+                "wr_t12_display_only": "65%",
+                "wr_t24_display_only": "86%",
+                "wr_t36_display_only": "93%",
+                "rb_t12_display_only": OUTCOME_NOT_APPLICABLE,
+                "rb_t24_display_only": OUTCOME_NOT_APPLICABLE,
+                "qb_t12_display_only": OUTCOME_NOT_APPLICABLE,
+                "te_t12_display_only": OUTCOME_NOT_APPLICABLE,
+            }
+        ]
+    )
+
+    position_display = display_unified_player_board_frame(
+        frame,
+        view_mode=FULL_DYNASTY_VIEW,
+        selected_positions=["WR"],
+    )
+    all_display = display_unified_player_board_frame(
+        frame,
+        view_mode=FULL_DYNASTY_VIEW,
+        outcome_mode=OUTCOME_DISPLAY_MODE_ALL,
+        selected_positions=["WR"],
+    )
+    hidden_display = display_unified_player_board_frame(
+        frame,
+        view_mode=FULL_DYNASTY_VIEW,
+        outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
+        selected_positions=["WR"],
+    )
+
+    assert "WR T12 (Display-Only)" in position_display.columns
+    assert "WR T36 (Display-Only)" in position_display.columns
+    assert "RB T12 (Display-Only)" not in position_display.columns
+    assert all_display.loc[0, "RB T12 (Display-Only)"] == OUTCOME_NOT_APPLICABLE
+    assert all_display.loc[0, "QB T12 (Display-Only)"] == OUTCOME_NOT_APPLICABLE
+    assert "WR T12 (Display-Only)" not in hidden_display.columns
+    assert "Outcome Availability (Display-Only)" not in hidden_display.columns
+
+
+def test_outcome_column_mode_resolves_columns_for_selected_positions() -> None:
+    assert outcome_columns_for_display(
+        outcome_mode="Position-applicable only",
+        selected_positions=["WR", "TE"],
+    ) == (
+        "wr_t12_display_only",
+        "wr_t24_display_only",
+        "wr_t36_display_only",
+        "te_t12_display_only",
+    )
+    assert outcome_columns_for_display(
+        outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
+        selected_positions=["WR"],
+    ) == ()
 
 
 def test_outcome_display_context_uses_not_enough_information_for_missing_values() -> None:

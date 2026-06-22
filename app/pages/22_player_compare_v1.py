@@ -18,10 +18,91 @@ from app.components.draft_day_v1 import (
 )
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
+    APPROVED_OUTCOME_DISPLAY_FIELDS,
+    OUTCOME_DISPLAY_FIELD_POSITIONS,
+    OUTCOME_NOT_APPLICABLE,
+    OUTCOME_NOT_ENOUGH_INFORMATION,
     display_lane_prop_frame,
     load_frozen_board,
     load_lane_prop_file,
 )
+
+OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
+
+
+def _position_outcome_labels(position: object) -> tuple[str, ...]:
+    normalized = str(position or "").strip().upper()
+    return tuple(
+        label
+        for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
+        if OUTCOME_DISPLAY_FIELD_POSITIONS[target] == normalized
+    )
+
+
+def _outcome_display_value(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
+
+
+def _render_position_aware_outcome_compare(
+    compare_frame: pd.DataFrame,
+    prop_frame: pd.DataFrame,
+    prop_path: Path,
+) -> None:
+    st.subheader("Outcome Context")
+    st.caption(
+        "Outcome probabilities are display-only. By default each player shows only the "
+        "approved heads for that player's position."
+    )
+    show_all = st.toggle(
+        "Show all Outcome columns",
+        value=False,
+        key="player_compare_show_all_outcomes",
+        help="Wrong-position Outcome heads show N/A in this advanced view.",
+    )
+    st.caption(f"Outcome source: {prop_path}")
+
+    base_columns = [column for column in ("player", "position") if column in compare_frame.columns]
+    if len(base_columns) < 2:
+        st.warning("Outcome comparison needs player and position context.")
+        return
+    merged = pd.merge(
+        compare_frame[base_columns],
+        prop_frame,
+        on=base_columns,
+        how="left",
+    )
+    rows: list[dict[str, str]] = []
+    visible_heads: set[str] = set()
+    for row in merged.to_dict("records"):
+        player = str(row.get("player", ""))
+        position = str(row.get("position", ""))
+        labels = OUTCOME_PROP_LABELS if show_all else _position_outcome_labels(position)
+        visible_heads.update(labels)
+        for label in labels:
+            applicable = label in _position_outcome_labels(position)
+            rows.append(
+                {
+                    "Player": player,
+                    "Pos": position,
+                    "Outcome": f"{label} (Display-Only)",
+                    "Probability": (
+                        _outcome_display_value(row.get(label))
+                        if applicable
+                        else OUTCOME_NOT_APPLICABLE
+                    ),
+                }
+            )
+    if not rows:
+        st.info("No applicable Outcome heads for the selected players.")
+        return
+    st.caption(
+        "Visible Outcome heads: "
+        + ", ".join(f"{head} (Display-Only)" for head in sorted(visible_heads))
+    )
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 bundle = load_frozen_board()
 
@@ -60,6 +141,9 @@ for lane, file_name in prop_files.items():
         continue
     if prop_frame.empty:
         render_yellow_hold(f"{lane} props are missing: {prop_path}.")
+        continue
+    if lane == "outcome_columns":
+        _render_position_aware_outcome_compare(compare, prop_frame, prop_path)
         continue
     st.caption(f"{lane} props: {prop_path}")
     join_columns = [
