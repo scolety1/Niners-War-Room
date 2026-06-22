@@ -32,6 +32,7 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "player": f"Fixture Player {index + 1}",
                 "position": "WR" if index % 2 else "RB",
                 "nfl_team": "SF",
+                "age": "23.4" if index == 0 else "Not enough information",
                 "asset_type": "rookie" if index < 10 else "veteran",
                 "availability_status": "rookie_pool",
                 "final_board_score_visible": f"{90 - index:.2f}",
@@ -186,13 +187,14 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     workflow = with_workflow_columns(board, empty_workflow_state())
     display = display_ranking_frame(workflow)
 
-    assert list(display.columns[:9]) == [
+    assert list(display.columns[:10]) == [
         "Draft Status",
         "Assigned Pick",
         "Final Board Rank",
         "Player",
         "Pos",
         "NFL Team",
+        "Age",
         "Asset Type",
         "Board Availability",
         "Draft Action (Display-Only)",

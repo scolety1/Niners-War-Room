@@ -9,10 +9,12 @@ import src.services.draft_day_app_v1_service as draft_day_service
 from src.services.draft_day_app_v1_service import (
     EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_ROW_COUNT,
+    FULL_DYNASTY_VIEW,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     REPO_SAFE_APP_PROP_ROOT,
     REPO_SAFE_FROZEN_BOARD_ROOT,
     REQUIRED_VISIBLE_FIELDS,
+    ROOKIES_DRAFT_BOARD_VIEW,
     build_unified_player_board,
     display_board_frame,
     display_dynasty_rankings_frame,
@@ -420,7 +422,7 @@ def test_unified_player_board_default_sort_uses_dynasty_rank_before_source_cover
     )
 
     unified = build_unified_player_board(dynasty, board)
-    display = display_unified_player_board_frame(unified)
+    display = display_unified_player_board_frame(unified, view_mode=FULL_DYNASTY_VIEW)
 
     assert unified["player_name"].tolist() == [
         "Puka Nacua",
@@ -428,11 +430,17 @@ def test_unified_player_board_default_sort_uses_dynasty_rank_before_source_cover
         "Jeremiyah Love",
     ]
     assert display.columns[0] == "Dynasty Rank"
-    assert display.columns[1] == "Final Board Rank"
-    assert display.columns[2] == "Player"
-    assert "Source Coverage" in display.columns
+    assert display.columns[1] == "Player"
+    assert "Final Board Rank" not in display.columns
+    assert "Final Tier" not in display.columns
+    assert "Source Coverage" not in display.columns
     assert all(not column.startswith("_") for column in display.columns)
 
-    frozen_view = sort_unified_player_board_for_view(unified, "Frozen Draft Board")
+    frozen_display = display_unified_player_board_frame(
+        unified,
+        view_mode=ROOKIES_DRAFT_BOARD_VIEW,
+    )
+    frozen_view = sort_unified_player_board_for_view(unified, ROOKIES_DRAFT_BOARD_VIEW)
 
+    assert frozen_display.columns[0] == "Final Board Rank"
     assert frozen_view["player_name"].tolist()[:2] == ["Zay Flowers", "Jeremiyah Love"]

@@ -208,7 +208,7 @@ def page_header(
     description: str,
     status_items: Iterable[tuple[str, str]] = (),
 ) -> None:
-    pills = "".join(
+    pills = " ".join(
         f'<span class="nwr-pill {kind}">{label}</span>' for label, kind in status_items
     )
     status_html = f'<div class="nwr-status-row">{pills}</div>' if pills else ""

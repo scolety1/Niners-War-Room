@@ -90,6 +90,10 @@ DISPLAY_ONLY_COLUMNS = tuple(
     )
 )
 
+FULL_DYNASTY_VIEW = "Full Dynasty Rankings"
+ROOKIES_DRAFT_BOARD_VIEW = "Rookies / Draft Board"
+UNIFIED_REVIEW_VIEW = "Unified Review"
+
 LANE_NAMES = (
     "outcome_columns",
     "trading_lab",
@@ -142,16 +146,59 @@ DYNASTY_DISPLAY_COLUMNS = (
     "wr_t36_display_only",
     "te_t12_display_only",
 )
-UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
+FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "nwr_rank",
+    "player_name",
+    "position",
+    "nfl_team",
+    "age",
+    "position_rank",
+    "asset_type_display",
+    "nwr_dynasty_score",
+    "trust_status",
+    "warning_flags",
+    "pool_status",
+    "data_needed",
+    "outcome_availability_display_only",
+    "qb_t12_display_only",
+    "rb_t12_display_only",
+    "rb_t24_display_only",
+    "wr_t12_display_only",
+    "wr_t24_display_only",
+    "wr_t36_display_only",
+    "te_t12_display_only",
+)
+ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
     "final_board_rank",
     "player_name",
     "position",
     "nfl_team",
+    "age",
+    "final_tier",
+    "asset_type_display",
+    "availability_status",
+    "draft_action_display_only",
+    "nwr_rank",
+    "outcome_availability_display_only",
+    "qb_t12_display_only",
+    "rb_t12_display_only",
+    "rb_t24_display_only",
+    "wr_t12_display_only",
+    "wr_t24_display_only",
+    "wr_t36_display_only",
+    "te_t12_display_only",
+)
+UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
+    "nwr_rank",
+    "player_name",
+    "position",
+    "nfl_team",
+    "age",
+    "asset_type_display",
     "source_coverage",
+    "final_board_rank",
     "final_tier",
     "position_rank",
-    "age",
     "nwr_dynasty_score",
     "trust_status",
     "warning_flags",
@@ -376,6 +423,10 @@ def normalize_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
             normalized["final_board_rank"], errors="coerce"
         )
         normalized = normalized.sort_values("final_board_rank", kind="stable")
+    if "age" in normalized.columns:
+        normalized["age"] = normalized["age"].map(age_display_value)
+    else:
+        normalized["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
     return normalized.reset_index(drop=True)
 
 
@@ -625,10 +676,13 @@ def build_unified_player_board(
             if board_row
             else "Full Dynasty source"
         )
+        merged["asset_type_display"] = asset_type_display(row, board_row)
         for column in (
             "final_board_rank",
             "final_tier",
             "position_rank",
+            "availability_status",
+            "draft_action_display_only",
             "model_posture_used",
             "candidate_status",
             "risk_notes",
@@ -652,7 +706,7 @@ def build_unified_player_board(
     unified = pd.DataFrame(rows)
     if unified.empty:
         return unified
-    return sort_unified_player_board_for_view(unified, "Unified Review View")
+    return sort_unified_player_board_for_view(unified, UNIFIED_REVIEW_VIEW)
 
 
 def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
@@ -673,7 +727,7 @@ def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> p
         {True: 0, False: 1}
     )
 
-    if view_mode == "Frozen Draft Board":
+    if view_mode == ROOKIES_DRAFT_BOARD_VIEW:
         by = ["_board_sort", "_has_dynasty_rank_sort", "_dynasty_sort", "player_name"]
         ascending = [True, True, True, True]
     else:
@@ -692,15 +746,22 @@ def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> p
     )
 
 
-def display_unified_player_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
-    available = [
-        column
-        for column in UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
-        if column in frame.columns
-    ]
+def display_unified_player_board_frame(
+    frame: pd.DataFrame,
+    view_mode: str = UNIFIED_REVIEW_VIEW,
+) -> pd.DataFrame:
+    if view_mode == FULL_DYNASTY_VIEW:
+        display_columns = FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS
+    elif view_mode == ROOKIES_DRAFT_BOARD_VIEW:
+        display_columns = ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS
+    else:
+        display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
+    available = [column for column in display_columns if column in frame.columns]
     display = frame.loc[:, available].copy()
     if "warning_flags" in display.columns:
         display["warning_flags"] = display["warning_flags"].map(warning_summary)
+    if "age" in display.columns:
+        display["age"] = display["age"].map(age_display_value)
     display = display.fillna("").astype(str)
     return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
 
@@ -720,6 +781,9 @@ def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFra
                 "position": row.get("position", ""),
                 "age": OUTCOME_NOT_ENOUGH_INFORMATION,
                 "nfl_team": row.get("nfl_team", ""),
+                "asset_type_display": row.get("asset_type", "Draft-board only"),
+                "availability_status": row.get("availability_status", ""),
+                "draft_action_display_only": row.get("draft_action_display_only", ""),
                 "nwr_dynasty_score": OUTCOME_NOT_ENOUGH_INFORMATION,
                 "trust_status": "Draft-board only",
                 "warning_flags": "",
@@ -803,6 +867,10 @@ def _clean_text(value: object) -> str:
 
 def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
     normalized = frame.copy()
+    if "age" in normalized.columns:
+        normalized["age"] = normalized["age"].map(age_display_value)
+    else:
+        normalized["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
     if "nwr_rank" in normalized.columns:
         normalized["_rank_sort_visible"] = pd.to_numeric(
             normalized["nwr_rank"], errors="coerce"
@@ -825,7 +893,31 @@ def display_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
         display = display.rename(columns={"market_rank": "Market Rank (Display-Only)"})
     if "league_rank" in display.columns:
         display = display.rename(columns={"league_rank": "League Rank (Display-Only)"})
+    if "age" in display.columns:
+        display["age"] = display["age"].map(age_display_value)
     return display.rename(columns=DYNASTY_DISPLAY_LABELS)
+
+
+def age_display_value(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a", "age missing"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    try:
+        return f"{float(text):.1f}"
+    except ValueError:
+        return text
+
+
+def asset_type_display(row: dict[str, object], board_row: dict[str, object]) -> str:
+    board_asset = _clean_text(board_row.get("asset_type"))
+    if board_asset:
+        return board_asset
+    is_rookie = _clean_text(row.get("is_rookie")).lower()
+    if is_rookie in {"1", "true", "yes"}:
+        return "rookie"
+    if row:
+        return "veteran"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def warning_summary(value: object) -> str:
@@ -924,6 +1016,9 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "position": "Pos",
     "age": "Age",
     "nfl_team": "NFL Team",
+    "asset_type_display": "Asset Type",
+    "availability_status": "Board Availability",
+    "draft_action_display_only": "Draft Action (Display-Only)",
     "nwr_dynasty_score": "NWR Dynasty Score",
     "trust_status": "Trust",
     "warning_flags": "Warnings",

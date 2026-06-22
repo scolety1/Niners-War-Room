@@ -149,13 +149,12 @@ def test_draft_day_v1_rankings_page_uses_one_player_board_with_view_modes() -> N
     draft_prep = (APP_DIR / "pages" / "25_draft_prep_v1.py").read_text()
     legacy_player_board = (APP_DIR / "legacy_pages" / "05_rankings_legacy.py").read_text()
 
-    assert "Dynasty Rankings / Player Board" in final_board
-    assert "One player-board surface for full dynasty rankings" in final_board
-    assert "Final Draft Board remains the frozen 66-row source" in final_board
-    assert "Outcome Display-Only columns are display-only" in final_board
-    assert "Unified Review View" in final_board
-    assert "Full Dynasty source" in final_board
-    assert "Frozen Draft Board" in final_board
+    assert '"Dynasty Rankings"' in final_board
+    assert "Full dynasty rankings first" in final_board
+    assert "Outcome columns are display-only" in final_board
+    assert "UNIFIED_REVIEW_VIEW" in final_board
+    assert "FULL_DYNASTY_VIEW" in final_board
+    assert "ROOKIES_DRAFT_BOARD_VIEW" in final_board
     assert "load_dynasty_rankings" in final_board
     assert "display_unified_player_board_frame" in final_board
     assert "render_final_board_table" not in final_board
