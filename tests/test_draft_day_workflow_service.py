@@ -8,6 +8,7 @@ from src.services.draft_day_workflow_service import (
     DraftWorkflowError,
     assign_player_to_pick,
     available_board_frame,
+    current_pick_number,
     display_draft_board_frame,
     display_ranking_frame,
     draft_board_frame,
@@ -178,3 +179,53 @@ def test_display_frames_do_not_expose_internal_or_hidden_columns() -> None:
     assert not any("hidden" in column.lower() for column in display.columns)
     assert "Final Board Rank" in display.columns
     assert "Draft Status" in display.columns
+
+
+def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
+    board = _board(2)
+    workflow = with_workflow_columns(board, empty_workflow_state())
+    display = display_ranking_frame(workflow)
+
+    assert list(display.columns[:9]) == [
+        "Draft Status",
+        "Assigned Pick",
+        "Final Board Rank",
+        "Player",
+        "Pos",
+        "NFL Team",
+        "Asset Type",
+        "Board Availability",
+        "Draft Action (Display-Only)",
+    ]
+    assert "Visible Score (Mixed Basis)" in display.columns
+
+
+def test_current_pick_advances_and_recomputes_after_remove_or_undo() -> None:
+    board = _board()
+    picks = _picks()
+    first_player_key = player_key_from_row(board.iloc[0])
+    second_player_key = player_key_from_row(board.iloc[1])
+
+    state = assign_player_to_pick(
+        empty_workflow_state(),
+        board=board,
+        pick_frame=picks,
+        player_key=first_player_key,
+        overall_pick=1,
+    )
+    assert current_pick_number(picks, state) == 2
+
+    state = assign_player_to_pick(
+        state,
+        board=board,
+        pick_frame=picks,
+        player_key=second_player_key,
+        overall_pick=2,
+    )
+    assert current_pick_number(picks, state) == 3
+
+    state, _message = remove_pick_assignment(state, 1)
+    assert current_pick_number(picks, state) == 1
+
+    state, _message = undo_last_pick(state)
+    assert current_pick_number(picks, state) == 1

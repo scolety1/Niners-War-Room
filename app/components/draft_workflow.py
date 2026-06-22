@@ -8,6 +8,7 @@ from src.services.draft_day_workflow_service import (
     assign_player_to_pick,
     available_board_frame,
     copy_state,
+    current_pick_number,
     display_draft_board_frame,
     display_ranking_frame,
     draft_board_frame,
@@ -38,19 +39,26 @@ def render_draft_workflow(
     state = st.session_state[session_key]
 
     summary = workflow_summary(board_frame, pick_frame, state)
-    st.info(
+    st.caption(
         "Pick a player from the table, assign to current pick or a chosen pick slot, "
         "undo if needed. This is session-only draft tracking and does not mutate source data."
     )
     st.caption(source_caption)
-    metric_cols = st.columns(4)
-    metric_cols[0].metric("Frozen board rows", len(board_frame))
-    metric_cols[1].metric("Drafted", summary.drafted_count)
-    metric_cols[2].metric("Available", summary.available_count)
-    metric_cols[3].metric(
-        "Current pick",
-        summary.current_pick_label,
-        delta=summary.current_pick_owner or None,
+    current_owner = f" - {summary.current_pick_owner}" if summary.current_pick_owner else ""
+    st.caption(
+        " | ".join(
+            (
+                f"Frozen board rows: {len(board_frame)}",
+                f"Drafted: {summary.drafted_count}",
+                f"Available: {summary.available_count}",
+                f"Current pick: {summary.current_pick_label}{current_owner}",
+            )
+        )
+    )
+    st.caption(
+        "Default order is Final Board Rank ascending. Visible Score uses mixed source bases "
+        "(rookie board score vs dropped-veteran candidate value), so rank and asset type are "
+        "the safer live-draft reading."
     )
 
     filtered = _render_filters(board_frame, state, session_key=session_key)
@@ -105,7 +113,7 @@ def _render_filters(
 ) -> pd.DataFrame:
     frame = with_workflow_columns(board_frame, state)
     with st.container():
-        filter_cols = st.columns([1, 1, 1, 1, 1])
+        filter_cols = st.columns([1, 1, 1, 1, 1, 1])
         status_filter = filter_cols[0].selectbox(
             "Draft status",
             ["Available only", "All", "Drafted only"],
@@ -119,13 +127,19 @@ def _render_filters(
         )
         tier_values = _values(frame, "final_tier")
         tier = filter_cols[2].selectbox("Tier", ["All", *tier_values], key=f"{session_key}_tier")
+        asset_values = _values(frame, "asset_type")
+        asset_type = filter_cols[3].selectbox(
+            "Asset Type",
+            ["All", *asset_values],
+            key=f"{session_key}_asset_type",
+        )
         action_values = _values(frame, "draft_action_display_only")
-        action = filter_cols[3].selectbox(
+        action = filter_cols[4].selectbox(
             "Target/watch/avoid",
             ["All", *action_values],
             key=f"{session_key}_action",
         )
-        manual_only = filter_cols[4].checkbox(
+        manual_only = filter_cols[5].checkbox(
             "Manual review",
             key=f"{session_key}_manual_review",
         )
@@ -154,6 +168,8 @@ def _render_filters(
         frame = frame.loc[frame["position"].astype(str) == position].copy()
     if tier != "All" and "final_tier" in frame.columns:
         frame = frame.loc[frame["final_tier"].astype(str) == tier].copy()
+    if asset_type != "All" and "asset_type" in frame.columns:
+        frame = frame.loc[frame["asset_type"].astype(str) == asset_type].copy()
     if action != "All" and "draft_action_display_only" in frame.columns:
         frame = frame.loc[frame["draft_action_display_only"].astype(str) == action].copy()
     if manual_only and "needs_manual_review" in frame.columns:
@@ -185,6 +201,7 @@ def _render_pick_controls(
     if not player_options or not pick_options:
         st.warning("Player or pick context is missing, so picks cannot be assigned.")
         return
+    _sync_pick_slot_selectbox(session_key, pick_options, pick_frame)
 
     cols = st.columns([2, 2, 1, 1])
     player_label = cols[0].selectbox(
@@ -206,12 +223,14 @@ def _render_pick_controls(
                 player_key=player_options[player_label],
                 overall_pick=pick_options[pick_label],
             )
+            st.session_state[f"{session_key}_sync_pick_to_current"] = True
             st.success(f"Assigned {player_label} to {pick_label}.")
             st.rerun()
         except DraftWorkflowError as exc:
             st.error(str(exc))
     if cols[3].button("Undo Last", key=f"{session_key}_undo", use_container_width=True):
         st.session_state[session_key], message = undo_last_pick(st.session_state[session_key])
+        st.session_state[f"{session_key}_sync_pick_to_current"] = True
         st.info(message)
         st.rerun()
 
@@ -230,6 +249,7 @@ def _render_pick_controls(
             st.session_state[session_key],
             pick_options[remove_pick_label],
         )
+        st.session_state[f"{session_key}_sync_pick_to_current"] = True
         st.info(message)
         st.rerun()
 
@@ -238,3 +258,33 @@ def _values(frame: pd.DataFrame, column: str) -> list[str]:
     if column not in frame.columns:
         return []
     return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
+
+
+def _sync_pick_slot_selectbox(
+    session_key: str,
+    pick_options: dict[str, int],
+    pick_frame: pd.DataFrame,
+) -> None:
+    selected_pick_key = f"{session_key}_selected_pick"
+    sync_flag_key = f"{session_key}_sync_pick_to_current"
+    current = current_pick_number(pick_frame, st.session_state[session_key])
+    if current is None:
+        return
+    current_label = next(
+        (label for label, overall in pick_options.items() if overall == current),
+        next(iter(pick_options)),
+    )
+    selected_label = st.session_state.get(selected_pick_key)
+    assigned_picks = {
+        int(row.get("overall_pick", 0))
+        for row in st.session_state[session_key].get("assignments", [])
+        if row.get("overall_pick") is not None
+    }
+    selected_overall = pick_options.get(str(selected_label), None)
+    should_sync = (
+        bool(st.session_state.pop(sync_flag_key, False))
+        or selected_label not in pick_options
+        or selected_overall in assigned_picks
+    )
+    if should_sync:
+        st.session_state[selected_pick_key] = current_label
