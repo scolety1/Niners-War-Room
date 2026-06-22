@@ -19,18 +19,21 @@ SLEEPER_ADP_POINTER_PATH = Path(
 )
 
 CORE_RANKING_COLUMNS = (
+    "cross_asset_candidate_rank",
     "final_board_rank",
     "player",
     "position",
     "nfl_team",
     "age",
     "position_rank",
-    "asset_type",
+    "candidate_value_band",
+    "cross_asset_candidate_value",
+    "confidence_band",
     "adp_display_only",
-    "adp_range_display_only",
+    "available_pool_adp_range",
     "current_pick_value_display_only",
-    "source_label_display_only",
     "final_tier",
+    "candidate_key_caveat",
     "risk_notes",
     "needs_manual_review",
 )
@@ -61,6 +64,13 @@ RANKING_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
+    "cross_asset_candidate_rank": "Candidate Rank (Review-Only)",
+    "cross_asset_candidate_value": "Candidate Value (Review-Only)",
+    "candidate_value_band": "Candidate Band",
+    "confidence_band": "Confidence",
+    "available_pool_adp_rank": "Available-Pool ADP Rank (Display-Only)",
+    "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
+    "candidate_key_caveat": "Key Caveat / Review Flag",
     "player": "Player",
     "position": "Pos",
     "nfl_team": "NFL Team",
@@ -95,6 +105,9 @@ DRAFT_BOARD_LABELS = {
 
 VISIBLE_SORT_COLUMNS = {
     "Final Board Rank": "final_board_rank",
+    "Candidate Rank": "cross_asset_candidate_rank",
+    "Candidate Value": "cross_asset_candidate_value",
+    "Available-Pool ADP Rank": "available_pool_adp_rank",
     "Player": "player",
     "Position": "position",
     "Tier": "final_tier",
@@ -212,17 +225,28 @@ def with_display_context(
         key = _adp_key(row.get("player"), row.get("position"))
         adp_row = adp_lookup.get(key, {})
         adp_text = str(
-            adp_row.get("adp") or row.get("adp_display_only") or ""
+            row.get("adp") or adp_row.get("adp") or row.get("adp_display_only") or ""
         ).strip()
         range_text = str(
-            adp_row.get("range") or row.get("adp_range_display_only") or ""
+            row.get("available_pool_adp_range")
+            or adp_row.get("range")
+            or row.get("adp_range_display_only")
+            or ""
         ).strip()
         adp_values.append(adp_text or NOT_ENOUGH_INFORMATION)
         range_values.append(range_text or NOT_ENOUGH_INFORMATION)
-        current_pick_values.append(current_pick_value_label(current_pick, adp_text))
+        current_pick_values.append(
+            current_pick_value_label(
+                current_pick,
+                str(row.get("available_pool_adp_rank") or "").strip(),
+                candidate_rank=str(row.get("cross_asset_candidate_rank") or "").strip(),
+                confidence=str(row.get("confidence_band") or "").strip(),
+            )
+        )
         source_values.append(source_label_for_row(row, adp_row))
     contextual["adp_display_only"] = adp_values
     contextual["adp_range_display_only"] = range_values
+    contextual["available_pool_adp_range"] = range_values
     contextual["current_pick_value_display_only"] = current_pick_values
     contextual["source_label_display_only"] = source_values
     return contextual
@@ -238,7 +262,14 @@ def sort_workflow_frame(
     if column not in frame.columns:
         return frame.copy()
     sorted_frame = frame.copy()
-    if column in {"final_board_rank", "position_rank", "final_board_score_visible"}:
+    if column in {
+        "final_board_rank",
+        "position_rank",
+        "final_board_score_visible",
+        "cross_asset_candidate_rank",
+        "cross_asset_candidate_value",
+        "available_pool_adp_rank",
+    }:
         sorted_frame["_visible_sort"] = pd.to_numeric(sorted_frame[column], errors="coerce")
         sorted_frame = sorted_frame.sort_values(
             by=["_visible_sort", "player"],
@@ -300,23 +331,39 @@ def source_label_for_row(row: dict[str, object], adp_row: dict[str, str]) -> str
     return source
 
 
-def current_pick_value_label(current_pick: int | None, adp_text: str) -> str:
+def current_pick_value_label(
+    current_pick: int | None,
+    available_pool_adp_rank: str,
+    *,
+    candidate_rank: str = "",
+    confidence: str = "",
+) -> str:
     if current_pick is None:
         return NOT_ENOUGH_INFORMATION
     try:
-        adp = float(str(adp_text).strip())
+        pool_rank = float(str(available_pool_adp_rank).strip())
     except ValueError:
         return NOT_ENOUGH_INFORMATION
-    delta = float(current_pick) - adp
-    if delta <= -12:
+    try:
+        candidate = float(str(candidate_rank).strip())
+    except ValueError:
+        candidate = pool_rank
+    price_delta = float(current_pick) - pool_rank
+    value_delta = float(current_pick) - candidate
+    low_confidence = str(confidence).strip().lower() in {"low", "very low"}
+    if low_confidence and value_delta < 6:
+        return NOT_ENOUGH_INFORMATION
+    if price_delta <= -8 and value_delta <= -4:
+        return "Too early"
+    if price_delta <= -4:
         return "Reach"
-    if delta <= -4:
+    if price_delta <= -2:
         return "Slight reach"
-    if delta < 4:
-        return "Fair"
-    if delta < 12:
+    if value_delta >= 10 and price_delta >= 3:
+        return "Steal"
+    if value_delta >= 4 or price_delta >= 2:
         return "Value"
-    return "Steal"
+    return "Fair"
 
 
 def _adp_source_field_range(row: dict[str, object]) -> str:

@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BOARD_FILE_NAME = "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
 DYNASTY_BOARD_FILE_NAME = "full_player_board_value_review_rows.csv"
 OUTCOME_NUMERIC_DISPLAY_FILE_NAME = "numeric_outcome_display_v1.csv"
+CROSS_ASSET_CANDIDATE_FILE_NAME = "cross_asset_candidate_player_board.csv"
 
 LOCAL_FROZEN_BOARD_ROOT = Path(
     r"C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622"
@@ -26,6 +27,14 @@ REPO_SAFE_FROZEN_BOARD_ROOT = (
     / "final_board_v1_20260622"
 )
 REPO_SAFE_FROZEN_BOARD_PATH = REPO_SAFE_FROZEN_BOARD_ROOT / BOARD_FILE_NAME
+CROSS_ASSET_CANDIDATE_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "cross_asset_formula_app_repair_20260622"
+    / CROSS_ASSET_CANDIDATE_FILE_NAME
+)
 
 LOCAL_APP_PROP_ROOT = Path(r"C:\NWR_SHARED_DATA\draft_day_app_props\20260622")
 REPO_SAFE_APP_PROP_ROOT = REPO_SAFE_FROZEN_BOARD_ROOT / "app_props"
@@ -155,18 +164,16 @@ DYNASTY_DISPLAY_COLUMNS = (
 )
 FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "nwr_rank",
+    "cross_asset_candidate_rank",
+    "cross_asset_candidate_value",
     "player_name",
     "position",
     "nfl_team",
     "age",
     "position_rank",
-    "asset_type_display",
-    "nwr_dynasty_score",
-    "trust_status",
-    "warning_flags",
-    "pool_status",
-    "data_needed",
-    "outcome_availability_display_only",
+    "candidate_value_band",
+    "confidence_band",
+    "candidate_key_caveat",
     "qb_t12_display_only",
     "rb_t12_display_only",
     "rb_t24_display_only",
@@ -176,17 +183,20 @@ FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "te_t12_display_only",
 )
 ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
+    "cross_asset_candidate_rank",
     "final_board_rank",
+    "cross_asset_candidate_value",
     "player_name",
     "position",
     "nfl_team",
     "age",
-    "final_tier",
+    "candidate_value_band",
+    "confidence_band",
     "asset_type_display",
-    "availability_status",
-    "draft_action_display_only",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "candidate_key_caveat",
     "nwr_rank",
-    "outcome_availability_display_only",
     "qb_t12_display_only",
     "rb_t12_display_only",
     "rb_t24_display_only",
@@ -197,6 +207,8 @@ ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
 )
 UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "nwr_rank",
+    "cross_asset_candidate_rank",
+    "cross_asset_candidate_value",
     "player_name",
     "position",
     "nfl_team",
@@ -206,6 +218,11 @@ UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "final_board_rank",
     "final_tier",
     "position_rank",
+    "candidate_value_band",
+    "confidence_band",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "candidate_key_caveat",
     "nwr_dynasty_score",
     "trust_status",
     "warning_flags",
@@ -215,7 +232,6 @@ UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "candidate_status",
     "risk_notes",
     "needs_manual_review",
-    "outcome_availability_display_only",
     "qb_t12_display_only",
     "rb_t12_display_only",
     "rb_t24_display_only",
@@ -400,6 +416,11 @@ def load_frozen_board() -> FrozenBoardBundle:
     frame = pd.read_csv(path).fillna("")
     errors = list(validate_frozen_board(frame))
     normalized = normalize_board_frame(frame)
+    normalized = integrate_cross_asset_candidate_context(
+        normalized,
+        name_column="player",
+        position_column="position",
+    )
     return FrozenBoardBundle(
         frame=normalized,
         source_path=path,
@@ -510,7 +531,11 @@ def load_dynasty_rankings() -> DynastyRankingsBundle:
             "Approved dynasty rankings hash mismatch: expected "
             f"{EXPECTED_DYNASTY_RANKINGS_HASH}; found {source_hash}."
         )
-    normalized = integrate_outcome_display_context(normalize_dynasty_rankings_frame(frame))
+    normalized = integrate_cross_asset_candidate_context(
+        integrate_outcome_display_context(normalize_dynasty_rankings_frame(frame)),
+        name_column="player_name",
+        position_column="position",
+    )
     return DynastyRankingsBundle(
         frame=normalized,
         source_path=path,
@@ -567,6 +592,108 @@ def load_outcome_numeric_display() -> OutcomeDisplayBundle:
         warnings=(),
         source_hash=source_hash,
     )
+
+
+@lru_cache(maxsize=1)
+def load_cross_asset_candidate_board() -> pd.DataFrame:
+    if not CROSS_ASSET_CANDIDATE_PATH.exists():
+        return pd.DataFrame()
+    try:
+        frame = pd.read_csv(CROSS_ASSET_CANDIDATE_PATH, dtype=str).fillna("")
+    except Exception:
+        return pd.DataFrame()
+    hidden_like = hidden_sort_columns(frame.columns)
+    if hidden_like:
+        return pd.DataFrame()
+    return frame
+
+
+def integrate_cross_asset_candidate_context(
+    frame: pd.DataFrame,
+    *,
+    name_column: str,
+    position_column: str,
+) -> pd.DataFrame:
+    candidate = load_cross_asset_candidate_board()
+    enriched = frame.copy()
+    for column in CROSS_ASSET_DISPLAY_COLUMNS:
+        if column not in enriched.columns:
+            enriched[column] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if (
+        candidate.empty
+        or name_column not in enriched.columns
+        or position_column not in enriched.columns
+    ):
+        return enriched
+
+    lookup = {
+        _player_identity_key(row.get("player"), row.get("pos")): row
+        for row in candidate.to_dict("records")
+    }
+    for index, row in enriched.iterrows():
+        key = _player_identity_key(row.get(name_column), row.get(position_column))
+        candidate_row = lookup.get(key)
+        if not candidate_row:
+            continue
+        for column in CROSS_ASSET_DISPLAY_COLUMNS:
+            enriched.at[index, column] = _candidate_display_value(candidate_row.get(column))
+        enriched.at[index, "candidate_key_caveat"] = _candidate_key_caveat(candidate_row)
+    return enriched
+
+
+CROSS_ASSET_DISPLAY_COLUMNS = (
+    "cross_asset_candidate_rank",
+    "cross_asset_candidate_value",
+    "candidate_value_band",
+    "confidence_band",
+    "uncertainty_reasons",
+    "adp",
+    "available_pool_adp_rank",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "current_pick_value_reason",
+    "outcome_applicable_summary",
+    "manual_review_flag",
+    "source_note",
+    "candidate_key_caveat",
+)
+
+
+def _candidate_display_value(value: object) -> str:
+    text = str(value or "").strip()
+    return text if text else OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _candidate_key_caveat(row: dict[str, object]) -> str:
+    manual = str(row.get("manual_review_flag", "")).strip().lower()
+    confidence = str(row.get("confidence_band", "")).strip()
+    reasons = [
+        reason
+        for reason in str(row.get("uncertainty_reasons", "")).split("; ")
+        if reason
+    ]
+    important = [
+        reason
+        for reason in reasons
+        if any(
+            token in reason
+            for token in (
+                "manual_review",
+                "critical",
+                "needs_data",
+                "Not enough information",
+                "score_basis",
+                "no_full_dynasty",
+            )
+        )
+    ]
+    pieces: list[str] = []
+    if confidence:
+        pieces.append(f"Confidence: {confidence}")
+    if manual in {"yes", "true", "1", "human_decision_only"}:
+        pieces.append("Manual review")
+    pieces.extend(important[:2])
+    return "; ".join(pieces) if pieces else "Review-only candidate context"
 
 
 def validate_outcome_numeric_display(frame: pd.DataFrame) -> tuple[str, ...]:
@@ -1162,6 +1289,13 @@ DYNASTY_DISPLAY_LABELS = {
 UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "source_coverage": "Source Coverage",
     "nwr_rank": "Dynasty Rank",
+    "cross_asset_candidate_rank": "Candidate Rank (Review-Only)",
+    "cross_asset_candidate_value": "Candidate Value (Review-Only)",
+    "candidate_value_band": "Candidate Band",
+    "confidence_band": "Confidence",
+    "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
+    "current_pick_value": "Current Pick Value (Display-Only)",
+    "candidate_key_caveat": "Key Caveat / Review Flag",
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",

@@ -34,6 +34,15 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "nfl_team": "SF",
                 "age": "23.4" if index == 0 else "Not enough information",
                 "asset_type": "rookie" if index < 10 else "veteran",
+                "cross_asset_candidate_rank": index + 1,
+                "cross_asset_candidate_value": f"{75 - index:.2f}",
+                "candidate_value_band": "Priority candidate" if index < 3 else "Depth",
+                "confidence_band": "Medium",
+                "available_pool_adp_rank": index + 1,
+                "available_pool_adp_range": (
+                    "Early 1st equivalent" if index == 0 else "Depth / later"
+                ),
+                "candidate_key_caveat": "Review-only candidate context",
                 "adp_display_only": "10.0" if index == 0 else "Not enough information",
                 "adp_range_display_only": (
                     "8.0-12.0" if index == 0 else "Not enough information"
@@ -192,24 +201,25 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     workflow = with_workflow_columns(board, empty_workflow_state())
     display = display_ranking_frame(workflow, current_pick=5)
 
-    assert list(display.columns[:12]) == [
+    assert list(display.columns[:13]) == [
+        "Candidate Rank (Review-Only)",
         "Final Board Rank",
         "Player",
         "Pos",
         "NFL Team",
         "Age",
         "Position Rank",
-        "Asset Type",
+        "Candidate Band",
+        "Candidate Value (Review-Only)",
+        "Confidence",
         "ADP (Display-Only)",
-        "ADP Range (Display-Only)",
+        "Available-Pool ADP Range (Display-Only)",
         "Current Pick Value (Display-Only)",
-        "Source",
-        "Final Tier",
     ]
     assert "Visible Score (Mixed Basis)" not in display.columns
     assert "Board Availability" not in display.columns
     assert "Draft Action (Display-Only)" not in display.columns
-    assert display.loc[0, "Current Pick Value (Display-Only)"] == "Slight reach"
+    assert display.loc[0, "Current Pick Value (Display-Only)"] == "Value"
 
 
 def test_drafted_context_only_appears_when_toggle_context_is_requested() -> None:

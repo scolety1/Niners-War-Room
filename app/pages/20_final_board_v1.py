@@ -76,10 +76,13 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         placeholder="Type a player, team, or position",
     )
     position_values = _column_values(filtered, "position")
+    default_positions = [position for position in position_values if position != "K"]
+    if not default_positions:
+        default_positions = position_values
     selected_positions = filter_row_one[1].multiselect(
         "Position",
         position_values,
-        default=position_values,
+        default=default_positions,
         key="dynasty_rankings_positions",
     )
     source_filter = filter_row_one[2].selectbox(
@@ -120,6 +123,24 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         key="dynasty_rankings_ascending",
     )
     _render_age_filter(filter_row_two[3], filtered)
+    filter_row_three = st.columns([1.2, 1.2, 1.4])
+    tier_values = ["All", *_column_values(filtered, "candidate_value_band")]
+    selected_tier = filter_row_three[0].selectbox(
+        "Tier / band",
+        tier_values,
+        key="dynasty_rankings_candidate_band",
+    )
+    confidence_values = ["All", *_column_values(filtered, "confidence_band")]
+    selected_confidence = filter_row_three[1].selectbox(
+        "Confidence",
+        confidence_values,
+        key="dynasty_rankings_confidence",
+    )
+    review_filter = filter_row_three[2].selectbox(
+        "Manual review",
+        ["All", "Needs manual review", "No manual-review flag"],
+        key="dynasty_rankings_manual_review",
+    )
     outcome_mode = st.selectbox(
         "Outcome columns",
         OUTCOME_DISPLAY_MODES,
@@ -171,6 +192,22 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
                 OUTCOME_NOT_ENOUGH_INFORMATION
             )
         ].copy()
+    if selected_tier != "All" and "candidate_value_band" in filtered.columns:
+        filtered = filtered.loc[
+            filtered["candidate_value_band"].astype(str) == selected_tier
+        ].copy()
+    if selected_confidence != "All" and "confidence_band" in filtered.columns:
+        filtered = filtered.loc[
+            filtered["confidence_band"].astype(str) == selected_confidence
+        ].copy()
+    if review_filter != "All" and "manual_review_flag" in filtered.columns:
+        review_mask = filtered["manual_review_flag"].astype(str).str.lower().isin(
+            {"yes", "true", "1", "human_decision_only"}
+        )
+        if review_filter == "Needs manual review":
+            filtered = filtered.loc[review_mask].copy()
+        else:
+            filtered = filtered.loc[~review_mask].copy()
 
     filtered = _sort_player_board(filtered, sort_by, ascending=ascending, view_mode=view_mode)
     return filtered, sort_by, outcome_mode
@@ -346,6 +383,10 @@ filtered_board, sort_by, outcome_mode = _apply_player_filters(unified_board, vie
 st.caption(
     f"Rows shown: {int(filtered_board.shape[0])} | View: {view_mode} | Sort: {sort_by} | "
     f"Outcome columns: {outcome_mode}. Outcome is display-only and does not drive sort."
+)
+st.caption(
+    "Candidate Rank / Candidate Value, when present, are review-only cross-asset context "
+    "and do not replace Dynasty Rank or Final Board Rank."
 )
 st.caption(f"Visible Outcome heads: {_outcome_head_caption(filtered_board, outcome_mode)}")
 st.dataframe(

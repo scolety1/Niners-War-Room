@@ -127,6 +127,55 @@ if len(selected) < 2:
 compare = bundle.frame.loc[bundle.frame["player"].astype(str).isin(selected)].copy()
 render_final_board_table(compare, key="player_compare_board")
 
+compare_columns = [
+    "cross_asset_candidate_rank",
+    "final_board_rank",
+    "player",
+    "position",
+    "nfl_team",
+    "age",
+    "position_rank",
+    "cross_asset_candidate_value",
+    "candidate_value_band",
+    "confidence_band",
+    "adp",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "candidate_key_caveat",
+]
+available_compare_columns = [column for column in compare_columns if column in compare.columns]
+if available_compare_columns:
+    st.subheader("Cross-Asset Candidate Comparison")
+    st.caption(
+        "Review-only candidate metrics. They do not replace Final Board Rank, Dynasty Rank, "
+        "or the frozen board source of truth. ADP/range is display-only price context."
+    )
+    candidate_display = compare.loc[:, available_compare_columns].copy().fillna(
+        OUTCOME_NOT_ENOUGH_INFORMATION
+    )
+    st.dataframe(
+        candidate_display.rename(
+            columns={
+                "cross_asset_candidate_rank": "Candidate Rank (Review-Only)",
+                "final_board_rank": "Final Board Rank",
+                "player": "Player",
+                "position": "Pos",
+                "nfl_team": "NFL Team",
+                "age": "Age",
+                "position_rank": "Position Rank",
+                "cross_asset_candidate_value": "Candidate Value (Review-Only)",
+                "candidate_value_band": "Candidate Band",
+                "confidence_band": "Confidence",
+                "adp": "ADP (Display-Only)",
+                "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
+                "current_pick_value": "Current Pick Value (Display-Only)",
+                "candidate_key_caveat": "Key Caveat / Review Flag",
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
 st.subheader("Lane Prop Context")
 prop_files = {
     "outcome_columns": "outcome_player_context.csv",

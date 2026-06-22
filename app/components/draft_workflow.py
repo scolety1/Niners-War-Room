@@ -58,6 +58,10 @@ def render_draft_workflow(
         state,
         session_key=session_key,
     )
+    st.caption(
+        "Candidate Best Available is review-only and does not replace Final Board Rank. "
+        "ADP/range context is display-only price context and does not drive NWR rank."
+    )
     st.subheader("Main Ranking Table")
     st.dataframe(
         display_ranking_frame(
@@ -152,23 +156,47 @@ def _render_filters(
             key=f"{session_key}_show_drafted_players",
         )
 
-        sort_cols = st.columns([1, 1, 1, 1])
+        sort_cols = st.columns([1.25, 1, 1, 1])
         manual_only = sort_cols[0].checkbox(
             "Manual review",
             key=f"{session_key}_manual_review",
         )
-        sort_by = sort_cols[1].selectbox(
-            "Sort by",
+        view_mode = sort_cols[1].selectbox(
+            "View / sort mode",
             [
-                "Final Board Rank",
-                "Player",
-                "Position",
-                "Position Rank",
-                "Tier",
+                "Candidate Best Available",
+                "Frozen Board Rank",
+                "ADP / Price Context",
             ],
+            key=f"{session_key}_view_sort_mode",
+        )
+        sort_default = {
+            "Candidate Best Available": "Candidate Rank",
+            "Frozen Board Rank": "Final Board Rank",
+            "ADP / Price Context": "Available-Pool ADP Rank",
+        }[view_mode]
+        sort_options = [
+            "Candidate Rank",
+            "Final Board Rank",
+            "Available-Pool ADP Rank",
+            "Candidate Value",
+            "Player",
+            "Position",
+            "Position Rank",
+            "Tier",
+        ]
+        sort_by = sort_cols[2].selectbox(
+            "Sort by",
+            sort_options,
+            index=sort_options.index(sort_default),
             key=f"{session_key}_sort_by",
         )
-        ascending = sort_cols[2].toggle("Ascending", value=True, key=f"{session_key}_ascending")
+        ascending_default = sort_by != "Candidate Value"
+        ascending = sort_cols[3].toggle(
+            "Ascending",
+            value=ascending_default,
+            key=f"{session_key}_ascending",
+        )
 
     if not show_drafted_players:
         frame = available_board_frame(board_frame, state)
