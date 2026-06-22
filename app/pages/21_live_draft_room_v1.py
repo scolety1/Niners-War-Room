@@ -51,8 +51,9 @@ else:
         session_key="draft_day_v1_live_draft_workflow",
         source_caption=(
             f"Ranking source: {bundle.source_path}. Pick order: {pick_path}. "
-            "Default live-draft order is Final Board Rank ascending. Sleeper ADP context, "
-            "when present, is display-only and does not drive rank or sort."
+            "Default candidate view uses the Historical Tuned Candidate overlay where "
+            "available. Final Board Rank remains visible and unchanged. Sleeper ADP "
+            "context, when present, is display-only and does not drive rank or sort."
         ),
     )
 

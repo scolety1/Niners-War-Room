@@ -59,8 +59,10 @@ def render_draft_workflow(
         session_key=session_key,
     )
     st.caption(
-        "Candidate Best Available is review-only and does not replace Final Board Rank. "
-        "ADP/range context is display-only price context and does not drive NWR rank."
+        "Historical Tuned Candidate Best Available is review-only and does not replace "
+        "Final Board Rank. No verified full historical dropped-veteran panel exists, so "
+        "use human judgment. ADP/range context is display-only price context and does "
+        "not drive NWR rank."
     )
     st.subheader("Main Ranking Table")
     st.dataframe(

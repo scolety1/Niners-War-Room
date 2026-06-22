@@ -221,8 +221,9 @@ available_compare_columns = [column for column in compare_columns if column in c
 if available_compare_columns:
     st.subheader("Cross-Asset Candidate Comparison")
     st.caption(
-        "Review-only candidate metrics. They do not replace Final Board Rank, Dynasty Rank, "
-        "or the frozen board source of truth. ADP/range is display-only price context."
+        "Historical tuned review-only candidate metrics where available. They do not "
+        "replace Final Board Rank, Dynasty Rank, or the frozen board source of truth. "
+        "ADP/range is display-only price context."
     )
     candidate_display = compare.loc[:, available_compare_columns].copy().fillna(
         OUTCOME_NOT_ENOUGH_INFORMATION
@@ -230,14 +231,14 @@ if available_compare_columns:
     st.dataframe(
         candidate_display.rename(
             columns={
-                "cross_asset_candidate_rank": "Candidate Rank (Review-Only)",
+                "cross_asset_candidate_rank": "Historical Tuned Candidate Rank (Review-Only)",
                 "final_board_rank": "Final Board Rank",
                 "player": "Player",
                 "position": "Pos",
                 "nfl_team": "NFL Team",
                 "age": "Age",
                 "position_rank": "Position Rank",
-                "cross_asset_candidate_value": "Candidate Value (Review-Only)",
+                "cross_asset_candidate_value": "Historical Tuned Candidate Value (Review-Only)",
                 "candidate_value_band": "Candidate Band",
                 "confidence_band": "Confidence",
                 "adp": "ADP (Display-Only)",

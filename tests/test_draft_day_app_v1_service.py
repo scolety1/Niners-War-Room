@@ -27,6 +27,7 @@ from src.services.draft_day_app_v1_service import (
     frozen_board_outcome_support_counts,
     hidden_sort_columns,
     lane_prop_status_rows,
+    load_cross_asset_candidate_board,
     load_frozen_board,
     load_lane_prop_file,
     normalize_board_frame,
@@ -48,6 +49,48 @@ def test_frozen_board_loader_contract_is_green_in_local_hq_context() -> None:
     for field in REQUIRED_VISIBLE_FIELDS:
         assert field in bundle.frame.columns
     assert "source_file" not in bundle.frame.columns
+
+
+def test_historical_tuned_overlay_updates_review_only_candidate_context() -> None:
+    candidate = load_cross_asset_candidate_board()
+    rows = {
+        str(row["player"]): row
+        for row in candidate.loc[
+            candidate["player"].isin(
+                [
+                    "Jeremiyah Love",
+                    "Zay Flowers",
+                    "Chris Olave",
+                    "Jameson Williams",
+                    "Drake Maye",
+                    "Dak Prescott",
+                    "Keenan Allen",
+                    "Darren Waller",
+                ]
+            )
+        ].to_dict("records")
+    }
+
+    assert rows["Jeremiyah Love"]["cross_asset_candidate_rank"] == "1"
+    assert rows["Zay Flowers"]["cross_asset_candidate_rank"] == "10"
+    assert rows["Chris Olave"]["cross_asset_candidate_rank"] == "11"
+    assert rows["Jameson Williams"]["cross_asset_candidate_rank"] == "13"
+    assert rows["Drake Maye"]["cross_asset_candidate_rank"] == "20"
+    assert rows["Dak Prescott"]["cross_asset_candidate_rank"] == "32"
+    assert rows["Keenan Allen"]["cross_asset_candidate_rank"] == "64"
+    assert rows["Darren Waller"]["cross_asset_candidate_rank"] == "66"
+    assert "Historical Tuned Candidate / Review-Only" in rows["Zay Flowers"]["source_note"]
+
+
+def test_frozen_board_keeps_final_rank_with_historical_tuned_candidate_context() -> None:
+    bundle = load_frozen_board()
+    zay = bundle.frame.loc[bundle.frame["player"].astype(str).eq("Zay Flowers")].iloc[0]
+    maye = bundle.frame.loc[bundle.frame["player"].astype(str).eq("Drake Maye")].iloc[0]
+
+    assert int(zay["final_board_rank"]) == 31
+    assert str(zay["cross_asset_candidate_rank"]) == "10"
+    assert int(maye["final_board_rank"]) == 40
+    assert str(maye["cross_asset_candidate_rank"]) == "20"
 
 
 def test_hidden_sort_and_private_value_columns_are_blocked() -> None:

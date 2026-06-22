@@ -35,6 +35,14 @@ CROSS_ASSET_CANDIDATE_PATH = (
     / "overnight_8h_emergency_20260622"
     / "emergency_cross_asset_candidate_player_board.csv"
 )
+HISTORICAL_TUNED_CANDIDATE_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "historical_cross_asset_tuning_20260622"
+    / "tuned_candidate_app_overlay.csv"
+)
 FALLBACK_CROSS_ASSET_CANDIDATE_PATH = (
     REPO_ROOT
     / "docs"
@@ -604,21 +612,102 @@ def load_outcome_numeric_display() -> OutcomeDisplayBundle:
 
 @lru_cache(maxsize=1)
 def load_cross_asset_candidate_board() -> pd.DataFrame:
-    candidate_path = (
+    base_path = (
         CROSS_ASSET_CANDIDATE_PATH
         if CROSS_ASSET_CANDIDATE_PATH.exists()
         else FALLBACK_CROSS_ASSET_CANDIDATE_PATH
     )
-    if not candidate_path.exists():
+    if not base_path.exists():
         return pd.DataFrame()
     try:
-        frame = pd.read_csv(candidate_path, dtype=str).fillna("")
+        frame = pd.read_csv(base_path, dtype=str).fillna("")
     except Exception:
         return pd.DataFrame()
     hidden_like = hidden_sort_columns(frame.columns)
     if hidden_like:
         return pd.DataFrame()
-    return frame
+    return _overlay_historical_tuned_candidate_rows(frame)
+
+
+def _overlay_historical_tuned_candidate_rows(base_frame: pd.DataFrame) -> pd.DataFrame:
+    if not HISTORICAL_TUNED_CANDIDATE_PATH.exists():
+        return base_frame
+    try:
+        tuned = pd.read_csv(HISTORICAL_TUNED_CANDIDATE_PATH, dtype=str).fillna("")
+    except Exception:
+        return base_frame
+    if hidden_sort_columns(tuned.columns):
+        return base_frame
+    required = {"player", "pos", "tuned_cross_asset_rank", "tuned_cross_asset_value"}
+    if not required.issubset(tuned.columns):
+        return base_frame
+
+    merged = base_frame.copy()
+    base_lookup = {
+        _player_identity_key(row.get("player"), row.get("pos")): index
+        for index, row in merged.iterrows()
+    }
+    for _, tuned_row in tuned.iterrows():
+        key = _player_identity_key(tuned_row.get("player"), tuned_row.get("pos"))
+        if key not in base_lookup:
+            continue
+        index = base_lookup[key]
+        _apply_tuned_candidate_row(merged, index, tuned_row)
+    return merged
+
+
+def _apply_tuned_candidate_row(
+    frame: pd.DataFrame,
+    index: int,
+    tuned_row: pd.Series,
+) -> None:
+    mapping = {
+        "tuned_cross_asset_rank": "cross_asset_candidate_rank",
+        "tuned_cross_asset_value": "cross_asset_candidate_value",
+        "value_band": "candidate_value_band",
+        "confidence_band": "confidence_band",
+        "uncertainty_reasons": "uncertainty_reasons",
+        "outcome_applicable_summary": "outcome_applicable_summary",
+        "manual_review_flag": "manual_review_flag",
+        "adp": "adp",
+        "available_pool_adp_rank": "available_pool_adp_rank",
+        "available_pool_adp_range": "available_pool_adp_range",
+    }
+    for source, target in mapping.items():
+        if source in tuned_row.index:
+            frame.at[index, target] = _candidate_display_value(tuned_row.get(source))
+
+    frame.at[index, "candidate_vs_frozen_note"] = _historical_tuned_note(
+        tuned_row.get("direction_vs_frozen_rank"),
+        tuned_row.get("main_reason_to_draft"),
+    )
+    frame.at[index, "candidate_vs_dynasty_note"] = _historical_tuned_note(
+        tuned_row.get("direction_vs_emergency_candidate_rank"),
+        tuned_row.get("main_reason_to_pass"),
+    )
+    frame.at[index, "candidate_action_summary"] = _candidate_display_value(
+        tuned_row.get("main_reason_to_draft")
+    )
+    frame.at[index, "source_note"] = (
+        "Historical Tuned Candidate / Review-Only; does not replace Final Board Rank "
+        "or Dynasty Rank; no verified full historical dropped-veteran panel; ADP is "
+        "display-only price context."
+    )
+
+
+def _historical_tuned_note(direction: object, reason: object) -> str:
+    direction_text = str(direction or "").strip()
+    reason_text = str(reason or "").strip()
+    pieces = [
+        "Historical Tuned Candidate / Review-Only",
+        "does not replace Final Board Rank",
+    ]
+    if direction_text:
+        pieces.append(direction_text)
+    if reason_text:
+        pieces.append(reason_text)
+    pieces.append("Use human judgment; historical dropped-veteran panel is incomplete.")
+    return "; ".join(pieces)
 
 
 def integrate_cross_asset_candidate_context(
@@ -1314,8 +1403,8 @@ DYNASTY_DISPLAY_LABELS = {
 UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "source_coverage": "Source Coverage",
     "nwr_rank": "Dynasty Rank",
-    "cross_asset_candidate_rank": "Candidate Rank (Review-Only)",
-    "cross_asset_candidate_value": "Candidate Value (Review-Only)",
+    "cross_asset_candidate_rank": "Historical Tuned Candidate Rank (Review-Only)",
+    "cross_asset_candidate_value": "Historical Tuned Candidate Value (Review-Only)",
     "candidate_value_band": "Candidate Band",
     "confidence_band": "Confidence",
     "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
