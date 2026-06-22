@@ -1,0 +1,11 @@
+sanity_anchor,status,evidence
+Zay Flowers and Chris Olave are not buried behind low-confidence rookies,PASS,"V2 ranks Zay 2 and Olave 3, with Final Board Rank still visible."
+Jameson Williams is review-visible,PASS,V2 ranks Jameson Williams 6.
+Drake Maye is discounted for 1QB but not useless,PASS,V2 ranks Drake Maye 20 with Long shot horizon bands.
+Dak Prescott remains discounted by 10-team 1QB context,PASS,V2 ranks Dak Prescott 53.
+Keenan Allen and Darren Waller carry age/risk caveats,PASS,Both remain human-review holds at 64 and 66.
+Jeremiyah Love remains high only if evidence/confidence supports it,PASS,Love remains 1 but with Medium-low confidence and review-only label.
+Top rookies remain visible but uncertainty is obvious,PASS,"Makai, Carnell, KC, Jadarian remain top 10 with Medium-low confidence."
+Missing Outcome does not become zero,PASS,"Missing Outcome affects confidence/horizon bands, not a zero score."
+Startup ADP is not direct draft order,PASS,ADP is display-only only; value comes from internal anchors.
+K are excluded by default,PASS,Candidate tables and app default exclude K from draft workflow ranking context.

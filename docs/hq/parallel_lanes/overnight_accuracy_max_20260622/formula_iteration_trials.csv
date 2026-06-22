@@ -1,0 +1,6 @@
+formula_version,veteran_anchor,rookie_strength,proxy_weight,anchor_pass_count,key_failure,selected
+emergency_pre_tuning,1.0,1.0,0.0,7,"Young veterans surfaced, but raw score basis remained too implicit.",no
+historical_tuned_v1,1.12,0.86,0.1,9,"Safer than emergency, but Zay/Olave/Jamo still not actionable enough at 1.03/1.04/1.09.",no
+tuned_v2_verified_internal_only,1.2,0.82,0.0,9,"Stable, but undercorrects young WR veterans relative to low-confidence rookie cluster.",no
+tuned_v2_verified_plus_proxy_low_weight,1.28,0.8,0.1,10,No anchor failure; best balance of rookie visibility and veteran respect.,yes
+tuned_v2_verified_plus_proxy_medium_weight,1.38,0.75,0.25,8,Overcorrects toward proxy-shaped veterans and risks pushing top rookies down too aggressively.,no

@@ -1,0 +1,4 @@
+sensitivity_version,proxy_use,result,zay_rank,olave_rank,jamo_rank,love_rank,why_not_selected
+verified_internal_only,none,stable but conservative,5,7,10,1,Does not make the young-veteran correction actionable enough.
+verified_plus_proxy_low_weight,sensitivity_only_low_weight,best stability,2,3,6,1,Selected.
+verified_plus_proxy_medium_weight,sensitivity_only_medium_weight,overcorrected,2,3,4,3,Lets proxy cohorts dominate too much; weakens top rookie visibility.
