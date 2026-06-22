@@ -119,6 +119,21 @@ def test_expanded_draftable_pool_adds_pdf_free_agents_without_mutating_frozen_co
     assert tyreek["source_label_display_only"] == "PDF Free Agent / Draftable"
 
 
+def test_on_clock_decision_layer_keeps_frozen_rank_and_adds_emergency_anchors() -> None:
+    bundle = load_frozen_board()
+    expanded = load_expanded_draftable_player_pool(bundle.frame)
+    rows = {str(row["player"]): row for row in expanded.to_dict("records")}
+
+    assert rows["Drake Maye"]["final_board_rank"] == 40
+    assert rows["Drake Maye"]["cross_asset_candidate_rank"] == "21"
+    assert rows["Drake Maye"]["on_clock_decision_rank"] == "4"
+    assert "1QB" in rows["Drake Maye"]["on_clock_warning"]
+    assert rows["Tyreek Hill"]["final_board_rank"] == "Not on frozen board"
+    assert rows["Tyreek Hill"]["on_clock_decision_rank"] == "18"
+    assert "LOUD WARNING" in rows["Tyreek Hill"]["on_clock_warning"]
+    assert rows["Zay Flowers"]["on_clock_decision_rank"] == "1"
+
+
 def test_hidden_sort_and_private_value_columns_are_blocked() -> None:
     columns = ["player", "final_board_rank", "hidden_sort_key", "private_value_score"]
 

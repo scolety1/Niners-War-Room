@@ -19,6 +19,9 @@ SLEEPER_ADP_POINTER_PATH = Path(
 )
 
 CORE_RANKING_COLUMNS = (
+    "on_clock_decision_rank",
+    "on_clock_decision_tier",
+    "on_clock_decision_value",
     "cross_asset_candidate_rank",
     "final_board_rank",
     "player",
@@ -26,14 +29,17 @@ CORE_RANKING_COLUMNS = (
     "nfl_team",
     "age",
     "position_rank",
+    "on_clock_confidence",
+    "on_clock_reason",
+    "on_clock_warning",
+    "startup_adp_display_only",
+    "available_pool_adp_range",
+    "draft_timing_note",
+    "source_label_display_only",
+    "final_tier",
     "candidate_value_band",
     "cross_asset_candidate_value",
     "confidence_band",
-    "adp_display_only",
-    "available_pool_adp_range",
-    "current_pick_value_display_only",
-    "source_label_display_only",
-    "final_tier",
     "candidate_key_caveat",
     "risk_notes",
     "needs_manual_review",
@@ -65,6 +71,12 @@ RANKING_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
+    "on_clock_decision_rank": "On-Clock Decision Rank (Review-Only)",
+    "on_clock_decision_tier": "On-Clock Decision Tier",
+    "on_clock_decision_value": "On-Clock Decision Value (Review-Only)",
+    "on_clock_confidence": "On-Clock Confidence",
+    "on_clock_reason": "On-Clock Reason",
+    "on_clock_warning": "On-Clock Warning",
     "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
     "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
     "candidate_value_band": "Candidate Band",
@@ -77,9 +89,11 @@ RANKING_LABELS = {
     "nfl_team": "NFL Team",
     "age": "Age",
     "asset_type": "Asset Type",
-    "adp_display_only": "ADP (Display-Only)",
+    "adp_display_only": "Startup ADP / Display-Only",
+    "startup_adp_display_only": "Startup ADP / Display-Only",
     "adp_range_display_only": "ADP Range (Display-Only)",
     "current_pick_value_display_only": "Current Pick Value (Display-Only)",
+    "draft_timing_note": "Draft Timing Note",
     "source_label_display_only": "Source",
     "availability_status": "Board Availability",
     "final_board_score_visible": "Visible Score (Mixed Basis)",
@@ -105,6 +119,8 @@ DRAFT_BOARD_LABELS = {
 }
 
 VISIBLE_SORT_COLUMNS = {
+    "On-Clock Decision Rank": "on_clock_decision_rank",
+    "On-Clock Decision Value": "on_clock_decision_value",
     "Final Board Rank": "final_board_rank",
     "Candidate Rank": "cross_asset_candidate_rank",
     "Candidate Value": "cross_asset_candidate_value",
@@ -221,6 +237,7 @@ def with_display_context(
     adp_values: list[str] = []
     range_values: list[str] = []
     current_pick_values: list[str] = []
+    draft_timing_notes: list[str] = []
     source_values: list[str] = []
     for row in contextual.to_dict("records"):
         key = _adp_key(row.get("player"), row.get("position"))
@@ -240,15 +257,28 @@ def with_display_context(
             current_pick_value_label(
                 current_pick,
                 str(row.get("available_pool_adp_rank") or "").strip(),
-                candidate_rank=str(row.get("cross_asset_candidate_rank") or "").strip(),
+                candidate_rank=str(
+                    row.get("on_clock_decision_rank")
+                    or row.get("cross_asset_candidate_rank")
+                    or ""
+                ).strip(),
                 confidence=str(row.get("confidence_band") or "").strip(),
+            )
+        )
+        draft_timing_notes.append(
+            draft_timing_note(
+                adp_text,
+                range_text,
+                str(row.get("available_pool_adp_rank") or "").strip(),
             )
         )
         source_values.append(source_label_for_row(row, adp_row))
     contextual["adp_display_only"] = adp_values
+    contextual["startup_adp_display_only"] = adp_values
     contextual["adp_range_display_only"] = range_values
     contextual["available_pool_adp_range"] = range_values
     contextual["current_pick_value_display_only"] = current_pick_values
+    contextual["draft_timing_note"] = draft_timing_notes
     contextual["source_label_display_only"] = source_values
     return contextual
 
@@ -267,6 +297,8 @@ def sort_workflow_frame(
         "final_board_rank",
         "position_rank",
         "final_board_score_visible",
+        "on_clock_decision_rank",
+        "on_clock_decision_value",
         "cross_asset_candidate_rank",
         "cross_asset_candidate_value",
         "available_pool_adp_rank",
@@ -285,6 +317,27 @@ def sort_workflow_frame(
             kind="stable",
         )
     return sorted_frame.reset_index(drop=True)
+
+
+def draft_timing_note(
+    startup_adp: str,
+    available_pool_range: str,
+    available_pool_rank: str,
+) -> str:
+    if (
+        not str(startup_adp or "").strip()
+        or str(startup_adp).strip() == NOT_ENOUGH_INFORMATION
+    ):
+        return NOT_ENOUGH_INFORMATION
+    pieces = [
+        "Weak timing signal for this rookie/free-agent draft",
+        "use On-Clock Rank first",
+    ]
+    if str(available_pool_range or "").strip() not in {"", NOT_ENOUGH_INFORMATION}:
+        pieces.append(f"available-pool range {available_pool_range}")
+    if str(available_pool_rank or "").strip() not in {"", NOT_ENOUGH_INFORMATION}:
+        pieces.append(f"startup-pool rank {available_pool_rank}")
+    return "; ".join(pieces)
 
 
 @lru_cache(maxsize=1)

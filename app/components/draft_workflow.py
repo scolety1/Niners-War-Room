@@ -63,15 +63,14 @@ def render_draft_workflow(
         session_key=session_key,
     )
     st.caption(
-        "How to use: Candidate Rank = review-only rookie/veteran comparison | "
-        "Final Board Rank = frozen baseline | ADP Range = display-only available-pool "
-        "price context | Current Pick Value = reach/value context, not model truth | "
-        "Outcome/Horizon = partial display-only context | Human Review flags matter "
-        "when confidence is low."
+        "How to use: On-Clock Decision Rank = emergency review-only decision aid | "
+        "Final Board Rank = frozen baseline | Candidate Rank = tuned model context | "
+        "Startup ADP / ADP Range = display-only weak timing context | "
+        "Outcome/Horizon = partial display-only context."
     )
-    pdf_watch = _pdf_free_agent_watch_caption(board_frame)
-    if pdf_watch:
-        st.caption(pdf_watch)
+    on_clock_watch = _on_clock_watch_caption(board_frame)
+    if on_clock_watch:
+        st.caption(on_clock_watch)
     st.subheader("Main Ranking Table")
     st.dataframe(
         display_ranking_frame(
@@ -184,6 +183,7 @@ def _render_filters(
         view_mode = sort_cols[1].selectbox(
             "View / sort mode",
             [
+                "On-Clock Decision Rank",
                 "Candidate Best Available",
                 "Frozen Board Rank",
                 "ADP / Price Context",
@@ -191,11 +191,14 @@ def _render_filters(
             key=f"{session_key}_view_sort_mode",
         )
         sort_default = {
+            "On-Clock Decision Rank": "On-Clock Decision Rank",
             "Candidate Best Available": "Candidate Rank",
             "Frozen Board Rank": "Final Board Rank",
             "ADP / Price Context": "Available-Pool ADP Rank",
         }[view_mode]
         sort_options = [
+            "On-Clock Decision Rank",
+            "On-Clock Decision Value",
             "Candidate Rank",
             "Final Board Rank",
             "Available-Pool ADP Rank",
@@ -334,33 +337,33 @@ def _non_pdf_row_count(frame: pd.DataFrame) -> int:
     return int((~frame["source_group"].astype(str).eq("LVE PDF Free Agent")).sum())
 
 
-def _pdf_free_agent_watch_caption(frame: pd.DataFrame) -> str:
-    if "source_group" not in frame.columns:
+def _on_clock_watch_caption(frame: pd.DataFrame) -> str:
+    if "player" not in frame.columns:
         return ""
-    pdf = frame.loc[frame["source_group"].astype(str).eq("LVE PDF Free Agent")].copy()
-    if pdf.empty:
+    targets = frame.loc[
+        frame["player"]
+        .astype(str)
+        .isin(["Drake Maye", "Tyreek Hill", "Zay Flowers", "Chris Olave"])
+    ].copy()
+    if targets.empty:
         return ""
-    pdf["_candidate_rank_sort"] = pd.to_numeric(
-        pdf.get("cross_asset_candidate_rank", pd.Series(dtype=str)),
-        errors="coerce",
-    )
-    ranked = pdf.loc[pdf["_candidate_rank_sort"].notna()].sort_values(
-        ["_candidate_rank_sort", "player"],
-        kind="stable",
-    )
-    if ranked.empty:
-        return (
-            "PDF FA watch: PDF free agents are draftable, but none currently have enough "
-            "internal candidate value for Candidate Rank. Missing values show Not enough "
-            "information."
+    parts: list[str] = []
+    for name in ["Drake Maye", "Tyreek Hill", "Zay Flowers", "Chris Olave"]:
+        row = targets.loc[targets["player"].astype(str).eq(name)]
+        if row.empty:
+            continue
+        record = row.iloc[0]
+        parts.append(
+            f"{name}: On-Clock {record.get('on_clock_decision_rank', 'Not enough information')} "
+            f"({record.get('on_clock_decision_tier', 'Not enough information')}; "
+            f"{record.get('on_clock_warning', 'review-only')})"
         )
-    top = ranked.iloc[0]
+    if not parts:
+        return ""
     return (
-        "PDF FA watch: "
-        f"{top.get('player', 'Top PDF free agent')} is included "
-        f"(Candidate Rank {top.get('cross_asset_candidate_rank', 'Not enough information')}, "
-        f"Final Board Rank {top.get('final_board_rank', 'Not on frozen board')}, "
-        f"Confidence {top.get('confidence_band', 'Not enough information')})."
+        "On-clock watch: "
+        + " | ".join(parts)
+        + " Startup ADP is display-only and weak for this rookie/free-agent draft."
     )
 
 

@@ -489,8 +489,211 @@ def load_expanded_draftable_player_pool(frozen_frame: pd.DataFrame) -> pd.DataFr
         expanded = pd.concat([expanded, pdf_rows], ignore_index=True, sort=False).fillna("")
     expanded = enrich_display_age_from_roster_context(expanded, name_column="player")
     expanded = _recalculate_expanded_candidate_rank(expanded)
+    expanded = _apply_on_clock_decision_layer(expanded)
     expanded = _recalculate_expanded_available_pool_adp(expanded)
     return expanded.fillna("").reset_index(drop=True)
+
+
+def _apply_on_clock_decision_layer(frame: pd.DataFrame) -> pd.DataFrame:
+    decision = frame.copy()
+    if decision.empty:
+        return decision
+    values: list[float | None] = []
+    for row in decision.to_dict("records"):
+        values.append(_on_clock_decision_value(row))
+    decision["_on_clock_decision_value_sort"] = values
+    decision["on_clock_decision_value"] = [
+        f"{value:.2f}" if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION
+        for value in values
+    ]
+    decision["on_clock_decision_tier"] = [
+        _on_clock_decision_tier(value) if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION
+        for value in values
+    ]
+    decision["on_clock_confidence"] = [
+        _on_clock_confidence(row, value)
+        for row, value in zip(decision.to_dict("records"), values, strict=False)
+    ]
+    reasons: list[str] = []
+    warnings: list[str] = []
+    for row, value in zip(decision.to_dict("records"), values, strict=False):
+        reason, warning = _on_clock_reason_and_warning(row, value)
+        reasons.append(reason)
+        warnings.append(warning)
+    decision["on_clock_reason"] = reasons
+    decision["on_clock_warning"] = warnings
+
+    eligible = decision["position"].astype(str).str.upper().isin({"QB", "RB", "WR", "TE"})
+    order = decision.loc[eligible & decision["_on_clock_decision_value_sort"].notna()].copy()
+    if not order.empty:
+        order = order.sort_values(
+            by=["_on_clock_decision_value_sort", "player"],
+            ascending=[False, True],
+            kind="stable",
+        )
+        for rank, index in enumerate(order.index, start=1):
+            decision.at[index, "on_clock_decision_rank"] = str(rank)
+    decision["on_clock_decision_rank"] = decision.get(
+        "on_clock_decision_rank",
+        OUTCOME_NOT_ENOUGH_INFORMATION,
+    )
+    return decision.drop(columns=["_on_clock_decision_value_sort"])
+
+
+def _on_clock_decision_value(row: dict[str, object]) -> float | None:
+    key = _player_identity_key(row.get("player"), row.get("position"))
+    anchor = _on_clock_anchor_value(key)
+    if anchor is not None:
+        return anchor
+
+    base = _safe_float(row.get("cross_asset_candidate_value"))
+    if base is None:
+        return None
+    position = _clean_text(row.get("position")).upper()
+    source_group = _clean_text(row.get("source_group"))
+    confidence = _clean_text(row.get("confidence_band")).lower()
+    caveat_text = " ".join(
+        _clean_text(row.get(column)).lower()
+        for column in (
+            "candidate_key_caveat",
+            "uncertainty_reasons",
+            "risk_notes",
+            "needs_manual_review",
+        )
+    )
+    value = base
+    if position == "QB":
+        value -= 7.0
+    if source_group == "LVE PDF Free Agent":
+        value -= 4.0
+    if confidence in {"low", "very low"}:
+        value -= 6.0
+    elif confidence in {"medium-low", "medium low"}:
+        value -= 2.0
+    if "manual" in caveat_text or "needs_data" in caveat_text:
+        value -= 2.5
+    if "age" in caveat_text or "injury" in caveat_text or "risk" in caveat_text:
+        value -= 2.0
+    age = _safe_float(row.get("age"))
+    if age is not None:
+        if position in {"RB", "WR", "TE"} and age >= 30:
+            value -= 6.0
+        elif position in {"RB", "WR", "TE"} and age >= 28:
+            value -= 3.0
+        elif position == "QB" and age >= 32:
+            value -= 4.0
+    return max(min(value, 100.0), 0.0)
+
+
+def _on_clock_anchor_value(key: tuple[str, str]) -> float | None:
+    anchors = {
+        ("zayflowers", "WR"): 78.0,
+        ("chrisolave", "WR"): 76.0,
+        ("jeremiyahlove", "RB"): 74.0,
+        ("drakemaye", "QB"): 73.0,
+        ("makailemon", "WR"): 69.0,
+        ("carnelltate", "WR"): 67.0,
+        ("jamesonwilliams", "WR"): 66.0,
+        ("kcconcepcion", "WR"): 64.0,
+        ("jadarianprice", "RB"): 62.0,
+        ("brianthomas", "WR"): 61.0,
+        ("brianthomasjr", "WR"): 61.0,
+        ("jaylenwarren", "RB"): 59.0,
+        ("rasheerice", "WR"): 58.0,
+        ("brockpurdy", "QB"): 52.0,
+        ("dakprescott", "QB"): 49.0,
+        ("tyreekhill", "WR"): 40.0,
+        ("keenanallen", "WR"): 32.0,
+        ("darrenwaller", "TE"): 24.0,
+    }
+    return anchors.get(key)
+
+
+def _on_clock_decision_tier(value: float) -> str:
+    if value >= 72:
+        return "Tier 1 - on-clock core"
+    if value >= 60:
+        return "Tier 2 - strong review"
+    if value >= 45:
+        return "Tier 3 - situational value"
+    if value >= 30:
+        return "Tier 4 - discount only"
+    return "Hold / deep discount"
+
+
+def _on_clock_confidence(row: dict[str, object], value: float | None) -> str:
+    if value is None:
+        return "Low"
+    key = _player_identity_key(row.get("player"), row.get("position"))
+    if key in {
+        ("zayflowers", "WR"),
+        ("chrisolave", "WR"),
+        ("drakemaye", "QB"),
+        ("jamesonwilliams", "WR"),
+    }:
+        return "Medium"
+    if key in {("tyreekhill", "WR"), ("keenanallen", "WR"), ("darrenwaller", "TE")}:
+        return "Low"
+    confidence = _clean_text(row.get("confidence_band"))
+    return confidence or "Medium-low"
+
+
+def _on_clock_reason_and_warning(row: dict[str, object], value: float | None) -> tuple[str, str]:
+    if value is None:
+        return (
+            "Not enough internal evidence for on-clock value; still draftable if eligible.",
+            "Not enough information.",
+        )
+    key = _player_identity_key(row.get("player"), row.get("position"))
+    reason_warning = {
+        ("zayflowers", "WR"): (
+            "Proven young WR anchor; should not be buried behind medium/low-confidence rookies.",
+            "Review-only anchor; still compare with Final Board Rank.",
+        ),
+        ("chrisolave", "WR"): (
+            "Proven young WR anchor with primary-target profile; top decision tier.",
+            "Review-only anchor; verify human preference versus rookies.",
+        ),
+        ("jeremiyahlove", "RB"): (
+            "Top rookie/prospect remains high, but confidence is capped versus proven NFL assets.",
+            "Rookie uncertainty remains high.",
+        ),
+        ("drakemaye", "QB"): (
+            "Elite-young-QB exception: 1QB discount still applies, but he must stay "
+            "review-visible.",
+            "10-team 1QB lowers ceiling versus WR/RB, but prior rank was too buried.",
+        ),
+        ("jamesonwilliams", "WR"): (
+            "Explosive young NFL WR production keeps him review-visible against rookies.",
+            "Volatility remains; do not treat as risk-free.",
+        ),
+        ("tyreekhill", "WR"): (
+            "PDF free agent with major age/status/injury risk; discount only despite name value.",
+            "LOUD WARNING: not on frozen board; major current-status and age risk.",
+        ),
+        ("keenanallen", "WR"): (
+            "Older veteran profile; draft only at discount if roster construction needs "
+            "short-term WR.",
+            "Age/role risk; not a long-term anchor.",
+        ),
+        ("darrenwaller", "TE"): (
+            "Older TE with return/health risk; human-review hold unless cost is trivial.",
+            "Age/retirement/health risk.",
+        ),
+    }
+    if key in reason_warning:
+        return reason_warning[key]
+    source_group = _clean_text(row.get("source_group"))
+    confidence = _clean_text(row.get("confidence_band")) or "Medium-low"
+    if source_group == "LVE PDF Free Agent":
+        return (
+            "PDF free-agent overlay with review-only internal value where available.",
+            "Not on frozen board; use human review.",
+        )
+    return (
+        f"On-clock value from tuned candidate layer with {confidence} confidence.",
+        "Review-only; does not replace Final Board Rank.",
+    )
 
 
 def _prepare_frozen_rows_for_expanded_pool(frame: pd.DataFrame) -> pd.DataFrame:

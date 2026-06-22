@@ -34,6 +34,12 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "nfl_team": "SF",
                 "age": "23.4" if index == 0 else "Not enough information",
                 "asset_type": "rookie" if index < 10 else "veteran",
+                "on_clock_decision_rank": index + 1,
+                "on_clock_decision_tier": "Tier 1 - on-clock core" if index < 3 else "Tier 2",
+                "on_clock_decision_value": f"{80 - index:.2f}",
+                "on_clock_confidence": "Medium",
+                "on_clock_reason": "Review-only on-clock context",
+                "on_clock_warning": "Review-only; does not replace Final Board Rank.",
                 "cross_asset_candidate_rank": index + 1,
                 "cross_asset_candidate_value": f"{75 - index:.2f}",
                 "candidate_value_band": "Priority candidate" if index < 3 else "Depth",
@@ -202,6 +208,9 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     display = display_ranking_frame(workflow, current_pick=5)
 
     assert list(display.columns[:14]) == [
+        "On-Clock Decision Rank (Review-Only)",
+        "On-Clock Decision Tier",
+        "On-Clock Decision Value (Review-Only)",
         "Tuned V2 Candidate Rank (Review-Only)",
         "Final Board Rank",
         "Player",
@@ -209,18 +218,20 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
         "NFL Team",
         "Age",
         "Position Rank",
-        "Candidate Band",
-        "Tuned V2 Candidate Value (Review-Only)",
-        "Confidence",
-        "ADP (Display-Only)",
+        "On-Clock Confidence",
+        "On-Clock Reason",
+        "On-Clock Warning",
+        "Startup ADP / Display-Only",
+    ]
+    assert list(display.columns[14:17]) == [
         "Available-Pool ADP Range (Display-Only)",
-        "Current Pick Value (Display-Only)",
+        "Draft Timing Note",
         "Source",
     ]
     assert "Visible Score (Mixed Basis)" not in display.columns
     assert "Board Availability" not in display.columns
     assert "Draft Action (Display-Only)" not in display.columns
-    assert display.loc[0, "Current Pick Value (Display-Only)"] == "Value"
+    assert "Weak timing signal" in display.loc[0, "Draft Timing Note"]
 
 
 def test_drafted_context_only_appears_when_toggle_context_is_requested() -> None:
