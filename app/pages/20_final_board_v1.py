@@ -11,23 +11,27 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.draft_day_v1 import (
-    filter_board_frame,
-    render_board_metrics,
-    render_final_board_table,
     render_source_of_truth_badge,
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
+    OUTCOME_NOT_ENOUGH_INFORMATION,
     DynastyRankingsBundle,
-    display_dynasty_rankings_frame,
+    FrozenBoardBundle,
+    build_unified_player_board,
+    display_unified_player_board_frame,
+    frozen_board_outcome_support_counts,
     load_dynasty_rankings,
     load_frozen_board,
     outcome_display_coverage_counts,
 )
 
 
-def _render_dynasty_rankings(dynasty: DynastyRankingsBundle) -> None:
+def _render_source_badges(
+    dynasty: DynastyRankingsBundle,
+    frozen_board: FrozenBoardBundle,
+) -> None:
     status = "GREEN" if dynasty.loaded else "YELLOW-HOLD"
     source = str(dynasty.source_path or "missing")
     st.info(
@@ -35,65 +39,96 @@ def _render_dynasty_rankings(dynasty: DynastyRankingsBundle) -> None:
         f"{dynasty.row_count} rows | {dynasty.source_label} | {source}"
     )
     if dynasty.source_hash:
-        st.caption(f"Source hash: `{dynasty.source_hash}`")
+        st.caption(f"Dynasty source hash: `{dynasty.source_hash}`")
     for warning in dynasty.warnings:
         st.warning(warning)
     for error in dynasty.errors:
         st.error(error)
 
-    if not dynasty.loaded:
-        st.warning(
-            "Dynasty Rankings cannot be fabricated from sample data. Restore the approved "
-            "full-board CSV before using this page."
-        )
-        return
+    render_source_of_truth_badge(frozen_board)
+    stop_if_board_blocked(frozen_board)
 
-    _render_dynasty_metrics(dynasty)
-    _render_outcome_metrics(dynasty)
-    _render_dynasty_source_samples(dynasty)
-    filtered = _filter_dynasty_frame(dynasty.frame)
-    st.dataframe(
-        display_dynasty_rankings_frame(filtered),
-        use_container_width=True,
-        hide_index=True,
-        key="dynasty_rankings_full_table",
+
+def _render_player_board_metrics(
+    unified: pd.DataFrame,
+    dynasty: DynastyRankingsBundle,
+    frozen_board: FrozenBoardBundle,
+) -> None:
+    board_only = _source_count(unified, "Frozen Draft Board only")
+    outcome_counts = outcome_display_coverage_counts(unified)
+    frozen_outcome = frozen_board_outcome_support_counts(frozen_board.frame)
+    cols = st.columns(5)
+    cols[0].metric("Unified rows", int(unified.shape[0]))
+    cols[1].metric("Full dynasty rows", dynasty.row_count)
+    cols[2].metric("Frozen board rows", frozen_board.row_count)
+    cols[3].metric("Draft-board only", board_only)
+    cols[4].metric(
+        "Frozen-board Outcome support",
+        f"{frozen_outcome['supported']} / {frozen_outcome['rows']}",
+    )
+    st.info(
+        "Outcome Display-Only columns are display-only context. Missing or unavailable "
+        f"Outcome cells show `{OUTCOME_NOT_ENOUGH_INFORMATION}` and do not drive "
+        "sorting or ranking."
     )
     st.caption(
-        "Outcome probabilities, market ranks, and league ranks are display-only context. "
-        "They do not create, replace, or override NWR Dynasty Score or Dynasty Rank."
+        "Frozen-board-only rows keep their Final Board Rank and show `Draft-board only` "
+        "or `Not enough information` where the approved dynasty source has no row."
+    )
+    st.caption(
+        "Outcome coverage in this player board: "
+        f"{outcome_counts['available']} available / {outcome_counts['rows']} rows; "
+        f"{outcome_counts['not_enough_information']} rows need more information."
     )
 
 
-def _render_dynasty_metrics(dynasty: DynastyRankingsBundle) -> None:
-    positions = (
-        int(dynasty.frame["position"].astype(str).nunique())
-        if "position" in dynasty.frame.columns
-        else 0
-    )
-    scored = 0
-    if "nwr_dynasty_score" in dynasty.frame.columns:
-        scored = int(dynasty.frame["nwr_dynasty_score"].astype(str).str.strip().astype(bool).sum())
-    cols = st.columns(5)
-    cols[0].metric("Dynasty rows", dynasty.row_count)
-    cols[1].metric("Veterans", dynasty.veteran_count)
-    cols[2].metric("Rookie flag", dynasty.rookie_count)
-    cols[3].metric("Positions", positions)
-    cols[4].metric("NWR scored", scored)
-    if dynasty.rookie_count == 0:
-        st.caption(
-            "The approved full-player artifact includes young players, but its "
-            "`is_rookie` flag is not populated for a rookie-only split."
-        )
+def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
+    if "source_coverage" not in frame.columns:
+        return 0
+    return int(frame["source_coverage"].astype(str).eq(source_coverage).sum())
 
 
-def _render_dynasty_source_samples(dynasty: DynastyRankingsBundle) -> None:
-    if dynasty.frame.empty or "player_name" not in dynasty.frame.columns:
+def _render_player_board_samples(frame: pd.DataFrame) -> None:
+    if frame.empty or "player_name" not in frame.columns:
         return
-    top_players = ", ".join(dynasty.frame["player_name"].astype(str).head(3))
-    st.caption(f"Top Dynasty rows loaded: {top_players}.")
-    outcome_sample = _first_outcome_sample(dynasty.frame)
+    veteran_sample = _first_player_match(frame, ("Christian McCaffrey", "Puka Nacua"))
+    board_prospect_sample = _first_source_match(frame, "Frozen Draft Board only")
+    outcome_sample = _first_outcome_sample(frame)
+    if veteran_sample:
+        st.caption(f"Veteran proof row loaded: {veteran_sample}.")
+    if board_prospect_sample:
+        st.caption(
+            "Frozen-board rookie/prospect proof row loaded: "
+            f"{board_prospect_sample}."
+        )
     if outcome_sample:
         st.caption(f"Outcome display sample: {outcome_sample}.")
+
+
+def _first_player_match(frame: pd.DataFrame, names: tuple[str, ...]) -> str:
+    for name in names:
+        rows = frame.loc[frame["player_name"].astype(str).str.casefold() == name.casefold()]
+        if rows.empty:
+            continue
+        row = rows.iloc[0]
+        source = str(row.get("source_coverage") or "").strip()
+        position = str(row.get("position") or "").strip()
+        return f"{name} ({position}, {source})"
+    return ""
+
+
+def _first_source_match(frame: pd.DataFrame, source_coverage: str) -> str:
+    if "source_coverage" not in frame.columns:
+        return ""
+    rows = frame.loc[frame["source_coverage"].astype(str) == source_coverage]
+    if rows.empty:
+        return ""
+    row = rows.iloc[0]
+    player = str(row.get("player_name") or "").strip()
+    position = str(row.get("position") or "").strip()
+    final_rank = str(row.get("final_board_rank") or "").strip()
+    rank_text = f", Final Board Rank {final_rank}" if final_rank else ""
+    return f"{player} ({position}, {source_coverage}{rank_text})"
 
 
 def _first_outcome_sample(frame: pd.DataFrame) -> str:
@@ -110,69 +145,57 @@ def _first_outcome_sample(frame: pd.DataFrame) -> str:
         player = str(row.get("player_name") or "").strip()
         for column, label in outcome_columns:
             value = str(row.get(column) or "").strip()
-            if player and value and value != "Not enough information.":
+            if player and value and value != OUTCOME_NOT_ENOUGH_INFORMATION:
                 return f"{player} {label} {value}"
     return ""
 
 
-def _render_outcome_metrics(dynasty: DynastyRankingsBundle) -> None:
-    counts = outcome_display_coverage_counts(dynasty.frame)
-    cols = st.columns(3)
-    cols[0].metric("Outcome context rows", counts["rows"])
-    cols[1].metric("Outcome available", counts["available"])
-    cols[2].metric("Outcome not enough info", counts["not_enough_information"])
-    st.info(
-        "Outcome columns are display-only. Missing or unavailable Outcome cells show "
-        "`Not enough information.` and do not drive sorting or ranking."
-    )
-
-
-def _filter_dynasty_frame(frame: pd.DataFrame) -> pd.DataFrame:
+def _filter_player_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
     filtered = frame.copy()
-    with st.expander("Dynasty Filters", expanded=False):
-        cols = st.columns(5)
+    view_mode = st.radio(
+        "View mode",
+        ["Unified Review View", "Full Dynasty source", "Frozen Draft Board"],
+        horizontal=True,
+        key="dynasty_player_board_view_mode",
+    )
+    if view_mode == "Full Dynasty source" and "source_coverage" in filtered.columns:
+        filtered = filtered.loc[
+            filtered["source_coverage"].astype(str).str.startswith("Full Dynasty source")
+        ]
+    elif view_mode == "Frozen Draft Board" and "final_board_rank" in filtered.columns:
+        filtered = filtered.loc[filtered["final_board_rank"].astype(str).str.strip().astype(bool)]
+
+    with st.expander("Player Board Filters", expanded=False):
+        cols = st.columns(4)
         position_values = filtered.get("position", pd.Series(dtype=str)).astype(str).unique()
         positions = ["All"] + sorted(value for value in position_values if value)
-        position = cols[0].selectbox("Position", positions, key="dynasty_full_position")
+        position = cols[0].selectbox("Position", positions, key="dynasty_player_board_position")
         if position != "All" and "position" in filtered.columns:
             filtered = filtered.loc[filtered["position"].astype(str) == position]
 
-        team_values = filtered.get("nfl_team", pd.Series(dtype=str)).astype(str).unique()
-        teams = ["All"] + sorted(value for value in team_values if value)
-        team = cols[1].selectbox("Team", teams, key="dynasty_full_team")
-        if team != "All" and "nfl_team" in filtered.columns:
-            filtered = filtered.loc[filtered["nfl_team"].astype(str) == team]
+        source_values = filtered.get("source_coverage", pd.Series(dtype=str)).astype(str).unique()
+        sources = ["All"] + sorted(value for value in source_values if value)
+        source = cols[1].selectbox("Source Coverage", sources, key="dynasty_player_board_source")
+        if source != "All" and "source_coverage" in filtered.columns:
+            filtered = filtered.loc[filtered["source_coverage"].astype(str) == source]
 
-        pool_values = filtered.get("pool_status", pd.Series(dtype=str)).astype(str).unique()
-        pools = ["All"] + sorted(value for value in pool_values if value)
-        pool = cols[2].selectbox("Status", pools, key="dynasty_full_pool")
-        if pool != "All" and "pool_status" in filtered.columns:
-            filtered = filtered.loc[filtered["pool_status"].astype(str) == pool]
-
-        rookie_mode = cols[3].selectbox(
-            "Rookie/Veteran",
-            ["All", "Veterans/current", "Rookie-flagged"],
-            key="dynasty_full_rookie_mode",
-        )
-        if rookie_mode != "All" and "is_rookie" in filtered.columns:
-            rookie_mask = (
-                filtered["is_rookie"].astype(str).str.lower().isin({"1", "true", "yes"})
-            )
-            filtered = filtered.loc[
-                rookie_mask if rookie_mode == "Rookie-flagged" else ~rookie_mask
-            ]
-
-        outcome = cols[4].selectbox(
+        outcome = cols[2].selectbox(
             "Outcome",
-            ["All", "Available", "Not enough information."],
-            key="dynasty_full_outcome",
+            ["All", "Available", OUTCOME_NOT_ENOUGH_INFORMATION],
+            key="dynasty_player_board_outcome",
         )
         if outcome != "All" and "outcome_availability_display_only" in filtered.columns:
             filtered = filtered.loc[
                 filtered["outcome_availability_display_only"].astype(str) == outcome
             ]
 
-        search = st.text_input("Search", key="dynasty_full_search")
+        manual_only = cols[3].checkbox("Manual review only", key="dynasty_player_board_manual")
+        if manual_only and "needs_manual_review" in filtered.columns:
+            filtered = filtered.loc[
+                filtered["needs_manual_review"].astype(str).str.lower().isin({"true", "yes", "1"})
+            ]
+
+        search = st.text_input("Search", key="dynasty_player_board_search")
         if search:
             mask = pd.Series(False, index=filtered.index)
             for column in ("player_name", "nfl_team", "position"):
@@ -184,18 +207,20 @@ def _filter_dynasty_frame(frame: pd.DataFrame) -> pd.DataFrame:
                         regex=False,
                     )
             filtered = filtered.loc[mask]
+    st.caption(f"Rows shown: {int(filtered.shape[0])}")
     return filtered
 
 
 bundle = load_frozen_board()
 dynasty_bundle = load_dynasty_rankings()
+unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
 
 page_header(
-    "Dynasty Rankings / Final Draft Board",
+    "Dynasty Rankings / Player Board",
     eyebrow="Draft-Day App V1",
     description=(
-        "Dynasty Rankings shows the approved full veteran-plus-rookie rankings artifact. "
-        "Final Draft Board remains the frozen 66-row source for draft-day live workflows."
+        "One player-board surface for full dynasty rankings plus frozen draft-board context. "
+        "Final Draft Board remains the frozen 66-row source for draft-day workflows."
     ),
     status_items=(
         ("Full dynasty rankings", "safe" if dynasty_bundle.loaded else "review"),
@@ -204,24 +229,23 @@ page_header(
     ),
 )
 
-dynasty_tab, final_board_tab = st.tabs(
-    ["Dynasty Rankings (Full)", "Final Draft Board (Frozen 66)"]
-)
-
-with dynasty_tab:
-    _render_dynasty_rankings(dynasty_bundle)
-
-with final_board_tab:
-    st.subheader("Final Draft Board")
-    render_source_of_truth_badge(bundle)
-    stop_if_board_blocked(bundle)
-
-    render_board_metrics(bundle.frame)
-    filtered = filter_board_frame(bundle.frame, key_prefix="final_board_v1")
-    render_final_board_table(filtered, key="final_board_v1_table")
-
-    st.caption(
-        "Final Draft Board uses the frozen 66-row export. The visible final_board_rank, "
-        "final_tier, and position_rank columns remain the source of truth for tomorrow's "
-        "Live Draft Room and draft-board workflows."
+_render_source_badges(dynasty_bundle, bundle)
+if not dynasty_bundle.loaded:
+    st.warning(
+        "Full Dynasty Rankings cannot be fabricated from sample data. Frozen-board rows remain "
+        "visible as draft-board-only context until the approved dynasty source is available."
     )
+
+_render_player_board_metrics(unified_board, dynasty_bundle, bundle)
+_render_player_board_samples(unified_board)
+filtered_board = _filter_player_board_frame(unified_board)
+st.dataframe(
+    display_unified_player_board_frame(filtered_board),
+    use_container_width=True,
+    hide_index=True,
+    key="dynasty_unified_player_board_table",
+)
+st.caption(
+    "This table does not create, replace, or override Final Board Rank, NWR Dynasty Score, "
+    "Dynasty Rank, or Outcome probabilities."
+)

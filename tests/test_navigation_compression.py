@@ -144,19 +144,21 @@ def test_source_plumbing_is_not_direct_sidebar_inputs() -> None:
     assert "Pack Details" in data_pack_selector
 
 
-def test_draft_day_v1_rankings_page_splits_dynasty_and_final_board_sources() -> None:
+def test_draft_day_v1_rankings_page_uses_one_player_board_with_view_modes() -> None:
     final_board = (APP_DIR / "pages" / "20_final_board_v1.py").read_text()
     draft_prep = (APP_DIR / "pages" / "25_draft_prep_v1.py").read_text()
     legacy_player_board = (APP_DIR / "legacy_pages" / "05_rankings_legacy.py").read_text()
 
-    assert "Dynasty Rankings / Final Draft Board" in final_board
-    assert "Dynasty Rankings shows the approved full veteran-plus-rookie" in final_board
+    assert "Dynasty Rankings / Player Board" in final_board
+    assert "One player-board surface for full dynasty rankings" in final_board
     assert "Final Draft Board remains the frozen 66-row source" in final_board
-    assert "Outcome columns are display-only" in final_board
-    assert "Dynasty Rankings (Full)" in final_board
-    assert "Final Draft Board (Frozen 66)" in final_board
+    assert "Outcome Display-Only columns are display-only" in final_board
+    assert "Unified Review View" in final_board
+    assert "Full Dynasty source" in final_board
+    assert "Frozen Draft Board" in final_board
     assert "load_dynasty_rankings" in final_board
-    assert "render_final_board_table" in final_board
+    assert "display_unified_player_board_frame" in final_board
+    assert "render_final_board_table" not in final_board
     assert "Draft Prep" in draft_prep
     assert "Readiness Checklist" in draft_prep
     assert "Lane Prop Status" in draft_prep

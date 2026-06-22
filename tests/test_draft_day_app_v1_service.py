@@ -9,13 +9,17 @@ import src.services.draft_day_app_v1_service as draft_day_service
 from src.services.draft_day_app_v1_service import (
     EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_ROW_COUNT,
+    OUTCOME_NOT_ENOUGH_INFORMATION,
     REPO_SAFE_APP_PROP_ROOT,
     REPO_SAFE_FROZEN_BOARD_ROOT,
     REQUIRED_VISIBLE_FIELDS,
+    build_unified_player_board,
     display_board_frame,
     display_dynasty_rankings_frame,
     display_lane_prop_frame,
+    display_unified_player_board_frame,
     extract_prop_status,
+    frozen_board_outcome_support_counts,
     hidden_sort_columns,
     lane_prop_status_rows,
     load_frozen_board,
@@ -219,7 +223,7 @@ def test_full_dynasty_rankings_loader_uses_approved_artifact_contract(
     }
     display = display_dynasty_rankings_frame(bundle.frame)
     assert "QB T12" in display.columns
-    assert display["RB T12"].isin({"20%", "Not enough information."}).all()
+    assert display["RB T12"].isin({"20%", OUTCOME_NOT_ENOUGH_INFORMATION}).all()
 
 
 def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
@@ -239,13 +243,13 @@ def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
                 "pool_status": "AVAILABLE",
                 "data_needed": "None",
                 "outcome_availability_display_only": "Available",
-                "qb_t12_display_only": "Not enough information.",
-                "rb_t12_display_only": "Not enough information.",
-                "rb_t24_display_only": "Not enough information.",
+                "qb_t12_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "rb_t12_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "rb_t24_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
                 "wr_t12_display_only": "65%",
                 "wr_t24_display_only": "86%",
                 "wr_t36_display_only": "93%",
-                "te_t12_display_only": "Not enough information.",
+                "te_t12_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
                 "source_path": r"C:\local\source.csv",
                 "blocked_use": "draft_sort_override",
                 "candidate_evidence_fields_used": "technical",
@@ -270,8 +274,8 @@ def test_outcome_display_context_uses_not_enough_information_for_missing_values(
     frame = pd.DataFrame(
         [
             {
-                "outcome_availability_display_only": "Not enough information.",
-                "qb_t12_display_only": "Not enough information.",
+                "outcome_availability_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "qb_t12_display_only": OUTCOME_NOT_ENOUGH_INFORMATION,
             }
         ]
     )
@@ -279,3 +283,98 @@ def test_outcome_display_context_uses_not_enough_information_for_missing_values(
     counts = outcome_display_coverage_counts(frame)
 
     assert counts == {"rows": 1, "available": 0, "not_enough_information": 1}
+
+
+def test_unified_player_board_preserves_dynasty_and_board_only_truths(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    outcome_path = tmp_path / draft_day_service.OUTCOME_NUMERIC_DISPLAY_FILE_NAME
+    pd.DataFrame(
+        [
+            {
+                "player_id": "dyn_1",
+                "player_display_name": "Dynasty Veteran",
+                "position": "WR",
+                "outcome_status": "available",
+                "qb_t12_display_pct": "",
+                "rb_t12_display_pct": "",
+                "rb_t24_display_pct": "",
+                "wr_t12_display_pct": "65%",
+                "wr_t24_display_pct": "86%",
+                "wr_t36_display_pct": "93%",
+                "te_t12_display_pct": "",
+            }
+        ]
+    ).to_csv(outcome_path, index=False)
+    outcome_hash = draft_day_service.file_sha256(outcome_path)
+    monkeypatch.setattr(draft_day_service, "OUTCOME_NUMERIC_DISPLAY_PATH", outcome_path)
+    monkeypatch.setattr(draft_day_service, "EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH", outcome_hash)
+    dynasty = pd.DataFrame(
+        [
+            {
+                "player_id": "dyn_1",
+                "nwr_rank": "1",
+                "player_name": "Dynasty Veteran",
+                "position": "WR",
+                "age": "25",
+                "nfl_team": "SF",
+                "nwr_dynasty_score": "88.8",
+                "trust_status": "Scored",
+                "pool_status": "AVAILABLE",
+                "warning_flags": "",
+                "data_needed": "",
+            }
+        ]
+    )
+    dynasty = draft_day_service.integrate_outcome_display_context(dynasty)
+    board = pd.DataFrame(
+        [
+            {
+                "player_id": "dyn_1",
+                "final_board_rank": "4",
+                "final_tier": "T1",
+                "position_rank": "WR1",
+                "player": "Dynasty Veteran",
+                "position": "WR",
+                "nfl_team": "SF",
+                "model_posture_used": "frozen",
+                "candidate_status": "READY",
+                "risk_notes": "",
+                "needs_manual_review": "false",
+            },
+            {
+                "player_id": "board_1",
+                "final_board_rank": "5",
+                "final_tier": "T1",
+                "position_rank": "RB1",
+                "player": "Draft Prospect",
+                "position": "RB",
+                "nfl_team": "",
+                "model_posture_used": "frozen",
+                "candidate_status": "READY",
+                "risk_notes": "manual check",
+                "needs_manual_review": "true",
+            },
+        ]
+    )
+
+    unified = build_unified_player_board(dynasty, board)
+    display = display_unified_player_board_frame(unified)
+
+    assert unified.shape[0] == 2
+    assert set(unified["source_coverage"]) == {
+        "Full Dynasty source + Frozen Board",
+        "Frozen Draft Board only",
+    }
+    board_only = display.loc[display["Player"].eq("Draft Prospect")].iloc[0]
+    assert board_only["Dynasty Rank"] == "Draft-board only"
+    assert board_only["NWR Dynasty Score"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert board_only["Outcome Availability (Display-Only)"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert "player_id" not in display.columns
+    assert "WR T12 (Display-Only)" in display.columns
+    assert frozen_board_outcome_support_counts(board) == {
+        "rows": 2,
+        "supported": 1,
+        "unsupported": 1,
+    }

@@ -34,6 +34,15 @@ LOCAL_DYNASTY_RANKINGS_ROOT = (
     REPO_ROOT / "local_exports" / "model_v4" / "current_value" / "latest"
 )
 LOCAL_DYNASTY_RANKINGS_PATH = LOCAL_DYNASTY_RANKINGS_ROOT / DYNASTY_BOARD_FILE_NAME
+CONTROL_REPO_ROOT = Path(r"C:\NWR\Niners-War-Room")
+CONTROL_DYNASTY_RANKINGS_PATH = (
+    CONTROL_REPO_ROOT
+    / "local_exports"
+    / "model_v4"
+    / "current_value"
+    / "latest"
+    / DYNASTY_BOARD_FILE_NAME
+)
 EXPECTED_DYNASTY_RANKINGS_HASH = (
     "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
 )
@@ -133,7 +142,35 @@ DYNASTY_DISPLAY_COLUMNS = (
     "wr_t36_display_only",
     "te_t12_display_only",
 )
-OUTCOME_NOT_ENOUGH_INFORMATION = "Not enough information."
+UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
+    "source_coverage",
+    "nwr_rank",
+    "final_board_rank",
+    "final_tier",
+    "position_rank",
+    "player_name",
+    "position",
+    "age",
+    "nfl_team",
+    "nwr_dynasty_score",
+    "trust_status",
+    "warning_flags",
+    "pool_status",
+    "data_needed",
+    "model_posture_used",
+    "candidate_status",
+    "risk_notes",
+    "needs_manual_review",
+    "outcome_availability_display_only",
+    "qb_t12_display_only",
+    "rb_t12_display_only",
+    "rb_t24_display_only",
+    "wr_t12_display_only",
+    "wr_t24_display_only",
+    "wr_t36_display_only",
+    "te_t12_display_only",
+)
+OUTCOME_NOT_ENOUGH_INFORMATION = "Not enough information"
 APPROVED_OUTCOME_DISPLAY_FIELDS = (
     ("qb_t12_display_pct", "qb_t12_display_only", "QB T12"),
     ("rb_t12_display_pct", "rb_t12_display_only", "RB T12"),
@@ -354,6 +391,17 @@ def dynasty_rankings_candidates() -> tuple[tuple[Path, str, str], ...]:
             )
         )
     candidates.append((LOCAL_DYNASTY_RANKINGS_PATH, "approved local dynasty rankings", ""))
+    if CONTROL_DYNASTY_RANKINGS_PATH != LOCAL_DYNASTY_RANKINGS_PATH:
+        candidates.append(
+            (
+                CONTROL_DYNASTY_RANKINGS_PATH,
+                "approved control-repo dynasty rankings",
+                (
+                    "Using the approved local dynasty rankings artifact from the clean "
+                    "control repo because this lane worktree does not contain local_exports."
+                ),
+            )
+        )
     return tuple(candidates)
 
 
@@ -536,6 +584,207 @@ def outcome_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
     }
 
 
+def frozen_board_outcome_support_counts(frame: pd.DataFrame) -> dict[str, int]:
+    rows = int(frame.shape[0])
+    outcome = load_outcome_numeric_display()
+    if not outcome.loaded:
+        return {"rows": rows, "supported": 0, "unsupported": rows}
+    available = outcome.frame.loc[
+        outcome.frame["outcome_status"].astype(str).str.lower().eq("available")
+    ]
+    board_keys = _player_identity_keys(frame, name_column="player")
+    available_keys = _player_identity_keys(available, name_column="player_display_name")
+    supported = len(board_keys & available_keys)
+    return {"rows": rows, "supported": supported, "unsupported": rows - supported}
+
+
+def build_unified_player_board(
+    dynasty_frame: pd.DataFrame,
+    frozen_board_frame: pd.DataFrame,
+) -> pd.DataFrame:
+    dynasty = dynasty_frame.copy()
+    board = frozen_board_frame.copy()
+    if dynasty.empty and board.empty:
+        return pd.DataFrame()
+
+    board_by_id = _rows_by_player_id(board)
+    board_by_identity = _rows_by_player_identity(board, name_column="player")
+    dynasty_ids = _player_id_set(dynasty)
+    dynasty_identity_keys = _player_identity_keys(dynasty, name_column="player_name")
+    rows: list[dict[str, object]] = []
+    for row in dynasty.to_dict("records"):
+        player_id = _clean_text(row.get("player_id"))
+        identity_key = _player_identity_key(
+            row.get("player_name"),
+            row.get("position"),
+        )
+        board_row = board_by_id.get(player_id, {}) or board_by_identity.get(identity_key, {})
+        merged = dict(row)
+        merged["source_coverage"] = (
+            "Full Dynasty source + Frozen Board"
+            if board_row
+            else "Full Dynasty source"
+        )
+        for column in (
+            "final_board_rank",
+            "final_tier",
+            "position_rank",
+            "model_posture_used",
+            "candidate_status",
+            "risk_notes",
+            "needs_manual_review",
+        ):
+            merged[column] = board_row.get(column, "")
+        rows.append(merged)
+
+    if not board.empty:
+        board_only = board.loc[
+            ~board.apply(
+                lambda row: _board_row_matches_dynasty(row, dynasty_ids, dynasty_identity_keys),
+                axis=1,
+            )
+        ].copy()
+        board_only_rows = integrate_outcome_display_context(
+            _board_only_rows_for_unified_player_board(board_only)
+        )
+        rows.extend(board_only_rows.to_dict("records"))
+
+    unified = pd.DataFrame(rows)
+    if unified.empty:
+        return unified
+    unified["_dynasty_sort"] = pd.to_numeric(
+        unified.get("nwr_rank", pd.Series(dtype=str)),
+        errors="coerce",
+    )
+    unified["_board_sort"] = pd.to_numeric(
+        unified.get("final_board_rank", pd.Series(dtype=str)),
+        errors="coerce",
+    )
+    unified["_source_sort"] = unified["source_coverage"].map(
+        {
+            "Full Dynasty source + Frozen Board": 0,
+            "Full Dynasty source": 1,
+            "Frozen Draft Board only": 2,
+        }
+    ).fillna(3)
+    unified = unified.sort_values(
+        by=["_source_sort", "_dynasty_sort", "_board_sort", "player_name"],
+        ascending=[True, True, True, True],
+        na_position="last",
+        kind="stable",
+    ).drop(columns=["_source_sort", "_dynasty_sort", "_board_sort"])
+    return unified.reset_index(drop=True)
+
+
+def display_unified_player_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    available = [
+        column
+        for column in UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
+        if column in frame.columns
+    ]
+    display = frame.loc[:, available].copy()
+    if "warning_flags" in display.columns:
+        display["warning_flags"] = display["warning_flags"].map(warning_summary)
+    display = display.fillna("").astype(str)
+    return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
+
+
+def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    for row in frame.to_dict("records"):
+        rows.append(
+            {
+                "player_id": row.get("player_id", ""),
+                "source_coverage": "Frozen Draft Board only",
+                "nwr_rank": "Draft-board only",
+                "final_board_rank": row.get("final_board_rank", ""),
+                "final_tier": row.get("final_tier", ""),
+                "position_rank": row.get("position_rank", ""),
+                "player_name": row.get("player", ""),
+                "position": row.get("position", ""),
+                "age": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "nfl_team": row.get("nfl_team", ""),
+                "nwr_dynasty_score": OUTCOME_NOT_ENOUGH_INFORMATION,
+                "trust_status": "Draft-board only",
+                "warning_flags": "",
+                "pool_status": "Draft-board only",
+                "data_needed": "Draft-board only",
+                "model_posture_used": row.get("model_posture_used", ""),
+                "candidate_status": row.get("candidate_status", ""),
+                "risk_notes": row.get("risk_notes", ""),
+                "needs_manual_review": row.get("needs_manual_review", ""),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _rows_by_player_id(frame: pd.DataFrame) -> dict[str, dict[str, object]]:
+    if "player_id" not in frame.columns:
+        return {}
+    rows: dict[str, dict[str, object]] = {}
+    for row in frame.to_dict("records"):
+        player_id = _clean_text(row.get("player_id"))
+        if player_id:
+            rows[player_id] = row
+    return rows
+
+
+def _rows_by_player_identity(
+    frame: pd.DataFrame,
+    *,
+    name_column: str,
+) -> dict[tuple[str, str], dict[str, object]]:
+    rows: dict[tuple[str, str], dict[str, object]] = {}
+    if name_column not in frame.columns or "position" not in frame.columns:
+        return rows
+    for row in frame.to_dict("records"):
+        identity_key = _player_identity_key(row.get(name_column), row.get("position"))
+        if identity_key != ("", ""):
+            rows[identity_key] = row
+    return rows
+
+
+def _player_id_set(frame: pd.DataFrame) -> set[str]:
+    if "player_id" not in frame.columns:
+        return set()
+    return {
+        str(player_id).strip()
+        for player_id in frame["player_id"]
+        if str(player_id).strip()
+    }
+
+
+def _player_identity_keys(frame: pd.DataFrame, *, name_column: str) -> set[tuple[str, str]]:
+    if name_column not in frame.columns or "position" not in frame.columns:
+        return set()
+    return {
+        _player_identity_key(row.get(name_column), row.get("position"))
+        for row in frame.to_dict("records")
+        if _player_identity_key(row.get(name_column), row.get("position")) != ("", "")
+    }
+
+
+def _board_row_matches_dynasty(
+    row: pd.Series,
+    dynasty_ids: set[str],
+    dynasty_identity_keys: set[tuple[str, str]],
+) -> bool:
+    player_id = _clean_text(row.get("player_id"))
+    if player_id and player_id in dynasty_ids:
+        return True
+    return _player_identity_key(row.get("player"), row.get("position")) in dynasty_identity_keys
+
+
+def _player_identity_key(name: object, position: object) -> tuple[str, str]:
+    normalized_name = re.sub(r"[^a-z0-9]+", "", str(name or "").casefold())
+    normalized_position = str(position or "").strip().upper()
+    return normalized_name, normalized_position
+
+
+def _clean_text(value: object) -> str:
+    return str(value or "").strip()
+
+
 def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
     normalized = frame.copy()
     if "nwr_rank" in normalized.columns:
@@ -647,6 +896,35 @@ DYNASTY_DISPLAY_LABELS = {
     "wr_t24_display_only": "WR T24",
     "wr_t36_display_only": "WR T36",
     "te_t12_display_only": "TE T12",
+}
+
+UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
+    "source_coverage": "Source Coverage",
+    "nwr_rank": "Dynasty Rank",
+    "final_board_rank": "Final Board Rank",
+    "final_tier": "Final Tier",
+    "position_rank": "Position Rank",
+    "player_name": "Player",
+    "position": "Pos",
+    "age": "Age",
+    "nfl_team": "NFL Team",
+    "nwr_dynasty_score": "NWR Dynasty Score",
+    "trust_status": "Trust",
+    "warning_flags": "Warnings",
+    "pool_status": "Status",
+    "data_needed": "Data Needed",
+    "model_posture_used": "Model Posture Used",
+    "candidate_status": "Candidate Status",
+    "risk_notes": "Risk Notes",
+    "needs_manual_review": "Needs Manual Review",
+    "outcome_availability_display_only": "Outcome Availability (Display-Only)",
+    "qb_t12_display_only": "QB T12 (Display-Only)",
+    "rb_t12_display_only": "RB T12 (Display-Only)",
+    "rb_t24_display_only": "RB T24 (Display-Only)",
+    "wr_t12_display_only": "WR T12 (Display-Only)",
+    "wr_t24_display_only": "WR T24 (Display-Only)",
+    "wr_t36_display_only": "WR T36 (Display-Only)",
+    "te_t12_display_only": "TE T12 (Display-Only)",
 }
 
 
