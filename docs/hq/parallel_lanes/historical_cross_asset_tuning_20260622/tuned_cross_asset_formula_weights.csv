@@ -1,0 +1,12 @@
+component,emergency_weight,tuned_weight,direction,evidence_basis,guardrail
+veteran_dynasty_anchor_strength,1.0,1.12,up,Full dynasty anchor and current value rows are more reliable for established young veterans than mixed rookie raw scores.,Uses internal dynasty score only where available; no market/projection input.
+rookie_rank_tier_crosswalk_strength,1.0,0.86,down,"Mature rookie replay showed draft-capital-only beat the current rookie model in aggregate Top-20, while high-ranked misses and low-evidence overpromotion were real patterns.",Rookies remain visible; raw rookie score is not compared directly to veteran score.
+rookie_draft_capital_role_evidence_strength,1.0,1.15,up,Replay evidence supports draft capital as a strong rookie prior; role evidence matters for RB/WR/TE usefulness.,Only approved internal draft/profile fields if present.
+age_curve_rb_penalty,1.0,1.15,up,RB aging/role volatility matters most in short dynasty windows.,Confidence/value adjustment only; does not change approved rank.
+age_curve_wr_penalty,1.0,1.05,slight_up,WR age curve is gentler than RB but older uncertain WRs need caveats.,Confidence/value adjustment only.
+age_curve_te_penalty,1.0,0.9,down,TE can retain later value but hit rates are volatile; avoid overreacting to age alone.,Position-specific adjustment only.
+qb_1qb_discount,1.0,1.3,up,10-team 1QB setting lowers replacement-level QB urgency and prior QB discipline reports caution against overpromotion.,"Applies to cross-asset review score, not final_board_rank."
+rb_wr_te_scarcity_component,1.0,1.08,up,"League starts 2 RB, 3 WR, 2 FLEX; RB/WR/TE depth matters more than QB depth.",No K included by default.
+manual_review_needs_data_penalty,1.0,1.4,up,"Current board has many manual-review/needs_data rows; tuning should make uncertainty louder, not silently confidence-rank them.",Penalty lowers candidate confidence/value only.
+unsupported_outcome_treatment,1.0,0.5,down_to_confidence_only,Outcome support is 12/66; missing support should not be treated as zero fantasy probability.,"Missing outcome becomes uncertainty/Not enough information, not a model-zero."
+adp_or_market_input_weight,0.0,0.0,unchanged_blocked,ADP is display-only price context; not a model input.,Hard guardrail: market/ADP not used as internal value.
