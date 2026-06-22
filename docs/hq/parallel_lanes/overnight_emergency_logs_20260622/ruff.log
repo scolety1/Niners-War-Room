@@ -1,0 +1,8 @@
+﻿python.exe : C:\NWR\Niners-War-Room\.venv\Scripts\python.exe: No module named ruff
+At line:2 char:1
++ & '.\.venv\Scripts\python.exe' -m ruff check scripts\build_emergency_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\NWR\Niners-W...dule named ruff:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+

@@ -32,6 +32,14 @@ CROSS_ASSET_CANDIDATE_PATH = (
     / "docs"
     / "hq"
     / "parallel_lanes"
+    / "overnight_8h_emergency_20260622"
+    / "emergency_cross_asset_candidate_player_board.csv"
+)
+FALLBACK_CROSS_ASSET_CANDIDATE_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
     / "cross_asset_formula_app_repair_20260622"
     / CROSS_ASSET_CANDIDATE_FILE_NAME
 )
@@ -596,10 +604,15 @@ def load_outcome_numeric_display() -> OutcomeDisplayBundle:
 
 @lru_cache(maxsize=1)
 def load_cross_asset_candidate_board() -> pd.DataFrame:
-    if not CROSS_ASSET_CANDIDATE_PATH.exists():
+    candidate_path = (
+        CROSS_ASSET_CANDIDATE_PATH
+        if CROSS_ASSET_CANDIDATE_PATH.exists()
+        else FALLBACK_CROSS_ASSET_CANDIDATE_PATH
+    )
+    if not candidate_path.exists():
         return pd.DataFrame()
     try:
-        frame = pd.read_csv(CROSS_ASSET_CANDIDATE_PATH, dtype=str).fillna("")
+        frame = pd.read_csv(candidate_path, dtype=str).fillna("")
     except Exception:
         return pd.DataFrame()
     hidden_like = hidden_sort_columns(frame.columns)
@@ -644,12 +657,24 @@ def integrate_cross_asset_candidate_context(
 CROSS_ASSET_DISPLAY_COLUMNS = (
     "cross_asset_candidate_rank",
     "cross_asset_candidate_value",
+    "emergency_cross_asset_rank",
+    "emergency_cross_asset_value",
+    "emergency_overall_context_rank",
     "candidate_value_band",
     "confidence_band",
     "uncertainty_reasons",
+    "candidate_vs_frozen_note",
+    "candidate_vs_dynasty_note",
+    "candidate_action_summary",
     "adp",
+    "adp_source_status",
     "available_pool_adp_rank",
     "available_pool_adp_range",
+    "current_pick_value_1_03",
+    "current_pick_value_1_04",
+    "current_pick_value_1_09",
+    "current_pick_value_2_04",
+    "current_pick_value_2_08",
     "current_pick_value",
     "current_pick_value_reason",
     "outcome_applicable_summary",

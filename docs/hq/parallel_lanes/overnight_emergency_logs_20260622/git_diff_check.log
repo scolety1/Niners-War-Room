@@ -1,0 +1,11 @@
+﻿git : warning: in the working copy of 'app/pages/22_player_compare_v1.py', LF will be replaced by CRLF the next time 
+Git touches it
+At line:2 char:1
++ git diff --check *> 'docs\hq\parallel_lanes\overnight_emergency_logs_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'src/services/draft_day_app_v1_service.py', LF will be replaced by CRLF the next time 
+Git touches it
+

@@ -1,0 +1,2 @@
+## work/hq-parallel-control...origin/work/hq-parallel-control
+?? docs/hq/parallel_lanes/overnight_emergency_logs_20260622/

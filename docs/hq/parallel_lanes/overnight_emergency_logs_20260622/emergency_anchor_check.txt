@@ -1,0 +1,18 @@
+﻿rows 294
+Jeremiyah Love draftRank 1 overall 9 value 61.70 band Priority candidate conf Medium final 1 dyn Not enough information adpRank 7
+Makai Lemon draftRank 4 overall 22 value 49.20 band Viable candidate conf Low final 2 dyn Not enough information adpRank 76
+Carnell Tate draftRank 7 overall 25 value 48.40 band Viable candidate conf Low final 3 dyn Not enough information adpRank 43
+KC Concepcion draftRank 8 overall 28 value 46.70 band Viable candidate conf Low final 4 dyn Not enough information adpRank 80
+Jadarian Price draftRank 9 overall 29 value 45.70 band Viable candidate conf Low final 5 dyn Not enough information adpRank 67
+Zay Flowers draftRank 2 overall 13 value 57.03 band Strong candidate conf Medium-high final 31 dyn 12 adpRank 66
+Chris Olave draftRank 3 overall 14 value 54.57 band Strong candidate conf Medium-high final 34 dyn 14 adpRank 34
+Jameson Williams draftRank 5 overall 23 value 48.99 band Viable candidate conf Medium-high final 42 dyn 26 adpRank 69
+Drake Maye draftRank 11 overall 38 value 38.35 band Depth/discount candidate conf Low final 40 dyn 23 adpRank 9
+Dak Prescott draftRank 57 overall 215 value 10.06 band Human-review only longshot conf Low final 60 dyn 70 adpRank 112
+Jaylen Warren draftRank 19 overall 70 value 28.20 band Depth/discount candidate conf Medium final 54 dyn 43 adpRank 88
+Brian Thomas draftRank 22 overall 87 value 23.69 band Human-review only longshot conf Medium final 63 dyn 82 adpRank 64
+Rashee Rice draftRank 20 overall 75 value 26.27 band Depth/discount candidate conf Medium final 62 dyn 79 adpRank 46
+Brock Purdy draftRank 63 overall 267 value 3.34 band Human-review only longshot conf Medium final 65 dyn 185 adpRank 75
+Keenan Allen draftRank 65 overall 278 value 0.94 band Human-review only longshot conf Low final 64 dyn 124 adpRank 235
+Darren Waller draftRank 66 overall 285 value 0.00 band Human-review only longshot conf Low final 66 dyn 226 adpRank 277
+

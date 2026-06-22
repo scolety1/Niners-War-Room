@@ -28,6 +28,14 @@ from src.services.draft_day_app_v1_service import (
 )
 
 OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
+HORIZON_CANDIDATE_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "overnight_8h_emergency_20260622"
+    / "outcome_horizon_candidate.csv"
+)
 
 
 def _position_outcome_labels(position: object) -> tuple[str, ...]:
@@ -104,6 +112,70 @@ def _render_position_aware_outcome_compare(
     )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
+
+def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
+    if not HORIZON_CANDIDATE_PATH.exists():
+        return
+    try:
+        horizon = pd.read_csv(HORIZON_CANDIDATE_PATH, dtype=str).fillna(
+            OUTCOME_NOT_ENOUGH_INFORMATION
+        )
+    except Exception:
+        render_yellow_hold("Outcome horizon candidate file could not be loaded.")
+        return
+    required = {"player", "pos", "horizon_metric", "horizon_value_or_band"}
+    if not required.issubset(horizon.columns):
+        render_yellow_hold("Outcome horizon candidate file is missing required columns.")
+        return
+    selected_keys = {
+        (
+            str(row.get("player", "")).strip().casefold(),
+            str(row.get("position", "")).strip().upper(),
+        )
+        for row in compare_frame.to_dict("records")
+    }
+    rows = [
+        row
+        for row in horizon.to_dict("records")
+        if (
+            str(row.get("player", "")).strip().casefold(),
+            str(row.get("pos", "")).strip().upper(),
+        )
+        in selected_keys
+    ]
+    if not rows:
+        return
+    st.subheader("Horizon Outcome Candidate")
+    st.caption(
+        "Candidate / Review-Only bands for 2026, 2027, and Next 5Y. These are not "
+        "approved probabilities and do not replace current Outcome display."
+    )
+    display = pd.DataFrame(rows)
+    columns = [
+        "player",
+        "pos",
+        "horizon_metric",
+        "horizon_value_or_band",
+        "horizon_confidence",
+        "horizon_reason",
+        "display_status",
+    ]
+    st.dataframe(
+        display.loc[:, [column for column in columns if column in display.columns]].rename(
+            columns={
+                "player": "Player",
+                "pos": "Pos",
+                "horizon_metric": "Horizon Metric",
+                "horizon_value_or_band": "Band (Candidate / Review-Only)",
+                "horizon_confidence": "Confidence",
+                "horizon_reason": "Reason",
+                "display_status": "Status",
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
 bundle = load_frozen_board()
 
 page_header(
@@ -141,6 +213,8 @@ compare_columns = [
     "adp",
     "available_pool_adp_range",
     "current_pick_value",
+    "candidate_vs_frozen_note",
+    "candidate_action_summary",
     "candidate_key_caveat",
 ]
 available_compare_columns = [column for column in compare_columns if column in compare.columns]
@@ -169,6 +243,8 @@ if available_compare_columns:
                 "adp": "ADP (Display-Only)",
                 "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
                 "current_pick_value": "Current Pick Value (Display-Only)",
+                "candidate_vs_frozen_note": "Candidate vs Frozen Note",
+                "candidate_action_summary": "Candidate Action Summary",
                 "candidate_key_caveat": "Key Caveat / Review Flag",
             }
         ),
@@ -193,6 +269,7 @@ for lane, file_name in prop_files.items():
         continue
     if lane == "outcome_columns":
         _render_position_aware_outcome_compare(compare, prop_frame, prop_path)
+        _render_horizon_candidate_compare(compare)
         continue
     st.caption(f"{lane} props: {prop_path}")
     join_columns = [

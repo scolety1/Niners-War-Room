@@ -1,0 +1,8 @@
+﻿python.exe : C:\NWR\Niners-War-Room\.venv\Scripts\python.exe: No module named pytest
+At line:2 char:1
++ & '.\.venv\Scripts\python.exe' -m pytest -q tests\test_draft_day_app_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\NWR\Niners-W...le named pytest:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
