@@ -25,6 +25,7 @@ from src.services.draft_day_app_v1_service import (
     load_dynasty_rankings,
     load_frozen_board,
     outcome_display_coverage_counts,
+    sort_unified_player_board_for_view,
 )
 
 
@@ -70,6 +71,11 @@ def _render_player_board_metrics(
         "Outcome Display-Only columns are display-only context. Missing or unavailable "
         f"Outcome cells show `{OUTCOME_NOT_ENOUGH_INFORMATION}` and do not drive "
         "sorting or ranking."
+    )
+    st.caption(
+        "Default order: Full Dynasty Rank is the dynasty order; Final Board Rank is the "
+        "frozen draft-board order. Source Coverage is informational only and is not the "
+        "primary sort."
     )
     st.caption(
         "Frozen-board-only rows keep their Final Board Rank and show `Draft-board only` "
@@ -207,6 +213,7 @@ def _filter_player_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
                         regex=False,
                     )
             filtered = filtered.loc[mask]
+    filtered = sort_unified_player_board_for_view(filtered, view_mode)
     st.caption(f"Rows shown: {int(filtered.shape[0])}")
     return filtered
 

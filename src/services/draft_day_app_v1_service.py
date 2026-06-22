@@ -143,15 +143,15 @@ DYNASTY_DISPLAY_COLUMNS = (
     "te_t12_display_only",
 )
 UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
-    "source_coverage",
     "nwr_rank",
     "final_board_rank",
-    "final_tier",
-    "position_rank",
     "player_name",
     "position",
-    "age",
     "nfl_team",
+    "source_coverage",
+    "final_tier",
+    "position_rank",
+    "age",
     "nwr_dynasty_score",
     "trust_status",
     "warning_flags",
@@ -652,28 +652,44 @@ def build_unified_player_board(
     unified = pd.DataFrame(rows)
     if unified.empty:
         return unified
-    unified["_dynasty_sort"] = pd.to_numeric(
-        unified.get("nwr_rank", pd.Series(dtype=str)),
+    return sort_unified_player_board_for_view(unified, "Unified Review View")
+
+
+def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
+    """Sort display rows without changing any rank/value fields."""
+
+    if frame.empty:
+        return frame.copy()
+    sorted_frame = frame.copy()
+    sorted_frame["_dynasty_sort"] = pd.to_numeric(
+        sorted_frame.get("nwr_rank", pd.Series(dtype=str)),
         errors="coerce",
     )
-    unified["_board_sort"] = pd.to_numeric(
-        unified.get("final_board_rank", pd.Series(dtype=str)),
+    sorted_frame["_board_sort"] = pd.to_numeric(
+        sorted_frame.get("final_board_rank", pd.Series(dtype=str)),
         errors="coerce",
     )
-    unified["_source_sort"] = unified["source_coverage"].map(
-        {
-            "Full Dynasty source + Frozen Board": 0,
-            "Full Dynasty source": 1,
-            "Frozen Draft Board only": 2,
-        }
-    ).fillna(3)
-    unified = unified.sort_values(
-        by=["_source_sort", "_dynasty_sort", "_board_sort", "player_name"],
-        ascending=[True, True, True, True],
-        na_position="last",
-        kind="stable",
-    ).drop(columns=["_source_sort", "_dynasty_sort", "_board_sort"])
-    return unified.reset_index(drop=True)
+    sorted_frame["_has_dynasty_rank_sort"] = sorted_frame["_dynasty_sort"].notna().map(
+        {True: 0, False: 1}
+    )
+
+    if view_mode == "Frozen Draft Board":
+        by = ["_board_sort", "_has_dynasty_rank_sort", "_dynasty_sort", "player_name"]
+        ascending = [True, True, True, True]
+    else:
+        by = ["_has_dynasty_rank_sort", "_dynasty_sort", "_board_sort", "player_name"]
+        ascending = [True, True, True, True]
+
+    return (
+        sorted_frame.sort_values(
+            by=by,
+            ascending=ascending,
+            na_position="last",
+            kind="stable",
+        )
+        .drop(columns=["_dynasty_sort", "_board_sort", "_has_dynasty_rank_sort"])
+        .reset_index(drop=True)
+    )
 
 
 def display_unified_player_board_frame(frame: pd.DataFrame) -> pd.DataFrame:

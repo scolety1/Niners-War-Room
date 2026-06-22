@@ -27,6 +27,7 @@ from src.services.draft_day_app_v1_service import (
     normalize_board_frame,
     outcome_display_coverage_counts,
     outcome_prop_match_counts,
+    sort_unified_player_board_for_view,
     validate_frozen_board,
 )
 
@@ -378,3 +379,60 @@ def test_unified_player_board_preserves_dynasty_and_board_only_truths(
         "supported": 1,
         "unsupported": 1,
     }
+
+
+def test_unified_player_board_default_sort_uses_dynasty_rank_before_source_coverage() -> None:
+    dynasty = pd.DataFrame(
+        [
+            {
+                "player_id": "puka",
+                "nwr_rank": "1",
+                "player_name": "Puka Nacua",
+                "position": "WR",
+                "nfl_team": "LAR",
+            },
+            {
+                "player_id": "zay",
+                "nwr_rank": "12",
+                "player_name": "Zay Flowers",
+                "position": "WR",
+                "nfl_team": "BAL",
+            },
+        ]
+    )
+    board = pd.DataFrame(
+        [
+            {
+                "player_id": "zay",
+                "final_board_rank": "1",
+                "player": "Zay Flowers",
+                "position": "WR",
+                "nfl_team": "BAL",
+            },
+            {
+                "player_id": "rookie",
+                "final_board_rank": "2",
+                "player": "Jeremiyah Love",
+                "position": "RB",
+                "nfl_team": "ARI",
+            },
+        ]
+    )
+
+    unified = build_unified_player_board(dynasty, board)
+    display = display_unified_player_board_frame(unified)
+
+    assert unified["player_name"].tolist() == [
+        "Puka Nacua",
+        "Zay Flowers",
+        "Jeremiyah Love",
+    ]
+    assert display.columns[0] == "Dynasty Rank"
+    assert display.columns[1] == "Final Board Rank"
+    assert display.columns[2] == "Player"
+    assert "Source Coverage" in display.columns
+    assert all(not column.startswith("_") for column in display.columns)
+
+    frozen_view = sort_unified_player_board_for_view(unified, "Frozen Draft Board")
+
+    assert frozen_view["player_name"].tolist()[:2] == ["Zay Flowers", "Jeremiyah Love"]
