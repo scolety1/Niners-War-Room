@@ -51,7 +51,7 @@ def test_frozen_board_loader_contract_is_green_in_local_hq_context() -> None:
     assert "source_file" not in bundle.frame.columns
 
 
-def test_historical_tuned_overlay_updates_review_only_candidate_context() -> None:
+def test_tuned_v2_overlay_updates_review_only_candidate_context() -> None:
     candidate = load_cross_asset_candidate_board()
     rows = {
         str(row["player"]): row
@@ -72,23 +72,24 @@ def test_historical_tuned_overlay_updates_review_only_candidate_context() -> Non
     }
 
     assert rows["Jeremiyah Love"]["cross_asset_candidate_rank"] == "1"
-    assert rows["Zay Flowers"]["cross_asset_candidate_rank"] == "10"
-    assert rows["Chris Olave"]["cross_asset_candidate_rank"] == "11"
-    assert rows["Jameson Williams"]["cross_asset_candidate_rank"] == "13"
+    assert rows["Zay Flowers"]["cross_asset_candidate_rank"] == "2"
+    assert rows["Chris Olave"]["cross_asset_candidate_rank"] == "3"
+    assert rows["Jameson Williams"]["cross_asset_candidate_rank"] == "6"
     assert rows["Drake Maye"]["cross_asset_candidate_rank"] == "20"
-    assert rows["Dak Prescott"]["cross_asset_candidate_rank"] == "32"
+    assert rows["Dak Prescott"]["cross_asset_candidate_rank"] == "53"
     assert rows["Keenan Allen"]["cross_asset_candidate_rank"] == "64"
     assert rows["Darren Waller"]["cross_asset_candidate_rank"] == "66"
-    assert "Historical Tuned Candidate / Review-Only" in rows["Zay Flowers"]["source_note"]
+    assert "Tuned V2 Candidate / Review-Only" in rows["Zay Flowers"]["source_note"]
+    assert rows["Zay Flowers"]["horizon_next5y_band"] == "Priority"
 
 
-def test_frozen_board_keeps_final_rank_with_historical_tuned_candidate_context() -> None:
+def test_frozen_board_keeps_final_rank_with_tuned_v2_candidate_context() -> None:
     bundle = load_frozen_board()
     zay = bundle.frame.loc[bundle.frame["player"].astype(str).eq("Zay Flowers")].iloc[0]
     maye = bundle.frame.loc[bundle.frame["player"].astype(str).eq("Drake Maye")].iloc[0]
 
     assert int(zay["final_board_rank"]) == 31
-    assert str(zay["cross_asset_candidate_rank"]) == "10"
+    assert str(zay["cross_asset_candidate_rank"]) == "2"
     assert int(maye["final_board_rank"]) == 40
     assert str(maye["cross_asset_candidate_rank"]) == "20"
 

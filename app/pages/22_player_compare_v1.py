@@ -213,6 +213,9 @@ compare_columns = [
     "adp",
     "available_pool_adp_range",
     "current_pick_value",
+    "horizon_2026_band",
+    "horizon_2027_band",
+    "horizon_next5y_band",
     "candidate_vs_frozen_note",
     "candidate_action_summary",
     "candidate_key_caveat",
@@ -221,9 +224,9 @@ available_compare_columns = [column for column in compare_columns if column in c
 if available_compare_columns:
     st.subheader("Cross-Asset Candidate Comparison")
     st.caption(
-        "Historical tuned review-only candidate metrics where available. They do not "
-        "replace Final Board Rank, Dynasty Rank, or the frozen board source of truth. "
-        "ADP/range is display-only price context."
+        "Tuned V2 review-only candidate and horizon metrics where available. They do "
+        "not replace Final Board Rank, Dynasty Rank, or the frozen board source of "
+        "truth. ADP/range is display-only price context."
     )
     candidate_display = compare.loc[:, available_compare_columns].copy().fillna(
         OUTCOME_NOT_ENOUGH_INFORMATION
@@ -231,19 +234,22 @@ if available_compare_columns:
     st.dataframe(
         candidate_display.rename(
             columns={
-                "cross_asset_candidate_rank": "Historical Tuned Candidate Rank (Review-Only)",
+                "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
                 "final_board_rank": "Final Board Rank",
                 "player": "Player",
                 "position": "Pos",
                 "nfl_team": "NFL Team",
                 "age": "Age",
                 "position_rank": "Position Rank",
-                "cross_asset_candidate_value": "Historical Tuned Candidate Value (Review-Only)",
+                "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
                 "candidate_value_band": "Candidate Band",
                 "confidence_band": "Confidence",
                 "adp": "ADP (Display-Only)",
                 "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
                 "current_pick_value": "Current Pick Value (Display-Only)",
+                "horizon_2026_band": "2026 Horizon Band (Review-Only)",
+                "horizon_2027_band": "2027 Horizon Band (Review-Only)",
+                "horizon_next5y_band": "Next-5Y Horizon Band (Review-Only)",
                 "candidate_vs_frozen_note": "Candidate vs Frozen Note",
                 "candidate_action_summary": "Candidate Action Summary",
                 "candidate_key_caveat": "Key Caveat / Review Flag",

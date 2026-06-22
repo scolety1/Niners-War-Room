@@ -1,0 +1,9 @@
+﻿run_label,overnight_accuracy_max_20260622
+repo,C:\NWR\Niners-War-Room
+branch,work/hq-parallel-control
+starting_head,010d29603dc9ceed51575acdde8120ec48993924
+origin_head,010d29603dc9ceed51575acdde8120ec48993924
+ahead_behind,0/0
+frozen_board_rows,66
+pinned_manifest_hash,5780156F09FBDA61FB906715C7341DB1B6D320C8D8EFA588070F19C4C50F45CE
+guardrail_scope,review-only candidate overlay; no source truth mutation

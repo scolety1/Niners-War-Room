@@ -1,0 +1,13 @@
+path,seasons,row_count,player_id_coverage,rookie_veteran_coverage,age_coverage,future_outcome_coverage,source_type,safe_for_training
+C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622\FINAL_DRAFT_BOARD_V1_FROZEN.csv,2022-2026 mixed/current,66,no,yes/mixed,no,no,approved,no
+C:\NWR\Niners-War-Room\docs\hq\parallel_lanes\historical_cross_asset_tuning_20260622\tuned_candidate_app_overlay.csv,2022-2026 mixed/current,66,yes,yes/mixed,yes,yes,candidate,yes
+C:\NWR\Niners-War-Room\docs\hq\parallel_lanes\overnight_8h_emergency_20260622\emergency_cross_asset_candidate_player_board.csv,2022-2026 mixed/current,294,yes,yes/mixed,yes,yes,candidate,yes
+C:\NWR\Niners-War-Room\local_exports\model_v4\current_value\latest\full_player_board_value_review_rows.csv,2022-2026 mixed/current,240,yes,yes/mixed,yes,no,approved/internal,yes
+C:\NWR\Niners-War-Room\sample_data\historical_rookie_replay\pre_draft_prospect_inputs.csv,2022-2026 mixed/current,60,no,yes/mixed,yes,no,approved/internal fixture,yes
+C:\NWR\Niners-War-Room\sample_data\historical_rookie_replay\post_draft_outcomes.csv,2022-2026 mixed/current,60,no,yes/mixed,no,yes,approved/internal fixture,yes
+C:\NWR\Niners-War-Room\docs\hq\parallel_lanes\historical_cross_asset_tuning_20260622\historical_dropped_veteran_proxy_cohorts.csv,2022-2026 mixed/current,96,yes,yes/mixed,yes,yes,proxy,sensitivity_only
+C:\NWR\Niners-War-Room\sample_data\rookie_model_v1\veteran_opportunity_assets.csv,2022-2026 mixed/current,21,no,yes/mixed,no,no,proxy,sensitivity_only
+docs/model_v4/MODEL_V4_3_6_ROOKIE_REPLAY_BASELINE_COMPARISON.md,report dependent,report-level,unknown,yes/mixed,unknown,report-level,approved/internal report,yes
+docs/model_v4/MODEL_V4_3_6_MATURE_REPLAY_MISS_PATTERN_REPORT.md,report dependent,report-level,unknown,yes/mixed,unknown,report-level,approved/internal report,yes
+docs/model_v4/VETERAN_AGE_WINDOW_AUDIT_20260605.md,report dependent,report-level,unknown,yes/mixed,unknown,report-level,approved/internal report,yes
+docs/model_v4/QB_1QB_DISCIPLINE_REPORT_20260605.md,report dependent,report-level,unknown,yes/mixed,unknown,report-level,approved/internal report,yes

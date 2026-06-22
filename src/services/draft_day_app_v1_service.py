@@ -43,6 +43,14 @@ HISTORICAL_TUNED_CANDIDATE_PATH = (
     / "historical_cross_asset_tuning_20260622"
     / "tuned_candidate_app_overlay.csv"
 )
+TUNED_V2_CANDIDATE_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "overnight_accuracy_max_20260622"
+    / "tuned_v2_current_draft_pool_overlay.csv"
+)
 FALLBACK_CROSS_ASSET_CANDIDATE_PATH = (
     REPO_ROOT
     / "docs"
@@ -626,7 +634,9 @@ def load_cross_asset_candidate_board() -> pd.DataFrame:
     hidden_like = hidden_sort_columns(frame.columns)
     if hidden_like:
         return pd.DataFrame()
-    return _overlay_historical_tuned_candidate_rows(frame)
+    return _overlay_tuned_v2_candidate_rows(
+        _overlay_historical_tuned_candidate_rows(frame)
+    )
 
 
 def _overlay_historical_tuned_candidate_rows(base_frame: pd.DataFrame) -> pd.DataFrame:
@@ -710,6 +720,116 @@ def _historical_tuned_note(direction: object, reason: object) -> str:
     return "; ".join(pieces)
 
 
+def _overlay_tuned_v2_candidate_rows(base_frame: pd.DataFrame) -> pd.DataFrame:
+    if not TUNED_V2_CANDIDATE_PATH.exists():
+        return base_frame
+    try:
+        tuned = pd.read_csv(TUNED_V2_CANDIDATE_PATH, dtype=str).fillna("")
+    except Exception:
+        return base_frame
+    if hidden_sort_columns(tuned.columns):
+        return base_frame
+    required = {"player", "pos", "tuned_v2_cross_asset_rank", "tuned_v2_cross_asset_value"}
+    if not required.issubset(tuned.columns):
+        return base_frame
+
+    merged = base_frame.copy()
+    base_lookup = {
+        _player_identity_key(row.get("player"), row.get("pos")): index
+        for index, row in merged.iterrows()
+    }
+    for _, tuned_row in tuned.iterrows():
+        key = _player_identity_key(tuned_row.get("player"), tuned_row.get("pos"))
+        if key not in base_lookup:
+            continue
+        index = base_lookup[key]
+        _apply_tuned_v2_candidate_row(merged, index, tuned_row)
+    return merged
+
+
+def _apply_tuned_v2_candidate_row(
+    frame: pd.DataFrame,
+    index: int,
+    tuned_row: pd.Series,
+) -> None:
+    mapping = {
+        "tuned_v2_cross_asset_rank": "cross_asset_candidate_rank",
+        "tuned_v2_cross_asset_value": "cross_asset_candidate_value",
+        "confidence_band": "confidence_band",
+        "uncertainty_reasons": "uncertainty_reasons",
+        "outcome_applicable_summary": "outcome_applicable_summary",
+        "adp": "adp",
+        "available_pool_adp_rank": "available_pool_adp_rank",
+        "available_pool_adp_range": "available_pool_adp_range",
+        "current_pick_value_1_03": "current_pick_value_1_03",
+        "current_pick_value_1_04": "current_pick_value_1_04",
+        "current_pick_value_1_09": "current_pick_value_1_09",
+        "current_pick_value_2_04": "current_pick_value_2_04",
+        "current_pick_value_2_08": "current_pick_value_2_08",
+        "horizon_2026_band": "horizon_2026_band",
+        "horizon_2027_band": "horizon_2027_band",
+        "horizon_next5y_band": "horizon_next5y_band",
+        "human_review_priority": "manual_review_flag",
+    }
+    for source, target in mapping.items():
+        if source in tuned_row.index:
+            frame.at[index, target] = _candidate_display_value(tuned_row.get(source))
+    if "tuned_v2_cross_asset_value" in tuned_row.index:
+        value = _candidate_display_value(tuned_row.get("tuned_v2_cross_asset_value"))
+        frame.at[index, "candidate_value_band"] = _tuned_v2_value_band(value)
+    frame.at[index, "candidate_vs_frozen_note"] = _tuned_v2_note(
+        tuned_row.get("rank_delta_vs_frozen"),
+        tuned_row.get("reason_to_draft"),
+    )
+    frame.at[index, "candidate_vs_dynasty_note"] = _tuned_v2_note(
+        tuned_row.get("rank_delta_vs_current_candidate"),
+        tuned_row.get("reason_to_pass"),
+    )
+    frame.at[index, "candidate_action_summary"] = _candidate_display_value(
+        tuned_row.get("reason_to_draft")
+    )
+    frame.at[index, "current_pick_value"] = _candidate_display_value(
+        tuned_row.get("current_pick_value_1_03")
+    )
+    frame.at[index, "current_pick_value_reason"] = (
+        "Tuned V2 Candidate / Review-Only pick-window label. ADP/range is "
+        "display-only and does not drive internal value."
+    )
+    frame.at[index, "source_note"] = _candidate_display_value(
+        tuned_row.get("source_note")
+    )
+
+
+def _tuned_v2_value_band(value: object) -> str:
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    if numeric >= 58:
+        return "Priority review target"
+    if numeric >= 50:
+        return "Strong review target"
+    if numeric >= 38:
+        return "Viable with caveats"
+    if numeric >= 24:
+        return "Depth / format-dependent"
+    return "Human-review hold"
+
+
+def _tuned_v2_note(delta: object, reason: object) -> str:
+    delta_text = str(delta or "").strip()
+    reason_text = str(reason or "").strip()
+    pieces = [
+        "Tuned V2 Candidate / Review-Only",
+        "does not replace Final Board Rank",
+    ]
+    if delta_text:
+        pieces.append(f"rank delta {delta_text}")
+    if reason_text:
+        pieces.append(reason_text)
+    pieces.append("ADP is display-only; no verified full historical dropped-veteran panel.")
+    return "; ".join(pieces)
+
+
 def integrate_cross_asset_candidate_context(
     frame: pd.DataFrame,
     *,
@@ -767,6 +887,9 @@ CROSS_ASSET_DISPLAY_COLUMNS = (
     "current_pick_value",
     "current_pick_value_reason",
     "outcome_applicable_summary",
+    "horizon_2026_band",
+    "horizon_2027_band",
+    "horizon_next5y_band",
     "manual_review_flag",
     "source_note",
     "candidate_key_caveat",
@@ -1403,12 +1526,15 @@ DYNASTY_DISPLAY_LABELS = {
 UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "source_coverage": "Source Coverage",
     "nwr_rank": "Dynasty Rank",
-    "cross_asset_candidate_rank": "Historical Tuned Candidate Rank (Review-Only)",
-    "cross_asset_candidate_value": "Historical Tuned Candidate Value (Review-Only)",
+    "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
+    "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
     "candidate_value_band": "Candidate Band",
     "confidence_band": "Confidence",
     "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
     "current_pick_value": "Current Pick Value (Display-Only)",
+    "horizon_2026_band": "2026 Horizon Band (Review-Only)",
+    "horizon_2027_band": "2027 Horizon Band (Review-Only)",
+    "horizon_next5y_band": "Next-5Y Horizon Band (Review-Only)",
     "candidate_key_caveat": "Key Caveat / Review Flag",
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",

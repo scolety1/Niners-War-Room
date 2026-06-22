@@ -51,7 +51,7 @@ else:
         session_key="draft_day_v1_live_draft_workflow",
         source_caption=(
             f"Ranking source: {bundle.source_path}. Pick order: {pick_path}. "
-            "Default candidate view uses the Historical Tuned Candidate overlay where "
+            "Default candidate view uses the Tuned V2 Candidate overlay where "
             "available. Final Board Rank remains visible and unchanged. Sleeper ADP "
             "context, when present, is display-only and does not drive rank or sort."
         ),
