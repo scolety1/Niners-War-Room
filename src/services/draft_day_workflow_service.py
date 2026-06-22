@@ -334,7 +334,10 @@ def draft_board_frame(
 
 def display_draft_board_frame(frame: pd.DataFrame) -> pd.DataFrame:
     columns = [column for column in DRAFT_BOARD_COLUMNS if column in frame.columns]
-    return frame.loc[:, columns].rename(columns=DRAFT_BOARD_LABELS)
+    display = frame.loc[:, columns].copy()
+    for column in display.columns:
+        display[column] = display[column].astype(str)
+    return display.rename(columns=DRAFT_BOARD_LABELS)
 
 
 def workflow_summary(

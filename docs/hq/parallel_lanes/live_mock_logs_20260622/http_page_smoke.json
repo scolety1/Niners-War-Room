@@ -1,0 +1,47 @@
+﻿[
+    {
+        "page":  "/rankings",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/live-draft-room",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/player-compare",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/trading-lab",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/mock-draft",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/draft-room",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/outcome-columns",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/decision-board",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "page":  "/settings",
+        "status":  200,
+        "ok":  true
+    }
+]

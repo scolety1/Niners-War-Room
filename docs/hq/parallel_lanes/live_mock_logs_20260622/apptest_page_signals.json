@@ -1,0 +1,111 @@
+{
+  "live": {
+    "headers": [],
+    "subheaders": [
+      "Main Ranking Table",
+      "Pick Selection",
+      "Draft Board"
+    ],
+    "markdown": [
+      "<div class=\"nwr-page-header\">\n  <div class=\"nwr-eyebrow\">Draft-Day App V1</div>\n  <div class=\"nwr-title\">Live Draft Room</div>\n  <p class=\"nwr-description\">One frozen-board ranking table plus an interactive draft board. Picked-player state is session-only and never mutates the frozen source CSV.</p>\n  <div class=\"nwr-status-row\"><span class=\"nwr-pill safe\">Frozen 66-row board</span><span class=\"nwr-pill safe\">Session-only draft state</span><span class=\"nwr-pill review\">Manual pick controls</span></div>\n</div>"
+    ],
+    "captions": [
+      "Ranking source: C:\\NWR_SHARED_DATA\\draft_day_exports\\nwr_final_draft_board_v1_frozen_20260622\\FINAL_DRAFT_BOARD_V1_FROZEN.csv. Pick order: C:\\NWR_SHARED_DATA\\draft_day_app_props\\20260622\\mock_draft\\mock_pick_context.csv. Sorting is visible and user-controlled.",
+      "Live Draft Room: manual selection only. No simulator pick algorithm or automatic recommendation is running.",
+      "No picks have been assigned in this session."
+    ],
+    "info": [
+      "Source of truth: Frozen Final Draft Board V1 | GREEN | 66 rows | local frozen board | C:\\NWR_SHARED_DATA\\draft_day_exports\\nwr_final_draft_board_v1_frozen_20260622\\FINAL_DRAFT_BOARD_V1_FROZEN.csv",
+      "Pick a player from the table, assign to current pick or a chosen pick slot, undo if needed. This is session-only draft tracking and does not mutate source data."
+    ],
+    "metrics": [
+      {
+        "label": "Frozen board rows",
+        "value": "66"
+      },
+      {
+        "label": "Drafted",
+        "value": "0"
+      },
+      {
+        "label": "Available",
+        "value": "66"
+      },
+      {
+        "label": "Current pick",
+        "value": "1.01"
+      }
+    ],
+    "buttons": [
+      "Assign Pick",
+      "Undo Last",
+      "Remove Player"
+    ],
+    "selectboxes": [
+      "Draft status",
+      "Position",
+      "Tier",
+      "Target/watch/avoid",
+      "Sort by",
+      "Player from current table",
+      "Pick slot",
+      "Edit/remove assigned pick"
+    ],
+    "dataframes": 3
+  },
+  "mock": {
+    "headers": [],
+    "subheaders": [
+      "Main Ranking Table",
+      "Pick Selection",
+      "Draft Board"
+    ],
+    "markdown": [
+      "<div class=\"nwr-page-header\">\n  <div class=\"nwr-eyebrow\">Draft-Day App V1</div>\n  <div class=\"nwr-title\">Mock Draft</div>\n  <p class=\"nwr-description\">Manual mock selection workflow using the frozen board and reference-only Mock Draft props. Simulator/model valuation logic remains unchanged.</p>\n  <div class=\"nwr-status-row\"><span class=\"nwr-pill review\">Manual mock mode</span><span class=\"nwr-pill safe\">Simulator logic unchanged</span><span class=\"nwr-pill safe\">No automatic recommendations</span></div>\n</div>"
+    ],
+    "captions": [
+      "Ranking source: C:\\NWR_SHARED_DATA\\draft_day_exports\\nwr_final_draft_board_v1_frozen_20260622\\FINAL_DRAFT_BOARD_V1_FROZEN.csv. Mock Draft pick props: C:\\NWR_SHARED_DATA\\draft_day_app_props\\20260622\\mock_draft\\mock_pick_context.csv. This is manual practice state, not a simulator run.",
+      "Mock Draft manual practice: manual selection only. No simulator pick algorithm or automatic recommendation is running.",
+      "No picks have been assigned in this session.",
+      "Display-only Mock Draft availability props: C:\\NWR_SHARED_DATA\\draft_day_app_props\\20260622\\mock_draft\\availability_context.csv"
+    ],
+    "info": [
+      "Source of truth: Frozen Final Draft Board V1 | GREEN | 66 rows | local frozen board | C:\\NWR_SHARED_DATA\\draft_day_exports\\nwr_final_draft_board_v1_frozen_20260622\\FINAL_DRAFT_BOARD_V1_FROZEN.csv",
+      "Pick a player from the table, assign to current pick or a chosen pick slot, undo if needed. This is session-only draft tracking and does not mutate source data."
+    ],
+    "metrics": [
+      {
+        "label": "Frozen board rows",
+        "value": "66"
+      },
+      {
+        "label": "Drafted",
+        "value": "0"
+      },
+      {
+        "label": "Available",
+        "value": "66"
+      },
+      {
+        "label": "Current pick",
+        "value": "1.01"
+      }
+    ],
+    "buttons": [
+      "Assign Pick",
+      "Undo Last",
+      "Remove Player"
+    ],
+    "selectboxes": [
+      "Draft status",
+      "Position",
+      "Tier",
+      "Target/watch/avoid",
+      "Sort by",
+      "Player from current table",
+      "Pick slot",
+      "Edit/remove assigned pick"
+    ],
+    "dataframes": 3
+  }
+}

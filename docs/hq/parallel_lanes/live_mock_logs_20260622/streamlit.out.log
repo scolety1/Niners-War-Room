@@ -1,0 +1,12 @@
+Niners War Room Draft-Day App V1
+Repo: C:\NWR\Niners-War-Room-live-mock-draft-workflow
+Local URL: http://127.0.0.1:8501/rankings
+Static fallback: C:\NWR\Niners-War-Room-live-mock-draft-workflow\docs\draft_day_exports\final_board_v1_20260622\OPEN_THIS_FIRST.html
+
+Starting Streamlit. Leave this window open during the draft.
+Open: http://127.0.0.1:8501/rankings
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://127.0.0.1:8501
+

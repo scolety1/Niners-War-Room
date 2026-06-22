@@ -62,6 +62,6 @@ else:
 with st.expander("Reference-only availability context", expanded=False):
     if availability_path and not availability_frame.empty:
         st.caption(f"Display-only Mock Draft availability props: {availability_path}")
-        st.dataframe(availability_frame, use_container_width=True, hide_index=True)
+        st.dataframe(availability_frame.astype(str), use_container_width=True, hide_index=True)
     else:
         render_yellow_hold("Mock Draft availability props are missing.")

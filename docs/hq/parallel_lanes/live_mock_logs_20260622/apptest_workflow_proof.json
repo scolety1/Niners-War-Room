@@ -1,0 +1,212 @@
+{
+  "pages": [
+    {
+      "name": "Final Board",
+      "path": "app/pages/20_final_board_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [
+        "Frozen rows",
+        "Positions",
+        "Manual flags",
+        "Candidate statuses"
+      ],
+      "dataframe_count": 1
+    },
+    {
+      "name": "Live Draft Room",
+      "path": "app/pages/21_live_draft_room_v1.py",
+      "exceptions": [],
+      "button_labels": [
+        "Assign Pick",
+        "Undo Last",
+        "Remove Player"
+      ],
+      "metrics": [
+        "Frozen board rows",
+        "Drafted",
+        "Available",
+        "Current pick"
+      ],
+      "dataframe_count": 3
+    },
+    {
+      "name": "Player Compare",
+      "path": "app/pages/22_player_compare_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [],
+      "dataframe_count": 0
+    },
+    {
+      "name": "Trading Lab",
+      "path": "app/pages/23_trading_lab_v1.py",
+      "exceptions": [],
+      "button_labels": [
+        "Add Player",
+        "Add Pick Context",
+        "Add Player",
+        "Add Pick Context",
+        "Clear Trade"
+      ],
+      "metrics": [
+        "Frozen board rows",
+        "Trade helper rows",
+        "Pick context rows",
+        "Tier context rows",
+        "Review status",
+        "Visible score gap",
+        "Rank context",
+        "Human review"
+      ],
+      "dataframe_count": 5
+    },
+    {
+      "name": "Mock Draft",
+      "path": "app/pages/24_mock_draft_v1.py",
+      "exceptions": [],
+      "button_labels": [
+        "Assign Pick",
+        "Undo Last",
+        "Remove Player"
+      ],
+      "metrics": [
+        "Frozen board rows",
+        "Drafted",
+        "Available",
+        "Current pick"
+      ],
+      "dataframe_count": 3
+    },
+    {
+      "name": "Draft Prep",
+      "path": "app/pages/25_draft_prep_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [],
+      "dataframe_count": 2
+    },
+    {
+      "name": "Outcome Columns",
+      "path": "app/pages/26_outcome_columns_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [
+        "Context rows",
+        "Matched",
+        "Unmatched"
+      ],
+      "dataframe_count": 2
+    },
+    {
+      "name": "Decision Board",
+      "path": "app/pages/27_decision_board_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [],
+      "dataframe_count": 5
+    },
+    {
+      "name": "Settings",
+      "path": "app/pages/28_settings_data_health_v1.py",
+      "exceptions": [],
+      "button_labels": [],
+      "metrics": [],
+      "dataframe_count": 4
+    }
+  ],
+  "live_workflow": {
+    "name": "Live Draft Room",
+    "initial": {
+      "exceptions": [],
+      "buttons": [
+        "Assign Pick",
+        "Undo Last",
+        "Remove Player"
+      ],
+      "dataframe_count": 3,
+      "metrics": [
+        "Frozen board rows",
+        "Drafted",
+        "Available",
+        "Current pick"
+      ]
+    },
+    "assigned_after_assign": [
+      {
+        "player_key": "1|Jeremiyah Love|RB|ARI",
+        "overall_pick": 1,
+        "pick_label": 1.01,
+        "pick_owner": "Golden Boy Productions",
+        "player": "Jeremiyah Love",
+        "position": "RB",
+        "nfl_team": "ARI",
+        "final_board_rank": 1,
+        "final_tier": "Tier 1 - Priority Draft Targets"
+      }
+    ],
+    "assigned_after_undo_count": 0,
+    "assigned_after_second_assign": [
+      {
+        "player_key": "2|Makai Lemon|WR|PHI",
+        "overall_pick": 1,
+        "pick_label": 1.01,
+        "pick_owner": "Golden Boy Productions",
+        "player": "Makai Lemon",
+        "position": "WR",
+        "nfl_team": "PHI",
+        "final_board_rank": 2,
+        "final_tier": "Tier 1 - Priority Draft Targets"
+      }
+    ],
+    "assigned_after_remove_count": 0,
+    "passed": true
+  },
+  "mock_workflow": {
+    "name": "Mock Draft",
+    "initial": {
+      "exceptions": [],
+      "buttons": [
+        "Assign Pick",
+        "Undo Last",
+        "Remove Player"
+      ],
+      "dataframe_count": 3,
+      "metrics": [
+        "Frozen board rows",
+        "Drafted",
+        "Available",
+        "Current pick"
+      ]
+    },
+    "assigned_after_assign": [
+      {
+        "player_key": "1|Jeremiyah Love|RB|ARI",
+        "overall_pick": 1,
+        "pick_label": 1.01,
+        "pick_owner": "Golden Boy Productions",
+        "player": "Jeremiyah Love",
+        "position": "RB",
+        "nfl_team": "ARI",
+        "final_board_rank": 1,
+        "final_tier": "Tier 1 - Priority Draft Targets"
+      }
+    ],
+    "assigned_after_undo_count": 0,
+    "assigned_after_second_assign": [
+      {
+        "player_key": "2|Makai Lemon|WR|PHI",
+        "overall_pick": 1,
+        "pick_label": 1.01,
+        "pick_owner": "Golden Boy Productions",
+        "player": "Makai Lemon",
+        "position": "WR",
+        "nfl_team": "PHI",
+        "final_board_rank": 2,
+        "final_tier": "Tier 1 - Priority Draft Targets"
+      }
+    ],
+    "assigned_after_remove_count": 0,
+    "passed": true
+  }
+}

@@ -152,6 +152,8 @@ def test_draft_board_state_updates_and_supports_edit_remove() -> None:
     assert board_rows.loc[2, "player"] == "Fixture Player 1"
     assert board_rows.loc[2, "is_nwr_pick"] == "Yes"
     assert "Player" in display.columns
+    assert isinstance(display.loc[2, "Board Rank"], str)
+    assert isinstance(display.loc[0, "Player"], str)
 
     state, message = remove_pick_assignment(state, 3)
 
