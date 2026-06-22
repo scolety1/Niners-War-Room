@@ -126,12 +126,38 @@ def test_on_clock_decision_layer_keeps_frozen_rank_and_adds_emergency_anchors() 
 
     assert rows["Drake Maye"]["final_board_rank"] == 40
     assert rows["Drake Maye"]["cross_asset_candidate_rank"] == "21"
+    assert rows["Drake Maye"]["dynasty_asset_tier"] == "Tier 1A: core on-clock candidates"
+    assert rows["Drake Maye"]["dynasty_asset_rank"] == "4"
     assert rows["Drake Maye"]["on_clock_decision_rank"] == "4"
     assert "1QB" in rows["Drake Maye"]["on_clock_warning"]
     assert rows["Tyreek Hill"]["final_board_rank"] == "Not on frozen board"
+    assert rows["Tyreek Hill"]["dynasty_asset_tier"] == "Tier 3: discount / depth / risky"
     assert rows["Tyreek Hill"]["on_clock_decision_rank"] == "18"
     assert "LOUD WARNING" in rows["Tyreek Hill"]["on_clock_warning"]
+    assert rows["Jeremiyah Love"]["dynasty_asset_tier"] == "Tier 1A: core on-clock candidates"
     assert rows["Zay Flowers"]["on_clock_decision_rank"] == "1"
+    assert rows["Zay Flowers"]["dynasty_asset_rank"] == "1"
+
+
+def test_available_pool_adp_pick_equivalent_is_display_only_timing_context() -> None:
+    bundle = load_frozen_board()
+    expanded = load_expanded_draftable_player_pool(bundle.frame)
+    rows = {str(row["player"]): row for row in expanded.to_dict("records")}
+
+    assert rows["Jeremiyah Love"]["available_pool_adp_rank"] == "1"
+    assert rows["Jeremiyah Love"]["pool_adp_pick_equivalent"] == "1.01"
+    assert rows["Drake Maye"]["pool_adp_pick_equivalent"] == "1.02"
+    assert rows["Carnell Tate"]["pool_adp_pick_equivalent"] == "1.04"
+    assert rows["Tyreek Hill"]["pool_adp_pick_equivalent"] == "4.04"
+
+
+def test_verified_rookie_birthdate_audit_fills_age_but_conflicts_stay_missing() -> None:
+    bundle = load_frozen_board()
+    expanded = load_expanded_draftable_player_pool(bundle.frame)
+    rows = {str(row["player"]): row for row in expanded.to_dict("records")}
+
+    assert rows["Jeremiyah Love"]["age"] != OUTCOME_NOT_ENOUGH_INFORMATION
+    assert rows["KC Concepcion"]["age"] == OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def test_hidden_sort_and_private_value_columns_are_blocked() -> None:

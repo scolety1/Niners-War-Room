@@ -9,12 +9,15 @@ from src.services.draft_day_workflow_service import (
     assign_player_to_pick,
     available_board_frame,
     current_pick_number,
+    current_pick_value_label,
     display_draft_board_frame,
     display_ranking_frame,
     draft_board_frame,
     empty_workflow_state,
     player_key_from_row,
+    pool_adp_pick_equivalent,
     remove_pick_assignment,
+    sort_workflow_frame,
     undo_last_pick,
     validate_no_duplicate_assignments,
     with_workflow_columns,
@@ -34,6 +37,15 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "nfl_team": "SF",
                 "age": "23.4" if index == 0 else "Not enough information",
                 "asset_type": "rookie" if index < 10 else "veteran",
+                "dynasty_asset_tier": (
+                    "Tier 1A: core on-clock candidates" if index < 3 else "Tier 1B"
+                ),
+                "dynasty_asset_rank": index + 1,
+                "dynasty_asset_score": f"{80 - index:.2f}",
+                "dynasty_asset_confidence": "Medium",
+                "why_draft": "Review-only dynasty asset context",
+                "main_risk": "Review-only; does not replace Final Board Rank.",
+                "human_review_flag": "LOW",
                 "on_clock_decision_rank": index + 1,
                 "on_clock_decision_tier": "Tier 1 - on-clock core" if index < 3 else "Tier 2",
                 "on_clock_decision_value": f"{80 - index:.2f}",
@@ -45,9 +57,12 @@ def _board(rows: int = EXPECTED_ROW_COUNT) -> pd.DataFrame:
                 "candidate_value_band": "Priority candidate" if index < 3 else "Depth",
                 "confidence_band": "Medium",
                 "available_pool_adp_rank": index + 1,
+                "pool_adp_pick_equivalent": f"1.{index + 1:02d}",
                 "available_pool_adp_range": (
                     "Early 1st equivalent" if index == 0 else "Depth / later"
                 ),
+                "at_current_pick_value": "Fair",
+                "outcome_applicable_summary": "Not enough information",
                 "candidate_key_caveat": "Review-only candidate context",
                 "adp_display_only": "10.0" if index == 0 else "Not enough information",
                 "adp_range_display_only": (
@@ -208,24 +223,24 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     display = display_ranking_frame(workflow, current_pick=5)
 
     assert list(display.columns[:14]) == [
-        "On-Clock Decision Rank (Review-Only)",
-        "On-Clock Decision Tier",
-        "On-Clock Decision Value (Review-Only)",
-        "Tuned V2 Candidate Rank (Review-Only)",
-        "Final Board Rank",
+        "Dynasty Asset Tier",
+        "Dynasty Asset Rank",
         "Player",
         "Pos",
         "NFL Team",
         "Age",
-        "Position Rank",
-        "On-Clock Confidence",
-        "On-Clock Reason",
-        "On-Clock Warning",
-        "Startup ADP / Display-Only",
+        "Final Board Rank",
+        "Pool ADP Pick",
+        "At Current Pick",
+        "Why Draft",
+        "Main Risk",
+        "Confidence",
+        "Human Review",
+        "Startup ADP",
     ]
     assert list(display.columns[14:17]) == [
-        "Available-Pool ADP Range (Display-Only)",
-        "Draft Timing Note",
+        "Available-Pool ADP Rank (Display-Only)",
+        "Outcome/Horizon",
         "Source",
     ]
     assert "Visible Score (Mixed Basis)" not in display.columns
@@ -245,6 +260,38 @@ def test_drafted_context_only_appears_when_toggle_context_is_requested() -> None
     assert "Assigned Pick" not in default_display.columns
     assert "Draft Status" in expanded_display.columns
     assert "Assigned Pick" in expanded_display.columns
+
+
+def test_dynasty_asset_sort_uses_tier_rank_then_confidence() -> None:
+    board = _board(4)
+    board.loc[0, "dynasty_asset_tier"] = "Tier 1B: strong alternatives"
+    board.loc[0, "dynasty_asset_rank"] = 2
+    board.loc[1, "dynasty_asset_tier"] = "Tier 1A: core on-clock candidates"
+    board.loc[1, "dynasty_asset_rank"] = 2
+    board.loc[1, "dynasty_asset_confidence"] = "Low"
+    board.loc[2, "dynasty_asset_tier"] = "Tier 1A: core on-clock candidates"
+    board.loc[2, "dynasty_asset_rank"] = 1
+    board.loc[2, "dynasty_asset_confidence"] = "Medium"
+
+    sorted_frame = sort_workflow_frame(board, "Dynasty Asset Tier/Rank")
+
+    assert list(sorted_frame["player"].head(3)) == [
+        "Fixture Player 3",
+        "Fixture Player 2",
+        "Fixture Player 1",
+    ]
+
+
+def test_pool_adp_pick_equivalent_and_current_pick_value_are_adp_only() -> None:
+    assert pool_adp_pick_equivalent("1") == "1.01"
+    assert pool_adp_pick_equivalent("10") == "1.10"
+    assert pool_adp_pick_equivalent("11") == "2.01"
+    assert pool_adp_pick_equivalent("14") == "2.04"
+    assert pool_adp_pick_equivalent("18") == "2.08"
+
+    assert current_pick_value_label(4, "4") == "Fair"
+    assert current_pick_value_label(4, "12") == "Too early"
+    assert current_pick_value_label(14, "4") == "Steal"
 
 
 def test_current_pick_advances_and_recomputes_after_remove_or_undo() -> None:

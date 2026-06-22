@@ -60,10 +60,11 @@ else:
             f"Frozen board source: {bundle.source_path}. Pick order: {pick_path}. "
             "Draftable overlay: LVE Rosters 061326.pdf page 3 Free Agents, "
             "QB/RB/WR/TE shown by default and K/DST hidden by default. "
-            "Default candidate view uses the Tuned V2 Candidate overlay where "
-            "available; PDF-only free agents without internal value show Not enough "
+            "Default candidate view uses Dynasty Asset Tier/Rank review-only columns "
+            "where available; PDF-only free agents without internal value show Not enough "
             "information. Final Board Rank remains visible and unchanged. Sleeper "
-            "ADP context, when present, is display-only and does not drive rank or sort."
+            "ADP context, when present, is display-only timing context and does not "
+            "drive Dynasty Asset Score."
         ),
     )
 

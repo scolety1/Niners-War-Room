@@ -63,9 +63,9 @@ def render_draft_workflow(
         session_key=session_key,
     )
     st.caption(
-        "How to use: On-Clock Decision Rank = emergency review-only decision aid | "
+        "How to use: Dynasty Asset Tier/Rank = emergency review-only decision aid | "
         "Final Board Rank = frozen baseline | Candidate Rank = tuned model context | "
-        "Startup ADP / ADP Range = display-only weak timing context | "
+        "Startup ADP / Pool ADP Pick = display-only timing context | "
         "Outcome/Horizon = partial display-only context."
     )
     on_clock_watch = _on_clock_watch_caption(board_frame)
@@ -88,6 +88,7 @@ def render_draft_workflow(
         filtered_frame=filtered,
         board_frame=board_frame,
         pick_frame=pick_frame,
+        current_pick=current_pick,
         session_key=session_key,
     )
 
@@ -183,7 +184,7 @@ def _render_filters(
         view_mode = sort_cols[1].selectbox(
             "View / sort mode",
             [
-                "On-Clock Decision Rank",
+                "Dynasty Asset Tiers",
                 "Candidate Best Available",
                 "Frozen Board Rank",
                 "ADP / Price Context",
@@ -191,14 +192,15 @@ def _render_filters(
             key=f"{session_key}_view_sort_mode",
         )
         sort_default = {
-            "On-Clock Decision Rank": "On-Clock Decision Rank",
+            "Dynasty Asset Tiers": "Dynasty Asset Tier/Rank",
             "Candidate Best Available": "Candidate Rank",
             "Frozen Board Rank": "Final Board Rank",
             "ADP / Price Context": "Available-Pool ADP Rank",
         }[view_mode]
         sort_options = [
-            "On-Clock Decision Rank",
-            "On-Clock Decision Value",
+            "Dynasty Asset Tier/Rank",
+            "Dynasty Asset Rank",
+            "Dynasty Asset Score",
             "Candidate Rank",
             "Final Board Rank",
             "Available-Pool ADP Rank",
@@ -214,7 +216,7 @@ def _render_filters(
             index=sort_options.index(sort_default),
             key=f"{session_key}_sort_by",
         )
-        ascending_default = sort_by != "Candidate Value"
+        ascending_default = sort_by not in {"Candidate Value", "Dynasty Asset Score"}
         ascending = sort_cols[3].toggle(
             "Ascending",
             value=ascending_default,
@@ -254,6 +256,7 @@ def _render_pick_controls(
     filtered_frame: pd.DataFrame,
     board_frame: pd.DataFrame,
     pick_frame: pd.DataFrame,
+    current_pick: int | None,
     session_key: str,
 ) -> None:
     st.subheader("Pick Selection")
@@ -272,6 +275,7 @@ def _render_pick_controls(
     player_label = cols[0].selectbox(
         "Player from current table",
         list(player_options),
+        index=_adp_timing_suggestion_index(filtered_frame, list(player_options), current_pick),
         key=f"{session_key}_selected_player",
     )
     pick_label = cols[1].selectbox(
@@ -325,6 +329,27 @@ def _values(frame: pd.DataFrame, column: str) -> list[str]:
     return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
 
 
+def _adp_timing_suggestion_index(
+    frame: pd.DataFrame,
+    option_labels: list[str],
+    current_pick: int | None,
+) -> int:
+    if current_pick is None or frame.empty or "available_pool_adp_rank" not in frame.columns:
+        return 0
+    best: tuple[float, float, int] | None = None
+    for index, (_row_index, row) in enumerate(frame.iterrows()):
+        if index >= len(option_labels):
+            break
+        try:
+            pool_rank = float(str(row.get("available_pool_adp_rank") or "").strip())
+        except ValueError:
+            continue
+        candidate = (abs(pool_rank - float(current_pick)), pool_rank, index)
+        if best is None or candidate < best:
+            best = candidate
+    return best[2] if best is not None else 0
+
+
 def _pdf_row_count(frame: pd.DataFrame) -> int:
     if "source_group" not in frame.columns:
         return 0
@@ -354,14 +379,14 @@ def _on_clock_watch_caption(frame: pd.DataFrame) -> str:
             continue
         record = row.iloc[0]
         parts.append(
-            f"{name}: On-Clock {record.get('on_clock_decision_rank', 'Not enough information')} "
-            f"({record.get('on_clock_decision_tier', 'Not enough information')}; "
-            f"{record.get('on_clock_warning', 'review-only')})"
+            f"{name}: Dynasty Asset {record.get('dynasty_asset_rank', 'Not enough information')} "
+            f"({record.get('dynasty_asset_tier', 'Not enough information')}; "
+            f"{record.get('main_risk', 'review-only')})"
         )
     if not parts:
         return ""
     return (
-        "On-clock watch: "
+        "Dynasty asset watch: "
         + " | ".join(parts)
         + " Startup ADP is display-only and weak for this rookie/free-agent draft."
     )

@@ -59,6 +59,14 @@ PDF_FREE_AGENT_DRAFTABLE_POOL_PATH = (
     / "overnight_accuracy_max_20260622"
     / "free_agent_pdf_page3_draftable_pool.csv"
 )
+ROOKIE_VERIFIED_AGE_DISPLAY_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "age_source_audit_20260622"
+    / "rookie_verified_age_display_20260622.csv"
+)
 FALLBACK_CROSS_ASSET_CANDIDATE_PATH = (
     REPO_ROOT
     / "docs"
@@ -488,6 +496,7 @@ def load_expanded_draftable_player_pool(frozen_frame: pd.DataFrame) -> pd.DataFr
     if not pdf_rows.empty:
         expanded = pd.concat([expanded, pdf_rows], ignore_index=True, sort=False).fillna("")
     expanded = enrich_display_age_from_roster_context(expanded, name_column="player")
+    expanded = enrich_display_age_from_rookie_birthdate_audit(expanded)
     expanded = _recalculate_expanded_candidate_rank(expanded)
     expanded = _apply_on_clock_decision_layer(expanded)
     expanded = _recalculate_expanded_available_pool_adp(expanded)
@@ -522,6 +531,18 @@ def _apply_on_clock_decision_layer(frame: pd.DataFrame) -> pd.DataFrame:
         warnings.append(warning)
     decision["on_clock_reason"] = reasons
     decision["on_clock_warning"] = warnings
+    decision["dynasty_asset_score"] = decision["on_clock_decision_value"]
+    decision["dynasty_asset_tier"] = [
+        _dynasty_asset_tier(value) if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION
+        for value in values
+    ]
+    decision["dynasty_asset_confidence"] = decision["on_clock_confidence"]
+    decision["why_draft"] = reasons
+    decision["main_risk"] = warnings
+    decision["human_review_flag"] = [
+        _dynasty_asset_human_review_flag(row, value)
+        for row, value in zip(decision.to_dict("records"), values, strict=False)
+    ]
 
     eligible = decision["position"].astype(str).str.upper().isin({"QB", "RB", "WR", "TE"})
     order = decision.loc[eligible & decision["_on_clock_decision_value_sort"].notna()].copy()
@@ -533,8 +554,13 @@ def _apply_on_clock_decision_layer(frame: pd.DataFrame) -> pd.DataFrame:
         )
         for rank, index in enumerate(order.index, start=1):
             decision.at[index, "on_clock_decision_rank"] = str(rank)
+            decision.at[index, "dynasty_asset_rank"] = str(rank)
     decision["on_clock_decision_rank"] = decision.get(
         "on_clock_decision_rank",
+        OUTCOME_NOT_ENOUGH_INFORMATION,
+    )
+    decision["dynasty_asset_rank"] = decision.get(
+        "dynasty_asset_rank",
         OUTCOME_NOT_ENOUGH_INFORMATION,
     )
     return decision.drop(columns=["_on_clock_decision_value_sort"])
@@ -570,6 +596,8 @@ def _on_clock_decision_value(row: dict[str, object]) -> float | None:
         value -= 6.0
     elif confidence in {"medium-low", "medium low"}:
         value -= 2.0
+    if _clean_text(row.get("asset_type")).lower() == "rookie" and not _has_display_age(row):
+        value -= 1.5
     if "manual" in caveat_text or "needs_data" in caveat_text:
         value -= 2.5
     if "age" in caveat_text or "injury" in caveat_text or "risk" in caveat_text:
@@ -619,6 +647,45 @@ def _on_clock_decision_tier(value: float) -> str:
     if value >= 30:
         return "Tier 4 - discount only"
     return "Hold / deep discount"
+
+
+def _dynasty_asset_tier(value: float) -> str:
+    if value >= 72:
+        return "Tier 1A: core on-clock candidates"
+    if value >= 60:
+        return "Tier 1B: strong alternatives"
+    if value >= 45:
+        return "Tier 2: viable but conditional"
+    if value >= 30:
+        return "Tier 3: discount / depth / risky"
+    return "Avoid / emergency only"
+
+
+def _dynasty_asset_human_review_flag(row: dict[str, object], value: float | None) -> str:
+    if value is None:
+        return "HIGH - not enough internal evidence"
+    key = _player_identity_key(row.get("player"), row.get("position"))
+    if key in {
+        ("drakemaye", "QB"),
+        ("tyreekhill", "WR"),
+        ("keenanallen", "WR"),
+        ("darrenwaller", "TE"),
+    }:
+        return "HIGH"
+    if _clean_text(row.get("asset_type")).lower() == "rookie" and not _has_display_age(row):
+        return "MEDIUM - rookie age missing"
+    existing = _clean_text(row.get("human_review_priority")) or _clean_text(
+        row.get("manual_review_flag")
+    )
+    if existing:
+        return existing
+    if str(row.get("needs_manual_review", "")).lower() in {"true", "yes", "1"}:
+        return "MEDIUM"
+    return "LOW"
+
+
+def _has_display_age(row: dict[str, object]) -> bool:
+    return age_display_value(row.get("age")) != OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def _on_clock_confidence(row: dict[str, object], value: float | None) -> str:
@@ -875,7 +942,16 @@ def _recalculate_expanded_available_pool_adp(frame: pd.DataFrame) -> pd.DataFram
     for rank, index in enumerate(order.index, start=1):
         expanded.at[index, "available_pool_adp_rank"] = str(rank)
         expanded.at[index, "available_pool_adp_range"] = _available_pool_adp_range(rank)
+        expanded.at[index, "pool_adp_pick_equivalent"] = _pool_adp_pick_equivalent(rank)
     return expanded
+
+
+def _pool_adp_pick_equivalent(rank: int) -> str:
+    if rank <= 0:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    round_number = ((rank - 1) // 10) + 1
+    round_pick = ((rank - 1) % 10) + 1
+    return f"{round_number}.{round_pick:02d}"
 
 
 def _available_pool_adp_range(rank: int) -> str:
@@ -1833,6 +1909,51 @@ def enrich_display_age_from_roster_context(
         key = _player_identity_key(row.get(name_column), row.get("position"))
         enriched.at[index, "age"] = lookup.get(key, OUTCOME_NOT_ENOUGH_INFORMATION)
     return enriched
+
+
+def enrich_display_age_from_rookie_birthdate_audit(frame: pd.DataFrame) -> pd.DataFrame:
+    """Fill display age only from the derived verified rookie-age audit artifact."""
+
+    if frame.empty or "player" not in frame.columns or "position" not in frame.columns:
+        return frame
+    lookup = rookie_birthdate_audit_age_lookup()
+    if not lookup:
+        return frame
+    enriched = frame.copy()
+    if "age" not in enriched.columns:
+        enriched["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for index, row in enriched.iterrows():
+        current = age_display_value(row.get("age"))
+        if current != OUTCOME_NOT_ENOUGH_INFORMATION:
+            enriched.at[index, "age"] = current
+            continue
+        key = _player_identity_key(row.get("player"), row.get("position"))
+        enriched.at[index, "age"] = lookup.get(key, OUTCOME_NOT_ENOUGH_INFORMATION)
+    return enriched
+
+
+@lru_cache(maxsize=1)
+def rookie_birthdate_audit_age_lookup() -> dict[tuple[str, str], str]:
+    if not ROOKIE_VERIFIED_AGE_DISPLAY_PATH.exists():
+        return {}
+    try:
+        frame = pd.read_csv(ROOKIE_VERIFIED_AGE_DISPLAY_PATH, dtype=str).fillna("")
+    except Exception:
+        return {}
+    required = {"player", "position", "age", "verification_status"}
+    if not required.issubset(frame.columns):
+        return {}
+    lookup: dict[tuple[str, str], str] = {}
+    for row in frame.to_dict("records"):
+        if row.get("verification_status") != "multi_source_birthdate_match":
+            continue
+        age = age_display_value(row.get("age"))
+        if age == OUTCOME_NOT_ENOUGH_INFORMATION:
+            continue
+        key = _player_identity_key(row.get("player"), row.get("position"))
+        if key != ("", ""):
+            lookup[key] = age
+    return lookup
 
 
 @lru_cache(maxsize=1)

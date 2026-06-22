@@ -19,26 +19,33 @@ SLEEPER_ADP_POINTER_PATH = Path(
 )
 
 CORE_RANKING_COLUMNS = (
-    "on_clock_decision_rank",
-    "on_clock_decision_tier",
-    "on_clock_decision_value",
-    "cross_asset_candidate_rank",
-    "final_board_rank",
+    "dynasty_asset_tier",
+    "dynasty_asset_rank",
     "player",
     "position",
     "nfl_team",
     "age",
+    "final_board_rank",
+    "pool_adp_pick_equivalent",
+    "at_current_pick_value",
+    "why_draft",
+    "main_risk",
+    "dynasty_asset_confidence",
+    "human_review_flag",
+    "startup_adp_display",
+    "available_pool_adp_rank",
+    "outcome_applicable_summary",
+    "source_label_display_only",
+    "dynasty_asset_score",
+    "cross_asset_candidate_rank",
+    "cross_asset_candidate_value",
+    "final_tier",
     "position_rank",
     "on_clock_confidence",
     "on_clock_reason",
     "on_clock_warning",
-    "startup_adp_display_only",
-    "available_pool_adp_range",
     "draft_timing_note",
-    "source_label_display_only",
-    "final_tier",
     "candidate_value_band",
-    "cross_asset_candidate_value",
     "confidence_band",
     "candidate_key_caveat",
     "risk_notes",
@@ -71,6 +78,13 @@ RANKING_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
+    "dynasty_asset_tier": "Dynasty Asset Tier",
+    "dynasty_asset_rank": "Dynasty Asset Rank",
+    "dynasty_asset_score": "Dynasty Asset Score",
+    "dynasty_asset_confidence": "Confidence",
+    "why_draft": "Why Draft",
+    "main_risk": "Main Risk",
+    "human_review_flag": "Human Review",
     "on_clock_decision_rank": "On-Clock Decision Rank (Review-Only)",
     "on_clock_decision_tier": "On-Clock Decision Tier",
     "on_clock_decision_value": "On-Clock Decision Value (Review-Only)",
@@ -89,11 +103,15 @@ RANKING_LABELS = {
     "nfl_team": "NFL Team",
     "age": "Age",
     "asset_type": "Asset Type",
+    "startup_adp_display": "Startup ADP",
     "adp_display_only": "Startup ADP / Display-Only",
     "startup_adp_display_only": "Startup ADP / Display-Only",
     "adp_range_display_only": "ADP Range (Display-Only)",
     "current_pick_value_display_only": "Current Pick Value (Display-Only)",
+    "pool_adp_pick_equivalent": "Pool ADP Pick",
+    "at_current_pick_value": "At Current Pick",
     "draft_timing_note": "Draft Timing Note",
+    "outcome_applicable_summary": "Outcome/Horizon",
     "source_label_display_only": "Source",
     "availability_status": "Board Availability",
     "final_board_score_visible": "Visible Score (Mixed Basis)",
@@ -119,6 +137,9 @@ DRAFT_BOARD_LABELS = {
 }
 
 VISIBLE_SORT_COLUMNS = {
+    "Dynasty Asset Tier/Rank": "dynasty_asset_rank",
+    "Dynasty Asset Rank": "dynasty_asset_rank",
+    "Dynasty Asset Score": "dynasty_asset_score",
     "On-Clock Decision Rank": "on_clock_decision_rank",
     "On-Clock Decision Value": "on_clock_decision_value",
     "Final Board Rank": "final_board_rank",
@@ -257,12 +278,6 @@ def with_display_context(
             current_pick_value_label(
                 current_pick,
                 str(row.get("available_pool_adp_rank") or "").strip(),
-                candidate_rank=str(
-                    row.get("on_clock_decision_rank")
-                    or row.get("cross_asset_candidate_rank")
-                    or ""
-                ).strip(),
-                confidence=str(row.get("confidence_band") or "").strip(),
             )
         )
         draft_timing_notes.append(
@@ -274,10 +289,16 @@ def with_display_context(
         )
         source_values.append(source_label_for_row(row, adp_row))
     contextual["adp_display_only"] = adp_values
+    contextual["startup_adp_display"] = adp_values
     contextual["startup_adp_display_only"] = adp_values
     contextual["adp_range_display_only"] = range_values
     contextual["available_pool_adp_range"] = range_values
+    contextual["pool_adp_pick_equivalent"] = [
+        pool_adp_pick_equivalent(str(value or "").strip())
+        for value in contextual.get("available_pool_adp_rank", pd.Series(dtype=object))
+    ]
     contextual["current_pick_value_display_only"] = current_pick_values
+    contextual["at_current_pick_value"] = current_pick_values
     contextual["draft_timing_note"] = draft_timing_notes
     contextual["source_label_display_only"] = source_values
     return contextual
@@ -293,10 +314,31 @@ def sort_workflow_frame(
     if column not in frame.columns:
         return frame.copy()
     sorted_frame = frame.copy()
-    if column in {
+    if sort_label == "Dynasty Asset Tier/Rank":
+        sorted_frame["_tier_sort"] = sorted_frame.get(
+            "dynasty_asset_tier",
+            pd.Series(dtype=object),
+        ).map(_dynasty_asset_tier_sort)
+        sorted_frame["_rank_sort"] = pd.to_numeric(
+            sorted_frame.get("dynasty_asset_rank", pd.Series(dtype=object)),
+            errors="coerce",
+        )
+        sorted_frame["_confidence_sort"] = sorted_frame.get(
+            "dynasty_asset_confidence",
+            sorted_frame.get("on_clock_confidence", pd.Series(dtype=object)),
+        ).map(_confidence_sort)
+        sorted_frame = sorted_frame.sort_values(
+            by=["_tier_sort", "_rank_sort", "_confidence_sort", "player"],
+            ascending=[True, True, True, True],
+            na_position="last",
+            kind="stable",
+        ).drop(columns=["_tier_sort", "_rank_sort", "_confidence_sort"])
+    elif column in {
         "final_board_rank",
         "position_rank",
         "final_board_score_visible",
+        "dynasty_asset_rank",
+        "dynasty_asset_score",
         "on_clock_decision_rank",
         "on_clock_decision_value",
         "cross_asset_candidate_rank",
@@ -331,7 +373,7 @@ def draft_timing_note(
         return NOT_ENOUGH_INFORMATION
     pieces = [
         "Weak timing signal for this rookie/free-agent draft",
-        "use On-Clock Rank first",
+        "ADP does not drive Dynasty Asset Score",
     ]
     if str(available_pool_range or "").strip() not in {"", NOT_ENOUGH_INFORMATION}:
         pieces.append(f"available-pool range {available_pool_range}")
@@ -388,9 +430,6 @@ def source_label_for_row(row: dict[str, object], adp_row: dict[str, str]) -> str
 def current_pick_value_label(
     current_pick: int | None,
     available_pool_adp_rank: str,
-    *,
-    candidate_rank: str = "",
-    confidence: str = "",
 ) -> str:
     if current_pick is None:
         return NOT_ENOUGH_INFORMATION
@@ -398,26 +437,58 @@ def current_pick_value_label(
         pool_rank = float(str(available_pool_adp_rank).strip())
     except ValueError:
         return NOT_ENOUGH_INFORMATION
-    try:
-        candidate = float(str(candidate_rank).strip())
-    except ValueError:
-        candidate = pool_rank
     price_delta = float(current_pick) - pool_rank
-    value_delta = float(current_pick) - candidate
-    low_confidence = str(confidence).strip().lower() in {"low", "very low"}
-    if low_confidence and value_delta < 6:
-        return NOT_ENOUGH_INFORMATION
-    if price_delta <= -8 and value_delta <= -4:
+    if price_delta <= -8:
         return "Too early"
     if price_delta <= -4:
         return "Reach"
     if price_delta <= -2:
         return "Slight reach"
-    if value_delta >= 10 and price_delta >= 3:
+    if price_delta >= 10:
         return "Steal"
-    if value_delta >= 4 or price_delta >= 2:
+    if price_delta >= 3:
         return "Value"
     return "Fair"
+
+
+def pool_adp_pick_equivalent(available_pool_adp_rank: str) -> str:
+    try:
+        rank = int(float(str(available_pool_adp_rank).strip()))
+    except ValueError:
+        return NOT_ENOUGH_INFORMATION
+    if rank <= 0:
+        return NOT_ENOUGH_INFORMATION
+    round_number = ((rank - 1) // 10) + 1
+    round_pick = ((rank - 1) % 10) + 1
+    return f"{round_number}.{round_pick:02d}"
+
+
+def _dynasty_asset_tier_sort(value: object) -> int:
+    text = str(value or "")
+    if text.startswith("Tier 1A"):
+        return 1
+    if text.startswith("Tier 1B"):
+        return 2
+    if text.startswith("Tier 2"):
+        return 3
+    if text.startswith("Tier 3"):
+        return 4
+    if text.startswith("Avoid"):
+        return 5
+    return 99
+
+
+def _confidence_sort(value: object) -> int:
+    text = str(value or "").strip().lower().replace("-", " ")
+    order = {
+        "high": 1,
+        "medium high": 2,
+        "medium": 3,
+        "medium low": 4,
+        "low": 5,
+        "very low": 6,
+    }
+    return order.get(text, 99)
 
 
 def _adp_source_field_range(row: dict[str, object]) -> str:
