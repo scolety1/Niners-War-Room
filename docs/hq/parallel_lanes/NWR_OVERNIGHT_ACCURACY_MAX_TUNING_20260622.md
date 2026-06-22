@@ -8,6 +8,21 @@ Tuned V2 produced a materially better review-only rookie-veteran comparison laye
 
 Yes. Tuned V2 is integrated as the app's Review-Only Candidate layer. It strengthens young established veteran anchors, confidence-caps uncertain rookies, discounts QBs in 10-team 1QB, and keeps ADP strictly display-only.
 
+## PDF Free Agent Pool Addendum
+
+`C:\Users\codex-agent\Downloads\LVE Rosters 061326.pdf` page 3 was parsed as the verified league Free Agents source for this draft and integrated as a draftable overlay. This does not mutate Frozen Final Draft Board V1 or any approved rank/source-truth field.
+
+- Extracted free agents: 77
+- Included by default: 63 QB/RB/WR/TE
+- Hidden by default: 14 K/DST
+- Frozen board rows remain: 66
+- Expanded Live Draft Room loaded pool rows: 143
+- Key parsed examples: Tyreek Hill, Dallas Goedert, Juwan Johnson, Tua Tagovailoa, Jaylen Wright, Isaac Guerendo, Darnell Mooney, Rashod Bateman, Bryce Young, Anthony Richardson, Austin Ekeler, Marquise Brown, Cedric Tillman, Jerome Ford, Justice Hill, Ben Sinnott, Michael Mayer, Geno Smith, Marcus Mariota, Mac Jones, Noah Gray.
+
+Live Draft Room now has `Show PDF free agents` and `Show K/DST` controls. PDF-only players show `Not on frozen board` for Final Board Rank and remain selectable/draftable. Missing model/candidate values show `Not enough information`. ADP/range context remains display-only and does not drive internal value.
+
+Detailed audit: `docs/hq/parallel_lanes/overnight_accuracy_max_20260622/NWR_PDF_FREE_AGENT_POOL_INTEGRATION_20260622.md`.
+
 ## Historical Data Found
 
 The run used internal rookie replay fixtures, model v4 replay reports, current full dynasty board, current frozen board, current emergency/historical tuned overlays, and proxy dropped-veteran cohorts. No outside market/projection/trade-calculator sources were used.

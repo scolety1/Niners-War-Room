@@ -23,6 +23,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_APPLICABLE,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     display_lane_prop_frame,
+    load_expanded_draftable_player_pool,
     load_frozen_board,
     load_lane_prop_file,
 )
@@ -177,26 +178,27 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
     )
 
 bundle = load_frozen_board()
+compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
 
 page_header(
     "Player Compare",
     eyebrow="Draft-Day App V1",
     description=(
-        "Compare 2 to 4 players using the frozen board fields. Lane prop context is "
-        "shown only when present and remains secondary to final_board_rank."
+        "Compare 2 to 4 players using the frozen board plus verified PDF free-agent "
+        "draftable overlay. Lane prop context remains secondary to final_board_rank."
     ),
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
-players = bundle.frame["player"].astype(str).tolist() if "player" in bundle.frame.columns else []
+players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
 selected = st.multiselect("Players to compare", players, max_selections=4)
 if len(selected) < 2:
-    st.info("Select 2 to 4 players from the frozen board.")
+    st.info("Select 2 to 4 players from the frozen board or PDF free-agent overlay.")
     st.stop()
 
-compare = bundle.frame.loc[bundle.frame["player"].astype(str).isin(selected)].copy()
+compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
 render_final_board_table(compare, key="player_compare_board")
 
 compare_columns = [

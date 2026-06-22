@@ -51,6 +51,14 @@ TUNED_V2_CANDIDATE_PATH = (
     / "overnight_accuracy_max_20260622"
     / "tuned_v2_current_draft_pool_overlay.csv"
 )
+PDF_FREE_AGENT_DRAFTABLE_POOL_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "parallel_lanes"
+    / "overnight_accuracy_max_20260622"
+    / "free_agent_pdf_page3_draftable_pool.csv"
+)
 FALLBACK_CROSS_ASSET_CANDIDATE_PATH = (
     REPO_ROOT
     / "docs"
@@ -452,6 +460,243 @@ def load_frozen_board() -> FrozenBoardBundle:
         errors=tuple(errors),
         warnings=warnings,
     )
+
+
+@lru_cache(maxsize=1)
+def load_pdf_free_agent_pool() -> pd.DataFrame:
+    """Load the verified LVE PDF page-3 free-agent overlay without mutating sources."""
+
+    if not PDF_FREE_AGENT_DRAFTABLE_POOL_PATH.exists():
+        return pd.DataFrame()
+    try:
+        frame = pd.read_csv(PDF_FREE_AGENT_DRAFTABLE_POOL_PATH, dtype=str).fillna("")
+    except Exception:
+        return pd.DataFrame()
+    hidden_like = hidden_sort_columns(frame.columns)
+    if hidden_like:
+        return pd.DataFrame()
+    return frame
+
+
+def load_expanded_draftable_player_pool(frozen_frame: pd.DataFrame) -> pd.DataFrame:
+    """Return frozen board rows plus verified PDF free agents for draft UI only."""
+
+    if frozen_frame.empty:
+        return frozen_frame.copy()
+    expanded = _prepare_frozen_rows_for_expanded_pool(frozen_frame)
+    pdf_rows = _pdf_free_agent_rows_for_expanded_pool(expanded)
+    if not pdf_rows.empty:
+        expanded = pd.concat([expanded, pdf_rows], ignore_index=True, sort=False).fillna("")
+    expanded = enrich_display_age_from_roster_context(expanded, name_column="player")
+    expanded = _recalculate_expanded_candidate_rank(expanded)
+    expanded = _recalculate_expanded_available_pool_adp(expanded)
+    return expanded.fillna("").reset_index(drop=True)
+
+
+def _prepare_frozen_rows_for_expanded_pool(frame: pd.DataFrame) -> pd.DataFrame:
+    prepared = frame.copy()
+    prepared["source_group"] = "Frozen Board"
+    prepared["draftable_status"] = "Frozen Final Draft Board V1"
+    prepared["include_default"] = "yes"
+    prepared["exclude_reason"] = ""
+    if "source_label_display_only" not in prepared.columns:
+        prepared["source_label_display_only"] = "Frozen Board"
+    if "asset_type_display" not in prepared.columns:
+        prepared["asset_type_display"] = prepared.get("asset_type", "Frozen Board")
+    return prepared
+
+
+def _pdf_free_agent_rows_for_expanded_pool(existing_frame: pd.DataFrame) -> pd.DataFrame:
+    pool = load_pdf_free_agent_pool()
+    if pool.empty:
+        return pd.DataFrame()
+    existing_keys = {
+        _player_identity_key(row.get("player"), row.get("position"))
+        for row in existing_frame.to_dict("records")
+    }
+    rows: list[dict[str, object]] = []
+    for row in pool.to_dict("records"):
+        identity = _player_identity_key(row.get("player"), row.get("pos"))
+        if identity in existing_keys:
+            continue
+        rows.append(_pdf_free_agent_row(row))
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows)
+
+
+def _pdf_free_agent_row(row: dict[str, object]) -> dict[str, object]:
+    player = _clean_text(row.get("player"))
+    position = _clean_text(row.get("pos")).upper()
+    age = age_display_value(row.get("age"))
+    adp = _candidate_display_value(row.get("adp"))
+    candidate_value = _pdf_candidate_value(row)
+    confidence = _pdf_confidence_band(row, candidate_value)
+    caveat = _pdf_candidate_caveat(row, candidate_value)
+    return {
+        "player_id": _clean_text(row.get("player_id")),
+        "final_board_rank": "Not on frozen board",
+        "final_tier": "PDF Free Agent",
+        "position_rank": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "player": player,
+        "position": position,
+        "nfl_team": _clean_text(row.get("nfl_team")),
+        "age": age,
+        "asset_type": "PDF Free Agent / Draftable",
+        "asset_type_display": "PDF Free Agent / Draftable",
+        "source_group": "LVE PDF Free Agent",
+        "draftable_status": "PDF Page 3 Free Agent",
+        "include_default": _clean_text(row.get("include_default")) or "no",
+        "exclude_reason": _clean_text(row.get("exclude_reason")),
+        "source_label_display_only": "PDF Free Agent / Draftable",
+        "availability_status": "PDF Page 3 Free Agent",
+        "model_posture_used": "PDF draftable overlay / review-only",
+        "candidate_status": "REVIEW_ONLY_PDF_FREE_AGENT",
+        "risk_notes": "Not on frozen board; draftable per LVE Rosters page 3.",
+        "needs_manual_review": "true",
+        "adp": adp,
+        "adp_source_status": "Display-only Sleeper ADP context where available",
+        "cross_asset_candidate_rank": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "cross_asset_candidate_value": candidate_value,
+        "candidate_value_band": _tuned_v2_value_band(candidate_value),
+        "confidence_band": confidence,
+        "uncertainty_reasons": _pdf_uncertainty_reasons(row, candidate_value),
+        "candidate_key_caveat": caveat,
+        "candidate_vs_frozen_note": (
+            "PDF Free Agent / Review-Only; not on frozen board; does not replace "
+            "Final Board Rank."
+        ),
+        "candidate_vs_dynasty_note": _pdf_dynasty_note(row),
+        "candidate_action_summary": caveat,
+        "available_pool_adp_rank": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "available_pool_adp_range": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "current_pick_value": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "current_pick_value_reason": (
+            "Computed from available-pool ADP rank when display-only ADP exists; "
+            "ADP does not drive internal value."
+        ),
+        "outcome_applicable_summary": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "horizon_2026_band": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "horizon_2027_band": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "horizon_next5y_band": OUTCOME_NOT_ENOUGH_INFORMATION,
+        "manual_review_flag": "HIGH",
+        "source_note": (
+            "LVE Rosters 061326.pdf page 3 Free Agents; draftable overlay only; "
+            "PDF ranks are display-only and not model inputs."
+        ),
+        "pdf_overall_rank_or_number": _clean_text(row.get("pdf_overall_rank_or_number")),
+        "pdf_position_rank": _clean_text(row.get("pdf_position_rank")),
+    }
+
+
+def _pdf_candidate_value(row: dict[str, object]) -> str:
+    tuned = _clean_text(row.get("tuned_v2_cross_asset_value"))
+    if tuned:
+        return tuned
+    score = _safe_float(row.get("nwr_dynasty_score"))
+    if score is not None:
+        return f"{max(min(score, 100.0), 0.0):.2f}"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _pdf_confidence_band(row: dict[str, object], candidate_value: object) -> str:
+    if _safe_float(candidate_value) is None:
+        return "Low"
+    confidence = _clean_text(row.get("tuned_v2_confidence_band"))
+    if confidence:
+        return confidence
+    if _clean_text(row.get("matched_full_dynasty_rank")):
+        return "Medium-low"
+    return "Low"
+
+
+def _pdf_uncertainty_reasons(row: dict[str, object], candidate_value: object) -> str:
+    reasons = ["pdf_page3_free_agent_overlay", "not_on_frozen_board"]
+    if _safe_float(candidate_value) is None:
+        reasons.append("no_internal_candidate_value_available")
+    if not _clean_text(row.get("matched_full_dynasty_rank")):
+        reasons.append("not_matched_full_dynasty_source")
+    if not _clean_text(row.get("player_id")):
+        reasons.append("player_id_not_matched")
+    return "; ".join(reasons)
+
+
+def _pdf_candidate_caveat(row: dict[str, object], candidate_value: object) -> str:
+    if _safe_float(candidate_value) is None:
+        return "PDF Free Agent / Draftable; internal candidate value is Not enough information."
+    return "PDF Free Agent / Draftable; candidate value is review-only."
+
+
+def _pdf_dynasty_note(row: dict[str, object]) -> str:
+    rank = _clean_text(row.get("matched_full_dynasty_rank"))
+    if rank:
+        return f"Matched full dynasty rank {rank}; review-only overlay."
+    return "No matched full dynasty rank; use human review."
+
+
+def _recalculate_expanded_candidate_rank(frame: pd.DataFrame) -> pd.DataFrame:
+    ranked = frame.copy()
+    if "cross_asset_candidate_value" not in ranked.columns:
+        return ranked
+    eligible = ranked["position"].astype(str).str.upper().isin({"QB", "RB", "WR", "TE"})
+    values = pd.to_numeric(ranked["cross_asset_candidate_value"], errors="coerce")
+    order = ranked.loc[eligible & values.notna()].copy()
+    if order.empty:
+        return ranked
+    order["_expanded_candidate_value_sort"] = values.loc[order.index]
+    order = order.sort_values(
+        by=["_expanded_candidate_value_sort", "player"],
+        ascending=[False, True],
+        kind="stable",
+    )
+    for rank, index in enumerate(order.index, start=1):
+        ranked.at[index, "cross_asset_candidate_rank"] = str(rank)
+    return ranked
+
+
+def _recalculate_expanded_available_pool_adp(frame: pd.DataFrame) -> pd.DataFrame:
+    expanded = frame.copy()
+    if "adp" not in expanded.columns:
+        return expanded
+    eligible = expanded["position"].astype(str).str.upper().isin({"QB", "RB", "WR", "TE"})
+    adp_values = pd.to_numeric(expanded["adp"], errors="coerce")
+    order = expanded.loc[eligible & adp_values.notna()].copy()
+    if order.empty:
+        return expanded
+    order["_expanded_adp_sort"] = adp_values.loc[order.index]
+    order = order.sort_values(
+        by=["_expanded_adp_sort", "player"],
+        ascending=[True, True],
+        kind="stable",
+    )
+    for rank, index in enumerate(order.index, start=1):
+        expanded.at[index, "available_pool_adp_rank"] = str(rank)
+        expanded.at[index, "available_pool_adp_range"] = _available_pool_adp_range(rank)
+    return expanded
+
+
+def _available_pool_adp_range(rank: int) -> str:
+    if rank <= 3:
+        return "Early 1st equivalent"
+    if rank <= 7:
+        return "Mid 1st equivalent"
+    if rank <= 10:
+        return "Late 1st equivalent"
+    if rank <= 13:
+        return "Early 2nd equivalent"
+    if rank <= 20:
+        return "Mid/Late 2nd equivalent"
+    return "Depth / later"
+
+
+def _safe_float(value: object) -> float | None:
+    try:
+        numeric = float(str(value or "").strip())
+    except ValueError:
+        return None
+    if pd.isna(numeric):
+        return None
+    return numeric
 
 
 def validate_frozen_board(frame: pd.DataFrame) -> tuple[str, ...]:

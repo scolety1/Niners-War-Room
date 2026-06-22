@@ -32,6 +32,7 @@ CORE_RANKING_COLUMNS = (
     "adp_display_only",
     "available_pool_adp_range",
     "current_pick_value_display_only",
+    "source_label_display_only",
     "final_tier",
     "candidate_key_caveat",
     "risk_notes",
@@ -458,7 +459,7 @@ def assign_player_to_pick(
     normalized = normalize_workflow_state(state)
     player_row = _player_row(board, player_key)
     if player_row is None:
-        raise DraftWorkflowError("Selected player is not on the frozen board.")
+        raise DraftWorkflowError("Selected player is not in the draftable player pool.")
     pick_row = _pick_row(pick_frame, overall_pick)
     if pick_row is None:
         raise DraftWorkflowError("Selected pick slot is not in the draft board.")

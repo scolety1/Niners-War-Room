@@ -40,11 +40,15 @@ def render_draft_workflow(
 
     summary = workflow_summary(board_frame, pick_frame, state)
     current_owner = f" - {summary.current_pick_owner}" if summary.current_pick_owner else ""
+    frozen_rows = _non_pdf_row_count(board_frame)
+    pdf_rows = _pdf_row_count(board_frame)
     st.caption(
         " | ".join(
             (
-                "Source: Frozen Board",
-                f"Rows: {len(board_frame)}",
+                "Source: Frozen Board + verified PDF free-agent overlay",
+                f"Frozen rows: {frozen_rows}",
+                f"PDF FAs: {pdf_rows}",
+                f"Draftable rows: {len(board_frame)}",
                 f"Drafted: {summary.drafted_count}",
                 f"Available: {summary.available_count}",
                 f"Current pick: {summary.current_pick_label}{current_owner}",
@@ -132,7 +136,7 @@ def _render_filters(
 ) -> tuple[pd.DataFrame, bool]:
     frame = with_workflow_columns(board_frame, state)
     with st.container():
-        filter_cols = st.columns([1.4, 1, 1, 1, 1])
+        filter_cols = st.columns([1.35, 0.9, 0.9, 1.1, 0.9, 0.9, 0.9])
         search = filter_cols[0].text_input(
             "Search player",
             key=f"{session_key}_search",
@@ -156,6 +160,16 @@ def _render_filters(
             "Show drafted players",
             value=False,
             key=f"{session_key}_show_drafted_players",
+        )
+        show_pdf_free_agents = filter_cols[5].toggle(
+            "Show PDF free agents",
+            value=True,
+            key=f"{session_key}_show_pdf_free_agents",
+        )
+        show_kickers_dst = filter_cols[6].toggle(
+            "Show K/DST",
+            value=False,
+            key=f"{session_key}_show_kickers_dst",
         )
 
         sort_cols = st.columns([1.25, 1, 1, 1])
@@ -202,6 +216,14 @@ def _render_filters(
 
     if not show_drafted_players:
         frame = available_board_frame(board_frame, state)
+    if not show_pdf_free_agents and "source_group" in frame.columns:
+        frame = frame.loc[
+            ~frame["source_group"].astype(str).eq("LVE PDF Free Agent")
+        ].copy()
+    if not show_kickers_dst and "position" in frame.columns:
+        frame = frame.loc[
+            ~frame["position"].astype(str).str.upper().isin({"K", "DST"})
+        ].copy()
     if position != "All" and "position" in frame.columns:
         frame = frame.loc[frame["position"].astype(str) == position].copy()
     if tier != "All" and "final_tier" in frame.columns:
@@ -294,6 +316,18 @@ def _values(frame: pd.DataFrame, column: str) -> list[str]:
     if column not in frame.columns:
         return []
     return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
+
+
+def _pdf_row_count(frame: pd.DataFrame) -> int:
+    if "source_group" not in frame.columns:
+        return 0
+    return int(frame["source_group"].astype(str).eq("LVE PDF Free Agent").sum())
+
+
+def _non_pdf_row_count(frame: pd.DataFrame) -> int:
+    if "source_group" not in frame.columns:
+        return int(frame.shape[0])
+    return int((~frame["source_group"].astype(str).eq("LVE PDF Free Agent")).sum())
 
 
 def _sync_pick_slot_selectbox(

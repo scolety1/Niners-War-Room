@@ -28,8 +28,10 @@ from src.services.draft_day_app_v1_service import (
     hidden_sort_columns,
     lane_prop_status_rows,
     load_cross_asset_candidate_board,
+    load_expanded_draftable_player_pool,
     load_frozen_board,
     load_lane_prop_file,
+    load_pdf_free_agent_pool,
     normalize_board_frame,
     outcome_columns_for_display,
     outcome_display_coverage_counts,
@@ -92,6 +94,29 @@ def test_frozen_board_keeps_final_rank_with_tuned_v2_candidate_context() -> None
     assert str(zay["cross_asset_candidate_rank"]) == "2"
     assert int(maye["final_board_rank"]) == 40
     assert str(maye["cross_asset_candidate_rank"]) == "20"
+
+
+def test_pdf_free_agent_pool_loads_verified_page_three_rows() -> None:
+    pool = load_pdf_free_agent_pool()
+
+    assert not pool.empty
+    assert {"player", "pos", "include_default", "source_group"}.issubset(pool.columns)
+    rows = {str(row["player"]): row for row in pool.to_dict("records")}
+    assert rows["Tyreek Hill"]["source_group"] == "LVE PDF Free Agent"
+    assert rows["Tyreek Hill"]["include_default"] == "yes"
+    assert rows["Evan McPherson"]["include_default"] == "no"
+
+
+def test_expanded_draftable_pool_adds_pdf_free_agents_without_mutating_frozen_count() -> None:
+    bundle = load_frozen_board()
+    expanded = load_expanded_draftable_player_pool(bundle.frame)
+
+    assert bundle.row_count == EXPECTED_ROW_COUNT
+    assert expanded.shape[0] > EXPECTED_ROW_COUNT
+    tyreek = expanded.loc[expanded["player"].astype(str).eq("Tyreek Hill")].iloc[0]
+    assert tyreek["final_board_rank"] == "Not on frozen board"
+    assert tyreek["source_group"] == "LVE PDF Free Agent"
+    assert tyreek["source_label_display_only"] == "PDF Free Agent / Draftable"
 
 
 def test_hidden_sort_and_private_value_columns_are_blocked() -> None:

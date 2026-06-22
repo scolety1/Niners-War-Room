@@ -201,8 +201,8 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     workflow = with_workflow_columns(board, empty_workflow_state())
     display = display_ranking_frame(workflow, current_pick=5)
 
-    assert list(display.columns[:13]) == [
-        "Candidate Rank (Review-Only)",
+    assert list(display.columns[:14]) == [
+        "Tuned V2 Candidate Rank (Review-Only)",
         "Final Board Rank",
         "Player",
         "Pos",
@@ -210,11 +210,12 @@ def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
         "Age",
         "Position Rank",
         "Candidate Band",
-        "Candidate Value (Review-Only)",
+        "Tuned V2 Candidate Value (Review-Only)",
         "Confidence",
         "ADP (Display-Only)",
         "Available-Pool ADP Range (Display-Only)",
         "Current Pick Value (Display-Only)",
+        "Source",
     ]
     assert "Visible Score (Mixed Basis)" not in display.columns
     assert "Board Availability" not in display.columns
