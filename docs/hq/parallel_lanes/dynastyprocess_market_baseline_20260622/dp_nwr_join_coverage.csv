@@ -1,0 +1,6 @@
+source_name,nwr_rows,dp_matched_rows,dp_match_rate,nwr_age_rows_before_dp,dp_age_rows_when_matched,age_gain_possible_rows,notes
+full_dynasty_rankings,240,232,0.9667,3,233,230,"Display-only DynastyProcess market baseline; not NWR source truth; not used for model inputs, candidate rank, or hidden sort."
+frozen_board_66,66,49,0.7424,40,49,9,"Display-only DynastyProcess market baseline; not NWR source truth; not used for model inputs, candidate rank, or hidden sort."
+pdf_free_agent_pool,77,62,0.8052,77,62,0,"Display-only DynastyProcess market baseline; not NWR source truth; not used for model inputs, candidate rank, or hidden sort."
+current_candidate_overlay,66,49,0.7424,40,49,9,"Display-only DynastyProcess market baseline; not NWR source truth; not used for model inputs, candidate rank, or hidden sort."
+combined_nwr_universe,380,330,0.8684,117,330,,"Input counts: {'full_dynasty_rankings': 240, 'frozen_board_66': 66, 'pdf_free_agent_pool': 77, 'current_candidate_overlay': 66, 'verified_rookie_age_context': 40}. Display-only DynastyProcess market baseline; not NWR source truth; not used for model inputs, candidate rank, or hidden sort."
