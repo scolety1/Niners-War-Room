@@ -23,6 +23,11 @@ RAW_BASE_URL = "https://raw.githubusercontent.com/dynastyprocess/data"
 GITHUB_COMMIT_API_URL = "https://api.github.com/repos/dynastyprocess/data/commits"
 DEFAULT_BRANCH = "master"
 DEFAULT_CACHE_ROOT = Path(r"C:\NWR_SHARED_DATA\market_sources\dynastyprocess")
+UPSTREAM_WORKFLOW_NAME = "weekly-playervalues"
+UPSTREAM_EXPECTED_CRON = "23 2 * * 5"
+UPSTREAM_EXPECTED_UTC = "Friday 02:23 UTC"
+NWR_RECOMMENDED_PULL = "Friday 06:00 America/Denver"
+NWR_BACKUP_RETRY = "Saturday morning America/Denver"
 DEFAULT_FILE_NAMES = (
     "values.csv",
     "values-players.csv",
@@ -169,6 +174,26 @@ class SnapshotResult:
     warnings: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class FreshnessMetadata:
+    """Review metadata that prevents stale market context from looking current."""
+
+    nwr_fetch_timestamp: str
+    upstream_scrape_date: str
+    upstream_latest_commit_sha: str
+    upstream_latest_commit_timestamp: str
+    upstream_workflow_name: str
+    upstream_expected_cron: str
+    local_cache_path: str
+    derived_artifact_path: str
+    freshness_status: str
+    freshness_age_days: int | str
+    previous_scrape_date: str
+    previous_values_sha256: str
+    current_values_sha256: str
+    freshness_warning: str
+
+
 def _utc_now_iso() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
@@ -179,6 +204,18 @@ def build_raw_url(file_name: str, branch: str = DEFAULT_BRANCH) -> str:
     if not file_name or Path(file_name).name != file_name or "/" in file_name:
         raise ValueError(f"Unsafe DynastyProcess file name: {file_name!r}")
     return f"{RAW_BASE_URL}/{branch}/files/{file_name}"
+
+
+def parse_upstream_cron_metadata() -> dict[str, str]:
+    """Return the fixed upstream schedule metadata used by NWR refresh policy."""
+
+    return {
+        "upstream_workflow_name": UPSTREAM_WORKFLOW_NAME,
+        "upstream_expected_cron": UPSTREAM_EXPECTED_CRON,
+        "upstream_expected_utc": UPSTREAM_EXPECTED_UTC,
+        "nwr_recommended_pull": NWR_RECOMMENDED_PULL,
+        "nwr_backup_retry": NWR_BACKUP_RETRY,
+    }
 
 
 def validate_schema(headers: Iterable[str], file_name: str) -> None:
@@ -213,6 +250,124 @@ def _csv_metadata(body: bytes, file_name: str) -> tuple[int, str | None]:
     if len(scrape_dates) > 1:
         return row_count, ";".join(sorted(scrape_dates))
     return row_count, None
+
+
+def _parse_date(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def _file_metadata(snapshot: SnapshotResult, file_name: str) -> FetchedFile | None:
+    for file_metadata in snapshot.files:
+        if file_metadata.file_name == file_name:
+            return file_metadata
+    return None
+
+
+def evaluate_freshness(
+    snapshot: SnapshotResult | None,
+    *,
+    now_utc: datetime | None = None,
+    previous_snapshot: SnapshotResult | None = None,
+    fetch_failed: bool = False,
+    derived_artifact_path: Path | str = "",
+) -> FreshnessMetadata:
+    """Evaluate NWR freshness status for a cached DynastyProcess snapshot."""
+
+    if snapshot is None:
+        return FreshnessMetadata(
+            nwr_fetch_timestamp=_utc_now_iso(),
+            upstream_scrape_date="",
+            upstream_latest_commit_sha="",
+            upstream_latest_commit_timestamp="",
+            upstream_workflow_name=UPSTREAM_WORKFLOW_NAME,
+            upstream_expected_cron=UPSTREAM_EXPECTED_CRON,
+            local_cache_path="",
+            derived_artifact_path=str(derived_artifact_path),
+            freshness_status="RED_NO_VALID_CACHE",
+            freshness_age_days="",
+            previous_scrape_date="",
+            previous_values_sha256="",
+            current_values_sha256="",
+            freshness_warning="Market baseline unavailable: no valid DynastyProcess cache.",
+        )
+
+    values_file = _file_metadata(snapshot, "values.csv") or _file_metadata(
+        snapshot, "values-players.csv"
+    )
+    previous_values_file = (
+        _file_metadata(previous_snapshot, "values.csv")
+        if previous_snapshot is not None
+        else None
+    )
+    now = now_utc or datetime.now(UTC)
+    scrape_date = values_file.scrape_date if values_file else None
+    scrape_datetime = _parse_date(scrape_date)
+    age_days: int | str = ""
+    if scrape_datetime is not None:
+        age_days = (now.date() - scrape_datetime.date()).days
+
+    previous_scrape_date = previous_values_file.scrape_date if previous_values_file else ""
+    previous_sha = previous_values_file.sha256 if previous_values_file else ""
+    current_sha = values_file.sha256 if values_file else ""
+    commit_timestamp = values_file.upstream_commit_date if values_file else ""
+    commit_datetime = _parse_date(commit_timestamp)
+    commit_age_days: int | None = None
+    if commit_datetime is not None:
+        commit_age_days = (now.date() - commit_datetime.date()).days
+
+    warning = ""
+    if fetch_failed:
+        status = "YELLOW_FETCH_FAILED_USING_LAST_CACHE"
+        warning = "Market baseline stale risk: upstream fetch failed, using last local cache."
+    elif isinstance(age_days, int) and age_days > 14:
+        status = "RED_STALE"
+        warning = "Market baseline stale: DynastyProcess scrape_date is older than 14 days."
+    elif isinstance(age_days, int) and age_days > 8:
+        status = "YELLOW_STALE"
+        warning = "Market baseline stale: DynastyProcess scrape_date is older than 8 days."
+    elif commit_age_days is not None and commit_age_days > 8:
+        status = "YELLOW_STALE"
+        warning = "Market baseline stale: upstream commit is older than expected weekly window."
+    elif (
+        scrape_date
+        and previous_scrape_date
+        and scrape_date == previous_scrape_date
+        and current_sha
+        and previous_sha
+        and current_sha == previous_sha
+    ):
+        status = "GREEN_SAME_WEEK_NO_CHANGE"
+    else:
+        status = "GREEN_CURRENT"
+
+    if status.startswith(("YELLOW", "RED")) and not warning:
+        warning = "Market baseline stale: review freshness report before use."
+
+    return FreshnessMetadata(
+        nwr_fetch_timestamp=snapshot.fetched_at_utc,
+        upstream_scrape_date=scrape_date or "",
+        upstream_latest_commit_sha=values_file.upstream_commit_sha if values_file else "",
+        upstream_latest_commit_timestamp=commit_timestamp or "",
+        upstream_workflow_name=UPSTREAM_WORKFLOW_NAME,
+        upstream_expected_cron=UPSTREAM_EXPECTED_CRON,
+        local_cache_path=snapshot.snapshot_dir,
+        derived_artifact_path=str(derived_artifact_path),
+        freshness_status=status,
+        freshness_age_days=age_days,
+        previous_scrape_date=previous_scrape_date or "",
+        previous_values_sha256=previous_sha,
+        current_values_sha256=current_sha,
+        freshness_warning=warning,
+    )
 
 
 class DynastyProcessConnector:
@@ -330,3 +485,40 @@ def read_snapshot_metadata(metadata_path: Path | str) -> SnapshotResult:
         files=files,
         warnings=tuple(payload.get("warnings", ())),
     )
+
+
+def iter_cached_snapshots(
+    cache_root: Path | str = DEFAULT_CACHE_ROOT,
+) -> tuple[SnapshotResult, ...]:
+    """Load valid cached DynastyProcess snapshots, newest first."""
+
+    root = Path(cache_root)
+    if not root.exists():
+        return ()
+    snapshots: list[SnapshotResult] = []
+    for metadata_path in root.glob("*/snapshot_metadata.json"):
+        try:
+            snapshots.append(read_snapshot_metadata(metadata_path))
+        except (KeyError, TypeError, json.JSONDecodeError, OSError):
+            continue
+    return tuple(
+        sorted(
+            snapshots,
+            key=lambda snapshot: snapshot.fetched_at_utc,
+            reverse=True,
+        )
+    )
+
+
+def latest_cached_snapshot(
+    cache_root: Path | str = DEFAULT_CACHE_ROOT,
+    *,
+    exclude_snapshot_dir: Path | str | None = None,
+) -> SnapshotResult | None:
+    """Return the newest usable local cache metadata, optionally excluding one path."""
+
+    excluded = str(Path(exclude_snapshot_dir)) if exclude_snapshot_dir is not None else None
+    for snapshot in iter_cached_snapshots(cache_root):
+        if excluded is None or str(Path(snapshot.snapshot_dir)) != excluded:
+            return snapshot
+    return None

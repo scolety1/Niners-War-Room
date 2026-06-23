@@ -25,6 +25,12 @@ Build command:
 & 'C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' scripts\build_dynastyprocess_market_baseline_v1.py --snapshot-label 20260623_dynastyprocess_v1
 ```
 
+Recommended refresh command:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\refresh_dynastyprocess_market_baseline_v1.py
+```
+
 Raw cache path:
 
 - `C:\NWR_SHARED_DATA\market_sources\dynastyprocess\20260623_dynastyprocess_v1`
@@ -35,8 +41,28 @@ Snapshot metadata:
 
 - Upstream commit: `a38911c0080e5623741eaa3bfcd63d1db98a5342`
 - Upstream commit date: `2026-06-19T07:33:57Z`
-- Fetch timestamp: `2026-06-23T22:27:46+00:00`
+- Fetch timestamp: `2026-06-23T22:37:05+00:00`
 - Upstream scrape date for values/ECR files: `2026-06-19`
+- Freshness status: `GREEN_CURRENT`
+
+## Refresh Schedule And Freshness
+
+- Upstream workflow: `weekly-playervalues`
+- Upstream cron: `23 2 * * 5`
+- Upstream time: Friday `02:23 UTC`
+- NWR recommended pull time: Friday `06:00 America/Denver`
+- Backup retry: Saturday morning America/Denver when Friday pull sees stale or unchanged data.
+
+Freshness statuses:
+
+- `GREEN_CURRENT`: scrape date is within expected weekly window and newer than the prior local snapshot.
+- `GREEN_SAME_WEEK_NO_CHANGE`: scrape date is current week but values are unchanged from the prior local snapshot.
+- `YELLOW_STALE`: scrape date is older than 8 days or upstream commit is older than expected.
+- `RED_STALE`: scrape date is older than 14 days.
+- `YELLOW_FETCH_FAILED_USING_LAST_CACHE`: upstream fetch failed but a usable local cache exists.
+- `RED_NO_VALID_CACHE`: fetch failed and no usable cache exists.
+
+Every derived artifact now includes freshness columns, including `freshness_status` and `market_baseline_stale_warning`. Yellow/red rows must be shown as stale market context if exposed later.
 
 ## Upstream Files
 
@@ -67,6 +93,7 @@ Repo-safe outputs:
 - `docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_pick_value_context.csv`
 - `docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_playerid_crosswalk_audit.csv`
 - `docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_nwr_join_coverage.csv`
+- `docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_freshness_report.csv`
 
 Every market row carries:
 

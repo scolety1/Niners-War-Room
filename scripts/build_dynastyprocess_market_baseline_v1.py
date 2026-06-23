@@ -13,7 +13,7 @@ import argparse
 import re
 import sys
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -26,6 +26,10 @@ from src.connectors.dynastyprocess_connector import (
     DEFAULT_CACHE_ROOT,
     DEFAULT_FILE_NAMES,
     DynastyProcessConnector,
+    FreshnessMetadata,
+    evaluate_freshness,
+    latest_cached_snapshot,
+    read_snapshot_metadata,
     validate_schema,
 )
 
@@ -79,6 +83,18 @@ DISPLAY_ONLY_WARNING = (
     "Display-only DynastyProcess market baseline; not NWR source truth; "
     "not used for model inputs, candidate rank, or hidden sort."
 )
+FRESHNESS_COLUMNS = [
+    "nwr_fetch_timestamp",
+    "upstream_scrape_date",
+    "upstream_latest_commit_sha",
+    "upstream_latest_commit_timestamp",
+    "upstream_workflow_name",
+    "upstream_expected_cron",
+    "local_cache_path",
+    "derived_artifact_path",
+    "freshness_status",
+    "market_baseline_stale_warning",
+]
 
 
 @dataclass
@@ -122,6 +138,35 @@ def _rank(value: object) -> float | None:
         return float(text)
     except ValueError:
         return None
+
+
+def _freshness_row(freshness: FreshnessMetadata, artifact_path: Path) -> dict[str, object]:
+    warning = freshness.freshness_warning
+    if freshness.freshness_status.startswith(("YELLOW", "RED")) and not warning:
+        warning = "Market baseline stale: review freshness report before use."
+    return {
+        "nwr_fetch_timestamp": freshness.nwr_fetch_timestamp,
+        "upstream_scrape_date": freshness.upstream_scrape_date,
+        "upstream_latest_commit_sha": freshness.upstream_latest_commit_sha,
+        "upstream_latest_commit_timestamp": freshness.upstream_latest_commit_timestamp,
+        "upstream_workflow_name": freshness.upstream_workflow_name,
+        "upstream_expected_cron": freshness.upstream_expected_cron,
+        "local_cache_path": freshness.local_cache_path,
+        "derived_artifact_path": str(artifact_path),
+        "freshness_status": freshness.freshness_status,
+        "market_baseline_stale_warning": warning,
+    }
+
+
+def _with_freshness(
+    frame: pd.DataFrame,
+    freshness: FreshnessMetadata,
+    artifact_path: Path,
+) -> pd.DataFrame:
+    enriched = frame.copy()
+    for column, value in _freshness_row(freshness, artifact_path).items():
+        enriched[column] = value
+    return enriched
 
 
 def _upsert_player(players: dict[tuple[str, str], NwrPlayer], key: tuple[str, str]) -> NwrPlayer:
@@ -519,7 +564,11 @@ def build_crosswalk_audit(joined: pd.DataFrame) -> pd.DataFrame:
     return matched[columns].drop_duplicates()
 
 
-def write_outputs(snapshot_dir: Path, output_dir: Path) -> dict[str, Path]:
+def write_outputs(
+    snapshot_dir: Path,
+    output_dir: Path,
+    freshness: FreshnessMetadata,
+) -> dict[str, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     nwr, counts = load_nwr_universe()
     dp_players = load_dp_players(snapshot_dir)
@@ -548,11 +597,27 @@ def write_outputs(snapshot_dir: Path, output_dir: Path) -> dict[str, Path]:
         "picks": output_dir / "dp_pick_value_context.csv",
         "crosswalk": output_dir / "dp_playerid_crosswalk_audit.csv",
         "coverage": output_dir / "dp_nwr_join_coverage.csv",
+        "freshness": output_dir / "dp_freshness_report.csv",
     }
-    matched_context.to_csv(paths["market"], index=False)
-    build_pick_context(snapshot_dir).to_csv(paths["picks"], index=False)
-    build_crosswalk_audit(joined).to_csv(paths["crosswalk"], index=False)
-    build_coverage(nwr, joined, counts).to_csv(paths["coverage"], index=False)
+    _with_freshness(matched_context, freshness, paths["market"]).to_csv(
+        paths["market"],
+        index=False,
+    )
+    _with_freshness(build_pick_context(snapshot_dir), freshness, paths["picks"]).to_csv(
+        paths["picks"],
+        index=False,
+    )
+    _with_freshness(build_crosswalk_audit(joined), freshness, paths["crosswalk"]).to_csv(
+        paths["crosswalk"],
+        index=False,
+    )
+    _with_freshness(build_coverage(nwr, joined, counts), freshness, paths["coverage"]).to_csv(
+        paths["coverage"],
+        index=False,
+    )
+    report = asdict(freshness)
+    report["market_baseline_stale_warning"] = freshness.freshness_warning
+    pd.DataFrame([report]).to_csv(paths["freshness"], index=False)
     return paths
 
 
@@ -562,7 +627,7 @@ def run(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     snapshot_label: str | None = None,
     snapshot_dir: Path | None = None,
-) -> tuple[Path, dict[str, Path]]:
+) -> tuple[Path, dict[str, Path], FreshnessMetadata]:
     if snapshot_dir is None:
         connector = DynastyProcessConnector(cache_root=cache_root)
         result = connector.fetch_snapshot(
@@ -570,8 +635,24 @@ def run(
             snapshot_label=snapshot_label,
         )
         snapshot_dir = Path(result.snapshot_dir)
-    paths = write_outputs(snapshot_dir=snapshot_dir, output_dir=output_dir)
-    return snapshot_dir, paths
+        snapshot = result
+    else:
+        snapshot = read_snapshot_metadata(snapshot_dir / "snapshot_metadata.json")
+    previous_snapshot = latest_cached_snapshot(
+        cache_root,
+        exclude_snapshot_dir=snapshot.snapshot_dir,
+    )
+    freshness = evaluate_freshness(
+        snapshot,
+        previous_snapshot=previous_snapshot,
+        derived_artifact_path=output_dir,
+    )
+    paths = write_outputs(
+        snapshot_dir=snapshot_dir,
+        output_dir=output_dir,
+        freshness=freshness,
+    )
+    return snapshot_dir, paths, freshness
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -585,13 +666,14 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = parse_args(argv)
-    snapshot_dir, paths = run(
+    snapshot_dir, paths, freshness = run(
         cache_root=args.cache_root,
         output_dir=args.output_dir,
         snapshot_label=args.snapshot_label,
         snapshot_dir=args.snapshot_dir,
     )
     print(f"DynastyProcess raw cache: {snapshot_dir}")
+    print(f"freshness_status: {freshness.freshness_status}")
     for name, path in paths.items():
         print(f"{name}: {path}")
     return 0
