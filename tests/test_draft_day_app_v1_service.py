@@ -448,6 +448,98 @@ def test_position_aware_display_hides_wrong_position_columns_by_mode() -> None:
     assert "Outcome Availability (Display-Only)" not in hidden_display.columns
 
 
+def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "nwr_rank": "1",
+                "cross_asset_candidate_rank": "99",
+                "cross_asset_candidate_value": "44.0",
+                "final_board_rank": "7",
+                "final_tier": "T2",
+                "source_coverage": "Full Dynasty source + Frozen Baseline",
+                "asset_type_display": "Veteran",
+                "player_name": "Example WR",
+                "position": "WR",
+                "nfl_team": "",
+                "age": "",
+                "nwr_position_rank": "WR1",
+                "candidate_value_band": "Priority candidate",
+                "nwr_dynasty_score": "88.8",
+                "trust_status": "Scored",
+                "confidence_band": "Medium",
+                "available_pool_adp_range": "90s",
+                "candidate_key_caveat": "",
+                "wr_t12_display_only": "",
+                "wr_t24_display_only": "74%",
+                "wr_t36_display_only": "88%",
+                "rb_t12_display_only": "N/A",
+                "rb_t24_display_only": "N/A",
+                "qb_t12_display_only": "N/A",
+                "te_t12_display_only": "N/A",
+            }
+        ]
+    )
+
+    display = display_unified_player_board_frame(
+        frame,
+        view_mode=FULL_DYNASTY_VIEW,
+        selected_positions=["WR"],
+    )
+
+    assert display.columns.tolist() == [
+        "Dynasty Rank",
+        "Player",
+        "Pos",
+        "NFL Team",
+        "Age",
+        "Position Rank",
+        "Candidate Band",
+        "NWR Dynasty Score",
+        "Trust",
+        "Confidence",
+        "WR T12 (Display-Only)",
+        "WR T24 (Display-Only)",
+        "WR T36 (Display-Only)",
+        "Key Caveat / Review Flag",
+    ]
+    assert display.loc[0, "NFL Team"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert display.loc[0, "Age"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert display.loc[0, "WR T12 (Display-Only)"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert display.loc[0, "Key Caveat / Review Flag"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    for blocked in (
+        "Final Board Rank",
+        "Final Tier",
+        "Source Coverage",
+        "Asset Type",
+        "Tuned V2 Candidate Rank (Review-Only)",
+        "Tuned V2 Candidate Value (Review-Only)",
+        "Available-Pool ADP Range (Display-Only)",
+    ):
+        assert blocked not in display.columns
+
+
+def test_nwr_position_rank_display_is_derived_without_overwriting_nwr_rank() -> None:
+    frame = pd.DataFrame(
+        [
+            {"nwr_rank": "12", "player_name": "Zay Flowers", "position": "WR"},
+            {"nwr_rank": "1", "player_name": "Puka Nacua", "position": "WR"},
+            {"nwr_rank": "3", "player_name": "Bijan Robinson", "position": "RB"},
+            {"nwr_rank": "", "player_name": "Missing Rank", "position": "TE"},
+        ]
+    )
+
+    ranked = draft_day_service.add_nwr_position_rank_display(frame)
+
+    rows = {row["player_name"]: row for row in ranked.to_dict("records")}
+    assert rows["Puka Nacua"]["nwr_rank"] == "1"
+    assert rows["Puka Nacua"]["nwr_position_rank"] == "WR1"
+    assert rows["Zay Flowers"]["nwr_rank"] == "12"
+    assert rows["Zay Flowers"]["nwr_position_rank"] == "WR2"
+    assert rows["Bijan Robinson"]["nwr_position_rank"] == "RB1"
+    assert rows["Missing Rank"]["nwr_position_rank"] == OUTCOME_NOT_ENOUGH_INFORMATION
+
+
 def test_outcome_column_mode_resolves_columns_for_selected_positions() -> None:
     assert outcome_columns_for_display(
         outcome_mode="Position-applicable only",

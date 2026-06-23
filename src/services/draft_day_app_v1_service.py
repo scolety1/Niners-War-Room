@@ -204,16 +204,15 @@ DYNASTY_DISPLAY_COLUMNS = (
 )
 FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "nwr_rank",
-    "cross_asset_candidate_rank",
-    "cross_asset_candidate_value",
     "player_name",
     "position",
     "nfl_team",
     "age",
-    "position_rank",
+    "nwr_position_rank",
     "candidate_value_band",
+    "nwr_dynasty_score",
+    "trust_status",
     "confidence_band",
-    "candidate_key_caveat",
     "qb_t12_display_only",
     "rb_t12_display_only",
     "rb_t24_display_only",
@@ -221,6 +220,7 @@ FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "wr_t24_display_only",
     "wr_t36_display_only",
     "te_t12_display_only",
+    "candidate_key_caveat",
 )
 ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
     "cross_asset_candidate_rank",
@@ -1736,8 +1736,30 @@ def display_unified_player_board_frame(
         display["warning_flags"] = display["warning_flags"].map(warning_summary)
     if "age" in display.columns:
         display["age"] = display["age"].map(age_display_value)
+    for column in MISSING_INFORMATION_DISPLAY_COLUMNS:
+        if column in display.columns:
+            display[column] = display[column].map(not_enough_information_display_value)
     display = display.fillna("").astype(str)
     return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
+
+
+MISSING_INFORMATION_DISPLAY_COLUMNS = (
+    "nfl_team",
+    "nwr_position_rank",
+    "position_rank",
+    "candidate_value_band",
+    "nwr_dynasty_score",
+    "trust_status",
+    "confidence_band",
+    "candidate_key_caveat",
+)
+
+
+def not_enough_information_display_value(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
 
 
 def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1859,7 +1881,32 @@ def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
             na_position="last",
             kind="stable",
         ).drop(columns=["_rank_sort_visible"])
+    normalized = add_nwr_position_rank_display(normalized)
     return normalized.reset_index(drop=True)
+
+
+def add_nwr_position_rank_display(frame: pd.DataFrame) -> pd.DataFrame:
+    """Derive an in-memory position-rank display from approved NWR overall rank."""
+
+    if frame.empty or "position" not in frame.columns or "nwr_rank" not in frame.columns:
+        return frame.copy()
+    ranked = frame.copy()
+    ranked["nwr_position_rank"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    rank_values = pd.to_numeric(ranked["nwr_rank"], errors="coerce")
+    position_values = ranked["position"].astype(str).str.upper().str.strip()
+    for position in sorted(position_values[rank_values.notna()].unique().tolist()):
+        mask = rank_values.notna() & position_values.eq(position)
+        position_frame = ranked.loc[mask].copy()
+        position_frame["_rank_sort_visible"] = rank_values.loc[mask]
+        ordered_indices = position_frame.sort_values(
+            by=["_rank_sort_visible", "player_name"],
+            ascending=[True, True],
+            na_position="last",
+            kind="stable",
+        ).index.tolist()
+        for rank, index in enumerate(ordered_indices, start=1):
+            ranked.at[index, "nwr_position_rank"] = f"{position}{rank}"
+    return ranked
 
 
 def display_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -2108,6 +2155,7 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
+    "nwr_position_rank": "Position Rank",
     "player_name": "Player",
     "position": "Pos",
     "age": "Age",

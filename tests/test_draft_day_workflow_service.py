@@ -211,6 +211,7 @@ def test_display_frames_do_not_expose_internal_or_hidden_columns() -> None:
     workflow = with_workflow_columns(board, empty_workflow_state())
     display = display_ranking_frame(workflow)
 
+    assert display.columns.is_unique
     assert "source_file" not in display.columns
     assert not any("hidden" in column.lower() for column in display.columns)
     assert "Final Board Rank" in display.columns

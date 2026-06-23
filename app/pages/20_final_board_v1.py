@@ -35,10 +35,12 @@ VIEW_MODES = (FULL_DYNASTY_VIEW, ROOKIES_DRAFT_BOARD_VIEW, UNIFIED_REVIEW_VIEW)
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
     "Final Board Rank": "final_board_rank",
-    "Position Rank": "position_rank",
+    "Position Rank": "nwr_position_rank",
     "Age": "age",
     "Player": "player_name",
+    "Candidate Rank (Review-Only)": "cross_asset_candidate_rank",
 }
+BASE_POSITION_FILTERS = ("QB", "RB", "WR", "TE")
 
 
 def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
@@ -75,8 +77,8 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         key="dynasty_rankings_search",
         placeholder="Type a player, team, or position",
     )
-    position_values = _column_values(filtered, "position")
-    default_positions = [position for position in position_values if position != "K"]
+    position_values = _position_filter_values(filtered)
+    default_positions = position_values
     if not default_positions:
         default_positions = position_values
     selected_positions = filter_row_one[1].multiselect(
@@ -86,15 +88,9 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         key="dynasty_rankings_positions",
     )
     source_filter = filter_row_one[2].selectbox(
-        "Source / player type",
-        [
-            "All",
-            "Rookies / prospects",
-            "Veterans",
-            "Full Dynasty source",
-            "Frozen Baseline only",
-        ],
-        key="dynasty_rankings_source_filter",
+        "Player type",
+        _source_filter_options_for_view(view_mode),
+        key=f"dynasty_rankings_source_filter_{view_mode}",
     )
     team_values = ["All", *_column_values(filtered, "nfl_team")]
     selected_team = filter_row_one[3].selectbox(
@@ -253,6 +249,18 @@ def _column_values(frame: pd.DataFrame, column: str) -> list[str]:
     return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
 
 
+def _position_filter_values(frame: pd.DataFrame) -> list[str]:
+    present = set(_column_values(frame, "position"))
+    return [position for position in BASE_POSITION_FILTERS if position in present]
+
+
+def _source_filter_options_for_view(view_mode: str) -> list[str]:
+    options = ["All", "Rookies / prospects", "Veterans", "Full Dynasty source"]
+    if view_mode != FULL_DYNASTY_VIEW:
+        options.append("Frozen Baseline only")
+    return options
+
+
 def _outcome_head_caption(frame: pd.DataFrame, outcome_mode: str) -> str:
     targets = outcome_columns_for_display(
         outcome_mode=outcome_mode,
@@ -273,12 +281,18 @@ def _default_sort_label(view_mode: str) -> str:
 
 
 def _sort_options_for_view(view_mode: str) -> list[str]:
-    options = ["Dynasty Rank", "Final Board Rank", "Position Rank", "Age", "Player"]
     if view_mode == FULL_DYNASTY_VIEW:
-        return ["Dynasty Rank", "Position Rank", "Age", "Player", "Final Board Rank"]
+        return ["Dynasty Rank", "Position Rank", "Age", "Player"]
     if view_mode == ROOKIES_DRAFT_BOARD_VIEW:
         return ["Final Board Rank", "Player", "Position Rank", "Age", "Dynasty Rank"]
-    return options
+    return [
+        "Dynasty Rank",
+        "Final Board Rank",
+        "Position Rank",
+        "Age",
+        "Player",
+        "Candidate Rank (Review-Only)",
+    ]
 
 
 def _sort_player_board(
@@ -289,12 +303,24 @@ def _sort_player_board(
     view_mode: str,
 ) -> pd.DataFrame:
     filtered = _apply_age_range_if_available(frame)
-    column = SORT_COLUMNS.get(sort_by, "nwr_rank")
+    column = _sort_column_for_view(sort_by, view_mode)
     if column not in filtered.columns:
         return sort_unified_player_board_for_view(filtered, view_mode)
     sorted_frame = filtered.copy()
-    if column in {"nwr_rank", "final_board_rank", "position_rank", "age"}:
+    if column in {
+        "nwr_rank",
+        "final_board_rank",
+        "position_rank",
+        "nwr_position_rank",
+        "cross_asset_candidate_rank",
+        "age",
+    }:
         sorted_frame["_ui_sort"] = pd.to_numeric(sorted_frame[column], errors="coerce")
+        if column == "nwr_position_rank":
+            sorted_frame["_ui_sort"] = pd.to_numeric(
+                sorted_frame[column].astype(str).str.extract(r"(\d+)", expand=False),
+                errors="coerce",
+            )
         sorted_frame = sorted_frame.sort_values(
             by=["_ui_sort", "player_name"],
             ascending=[ascending, True],
@@ -309,6 +335,12 @@ def _sort_player_board(
             kind="stable",
         )
     return sorted_frame.reset_index(drop=True)
+
+
+def _sort_column_for_view(sort_by: str, view_mode: str) -> str:
+    if sort_by == "Position Rank" and view_mode != FULL_DYNASTY_VIEW:
+        return "position_rank"
+    return SORT_COLUMNS.get(sort_by, "nwr_rank")
 
 
 def _render_source_diagnostics(
@@ -354,6 +386,11 @@ page_header(
             f"Full dynasty rows: {dynasty_bundle.row_count}",
             "safe" if dynasty_bundle.loaded else "review",
         ),
+        (
+            f"Veterans: {dynasty_bundle.veteran_count} | rookies/prospects: "
+            f"{dynasty_bundle.rookie_count}",
+            "safe" if dynasty_bundle.loaded else "review",
+        ),
         (f"Frozen baseline rows: {bundle.row_count}", "safe" if bundle.loaded else "blocked"),
         (
             "Outcome support: "
@@ -368,7 +405,7 @@ if not bundle.loaded:
     st.stop()
 if not dynasty_bundle.loaded:
     st.warning(
-        "Full Dynasty Rankings cannot be fabricated from sample data. Frozen-board rows remain "
+        "Full Dynasty Rankings cannot be fabricated from sample data. Frozen-baseline rows remain "
         "visible as frozen-baseline-only context until the approved dynasty source is available."
     )
 
