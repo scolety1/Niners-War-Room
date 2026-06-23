@@ -1,0 +1,80 @@
+{
+  "version": "NWR_MARKET_BASELINE_CONTRACT_V1_20260623",
+  "display_label": "Market Baseline / Display-Only",
+  "freshness_statuses": [
+    "GREEN_CURRENT",
+    "GREEN_SAME_WEEK_NO_CHANGE",
+    "YELLOW_STALE",
+    "RED_STALE",
+    "YELLOW_FETCH_FAILED_USING_LAST_CACHE",
+    "RED_NO_VALID_CACHE"
+  ],
+  "artifacts": {
+    "dp_player_market_context.csv": {
+      "compatible_current_names": ["dp_market_baseline_context.csv"],
+      "required_columns": [
+        "player",
+        "pos",
+        "dp_market_rank_1qb",
+        "dp_value_1qb",
+        "join_method",
+        "join_confidence",
+        "dp_display_only_warning",
+        "freshness_status"
+      ],
+      "display_only": true,
+      "model_input_allowed": false,
+      "sort_allowed": false
+    },
+    "dp_pick_market_context.csv": {
+      "compatible_current_names": ["dp_pick_value_context.csv"],
+      "required_columns": ["pick_label", "value_1qb", "ecr_1qb", "freshness_status"],
+      "display_only": true,
+      "model_input_allowed": false,
+      "sort_allowed": false
+    },
+    "dp_playerid_crosswalk_audit.csv": {
+      "required_columns": [
+        "player",
+        "pos",
+        "fp_id",
+        "sleeper_id",
+        "nwr_player_id",
+        "nwr_name",
+        "nwr_pos",
+        "join_method",
+        "join_confidence",
+        "dp_display_only_warning",
+        "freshness_status"
+      ],
+      "display_only": true,
+      "model_input_allowed": false,
+      "sort_allowed": false
+    },
+    "dp_nwr_join_coverage.csv": {
+      "required_columns": [
+        "source_name",
+        "nwr_rows",
+        "dp_matched_rows",
+        "dp_match_rate",
+        "notes",
+        "freshness_status"
+      ],
+      "display_only": true,
+      "model_input_allowed": false,
+      "sort_allowed": false
+    },
+    "dp_freshness_report.csv": {
+      "required_columns": [
+        "nwr_fetch_timestamp",
+        "upstream_scrape_date",
+        "upstream_latest_commit_sha",
+        "upstream_latest_commit_timestamp",
+        "freshness_status"
+      ],
+      "display_only": true,
+      "model_input_allowed": false,
+      "sort_allowed": false
+    }
+  }
+}
