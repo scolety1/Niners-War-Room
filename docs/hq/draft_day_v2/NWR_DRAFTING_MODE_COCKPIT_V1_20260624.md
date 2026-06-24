@@ -21,7 +21,7 @@ Top bar:
 - Current pick and on-clock team.
 - Drafted count and trade count.
 - Autosave status and timestamp help text.
-- Compact controls for Refresh Data, Save State, Load Latest, Export, Settings/Data Health, and Normal App View.
+- Compact controls for Refresh Data, Save State, Load Latest, Export, Settings / Data Health, and Normal App View.
 
 Left rail:
 
@@ -29,7 +29,7 @@ Left rail:
 - Recent pick/trade runtime events.
 - Recent trade records.
 - Pick ownership overrides.
-- Secondary links to Full Rankings, Full Player Compare, Full Trading Lab, Post-Draft Mode, and Settings/Data Health.
+- Secondary links to Rankings, Cheat Sheets, Live Draft Room, Mock Draft, Player Compare, Trading Lab, Post-Draft Mode, and Unified Universe Review.
 
 Center board:
 
@@ -62,7 +62,7 @@ Trade recorder:
 
 Deep tools/back links:
 
-- Added `Back to Drafting Mode` links to Cheat Sheets, Dynasty Rankings, Player Compare, Trading Lab, Post-Draft Mode, and Settings/Data Health.
+- Added `Back to Drafting Mode` links to Cheat Sheets, Dynasty Rankings, Live Draft Room, Mock Draft, Player Compare, Trading Lab, Post-Draft Mode, Unified Universe Review, and Settings / Data Health.
 - Direct routes are preserved.
 - Full custom navigation hiding was not forced in this V1.
 

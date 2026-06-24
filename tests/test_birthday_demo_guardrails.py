@@ -92,15 +92,14 @@ def test_streamlit_status_widget_is_hidden_best_effort_for_demo() -> None:
     assert "footer" in text
 
 
-def test_rankings_has_visible_route_and_hidden_root_alias() -> None:
-    visible_rankings = next(
-        page for page in VISIBLE_NAVIGATION_PAGES if page.title == "Dynasty Rankings"
-    )
+def test_rankings_has_hidden_direct_route_and_drafting_mode_is_primary() -> None:
+    hidden_rankings = next(page for page in HIDDEN_ADVANCED_PAGES if page.url_path == "rankings")
     hidden_defaults = [page for page in HIDDEN_ADVANCED_PAGES if page.default]
 
-    assert visible_rankings.url_path == "rankings"
-    assert visible_rankings.default is True
-    assert hidden_defaults == []
+    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "drafting-mode"
+    assert hidden_rankings.title == "Rankings"
+    assert hidden_rankings.visible is False
+    assert [page.title for page in hidden_defaults] == ["Drafting Mode Root"]
 
 
 def test_team_and_roster_tags_are_display_only_for_private_score() -> None:

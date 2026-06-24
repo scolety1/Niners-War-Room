@@ -497,7 +497,14 @@ page_header(
     ),
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption(
+    "Deep tool: decision aid only. Comparison output does not mutate ranks, tiers, model "
+    "values, or source-truth files."
+)
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

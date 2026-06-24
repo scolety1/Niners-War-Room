@@ -215,9 +215,17 @@ def test_tier_counts_and_display_columns_are_available() -> None:
     counts = tier_count_rows(board)
     display = display_cockpit_board(board)
 
-    assert {"tier": "Tier 1A: core on-clock candidates", "available_count": "1"} in counts
+    assert {"Tier Availability": "Tier 1A - 1 available", "Available": "1"} in counts
     assert "NWR Draft Rank" in display.columns
     assert "Frozen Baseline Rank" in display.columns
+
+
+def test_tier_counts_use_friendly_review_needed_label() -> None:
+    frame = pd.DataFrame([{"final_tier": ""}, {"final_tier": "Review Needed"}])
+
+    assert tier_count_rows(frame) == [
+        {"Tier Availability": "Review Needed - 2", "Available": "2"}
+    ]
 
 
 def test_decision_panel_handles_no_selection_and_valid_player() -> None:
@@ -225,7 +233,7 @@ def test_decision_panel_handles_no_selection_and_valid_player() -> None:
     player = _board().iloc[1].to_dict()
     selected_rows = decision_panel_rows(player)
 
-    assert "Select a player" in empty_rows[0]["value"]
+    assert "Choose a player from the selector" in empty_rows[0]["value"]
     assert any(
         row["field"] == "Player" and row["value"] == "Best NWR Player"
         for row in selected_rows

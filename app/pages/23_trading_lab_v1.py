@@ -70,7 +70,14 @@ page_header(
         ("No trade model added", "safe"),
     ),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption(
+    "Deep tool: manual trade review. Market context is display-only and not a trade model, "
+    "rank input, or source of truth."
+)
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

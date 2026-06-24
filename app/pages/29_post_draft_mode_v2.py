@@ -42,7 +42,14 @@ page_header(
         ("No rank mutation", "safe"),
     ),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption(
+    "Deep tool: runtime audit and recap. Runtime state is not official source truth and does "
+    "not mutate ranks, tiers, or latest files."
+)
 
 mode = st.radio("Draft session", ["Live", "Mock"], horizontal=True, key="post_draft_mode")
 runtime_mode = mode.lower()
