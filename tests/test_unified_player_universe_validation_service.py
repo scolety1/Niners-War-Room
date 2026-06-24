@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.unified_player_universe_validation_service import (
+    CONSOLIDATED_REVIEW_COLUMNS,
     DUPLICATE_CLASS_VALUES,
     IDENTITY_TRIAGE_COLUMNS,
     REQUIRED_REVIEW_COLUMNS,
@@ -19,6 +20,13 @@ OUTPUT_DIR = REPO_ROOT / "docs" / "hq" / "model" / "unified_player_universe_v0"
 def _review() -> pd.DataFrame:
     return pd.read_csv(
         OUTPUT_DIR / "unified_player_universe_v1_review.csv",
+        keep_default_na=False,
+    )
+
+
+def _consolidated() -> pd.DataFrame:
+    return pd.read_csv(
+        OUTPUT_DIR / "unified_player_universe_v1_consolidated_review.csv",
         keep_default_na=False,
     )
 
@@ -120,6 +128,70 @@ def test_no_fabricated_ids_from_identity_triage() -> None:
         "source_used",
     ]
     assert safe_repairs.ne("").all()
+
+
+def test_consolidated_artifact_schema() -> None:
+    consolidated = _consolidated()
+
+    assert set(CONSOLIDATED_REVIEW_COLUMNS).issubset(consolidated.columns)
+    assert len(consolidated) == 368
+    assert consolidated["consolidation_status"].eq("CONSOLIDATED").sum() == 15
+
+
+def test_consolidation_preserves_app_wiring_allowed_no() -> None:
+    consolidated = _consolidated()
+
+    assert consolidated["app_wiring_allowed"].eq("no").all()
+
+
+def test_consolidation_preserves_model_input_allowed_no() -> None:
+    consolidated = _consolidated()
+
+    assert consolidated["model_input_allowed"].eq("no").all()
+
+
+def test_consolidated_market_fields_remain_display_only() -> None:
+    consolidated = _consolidated()
+
+    assert not consolidated["rank_source"].str.contains("MARKET", case=False).any()
+    assert consolidated.loc[
+        consolidated["market_match_status"].eq("MATCHED"),
+        "dp_market_rank",
+    ].ne("").any()
+
+
+def test_consolidated_full_dynasty_rank_source_not_overwritten() -> None:
+    consolidated = _consolidated()
+    dynasty_rows = consolidated.loc[consolidated["dynasty_rank"].astype(str).str.strip().ne("")]
+
+    assert not dynasty_rows.empty
+    assert dynasty_rows["rank_source"].eq("FULL_DYNASTY_RANK").all()
+
+
+def test_consolidated_rookies_do_not_get_fabricated_dynasty_rank() -> None:
+    consolidated = _consolidated()
+    rookies = consolidated.loc[consolidated["player_type"].isin(["ROOKIE", "PROSPECT"])]
+
+    assert len(rookies) == 54
+    assert rookies["dynasty_rank"].eq("").all()
+
+
+def test_consolidation_conflict_rows_are_review_needed() -> None:
+    consolidated = _consolidated()
+    conflict_rows = consolidated.loc[consolidated["conflict_flags"].astype(str).str.strip().ne("")]
+
+    assert conflict_rows["review_status"].eq("REVIEW_NEEDED").all()
+
+
+def test_remaining_blockers_file_loads() -> None:
+    blockers = pd.read_csv(
+        OUTPUT_DIR / "unified_player_universe_v1_remaining_blockers.csv",
+        keep_default_na=False,
+    )
+
+    assert len(blockers) == 310
+    assert blockers["blocker_type"].eq("MISSING_PLAYER_ID").sum() == 5
+    assert blockers["blocker_type"].eq("MISSING_AGE").sum() == 42
 
 
 def test_source_summary_counts_load() -> None:

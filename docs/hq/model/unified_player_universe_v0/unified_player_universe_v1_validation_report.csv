@@ -21,3 +21,10 @@ identity_triage_schema_valid,PASS,ok
 identity_triage_class_enum_valid,PASS,ok
 duplicate_class_enum_valid,PASS,ok
 identity_repairs_preserve_app_and_model_no,PASS,safe review-artifact repairs cannot unlock app/model usage
+consolidated_required_columns_exist,PASS,ok
+consolidated_review_only_gates_locked,PASS,consolidated review artifact remains blocked from app/model usage
+consolidation_status_enum_valid,PASS,ok
+consolidation_confidence_enum_valid,PASS,ok
+consolidation_decisions_schema_valid,PASS,ok
+remaining_blockers_schema_valid,PASS,ok
+expected_duplicate_groups_consolidated,PASS,decisions=15 duplicate_rows=15

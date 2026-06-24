@@ -91,11 +91,20 @@ VALIDATION_REPORT_PATH = OUTPUT_DIR / "unified_player_universe_v1_validation_rep
 DUPLICATE_REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_duplicate_review.csv"
 IDENTITY_GAP_REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_identity_gap_review.csv"
 IDENTITY_TRIAGE_PATH = OUTPUT_DIR / "unified_player_universe_v1_identity_triage.csv"
+CONSOLIDATED_REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_consolidated_review.csv"
+CONSOLIDATION_DECISIONS_PATH = OUTPUT_DIR / "unified_player_universe_v1_consolidation_decisions.csv"
+REMAINING_BLOCKERS_PATH = OUTPUT_DIR / "unified_player_universe_v1_remaining_blockers.csv"
 SOURCE_SUMMARY_PATH = OUTPUT_DIR / "unified_player_universe_v1_source_summary.csv"
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
 APP_WIRING_ALLOWED = "no"
 MODEL_INPUT_ALLOWED = "no"
+SOURCE_LAYER_PRIORITY = (
+    "Veteran Full Dynasty Layer",
+    "Rookie/Prospect Layer",
+    "Frozen Baseline Layer",
+    "PDF Free-Agent Availability Layer",
+)
 
 REQUIRED_REVIEW_COLUMNS = (
     "player_universe_id",
@@ -176,6 +185,70 @@ IDENTITY_TRIAGE_COLUMNS = (
     "remaining_risk",
     "notes",
 )
+CONSOLIDATED_REVIEW_COLUMNS = (
+    "canonical_universe_id",
+    "source_row_ids",
+    "player_id",
+    "player_name",
+    "normalized_name",
+    "position",
+    "nfl_team",
+    "age",
+    "age_source",
+    "player_type",
+    "availability_status",
+    "rank_source",
+    "dynasty_rank",
+    "rookie_rank",
+    "frozen_baseline_rank",
+    "candidate_rank",
+    "unified_display_rank",
+    "unified_display_rank_source",
+    "tier",
+    "tier_source",
+    "outcome_context",
+    "outcome_status",
+    "market_match_status",
+    "dp_1qb_value",
+    "dp_market_rank",
+    "nwr_vs_market_gap",
+    "data_quality_status",
+    "manual_review_flag",
+    "review_status",
+    "consolidation_status",
+    "consolidation_confidence",
+    "conflict_flags",
+    "caveats",
+    "source_layers",
+    "source_files",
+    "app_wiring_allowed",
+    "model_input_allowed",
+)
+CONSOLIDATION_DECISION_COLUMNS = (
+    "duplicate_group_id",
+    "player_name",
+    "position",
+    "source_layers",
+    "decision",
+    "confidence",
+    "conflicts",
+    "canonical_field_sources",
+    "action_taken",
+    "notes",
+)
+REMAINING_BLOCKER_COLUMNS = (
+    "blocker_id",
+    "blocker_type",
+    "player_name",
+    "position",
+    "source_layer",
+    "detail",
+    "prevents_app_wiring",
+    "recommended_action",
+    "notes",
+)
+CONSOLIDATION_STATUS_VALUES = {"SINGLE_SOURCE", "CONSOLIDATED", "REVIEW_NEEDED"}
+CONSOLIDATION_CONFIDENCE_VALUES = {"HIGH", "MEDIUM", "LOW", "NOT_APPLICABLE"}
 
 
 @dataclass(frozen=True)
@@ -185,13 +258,19 @@ class BuildResult:
     duplicate_review_path: Path
     identity_gap_review_path: Path
     identity_triage_path: Path
+    consolidated_review_path: Path
+    consolidation_decisions_path: Path
+    remaining_blockers_path: Path
     source_summary_path: Path
     total_rows: int
+    consolidated_rows: int
     veteran_rows: int
     rookie_rows: int
     pdf_fa_rows: int
     duplicate_review_count: int
+    duplicate_groups_handled: int
     identity_gap_count: int
+    remaining_blocker_count: int
     safe_repair_count: int
 
 
@@ -212,13 +291,29 @@ def build_unified_player_universe_review() -> BuildResult:
     review = _apply_duplicate_groups(review)
     duplicate_review = _duplicate_review(review)
     identity_gap_review = _identity_gap_review(review)
-    source_summary = _source_summary(review, sources, identity_gap_review, duplicate_review)
+    consolidated_review, consolidation_decisions = _consolidated_review(review, duplicate_review)
+    remaining_blockers = _remaining_blockers(
+        review,
+        identity_gap_review,
+        consolidation_decisions,
+    )
+    source_summary = _source_summary(
+        review,
+        sources,
+        identity_gap_review,
+        duplicate_review,
+        consolidated_review,
+        remaining_blockers,
+    )
     validation_report = validate_review_frame(
         review,
         duplicate_review,
         identity_gap_review,
         sources,
         identity_triage,
+        consolidated_review,
+        consolidation_decisions,
+        remaining_blockers,
     )
 
     review.to_csv(REVIEW_PATH, index=False)
@@ -226,6 +321,9 @@ def build_unified_player_universe_review() -> BuildResult:
     duplicate_review.to_csv(DUPLICATE_REVIEW_PATH, index=False)
     identity_gap_review.to_csv(IDENTITY_GAP_REVIEW_PATH, index=False)
     identity_triage.to_csv(IDENTITY_TRIAGE_PATH, index=False)
+    consolidated_review.to_csv(CONSOLIDATED_REVIEW_PATH, index=False)
+    consolidation_decisions.to_csv(CONSOLIDATION_DECISIONS_PATH, index=False)
+    remaining_blockers.to_csv(REMAINING_BLOCKERS_PATH, index=False)
     source_summary.to_csv(SOURCE_SUMMARY_PATH, index=False)
 
     return BuildResult(
@@ -234,13 +332,21 @@ def build_unified_player_universe_review() -> BuildResult:
         duplicate_review_path=DUPLICATE_REVIEW_PATH,
         identity_gap_review_path=IDENTITY_GAP_REVIEW_PATH,
         identity_triage_path=IDENTITY_TRIAGE_PATH,
+        consolidated_review_path=CONSOLIDATED_REVIEW_PATH,
+        consolidation_decisions_path=CONSOLIDATION_DECISIONS_PATH,
+        remaining_blockers_path=REMAINING_BLOCKERS_PATH,
         source_summary_path=SOURCE_SUMMARY_PATH,
         total_rows=int(len(review)),
+        consolidated_rows=int(len(consolidated_review)),
         veteran_rows=int(review["player_type"].eq("VETERAN").sum()),
         rookie_rows=int(review["player_type"].isin(["ROOKIE", "PROSPECT"]).sum()),
         pdf_fa_rows=int(review["player_type"].eq("PDF_FA").sum()),
         duplicate_review_count=int(len(duplicate_review)),
+        duplicate_groups_handled=int(
+            consolidation_decisions["decision"].astype(str).eq("CONSOLIDATE").sum()
+        ),
         identity_gap_count=int(len(identity_gap_review)),
+        remaining_blocker_count=int(len(remaining_blockers)),
         safe_repair_count=safe_repair_count,
     )
 
@@ -253,6 +359,18 @@ def validate_artifact_files(output_dir: Path = OUTPUT_DIR) -> pd.DataFrame:
         keep_default_na=False,
     )
     identity_triage = pd.read_csv(output_dir / IDENTITY_TRIAGE_PATH.name, keep_default_na=False)
+    consolidated_review = pd.read_csv(
+        output_dir / CONSOLIDATED_REVIEW_PATH.name,
+        keep_default_na=False,
+    )
+    consolidation_decisions = pd.read_csv(
+        output_dir / CONSOLIDATION_DECISIONS_PATH.name,
+        keep_default_na=False,
+    )
+    remaining_blockers = pd.read_csv(
+        output_dir / REMAINING_BLOCKERS_PATH.name,
+        keep_default_na=False,
+    )
     source_summary = pd.read_csv(output_dir / SOURCE_SUMMARY_PATH.name, keep_default_na=False)
     sources = {
         "full_dynasty": _read_csv(FULL_DYNASTY_PATH),
@@ -264,6 +382,9 @@ def validate_artifact_files(output_dir: Path = OUTPUT_DIR) -> pd.DataFrame:
         identity_gap_review,
         sources,
         identity_triage,
+        consolidated_review,
+        consolidation_decisions,
+        remaining_blockers,
     )
     report = pd.concat(
         [
@@ -289,9 +410,18 @@ def validate_review_frame(
     identity_gap_review: pd.DataFrame,
     sources: dict[str, pd.DataFrame],
     identity_triage: pd.DataFrame | None = None,
+    consolidated_review: pd.DataFrame | None = None,
+    consolidation_decisions: pd.DataFrame | None = None,
+    remaining_blockers: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     if identity_triage is None:
         identity_triage = pd.DataFrame(columns=IDENTITY_TRIAGE_COLUMNS)
+    if consolidated_review is None:
+        consolidated_review = pd.DataFrame(columns=CONSOLIDATED_REVIEW_COLUMNS)
+    if consolidation_decisions is None:
+        consolidation_decisions = pd.DataFrame(columns=CONSOLIDATION_DECISION_COLUMNS)
+    if remaining_blockers is None:
+        remaining_blockers = pd.DataFrame(columns=REMAINING_BLOCKER_COLUMNS)
     checks = [
         _check_row(
             "required_columns_exist",
@@ -416,6 +546,59 @@ def validate_review_frame(
             review["app_wiring_allowed"].astype(str).str.lower().eq("no").all()
             and review["model_input_allowed"].astype(str).str.lower().eq("no").all(),
             "safe review-artifact repairs cannot unlock app/model usage",
+        ),
+        _check_row(
+            "consolidated_required_columns_exist",
+            set(CONSOLIDATED_REVIEW_COLUMNS).issubset(consolidated_review.columns),
+            _missing_message(CONSOLIDATED_REVIEW_COLUMNS, consolidated_review.columns),
+        ),
+        _check_row(
+            "consolidated_review_only_gates_locked",
+            consolidated_review["app_wiring_allowed"].astype(str).str.lower().eq("no").all()
+            and consolidated_review["model_input_allowed"].astype(str).str.lower().eq("no").all(),
+            "consolidated review artifact remains blocked from app/model usage",
+        ),
+        _check_row(
+            "consolidation_status_enum_valid",
+            _column_values_in(
+                consolidated_review,
+                "consolidation_status",
+                CONSOLIDATION_STATUS_VALUES,
+            ),
+            _bad_values_message(
+                consolidated_review,
+                "consolidation_status",
+                CONSOLIDATION_STATUS_VALUES,
+            ),
+        ),
+        _check_row(
+            "consolidation_confidence_enum_valid",
+            _column_values_in(
+                consolidated_review,
+                "consolidation_confidence",
+                CONSOLIDATION_CONFIDENCE_VALUES,
+            ),
+            _bad_values_message(
+                consolidated_review,
+                "consolidation_confidence",
+                CONSOLIDATION_CONFIDENCE_VALUES,
+            ),
+        ),
+        _check_row(
+            "consolidation_decisions_schema_valid",
+            set(CONSOLIDATION_DECISION_COLUMNS).issubset(consolidation_decisions.columns),
+            _missing_message(CONSOLIDATION_DECISION_COLUMNS, consolidation_decisions.columns),
+        ),
+        _check_row(
+            "remaining_blockers_schema_valid",
+            set(REMAINING_BLOCKER_COLUMNS).issubset(remaining_blockers.columns),
+            _missing_message(REMAINING_BLOCKER_COLUMNS, remaining_blockers.columns),
+        ),
+        _check_row(
+            "expected_duplicate_groups_consolidated",
+            int(consolidation_decisions["decision"].astype(str).eq("CONSOLIDATE").sum())
+            == int(duplicate_review["duplicate_class"].astype(str).eq("MULTI_LAYER_SAME_PLAYER_EXPECTED").sum()),
+            f"decisions={len(consolidation_decisions)} duplicate_rows={len(duplicate_review)}",
         ),
     ]
     return pd.DataFrame(checks)
@@ -1075,16 +1258,426 @@ def _append_caveat(caveats: str, addition: str) -> str:
     return f"{caveats} {addition}"
 
 
+def _consolidated_review(
+    review: pd.DataFrame,
+    duplicate_review: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    rows = []
+    decisions = []
+    handled_indexes: set[int] = set()
+    safe_duplicate_ids = set(
+        duplicate_review.loc[
+            duplicate_review["duplicate_class"].astype(str).eq("MULTI_LAYER_SAME_PLAYER_EXPECTED"),
+            "duplicate_group_id",
+        ]
+    )
+    for duplicate_group_id in sorted(safe_duplicate_ids):
+        group = review.loc[review["duplicate_group_id"].astype(str).eq(duplicate_group_id)].copy()
+        if group.empty:
+            continue
+        consolidated, field_sources, conflict_flags = _consolidate_group(
+            group,
+            "CONSOLIDATED",
+            "HIGH",
+        )
+        rows.append(consolidated)
+        decisions.append(
+            {
+                "duplicate_group_id": duplicate_group_id,
+                "player_name": consolidated["player_name"],
+                "position": consolidated["position"],
+                "source_layers": consolidated["source_layers"],
+                "decision": "CONSOLIDATE",
+                "confidence": "HIGH" if not conflict_flags else "MEDIUM",
+                "conflicts": ";".join(conflict_flags),
+                "canonical_field_sources": field_sources,
+                "action_taken": "Collapsed expected multi-layer same-player rows into one review-only canonical row.",
+                "notes": "Rank families remain source-labeled; market remains display-only; app/model gates remain no.",
+            }
+        )
+        handled_indexes.update(int(index) for index in group.index)
+    for index, row in review.iterrows():
+        if int(index) in handled_indexes:
+            continue
+        consolidated, _, _ = _consolidate_group(
+            pd.DataFrame([row]),
+            "SINGLE_SOURCE",
+            "NOT_APPLICABLE",
+        )
+        rows.append(consolidated)
+    consolidated_review = pd.DataFrame(rows, columns=CONSOLIDATED_REVIEW_COLUMNS)
+    consolidation_decisions = pd.DataFrame(decisions, columns=CONSOLIDATION_DECISION_COLUMNS)
+    consolidated_review = consolidated_review.sort_values(
+        by=["unified_display_rank", "player_name"],
+        key=lambda series: series.map(_sort_token),
+    ).reset_index(drop=True)
+    return consolidated_review, consolidation_decisions
+
+
+def _consolidate_group(
+    group: pd.DataFrame,
+    consolidation_status: str,
+    consolidation_confidence: str,
+) -> tuple[dict[str, Any], str, list[str]]:
+    conflict_flags = _consolidation_conflicts(group)
+    chosen = _preferred_row(group)
+    dynasty_rank = _rank_from_layer(group, "dynasty_rank", "Veteran Full Dynasty Layer")
+    rookie_rank = _rank_from_layer(group, "rookie_rank", "Rookie/Prospect Layer")
+    frozen_rank = _rank_from_layer(group, "frozen_baseline_rank", "Frozen Baseline Layer")
+    candidate_rank = _first_nonempty(group, "candidate_rank")
+    rank_source, unified_rank = _consolidated_rank_source(
+        dynasty_rank,
+        rookie_rank,
+        frozen_rank,
+        candidate_rank,
+    )
+    rank_source_row = _row_for_rank_source(group, rank_source)
+    tier_row = rank_source_row if _text(rank_source_row.get("tier")) else _preferred_nonempty_row(group, "tier")
+    status = "REVIEW_NEEDED" if conflict_flags else consolidation_status
+    review_status = (
+        "REVIEW_NEEDED"
+        if conflict_flags
+        or group["review_status"].astype(str).eq("REVIEW_NEEDED").any()
+        or group["manual_review_flag"].astype(str).str.lower().eq("true").any()
+        else "READY"
+    )
+    manual_review_flag = "true" if review_status == "REVIEW_NEEDED" else "false"
+    canonical_id = _canonical_universe_id(chosen, group)
+    field_sources = {
+        "player_id": _field_source(group, "player_id", chosen),
+        "player_name": _field_source(group, "player_name", chosen),
+        "position": _field_source(group, "position", chosen),
+        "nfl_team": _field_source(group, "nfl_team", chosen),
+        "age": _field_source(group, "age", _preferred_nonempty_row(group, "age")),
+        "rank_source": rank_source,
+        "tier": _field_source(group, "tier", tier_row),
+        "outcome": _field_source(group, "outcome_context", _preferred_outcome_row(group)),
+        "market": _field_source(group, "dp_1qb_value", _preferred_market_row(group)),
+        "availability": _field_source(group, "availability_status", _preferred_availability_row(group)),
+    }
+    outcome_row = _preferred_outcome_row(group)
+    market_row = _preferred_market_row(group)
+    availability_row = _preferred_availability_row(group)
+    age_row = _preferred_nonempty_row(group, "age")
+    return (
+        {
+            "canonical_universe_id": canonical_id,
+            "source_row_ids": _join_unique(group["player_universe_id"]),
+            "player_id": _text(chosen.get("player_id")),
+            "player_name": _text(chosen.get("player_name")),
+            "normalized_name": _text(chosen.get("normalized_name")),
+            "position": _text(chosen.get("position")),
+            "nfl_team": _text(_preferred_team_row(group).get("nfl_team")),
+            "age": _text(age_row.get("age")),
+            "age_source": _text(age_row.get("age_source")),
+            "player_type": _text(chosen.get("player_type")),
+            "availability_status": _text(availability_row.get("availability_status")),
+            "rank_source": rank_source,
+            "dynasty_rank": dynasty_rank,
+            "rookie_rank": rookie_rank,
+            "frozen_baseline_rank": frozen_rank,
+            "candidate_rank": candidate_rank,
+            "unified_display_rank": unified_rank,
+            "unified_display_rank_source": rank_source,
+            "tier": _text(tier_row.get("tier")),
+            "tier_source": _text(tier_row.get("tier_source")),
+            "outcome_context": _text(outcome_row.get("outcome_context")),
+            "outcome_status": _text(outcome_row.get("outcome_status")),
+            "market_match_status": _text(market_row.get("market_match_status")),
+            "dp_1qb_value": _text(market_row.get("dp_1qb_value")),
+            "dp_market_rank": _text(market_row.get("dp_market_rank")),
+            "nwr_vs_market_gap": _text(market_row.get("nwr_vs_market_gap")),
+            "data_quality_status": "MANUAL_REVIEW" if review_status == "REVIEW_NEEDED" else "GREEN",
+            "manual_review_flag": manual_review_flag,
+            "review_status": review_status,
+            "consolidation_status": status,
+            "consolidation_confidence": "MEDIUM" if conflict_flags else consolidation_confidence,
+            "conflict_flags": ";".join(conflict_flags),
+            "caveats": _join_unique(group["caveats"]),
+            "source_layers": _join_unique(group["source_layer"]),
+            "source_files": _join_unique(group["source_files"]),
+            "app_wiring_allowed": APP_WIRING_ALLOWED,
+            "model_input_allowed": MODEL_INPUT_ALLOWED,
+        },
+        "; ".join(f"{key}={value}" for key, value in field_sources.items() if value),
+        conflict_flags,
+    )
+
+
+def _consolidation_conflicts(group: pd.DataFrame) -> list[str]:
+    flags = []
+    if _distinct_nonempty(group, "player_id") > 1:
+        flags.append("player_id_conflict")
+    if _distinct_nonempty(group, "normalized_name") > 1:
+        flags.append("normalized_name_conflict")
+    if _distinct_nonempty(group, "position") > 1:
+        flags.append("position_conflict")
+    if _distinct_nonempty(group, "nfl_team", ignore_values={"UNKNOWN", "NEEDS_DATA"}) > 1:
+        flags.append("nfl_team_conflict")
+    if _distinct_nonempty(group, "age", ignore_values={NOT_ENOUGH_INFORMATION}) > 1:
+        flags.append("age_conflict")
+    for column in ("dynasty_rank", "rookie_rank", "frozen_baseline_rank", "candidate_rank"):
+        if _distinct_nonempty(group, column) > 1:
+            flags.append(f"{column}_conflict")
+    if _distinct_nonempty(group, "tier", ignore_values={NOT_ENOUGH_INFORMATION}) > 1:
+        flags.append("tier_conflict")
+    return flags
+
+
+def _preferred_row(group: pd.DataFrame) -> pd.Series:
+    for layer in SOURCE_LAYER_PRIORITY:
+        layer_rows = group.loc[group["source_layer"].astype(str).eq(layer)]
+        if not layer_rows.empty:
+            return layer_rows.iloc[0]
+    return group.iloc[0]
+
+
+def _preferred_nonempty_row(group: pd.DataFrame, column: str) -> pd.Series:
+    for layer in SOURCE_LAYER_PRIORITY:
+        layer_rows = group.loc[
+            group["source_layer"].astype(str).eq(layer)
+            & group[column].astype(str).str.strip().ne("")
+            & group[column].astype(str).ne(NOT_ENOUGH_INFORMATION)
+        ]
+        if not layer_rows.empty:
+            return layer_rows.iloc[0]
+    nonempty = group.loc[
+        group[column].astype(str).str.strip().ne("")
+        & group[column].astype(str).ne(NOT_ENOUGH_INFORMATION)
+    ]
+    return nonempty.iloc[0] if not nonempty.empty else _preferred_row(group)
+
+
+def _preferred_team_row(group: pd.DataFrame) -> pd.Series:
+    known = group.loc[~group["nfl_team"].astype(str).isin(["", "UNKNOWN", "NEEDS_DATA"])]
+    return _preferred_row(known) if not known.empty else _preferred_row(group)
+
+
+def _preferred_outcome_row(group: pd.DataFrame) -> pd.Series:
+    supported = group.loc[group["outcome_status"].astype(str).eq("SUPPORTED")]
+    return _preferred_row(supported) if not supported.empty else _preferred_row(group)
+
+
+def _preferred_market_row(group: pd.DataFrame) -> pd.Series:
+    matched = group.loc[group["market_match_status"].astype(str).eq("MATCHED")]
+    return _preferred_row(matched) if not matched.empty else _preferred_row(group)
+
+
+def _preferred_availability_row(group: pd.DataFrame) -> pd.Series:
+    for status in ("MY TEAM", "PDF Page 3 Free Agent", "dropped_legal_draftable", "OTHER TEAM"):
+        rows = group.loc[group["availability_status"].astype(str).eq(status)]
+        if not rows.empty:
+            return rows.iloc[0]
+    return _preferred_row(group)
+
+
+def _rank_from_layer(group: pd.DataFrame, column: str, source_layer: str) -> str:
+    rows = group.loc[group["source_layer"].astype(str).eq(source_layer)]
+    if rows.empty:
+        return ""
+    return _first_nonempty(rows, column)
+
+
+def _first_nonempty(group: pd.DataFrame, column: str) -> str:
+    if column not in group.columns:
+        return ""
+    for value in group[column].tolist():
+        text = _text(value)
+        if text and text != NOT_ENOUGH_INFORMATION:
+            return text
+    return ""
+
+
+def _consolidated_rank_source(
+    dynasty_rank: str,
+    rookie_rank: str,
+    frozen_rank: str,
+    candidate_rank: str,
+) -> tuple[str, str]:
+    if dynasty_rank:
+        return "FULL_DYNASTY_RANK", dynasty_rank
+    if rookie_rank:
+        return "ROOKIE_RANK", rookie_rank
+    if frozen_rank:
+        return "FROZEN_BASELINE_RANK", frozen_rank
+    if candidate_rank:
+        return "CANDIDATE_RANK", candidate_rank
+    return "UNRANKED_REVIEW", ""
+
+
+def _row_for_rank_source(group: pd.DataFrame, rank_source: str) -> pd.Series:
+    layer_by_rank_source = {
+        "FULL_DYNASTY_RANK": "Veteran Full Dynasty Layer",
+        "ROOKIE_RANK": "Rookie/Prospect Layer",
+        "FROZEN_BASELINE_RANK": "Frozen Baseline Layer",
+    }
+    layer = layer_by_rank_source.get(rank_source)
+    if layer:
+        rows = group.loc[group["source_layer"].astype(str).eq(layer)]
+        if not rows.empty:
+            return rows.iloc[0]
+    return _preferred_row(group)
+
+
+def _canonical_universe_id(chosen: pd.Series, group: pd.DataFrame) -> str:
+    player_id = _text(chosen.get("player_id"))
+    if player_id:
+        return _safe_token(f"consolidated-{player_id}")
+    name = _text(chosen.get("normalized_name")) or _normalize_name(chosen.get("player_name"))
+    position = _text(chosen.get("position")).lower()
+    row_ids = _safe_token(_join_unique(group["player_universe_id"]))
+    return _safe_token(f"consolidated-{name}-{position}-{row_ids}")
+
+
+def _field_source(group: pd.DataFrame, column: str, row: pd.Series) -> str:
+    if column not in group.columns:
+        return ""
+    value = _text(row.get(column))
+    if not value or value == NOT_ENOUGH_INFORMATION:
+        return ""
+    return _text(row.get("source_layer"))
+
+
+def _distinct_nonempty(
+    group: pd.DataFrame,
+    column: str,
+    ignore_values: set[str] | None = None,
+) -> int:
+    ignore_values = ignore_values or set()
+    values = {
+        _text(value)
+        for value in group[column].tolist()
+        if _text(value) and _text(value) not in ignore_values
+    }
+    return len(values)
+
+
+def _sort_token(value: Any) -> tuple[int, Any]:
+    text = _text(value)
+    try:
+        return (0, float(text))
+    except ValueError:
+        return (1, text)
+
+
+def _remaining_blockers(
+    review: pd.DataFrame,
+    identity_gap_review: pd.DataFrame,
+    consolidation_decisions: pd.DataFrame,
+) -> pd.DataFrame:
+    rows = []
+    blocker_num = 1
+    for _, gap in identity_gap_review.loc[
+        identity_gap_review["gap_type"].astype(str).eq("missing_player_id")
+    ].iterrows():
+        rows.append(
+            _blocker_row(
+                blocker_num,
+                "MISSING_PLAYER_ID",
+                gap.get("player_name", ""),
+                gap.get("position", ""),
+                gap.get("source_layer", ""),
+                "Missing stable approved player_id.",
+                "yes",
+                "Manual identity review; do not fabricate IDs.",
+                gap.get("notes", ""),
+            )
+        )
+        blocker_num += 1
+    for _, gap in identity_gap_review.loc[
+        identity_gap_review["gap_type"].astype(str).eq("missing_age")
+    ].iterrows():
+        rows.append(
+            _blocker_row(
+                blocker_num,
+                "MISSING_AGE",
+                gap.get("player_name", ""),
+                gap.get("position", ""),
+                gap.get("source_layer", ""),
+                "Missing approved age coverage.",
+                "yes",
+                "Add approved age source coverage or keep Not enough information.",
+                gap.get("notes", ""),
+            )
+        )
+        blocker_num += 1
+    conflict_decisions = consolidation_decisions.loc[
+        consolidation_decisions["conflicts"].astype(str).str.strip().ne("")
+    ]
+    for _, decision in conflict_decisions.iterrows():
+        rows.append(
+            _blocker_row(
+                blocker_num,
+                "CONSOLIDATION_CONFLICT",
+                decision.get("player_name", ""),
+                decision.get("position", ""),
+                decision.get("source_layers", ""),
+                decision.get("conflicts", ""),
+                "yes",
+                "Resolve source conflict before app wiring.",
+                decision.get("notes", ""),
+            )
+        )
+        blocker_num += 1
+    review_needed = review.loc[review["review_status"].astype(str).eq("REVIEW_NEEDED")]
+    for _, row in review_needed.iterrows():
+        rows.append(
+            _blocker_row(
+                blocker_num,
+                "REVIEW_NEEDED_ROW",
+                row.get("player_name", ""),
+                row.get("position", ""),
+                row.get("source_layer", ""),
+                "Row remains REVIEW_NEEDED in the review artifact.",
+                "yes",
+                "Clear manual review/source caveats before app wiring.",
+                row.get("caveats", ""),
+            )
+        )
+        blocker_num += 1
+    return pd.DataFrame(rows, columns=REMAINING_BLOCKER_COLUMNS)
+
+
+def _blocker_row(
+    blocker_num: int,
+    blocker_type: str,
+    player_name: Any,
+    position: Any,
+    source_layer: Any,
+    detail: Any,
+    prevents_app_wiring: str,
+    recommended_action: str,
+    notes: Any,
+) -> dict[str, Any]:
+    return {
+        "blocker_id": f"BLOCKER-{blocker_num:04d}",
+        "blocker_type": blocker_type,
+        "player_name": player_name,
+        "position": position,
+        "source_layer": source_layer,
+        "detail": detail,
+        "prevents_app_wiring": prevents_app_wiring,
+        "recommended_action": recommended_action,
+        "notes": notes,
+    }
+
+
 def _source_summary(
     review: pd.DataFrame,
     sources: dict[str, pd.DataFrame],
     identity_gap_review: pd.DataFrame | None = None,
     duplicate_review: pd.DataFrame | None = None,
+    consolidated_review: pd.DataFrame | None = None,
+    remaining_blockers: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     if identity_gap_review is None:
         identity_gap_review = pd.DataFrame()
     if duplicate_review is None:
         duplicate_review = pd.DataFrame()
+    if consolidated_review is None:
+        consolidated_review = pd.DataFrame()
+    if remaining_blockers is None:
+        remaining_blockers = pd.DataFrame()
     rows = []
     for layer, group in review.groupby("source_layer"):
         layer_identity_gaps = (
@@ -1143,6 +1736,61 @@ def _source_summary(
                 "identity_gap_count": "",
                 "duplicate_review_count": "",
                 "caveats": "Input source count for validation context.",
+            }
+        )
+    if not consolidated_review.empty:
+        rows.append(
+            {
+                "layer": "Consolidated review output",
+                "source_files": _rel(CONSOLIDATED_REVIEW_PATH),
+                "row_count": len(consolidated_review),
+                "unique_player_count": consolidated_review[
+                    ["normalized_name", "position"]
+                ].drop_duplicates().shape[0],
+                "player_id_coverage": int(
+                    consolidated_review["player_id"].astype(str).str.strip().ne("").sum()
+                ),
+                "age_coverage": int(
+                    consolidated_review["age"].astype(str).ne(NOT_ENOUGH_INFORMATION).sum()
+                ),
+                "rank_coverage": int(
+                    consolidated_review[
+                        ["dynasty_rank", "rookie_rank", "frozen_baseline_rank", "candidate_rank"]
+                    ]
+                    .astype(str)
+                    .apply(lambda row: any(value.strip() for value in row), axis=1)
+                    .sum()
+                ),
+                "outcome_coverage": int(
+                    consolidated_review["outcome_status"].astype(str).eq("SUPPORTED").sum()
+                ),
+                "market_coverage": int(
+                    consolidated_review["market_match_status"].astype(str).eq("MATCHED").sum()
+                ),
+                "review_needed_count": int(
+                    consolidated_review["review_status"].astype(str).eq("REVIEW_NEEDED").sum()
+                ),
+                "identity_gap_count": "",
+                "duplicate_review_count": "",
+                "caveats": "Review-only consolidated artifact; not app wiring or model input.",
+            }
+        )
+    if not remaining_blockers.empty:
+        rows.append(
+            {
+                "layer": "Remaining blockers output",
+                "source_files": _rel(REMAINING_BLOCKERS_PATH),
+                "row_count": len(remaining_blockers),
+                "unique_player_count": "",
+                "player_id_coverage": "",
+                "age_coverage": "",
+                "rank_coverage": "",
+                "outcome_coverage": "",
+                "market_coverage": "",
+                "review_needed_count": "",
+                "identity_gap_count": "",
+                "duplicate_review_count": "",
+                "caveats": "Rows that still block app wiring.",
             }
         )
     return pd.DataFrame(rows)
