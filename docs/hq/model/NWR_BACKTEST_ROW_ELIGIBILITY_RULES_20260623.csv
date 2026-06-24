@@ -1,0 +1,14 @@
+source_class,confidence,allowed_for_training,allowed_for_truth_backtest,allowed_for_caution_backtest,allowed_for_sensitivity,allowed_for_rank_penalty,allowed_for_source_truth_claim,notes
+ACTUAL_DROP,HIGH,no,yes,yes,yes,no,yes,"Eligible for truth/caution backtest as high-confidence availability/drop evidence only. Not a player-value label, not bad-cut proof, and not rank-penalty truth."
+ACTUAL_DROP,MEDIUM,no,no,yes,yes,no,no,Use only if a future row is downgraded or partially corroborated. Not eligible for strict truth backtest or source-truth claim without upgrade.
+ACTUAL_DROP,LOW,no,no,no,yes,no,no,Low-confidence actual-looking rows are sensitivity-only until evidence is upgraded.
+INFERRED_DROP,HIGH,no,no,yes,yes,no,no,Caution-backtest eligible only; still not source-truth or training truth unless upgraded to ACTUAL_DROP by transaction/commissioner evidence.
+INFERRED_DROP,MEDIUM,no,no,yes,yes,no,no,Current 2022-2024 unprotected/PDF rows fit here. Caution backtest only; down-weight and report separately.
+INFERRED_DROP,LOW,no,no,no,yes,no,no,Sensitivity-only. Do not include in caution headline metrics.
+PROXY_DROP,PROXY_ONLY,no,no,no,yes,no,no,2010-2021 proxy rows. Sensitivity/stress/robustness/gap analysis only; never direct training truth or source-truth claim.
+PROXY_DROP,LOW,no,no,no,yes,no,no,Treat the same as proxy-only: sensitivity-only and explicitly excluded from truth/caution headline metrics.
+CURRENT_FA_SNAPSHOT,HIGH,no,no,yes,yes,no,no,"Current availability/free-agent snapshots can support caution/display analysis if timestamped, but are not historical drop truth or bad-cut labels."
+CURRENT_FA_SNAPSHOT,MEDIUM,no,no,no,yes,no,no,Sensitivity-only unless tied to a verified historical source and timestamp.
+CURRENT_FA_SNAPSHOT,LOW,no,no,no,yes,no,no,Sensitivity-only; report as weak availability context.
+DISPLAY_ONLY,HIGH,no,no,no,yes,no,no,"Market/ADP/Outcome/display context may be used only as a separate market sanity comparison or stratification, never as model truth."
+UNKNOWN,UNKNOWN,no,no,no,no,no,no,Forbidden until classified. Unknown rows should fail closed.
