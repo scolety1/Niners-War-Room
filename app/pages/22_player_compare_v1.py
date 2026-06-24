@@ -28,6 +28,10 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
 )
+from src.services.player_compare_decision_service import (
+    build_player_compare_decision_summary,
+    decision_summary_rows,
+)
 
 OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
 HORIZON_CANDIDATE_PATH = (
@@ -189,115 +193,53 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
 def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
     st.subheader("Decision Summary")
     st.caption(
-        "Fast on-clock read first. This is review-only decision support; Final Board Rank "
-        "and Dynasty Rank are not changed."
+        "Fast on-clock read first. Review-only decision support; frozen baseline rank, "
+        "Dynasty Rank, tiers, and model values are not changed."
     )
     if compare_frame.empty:
         st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
         return
-    ranked = compare_frame.copy()
-    rank_column = _first_existing(
-        ranked,
-        ("dynasty_asset_rank", "cross_asset_candidate_rank", "final_board_rank"),
+
+    records = compare_frame.to_dict("records")
+    summary = build_player_compare_decision_summary(
+        records[0],
+        records[1],
+        records[2:],
     )
-    if rank_column:
-        ranked["_decision_sort"] = pd.to_numeric(ranked[rank_column], errors="coerce")
-        ranked = ranked.sort_values("_decision_sort", na_position="last", kind="stable")
-    leader = ranked.iloc[0].to_dict()
-    runner_up = ranked.iloc[1].to_dict() if len(ranked) > 1 else {}
     cols = st.columns(4)
-    cols[0].metric("Lean", str(leader.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION))
-    cols[1].metric(
-        "Confidence",
-        str(
-            leader.get("dynasty_asset_confidence")
-            or leader.get("confidence_band")
-            or OUTCOME_NOT_ENOUGH_INFORMATION
-        ),
+    cols[0].metric("Lean", summary.lean)
+    cols[1].metric("Confidence", summary.confidence)
+    cols[2].metric("Best use case", summary.best_use_case)
+    cols[3].metric("Data quality", summary.data_quality)
+
+    reason_col, flag_col = st.columns(2)
+    with reason_col:
+        st.markdown("**Main reasons**")
+        for reason in summary.reason_bullets:
+            st.markdown(f"- {reason}")
+    with flag_col:
+        st.markdown("**Red flags / checks**")
+        for flag in summary.red_flags:
+            st.markdown(f"- {flag}")
+
+    if summary.display_only_market_note:
+        st.caption(summary.display_only_market_note)
+
+    st.dataframe(
+        pd.DataFrame(decision_summary_rows(records)),
+        use_container_width=True,
+        hide_index=True,
     )
-    cols[2].metric(
-        "Biggest risk",
-        str(
-            leader.get("main_risk")
-            or leader.get("candidate_key_caveat")
-            or OUTCOME_NOT_ENOUGH_INFORMATION
-        )[:80],
-    )
-    cols[3].metric(
-        "Compare against",
-        str(runner_up.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION),
-    )
-    summary_rows = []
-    for record in ranked.to_dict("records"):
-        summary_rows.append(
-            {
-                "Player": record.get("player", OUTCOME_NOT_ENOUGH_INFORMATION),
-                "Rank signal": _rank_signal(record),
-                "Why draft": record.get("why_draft", OUTCOME_NOT_ENOUGH_INFORMATION),
-                "Why pass / risk": record.get(
-                    "main_risk",
-                    record.get("candidate_key_caveat", OUTCOME_NOT_ENOUGH_INFORMATION),
-                ),
-                "What would change decision": _decision_change_note(record),
-                "Best fit by context": _best_fit_note(record),
-                "Model / human-review flag": _human_review_note(record),
-                "Confidence": record.get(
-                    "dynasty_asset_confidence",
-                    record.get("confidence_band", OUTCOME_NOT_ENOUGH_INFORMATION),
-                ),
-            }
-        )
-    st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
 
 
-def _first_existing(frame: pd.DataFrame, candidates: tuple[str, ...]) -> str:
-    return next((column for column in candidates if column in frame.columns), "")
+def _player_index(players: list[str], preferred: str = "") -> int:
+    if preferred and preferred in players:
+        return players.index(preferred)
+    return 0
 
 
-def _decision_change_note(record: dict[str, object]) -> str:
-    caveat = str(record.get("candidate_key_caveat") or record.get("main_risk") or "").strip()
-    outcome = str(record.get("outcome_applicable_summary") or "").strip()
-    if caveat and caveat != OUTCOME_NOT_ENOUGH_INFORMATION:
-        return f"Resolve caveat: {caveat}"
-    if not outcome or outcome == OUTCOME_NOT_ENOUGH_INFORMATION:
-        return "More role/outcome support would raise confidence."
-    return "Decision mainly changes if roster need or tier drop changes."
-
-
-def _rank_signal(record: dict[str, object]) -> str:
-    for label, key in (
-        ("Candidate", "dynasty_asset_rank"),
-        ("Tuned V2", "cross_asset_candidate_rank"),
-        ("Final Board", "final_board_rank"),
-    ):
-        value = str(record.get(key) or "").strip()
-        if value and value != OUTCOME_NOT_ENOUGH_INFORMATION:
-            return f"{label} rank {value}"
-    return OUTCOME_NOT_ENOUGH_INFORMATION
-
-
-def _best_fit_note(record: dict[str, object]) -> str:
-    position = str(record.get("position") or "").strip()
-    band = str(record.get("candidate_value_band") or "").strip()
-    tier = str(record.get("final_tier") or "").strip()
-    pieces = [piece for piece in (position, band, tier) if piece]
-    if not pieces:
-        return OUTCOME_NOT_ENOUGH_INFORMATION
-    return " / ".join(pieces)
-
-
-def _human_review_note(record: dict[str, object]) -> str:
-    flags = [
-        str(record.get("human_review_flag") or "").strip(),
-        str(record.get("needs_manual_review") or "").strip(),
-        str(record.get("candidate_vs_frozen_note") or "").strip(),
-    ]
-    meaningful = [
-        flag
-        for flag in flags
-        if flag and flag.lower() not in {"false", "none", "nan", "0"}
-    ]
-    return "; ".join(meaningful) if meaningful else "No special flag"
+def _non_duplicate_options(players: list[str], selected: set[str]) -> list[str]:
+    return [player for player in players if player not in selected]
 
 
 def _render_dynasty_context(compare_frame: pd.DataFrame) -> None:
@@ -328,7 +270,7 @@ def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
         return
     st.caption(
         "Tuned V2 review-only candidate metrics. They do not replace Final Board Rank, "
-        "Dynasty Rank, or frozen source truth."
+        "Dynasty Rank, or the frozen baseline checkpoint."
     )
     candidate_display = compare_frame.loc[:, available_compare_columns].copy().fillna(
         OUTCOME_NOT_ENOUGH_INFORMATION
@@ -550,8 +492,8 @@ page_header(
     "Player Compare",
     eyebrow="Draft-Day App V1",
     description=(
-        "Compare 2 to 4 players using the frozen board plus verified PDF free-agent "
-        "draftable overlay. Lane prop context remains secondary to final_board_rank."
+        "Compare 2 to 4 players using the active draftable pool, frozen baseline checkpoint, "
+        "and verified PDF free-agent overlay."
     ),
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
@@ -564,16 +506,41 @@ query_players = [
     for player in st.query_params.get_all("player")
     if player in set(players)
 ]
-selected = st.multiselect(
-    "Players to compare",
-    players,
-    default=query_players[:4],
-    max_selections=4,
-)
-if len(selected) < 2:
-    st.info("Select 2 to 4 players from the frozen board or PDF free-agent overlay.")
+if len(players) < 2:
+    st.warning("Not enough information: player pool has fewer than two players.")
 else:
+    selector_cols = st.columns(2)
+    player_a_default = query_players[0] if query_players else ""
+    player_b_default = query_players[1] if len(query_players) > 1 else ""
+    player_a = selector_cols[0].selectbox(
+        "Player A",
+        players,
+        index=_player_index(players, player_a_default),
+        key="player_compare_a",
+    )
+    player_b_options = _non_duplicate_options(players, {player_a})
+    player_b = selector_cols[1].selectbox(
+        "Player B",
+        player_b_options,
+        index=_player_index(player_b_options, player_b_default),
+        key="player_compare_b",
+    )
+    extra_options = _non_duplicate_options(players, {player_a, player_b})
+    extra_players = st.multiselect(
+        "Optional extra players",
+        extra_options,
+        default=[player for player in query_players[2:4] if player in extra_options],
+        max_selections=2,
+        help="Use this only when you want a 3- or 4-player decision check.",
+    )
+    selected = [player_a, player_b, *extra_players]
     compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
+    compare["_selection_order"] = compare["player"].astype(str).map(
+        {player: index for index, player in enumerate(selected)}
+    )
+    compare = compare.sort_values("_selection_order", kind="stable").drop(
+        columns=["_selection_order"]
+    )
     _render_decision_summary(compare)
 
     detail_tabs = st.tabs(
