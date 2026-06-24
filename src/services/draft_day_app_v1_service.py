@@ -10,6 +10,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.services.market_baseline_registry import get_market_baseline_page_usage
+from src.services.market_baseline_service import (
+    DISPLAY_LABEL as MARKET_BASELINE_DISPLAY_LABEL,
+)
+from src.services.market_baseline_service import (
+    compute_market_sanity_flags,
+    load_market_freshness,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOARD_FILE_NAME = "FINAL_DRAFT_BOARD_V1_FROZEN.csv"
 DYNASTY_BOARD_FILE_NAME = "full_player_board_value_review_rows.csv"
@@ -221,6 +230,16 @@ FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "wr_t36_display_only",
     "te_t12_display_only",
     "candidate_key_caveat",
+)
+MARKET_BASELINE_DISPLAY_COLUMNS = (
+    "dp_value_1qb",
+    "dp_market_rank_1qb",
+    "dp_ecr_pos",
+    "dp_age",
+    "market_gap",
+    "market_sanity_label",
+    "age_source_display",
+    "market_baseline_label",
 )
 ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
     "cross_asset_candidate_rank",
@@ -1661,6 +1680,96 @@ def build_unified_player_board(
     return sort_unified_player_board_for_view(unified, UNIFIED_REVIEW_VIEW)
 
 
+def enrich_unified_player_board_with_market_baseline(frame: pd.DataFrame) -> pd.DataFrame:
+    """Append display-only DynastyProcess market context without changing rank fields."""
+
+    usage = get_market_baseline_page_usage("dynasty_rankings")
+    if usage is None or not usage.enabled:
+        return frame.copy()
+
+    try:
+        enriched = compute_market_sanity_flags(frame)
+    except (FileNotFoundError, ValueError):
+        enriched = frame.copy()
+        enriched["market_baseline_label"] = MARKET_BASELINE_DISPLAY_LABEL
+        enriched["market_sanity_label"] = "No market match"
+        enriched["market_gap"] = ""
+        enriched["dp_value_1qb"] = ""
+        enriched["dp_market_rank_1qb"] = ""
+        enriched["dp_ecr_pos"] = ""
+        enriched["dp_age"] = ""
+        enriched["market_join_confidence"] = "market unavailable / manual review"
+        enriched["freshness_status"] = ""
+        enriched["market_baseline_stale_warning"] = "Market baseline unavailable."
+
+    output = enriched.copy()
+    if "age_source_display" not in output.columns:
+        output["age_source_display"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if "market_age_fallback_used" not in output.columns:
+        output["market_age_fallback_used"] = False
+    if "age" not in output.columns:
+        output["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if "dp_age" not in output.columns:
+        output["dp_age"] = ""
+
+    for index, row in output.iterrows():
+        nwr_age = age_display_value(row.get("age"))
+        dp_age = age_display_value(row.get("dp_age"))
+        if nwr_age != OUTCOME_NOT_ENOUGH_INFORMATION:
+            output.at[index, "age"] = nwr_age
+            output.at[index, "age_source_display"] = "NWR approved source"
+        elif dp_age != OUTCOME_NOT_ENOUGH_INFORMATION:
+            output.at[index, "age"] = dp_age
+            output.at[index, "age_source_display"] = (
+                "Market Baseline / Display-Only fallback"
+            )
+            output.at[index, "market_age_fallback_used"] = True
+        else:
+            output.at[index, "age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+            output.at[index, "age_source_display"] = OUTCOME_NOT_ENOUGH_INFORMATION
+
+    return output
+
+
+def market_baseline_age_coverage(frame: pd.DataFrame) -> dict[str, int]:
+    """Return display age coverage before/after optional market fallback."""
+
+    before = 0
+    if "age" in frame.columns:
+        before = int(
+            frame["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum()
+        )
+    enriched = enrich_unified_player_board_with_market_baseline(frame)
+    after = int(
+        enriched["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum()
+    )
+    fallback = int(enriched.get("market_age_fallback_used", pd.Series(dtype=bool)).sum())
+    return {"before": before, "after": after, "market_fallback": fallback}
+
+
+def market_baseline_join_coverage(frame: pd.DataFrame) -> dict[str, int]:
+    enriched = enrich_unified_player_board_with_market_baseline(frame)
+    rows = int(enriched.shape[0])
+    matched = int(
+        enriched.get("market_sanity_label", pd.Series(dtype=str))
+        .astype(str)
+        .ne("No market match")
+        .sum()
+    )
+    return {"rows": rows, "matched": matched, "unmatched": rows - matched}
+
+
+def market_baseline_freshness_status() -> dict[str, str]:
+    try:
+        return load_market_freshness()
+    except (FileNotFoundError, ValueError):
+        return {
+            "freshness_status": "RED_NO_VALID_CACHE",
+            "upstream_scrape_date": "",
+            "market_baseline_stale_warning": "Market baseline unavailable.",
+        }
+
+
 def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
     """Sort display rows without changing any rank/value fields."""
 
@@ -1703,6 +1812,7 @@ def display_unified_player_board_frame(
     view_mode: str = UNIFIED_REVIEW_VIEW,
     outcome_mode: str = OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
     selected_positions: Iterable[object] | None = None,
+    show_market_baseline: bool = False,
 ) -> pd.DataFrame:
     if view_mode == FULL_DYNASTY_VIEW:
         display_columns = FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS
@@ -1710,6 +1820,8 @@ def display_unified_player_board_frame(
         display_columns = ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS
     else:
         display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
+    if show_market_baseline:
+        display_columns = (*display_columns, *MARKET_BASELINE_DISPLAY_COLUMNS)
     selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
     outcome_targets = set(
         outcome_columns_for_display(
@@ -1752,6 +1864,12 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "trust_status",
     "confidence_band",
     "candidate_key_caveat",
+    "dp_value_1qb",
+    "dp_market_rank_1qb",
+    "dp_ecr_pos",
+    "dp_age",
+    "market_gap",
+    "age_source_display",
 )
 
 
@@ -2180,6 +2298,14 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "wr_t24_display_only": "WR T24 (Display-Only)",
     "wr_t36_display_only": "WR T36 (Display-Only)",
     "te_t12_display_only": "TE T12 (Display-Only)",
+    "dp_value_1qb": "DP 1QB Value (Market Baseline / Display-Only)",
+    "dp_market_rank_1qb": "DP 1QB Market Rank (Market Baseline / Display-Only)",
+    "dp_ecr_pos": "DP ECR Pos (Market Baseline / Display-Only)",
+    "dp_age": "DP Age (Market Baseline / Display-Only)",
+    "market_gap": "NWR vs Market Gap (Market Baseline / Display-Only)",
+    "market_sanity_label": "Market Sanity Flag (Market Baseline / Display-Only)",
+    "age_source_display": "Age Source",
+    "market_baseline_label": "Market Baseline Label",
 }
 
 

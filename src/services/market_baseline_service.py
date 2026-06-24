@@ -370,8 +370,11 @@ def _market_display_fields(match: dict[str, Any] | None) -> dict[str, Any]:
             "market_sanity_label": "No market match",
             "dp_market_rank_1qb": "",
             "dp_value_1qb": "",
+            "dp_ecr_pos": "",
+            "dp_age": "",
             "market_join_confidence": "unmatched / manual review",
             "freshness_status": "",
+            "market_source_label": "",
             "market_baseline_stale_warning": "",
         }
     return {
@@ -379,9 +382,12 @@ def _market_display_fields(match: dict[str, Any] | None) -> dict[str, Any]:
         "dp_market_player": _text(match.get("player")),
         "dp_market_rank_1qb": _text(match.get("dp_market_rank_1qb")),
         "dp_value_1qb": _text(match.get("dp_value_1qb")),
+        "dp_ecr_pos": _text(match.get("ecr_pos")),
+        "dp_age": _text(match.get("age")),
         "market_join_method": _text(match.get("join_method")),
         "market_join_confidence": _text(match.get("join_confidence")),
         "freshness_status": _text(match.get("freshness_status")),
+        "market_source_label": _text(match.get("source_note")) or "DynastyProcess public data",
         "market_baseline_stale_warning": _text(match.get("market_baseline_stale_warning")),
         "dp_display_only_warning": _text(match.get("dp_display_only_warning"))
         or DISPLAY_ONLY_WARNING,
@@ -399,11 +405,11 @@ def _market_gap_label(row: dict[str, Any]) -> tuple[str, float | None]:
 
     nwr_rank = _rank_basis(row)
     if nwr_rank is None:
-        return "Aligned with market", None
+        return "Aligned", None
 
     gap = round(nwr_rank - market_rank, 1)
     if gap <= -20:
-        return "NWR higher than market", gap
+        return "NWR much higher", gap
     if gap >= 20:
-        return "NWR lower than market", gap
-    return "Aligned with market", gap
+        return "NWR much lower", gap
+    return "Aligned", gap

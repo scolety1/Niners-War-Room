@@ -23,9 +23,13 @@ from src.services.draft_day_app_v1_service import (
     FrozenBoardBundle,
     build_unified_player_board,
     display_unified_player_board_frame,
+    enrich_unified_player_board_with_market_baseline,
     frozen_board_outcome_support_counts,
     load_dynasty_rankings,
     load_frozen_board,
+    market_baseline_age_coverage,
+    market_baseline_freshness_status,
+    market_baseline_join_coverage,
     outcome_columns_for_display,
     outcome_display_coverage_counts,
     sort_unified_player_board_for_view,
@@ -41,6 +45,14 @@ SORT_COLUMNS = {
     "Candidate Rank (Review-Only)": "cross_asset_candidate_rank",
 }
 BASE_POSITION_FILTERS = ("QB", "RB", "WR", "TE")
+MARKET_SANITY_FILTERS = (
+    "All",
+    "NWR much higher",
+    "NWR much lower",
+    "Aligned",
+    "No market match",
+)
+MARKET_MATCH_FILTERS = ("All", "Has market match", "No market match")
 
 
 def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
@@ -69,7 +81,10 @@ def _view_base_frame(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
     return filtered
 
 
-def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataFrame, str, str]:
+def _apply_player_filters(
+    frame: pd.DataFrame,
+    view_mode: str,
+) -> tuple[pd.DataFrame, str, str, bool]:
     filtered = _view_base_frame(frame, view_mode)
     filter_row_one = st.columns([1.4, 1.2, 1.2, 1.0])
     search = filter_row_one[0].text_input(
@@ -147,6 +162,26 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
             "heads; all-outcome mode shows wrong-position heads as N/A."
         ),
     )
+    market_row = st.columns([1.2, 1.2, 1.2])
+    show_market_baseline = market_row[0].toggle(
+        "Show Market Baseline columns",
+        value=False,
+        key="dynasty_rankings_show_market_baseline",
+        help=(
+            "Adds DynastyProcess market sanity columns as display-only context. "
+            "They do not change Dynasty Rank, Candidate Rank, or default sort."
+        ),
+    )
+    market_sanity_filter = market_row[1].selectbox(
+        "Market sanity",
+        MARKET_SANITY_FILTERS,
+        key="dynasty_rankings_market_sanity_filter",
+    )
+    market_match_filter = market_row[2].selectbox(
+        "Market match",
+        MARKET_MATCH_FILTERS,
+        key="dynasty_rankings_market_match_filter",
+    )
 
     if search:
         mask = pd.Series(False, index=filtered.index)
@@ -204,9 +239,29 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
             filtered = filtered.loc[review_mask].copy()
         else:
             filtered = filtered.loc[~review_mask].copy()
+    filtered = _apply_market_filters(filtered, market_sanity_filter, market_match_filter)
 
     filtered = _sort_player_board(filtered, sort_by, ascending=ascending, view_mode=view_mode)
-    return filtered, sort_by, outcome_mode
+    return filtered, sort_by, outcome_mode, show_market_baseline
+
+
+def _apply_market_filters(
+    frame: pd.DataFrame,
+    market_sanity_filter: str,
+    market_match_filter: str,
+) -> pd.DataFrame:
+    filtered = frame.copy()
+    if market_sanity_filter != "All" and "market_sanity_label" in filtered.columns:
+        filtered = filtered.loc[
+            filtered["market_sanity_label"].astype(str).eq(market_sanity_filter)
+        ].copy()
+    if market_match_filter != "All" and "market_sanity_label" in filtered.columns:
+        has_match = ~filtered["market_sanity_label"].astype(str).eq("No market match")
+        if market_match_filter == "Has market match":
+            filtered = filtered.loc[has_match].copy()
+        else:
+            filtered = filtered.loc[~has_match].copy()
+    return filtered
 
 
 def _render_age_filter(container: st.delta_generator.DeltaGenerator, frame: pd.DataFrame) -> None:
@@ -369,9 +424,44 @@ def _render_source_diagnostics(
             st.error(error)
 
 
+def _render_market_baseline_status(unified: pd.DataFrame) -> None:
+    freshness = market_baseline_freshness_status()
+    age = market_baseline_age_coverage(unified)
+    join = market_baseline_join_coverage(unified)
+    scrape_date = freshness.get("upstream_scrape_date") or "Not enough information"
+    freshness_status = freshness.get("freshness_status") or "Not enough information"
+    st.caption(
+        "Market Baseline / Display-Only: "
+        f"{freshness_status} | Scrape date: {scrape_date} | "
+        "hidden by default; not used for rank, model value, Candidate Rank, or hidden sort."
+    )
+    with st.expander("Market Baseline / Display-Only diagnostics", expanded=False):
+        st.write(
+            {
+                "source_label": "DynastyProcess public market baseline",
+                "freshness_status": freshness_status,
+                "scrape_date": scrape_date,
+                "join_rows": join["rows"],
+                "market_matches": join["matched"],
+                "no_market_match": join["unmatched"],
+                "age_supported_before_market_fallback": age["before"],
+                "age_supported_after_market_fallback": age["after"],
+                "market_age_fallback_rows": age["market_fallback"],
+                "display_only_warning": (
+                    "DynastyProcess market baseline is display-only market sanity context. "
+                    "It does not replace NWR ranks or source truth."
+                ),
+            }
+        )
+        stale_warning = freshness.get("market_baseline_stale_warning")
+        if stale_warning:
+            st.warning(stale_warning)
+
+
 bundle = load_frozen_board()
 dynasty_bundle = load_dynasty_rankings()
-unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
+raw_unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
+unified_board = enrich_unified_player_board_with_market_baseline(raw_unified_board)
 outcome_counts = outcome_display_coverage_counts(unified_board)
 frozen_outcome_counts = frozen_board_outcome_support_counts(bundle.frame)
 
@@ -409,13 +499,17 @@ if not dynasty_bundle.loaded:
         "visible as frozen-baseline-only context until the approved dynasty source is available."
     )
 
+_render_market_baseline_status(raw_unified_board)
 view_mode = st.radio(
     "View",
     VIEW_MODES,
     horizontal=True,
     key="dynasty_rankings_view_mode",
 )
-filtered_board, sort_by, outcome_mode = _apply_player_filters(unified_board, view_mode)
+filtered_board, sort_by, outcome_mode, show_market_baseline = _apply_player_filters(
+    unified_board,
+    view_mode,
+)
 
 st.caption(
     f"Rows shown: {int(filtered_board.shape[0])} | View: {view_mode} | Sort: {sort_by} | "
@@ -426,12 +520,18 @@ st.caption(
     "and do not replace Dynasty Rank or Final Board Rank."
 )
 st.caption(f"Visible Outcome heads: {_outcome_head_caption(filtered_board, outcome_mode)}")
+if show_market_baseline:
+    st.caption(
+        "Market Baseline columns are display-only DynastyProcess context and do not drive "
+        "Dynasty Rank, Candidate Rank, Final Board Rank, or default sort."
+    )
 st.dataframe(
     display_unified_player_board_frame(
         filtered_board,
         view_mode=view_mode,
         outcome_mode=outcome_mode,
         selected_positions=filtered_board.get("position", pd.Series(dtype=str)).tolist(),
+        show_market_baseline=show_market_baseline,
     ),
     use_container_width=True,
     hide_index=True,

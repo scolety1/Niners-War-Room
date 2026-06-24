@@ -79,8 +79,8 @@ def test_market_sanity_flag_computation_does_not_mutate_rank_columns() -> None:
     result = compute_market_sanity_flags(players)
 
     assert result.loc[0, "market_sanity_label"] in {
-        "NWR higher than market",
-        "Aligned with market",
+        "NWR much higher",
+        "Aligned",
         "Market data stale",
     }
     assert result.loc[1, "market_sanity_label"] == "No market match"
@@ -167,4 +167,4 @@ def test_market_gap_summary_uses_display_language() -> None:
             "freshness_status": "GREEN_CURRENT",
         }
     )
-    assert summary.startswith("NWR higher than market")
+    assert summary.startswith("NWR much higher")
