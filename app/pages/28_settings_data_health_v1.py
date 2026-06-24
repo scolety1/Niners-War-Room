@@ -16,6 +16,19 @@ from src.services.data_health_dashboard_service import (
     build_data_health_dashboard,
     compact_status_cards,
 )
+from src.services.data_refresh_orchestrator_service import (
+    CHECK_PROTECTED_ARTIFACTS,
+    FULL_SAFE_REFRESH,
+    MANUAL_SOURCES_CHECKLIST,
+    QUICK_REFRESH,
+    export_results_csv,
+    refresh_results_table,
+    run_check_protected_artifacts,
+    run_full_safe_refresh,
+    run_manual_sources_checklist,
+    run_quick_refresh,
+    validate_refresh_result_schema,
+)
 
 STATUS_STYLES = {
     "GREEN": ("safe", "Ready"),
@@ -61,6 +74,69 @@ def _display_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return display
 
 
+def _run_loader_from_health(mode: str) -> None:
+    runners = {
+        QUICK_REFRESH: run_quick_refresh,
+        FULL_SAFE_REFRESH: run_full_safe_refresh,
+        CHECK_PROTECTED_ARTIFACTS: run_check_protected_artifacts,
+        MANUAL_SOURCES_CHECKLIST: run_manual_sources_checklist,
+    }
+    with st.spinner(f"Running {mode.replace('_', ' ').title()}..."):
+        run = runners[mode]()
+    rows = refresh_results_table(run)
+    validate_refresh_result_schema(rows)
+    st.session_state["data_health_loader_run"] = {"run": run, "rows": rows}
+
+
+def _render_safe_loader_controls() -> None:
+    st.markdown("### Safe Data Loader")
+    st.caption(
+        "Full Safe Refresh means pull every approved eligible current source. "
+        "Protected/manual sources are checked or listed, not pulled, and refreshed data "
+        "does not automatically update rankings or model outputs."
+    )
+    columns = st.columns(4)
+    buttons = (
+        ("Quick Refresh", QUICK_REFRESH),
+        ("Full Safe Refresh", FULL_SAFE_REFRESH),
+        ("Check Protected", CHECK_PROTECTED_ARTIFACTS),
+        ("Manual Checklist", MANUAL_SOURCES_CHECKLIST),
+    )
+    for column, (label, mode) in zip(columns, buttons, strict=False):
+        with column:
+            if st.button(label, use_container_width=True, key=f"health_loader_{mode}"):
+                _run_loader_from_health(mode)
+    loader_run = st.session_state.get("data_health_loader_run")
+    if loader_run:
+        run = loader_run["run"]
+        rows = pd.DataFrame(loader_run["rows"])
+        st.dataframe(
+            rows.loc[
+                :,
+                [
+                    "loader_mode",
+                    "source_id",
+                    "source_name",
+                    "loader_category",
+                    "action_type",
+                    "configured",
+                    "freshness",
+                    "user_explanation",
+                    "model_use_warning",
+                ],
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Export Results",
+            data=export_results_csv(run),
+            file_name=f"{run.run_id}_{run.loader_mode.lower()}_results.csv",
+            mime="text/csv",
+            key="health_loader_export",
+        )
+
+
 report = build_data_health_dashboard()
 
 page_header(
@@ -101,6 +177,7 @@ if not report.warnings.empty:
 else:
     st.success("No data-health warnings found by the dashboard checks.")
 
+_render_safe_loader_controls()
 _render_warning_summary(report)
 _render_section("App / Version Status", report.app_status, expanded=True)
 _render_section("Board Health", report.board_health, expanded=True)
