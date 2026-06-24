@@ -21,6 +21,7 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
 )
+from src.services.draft_day_runtime_state_service import load_runtime_state, record_trade_event
 from src.services.draft_day_trade_lab_service import (
     NOT_ENOUGH_INFORMATION,
     add_trade_item,
@@ -40,6 +41,7 @@ from src.services.draft_day_trade_lab_service import (
 )
 
 SESSION_KEY = "draft_day_v1_trading_lab_builder"
+RUNTIME_STATE_KEY = "draft_day_v2_trade_lab_runtime_state"
 
 bundle = load_frozen_board()
 trade_frame, trade_path = load_lane_prop_file("trading_lab", "trade_helper_context.csv")
@@ -65,6 +67,8 @@ stop_if_board_blocked(bundle)
 if SESSION_KEY not in st.session_state:
     st.session_state[SESSION_KEY] = empty_trade_state()
 st.session_state[SESSION_KEY] = copy_trade_state(st.session_state[SESSION_KEY])
+if RUNTIME_STATE_KEY not in st.session_state:
+    st.session_state[RUNTIME_STATE_KEY] = load_runtime_state(mode="live")
 
 lookup = build_trade_item_lookup(bundle.frame, trade_frame, pick_frame)
 player_select = player_options(lookup)
@@ -231,6 +235,87 @@ def _render_diagnostics() -> None:
             )
 
 
+def _render_trade_finder() -> None:
+    st.subheader("Trade Finder")
+    st.caption(
+        "Use when the current pick feels bad: find conservative trade-back structures from "
+        "existing pick context. Decision support only; no trade calculator."
+    )
+    if pick_frame.empty:
+        st.warning(NOT_ENOUGH_INFORMATION)
+        return
+    pick_labels = pick_frame.get("pick_label", pick_frame.index.to_series()).astype(str).tolist()
+    current_pick = st.selectbox("Current pick to shop", pick_labels, key="trade_finder_pick")
+    later_picks = [label for label in pick_labels if label != current_pick]
+    target_pick = st.selectbox(
+        "Candidate later pick received",
+        later_picks or pick_labels,
+        key="trade_finder_later_pick",
+    )
+    future_pick = st.text_input(
+        "Future pick / extra context",
+        value="2028 1st",
+        key="trade_finder_future_pick",
+    )
+    counterparty = st.text_input(
+        "Counterparty",
+        value="Trade partner",
+        key="trade_finder_counterparty",
+    )
+    st.info(
+        f"Conservative structure: NWR sends {current_pick}; NWR receives "
+        f"{future_pick} + {target_pick}. Human judgment required."
+    )
+    if st.button("Record Accepted Trade-Back Event", key="trade_finder_accept"):
+        st.session_state[RUNTIME_STATE_KEY] = record_trade_event(
+            st.session_state[RUNTIME_STATE_KEY],
+            trade_type="Trade Finder accepted trade-back",
+            counterparty=counterparty,
+            sends=current_pick,
+            receives=f"{future_pick} + {target_pick}",
+            notes="Recorded from Trade Finder V2 decision-support tab.",
+        )
+        st.success("Accepted trade-back event recorded in local draft runtime log.")
+
+
+def _render_trade_for() -> None:
+    st.subheader("Trade For")
+    st.caption(
+        "Use when a player is falling: estimate a conservative pick-acquisition structure "
+        "from available pick context. No trade calculator or final advice."
+    )
+    if not player_select:
+        st.warning(NOT_ENOUGH_INFORMATION)
+        return
+    player_label = st.selectbox("Falling player", list(player_select), key="trade_for_player")
+    pick_labels = pick_frame.get("pick_label", pick_frame.index.to_series()).astype(str).tolist()
+    target_pick = st.selectbox("Pick to acquire", pick_labels, key="trade_for_pick")
+    offer = st.text_input(
+        "Possible offer",
+        value="Future pick or later current pick",
+        key="trade_for_offer",
+    )
+    counterparty = st.text_input(
+        "Pick owner / counterparty",
+        value="Pick owner",
+        key="trade_for_counterparty",
+    )
+    st.info(
+        f"Review structure: acquire {target_pick} for {player_label}; possible send: {offer}. "
+        "Compare manually against roster need and tiers."
+    )
+    if st.button("Record Accepted Trade-For Event", key="trade_for_accept"):
+        st.session_state[RUNTIME_STATE_KEY] = record_trade_event(
+            st.session_state[RUNTIME_STATE_KEY],
+            trade_type="Trade For accepted pick acquisition",
+            counterparty=counterparty,
+            sends=offer,
+            receives=target_pick,
+            notes=f"Target player context: {player_label}",
+        )
+        st.success("Accepted trade-for event recorded in local draft runtime log.")
+
+
 def _remove_options(
     side_keys: list[str],
     lookup: dict[str, dict[str, object]],
@@ -243,7 +328,15 @@ def _remove_options(
 
 
 _render_source_metrics(counts)
-_render_builder(player_select, pick_select)
-_render_summary(lookup)
-_render_selected_items(lookup)
+builder_tab, finder_tab, trade_for_tab = st.tabs(
+    ["Package Builder", "Trade Finder", "Trade For"]
+)
+with builder_tab:
+    _render_builder(player_select, pick_select)
+    _render_summary(lookup)
+    _render_selected_items(lookup)
+with finder_tab:
+    _render_trade_finder()
+with trade_for_tab:
+    _render_trade_for()
 _render_diagnostics()

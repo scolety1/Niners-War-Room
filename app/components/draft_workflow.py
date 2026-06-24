@@ -3,6 +3,17 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.services.draft_day_runtime_state_service import (
+    apply_trade_events_to_pick_frame,
+    event_rows,
+    export_runtime_state,
+    load_runtime_state,
+    record_trade_event,
+    reset_runtime_state,
+    runtime_paths,
+    save_runtime_state,
+    update_workflow_state,
+)
 from src.services.draft_day_workflow_service import (
     DraftWorkflowError,
     assign_player_to_pick,
@@ -22,17 +33,6 @@ from src.services.draft_day_workflow_service import (
     validate_no_duplicate_assignments,
     with_workflow_columns,
     workflow_summary,
-)
-from src.services.draft_day_runtime_state_service import (
-    apply_trade_events_to_pick_frame,
-    event_rows,
-    export_runtime_state,
-    load_runtime_state,
-    record_trade_event,
-    reset_runtime_state,
-    runtime_paths,
-    save_runtime_state,
-    update_workflow_state,
 )
 
 
@@ -339,14 +339,18 @@ def _render_pick_controls(
             )
             player_row = _row_for_player_key(board_frame, player_options[player_label])
             pick_row = _row_for_pick(pick_frame, pick_options[pick_label])
+            assigned_player = (
+                player_row.get("player", player_label) if player_row else player_label
+            )
+            assigned_pick = pick_row.get("pick_label", pick_label) if pick_row else pick_label
             runtime_state = update_workflow_state(
                 st.session_state[runtime_state_key],
                 next_state,
                 event_type="pick_assigned",
                 event_detail={
-                    "player": player_row.get("player", player_label) if player_row else player_label,
+                    "player": assigned_player,
                     "position": player_row.get("position", "") if player_row else "",
-                    "pick_label": pick_row.get("pick_label", pick_label) if pick_row else pick_label,
+                    "pick_label": assigned_pick,
                     "overall_pick": pick_options[pick_label],
                 },
             )
