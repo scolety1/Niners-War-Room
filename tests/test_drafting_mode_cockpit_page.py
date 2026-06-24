@@ -52,6 +52,26 @@ def test_drafting_mode_deep_tool_links_carry_session_type_to_cheat_sheets() -> N
     text = _text("app/pages/19_drafting_mode_v2.py")
 
     assert '("Cheat Sheets", f"/cheat-sheets?session_type={session_query}")' in text
+    assert 'with st.expander("Tools / Review", expanded=False):' in text
+    assert "Secondary tools stay available here and by direct URL." in text
+
+
+def test_drafting_mode_selection_and_decision_panel_copy_are_clear() -> None:
+    text = _text("app/pages/19_drafting_mode_v2.py")
+
+    assert "Select player for Decision Panel" in text
+    assert "Selection drives the right-side decision summary" in text
+    assert "**Selected:" in text
+    assert "Why this player" in text
+    assert "Review checks" in text
+    assert "Choose a player to see the decision summary." in text
+
+
+def test_settings_data_health_label_spacing_is_consistent_in_cockpit() -> None:
+    text = _text("app/pages/19_drafting_mode_v2.py")
+
+    assert "Settings / Data Health" in text
+    assert "Settings/Data Health" not in text
 
 
 def test_cheat_sheets_reads_cockpit_session_type_when_launched_from_cockpit() -> None:
@@ -74,12 +94,15 @@ def test_deep_pages_expose_back_to_drafting_mode_link() -> None:
     pages = [
         "app/pages/18_cheat_sheets_v2.py",
         "app/pages/20_final_board_v1.py",
+        "app/pages/21_live_draft_room_v1.py",
         "app/pages/22_player_compare_v1.py",
         "app/pages/23_trading_lab_v1.py",
+        "app/pages/24_mock_draft_v1.py",
         "app/pages/28_settings_data_health_v1.py",
         "app/pages/29_post_draft_mode_v2.py",
+        "app/pages/31_unified_universe_review_v1.py",
     ]
 
     for page in pages:
         text = _text(page)
-        assert 'st.link_button("Back to Drafting Mode", "/drafting-mode")' in text
+        assert '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>' in text

@@ -343,7 +343,10 @@ page_header(
         ("Display only", "review"),
     ),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
 if runtime_mode == "mock":
     st.warning("Practice state only — does not affect live draft.")
 render_frozen_baseline_badge(bundle)

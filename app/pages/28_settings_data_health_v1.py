@@ -76,7 +76,10 @@ page_header(
         ("Market display-only", "safe"),
     ),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
 
 st.caption(
     "What this means: GREEN is usable, YELLOW means review the caveat before acting, "

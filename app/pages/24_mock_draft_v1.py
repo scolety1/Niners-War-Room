@@ -39,6 +39,11 @@ page_header(
         ("No automatic recommendations", "safe"),
     ),
 )
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption("Deep tool: manual practice workflow. Mock state does not affect live draft state.")
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

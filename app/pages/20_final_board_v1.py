@@ -489,7 +489,14 @@ page_header(
         ),
     ),
 )
-st.link_button("Back to Drafting Mode", "/drafting-mode")
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption(
+    "Deep tool: full dynasty source board. Market and Outcome context are display-only and "
+    "never replace Dynasty Rank, Final Board Rank, tiers, or model values."
+)
 
 if not bundle.loaded:
     st.error("Frozen Final Draft Board V1 baseline is unavailable; baseline context is blocked.")

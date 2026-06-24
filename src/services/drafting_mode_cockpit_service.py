@@ -135,9 +135,15 @@ def tier_count_rows(frame: pd.DataFrame) -> list[dict[str, str]]:
     tier_column = "dynasty_asset_tier" if "dynasty_asset_tier" in frame.columns else "final_tier"
     if tier_column not in frame.columns:
         return []
-    counts = frame[tier_column].replace("", NOT_ENOUGH_INFORMATION).astype(str).value_counts()
+    tier_labels = frame[tier_column].replace("", NOT_ENOUGH_INFORMATION).astype(str).map(
+        _friendly_tier_label
+    )
+    counts = tier_labels.value_counts()
     return [
-        {"tier": tier, "available_count": str(count)}
+        {
+            "Tier Availability": _tier_count_label(str(tier), int(count)),
+            "Available": str(count),
+        }
         for tier, count in counts.sort_index().items()
     ]
 
@@ -165,8 +171,10 @@ def decision_panel_rows(player: dict[str, Any] | None) -> list[dict[str, str]]:
     if not player:
         return [
             {
-                "field": "Selected player",
-                "value": "Select a player from the board to see decision summary.",
+                "field": "Decision Panel",
+                "value": (
+                    "Choose a player from the selector to see rank, reasons, and review flags."
+                ),
             }
         ]
     flags = red_flags_for_player(player)
@@ -329,6 +337,19 @@ def _market_note(player: dict[str, Any]) -> str:
         if value != NOT_ENOUGH_INFORMATION:
             return value
     return NOT_ENOUGH_INFORMATION
+
+
+def _tier_count_label(tier: str, count: int) -> str:
+    suffix = "available" if tier.lower().startswith("tier ") else ""
+    return " - ".join(part for part in (tier, f"{count} {suffix}".strip()) if part)
+
+
+def _friendly_tier_label(tier: str) -> str:
+    text = str(tier or "").strip()
+    if not text or text == NOT_ENOUGH_INFORMATION:
+        return "Review Needed"
+    head = text.split(":", maxsplit=1)[0].strip()
+    return head or "Review Needed"
 
 
 def _value(player: dict[str, Any], key: str) -> str:

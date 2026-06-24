@@ -15,19 +15,9 @@ APP_DIR = Path("app")
 
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
-        "Drafting Mode V2",
-        "Cheat Sheets V2",
-        "Live Draft Room",
-        "Dynasty Rankings",
-        "Player Compare",
-        "Trading Lab",
+        "Drafting Mode",
         "Refresh Data",
-        "Mock Draft",
-        "Draft Prep",
-        "Outcome Diagnostics",
-        "Decision Board",
         "Settings / Data Health",
-        "Post-Draft Mode V2",
     ]
 
 
@@ -36,8 +26,19 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
     visible_titles = {page.title for page in VISIBLE_NAVIGATION_PAGES}
 
     assert hidden_titles == {
+        "Drafting Mode Root",
+        "Rankings",
         "Dynasty Rankings Home",
         "Dynasty Rankings URL Alias",
+        "Cheat Sheets",
+        "Live Draft Room",
+        "Mock Draft",
+        "Player Compare",
+        "Trading Lab",
+        "Post-Draft Mode",
+        "Draft Prep",
+        "Outcome Diagnostics",
+        "Decision Board",
         "Legacy Dynasty Rankings",
         "Legacy Draft Prep",
         "Legacy Live Draft Room",
@@ -81,14 +82,54 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_refresh_data_nav_precedes_mock_draft() -> None:
     titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
 
-    assert titles.index("Refresh Data") < titles.index("Mock Draft")
+    assert titles == ["Drafting Mode", "Refresh Data", "Settings / Data Health"]
 
 
-def test_exactly_one_visible_default_page() -> None:
-    defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
+def test_no_special_default_page_keeps_drafting_mode_direct_route_stable() -> None:
+    visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
+    all_defaults = [page for page in ALL_NAVIGATION_PAGES if page.default]
 
-    assert [page.title for page in defaults] == ["Dynasty Rankings"]
-    assert sum(1 for page in ALL_NAVIGATION_PAGES if page.default) == 1
+    assert visible_defaults == []
+    assert [(page.title, page.visible) for page in all_defaults] == [
+        ("Drafting Mode Root", False)
+    ]
+    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "drafting-mode"
+
+
+def test_required_direct_routes_remain_registered() -> None:
+    route_map = {page.url_path: page for page in ALL_NAVIGATION_PAGES}
+
+    for route in {
+        "drafting-mode",
+        "rankings",
+        "cheat-sheets",
+        "live-draft-room",
+        "mock-draft",
+        "player-compare",
+        "trading-lab",
+        "post-draft-mode",
+        "settings-data-health",
+        "refresh-data",
+        "unified-universe-review",
+    }:
+        assert route in route_map
+
+
+def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
+    visible_routes = {page.url_path for page in VISIBLE_NAVIGATION_PAGES}
+    hidden_routes = {page.url_path for page in HIDDEN_ADVANCED_PAGES}
+
+    assert visible_routes == {"drafting-mode", "refresh-data", "settings-data-health"}
+    assert {
+        "rankings",
+        "cheat-sheets",
+        "live-draft-room",
+        "mock-draft",
+        "player-compare",
+        "trading-lab",
+        "post-draft-mode",
+        "unified-universe-review",
+    }.issubset(hidden_routes)
 
 
 def test_command_center_is_the_first_click_ui_framework() -> None:

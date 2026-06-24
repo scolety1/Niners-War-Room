@@ -122,12 +122,14 @@ def _set_runtime_state(state: dict[str, object]) -> None:
 def _action_links(mode: str) -> None:
     session_query = _valid_session_mode(mode)
     links = [
-        ("Full Rankings", "/rankings"),
+        ("Rankings", "/rankings"),
         ("Cheat Sheets", f"/cheat-sheets?session_type={session_query}"),
-        ("Full Player Compare", "/player-compare"),
-        ("Full Trading Lab", "/trading-lab"),
+        ("Live Draft Room", "/live-draft-room"),
+        ("Mock Draft", "/mock-draft"),
+        ("Player Compare", "/player-compare"),
+        ("Trading Lab", "/trading-lab"),
         ("Post-Draft Mode", "/post-draft-mode"),
-        ("Settings/Data Health", "/settings-data-health"),
+        ("Unified Universe Review", "/unified-universe-review"),
     ]
     for label, path in links:
         st.link_button(label, path, use_container_width=True)
@@ -174,7 +176,7 @@ def _render_top_bar(summary, session_mode: str) -> None:
         )
         st.success("Exported local draft log.")
     action_cols[4].link_button(
-        "Settings/Data Health",
+        "Settings / Data Health",
         "/settings-data-health",
         use_container_width=True,
     )
@@ -258,7 +260,8 @@ def _render_left_rail(
         else:
             st.write("No ownership overrides recorded.")
 
-    with st.expander("Deep tools", expanded=True):
+    with st.expander("Tools / Review", expanded=False):
+        st.caption("Secondary tools stay available here and by direct URL.")
         _action_links(session_mode)
 
 
@@ -329,7 +332,12 @@ def _render_center_board(
     if not options:
         st.warning("No available players match the current filters.")
         return filtered, None, None
-    selected_label = st.selectbox("Select player", list(options), key=f"{SESSION_KEY}_selected")
+    selected_label = st.selectbox(
+        "Select player for Decision Panel",
+        list(options),
+        key=f"{SESSION_KEY}_selected",
+        help="Selection drives the right-side decision summary and action buttons.",
+    )
     selected = selected_player_row(filtered, options[selected_label])
 
     comparison_options = {"None": ""}
@@ -430,11 +438,21 @@ def _render_right_panel(
     comparison: dict[str, object] | None,
 ) -> None:
     st.markdown("#### Decision Panel")
-    st.dataframe(
-        pd.DataFrame(decision_panel_rows(selected)),
-        use_container_width=True,
-        hide_index=True,
-    )
+    rows = {row["field"]: row["value"] for row in decision_panel_rows(selected)}
+    if selected is None:
+        st.info(rows.get("Decision Panel", "Choose a player to see the decision summary."))
+    else:
+        st.markdown(f"**Selected: {rows.get('Player', 'Player')}**")
+        st.caption(rows.get("Position / Team / Age", ""))
+        metric_cols = st.columns(2)
+        metric_cols[0].metric("NWR context", rows.get("NWR rank / tier", "Not enough information"))
+        metric_cols[1].metric("Market sanity", rows.get("Market sanity", "Not enough information"))
+        st.markdown("**Why this player**")
+        st.write(rows.get("Why draft", "Not enough information"))
+        st.markdown("**Review checks**")
+        st.write(rows.get("Main caveat", "Not enough information"))
+        st.caption(rows.get("Red flags", "No red flags in current context."))
+        st.caption(rows.get("Display-only guardrail", ""))
     with st.expander("Compare decision summary", expanded=bool(comparison)):
         st.dataframe(
             pd.DataFrame(compare_decision_rows(selected, comparison)),

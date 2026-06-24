@@ -19,35 +19,9 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Drafting Mode V2",
+        title="Drafting Mode",
         file_path="pages/19_drafting_mode_v2.py",
         url_path="drafting-mode",
-    ),
-    NavigationPageSpec(
-        title="Cheat Sheets V2",
-        file_path="pages/18_cheat_sheets_v2.py",
-        url_path="cheat-sheets",
-    ),
-    NavigationPageSpec(
-        title="Live Draft Room",
-        file_path="pages/21_live_draft_room_v1.py",
-        url_path="live-draft-room",
-    ),
-    NavigationPageSpec(
-        title="Dynasty Rankings",
-        file_path="pages/20_final_board_v1.py",
-        url_path="home",
-        default=True,
-    ),
-    NavigationPageSpec(
-        title="Player Compare",
-        file_path="pages/22_player_compare_v1.py",
-        url_path="player-compare",
-    ),
-    NavigationPageSpec(
-        title="Trading Lab",
-        file_path="pages/23_trading_lab_v1.py",
-        url_path="trading-lab",
     ),
     NavigationPageSpec(
         title="Refresh Data",
@@ -55,38 +29,92 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="refresh-data",
     ),
     NavigationPageSpec(
+        title="Settings / Data Health",
+        file_path="pages/28_settings_data_health_v1.py",
+        url_path="settings-data-health",
+    ),
+)
+
+HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
+    NavigationPageSpec(
+        title="Drafting Mode Root",
+        file_path="pages/32_drafting_mode_root_v1.py",
+        url_path="drafting-mode-root",
+        default=True,
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Rankings",
+        file_path="pages/20_final_board_v1.py",
+        url_path="rankings",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Dynasty Rankings Home",
+        file_path="pages/20_final_board_v1.py",
+        url_path="home",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Dynasty Rankings URL Alias",
+        file_path="pages/20_final_board_v1.py",
+        url_path="draft-day-home",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Cheat Sheets",
+        file_path="pages/18_cheat_sheets_v2.py",
+        url_path="cheat-sheets",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Live Draft Room",
+        file_path="pages/21_live_draft_room_v1.py",
+        url_path="live-draft-room",
+        visible=False,
+    ),
+    NavigationPageSpec(
         title="Mock Draft",
         file_path="pages/24_mock_draft_v1.py",
         url_path="mock-draft",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Player Compare",
+        file_path="pages/22_player_compare_v1.py",
+        url_path="player-compare",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Trading Lab",
+        file_path="pages/23_trading_lab_v1.py",
+        url_path="trading-lab",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Post-Draft Mode",
+        file_path="pages/29_post_draft_mode_v2.py",
+        url_path="post-draft-mode",
+        visible=False,
     ),
     NavigationPageSpec(
         title="Draft Prep",
         file_path="pages/25_draft_prep_v1.py",
         url_path="draft-room",
+        visible=False,
     ),
     NavigationPageSpec(
         title="Outcome Diagnostics",
         file_path="pages/26_outcome_columns_v1.py",
         url_path="outcome-columns",
+        visible=False,
     ),
     NavigationPageSpec(
         title="Decision Board",
         file_path="pages/27_decision_board_v1.py",
         url_path="decision-board",
+        visible=False,
     ),
-    NavigationPageSpec(
-        title="Settings / Data Health",
-        file_path="pages/28_settings_data_health_v1.py",
-        url_path="settings-data-health",
-    ),
-    NavigationPageSpec(
-        title="Post-Draft Mode V2",
-        file_path="pages/29_post_draft_mode_v2.py",
-        url_path="post-draft-mode",
-    ),
-)
-
-HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Unified Universe Review",
         file_path="pages/31_unified_universe_review_v1.py",
@@ -103,18 +131,6 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Post-Draft Mode Legacy Alias",
         file_path="pages/29_post_draft_mode_v2.py",
         url_path="post-draft",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Dynasty Rankings Home",
-        file_path="pages/20_final_board_v1.py",
-        url_path="rankings",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Dynasty Rankings URL Alias",
-        file_path="pages/20_final_board_v1.py",
-        url_path="draft-day-home",
         visible=False,
     ),
     NavigationPageSpec(

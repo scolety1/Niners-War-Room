@@ -44,6 +44,11 @@ page_header(
         ("Persistent local draft state", "safe"),
     ),
 )
+st.markdown(
+    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    unsafe_allow_html=True,
+)
+st.caption("Deep tool: live draft execution surface. Drafting Mode remains the cockpit.")
 stop_if_board_blocked(bundle)
 
 if pick_path is None or pick_frame.empty:
