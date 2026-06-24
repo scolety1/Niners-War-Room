@@ -12,99 +12,174 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.ui_framework import page_header
 from src.services.data_refresh_orchestrator_service import (
+    CHECK_PROTECTED_ARTIFACTS,
+    FULL_SAFE_REFRESH,
+    MANUAL_SOURCES_CHECKLIST,
+    QUICK_REFRESH,
     build_refresh_registry,
+    export_results_csv,
     refresh_results_table,
-    run_data_refresh,
+    run_check_protected_artifacts,
+    run_full_safe_refresh,
+    run_manual_sources_checklist,
+    run_quick_refresh,
     validate_refresh_result_schema,
 )
 
+RESULT_COLUMNS = [
+    "run_id",
+    "run_timestamp",
+    "loader_mode",
+    "source_id",
+    "source_name",
+    "loader_category",
+    "action_type",
+    "refreshed",
+    "configured",
+    "freshness",
+    "expected_artifacts",
+    "found_artifacts",
+    "user_explanation",
+    "model_use_warning",
+]
 
-def _display_results(rows: list[dict[str, object]]) -> pd.DataFrame:
-    columns = [
-        "source_name",
-        "status",
-        "refreshed",
-        "user_message",
-        "timestamp",
-        "artifact_updated",
-        "caveat",
-    ]
-    frame = pd.DataFrame(rows)
-    if frame.empty:
-        return pd.DataFrame(columns=columns)
-    return frame.loc[:, columns].rename(
-        columns={
-            "source_name": "source",
-            "user_message": "message",
-            "artifact_updated": "artifact updated",
-        }
-    )
+REGISTRY_COLUMNS = [
+    "source_id",
+    "source_name",
+    "source_kind",
+    "loader_category",
+    "enabled_in_quick_refresh",
+    "enabled_in_full_safe_refresh",
+    "requires_api_key",
+    "required_env_vars",
+    "runner_exists",
+    "configured",
+    "safe_to_pull",
+    "protected_artifact",
+    "writes_raw_cache",
+    "raw_cache_location",
+    "writes_tracked_artifact",
+    "freshness_policy",
+    "model_use_allowed",
+    "model_use_warning",
+    "default_action",
+    "failure_mode",
+    "user_explanation",
+]
+
+
+def _run_and_store(mode: str) -> None:
+    runners = {
+        QUICK_REFRESH: run_quick_refresh,
+        FULL_SAFE_REFRESH: run_full_safe_refresh,
+        CHECK_PROTECTED_ARTIFACTS: run_check_protected_artifacts,
+        MANUAL_SOURCES_CHECKLIST: run_manual_sources_checklist,
+    }
+    with st.spinner(f"Running {mode.replace('_', ' ').title()}..."):
+        run = runners[mode]()
+    rows = refresh_results_table(run)
+    validate_refresh_result_schema(rows)
+    st.session_state["refresh_data_last_run"] = {
+        "run": run,
+        "rows": rows,
+        "summary": _summary_rows(rows),
+    }
 
 
 def _summary_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    refreshed = [row for row in rows if row.get("refreshed") is True]
-    skipped = [
-        row
-        for row in rows
-        if str(row.get("status")) in {"SKIPPED", "NOT_CONFIGURED", "BLOCKED"}
-    ]
-    failed = [row for row in rows if row.get("status") == "RED"]
-    return [
-        {"metric": "sources refreshed", "value": len(refreshed)},
-        {"metric": "sources skipped / not configured / blocked", "value": len(skipped)},
-        {"metric": "failed sources", "value": len(failed)},
-    ]
+    values = {
+        "refreshed": sum(1 for row in rows if row.get("action_type") == "REFRESHED"),
+        "checked only": sum(1 for row in rows if row.get("action_type") == "CHECK_ONLY"),
+        "skipped by policy": sum(
+            1 for row in rows if row.get("action_type") == "SKIPPED_BY_POLICY"
+        ),
+        "not configured": sum(1 for row in rows if row.get("action_type") == "NOT_CONFIGURED"),
+        "manual blocked": sum(1 for row in rows if row.get("action_type") == "BLOCKED_MANUAL"),
+        "failed": sum(1 for row in rows if row.get("action_type") == "FAILED"),
+    }
+    return [{"metric": key, "value": value} for key, value in values.items()]
+
+
+def _display_results(rows: list[dict[str, object]]) -> pd.DataFrame:
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return pd.DataFrame(columns=RESULT_COLUMNS)
+    return frame.loc[:, RESULT_COLUMNS]
+
+
+def _display_registry() -> pd.DataFrame:
+    rows = []
+    for entry in build_refresh_registry():
+        row = entry.__dict__.copy()
+        row["required_env_vars"] = "; ".join(entry.required_env_vars)
+        rows.append(row)
+    return pd.DataFrame(rows).loc[:, REGISTRY_COLUMNS]
 
 
 page_header(
     "Refresh Data",
-    eyebrow="Source Refresh",
+    eyebrow="Safe Data Loader V1",
     description=(
-        "Pull current data from configured safe sources and show exactly what was "
-        "refreshed, skipped, blocked, or left manual."
+        "Run current-data refreshes from the source registry. Full Safe Refresh pulls "
+        "every approved eligible current source; protected and manual sources are "
+        "checked or listed, not pulled."
     ),
     status_items=(
         ("No model/rank changes", "safe"),
         ("Manual sources stay manual", "review"),
-        ("Local ignored status", "safe"),
+        ("Protected artifacts check-only", "safe"),
     ),
 )
 
 st.caption(
-    "Refresh Data does not auto-run. It does not mutate ranks, tiers, frozen board files, "
-    "latest_candidate/latest_approved, pinned snapshots, or runtime draft picks."
+    "Refreshed data does not automatically update rankings, model outputs, candidate files, "
+    "the frozen board, pinned snapshots, latest_candidate/latest_approved, or runtime draft state."
 )
 
-include_slow = st.checkbox(
-    "Include slow nflverse scheduled runner",
-    value=False,
-    help="Uses the existing local nflverse runner without candidate writes.",
+st.markdown("### Loader Modes")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    if st.button("Quick Refresh", type="primary", use_container_width=True):
+        _run_and_store(QUICK_REFRESH)
+with col2:
+    if st.button("Full Safe Refresh", use_container_width=True):
+        _run_and_store(FULL_SAFE_REFRESH)
+with col3:
+    if st.button("Check Protected Artifacts", use_container_width=True):
+        _run_and_store(CHECK_PROTECTED_ARTIFACTS)
+with col4:
+    if st.button("Manual Sources Checklist", use_container_width=True):
+        _run_and_store(MANUAL_SOURCES_CHECKLIST)
+
+st.info(
+    "Quick Refresh pulls Sleeper league state and DynastyProcess market baseline. "
+    "Full Safe Refresh also includes the nflverse runner and CFBD only when CFBD_API_KEY "
+    "is configured. Vendor, Gmail, frozen/latest/pinned, model, Outcome, PDF, ADP, and "
+    "runtime sources are not pulled automatically."
 )
 
-registry = build_refresh_registry(include_slow_sources=include_slow)
-with st.expander("Source registry", expanded=False):
-    st.dataframe(
-        pd.DataFrame([entry.__dict__ for entry in registry]),
-        use_container_width=True,
-        hide_index=True,
+with st.expander("Manual Sources Checklist", expanded=True):
+    st.markdown(
+        "\n".join(
+            [
+                "- Gmail league-history evidence: privacy-gated manual evidence intake; "
+                "raw email bodies are not pulled.",
+                "- RotoWire/vendor exports: manual/export-only and never scraped.",
+                "- FantasyPros/vendor/projection exports: manual/keyed export only; no scraping.",
+                "- PDFs/manual evidence files: user-provided and reviewed before use.",
+            ]
+        )
     )
 
-if st.button("Refresh Data", type="primary", use_container_width=False):
-    with st.spinner("Refreshing configured safe sources..."):
-        run = run_data_refresh(include_slow_sources=include_slow)
-    rows = refresh_results_table(run)
-    validate_refresh_result_schema(rows)
-    st.session_state["refresh_data_last_run"] = {
-        "overall_status": run.overall_status,
-        "rows": rows,
-        "summary": _summary_rows(rows),
-        "finished_at_utc": run.finished_at_utc,
-    }
+with st.expander("Source Registry", expanded=False):
+    st.dataframe(_display_registry(), use_container_width=True, hide_index=True)
 
 last_run = st.session_state.get("refresh_data_last_run")
 if last_run:
-    st.subheader("Freshness Summary")
-    st.metric("Overall", str(last_run["overall_status"]))
+    run = last_run["run"]
+    st.subheader("Run Summary")
+    st.metric("Overall", run.overall_status)
+    st.caption(f"{run.loader_mode} finished at {run.finished_at_utc}")
     st.dataframe(
         pd.DataFrame(last_run["summary"]),
         use_container_width=True,
@@ -116,5 +191,11 @@ if last_run:
         use_container_width=True,
         hide_index=True,
     )
+    st.download_button(
+        "Export Results",
+        data=export_results_csv(run),
+        file_name=f"{run.run_id}_{run.loader_mode.lower()}_results.csv",
+        mime="text/csv",
+    )
 else:
-    st.info("No manual Refresh Data run has been started in this session.")
+    st.info("No safe loader run has been started in this session.")
