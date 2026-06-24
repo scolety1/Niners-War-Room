@@ -77,11 +77,17 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Post-Draft Mode V2",
         file_path="pages/29_post_draft_mode_v2.py",
-        url_path="post-draft",
+        url_path="post-draft-mode",
     ),
 )
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
+    NavigationPageSpec(
+        title="Post-Draft Mode Legacy Alias",
+        file_path="pages/29_post_draft_mode_v2.py",
+        url_path="post-draft",
+        visible=False,
+    ),
     NavigationPageSpec(
         title="Dynasty Rankings Home",
         file_path="pages/20_final_board_v1.py",
