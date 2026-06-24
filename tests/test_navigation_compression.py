@@ -15,15 +15,19 @@ APP_DIR = Path("app")
 
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
+        "Drafting Mode V2",
+        "Cheat Sheets V2",
         "Live Draft Room",
         "Dynasty Rankings",
         "Player Compare",
         "Trading Lab",
+        "Refresh Data",
         "Mock Draft",
         "Draft Prep",
         "Outcome Diagnostics",
         "Decision Board",
         "Settings / Data Health",
+        "Post-Draft Mode V2",
     ]
 
 
@@ -45,6 +49,8 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
         "Command Center Legacy Alias",
         "Trade Lab Legacy Alias",
         "Historical Replay Advanced",
+        "Settings Data Health Legacy Alias",
+        "Post-Draft Mode Legacy Alias",
         "War Board",
         "My Team",
         "League Targets",
@@ -69,6 +75,12 @@ def test_navigation_page_files_exist_and_compile() -> None:
         page_path = app_page_path(APP_DIR, page)
         assert page_path.exists(), page_path
         py_compile.compile(str(page_path), doraise=True)
+
+
+def test_refresh_data_nav_precedes_mock_draft() -> None:
+    titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
+
+    assert titles.index("Refresh Data") < titles.index("Mock Draft")
 
 
 def test_exactly_one_visible_default_page() -> None:

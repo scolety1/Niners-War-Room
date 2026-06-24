@@ -50,6 +50,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="trading-lab",
     ),
     NavigationPageSpec(
+        title="Refresh Data",
+        file_path="pages/24_refresh_data_v1.py",
+        url_path="refresh-data",
+    ),
+    NavigationPageSpec(
         title="Mock Draft",
         file_path="pages/24_mock_draft_v1.py",
         url_path="mock-draft",

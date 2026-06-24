@@ -20,6 +20,7 @@ def _value(report, section: str, check: str) -> str:
     frames = {
         "Board": report.board_health,
         "Market": report.market_health,
+        "Refresh Data": report.refresh_health,
         "Runtime": report.runtime_health,
         "Evidence": report.evidence_health,
         "Missing data": report.missing_data_health,
@@ -34,6 +35,7 @@ def _status(report, section: str, check: str) -> str:
     frames = {
         "Board": report.board_health,
         "Market": report.market_health,
+        "Refresh Data": report.refresh_health,
         "Runtime": report.runtime_health,
         "Evidence": report.evidence_health,
         "Missing data": report.missing_data_health,
@@ -125,9 +127,43 @@ def test_dashboard_status_cards_are_compact(tmp_path: Path) -> None:
         "Frozen baseline",
         "Full dynasty",
         "Market baseline",
+        "Refresh Data",
         "Runtime state",
         "Model evidence",
     }
+
+
+def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:
+    refresh_status = tmp_path / "latest_refresh_status.json"
+    refresh_status.write_text(
+        json.dumps(
+            {
+                "run_id": "20260624_120000",
+                "finished_at_utc": "2026-06-24T12:00:00+00:00",
+                "overall_status": "YELLOW",
+                "results": [
+                    {
+                        "source_id": "dynastyprocess_market_baseline",
+                        "source_name": "DynastyProcess market baseline",
+                        "status": "GREEN",
+                        "refreshed": True,
+                        "user_message": "ok",
+                    },
+                    {"source_id": "rotowire_vendor_exports", "status": "BLOCKED"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_data_health_dashboard(
+        runtime_root=tmp_path / "runtime",
+        refresh_status_path=refresh_status,
+    )
+
+    assert _value(report, "Refresh Data", "Sources refreshed") == "1"
+    assert _value(report, "Refresh Data", "Blocked/not configured sources") == "1"
+    assert _value(report, "Refresh Data", "DynastyProcess freshness after refresh") == "GREEN"
 
 
 def test_settings_data_health_route_and_legacy_alias_exist() -> None:

@@ -9,6 +9,12 @@ from typing import Any
 
 import pandas as pd
 
+from src.services.data_refresh_orchestrator_service import (
+    DEFAULT_STATUS_PATH as DEFAULT_REFRESH_STATUS_PATH,
+)
+from src.services.data_refresh_orchestrator_service import (
+    load_latest_refresh_status,
+)
 from src.services.draft_day_app_v1_service import (
     EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_PINNED_MANIFEST_HASH,
@@ -75,6 +81,7 @@ class HealthDashboardReport:
     app_status: pd.DataFrame
     board_health: pd.DataFrame
     market_health: pd.DataFrame
+    refresh_health: pd.DataFrame
     runtime_health: pd.DataFrame
     evidence_health: pd.DataFrame
     missing_data_health: pd.DataFrame
@@ -86,11 +93,13 @@ def build_data_health_dashboard(
     *,
     runtime_root: Path | None = None,
     repo_root: Path = REPO_ROOT,
+    refresh_status_path: Path = DEFAULT_REFRESH_STATUS_PATH,
 ) -> HealthDashboardReport:
     sections = {
         "app_status": _app_status(repo_root),
         "board_health": _board_health(),
         "market_health": _market_health(),
+        "refresh_health": _refresh_health(refresh_status_path),
         "runtime_health": _runtime_health(runtime_root),
         "evidence_health": _evidence_health(),
         "missing_data_health": _missing_data_health(),
@@ -104,6 +113,7 @@ def build_data_health_dashboard(
         app_status=sections["app_status"],
         board_health=sections["board_health"],
         market_health=sections["market_health"],
+        refresh_health=sections["refresh_health"],
         runtime_health=sections["runtime_health"],
         evidence_health=sections["evidence_health"],
         missing_data_health=sections["missing_data_health"],
@@ -129,6 +139,11 @@ def compact_status_cards(report: HealthDashboardReport) -> list[dict[str, str]]:
             "Market baseline",
             _status_for_check(report.market_health, "DynastyProcess freshness"),
             _value_for_check(report.market_health, "DynastyProcess freshness"),
+        ),
+        _card(
+            "Refresh Data",
+            _status_for_check(report.refresh_health, "Last manual Refresh Data run"),
+            _value_for_check(report.refresh_health, "Last manual Refresh Data run"),
         ),
         _card(
             "Runtime state",
@@ -307,6 +322,86 @@ def _runtime_health(runtime_root: Path | None) -> pd.DataFrame:
                 "YELLOW",
                 "manual/local",
                 "Runtime draft state is manual local state, not official source truth.",
+            ),
+        ]
+    )
+
+
+def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:
+    payload = load_latest_refresh_status(status_path=refresh_status_path)
+    if not payload:
+        return _frame(
+            [
+                _row(
+                    "Refresh Data",
+                    "Last manual Refresh Data run",
+                    "YELLOW",
+                    "not run",
+                    "Use the Refresh Data control to pull configured safe sources.",
+                ),
+                _row(
+                    "Refresh Data",
+                    "DynastyProcess freshness after refresh",
+                    "YELLOW",
+                    NOT_ENOUGH_INFORMATION,
+                    "No Refresh Data status file exists yet.",
+                ),
+            ]
+        )
+
+    rows = payload.get("results", [])
+    refreshed = [row for row in rows if row.get("refreshed") is True]
+    skipped = [
+        row
+        for row in rows
+        if str(row.get("status")) in {"SKIPPED", "NOT_CONFIGURED"}
+    ]
+    blocked = [row for row in rows if str(row.get("status")) == "BLOCKED"]
+    failed = [row for row in rows if str(row.get("status")) == "RED"]
+    dynasty = next(
+        (
+            row
+            for row in rows
+            if row.get("source_id") == "dynastyprocess_market_baseline"
+        ),
+        {},
+    )
+    overall = str(payload.get("overall_status") or "YELLOW")
+    return _frame(
+        [
+            _row(
+                "Refresh Data",
+                "Last manual Refresh Data run",
+                _health_status_from_refresh(overall),
+                str(payload.get("finished_at_utc") or NOT_ENOUGH_INFORMATION),
+                f"Refresh run id: {payload.get('run_id') or NOT_ENOUGH_INFORMATION}.",
+            ),
+            _row("Refresh Data", "Sources refreshed", "GREEN", str(len(refreshed))),
+            _row(
+                "Refresh Data",
+                "Sources skipped",
+                "YELLOW" if skipped else "GREEN",
+                str(len(skipped)),
+            ),
+            _row(
+                "Refresh Data",
+                "Failed sources",
+                "RED" if failed else "GREEN",
+                str(len(failed)),
+            ),
+            _row(
+                "Refresh Data",
+                "Blocked/not configured sources",
+                "YELLOW" if blocked else "GREEN",
+                str(len(blocked)),
+                "Manual/vendor/key-gated sources remain explicit.",
+            ),
+            _row(
+                "Refresh Data",
+                "DynastyProcess freshness after refresh",
+                _health_status_from_refresh(str(dynasty.get("status") or "YELLOW")),
+                str(dynasty.get("status") or NOT_ENOUGH_INFORMATION),
+                str(dynasty.get("user_message") or ""),
             ),
         ]
     )
@@ -576,6 +671,14 @@ def _market_status(status: str) -> str:
     if str(status).startswith("GREEN"):
         return "GREEN"
     if str(status).startswith("RED"):
+        return "RED"
+    return "YELLOW"
+
+
+def _health_status_from_refresh(status: str) -> str:
+    if status == "GREEN":
+        return "GREEN"
+    if status == "RED":
         return "RED"
     return "YELLOW"
 
