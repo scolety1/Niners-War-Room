@@ -10,17 +10,24 @@ from src.services.draft_day_app_v1_service import (
 )
 
 
-def render_source_of_truth_badge(bundle: FrozenBoardBundle) -> None:
+def render_frozen_baseline_badge(bundle: FrozenBoardBundle) -> None:
     status = "GREEN" if bundle.loaded else "RED"
     source = str(bundle.source_path or "missing")
     st.info(
-        f"Source of truth: Frozen Final Draft Board V1 | {status} | "
-        f"{bundle.row_count} rows | {bundle.source_label} | {source}"
+        f"Frozen baseline checkpoint: Final Draft Board V1 | {status} | "
+        f"{bundle.row_count} rows | {bundle.source_label} | {source}. "
+        "This is not the full draftable-player universe."
     )
     for warning in bundle.warnings:
         st.warning(warning)
     for error in bundle.errors:
         st.error(error)
+
+
+def render_source_of_truth_badge(bundle: FrozenBoardBundle) -> None:
+    """Backward-compatible wrapper for pages that still import the old name."""
+
+    render_frozen_baseline_badge(bundle)
 
 
 def stop_if_board_blocked(bundle: FrozenBoardBundle) -> None:
@@ -41,7 +48,7 @@ def render_board_metrics(frame: pd.DataFrame) -> None:
         else 0
     )
     cols = st.columns(4)
-    cols[0].metric("Frozen rows", len(frame))
+    cols[0].metric("Frozen baseline rows", len(frame))
     cols[1].metric("Positions", positions)
     cols[2].metric("Manual flags", manual_count)
     cols[3].metric("Candidate statuses", candidates)

@@ -72,7 +72,7 @@ def render_draft_workflow(
     st.caption(
         " | ".join(
             (
-                "Source: Frozen Board + verified PDF free-agent overlay",
+                "Source: Frozen Baseline + verified PDF free-agent overlay",
                 f"Frozen rows: {frozen_rows}",
                 f"PDF FAs: {pdf_rows}",
                 f"Draftable rows: {len(board_frame)}",
@@ -230,7 +230,7 @@ def _render_filters(
             [
                 "Dynasty Asset Tiers",
                 "Candidate Best Available",
-                "Frozen Board Rank",
+                "Frozen Baseline Rank",
                 "ADP / Price Context",
             ],
             key=f"{session_key}_view_sort_mode",
@@ -238,7 +238,7 @@ def _render_filters(
         sort_default = {
             "Dynasty Asset Tiers": "Dynasty Asset Tier/Rank",
             "Candidate Best Available": "Candidate Rank",
-            "Frozen Board Rank": "Final Board Rank",
+            "Frozen Baseline Rank": "Final Board Rank",
             "ADP / Price Context": "Available-Pool ADP Rank",
         }[view_mode]
         sort_options = [

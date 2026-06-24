@@ -34,13 +34,14 @@ page_header(
     "Live Draft Room",
     eyebrow="Draft-Day App V1",
     description=(
-        "One frozen-board ranking table plus an interactive draft board. Picked-player "
-        "state is session-only and never mutates the frozen source CSV."
+        "One active draftable-pool table plus an interactive draft board. The frozen "
+        "66-row board is a baseline checkpoint only; PDF/free-agent overlays extend "
+        "the draftable universe without mutating source CSVs."
     ),
     status_items=(
-        ("Frozen 66-row board", "safe"),
+        ("Active draftable pool", "safe"),
+        ("Frozen baseline rank visible", "review"),
         ("Session-only draft state", "safe"),
-        ("Manual pick controls", "review"),
     ),
 )
 stop_if_board_blocked(bundle)
@@ -57,18 +58,19 @@ else:
         nwr_picks_frame=nwr_frame,
         session_key="draft_day_v1_live_draft_workflow",
         source_caption=(
-            f"Frozen board source: {bundle.source_path}. Pick order: {pick_path}. "
+            f"Frozen baseline checkpoint: {bundle.source_path}. Pick order: {pick_path}. "
             "Draftable overlay: LVE Rosters 061326.pdf page 3 Free Agents, "
             "QB/RB/WR/TE shown by default and K/DST hidden by default. "
             "Default candidate view uses Dynasty Asset Tier/Rank review-only columns "
             "where available; PDF-only free agents without internal value show Not enough "
-            "information. Final Board Rank remains visible and unchanged. Sleeper "
+            "information. Final Board Rank remains visible as a frozen baseline rank, "
+            "not as the full available-player line of truth. Sleeper "
             "ADP context, when present, is display-only timing context and does not "
             "drive Dynasty Asset Score."
         ),
     )
 
-with st.expander("Frozen board source / guardrails", expanded=False):
+with st.expander("Frozen baseline / guardrails", expanded=False):
     render_source_of_truth_badge(bundle)
 
 with st.expander("Lane prop status", expanded=False):

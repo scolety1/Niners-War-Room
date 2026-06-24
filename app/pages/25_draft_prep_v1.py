@@ -45,7 +45,8 @@ render_lane_status_table()
 st.subheader("What To Use Tomorrow")
 st.markdown(
     """
-    - Use the frozen Final Draft Board V1 order as the source of truth.
+    - Use the frozen Final Draft Board V1 only as a protected baseline/checkpoint.
+    - Use the expanded draftable pool and runtime draft state for on-clock availability.
     - Use Live Draft Room session marking only as a local taken-list aid.
     - Treat missing lane prop pages as YELLOW-HOLD, not blockers to using the board.
     - Do not use vendor research hold fields as safe board signals.

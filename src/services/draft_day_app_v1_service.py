@@ -487,7 +487,7 @@ def load_pdf_free_agent_pool() -> pd.DataFrame:
 
 
 def load_expanded_draftable_player_pool(frozen_frame: pd.DataFrame) -> pd.DataFrame:
-    """Return frozen board rows plus verified PDF free agents for draft UI only."""
+    """Return baseline board rows plus verified PDF free agents for draft UI only."""
 
     if frozen_frame.empty:
         return frozen_frame.copy()
@@ -765,14 +765,14 @@ def _on_clock_reason_and_warning(row: dict[str, object], value: float | None) ->
 
 def _prepare_frozen_rows_for_expanded_pool(frame: pd.DataFrame) -> pd.DataFrame:
     prepared = frame.copy()
-    prepared["source_group"] = "Frozen Board"
-    prepared["draftable_status"] = "Frozen Final Draft Board V1"
+    prepared["source_group"] = "Frozen Baseline"
+    prepared["draftable_status"] = "Frozen Final Draft Board V1 baseline"
     prepared["include_default"] = "yes"
     prepared["exclude_reason"] = ""
     if "source_label_display_only" not in prepared.columns:
-        prepared["source_label_display_only"] = "Frozen Board"
+        prepared["source_label_display_only"] = "Frozen Baseline"
     if "asset_type_display" not in prepared.columns:
-        prepared["asset_type_display"] = prepared.get("asset_type", "Frozen Board")
+        prepared["asset_type_display"] = prepared.get("asset_type", "Frozen Baseline")
     return prepared
 
 
@@ -1624,7 +1624,7 @@ def build_unified_player_board(
         board_row = board_by_id.get(player_id, {}) or board_by_identity.get(identity_key, {})
         merged = dict(row)
         merged["source_coverage"] = (
-            "Full Dynasty source + Frozen Board"
+            "Full Dynasty source + Frozen Baseline"
             if board_row
             else "Full Dynasty source"
         )
@@ -1746,8 +1746,8 @@ def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFra
         rows.append(
             {
                 "player_id": row.get("player_id", ""),
-                "source_coverage": "Frozen Draft Board only",
-                "nwr_rank": "Draft-board only",
+                "source_coverage": "Frozen Baseline only",
+                "nwr_rank": "Frozen-baseline only",
                 "final_board_rank": row.get("final_board_rank", ""),
                 "final_tier": row.get("final_tier", ""),
                 "position_rank": row.get("position_rank", ""),
@@ -1755,14 +1755,14 @@ def _board_only_rows_for_unified_player_board(frame: pd.DataFrame) -> pd.DataFra
                 "position": row.get("position", ""),
                 "age": row.get("age", OUTCOME_NOT_ENOUGH_INFORMATION),
                 "nfl_team": row.get("nfl_team", ""),
-                "asset_type_display": row.get("asset_type", "Draft-board only"),
+                "asset_type_display": row.get("asset_type", "Frozen-baseline only"),
                 "availability_status": row.get("availability_status", ""),
                 "draft_action_display_only": row.get("draft_action_display_only", ""),
                 "nwr_dynasty_score": OUTCOME_NOT_ENOUGH_INFORMATION,
-                "trust_status": "Draft-board only",
+                "trust_status": "Frozen-baseline only",
                 "warning_flags": "",
-                "pool_status": "Draft-board only",
-                "data_needed": "Draft-board only",
+                "pool_status": "Frozen-baseline only",
+                "data_needed": "Frozen-baseline only",
                 "model_posture_used": row.get("model_posture_used", ""),
                 "candidate_status": row.get("candidate_status", ""),
                 "risk_notes": row.get("risk_notes", ""),
@@ -2166,7 +2166,10 @@ def lane_prop_status_rows() -> list[dict[str, str]]:
                 "file_count": str(len([path for path in files if path.is_file()])),
                 "primary_file": primary.name if primary else LANE_PROP_PRIMARY_FILES[lane],
                 "source_label": source_label,
-                "source_rule": "Must reference frozen Final Draft Board V1.",
+                "source_rule": (
+                    "Must reference frozen Final Draft Board V1 as a baseline checkpoint; "
+                    "not the full draftable-player universe."
+                ),
             }
         )
     return rows

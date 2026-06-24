@@ -419,7 +419,7 @@ def sleeper_adp_display_lookup() -> dict[str, dict[str, str]]:
 
 
 def source_label_for_row(row: dict[str, object], adp_row: dict[str, str]) -> str:
-    source = str(row.get("source_label_display_only") or "Frozen Board")
+    source = str(row.get("source_label_display_only") or "Frozen Baseline")
     if adp_row:
         risk = adp_row.get("source_risk") or "display-only"
         risk_label = "YELLOW" if "YELLOW" in risk else risk

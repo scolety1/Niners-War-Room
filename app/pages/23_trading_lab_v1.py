@@ -87,7 +87,7 @@ if trade_path is None or trade_frame.empty:
 
 def _render_source_metrics(counts: dict[str, int]) -> None:
     cols = st.columns(4)
-    cols[0].metric("Frozen board rows", counts["frozen_board_rows"])
+    cols[0].metric("Frozen baseline rows", counts["frozen_board_rows"])
     cols[1].metric("Trade helper rows", counts["trade_helper_rows"])
     cols[2].metric("Draft pick rows", int(mock_pick_frame.shape[0]))
     cols[3].metric("Tier context rows", counts["tier_context_rows"])

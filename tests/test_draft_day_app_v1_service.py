@@ -558,11 +558,11 @@ def test_unified_player_board_preserves_dynasty_and_board_only_truths(
 
     assert unified.shape[0] == 2
     assert set(unified["source_coverage"]) == {
-        "Full Dynasty source + Frozen Board",
-        "Frozen Draft Board only",
+        "Full Dynasty source + Frozen Baseline",
+        "Frozen Baseline only",
     }
     board_only = display.loc[display["Player"].eq("Draft Prospect")].iloc[0]
-    assert board_only["Dynasty Rank"] == "Draft-board only"
+    assert board_only["Dynasty Rank"] == "Frozen-baseline only"
     assert board_only["NWR Dynasty Score"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert "Outcome Availability (Display-Only)" not in display.columns
     assert "player_id" not in display.columns

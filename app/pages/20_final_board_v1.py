@@ -92,7 +92,7 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
             "Rookies / prospects",
             "Veterans",
             "Full Dynasty source",
-            "Frozen Draft Board only",
+            "Frozen Baseline only",
         ],
         key="dynasty_rankings_source_filter",
     )
@@ -175,9 +175,9 @@ def _apply_player_filters(frame: pd.DataFrame, view_mode: str) -> tuple[pd.DataF
         filtered = filtered.loc[
             filtered["source_coverage"].astype(str).str.startswith("Full Dynasty source")
         ].copy()
-    elif source_filter == "Frozen Draft Board only" and "source_coverage" in filtered.columns:
+    elif source_filter == "Frozen Baseline only" and "source_coverage" in filtered.columns:
         filtered = filtered.loc[
-            filtered["source_coverage"].astype(str).eq("Frozen Draft Board only")
+            filtered["source_coverage"].astype(str).eq("Frozen Baseline only")
         ].copy()
     if outcome_filter == "Has Outcome support" and "outcome_availability_display_only" in filtered:
         filtered = filtered.loc[
@@ -324,9 +324,9 @@ def _render_source_diagnostics(
                 "dynasty_rows": dynasty.row_count,
                 "dynasty_source": str(dynasty.source_path or "missing"),
                 "dynasty_hash": dynasty.source_hash or "missing",
-                "frozen_board_rows": frozen_board.row_count,
-                "frozen_board_source": str(frozen_board.source_path or "missing"),
-                "draft_board_only_rows": _source_count(unified, "Frozen Draft Board only"),
+                "frozen_baseline_rows": frozen_board.row_count,
+                "frozen_baseline_source": str(frozen_board.source_path or "missing"),
+                "frozen_baseline_only_rows": _source_count(unified, "Frozen Baseline only"),
                 "outcome_support": frozen_board_outcome_support_counts(frozen_board.frame),
                 "age_supported_rows": _supported_age_count(unified),
             }
@@ -347,14 +347,14 @@ page_header(
     "Dynasty Rankings",
     eyebrow="Draft-Day App V1",
     description=(
-        "Full dynasty rankings first, with draft-board and Outcome context kept display-only."
+        "Full dynasty rankings first, with frozen-baseline and Outcome context kept display-only."
     ),
     status_items=(
         (
             f"Full dynasty rows: {dynasty_bundle.row_count}",
             "safe" if dynasty_bundle.loaded else "review",
         ),
-        (f"Frozen board rows: {bundle.row_count}", "safe" if bundle.loaded else "blocked"),
+        (f"Frozen baseline rows: {bundle.row_count}", "safe" if bundle.loaded else "blocked"),
         (
             "Outcome support: "
             f"{frozen_outcome_counts['supported']}/{frozen_outcome_counts['rows']}",
@@ -364,12 +364,12 @@ page_header(
 )
 
 if not bundle.loaded:
-    st.error("Frozen Final Draft Board V1 is unavailable; rankings context is blocked.")
+    st.error("Frozen Final Draft Board V1 baseline is unavailable; baseline context is blocked.")
     st.stop()
 if not dynasty_bundle.loaded:
     st.warning(
         "Full Dynasty Rankings cannot be fabricated from sample data. Frozen-board rows remain "
-        "visible as draft-board-only context until the approved dynasty source is available."
+        "visible as frozen-baseline-only context until the approved dynasty source is available."
     )
 
 view_mode = st.radio(
