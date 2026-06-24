@@ -19,6 +19,16 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
+        title="Drafting Mode V2",
+        file_path="pages/19_drafting_mode_v2.py",
+        url_path="drafting-mode",
+    ),
+    NavigationPageSpec(
+        title="Cheat Sheets V2",
+        file_path="pages/18_cheat_sheets_v2.py",
+        url_path="cheat-sheets",
+    ),
+    NavigationPageSpec(
         title="Live Draft Room",
         file_path="pages/21_live_draft_room_v1.py",
         url_path="live-draft-room",
@@ -63,6 +73,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Settings / Data Health",
         file_path="pages/28_settings_data_health_v1.py",
         url_path="settings",
+    ),
+    NavigationPageSpec(
+        title="Post-Draft Mode V2",
+        file_path="pages/29_post_draft_mode_v2.py",
+        url_path="post-draft",
     ),
 )
 

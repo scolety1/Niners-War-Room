@@ -177,6 +177,82 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
         hide_index=True,
     )
 
+
+def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
+    st.subheader("Decision Summary")
+    st.caption(
+        "Fast on-clock read first. This is review-only decision support; Final Board Rank "
+        "and Dynasty Rank are not changed."
+    )
+    if compare_frame.empty:
+        st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    ranked = compare_frame.copy()
+    rank_column = _first_existing(
+        ranked,
+        ("dynasty_asset_rank", "cross_asset_candidate_rank", "final_board_rank"),
+    )
+    if rank_column:
+        ranked["_decision_sort"] = pd.to_numeric(ranked[rank_column], errors="coerce")
+        ranked = ranked.sort_values("_decision_sort", na_position="last", kind="stable")
+    leader = ranked.iloc[0].to_dict()
+    runner_up = ranked.iloc[1].to_dict() if len(ranked) > 1 else {}
+    cols = st.columns(4)
+    cols[0].metric("Lean", str(leader.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION))
+    cols[1].metric(
+        "Confidence",
+        str(
+            leader.get("dynasty_asset_confidence")
+            or leader.get("confidence_band")
+            or OUTCOME_NOT_ENOUGH_INFORMATION
+        ),
+    )
+    cols[2].metric(
+        "Biggest risk",
+        str(
+            leader.get("main_risk")
+            or leader.get("candidate_key_caveat")
+            or OUTCOME_NOT_ENOUGH_INFORMATION
+        )[:80],
+    )
+    cols[3].metric(
+        "Compare against",
+        str(runner_up.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION),
+    )
+    summary_rows = []
+    for record in ranked.to_dict("records"):
+        summary_rows.append(
+            {
+                "Player": record.get("player", OUTCOME_NOT_ENOUGH_INFORMATION),
+                "Why draft": record.get("why_draft", OUTCOME_NOT_ENOUGH_INFORMATION),
+                "Why pass / risk": record.get(
+                    "main_risk",
+                    record.get("candidate_key_caveat", OUTCOME_NOT_ENOUGH_INFORMATION),
+                ),
+                "What would change decision": _decision_change_note(record),
+                "Confidence": record.get(
+                    "dynasty_asset_confidence",
+                    record.get("confidence_band", OUTCOME_NOT_ENOUGH_INFORMATION),
+                ),
+            }
+        )
+    st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
+
+
+def _first_existing(frame: pd.DataFrame, candidates: tuple[str, ...]) -> str:
+    return next((column for column in candidates if column in frame.columns), "")
+
+
+def _decision_change_note(record: dict[str, object]) -> str:
+    caveat = str(record.get("candidate_key_caveat") or record.get("main_risk") or "").strip()
+    outcome = str(record.get("outcome_applicable_summary") or "").strip()
+    if caveat and caveat != OUTCOME_NOT_ENOUGH_INFORMATION:
+        return f"Resolve caveat: {caveat}"
+    if not outcome or outcome == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return "More role/outcome support would raise confidence."
+    return "Decision mainly changes if roster need or tier drop changes."
+
+
 bundle = load_frozen_board()
 compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
 
@@ -199,6 +275,7 @@ if len(selected) < 2:
     st.stop()
 
 compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
+_render_decision_summary(compare)
 render_final_board_table(compare, key="player_compare_board")
 
 compare_columns = [
