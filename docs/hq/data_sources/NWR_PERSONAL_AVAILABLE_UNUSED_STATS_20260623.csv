@@ -1,0 +1,23 @@
+source,field_or_dataset,what_it_could_improve,classification,risk_guardrail_concern,priority
+nflverse,participation/routes/snaps,role and route confidence,model input after timing gate,leakage/as-of risk; route coverage uneven,P1
+nflverse,injuries/depth charts,confidence caps and current status warnings,diagnostic/model confidence only,depth charts are uncertain and can be stale,P1
+nflverse,pbp first downs,first-down scoring approximation,model input after scoring contract,must avoid post-outcome leakage,P1
+nflverse,combine and draft picks,rookie priors and athletic/draft capital,model input for completed facts,zero placeholders and mock/big-board leakage,P2
+Sleeper,transactions/rosters over time,actual dropped/free-agent history,model training after archive reconstruction,historical availability may be incomplete,P0
+Sleeper,player status/team metadata,current identity/team/status repair,source truth/diagnostic,metadata staleness,P1
+Sleeper,traded picks/drafts,pick ownership history,source truth for pick state,league/draft id completeness,P2
+DynastyProcess,db_playerids,identity joins across sources,identity crosswalk only,GPL/license and name mismatch checks,P1
+DynastyProcess,values/ecr,market baseline sanity,display-only market context,must not drive NWR rank/value,P2
+RotoWire,routes run / TPRR / YPRR,WR/TE role evidence,candidate/model input only if licensed/admitted,vendor license and projection/rank contamination,P2
+RotoWire,red-zone/goal-line usage,TD/role context,candidate/model input only if factual/admitted,small samples and vendor access,P2
+RotoWire,yards after contact / broken tackles,RB role/talent context,candidate/model input only if factual/admitted,field definitions and source approval,P2
+FantasyPros,advanced factual stats,possible historical cross-check,candidate only pending classification,rank/projection leakage risk,P3
+FantasyPros,ADP/ECR/projections,market sanity and timing,display-only only,blocked as model input,P3
+CollegeFootballData,college receiving/rushing/QB stats,rookie production priors,model input after identity gate,API key and player matching required,P1
+CollegeFootballData,team share/context,adjust college production for environment,model input after validation,team/role translations can mislead,P2
+SportsDataIO,injuries/depth/ids,licensed factual replacement for manual checks,model input only if licensed/admitted,paid license and projection fields,P3
+PFF,alignment/routes/charting,role nuance and position usage,candidate only if licensed/admitted,grades/ranks/big boards blocked,P3
+Official NFL/team pages,transactions/status/injury snippets,current factual status correction,diagnostic/source-truth for labels,"manual, not bulk; cite URL",P1
+Pro Football Reference,historical season stats,sanity checks and outcome labels,diagnostic/historical factual,terms and approximate-value misuse,P2
+Outcome internal package,same-year model diagnostics,probability calibration evidence,diagnostic until release gate,not player-facing unless approved,P2
+Local model_v4 source risk heatmap,evidence caveat loudness,UI trust warnings,display/diagnostic,must not become hidden sort,P1
