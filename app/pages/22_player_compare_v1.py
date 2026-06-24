@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # ruff: noqa: E402
+import re
 import sys
 from pathlib import Path
 
@@ -36,6 +37,13 @@ HORIZON_CANDIDATE_PATH = (
     / "parallel_lanes"
     / "overnight_8h_emergency_20260622"
     / "outcome_horizon_candidate.csv"
+)
+INJURY_PER_GAME_AUDIT_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "draft_day_v2"
+    / "injury_per_game_risk_audit_20260623.csv"
 )
 
 
@@ -419,6 +427,122 @@ def _render_age_risk_context(compare_frame: pd.DataFrame) -> None:
     )
 
 
+def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
+    st.subheader("Injury / Per-Game Context")
+    st.caption(
+        "Display-only context. Not used to change rank or model value. Missing injury "
+        f"coverage shows exactly `{OUTCOME_NOT_ENOUGH_INFORMATION}` and does not mean clean health."
+    )
+    audit = _load_injury_per_game_audit()
+    rows = [_injury_display_row(record, audit) for record in compare_frame.to_dict("records")]
+    display = pd.DataFrame(rows)
+    warning_players = [
+        row["Player"]
+        for row in rows
+        if str(row.get("Annual Totals Warning", "")).startswith("YES")
+    ]
+    if warning_players:
+        st.warning(
+            "Annual totals may be misleading for: "
+            + ", ".join(warning_players)
+            + ". Use per-game talent and availability risk as separate questions."
+        )
+    st.table(display)
+
+
+def _load_injury_per_game_audit() -> pd.DataFrame:
+    if not INJURY_PER_GAME_AUDIT_PATH.exists():
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(INJURY_PER_GAME_AUDIT_PATH, dtype=str).fillna(
+            OUTCOME_NOT_ENOUGH_INFORMATION
+        )
+    except Exception:
+        return pd.DataFrame()
+
+
+def _injury_display_row(
+    record: dict[str, object],
+    audit: pd.DataFrame,
+) -> dict[str, str]:
+    player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
+    position = str(record.get("position") or OUTCOME_NOT_ENOUGH_INFORMATION)
+    audit_row = _audit_row_for_player(player, position, audit)
+    current_available = _audit_value(
+        audit_row,
+        "current_injury_status_available",
+    ).lower()
+    return {
+        "Player": player,
+        "Pos": position,
+        "Per-Game Signal Available": _audit_value(
+            audit_row,
+            "per_game_signal_available",
+        ),
+        "Annual Total Signal Available": _audit_value(
+            audit_row,
+            "annual_total_signal_available",
+        ),
+        "Injury Data Available": (
+            "Verified current injury data"
+            if current_available in {"yes", "true", "verified"}
+            else OUTCOME_NOT_ENOUGH_INFORMATION
+        ),
+        "Current Injury Status": (
+            _audit_value(audit_row, "current_injury_status")
+            if current_available in {"yes", "true", "verified"}
+            else OUTCOME_NOT_ENOUGH_INFORMATION
+        ),
+        "Recovery Risk Band": _supported_band(audit_row, "recovery_risk_band"),
+        "Chronic Injury Risk Band": _supported_band(audit_row, "chronic_injury_risk_band"),
+        "Human Review Warning": _audit_value(audit_row, "human_review_warning"),
+        "Model Treatment Summary": _audit_value(audit_row, "model_treatment_summary"),
+        "Annual Totals Warning": _audit_value(
+            audit_row,
+            "current_display_likely_misleading",
+        ),
+    }
+
+
+def _audit_row_for_player(
+    player: str,
+    position: str,
+    audit: pd.DataFrame,
+) -> dict[str, object]:
+    if audit.empty or "player" not in audit.columns:
+        return {}
+    player_key = _player_key(player)
+    rows = audit.loc[audit["player"].map(_player_key).eq(player_key)]
+    if rows.empty and player_key == "brianthomas":
+        rows = audit.loc[audit["player"].map(_player_key).isin({"brianthomas", "brianthomasjr"})]
+    if rows.empty and "pos" in audit.columns:
+        rows = audit.loc[
+            audit["player"].map(_player_key).eq(player_key)
+            & audit["pos"].astype(str).str.upper().eq(str(position).upper())
+        ]
+    if rows.empty:
+        return {}
+    return rows.iloc[0].to_dict()
+
+
+def _audit_value(row: dict[str, object], column: str) -> str:
+    text = str(row.get(column, "") if row else "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
+
+
+def _supported_band(row: dict[str, object], column: str) -> str:
+    value = _audit_value(row, column)
+    return value if value != OUTCOME_NOT_ENOUGH_INFORMATION else OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _player_key(value: object) -> str:
+    text = str(value or "").lower().replace("jr.", "jr")
+    text = text.replace("brian thomas jr", "brian thomas")
+    return re.sub(r"[^a-z0-9]+", "", text)
+
+
 bundle = load_frozen_board()
 compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
 
@@ -456,6 +580,7 @@ else:
         [
             "Dynasty / NWR Context",
             "Market Baseline / Display-Only",
+            "Injury / Per-Game Context",
             "Outcome / Horizon",
             "Age / Injury / Risk",
             "Raw Details / Diagnostics",
@@ -467,7 +592,9 @@ else:
             _render_dynasty_context(compare)
     with detail_tabs[1]:
         _render_market_context(compare)
-    with detail_tabs[3]:
+    with detail_tabs[2]:
+        _render_injury_per_game_context(compare)
+    with detail_tabs[4]:
         _render_age_risk_context(compare)
 
     prop_files = {
@@ -476,7 +603,7 @@ else:
         "rookie_hq": "rookie_overlay_context.csv",
         "decision_board": "decision_flags_context.csv",
     }
-    with detail_tabs[2]:
+    with detail_tabs[3]:
         outcome_frame, outcome_path = load_lane_prop_file(
             "outcome_columns",
             "outcome_player_context.csv",
@@ -487,7 +614,7 @@ else:
             _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
             _render_horizon_candidate_compare(compare)
 
-    with detail_tabs[4]:
+    with detail_tabs[5]:
         st.caption("Raw context is diagnostic-only and intentionally below the decision summary.")
         for lane, file_name in prop_files.items():
             prop_frame, prop_path = load_lane_prop_file(lane, file_name)
