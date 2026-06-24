@@ -173,3 +173,74 @@ Proof runs used deterministic handlers for external pull steps to avoid a surpri
 - Full Safe Refresh live nflverse runtime depends on the existing local runner environment.
 - Proof exports are ignored local artifacts and are not committed.
 - The loader intentionally does not promote refreshed data into model inputs; future lanes must approve any separate admission workflow.
+
+## 14. Connector Completion Update
+
+### 1. nflverse Connector Status
+
+Status: connector-ready with dependency gating.
+
+- Confirmed runner: `scripts/run_nflverse_refresh_v0.ps1`
+- Added `-CheckDependencies` to the runner for non-mutating dependency checks.
+- Full Safe Refresh includes nflverse only when the runner exists and the local deps path exists:
+  `C:\NWR_SHARED_DATA\vendor_spikes\nflverse\scratch\pydeps`
+- Missing runner/deps returns `NOT_CONFIGURED` with a clear explanation.
+- Post-run status includes runner path, start/end time, exit code, expected artifacts, found artifacts, freshness, user explanation, raw cache location, and model-use warning.
+- Loader invokes the runner without `-WriteCandidates`; no candidate/model/ranking outputs are written.
+- Raw/cache output remains outside git.
+
+### 2. CFBD Connector Status
+
+Status: minimum safe connector V1 implemented.
+
+- Uses existing config/env field: `CFBD_API_KEY`
+- Raw/cache location: `C:\NWR_SHARED_DATA\public_sources\cfbd\`
+- Writes ignored local status artifacts under `local_exports/refresh_data/cfbd/latest/`
+- Writes and validates `cfbd_review_status.csv`
+- Attaches identity gate: `CFBD player identities must be reviewed/matched before model use.`
+- Does not make CFBD model input.
+- Does not invent college/rookie data when source data is unavailable.
+
+### 3. Behavior With CFBD_API_KEY Absent
+
+- `loader_category = NOT_CONFIGURED`
+- `action_type = NOT_CONFIGURED`
+- `refreshed = false`
+- `user_explanation = "CFBD_API_KEY is not set; CFBD refresh is unavailable."`
+- No live network call is attempted.
+
+### 4. Behavior With CFBD_API_KEY Present / Mocked
+
+Focused tests mock the CFBD HTTP path. With a mocked key and mocked response:
+
+- CFBD refresh runs automatically in Full Safe Refresh.
+- Raw JSON is written only under the outside-git shared cache root.
+- `cfbd_refresh_manifest.json` is written under ignored local refresh status.
+- `cfbd_review_status.csv` is written and schema-validated.
+- `model_use_allowed` remains `false`.
+- The result row reports review/status output only and repeats the identity-gate warning.
+
+### 5. Remaining Connector Gaps
+
+- Live CFBD verification still requires a real `CFBD_API_KEY`.
+- Live nflverse execution depends on the existing local deps path and package environment.
+- The loader deliberately stops at cache/status/review artifacts; it does not include admission, promotion, or model-input wiring.
+
+### 6. Proof No Model / Rank / Source-Truth Mutation Occurs
+
+Validation confirmed:
+
+- Frozen board remains 66 rows.
+- Pinned hash remains unchanged.
+- No `latest_candidate` or `latest_approved` files are touched.
+- No `final_board_rank`, Dynasty Rank, Candidate Rank, tier assignment, model output, or rank logic file is changed.
+- No `C:\NWR_SHARED_DATA` files are tracked.
+- No raw nflverse/CFBD/vendor/Gmail files are tracked.
+- Full Safe Refresh result rows now expose `tracked_artifacts_written`; connector refreshes leave it blank.
+
+Connector proof exports, all ignored:
+
+- `local_exports/safe_loader_connector_proof_20260624/20260624_230446_quick_refresh_results.csv`
+- `local_exports/safe_loader_connector_proof_20260624/20260624_230446_full_safe_refresh_results.csv`
+- `local_exports/safe_loader_connector_proof_20260624/20260624_230446_check_protected_artifacts_results.csv`
+- `local_exports/safe_loader_connector_proof_20260624/20260624_230446_manual_sources_checklist_results.csv`

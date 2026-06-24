@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+import src.services.data_refresh_orchestrator_service as orchestrator
 from src.config.api_settings import ApiSettings
 from src.services.data_refresh_orchestrator_service import (
     ACTION_CHECK_ONLY,
@@ -100,9 +101,19 @@ def test_quick_refresh_pulls_sleeper_and_dynastyprocess_only(tmp_path: Path) -> 
 
 
 def test_full_safe_refresh_includes_nflverse_when_runner_exists(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    scripts = repo_root / "scripts"
+    scripts.mkdir(parents=True)
+    (scripts / "run_nflverse_refresh_v0.ps1").write_text("# runner", encoding="utf-8")
+    shared_root = tmp_path / "shared"
+    (shared_root / "vendor_spikes" / "nflverse" / "scratch" / "pydeps").mkdir(
+        parents=True
+    )
+
     run = run_full_safe_refresh(
+        repo_root=repo_root,
         status_root=tmp_path / "status",
-        shared_root=tmp_path / "shared",
+        shared_root=shared_root,
         settings=_settings(),
         command_runner=_runner,
         handlers={
@@ -116,6 +127,29 @@ def test_full_safe_refresh_includes_nflverse_when_runner_exists(tmp_path: Path) 
     assert nflverse.runner_exists is True
     assert nflverse.action_type == REFRESHED
     assert nflverse.refreshed is True
+    assert nflverse.exit_code == "0"
+    assert "nflverse_refresh_manifest.json" in nflverse.found_artifacts[-1]
+
+
+def test_nflverse_missing_runner_or_deps_returns_not_configured(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    (repo_root / "scripts").mkdir(parents=True)
+
+    run = run_full_safe_refresh(
+        repo_root=repo_root,
+        status_root=tmp_path / "status",
+        shared_root=tmp_path / "shared",
+        source_ids=["nflverse_public_data"],
+        settings=_settings(),
+        command_runner=_runner,
+        write_status=False,
+    )
+    nflverse = next(row for row in run.results if row.source_id == "nflverse_public_data")
+
+    assert nflverse.action_type == ACTION_NOT_CONFIGURED
+    assert nflverse.refreshed is False
+    assert "not configured" in nflverse.user_explanation
+    assert "runner missing" in nflverse.user_explanation
 
 
 def test_full_safe_refresh_reports_cfbd_not_configured_without_key(tmp_path: Path) -> None:
@@ -133,7 +167,7 @@ def test_full_safe_refresh_reports_cfbd_not_configured_without_key(tmp_path: Pat
 
     assert cfbd.action_type == ACTION_NOT_CONFIGURED
     assert cfbd.configured is False
-    assert "CFBD_API_KEY" in cfbd.user_explanation
+    assert cfbd.user_explanation == "CFBD_API_KEY is not set; CFBD refresh is unavailable."
 
 
 def test_cfbd_is_eligible_only_when_configured() -> None:
@@ -152,6 +186,63 @@ def test_cfbd_is_eligible_only_when_configured() -> None:
     assert no_key.safe_to_pull is False
     assert with_key.loader_category == "AUTO_SLOW"
     assert with_key.safe_to_pull is True
+
+
+def test_cfbd_with_mocked_api_key_runs_review_status_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class MockResponse:
+        def __enter__(self) -> MockResponse:
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b'[{"school":"NWR Test State","conference":"Test"}]'
+
+    def fake_urlopen(request, timeout: int) -> MockResponse:
+        return MockResponse()
+
+    monkeypatch.setattr(orchestrator.urllib.request, "urlopen", fake_urlopen)
+    shared_root = tmp_path / "shared"
+    run = run_full_safe_refresh(
+        status_root=tmp_path / "status",
+        shared_root=shared_root,
+        source_ids=["cfbd_college_football_data"],
+        settings=_settings(cfbd_api_key="mock-key"),
+        write_status=False,
+    )
+    cfbd = next(row for row in run.results if row.source_id == "cfbd_college_football_data")
+    manifest = Path(cfbd.artifact_updated)
+    review_status = manifest.parent / "cfbd_review_status.csv"
+
+    assert cfbd.action_type == REFRESHED
+    assert cfbd.refreshed is True
+    assert str(shared_root / "public_sources" / "cfbd") in cfbd.raw_cache_location
+    assert review_status.exists()
+    assert cfbd.tracked_artifacts_written == ""
+    assert "reviewed/matched before model use" in cfbd.model_use_warning
+    assert "No college identities became model input" in cfbd.user_explanation
+
+
+def test_cfbd_review_status_schema_rejects_model_use(tmp_path: Path) -> None:
+    path = tmp_path / "cfbd_review_status.csv"
+    path.write_text(
+        "\n".join(
+            [
+                "source_id,run_id,row_count,raw_cache_location,identity_gate_status,"
+                "model_use_allowed,model_use_warning",
+                "cfbd,run,1,C:/NWR_SHARED_DATA/public_sources/cfbd,REVIEW_REQUIRED,"
+                "true,warning",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError):
+        orchestrator._validate_cfbd_review_status(path)
 
 
 def test_manual_blocked_sources_are_never_pulled(tmp_path: Path) -> None:
@@ -221,7 +312,17 @@ def test_results_export_includes_required_columns(tmp_path: Path) -> None:
     csv_text = export_results_csv(run)
 
     validate_refresh_result_schema(rows)
-    for column in ("action_type", "loader_mode", "user_explanation", "model_use_warning"):
+    for column in (
+        "action_type",
+        "loader_mode",
+        "user_explanation",
+        "model_use_warning",
+        "start_time",
+        "end_time",
+        "exit_code",
+        "runner_path",
+        "tracked_artifacts_written",
+    ):
         assert column in rows[0]
         assert column in csv_text.splitlines()[0]
 
