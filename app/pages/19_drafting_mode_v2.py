@@ -51,11 +51,14 @@ stop_if_board_blocked(bundle)
 
 top_cols = st.columns([1, 1, 1, 2])
 with top_cols[0]:
-    st.page_link("pages/21_live_draft_room_v1.py", label="Enter Live Draft Room")
+    st.markdown("**Enter Live Draft Room**")
+    st.caption("Open sidebar item `Live Draft Room` or URL `/live-draft-room`.")
 with top_cols[1]:
-    st.page_link("pages/24_mock_draft_v1.py", label="Enter Mock Draft")
+    st.markdown("**Enter Mock Draft**")
+    st.caption("Open sidebar item `Mock Draft` or URL `/mock-draft`.")
 with top_cols[2]:
-    st.page_link("pages/18_cheat_sheets_v2.py", label="Open Cheat Sheets")
+    st.markdown("**Open Cheat Sheets**")
+    st.caption("Open sidebar item `Cheat Sheets V2` or URL `/cheat-sheets`.")
 with top_cols[3]:
     st.caption(
         "Drafting Mode is a workflow shell. Final Board Rank and Dynasty Rank remain visible "
@@ -76,24 +79,26 @@ tabs = st.tabs(
 with tabs[0]:
     st.subheader("Cheat Sheets")
     st.caption("Overall-first tiered view for on-clock scanning.")
-    st.page_link("pages/18_cheat_sheets_v2.py", label="Open Cheat Sheets V2")
+    st.code("/cheat-sheets")
 
 with tabs[1]:
     st.subheader("Draft Board")
     st.caption("Use Live Draft for real picks or Mock Draft for practice state.")
     draft_cols = st.columns(2)
-    draft_cols[0].page_link("pages/21_live_draft_room_v1.py", label="Live Draft Room")
-    draft_cols[1].page_link("pages/24_mock_draft_v1.py", label="Mock Draft")
+    with draft_cols[0]:
+        st.code("/live-draft-room")
+    with draft_cols[1]:
+        st.code("/mock-draft")
 
 with tabs[2]:
     st.subheader("Trade Lab")
     st.caption("Manual package review plus V2 trade-event recording. No trade calculator logic.")
-    st.page_link("pages/23_trading_lab_v1.py", label="Open Trade Lab")
+    st.code("/trading-lab")
 
 with tabs[3]:
     st.subheader("Player Compare")
     st.caption("Decision summary first; detailed context behind expanders.")
-    st.page_link("pages/22_player_compare_v1.py", label="Open Player Compare")
+    st.code("/player-compare")
 
 with tabs[4]:
     st.subheader("Search")
@@ -144,4 +149,4 @@ with tabs[5]:
         },
     ]
     st.dataframe(pd.DataFrame(runtime_rows), use_container_width=True, hide_index=True)
-    st.page_link("pages/28_settings_data_health_v1.py", label="Open full Settings / Data Health")
+    st.code("/settings")
