@@ -224,12 +224,15 @@ def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
         summary_rows.append(
             {
                 "Player": record.get("player", OUTCOME_NOT_ENOUGH_INFORMATION),
+                "Rank signal": _rank_signal(record),
                 "Why draft": record.get("why_draft", OUTCOME_NOT_ENOUGH_INFORMATION),
                 "Why pass / risk": record.get(
                     "main_risk",
                     record.get("candidate_key_caveat", OUTCOME_NOT_ENOUGH_INFORMATION),
                 ),
                 "What would change decision": _decision_change_note(record),
+                "Best fit by context": _best_fit_note(record),
+                "Model / human-review flag": _human_review_note(record),
                 "Confidence": record.get(
                     "dynasty_asset_confidence",
                     record.get("confidence_band", OUTCOME_NOT_ENOUGH_INFORMATION),
@@ -253,6 +256,169 @@ def _decision_change_note(record: dict[str, object]) -> str:
     return "Decision mainly changes if roster need or tier drop changes."
 
 
+def _rank_signal(record: dict[str, object]) -> str:
+    for label, key in (
+        ("Candidate", "dynasty_asset_rank"),
+        ("Tuned V2", "cross_asset_candidate_rank"),
+        ("Final Board", "final_board_rank"),
+    ):
+        value = str(record.get(key) or "").strip()
+        if value and value != OUTCOME_NOT_ENOUGH_INFORMATION:
+            return f"{label} rank {value}"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _best_fit_note(record: dict[str, object]) -> str:
+    position = str(record.get("position") or "").strip()
+    band = str(record.get("candidate_value_band") or "").strip()
+    tier = str(record.get("final_tier") or "").strip()
+    pieces = [piece for piece in (position, band, tier) if piece]
+    if not pieces:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return " / ".join(pieces)
+
+
+def _human_review_note(record: dict[str, object]) -> str:
+    flags = [
+        str(record.get("human_review_flag") or "").strip(),
+        str(record.get("needs_manual_review") or "").strip(),
+        str(record.get("candidate_vs_frozen_note") or "").strip(),
+    ]
+    meaningful = [
+        flag
+        for flag in flags
+        if flag and flag.lower() not in {"false", "none", "nan", "0"}
+    ]
+    return "; ".join(meaningful) if meaningful else "No special flag"
+
+
+def _render_dynasty_context(compare_frame: pd.DataFrame) -> None:
+    render_final_board_table(compare_frame, key="player_compare_board")
+
+
+def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
+    compare_columns = [
+        "cross_asset_candidate_rank",
+        "final_board_rank",
+        "player",
+        "position",
+        "nfl_team",
+        "age",
+        "position_rank",
+        "cross_asset_candidate_value",
+        "candidate_value_band",
+        "confidence_band",
+        "candidate_vs_frozen_note",
+        "candidate_action_summary",
+        "candidate_key_caveat",
+    ]
+    available_compare_columns = [
+        column for column in compare_columns if column in compare_frame.columns
+    ]
+    if not available_compare_columns:
+        st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    st.caption(
+        "Tuned V2 review-only candidate metrics. They do not replace Final Board Rank, "
+        "Dynasty Rank, or frozen source truth."
+    )
+    candidate_display = compare_frame.loc[:, available_compare_columns].copy().fillna(
+        OUTCOME_NOT_ENOUGH_INFORMATION
+    )
+    st.dataframe(
+        candidate_display.rename(
+            columns={
+                "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
+                "final_board_rank": "Final Board Rank",
+                "player": "Player",
+                "position": "Pos",
+                "nfl_team": "NFL Team",
+                "age": "Age",
+                "position_rank": "Position Rank",
+                "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
+                "candidate_value_band": "Candidate Band",
+                "confidence_band": "Confidence",
+                "candidate_vs_frozen_note": "Candidate vs Frozen Note",
+                "candidate_action_summary": "Candidate Action Summary",
+                "candidate_key_caveat": "Key Caveat / Review Flag",
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+def _render_market_context(compare_frame: pd.DataFrame) -> None:
+    market_columns = [
+        "player",
+        "position",
+        "adp",
+        "startup_adp_display",
+        "available_pool_adp_rank",
+        "available_pool_adp_range",
+        "current_pick_value",
+    ]
+    columns = [column for column in market_columns if column in compare_frame.columns]
+    if len(columns) <= 2:
+        st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    st.caption(
+        "Market/ADP context is display-only timing sanity. It is not a model input and "
+        "does not override NWR ranks."
+    )
+    st.dataframe(
+        compare_frame.loc[:, columns].fillna(OUTCOME_NOT_ENOUGH_INFORMATION).rename(
+            columns={
+                "player": "Player",
+                "position": "Pos",
+                "adp": "ADP (Display-Only)",
+                "startup_adp_display": "Startup ADP (Display-Only)",
+                "available_pool_adp_rank": "Available-Pool ADP Rank (Display-Only)",
+                "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
+                "current_pick_value": "Current Pick Value (Display-Only)",
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+def _render_age_risk_context(compare_frame: pd.DataFrame) -> None:
+    risk_columns = [
+        "player",
+        "position",
+        "age",
+        "main_risk",
+        "risk_notes",
+        "candidate_key_caveat",
+        "needs_manual_review",
+        "human_review_flag",
+    ]
+    columns = [column for column in risk_columns if column in compare_frame.columns]
+    if len(columns) <= 2:
+        st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    st.caption(
+        "Age/injury/risk fields are shown only where the current approved data supports them."
+    )
+    st.dataframe(
+        compare_frame.loc[:, columns].fillna(OUTCOME_NOT_ENOUGH_INFORMATION).rename(
+            columns={
+                "player": "Player",
+                "position": "Pos",
+                "age": "Age",
+                "main_risk": "Main Risk",
+                "risk_notes": "Risk Notes",
+                "candidate_key_caveat": "Candidate Caveat",
+                "needs_manual_review": "Needs Manual Review",
+                "human_review_flag": "Human Review Flag",
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
 bundle = load_frozen_board()
 compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
 
@@ -269,107 +435,85 @@ render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 
 players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
-selected = st.multiselect("Players to compare", players, max_selections=4)
+query_players = [
+    player
+    for player in st.query_params.get_all("player")
+    if player in set(players)
+]
+selected = st.multiselect(
+    "Players to compare",
+    players,
+    default=query_players[:4],
+    max_selections=4,
+)
 if len(selected) < 2:
     st.info("Select 2 to 4 players from the frozen board or PDF free-agent overlay.")
-    st.stop()
+else:
+    compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
+    _render_decision_summary(compare)
 
-compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
-_render_decision_summary(compare)
-render_final_board_table(compare, key="player_compare_board")
+    detail_tabs = st.tabs(
+        [
+            "Dynasty / NWR Context",
+            "Market Baseline / Display-Only",
+            "Outcome / Horizon",
+            "Age / Injury / Risk",
+            "Raw Details / Diagnostics",
+        ]
+    )
+    with detail_tabs[0]:
+        _render_candidate_context(compare)
+        with st.expander("Frozen board detail", expanded=False):
+            _render_dynasty_context(compare)
+    with detail_tabs[1]:
+        _render_market_context(compare)
+    with detail_tabs[3]:
+        _render_age_risk_context(compare)
 
-compare_columns = [
-    "cross_asset_candidate_rank",
-    "final_board_rank",
-    "player",
-    "position",
-    "nfl_team",
-    "age",
-    "position_rank",
-    "cross_asset_candidate_value",
-    "candidate_value_band",
-    "confidence_band",
-    "adp",
-    "available_pool_adp_range",
-    "current_pick_value",
-    "horizon_2026_band",
-    "horizon_2027_band",
-    "horizon_next5y_band",
-    "candidate_vs_frozen_note",
-    "candidate_action_summary",
-    "candidate_key_caveat",
-]
-available_compare_columns = [column for column in compare_columns if column in compare.columns]
-if available_compare_columns:
-    st.subheader("Cross-Asset Candidate Comparison")
-    st.caption(
-        "Tuned V2 review-only candidate and horizon metrics where available. They do "
-        "not replace Final Board Rank, Dynasty Rank, or the frozen board source of "
-        "truth. ADP/range is display-only price context."
-    )
-    candidate_display = compare.loc[:, available_compare_columns].copy().fillna(
-        OUTCOME_NOT_ENOUGH_INFORMATION
-    )
-    st.dataframe(
-        candidate_display.rename(
-            columns={
-                "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
-                "final_board_rank": "Final Board Rank",
-                "player": "Player",
-                "position": "Pos",
-                "nfl_team": "NFL Team",
-                "age": "Age",
-                "position_rank": "Position Rank",
-                "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
-                "candidate_value_band": "Candidate Band",
-                "confidence_band": "Confidence",
-                "adp": "ADP (Display-Only)",
-                "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
-                "current_pick_value": "Current Pick Value (Display-Only)",
-                "horizon_2026_band": "2026 Horizon Band (Review-Only)",
-                "horizon_2027_band": "2027 Horizon Band (Review-Only)",
-                "horizon_next5y_band": "Next-5Y Horizon Band (Review-Only)",
-                "candidate_vs_frozen_note": "Candidate vs Frozen Note",
-                "candidate_action_summary": "Candidate Action Summary",
-                "candidate_key_caveat": "Key Caveat / Review Flag",
-            }
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
-
-st.subheader("Lane Prop Context")
-prop_files = {
-    "outcome_columns": "outcome_player_context.csv",
-    "trading_lab": "trade_helper_context.csv",
-    "rookie_hq": "rookie_overlay_context.csv",
-    "decision_board": "decision_flags_context.csv",
-}
-for lane, file_name in prop_files.items():
-    prop_frame, prop_path = load_lane_prop_file(lane, file_name)
-    if prop_path is None:
-        render_yellow_hold(f"{lane} props are missing.")
-        continue
-    if prop_frame.empty:
-        render_yellow_hold(f"{lane} props are missing: {prop_path}.")
-        continue
-    if lane == "outcome_columns":
-        _render_position_aware_outcome_compare(compare, prop_frame, prop_path)
-        _render_horizon_candidate_compare(compare)
-        continue
-    st.caption(f"{lane} props: {prop_path}")
-    join_columns = [
-        column
-        for column in ("player", "position", "final_board_rank")
-        if column in prop_frame.columns
-    ]
-    if not join_columns:
-        st.dataframe(
-            display_lane_prop_frame(prop_frame).head(25),
-            use_container_width=True,
-            hide_index=True,
+    prop_files = {
+        "outcome_columns": "outcome_player_context.csv",
+        "trading_lab": "trade_helper_context.csv",
+        "rookie_hq": "rookie_overlay_context.csv",
+        "decision_board": "decision_flags_context.csv",
+    }
+    with detail_tabs[2]:
+        outcome_frame, outcome_path = load_lane_prop_file(
+            "outcome_columns",
+            "outcome_player_context.csv",
         )
-        continue
-    base_columns = [column for column in join_columns if column in compare.columns]
-    context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
-    st.dataframe(display_lane_prop_frame(context), use_container_width=True, hide_index=True)
+        if outcome_path is None or outcome_frame.empty:
+            render_yellow_hold("Outcome props are missing.")
+        else:
+            _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
+            _render_horizon_candidate_compare(compare)
+
+    with detail_tabs[4]:
+        st.caption("Raw context is diagnostic-only and intentionally below the decision summary.")
+        for lane, file_name in prop_files.items():
+            prop_frame, prop_path = load_lane_prop_file(lane, file_name)
+            if prop_path is None:
+                render_yellow_hold(f"{lane} props are missing.")
+                continue
+            if prop_frame.empty:
+                render_yellow_hold(f"{lane} props are missing: {prop_path}.")
+                continue
+            st.caption(f"{lane} props: {prop_path}")
+            join_columns = [
+                column
+                for column in ("player", "position", "final_board_rank")
+                if column in prop_frame.columns
+            ]
+            if not join_columns:
+                st.dataframe(
+                    display_lane_prop_frame(prop_frame).head(25),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                continue
+            base_columns = [column for column in join_columns if column in compare.columns]
+            context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
+            st.dataframe(
+                display_lane_prop_frame(context),
+                use_container_width=True,
+                hide_index=True,
+            )
