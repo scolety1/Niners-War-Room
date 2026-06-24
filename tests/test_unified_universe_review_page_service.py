@@ -21,7 +21,7 @@ def test_review_page_service_loads_consolidated_artifact() -> None:
     data = load_unified_universe_review_data()
 
     assert len(data.consolidated) == 368
-    assert len(data.blockers) == 310
+    assert len(data.blockers) == 271
     assert len(data.consolidation_decisions) == 15
 
 
@@ -33,17 +33,20 @@ def test_review_page_summary_counts_match_artifact() -> None:
     assert summary["veteran_count"] == 240
     assert summary["rookie_prospect_count"] == 54
     assert summary["pdf_fa_count"] == 74
-    assert summary["blocker_count"] == 310
-    assert summary["review_needed_count"] == 248
+    assert summary["blocker_count"] == 271
+    assert summary["missing_age_count"] == 16
+    assert summary["review_needed_count"] == 249
 
 
 def test_review_page_blocker_counts_load() -> None:
     data = load_unified_universe_review_data()
     missing_ids = filter_blockers(data.blockers, blocker_types=["MISSING_PLAYER_ID"])
     missing_ages = filter_blockers(data.blockers, blocker_types=["MISSING_AGE"])
+    age_conflicts = filter_blockers(data.blockers, blocker_types=["AGE_CONFLICT_REVIEW_NEEDED"])
 
     assert len(missing_ids) == 5
-    assert len(missing_ages) == 42
+    assert len(missing_ages) == 16
+    assert len(age_conflicts) == 1
     assert set(BLOCKER_TABLE_COLUMNS).issubset(data.blockers.columns)
 
 
@@ -75,7 +78,7 @@ def test_missing_age_and_player_id_blockers_are_visible() -> None:
     data = load_unified_universe_review_data()
 
     assert data.summary["missing_player_id_count"] == 5
-    assert data.summary["missing_age_count"] == 42
+    assert data.summary["missing_age_count"] == 16
     assert data.blockers["blocker_type"].eq("MISSING_PLAYER_ID").any()
     assert data.blockers["blocker_type"].eq("MISSING_AGE").any()
 

@@ -30,10 +30,11 @@ The page reads review-only artifacts from:
 - Veterans: 240
 - Rookies/prospects: 54
 - PDF free agents: 74
-- Blockers: 310
+- Blockers: 271
 - Missing player_id blockers: 5
-- Missing age blockers: 42
-- Review-needed consolidated rows: 248
+- Missing age blockers: 16
+- Age conflict blockers: 1
+- Review-needed consolidated rows: 249
 - App wiring allowed: no
 - Model input allowed: no
 

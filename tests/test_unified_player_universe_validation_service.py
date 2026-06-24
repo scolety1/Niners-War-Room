@@ -189,9 +189,10 @@ def test_remaining_blockers_file_loads() -> None:
         keep_default_na=False,
     )
 
-    assert len(blockers) == 310
+    assert len(blockers) == 271
     assert blockers["blocker_type"].eq("MISSING_PLAYER_ID").sum() == 5
-    assert blockers["blocker_type"].eq("MISSING_AGE").sum() == 42
+    assert blockers["blocker_type"].eq("MISSING_AGE").sum() == 16
+    assert blockers["blocker_type"].eq("AGE_CONFLICT_REVIEW_NEEDED").sum() == 1
 
 
 def test_source_summary_counts_load() -> None:

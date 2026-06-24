@@ -28,3 +28,8 @@ consolidation_confidence_enum_valid,PASS,ok
 consolidation_decisions_schema_valid,PASS,ok
 remaining_blockers_schema_valid,PASS,ok
 expected_duplicate_groups_consolidated,PASS,decisions=15 duplicate_rows=15
+missing_id_age_repair_schema_valid,PASS,repair CSV required columns present
+repaired_age_source_present,PASS,repaired age rows require age_source
+no_player_id_repair_without_approved_source,PASS,new player_id values must cite an approved source
+repair_preserves_app_and_model_no,PASS,repair artifact remains blocked from app/model usage
+remaining_blockers_load_after_repair,PASS,remaining blockers rows=271

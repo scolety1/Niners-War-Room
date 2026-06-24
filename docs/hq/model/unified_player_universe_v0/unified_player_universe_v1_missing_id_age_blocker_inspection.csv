@@ -1,0 +1,48 @@
+player_name,position,source_layer,player_type,current_player_id,current_age,blocker_type,current_review_status,candidate_repair_source,repair_possible,reason
+Sieh Bangura,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_PLAYER_ID,REVIEW_NEEDED,,no,No approved high-confidence exact player_id source found.
+Devin Voisin,WR,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_PLAYER_ID,REVIEW_NEEDED,,no,No approved high-confidence exact player_id source found.
+Barika Kpeenu,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_PLAYER_ID,REVIEW_NEEDED,,no,No approved high-confidence exact player_id source found.
+Braylon James,WR,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_PLAYER_ID,REVIEW_NEEDED,,no,No approved high-confidence exact player_id source found.
+Jamarion Miller,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_PLAYER_ID,REVIEW_NEEDED,,no,No approved high-confidence exact player_id source found.
+Nick Chubb,RB,Veteran Full Dynasty Layer,VETERAN,4988,Not enough information,MISSING_AGE,REVIEW_NEEDED,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Brandon Aubrey,K,Veteran Full Dynasty Layer,VETERAN,11533,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Cameron Dicker,K,Veteran Full Dynasty Layer,VETERAN,8259,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Jason Myers,K,Veteran Full Dynasty Layer,VETERAN,2747,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Eddy Pineiro,K,Veteran Full Dynasty Layer,VETERAN,5189,30.8,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Jake Bates,K,Veteran Full Dynasty Layer,VETERAN,11539,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Chris Boswell,K,Veteran Full Dynasty Layer,VETERAN,1945,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Harrison Butker,K,Veteran Full Dynasty Layer,VETERAN,4227,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Matt Prater,K,Veteran Full Dynasty Layer,VETERAN,17,Not enough information,MISSING_AGE,READY,nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+KC Concepcion,WR,Rookie/Prospect Layer,ROOKIE,13298,Not enough information,MISSING_AGE,READY,,no,No approved local age source found; keep Not enough information.
+Eric McAlister,WR,Rookie/Prospect Layer,ROOKIE,13354,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Kejon Owens,RB,Rookie/Prospect Layer,ROOKIE,13291,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Sieh Bangura,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Chris Brazzell,WR,Rookie/Prospect Layer,ROOKIE,13353,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Jacob De Jesus,WR,Rookie/Prospect Layer,ROOKIE,13904,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Dominic Richardson,RB,Rookie/Prospect Layer,ROOKIE,13725,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Devin Voisin,WR,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Hank Beatty,WR,Rookie/Prospect Layer,ROOKIE,13776,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+O'Mega Blake,WR,Rookie/Prospect Layer,ROOKIE,13304,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Barika Kpeenu,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Braylon James,WR,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Jamarion Miller,RB,Rookie/Prospect Layer,ROOKIE,,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Chip Trayanum,RB,Rookie/Prospect Layer,ROOKIE,28114,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Zay Flowers,WR,Frozen Baseline Layer,VETERAN,9997,25.8,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Chris Olave,WR,Frozen Baseline Layer,VETERAN,8144,26.0,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Drake Maye,QB,Frozen Baseline Layer,VETERAN,11564,23.8,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Jameson Williams,WR,Frozen Baseline Layer,VETERAN,8148,25.2,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Alec Pierce,WR,Frozen Baseline Layer,VETERAN,8142,26.1,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Jaylen Warren,RB,Frozen Baseline Layer,VETERAN,8228,27.6,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Dak Prescott,QB,Frozen Baseline Layer,VETERAN,3294,32.9,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Rashee Rice,WR,Frozen Baseline Layer,VETERAN,10229,26.2,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Brian Thomas,WR,Frozen Baseline Layer,VETERAN,11631,23.7,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Keenan Allen,WR,Frozen Baseline Layer,VETERAN,1479,34.1,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Brock Purdy,QB,Frozen Baseline Layer,VETERAN,8183,26.5,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Darren Waller,TE,Frozen Baseline Layer,VETERAN,2505,33.8,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+John Metchie,WR,PDF Free-Agent Availability Layer,PDF_FA,8147,Not enough information,MISSING_AGE,READY,docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv DynastyProcess display fallback; nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Joe Milton,QB,PDF Free-Agent Availability Layer,PDF_FA,11557,Not enough information,MISSING_AGE,READY,docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv DynastyProcess display fallback; nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Audric Estime,RB,PDF Free-Agent Availability Layer,PDF_FA,11579,Not enough information,MISSING_AGE,READY,docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv DynastyProcess display fallback; nflverse roster display context display_stat_context_only,yes,Approved display-age source matched exactly.
+Atlanta Falcons,DST,PDF Free-Agent Availability Layer,PDF_FA,ATL,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Miami Dolphins,DST,PDF Free-Agent Availability Layer,PDF_FA,MIA,Not enough information,MISSING_AGE,REVIEW_NEEDED,,no,No approved local age source found; keep Not enough information.
+Dont'e Thornton,WR,PDF Free-Agent Availability Layer,VETERAN,12541,23.6,MISSING_AGE,REVIEW_NEEDED,Existing consolidated canonical row,yes,Stale blocker removed; consolidated canonical row already has age.
+Joshua Palmer,WR,PDF Free-Agent Availability Layer,PDF_FA,7670,Not enough information,MISSING_AGE,READY,docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv DynastyProcess display fallback=26.7; nflverse roster display context display_stat_context_only=26.8,no,Age conflict across approved display sources: docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv DynastyProcess display fallback=26.7; nflverse roster display context display_stat_context_only=26.8.

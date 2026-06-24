@@ -10,5 +10,5 @@ PDF free-agent source input,docs/hq/parallel_lanes/overnight_accuracy_max_202606
 Market baseline source input,docs/hq/parallel_lanes/dynastyprocess_market_baseline_20260622/dp_market_baseline_context.csv,330,,,,,,,,,,Input source count for validation context.
 Outcome context source input,docs/draft_day_exports/final_board_v1_20260622/app_props/outcome_columns/outcome_player_context.csv,66,,,,,,,,,,Input source count for validation context.
 Identity audit source input,docs/hq/data_sources/identity/player_id_coverage_audit_v1.csv,1139,,,,,,,,,,Input source count for validation context.
-Consolidated review output,docs/hq/model/unified_player_universe_v0/unified_player_universe_v1_consolidated_review.csv,368,368,363,340,287,12,329,248,,,Review-only consolidated artifact; not app wiring or model input.
-Remaining blockers output,docs/hq/model/unified_player_universe_v0/unified_player_universe_v1_remaining_blockers.csv,310,,,,,,,,,,Rows that still block app wiring.
+Consolidated review output,docs/hq/model/unified_player_universe_v0/unified_player_universe_v1_consolidated_review.csv,368,368,363,351,287,12,329,249,,,Review-only consolidated artifact; not app wiring or model input.
+Remaining blockers output,docs/hq/model/unified_player_universe_v0/unified_player_universe_v1_remaining_blockers.csv,271,,,,,,,,,,Rows that still block app wiring.
