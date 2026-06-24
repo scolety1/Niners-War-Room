@@ -94,7 +94,7 @@ RANKING_LABELS = {
     "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
     "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
     "candidate_value_band": "Candidate Band",
-    "confidence_band": "Confidence",
+    "confidence_band": "Candidate Confidence",
     "available_pool_adp_rank": "Available-Pool ADP Rank (Display-Only)",
     "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
     "candidate_key_caveat": "Key Caveat / Review Flag",
@@ -118,7 +118,7 @@ RANKING_LABELS = {
     "draft_action_display_only": "Draft Action (Display-Only)",
     "warning_severity_display_only": "Warning (Display-Only)",
     "risk_notes": "Risk Notes",
-    "needs_manual_review": "Manual Review",
+    "needs_manual_review": "Needs Manual Review",
 }
 
 DRAFT_BOARD_LABELS = {
