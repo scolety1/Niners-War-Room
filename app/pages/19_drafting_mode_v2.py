@@ -157,10 +157,13 @@ def _future_pick_rows(state: dict[str, object]) -> pd.DataFrame:
             rows.append(
                 {
                     "Future Pick": str(pick),
-                    "Counterparty": str(trade.get("counterparty") or "Not enough information"),
+                    "Team A": str(trade.get("team_a") or "Not enough information"),
+                    "Team B": str(trade.get("team_b") or "Not enough information"),
                     "Trade": (
-                        f"Send {trade.get('sends', '')}; "
-                        f"Receive {trade.get('receives', '')}"
+                        f"{trade.get('team_a', 'Team A')} sends "
+                        f"{trade.get('team_a_sends', '')}; "
+                        f"{trade.get('team_b', 'Team B')} sends "
+                        f"{trade.get('team_b_sends', '')}"
                     ),
                 }
             )
@@ -183,10 +186,17 @@ def _trade_event_rows(state: dict[str, object]) -> pd.DataFrame:
             continue
         rows.append(
             {
-                "Type": str(trade.get("trade_type") or "Not enough information"),
-                "Counterparty": str(trade.get("counterparty") or "Not enough information"),
-                "Sends": str(trade.get("sends") or "Not enough information"),
-                "Receives": str(trade.get("receives") or "Not enough information"),
+                "Team A": str(trade.get("team_a") or "Not enough information"),
+                "Team B": str(trade.get("team_b") or "Not enough information"),
+                "Team A Sends": str(
+                    trade.get("team_a_sends") or trade.get("sends") or "Not enough information"
+                ),
+                "Team B Sends": str(
+                    trade.get("team_b_sends")
+                    or trade.get("receives")
+                    or "Not enough information"
+                ),
+                "Status": str(trade.get("status") or "Not enough information"),
             }
         )
     return pd.DataFrame(rows)

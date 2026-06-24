@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import streamlit as st
 
 from src.services.draft_day_runtime_state_service import (
     apply_trade_events_to_pick_frame,
+    create_runtime_backup,
     event_rows,
     export_runtime_state,
+    export_runtime_state_json,
+    load_latest_runtime_state,
     load_runtime_state,
     record_trade_event,
-    reset_runtime_state,
+    reset_runtime_state_if_confirmed,
+    restore_runtime_state_from_json,
     runtime_paths,
     save_runtime_state,
     update_workflow_state,
@@ -349,9 +355,12 @@ def _render_pick_controls(
                 event_type="pick_assigned",
                 event_detail={
                     "player": assigned_player,
+                    "player_id": player_options[player_label],
                     "position": player_row.get("position", "") if player_row else "",
                     "pick_label": assigned_pick,
                     "overall_pick": pick_options[pick_label],
+                    "pick_owner": pick_row.get("current_owner", "") if pick_row else "",
+                    "selecting_team": pick_row.get("current_owner", "") if pick_row else "",
                 },
             )
             st.session_state[runtime_state_key] = runtime_state
@@ -413,44 +422,46 @@ def _render_trade_events(
     session_key: str,
     runtime_state_key: str,
 ) -> None:
-    with st.expander("In-draft trade events", expanded=False):
+    with st.expander("Record Trade", expanded=False):
         st.caption(
             "Record pick-ownership events during the draft. This updates local runtime board "
             "context only; no trade calculator, model value, rank, or source truth is changed."
         )
-        trade_type = st.selectbox(
-            "Trade type",
-            ["Trade away current pick", "Trade for pick", "Manual trade note"],
-            key=f"{session_key}_trade_type",
-        )
-        counterparty = st.text_input(
-            "Counterparty / team",
-            key=f"{session_key}_trade_counterparty",
-            placeholder="Team name",
-        )
         cols = st.columns(2)
-        sends = cols[0].text_input(
-            "NWR sends",
-            key=f"{session_key}_trade_sends",
-            placeholder="Example: 1.04",
+        team_a = cols[0].text_input(
+            "Team A",
+            key=f"{session_key}_trade_team_a",
+            value="NWR",
+            placeholder="Team A",
         )
-        receives = cols[1].text_input(
-            "NWR receives",
-            key=f"{session_key}_trade_receives",
-            placeholder="Example: 2028 1st + 2.03",
+        team_b = cols[1].text_input(
+            "Team B",
+            key=f"{session_key}_trade_team_b",
+            placeholder="Team B",
+        )
+        asset_cols = st.columns(2)
+        team_a_sends = asset_cols[0].text_area(
+            "Team A sends",
+            key=f"{session_key}_trade_team_a_sends",
+            placeholder="Example: 2026 1.04",
+        )
+        team_b_sends = asset_cols[1].text_area(
+            "Team B sends",
+            key=f"{session_key}_trade_team_b_sends",
+            placeholder="Example: 2026 2.03, 2028 1st",
         )
         notes = st.text_area(
             "Notes",
             key=f"{session_key}_trade_notes",
             placeholder="Optional context. No final trade advice.",
         )
-        if st.button("Record Trade Event", key=f"{session_key}_record_trade"):
+        if st.button("Record trade", key=f"{session_key}_record_trade"):
             st.session_state[runtime_state_key] = record_trade_event(
                 st.session_state[runtime_state_key],
-                trade_type=trade_type,
-                counterparty=counterparty,
-                sends=sends,
-                receives=receives,
+                team_a=team_a,
+                team_b=team_b,
+                team_a_sends=team_a_sends,
+                team_b_sends=team_b_sends,
                 notes=notes,
             )
             st.success("Trade event recorded in local draft runtime state.")
@@ -489,6 +500,116 @@ def _render_runtime_state_controls(
             f"Autosave path: {paths.state_dir}. Runtime files are local-only under "
             "C:\\NWR_SHARED_DATA and must not be committed."
         )
+        state_cols = st.columns(3)
+        if state_cols[0].button("Save draft state", key=f"{session_key}_manual_save"):
+            st.session_state[runtime_state_key] = save_runtime_state(
+                st.session_state[runtime_state_key],
+                event_type="manual_save",
+                event_detail={"source": "manual_button"},
+            )
+            st.success("Draft state saved.")
+        if state_cols[1].button("Load latest draft state", key=f"{session_key}_load_latest"):
+            latest = load_latest_runtime_state(
+                mode=str(st.session_state[runtime_state_key].get("mode") or "live"),
+                draft_id=str(
+                    st.session_state[runtime_state_key].get("draft_session_id")
+                    or st.session_state[runtime_state_key].get("draft_id")
+                    or "draft_day_v2"
+                ),
+                source_checkpoint=source_caption,
+            )
+            st.session_state[runtime_state_key] = save_runtime_state(
+                latest,
+                event_type="state_loaded",
+                event_detail={"source": "latest_runtime_state"},
+            )
+            st.session_state[session_key] = st.session_state[runtime_state_key][
+                "workflow_state"
+            ]
+            st.success("Latest draft state loaded.")
+            st.rerun()
+        if state_cols[2].button("Create backup", key=f"{session_key}_create_backup"):
+            backup_path = create_runtime_backup(
+                st.session_state[runtime_state_key],
+                reason="manual_button",
+            )
+            st.session_state[runtime_state_key] = save_runtime_state(
+                st.session_state[runtime_state_key],
+                event_type="backup_created",
+                event_detail={"path": str(backup_path)},
+                create_backup=False,
+            )
+            st.success(f"Backup created: {backup_path}")
+
+        export_cols = st.columns(2)
+        if export_cols[0].button("Export JSON", key=f"{session_key}_export_json"):
+            exports = export_runtime_state(st.session_state[runtime_state_key])
+            st.session_state[runtime_state_key] = save_runtime_state(
+                st.session_state[runtime_state_key],
+                event_type="export_created",
+                event_detail={label: str(path) for label, path in exports.items()},
+            )
+            st.success("Exported: " + " | ".join(str(path) for path in exports.values()))
+        export_cols[1].download_button(
+            "Download JSON",
+            data=export_runtime_state_json(st.session_state[runtime_state_key]),
+            file_name=f"{session_key}_draft_state.json",
+            mime="application/json",
+            key=f"{session_key}_download_json",
+        )
+
+        uploaded = st.file_uploader(
+            "Import JSON",
+            type=["json"],
+            key=f"{session_key}_import_json",
+            help="Restore a previously exported draft state JSON file.",
+        )
+        if uploaded is not None and st.button(
+            "Restore imported JSON",
+            key=f"{session_key}_restore_imported_json",
+        ):
+            try:
+                st.session_state[runtime_state_key] = restore_runtime_state_from_json(
+                    uploaded.getvalue(),
+                    mode=str(st.session_state[runtime_state_key].get("mode") or "live"),
+                    draft_id=str(
+                        st.session_state[runtime_state_key].get("draft_session_id")
+                        or st.session_state[runtime_state_key].get("draft_id")
+                        or "draft_day_v2"
+                    ),
+                )
+                st.session_state[session_key] = st.session_state[runtime_state_key][
+                    "workflow_state"
+                ]
+                st.success("Imported draft state restored.")
+                st.rerun()
+            except (json.JSONDecodeError, TypeError, ValueError) as exc:
+                st.error(f"Could not import draft JSON: {exc}")
+
+        reset_col, status_col = st.columns([1, 2])
+        confirm = reset_col.checkbox(
+            "Confirm reset draft state",
+            key=f"{session_key}_confirm_reset",
+            help="Required before clearing local runtime picks/trades for this mode.",
+        )
+        if reset_col.button("Reset draft state", key=f"{session_key}_reset_state"):
+            if not confirm:
+                st.warning("Check Confirm reset before clearing local runtime state.")
+            else:
+                st.session_state[runtime_state_key] = reset_runtime_state_if_confirmed(
+                    st.session_state[runtime_state_key],
+                    confirmed=True,
+                    reason=f"User reset from {source_caption[:160]}",
+                )
+                st.session_state[session_key] = st.session_state[runtime_state_key][
+                    "workflow_state"
+                ]
+                st.success("Local runtime state reset.")
+                st.rerun()
+        status_col.caption(f"State path: {paths.state_dir}")
+        status_col.caption(f"Backup path: {paths.backup_dir}")
+
+    with st.expander("Event log", expanded=False):
         events = event_rows(st.session_state[runtime_state_key])
         st.caption(f"Events recorded: {len(events)}")
         if events:
@@ -498,33 +619,8 @@ def _render_runtime_state_controls(
                 hide_index=True,
                 key=f"{session_key}_runtime_events",
             )
-        export_col, reset_col = st.columns(2)
-        if export_col.button("Export Draft Log", key=f"{session_key}_export_log"):
-            exports = export_runtime_state(st.session_state[runtime_state_key])
-            st.session_state[runtime_state_key] = save_runtime_state(
-                st.session_state[runtime_state_key],
-                event_type="export_created",
-                event_detail={label: str(path) for label, path in exports.items()},
-            )
-            st.success("Exported: " + " | ".join(str(path) for path in exports.values()))
-        confirm = reset_col.checkbox(
-            "Confirm reset",
-            key=f"{session_key}_confirm_reset",
-            help="Required before clearing local runtime picks/trades for this mode.",
-        )
-        if reset_col.button("Reset Local Draft State", key=f"{session_key}_reset_state"):
-            if not confirm:
-                st.warning("Check Confirm reset before clearing local runtime state.")
-            else:
-                st.session_state[runtime_state_key] = reset_runtime_state(
-                    st.session_state[runtime_state_key],
-                    reason=f"User reset from {source_caption[:160]}",
-                )
-                st.session_state[session_key] = st.session_state[runtime_state_key][
-                    "workflow_state"
-                ]
-                st.success("Local runtime state reset.")
-                st.rerun()
+        else:
+            st.caption("No draft events recorded yet.")
 
 
 def _values(frame: pd.DataFrame, column: str) -> list[str]:

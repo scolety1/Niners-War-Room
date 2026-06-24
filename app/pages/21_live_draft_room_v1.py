@@ -41,7 +41,7 @@ page_header(
     status_items=(
         ("Active draftable pool", "safe"),
         ("Frozen baseline rank visible", "review"),
-        ("Session-only draft state", "safe"),
+        ("Persistent local draft state", "safe"),
     ),
 )
 stop_if_board_blocked(bundle)
