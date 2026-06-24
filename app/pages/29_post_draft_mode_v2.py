@@ -42,6 +42,7 @@ page_header(
         ("No rank mutation", "safe"),
     ),
 )
+st.link_button("Back to Drafting Mode", "/drafting-mode")
 
 mode = st.radio("Draft session", ["Live", "Mock"], horizontal=True, key="post_draft_mode")
 runtime_mode = mode.lower()

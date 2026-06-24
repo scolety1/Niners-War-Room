@@ -497,6 +497,7 @@ page_header(
     ),
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
+st.link_button("Back to Drafting Mode", "/drafting-mode")
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

@@ -489,6 +489,7 @@ page_header(
         ),
     ),
 )
+st.link_button("Back to Drafting Mode", "/drafting-mode")
 
 if not bundle.loaded:
     st.error("Frozen Final Draft Board V1 baseline is unavailable; baseline context is blocked.")

@@ -325,6 +325,7 @@ page_header(
         ("Display only", "review"),
     ),
 )
+st.link_button("Back to Drafting Mode", "/drafting-mode")
 render_frozen_baseline_badge(bundle)
 stop_if_board_blocked(bundle)
 

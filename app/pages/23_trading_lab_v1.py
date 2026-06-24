@@ -70,6 +70,7 @@ page_header(
         ("No trade model added", "safe"),
     ),
 )
+st.link_button("Back to Drafting Mode", "/drafting-mode")
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

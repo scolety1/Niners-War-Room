@@ -12,319 +12,439 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.draft_day_v1 import render_source_of_truth_badge, stop_if_board_blocked
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
+from src.services.draft_day_app_v1_service import (
+    load_expanded_draftable_player_pool,
+    load_frozen_board,
+    load_lane_prop_file,
+)
 from src.services.draft_day_runtime_state_service import (
     apply_trade_events_to_pick_frame,
-    event_rows,
+    export_runtime_state,
+    export_runtime_state_json,
+    load_latest_runtime_state,
     load_runtime_state,
     runtime_paths,
+    save_runtime_state,
+    update_workflow_state,
+)
+from src.services.draft_day_workflow_service import (
+    DraftWorkflowError,
+    assign_player_to_pick,
+    pick_select_options,
+    player_key_from_row,
+)
+from src.services.drafting_mode_cockpit_service import (
+    DEFAULT_SORT_LABEL,
+    build_cockpit_board,
+    build_cockpit_summary,
+    compare_decision_rows,
+    current_pick_for_assignment,
+    decision_panel_rows,
+    display_cockpit_board,
+    owned_pick_rows,
+    player_options,
+    recent_event_rows,
+    recent_trade_rows,
+    record_cockpit_trade,
+    selected_player_row,
+    tier_count_rows,
 )
 
-bundle = load_frozen_board()
-live_state = load_runtime_state(mode="live")
-mock_state = load_runtime_state(mode="mock")
-pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
+SESSION_KEY = "drafting_mode_cockpit_v1"
+RUNTIME_STATE_KEY = f"{SESSION_KEY}_runtime_state"
 
 
-def _render_sidebar() -> None:
-    with st.sidebar:
-        st.markdown("### Your Team")
-        st.caption("Local runtime view only. Source truth, ranks, and roster files are unchanged.")
-        metric_cols = st.columns(2)
-        metric_cols[0].metric("Live picks", len(live_state["workflow_state"]["assignments"]))
-        metric_cols[1].metric("Trades", len(live_state["trade_events"]))
-        st.caption(f"Last autosave: {_last_autosave(live_state)}")
-        st.caption(f"Owned picks: {_owned_pick_summary(pick_frame, live_state)}")
-        st.caption(f"Drafted: {_assignment_summary(live_state)}")
-        st.caption(f"Future picks: {_future_pick_summary(live_state)}")
-
-        with st.expander("Current owned picks", expanded=True):
-            owned = _owned_pick_rows(pick_frame, live_state)
-            if owned.empty:
-                st.write("Not enough information")
-            else:
-                st.dataframe(owned, use_container_width=True, hide_index=True)
-
-        with st.expander("Drafted by NWR this draft", expanded=True):
-            assignments = _assignment_rows(live_state)
-            if assignments.empty:
-                st.write("No picks assigned yet.")
-            else:
-                st.dataframe(assignments, use_container_width=True, hide_index=True)
-
-        with st.expander("Future picks from trade events", expanded=True):
-            future = _future_pick_rows(live_state)
-            if future.empty:
-                st.write("No future pick events recorded yet.")
-            else:
-                st.dataframe(future, use_container_width=True, hide_index=True)
-
-        with st.expander("Trades made during draft", expanded=False):
-            trades = _trade_event_rows(live_state)
-            if trades.empty:
-                st.write("No trade events recorded yet.")
-            else:
-                st.dataframe(trades, use_container_width=True, hide_index=True)
-
-        with st.expander("Roster source", expanded=False):
-            st.write(
-                "Not enough information. A current NWR roster source is not wired into this "
-                "Drafting Mode sidebar, so this panel shows runtime picks/trades only."
-            )
-        with st.expander("Runtime status", expanded=False):
-            paths = runtime_paths()
-            st.caption(f"Runtime root: {paths.root}")
-            st.caption(f"Pick source: {pick_path or 'Not enough information'}")
-            st.caption(f"Live events: {len(event_rows(live_state))}")
-            st.caption(f"Mock picks: {len(mock_state['workflow_state']['assignments'])}")
-
-
-def _owned_pick_rows(frame: pd.DataFrame, state: dict[str, object]) -> pd.DataFrame:
-    if frame.empty:
-        return pd.DataFrame()
-    adjusted = apply_trade_events_to_pick_frame(frame, state)
-    required = {"overall_pick", "pick_label", "current_owner", "is_nwr_pick"}
-    if not required.issubset(adjusted.columns):
-        return pd.DataFrame()
-    owner_mask = adjusted["current_owner"].astype(str).str.contains(
-        "Niners|NWR", case=False, na=False
-    )
-    nwr_mask = adjusted["is_nwr_pick"].astype(str).str.lower().isin({"true", "1", "yes"})
-    rows = adjusted.loc[owner_mask | nwr_mask].copy()
-    if rows.empty:
-        return pd.DataFrame()
-    columns = ["overall_pick", "pick_label", "current_owner", "original_owner"]
-    rows = rows.loc[:, [column for column in columns if column in rows.columns]]
-    return rows.rename(
-        columns={
-            "overall_pick": "Overall",
-            "pick_label": "Pick",
-            "current_owner": "Current Owner",
-            "original_owner": "Original Owner",
-        }
-    )
-
-
-def _owned_pick_summary(frame: pd.DataFrame, state: dict[str, object]) -> str:
-    rows = _owned_pick_rows(frame, state)
-    if rows.empty or "Pick" not in rows.columns:
-        return "Not enough information"
-    picks = rows["Pick"].astype(str).head(6).tolist()
-    suffix = "..." if len(rows) > 6 else ""
-    return ", ".join(picks) + suffix
-
-
-def _assignment_rows(state: dict[str, object]) -> pd.DataFrame:
-    assignments = state.get("workflow_state", {}).get("assignments", [])  # type: ignore[union-attr]
-    if not isinstance(assignments, list) or not assignments:
-        return pd.DataFrame()
-    rows = pd.DataFrame([row for row in assignments if isinstance(row, dict)])
-    columns = [
-        column
-        for column in ("pick_label", "player", "position", "nfl_team")
-        if column in rows.columns
-    ]
-    if not columns:
-        return pd.DataFrame()
-    return rows.loc[:, columns].rename(
-        columns={
-            "pick_label": "Pick",
-            "player": "Player",
-            "position": "Pos",
-            "nfl_team": "NFL Team",
-        }
-    )
-
-
-def _assignment_summary(state: dict[str, object]) -> str:
-    rows = _assignment_rows(state)
-    if rows.empty or "Player" not in rows.columns:
-        return "No picks assigned yet."
-    players = rows["Player"].astype(str).head(4).tolist()
-    suffix = "..." if len(rows) > 4 else ""
-    return ", ".join(players) + suffix
-
-
-def _future_pick_rows(state: dict[str, object]) -> pd.DataFrame:
-    rows: list[dict[str, str]] = []
-    for trade in state.get("trade_events", []):
-        if not isinstance(trade, dict):
-            continue
-        future_picks = trade.get("future_picks", [])
-        if not isinstance(future_picks, list):
-            continue
-        for pick in future_picks:
-            rows.append(
-                {
-                    "Future Pick": str(pick),
-                    "Team A": str(trade.get("team_a") or "Not enough information"),
-                    "Team B": str(trade.get("team_b") or "Not enough information"),
-                    "Trade": (
-                        f"{trade.get('team_a', 'Team A')} sends "
-                        f"{trade.get('team_a_sends', '')}; "
-                        f"{trade.get('team_b', 'Team B')} sends "
-                        f"{trade.get('team_b_sends', '')}"
-                    ),
-                }
-            )
-    return pd.DataFrame(rows)
-
-
-def _future_pick_summary(state: dict[str, object]) -> str:
-    rows = _future_pick_rows(state)
-    if rows.empty or "Future Pick" not in rows.columns:
-        return "No future pick events recorded yet."
-    picks = rows["Future Pick"].astype(str).drop_duplicates().head(4).tolist()
-    suffix = "..." if len(rows) > 4 else ""
-    return ", ".join(picks) + suffix
-
-
-def _trade_event_rows(state: dict[str, object]) -> pd.DataFrame:
-    rows: list[dict[str, str]] = []
-    for trade in state.get("trade_events", []):
-        if not isinstance(trade, dict):
-            continue
-        rows.append(
-            {
-                "Team A": str(trade.get("team_a") or "Not enough information"),
-                "Team B": str(trade.get("team_b") or "Not enough information"),
-                "Team A Sends": str(
-                    trade.get("team_a_sends") or trade.get("sends") or "Not enough information"
-                ),
-                "Team B Sends": str(
-                    trade.get("team_b_sends")
-                    or trade.get("receives")
-                    or "Not enough information"
-                ),
-                "Status": str(trade.get("status") or "Not enough information"),
-            }
+def _runtime_state() -> dict[str, object]:
+    if RUNTIME_STATE_KEY not in st.session_state:
+        st.session_state[RUNTIME_STATE_KEY] = load_runtime_state(
+            mode="live",
+            source_checkpoint=SOURCE_CAPTION,
         )
-    return pd.DataFrame(rows)
+    return st.session_state[RUNTIME_STATE_KEY]
 
 
-def _last_autosave(state: dict[str, object]) -> str:
-    return str(state.get("updated_at_utc") or "Not enough information")
+def _set_runtime_state(state: dict[str, object]) -> None:
+    st.session_state[RUNTIME_STATE_KEY] = state
 
 
-_render_sidebar()
+def _action_links() -> None:
+    links = [
+        ("Full Rankings", "/rankings"),
+        ("Full Player Compare", "/player-compare"),
+        ("Full Trading Lab", "/trading-lab"),
+        ("Post-Draft Mode", "/post-draft-mode"),
+        ("Settings/Data Health", "/settings-data-health"),
+    ]
+    for label, path in links:
+        st.link_button(label, path, use_container_width=True)
+
+
+def _render_top_bar(summary) -> None:
+    metric_cols = st.columns([1.1, 1.25, 0.9, 0.9, 1.35])
+    metric_cols[0].metric("Current pick", summary.current_pick)
+    metric_cols[1].metric("On-clock team", summary.on_clock_team)
+    metric_cols[2].metric("Drafted", summary.drafted_count)
+    metric_cols[3].metric("Trades", summary.trade_count)
+    metric_cols[4].metric("Autosave", summary.autosave_status, help=summary.last_saved)
+
+    action_cols = st.columns([1, 1, 1, 1, 1, 1])
+    if (REPO_ROOT / "src" / "services" / "data_refresh_orchestrator_service.py").exists():
+        action_cols[0].link_button("Refresh Data", "/refresh-data", use_container_width=True)
+    if action_cols[1].button("Save State", use_container_width=True):
+        _set_runtime_state(
+            save_runtime_state(
+                _runtime_state(),
+                event_type="manual_save",
+                event_detail={"source": "drafting_mode_cockpit"},
+            )
+        )
+        st.success("Draft state saved.")
+        st.rerun()
+    if action_cols[2].button("Load Latest", use_container_width=True):
+        _set_runtime_state(load_latest_runtime_state(mode="live", source_checkpoint=SOURCE_CAPTION))
+        st.success("Latest live draft state loaded.")
+        st.rerun()
+    if action_cols[3].button("Export", use_container_width=True):
+        exports = export_runtime_state(_runtime_state())
+        _set_runtime_state(
+            save_runtime_state(
+                _runtime_state(),
+                event_type="export_created",
+                event_detail={label: str(path) for label, path in exports.items()},
+            )
+        )
+        st.success("Exported local draft log.")
+    action_cols[4].link_button(
+        "Settings/Data Health",
+        "/settings-data-health",
+        use_container_width=True,
+    )
+    action_cols[5].link_button("Normal App View", "/rankings", use_container_width=True)
+
+
+def _render_left_rail(state: dict[str, object], pick_frame: pd.DataFrame) -> None:
+    st.markdown("#### Your Draft Rail")
+    owned = owned_pick_rows(pick_frame, state)
+    st.caption("Owned picks")
+    if owned.empty:
+        st.info("Not enough information")
+    else:
+        st.dataframe(owned.head(10), use_container_width=True, hide_index=True)
+
+    st.caption("Recent pick/trade events")
+    events = recent_event_rows(state)
+    if events.empty:
+        st.write("No runtime events yet.")
+    else:
+        st.dataframe(events, use_container_width=True, hide_index=True)
+
+    trades = recent_trade_rows(state)
+    st.caption("Recent trades")
+    if trades.empty:
+        st.write("No trade events recorded.")
+    else:
+        st.dataframe(trades, use_container_width=True, hide_index=True)
+
+    with st.expander("Pick ownership overrides", expanded=False):
+        overrides = state.get("pick_ownership_overrides", {})
+        if isinstance(overrides, dict) and overrides:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {"pick": pick, **value}
+                        for pick, value in overrides.items()
+                        if isinstance(value, dict)
+                    ]
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.write("No ownership overrides recorded.")
+
+    with st.expander("Deep tools", expanded=True):
+        _action_links()
+
+
+def _render_board_controls(board_frame: pd.DataFrame) -> tuple[str, str, str, bool, bool]:
+    controls = st.columns([1.3, 0.8, 1, 0.9, 0.7])
+    search = controls[0].text_input(
+        "Search",
+        placeholder="Player name",
+        key=f"{SESSION_KEY}_search",
+    )
+    positions = ["All"]
+    if "position" in board_frame.columns:
+        positions.extend(
+            sorted(
+                value
+                for value in board_frame["position"].astype(str).dropna().unique().tolist()
+                if value
+            )
+        )
+    position = controls[1].selectbox("Position", positions, key=f"{SESSION_KEY}_position")
+    tiers = ["All"]
+    if "dynasty_asset_tier" in board_frame.columns:
+        tiers.extend(
+            sorted(
+                value
+                for value in (
+                    board_frame["dynasty_asset_tier"].astype(str).dropna().unique().tolist()
+                )
+                if value
+            )
+        )
+    tier = controls[2].selectbox("Tier", tiers, key=f"{SESSION_KEY}_tier")
+    show_pdf = controls[3].toggle("PDF FAs", value=True, key=f"{SESSION_KEY}_show_pdf")
+    show_k_dst = controls[4].toggle("K/DST", value=False, key=f"{SESSION_KEY}_show_k_dst")
+    return search, position, tier, show_pdf, show_k_dst
+
+
+def _render_center_board(
+    *,
+    board_frame: pd.DataFrame,
+    pick_frame: pd.DataFrame,
+    state: dict[str, object],
+) -> tuple[pd.DataFrame, dict[str, object] | None, dict[str, object] | None]:
+    st.markdown("#### Best Available Board")
+    search, position, tier, show_pdf, show_k_dst = _render_board_controls(board_frame)
+    filtered = build_cockpit_board(
+        board_frame,
+        state,
+        search=search,
+        position=position,
+        tier=tier,
+        show_pdf_free_agents=show_pdf,
+        show_k_dst=show_k_dst,
+        sort_label=DEFAULT_SORT_LABEL,
+    )
+    counts = tier_count_rows(filtered)
+    if counts:
+        st.dataframe(pd.DataFrame(counts), use_container_width=True, hide_index=True)
+    st.dataframe(
+        display_cockpit_board(filtered).head(80),
+        use_container_width=True,
+        hide_index=True,
+        key=f"{SESSION_KEY}_main_board",
+    )
+
+    options = player_options(filtered)
+    if not options:
+        st.warning("No available players match the current filters.")
+        return filtered, None, None
+    selected_label = st.selectbox("Select player", list(options), key=f"{SESSION_KEY}_selected")
+    selected = selected_player_row(filtered, options[selected_label])
+
+    comparison_options = {"None": ""}
+    comparison_options.update(options)
+    comparison_label = st.selectbox(
+        "Compare against",
+        list(comparison_options),
+        key=f"{SESSION_KEY}_compare_against",
+    )
+    comparison = (
+        selected_player_row(filtered, comparison_options[comparison_label])
+        if comparison_options[comparison_label]
+        else None
+    )
+
+    action_cols = st.columns([1, 1, 1, 1])
+    if action_cols[0].button("Mark Drafted", use_container_width=True):
+        _mark_player_drafted(
+            selected=selected,
+            board_frame=board_frame,
+            pick_frame=pick_frame,
+            state=state,
+        )
+    action_cols[1].link_button("Open Full Compare", "/player-compare", use_container_width=True)
+    action_cols[2].link_button("Open Trade Lab", "/trading-lab", use_container_width=True)
+    note = st.text_input("Flag/note", key=f"{SESSION_KEY}_note", placeholder="Optional note")
+    if action_cols[3].button("Add Note", use_container_width=True):
+        if selected and note.strip():
+            next_state = dict(_runtime_state())
+            notes = list(next_state.get("notes", []))
+            notes.append(f"{selected.get('player', 'Player')}: {note.strip()}")
+            next_state["notes"] = notes
+            _set_runtime_state(
+                save_runtime_state(
+                    next_state,
+                    event_type="note_added",
+                    event_detail={"player": selected.get("player", ""), "note": note.strip()},
+                )
+            )
+            st.success("Note added to local runtime state.")
+            st.rerun()
+        else:
+            st.warning("Select a player and enter a note first.")
+    return filtered, selected, comparison
+
+
+def _mark_player_drafted(
+    *,
+    selected: dict[str, object] | None,
+    board_frame: pd.DataFrame,
+    pick_frame: pd.DataFrame,
+    state: dict[str, object],
+) -> None:
+    if selected is None:
+        st.warning("Select a player first.")
+        return
+    current_pick = current_pick_for_assignment(pick_frame, state)
+    if current_pick is None:
+        st.warning("No current pick is available.")
+        return
+    adjusted_picks = apply_trade_events_to_pick_frame(pick_frame, state)
+    try:
+        next_workflow = assign_player_to_pick(
+            state["workflow_state"],  # type: ignore[index]
+            board=board_frame,
+            pick_frame=adjusted_picks,
+            player_key=player_key_from_row(selected),
+            overall_pick=current_pick,
+        )
+    except DraftWorkflowError as exc:
+        st.error(str(exc))
+        return
+    pick_options = pick_select_options(adjusted_picks)
+    pick_label = next(
+        (label for label, pick in pick_options.items() if pick == current_pick),
+        str(current_pick),
+    )
+    _set_runtime_state(
+        update_workflow_state(
+            state,
+            next_workflow,
+            event_type="pick_assigned",
+            event_detail={
+                "player": selected.get("player", ""),
+                "player_id": player_key_from_row(selected),
+                "position": selected.get("position", ""),
+                "pick_label": pick_label.split(" - ", maxsplit=1)[0],
+                "overall_pick": current_pick,
+            },
+        )
+    )
+    st.success(f"Marked {selected.get('player', 'player')} drafted.")
+    st.rerun()
+
+
+def _render_right_panel(
+    selected: dict[str, object] | None,
+    comparison: dict[str, object] | None,
+) -> None:
+    st.markdown("#### Decision Panel")
+    st.dataframe(
+        pd.DataFrame(decision_panel_rows(selected)),
+        use_container_width=True,
+        hide_index=True,
+    )
+    with st.expander("Compare decision summary", expanded=bool(comparison)):
+        st.dataframe(
+            pd.DataFrame(compare_decision_rows(selected, comparison)),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
+def _render_trade_recorder(state: dict[str, object]) -> None:
+    with st.expander("Record Trade", expanded=False):
+        st.caption(
+            "Local runtime trade event only. Updates parseable current-year pick ownership "
+            "overrides; future picks are logged; unparseable assets require review."
+        )
+        cols = st.columns(2)
+        team_a = cols[0].text_input("Team A", value="NWR", key=f"{SESSION_KEY}_trade_team_a")
+        team_b = cols[1].text_input("Team B", value="Team B", key=f"{SESSION_KEY}_trade_team_b")
+        asset_cols = st.columns(2)
+        team_a_sends = asset_cols[0].text_area(
+            "Team A sends",
+            value="2026 1.04",
+            key=f"{SESSION_KEY}_team_a_sends",
+        )
+        team_b_sends = asset_cols[1].text_area(
+            "Team B sends",
+            value="2026 2.03, 2028 1st",
+            key=f"{SESSION_KEY}_team_b_sends",
+        )
+        notes = st.text_area("Notes", key=f"{SESSION_KEY}_trade_notes")
+        if st.button("Record trade", key=f"{SESSION_KEY}_record_trade"):
+            _set_runtime_state(
+                record_cockpit_trade(
+                    state,
+                    team_a=team_a,
+                    team_a_sends=team_a_sends,
+                    team_b=team_b,
+                    team_b_sends=team_b_sends,
+                    notes=notes,
+                )
+            )
+            st.success("Trade event recorded.")
+            st.rerun()
+
+
+bundle = load_frozen_board()
+draftable_board = (
+    load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
+)
+pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
+SOURCE_CAPTION = (
+    f"Frozen baseline checkpoint: {bundle.source_path}. Pick order: {pick_path}. "
+    "Draftable overlay: LVE Rosters 061326.pdf page 3 Free Agents. "
+    "K/DST hidden by default. Market/ADP context is display-only and never drives default sort."
+)
+
+state = _runtime_state()
+summary = build_cockpit_summary(
+    board_frame=draftable_board,
+    pick_frame=pick_frame,
+    runtime_state=state,
+)
 
 page_header(
     "Drafting Mode",
-    eyebrow="Draft-Day App V2",
+    eyebrow="On-Clock Cockpit",
     description=(
-        "One on-clock shell for Live Draft, Mock Draft, cheat sheets, trade tools, player "
-        "compare, search, and post-draft review. Runtime state is local-only and reload-safe."
+        "Live draft workspace: board first, runtime state always local, "
+        "source truth unchanged."
     ),
     status_items=(
-        ("Persistent runtime state", "safe"),
-        ("Source truth unchanged", "safe"),
-        ("Decision support only", "review"),
+        ("Cockpit active", "safe"),
+        ("Autosave local", "safe"),
+        ("Market display-only", "review"),
     ),
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
+_render_top_bar(summary)
 
-top_cols = st.columns([1, 1, 1, 2])
-with top_cols[0]:
-    st.markdown("**Enter Live Draft Room**")
-    st.code("/live-draft-room")
-    st.caption("Use for the real draft and reload-safe live picks.")
-with top_cols[1]:
-    st.markdown("**Enter Mock Draft**")
-    st.code("/mock-draft")
-    st.caption("Practice state remains separate from Live Draft.")
-with top_cols[2]:
-    st.markdown("**Open Cheat Sheets**")
-    st.code("/cheat-sheets")
-    st.caption("Overall-first tiered board for quick scanning.")
-with top_cols[3]:
-    st.caption(
-        "Drafting Mode is a workflow shell. Final Board Rank and Dynasty Rank remain visible "
-        "baselines; V2 runtime events do not edit source artifacts."
+left, center, right = st.columns([1.1, 2.35, 1.15])
+with left:
+    _render_left_rail(state, pick_frame)
+with center:
+    _filtered, selected_player, comparison_player = _render_center_board(
+        board_frame=draftable_board,
+        pick_frame=pick_frame,
+        state=state,
     )
+    _render_trade_recorder(_runtime_state())
+with right:
+    _render_right_panel(selected_player, comparison_player)
 
-tabs = st.tabs(
-    [
-        "Cheat Sheets",
-        "Draft Board",
-        "Trade Lab",
-        "Player Compare",
-        "Search",
-        "Settings / Data Health",
-    ]
-)
-
-with tabs[0]:
-    st.subheader("Cheat Sheets")
-    st.caption("Overall-first tiered view for on-clock scanning.")
-    st.code("/cheat-sheets")
-
-with tabs[1]:
-    st.subheader("Draft Board")
-    st.caption("Use Live Draft for real picks or Mock Draft for practice state.")
-    draft_cols = st.columns(2)
-    with draft_cols[0]:
-        st.code("/live-draft-room")
-    with draft_cols[1]:
-        st.code("/mock-draft")
-
-with tabs[2]:
-    st.subheader("Trade Lab")
-    st.caption("Manual package review plus V2 trade-event recording. No trade calculator logic.")
-    st.code("/trading-lab")
-
-with tabs[3]:
-    st.subheader("Player Compare")
-    st.caption("Decision summary first; detailed context behind expanders.")
-    st.code("/player-compare")
-
-with tabs[4]:
-    st.subheader("Search")
-    if bundle.loaded and "player" in bundle.frame.columns:
-        query = st.text_input("Find a player on the frozen board", placeholder="Search player")
-        search_frame = bundle.frame.copy()
-        if query:
-            search_frame = search_frame.loc[
-                search_frame["player"].astype(str).str.contains(query, case=False, na=False)
-            ]
-        columns = [
-            column
-            for column in ("final_board_rank", "player", "position", "nfl_team", "final_tier")
-            if column in search_frame.columns
-        ]
-        st.dataframe(
-            search_frame.loc[:, columns].head(40).rename(
-                columns={
-                    "final_board_rank": "Final Board Rank",
-                    "player": "Player",
-                    "position": "Pos",
-                    "nfl_team": "NFL Team",
-                    "final_tier": "Tier",
-                }
-            ),
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.warning("Frozen board search is unavailable.")
-
-with tabs[5]:
-    st.subheader("Settings / Data Health")
+with st.expander("Source / guardrails", expanded=False):
+    st.caption(SOURCE_CAPTION)
+    st.caption(
+        "Default cockpit sort is Dynasty Asset Tier/Rank. Frozen Final Board Rank is a "
+        "baseline/checkpoint display, not source truth for the full available pool."
+    )
+    st.caption(
+        "DynastyProcess, ADP, and market fields are display-only timing/sanity context and "
+        "do not drive default sort, model inputs, ranks, tiers, or hidden sort."
+    )
+    st.download_button(
+        "Download current runtime JSON",
+        data=export_runtime_state_json(_runtime_state()),
+        file_name="drafting_mode_live_runtime_state.json",
+        mime="application/json",
+    )
     paths = runtime_paths()
-    st.caption(f"Runtime state root: {paths.root}")
-    runtime_rows = [
-        {
-            "Mode": "Live",
-            "Picks": len(live_state["workflow_state"]["assignments"]),
-            "Trades": len(live_state["trade_events"]),
-            "Events": len(event_rows(live_state)),
-        },
-        {
-            "Mode": "Mock",
-            "Picks": len(mock_state["workflow_state"]["assignments"]),
-            "Trades": len(mock_state["trade_events"]),
-            "Events": len(event_rows(mock_state)),
-        },
-    ]
-    st.dataframe(pd.DataFrame(runtime_rows), use_container_width=True, hide_index=True)
-    st.code("/settings")
+    st.caption(f"Runtime root: {paths.root}")
