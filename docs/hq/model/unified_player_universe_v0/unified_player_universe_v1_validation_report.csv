@@ -1,0 +1,19 @@
+check_name,status,detail
+required_columns_exist,PASS,ok
+player_type_enum_valid,PASS,ok
+review_status_enum_valid,PASS,ok
+data_quality_enum_valid,PASS,ok
+market_status_enum_valid,PASS,ok
+outcome_status_enum_valid,PASS,ok
+rank_source_enum_valid,PASS,ok
+no_market_as_rank_source,PASS,market cannot create rank_source
+rookies_do_not_have_dynasty_rank,PASS,rookie/prospect dynasty_rank must be blank
+app_wiring_allowed_all_no,PASS,review artifact is not app wiring
+model_input_allowed_all_no,PASS,review artifact is not model input
+duplicate_groups_identified,PASS,duplicate review rows=15
+missing_player_id_reported,PASS,identity gap rows=330
+age_source_reported,PASS,age_source required on every row
+outcome_gaps_not_enough_information,PASS,missing/unsupported outcomes must display Not enough information
+full_dynasty_veteran_row_count_preserved,PASS,full dynasty rows=240
+rookie_prospect_count_reported,PASS,rookie/prospect rows=54
+frozen_board_remains_66,PASS,frozen source rows=66
