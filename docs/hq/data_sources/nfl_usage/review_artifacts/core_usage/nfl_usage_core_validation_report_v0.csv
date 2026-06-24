@@ -1,0 +1,4 @@
+source_family,validation_status,missing_required_fields,blocked_fields,model_input_allowed,app_wiring_allowed,notes
+snap_counts,YELLOW_NOT_LIVE_INTROSPECTED,"season;week;player;position;team;offense_snaps",,no,no,blocked until nflreadpy dependency approved
+player_stats,YELLOW_NOT_LIVE_INTROSPECTED,"season;week;player_id;position",,no,no,blocked until nflreadpy dependency approved
+pbp,YELLOW_NOT_LIVE_INTROSPECTED,"season;week;posteam;yardline_100",,no,no,blocked until nflreadpy dependency approved

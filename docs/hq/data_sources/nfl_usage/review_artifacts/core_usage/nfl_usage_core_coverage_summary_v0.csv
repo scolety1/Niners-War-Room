@@ -1,0 +1,4 @@
+source_family,loader_name,status,row_count,field_count,raw_cache_root,raw_data_tracked,model_input_allowed,app_wiring_allowed,warnings
+snap_counts,load_snap_counts,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed
+player_stats,load_player_stats,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed
+pbp,load_pbp,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed

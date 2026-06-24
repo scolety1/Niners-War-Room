@@ -1,0 +1,13 @@
+source_family,quarantine_status,reason,model_input_allowed,app_wiring_allowed
+template,TEMPLATE_REASON,schema mismatch,no,no
+template,TEMPLATE_REASON,missing required fields,no,no
+template,TEMPLATE_REASON,blocked fields present,no,no
+template,TEMPLATE_REASON,row count collapse,no,no
+template,TEMPLATE_REASON,duplicate explosion,no,no
+template,TEMPLATE_REASON,null spike,no,no
+template,TEMPLATE_REASON,stale data,no,no
+template,TEMPLATE_REASON,license/attribution missing,no,no
+template,TEMPLATE_REASON,source unavailable,no,no
+template,TEMPLATE_REASON,raw data attempted to be committed,no,no
+template,TEMPLATE_REASON,unsupported route truth claim,no,no
+template,TEMPLATE_REASON,app/model permission violation,no,no

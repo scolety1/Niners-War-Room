@@ -1,0 +1,3 @@
+source_family,validation_status,notes,model_input_allowed,app_wiring_allowed
+pbp,YELLOW_NOT_LIVE_INTROSPECTED,derivation service tested with in-memory rows but live pbp not pulled,no,no
+player_stats,YELLOW_NOT_LIVE_INTROSPECTED,touch formulas require player_stats or pbp event counts,no,no

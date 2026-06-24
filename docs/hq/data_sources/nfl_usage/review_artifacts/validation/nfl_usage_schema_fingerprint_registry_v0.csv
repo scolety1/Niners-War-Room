@@ -1,0 +1,8 @@
+source_family,schema_fingerprint,field_count,columns,source_version,model_input_allowed,app_wiring_allowed
+player_stats,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+pbp,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+snap_counts,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+nextgen_stats,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+participation,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+ftn_charting,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no
+pfr_advstats,PENDING_LIVE_INTROSPECTION,0,,nflreadpy not installed,no,no

@@ -1,0 +1,4 @@
+source_family,validation_status,row_count,field_count,reasons,model_input_allowed,app_wiring_allowed
+core_usage,YELLOW_TEMPLATE,0,0,live pull not run in V0 environment,no,no
+derived_usage,YELLOW_TEMPLATE,0,0,live pbp not run in V0 environment,no,no
+advanced_context,YELLOW_TEMPLATE,0,0,field introspection blocked until nflreadpy dependency approved,no,no

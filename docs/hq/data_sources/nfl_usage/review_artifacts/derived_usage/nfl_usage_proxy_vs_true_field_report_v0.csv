@@ -1,0 +1,6 @@
+metric_family,v0_status,approved_label,blocked_label,model_input_allowed,app_wiring_allowed
+routes_run,LICENSED_DATA_GAP,licensed-data gap for true routes run,true routes run from public participation unless verified,no,no
+tprr,LICENSED_DATA_GAP,targets per route proxy only if denominator is proxy,true TPRR,no,no
+yprr,LICENSED_DATA_GAP,yards per route proxy only if denominator is proxy,true YPRR,no,no
+first_downs_per_touch,DERIVED_PROXY,first downs per touch proxy until backtested,approved model feature,no,no
+red_zone_share,DERIVED_PROXY,team-week red-zone usage share proxy,approved model feature,no,no

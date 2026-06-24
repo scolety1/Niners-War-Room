@@ -1,0 +1,17 @@
+field_pattern,reason,blocked_status,notes
+rank,ranking/opinion fields can contaminate decisions,BLOCKED_UNSAFE,blocks public or vendor ranks
+projection,projection fields are not factual role evidence,BLOCKED_UNSAFE,blocks projected stats and projection labels
+adp,market price is display-only at most and not usage evidence,BLOCKED_UNSAFE,do not use as model feature
+fantasy_points,fantasy scoring target/model leakage risk,BLOCKED_UNSAFE,not a target/model feature in this lane
+fantasy_value,value field implies proprietary decision score,BLOCKED_UNSAFE,blocked
+trade_value,market/vendor trade score,BLOCKED_UNSAFE,blocked
+market,market fields are not usage evidence,BLOCKED_UNSAFE,blocked
+start_sit,analyst recommendation/opinion,BLOCKED_UNSAFE,blocked
+analyst,analyst blurb/opinion,BLOCKED_UNSAFE,blocked
+betting,odds/lines not role evidence and leakage risk,BLOCKED_UNSAFE,blocked
+dfs,DFS salary/market signal,BLOCKED_UNSAFE,blocked
+salary,DFS or contract ambiguity,BLOCKED_UNSAFE,blocked unless explicitly roster metadata reviewed later
+proprietary,licensed/vendor score risk,BLOCKED_UNSAFE,blocked
+true_tprr,requires verified exact route-run denominator,LICENSED_DATA_GAP,proxy labels only in V0
+true_yprr,requires verified exact route-run denominator,LICENSED_DATA_GAP,proxy labels only in V0
+true_routes_run,requires verified exact route-run source,LICENSED_DATA_GAP,public participation is not automatically true routes

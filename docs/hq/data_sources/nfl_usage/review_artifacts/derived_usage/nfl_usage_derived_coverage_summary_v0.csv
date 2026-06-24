@@ -1,0 +1,5 @@
+derived_family,status,row_count,field_count,source_dependency,raw_data_tracked,model_input_allowed,app_wiring_allowed,caveats
+red_zone_usage,YELLOW_INFRASTRUCTURE_READY_NO_LIVE_PBP,0,6,pbp,no,no,no,requires live pbp field introspection before production refresh
+inside_10_usage,YELLOW_INFRASTRUCTURE_READY_NO_LIVE_PBP,0,6,pbp,no,no,no,requires live pbp field introspection before production refresh
+inside_5_usage,YELLOW_INFRASTRUCTURE_READY_NO_LIVE_PBP,0,6,pbp,no,no,no,requires live pbp field introspection before production refresh
+first_down_touch_usage,YELLOW_INFRASTRUCTURE_READY_NO_LIVE_PBP,0,4,pbp/player_stats,no,no,no,share and rate fields are proxies

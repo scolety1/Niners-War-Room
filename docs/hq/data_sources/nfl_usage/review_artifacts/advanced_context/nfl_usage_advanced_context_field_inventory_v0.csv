@@ -1,0 +1,10 @@
+source_family,loader_name,stat_type,field_name,field_category,grain,expected_coverage,license,attribution_required,allowed_status,field_type,notes
+nextgen_stats,load_nextgen_stats,passing,ngs_passing_efficiency_fields,efficiency,player_week,2016 onward with attempt minimums,NFL Next Gen Stats via nflverse,yes,inventory_only,NOT_EVALUATED,exact field introspection blocked until nflreadpy available
+nextgen_stats,load_nextgen_stats,receiving,ngs_receiving_efficiency_fields,efficiency,player_week,2016 onward with attempt minimums,NFL Next Gen Stats via nflverse,yes,inventory_only,NOT_EVALUATED,exact field introspection blocked until nflreadpy available
+nextgen_stats,load_nextgen_stats,rushing,ngs_rushing_efficiency_fields,efficiency,player_week,2016 onward with attempt minimums,NFL Next Gen Stats via nflverse,yes,inventory_only,NOT_EVALUATED,exact field introspection blocked until nflreadpy available
+participation,load_participation,all,formation_personnel_players_on_play,context,play/player_game,2023 onward per project timing policy,FTN/public nflverse subset,yes,inventory_only,DERIVED_PROXY,route-like fields must remain proxy-labeled
+ftn_charting,load_ftn_charting,all,ftn_public_charting_subset,charting,play,2022 onward per nflreadr docs,CC-BY-SA 4.0,yes,inventory_only,NOT_EVALUATED,candidate evidence only
+pfr_advstats,load_pfr_advstats,pass,pfr_passing_advstats,advanced_stats,player_week_or_season,2018 onward per nflreadr docs,PFR sourced via nflverse,yes,inventory_only,NOT_EVALUATED,candidate evidence only
+pfr_advstats,load_pfr_advstats,rush,pfr_rushing_advstats,advanced_stats,player_week_or_season,2018 onward per nflreadr docs,PFR sourced via nflverse,yes,inventory_only,NOT_EVALUATED,candidate evidence only
+pfr_advstats,load_pfr_advstats,rec,pfr_receiving_advstats,advanced_stats,player_week_or_season,2018 onward per nflreadr docs,PFR sourced via nflverse,yes,inventory_only,NOT_EVALUATED,candidate evidence only
+licensed_gap,none,routes,true_routes_run,route_truth,player_route,not available in V0,licensed route data required,yes,blocked,LICENSED_DATA_GAP,do not infer from participation

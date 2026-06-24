@@ -1,0 +1,11 @@
+field_name,source_family,field_type,candidate_status,expected_value,required_backtest,risk,notes
+offense_snaps,snap_counts,TRUE_FACTUAL_FIELD,DISPLAY_ONLY_CANDIDATE,role security,coverage and point-in-time availability,medium,not model-approved in V0
+offense_pct,snap_counts,TRUE_FACTUAL_FIELD,DISPLAY_ONLY_CANDIDATE,snap share context,coverage and stale-data checks,medium,not model-approved in V0
+targets,player_stats,TRUE_FACTUAL_FIELD,DISPLAY_ONLY_CANDIDATE,receiving role,walk-forward role/value ablation,low,not model-approved in V0
+carries,player_stats,TRUE_FACTUAL_FIELD,DISPLAY_ONLY_CANDIDATE,rushing role,walk-forward role/value ablation,low,not model-approved in V0
+touches,derived_usage,TRUE_DERIVED_FACT,DISPLAY_ONLY_CANDIDATE,total role volume,derived-field consistency and backtest,medium,not model-approved in V0
+red_zone_carries,derived_usage,TRUE_DERIVED_FACT,CANDIDATE_MODEL_FEATURE_PENDING_BACKTEST,high-value role usage,leakage-safe walk-forward test,medium,not model-approved in V0
+red_zone_targets,derived_usage,TRUE_DERIVED_FACT,CANDIDATE_MODEL_FEATURE_PENDING_BACKTEST,high-value receiving role,leakage-safe walk-forward test,medium,not model-approved in V0
+route_participation_proxy,participation,DERIVED_PROXY,RESEARCH_ONLY,route-like context,proxy validation and coverage,high,proxy only
+true_routes_run,licensed_gap,LICENSED_DATA_GAP,BLOCKED_LICENSED_GAP,would improve route context,licensed source contract required,high,not available in V0
+true_tprr,licensed_gap,LICENSED_DATA_GAP,BLOCKED_LICENSED_GAP,would improve target efficiency context,licensed source contract required,high,not available in V0

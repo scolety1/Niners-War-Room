@@ -1,0 +1,7 @@
+artifact_name,source_family,path,row_count,field_count,data_grain,model_input_allowed,app_wiring_allowed,review_status,caveats
+core_field_inventory,core_usage,docs/hq/data_sources/nfl_usage/review_artifacts/core_usage/nfl_usage_core_field_inventory_v0.csv,13,8,mixed,no,no,YELLOW,field list is policy-backed not live-introspected
+core_coverage_summary,core_usage,docs/hq/data_sources/nfl_usage/review_artifacts/core_usage/nfl_usage_core_coverage_summary_v0.csv,3,10,source_family,no,no,YELLOW,nflreadpy not installed
+derived_field_inventory,derived_usage,docs/hq/data_sources/nfl_usage/review_artifacts/derived_usage/nfl_usage_derived_field_inventory_v0.csv,15,7,player_week,no,no,GREEN_INFRASTRUCTURE,formulas and tests exist
+advanced_context_inventory,advanced_context,docs/hq/data_sources/nfl_usage/review_artifacts/advanced_context/nfl_usage_advanced_context_field_inventory_v0.csv,9,12,mixed,no,no,YELLOW,exact field introspection pending
+validation_report,validation,docs/hq/data_sources/nfl_usage/review_artifacts/validation/nfl_usage_validation_report_v0.csv,3,7,source_family,no,no,YELLOW,template and dry-run status
+promotion_candidates,promotion,docs/hq/data_sources/nfl_usage/NWR_NFL_USAGE_FIELD_PROMOTION_CANDIDATES_V0_20260624.csv,10,8,field,no,no,YELLOW,no approvals in V0

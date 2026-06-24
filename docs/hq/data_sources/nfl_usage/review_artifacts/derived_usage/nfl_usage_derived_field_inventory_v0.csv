@@ -1,0 +1,16 @@
+field_name,source_family,field_type,grain,formula_notes,model_input_allowed,app_wiring_allowed
+touches,pbp/player_stats,TRUE_DERIVED_FACT,player_week,carries plus receptions,no,no
+opportunities,pbp/player_stats,TRUE_DERIVED_FACT,player_week,carries plus targets,no,no
+red_zone_carries,pbp,TRUE_DERIVED_FACT,player_week,carries where yardline_100 <= 20,no,no
+red_zone_targets,pbp,TRUE_DERIVED_FACT,player_week,targets where yardline_100 <= 20,no,no
+red_zone_touches,pbp,TRUE_DERIVED_FACT,player_week,red-zone carries plus red-zone receptions when available,no,no
+inside_10_carries,pbp,TRUE_DERIVED_FACT,player_week,carries where yardline_100 <= 10,no,no
+inside_10_targets,pbp,TRUE_DERIVED_FACT,player_week,targets where yardline_100 <= 10,no,no
+inside_10_touches,pbp,TRUE_DERIVED_FACT,player_week,inside-10 carries plus inside-10 receptions when available,no,no
+inside_5_carries,pbp,TRUE_DERIVED_FACT,player_week,carries where yardline_100 <= 5,no,no
+inside_5_targets,pbp,TRUE_DERIVED_FACT,player_week,targets where yardline_100 <= 5,no,no
+inside_5_touches,pbp,TRUE_DERIVED_FACT,player_week,inside-5 carries plus inside-5 receptions when available,no,no
+first_downs_per_touch,pbp/player_stats,DERIVED_PROXY,player_week,first downs divided by touches,no,no
+red_zone_share,pbp,DERIVED_PROXY,team_week,player red-zone carries plus targets over team red-zone carries plus targets,no,no
+inside_10_share,pbp,DERIVED_PROXY,team_week,player inside-10 carries plus targets over team inside-10 carries plus targets,no,no
+inside_5_share,pbp,DERIVED_PROXY,team_week,player inside-5 carries plus targets over team inside-5 carries plus targets,no,no

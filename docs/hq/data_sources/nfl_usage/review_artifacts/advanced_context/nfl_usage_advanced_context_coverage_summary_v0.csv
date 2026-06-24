@@ -1,0 +1,6 @@
+source_family,seasons_available,rows_if_sampled,player_id_name_coverage,useful_fields,risky_fields,licensing_attribution,v0_enablement_status,model_input_allowed,app_wiring_allowed
+nextgen_stats,2016 onward expected,0,not sampled,efficiency fields,attempt-minimum coverage gaps,NFL Next Gen Stats attribution required,inventoried_only,no,no
+participation,2023 onward expected,0,not sampled,personnel formation players-on-play,route truth overclaim risk,FTN/nflverse attribution required,inventoried_only,no,no
+ftn_charting,2022 onward expected,0,not sampled,public charting subset,license/attribution and coverage,CC-BY-SA 4.0 FTN attribution required,inventoried_only,no,no
+pfr_advstats,2018 onward expected,0,not sampled,advanced pass rush rec fields,not source truth for routes,PFR/nflverse attribution required,inventoried_only,no,no
+true_routes_run,not available,0,not available,true route denominator if licensed,licensed data gap,licensed source contract required,blocked,no,no

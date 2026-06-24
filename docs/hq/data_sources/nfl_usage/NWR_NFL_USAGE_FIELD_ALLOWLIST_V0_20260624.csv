@@ -1,0 +1,35 @@
+field_name,source_family,field_type,level,allowed_status,notes,attribution_required
+season,all,TRUE_FACTUAL_FIELD,player_week,allowed,season identifier,no
+week,all,TRUE_FACTUAL_FIELD,player_week,allowed,week identifier,no
+game_id,all,TRUE_FACTUAL_FIELD,player_game,allowed,game identifier,no
+player_id,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,nflverse player id,no
+gsis_id,rosters/player_ids,TRUE_FACTUAL_FIELD,player_week,allowed,identity support,no
+player_name,all,TRUE_FACTUAL_FIELD,player_week,allowed,display identity,no
+position,all,TRUE_FACTUAL_FIELD,player_week,allowed,position context,no
+team,all,TRUE_FACTUAL_FIELD,player_week,allowed,team context,no
+offense_snaps,snap_counts,TRUE_FACTUAL_FIELD,player_game,allowed,offensive snaps,yes
+offense_pct,snap_counts,TRUE_FACTUAL_FIELD,player_game,allowed,offensive snap percentage,yes
+targets,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,targets,no
+carries,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,rushing attempts,no
+touches,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,carries plus receptions,no
+opportunities,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,carries plus targets,no
+receptions,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,receptions,no
+rushing_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,rushing yards,no
+receiving_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,receiving yards,no
+receiving_air_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,receiving air yards,no
+receiving_yards_after_catch,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,YAC when present,no
+rushing_first_downs,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,rushing first downs,no
+receiving_first_downs,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,receiving first downs,no
+passing_first_downs,player_stats,TRUE_FACTUAL_FIELD,player_week,allowed,passing first downs,no
+yardline_100,pbp,TRUE_FACTUAL_FIELD,play,allowed,drive field position for zone derivations,no
+red_zone_carries,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 20 carries,no
+red_zone_targets,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 20 targets,no
+inside_10_carries,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 10 carries,no
+inside_10_targets,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 10 targets,no
+inside_5_carries,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 5 carries,no
+inside_5_targets,derived_usage,TRUE_DERIVED_FACT,player_week,allowed,yardline_100 <= 5 targets,no
+red_zone_share,derived_usage,DERIVED_PROXY,team_week,allowed,player share of team red-zone carries plus targets,no
+route_participation_proxy,participation,DERIVED_PROXY,player_week,allowed,proxy only not true routes,yes
+ngs_efficiency_fields,nextgen_stats,NOT_EVALUATED,player_week,inventory_only,exact fields require live introspection and NGS attribution,yes
+ftn_charting_fields,ftn_charting,NOT_EVALUATED,play,inventory_only,candidate only with FTN attribution,yes
+pfr_advstats_fields,pfr_advstats,NOT_EVALUATED,player_week,inventory_only,candidate only with PFR attribution,yes

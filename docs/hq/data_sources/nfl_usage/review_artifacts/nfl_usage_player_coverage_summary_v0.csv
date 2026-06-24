@@ -1,0 +1,5 @@
+source_family,player_id_coverage_status,player_name_coverage_status,row_count_sampled,coverage_status,model_input_allowed,app_wiring_allowed,caveats
+player_stats,pending,pending,0,YELLOW_NOT_SAMPLED,no,no,nflreadpy not installed
+snap_counts,pfr_id_expected,player_name_expected,0,YELLOW_NOT_SAMPLED,no,no,identity bridge requires review
+pbp,gsis_or_player_id_expected,player_name_expected,0,YELLOW_NOT_SAMPLED,no,no,raw pbp not committed
+participation,pending,pending,0,YELLOW_NOT_SAMPLED,no,no,proxy context only
