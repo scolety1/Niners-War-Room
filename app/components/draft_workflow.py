@@ -14,6 +14,7 @@ from src.services.draft_day_workflow_service import (
     draft_board_frame,
     empty_workflow_state,
     pick_select_options,
+    player_key_from_row,
     player_select_options,
     remove_pick_assignment,
     sort_workflow_frame,
@@ -21,6 +22,17 @@ from src.services.draft_day_workflow_service import (
     validate_no_duplicate_assignments,
     with_workflow_columns,
     workflow_summary,
+)
+from src.services.draft_day_runtime_state_service import (
+    apply_trade_events_to_pick_frame,
+    event_rows,
+    export_runtime_state,
+    load_runtime_state,
+    record_trade_event,
+    reset_runtime_state,
+    runtime_paths,
+    save_runtime_state,
+    update_workflow_state,
 )
 
 
@@ -33,12 +45,27 @@ def render_draft_workflow(
     session_key: str,
     source_caption: str,
 ) -> None:
+    runtime_mode = _runtime_mode_from_session_key(session_key)
+    runtime_state_key = f"{session_key}_runtime_state"
+    if runtime_state_key not in st.session_state:
+        st.session_state[runtime_state_key] = load_runtime_state(
+            mode=runtime_mode,
+            source_checkpoint=source_caption,
+        )
     if session_key not in st.session_state:
-        st.session_state[session_key] = empty_workflow_state()
+        st.session_state[session_key] = st.session_state[runtime_state_key].get(
+            "workflow_state",
+            empty_workflow_state(),
+        )
     st.session_state[session_key] = copy_state(st.session_state[session_key])
+    st.session_state[runtime_state_key]["workflow_state"] = st.session_state[session_key]
     state = st.session_state[session_key]
+    effective_pick_frame = apply_trade_events_to_pick_frame(
+        pick_frame,
+        st.session_state[runtime_state_key],
+    )
 
-    summary = workflow_summary(board_frame, pick_frame, state)
+    summary = workflow_summary(board_frame, effective_pick_frame, state)
     current_owner = f" - {summary.current_pick_owner}" if summary.current_pick_owner else ""
     frozen_rows = _non_pdf_row_count(board_frame)
     pdf_rows = _pdf_row_count(board_frame)
@@ -56,7 +83,7 @@ def render_draft_workflow(
         )
     )
 
-    current_pick = current_pick_number(pick_frame, state)
+    current_pick = current_pick_number(effective_pick_frame, state)
     filtered, show_drafted_players = _render_filters(
         board_frame,
         state,
@@ -87,13 +114,24 @@ def render_draft_workflow(
         mode_label=mode_label,
         filtered_frame=filtered,
         board_frame=board_frame,
-        pick_frame=pick_frame,
+        pick_frame=effective_pick_frame,
         current_pick=current_pick,
         session_key=session_key,
+        runtime_state_key=runtime_state_key,
+    )
+
+    _render_trade_events(
+        pick_frame=effective_pick_frame,
+        session_key=session_key,
+        runtime_state_key=runtime_state_key,
     )
 
     st.subheader("Draft Board")
-    board_rows = draft_board_frame(pick_frame, nwr_picks_frame, st.session_state[session_key])
+    board_rows = draft_board_frame(
+        effective_pick_frame,
+        nwr_picks_frame,
+        st.session_state[session_key],
+    )
     st.dataframe(
         display_draft_board_frame(board_rows),
         use_container_width=True,
@@ -117,6 +155,12 @@ def render_draft_workflow(
                 hide_index=True,
                 key=f"{session_key}_history",
             )
+
+    _render_runtime_state_controls(
+        session_key=session_key,
+        runtime_state_key=runtime_state_key,
+        source_caption=source_caption,
+    )
 
     with st.expander("Source / diagnostics", expanded=False):
         st.caption(source_caption)
@@ -258,6 +302,7 @@ def _render_pick_controls(
     pick_frame: pd.DataFrame,
     current_pick: int | None,
     session_key: str,
+    runtime_state_key: str,
 ) -> None:
     st.subheader("Pick Selection")
     st.caption(
@@ -285,20 +330,43 @@ def _render_pick_controls(
     )
     if cols[2].button("Assign Pick", key=f"{session_key}_assign", use_container_width=True):
         try:
-            st.session_state[session_key] = assign_player_to_pick(
+            next_state = assign_player_to_pick(
                 st.session_state[session_key],
                 board=board_frame,
                 pick_frame=pick_frame,
                 player_key=player_options[player_label],
                 overall_pick=pick_options[pick_label],
             )
+            player_row = _row_for_player_key(board_frame, player_options[player_label])
+            pick_row = _row_for_pick(pick_frame, pick_options[pick_label])
+            runtime_state = update_workflow_state(
+                st.session_state[runtime_state_key],
+                next_state,
+                event_type="pick_assigned",
+                event_detail={
+                    "player": player_row.get("player", player_label) if player_row else player_label,
+                    "position": player_row.get("position", "") if player_row else "",
+                    "pick_label": pick_row.get("pick_label", pick_label) if pick_row else pick_label,
+                    "overall_pick": pick_options[pick_label],
+                },
+            )
+            st.session_state[runtime_state_key] = runtime_state
+            st.session_state[session_key] = runtime_state["workflow_state"]
             st.session_state[f"{session_key}_sync_pick_to_current"] = True
             st.success(f"Assigned {player_label} to {pick_label}.")
             st.rerun()
         except DraftWorkflowError as exc:
             st.error(str(exc))
     if cols[3].button("Undo Last", key=f"{session_key}_undo", use_container_width=True):
-        st.session_state[session_key], message = undo_last_pick(st.session_state[session_key])
+        next_state, message = undo_last_pick(st.session_state[session_key])
+        runtime_state = update_workflow_state(
+            st.session_state[runtime_state_key],
+            next_state,
+            event_type="pick_undone",
+            event_detail={"message": message},
+        )
+        st.session_state[runtime_state_key] = runtime_state
+        st.session_state[session_key] = runtime_state["workflow_state"]
         st.session_state[f"{session_key}_sync_pick_to_current"] = True
         st.info(message)
         st.rerun()
@@ -314,13 +382,145 @@ def _render_pick_controls(
         key=f"{session_key}_remove_assignment",
         use_container_width=True,
     ):
-        st.session_state[session_key], message = remove_pick_assignment(
+        next_state, message = remove_pick_assignment(
             st.session_state[session_key],
             pick_options[remove_pick_label],
         )
+        runtime_state = update_workflow_state(
+            st.session_state[runtime_state_key],
+            next_state,
+            event_type="pick_removed",
+            event_detail={
+                "pick_label": remove_pick_label,
+                "overall_pick": pick_options[remove_pick_label],
+                "message": message,
+            },
+        )
+        st.session_state[runtime_state_key] = runtime_state
+        st.session_state[session_key] = runtime_state["workflow_state"]
         st.session_state[f"{session_key}_sync_pick_to_current"] = True
         st.info(message)
         st.rerun()
+
+
+def _render_trade_events(
+    *,
+    pick_frame: pd.DataFrame,
+    session_key: str,
+    runtime_state_key: str,
+) -> None:
+    with st.expander("In-draft trade events", expanded=False):
+        st.caption(
+            "Record pick-ownership events during the draft. This updates local runtime board "
+            "context only; no trade calculator, model value, rank, or source truth is changed."
+        )
+        trade_type = st.selectbox(
+            "Trade type",
+            ["Trade away current pick", "Trade for pick", "Manual trade note"],
+            key=f"{session_key}_trade_type",
+        )
+        counterparty = st.text_input(
+            "Counterparty / team",
+            key=f"{session_key}_trade_counterparty",
+            placeholder="Team name",
+        )
+        cols = st.columns(2)
+        sends = cols[0].text_input(
+            "NWR sends",
+            key=f"{session_key}_trade_sends",
+            placeholder="Example: 1.04",
+        )
+        receives = cols[1].text_input(
+            "NWR receives",
+            key=f"{session_key}_trade_receives",
+            placeholder="Example: 2028 1st + 2.03",
+        )
+        notes = st.text_area(
+            "Notes",
+            key=f"{session_key}_trade_notes",
+            placeholder="Optional context. No final trade advice.",
+        )
+        if st.button("Record Trade Event", key=f"{session_key}_record_trade"):
+            st.session_state[runtime_state_key] = record_trade_event(
+                st.session_state[runtime_state_key],
+                trade_type=trade_type,
+                counterparty=counterparty,
+                sends=sends,
+                receives=receives,
+                notes=notes,
+            )
+            st.success("Trade event recorded in local draft runtime state.")
+            st.rerun()
+
+        trades = st.session_state[runtime_state_key].get("trade_events", [])
+        if trades:
+            st.dataframe(
+                pd.DataFrame(trades).astype(str),
+                use_container_width=True,
+                hide_index=True,
+                key=f"{session_key}_trade_events",
+            )
+        else:
+            st.caption("No trade events recorded yet.")
+
+        if not pick_frame.empty:
+            st.caption("Current pick ownership after local trade events:")
+            st.dataframe(
+                pick_frame.astype(str).head(30),
+                use_container_width=True,
+                hide_index=True,
+                key=f"{session_key}_trade_adjusted_picks",
+            )
+
+
+def _render_runtime_state_controls(
+    *,
+    session_key: str,
+    runtime_state_key: str,
+    source_caption: str,
+) -> None:
+    with st.expander("Runtime draft state / export / reset", expanded=False):
+        paths = runtime_paths()
+        st.caption(
+            f"Autosave path: {paths.state_dir}. Runtime files are local-only under "
+            "C:\\NWR_SHARED_DATA and must not be committed."
+        )
+        events = event_rows(st.session_state[runtime_state_key])
+        st.caption(f"Events recorded: {len(events)}")
+        if events:
+            st.dataframe(
+                pd.DataFrame(events),
+                use_container_width=True,
+                hide_index=True,
+                key=f"{session_key}_runtime_events",
+            )
+        export_col, reset_col = st.columns(2)
+        if export_col.button("Export Draft Log", key=f"{session_key}_export_log"):
+            exports = export_runtime_state(st.session_state[runtime_state_key])
+            st.session_state[runtime_state_key] = save_runtime_state(
+                st.session_state[runtime_state_key],
+                event_type="export_created",
+                event_detail={label: str(path) for label, path in exports.items()},
+            )
+            st.success("Exported: " + " | ".join(str(path) for path in exports.values()))
+        confirm = reset_col.checkbox(
+            "Confirm reset",
+            key=f"{session_key}_confirm_reset",
+            help="Required before clearing local runtime picks/trades for this mode.",
+        )
+        if reset_col.button("Reset Local Draft State", key=f"{session_key}_reset_state"):
+            if not confirm:
+                st.warning("Check Confirm reset before clearing local runtime state.")
+            else:
+                st.session_state[runtime_state_key] = reset_runtime_state(
+                    st.session_state[runtime_state_key],
+                    reason=f"User reset from {source_caption[:160]}",
+                )
+                st.session_state[session_key] = st.session_state[runtime_state_key][
+                    "workflow_state"
+                ]
+                st.success("Local runtime state reset.")
+                st.rerun()
 
 
 def _values(frame: pd.DataFrame, column: str) -> list[str]:
@@ -420,3 +620,27 @@ def _sync_pick_slot_selectbox(
     )
     if should_sync:
         st.session_state[selected_pick_key] = current_label
+
+
+def _runtime_mode_from_session_key(session_key: str) -> str:
+    if "mock" in session_key:
+        return "mock"
+    if "live" in session_key:
+        return "live"
+    return session_key
+
+
+def _row_for_player_key(frame: pd.DataFrame, player_key: str) -> dict[str, object] | None:
+    for _index, row in frame.iterrows():
+        if player_key_from_row(row) == player_key:
+            return row.to_dict()
+    return None
+
+
+def _row_for_pick(frame: pd.DataFrame, overall_pick: int) -> dict[str, object] | None:
+    if "overall_pick" not in frame.columns:
+        return None
+    matches = frame.loc[pd.to_numeric(frame["overall_pick"], errors="coerce") == overall_pick]
+    if matches.empty:
+        return None
+    return matches.iloc[0].to_dict()

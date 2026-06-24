@@ -640,6 +640,13 @@ def draft_board_frame(
         for value in nwr_picks_frame.get("overall_pick", pd.Series(dtype=object)).tolist()
         if _int_or_none(value) is not None
     }
+    if "current_owner" in pick_frame.columns:
+        runtime_nwr_picks = {
+            pick_key_from_row(row)
+            for _index, row in pick_frame.iterrows()
+            if str(row.get("current_owner", "")).strip().casefold() in {"nwr", "niners"}
+        }
+        nwr_pick_numbers.update(runtime_nwr_picks)
     current = current_pick_number(pick_frame, normalized)
     rows: list[dict[str, object]] = []
     for _index, row in pick_frame.iterrows():
