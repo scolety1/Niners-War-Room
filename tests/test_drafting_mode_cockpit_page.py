@@ -35,6 +35,41 @@ def test_drafting_mode_top_bar_and_guardrails_are_present() -> None:
     assert "Market/ADP context is display-only and never drives default sort" in text
 
 
+def test_drafting_mode_top_bar_exposes_session_selector_and_reset_warning() -> None:
+    text = _text("app/pages/19_drafting_mode_v2.py")
+
+    assert "Draft Session:" in text
+    assert "Live Draft" in text
+    assert "Mock Draft / Practice" in text
+    assert "LIVE DRAFT MODE" in text
+    assert "MOCK PRACTICE MODE" in text
+    assert "Practice state only — does not affect live draft." in text
+    assert "Resetting Live Draft state clears live picks and trades only" in text
+    assert "reset_runtime_state" in text
+
+
+def test_drafting_mode_deep_tool_links_carry_session_type_to_cheat_sheets() -> None:
+    text = _text("app/pages/19_drafting_mode_v2.py")
+
+    assert '("Cheat Sheets", f"/cheat-sheets?session_type={session_query}")' in text
+
+
+def test_cheat_sheets_reads_cockpit_session_type_when_launched_from_cockpit() -> None:
+    text = _text("app/pages/18_cheat_sheets_v2.py")
+
+    assert '_query_value("session_type")' in text
+    assert "runtime_mode = _runtime_mode_from_query()" in text
+    assert "load_runtime_state(mode=runtime_mode)" in text
+    assert "Practice state only — does not affect live draft." in text
+
+
+def test_post_draft_mode_defaults_to_live_state() -> None:
+    text = _text("app/pages/29_post_draft_mode_v2.py")
+
+    assert 'st.radio("Draft session", ["Live", "Mock"]' in text
+    assert 'index=1' not in text
+
+
 def test_deep_pages_expose_back_to_drafting_mode_link() -> None:
     pages = [
         "app/pages/18_cheat_sheets_v2.py",

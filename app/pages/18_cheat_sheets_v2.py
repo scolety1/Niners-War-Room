@@ -295,19 +295,37 @@ def _query_flag(name: str) -> bool:
     return any(str(item or "").lower() in {"1", "true", "yes"} for item in values)
 
 
+def _query_value(name: str) -> str:
+    values: list[object] = []
+    try:
+        values.extend(st.query_params.get_all(name))
+    except AttributeError:
+        pass
+    value = st.query_params.get(name)
+    if value is not None:
+        values.append(value)
+    return str(values[0] if values else "").strip().lower()
+
+
+def _runtime_mode_from_query() -> str:
+    mode = _query_value("session_type") or _query_value("mode")
+    return "mock" if mode in {"mock", "practice", "mock_practice"} else "live"
+
+
 bundle = load_frozen_board()
 pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
-live_state = load_runtime_state(mode="live")
+runtime_mode = _runtime_mode_from_query()
+runtime_state = load_runtime_state(mode=runtime_mode)
 pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
-effective_pick_frame = apply_trade_events_to_pick_frame(pick_frame, live_state)
-live_workflow_state = live_state.get("workflow_state", {"assignments": []})
+effective_pick_frame = apply_trade_events_to_pick_frame(pick_frame, runtime_state)
+workflow_state = runtime_state.get("workflow_state", {"assignments": []})
 current_pick = (
-    current_pick_number(effective_pick_frame, live_workflow_state)
+    current_pick_number(effective_pick_frame, workflow_state)
     if not effective_pick_frame.empty
     else None
 )
 current_label = (
-    current_pick_label(effective_pick_frame, live_workflow_state)
+    current_pick_label(effective_pick_frame, workflow_state)
     if not effective_pick_frame.empty
     else NOT_ENOUGH_INFORMATION
 )
@@ -326,6 +344,8 @@ page_header(
     ),
 )
 st.link_button("Back to Drafting Mode", "/drafting-mode")
+if runtime_mode == "mock":
+    st.warning("Practice state only — does not affect live draft.")
 render_frozen_baseline_badge(bundle)
 stop_if_board_blocked(bundle)
 
@@ -406,7 +426,7 @@ manual_review_only = filter_cols[5].toggle(
 
 filtered, workflow_frame = _filter_cheat_sheet_frame(
     pool,
-    runtime_state=live_state,
+    runtime_state=runtime_state,
     selected_positions=selected_positions,
     search=search,
     show_drafted=show_drafted,
@@ -419,7 +439,7 @@ filtered = sort_workflow_frame(filtered, "Dynasty Asset Tier/Rank").head(int(lim
 _render_status_strip(
     pool=pool,
     frame=filtered,
-    runtime_state=live_state,
+    runtime_state=runtime_state,
     pick_frame=effective_pick_frame,
     current_label=current_label,
 )
@@ -493,7 +513,10 @@ with st.expander("Source / guardrails", expanded=False):
         "or pinned snapshots."
     )
     st.caption(f"Rows available before filters: {len(pool)}")
-    st.caption(f"Live runtime assignments: {len(live_workflow_state.get('assignments', []))}")
+    st.caption(
+        f"{runtime_mode.title()} runtime assignments: "
+        f"{len(workflow_state.get('assignments', []))}"
+    )
     st.caption(f"Pick source: {pick_path or NOT_ENOUGH_INFORMATION}")
     st.caption(
         "Missing data must stay as Not enough information. Market, ADP, DynastyProcess, "

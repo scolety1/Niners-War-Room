@@ -58,6 +58,91 @@ def test_runtime_state_autosaves_and_restores_workflow(tmp_path: Path) -> None:
     assert runtime_state_path(mode="live", root=tmp_path).exists()
 
 
+def test_live_and_mock_runtime_state_paths_are_separate(tmp_path: Path) -> None:
+    live_path = runtime_state_path(mode="live", root=tmp_path)
+    mock_path = runtime_state_path(mode="mock", root=tmp_path)
+
+    assert live_path != mock_path
+    assert live_path.name.endswith("__live.json")
+    assert mock_path.name.endswith("__mock.json")
+
+
+def test_live_drafted_player_does_not_appear_in_mock_state(tmp_path: Path) -> None:
+    update_workflow_state(
+        empty_runtime_state(mode="live"),
+        {
+            "assignments": [
+                {
+                    "player_key": "live|player",
+                    "overall_pick": 1,
+                    "pick_label": "1.01",
+                    "player": "Live Player",
+                    "position": "WR",
+                }
+            ]
+        },
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+
+    live_state = load_runtime_state(mode="live", root=tmp_path)
+    mock_state = load_runtime_state(mode="mock", root=tmp_path)
+
+    assert live_state["drafted_player_ids"] == ["live|player"]
+    assert mock_state["drafted_player_ids"] == []
+
+
+def test_mock_drafted_player_does_not_appear_in_live_state(tmp_path: Path) -> None:
+    update_workflow_state(
+        empty_runtime_state(mode="mock"),
+        {
+            "assignments": [
+                {
+                    "player_key": "mock|player",
+                    "overall_pick": 2,
+                    "pick_label": "1.02",
+                    "player": "Mock Player",
+                    "position": "RB",
+                }
+            ]
+        },
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+
+    live_state = load_runtime_state(mode="live", root=tmp_path)
+    mock_state = load_runtime_state(mode="mock", root=tmp_path)
+
+    assert live_state["drafted_player_ids"] == []
+    assert mock_state["drafted_player_ids"] == ["mock|player"]
+
+
+def test_trade_events_are_separated_by_session_type(tmp_path: Path) -> None:
+    record_trade_event(
+        empty_runtime_state(mode="live"),
+        team_a="NWR",
+        team_b="Live Team",
+        team_a_sends="2026 1.04",
+        team_b_sends="2026 2.03",
+        root=tmp_path,
+    )
+    record_trade_event(
+        empty_runtime_state(mode="mock"),
+        team_a="NWR",
+        team_b="Mock Team",
+        team_a_sends="2026 1.05",
+        team_b_sends="2028 1st",
+        root=tmp_path,
+    )
+
+    live_state = load_runtime_state(mode="live", root=tmp_path)
+    mock_state = load_runtime_state(mode="mock", root=tmp_path)
+
+    assert live_state["trade_events"][0]["team_b"] == "Live Team"
+    assert mock_state["trade_events"][0]["team_b"] == "Mock Team"
+    assert live_state["trade_events"][0]["team_b"] != mock_state["trade_events"][0]["team_b"]
+
+
 def test_trade_event_updates_current_year_pick_ownership(tmp_path: Path) -> None:
     state = record_trade_event(
         empty_runtime_state(mode="live"),
@@ -132,6 +217,36 @@ def test_export_import_roundtrip_restores_drafted_player(tmp_path: Path) -> None
     assert restored["event_log"][-1]["event_type"] == "state_restored_from_json"
 
 
+def test_export_import_respects_session_type(tmp_path: Path) -> None:
+    mock_state = update_workflow_state(
+        empty_runtime_state(mode="mock"),
+        {
+            "assignments": [
+                {
+                    "player_key": "mock|zay",
+                    "overall_pick": 4,
+                    "pick_label": "1.04",
+                    "player": "Mock Zay",
+                    "position": "WR",
+                }
+            ]
+        },
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+
+    restored = restore_runtime_state_from_json(
+        export_runtime_state_json(mock_state),
+        mode="mock",
+        root=tmp_path,
+    )
+    live_state = load_runtime_state(mode="live", root=tmp_path)
+
+    assert restored["mode"] == "mock"
+    assert restored["drafted_player_ids"] == ["mock|zay"]
+    assert live_state["drafted_player_ids"] == []
+
+
 def test_reset_runtime_state_clears_assignments_and_logs_reset(tmp_path: Path) -> None:
     state = update_workflow_state(
         empty_runtime_state(mode="live"),
@@ -144,6 +259,26 @@ def test_reset_runtime_state_clears_assignments_and_logs_reset(tmp_path: Path) -
 
     assert reset["workflow_state"] == {"assignments": []}
     assert reset["event_log"][-1]["event_type"] == "reset_confirmed"
+
+
+def test_reset_affects_only_selected_session_type(tmp_path: Path) -> None:
+    live_state = update_workflow_state(
+        empty_runtime_state(mode="live"),
+        {"assignments": [{"player_key": "live|x", "overall_pick": 1}]},
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+    update_workflow_state(
+        empty_runtime_state(mode="mock"),
+        {"assignments": [{"player_key": "mock|x", "overall_pick": 2}]},
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+
+    reset_runtime_state(live_state, reason="test live reset", root=tmp_path)
+
+    assert load_runtime_state(mode="live", root=tmp_path)["drafted_player_ids"] == []
+    assert load_runtime_state(mode="mock", root=tmp_path)["drafted_player_ids"] == ["mock|x"]
 
 
 def test_reset_requires_confirmation_logic(tmp_path: Path) -> None:

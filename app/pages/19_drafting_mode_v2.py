@@ -23,6 +23,7 @@ from src.services.draft_day_runtime_state_service import (
     export_runtime_state_json,
     load_latest_runtime_state,
     load_runtime_state,
+    reset_runtime_state,
     runtime_paths,
     save_runtime_state,
     update_workflow_state,
@@ -51,25 +52,78 @@ from src.services.drafting_mode_cockpit_service import (
 )
 
 SESSION_KEY = "drafting_mode_cockpit_v1"
-RUNTIME_STATE_KEY = f"{SESSION_KEY}_runtime_state"
+SESSION_TYPE_KEY = f"{SESSION_KEY}_session_type"
+RESET_PENDING_KEY = f"{SESSION_KEY}_reset_pending_mode"
+SESSION_LABELS = {
+    "live": "Live Draft",
+    "mock": "Mock Draft / Practice",
+}
+SESSION_BADGES = {
+    "live": "LIVE DRAFT MODE",
+    "mock": "MOCK PRACTICE MODE",
+}
 
 
-def _runtime_state() -> dict[str, object]:
-    if RUNTIME_STATE_KEY not in st.session_state:
-        st.session_state[RUNTIME_STATE_KEY] = load_runtime_state(
-            mode="live",
+def _runtime_state_key(mode: str) -> str:
+    return f"{SESSION_KEY}_{mode}_runtime_state"
+
+
+def _valid_session_mode(value: object) -> str:
+    token = str(value or "").strip().lower()
+    return token if token in SESSION_LABELS else "live"
+
+
+def _session_mode() -> str:
+    return _valid_session_mode(st.session_state.get(SESSION_TYPE_KEY, "live"))
+
+
+def _session_label(mode: str) -> str:
+    return SESSION_LABELS[_valid_session_mode(mode)]
+
+
+def _session_badge(mode: str) -> str:
+    return SESSION_BADGES[_valid_session_mode(mode)]
+
+
+def _render_session_selector() -> str:
+    current_mode = _session_mode()
+    labels = list(SESSION_LABELS.values())
+    selected = st.radio(
+        "Draft Session:",
+        labels,
+        index=labels.index(_session_label(current_mode)),
+        horizontal=True,
+        key=f"{SESSION_KEY}_session_selector",
+    )
+    next_mode = next(mode for mode, label in SESSION_LABELS.items() if label == selected)
+    st.session_state[SESSION_TYPE_KEY] = next_mode
+    st.markdown(f"**{_session_badge(next_mode)}**")
+    if next_mode == "mock":
+        st.warning("Practice state only — does not affect live draft.")
+    return next_mode
+
+
+def _runtime_state(mode: str | None = None) -> dict[str, object]:
+    runtime_mode = _valid_session_mode(mode or _session_mode())
+    key = _runtime_state_key(runtime_mode)
+    if key not in st.session_state:
+        st.session_state[key] = load_runtime_state(
+            mode=runtime_mode,
             source_checkpoint=SOURCE_CAPTION,
         )
-    return st.session_state[RUNTIME_STATE_KEY]
+    return st.session_state[key]
 
 
 def _set_runtime_state(state: dict[str, object]) -> None:
-    st.session_state[RUNTIME_STATE_KEY] = state
+    mode = _valid_session_mode(state.get("mode") or _session_mode())
+    st.session_state[_runtime_state_key(mode)] = state
 
 
-def _action_links() -> None:
+def _action_links(mode: str) -> None:
+    session_query = _valid_session_mode(mode)
     links = [
         ("Full Rankings", "/rankings"),
+        ("Cheat Sheets", f"/cheat-sheets?session_type={session_query}"),
         ("Full Player Compare", "/player-compare"),
         ("Full Trading Lab", "/trading-lab"),
         ("Post-Draft Mode", "/post-draft-mode"),
@@ -79,7 +133,7 @@ def _action_links() -> None:
         st.link_button(label, path, use_container_width=True)
 
 
-def _render_top_bar(summary) -> None:
+def _render_top_bar(summary, session_mode: str) -> None:
     metric_cols = st.columns([1.1, 1.25, 0.9, 0.9, 1.35])
     metric_cols[0].metric("Current pick", summary.current_pick)
     metric_cols[1].metric("On-clock team", summary.on_clock_team)
@@ -87,28 +141,33 @@ def _render_top_bar(summary) -> None:
     metric_cols[3].metric("Trades", summary.trade_count)
     metric_cols[4].metric("Autosave", summary.autosave_status, help=summary.last_saved)
 
-    action_cols = st.columns([1, 1, 1, 1, 1, 1])
+    action_cols = st.columns([1, 1, 1, 1, 1, 1, 1])
     if (REPO_ROOT / "src" / "services" / "data_refresh_orchestrator_service.py").exists():
         action_cols[0].link_button("Refresh Data", "/refresh-data", use_container_width=True)
     if action_cols[1].button("Save State", use_container_width=True):
         _set_runtime_state(
             save_runtime_state(
-                _runtime_state(),
+                _runtime_state(session_mode),
                 event_type="manual_save",
-                event_detail={"source": "drafting_mode_cockpit"},
+                event_detail={
+                    "source": "drafting_mode_cockpit",
+                    "session_type": session_mode,
+                },
             )
         )
-        st.success("Draft state saved.")
+        st.success(f"{_session_label(session_mode)} state saved.")
         st.rerun()
     if action_cols[2].button("Load Latest", use_container_width=True):
-        _set_runtime_state(load_latest_runtime_state(mode="live", source_checkpoint=SOURCE_CAPTION))
-        st.success("Latest live draft state loaded.")
+        _set_runtime_state(
+            load_latest_runtime_state(mode=session_mode, source_checkpoint=SOURCE_CAPTION)
+        )
+        st.success(f"Latest {_session_label(session_mode)} state loaded.")
         st.rerun()
     if action_cols[3].button("Export", use_container_width=True):
-        exports = export_runtime_state(_runtime_state())
+        exports = export_runtime_state(_runtime_state(session_mode))
         _set_runtime_state(
             save_runtime_state(
-                _runtime_state(),
+                _runtime_state(session_mode),
                 event_type="export_created",
                 event_detail={label: str(path) for label, path in exports.items()},
             )
@@ -119,10 +178,47 @@ def _render_top_bar(summary) -> None:
         "/settings-data-health",
         use_container_width=True,
     )
-    action_cols[5].link_button("Normal App View", "/rankings", use_container_width=True)
+    if action_cols[5].button("Reset", use_container_width=True):
+        st.session_state[RESET_PENDING_KEY] = session_mode
+    action_cols[6].link_button("Normal App View", "/rankings", use_container_width=True)
+    _render_reset_confirmation(session_mode)
 
 
-def _render_left_rail(state: dict[str, object], pick_frame: pd.DataFrame) -> None:
+def _render_reset_confirmation(session_mode: str) -> None:
+    pending_mode = st.session_state.get(RESET_PENDING_KEY)
+    if pending_mode != session_mode:
+        return
+    if session_mode == "live":
+        st.warning(
+            "Resetting Live Draft state clears live picks and trades only. "
+            "Mock Practice state is not changed."
+        )
+        confirm_label = "I understand this resets Live Draft state only."
+    else:
+        st.warning("Practice state only — reset affects mock draft/practice state only.")
+        confirm_label = "I understand this resets Mock Draft / Practice state only."
+    confirmed = st.checkbox(confirm_label, key=f"{SESSION_KEY}_{session_mode}_reset_confirmed")
+    confirm_cols = st.columns([1, 1, 4])
+    if confirm_cols[0].button("Confirm Reset", disabled=not confirmed, use_container_width=True):
+        _set_runtime_state(
+            reset_runtime_state(
+                _runtime_state(session_mode),
+                reason=f"manual_{session_mode}_reset_from_cockpit",
+            )
+        )
+        st.session_state.pop(RESET_PENDING_KEY, None)
+        st.success(f"{_session_label(session_mode)} state reset.")
+        st.rerun()
+    if confirm_cols[1].button("Cancel Reset", use_container_width=True):
+        st.session_state.pop(RESET_PENDING_KEY, None)
+        st.rerun()
+
+
+def _render_left_rail(
+    state: dict[str, object],
+    pick_frame: pd.DataFrame,
+    session_mode: str,
+) -> None:
     st.markdown("#### Your Draft Rail")
     owned = owned_pick_rows(pick_frame, state)
     st.caption("Owned picks")
@@ -163,7 +259,7 @@ def _render_left_rail(state: dict[str, object], pick_frame: pd.DataFrame) -> Non
             st.write("No ownership overrides recorded.")
 
     with st.expander("Deep tools", expanded=True):
-        _action_links()
+        _action_links(session_mode)
 
 
 def _render_board_controls(board_frame: pd.DataFrame) -> tuple[str, str, str, bool, bool]:
@@ -205,6 +301,7 @@ def _render_center_board(
     board_frame: pd.DataFrame,
     pick_frame: pd.DataFrame,
     state: dict[str, object],
+    session_mode: str,
 ) -> tuple[pd.DataFrame, dict[str, object] | None, dict[str, object] | None]:
     st.markdown("#### Best Available Board")
     search, position, tier, show_pdf, show_k_dst = _render_board_controls(board_frame)
@@ -261,7 +358,7 @@ def _render_center_board(
     note = st.text_input("Flag/note", key=f"{SESSION_KEY}_note", placeholder="Optional note")
     if action_cols[3].button("Add Note", use_container_width=True):
         if selected and note.strip():
-            next_state = dict(_runtime_state())
+            next_state = dict(_runtime_state(session_mode))
             notes = list(next_state.get("notes", []))
             notes.append(f"{selected.get('player', 'Player')}: {note.strip()}")
             next_state["notes"] = notes
@@ -393,18 +490,11 @@ SOURCE_CAPTION = (
     "K/DST hidden by default. Market/ADP context is display-only and never drives default sort."
 )
 
-state = _runtime_state()
-summary = build_cockpit_summary(
-    board_frame=draftable_board,
-    pick_frame=pick_frame,
-    runtime_state=state,
-)
-
 page_header(
     "Drafting Mode",
     eyebrow="On-Clock Cockpit",
     description=(
-        "Live draft workspace: board first, runtime state always local, "
+        "Draft session workspace: board first, runtime state always local, "
         "source truth unchanged."
     ),
     status_items=(
@@ -415,18 +505,26 @@ page_header(
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
-_render_top_bar(summary)
+session_mode = _render_session_selector()
+state = _runtime_state(session_mode)
+summary = build_cockpit_summary(
+    board_frame=draftable_board,
+    pick_frame=pick_frame,
+    runtime_state=state,
+)
+_render_top_bar(summary, session_mode)
 
 left, center, right = st.columns([1.1, 2.35, 1.15])
 with left:
-    _render_left_rail(state, pick_frame)
+    _render_left_rail(state, pick_frame, session_mode)
 with center:
     _filtered, selected_player, comparison_player = _render_center_board(
         board_frame=draftable_board,
         pick_frame=pick_frame,
         state=state,
+        session_mode=session_mode,
     )
-    _render_trade_recorder(_runtime_state())
+    _render_trade_recorder(_runtime_state(session_mode))
 with right:
     _render_right_panel(selected_player, comparison_player)
 
@@ -442,8 +540,8 @@ with st.expander("Source / guardrails", expanded=False):
     )
     st.download_button(
         "Download current runtime JSON",
-        data=export_runtime_state_json(_runtime_state()),
-        file_name="drafting_mode_live_runtime_state.json",
+        data=export_runtime_state_json(_runtime_state(session_mode)),
+        file_name=f"drafting_mode_{session_mode}_runtime_state.json",
         mime="application/json",
     )
     paths = runtime_paths()
