@@ -5,7 +5,10 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.unified_player_universe_validation_service import (
+    DUPLICATE_CLASS_VALUES,
+    IDENTITY_TRIAGE_COLUMNS,
     REQUIRED_REVIEW_COLUMNS,
+    TRIAGE_CLASS_VALUES,
     validate_artifact_files,
 )
 
@@ -58,6 +61,8 @@ def test_duplicate_detection_report_loads() -> None:
     assert len(duplicates) == 15
     assert duplicates["review_status"].eq("REVIEW_NEEDED").all()
     assert duplicates["detection_type"].str.contains("appears_in_multiple_layers").any()
+    assert duplicates["duplicate_class"].isin(DUPLICATE_CLASS_VALUES).all()
+    assert duplicates["duplicate_class"].eq("MULTI_LAYER_SAME_PLAYER_EXPECTED").all()
 
 
 def test_missing_player_id_reporting() -> None:
@@ -81,6 +86,40 @@ def test_model_input_allowed_is_no_for_all_rows() -> None:
     review = _review()
 
     assert review["model_input_allowed"].eq("no").all()
+
+
+def test_identity_triage_csv_schema() -> None:
+    triage = pd.read_csv(
+        OUTPUT_DIR / "unified_player_universe_v1_identity_triage.csv",
+        keep_default_na=False,
+    )
+
+    assert set(IDENTITY_TRIAGE_COLUMNS).issubset(triage.columns)
+    assert len(triage) == 330
+    assert triage["triage_class"].isin(TRIAGE_CLASS_VALUES).all()
+
+
+def test_safe_repairs_preserve_review_only_gates() -> None:
+    review = _review()
+
+    assert review["app_wiring_allowed"].eq("no").all()
+    assert review["model_input_allowed"].eq("no").all()
+
+
+def test_no_fabricated_ids_from_identity_triage() -> None:
+    review = _review()
+    triage = pd.read_csv(
+        OUTPUT_DIR / "unified_player_universe_v1_identity_triage.csv",
+        keep_default_na=False,
+    )
+
+    assert review["player_id"].eq("").sum() == 5
+    assert triage.loc[triage["action_taken"].eq("APPLY_PLAYER_ID_REPAIR")].empty
+    safe_repairs = triage.loc[
+        triage["triage_class"].str.startswith("SAFE_REPAIR"),
+        "source_used",
+    ]
+    assert safe_repairs.ne("").all()
 
 
 def test_source_summary_counts_load() -> None:

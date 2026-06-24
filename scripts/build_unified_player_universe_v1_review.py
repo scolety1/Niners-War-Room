@@ -18,6 +18,7 @@ def main() -> None:
     print(f"validation_report_path={result.validation_report_path}")
     print(f"duplicate_review_path={result.duplicate_review_path}")
     print(f"identity_gap_review_path={result.identity_gap_review_path}")
+    print(f"identity_triage_path={result.identity_triage_path}")
     print(f"source_summary_path={result.source_summary_path}")
     print(f"total_rows={result.total_rows}")
     print(f"veteran_rows={result.veteran_rows}")
@@ -25,6 +26,7 @@ def main() -> None:
     print(f"pdf_fa_rows={result.pdf_fa_rows}")
     print(f"duplicate_review_count={result.duplicate_review_count}")
     print(f"identity_gap_count={result.identity_gap_count}")
+    print(f"safe_repair_count={result.safe_repair_count}")
 
 
 if __name__ == "__main__":

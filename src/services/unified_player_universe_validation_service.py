@@ -90,6 +90,7 @@ REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_review.csv"
 VALIDATION_REPORT_PATH = OUTPUT_DIR / "unified_player_universe_v1_validation_report.csv"
 DUPLICATE_REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_duplicate_review.csv"
 IDENTITY_GAP_REVIEW_PATH = OUTPUT_DIR / "unified_player_universe_v1_identity_gap_review.csv"
+IDENTITY_TRIAGE_PATH = OUTPUT_DIR / "unified_player_universe_v1_identity_triage.csv"
 SOURCE_SUMMARY_PATH = OUTPUT_DIR / "unified_player_universe_v1_source_summary.csv"
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
@@ -146,6 +147,35 @@ RANK_SOURCE_VALUES = {
     "CANDIDATE_RANK",
     "UNRANKED_REVIEW",
 }
+TRIAGE_CLASS_VALUES = {
+    "SAFE_REPAIR_EXISTING_CROSSWALK",
+    "SAFE_REPAIR_EXACT_APPROVED_MATCH",
+    "EXPECTED_NO_ID_REVIEW_ONLY",
+    "NEEDS_MANUAL_REVIEW",
+    "DO_NOT_REPAIR",
+}
+DUPLICATE_CLASS_VALUES = {
+    "TRUE_DUPLICATE_SAFE_MERGE_LATER",
+    "MULTI_LAYER_SAME_PLAYER_EXPECTED",
+    "NAME_COLLISION",
+    "SUFFIX_VARIANT",
+    "POSITION_CONFLICT",
+    "TEAM_CONFLICT",
+    "NEEDS_MANUAL_REVIEW",
+}
+IDENTITY_TRIAGE_COLUMNS = (
+    "player_name",
+    "position",
+    "source_layer",
+    "original_player_id",
+    "proposed_player_id",
+    "triage_class",
+    "action_taken",
+    "confidence",
+    "source_used",
+    "remaining_risk",
+    "notes",
+)
 
 
 @dataclass(frozen=True)
@@ -154,6 +184,7 @@ class BuildResult:
     validation_report_path: Path
     duplicate_review_path: Path
     identity_gap_review_path: Path
+    identity_triage_path: Path
     source_summary_path: Path
     total_rows: int
     veteran_rows: int
@@ -161,6 +192,7 @@ class BuildResult:
     pdf_fa_rows: int
     duplicate_review_count: int
     identity_gap_count: int
+    safe_repair_count: int
 
 
 def build_unified_player_universe_review() -> BuildResult:
@@ -174,15 +206,26 @@ def build_unified_player_universe_review() -> BuildResult:
 
     review = pd.DataFrame(rows, columns=REQUIRED_REVIEW_COLUMNS)
     review = _apply_duplicate_groups(review)
+    identity_gap_review = _identity_gap_review(review)
+    identity_triage = _identity_triage(review, identity_gap_review, sources)
+    review, safe_repair_count = _apply_safe_identity_repairs(review, identity_triage)
+    review = _apply_duplicate_groups(review)
     duplicate_review = _duplicate_review(review)
     identity_gap_review = _identity_gap_review(review)
-    source_summary = _source_summary(review, sources)
-    validation_report = validate_review_frame(review, duplicate_review, identity_gap_review, sources)
+    source_summary = _source_summary(review, sources, identity_gap_review, duplicate_review)
+    validation_report = validate_review_frame(
+        review,
+        duplicate_review,
+        identity_gap_review,
+        sources,
+        identity_triage,
+    )
 
     review.to_csv(REVIEW_PATH, index=False)
     validation_report.to_csv(VALIDATION_REPORT_PATH, index=False)
     duplicate_review.to_csv(DUPLICATE_REVIEW_PATH, index=False)
     identity_gap_review.to_csv(IDENTITY_GAP_REVIEW_PATH, index=False)
+    identity_triage.to_csv(IDENTITY_TRIAGE_PATH, index=False)
     source_summary.to_csv(SOURCE_SUMMARY_PATH, index=False)
 
     return BuildResult(
@@ -190,6 +233,7 @@ def build_unified_player_universe_review() -> BuildResult:
         validation_report_path=VALIDATION_REPORT_PATH,
         duplicate_review_path=DUPLICATE_REVIEW_PATH,
         identity_gap_review_path=IDENTITY_GAP_REVIEW_PATH,
+        identity_triage_path=IDENTITY_TRIAGE_PATH,
         source_summary_path=SOURCE_SUMMARY_PATH,
         total_rows=int(len(review)),
         veteran_rows=int(review["player_type"].eq("VETERAN").sum()),
@@ -197,6 +241,7 @@ def build_unified_player_universe_review() -> BuildResult:
         pdf_fa_rows=int(review["player_type"].eq("PDF_FA").sum()),
         duplicate_review_count=int(len(duplicate_review)),
         identity_gap_count=int(len(identity_gap_review)),
+        safe_repair_count=safe_repair_count,
     )
 
 
@@ -207,12 +252,19 @@ def validate_artifact_files(output_dir: Path = OUTPUT_DIR) -> pd.DataFrame:
         output_dir / IDENTITY_GAP_REVIEW_PATH.name,
         keep_default_na=False,
     )
+    identity_triage = pd.read_csv(output_dir / IDENTITY_TRIAGE_PATH.name, keep_default_na=False)
     source_summary = pd.read_csv(output_dir / SOURCE_SUMMARY_PATH.name, keep_default_na=False)
     sources = {
         "full_dynasty": _read_csv(FULL_DYNASTY_PATH),
         "frozen": _read_csv(FROZEN_BOARD_PATH),
     }
-    report = validate_review_frame(review, duplicate_review, identity_gap_review, sources)
+    report = validate_review_frame(
+        review,
+        duplicate_review,
+        identity_gap_review,
+        sources,
+        identity_triage,
+    )
     report = pd.concat(
         [
             report,
@@ -236,7 +288,10 @@ def validate_review_frame(
     duplicate_review: pd.DataFrame,
     identity_gap_review: pd.DataFrame,
     sources: dict[str, pd.DataFrame],
+    identity_triage: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
+    if identity_triage is None:
+        identity_triage = pd.DataFrame(columns=IDENTITY_TRIAGE_COLUMNS)
     checks = [
         _check_row(
             "required_columns_exist",
@@ -340,6 +395,27 @@ def validate_review_frame(
             "frozen_board_remains_66",
             _expected_source_count(sources, "frozen", 66) == 66,
             f"frozen source rows={_expected_source_count(sources, 'frozen', 0)}",
+        ),
+        _check_row(
+            "identity_triage_schema_valid",
+            set(IDENTITY_TRIAGE_COLUMNS).issubset(identity_triage.columns),
+            _missing_message(IDENTITY_TRIAGE_COLUMNS, identity_triage.columns),
+        ),
+        _check_row(
+            "identity_triage_class_enum_valid",
+            _column_values_in(identity_triage, "triage_class", TRIAGE_CLASS_VALUES),
+            _bad_values_message(identity_triage, "triage_class", TRIAGE_CLASS_VALUES),
+        ),
+        _check_row(
+            "duplicate_class_enum_valid",
+            _column_values_in(duplicate_review, "duplicate_class", DUPLICATE_CLASS_VALUES),
+            _bad_values_message(duplicate_review, "duplicate_class", DUPLICATE_CLASS_VALUES),
+        ),
+        _check_row(
+            "identity_repairs_preserve_app_and_model_no",
+            review["app_wiring_allowed"].astype(str).str.lower().eq("no").all()
+            and review["model_input_allowed"].astype(str).str.lower().eq("no").all(),
+            "safe review-artifact repairs cannot unlock app/model usage",
         ),
     ]
     return pd.DataFrame(checks)
@@ -689,6 +765,7 @@ def _base_row(
 
 def _apply_duplicate_groups(review: pd.DataFrame) -> pd.DataFrame:
     output = review.copy()
+    output["duplicate_group_id"] = ""
     duplicate_keys: dict[int, list[int]] = {}
     group_num = 1
     for _, group in output.loc[output["player_id"].astype(str).str.strip().ne("")].groupby("player_id"):
@@ -726,10 +803,13 @@ def _duplicate_review(review: pd.DataFrame) -> pd.DataFrame:
             detection_types.append("conflicting_positions")
         if group["source_layer"].astype(str).nunique() > 1:
             detection_types.append("appears_in_multiple_layers")
+        duplicate_class = _duplicate_classification(detection_types)
         rows.append(
             {
                 "duplicate_group_id": duplicate_group_id,
                 "detection_type": ";".join(detection_types) or "likely_duplicate",
+                "duplicate_class": duplicate_class,
+                "recommended_action": _duplicate_recommended_action(duplicate_class),
                 "row_count": len(group),
                 "player_ids": _join_unique(group["player_id"]),
                 "player_names": _join_unique(group["player_name"]),
@@ -747,6 +827,8 @@ def _duplicate_review(review: pd.DataFrame) -> pd.DataFrame:
         columns=[
             "duplicate_group_id",
             "detection_type",
+            "duplicate_class",
+            "recommended_action",
             "row_count",
             "player_ids",
             "player_names",
@@ -757,6 +839,36 @@ def _duplicate_review(review: pd.DataFrame) -> pd.DataFrame:
             "notes",
         ],
     )
+
+
+def _duplicate_classification(detection_types: list[str]) -> str:
+    detections = set(detection_types)
+    if "conflicting_positions" in detections:
+        return "POSITION_CONFLICT"
+    if "conflicting_teams" in detections:
+        return "TEAM_CONFLICT"
+    if "likely_duplicate_suffix_difference" in detections:
+        return "SUFFIX_VARIANT"
+    if "appears_in_multiple_layers" in detections and (
+        "duplicate_exact_player_id" in detections
+        or "duplicate_normalized_name_position" in detections
+    ):
+        return "MULTI_LAYER_SAME_PLAYER_EXPECTED"
+    if "duplicate_normalized_name_position" in detections:
+        return "NAME_COLLISION"
+    return "NEEDS_MANUAL_REVIEW"
+
+
+def _duplicate_recommended_action(duplicate_class: str) -> str:
+    actions = {
+        "MULTI_LAYER_SAME_PLAYER_EXPECTED": "KEEP_SEPARATE_REVIEW_ROWS; consolidate by source policy later if app wiring is approved.",
+        "SUFFIX_VARIANT": "MANUAL_REVIEW_REQUIRED before merge.",
+        "POSITION_CONFLICT": "MANUAL_REVIEW_REQUIRED; do not merge until position conflict is resolved.",
+        "TEAM_CONFLICT": "MANUAL_REVIEW_REQUIRED; team may be stale or source-specific.",
+        "NAME_COLLISION": "MANUAL_REVIEW_REQUIRED; same normalized name/position may still be distinct rows.",
+        "TRUE_DUPLICATE_SAFE_MERGE_LATER": "SAFE_MERGE_LATER only after a separate source-policy lane approves consolidation.",
+    }
+    return actions.get(duplicate_class, "MANUAL_REVIEW_REQUIRED; do not auto-merge.")
 
 
 def _identity_gap_review(review: pd.DataFrame) -> pd.DataFrame:
@@ -803,9 +915,183 @@ def _identity_gap_review(review: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _source_summary(review: pd.DataFrame, sources: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def _identity_triage(
+    review: pd.DataFrame,
+    identity_gap_review: pd.DataFrame,
+    sources: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    rows = []
+    for _, gap in identity_gap_review.iterrows():
+        proposed_player_id, source_used = _safe_identity_repair_candidate(gap, sources)
+        triage_class, action_taken, confidence, remaining_risk = _triage_decision(
+            gap,
+            proposed_player_id,
+        )
+        rows.append(
+            {
+                "player_name": gap.get("player_name", ""),
+                "position": gap.get("position", ""),
+                "source_layer": gap.get("source_layer", ""),
+                "original_player_id": gap.get("player_id", ""),
+                "proposed_player_id": proposed_player_id,
+                "triage_class": triage_class,
+                "action_taken": action_taken,
+                "confidence": confidence,
+                "source_used": source_used,
+                "remaining_risk": remaining_risk,
+                "notes": _triage_notes(gap, review),
+            }
+        )
+    return pd.DataFrame(rows, columns=IDENTITY_TRIAGE_COLUMNS)
+
+
+def _safe_identity_repair_candidate(
+    gap: pd.Series,
+    sources: dict[str, pd.DataFrame],
+) -> tuple[str, str]:
+    if _text(gap.get("gap_type")) != "missing_player_id":
+        return "", ""
+    identity = sources.get("identity", pd.DataFrame())
+    if identity.empty or "player_id" not in identity.columns:
+        return "", ""
+    name = _normalize_name(gap.get("player_name"))
+    position = _text(gap.get("position")).upper()
+    matched = identity.loc[
+        identity["player_name"].map(_normalize_name).eq(name)
+        & identity["position"].astype(str).str.upper().eq(position)
+        & identity["player_id"].astype(str).str.strip().ne("")
+        & identity["match_confidence"].astype(str).str.upper().eq("HIGH")
+        & identity["needs_manual_review"].astype(str).str.lower().eq("no")
+    ]
+    if matched.empty:
+        return "", ""
+    player_id = _text(matched.iloc[0].get("player_id"))
+    return player_id, _rel(IDENTITY_AUDIT_PATH)
+
+
+def _triage_decision(gap: pd.Series, proposed_player_id: str) -> tuple[str, str, str, str]:
+    gap_type = _text(gap.get("gap_type"))
+    original_player_id = _text(gap.get("player_id"))
+    join_confidence = _text(gap.get("join_confidence")).upper()
+    if proposed_player_id:
+        return (
+            "SAFE_REPAIR_EXISTING_CROSSWALK",
+            "APPLY_PLAYER_ID_REPAIR",
+            "HIGH",
+            "Low; exact approved identity audit match with manual-review=no.",
+        )
+    if gap_type == "manual_review_flag" and original_player_id:
+        return (
+            "EXPECTED_NO_ID_REVIEW_ONLY",
+            "KEEP_REVIEW_ONLY",
+            join_confidence or "REVIEW_ONLY",
+            "Review flag remains until duplicate/source-layer policy is approved.",
+        )
+    if gap_type == "manual_review_flag":
+        return (
+            "NEEDS_MANUAL_REVIEW",
+            "NO_CHANGE",
+            join_confidence or "LOW",
+            "Manual review row has no high-confidence player_id repair source.",
+        )
+    if gap_type == "missing_age":
+        return (
+            "NEEDS_MANUAL_REVIEW",
+            "NO_CHANGE",
+            join_confidence or "UNKNOWN",
+            "Age coverage requires an approved age source; do not infer.",
+        )
+    if gap_type == "missing_player_id":
+        return (
+            "NEEDS_MANUAL_REVIEW",
+            "NO_CHANGE",
+            join_confidence or "LOW",
+            "No high-confidence existing crosswalk or exact approved match found.",
+        )
+    if gap_type == "low_or_missing_join_confidence":
+        return (
+            "NEEDS_MANUAL_REVIEW",
+            "NO_CHANGE",
+            join_confidence or "LOW",
+            "Join confidence is below the safe auto-repair threshold.",
+        )
+    return (
+        "DO_NOT_REPAIR",
+        "NO_CHANGE",
+        join_confidence or "UNKNOWN",
+        "Gap type is not eligible for automated review-artifact repair.",
+    )
+
+
+def _triage_notes(gap: pd.Series, review: pd.DataFrame) -> str:
+    player_name = _text(gap.get("player_name"))
+    position = _text(gap.get("position"))
+    source_layer = _text(gap.get("source_layer"))
+    gap_type = _text(gap.get("gap_type"))
+    matching_rows = review.loc[
+        review["player_name"].astype(str).eq(player_name)
+        & review["position"].astype(str).eq(position)
+        & review["source_layer"].astype(str).eq(source_layer)
+    ]
+    caveats = _join_unique(matching_rows["caveats"]) if not matching_rows.empty else ""
+    return f"gap_type={gap_type}; {caveats}".strip()
+
+
+def _apply_safe_identity_repairs(
+    review: pd.DataFrame,
+    identity_triage: pd.DataFrame,
+) -> tuple[pd.DataFrame, int]:
+    output = review.copy()
+    safe_rows = identity_triage.loc[
+        identity_triage["triage_class"].isin(
+            ["SAFE_REPAIR_EXISTING_CROSSWALK", "SAFE_REPAIR_EXACT_APPROVED_MATCH"]
+        )
+        & identity_triage["proposed_player_id"].astype(str).str.strip().ne("")
+    ]
+    repair_count = 0
+    for _, repair in safe_rows.iterrows():
+        mask = (
+            output["player_name"].astype(str).eq(_text(repair.get("player_name")))
+            & output["position"].astype(str).eq(_text(repair.get("position")))
+            & output["source_layer"].astype(str).eq(_text(repair.get("source_layer")))
+            & output["player_id"].astype(str).eq(_text(repair.get("original_player_id")))
+        )
+        if not mask.any():
+            continue
+        output.loc[mask, "player_id"] = _text(repair.get("proposed_player_id"))
+        output.loc[mask, "join_confidence"] = "HIGH"
+        output.loc[mask, "caveats"] = output.loc[mask, "caveats"].astype(str).map(
+            lambda value: _append_caveat(value, "Player ID repaired from existing approved identity audit.")
+        )
+        repair_count += int(mask.sum())
+    return output, repair_count
+
+
+def _append_caveat(caveats: str, addition: str) -> str:
+    if not caveats:
+        return addition
+    if addition in caveats:
+        return caveats
+    return f"{caveats} {addition}"
+
+
+def _source_summary(
+    review: pd.DataFrame,
+    sources: dict[str, pd.DataFrame],
+    identity_gap_review: pd.DataFrame | None = None,
+    duplicate_review: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    if identity_gap_review is None:
+        identity_gap_review = pd.DataFrame()
+    if duplicate_review is None:
+        duplicate_review = pd.DataFrame()
     rows = []
     for layer, group in review.groupby("source_layer"):
+        layer_identity_gaps = (
+            identity_gap_review.loc[identity_gap_review["source_layer"].astype(str).eq(layer)]
+            if not identity_gap_review.empty and "source_layer" in identity_gap_review.columns
+            else pd.DataFrame()
+        )
         rows.append(
             {
                 "layer": layer,
@@ -823,6 +1109,12 @@ def _source_summary(review: pd.DataFrame, sources: dict[str, pd.DataFrame]) -> p
                 "outcome_coverage": int(group["outcome_status"].astype(str).eq("SUPPORTED").sum()),
                 "market_coverage": int(group["market_match_status"].astype(str).eq("MATCHED").sum()),
                 "review_needed_count": int(group["review_status"].astype(str).eq("REVIEW_NEEDED").sum()),
+                "identity_gap_count": int(len(layer_identity_gaps)),
+                "duplicate_review_count": int(
+                    duplicate_review["source_layers"].astype(str).str.contains(layer, regex=False).sum()
+                )
+                if not duplicate_review.empty and "source_layers" in duplicate_review.columns
+                else 0,
                 "caveats": _layer_caveat(layer),
             }
         )
@@ -848,6 +1140,8 @@ def _source_summary(review: pd.DataFrame, sources: dict[str, pd.DataFrame]) -> p
                 "outcome_coverage": "",
                 "market_coverage": "",
                 "review_needed_count": "",
+                "identity_gap_count": "",
+                "duplicate_review_count": "",
                 "caveats": "Input source count for validation context.",
             }
         )
@@ -866,6 +1160,8 @@ def _suffix_duplicate_groups(review: pd.DataFrame) -> list[dict[str, Any]]:
             {
                 "duplicate_group_id": f"DUP-{next_num:04d}",
                 "detection_type": "likely_duplicate_suffix_difference",
+                "duplicate_class": "SUFFIX_VARIANT",
+                "recommended_action": _duplicate_recommended_action("SUFFIX_VARIANT"),
                 "row_count": len(group),
                 "player_ids": _join_unique(group["player_id"]),
                 "player_names": _join_unique(group["player_name"]),

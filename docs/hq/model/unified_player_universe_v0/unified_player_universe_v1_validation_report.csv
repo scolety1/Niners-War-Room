@@ -17,3 +17,7 @@ outcome_gaps_not_enough_information,PASS,missing/unsupported outcomes must displ
 full_dynasty_veteran_row_count_preserved,PASS,full dynasty rows=240
 rookie_prospect_count_reported,PASS,rookie/prospect rows=54
 frozen_board_remains_66,PASS,frozen source rows=66
+identity_triage_schema_valid,PASS,ok
+identity_triage_class_enum_valid,PASS,ok
+duplicate_class_enum_valid,PASS,ok
+identity_repairs_preserve_app_and_model_no,PASS,safe review-artifact repairs cannot unlock app/model usage
