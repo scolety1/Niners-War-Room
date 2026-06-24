@@ -2,9 +2,23 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Literal
 
 import pandas as pd
+
+from src.services.draft_day_runtime_state_service import parse_trade_assets
+from src.services.market_baseline_service import (
+    DISPLAY_LABEL as MARKET_BASELINE_DISPLAY_LABEL,
+)
+from src.services.market_baseline_service import (
+    DISPLAY_ONLY_WARNING as MARKET_BASELINE_DISPLAY_ONLY_WARNING,
+)
+from src.services.market_baseline_service import (
+    get_pick_market_value,
+    join_market_to_players,
+    load_market_freshness,
+)
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
 Side = Literal["give", "get"]
@@ -51,6 +65,16 @@ class TradeReview:
     score_gap_display: str
     rank_context: str
     explanation: str
+
+
+@dataclass(frozen=True)
+class MarketPackageSummary:
+    rows: pd.DataFrame
+    totals: pd.DataFrame
+    status: str
+    difference_display: str
+    freshness: dict[str, str]
+    display_only_warning: str
 
 
 def empty_trade_state() -> TradeState:
@@ -259,6 +283,197 @@ def review_trade_package(
     )
 
 
+def parse_trade_asset_text(text: str) -> list[dict[str, Any]]:
+    return parse_trade_assets(text)
+
+
+def lookup_pick_market_value(
+    asset_text: str,
+    *,
+    artifact_dir: str | Path | None = None,
+) -> dict[str, str]:
+    parsed = parse_trade_assets(asset_text)
+    if not parsed:
+        return _missing_market_lookup(asset_text, "unknown", "REVIEW_NEEDED")
+    asset = parsed[0]
+    if asset.get("asset_type") not in {"pick", "future_pick"}:
+        return _missing_market_lookup(
+            asset_text,
+            str(asset.get("asset_type") or "unknown"),
+            "REVIEW_NEEDED",
+        )
+    label = str(asset.get("display_label") or asset.get("pick_label") or asset_text)
+    try:
+        match = (
+            get_pick_market_value(label, artifact_dir=artifact_dir)
+            if artifact_dir is not None
+            else get_pick_market_value(label)
+        )
+    except (FileNotFoundError, TypeError, ValueError):
+        match = None
+    if not match:
+        return _missing_market_lookup(
+            label,
+            str(asset.get("asset_type") or "pick"),
+            "No market match",
+        )
+    return {
+        "asset": label,
+        "parsed_type": str(asset.get("asset_type") or "pick"),
+        "dp_value": _text(match.get("value_1qb")),
+        "match_status": "Matched pick market value",
+        "notes": _text(match.get("source_note")) or MARKET_BASELINE_DISPLAY_ONLY_WARNING,
+        "market_baseline_label": MARKET_BASELINE_DISPLAY_LABEL,
+    }
+
+
+def lookup_player_market_value(
+    player_row: dict[str, object],
+    *,
+    artifact_dir: str | Path | None = None,
+) -> dict[str, str]:
+    frame = pd.DataFrame([player_row])
+    try:
+        enriched = (
+            join_market_to_players(frame, artifact_dir=artifact_dir)
+            if artifact_dir is not None
+            else join_market_to_players(frame)
+        )
+    except (FileNotFoundError, TypeError, ValueError):
+        enriched = frame.copy()
+    row = enriched.iloc[0].to_dict() if not enriched.empty else player_row
+    player = _text(
+        row.get("player")
+        or row.get("player_name")
+        or row.get("name")
+        or player_row.get("player")
+        or player_row.get("label")
+    )
+    value = _text(row.get("dp_value_1qb"))
+    if not value:
+        return _missing_market_lookup(player or NOT_ENOUGH_INFORMATION, "player", "No market match")
+    return {
+        "asset": player,
+        "parsed_type": "player",
+        "dp_value": value,
+        "match_status": _text(row.get("market_join_confidence")) or "Matched player market value",
+        "notes": _text(row.get("dp_display_only_warning")) or MARKET_BASELINE_DISPLAY_ONLY_WARNING,
+        "market_baseline_label": MARKET_BASELINE_DISPLAY_LABEL,
+    }
+
+
+def summarize_trade_package_market(
+    state: TradeState,
+    lookup: dict[str, dict[str, object]],
+    *,
+    give_assets_text: str = "",
+    get_assets_text: str = "",
+    artifact_dir: str | Path | None = None,
+) -> MarketPackageSummary:
+    rows: list[dict[str, str]] = []
+    normalized = normalize_trade_state(state)
+    for side in ("give", "get"):
+        for key in normalized[side]:
+            item = lookup.get(key, _missing_item(key))
+            rows.append(
+                _market_row_for_lookup_item(
+                    "NWR gives" if side == "give" else "NWR gets",
+                    item,
+                    artifact_dir=artifact_dir,
+                )
+            )
+    rows.extend(
+        _manual_market_rows("NWR gives", give_assets_text, artifact_dir=artifact_dir)
+    )
+    rows.extend(
+        _manual_market_rows("NWR gets", get_assets_text, artifact_dir=artifact_dir)
+    )
+    frame = pd.DataFrame(
+        rows,
+        columns=[
+            "side",
+            "asset",
+            "parsed_type",
+            "dp_value",
+            "match_status",
+            "notes",
+            "market_baseline_label",
+        ],
+    )
+    totals = _market_totals(frame)
+    status, difference_display = classify_market_trade_gap(totals)
+    try:
+        freshness = (
+            load_market_freshness(artifact_dir=artifact_dir)
+            if artifact_dir is not None
+            else load_market_freshness()
+        )
+    except (FileNotFoundError, TypeError, ValueError):
+        freshness = {
+            "freshness_status": "RED_NO_VALID_CACHE",
+            "upstream_scrape_date": "",
+            "market_baseline_stale_warning": "Market baseline unavailable.",
+        }
+    return MarketPackageSummary(
+        rows=frame,
+        totals=totals,
+        status=status,
+        difference_display=difference_display,
+        freshness=freshness,
+        display_only_warning=MARKET_BASELINE_DISPLAY_ONLY_WARNING,
+    )
+
+
+def classify_market_trade_gap(totals: pd.DataFrame) -> tuple[str, str]:
+    if totals.empty:
+        return NOT_ENOUGH_INFORMATION, NOT_ENOUGH_INFORMATION
+    values = {
+        str(row.get("side")): _maybe_float(row.get("dp_market_total"))
+        for row in totals.to_dict("records")
+    }
+    give = values.get("NWR gives")
+    get = values.get("NWR gets")
+    if give is None or get is None:
+        return NOT_ENOUGH_INFORMATION, NOT_ENOUGH_INFORMATION
+    difference = round(get - give, 2)
+    if abs(difference) <= 250:
+        status = "Market says close"
+    elif difference > 0:
+        status = "Market says get side higher"
+    else:
+        status = "Market says give side higher"
+    return status, f"{difference:+.2f}"
+
+
+def display_market_package_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+    return frame.rename(
+        columns={
+            "side": "Side",
+            "asset": "Asset",
+            "parsed_type": "Parsed Type",
+            "dp_value": "DP Value / Display-Only",
+            "match_status": "Match Status",
+            "notes": "Notes",
+            "market_baseline_label": "Market Baseline Label",
+        }
+    )
+
+
+def display_market_totals(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+    return frame.rename(
+        columns={
+            "side": "Side",
+            "dp_market_total": "DP Market Total / Display-Only",
+            "matched_assets": "Matched Assets",
+            "unknown_assets": "Unknown / Review Assets",
+        }
+    )
+
+
 def source_context_counts(
     board_frame: pd.DataFrame,
     trade_context_frame: pd.DataFrame,
@@ -347,6 +562,77 @@ def _missing_item(key: str) -> dict[str, object]:
         "pick_window_note": NOT_ENOUGH_INFORMATION,
         "risk_manual_review_notes": NOT_ENOUGH_INFORMATION,
         "data_status": NOT_ENOUGH_INFORMATION,
+    }
+
+
+def _market_row_for_lookup_item(
+    side_label: str,
+    item: dict[str, object],
+    *,
+    artifact_dir: str | Path | None,
+) -> dict[str, str]:
+    if str(item.get("asset_type")) == "Player":
+        row = lookup_player_market_value(item, artifact_dir=artifact_dir)
+    else:
+        row = _missing_market_lookup(
+            _text(item.get("label")) or NOT_ENOUGH_INFORMATION,
+            str(item.get("asset_type") or "unknown"),
+            "Not a market-valued pick/player asset",
+        )
+    row["side"] = side_label
+    return row
+
+
+def _manual_market_rows(
+    side_label: str,
+    text: str,
+    *,
+    artifact_dir: str | Path | None,
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for asset in parse_trade_assets(text):
+        raw = _text(asset.get("raw_text") or asset.get("display_label"))
+        if asset.get("asset_type") in {"pick", "future_pick"}:
+            row = lookup_pick_market_value(raw, artifact_dir=artifact_dir)
+        else:
+            row = _missing_market_lookup(
+                raw,
+                str(asset.get("asset_type") or "unknown"),
+                str(asset.get("status") or "REVIEW_NEEDED"),
+            )
+        row["side"] = side_label
+        rows.append(row)
+    return rows
+
+
+def _market_totals(frame: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    for side in ("NWR gives", "NWR gets"):
+        side_frame = frame.loc[frame.get("side", pd.Series(dtype=str)).astype(str).eq(side)]
+        values = pd.to_numeric(side_frame.get("dp_value", pd.Series(dtype=str)), errors="coerce")
+        matched = int(values.notna().sum())
+        unknown = int(values.isna().sum()) if not side_frame.empty else 0
+        rows.append(
+            {
+                "side": side,
+                "dp_market_total": round(float(values.dropna().sum()), 2)
+                if matched
+                else NOT_ENOUGH_INFORMATION,
+                "matched_assets": matched,
+                "unknown_assets": unknown,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _missing_market_lookup(asset: str, parsed_type: str, status: str) -> dict[str, str]:
+    return {
+        "asset": asset or NOT_ENOUGH_INFORMATION,
+        "parsed_type": parsed_type or "unknown",
+        "dp_value": NOT_ENOUGH_INFORMATION,
+        "match_status": status or NOT_ENOUGH_INFORMATION,
+        "notes": "Market value missing; do not treat as zero.",
+        "market_baseline_label": MARKET_BASELINE_DISPLAY_LABEL,
     }
 
 

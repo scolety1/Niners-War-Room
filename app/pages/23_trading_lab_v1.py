@@ -33,6 +33,8 @@ from src.services.draft_day_trade_lab_service import (
     build_trade_item_lookup,
     clear_trade_state,
     copy_trade_state,
+    display_market_package_rows,
+    display_market_totals,
     display_package_summary,
     display_trade_item_rows,
     empty_trade_state,
@@ -42,6 +44,7 @@ from src.services.draft_day_trade_lab_service import (
     remove_trade_item,
     review_trade_package,
     source_context_counts,
+    summarize_trade_package_market,
     trade_item_rows,
 )
 
@@ -213,6 +216,61 @@ def _render_selected_items(lookup: dict[str, dict[str, object]]) -> None:
         hide_index=True,
         key="trading_lab_selected_items",
     )
+
+
+def _render_market_sanity_panel(lookup: dict[str, dict[str, object]]) -> None:
+    with st.expander("Market Baseline / Display-Only sanity check", expanded=True):
+        st.caption(
+            "DynastyProcess market baseline is sanity context only. It is not NWR source "
+            "truth, not a trade calculator, and not used for NWR rank/model logic."
+        )
+        text_cols = st.columns(2)
+        give_text = text_cols[0].text_area(
+            "Give market assets",
+            value="",
+            placeholder="Example: 2026 1.04",
+            key="trading_lab_market_give_assets",
+        )
+        get_text = text_cols[1].text_area(
+            "Get market assets",
+            value="",
+            placeholder="Example: 2026 2.03, 2028 1st",
+            key="trading_lab_market_get_assets",
+        )
+        market_summary = summarize_trade_package_market(
+            st.session_state[SESSION_KEY],
+            lookup,
+            give_assets_text=give_text,
+            get_assets_text=get_text,
+        )
+        fresh = market_summary.freshness
+        fresh_cols = st.columns(4)
+        fresh_cols[0].metric("Market sanity", market_summary.status)
+        fresh_cols[1].metric("Difference", market_summary.difference_display)
+        fresh_cols[2].metric("Freshness", fresh.get("freshness_status", "Not enough information"))
+        fresh_cols[3].metric(
+            "Scrape date",
+            fresh.get("upstream_scrape_date", "Not enough information"),
+        )
+        st.caption(market_summary.display_only_warning)
+        stale_warning = fresh.get("market_baseline_stale_warning")
+        if stale_warning:
+            st.warning(stale_warning)
+        if market_summary.rows.empty:
+            st.info("Add selected package items or type pick/player assets for market sanity.")
+        else:
+            st.dataframe(
+                display_market_package_rows(market_summary.rows).astype(str),
+                use_container_width=True,
+                hide_index=True,
+                key="trading_lab_market_rows",
+            )
+            st.dataframe(
+                display_market_totals(market_summary.totals).astype(str),
+                use_container_width=True,
+                hide_index=True,
+                key="trading_lab_market_totals",
+            )
 
 
 def _render_diagnostics() -> None:
@@ -617,6 +675,7 @@ with builder_tab:
     _render_builder(player_select, pick_select)
     _render_summary(lookup)
     _render_selected_items(lookup)
+    _render_market_sanity_panel(lookup)
 with finder_tab:
     _render_trade_finder()
 with trade_for_tab:
