@@ -1,7 +1,15 @@
 source_family,expected_seasons,expected_week_grain,sampled_seasons,sampled_weeks,coverage_status,model_input_allowed,app_wiring_allowed
-player_stats,public nflverse coverage varies,weekly,none,none,YELLOW_NOT_SAMPLED,no,no
-pbp,1999 onward expected,play/weekly derivation,none,none,YELLOW_NOT_SAMPLED,no,no
-snap_counts,season CSV availability varies,game/weekly,none,none,YELLOW_NOT_SAMPLED,no,no
-nextgen_stats,2016 onward expected,weekly,none,none,YELLOW_NOT_SAMPLED,no,no
-ftn_charting,2022 onward expected,play,none,none,YELLOW_NOT_SAMPLED,no,no
-pfr_advstats,2018 onward expected,weekly/season,none,none,YELLOW_NOT_SAMPLED,no,no
+player_stats,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+snap_counts,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+pbp,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+nextgen_stats_passing,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+nextgen_stats_receiving,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+nextgen_stats_rushing,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+participation,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+ftn_charting,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+pfr_advstats_pass,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+pfr_advstats_rush,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+pfr_advstats_rec,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+rosters,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+players,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no
+ff_playerids,2024 live smoke sample,source-defined,2024,source-defined,GREEN,no,no

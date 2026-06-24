@@ -22,9 +22,9 @@ Compile touched Python:
 
 ## Safe Refresh Later
 
-Only after dependency approval:
+Dependency approval is now complete for `nflreadpy`. For a future refresh:
 
-1. Install `nflreadpy` using the project dependency workflow.
+1. Use `.venv\Scripts\python.exe`.
 2. Set raw cache to `C:\NWR_SHARED_DATA\nfl_usage_cache\`.
 3. Run the smallest field-only source smoke.
 4. Generate field names, row counts, schema fingerprints, coverage summaries, and attribution summaries.
@@ -36,6 +36,7 @@ Only after dependency approval:
 - Repo-safe review artifacts: `docs/hq/data_sources/nfl_usage/review_artifacts/`
 - Source contract: `docs/hq/data_sources/nfl_usage/NWR_NFL_USAGE_SOURCE_CONTRACT_V0_20260624.md`
 - Promotion gate: `docs/hq/data_sources/nfl_usage/NWR_NFL_USAGE_FIELD_PROMOTION_GATE_V0_20260624.md`
+- Hidden review route: `/nfl-usage-evidence-review`
 
 ## Do Not Do
 
@@ -44,3 +45,4 @@ Only after dependency approval:
 - Do not update Dynasty Rank, Final Board Rank, tiers, latest_candidate, latest_approved, frozen board, pinned snapshot, model files, rank files, or source-truth files.
 - Do not call public participation data true routes run.
 - Do not call proxy fields true TPRR or true YPRR.
+- Do not make the review page read shared-cache raw payloads.

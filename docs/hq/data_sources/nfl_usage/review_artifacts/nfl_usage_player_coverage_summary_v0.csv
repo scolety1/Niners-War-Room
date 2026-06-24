@@ -1,5 +1,15 @@
 source_family,player_id_coverage_status,player_name_coverage_status,row_count_sampled,coverage_status,model_input_allowed,app_wiring_allowed,caveats
-player_stats,pending,pending,0,YELLOW_NOT_SAMPLED,no,no,nflreadpy not installed
-snap_counts,pfr_id_expected,player_name_expected,0,YELLOW_NOT_SAMPLED,no,no,identity bridge requires review
-pbp,gsis_or_player_id_expected,player_name_expected,0,YELLOW_NOT_SAMPLED,no,no,raw pbp not committed
-participation,pending,pending,0,YELLOW_NOT_SAMPLED,no,no,proxy context only
+player_stats,live_schema_observed,live_schema_observed,18981,GREEN,no,no,summary only
+snap_counts,live_schema_observed,live_schema_observed,26615,GREEN,no,no,summary only
+pbp,live_schema_observed,live_schema_observed,49492,GREEN,no,no,summary only
+nextgen_stats_passing,live_schema_observed,live_schema_observed,614,GREEN,no,no,summary only
+nextgen_stats_receiving,live_schema_observed,live_schema_observed,1435,GREEN,no,no,summary only
+nextgen_stats_rushing,live_schema_observed,live_schema_observed,601,GREEN,no,no,summary only
+participation,live_schema_observed,live_schema_observed,45919,GREEN,no,no,summary only
+ftn_charting,live_schema_observed,live_schema_observed,48031,GREEN,no,no,summary only
+pfr_advstats_pass,live_schema_observed,live_schema_observed,697,GREEN,no,no,summary only
+pfr_advstats_rush,live_schema_observed,live_schema_observed,2359,GREEN,no,no,summary only
+pfr_advstats_rec,live_schema_observed,live_schema_observed,4453,GREEN,no,no,summary only
+rosters,live_schema_observed,live_schema_observed,3216,GREEN,no,no,summary only
+players,live_schema_observed,live_schema_observed,25032,GREEN,no,no,summary only
+ff_playerids,live_schema_observed,live_schema_observed,12462,GREEN,no,no,summary only

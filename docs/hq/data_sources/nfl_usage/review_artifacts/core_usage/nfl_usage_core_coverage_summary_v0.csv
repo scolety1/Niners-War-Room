@@ -1,4 +1,4 @@
 source_family,loader_name,status,row_count,field_count,raw_cache_root,raw_data_tracked,model_input_allowed,app_wiring_allowed,warnings
-snap_counts,load_snap_counts,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed
-player_stats,load_player_stats,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed
-pbp,load_pbp,YELLOW_DRY_RUN_BLOCKED_NFLREADPY_NOT_INSTALLED,0,0,C:\NWR_SHARED_DATA\nfl_usage_cache\,no,no,no,nflreadpy not installed
+player_stats,load_player_stats,GREEN,18981,114,C:\NWR_SHARED_DATA\nfl_usage_cache\nflreadpy_cache,no,no,no,blocked fields quarantined
+snap_counts,load_snap_counts,GREEN,26615,16,C:\NWR_SHARED_DATA\nfl_usage_cache\nflreadpy_cache,no,no,no,
+pbp,load_pbp,GREEN,49492,372,C:\NWR_SHARED_DATA\nfl_usage_cache\nflreadpy_cache,no,no,no,blocked fields quarantined

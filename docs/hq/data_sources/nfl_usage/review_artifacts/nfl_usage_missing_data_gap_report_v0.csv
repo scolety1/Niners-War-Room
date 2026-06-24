@@ -1,7 +1,5 @@
 gap_name,source_family,gap_type,status,impact,next_action,model_input_allowed,app_wiring_allowed
-nflreadpy_not_installed,environment,dependency,YELLOW_BLOCKED,live field introspection not run,approve dependency workflow,no,no
-true_routes_run,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,prevents true TPRR/YPRR labels,source licensed route data contract,no,no
-true_tprr,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,prevents true TPRR,source licensed route data contract,no,no
-true_yprr,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,prevents true YPRR,source licensed route data contract,no,no
-participation_exact_route_truth,participation,OVERCLAIM_RISK,BLOCKED,prevents false route claims,keep proxy labels,no,no
-RotoWire_live_scraper,rotowire,BLOCKED_UNSAFE,BLOCKED,terms/license risk,manual licensed exports only if separately approved,no,no
+true_routes_run,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,prevents true TPRR/YPRR labels,licensed route data contract required,no,no
+true_tprr,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,requires exact routes run denominator,licensed route data contract required,no,no
+true_yprr,licensed_route_data,LICENSED_DATA_GAP,BLOCKED,requires exact routes run denominator,licensed route data contract required,no,no
+blocked_fantasy_score_fields,player_stats/pbp,BLOCKED_UNSAFE,FIELD_QUARANTINED,prevents fantasy/score-state leakage,retain field blocklist,no,no

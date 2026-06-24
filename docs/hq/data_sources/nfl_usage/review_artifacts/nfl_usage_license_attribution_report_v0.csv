@@ -1,8 +1,15 @@
 source_family,license,attribution_required,attribution_text,status,model_input_allowed,app_wiring_allowed
-player_stats,nflverse public data,yes,nflverse,YELLOW_PENDING_REFRESH,no,no
-pbp,nflverse public data,yes,nflverse,YELLOW_PENDING_REFRESH,no,no
-snap_counts,PFR-derived/public structured,yes,nflverse/PFR,YELLOW_PENDING_REFRESH,no,no
-nextgen_stats,NFL Next Gen Stats via nflverse,yes,NFL Next Gen Stats/nflverse,YELLOW_PENDING_REFRESH,no,no
-participation,FTN/public nflverse subset,yes,FTN via nflverse,YELLOW_PENDING_REFRESH,no,no
-ftn_charting,CC-BY-SA 4.0,yes,FTN Data via nflverse,YELLOW_PENDING_REFRESH,no,no
-pfr_advstats,Pro Football Reference sourced,yes,PFR/nflverse,YELLOW_PENDING_REFRESH,no,no
+player_stats,nflverse public data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+snap_counts,PFR-derived/public structured via nflverse,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+pbp,nflverse public data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+nextgen_stats_passing,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+nextgen_stats_receiving,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+nextgen_stats_rushing,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+participation,FTN/public nflverse subset,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+ftn_charting,CC-BY-SA 4.0 FTN via nflverse,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+pfr_advstats_pass,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+pfr_advstats_rush,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+pfr_advstats_rec,source-specific public nflverse data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+rosters,nflverse public data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+players,nflverse public data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no
+ff_playerids,nflverse public data,yes,nflverse/nflreadpy source attribution plus source-family attribution,GREEN_LIVE_SMOKE,no,no

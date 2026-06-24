@@ -88,6 +88,12 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
+        title="NFL Usage Evidence Review",
+        file_path="pages/32_nfl_usage_evidence_review.py",
+        url_path="nfl-usage-evidence-review",
+        visible=False,
+    ),
+    NavigationPageSpec(
         title="Unified Universe Review",
         file_path="pages/31_unified_universe_review_v1.py",
         url_path="unified-universe-review",

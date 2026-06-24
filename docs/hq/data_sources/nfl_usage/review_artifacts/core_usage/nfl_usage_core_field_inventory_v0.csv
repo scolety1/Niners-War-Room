@@ -1,14 +1,73 @@
 source_family,field_name,field_type,grain,field_status,model_input_allowed,app_wiring_allowed,notes
-snap_counts,offense_snaps,TRUE_FACTUAL_FIELD,player_game,AVAILABLE,no,no,offensive snaps from snap counts
-snap_counts,offense_pct,TRUE_FACTUAL_FIELD,player_game,AVAILABLE,no,no,offensive snap percentage from snap counts
-player_stats,targets,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,weekly targets
-player_stats,carries,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,weekly carries
-player_stats,receptions,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,weekly receptions
-player_stats,rushing_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,rushing yards
-player_stats,receiving_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,receiving yards
-player_stats,receiving_air_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,receiving air yards
-player_stats,receiving_yards_after_catch,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,YAC when field exists
-player_stats,rushing_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,rushing first downs
-player_stats,receiving_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,receiving first downs
-player_stats,passing_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE,no,no,passing first downs
-pbp,yardline_100,TRUE_FACTUAL_FIELD,play,DERIVED_INPUT_ONLY,no,no,used for red-zone thresholds
+ff_playerids,gsis_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+ff_playerids,position,TRUE_FACTUAL_FIELD,player,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+ff_playerids,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+ftn_charting,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+ftn_charting,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_passing,player_display_name,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+nextgen_stats_passing,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_passing,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_receiving,player_display_name,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+nextgen_stats_receiving,receptions,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_receiving,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_receiving,targets,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_receiving,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_rushing,player_display_name,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+nextgen_stats_rushing,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+nextgen_stats_rushing,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pbp,game_id,TRUE_FACTUAL_FIELD,game/play,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pbp,posteam,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pbp,receiving_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+pbp,rushing_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+pbp,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pbp,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pbp,yardline_100,TRUE_FACTUAL_FIELD,play,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+pfr_advstats_pass,game_id,TRUE_FACTUAL_FIELD,game/play,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_pass,pfr_player_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_pass,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pfr_advstats_pass,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_pass,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pfr_advstats_rec,game_id,TRUE_FACTUAL_FIELD,game/play,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rec,pfr_player_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rec,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pfr_advstats_rec,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rec,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pfr_advstats_rush,carries,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+pfr_advstats_rush,game_id,TRUE_FACTUAL_FIELD,game/play,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rush,pfr_player_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rush,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+pfr_advstats_rush,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+pfr_advstats_rush,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,carries,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,passing_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,player_display_name,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+player_stats,player_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+player_stats,player_name,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+player_stats,position,TRUE_FACTUAL_FIELD,player,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+player_stats,receiving_air_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,receiving_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,receiving_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,receiving_yards_after_catch,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,receptions,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,rushing_first_downs,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,rushing_yards,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,targets,TRUE_FACTUAL_FIELD,player_week,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+player_stats,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+player_stats,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+players,gsis_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+players,position,TRUE_FACTUAL_FIELD,player,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+rosters,gsis_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+rosters,position,TRUE_FACTUAL_FIELD,player,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+rosters,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+rosters,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+rosters,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+snap_counts,game_id,TRUE_FACTUAL_FIELD,game/play,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+snap_counts,offense_pct,TRUE_FACTUAL_FIELD,player_game,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+snap_counts,offense_snaps,TRUE_FACTUAL_FIELD,player_game,AVAILABLE_LIVE_SMOKE,no,no,dtype=Float64; attribution_required=yes
+snap_counts,pfr_player_id,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+snap_counts,player,TRUE_FACTUAL_FIELD,identity,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+snap_counts,position,TRUE_FACTUAL_FIELD,player,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+snap_counts,season,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes
+snap_counts,team,TRUE_FACTUAL_FIELD,team,AVAILABLE_LIVE_SMOKE,no,no,dtype=String; attribution_required=yes
+snap_counts,week,TRUE_FACTUAL_FIELD,source grain,AVAILABLE_LIVE_SMOKE,no,no,dtype=Int32; attribution_required=yes

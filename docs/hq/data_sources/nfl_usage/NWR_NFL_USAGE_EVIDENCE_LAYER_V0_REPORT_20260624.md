@@ -2,7 +2,7 @@
 
 ## Verdict
 
-YELLOW. V0 evidence infrastructure is complete as a safe research lane, but live field introspection and live source sampling are blocked until `nflreadpy` is approved and installed in the project environment.
+GREEN. V0 evidence infrastructure is complete as a safe research lane, `nflreadpy` was approved/installed through the repo dependency workflow, live field-only smoke ran, exact live field inventory/schema summaries were generated, review artifacts were regenerated, and validation/quarantine reports are complete.
 
 ## What Was Built
 
@@ -14,6 +14,7 @@ YELLOW. V0 evidence infrastructure is complete as a safe research lane, but live
 - Sanitized review artifacts and reports.
 - Promotion gate and backtest design.
 - CFBD parking-lot doc for a separate College/Rookie Evidence Layer.
+- Optional hidden read-only NFL Usage Evidence Review page reading only committed summary artifacts.
 
 ## Included Source Families
 
@@ -25,6 +26,10 @@ YELLOW. V0 evidence infrastructure is complete as a safe research lane, but live
 - ftn_charting
 - pfr_advstats
 - rosters/player IDs/crosswalks
+
+## Live Sampling Status
+
+Live `nflreadpy` smoke sampled 2024 for player_stats, snap_counts, pbp, nextgen_stats passing/receiving/rushing, participation, ftn_charting, pfr_advstats pass/rush/rec, rosters, players, and ff_playerids. Raw/cache files stayed under `C:\NWR_SHARED_DATA\nfl_usage_cache\nflreadpy_cache` and were not tracked.
 
 ## Supported True Factual Fields
 
@@ -53,7 +58,7 @@ RotoWire live collection remains blocked. The only safe future path is manual li
 
 ## Display-Only Later
 
-Core factual usage summaries may become display-only candidates after live source introspection, stable schema fingerprints, coverage checks, and attribution pass. V0 does not app-wire them.
+Core factual usage summaries may become display-only candidates after a separate promotion gate. V0 added only a hidden read-only review/debug page for artifact inspection; it does not feed decision pages.
 
 ## Model Use Later
 
@@ -61,4 +66,4 @@ No V0 field is model input. Candidate model features require the promotion gate 
 
 ## Exact Next Gate
 
-Approve dependency workflow for `nflreadpy`, run a tiny field-only smoke to shared cache, regenerate field inventories with schema fingerprints, and keep all outputs review-only.
+Run the promotion/backtest gate before any usage field can become display-only decision context or a candidate model feature.

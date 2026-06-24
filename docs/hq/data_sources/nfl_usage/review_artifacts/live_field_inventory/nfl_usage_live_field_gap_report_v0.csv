@@ -1,0 +1,17 @@
+requested_field,source_family,found,proxy_possible,licensed_data_gap,notes,model_input_allowed,app_wiring_allowed
+offense_snaps,snap_counts,yes,no,no,observed in live smoke,no,no
+offense_pct,snap_counts,yes,no,no,observed in live smoke,no,no
+targets,player_stats,yes,no,no,observed in live smoke,no,no
+carries,player_stats,yes,no,no,observed in live smoke,no,no
+receptions,player_stats,yes,no,no,observed in live smoke,no,no
+rushing_yards,player_stats,yes,no,no,observed in live smoke,no,no
+receiving_yards,player_stats,yes,no,no,observed in live smoke,no,no
+receiving_air_yards,player_stats,yes,no,no,observed in live smoke,no,no
+receiving_yards_after_catch,player_stats,yes,no,no,observed in live smoke,no,no
+rushing_first_downs,player_stats,yes,no,no,observed in live smoke,no,no
+receiving_first_downs,player_stats,yes,no,no,observed in live smoke,no,no
+passing_first_downs,player_stats,yes,no,no,observed in live smoke,no,no
+yardline_100,pbp,yes,no,no,observed in live smoke,no,no
+true_routes_run,participation,no,yes,yes,proxy only; do not call true route metric,no,no
+true_tprr,licensed_route_data,no,yes,yes,proxy only; do not call true route metric,no,no
+true_yprr,licensed_route_data,no,yes,yes,proxy only; do not call true route metric,no,no

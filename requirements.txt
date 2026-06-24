@@ -1,3 +1,4 @@
+nflreadpy
 numpy
 pandas
 pydantic

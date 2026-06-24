@@ -1,11 +1,6 @@
 field_or_metric,classification,allowed_v0_label,blocked_v0_label,status,model_input_allowed,app_wiring_allowed
-offense_snaps,TRUE_FACTUAL_FIELD,offensive snaps,,AVAILABLE_POLICY,no,no
-offense_pct,TRUE_FACTUAL_FIELD,offensive snap share,,AVAILABLE_POLICY,no,no
-targets,TRUE_FACTUAL_FIELD,targets,,AVAILABLE_POLICY,no,no
-carries,TRUE_FACTUAL_FIELD,carries,,AVAILABLE_POLICY,no,no
-touches,TRUE_DERIVED_FACT,touches,,AVAILABLE_INFRASTRUCTURE,no,no
-red_zone_share,DERIVED_PROXY,red-zone usage share proxy,approved model feature,AVAILABLE_INFRASTRUCTURE,no,no
-route_participation_proxy,DERIVED_PROXY,route participation proxy,true routes run,INVENTORY_ONLY,no,no
+route_participation_proxy,DERIVED_PROXY,route participation proxy,true routes run,PROXY_ONLY,no,no
 true_routes_run,LICENSED_DATA_GAP,licensed-data gap,true routes run from public participation,BLOCKED,no,no
 true_tprr,LICENSED_DATA_GAP,licensed-data gap,true TPRR,BLOCKED,no,no
 true_yprr,LICENSED_DATA_GAP,licensed-data gap,true YPRR,BLOCKED,no,no
+red_zone_share,DERIVED_PROXY,red-zone usage share proxy,approved model feature,REVIEW_ONLY,no,no

@@ -1,0 +1,15 @@
+source_family,loader_name,fingerprint,column_count,required_fields_present,schema_status,quarantine_reason,generated_at,notes
+player_stats,load_player_stats,609d0916b6c322baf2a832c7d7d122642384bc6bef1424882d84aec2f19dc492,114,player_id|position|season|week,GREEN,,2026-06-24T23:42:13+00:00,row_count=18981
+snap_counts,load_snap_counts,dc57aff276de89fa42723766b31a2efbcefd03f4199e580774489ec91e0ec808,16,offense_snaps|player|position|season|team|week,GREEN,,2026-06-24T23:42:13+00:00,row_count=26615
+pbp,load_pbp,41463b0dd98a7e239441117847ba2a14b2773b170ec2fd1524542a2f24a455e3,372,posteam|season|week|yardline_100,GREEN,,2026-06-24T23:42:13+00:00,row_count=49492
+nextgen_stats_passing,load_nextgen_stats,7d33e9fc6fbb36d826b3202096ce4118f10866929aeb0b88d84fcf7661dd408b,29,,GREEN,,2026-06-24T23:42:13+00:00,row_count=614
+nextgen_stats_receiving,load_nextgen_stats,8e8e84e9d2ef9ccba21b54f8cb3c7b56a458313b2c3a14728b6b57a9d46ed1ec,23,,GREEN,,2026-06-24T23:42:13+00:00,row_count=1435
+nextgen_stats_rushing,load_nextgen_stats,3c7abf062a577680cb985d6fa757d56751dcf408155f67dd4fcad100ce878be2,22,,GREEN,,2026-06-24T23:42:13+00:00,row_count=601
+participation,load_participation,ac17350d14b90817759af94b381d8f5c2a38837f419a2a087cd009380898f2ee,26,,YELLOW,missing_required=season|week,2026-06-24T23:42:13+00:00,row_count=45919
+ftn_charting,load_ftn_charting,fc8e8eacc9a95f4a3cf94a9bcd45853d2d136531431aece552cabb08ed9522a1,29,season|week,GREEN,,2026-06-24T23:42:13+00:00,row_count=48031
+pfr_advstats_pass,load_pfr_advstats,ebddcaa2cbffd725290334f914263825b6849708fa7783656a4a474871aba249,24,,GREEN,,2026-06-24T23:42:13+00:00,row_count=697
+pfr_advstats_rush,load_pfr_advstats,199bfddc5bd4d7230a48bb47123de59bfdc074f3a56292dc06f3d1d26a091a03,16,,GREEN,,2026-06-24T23:42:13+00:00,row_count=2359
+pfr_advstats_rec,load_pfr_advstats,98d3989a5526ee4efd5c330203196855a30b01e5096c013e3f5d755db94e78ce,17,,GREEN,,2026-06-24T23:42:13+00:00,row_count=4453
+rosters,load_rosters,ac4943e020f19a2794f3b234c91e93402ced99d8444dbefca5179a2d9d7fb254,36,season,GREEN,,2026-06-24T23:42:13+00:00,row_count=3216
+players,load_players,359300504c84c2fb2c19c2320d13ef6e9fa00fbb29024ff2d798302ddafdc1e9,39,,GREEN,,2026-06-24T23:42:13+00:00,row_count=25032
+ff_playerids,load_ff_playerids,b9dca04cab7a9af24001c65fe9a2fd06eb97991a07f4d9481a5b55d7d159e3b8,35,,GREEN,,2026-06-24T23:42:13+00:00,row_count=12462
