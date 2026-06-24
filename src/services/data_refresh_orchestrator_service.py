@@ -71,6 +71,8 @@ QUICK_PROTECTED_CHECKS = {
 RESULT_SCHEMA = (
     "run_id",
     "run_timestamp",
+    "start_time",
+    "end_time",
     "loader_mode",
     "source_id",
     "source_name",
@@ -80,8 +82,11 @@ RESULT_SCHEMA = (
     "refreshed",
     "configured",
     "freshness",
+    "runner_path",
+    "exit_code",
     "expected_artifacts",
     "found_artifacts",
+    "tracked_artifacts_written",
     "user_explanation",
     "model_use_warning",
     "requires_api_key",
@@ -165,6 +170,8 @@ class RefreshSourceEntry:
 class RefreshSourceResult:
     run_id: str
     run_timestamp: str
+    start_time: str
+    end_time: str
     loader_mode: str
     source_id: str
     source_name: str
@@ -174,8 +181,11 @@ class RefreshSourceResult:
     refreshed: bool
     configured: bool
     freshness: str
+    runner_path: str
+    exit_code: str
     expected_artifacts: tuple[str, ...]
     found_artifacts: tuple[str, ...]
+    tracked_artifacts_written: str
     user_explanation: str
     model_use_warning: str
     requires_api_key: bool
@@ -252,6 +262,20 @@ def build_refresh_registry(
     dynasty_script = scripts / "refresh_dynastyprocess_market_baseline_v1.py"
     sleeper_script = scripts / "run_sleeper_refresh_v0.ps1"
     nflverse_script = scripts / "run_nflverse_refresh_v0.ps1"
+    nflverse_deps_path = _nflverse_deps_path(shared_root)
+    nflverse_deps_exist = nflverse_deps_path.exists()
+    nflverse_configured = nflverse_script.exists() and nflverse_deps_exist
+    nflverse_missing = []
+    if not nflverse_script.exists():
+        nflverse_missing.append(f"runner missing: {nflverse_script}")
+    if not nflverse_deps_exist:
+        nflverse_missing.append(f"deps missing: {nflverse_deps_path}")
+    nflverse_explanation = (
+        "Uses scripts/run_nflverse_refresh_v0.ps1 in Full Safe Refresh only. "
+        f"Requires local deps path {nflverse_deps_path}. Raw/cache outputs stay outside git."
+        if nflverse_configured
+        else "nflverse is not configured: " + "; ".join(nflverse_missing)
+    )
     cfbd_configured = bool(settings.cfbd_api_key)
     cfbd_category = AUTO_SLOW if cfbd_configured else NOT_CONFIGURED
 
@@ -329,13 +353,17 @@ def build_refresh_registry(
             requires_api_key=False,
             required_env_vars=(),
             runner_exists=nflverse_script.exists(),
-            configured=nflverse_script.exists(),
-            safe_to_pull=nflverse_script.exists(),
+            configured=nflverse_configured,
+            safe_to_pull=nflverse_configured,
             protected_artifact=False,
             writes_raw_cache=True,
             raw_cache_location=str(shared_root / "scheduled_ingest" / "nflverse"),
             writes_tracked_artifact=False,
-            expected_artifacts=("nflverse snapshot folder", "nflverse refresh log"),
+            expected_artifacts=(
+                "nflverse snapshot folder",
+                "nflverse refresh log",
+                "nflverse_refresh_manifest.json",
+            ),
             freshness_policy="Slow public NFL refresh only in Full Safe Refresh.",
             model_use_allowed=False,
             model_use_warning=(
@@ -343,10 +371,7 @@ def build_refresh_registry(
             ),
             default_action=REFRESHED,
             failure_mode="Report FAILED for nflverse only; do not write candidates.",
-            user_explanation=(
-                "Uses scripts/run_nflverse_refresh_v0.ps1 in Full Safe Refresh only. "
-                "Raw/cache outputs stay outside git."
-            ),
+            user_explanation=nflverse_explanation,
             command_or_function=str(nflverse_script),
             expected_runtime="several minutes",
         ),
@@ -366,18 +391,25 @@ def build_refresh_registry(
             writes_raw_cache=True,
             raw_cache_location=str(shared_root / "public_sources" / "cfbd"),
             writes_tracked_artifact=False,
-            expected_artifacts=("cfbd_refresh_manifest.json", "raw CFBD probe JSON outside git"),
+            expected_artifacts=(
+                "cfbd_refresh_manifest.json",
+                "cfbd_review_status.csv",
+                "raw CFBD probe JSON outside git",
+            ),
             freshness_policy="Available only when CFBD_API_KEY is configured.",
             model_use_allowed=False,
             model_use_warning=(
-                "CFBD identities must be reviewed before model use; this task does not "
-                "make CFBD model input."
+                "CFBD player identities must be reviewed/matched before model use."
             ),
             default_action=REFRESHED if cfbd_configured else ACTION_NOT_CONFIGURED,
             failure_mode="Without CFBD_API_KEY report NOT_CONFIGURED; with key isolate failures.",
             user_explanation=(
-                "CFBD is only pulled in Full Safe Refresh when CFBD_API_KEY exists. "
-                "Without a key it is reported as NOT_CONFIGURED."
+                "CFBD_API_KEY is not set; CFBD refresh is unavailable."
+                if not cfbd_configured
+                else (
+                    "CFBD is pulled in Full Safe Refresh using CFBD_API_KEY. Raw data stays "
+                    "outside git and outputs are review/status only."
+                )
             ),
             command_or_function="internal_cfbd_safe_probe",
             expected_runtime="< 1 minute",
@@ -581,6 +613,7 @@ def _default_handlers() -> dict[str, SourceHandler]:
 
 
 def _refresh_sleeper(entry: RefreshSourceEntry, context: RefreshContext) -> RefreshSourceResult:
+    source_start_time = _utc_now()
     started = perf_counter()
     result = run_sleeper_refresh(
         league_id=context.settings.sleeper_league_id,
@@ -599,12 +632,14 @@ def _refresh_sleeper(entry: RefreshSourceEntry, context: RefreshContext) -> Refr
         found_artifacts=tuple(str(path) for path in result.files.values()),
         explanation=f"Sleeper league state refreshed with {rows} roster rows.",
         artifact=str(result.output_dir),
+        start_time=source_start_time,
     )
 
 
 def _refresh_dynastyprocess(
     entry: RefreshSourceEntry, context: RefreshContext
 ) -> RefreshSourceResult:
+    source_start_time = _utc_now()
     started = perf_counter()
     artifact_dir = context.status_root / "dynastyprocess_market_baseline" / "latest"
     command = [
@@ -629,6 +664,9 @@ def _refresh_dynastyprocess(
             found_artifacts=found,
             explanation=_tail(command_result.stderr) or "DynastyProcess refresh failed.",
             artifact="",
+            start_time=source_start_time,
+            exit_code=command_result.returncode,
+            runner_path=entry.command_or_function,
         )
     return _result(
         entry,
@@ -641,11 +679,52 @@ def _refresh_dynastyprocess(
         found_artifacts=found or (str(artifact_dir),),
         explanation=_tail(command_result.stdout) or "DynastyProcess refresh completed.",
         artifact=str(artifact_dir),
+        start_time=source_start_time,
+        exit_code=command_result.returncode,
+        runner_path=entry.command_or_function,
     )
 
 
 def _refresh_nflverse(entry: RefreshSourceEntry, context: RefreshContext) -> RefreshSourceResult:
+    source_start_time = _utc_now()
     started = perf_counter()
+    deps_path = _nflverse_deps_path(context.shared_root)
+    manifest_dir = context.status_root / "nflverse" / "latest"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = manifest_dir / "nflverse_refresh_manifest.json"
+    if not Path(entry.command_or_function).exists() or not deps_path.exists():
+        missing = []
+        if not Path(entry.command_or_function).exists():
+            missing.append(f"runner missing: {entry.command_or_function}")
+        if not deps_path.exists():
+            missing.append(f"deps missing: {deps_path}")
+        explanation = "nflverse is not configured: " + "; ".join(missing)
+        _write_source_manifest(
+            manifest_path,
+            entry=entry,
+            context=context,
+            start_time=source_start_time,
+            end_time=_utc_now(),
+            action_type=ACTION_NOT_CONFIGURED,
+            status="NOT_CONFIGURED",
+            exit_code="",
+            found_artifacts=(),
+            extra={"dependency_path": str(deps_path), "missing": missing},
+        )
+        return _result(
+            entry,
+            context,
+            started=started,
+            action_type=ACTION_NOT_CONFIGURED,
+            status="NOT_CONFIGURED",
+            refreshed=False,
+            freshness="nflverse runner/dependencies not configured",
+            found_artifacts=(str(manifest_path),),
+            explanation=explanation,
+            artifact=str(manifest_path),
+            start_time=source_start_time,
+            runner_path=entry.command_or_function,
+        )
     command = [
         "powershell",
         "-NoProfile",
@@ -655,6 +734,8 @@ def _refresh_nflverse(entry: RefreshSourceEntry, context: RefreshContext) -> Ref
         entry.command_or_function,
         "-SharedRoot",
         str(context.shared_root),
+        "-NflreadpyPath",
+        str(deps_path),
         "-SnapshotLabel",
         context.run_id,
     ]
@@ -667,6 +748,28 @@ def _refresh_nflverse(entry: RefreshSourceEntry, context: RefreshContext) -> Ref
         / f"nflverse_refresh_v0_{context.run_id}.log"
     )
     found = _existing_paths((snapshot_dir, log_path))
+    status = "GREEN" if command_result.returncode == 0 else "RED"
+    action_type = REFRESHED if command_result.returncode == 0 else FAILED
+    end_time = _utc_now()
+    _write_source_manifest(
+        manifest_path,
+        entry=entry,
+        context=context,
+        start_time=source_start_time,
+        end_time=end_time,
+        action_type=action_type,
+        status=status,
+        exit_code=str(command_result.returncode),
+        found_artifacts=(*found, str(manifest_path)),
+        extra={
+            "runner_path": entry.command_or_function,
+            "dependency_path": str(deps_path),
+            "snapshot_dir": str(snapshot_dir),
+            "log_path": str(log_path),
+            "write_candidates": False,
+        },
+    )
+    found = (*found, str(manifest_path))
     if command_result.returncode != 0:
         return _result(
             entry,
@@ -678,7 +781,10 @@ def _refresh_nflverse(entry: RefreshSourceEntry, context: RefreshContext) -> Ref
             freshness="refresh failed",
             found_artifacts=found,
             explanation=_tail(command_result.stderr) or "nflverse refresh failed.",
-            artifact="",
+            artifact=str(manifest_path),
+            start_time=source_start_time,
+            exit_code=command_result.returncode,
+            runner_path=entry.command_or_function,
         )
     return _result(
         entry,
@@ -688,13 +794,17 @@ def _refresh_nflverse(entry: RefreshSourceEntry, context: RefreshContext) -> Ref
         status="GREEN",
         refreshed=True,
         freshness=f"refreshed {context.run_timestamp}",
-        found_artifacts=found or (str(snapshot_dir),),
+        found_artifacts=found or (str(snapshot_dir), str(manifest_path)),
         explanation="nflverse runner completed without candidate/model writes.",
-        artifact=str(snapshot_dir),
+        artifact=str(manifest_path),
+        start_time=source_start_time,
+        exit_code=command_result.returncode,
+        runner_path=entry.command_or_function,
     )
 
 
 def _refresh_cfbd(entry: RefreshSourceEntry, context: RefreshContext) -> RefreshSourceResult:
+    source_start_time = _utc_now()
     started = perf_counter()
     raw_dir = context.shared_root / "public_sources" / "cfbd" / context.run_id
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -702,6 +812,7 @@ def _refresh_cfbd(entry: RefreshSourceEntry, context: RefreshContext) -> Refresh
     manifest_dir.mkdir(parents=True, exist_ok=True)
     raw_path = raw_dir / "teams_fbs_probe.json"
     manifest_path = manifest_dir / "cfbd_refresh_manifest.json"
+    review_path = manifest_dir / "cfbd_review_status.csv"
     year = str(datetime.now(UTC).year)
     url = f"{context.settings.cfbd_api_base}/teams/fbs?year={year}"
     request = urllib.request.Request(
@@ -718,11 +829,15 @@ def _refresh_cfbd(entry: RefreshSourceEntry, context: RefreshContext) -> Refresh
         manifest = {
             "source_id": entry.source_id,
             "run_id": context.run_id,
+            "start_time": source_start_time,
+            "end_time": _utc_now(),
+            "action_type": "FAILED",
             "status": "FAILED",
             "url": url,
             "raw_cache_location": str(raw_dir),
             "error": str(exc),
             "model_use_warning": entry.model_use_warning,
+            "tracked_artifacts_written": "",
         }
         manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
         return _result(
@@ -736,20 +851,41 @@ def _refresh_cfbd(entry: RefreshSourceEntry, context: RefreshContext) -> Refresh
             found_artifacts=_existing_paths((manifest_path,)),
             explanation=f"CFBD configured but safe probe failed: {exc}",
             artifact=str(manifest_path),
+            start_time=source_start_time,
+            runner_path=entry.command_or_function,
         )
     raw_path.write_text(body, encoding="utf-8")
     row_count = _json_row_count(body)
+    review_rows = [
+        {
+            "source_id": entry.source_id,
+            "run_id": context.run_id,
+            "row_count": str(row_count),
+            "raw_cache_location": str(raw_dir),
+            "identity_gate_status": "REVIEW_REQUIRED",
+            "model_use_allowed": "false",
+            "model_use_warning": entry.model_use_warning,
+        }
+    ]
+    _write_cfbd_review_status(review_path, review_rows)
+    _validate_cfbd_review_status(review_path)
+    end_time = _utc_now()
     manifest = {
         "source_id": entry.source_id,
         "run_id": context.run_id,
+        "start_time": source_start_time,
+        "end_time": end_time,
+        "action_type": "REFRESHED",
         "status": "REFRESHED",
         "url": url,
         "raw_cache_location": str(raw_dir),
         "raw_file": str(raw_path),
+        "review_status_file": str(review_path),
         "row_count": row_count,
-        "identity_gate": "CFBD identities must be reviewed before model use.",
+        "identity_gate": "CFBD player identities must be reviewed/matched before model use.",
         "model_use_allowed": False,
         "model_use_warning": entry.model_use_warning,
+        "tracked_artifacts_written": "",
     }
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return _result(
@@ -759,13 +895,16 @@ def _refresh_cfbd(entry: RefreshSourceEntry, context: RefreshContext) -> Refresh
         action_type=REFRESHED,
         status="GREEN",
         refreshed=True,
-        freshness=f"refreshed {context.run_timestamp}; rows={row_count}",
-        found_artifacts=(str(raw_path), str(manifest_path)),
+        freshness=f"refreshed {context.run_timestamp}; rows={row_count}; identity_review_required",
+        found_artifacts=(str(raw_path), str(manifest_path), str(review_path)),
         explanation=(
             "CFBD safe probe refreshed to outside-git raw cache with a local manifest. "
+            "CFBD player identities must be reviewed/matched before model use. "
             "No college identities became model input."
         ),
         artifact=str(manifest_path),
+        start_time=source_start_time,
+        runner_path=entry.command_or_function,
     )
 
 
@@ -924,11 +1063,17 @@ def _result(
     found_artifacts: tuple[str, ...],
     explanation: str,
     artifact: str,
+    start_time: str | None = None,
+    exit_code: int | str | None = None,
+    runner_path: str = "",
+    tracked_artifacts_written: str = "",
 ) -> RefreshSourceResult:
     timestamp = _utc_now()
     return RefreshSourceResult(
         run_id=context.run_id,
         run_timestamp=context.run_timestamp,
+        start_time=start_time or context.run_timestamp,
+        end_time=timestamp,
         loader_mode=context.loader_mode,
         source_id=entry.source_id,
         source_name=entry.source_name,
@@ -938,8 +1083,11 @@ def _result(
         refreshed=refreshed,
         configured=entry.configured,
         freshness=freshness,
+        runner_path=runner_path or entry.command_or_function,
+        exit_code="" if exit_code is None else str(exit_code),
         expected_artifacts=entry.expected_artifacts,
         found_artifacts=found_artifacts,
+        tracked_artifacts_written=tracked_artifacts_written,
         user_explanation=explanation,
         model_use_warning=entry.model_use_warning,
         requires_api_key=entry.requires_api_key,
@@ -1225,6 +1373,84 @@ def _tail(value: str, *, max_lines: int = 4) -> str:
 
 def _existing_paths(paths: Iterable[Path]) -> tuple[str, ...]:
     return tuple(str(path) for path in paths if path.exists())
+
+
+def _nflverse_deps_path(shared_root: Path) -> Path:
+    return shared_root / "vendor_spikes" / "nflverse" / "scratch" / "pydeps"
+
+
+def _write_source_manifest(
+    path: Path,
+    *,
+    entry: RefreshSourceEntry,
+    context: RefreshContext,
+    start_time: str,
+    end_time: str,
+    action_type: str,
+    status: str,
+    exit_code: str,
+    found_artifacts: tuple[str, ...],
+    extra: dict[str, Any] | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "run_id": context.run_id,
+        "loader_mode": context.loader_mode,
+        "source_id": entry.source_id,
+        "source_name": entry.source_name,
+        "action_type": action_type,
+        "refreshed": action_type == REFRESHED,
+        "configured": entry.configured,
+        "runner_exists": entry.runner_exists,
+        "runner_path": entry.command_or_function,
+        "start_time": start_time,
+        "end_time": end_time,
+        "exit_code": exit_code,
+        "expected_artifacts": list(entry.expected_artifacts),
+        "found_artifacts": list(found_artifacts),
+        "raw_cache_location": entry.raw_cache_location,
+        "tracked_artifacts_written": "",
+        "status": status,
+        "user_explanation": entry.user_explanation,
+        "model_use_warning": entry.model_use_warning,
+    }
+    payload.update(extra or {})
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+CFBD_REVIEW_STATUS_COLUMNS = (
+    "source_id",
+    "run_id",
+    "row_count",
+    "raw_cache_location",
+    "identity_gate_status",
+    "model_use_allowed",
+    "model_use_warning",
+)
+
+
+def _write_cfbd_review_status(path: Path, rows: list[dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CFBD_REVIEW_STATUS_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _validate_cfbd_review_status(path: Path) -> None:
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        columns = tuple(reader.fieldnames or ())
+        if columns != CFBD_REVIEW_STATUS_COLUMNS:
+            raise ValueError(
+                "CFBD review status schema mismatch: "
+                f"expected {CFBD_REVIEW_STATUS_COLUMNS}, found {columns}"
+            )
+        for row in reader:
+            if row.get("model_use_allowed") != "false":
+                raise ValueError("CFBD review status must keep model_use_allowed=false.")
+            if row.get("identity_gate_status") != "REVIEW_REQUIRED":
+                raise ValueError("CFBD review status must require identity review.")
 
 
 def _artifact_freshness(path: Path) -> str:

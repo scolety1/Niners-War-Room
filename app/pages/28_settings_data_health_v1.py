@@ -91,9 +91,8 @@ def _run_loader_from_health(mode: str) -> None:
 def _render_safe_loader_controls() -> None:
     st.markdown("### Safe Data Loader")
     st.caption(
-        "Full Safe Refresh means pull every approved eligible current source. "
-        "Protected/manual sources are checked or listed, not pulled, and refreshed data "
-        "does not automatically update rankings or model outputs."
+        "Full Safe Refresh means: Pull every approved eligible current source; check "
+        "protected/manual sources; do not mutate rankings/model/frozen/latest artifacts."
     )
     columns = st.columns(4)
     buttons = (
@@ -120,7 +119,11 @@ def _render_safe_loader_controls() -> None:
                     "loader_category",
                     "action_type",
                     "configured",
+                    "runner_exists",
+                    "exit_code",
                     "freshness",
+                    "raw_cache_location",
+                    "tracked_artifacts_written",
                     "user_explanation",
                     "model_use_warning",
                 ],

@@ -29,6 +29,8 @@ from src.services.data_refresh_orchestrator_service import (
 RESULT_COLUMNS = [
     "run_id",
     "run_timestamp",
+    "start_time",
+    "end_time",
     "loader_mode",
     "source_id",
     "source_name",
@@ -36,9 +38,14 @@ RESULT_COLUMNS = [
     "action_type",
     "refreshed",
     "configured",
+    "runner_exists",
+    "runner_path",
+    "exit_code",
     "freshness",
     "expected_artifacts",
     "found_artifacts",
+    "raw_cache_location",
+    "tracked_artifacts_written",
     "user_explanation",
     "model_use_warning",
 ]
@@ -120,9 +127,8 @@ page_header(
     "Refresh Data",
     eyebrow="Safe Data Loader V1",
     description=(
-        "Run current-data refreshes from the source registry. Full Safe Refresh pulls "
-        "every approved eligible current source; protected and manual sources are "
-        "checked or listed, not pulled."
+        "Pull every approved eligible current source; check protected/manual sources; "
+        "do not mutate rankings/model/frozen/latest artifacts."
     ),
     status_items=(
         ("No model/rank changes", "safe"),
@@ -155,7 +161,8 @@ st.info(
     "Quick Refresh pulls Sleeper league state and DynastyProcess market baseline. "
     "Full Safe Refresh also includes the nflverse runner and CFBD only when CFBD_API_KEY "
     "is configured. Vendor, Gmail, frozen/latest/pinned, model, Outcome, PDF, ADP, and "
-    "runtime sources are not pulled automatically."
+    "runtime sources are not pulled automatically. Pulled data is review/status/cache "
+    "material until a separate approved lane admits it."
 )
 
 with st.expander("Manual Sources Checklist", expanded=True):

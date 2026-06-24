@@ -13,6 +13,7 @@ param(
         "opportunity"
     ),
     [string]$SnapshotLabel = "",
+    [switch]$CheckDependencies,
     [switch]$WriteCandidates
 )
 
@@ -27,6 +28,18 @@ $NflverseRoot = Join-Path $SharedRoot "scheduled_ingest\nflverse"
 $LogRoot = Join-Path $SharedRoot "scheduled_ingest\logs"
 $LogPath = Join-Path $LogRoot "nflverse_refresh_v0_$SnapshotLabel.log"
 $SnapshotDir = Join-Path $NflverseRoot $SnapshotLabel
+
+if ($CheckDependencies) {
+    $DepsExist = Test-Path -LiteralPath $NflreadpyPath
+    Write-Host "NWR nflverse dependency check"
+    Write-Host "Runner: $PSCommandPath"
+    Write-Host "NflreadpyPath: $NflreadpyPath"
+    Write-Host "DependenciesFound: $DepsExist"
+    if (-not $DepsExist) {
+        exit 2
+    }
+    exit 0
+}
 
 New-Item -ItemType Directory -Force -Path $NflverseRoot, $LogRoot | Out-Null
 Start-Transcript -Path $LogPath -Force | Out-Null
