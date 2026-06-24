@@ -4,6 +4,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -21,7 +22,11 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
 )
-from src.services.draft_day_runtime_state_service import load_runtime_state, record_trade_event
+from src.services.draft_day_runtime_state_service import (
+    apply_trade_events_to_pick_frame,
+    load_runtime_state,
+    record_trade_event,
+)
 from src.services.draft_day_trade_lab_service import (
     NOT_ENOUGH_INFORMATION,
     add_trade_item,
@@ -47,6 +52,7 @@ bundle = load_frozen_board()
 trade_frame, trade_path = load_lane_prop_file("trading_lab", "trade_helper_context.csv")
 pick_frame, pick_path = load_lane_prop_file("trading_lab", "pick_context.csv")
 tier_frame, tier_path = load_lane_prop_file("trading_lab", "trade_tier_values.csv")
+mock_pick_frame, mock_pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
 
 page_header(
     "Trading Lab",
@@ -83,7 +89,7 @@ def _render_source_metrics(counts: dict[str, int]) -> None:
     cols = st.columns(4)
     cols[0].metric("Frozen board rows", counts["frozen_board_rows"])
     cols[1].metric("Trade helper rows", counts["trade_helper_rows"])
-    cols[2].metric("Pick context rows", counts["pick_context_rows"])
+    cols[2].metric("Draft pick rows", int(mock_pick_frame.shape[0]))
     cols[3].metric("Tier context rows", counts["tier_context_rows"])
     st.caption(
         "Trade helper, pick, tier, and any market-like fields are display-only context. "
@@ -226,6 +232,13 @@ def _render_diagnostics() -> None:
                 use_container_width=True,
                 hide_index=True,
             )
+        if mock_pick_path and not mock_pick_frame.empty:
+            st.caption(f"Draft pick-order context: {mock_pick_path}")
+            st.dataframe(
+                display_lane_prop_frame(mock_pick_frame.head(20)),
+                use_container_width=True,
+                hide_index=True,
+            )
         if tier_path and not tier_frame.empty:
             st.caption(f"Display-only tier context: {tier_path}")
             st.dataframe(
@@ -241,15 +254,22 @@ def _render_trade_finder() -> None:
         "Use when the current pick feels bad: find conservative trade-back structures from "
         "existing pick context. Decision support only; no trade calculator."
     )
-    if pick_frame.empty:
+    effective_pick_frame = _effective_pick_frame()
+    if effective_pick_frame.empty:
         st.warning(NOT_ENOUGH_INFORMATION)
         return
-    pick_labels = pick_frame.get("pick_label", pick_frame.index.to_series()).astype(str).tolist()
-    current_pick = st.selectbox("Current pick to shop", pick_labels, key="trade_finder_pick")
-    later_picks = [label for label in pick_labels if label != current_pick]
+    pick_labels = _pick_labels(effective_pick_frame)
+    current_pick = st.selectbox(
+        "Current pick to shop",
+        pick_labels,
+        index=_default_index(pick_labels, "1.04"),
+        key="trade_finder_pick",
+    )
+    later_picks = _later_pick_labels(effective_pick_frame, current_pick)
     target_pick = st.selectbox(
         "Candidate later pick received",
         later_picks or pick_labels,
+        index=_default_index(later_picks or pick_labels, "2.03"),
         key="trade_finder_later_pick",
     )
     future_pick = st.text_input(
@@ -265,6 +285,16 @@ def _render_trade_finder() -> None:
     st.info(
         f"Conservative structure: NWR sends {current_pick}; NWR receives "
         f"{future_pick} + {target_pick}. Human judgment required."
+    )
+    st.caption(
+        "Recommendation table fields: Target Owner, What To Ask For, Tier-Drop Risk, "
+        "Who May Still Be Available, Confidence, and Caveat."
+    )
+    st.dataframe(
+        _trade_back_rows(current_pick, effective_pick_frame, bundle.frame),
+        use_container_width=True,
+        hide_index=True,
+        key="trade_finder_recommendations",
     )
     if st.button("Record Accepted Trade-Back Event", key="trade_finder_accept"):
         st.session_state[RUNTIME_STATE_KEY] = record_trade_event(
@@ -288,8 +318,17 @@ def _render_trade_for() -> None:
         st.warning(NOT_ENOUGH_INFORMATION)
         return
     player_label = st.selectbox("Falling player", list(player_select), key="trade_for_player")
-    pick_labels = pick_frame.get("pick_label", pick_frame.index.to_series()).astype(str).tolist()
-    target_pick = st.selectbox("Pick to acquire", pick_labels, key="trade_for_pick")
+    effective_pick_frame = _effective_pick_frame()
+    pick_labels = _pick_labels(effective_pick_frame)
+    if not pick_labels:
+        st.warning(NOT_ENOUGH_INFORMATION)
+        return
+    target_pick = st.selectbox(
+        "Pick to acquire",
+        pick_labels,
+        index=_default_index(pick_labels, "1.04"),
+        key="trade_for_pick",
+    )
     offer = st.text_input(
         "Possible offer",
         value="Future pick or later current pick",
@@ -303,6 +342,16 @@ def _render_trade_for() -> None:
     st.info(
         f"Review structure: acquire {target_pick} for {player_label}; possible send: {offer}. "
         "Compare manually against roster need and tiers."
+    )
+    st.caption(
+        "Recommendation table fields: Cheapest Plausible Internal Package, Overpay Warning, "
+        "Worth Pursuing?, Confidence, and Caveat. Decision support only."
+    )
+    st.dataframe(
+        _trade_for_rows(player_label, target_pick, effective_pick_frame, lookup),
+        use_container_width=True,
+        hide_index=True,
+        key="trade_for_recommendations",
     )
     if st.button("Record Accepted Trade-For Event", key="trade_for_accept"):
         st.session_state[RUNTIME_STATE_KEY] = record_trade_event(
@@ -325,6 +374,239 @@ def _remove_options(
         label = str(lookup.get(key, {}).get("label", key))
         options[label] = key
     return options
+
+
+def _effective_pick_frame() -> pd.DataFrame:
+    state = st.session_state.get(RUNTIME_STATE_KEY, load_runtime_state(mode="live"))
+    return apply_trade_events_to_pick_frame(mock_pick_frame, state)
+
+
+def _pick_labels(frame: pd.DataFrame) -> list[str]:
+    if frame.empty or "pick_label" not in frame.columns:
+        return []
+    return frame["pick_label"].astype(str).dropna().tolist()
+
+
+def _later_pick_labels(frame: pd.DataFrame, current_pick: str) -> list[str]:
+    if frame.empty or "pick_label" not in frame.columns or "overall_pick" not in frame.columns:
+        return [label for label in _pick_labels(frame) if label != current_pick]
+    current_rows = frame.loc[frame["pick_label"].astype(str).eq(str(current_pick))]
+    if current_rows.empty:
+        return [label for label in _pick_labels(frame) if label != current_pick]
+    current_overall = _maybe_int(current_rows.iloc[0].get("overall_pick"))
+    if current_overall is None:
+        return [label for label in _pick_labels(frame) if label != current_pick]
+    later = frame.loc[pd.to_numeric(frame["overall_pick"], errors="coerce") > current_overall]
+    return later["pick_label"].astype(str).tolist()
+
+
+def _default_index(options: list[str], preferred: str) -> int:
+    try:
+        return options.index(preferred)
+    except ValueError:
+        return 0
+
+
+def _trade_back_rows(
+    current_pick: str,
+    frame: pd.DataFrame,
+    board_frame: pd.DataFrame,
+) -> pd.DataFrame:
+    current = _pick_row(frame, current_pick)
+    if current is None:
+        return pd.DataFrame([_not_enough_row("Trade-back target")])
+    current_overall = _maybe_int(current.get("overall_pick"))
+    if current_overall is None:
+        return pd.DataFrame([_not_enough_row("Trade-back target")])
+    candidates = frame.loc[
+        (pd.to_numeric(frame["overall_pick"], errors="coerce") > current_overall)
+        & (pd.to_numeric(frame["overall_pick"], errors="coerce") <= current_overall + 18)
+    ].head(8)
+    rows: list[dict[str, str]] = []
+    for _index, row in candidates.iterrows():
+        target_pick = str(row.get("pick_label") or NOT_ENOUGH_INFORMATION)
+        rows.append(
+            {
+                "Current Pick": current_pick,
+                "Trade-Back Target": target_pick,
+                "Target Owner": _text(row.get("current_owner")),
+                "What To Ask For": _ask_for_note(current_pick, target_pick),
+                "Tier-Drop Risk": _tier_drop_risk(
+                    current_overall,
+                    _maybe_int(row.get("overall_pick")),
+                    board_frame,
+                ),
+                "Who May Still Be Available": _players_near_pick(
+                    _maybe_int(row.get("overall_pick")),
+                    board_frame,
+                ),
+                "Confidence": "Medium" if _text(row.get("current_owner")) else "Low",
+                "Caveat": "Decision support only; no final trade advice or trade calculator.",
+            }
+        )
+    return pd.DataFrame(rows) if rows else pd.DataFrame([_not_enough_row("Trade-back target")])
+
+
+def _trade_for_rows(
+    player_label: str,
+    target_pick: str,
+    frame: pd.DataFrame,
+    lookup: dict[str, dict[str, object]],
+) -> pd.DataFrame:
+    target = _pick_row(frame, target_pick)
+    selected = _lookup_by_label(player_label, lookup)
+    if target is None or selected is None:
+        return pd.DataFrame([_not_enough_row("Trade-for package")])
+    target_overall = _maybe_int(target.get("overall_pick"))
+    selected_rank = _maybe_int(selected.get("final_board_rank"))
+    owned_later = _owned_later_picks(frame, target_overall)
+    package = (
+        f"Start with {owned_later[0]} plus a future pick sweetener"
+        if owned_later
+        else "Future pick package only"
+    )
+    return pd.DataFrame(
+        [
+            {
+                "Target Player": player_label,
+                "Pick To Acquire": target_pick,
+                "Current Owner": _text(target.get("current_owner")),
+                "Cheapest Plausible Internal Package": package,
+                "Overpay Warning": _overpay_warning(target_overall, selected_rank),
+                "Worth Pursuing?": _worth_pursuing(target_overall, selected_rank),
+                "Confidence": "Medium" if selected_rank is not None else "Low",
+                "Caveat": "Decision support only; accepted trade writes local event log.",
+            }
+        ]
+    )
+
+
+def _pick_row(frame: pd.DataFrame, pick_label: str) -> pd.Series | None:
+    if frame.empty or "pick_label" not in frame.columns:
+        return None
+    matches = frame.loc[frame["pick_label"].astype(str).eq(str(pick_label))]
+    if matches.empty:
+        return None
+    return matches.iloc[0]
+
+
+def _lookup_by_label(
+    label: str,
+    lookup: dict[str, dict[str, object]],
+) -> dict[str, object] | None:
+    for item in lookup.values():
+        if str(item.get("label")) == label:
+            return item
+    return None
+
+
+def _ask_for_note(current_pick: str, target_pick: str) -> str:
+    current_round = _round_from_pick(current_pick)
+    target_round = _round_from_pick(target_pick)
+    if current_round is not None and target_round is not None and target_round > current_round:
+        return f"{target_pick} plus a future 1st/2nd or equivalent make-up asset"
+    return f"{target_pick} plus a meaningful future pick if tier drops"
+
+
+def _tier_drop_risk(
+    current_overall: int | None,
+    target_overall: int | None,
+    board_frame: pd.DataFrame,
+) -> str:
+    if current_overall is None or target_overall is None:
+        return NOT_ENOUGH_INFORMATION
+    current_tier = _tier_at_rank(current_overall, board_frame)
+    target_tier = _tier_at_rank(target_overall, board_frame)
+    if current_tier == NOT_ENOUGH_INFORMATION or target_tier == NOT_ENOUGH_INFORMATION:
+        return NOT_ENOUGH_INFORMATION
+    if current_tier == target_tier:
+        return f"Low: still around {target_tier}"
+    return f"High: moves from {current_tier} to {target_tier}"
+
+
+def _players_near_pick(overall_pick: int | None, board_frame: pd.DataFrame) -> str:
+    if overall_pick is None or board_frame.empty or "final_board_rank" not in board_frame.columns:
+        return NOT_ENOUGH_INFORMATION
+    ranks = pd.to_numeric(board_frame["final_board_rank"], errors="coerce")
+    window = board_frame.loc[(ranks >= overall_pick - 2) & (ranks <= overall_pick + 2)]
+    names = [
+        f"{row.get('player')} ({row.get('position')})"
+        for _index, row in window.head(5).iterrows()
+    ]
+    return ", ".join(names) if names else NOT_ENOUGH_INFORMATION
+
+
+def _owned_later_picks(frame: pd.DataFrame, target_overall: int | None) -> list[str]:
+    if target_overall is None or frame.empty:
+        return []
+    if not {"overall_pick", "pick_label", "current_owner"}.issubset(frame.columns):
+        return []
+    later = frame.loc[
+        (pd.to_numeric(frame["overall_pick"], errors="coerce") > target_overall)
+        & frame["current_owner"].astype(str).str.contains("Niners|NWR", case=False, na=False)
+    ]
+    return later["pick_label"].astype(str).head(3).tolist()
+
+
+def _overpay_warning(target_overall: int | None, selected_rank: int | None) -> str:
+    if target_overall is None or selected_rank is None:
+        return NOT_ENOUGH_INFORMATION
+    if target_overall < selected_rank - 6:
+        return "High: acquiring this pick is earlier than the player's board neighborhood."
+    if target_overall > selected_rank + 6:
+        return "Lower: target player is past the board neighborhood."
+    return "Moderate: price and player rank are in the same neighborhood."
+
+
+def _worth_pursuing(target_overall: int | None, selected_rank: int | None) -> str:
+    if target_overall is None or selected_rank is None:
+        return NOT_ENOUGH_INFORMATION
+    if target_overall >= selected_rank + 6:
+        return "Looks favorable"
+    if target_overall >= selected_rank - 3:
+        return "Close / needs human judgment"
+    return "Risky"
+
+
+def _tier_at_rank(rank: int, board_frame: pd.DataFrame) -> str:
+    if board_frame.empty or "final_board_rank" not in board_frame.columns:
+        return NOT_ENOUGH_INFORMATION
+    ranks = pd.to_numeric(board_frame["final_board_rank"], errors="coerce")
+    rows = board_frame.loc[ranks.eq(rank)]
+    if rows.empty:
+        return NOT_ENOUGH_INFORMATION
+    return _text(rows.iloc[0].get("final_tier")) or NOT_ENOUGH_INFORMATION
+
+
+def _round_from_pick(pick_label: str) -> int | None:
+    try:
+        return int(str(pick_label).split(".")[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def _maybe_int(value: object) -> int | None:
+    try:
+        if str(value or "").strip() == "":
+            return None
+        return int(float(value))  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+
+
+def _text(value: object) -> str:
+    text = str(value or "").strip()
+    if text.lower() in {"", "nan", "none", "null"}:
+        return NOT_ENOUGH_INFORMATION
+    return text
+
+
+def _not_enough_row(label: str) -> dict[str, str]:
+    return {
+        label: NOT_ENOUGH_INFORMATION,
+        "Confidence": "Low",
+        "Caveat": "Decision support only; no final trade advice or trade calculator.",
+    }
 
 
 _render_source_metrics(counts)
