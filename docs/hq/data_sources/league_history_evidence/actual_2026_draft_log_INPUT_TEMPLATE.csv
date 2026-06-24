@@ -1,0 +1,2 @@
+season,draft_id,round,pick_in_round,overall_pick,selecting_team,original_pick_owner,player_name,player_id,position,nfl_team,source_file,source_exported_at,review_status,notes
+2026,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,OPTIONAL,REQUIRED,OPTIONAL,OPTIONAL,OPTIONAL,REQUIRED,OPTIONAL,REVIEW_NEEDED,"Template only. Do not commit raw export if it contains unrelated private content."

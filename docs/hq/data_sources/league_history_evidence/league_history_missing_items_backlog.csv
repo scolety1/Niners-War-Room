@@ -1,0 +1,8 @@
+item_id,category,description,needed_input,priority,current_status,model_use_allowed,training_allowed,sensitivity_only,notes
+LH-001,DRAFT_LOG,Actual 2026 draft selections are missing,Completed actual draft log export,HIGH,SOURCE_NEEDED,no,no,yes,"Use actual_2026_draft_log_INPUT_TEMPLATE.csv."
+LH-002,TRADE_HISTORY,Sleeper accepted trade history is missing,Sleeper transaction/trade export,HIGH,SOURCE_NEEDED,no,no,yes,"Use sleeper_trade_history_INPUT_TEMPLATE.csv."
+LH-003,OWNER_MAPPING,Owner/team/Sleeper roster-ID mapping is incomplete,Confirmed owner/team mapping,HIGH,REVIEW_NEEDED,no,no,yes,"Use league_history_owner_team_mapping.csv."
+LH-004,PLAYER_STATUS,Brian Thomas Jr. ambiguous top-5 phrase needs clarification,Hard confirmation of actual status,HIGH,UNKNOWN_LOW,no,no,yes,"Do not treat as drop/unprotected/free-agent proof."
+LH-005,GMAIL_REVIEW,Gmail trade candidates need privacy-safe review,Explicit review of accepted-trade messages/attachments,MEDIUM,REVIEW_NEEDED,no,no,yes,"No raw bodies should be committed."
+LH-006,DROP_RECONSTRUCTION,Proxy/inferred drop rows need actual source upgrades,Draft/keeper/cut/trade evidence by season,MEDIUM,REVIEW_NEEDED,no,no,yes,"Do not train on proxy/inferred rows."
+LH-007,FREE_AGENT_SNAPSHOT,Free-agent snapshots need event interpretation,Hard evidence linking snapshot rows to draftable status or source date,MEDIUM,REVIEW_NEEDED,no,no,yes,"Snapshot is not proof of how player became available."

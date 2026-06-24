@@ -1,0 +1,2 @@
+trade_id,season,trade_date,sleeper_transaction_id,status,team_a,team_b,team_a_sends,team_b_sends,source_file,source_exported_at,review_status,notes
+REQUIRED,REQUIRED,REQUIRED,OPTIONAL,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,OPTIONAL,REVIEW_NEEDED,"Template only. Preserve raw asset text in normalized asset rows; do not invent structured pick/player fields."
