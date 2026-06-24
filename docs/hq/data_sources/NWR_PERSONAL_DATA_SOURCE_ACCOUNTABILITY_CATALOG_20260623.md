@@ -10,7 +10,7 @@ NWR is strongest when it uses explicitly frozen or source-truth artifacts with v
 
 ### What NWR Is Weakest At
 
-NWR is weakest where it lacks true historical league state: actual dropped-veteran/free-agent pools over time, complete historical trades, complete current role/injury/news automation, and exact ADP/timing context for this specific rookie/free-agent keeper draft. The model can still produce useful review-only comparisons, but those comparisons must stay humble when they are built from proxy cohorts or mixed source bases.
+NWR is weakest where it lacks true historical league state: actual dropped-veteran/free-agent pools over time, complete historical trades, complete current role/injury/news automation, and exact ADP/timing context for this specific rookie/free-agent keeper draft. The model can still produce useful review-only comparisons, but those comparisons must stay humble when they are built from proxy cohorts or mixed source bases. Rows marked `PROXY_DROP`, `PROXY_ONLY`, or `LOW` confidence are sensitivity-only inputs, never direct training truth or source-truth labels.
 
 ### Biggest Trust Risks
 
@@ -59,13 +59,18 @@ See `NWR_PERSONAL_DATA_SOURCE_INVENTORY_20260623.csv` for the full current sourc
 | rookie replay fixtures | candidate/proxy | multiple historical classes in reports | sensitivity/model calibration only | future labels must not enter features |
 | model v4 current value/full dynasty board | derived NWR output | current snapshot | display/source for NWR rankings after validation | local-only freshness and source evidence required |
 | historical cross-asset tuning | candidate/review-only | limited/proxy panels | sensitivity-only unless verified panel exists | proxy dropped veterans cannot dominate formula |
-| dropped-veteran proxy cohorts | proxy | historical proxy only | sensitivity-only | not verified league truth |
+| dropped-veteran proxy cohorts | proxy | 2010-2021 proxy-only | sensitivity/stress/robustness/gap analysis only | not verified league truth; never direct training truth, rank penalty, bad-cut proof, actual-drop evidence, or source-truth label |
 | V1 expanded tune outputs | local-only research | historical seasons in run | research-only; not approval | do not commit raw tables; vendor challenger quarantined |
 | Outcome sprint 5 internal packages | internal diagnostic | 827-row broader historical set referenced | diagnostic/release-gated | no app probabilities unless release gate approves |
 | Frozen Final Draft Board V1 | approved frozen display baseline | 2026 draft day | draft baseline only | not a training set |
 | PDF page 3 free-agent pool | verified current draftable overlay | 2026 PDF date | draft eligibility display/source truth | PDF ranks display-only |
 
 Important read: V1/V2 candidate overlays and historical tuning reports are evidence generation, not promotion. Vendor challengers stay quarantined unless source/license approval changes.
+
+
+## C1. Proxy / Low-Confidence Usage Rule
+
+Rows or artifacts marked `PROXY_DROP`, `PROXY_ONLY`, or `LOW` confidence may be used only for sensitivity testing, stress testing, simulation/backtest robustness checks, and gap analysis. They may not be used as direct training truth, rank penalties, proof a player was a bad cut, evidence that a player was actually dropped, or source-truth labels. `ACTUAL_DROP` and high-confidence `INFERRED_DROP` rows may be analyzed separately, but inferred rows still need caution and should not be over-weighted.
 
 ## D. Missing-Data Backlog
 

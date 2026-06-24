@@ -32,6 +32,9 @@ Use this before trusting any NWR output.
 ## Historical Support
 
 - Is this claim backed by a verified historical backtest or only a proxy/sensitivity run?
+- If this uses `PROXY_DROP`, `PROXY_ONLY`, or `LOW` confidence rows, is it limited to sensitivity/stress/robustness/gap analysis?
+- Is any proxy/low-confidence row being treated as training truth, a rank penalty, bad-cut proof, actual-drop evidence, or a source-truth label? If yes, stop.
+- Are `ACTUAL_DROP` and high-confidence `INFERRED_DROP` rows analyzed separately from proxy rows, with inferred rows still down-weighted/caveated?
 - Did the backtest use only pre-outcome/as-of-safe features?
 - Is the data season/position coverage broad enough to trust the claim?
 
