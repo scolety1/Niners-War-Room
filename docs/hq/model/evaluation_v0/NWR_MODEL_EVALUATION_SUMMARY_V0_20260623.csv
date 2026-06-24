@@ -37,6 +37,10 @@ evidence_buckets,truth_backtest_row_count,22,GREEN,Rows are separated; no bucket
 evidence_buckets,caution_backtest_row_count,149,GREEN,Rows are separated; no bucket is collapsed into truth.
 evidence_buckets,sensitivity_test_row_count,480,GREEN,Rows are separated; no bucket is collapsed into truth.
 evidence_buckets,market_sanity_diagnostics_row_count,0,YELLOW,Rows are separated; no bucket is collapsed into truth.
+warning_repair,repair_queue_rows,61,GREEN,Review-safe accountability rows generated; no source truth changed.
+warning_repair,repair_action_explicit_not_enough_information_label,30,YELLOW,Repair actions are evaluation-only unless explicitly approved later.
+warning_repair,repair_action_not_enough_information,2,YELLOW,Repair actions are evaluation-only unless explicitly approved later.
+warning_repair,repair_action_resolved_for_evaluation_only,29,GREEN,Repair actions are evaluation-only unless explicitly approved later.
 evidence_separation,predictive_accuracy_claim,Not enough information,GREEN,Harness does not claim predictive accuracy without actual outcome labels.
 guardrail,market_as_model_truth,no,GREEN,DynastyProcess/ADP/market context is diagnostics only.
 guardrail,proxy_as_training_truth,no,GREEN,PROXY_DROP/PROXY_ONLY/LOW rows are sensitivity-only.

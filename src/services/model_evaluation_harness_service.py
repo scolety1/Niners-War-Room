@@ -18,6 +18,7 @@ OUTPUT_ROOT = REPO_ROOT / "docs" / "hq" / "model" / "evaluation_v0"
 SUMMARY_FILE = "NWR_MODEL_EVALUATION_SUMMARY_V0_20260623.csv"
 BY_BUCKET_FILE = "NWR_MODEL_EVALUATION_BY_BUCKET_V0_20260623.csv"
 WARNINGS_FILE = "NWR_MODEL_EVALUATION_WARNINGS_V0_20260623.csv"
+WARNING_REPAIR_QUEUE_FILE = "NWR_MODEL_EVALUATION_WARNING_REPAIR_QUEUE_20260623.csv"
 
 HISTORICAL_DROP_RECONSTRUCTION_PATH = (
     REPO_ROOT
@@ -36,6 +37,9 @@ OUTCOME_COVERAGE_MATCH_PATH = (
     / "hq"
     / "parallel_lanes"
     / "NWR_OUTCOME_COLUMNS_COVERAGE_MATCH_TABLE_20260622.csv"
+)
+IDENTITY_COVERAGE_AUDIT_PATH = (
+    REPO_ROOT / "docs" / "hq" / "data_sources" / "identity" / "player_id_coverage_audit_v1.csv"
 )
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
@@ -66,6 +70,17 @@ WARNING_COLUMNS = (
     "evidence",
     "recommended_action",
 )
+REPAIR_QUEUE_COLUMNS = (
+    "warning_id",
+    "player_name",
+    "issue_type",
+    "current_status",
+    "repair_action",
+    "source_used",
+    "confidence",
+    "remaining_risk",
+    "notes",
+)
 
 TRUTH_BACKTEST = "Truth backtest"
 CAUTION_BACKTEST = "Caution backtest"
@@ -86,6 +101,7 @@ class EvaluationHarnessResult:
     summary: pd.DataFrame
     by_bucket: pd.DataFrame
     warnings: pd.DataFrame
+    repair_queue: pd.DataFrame
 
 
 def run_model_evaluation_harness(
@@ -105,6 +121,7 @@ def build_model_evaluation_harness(
     eligibility_rules_frame: pd.DataFrame | None = None,
     outcome_coverage_frame: pd.DataFrame | None = None,
     market_enriched_frame: pd.DataFrame | None = None,
+    identity_audit_frame: pd.DataFrame | None = None,
 ) -> EvaluationHarnessResult:
     loaded_frozen = frozen_frame if frozen_frame is not None else _load_frozen_frame()
     loaded_dynasty = dynasty_frame if dynasty_frame is not None else _load_dynasty_frame()
@@ -133,8 +150,20 @@ def build_model_evaluation_harness(
         if market_enriched_frame is not None
         else _market_enriched_or_empty(loaded_dynasty)
     )
+    identity = (
+        identity_audit_frame
+        if identity_audit_frame is not None
+        else _read_optional_csv(IDENTITY_COVERAGE_AUDIT_PATH)
+    )
 
     by_bucket = _bucket_rows(historical, eligibility)
+    warning_result = _warning_rows(
+        dynasty=loaded_dynasty,
+        expanded=loaded_expanded,
+        outcome=outcome,
+        by_bucket=by_bucket,
+        identity=identity,
+    )
     summary = _summary_rows(
         dynasty=loaded_dynasty,
         frozen=loaded_frozen,
@@ -143,17 +172,13 @@ def build_model_evaluation_harness(
         outcome=outcome,
         market_frame=market_frame,
         by_bucket=by_bucket,
-    )
-    warnings = _warning_rows(
-        dynasty=loaded_dynasty,
-        expanded=loaded_expanded,
-        outcome=outcome,
-        by_bucket=by_bucket,
+        repair_queue=warning_result["repair_queue"],
     )
     return EvaluationHarnessResult(
         summary=_frame(summary, SUMMARY_COLUMNS),
         by_bucket=_frame(by_bucket, BUCKET_COLUMNS),
-        warnings=_frame(warnings, WARNING_COLUMNS),
+        warnings=_frame(warning_result["warnings"], WARNING_COLUMNS),
+        repair_queue=_frame(warning_result["repair_queue"], REPAIR_QUEUE_COLUMNS),
     )
 
 
@@ -167,10 +192,12 @@ def write_model_evaluation_outputs(
         "summary": output_root / SUMMARY_FILE,
         "by_bucket": output_root / BY_BUCKET_FILE,
         "warnings": output_root / WARNINGS_FILE,
+        "repair_queue": output_root / WARNING_REPAIR_QUEUE_FILE,
     }
     result.summary.to_csv(paths["summary"], index=False)
     result.by_bucket.to_csv(paths["by_bucket"], index=False)
     result.warnings.to_csv(paths["warnings"], index=False)
+    result.repair_queue.to_csv(paths["repair_queue"], index=False)
     return paths
 
 
@@ -180,6 +207,7 @@ def validate_evaluation_outputs(output_root: Path = OUTPUT_ROOT) -> list[str]:
         SUMMARY_FILE: SUMMARY_COLUMNS,
         BY_BUCKET_FILE: BUCKET_COLUMNS,
         WARNINGS_FILE: WARNING_COLUMNS,
+        WARNING_REPAIR_QUEUE_FILE: REPAIR_QUEUE_COLUMNS,
     }
     for name, columns in expected.items():
         path = output_root / name
@@ -221,6 +249,7 @@ def _summary_rows(
     outcome: pd.DataFrame,
     market_frame: pd.DataFrame,
     by_bucket: list[dict[str, str]],
+    repair_queue: list[dict[str, str]],
 ) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     rows.extend(_coverage_summary("full_dynasty_board", dynasty, rank_column="nwr_rank"))
@@ -237,6 +266,7 @@ def _summary_rows(
     rows.extend(_outcome_summary(outcome, expanded))
     rows.extend(_market_summary(market_frame))
     rows.extend(_bucket_summary(by_bucket))
+    rows.extend(_repair_summary(repair_queue))
     rows.append(
         _summary(
             "evidence_separation",
@@ -515,14 +545,51 @@ def _bucket_summary(bucket_rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return rows
 
 
+def _repair_summary(repair_queue: list[dict[str, str]]) -> list[dict[str, str]]:
+    if not repair_queue:
+        return [
+            _summary(
+                "warning_repair",
+                "repair_queue_rows",
+                "0",
+                "GREEN",
+                "No warning repair queue rows generated.",
+            )
+        ]
+    actions = pd.Series([row.get("repair_action", "") for row in repair_queue]).value_counts()
+    rows = [
+        _summary(
+            "warning_repair",
+            "repair_queue_rows",
+            len(repair_queue),
+            "GREEN",
+            "Review-safe accountability rows generated; no source truth changed.",
+        )
+    ]
+    for action, count in actions.sort_index().items():
+        rows.append(
+            _summary(
+                "warning_repair",
+                f"repair_action_{_metric_token(action)}",
+                int(count),
+                "GREEN" if "resolved" in str(action) else "YELLOW",
+                "Repair actions are evaluation-only unless explicitly approved later.",
+            )
+        )
+    return rows
+
+
 def _warning_rows(
     *,
     dynasty: pd.DataFrame,
     expanded: pd.DataFrame,
     outcome: pd.DataFrame,
     by_bucket: list[dict[str, str]],
-) -> list[dict[str, str]]:
+    identity: pd.DataFrame,
+) -> dict[str, list[dict[str, str]]]:
     warnings: list[dict[str, str]] = []
+    repair_queue: list[dict[str, str]] = []
+    identity_lookup = _safe_identity_lookup(dynasty, identity)
     high_rank = _top_ranked(
         expanded,
         ("dynasty_asset_rank", "cross_asset_candidate_rank", "final_board_rank"),
@@ -531,12 +598,92 @@ def _warning_rows(
     for row in high_rank.to_dict("records"):
         player = _player(row)
         missing = []
-        for label, column in (("player_id", "player_id"), ("age", "age")):
-            if not _has_value(row.get(column)):
-                missing.append(label)
+        player_key = _identity_key(player, row.get("position"))
+        identity_match = identity_lookup.get(player_key, {})
+        if not _has_value(row.get("player_id")):
+            if identity_match.get("player_id"):
+                repair_queue.append(
+                    _repair_row(
+                        player,
+                        "player_id",
+                        "missing_in_expanded_pool",
+                        "resolved_for_evaluation_only",
+                        identity_match.get("source", ""),
+                        identity_match.get("confidence", ""),
+                        "not_written_to_source_truth",
+                        f"player_id={identity_match.get('player_id', '')}",
+                    )
+                )
+            else:
+                missing.append("player_id")
+                repair_queue.append(
+                    _repair_row(
+                        player,
+                        "player_id",
+                        "missing",
+                        "manual_review_required",
+                        "no_safe_existing_match",
+                        "LOW",
+                        "must_not_guess_id",
+                        "No high-confidence existing identity source found.",
+                    )
+                )
+        if not _has_value(row.get("age")):
+            if _has_value(identity_match.get("age")):
+                repair_queue.append(
+                    _repair_row(
+                        player,
+                        "age",
+                        "missing_in_expanded_pool",
+                        "resolved_for_evaluation_only",
+                        identity_match.get("source", ""),
+                        identity_match.get("confidence", ""),
+                        "not_written_to_source_truth",
+                        f"age={identity_match.get('age', '')}",
+                    )
+                )
+            else:
+                missing.append("age")
+                repair_queue.append(
+                    _repair_row(
+                        player,
+                        "age",
+                        "missing",
+                        "not_enough_information",
+                        "no_safe_existing_match",
+                        "LOW",
+                        "show_not_enough_information",
+                        "Do not fabricate age.",
+                    )
+                )
         outcome_value = row.get("outcome_applicable_summary")
-        if not _has_value(outcome_value):
+        if _is_not_enough_information(outcome_value):
+            repair_queue.append(
+                _repair_row(
+                    player,
+                    "outcome_support",
+                    "unsupported_or_missing",
+                    "explicit_not_enough_information_label",
+                    "approved Outcome V1 coverage",
+                    "HIGH",
+                    "no_probability_fabricated",
+                    "Outcome gap is clarified; missing support is not treated as zero.",
+                )
+            )
+        elif not _has_value(outcome_value):
             missing.append("outcome")
+            repair_queue.append(
+                _repair_row(
+                    player,
+                    "outcome_support",
+                    "blank_or_unlabeled",
+                    "manual_review_required",
+                    "approved Outcome V1 coverage",
+                    "LOW",
+                    "must_show_not_enough_information",
+                    "Blank Outcome support can create false confidence.",
+                )
+            )
         confidence = _text(row.get("confidence_band") or row.get("dynasty_asset_confidence"))
         if missing:
             warnings.append(
@@ -588,7 +735,69 @@ def _warning_rows(
                 "Restore approved 240-row source before relying on rankings audit.",
             )
         )
-    return warnings
+    return {"warnings": warnings, "repair_queue": repair_queue}
+
+
+def _safe_identity_lookup(
+    dynasty: pd.DataFrame,
+    identity: pd.DataFrame,
+) -> dict[tuple[str, str], dict[str, str]]:
+    lookup: dict[tuple[str, str], dict[str, str]] = {}
+    if not dynasty.empty:
+        for row in dynasty.to_dict("records"):
+            player = _text(row.get("player_name") or row.get("player"))
+            position = _text(row.get("position") or row.get("pos"))
+            player_id = _text(row.get("player_id"))
+            if player and position and player_id:
+                lookup[_identity_key(player, position)] = {
+                    "player_id": player_id,
+                    "age": _text(row.get("age")),
+                    "source": "approved full dynasty board exact name+position",
+                    "confidence": "HIGH",
+                }
+    if not identity.empty:
+        for row in identity.to_dict("records"):
+            player = _text(row.get("player_name"))
+            position = _text(row.get("position"))
+            confidence = _text(row.get("match_confidence")).upper()
+            needs_review = _text(row.get("needs_manual_review")).lower() == "yes"
+            sleeper_id = _text(row.get("sleeper_id"))
+            if not player or not position or not sleeper_id:
+                continue
+            if confidence != "HIGH" or needs_review:
+                continue
+            key = _identity_key(player, position)
+            existing = lookup.get(key, {})
+            lookup[key] = {
+                "player_id": existing.get("player_id") or sleeper_id,
+                "age": existing.get("age", ""),
+                "source": "player_id_coverage_audit_v1 exact name+position",
+                "confidence": "HIGH",
+            }
+    return lookup
+
+
+def _repair_row(
+    player_name: str,
+    issue_type: str,
+    current_status: str,
+    repair_action: str,
+    source_used: str,
+    confidence: str,
+    remaining_risk: str,
+    notes: str,
+) -> dict[str, str]:
+    return {
+        "warning_id": "",
+        "player_name": player_name,
+        "issue_type": issue_type,
+        "current_status": current_status,
+        "repair_action": repair_action,
+        "source_used": source_used,
+        "confidence": confidence,
+        "remaining_risk": remaining_risk,
+        "notes": notes,
+    }
 
 
 def _with_eligibility(historical: pd.DataFrame, eligibility: pd.DataFrame) -> pd.DataFrame:
@@ -779,8 +988,10 @@ def _warning(
 
 def _frame(rows: list[dict[str, str]], columns: tuple[str, ...]) -> pd.DataFrame:
     frame = pd.DataFrame(rows, columns=columns).fillna("")
-    if "warning_id" in frame.columns:
+    if tuple(columns) == WARNING_COLUMNS:
         frame["warning_id"] = [f"MEV0-W{i:03d}" for i in range(1, len(frame) + 1)]
+    elif tuple(columns) == REPAIR_QUEUE_COLUMNS:
+        frame["warning_id"] = [f"MEV0-R{i:03d}" for i in range(1, len(frame) + 1)]
     return frame
 
 
@@ -802,6 +1013,10 @@ def _ratio(numerator: int, denominator: int) -> str:
 
 def _yes_no(value: bool) -> str:
     return "yes" if value else "no"
+
+
+def _is_not_enough_information(value: Any) -> bool:
+    return _text(value).strip().lower() == NOT_ENOUGH_INFORMATION.lower()
 
 
 def _has_value(value: Any) -> bool:
@@ -834,3 +1049,29 @@ def _text(value: Any) -> str:
 
 def _player(row: dict[str, Any]) -> str:
     return _text(row.get("player") or row.get("player_name")) or NOT_ENOUGH_INFORMATION
+
+
+def _identity_key(player: Any, position: Any) -> tuple[str, str]:
+    return (_normalize_player_name(_text(player)), _text(position).upper())
+
+
+def _normalize_player_name(value: str) -> str:
+    text = value.lower().strip()
+    text = text.replace(".", "")
+    for suffix in (" jr", " sr", " ii", " iii", " iv", " v"):
+        if text.endswith(suffix):
+            text = text[: -len(suffix)]
+    return " ".join(text.split())
+
+
+def _metric_token(value: Any) -> str:
+    return (
+        _text(value)
+        .lower()
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(" ", "_")
+        .replace("__", "_")
+        .strip("_")
+        or "unknown"
+    )

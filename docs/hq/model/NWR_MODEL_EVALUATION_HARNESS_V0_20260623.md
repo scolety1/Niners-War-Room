@@ -26,6 +26,7 @@ The Draft-Day App V2 release-candidate audit was checked before implementation:
 - `docs/hq/model/evaluation_v0/NWR_MODEL_EVALUATION_SUMMARY_V0_20260623.csv`
 - `docs/hq/model/evaluation_v0/NWR_MODEL_EVALUATION_BY_BUCKET_V0_20260623.csv`
 - `docs/hq/model/evaluation_v0/NWR_MODEL_EVALUATION_WARNINGS_V0_20260623.csv`
+- `docs/hq/model/evaluation_v0/NWR_MODEL_EVALUATION_WARNING_REPAIR_QUEUE_20260623.csv`
 
 ## Inputs Inspected
 
@@ -64,7 +65,9 @@ No bucket is marked training-eligible in this V0 run.
 - Caution backtest rows: 149
 - Sensitivity-only proxy rows: 480
 - P0/P1 model trust warnings: 0
-- P2 potential false-confidence warnings: 30
+- P2 potential false-confidence warnings after repair: 2
+- Evaluation-only player ID repairs: 29
+- Explicit `Not enough information` Outcome clarifications: 30
 
 The harness explicitly reports predictive accuracy as `Not enough information` because no actual future outcome label is available in this evaluation pass.
 
@@ -74,12 +77,16 @@ The warning file currently contains P2 potential false-confidence warnings. Thes
 
 Common warning pattern:
 
-- high-rank player missing `player_id`;
-- missing Outcome support;
-- age missing on some rows;
-- confidence/caveat should remain visible to the user.
+- high-rank player has a remaining age gap;
+- confidence/caveat should remain visible to the user;
+- missing data should display as `Not enough information`.
 
-Examples include Zay Flowers, Chris Olave, Jeremiyah Love, Drake Maye, Makai Lemon, Carnell Tate, Jameson Williams, and KC Concepcion.
+Remaining P2 examples:
+
+- KC Concepcion: age remains `Not enough information`.
+- Brian Thomas: age remains `Not enough information`.
+
+Resolved/clarified issues are tracked in the repair queue rather than hidden. Player IDs were resolved for evaluation only from existing high-confidence identity artifacts and were not written into the frozen board or rankings. Outcome gaps remain unsupported but are explicitly labeled `Not enough information`, not low probability.
 
 ## Guardrail Confirmations
 

@@ -140,6 +140,21 @@ def _outcome() -> pd.DataFrame:
     )
 
 
+def _identity_audit() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "source_surface": "frozen_final_board_v1",
+                "player_name": "High Rank Missing Data",
+                "position": "WR",
+                "sleeper_id": "safe-id",
+                "match_confidence": "HIGH",
+                "needs_manual_review": "no",
+            }
+        ]
+    )
+
+
 def test_evaluation_harness_separates_truth_caution_and_sensitivity() -> None:
     result = build_model_evaluation_harness(
         dynasty_frame=_dynasty(),
@@ -226,3 +241,54 @@ def test_evaluation_outputs_validate(tmp_path) -> None:
     write_model_evaluation_outputs(result, output_root=tmp_path)
 
     assert validate_evaluation_outputs(tmp_path) == []
+
+
+def test_evaluation_harness_uses_safe_identity_repair_without_mutating_sources() -> None:
+    result = build_model_evaluation_harness(
+        dynasty_frame=_dynasty(),
+        frozen_frame=_frozen(),
+        expanded_pool_frame=_expanded(),
+        historical_drop_frame=_historical(),
+        eligibility_rules_frame=_eligibility(),
+        outcome_coverage_frame=_outcome(),
+        market_enriched_frame=_dynasty(),
+        identity_audit_frame=_identity_audit(),
+    )
+
+    repair = result.repair_queue.loc[
+        result.repair_queue["issue_type"].eq("player_id")
+        & result.repair_queue["player_name"].eq("High Rank Missing Data")
+    ].iloc[0]
+    assert repair["repair_action"] == "resolved_for_evaluation_only"
+    assert repair["remaining_risk"] == "not_written_to_source_truth"
+
+
+def test_explicit_not_enough_information_outcome_is_clarified_not_warning() -> None:
+    expanded = pd.DataFrame(
+        [
+            {
+                "player_id": "covered",
+                "player": "Covered Unknown Outcome",
+                "position": "WR",
+                "age": "24.0",
+                "final_board_rank": "1",
+                "confidence_band": "Medium",
+                "outcome_applicable_summary": "Not enough information",
+            }
+        ]
+    )
+    result = build_model_evaluation_harness(
+        dynasty_frame=_dynasty(),
+        frozen_frame=_frozen(),
+        expanded_pool_frame=expanded,
+        historical_drop_frame=_historical(),
+        eligibility_rules_frame=_eligibility(),
+        outcome_coverage_frame=_outcome(),
+        market_enriched_frame=_dynasty(),
+        identity_audit_frame=pd.DataFrame(),
+    )
+
+    assert result.warnings.empty
+    assert set(result.repair_queue["repair_action"]) == {
+        "explicit_not_enough_information_label"
+    }
