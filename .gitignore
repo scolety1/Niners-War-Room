@@ -6,6 +6,9 @@ __pycache__/
 .env
 .env.*
 !.env.example
+*.key
+*api_key*.txt
+*secret*.txt
 data_packs/*.sqlite3
 data_packs/*.db
 .codex-logs/

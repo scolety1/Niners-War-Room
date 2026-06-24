@@ -77,7 +77,7 @@ def test_registry_contains_required_source_policy_fields() -> None:
     assert sleeper.enabled_in_quick_refresh is True
     assert sleeper.model_use_allowed is False
     assert cfbd.requires_api_key is True
-    assert cfbd.required_env_vars == ("CFBD_API_KEY",)
+    assert cfbd.required_env_vars == ("CFBD_API_KEY or NWR_CFBD_API_KEY_FILE",)
 
 
 def test_quick_refresh_pulls_sleeper_and_dynastyprocess_only(tmp_path: Path) -> None:
@@ -167,7 +167,10 @@ def test_full_safe_refresh_reports_cfbd_not_configured_without_key(tmp_path: Pat
 
     assert cfbd.action_type == ACTION_NOT_CONFIGURED
     assert cfbd.configured is False
-    assert cfbd.user_explanation == "CFBD_API_KEY is not set; CFBD refresh is unavailable."
+    assert (
+        cfbd.user_explanation
+        == "CFBD_API_KEY/NWR_CFBD_API_KEY_FILE is not set; CFBD refresh is unavailable."
+    )
 
 
 def test_cfbd_is_eligible_only_when_configured() -> None:

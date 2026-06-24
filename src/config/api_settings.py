@@ -28,7 +28,7 @@ def get_api_settings() -> ApiSettings:
     return ApiSettings(
         sleeper_league_id=_env("NINERS_SLEEPER_LEAGUE_ID", "1344772855908290560"),
         sleeper_api_base=_env("SLEEPER_API_BASE", "https://api.sleeper.app/v1").rstrip("/"),
-        cfbd_api_key=_env("CFBD_API_KEY", ""),
+        cfbd_api_key=_secret_env_or_file("CFBD_API_KEY", "NWR_CFBD_API_KEY_FILE"),
         cfbd_api_base=_env("CFBD_API_BASE", "https://api.collegefootballdata.com").rstrip("/"),
         sportsdataio_api_key=_env("SPORTSDATAIO_API_KEY", ""),
         sportsdataio_api_base=_env("SPORTSDATAIO_API_BASE", "https://api.sportsdata.io").rstrip(
@@ -54,6 +54,19 @@ def require_live_api_enabled(source_name: str) -> None:
 
 def _env(name: str, default: str) -> str:
     return os.environ.get(name, default).strip()
+
+
+def _secret_env_or_file(env_name: str, file_env_name: str) -> str:
+    direct = os.environ.get(env_name, "").strip()
+    if direct:
+        return direct
+    secret_path = os.environ.get(file_env_name, "").strip()
+    if not secret_path:
+        return ""
+    try:
+        return Path(secret_path).read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
 
 def _bool_env(name: str, *, default: bool) -> bool:

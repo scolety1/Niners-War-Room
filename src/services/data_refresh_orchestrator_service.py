@@ -383,7 +383,7 @@ def build_refresh_registry(
             enabled_in_quick_refresh=False,
             enabled_in_full_safe_refresh=True,
             requires_api_key=True,
-            required_env_vars=("CFBD_API_KEY",),
+            required_env_vars=("CFBD_API_KEY or NWR_CFBD_API_KEY_FILE",),
             runner_exists=True,
             configured=cfbd_configured,
             safe_to_pull=cfbd_configured,
@@ -396,19 +396,24 @@ def build_refresh_registry(
                 "cfbd_review_status.csv",
                 "raw CFBD probe JSON outside git",
             ),
-            freshness_policy="Available only when CFBD_API_KEY is configured.",
+            freshness_policy=(
+                "Available only when CFBD_API_KEY or NWR_CFBD_API_KEY_FILE is configured."
+            ),
             model_use_allowed=False,
             model_use_warning=(
                 "CFBD player identities must be reviewed/matched before model use."
             ),
             default_action=REFRESHED if cfbd_configured else ACTION_NOT_CONFIGURED,
-            failure_mode="Without CFBD_API_KEY report NOT_CONFIGURED; with key isolate failures.",
+            failure_mode=(
+                "Without CFBD_API_KEY/NWR_CFBD_API_KEY_FILE report NOT_CONFIGURED; "
+                "with key isolate failures."
+            ),
             user_explanation=(
-                "CFBD_API_KEY is not set; CFBD refresh is unavailable."
+                "CFBD_API_KEY/NWR_CFBD_API_KEY_FILE is not set; CFBD refresh is unavailable."
                 if not cfbd_configured
                 else (
-                    "CFBD is pulled in Full Safe Refresh using CFBD_API_KEY. Raw data stays "
-                    "outside git and outputs are review/status only."
+                    "CFBD is pulled in Full Safe Refresh using a configured CFBD key. "
+                    "Raw data stays outside git and outputs are review/status only."
                 )
             ),
             command_or_function="internal_cfbd_safe_probe",
