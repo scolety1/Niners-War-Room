@@ -1,0 +1,5 @@
+bucket,source_class,confidence,row_count,eligible_for_truth_backtest,eligible_for_caution_backtest,eligible_for_sensitivity,eligible_for_training,notes
+Caution backtest,INFERRED_DROP,MEDIUM,149,no,yes,yes,no,Actual plus medium/high inferred evidence; report separately.
+Market sanity diagnostics,DISPLAY_ONLY,HIGH,0,no,no,yes,no,Market/ADP/DynastyProcess context is diagnostics-only and never training truth.
+Sensitivity test,PROXY_DROP,PROXY_ONLY,480,no,no,yes,no,Proxy/low-confidence rows; sensitivity only.
+Truth backtest,ACTUAL_DROP,HIGH,22,yes,yes,yes,no,High-confidence actual evidence only; not training truth.

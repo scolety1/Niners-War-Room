@@ -1,0 +1,42 @@
+evaluation_area,metric,value,status,notes
+full_dynasty_board,row_count,240,GREEN,
+full_dynasty_board,rank_coverage,232/240 (96.7%),YELLOW,nwr_rank
+full_dynasty_board,player_id_coverage,240/240 (100.0%),GREEN,
+full_dynasty_board,age_coverage,224/240 (93.3%),YELLOW,
+full_dynasty_board,missing_data_count,3255,GREEN,Counts blank/null/Not enough information cells.
+full_dynasty_board,not_enough_information_players,240,GREEN,Players with at least one Not enough information field.
+frozen_baseline_board,row_count,66,GREEN,
+frozen_baseline_board,rank_coverage,66/66 (100.0%),GREEN,final_board_rank
+frozen_baseline_board,player_id_coverage,Not enough information,YELLOW,
+frozen_baseline_board,age_coverage,11/66 (16.7%),YELLOW,
+frozen_baseline_board,missing_data_count,518,GREEN,Counts blank/null/Not enough information cells.
+frozen_baseline_board,not_enough_information_players,66,GREEN,Players with at least one Not enough information field.
+expanded_draftable_pool,row_count,143,GREEN,
+expanded_draftable_pool,rank_coverage,143/143 (100.0%),GREEN,final_board_rank
+expanded_draftable_pool,player_id_coverage,75/143 (52.4%),YELLOW,
+expanded_draftable_pool,age_coverage,121/143 (84.6%),YELLOW,
+expanded_draftable_pool,missing_data_count,4188,GREEN,Counts blank/null/Not enough information cells.
+expanded_draftable_pool,not_enough_information_players,143,GREEN,Players with at least one Not enough information field.
+full_dynasty_board,position_count_K,8,GREEN,
+full_dynasty_board,position_count_QB,28,GREEN,
+full_dynasty_board,position_count_RB,79,GREEN,
+full_dynasty_board,position_count_TE,32,GREEN,
+full_dynasty_board,position_count_WR,93,GREEN,
+frozen_baseline_board,position_count_QB,3,GREEN,
+frozen_baseline_board,position_count_RB,22,GREEN,
+frozen_baseline_board,position_count_TE,3,GREEN,
+frozen_baseline_board,position_count_WR,38,GREEN,
+outcome,coverage_artifact_rows,66,GREEN,
+outcome,matched_outcome_rows,12,GREEN,
+outcome,unsupported_or_missing_rows,54,YELLOW,"Must display as Not enough information, not zero."
+outcome,expanded_pool_outcome_summary_supported,0,YELLOW,Display-only only.
+market_sanity,market_match_count,232,GREEN,Display-only context only.
+market_sanity,market_match_coverage,232/240 (96.7%),GREEN,Display-only context only.
+market_sanity,nwr_vs_market_gap_summary,count=232; mean=-29.9; max_abs=228.0,GREEN,Diagnostics only; not model truth.
+evidence_buckets,truth_backtest_row_count,22,GREEN,Rows are separated; no bucket is collapsed into truth.
+evidence_buckets,caution_backtest_row_count,149,GREEN,Rows are separated; no bucket is collapsed into truth.
+evidence_buckets,sensitivity_test_row_count,480,GREEN,Rows are separated; no bucket is collapsed into truth.
+evidence_buckets,market_sanity_diagnostics_row_count,0,YELLOW,Rows are separated; no bucket is collapsed into truth.
+evidence_separation,predictive_accuracy_claim,Not enough information,GREEN,Harness does not claim predictive accuracy without actual outcome labels.
+guardrail,market_as_model_truth,no,GREEN,DynastyProcess/ADP/market context is diagnostics only.
+guardrail,proxy_as_training_truth,no,GREEN,PROXY_DROP/PROXY_ONLY/LOW rows are sensitivity-only.
