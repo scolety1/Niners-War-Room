@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NWR Sleeper Player Status Context V1",
+  "type": "object",
+  "required": [
+    "player",
+    "pos",
+    "nfl_team",
+    "sleeper_player_id",
+    "sleeper_team",
+    "status",
+    "injury_status",
+    "injury_start_date",
+    "practice_participation",
+    "age",
+    "years_exp",
+    "warning_classification",
+    "source_note"
+  ],
+  "properties": {
+    "player": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "pos": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "nfl_team": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "sleeper_player_id": {
+      "type": "string",
+      "description": "Sleeper identity key when matched safely."
+    },
+    "sleeper_team": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "status": {
+      "type": "string",
+      "description": "Raw Sleeper player status flag when available."
+    },
+    "injury_status": {
+      "type": "string",
+      "description": "Raw Sleeper injury_status flag when available."
+    },
+    "injury_start_date": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "practice_participation": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "age": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "years_exp": {
+      "type": "string",
+      "description": "Display-only status context field."
+    },
+    "warning_classification": {
+      "type": "string",
+      "description": "clean, injury/status review, team/status mismatch, or missing status metadata."
+    },
+    "source_note": {
+      "type": "string",
+      "description": "Required warning that Sleeper is not a full injury/news feed."
+    }
+  },
+  "additionalProperties": false,
+  "guardrail": "Sleeper status fields are warning/diagnostic context only and are not full injury/news analysis or rank/model inputs."
+}

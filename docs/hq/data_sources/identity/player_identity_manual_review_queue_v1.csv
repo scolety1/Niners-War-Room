@@ -1,0 +1,75 @@
+source_surface,player_name,position,team,existing_id_present,sleeper_id,dynastyprocess_id,nflverse_id_or_gsis,match_method,match_confidence,needs_manual_review,reason
+frozen_final_board_v1,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Atlanta Falcons,DST,ATL,no,ATL,,,exact_name_position_sleeper,LOW,yes,sleeper_match
+lve_pdf_page3_free_agents,Miami Dolphins,DST,MIA,no,MIA,,,exact_name_position_sleeper,LOW,yes,sleeper_match
+outcome_numeric_display_support,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.

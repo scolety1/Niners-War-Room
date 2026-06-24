@@ -1,0 +1,1140 @@
+source_surface,player_name,position,team,existing_id_present,sleeper_id,dynastyprocess_id,nflverse_id_or_gsis,match_method,match_confidence,needs_manual_review,reason
+frozen_final_board_v1,Jeremiyah Love,RB,ARI,no,13287,25403,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Makai Lemon,WR,PHI,no,13294,25420,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Carnell Tate,WR,TEN,no,13279,26009,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,KC Concepcion,WR,CLE,no,13298,27331,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jadarian Price,RB,SEA,no,13286,27329,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Denzel Boston,WR,CLE,no,13346,27339,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Germie Bernard,WR,PIT,no,13274,26039,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Chris Bell,WR,MIA,no,13311,26038,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Zachariah Branch,WR,ATL,no,13320,25419,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Antonio Williams,WR,WAS,no,13301,25418,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jonah Coleman,RB,DEN,no,13345,27320,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Skyler Bell,WR,BUF,no,13402,28126,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Brenen Thompson,WR,LAC,no,13380,28133,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Elijah Sarratt,WR,BAL,no,13268,27463,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Emmett Johnson,RB,KC,no,13337,28107,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Kaytron Allen,RB,WAS,no,13405,24362,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Adam Randall,RB,BAL,no,13302,24367,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Josh Cameron,WR,JAX,no,13394,28137,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Nicholas Singleton,RB,TEN,no,13288,24343,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Barion Brown,WR,NO,no,13533,25416,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Demond Claiborne,RB,MIN,no,13347,28084,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,J'Mari Taylor,RB,JAX,no,13348,28109,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Eric McAlister,WR,FA,no,13354,28134,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Chris Brazzell,WR,CAR,no,13353,28047,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Robert Henry Jr.,RB,WAS,no,13418,28404,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Seth McGowan,RB,IND,no,13424,23079,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Zay Flowers,WR,BAL,no,9997,22916,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Omar Cooper,WR,NYJ,no,13276,28127,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Chris Olave,WR,NO,no,8144,20111,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Drake Maye,QB,NE,no,11564,23046,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Roman Hemby,RB,LV,no,13416,25387,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jameson Williams,WR,DET,no,8148,23677,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Chase Roberts,WR,LV,no,13410,28131,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Kevin Coleman,WR,MIA,no,13338,28067,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Alec Pierce,WR,IND,no,8142,23791,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Deion Burks,WR,IND,no,13333,27093,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Trebor Pena,WR,JAC,no,13356,28139,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Jordyn Tyson,WR,NO,no,13281,26035,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jaylen Warren,RB,PIT,no,8228,24209,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Eli Stowers,TE,PHI,no,13349,23144,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Kaelon Black,RB,SF,no,13414,28401,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Sam Roush,TE,CHI,no,13322,28161,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+frozen_final_board_v1,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+frozen_final_board_v1,Dak Prescott,QB,DAL,no,3294,15600,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Rashee Rice,WR,KC,no,10229,23113,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Brian Thomas,WR,JAX,no,11631,23000,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Keenan Allen,WR,UNKNOWN,no,1479,11616,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Brock Purdy,QB,SF,no,8183,19797,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+frozen_final_board_v1,Darren Waller,TE,UNKNOWN,no,2505,14104,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tyreek Hill,WR,MIA,yes,3321,15802,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Ryan Flournoy,WR,DAL,yes,11783,26398,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,John Metchie,WR,NYJ,yes,8147,22895,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Dallas Goedert,TE,PHI,yes,5022,17270,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Evan McPherson,K,CIN,yes,7839,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Olamide Zaccheaus,WR,ATL,yes,6271,18864,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Juwan Johnson,TE,NO,yes,7002,19562,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tyler Loop,K,BAL,yes,12711,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Tua Tagovailoa,QB,ATL,yes,6768,19198,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tyler Shough,QB,NO,yes,12545,23096,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Andy Borregales,K,NE,yes,12713,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Chris Brooks,RB,GB,yes,11370,25823,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Malik Willis,QB,MIA,yes,8161,23499,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Isaac Guerendo,RB,SF,yes,11651,26392,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jordan James,RB,SF,yes,12467,27310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jaylen Wright,RB,MIA,yes,11643,25987,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Eddy Pineiro,K,SF,yes,5189,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Ben Sinnott,TE,WAS,yes,11596,26310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Terrance Ferguson,TE,LAR,yes,12487,23091,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Darnell Mooney,WR,NYG,yes,7090,19810,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Terrell Jennings,RB,NE,yes,12412,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Theo Johnson,TE,NYG,yes,11597,23104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Rashod Bateman,WR,BAL,yes,7571,19794,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Dameon Pierce,RB,PHI,yes,8129,22947,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Bryce Young,QB,CAR,yes,9228,22900,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Chase McLaughlin,K,TB,yes,6650,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Antonio Gibson,RB,NE,yes,6945,19624,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Kyle Williams,WR,NE,yes,7437,27487,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Cairo Santos,K,CHI,yes,2020,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Raheim Sanders,RB,CLE,yes,12472,24351,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Ka'imi Fairbairn,K,HOU,yes,3451,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Harrison Mevis,K,LAR,yes,12015,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Austin Ekeler,RB,WAS,yes,4663,16483,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Cam Little,K,JAC,yes,11786,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Malik Davis,RB,DAL,yes,8800,24205,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Zane Gonzalez,K,ATL,yes,4233,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Ty Johnson,RB,BUF,yes,6039,18406,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jawhar Jordan,RB,HOU,yes,11588,26329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,DJ Giddens,RB,IND,yes,12471,27097,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Anthony Richardson,QB,IND,yes,9229,24347,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Charlie Smyth,K,NO,yes,11653,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Will Shipley,RB,PHI,yes,11577,22930,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Wil Lutz,K,DEN,yes,3678,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+lve_pdf_page3_free_agents,Darnell Washington,TE,PIT,yes,9479,22967,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jarquez Hunter,RB,LAR,yes,11569,24335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Michael Mayer,TE,LV,yes,9482,23056,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Konata Mumpfield,WR,LAR,yes,12718,27449,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Joe Milton,QB,DAL,yes,11557,25967,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Audric Estime,RB,NO,yes,11579,23054,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tyler Higbee,TE,LAR,yes,3271,15623,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Atlanta Falcons,DST,ATL,no,ATL,,,exact_name_position_sleeper,LOW,yes,sleeper_match
+lve_pdf_page3_free_agents,Geno Smith,QB,NYJ,yes,1373,11687,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tyquan Thornton,WR,KC,yes,8188,22913,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Miami Dolphins,DST,MIA,no,MIA,,,exact_name_position_sleeper,LOW,yes,sleeper_match
+lve_pdf_page3_free_agents,George Holani,RB,SEA,yes,12048,22915,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Marcus Mariota,QB,WAS,yes,2307,13890,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jack Bech,WR,LV,yes,12483,27224,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Trevor Etienne,RB,CAR,yes,12531,25393,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Marquise Brown,WR,PHI,yes,5848,18226,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Dont'e Thornton,WR,LV,yes,12541,27288,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Cedric Tillman,WR,CLE,yes,10444,25287,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jerome Ford,RB,WAS,yes,8143,22921,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Justice Hill,RB,BAL,yes,5995,18256,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jake Tonges,TE,SF,yes,8698,24778,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jacoby Brissett,QB,ARI,yes,3257,15642,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tez Johnson,WR,TB,yes,12485,27147,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Mac Jones,QB,SF,yes,7527,20156,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Noah Gray,TE,KC,yes,7828,19539,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jaylin Lane,WR,WAS,yes,12641,27454,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Xavier Hutchinson,WR,HOU,yes,10218,25332,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,John Bates,TE,WAS,yes,7716,22833,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Joshua Palmer,WR,BUF,yes,7670,22845,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Tahj Brooks,RB,CIN,yes,12543,26212,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Mike Gesicki,TE,CIN,yes,4993,17272,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jalen Royals,WR,KC,yes,12505,27076,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Samaje Perine,RB,CIN,yes,4147,16423,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+lve_pdf_page3_free_agents,Jalen Nailor,WR,LV,yes,8180,24177,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jeremiyah Love,RB,ARI,no,13287,25403,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Makai Lemon,WR,PHI,no,13294,25420,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Carnell Tate,WR,TEN,no,13279,26009,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,KC Concepcion,WR,CLE,no,13298,27331,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jadarian Price,RB,SEA,no,13286,27329,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Denzel Boston,WR,CLE,no,13346,27339,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Germie Bernard,WR,PIT,no,13274,26039,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Chris Bell,WR,MIA,no,13311,26038,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Zachariah Branch,WR,ATL,no,13320,25419,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Antonio Williams,WR,WAS,no,13301,25418,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jonah Coleman,RB,DEN,no,13345,27320,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Skyler Bell,WR,BUF,no,13402,28126,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Brenen Thompson,WR,LAC,no,13380,28133,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Elijah Sarratt,WR,BAL,no,13268,27463,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Emmett Johnson,RB,KC,no,13337,28107,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Kaytron Allen,RB,WAS,no,13405,24362,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Adam Randall,RB,BAL,no,13302,24367,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Josh Cameron,WR,JAX,no,13394,28137,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Nicholas Singleton,RB,TEN,no,13288,24343,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Barion Brown,WR,NO,no,13533,25416,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Demond Claiborne,RB,MIN,no,13347,28084,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,J'Mari Taylor,RB,JAX,no,13348,28109,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Eric McAlister,WR,FA,no,13354,28134,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Chris Brazzell,WR,CAR,no,13353,28047,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Robert Henry Jr.,RB,WAS,no,13418,28404,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Seth McGowan,RB,IND,no,13424,23079,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Zay Flowers,WR,BAL,no,9997,22916,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Omar Cooper,WR,NYJ,no,13276,28127,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Chris Olave,WR,NO,no,8144,20111,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Drake Maye,QB,NE,no,11564,23046,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Roman Hemby,RB,LV,no,13416,25387,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jameson Williams,WR,DET,no,8148,23677,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Chase Roberts,WR,LV,no,13410,28131,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Kevin Coleman,WR,MIA,no,13338,28067,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Alec Pierce,WR,IND,no,8142,23791,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Deion Burks,WR,IND,no,13333,27093,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Trebor Pena,WR,JAC,no,13356,28139,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Jordyn Tyson,WR,NO,no,13281,26035,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jaylen Warren,RB,PIT,no,8228,24209,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Eli Stowers,TE,PHI,no,13349,23144,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Kaelon Black,RB,SF,no,13414,28401,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Sam Roush,TE,CHI,no,13322,28161,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+outcome_numeric_display_support,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+outcome_numeric_display_support,Dak Prescott,QB,DAL,no,3294,15600,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Rashee Rice,WR,KC,no,10229,23113,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Brian Thomas,WR,JAX,no,11631,23000,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Keenan Allen,WR,UNKNOWN,no,1479,11616,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Brock Purdy,QB,SF,no,8183,19797,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+outcome_numeric_display_support,Darren Waller,TE,UNKNOWN,no,2505,14104,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ja'Marr Chase,WR,CIN,yes,7564,19788,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ashton Jeanty,RB,LV,yes,12527,25989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jake Ferguson,TE,DAL,yes,8110,22718,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mike Evans,WR,SF,yes,2216,12119,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,George Kittle,TE,SF,yes,4217,16499,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,RJ Harvey,RB,DEN,yes,12489,27142,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Xavier Worthy,WR,KC,yes,11624,23019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Parker Washington,WR,JAC,yes,9487,23106,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jayden Higgins,WR,HOU,yes,12484,27077,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jared Goff,QB,DET,yes,3163,15501,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isaiah Likely,TE,NYG,yes,8131,23781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jonathon Brooks,RB,CAR,yes,11583,26148,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Josh Downs,WR,IND,yes,9500,24706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Baker Mayfield,QB,TB,yes,4892,17237,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,David Montgomery,RB,HOU,yes,5892,18239,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Malik Nabers,WR,NYG,yes,11632,25409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jakobi Meyers,WR,JAC,yes,5947,18598,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Matthew Golden,WR,GB,yes,12501,26024,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cam Ward,QB,TEN,yes,12522,24755,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kyle Monangai,RB,CHI,yes,12534,27131,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jayden Reed,WR,GB,yes,10222,23020,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Zach Charbonnet,RB,SEA,yes,9753,23152,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Godwin Jr.,WR,TB,yes,4037,16406,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyler Shough,QB,NO,yes,12545,23096,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Quentin Johnston,WR,LAC,yes,9754,23123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kyler Murray,QB,MIN,yes,5849,18600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brenton Strange,TE,JAC,yes,9480,25345,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Khalil Shakir,WR,BUF,yes,8134,23748,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyreek Hill,WR,FA,yes,3321,15802,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Romeo Doubs,WR,NE,yes,8121,23794,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Travis Hunter,WR,JAC,yes,12530,26034,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rhamondre Stevenson,RB,NE,yes,7611,22726,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Sam Darnold,QB,SEA,yes,4943,17236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rico Dowdle,RB,PIT,yes,7021,19647,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Blake Corum,RB,LAR,yes,11586,23013,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chuba Hubbard,RB,CAR,yes,7594,19792,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tank Dell,WR,HOU,yes,9502,25361,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jalen Coker,WR,CAR,yes,11646,26403,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dallas Goedert,TE,PHI,yes,5022,17270,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tony Pollard,RB,TEN,yes,5967,18705,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Malik Willis,QB,MIA,yes,8161,23499,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bryce Young,QB,CAR,yes,9228,22900,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mark Andrews,TE,BAL,yes,5012,17269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Matthew Stafford,QB,LAR,yes,421,9451,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Daniel Jones,QB,IND,yes,5870,18232,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chig Okonkwo,TE,WAS,yes,8210,23982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kenneth Gainwell,RB,TB,yes,7567,23310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Drake London,WR,ATL,yes,8112,23163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jalen McMillan,WR,TB,yes,11618,23179,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,AJ Barner,TE,SEA,yes,11603,26335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rashid Shaheed,WR,SEA,yes,8676,24687,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jauan Jennings,WR,MIN,yes,7049,19590,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,J.K. Dobbins,RB,DEN,yes,6806,19245,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Anthony Richardson Sr.,QB,IND,yes,9229,24347,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tre' Harris,WR,LAC,yes,12509,26215,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Josh Allen,QB,BUF,yes,4984,17298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyler Allgeier,RB,ARI,yes,8132,24172,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyrone Tracy Jr.,RB,NYG,yes,11655,22980,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Woody Marks,RB,HOU,yes,12474,27520,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jacory Croskey-Merritt,RB,WAS,yes,12533,27316,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Travis Kelce,TE,KC,yes,1466,11594,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Terrance Ferguson,TE,LAR,yes,12487,23091,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,T.J. Hockenson,TE,MIN,yes,5844,18290,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rachaad White,RB,WAS,yes,8136,23891,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Juwan Johnson,TE,NO,yes,7002,19562,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jerry Jeudy,WR,CLE,yes,6783,19201,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Stefon Diggs,WR,FA,yes,2449,13981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Michael Penix Jr.,QB,ATL,yes,11559,22973,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jordan Mason,RB,MIN,yes,8408,22969,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaylin Noel,WR,HOU,yes,12536,27122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Gunnar Helm,TE,TEN,yes,12502,27109,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Hunter Henry,TE,NE,yes,3214,15561,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Troy Franklin,WR,DEN,yes,11627,23092,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kayshon Boutte,WR,NE,yes,9504,22989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dylan Sampson,RB,CLE,yes,12469,27102,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Rodriguez Jr.,RB,JAC,yes,10219,22986,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Deebo Samuel Sr.,WR,FA,yes,5872,18244,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Adonai Mitchell,WR,NYJ,yes,11625,24357,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dalton Schultz,TE,HOU,yes,5001,17349,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,James Cook III,RB,BUF,yes,8138,22958,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isaac TeSlaa,WR,DET,yes,12535,27446,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mason Taylor,TE,NYJ,yes,12498,26005,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Aaron Jones Sr.,RB,MIN,yes,4199,16673,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Pat Bryant,WR,DEN,yes,12492,27211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isiah Pacheco,RB,DET,yes,8205,24333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyjae Spears,RB,TEN,yes,9508,25323,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chimere Dike,WR,TEN,yes,12540,27315,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,J.J. McCarthy,QB,MIN,yes,11565,23018,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaxon Smith-Njigba,WR,SEA,yes,9488,23070,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tetairoa McMillan,WR,CAR,yes,12526,25417,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,David Njoku,TE,LAC,yes,4033,16399,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Braelon Allen,RB,NYJ,yes,11576,24346,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jalen Nailor,WR,LV,yes,8180,24177,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Elic Ayomanor,WR,TEN,yes,12499,27059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tua Tagovailoa,QB,ATL,yes,6768,19198,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Pat Freiermuth,TE,PIT,yes,7600,20163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kyle Williams,WR,NE,yes,12547,27487,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brian Robinson Jr.,RB,ATL,yes,8154,20094,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cade Otton,TE,TB,yes,8111,23181,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jack Bech,WR,LV,yes,12483,27224,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Omarion Hampton,RB,LAC,yes,12507,25395,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Garrett Wilson,WR,NYJ,yes,8146,23072,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tank Bigsby,RB,PHI,yes,9225,22908,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Elijah Arroyo,TE,SEA,yes,12521,23004,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Keaton Mitchell,RB,LAC,yes,9511,25360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jacoby Brissett,QB,ARI,yes,3257,15642,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Calvin Ridley,WR,TEN,yes,4981,17258,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Darnell Mooney,WR,NYG,yes,7090,19810,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Theo Johnson,TE,NYG,yes,11597,23104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tre Tucker,WR,LV,yes,10213,25337,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Alvin Kamara,RB,NO,yes,4035,16421,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tory Horton,WR,SEA,yes,12497,26022,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Shedeur Sanders,QB,CLE,yes,12524,25968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Keon Coleman,WR,BUF,yes,11637,26019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dontayvion Wicks,WR,PHI,yes,9486,24354,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jonathan Taylor,RB,IND,yes,6813,19217,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Geno Smith,QB,NYJ,yes,1373,11687,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kaleb Johnson,RB,PIT,yes,12504,27165,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Trey Benson,RB,ARI,yes,11589,25388,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mac Jones,QB,SF,yes,7527,20156,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rashod Bateman,WR,BAL,yes,7571,19794,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Aaron Rodgers,QB,PIT,yes,96,9001,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Malik Washington,WR,MIA,yes,11610,26314,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Nico Collins,WR,HOU,yes,7569,20130,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,De'Von Achane,RB,MIA,yes,9226,23136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kimani Vidal,RB,LAC,yes,11647,26355,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Marvin Mims Jr.,WR,DEN,yes,9494,23080,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Justin Fields,QB,KC,yes,7591,19781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ryan Flournoy,WR,DAL,yes,11783,26398,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Emanuel Wilson,RB,SEA,yes,11435,25885,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Michael Mayer,TE,LV,yes,9482,23056,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,James Conner,RB,ARI,yes,4137,16447,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Christian Kirk,WR,SF,yes,4950,17268,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jake Tonges,TE,SF,yes,8698,24778,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ollie Gordon II,RB,MIA,yes,12495,25984,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Breece Hall,RB,NYJ,yes,8155,22982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaylen Wright,RB,MIA,yes,11643,25987,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Xavier Legette,WR,CAR,yes,11626,26136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Colby Parkinson,TE,LAR,yes,6865,19372,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ray Davis,RB,BUF,yes,11575,26191,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Devin Neal,RB,NO,yes,12476,23682,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cedric Tillman,WR,CLE,yes,10444,25287,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Sean Tucker,RB,TB,yes,9506,23679,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Evan Engram,TE,DEN,yes,4066,16411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cooper Kupp,WR,SEA,yes,4039,16433,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Emeka Egbuka,WR,TB,yes,12514,23062,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brock Bowers,TE,LV,yes,11604,22955,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tez Johnson,WR,TB,yes,12485,27147,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Hollywood Brown,WR,PHI,yes,5848,18226,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,MarShawn Lloyd,RB,GB,yes,11581,23118,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jordan James,RB,SF,yes,12467,27310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Darnell Washington,TE,PIT,yes,9479,22967,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ben Sinnott,TE,WAS,yes,11596,26310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jalen Royals,WR,KC,yes,12505,27076,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaydon Blue,RB,DAL,yes,12457,24344,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Devaughn Vele,WR,NO,yes,11834,26409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,DeMario Douglas,WR,NE,yes,9501,25304,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Marcus Mariota,QB,WAS,yes,2307,13890,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mike Gesicki,TE,CIN,yes,4993,17272,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cole Kmet,TE,CHI,yes,6826,19229,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Trey McBride,TE,ARI,yes,8130,22936,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,A.J. Brown,WR,NE,yes,5859,18218,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Darius Slayton,WR,NYG,yes,6149,18706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Najee Harris,RB,LAC,yes,7528,19302,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isaiah Bond,WR,CLE,yes,12503,24371,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,DJ Giddens,RB,IND,yes,12471,27097,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brashard Smith,RB,KC,yes,12455,27259,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Brooks,RB,GB,yes,11370,25823,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dont'e Thornton Jr.,WR,LV,yes,12541,27288,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kendre Miller,RB,NO,yes,9757,24360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Andrei Iosivas,WR,CIN,yes,10226,25335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyquan Thornton,WR,KC,yes,8188,22913,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isaiah Davis,RB,NYJ,yes,11571,25977,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Joe Milton III,QB,DAL,yes,11557,25967,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jarquez Hunter,RB,LAR,yes,11569,24335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Savion Williams,WR,GB,yes,12482,27144,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Joshua Palmer,WR,BUF,yes,7670,22845,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Luke McCaffrey,WR,WAS,yes,11650,26328,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Michael Carter,RB,TEN,yes,7607,22728,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaylin Lane,WR,WAS,yes,12641,27454,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,George Pickens,WR,DAL,yes,8137,22963,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Lamar Jackson,QB,BAL,yes,4881,17233,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,LeQuint Allen Jr.,RB,JAC,yes,12544,27285,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Raheim Sanders,RB,CLE,yes,12472,24351,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Trevor Etienne,RB,CAR,yes,12531,25393,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tahj Brooks,RB,CIN,yes,12543,26212,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Nick Chubb,RB,FA,yes,4988,17246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jerome Ford,RB,WAS,yes,8143,22921,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Will Shipley,RB,PHI,yes,11577,22930,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Calvin Austin III,WR,NYG,yes,8125,23739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Justice Hill,RB,BAL,yes,5995,18256,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Elijah Moore,WR,PHI,yes,7596,20114,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,John Metchie III,WR,CAR,yes,8147,22895,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Devin Singletary,RB,NYG,yes,6130,18280,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Joe Mixon,RB,FA,yes,4018,16420,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Isaac Guerendo,RB,SF,yes,11651,26392,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Konata Mumpfield,WR,LAR,yes,12718,27449,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Roschon Johnson,RB,CHI,yes,10235,25322,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,George Holani,RB,SEA,yes,12048,22915,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Zach Ertz,TE,FA,yes,1339,11689,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kendrick Bourne,WR,ARI,yes,4454,17066,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Malik Davis,RB,DAL,yes,8800,24205,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,DeVonta Smith,WR,PHI,yes,7525,19222,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Christian McCaffrey,RB,SF,yes,4034,16393,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kareem Hunt,RB,FA,yes,4098,16425,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Xavier Hutchinson,WR,HOU,yes,10218,25332,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyler Higbee,TE,LAR,yes,3271,15623,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dameon Pierce,RB,PHI,yes,8129,22947,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Emari Demercado,RB,KC,yes,11199,25654,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Samaje Perine,RB,CIN,yes,4147,16423,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Olamide Zaccheaus,WR,ATL,yes,6271,18864,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Mack Hollins,WR,NE,yes,4177,16489,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kenneth Walker III,RB,KC,yes,8151,23021,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jayden Daniels,QB,WAS,yes,11566,22902,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ladd McConkey,WR,LAC,yes,11635,26122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bam Knight,RB,ARI,yes,8122,24901,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Audric Estime,RB,NO,yes,11579,23054,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaleel McLaughlin,RB,DEN,yes,11439,25876,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Philip Rivers,QB,FA,yes,331,9509,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ty Johnson,RB,BUF,yes,6039,18406,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Noah Gray,TE,KC,yes,7828,19539,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Patrick Mahomes II,QB,KC,yes,4046,16413,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Antonio Gibson,RB,FA,yes,6945,19624,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jeremy McNichols,RB,WAS,yes,4219,16445,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Gabe Davis,WR,FA,yes,6943,19398,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Austin Ekeler,RB,FA,yes,4663,16483,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jawhar Jordan,RB,HOU,yes,11588,26329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Marvin Harrison Jr.,WR,ARI,yes,11628,23064,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaylen Waddle,WR,DEN,yes,7526,19790,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rome Odunze,WR,CHI,yes,11620,25411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,John Bates,TE,WAS,yes,7716,22833,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bijan Robinson,RB,ATL,yes,9509,23133,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chase Brown,RB,CIN,yes,9224,25324,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Colston Loveland,TE,CHI,yes,12517,26006,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Joe Burrow,QB,CIN,yes,6770,19196,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Luther Burden III,WR,CHI,yes,12519,27016,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jalen Hurts,QB,PHI,yes,6904,19275,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Sam LaPorta,TE,DET,yes,10859,22978,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tee Higgins,WR,CIN,yes,6801,19211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tyler Warren,TE,IND,yes,12518,26434,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Caleb Williams,QB,CHI,yes,11560,23084,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Saquon Barkley,RB,PHI,yes,4866,17240,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Justin Jefferson,WR,MIN,yes,6794,19236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,CeeDee Lamb,WR,DAL,yes,6786,19202,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Justin Herbert,QB,LAC,yes,6797,18635,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Travis Etienne Jr.,RB,NO,yes,7543,19231,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,TreVeyon Henderson,RB,NE,yes,12529,23065,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kyren Williams,RB,LAR,yes,8150,23059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Tucker Kraft,TE,GB,yes,9484,25298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Harold Fannin Jr.,TE,CLE,yes,12506,27050,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Quinshon Judkins,RB,CLE,yes,12512,25391,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Puka Nacua,WR,LAR,yes,9493,23180,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Amon-Ra St. Brown,WR,DET,yes,7547,19799,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jahmyr Gibbs,RB,DET,yes,9221,22968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kyle Pitts Sr.,TE,ATL,yes,7553,20164,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Trevor Lawrence,QB,JAC,yes,7523,19780,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaxson Dart,QB,NYG,yes,12508,23160,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,DK Metcalf,WR,PIT,yes,5846,18219,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,DJ Moore,WR,BUF,yes,4983,17265,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bucky Irving,RB,TB,yes,11584,25981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Javonte Williams,RB,DAL,yes,7588,22739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bo Nix,QB,DEN,yes,11563,22910,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Cam Skattebo,RB,NYG,yes,12481,27166,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Christian Watson,WR,GB,yes,8167,23886,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dalton Kincaid,TE,BUF,yes,10236,25247,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Michael Pittman Jr.,WR,PIT,yes,6819,19278,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Josh Jacobs,RB,GB,yes,5850,18269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Derrick Henry,RB,BAL,yes,3198,15514,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jordan Addison,WR,MIN,yes,9756,23107,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,C.J. Stroud,QB,HOU,yes,9758,23071,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Terry McLaurin,WR,WAS,yes,5927,18466,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jordan Love,QB,GB,yes,6804,19246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Bhayshul Tuten,RB,JAC,yes,12490,27297,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,D'Andre Swift,RB,CHI,yes,6790,19210,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Ricky Pearsall,WR,SF,yes,11638,26214,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Michael Wilson,WR,ARI,yes,10232,25333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brandon Aiyuk,WR,SF,yes,6803,19252,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Oronde Gadsden II,TE,LAC,yes,12493,25997,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Davante Adams,WR,LAR,yes,2133,12123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Wan'Dale Robinson,WR,TEN,yes,8126,22985,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Courtland Sutton,WR,DEN,yes,5045,17253,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jeremiyah Love,RB,ARI,yes,13287,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Germie Bernard,WR,PIT,yes,13274,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Bell,WR,MIA,yes,13311,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Zachariah Branch,WR,ATL,yes,13320,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Alec Pierce,WR,IND,yes,8142,23791,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jonah Coleman,RB,DEN,yes,13345,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Skyler Bell,WR,BUF,yes,13402,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Antonio Williams,WR,WAS,yes,13301,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brenen Thompson,WR,LAC,yes,13380,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Elijah Sarratt,WR,BAL,yes,13268,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Emmett Johnson,RB,KC,yes,13337,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Zay Flowers,WR,BAL,yes,9997,22916,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Drake Maye,QB,NE,yes,11564,23046,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kaytron Allen,RB,WAS,yes,13405,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Adam Randall,RB,BAL,yes,13302,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Josh Cameron,WR,JAC,yes,13394,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Nicholas Singleton,RB,TEN,yes,13288,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jaylen Warren,RB,PIT,yes,8228,24209,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Rashee Rice,WR,KC,yes,10229,23113,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Demond Claiborne,RB,MIN,yes,13347,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brian Thomas Jr.,WR,JAC,yes,11631,23000,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Olave,WR,NO,yes,8144,20111,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Barion Brown,WR,NO,yes,13533,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,J'Mari Taylor,RB,JAC,yes,13348,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Eric McAlister,WR,FA,yes,13354,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chris Brazzell II,WR,CAR,yes,13353,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Robert Henry Jr.,RB,WAS,yes,13418,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Seth McGowan,RB,IND,yes,13424,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Omar Cooper Jr.,WR,NYJ,yes,13276,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Makai Lemon,WR,PHI,yes,13294,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Roman Hemby,RB,LV,yes,13416,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chase Roberts,WR,LV,yes,13410,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kevin Coleman Jr.,WR,MIA,yes,13338,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Trebor Pena,WR,JAC,yes,13356,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jordyn Tyson,WR,NO,yes,13281,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Carnell Tate,WR,TEN,yes,13279,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Kaelon Black,RB,SF,yes,13414,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Dak Prescott,QB,DAL,yes,3294,15600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Eli Stowers,TE,PHI,yes,13349,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Sam Roush,TE,CHI,yes,13322,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jameson Williams,WR,DET,yes,8148,23677,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Deion Burks,WR,IND,yes,13333,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Chip Trayanum,RB,NYJ,yes,,27329,,existing_id_to_dynastyprocess,HIGH,no,existing_id_present; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Keenan Allen,WR,LAC,yes,1479,11616,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Brock Purdy,QB,SF,yes,8183,19797,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Darren Waller,TE,FA,yes,2505,14104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,KC Concepcion,WR,CLE,yes,13298,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Denzel Boston,WR,CLE,yes,13346,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+dynastyprocess_market_baseline_crosswalk,Jadarian Price,RB,SEA,yes,13286,27329,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jeremiyah Love,RB,ARI,no,13287,25403,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Zay Flowers,WR,BAL,yes,9997,22916,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Chris Olave,WR,NO,yes,8144,20111,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Makai Lemon,WR,PHI,no,13294,25420,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Carnell Tate,WR,TEN,no,13279,26009,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jameson Williams,WR,DET,yes,8148,23677,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,KC Concepcion,WR,CLE,no,13298,27331,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Denzel Boston,WR,CLE,no,13346,27339,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jadarian Price,RB,SEA,no,13286,27329,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Germie Bernard,WR,PIT,no,13274,26039,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Chris Bell,WR,MIA,no,13311,26038,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Zachariah Branch,WR,ATL,no,13320,25419,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Alec Pierce,WR,IND,yes,8142,23791,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jonah Coleman,RB,DEN,no,13345,27320,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Skyler Bell,WR,BUF,no,13402,28126,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Antonio Williams,WR,WAS,no,13301,25418,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Brenen Thompson,WR,LAC,no,13380,28133,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Elijah Sarratt,WR,BAL,no,13268,27463,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Emmett Johnson,RB,KC,no,13337,28107,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Drake Maye,QB,NE,yes,11564,23046,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Kaytron Allen,RB,WAS,no,13405,24362,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Adam Randall,RB,BAL,no,13302,24367,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Josh Cameron,WR,JAX,no,13394,28137,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Nicholas Singleton,RB,TEN,no,13288,24343,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jaylen Warren,RB,PIT,yes,8228,24209,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Rashee Rice,WR,KC,yes,10229,23113,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Demond Claiborne,RB,MIN,no,13347,28084,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Brian Thomas,WR,JAX,yes,11631,23000,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Barion Brown,WR,NO,no,13533,25416,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,J'Mari Taylor,RB,JAX,no,13348,28109,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Eric McAlister,WR,FA,no,13354,28134,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Chris Brazzell,WR,CAR,no,13353,28047,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Robert Henry Jr.,RB,WAS,no,13418,28404,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Seth McGowan,RB,IND,no,13424,23079,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Omar Cooper,WR,NYJ,no,13276,28127,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Roman Hemby,RB,LV,no,13416,25387,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Chase Roberts,WR,LV,no,13410,28131,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Kevin Coleman,WR,MIA,no,13338,28067,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Trebor Pena,WR,JAC,no,13356,28139,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jordyn Tyson,WR,NO,no,13281,26035,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Kaelon Black,RB,SF,no,13414,28401,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Dak Prescott,QB,DAL,yes,3294,15600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Eli Stowers,TE,PHI,no,13349,23144,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Sam Roush,TE,CHI,no,13322,28161,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+tuned_v2_candidate_overlay,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Deion Burks,WR,IND,no,13333,27093,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+tuned_v2_candidate_overlay,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Keenan Allen,WR,UNKNOWN,yes,1479,11616,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Brock Purdy,QB,SF,yes,8183,19797,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+tuned_v2_candidate_overlay,Darren Waller,TE,UNKNOWN,yes,2505,14104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaxon Smith-Njigba,WR,SEA,yes,9488,23070,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Puka Nacua,WR,LAR,yes,9493,23180,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Bijan Robinson,RB,ATL,yes,9509,23133,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jonathan Taylor,RB,IND,yes,6813,19217,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jahmyr Gibbs,RB,DET,yes,9221,22968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ja'Marr Chase,WR,CIN,yes,7564,19788,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Amon-Ra St. Brown,WR,DET,yes,7547,19799,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,De'Von Achane,RB,MIA,yes,9226,23136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jeremiyah Love,RB,ARI,no,13287,25403,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Trey McBride,TE,ARI,yes,8130,22936,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,George Pickens,WR,DAL,yes,8137,22963,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,James Cook,RB,BUF,yes,8138,22958,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Zay Flowers,WR,BAL,yes,9997,22916,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chris Olave,WR,NO,yes,8144,20111,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Nico Collins,WR,HOU,yes,7569,20130,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kyle Pitts,TE,ATL,yes,7553,20164,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Drake London,WR,ATL,yes,8112,23163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,CeeDee Lamb,WR,DAL,yes,6786,19202,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kyren Williams,RB,LAR,yes,8150,23059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,A.J. Brown,WR,PHI,yes,5859,18218,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Justin Jefferson,WR,MIN,yes,6794,19236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Makai Lemon,WR,PHI,no,13294,25420,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jameson Williams,WR,DET,yes,8148,23677,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Alec Pierce,WR,IND,yes,8142,23791,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Carnell Tate,WR,TEN,no,13279,26009,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chase Brown,RB,CIN,yes,9224,25324,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Christian McCaffrey,RB,SF,yes,4034,16393,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,KC Concepcion,WR,CLE,no,13298,27331,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jadarian Price,RB,SEA,no,13286,27329,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,DeVonta Smith,WR,PHI,yes,7525,19222,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tetairoa McMillan,WR,CAR,yes,12526,25417,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Breece Hall,RB,NYJ,yes,8155,22982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Denzel Boston,WR,CLE,no,13346,27339,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Michael Wilson,WR,ARI,yes,10232,25333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Josh Allen,QB,BUF,yes,4984,17298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Trevor Lawrence,QB,JAX,yes,7523,19780,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tee Higgins,WR,CIN,yes,6801,19211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Drake Maye,QB,NE,yes,11564,23046,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Emeka Egbuka,WR,TB,yes,12514,23062,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Germie Bernard,WR,PIT,no,13274,26039,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaylen Waddle,WR,DEN,yes,7526,19790,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chris Bell,WR,MIA,no,13311,26038,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Wan'Dale Robinson,WR,TEN,yes,8126,22985,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Parker Washington,WR,JAX,yes,9487,23106,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Javonte Williams,RB,DAL,yes,7588,22739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ashton Jeanty,RB,LV,yes,12527,25989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,D'Andre Swift,RB,CHI,yes,6790,19210,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Zachariah Branch,WR,ATL,no,13320,25419,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Josh Jacobs,RB,GB,yes,5850,18269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,DK Metcalf,WR,PIT,yes,5846,18219,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rome Odunze,WR,CHI,yes,11620,25411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jonah Coleman,RB,DEN,no,13345,27320,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Courtland Sutton,WR,DEN,yes,5045,17253,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brock Bowers,TE,LV,yes,11604,22955,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Travis Etienne,RB,NO,yes,7543,19231,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Deebo Samuel,WR,NOT ENOUGH INFORMATION,yes,5872,18244,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Emmett Johnson,RB,KC,no,13337,28107,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Malik Nabers,WR,NYG,yes,11632,25409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Saquon Barkley,RB,PHI,yes,4866,17240,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Skyler Bell,WR,BUF,no,13402,28126,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Christian Watson,WR,GB,yes,8167,23886,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Adam Randall,RB,BAL,no,13302,24367,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ladd McConkey,WR,LAC,yes,11635,26122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jordan Addison,WR,MIN,yes,9756,23107,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tyler Warren,TE,IND,yes,12518,26434,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Harold Fannin,TE,CLE,yes,12506,27050,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Garrett Wilson,WR,NYJ,yes,8146,23072,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Troy Franklin,WR,DEN,yes,11627,23092,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Michael Pittman,WR,PIT,yes,6819,19278,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaylen Warren,RB,PIT,yes,8228,24209,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Quentin Johnston,WR,LAC,yes,9754,23123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Quinshon Judkins,RB,CLE,yes,12512,25391,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jerry Jeudy,WR,CLE,yes,6783,19201,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Khalil Shakir,WR,BUF,yes,8134,23748,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rashee Rice,WR,KC,yes,10229,23113,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kenneth Walker,RB,KC,yes,8151,23021,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Marvin Harrison,WR,ARI,yes,11628,23064,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dalton Schultz,TE,HOU,yes,5001,17349,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Caleb Williams,QB,CHI,yes,11560,23084,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Josh Downs,WR,IND,yes,9500,24706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chimere Dike,WR,TEN,yes,12540,27315,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Davante Adams,WR,LAR,yes,2133,12123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Terry McLaurin,WR,WAS,yes,5927,18466,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Xavier Worthy,WR,KC,yes,11624,23019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rico Dowdle,RB,PIT,yes,7021,19647,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kaytron Allen,RB,WAS,no,13405,24362,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brian Thomas,WR,JAX,yes,11631,23000,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tre Tucker,WR,LV,yes,10213,25337,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Justin Herbert,QB,LAC,yes,6797,18635,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ricky Pearsall,WR,SF,yes,11638,26214,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Zach Charbonnet,RB,SEA,yes,9753,23152,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brenen Thompson,WR,LAC,no,13380,28133,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jake Ferguson,TE,DAL,yes,8110,22718,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,TreVeyon Henderson,RB,NE,yes,12529,23065,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Romeo Doubs,WR,NE,yes,8121,23794,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jalen Hurts,QB,PHI,yes,6904,19275,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Luther Burden,WR,CHI,yes,12519,27016,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Elijah Sarratt,WR,BAL,no,13268,27463,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Josh Cameron,WR,JAX,no,13394,28137,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kayshon Boutte,WR,NE,yes,9504,22989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Adonai Mitchell,WR,NYJ,yes,11625,24357,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Elic Ayomanor,WR,TEN,yes,12499,27059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Derrick Henry,RB,BAL,yes,3198,15514,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Nicholas Singleton,RB,TEN,no,13288,24343,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Calvin Austin,WR,NYG,yes,8125,23739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tyrone Tracy,RB,NYG,yes,11655,22980,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kenneth Gainwell,RB,TB,yes,7567,23310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,DJ Moore,WR,BUF,yes,4983,17265,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Keon Coleman,WR,BUF,yes,11637,26019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Antonio Williams,WR,WAS,no,13301,25418,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Bucky Irving,RB,TB,yes,11584,25981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Bo Nix,QB,DEN,yes,11563,22910,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Eric McAlister,WR,FA,no,13354,28134,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,DeMario Douglas,WR,NE,yes,9501,25304,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Demond Claiborne,RB,MIN,no,13347,28084,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brandon Aiyuk,WR,SF,yes,6803,19252,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Stefon Diggs,WR,NOT ENOUGH INFORMATION,yes,2449,13981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chris Brazzell,WR,CAR,no,13353,28047,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Lewis Bond,WR,HOU,no,13541,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Darius Slayton,WR,NYG,yes,6149,18706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Seth McGowan,RB,IND,no,13424,23079,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jayden Reed,WR,GB,yes,10222,23020,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tony Pollard,RB,TEN,yes,5967,18705,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,J'Mari Taylor,RB,JAX,no,13348,28109,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jalen McMillan,WR,TB,yes,11618,23179,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Xavier Legette,WR,CAR,yes,11626,26136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Omar Cooper,WR,NYJ,no,13276,28127,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jayden Higgins,WR,HOU,yes,12484,27077,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rashid Shaheed,WR,SEA,yes,8676,24687,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jakobi Meyers,WR,JAX,yes,5947,18598,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jauan Jennings,WR,MIN,yes,7049,19590,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Malik Washington,WR,MIA,yes,11610,26314,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Omarion Hampton,RB,LAC,yes,12507,25395,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jalen Coker,WR,CAR,yes,11646,26403,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Hank Beatty,WR,TEN,no,13776,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jacob De Jesus,WR,NEEDS_DATA,no,13904,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Hunter Henry,TE,NE,yes,3214,15561,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,O'Mega Blake,WR,NEEDS_DATA,no,13304,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,RJ Harvey,RB,DEN,yes,12489,27142,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Colston Loveland,TE,CHI,yes,12517,26006,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Matthew Golden,WR,GB,yes,12501,26024,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tank Dell,WR,HOU,yes,9502,25361,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Travis Hunter,WR,JAX,yes,12530,26034,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dontayvion Wicks,WR,PHI,yes,9486,24354,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Woody Marks,RB,HOU,yes,12474,27520,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Devin Voisin,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Calvin Ridley,WR,TEN,yes,4981,17258,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Patrick Mahomes,QB,KC,yes,4046,16413,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Pat Bryant,WR,DEN,yes,12492,27211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kejon Owens,RB,MIN,no,13291,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Andrei Iosivas,WR,CIN,yes,10226,25335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Sieh Bangura,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Tyjae Spears,RB,TEN,yes,9508,25323,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Robert Henry Jr.,RB,WAS,no,13418,28404,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chris Godwin,WR,TB,yes,4037,16406,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Isaiah Bond,WR,CLE,yes,12503,24371,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Cam Skattebo,RB,NYG,yes,12481,27166,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Emmanuel Henderson,WR,SEA,no,13313,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Chuba Hubbard,RB,CAR,yes,7594,19792,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dont'e Thornton,WR,LV,yes,12541,27288,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Marvin Mims,WR,DEN,yes,9494,23080,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chase Roberts,WR,LV,no,13410,28131,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dominic Richardson,RB,DAL,no,13725,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Kimani Vidal,RB,LAC,yes,11647,26355,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Joe Mixon,RB,NOT ENOUGH INFORMATION,yes,4018,16420,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tre' Harris,WR,LAC,yes,12509,26215,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jordan Hudson,WR,DAL,no,13325,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Tory Horton,WR,SEA,yes,12497,26022,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Sam LaPorta,TE,DET,yes,10859,22978,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kevin Coleman,WR,MIA,no,13338,28067,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Oronde Gadsden,TE,LAC,yes,12493,25997,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Donaven Mcculley,WR,MIA,no,13409,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Eli Stowers,TE,PHI,no,13349,23144,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Caullin Lacy,WR,NYJ,no,13826,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Kyle Monangai,RB,CHI,yes,12534,27131,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tucker Kraft,TE,GB,yes,9484,25298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Trebor Pena,WR,JAC,no,13356,28139,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dalton Kincaid,TE,BUF,yes,10236,25247,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dylan Sampson,RB,CLE,yes,12469,27102,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brenton Strange,TE,JAX,yes,9480,25345,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Cade Otton,TE,TB,yes,8111,23181,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rachaad White,RB,WAS,yes,8136,23891,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaylin Noel,WR,HOU,yes,12536,27122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Gabe Davis,WR,NOT ENOUGH INFORMATION,yes,6943,19398,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Barion Brown,WR,NO,no,13533,25416,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Sam Roush,TE,CHI,no,13322,28161,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Rhamondre Stevenson,RB,NE,yes,7611,22726,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,T.J. Hockenson,TE,MIN,yes,5844,18290,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jordyn Tyson,WR,NO,no,13281,26035,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jacory Croskey-Merritt,RB,WAS,yes,12533,27316,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Pat Freiermuth,TE,PIT,yes,7600,20163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Elijah Moore,WR,PHI,yes,7596,20114,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Isaac TeSlaa,WR,DET,yes,12535,27446,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Roman Hemby,RB,LV,no,13416,25387,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,AJ Barner,TE,SEA,yes,11603,26335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Mason Taylor,TE,NYJ,yes,12498,26005,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Luke McCaffrey,WR,WAS,yes,11650,26328,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chris Rodriguez,RB,JAX,yes,10219,22986,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Colby Parkinson,TE,LAR,yes,6865,19372,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Devaughn Vele,WR,NO,yes,11834,26409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Barika Kpeenu,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Trey Benson,RB,ARI,yes,11589,25388,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Devin Neal,RB,NO,yes,12476,23682,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jared Goff,QB,DET,yes,3163,15501,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Gunnar Helm,TE,TEN,yes,12502,27109,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kentrel Bullock,RB,CIN,no,13436,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Brashard Smith,RB,KC,yes,12455,27259,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Cole Kmet,TE,CHI,yes,6826,19229,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chig Okonkwo,TE,WAS,yes,8210,23982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Isaiah Davis,RB,NYJ,yes,11571,25977,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,J.K. Dobbins,RB,DEN,yes,6806,19245,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,David Montgomery,RB,HOU,yes,5892,18239,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Isaiah Likely,TE,NYG,yes,8131,23781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ollie Gordon,RB,MIA,yes,12495,25984,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Dak Prescott,QB,DAL,yes,3294,15600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Matthew Stafford,QB,LAR,yes,421,9451,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tyler Allgeier,RB,ARI,yes,8132,24172,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kaelon Black,RB,SF,no,13414,28401,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Savion Williams,WR,GB,yes,12482,27144,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Isiah Pacheco,RB,DET,yes,8205,24333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,David Njoku,TE,LAC,yes,4033,16399,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Michael Carter,RB,TEN,yes,7607,22728,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Elijah Arroyo,TE,SEA,yes,12521,23004,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jordan Mason,RB,MIN,yes,8408,22969,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kendre Miller,RB,NO,yes,9757,24360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Bhayshul Tuten,RB,JAX,yes,12490,27297,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Braelon Allen,RB,NYJ,yes,11576,24346,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Sean Tucker,RB,TB,yes,9506,23679,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jamal Haynes,RB,CIN,no,13946,,,exact_name_position_sleeper,MEDIUM,yes,sleeper_match
+emergency_cross_asset_candidate_overlay,Jamarion Miller,RB,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Blake Corum,RB,LAR,yes,11586,23013,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jonathon Brooks,RB,CAR,yes,11583,26148,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,LeQuint Allen,RB,JAX,yes,12544,27285,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Zonovan Knight,RB,ARI,yes,8122,24901,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Keaton Mitchell,RB,LAC,yes,9511,25360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaxson Dart,QB,NYG,yes,12508,23160,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Mike Evans,WR,SF,yes,2216,12119,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaydon Blue,RB,DAL,yes,12457,24344,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Christian Kirk,WR,SF,yes,4950,17268,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Ray Davis,RB,BUF,yes,11575,26191,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Emanuel Wilson,RB,SEA,yes,11435,25885,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,C.J. Stroud,QB,HOU,yes,9758,23071,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Baker Mayfield,QB,TB,yes,4892,17237,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Travis Kelce,TE,KC,yes,1466,11594,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,George Kittle,TE,SF,yes,4217,16499,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Tank Bigsby,RB,PHI,yes,9225,22908,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brian Robinson,RB,ATL,yes,8154,20094,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Mack Hollins,WR,NE,yes,4177,16489,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,MarShawn Lloyd,RB,GB,yes,11581,23118,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kendrick Bourne,WR,ARI,yes,4454,17066,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Cam Ward,QB,TEN,yes,12522,24755,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Chip Trayanum,RB,NEEDS_DATA,no,,28114,,exact_name_position_dynastyprocess,MEDIUM,yes,dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Cooper Kupp,WR,SEA,yes,4039,16433,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Roschon Johnson,RB,CHI,yes,10235,25322,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Devin Singletary,RB,NYG,yes,6130,18280,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jordan Love,QB,GB,yes,6804,19246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Lamar Jackson,QB,BAL,yes,4881,17233,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jaleel McLaughlin,RB,DEN,yes,11439,25876,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Aaron Jones,RB,MIN,yes,4199,16673,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kaleb Johnson,RB,PIT,yes,12504,27165,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Braylon James,WR,NEEDS_DATA,no,,,,unresolved,LOW,yes,No stable ID or exact name+position match; keep visible but require manual review.
+emergency_cross_asset_candidate_overlay,Alvin Kamara,RB,NO,yes,4035,16421,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Emari Demercado,RB,KC,yes,11199,25654,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Justice Hill,RB,BAL,yes,5995,18256,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jayden Daniels,QB,WAS,yes,11566,22902,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Mark Andrews,TE,BAL,yes,5012,17269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brock Purdy,QB,SF,yes,8183,19797,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,J.J. McCarthy,QB,MIN,yes,11565,23018,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Deion Burks,WR,IND,no,13333,27093,,exact_name_position_sleeper_and_dynastyprocess,HIGH,no,sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Justin Fields,QB,KC,yes,7591,19781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Sam Darnold,QB,SEA,yes,4943,17236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,James Conner,RB,ARI,yes,4137,16447,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Najee Harris,RB,NOT ENOUGH INFORMATION,yes,7528,19302,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Daniel Jones,QB,IND,yes,5870,18232,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Evan Engram,TE,DEN,yes,4066,16411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kareem Hunt,RB,NOT ENOUGH INFORMATION,yes,4098,16425,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Shedeur Sanders,QB,CLE,yes,12524,25968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Keenan Allen,WR,UNKNOWN,yes,1479,11616,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Jeremy McNichols,RB,WAS,yes,4219,16445,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Michael Penix,QB,ATL,yes,11559,22973,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Aaron Rodgers,QB,PIT,yes,96,9001,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Brandon Aubrey,K,DAL,yes,11533,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Cameron Dicker,K,LAC,yes,8259,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Chris Boswell,K,PIT,yes,1945,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Darren Waller,TE,UNKNOWN,yes,2505,14104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Eddy Pineiro,K,SF,yes,5189,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Harrison Butker,K,KC,yes,4227,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Jake Bates,K,DET,yes,11539,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Jason Myers,K,SEA,yes,2747,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Joe Burrow,QB,CIN,yes,6770,19196,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Kyler Murray,QB,MIN,yes,5849,18600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Matt Prater,K,NOT ENOUGH INFORMATION,yes,17,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+emergency_cross_asset_candidate_overlay,Nick Chubb,RB,NOT ENOUGH INFORMATION,yes,4988,17246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+emergency_cross_asset_candidate_overlay,Zach Ertz,TE,NOT ENOUGH INFORMATION,yes,1339,11689,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Puka Nacua,WR,LAR,yes,9493,23180,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaxon Smith-Njigba,WR,SEA,yes,9488,23070,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Bijan Robinson,RB,ATL,yes,9509,23133,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jonathan Taylor,RB,IND,yes,6813,19217,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jahmyr Gibbs,RB,DET,yes,9221,22968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ja'Marr Chase,WR,CIN,yes,7564,19788,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Amon-Ra St. Brown,WR,DET,yes,7547,19799,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Trey McBride,TE,ARI,yes,8130,22936,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,De'Von Achane,RB,MIA,yes,9226,23136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,George Pickens,WR,DAL,yes,8137,22963,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,James Cook,RB,BUF,yes,8138,22958,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Zay Flowers,WR,BAL,yes,9997,22916,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,A.J. Brown,WR,PHI,yes,5859,18218,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chris Olave,WR,NO,yes,8144,20111,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kyren Williams,RB,LAR,yes,8150,23059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Nico Collins,WR,HOU,yes,7569,20130,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kyle Pitts,TE,ATL,yes,7553,20164,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Christian McCaffrey,RB,SF,yes,4034,16393,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Josh Allen,QB,BUF,yes,4984,17298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Drake London,WR,ATL,yes,8112,23163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Drake Maye,QB,NE,yes,11564,23046,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chase Brown,RB,CIN,yes,9224,25324,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,CeeDee Lamb,WR,DAL,yes,6786,19202,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jameson Williams,WR,DET,yes,8148,23677,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Justin Jefferson,WR,MIN,yes,6794,19236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Trevor Lawrence,QB,JAX,yes,7523,19780,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,DeVonta Smith,WR,PHI,yes,7525,19222,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Alec Pierce,WR,IND,yes,8142,23791,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Courtland Sutton,WR,DEN,yes,5045,17253,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tetairoa McMillan,WR,CAR,yes,12526,25417,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Breece Hall,RB,NYJ,yes,8155,22982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Josh Jacobs,RB,GB,yes,5850,18269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaylen Waddle,WR,DEN,yes,7526,19790,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Michael Wilson,WR,ARI,yes,10232,25333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tee Higgins,WR,CIN,yes,6801,19211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,DK Metcalf,WR,PIT,yes,5846,18219,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Javonte Williams,RB,DAL,yes,7588,22739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Saquon Barkley,RB,PHI,yes,4866,17240,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,D'Andre Swift,RB,CHI,yes,6790,19210,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Matthew Stafford,QB,LAR,yes,421,9451,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Wan'Dale Robinson,WR,TEN,yes,8126,22985,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Travis Etienne,RB,NO,yes,7543,19231,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Emeka Egbuka,WR,TB,yes,12514,23062,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaylen Warren,RB,PIT,yes,8228,24209,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Parker Washington,WR,JAX,yes,9487,23106,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brock Bowers,TE,LV,yes,11604,22955,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ashton Jeanty,RB,LV,yes,12527,25989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Davante Adams,WR,LAR,yes,2133,12123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rome Odunze,WR,CHI,yes,11620,25411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Caleb Williams,QB,CHI,yes,11560,23084,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Terry McLaurin,WR,WAS,yes,5927,18466,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Michael Pittman,WR,PIT,yes,6819,19278,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Deebo Samuel,WR,,yes,5872,18244,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Justin Herbert,QB,LAC,yes,6797,18635,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ladd McConkey,WR,LAC,yes,11635,26122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rico Dowdle,RB,PIT,yes,7021,19647,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Christian Watson,WR,GB,yes,8167,23886,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Malik Nabers,WR,NYG,yes,11632,25409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tyler Warren,TE,IND,yes,12518,26434,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Harold Fannin,TE,CLE,yes,12506,27050,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Stefon Diggs,WR,,yes,2449,13981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Bo Nix,QB,DEN,yes,11563,22910,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Garrett Wilson,WR,NYJ,yes,8146,23072,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jalen Hurts,QB,PHI,yes,6904,19275,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jakobi Meyers,WR,JAX,yes,5947,18598,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Derrick Henry,RB,BAL,yes,3198,15514,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jordan Addison,WR,MIN,yes,9756,23107,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Quentin Johnston,WR,LAC,yes,9754,23123,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Troy Franklin,WR,DEN,yes,11627,23092,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dak Prescott,QB,DAL,yes,3294,15600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jerry Jeudy,WR,CLE,yes,6783,19201,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Khalil Shakir,WR,BUF,yes,8134,23748,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kenneth Walker,RB,KC,yes,8151,23021,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Hunter Henry,TE,NE,yes,3214,15561,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Marvin Harrison,WR,ARI,yes,11628,23064,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tony Pollard,RB,TEN,yes,5967,18705,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dalton Schultz,TE,HOU,yes,5001,17349,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Calvin Ridley,WR,TEN,yes,4981,17258,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rashee Rice,WR,KC,yes,10229,23113,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kenneth Gainwell,RB,TB,yes,7567,23310,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Josh Downs,WR,IND,yes,9500,24706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brian Thomas,WR,JAX,yes,11631,23000,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Quinshon Judkins,RB,CLE,yes,12512,25391,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Patrick Mahomes,QB,KC,yes,4046,16413,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brandon Aiyuk,WR,SF,yes,6803,19252,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Luther Burden,WR,CHI,yes,12519,27016,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jake Ferguson,TE,DAL,yes,8110,22718,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ricky Pearsall,WR,SF,yes,11638,26214,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chris Godwin,WR,TB,yes,4037,16406,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Darius Slayton,WR,NYG,yes,6149,18706,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,DJ Moore,WR,BUF,yes,4983,17265,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Romeo Doubs,WR,NE,yes,8121,23794,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rashid Shaheed,WR,SEA,yes,8676,24687,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jauan Jennings,WR,MIN,yes,7049,19590,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chimere Dike,WR,TEN,yes,12540,27315,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tre Tucker,WR,LV,yes,10213,25337,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Joe Mixon,RB,,yes,4018,16420,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Xavier Worthy,WR,KC,yes,11624,23019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Zach Charbonnet,RB,SEA,yes,9753,23152,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Calvin Austin,WR,NYG,yes,8125,23739,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,TreVeyon Henderson,RB,NE,yes,12529,23065,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jared Goff,QB,DET,yes,3163,15501,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Adonai Mitchell,WR,NYJ,yes,11625,24357,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,DeMario Douglas,WR,NE,yes,9501,25304,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kayshon Boutte,WR,NE,yes,9504,22989,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tyrone Tracy,RB,NYG,yes,11655,22980,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Elic Ayomanor,WR,TEN,yes,12499,27059,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Bucky Irving,RB,TB,yes,11584,25981,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jayden Reed,WR,GB,yes,10222,23020,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Keon Coleman,WR,BUF,yes,11637,26019,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Xavier Legette,WR,CAR,yes,11626,26136,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rhamondre Stevenson,RB,NE,yes,7611,22726,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tank Dell,WR,HOU,yes,9502,25361,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Malik Washington,WR,MIA,yes,11610,26314,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dontayvion Wicks,WR,PHI,yes,9486,24354,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jalen Coker,WR,CAR,yes,11646,26403,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chuba Hubbard,RB,CAR,yes,7594,19792,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Colston Loveland,TE,CHI,yes,12517,26006,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jalen McMillan,WR,TB,yes,11618,23179,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jayden Higgins,WR,HOU,yes,12484,27077,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,David Montgomery,RB,HOU,yes,5892,18239,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,RJ Harvey,RB,DEN,yes,12489,27142,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Andrei Iosivas,WR,CIN,yes,10226,25335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Keenan Allen,WR,,yes,1479,11616,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Oronde Gadsden,TE,LAC,yes,12493,25997,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Woody Marks,RB,HOU,yes,12474,27520,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Rachaad White,RB,WAS,yes,8136,23891,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Matthew Golden,WR,GB,yes,12501,26024,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Travis Hunter,WR,JAX,yes,12530,26034,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Mike Evans,WR,SF,yes,2216,12119,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Baker Mayfield,QB,TB,yes,4892,17237,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Christian Kirk,WR,SF,yes,4950,17268,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Devaughn Vele,WR,NO,yes,11834,26409,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Omarion Hampton,RB,LAC,yes,12507,25395,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tyjae Spears,RB,TEN,yes,9508,25323,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dont'e Thornton,WR,LV,yes,12541,27288,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Pat Bryant,WR,DEN,yes,12492,27211,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Marvin Mims,WR,DEN,yes,9494,23080,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaxson Dart,QB,NYG,yes,12508,23160,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Mack Hollins,WR,NE,yes,4177,16489,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Sam LaPorta,TE,DET,yes,10859,22978,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Cam Skattebo,RB,NYG,yes,12481,27166,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jordan Love,QB,GB,yes,6804,19246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Lamar Jackson,QB,BAL,yes,4881,17233,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dalton Kincaid,TE,BUF,yes,10236,25247,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kendrick Bourne,WR,ARI,yes,4454,17066,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Isaiah Bond,WR,CLE,yes,12503,24371,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,C.J. Stroud,QB,HOU,yes,9758,23071,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Cade Otton,TE,TB,yes,8111,23181,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Travis Kelce,TE,KC,yes,1466,11594,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,George Kittle,TE,SF,yes,4217,16499,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Cooper Kupp,WR,SEA,yes,4039,16433,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tucker Kraft,TE,GB,yes,9484,25298,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kimani Vidal,RB,LAC,yes,11647,26355,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,T.J. Hockenson,TE,MIN,yes,5844,18290,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Gabe Davis,WR,,yes,6943,19398,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Pat Freiermuth,TE,PIT,yes,7600,20163,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tre' Harris,WR,LAC,yes,12509,26215,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brenton Strange,TE,JAX,yes,9480,25345,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Cam Ward,QB,TEN,yes,12522,24755,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tory Horton,WR,SEA,yes,12497,26022,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,J.K. Dobbins,RB,DEN,yes,6806,19245,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Elijah Moore,WR,PHI,yes,7596,20114,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kyle Monangai,RB,CHI,yes,12534,27131,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Colby Parkinson,TE,LAR,yes,6865,19372,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Luke McCaffrey,WR,WAS,yes,11650,26328,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tyler Allgeier,RB,ARI,yes,8132,24172,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chig Okonkwo,TE,WAS,yes,8210,23982,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Isiah Pacheco,RB,DET,yes,8205,24333,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,AJ Barner,TE,SEA,yes,11603,26335,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Michael Carter,RB,TEN,yes,7607,22728,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Devin Singletary,RB,NYG,yes,6130,18280,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Mason Taylor,TE,NYJ,yes,12498,26005,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jordan Mason,RB,MIN,yes,8408,22969,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Cole Kmet,TE,CHI,yes,6826,19229,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaylin Noel,WR,HOU,yes,12536,27122,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Sam Darnold,QB,SEA,yes,4943,17236,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jacory Croskey-Merritt,RB,WAS,yes,12533,27316,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Daniel Jones,QB,IND,yes,5870,18232,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jayden Daniels,QB,WAS,yes,11566,22902,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Mark Andrews,TE,BAL,yes,5012,17269,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Gunnar Helm,TE,TEN,yes,12502,27109,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,David Njoku,TE,LAC,yes,4033,16399,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Aaron Jones,RB,MIN,yes,4199,16673,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brock Purdy,QB,SF,yes,8183,19797,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Dylan Sampson,RB,CLE,yes,12469,27102,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Chris Rodriguez,RB,JAX,yes,10219,22986,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Isaac TeSlaa,WR,DET,yes,12535,27446,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Alvin Kamara,RB,NO,yes,4035,16421,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Isaiah Likely,TE,NYG,yes,8131,23781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Aaron Rodgers,QB,PIT,yes,96,9001,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Trey Benson,RB,ARI,yes,11589,25388,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Blake Corum,RB,LAR,yes,11586,23013,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,J.J. McCarthy,QB,MIN,yes,11565,23018,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Evan Engram,TE,DEN,yes,4066,16411,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Justice Hill,RB,BAL,yes,5995,18256,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Justin Fields,QB,KC,yes,7591,19781,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Emanuel Wilson,RB,SEA,yes,11435,25885,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Joe Burrow,QB,CIN,yes,6770,19196,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brian Robinson,RB,ATL,yes,8154,20094,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Isaiah Davis,RB,NYJ,yes,11571,25977,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Savion Williams,WR,GB,yes,12482,27144,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Elijah Arroyo,TE,SEA,yes,12521,23004,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ray Davis,RB,BUF,yes,11575,26191,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Shedeur Sanders,QB,CLE,yes,12524,25968,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Devin Neal,RB,NO,yes,12476,23682,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Najee Harris,RB,,yes,7528,19302,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Ollie Gordon,RB,MIA,yes,12495,25984,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Michael Penix,QB,ATL,yes,11559,22973,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kareem Hunt,RB,,yes,4098,16425,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kyler Murray,QB,MIN,yes,5849,18600,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brashard Smith,RB,KC,yes,12455,27259,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,James Conner,RB,ARI,yes,4137,16447,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Zonovan Knight,RB,ARI,yes,8122,24901,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kendre Miller,RB,NO,yes,9757,24360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Bhayshul Tuten,RB,JAX,yes,12490,27297,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Sean Tucker,RB,TB,yes,9506,23679,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Emari Demercado,RB,KC,yes,11199,25654,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaleel McLaughlin,RB,DEN,yes,11439,25876,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Keaton Mitchell,RB,LAC,yes,9511,25360,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,LeQuint Allen,RB,JAX,yes,12544,27285,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jeremy McNichols,RB,WAS,yes,4219,16445,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Nick Chubb,RB,,yes,4988,17246,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Braelon Allen,RB,NYJ,yes,11576,24346,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Tank Bigsby,RB,PHI,yes,9225,22908,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Darren Waller,TE,,yes,2505,14104,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jonathon Brooks,RB,CAR,yes,11583,26148,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,MarShawn Lloyd,RB,GB,yes,11581,23118,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Jaydon Blue,RB,DAL,yes,12457,24344,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Roschon Johnson,RB,CHI,yes,10235,25322,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Zach Ertz,TE,,yes,1339,11689,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Kaleb Johnson,RB,PIT,yes,12504,27165,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match; dynastyprocess_crosswalk_candidate
+full_dynasty_board_model_v4,Brandon Aubrey,K,DAL,yes,11533,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Cameron Dicker,K,LAC,yes,8259,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Jason Myers,K,SEA,yes,2747,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Eddy Pineiro,K,SF,yes,5189,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Jake Bates,K,DET,yes,11539,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Chris Boswell,K,PIT,yes,1945,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Harrison Butker,K,KC,yes,4227,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
+full_dynasty_board_model_v4,Matt Prater,K,,yes,17,,,existing_id_to_sleeper,HIGH,no,existing_id_present; sleeper_match
