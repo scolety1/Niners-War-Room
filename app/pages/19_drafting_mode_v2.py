@@ -12,8 +12,9 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.draft_day_v1 import render_source_of_truth_badge, stop_if_board_blocked
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board
+from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
 from src.services.draft_day_runtime_state_service import (
+    apply_trade_events_to_pick_frame,
     event_rows,
     load_runtime_state,
     runtime_paths,
@@ -22,16 +23,180 @@ from src.services.draft_day_runtime_state_service import (
 bundle = load_frozen_board()
 live_state = load_runtime_state(mode="live")
 mock_state = load_runtime_state(mode="mock")
+pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
 
-with st.sidebar:
-    st.markdown("### Your Team")
-    st.caption(
-        "V2 keeps this sidebar reserved for roster, picks, and trade context. Current lane does "
-        "not mutate roster/source truth."
+
+def _render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("### Your Team")
+        st.caption("Local runtime view only. Source truth, ranks, and roster files are unchanged.")
+        metric_cols = st.columns(2)
+        metric_cols[0].metric("Live picks", len(live_state["workflow_state"]["assignments"]))
+        metric_cols[1].metric("Trades", len(live_state["trade_events"]))
+        st.caption(f"Last autosave: {_last_autosave(live_state)}")
+        st.caption(f"Owned picks: {_owned_pick_summary(pick_frame, live_state)}")
+        st.caption(f"Drafted: {_assignment_summary(live_state)}")
+        st.caption(f"Future picks: {_future_pick_summary(live_state)}")
+
+        with st.expander("Current owned picks", expanded=True):
+            owned = _owned_pick_rows(pick_frame, live_state)
+            if owned.empty:
+                st.write("Not enough information")
+            else:
+                st.dataframe(owned, use_container_width=True, hide_index=True)
+
+        with st.expander("Drafted by NWR this draft", expanded=True):
+            assignments = _assignment_rows(live_state)
+            if assignments.empty:
+                st.write("No picks assigned yet.")
+            else:
+                st.dataframe(assignments, use_container_width=True, hide_index=True)
+
+        with st.expander("Future picks from trade events", expanded=True):
+            future = _future_pick_rows(live_state)
+            if future.empty:
+                st.write("No future pick events recorded yet.")
+            else:
+                st.dataframe(future, use_container_width=True, hide_index=True)
+
+        with st.expander("Trades made during draft", expanded=False):
+            trades = _trade_event_rows(live_state)
+            if trades.empty:
+                st.write("No trade events recorded yet.")
+            else:
+                st.dataframe(trades, use_container_width=True, hide_index=True)
+
+        with st.expander("Roster source", expanded=False):
+            st.write(
+                "Not enough information. A current NWR roster source is not wired into this "
+                "Drafting Mode sidebar, so this panel shows runtime picks/trades only."
+            )
+        with st.expander("Runtime status", expanded=False):
+            paths = runtime_paths()
+            st.caption(f"Runtime root: {paths.root}")
+            st.caption(f"Pick source: {pick_path or 'Not enough information'}")
+            st.caption(f"Live events: {len(event_rows(live_state))}")
+            st.caption(f"Mock picks: {len(mock_state['workflow_state']['assignments'])}")
+
+
+def _owned_pick_rows(frame: pd.DataFrame, state: dict[str, object]) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame()
+    adjusted = apply_trade_events_to_pick_frame(frame, state)
+    required = {"overall_pick", "pick_label", "current_owner", "is_nwr_pick"}
+    if not required.issubset(adjusted.columns):
+        return pd.DataFrame()
+    owner_mask = adjusted["current_owner"].astype(str).str.contains(
+        "Niners|NWR", case=False, na=False
     )
-    st.metric("Live picks recorded", len(live_state["workflow_state"]["assignments"]))
-    st.metric("Live trades recorded", len(live_state["trade_events"]))
-    st.metric("Mock picks recorded", len(mock_state["workflow_state"]["assignments"]))
+    nwr_mask = adjusted["is_nwr_pick"].astype(str).str.lower().isin({"true", "1", "yes"})
+    rows = adjusted.loc[owner_mask | nwr_mask].copy()
+    if rows.empty:
+        return pd.DataFrame()
+    columns = ["overall_pick", "pick_label", "current_owner", "original_owner"]
+    rows = rows.loc[:, [column for column in columns if column in rows.columns]]
+    return rows.rename(
+        columns={
+            "overall_pick": "Overall",
+            "pick_label": "Pick",
+            "current_owner": "Current Owner",
+            "original_owner": "Original Owner",
+        }
+    )
+
+
+def _owned_pick_summary(frame: pd.DataFrame, state: dict[str, object]) -> str:
+    rows = _owned_pick_rows(frame, state)
+    if rows.empty or "Pick" not in rows.columns:
+        return "Not enough information"
+    picks = rows["Pick"].astype(str).head(6).tolist()
+    suffix = "..." if len(rows) > 6 else ""
+    return ", ".join(picks) + suffix
+
+
+def _assignment_rows(state: dict[str, object]) -> pd.DataFrame:
+    assignments = state.get("workflow_state", {}).get("assignments", [])  # type: ignore[union-attr]
+    if not isinstance(assignments, list) or not assignments:
+        return pd.DataFrame()
+    rows = pd.DataFrame([row for row in assignments if isinstance(row, dict)])
+    columns = [
+        column
+        for column in ("pick_label", "player", "position", "nfl_team")
+        if column in rows.columns
+    ]
+    if not columns:
+        return pd.DataFrame()
+    return rows.loc[:, columns].rename(
+        columns={
+            "pick_label": "Pick",
+            "player": "Player",
+            "position": "Pos",
+            "nfl_team": "NFL Team",
+        }
+    )
+
+
+def _assignment_summary(state: dict[str, object]) -> str:
+    rows = _assignment_rows(state)
+    if rows.empty or "Player" not in rows.columns:
+        return "No picks assigned yet."
+    players = rows["Player"].astype(str).head(4).tolist()
+    suffix = "..." if len(rows) > 4 else ""
+    return ", ".join(players) + suffix
+
+
+def _future_pick_rows(state: dict[str, object]) -> pd.DataFrame:
+    rows: list[dict[str, str]] = []
+    for trade in state.get("trade_events", []):
+        if not isinstance(trade, dict):
+            continue
+        future_picks = trade.get("future_picks", [])
+        if not isinstance(future_picks, list):
+            continue
+        for pick in future_picks:
+            rows.append(
+                {
+                    "Future Pick": str(pick),
+                    "Counterparty": str(trade.get("counterparty") or "Not enough information"),
+                    "Trade": (
+                        f"Send {trade.get('sends', '')}; "
+                        f"Receive {trade.get('receives', '')}"
+                    ),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _future_pick_summary(state: dict[str, object]) -> str:
+    rows = _future_pick_rows(state)
+    if rows.empty or "Future Pick" not in rows.columns:
+        return "No future pick events recorded yet."
+    picks = rows["Future Pick"].astype(str).drop_duplicates().head(4).tolist()
+    suffix = "..." if len(rows) > 4 else ""
+    return ", ".join(picks) + suffix
+
+
+def _trade_event_rows(state: dict[str, object]) -> pd.DataFrame:
+    rows: list[dict[str, str]] = []
+    for trade in state.get("trade_events", []):
+        if not isinstance(trade, dict):
+            continue
+        rows.append(
+            {
+                "Type": str(trade.get("trade_type") or "Not enough information"),
+                "Counterparty": str(trade.get("counterparty") or "Not enough information"),
+                "Sends": str(trade.get("sends") or "Not enough information"),
+                "Receives": str(trade.get("receives") or "Not enough information"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _last_autosave(state: dict[str, object]) -> str:
+    return str(state.get("updated_at_utc") or "Not enough information")
+
+
+_render_sidebar()
 
 page_header(
     "Drafting Mode",
@@ -52,13 +217,16 @@ stop_if_board_blocked(bundle)
 top_cols = st.columns([1, 1, 1, 2])
 with top_cols[0]:
     st.markdown("**Enter Live Draft Room**")
-    st.caption("Open sidebar item `Live Draft Room` or URL `/live-draft-room`.")
+    st.code("/live-draft-room")
+    st.caption("Use for the real draft and reload-safe live picks.")
 with top_cols[1]:
     st.markdown("**Enter Mock Draft**")
-    st.caption("Open sidebar item `Mock Draft` or URL `/mock-draft`.")
+    st.code("/mock-draft")
+    st.caption("Practice state remains separate from Live Draft.")
 with top_cols[2]:
     st.markdown("**Open Cheat Sheets**")
-    st.caption("Open sidebar item `Cheat Sheets V2` or URL `/cheat-sheets`.")
+    st.code("/cheat-sheets")
+    st.caption("Overall-first tiered board for quick scanning.")
 with top_cols[3]:
     st.caption(
         "Drafting Mode is a workflow shell. Final Board Rank and Dynasty Rank remain visible "
