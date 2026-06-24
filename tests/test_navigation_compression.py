@@ -49,6 +49,7 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
         "Command Center Legacy Alias",
         "Trade Lab Legacy Alias",
         "Historical Replay Advanced",
+        "Unified Universe Review",
         "Settings Data Health Legacy Alias",
         "Post-Draft Mode Legacy Alias",
         "War Board",

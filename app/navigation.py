@@ -88,6 +88,12 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
+        title="Unified Universe Review",
+        file_path="pages/31_unified_universe_review_v1.py",
+        url_path="unified-universe-review",
+        visible=False,
+    ),
+    NavigationPageSpec(
         title="Settings Data Health Legacy Alias",
         file_path="pages/30_settings_data_health_alias.py",
         url_path="settings",
