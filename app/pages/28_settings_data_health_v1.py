@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # ruff: noqa: E402
-import subprocess
 import sys
 from pathlib import Path
 
@@ -11,98 +10,111 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.components.draft_day_v1 import (
-    render_lane_status_table,
-    render_source_of_truth_badge,
-    stop_if_board_blocked,
-)
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import (
-    DISPLAY_ONLY_COLUMNS,
-    EXPECTED_PINNED_MANIFEST_HASH,
-    LOCAL_APP_PROP_ROOT,
-    LOCAL_FROZEN_BOARD_ROOT,
-    PINNED_SNAPSHOT_MANIFEST,
-    REPO_SAFE_APP_PROP_ROOT,
-    REPO_SAFE_FROZEN_BOARD_ROOT,
-    draft_day_status_rows,
-    lane_prop_file_rows,
-    load_frozen_board,
-    pinned_manifest_hash,
+from src.services.data_health_dashboard_service import (
+    HealthDashboardReport,
+    build_data_health_dashboard,
+    compact_status_cards,
 )
 
-bundle = load_frozen_board()
+STATUS_STYLES = {
+    "GREEN": ("safe", "Ready"),
+    "YELLOW": ("review", "Review"),
+    "RED": ("blocked", "Blocked"),
+    "INFO": ("", "Info"),
+}
+
+
+def _status_label(status: str) -> str:
+    return STATUS_STYLES.get(status, ("review", status))[1]
+
+
+def _status_kind(status: str) -> str:
+    return STATUS_STYLES.get(status, ("review", status))[0]
+
+
+def _render_warning_summary(report: HealthDashboardReport) -> None:
+    if report.warnings.empty:
+        return
+    with st.expander("Warning summary", expanded=True):
+        st.dataframe(
+            _display_frame(report.warnings),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
+def _render_section(title: str, frame: pd.DataFrame, *, expanded: bool = False) -> None:
+    with st.expander(title, expanded=expanded):
+        if frame.empty:
+            st.info("Not enough information")
+            return
+        st.dataframe(_display_frame(frame), use_container_width=True, hide_index=True)
+
+
+def _display_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    display = frame.copy()
+    if "status" in display.columns:
+        display["status"] = display["status"].map(
+            lambda value: f"{value} - {_status_label(str(value))}"
+        )
+    return display
+
+
+report = build_data_health_dashboard()
 
 page_header(
     "Settings / Data Health",
-    eyebrow="Draft-Day App V1",
-    description="Local source paths, guardrails, lane status, and no-deploy access instructions.",
-    status_items=(("Local only", "safe"), ("No deploy", "safe"), ("Vendor hold", "review")),
+    eyebrow="Draft-Day App V2",
+    description=(
+        "One place to check source freshness, runtime state, market baseline status, "
+        "evidence buckets, and guardrails before trusting the app."
+    ),
+    status_items=(
+        (f"Overall {_status_label(report.overall_status)}", _status_kind(report.overall_status)),
+        ("Local runtime only", "review"),
+        ("Market display-only", "safe"),
+    ),
 )
-render_source_of_truth_badge(bundle)
-stop_if_board_blocked(bundle)
 
-try:
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
-except (subprocess.CalledProcessError, FileNotFoundError):
-    commit = "unknown"
-
-st.subheader("App Status")
-status_rows = draft_day_status_rows(bundle)
-status_rows.append({"check": "Repo commit", "status": "INFO", "detail": commit})
-status_rows.append(
-    {
-        "check": "Pinned expected hash",
-        "status": "INFO",
-        "detail": EXPECTED_PINNED_MANIFEST_HASH,
-    }
+st.caption(
+    "What this means: GREEN is usable, YELLOW means review the caveat before acting, "
+    "and RED means do not trust that area until repaired."
 )
-status_rows.append(
-    {
-        "check": "Pinned observed hash",
-        "status": "GREEN"
-        if pinned_manifest_hash() == EXPECTED_PINNED_MANIFEST_HASH
-        else "YELLOW-HOLD",
-        "detail": pinned_manifest_hash() or "missing",
-    }
-)
-st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
 
-st.subheader("Lane Prop Status")
-render_lane_status_table()
+cards = compact_status_cards(report)
+columns = st.columns(3)
+for index, card in enumerate(cards):
+    with columns[index % 3]:
+        st.metric(
+            card["label"],
+            _status_label(card["status"]),
+            help=card["detail"],
+        )
 
-st.subheader("Lane Prop Files")
-st.dataframe(pd.DataFrame(lane_prop_file_rows()), use_container_width=True, hide_index=True)
-
-st.subheader("Source Paths")
-st.code(
-    "\n".join(
-        [
-            f"Frozen package: {LOCAL_FROZEN_BOARD_ROOT}",
-            f"Repo fallback package: {REPO_SAFE_FROZEN_BOARD_ROOT}",
-            f"Local app prop root: {LOCAL_APP_PROP_ROOT}",
-            f"Repo app prop fallback: {REPO_SAFE_APP_PROP_ROOT}",
-            "Env override data root: NWR_DRAFT_DAY_DATA_ROOT",
-            "Env override prop root: NWR_DRAFT_DAY_APP_PROPS_ROOT",
-            f"Pinned manifest: {PINNED_SNAPSHOT_MANIFEST}",
-        ]
+if not report.warnings.empty:
+    warning_count = len(report.warnings)
+    st.warning(
+        f"{warning_count} data-health item(s) need review. Open the warning summary below."
     )
-)
+else:
+    st.success("No data-health warnings found by the dashboard checks.")
 
-st.subheader("Display-Only Context")
-st.dataframe(
-    pd.DataFrame({"display_only_field": [field for field in DISPLAY_ONLY_COLUMNS]}),
-    use_container_width=True,
-    hide_index=True,
-)
+_render_warning_summary(report)
+_render_section("App / Version Status", report.app_status, expanded=True)
+_render_section("Board Health", report.board_health, expanded=True)
+_render_section("Market Baseline Health", report.market_health)
+_render_section("Runtime Draft State Health", report.runtime_health)
+_render_section("Historical / Model Evidence Health", report.evidence_health)
+_render_section("Missing-Data Health", report.missing_data_health)
+_render_section("Guardrail Checklist", report.guardrails, expanded=True)
 
-st.subheader("Local Access")
+st.markdown("### What This Dashboard Does Not Do")
 st.markdown(
     """
-    - Use `streamlit run app/main.py` for the connected local app.
-    - Use the repo-safe static export only as a fallback.
-    - External asset/trade context is merged here as Settings / Data Health plus Trading Lab props.
-    - No hosted deployment, public access, or GitHub Pages is enabled by this app contract.
-    - Vendor research remains YELLOW-HOLD and is not a safe board signal.
+    - It does not change NWR ranks, model values, or tier assignments.
+    - It does not promote DynastyProcess, ADP, or market data into model truth.
+    - It does not create or mutate runtime draft state when opened.
+    - It does not make the frozen baseline board the only source of truth.
     """
 )

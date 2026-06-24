@@ -72,7 +72,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Settings / Data Health",
         file_path="pages/28_settings_data_health_v1.py",
-        url_path="settings",
+        url_path="settings-data-health",
     ),
     NavigationPageSpec(
         title="Post-Draft Mode V2",
@@ -82,6 +82,12 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 )
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
+    NavigationPageSpec(
+        title="Settings Data Health Legacy Alias",
+        file_path="pages/30_settings_data_health_alias.py",
+        url_path="settings",
+        visible=False,
+    ),
     NavigationPageSpec(
         title="Post-Draft Mode Legacy Alias",
         file_path="pages/29_post_draft_mode_v2.py",
