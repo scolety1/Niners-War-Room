@@ -10,7 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.components.draft_day_v1 import render_source_of_truth_badge, stop_if_board_blocked
+from app.components.draft_day_v1 import render_frozen_baseline_badge, stop_if_board_blocked
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_expanded_draftable_player_pool,
@@ -222,7 +222,7 @@ def _render_status_strip(
         f"Current pick: {current_label}",
         f"Drafted: {drafted_count}",
         f"Shown: {available_count}",
-        "Source: Frozen Board + approved overlays",
+        "Source: Frozen Baseline + approved overlays",
         "ADP/market: display-only",
     ]
     st.caption(" | ".join(chips))
@@ -325,7 +325,7 @@ page_header(
         ("Display only", "review"),
     ),
 )
-render_source_of_truth_badge(bundle)
+render_frozen_baseline_badge(bundle)
 stop_if_board_blocked(bundle)
 
 show_drafted_default = _query_flag("show_drafted")
