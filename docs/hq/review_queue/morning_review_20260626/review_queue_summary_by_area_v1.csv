@@ -1,0 +1,6 @@
+area,p0_count,p1_count,p2_count,total_queue_rows,top_action,source_file
+Unified Universe,5,15,0,20,Resolve or leave blocked missing player IDs and age gaps,unified_universe_blocker_review_queue_v1.csv
+CFBD Identity,3,9,6,18,Review ambiguous and same-name conflict rows before any exact-match approvals,cfbd_identity_review_queue_v1.csv
+NFL Usage,4,6,16,26,Keep licensed gaps blocked and proxy/display fields clearly labeled,nfl_usage_promotion_review_queue_v1.csv
+Evidence Registry,0,1,0,15,Use registry as status-only dashboard input,evidence_status_registry_v1_20260626.csv
+Route Audit,0,1,0,11,Keep evidence review routes separate from decision pages,NWR_REVIEW_ROUTE_AND_NAV_AUDIT_20260626.md
