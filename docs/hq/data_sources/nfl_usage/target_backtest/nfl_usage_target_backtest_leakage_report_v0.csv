@@ -1,0 +1,6 @@
+check_name,status,row_count,model_input_allowed,app_wiring_allowed,notes
+feature_target_split,PASS,945,no,no,feature season N joins target season N+1
+blocked_market_sources,PASS,945,no,no,"no market, ADP, projection, or rank source loaded by service"
+cfbd_boundary,PASS,945,no,no,no CFBD paths read or written
+raw_payload_commit_boundary,PASS,945,no,no,joined row-level panel is shared-cache only
+model_app_flags,PASS,945,no,no,all committed artifacts retain no/no flags
