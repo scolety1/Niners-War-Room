@@ -122,6 +122,12 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         visible=False,
     ),
     NavigationPageSpec(
+        title="Evidence Integration Review",
+        file_path="pages/33_evidence_integration_review_v1.py",
+        url_path="evidence-integration-review",
+        visible=False,
+    ),
+    NavigationPageSpec(
         title="Unified Universe Review",
         file_path="pages/31_unified_universe_review_v1.py",
         url_path="unified-universe-review",

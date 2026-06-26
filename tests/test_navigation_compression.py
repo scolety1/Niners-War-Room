@@ -37,10 +37,11 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
         "Trading Lab",
         "Post-Draft Mode",
         "Draft Prep",
-        "Outcome Diagnostics",
-        "Decision Board",
-        "NFL Usage Evidence Review",
-        "Legacy Dynasty Rankings",
+            "Outcome Diagnostics",
+            "Decision Board",
+            "NFL Usage Evidence Review",
+            "Evidence Integration Review",
+            "Legacy Dynasty Rankings",
         "Legacy Draft Prep",
         "Legacy Live Draft Room",
         "Legacy Decision Board",
@@ -111,6 +112,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "post-draft-mode",
         "settings-data-health",
         "refresh-data",
+        "evidence-integration-review",
         "unified-universe-review",
     }:
         assert route in route_map
