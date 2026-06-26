@@ -1,0 +1,14 @@
+run_id,source_family,source_name,approval_status,allowed_as_target,blocked_reason,leakage_risk,notes,model_input_allowed,app_wiring_allowed
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,nflreadpy/player_stats,actual historical NFL player stats from nflverse/nflreadpy/player_stats,APPROVED_FACTUAL_TARGET_SOURCE,yes,,LOW_IF_FEATURE_SEASON_N_TARGET_SEASON_N_PLUS_1,"Used only for actual next-season scoring/finish labels; no projections, ranks, market, or CFBD.",no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,ADP,ADP,BLOCKED,no,BLOCKED_MARKET_OR_DRAFT_COST,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,market rank,market rank,BLOCKED,no,BLOCKED_MARKET_VALUE,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,DynastyProcess rank/value,DynastyProcess rank/value,BLOCKED,no,BLOCKED_VENDOR_MARKET_VALUE,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,projections,projections,BLOCKED,no,BLOCKED_PROJECTION_NOT_ACTUAL_OUTCOME,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,fantasy analyst ranks,fantasy analyst ranks,BLOCKED,no,BLOCKED_ANALYST_RANK,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,current rankings,current rankings,BLOCKED,no,BLOCKED_CURRENT_RANK,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,candidate rankings,candidate rankings,BLOCKED,no,BLOCKED_CANDIDATE_RANK,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,manually adjusted ranks,manually adjusted ranks,BLOCKED,no,BLOCKED_MANUAL_RANK,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,RotoWire,RotoWire,BLOCKED,no,BLOCKED_VENDOR_SCRAPE,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,CFBD,CFBD,BLOCKED,no,BLOCKED_COLLEGE_LANE,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,proxy drop rows as hard labels,proxy drop rows as hard labels,BLOCKED,no,BLOCKED_PROXY_LABEL,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no
+nfl_usage_target_backtest_v0_20260626T082150Z_cff030b98e,unsupported Outcome gaps as negative labels,unsupported Outcome gaps as negative labels,BLOCKED,no,BLOCKED_FAKE_NEGATIVE,NOT_ALLOWED,Explicitly excluded from NFL usage target/backtest lane.,no,no

@@ -1,0 +1,5 @@
+position,feature_seasons,target_seasons,row_count,player_count,avg_next_season_nwr_points,avg_next_season_games,status,model_input_allowed,app_wiring_allowed,notes
+QB,2018;2019;2020;2021;2022;2023,2019;2020;2021;2022;2023;2024,376,110,115.6172,8.8457,GREEN_DIAGNOSTIC_COVERAGE,no,no,Position summary is review-only.
+RB,2018;2019;2020;2021;2022;2023,2019;2020;2021;2022;2023;2024,762,241,75.2072,10.3346,GREEN_DIAGNOSTIC_COVERAGE,no,no,Position summary is review-only.
+TE,2018;2019;2020;2021;2022;2023,2019;2020;2021;2022;2023;2024,594,202,38.3761,10.3199,GREEN_DIAGNOSTIC_COVERAGE,no,no,Position summary is review-only.
+WR,2018;2019;2020;2021;2022;2023,2019;2020;2021;2022;2023;2024,1116,365,61.494,10.8728,GREEN_DIAGNOSTIC_COVERAGE,no,no,Position summary is review-only.

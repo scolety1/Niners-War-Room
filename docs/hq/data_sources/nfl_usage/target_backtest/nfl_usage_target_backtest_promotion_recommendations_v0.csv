@@ -1,0 +1,29 @@
+field_name,current_status,best_review_metric,promotion_recommendation,model_candidate_status,reason,model_input_allowed,app_wiring_allowed
+offense_snaps,DISPLAY_ONLY_CANDIDATE,0.545829,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+offense_pct,DISPLAY_ONLY_CANDIDATE,0.510272,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+targets,DISPLAY_ONLY_CANDIDATE,0.374447,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+carries,DISPLAY_ONLY_CANDIDATE,0.448675,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+receptions,DISPLAY_ONLY_CANDIDATE,0.393272,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+touches,DISPLAY_ONLY_CANDIDATE,0.623626,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+opportunities,DISPLAY_ONLY_CANDIDATE,0.620308,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+rushing_yards,DISPLAY_ONLY_CANDIDATE,0.417145,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+receiving_yards,DISPLAY_ONLY_CANDIDATE,0.362586,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+receiving_air_yards,DISPLAY_ONLY_CANDIDATE,0.132891,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+receiving_yards_after_catch,DISPLAY_ONLY_CANDIDATE,0.414921,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+rushing_first_downs,DISPLAY_ONLY_CANDIDATE,0.457524,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+receiving_first_downs,DISPLAY_ONLY_CANDIDATE,0.355973,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+red_zone_carries,DISPLAY_ONLY_CANDIDATE,0.438492,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+red_zone_targets,DISPLAY_ONLY_CANDIDATE,0.355372,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+red_zone_touches,DISPLAY_ONLY_CANDIDATE,0.58373,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_10_carries,DISPLAY_ONLY_CANDIDATE,0.405721,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_10_targets,DISPLAY_ONLY_CANDIDATE,0.337477,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_10_touches,DISPLAY_ONLY_CANDIDATE,0.535814,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_5_carries,DISPLAY_ONLY_CANDIDATE,0.394631,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_5_targets,DISPLAY_ONLY_CANDIDATE,0.300081,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+inside_5_touches,DISPLAY_ONLY_CANDIDATE,0.487143,KEEP_DISPLAY_ONLY_NO_MODEL_PROMOTION,NO_ACTIVE_MODEL_CANDIDATE,"Leakage-safe diagnostic ran, but limited two-feature-season window is not enough for model promotion.",no,no
+ngs_efficiency_fields,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
+participation_personnel_formation_context,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
+route_participation_proxy,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
+tprr_like_proxy,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
+yprr_like_proxy,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
+ftn_pfr_advanced_fields,RESEARCH_ONLY,,KEEP_RESEARCH_ONLY,NO_ACTIVE_MODEL_CANDIDATE,Not included in safe factual target backtest panel.,no,no
