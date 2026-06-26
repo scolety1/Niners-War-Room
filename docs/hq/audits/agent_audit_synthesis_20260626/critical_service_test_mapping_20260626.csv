@@ -1,0 +1,22 @@
+service_path,test_path,criticality,coverage_status,waiver_reason,notes
+src/services/data_refresh_orchestrator_service.py,tests/test_data_refresh_orchestrator_service.py,P0,COVERED,,Refresh/Data Health orchestration gates protected sources and manual/blocked sources.
+src/services/data_health_dashboard_service.py,tests/test_data_health_dashboard_service.py,P0,COVERED,,Settings/Data Health surface reports source freshness and guardrail state.
+src/services/evidence_integration_review_service.py,tests/test_evidence_integration_review_page.py,P0,COVERED,,Hidden review page must stay status-only and not feed decision pages.
+src/services/draft_day_runtime_state_service.py,tests/test_draft_day_runtime_state_service.py,P0,COVERED,,Local draft runtime state must remain reload-safe and untracked.
+src/services/draft_day_workflow_service.py,tests/test_draft_day_workflow_service.py,P0,COVERED,,Draft workflow event/state behavior is a live-draft reliability core.
+src/services/draft_day_trade_lab_service.py,tests/test_draft_day_trade_lab_service.py,P1,COVERED,,Trade package support must keep market context display-only.
+src/services/player_compare_decision_service.py,tests/test_player_compare_decision_service.py,P1,COVERED,,Player Compare decisions must not be market-only or evidence-wired without a gate.
+src/services/post_draft_mode_service.py,tests/test_post_draft_mode_service.py,P1,COVERED,,Post-Draft Mode reads runtime state as manual/session evidence only.
+src/services/market_baseline_service.py,tests/test_market_baseline_service.py,P0,COVERED,,DynastyProcess and market values remain display-only sanity context.
+src/services/market_baseline_registry.py,tests/test_market_baseline_service.py,P1,PARTIAL,Registry behavior is covered through market baseline service tests; add direct tests if registry grows.,Market registry should not become an implicit model-input allowlist.
+src/services/unified_player_universe_validation_service.py,tests/test_unified_player_universe_validation_service.py,P0,COVERED,,Unified universe app/model gates remain blocked until explicit source-quality gate.
+src/services/unified_player_universe_review_page_service.py,tests/test_unified_universe_review_page_service.py,P1,COVERED,,Unified universe route is review-only.
+src/services/nfl_usage_evidence_review_page_service.py,tests/test_nfl_usage_evidence_review_page.py,P1,COVERED,,NFL usage route is review-only/status-only.
+src/services/nfl_usage_validation_service.py,tests/test_nfl_usage_validation_service.py,P0,COVERED,,NFL usage artifacts must validate without raw-cache/model promotion.
+src/services/nfl_usage_target_label_service.py,tests/test_nfl_usage_target_label_service.py,P0,COVERED,,Target labels remain evaluation/review artifacts and not active training truth.
+src/services/nfl_usage_target_backtest_service.py,tests/test_nfl_usage_target_backtest_service.py,P0,COVERED,,Backtest outputs remain diagnostics only.
+src/services/nfl_usage_historical_panel_service.py,tests/test_nfl_usage_historical_panel_service.py,P1,COVERED,,Historical usage panel artifacts are manifests/coverage summaries only.
+src/services/nfl_usage_promotion_backtest_service.py,tests/test_nfl_usage_promotion_backtest_service.py,P1,COVERED,,Promotion gate outputs do not enable model input.
+src/services/rankings_display_text_service.py,tests/test_rankings_display_text_service.py,P1,COVERED,,Rankings display text must preserve baseline/checkpoint and display-only wording.
+src/services/rankings_human_review_packet_service.py,tests/test_rankings_human_review_packet_service.py,P2,COVERED,,Review packet support remains export/review only.
+src/services/full_board_rankings_sanity_gate_service.py,tests/test_full_board_rankings_sanity_gate_service.py,P1,COVERED,,Full board sanity checks protect display/ranking assumptions.

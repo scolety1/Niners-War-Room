@@ -18,7 +18,8 @@ from src.services.draft_day_app_v1_service import (
 from src.services.draft_day_runtime_state_service import (
     export_runtime_state,
     load_latest_runtime_state,
-    restore_runtime_state_from_json,
+    preview_runtime_state_import,
+    restore_runtime_state_from_json_if_confirmed,
     runtime_paths,
 )
 from src.services.post_draft_mode_service import (
@@ -70,12 +71,44 @@ uploaded = st.file_uploader(
     key=f"post_draft_upload_{runtime_mode}",
 )
 if uploaded is not None:
-    try:
-        st.session_state[state_key] = restore_runtime_state_from_json(
-            uploaded.getvalue(),
-            mode=runtime_mode,
+    payload = uploaded.getvalue()
+    preview = preview_runtime_state_import(payload, mode=runtime_mode)
+    if preview.valid:
+        st.caption("Import preview. Confirm restore before overwriting local runtime state.")
+        st.dataframe(
+            pd.DataFrame([preview.summary]),
+            use_container_width=True,
+            hide_index=True,
+            key=f"post_draft_import_preview_{runtime_mode}",
         )
-        st.success("Imported draft state JSON into local runtime state.")
+        for warning in preview.warnings:
+            st.warning(warning)
+    else:
+        for warning in preview.warnings:
+            st.error(warning)
+    confirm_import = st.checkbox(
+        "Confirm restore imported JSON",
+        key=f"post_draft_confirm_import_{runtime_mode}",
+        help="Required before imported JSON overwrites local runtime state.",
+    )
+    try:
+        if st.button("Restore imported JSON", key=f"post_draft_restore_{runtime_mode}"):
+            st.session_state[state_key] = restore_runtime_state_from_json_if_confirmed(
+                payload,
+                confirmed=confirm_import,
+                current_state=st.session_state[state_key],
+                root=None,
+                draft_id=str(
+                    st.session_state[state_key].get("draft_session_id")
+                    or st.session_state[state_key].get("draft_id")
+                    or "draft_day_v2"
+                ),
+                mode=runtime_mode,
+            )
+            if not confirm_import:
+                st.warning("Check Confirm restore imported JSON before overwriting local state.")
+            else:
+                st.success("Imported draft state JSON into local runtime state.")
     except (ValueError, TypeError, OSError) as exc:
         st.error(f"Could not import draft state JSON: {exc}")
 
