@@ -20,10 +20,21 @@ def test_evidence_integration_review_service_loads_committed_registry_only() -> 
     assert data.summary["training_enabled"] == "no"
     assert data.summary["raw_data_tracked"] == "no"
     assert data.guardrails["status"].astype(str).eq("GREEN").all()
+    assert not data.safe_now.empty
+    assert not data.not_allowed.empty
     assert str(REGISTRY_PATH).endswith(
         "docs\\hq\\integration\\evidence_status_registry_v1_20260626.csv"
     )
     assert "NWR_SHARED_DATA" not in str(REGISTRY_PATH)
+
+
+def test_evidence_integration_review_blockers_are_priority_sorted() -> None:
+    data = load_evidence_integration_review_data()
+
+    priorities = data.blockers["priority"].tolist()
+    priority_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+    assert priorities == sorted(priorities, key=priority_order.get)
+    assert data.blockers["priority"].isin(priority_order).all()
 
 
 def test_evidence_integration_review_route_is_hidden_and_read_only() -> None:
@@ -35,5 +46,7 @@ def test_evidence_integration_review_route_is_hidden_and_read_only() -> None:
     assert route.visible is False
     assert route.file_path == "pages/33_evidence_integration_review_v1.py"
     assert "Review-only. This page does not feed rankings" in page_text
+    assert "What Is Safe Now" in page_text
+    assert "What Is Not Allowed Yet" in page_text
     assert "load_evidence_integration_review_data" in page_text
     assert "NWR_SHARED_DATA" not in page_text

@@ -12,8 +12,11 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.ui_framework import page_header
 from src.services.evidence_integration_review_service import (
     BLOCKER_TABLE_COLUMNS,
+    DOC_REFERENCE_COLUMNS,
     NEXT_GATE_TABLE_COLUMNS,
+    NOT_ALLOWED_COLUMNS,
     REGISTRY_TABLE_COLUMNS,
+    SAFE_NOW_COLUMNS,
     export_csv,
     load_evidence_integration_review_data,
     table_columns,
@@ -68,6 +71,20 @@ st.caption(
 
 _metric_grid(data.summary)
 
+st.markdown("### What Is Safe Now")
+st.dataframe(
+    table_columns(data.safe_now, SAFE_NOW_COLUMNS),
+    use_container_width=True,
+    hide_index=True,
+)
+
+st.markdown("### What Is Not Allowed Yet")
+st.dataframe(
+    table_columns(data.not_allowed, NOT_ALLOWED_COLUMNS),
+    use_container_width=True,
+    hide_index=True,
+)
+
 st.markdown("### Evidence Lane Table")
 registry_display = table_columns(data.registry, REGISTRY_TABLE_COLUMNS)
 st.dataframe(registry_display, use_container_width=True, hide_index=True)
@@ -92,6 +109,13 @@ st.dataframe(
 st.markdown("### Next Gates")
 st.dataframe(
     table_columns(data.next_gates, NEXT_GATE_TABLE_COLUMNS),
+    use_container_width=True,
+    hide_index=True,
+)
+
+st.markdown("### Main Evidence Artifact References")
+st.dataframe(
+    table_columns(data.registry, DOC_REFERENCE_COLUMNS),
     use_container_width=True,
     hide_index=True,
 )

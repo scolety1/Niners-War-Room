@@ -22,17 +22,27 @@ REGISTRY_TABLE_COLUMNS = [
     "next_gate",
 ]
 BLOCKER_TABLE_COLUMNS = [
+    "priority",
     "evidence_lane",
     "current_status",
     "known_blockers",
     "next_gate",
 ]
 NEXT_GATE_TABLE_COLUMNS = [
+    "priority",
     "evidence_lane",
     "next_gate",
     "known_blockers",
     "notes",
 ]
+DOC_REFERENCE_COLUMNS = [
+    "evidence_lane",
+    "artifact_root",
+    "current_status",
+    "next_gate",
+]
+SAFE_NOW_COLUMNS = ["area", "safe_now", "scope"]
+NOT_ALLOWED_COLUMNS = ["blocked_action", "reason", "safe_default"]
 
 
 @dataclass(frozen=True)
@@ -40,6 +50,8 @@ class EvidenceIntegrationReviewData:
     registry: pd.DataFrame
     blockers: pd.DataFrame
     next_gates: pd.DataFrame
+    safe_now: pd.DataFrame
+    not_allowed: pd.DataFrame
     guardrails: pd.DataFrame
     summary: dict[str, object]
 
@@ -52,13 +64,23 @@ def load_evidence_integration_review_data(
         registry["known_blockers"].astype(str).str.strip().ne("")
         | registry["current_status"].astype(str).isin(["BLOCKED", "RED", "YELLOW"])
     ].copy()
+    blockers = add_priority(blockers)
+    blockers = blockers.sort_values(["priority_sort", "evidence_lane"]).drop(
+        columns=["priority_sort"]
+    )
     next_gates = registry.loc[
         registry["next_gate"].astype(str).str.strip().ne("")
     ].copy()
+    next_gates = add_priority(next_gates)
+    next_gates = next_gates.sort_values(["priority_sort", "evidence_lane"]).drop(
+        columns=["priority_sort"]
+    )
     return EvidenceIntegrationReviewData(
         registry=registry,
         blockers=blockers,
         next_gates=next_gates,
+        safe_now=build_safe_now_table(),
+        not_allowed=build_not_allowed_table(),
         guardrails=build_guardrail_checklist(registry),
         summary=build_summary(registry),
     )
@@ -118,6 +140,78 @@ def build_guardrail_checklist(registry: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(checks, columns=["check", "status", "meaning"])
 
 
+def add_priority(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        output = frame.copy()
+        output["priority"] = []
+        output["priority_sort"] = []
+        return output
+    output = frame.copy()
+    output["priority"] = output.apply(_priority_for_row, axis=1)
+    output["priority_sort"] = output["priority"].map({"P0": 0, "P1": 1, "P2": 2, "P3": 3})
+    return output
+
+
+def build_safe_now_table() -> pd.DataFrame:
+    rows = [
+        (
+            "Evidence status review",
+            "Use `/evidence-integration-review` to inspect status, blockers, and next gates.",
+            "Review/status only.",
+        ),
+        (
+            "Unified Universe inspection",
+            "Use `/unified-universe-review` to inspect blockers and consolidated rows.",
+            "No app wiring or model input.",
+        ),
+        (
+            "NFL usage inspection",
+            "Use `/nfl-usage-evidence-review` to inspect public usage evidence summaries.",
+            "Committed summaries only; no raw cache access.",
+        ),
+        (
+            "Market context",
+            "Use DynastyProcess only as display-only market sanity.",
+            "Never model truth, hidden sort, or rank input.",
+        ),
+    ]
+    return pd.DataFrame(rows, columns=SAFE_NOW_COLUMNS)
+
+
+def build_not_allowed_table() -> pd.DataFrame:
+    rows = [
+        (
+            "Enable model input",
+            "CFBD, NFL usage, Unified Universe, proxy history, and market rows are not approved.",
+            "Keep model_input_allowed=no.",
+        ),
+        (
+            "Wire evidence into decision pages",
+            (
+                "Drafting Mode, Rankings, Player Compare, Trading Lab, Post-Draft, "
+                "and Cheat Sheets stay closed."
+            ),
+            "Use review pages only.",
+        ),
+        (
+            "Approve CFBD rows automatically",
+            "Identity rows require human review and approval.",
+            "Keep model_use_allowed=false and training_allowed=false.",
+        ),
+        (
+            "Treat proxy drops as truth",
+            "Proxy/LOW evidence is sensitivity-only.",
+            "Require actual draft/trade/league evidence.",
+        ),
+        (
+            "Scrape RotoWire/vendor sites",
+            "Live vendor scraping remains blocked.",
+            "Use safe public or licensed sources only.",
+        ),
+    ]
+    return pd.DataFrame(rows, columns=NOT_ALLOWED_COLUMNS)
+
+
 def table_columns(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     existing = [column for column in columns if column in frame.columns]
     return frame.loc[:, existing].copy()
@@ -125,6 +219,19 @@ def table_columns(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
 
 def export_csv(frame: pd.DataFrame) -> bytes:
     return frame.to_csv(index=False).encode("utf-8")
+
+
+def _priority_for_row(row: pd.Series) -> str:
+    lane = str(row.get("evidence_lane", ""))
+    status = str(row.get("current_status", ""))
+    blocker = str(row.get("known_blockers", "")).lower()
+    if status in {"RED", "BLOCKED"} or "blocked" in blocker:
+        return "P0"
+    if any(token in lane for token in ("CFBD", "Unified", "NFL Usage")):
+        return "P1"
+    if any(token in blocker for token in ("proxy", "missing", "not approved")):
+        return "P1"
+    return "P2"
 
 
 def _count_yes(frame: pd.DataFrame, column: str) -> int:
