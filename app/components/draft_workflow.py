@@ -12,10 +12,11 @@ from src.services.draft_day_runtime_state_service import (
     export_runtime_state,
     export_runtime_state_json,
     load_latest_runtime_state,
-    load_runtime_state,
+    load_runtime_state_with_status,
+    preview_runtime_state_import,
     record_trade_event,
     reset_runtime_state_if_confirmed,
-    restore_runtime_state_from_json,
+    restore_runtime_state_from_json_if_confirmed,
     runtime_paths,
     save_runtime_state,
     update_workflow_state,
@@ -54,10 +55,11 @@ def render_draft_workflow(
     runtime_mode = _runtime_mode_from_session_key(session_key)
     runtime_state_key = f"{session_key}_runtime_state"
     if runtime_state_key not in st.session_state:
-        st.session_state[runtime_state_key] = load_runtime_state(
+        load_result = load_runtime_state_with_status(
             mode=runtime_mode,
             source_checkpoint=source_caption,
         )
+        st.session_state[runtime_state_key] = load_result.state
     if session_key not in st.session_state:
         st.session_state[session_key] = st.session_state[runtime_state_key].get(
             "workflow_state",
@@ -65,6 +67,8 @@ def render_draft_workflow(
         )
     st.session_state[session_key] = copy_state(st.session_state[session_key])
     st.session_state[runtime_state_key]["workflow_state"] = st.session_state[session_key]
+    if st.session_state[runtime_state_key].get("runtime_recovery_required"):
+        st.warning(str(st.session_state[runtime_state_key].get("runtime_load_warning") or ""))
     state = st.session_state[session_key]
     effective_pick_frame = apply_trade_events_to_pick_frame(
         pick_frame,
@@ -564,12 +568,41 @@ def _render_runtime_state_controls(
             key=f"{session_key}_import_json",
             help="Restore a previously exported draft state JSON file.",
         )
+        uploaded_payload = uploaded.getvalue() if uploaded is not None else None
+        if uploaded_payload is not None:
+            preview = preview_runtime_state_import(
+                uploaded_payload,
+                mode=str(st.session_state[runtime_state_key].get("mode") or "live"),
+                draft_id=str(
+                    st.session_state[runtime_state_key].get("draft_session_id")
+                    or st.session_state[runtime_state_key].get("draft_id")
+                    or "draft_day_v2"
+                ),
+            )
+            if preview.valid:
+                st.caption("Import preview. Confirm restore before overwriting local state.")
+                st.dataframe(
+                    pd.DataFrame([preview.summary]),
+                    use_container_width=True,
+                    hide_index=True,
+                    key=f"{session_key}_import_preview",
+                )
+                for warning in preview.warnings:
+                    st.warning(warning)
+            else:
+                for warning in preview.warnings:
+                    st.error(warning)
+        confirm_import = st.checkbox(
+            "Confirm restore imported JSON",
+            key=f"{session_key}_confirm_import_json",
+            help="Required before imported JSON overwrites local runtime state.",
+        )
         if uploaded is not None and st.button(
             "Restore imported JSON",
             key=f"{session_key}_restore_imported_json",
         ):
             try:
-                st.session_state[runtime_state_key] = restore_runtime_state_from_json(
+                st.session_state[runtime_state_key] = restore_runtime_state_from_json_if_confirmed(
                     uploaded.getvalue(),
                     mode=str(st.session_state[runtime_state_key].get("mode") or "live"),
                     draft_id=str(
@@ -577,7 +610,14 @@ def _render_runtime_state_controls(
                         or st.session_state[runtime_state_key].get("draft_id")
                         or "draft_day_v2"
                     ),
+                    confirmed=confirm_import,
+                    current_state=st.session_state[runtime_state_key],
                 )
+                if not confirm_import:
+                    st.warning(
+                        "Check Confirm restore imported JSON before overwriting local state."
+                    )
+                    return
                 st.session_state[session_key] = st.session_state[runtime_state_key][
                     "workflow_state"
                 ]

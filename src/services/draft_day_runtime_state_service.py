@@ -30,6 +30,23 @@ class RuntimePaths:
     backup_dir: Path
 
 
+@dataclass(frozen=True)
+class RuntimeLoadResult:
+    state: RuntimeState
+    status: str
+    path: Path
+    warning: str
+    quarantine_path: Path | None = None
+
+
+@dataclass(frozen=True)
+class RuntimeImportPreview:
+    valid: bool
+    summary: dict[str, str]
+    warnings: tuple[str, ...]
+    state: RuntimeState | None = None
+
+
 def runtime_paths(root: Path | None = None) -> RuntimePaths:
     resolved_root = root or Path(
         os.environ.get("NWR_DRAFT_DAY_RUNTIME_ROOT", str(DEFAULT_RUNTIME_ROOT))
@@ -90,22 +107,95 @@ def load_runtime_state(
     source_checkpoint: str = "",
     root: Path | None = None,
 ) -> RuntimeState:
+    return load_runtime_state_with_status(
+        mode=mode,
+        draft_id=draft_id,
+        source_checkpoint=source_checkpoint,
+        root=root,
+    ).state
+
+
+def load_runtime_state_with_status(
+    *,
+    mode: str,
+    draft_id: str = DEFAULT_DRAFT_ID,
+    source_checkpoint: str = "",
+    root: Path | None = None,
+) -> RuntimeLoadResult:
     path = runtime_state_path(mode=mode, draft_id=draft_id, root=root)
     if not path.exists():
-        return empty_runtime_state(
-            mode=mode,
-            draft_id=draft_id,
-            source_checkpoint=source_checkpoint,
+        state = _mark_recovery_status(
+            empty_runtime_state(
+                mode=mode,
+                draft_id=draft_id,
+                source_checkpoint=source_checkpoint,
+            ),
+            status="MISSING_STATE_FILE",
+            warning=(
+                "No local draft runtime state file exists yet. This is an empty "
+                "runtime state, not a silent official reset."
+            ),
+        )
+        return RuntimeLoadResult(
+            state=state,
+            status="MISSING_STATE_FILE",
+            path=path,
+            warning=str(state["runtime_load_warning"]),
         )
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return empty_runtime_state(
-            mode=mode,
-            draft_id=draft_id,
-            source_checkpoint=source_checkpoint,
+    except (OSError, json.JSONDecodeError) as exc:
+        quarantine_path = quarantine_corrupt_runtime_state(
+            path,
+            root=root,
+            reason="load_failed",
         )
-    return normalize_runtime_state(raw, mode=mode, draft_id=draft_id)
+        state = _mark_recovery_status(
+            empty_runtime_state(
+                mode=mode,
+                draft_id=draft_id,
+                source_checkpoint=source_checkpoint,
+            ),
+            status="CORRUPT_STATE_QUARANTINED",
+            warning=(
+                "Local draft runtime state was unreadable and was quarantined. "
+                "Review the quarantine backup before continuing."
+            ),
+            detail={"error": type(exc).__name__, "quarantine_path": str(quarantine_path)},
+        )
+        return RuntimeLoadResult(
+            state=state,
+            status="CORRUPT_STATE_QUARANTINED",
+            path=path,
+            warning=str(state["runtime_load_warning"]),
+            quarantine_path=quarantine_path,
+        )
+    state = normalize_runtime_state(raw, mode=mode, draft_id=draft_id)
+    return RuntimeLoadResult(
+        state=_mark_recovery_status(state, status="LOADED", warning=""),
+        status="LOADED",
+        path=path,
+        warning="",
+    )
+
+
+def quarantine_corrupt_runtime_state(
+    path: Path,
+    *,
+    root: Path | None = None,
+    reason: str = "corrupt",
+) -> Path:
+    paths = runtime_paths(root)
+    quarantine_dir = paths.backup_dir / "quarantine"
+    quarantine_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = _safe_token(_now().replace("+00:00", "Z"))
+    quarantine_path = quarantine_dir / f"{path.stem}__{timestamp}__{_safe_token(reason)}.json"
+    if path.exists():
+        try:
+            path.replace(quarantine_path)
+        except OSError:
+            quarantine_path.write_text(path.read_text(encoding="utf-8", errors="replace"))
+    return quarantine_path
 
 
 def load_latest_runtime_state(
@@ -279,6 +369,7 @@ def reset_runtime_state(
     reason: str,
     root: Path | None = None,
 ) -> RuntimeState:
+    create_runtime_backup(state, root=root, reason="before_reset")
     reset_state = empty_runtime_state(
         mode=str(state.get("mode") or "draft"),
         draft_id=str(state.get("draft_id") or DEFAULT_DRAFT_ID),
@@ -361,10 +452,14 @@ def restore_runtime_state_from_json(
     mode: str,
     draft_id: str = DEFAULT_DRAFT_ID,
     root: Path | None = None,
+    current_state: RuntimeState | None = None,
 ) -> RuntimeState:
-    text = payload.decode("utf-8") if isinstance(payload, bytes) else payload
-    raw = json.loads(text)
-    restored = normalize_runtime_state(raw, mode=mode, draft_id=draft_id)
+    preview = preview_runtime_state_import(payload, mode=mode, draft_id=draft_id)
+    if not preview.valid or preview.state is None:
+        raise ValueError("; ".join(preview.warnings) or "Invalid draft runtime JSON import.")
+    if current_state is not None:
+        create_runtime_backup(current_state, root=root, reason="before_import_restore")
+    restored = preview.state
     restored["mode"] = mode
     restored["draft_id"] = draft_id
     restored["draft_session_id"] = draft_id
@@ -372,6 +467,151 @@ def restore_runtime_state_from_json(
         restored,
         event_type="state_restored_from_json",
         event_detail={"source": "imported_json"},
+        root=root,
+    )
+
+
+def preview_runtime_state_import(
+    payload: str | bytes,
+    *,
+    mode: str,
+    draft_id: str = DEFAULT_DRAFT_ID,
+) -> RuntimeImportPreview:
+    try:
+        text = payload.decode("utf-8") if isinstance(payload, bytes) else payload
+        raw = json.loads(text)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return RuntimeImportPreview(
+            valid=False,
+            summary={},
+            warnings=(f"Invalid JSON import: {type(exc).__name__}",),
+            state=None,
+        )
+    if not isinstance(raw, dict):
+        return RuntimeImportPreview(
+            valid=False,
+            summary={},
+            warnings=("Imported draft state must be a JSON object.",),
+            state=None,
+        )
+    raw_schema = str(raw.get("schema_version") or "")
+    state = normalize_runtime_state(raw, mode=mode, draft_id=draft_id)
+    assignment_count = len(state["workflow_state"]["assignments"])
+    trade_count = len(state["trade_events"])
+    event_count = len(state["event_log"])
+    warnings = [
+        "Import preview only. Confirm restore before overwriting local runtime state.",
+    ]
+    if raw_schema and raw_schema != SCHEMA_VERSION:
+        warnings.append(
+            f"Schema will normalize to {SCHEMA_VERSION}; review before restoring."
+        )
+    return RuntimeImportPreview(
+        valid=True,
+        summary={
+            "mode": str(state.get("mode") or mode),
+            "draft_id": str(state.get("draft_id") or draft_id),
+            "assignment_count": str(assignment_count),
+            "trade_count": str(trade_count),
+            "event_count": str(event_count),
+            "updated_at": str(state.get("updated_at_utc") or state.get("updated_at") or ""),
+        },
+        warnings=tuple(warnings),
+        state=state,
+    )
+
+
+def restore_runtime_state_from_json_if_confirmed(
+    payload: str | bytes,
+    *,
+    mode: str,
+    confirmed: bool,
+    draft_id: str = DEFAULT_DRAFT_ID,
+    current_state: RuntimeState | None = None,
+    root: Path | None = None,
+) -> RuntimeState:
+    if not confirmed:
+        return normalize_runtime_state(
+            current_state or empty_runtime_state(mode=mode, draft_id=draft_id),
+            mode=mode,
+            draft_id=draft_id,
+        )
+    return restore_runtime_state_from_json(
+        payload,
+        mode=mode,
+        draft_id=draft_id,
+        current_state=current_state,
+        root=root,
+    )
+
+
+def replay_runtime_state_from_event_log(
+    events: list[dict[str, Any]],
+    *,
+    mode: str,
+    draft_id: str = DEFAULT_DRAFT_ID,
+) -> RuntimeState:
+    replayed = empty_runtime_state(mode=mode, draft_id=draft_id)
+    assignments: list[dict[str, Any]] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        event_type = str(event.get("event_type") or "")
+        detail = event.get("detail", {}) if isinstance(event.get("detail"), dict) else {}
+        if event_type == "pick_assigned":
+            assignment = _assignment_from_event_detail(detail)
+            if assignment:
+                assignments = [
+                    row
+                    for row in assignments
+                    if row.get("overall_pick") != assignment.get("overall_pick")
+                    and row.get("player_key") != assignment.get("player_key")
+                ]
+                assignments.append(assignment)
+        elif event_type == "pick_removed":
+            pick = _int_or_blank(detail.get("overall_pick"))
+            assignments = [row for row in assignments if row.get("overall_pick") != pick]
+        elif event_type == "pick_undone" and assignments:
+            assignments = assignments[:-1]
+        elif event_type == "trade_recorded":
+            replayed = _append_trade_without_save(replayed, detail)
+        elif event_type == "reset_confirmed":
+            assignments = []
+            replayed["trade_events"] = []
+            replayed["pick_ownership_overrides"] = {}
+        replayed["workflow_state"] = {"assignments": assignments}
+        replayed["event_log"].append(deepcopy(event))
+    return _sync_derived_state_fields(replayed)
+
+
+def undo_last_trade_event(
+    state: RuntimeState,
+    *,
+    root: Path | None = None,
+) -> RuntimeState:
+    normalized = normalize_runtime_state(
+        state,
+        mode=str(state.get("mode") or "draft"),
+        draft_id=str(state.get("draft_id") or DEFAULT_DRAFT_ID),
+    )
+    trades = list(normalized.get("trade_events", []))
+    if not trades:
+        return save_runtime_state(
+            normalized,
+            event_type="trade_undo_noop",
+            event_detail={"message": "No trade event to undo."},
+            root=root,
+        )
+    removed = trades.pop()
+    normalized["trade_events"] = trades
+    normalized["pick_ownership_overrides"] = _ownership_overrides_from_trades(trades)
+    return save_runtime_state(
+        normalized,
+        event_type="trade_undone",
+        event_detail={
+            "trade_id": str(removed.get("trade_id") or ""),
+            "message": "Undid last trade event.",
+        },
         root=root,
     )
 
@@ -694,6 +934,73 @@ def _sync_derived_state_fields(state: RuntimeState) -> RuntimeState:
         else {}
     )
     return synced
+
+
+def _mark_recovery_status(
+    state: RuntimeState,
+    *,
+    status: str,
+    warning: str,
+    detail: dict[str, Any] | None = None,
+) -> RuntimeState:
+    marked = deepcopy(state)
+    marked["runtime_load_status"] = status
+    marked["runtime_recovery_required"] = status not in {"LOADED"}
+    marked["runtime_load_warning"] = warning
+    marked["runtime_load_detail"] = detail or {}
+    return marked
+
+
+def _assignment_from_event_detail(detail: dict[str, Any]) -> dict[str, Any] | None:
+    player_name = str(detail.get("player") or detail.get("player_name") or "").strip()
+    pick_label = str(detail.get("pick_label") or "").strip()
+    overall_pick = _int_or_blank(detail.get("overall_pick"))
+    if not player_name or overall_pick == "":
+        return None
+    return {
+        "player_key": str(detail.get("player_key") or detail.get("player_id") or player_name),
+        "overall_pick": overall_pick,
+        "pick_label": pick_label,
+        "pick_owner": str(detail.get("pick_owner") or detail.get("selecting_team") or ""),
+        "player": player_name,
+        "position": str(detail.get("position") or ""),
+        "nfl_team": str(detail.get("nfl_team") or ""),
+        "final_board_rank": str(detail.get("final_board_rank") or ""),
+        "final_tier": str(detail.get("final_tier") or ""),
+    }
+
+
+def _append_trade_without_save(state: RuntimeState, trade: dict[str, Any]) -> RuntimeState:
+    updated = deepcopy(state)
+    updated.setdefault("trade_events", []).append(deepcopy(trade))
+    updated["pick_ownership_overrides"] = _ownership_overrides_from_trades(
+        updated.get("trade_events", [])
+    )
+    return updated
+
+
+def _ownership_overrides_from_trades(trades: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    overrides: dict[str, dict[str, str]] = {}
+    for trade in trades:
+        if not isinstance(trade, dict):
+            continue
+        trade_id = str(trade.get("trade_id") or "")
+        source = str(trade.get("source") or "manual")
+        status = str(trade.get("status") or "active")
+        for change in trade.get("current_year_pick_changes", []):
+            if not isinstance(change, dict):
+                continue
+            pick_label = str(change.get("pick_label") or "")
+            new_owner = str(change.get("new_owner") or "")
+            if not pick_label or not new_owner:
+                continue
+            overrides[pick_label] = {
+                "new_owner": new_owner,
+                "trade_id": trade_id,
+                "source": source,
+                "status": status,
+            }
+    return overrides
 
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
