@@ -21,6 +21,14 @@ CFBD_INPUT = (
     / "cfbd_review_artifacts_20260624"
     / "cfbd_player_identity_review_queue.csv"
 )
+CFBD_PRODUCTION_INPUT = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "data_sources"
+    / "cfbd_review_artifacts_20260624"
+    / "cfbd_player_production_review.csv"
+)
 OUTPUT_ROOT = (
     REPO_ROOT
     / "docs"
@@ -94,6 +102,93 @@ SUMMARY_COLUMNS = (
     "notes",
 )
 
+HIGH_CONFIDENCE_COLUMNS = (
+    "cfbd_player_id",
+    "cfbd_player_name",
+    "cfbd_college_team",
+    "cfbd_position",
+    "cfbd_season",
+    "candidate_source",
+    "candidate_player_id",
+    "candidate_sleeper_id",
+    "candidate_player_name",
+    "candidate_position",
+    "name_score",
+    "match_status",
+    "match_confidence",
+    "recommended_review_action",
+    "human_decision",
+    "human_reviewer",
+    "human_review_date",
+    "review_note",
+    "model_use_allowed",
+    "training_allowed",
+    "review_required",
+)
+
+POSSIBLE_REVIEW_COLUMNS = CANDIDATE_COLUMNS + (
+    "ambiguity_reason",
+    "recommended_review_action",
+    "human_decision",
+    "human_reviewer",
+    "human_review_date",
+    "review_note",
+)
+
+UNMATCHED_PRIORITY_COLUMNS = (
+    "priority_bucket",
+    "priority_reason",
+    "cfbd_player_id",
+    "cfbd_player_name",
+    "cfbd_college_team",
+    "cfbd_position",
+    "cfbd_season",
+    "production_context_available",
+    "recruiting_context_available",
+    "needs_identity_source",
+    "recommended_review_action",
+    "model_use_allowed",
+    "training_allowed",
+    "review_required",
+)
+
+DRAFT_REGISTRY_COLUMNS = (
+    "cfbd_player_id",
+    "candidate_player_id",
+    "candidate_sleeper_id",
+    "cfbd_player_name",
+    "candidate_player_name",
+    "match_confidence",
+    "match_status",
+    "registry_status",
+    "approved_by_human",
+    "model_use_allowed",
+    "training_allowed",
+    "notes",
+)
+
+DASHBOARD_COLUMNS = ("metric", "value", "notes")
+
+PRODUCTION_CONTEXT_COLUMNS = CANDIDATE_COLUMNS + (
+    "production_context_available",
+    "production_categories",
+    "production_summary",
+    "production_context_model_use_allowed",
+    "production_context_training_allowed",
+    "production_context_review_required",
+)
+
+SOURCE_PRIORITY = {
+    "unified_player_universe_consolidated": 90,
+    "unified_player_universe_review": 80,
+    "sleeper_current_context": 70,
+    "player_id_coverage_audit": 60,
+    "player_identity_manual_review_queue": 50,
+    "dynastyprocess_display_crosswalk": 40,
+    "frozen_final_board_v1": 30,
+    "sample_2026_pre_declaration_dim_players": 20,
+}
+
 
 @dataclass(frozen=True)
 class IdentityCandidate:
@@ -130,12 +225,14 @@ class MatchDecision:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build review-only CFBD identity matches.")
     parser.add_argument("--cfbd-input", type=Path, default=CFBD_INPUT)
+    parser.add_argument("--production-input", type=Path, default=CFBD_PRODUCTION_INPUT)
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     args = parser.parse_args()
 
     run_timestamp = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     run_id = f"cfbd_identity_matching_v1_20260624_{_timestamp_slug(run_timestamp)}"
     cfbd_rows = _read_rows(args.cfbd_input)
+    production_context = load_production_context(args.production_input)
     candidates = build_identity_candidates(REPO_ROOT)
     candidate_rows, row_statuses = build_match_rows(
         cfbd_rows=cfbd_rows,
@@ -157,19 +254,94 @@ def main() -> int:
     unmatched_rows = [
         row for row in candidate_rows if row["match_status"] == "unmatched_review_required"
     ]
+    high_confidence_rows = build_high_confidence_review_rows(candidate_rows)
+    possible_review_rows = build_possible_review_rows(candidate_rows)
+    unmatched_priority_rows = build_unmatched_priority_rows(
+        unmatched_rows,
+        production_context=production_context,
+    )
+    draft_registry_rows = build_draft_registry_rows(candidate_rows)
+    production_review_rows = build_production_context_rows(
+        candidate_rows,
+        production_context=production_context,
+    )
+    dashboard_rows = build_dashboard_rows(
+        source_rows=len(cfbd_rows),
+        row_statuses=row_statuses,
+        candidate_rows=candidate_rows,
+        high_confidence_rows=high_confidence_rows,
+        possible_review_rows=possible_review_rows,
+        unmatched_priority_rows=unmatched_priority_rows,
+        draft_registry_rows=draft_registry_rows,
+        production_review_rows=production_review_rows,
+    )
 
     args.output_root.mkdir(parents=True, exist_ok=True)
     _write_csv(args.output_root / "cfbd_identity_match_candidates.csv", CANDIDATE_COLUMNS, candidate_rows)
     _write_csv(args.output_root / "cfbd_identity_match_summary.csv", SUMMARY_COLUMNS, summary_rows)
     _write_csv(args.output_root / "cfbd_identity_ambiguous_review.csv", CANDIDATE_COLUMNS, ambiguous_rows)
     _write_csv(args.output_root / "cfbd_identity_unmatched_review.csv", CANDIDATE_COLUMNS, unmatched_rows)
+    _write_csv(
+        args.output_root / "cfbd_identity_high_confidence_review.csv",
+        HIGH_CONFIDENCE_COLUMNS,
+        high_confidence_rows,
+    )
+    _write_csv(
+        args.output_root / "cfbd_identity_possible_review.csv",
+        POSSIBLE_REVIEW_COLUMNS,
+        possible_review_rows,
+    )
+    _write_csv(
+        args.output_root / "cfbd_identity_unmatched_priority_review.csv",
+        UNMATCHED_PRIORITY_COLUMNS,
+        unmatched_priority_rows,
+    )
+    _write_csv(
+        args.output_root / "cfbd_identity_link_registry_DRAFT.csv",
+        DRAFT_REGISTRY_COLUMNS,
+        draft_registry_rows,
+    )
+    _write_csv(
+        args.output_root / "cfbd_identity_review_dashboard_summary.csv",
+        DASHBOARD_COLUMNS,
+        dashboard_rows,
+    )
+    _write_csv(
+        args.output_root / "cfbd_identity_production_context_review.csv",
+        PRODUCTION_CONTEXT_COLUMNS,
+        production_review_rows,
+    )
     _write_method_doc(args.output_root / "cfbd_identity_matching_method.md", candidates)
-    _write_readme(args.output_root / "README.md", run_id, len(cfbd_rows), len(candidate_rows))
+    _write_final_method_doc(
+        args.output_root / "cfbd_identity_final_review_method.md",
+        source_rows=len(cfbd_rows),
+        high_count=len(high_confidence_rows),
+        possible_count=len(possible_review_rows),
+        unmatched_count=len(unmatched_priority_rows),
+    )
+    _write_readme(
+        args.output_root / "README.md",
+        run_id,
+        len(cfbd_rows),
+        len(candidate_rows),
+        final_counts={
+            "high_confidence_review": len(high_confidence_rows),
+            "possible_or_ambiguous_review": len(possible_review_rows),
+            "unmatched_priority_review": len(unmatched_priority_rows),
+            "draft_registry": len(draft_registry_rows),
+            "production_context_review": len(production_review_rows),
+        },
+    )
     print(
         {
             "run_id": run_id,
             "source_rows": len(cfbd_rows),
             "candidate_rows": len(candidate_rows),
+            "high_confidence_review_rows": len(high_confidence_rows),
+            "possible_or_ambiguous_review_rows": len(possible_review_rows),
+            "unmatched_priority_rows": len(unmatched_priority_rows),
+            "draft_registry_rows": len(draft_registry_rows),
+            "production_context_rows": len(production_review_rows),
             "output_root": str(args.output_root),
         }
     )
@@ -388,8 +560,7 @@ class CandidateResolver:
         )
         best_score = ranked[0][1]
         plausible = [item for item in ranked if item[1] >= max(88, best_score - 3)]
-        candidates = tuple(item[0] for item in plausible)
-        scores = {candidate.identity_key: score for candidate, score in plausible}
+        candidates, scores = _representative_candidates(plausible)
 
         distinct_keys = {candidate.logical_identity_key for candidate in candidates}
         position_match = any(_positions_compatible(position, candidate.position) for candidate in candidates)
@@ -424,6 +595,295 @@ class CandidateResolver:
             "LOW",
             "Possible fuzzy candidate; human review required.",
         )
+
+
+def _representative_candidates(
+    plausible: list[tuple[IdentityCandidate, int]],
+) -> tuple[tuple[IdentityCandidate, ...], dict[str, int]]:
+    by_logical_key: dict[str, tuple[IdentityCandidate, int]] = {}
+    for candidate, score in plausible:
+        current = by_logical_key.get(candidate.logical_identity_key)
+        rank = (score, SOURCE_PRIORITY.get(candidate.source, 0), bool(candidate.sleeper_id))
+        current_rank = (
+            (
+                current[1],
+                SOURCE_PRIORITY.get(current[0].source, 0),
+                bool(current[0].sleeper_id),
+            )
+            if current
+            else None
+        )
+        if current is None or rank > current_rank:
+            by_logical_key[candidate.logical_identity_key] = (candidate, score)
+    selected = tuple(
+        item[0]
+        for item in sorted(
+            by_logical_key.values(),
+            key=lambda item: (
+                item[1],
+                SOURCE_PRIORITY.get(item[0].source, 0),
+                item[0].normalized_name,
+            ),
+            reverse=True,
+        )
+    )
+    scores = {candidate.identity_key: by_logical_key[candidate.logical_identity_key][1] for candidate in selected}
+    return selected, scores
+
+
+def load_production_context(path: Path) -> dict[tuple[str, str], dict[str, str]]:
+    context: dict[tuple[str, str], dict[str, str]] = {}
+    if not path.exists():
+        return context
+    grouped: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in _read_rows(path):
+        key = (_clean(row.get("cfbd_player_id")), _clean(row.get("season")))
+        if key[0] and key[1]:
+            grouped[key].append(row)
+    for key, rows in grouped.items():
+        categories = sorted({_clean(row.get("stat_category")) for row in rows if row.get("stat_category")})
+        summary_bits: list[str] = []
+        for row in sorted(rows, key=lambda item: _clean(item.get("stat_category"))):
+            category = _clean(row.get("stat_category"))
+            stats = []
+            for index in range(1, 6):
+                name = _clean(row.get(f"stat_{index}_name"))
+                value = _clean(row.get(f"stat_{index}_value"))
+                if name and value:
+                    stats.append(f"{name}={value}")
+            if category and stats:
+                summary_bits.append(f"{category}: " + "; ".join(stats[:3]))
+        context[key] = {
+            "production_context_available": "true",
+            "production_categories": "|".join(categories),
+            "production_summary": " | ".join(summary_bits[:3]),
+        }
+    return context
+
+
+def build_high_confidence_review_rows(
+    candidate_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for row in candidate_rows:
+        if row["match_status"] != "exact_match" or row["match_confidence"] != "HIGH":
+            continue
+        rows.append(
+            {
+                "cfbd_player_id": row["cfbd_player_id"],
+                "cfbd_player_name": row["cfbd_player_name"],
+                "cfbd_college_team": row["cfbd_college_team"],
+                "cfbd_position": row["cfbd_position"],
+                "cfbd_season": row["cfbd_season"],
+                "candidate_source": row["candidate_source"],
+                "candidate_player_id": row["candidate_player_id"],
+                "candidate_sleeper_id": row["candidate_sleeper_id"],
+                "candidate_player_name": row["candidate_player_name"],
+                "candidate_position": row["candidate_position"],
+                "name_score": row["name_score"],
+                "match_status": row["match_status"],
+                "match_confidence": row["match_confidence"],
+                "recommended_review_action": "verify_identity_link_before_any_use",
+                "human_decision": "",
+                "human_reviewer": "",
+                "human_review_date": "",
+                "review_note": "High confidence remains review-only; not automatically approved.",
+                "model_use_allowed": MODEL_USE_ALLOWED,
+                "training_allowed": TRAINING_ALLOWED,
+                "review_required": REVIEW_REQUIRED,
+            }
+        )
+    return rows
+
+
+def build_possible_review_rows(candidate_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for row in candidate_rows:
+        if row["match_confidence"] == "HIGH":
+            continue
+        if row["match_status"] not in {"possible_candidate", "ambiguous"}:
+            continue
+        ambiguity_reason = (
+            "multiple_plausible_candidate_identities"
+            if row["match_status"] == "ambiguous"
+            else "low_fuzzy_name_score_or_partial_context"
+        )
+        rows.append(
+            {
+                **row,
+                "ambiguity_reason": ambiguity_reason,
+                "recommended_review_action": "manual_compare_name_position_team_context",
+                "human_decision": "",
+                "human_reviewer": "",
+                "human_review_date": "",
+                "review_note": "Candidate requires human approval or rejection.",
+            }
+        )
+    return rows
+
+
+def build_unmatched_priority_rows(
+    unmatched_rows: list[dict[str, str]],
+    *,
+    production_context: dict[tuple[str, str], dict[str, str]],
+) -> list[dict[str, str]]:
+    rows = [
+        _unmatched_priority_row(row, production_context=production_context)
+        for row in unmatched_rows
+    ]
+    return sorted(
+        rows,
+        key=lambda row: (
+            _priority_order(row["priority_bucket"]),
+            -_safe_int(row["cfbd_season"]),
+            row["cfbd_position"],
+            row["cfbd_player_name"],
+        ),
+    )
+
+
+def build_draft_registry_rows(candidate_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for row in candidate_rows:
+        if row["match_status"] not in {"exact_match", "possible_candidate", "ambiguous"}:
+            continue
+        rows.append(
+            {
+                "cfbd_player_id": row["cfbd_player_id"],
+                "candidate_player_id": row["candidate_player_id"],
+                "candidate_sleeper_id": row["candidate_sleeper_id"],
+                "cfbd_player_name": row["cfbd_player_name"],
+                "candidate_player_name": row["candidate_player_name"],
+                "match_confidence": row["match_confidence"],
+                "match_status": row["match_status"],
+                "registry_status": "DRAFT_REVIEW_ONLY",
+                "approved_by_human": "false",
+                "model_use_allowed": MODEL_USE_ALLOWED,
+                "training_allowed": TRAINING_ALLOWED,
+                "notes": "Draft link registry only; not source truth and not model input.",
+            }
+        )
+    return rows
+
+
+def build_production_context_rows(
+    candidate_rows: list[dict[str, str]],
+    *,
+    production_context: dict[tuple[str, str], dict[str, str]],
+) -> list[dict[str, str]]:
+    output: list[dict[str, str]] = []
+    for row in candidate_rows:
+        key = (row["cfbd_player_id"], row["cfbd_season"])
+        context = production_context.get(key)
+        if not context:
+            continue
+        output.append(
+            {
+                **row,
+                **context,
+                "production_context_model_use_allowed": MODEL_USE_ALLOWED,
+                "production_context_training_allowed": TRAINING_ALLOWED,
+                "production_context_review_required": REVIEW_REQUIRED,
+            }
+        )
+    return output
+
+
+def build_dashboard_rows(
+    *,
+    source_rows: int,
+    row_statuses: list[dict[str, str]],
+    candidate_rows: list[dict[str, str]],
+    high_confidence_rows: list[dict[str, str]],
+    possible_review_rows: list[dict[str, str]],
+    unmatched_priority_rows: list[dict[str, str]],
+    draft_registry_rows: list[dict[str, str]],
+    production_review_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    status_counts = Counter(row["match_status"] for row in row_statuses)
+    confidence_counts = Counter(row["match_confidence"] for row in row_statuses)
+    production_cfbd_ids = {
+        (row["cfbd_player_id"], row["cfbd_season"]) for row in production_review_rows
+    }
+    metrics = [
+        ("total CFBD rows", source_rows, "Input identity queue rows."),
+        ("candidate rows", len(candidate_rows), "Review candidate CSV rows."),
+        ("high confidence rows", confidence_counts["HIGH"], "Still human-review required."),
+        ("medium confidence rows", confidence_counts["MEDIUM"], "Ambiguous rows."),
+        ("low confidence rows", confidence_counts["LOW"], "Possible fuzzy candidates."),
+        ("unknown confidence rows", confidence_counts["UNKNOWN"], "Unmatched rows."),
+        ("unmatched rows", status_counts["unmatched_review_required"], "No candidate above threshold."),
+        ("ambiguous rows", status_counts["ambiguous"], "Multiple plausible identities."),
+        ("high confidence review rows", len(high_confidence_rows), "Exact-match review file rows."),
+        ("possible or ambiguous review rows", len(possible_review_rows), "Manual review candidates."),
+        ("unmatched priority rows", len(unmatched_priority_rows), "Prioritized unmatched review."),
+        ("draft registry rows", len(draft_registry_rows), "Draft review-only registry rows."),
+        ("rows with production context", len(production_cfbd_ids), "CFBD production context available."),
+        ("rows with recruiting context", 0, "No row-level recruiting artifact exists in V1."),
+        ("rows requiring human review", source_rows, "All rows require human review."),
+        ("rows approved for model use", 0, "Must remain zero in V1."),
+    ]
+    return [
+        {"metric": metric, "value": str(value), "notes": notes}
+        for metric, value, notes in metrics
+    ]
+
+
+def _unmatched_priority_row(
+    row: dict[str, str],
+    *,
+    production_context: dict[tuple[str, str], dict[str, str]],
+) -> dict[str, str]:
+    key = (row["cfbd_player_id"], row["cfbd_season"])
+    has_production = key in production_context
+    is_skill = row["cfbd_position"] in SUPPORTED_POSITIONS
+    season = _safe_int(row["cfbd_season"])
+    if has_production and is_skill and season >= 2025:
+        bucket = "P1_RECENT_SKILL_WITH_PRODUCTION"
+    elif has_production and is_skill:
+        bucket = "P2_SKILL_WITH_PRODUCTION"
+    elif is_skill and season >= 2025:
+        bucket = "P3_RECENT_SKILL_NO_PRODUCTION"
+    elif has_production:
+        bucket = "P4_OTHER_WITH_PRODUCTION"
+    else:
+        bucket = "P5_OTHER_UNMATCHED"
+    reason_parts = []
+    if is_skill:
+        reason_parts.append("offensive_skill_position")
+    if has_production:
+        reason_parts.append("production_context_available")
+    if season >= 2025:
+        reason_parts.append("recent_cfbd_season")
+    if not reason_parts:
+        reason_parts.append("identity_source_needed")
+    return {
+        "priority_bucket": bucket,
+        "priority_reason": ";".join(reason_parts),
+        "cfbd_player_id": row["cfbd_player_id"],
+        "cfbd_player_name": row["cfbd_player_name"],
+        "cfbd_college_team": row["cfbd_college_team"],
+        "cfbd_position": row["cfbd_position"],
+        "cfbd_season": row["cfbd_season"],
+        "production_context_available": str(has_production).lower(),
+        "recruiting_context_available": "false",
+        "needs_identity_source": "true",
+        "recommended_review_action": "search_existing_identity_sources_or_defer",
+        "model_use_allowed": MODEL_USE_ALLOWED,
+        "training_allowed": TRAINING_ALLOWED,
+        "review_required": REVIEW_REQUIRED,
+    }
+
+
+def _priority_order(value: str) -> int:
+    order = {
+        "P1_RECENT_SKILL_WITH_PRODUCTION": 1,
+        "P2_SKILL_WITH_PRODUCTION": 2,
+        "P3_RECENT_SKILL_NO_PRODUCTION": 3,
+        "P4_OTHER_WITH_PRODUCTION": 4,
+        "P5_OTHER_UNMATCHED": 5,
+    }
+    return order.get(value, 99)
 
 
 def build_summary_rows(
@@ -625,13 +1085,96 @@ def _write_method_doc(path: Path, candidates: tuple[IdentityCandidate, ...]) -> 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _write_readme(path: Path, run_id: str, source_rows: int, candidate_rows: int) -> None:
+def _write_final_method_doc(
+    path: Path,
+    *,
+    source_rows: int,
+    high_count: int,
+    possible_count: int,
+    unmatched_count: int,
+) -> None:
+    lines = [
+        "# CFBD Identity Matching V1 Final Review Method",
+        "",
+        "## How To Use This Package",
+        "",
+        "Start with `cfbd_identity_review_dashboard_summary.csv`, then review the focused CSVs in this order:",
+        "",
+        "1. `cfbd_identity_high_confidence_review.csv`",
+        "2. `cfbd_identity_possible_review.csv`",
+        "3. `cfbd_identity_unmatched_priority_review.csv`",
+        "4. `cfbd_identity_link_registry_DRAFT.csv`",
+        "",
+        "The draft registry is a work queue, not source truth. Human reviewers should fill the blank",
+        "`human_decision`, `human_reviewer`, `human_review_date`, and `review_note` fields in a future",
+        "review lane or copied review sheet. This package itself does not approve any link.",
+        "",
+        "## Why HIGH Is Not Automatically Approved",
+        "",
+        "`HIGH` means the normalized CFBD name and position align with one existing NWR/Sleeper reference.",
+        "It does not verify transfer history, draft class timing, NFL landing spot, duplicate identities, or",
+        "whether the existing source should be treated as authoritative for CFBD. Every row remains",
+        "`review_required=true`.",
+        "",
+        "## What Humans Should Approve Or Reject Later",
+        "",
+        "- Approve only when the CFBD player and candidate identity are clearly the same person.",
+        "- Reject when names are aliases/collisions or college/NFL context conflicts.",
+        "- Defer when more identity evidence is needed.",
+        "- Never use production stats alone to approve identity.",
+        "",
+        "## Why Unmatched Rows Are Expected",
+        "",
+        "The CFBD roster covers broad college football rosters, while NWR/Sleeper/final-board sources cover a",
+        "smaller fantasy/draft-relevant universe. Most CFBD rows should remain unmatched in V1.",
+        "",
+        "## Why This Is Not Model Input",
+        "",
+        "All outputs keep `model_use_allowed=false`, `training_allowed=false`, and `review_required=true`.",
+        "No candidate rank, Dynasty Rank, final board rank, tiers, source truth, or model feature files are",
+        "created or changed.",
+        "",
+        "## Counts",
+        "",
+        f"- Source CFBD rows: {source_rows}",
+        f"- High-confidence review rows: {high_count}",
+        f"- Possible/ambiguous review rows: {possible_count}",
+        f"- Unmatched priority rows: {unmatched_count}",
+        "",
+        "## CFBD Identity Matching V2 Next Steps",
+        "",
+        "- Add a human-review workflow for approve/reject/defer decisions.",
+        "- Add row-level recruiting context only if a tracked review-only recruiting artifact exists.",
+        "- Add transfer/team-season context before any source-truth promotion.",
+        "- Design a separate promotion gate after manual review and backtesting requirements are defined.",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_readme(
+    path: Path,
+    run_id: str,
+    source_rows: int,
+    candidate_rows: int,
+    *,
+    final_counts: dict[str, int],
+) -> None:
     lines = [
         "# CFBD Identity Matching V1 - 2026-06-24",
         "",
         f"Run ID: `{run_id}`",
         f"Input CFBD identity rows: {source_rows}",
         f"Candidate output rows: {candidate_rows}",
+        "",
+        "## Final Review Files",
+        "",
+        f"- `cfbd_identity_high_confidence_review.csv`: {final_counts['high_confidence_review']} rows",
+        f"- `cfbd_identity_possible_review.csv`: {final_counts['possible_or_ambiguous_review']} rows",
+        f"- `cfbd_identity_unmatched_priority_review.csv`: {final_counts['unmatched_priority_review']} rows",
+        f"- `cfbd_identity_link_registry_DRAFT.csv`: {final_counts['draft_registry']} rows",
+        f"- `cfbd_identity_production_context_review.csv`: {final_counts['production_context_review']} rows",
+        "- `cfbd_identity_review_dashboard_summary.csv`",
+        "- `cfbd_identity_final_review_method.md`",
         "",
         "This folder contains review-only identity matching suggestions.",
         "",
@@ -642,6 +1185,9 @@ def _write_readme(path: Path, run_id: str, source_rows: int, candidate_rows: int
         "- `model_use_allowed=false`.",
         "- `training_allowed=false`.",
         "- `review_required=true`.",
+        "",
+        "Suggested review workflow: review high-confidence rows first, then ambiguous/possible rows, then",
+        "the unmatched priority queue. The draft registry must not be treated as approved identity truth.",
         "",
         "The CFBD identity lane is separate from nflverse and the active NFL usage/data-loader lane.",
         "No CFBD rows are promoted into rankings, model features, candidates, or source-truth files.",
@@ -664,6 +1210,13 @@ def _write_csv(path: Path, columns: tuple[str, ...], rows: list[dict[str, str]])
 
 def _clean(value: object) -> str:
     return str(value or "").strip()
+
+
+def _safe_int(value: object) -> int:
+    try:
+        return int(str(value or "").strip())
+    except ValueError:
+        return 0
 
 
 def _timestamp_slug(value: str) -> str:

@@ -1,0 +1,214 @@
+cfbd_player_id,candidate_player_id,candidate_sleeper_id,cfbd_player_name,candidate_player_name,match_confidence,match_status,registry_status,approved_by_human,model_use_allowed,training_allowed,notes
+4594449,7525,7525,DeVonta Smith,DeVonta Smith,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685261,13274,13274,Germie Bernard,Germie Bernard,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685381,13313,13313,Emmanuel Henderson Jr.,Emmanuel Henderson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150249,6794,6794,Justin Jefferson,Justin Jefferson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4575131,12533,12533,Jacory Croskey-Merritt,Jacory Croskey-Merritt,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685472,12526,12526,Tetairoa McMillan,Tetairoa McMillan,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4696981,12481,12481,Cam Skattebo,Cam Skattebo,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4880281,13281,13281,Jordyn Tyson,Jordyn Tyson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5123663,12535,12535,Isaac TeSlaa,Isaac TeSlaa,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5221050,00-0040131,00-0040131,Kyle Williams,Kyle Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5219412,11560,11560,Caleb Williams,Caleb Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4710341,00-0040692,00-0040692,Jarquez Hunter,Jarquez Hunter,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430689,13725,13725,Dominic Richardson,Dominic Richardson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4879194,13394,13394,Josh Cameron,Josh Cameron,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4879194,,nan,Josh Cameron,Josh Cameron,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4890973,12527,12527,Ashton Jeanty,Ashton Jeanty,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683159,13541,13541,Lewis Bond,Lewis Bond,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5083076,12506,12506,Harold Fannin Jr.,Harold Fannin,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4714388,13410,13410,Chase Roberts,Chase Roberts,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4684173,13304,13304,O'Mega Blake,O'Mega Blake,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685526,13302,13302,Adam Randall,Adam Randall,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5081432,13301,13301,Antonio Williams,Antonio Williams,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5146639,5870,5870,Daniel Jones,Daniel Jones,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5221076,4983,4983,DJ Moore,DJ Moore,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4432762,12524,12524,Shedeur Sanders,Shedeur Sanders,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685415,12530,12530,Travis Hunter,Travis Hunter,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4597703,12497,12497,Tory Horton,Tory Horton,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5226090,00-0035537,00-0035537,Ty Johnson,Ty Johnson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4686761,6794,6794,Justin Jefferson,Justin Jefferson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431268,12540,12540,Chimere Dike,Chimere Dike,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431304,13291,13291,Kejon Owens,Kejon Owens,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5079539,7596,7596,Elijah Moore,Elijah Moore,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685350,00-0040644,00-0040644,Trevor Etienne,Trevor Etienne,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4611995,13946,13946,Jamal Haynes,Jamal Haynes,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4840124,4983,4983,D.J. Moore,DJ Moore,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4600981,12492,12492,Pat Bryant,Pat Bryant,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4814930,13776,13776,Hank Beatty,Hank Beatty,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4596347,13409,13409,Donaven McCulley,Donaven Mcculley,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4696044,13414,13414,Kaelon Black,Kaelon Black,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4723820,13276,13276,Omar Cooper Jr.,Omar Cooper,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5088338,13268,13268,Elijah Sarratt,Elijah Sarratt,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4819231,12504,12504,Kaleb Johnson,Kaleb Johnson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4586312,12536,12536,Jaylin Noel,Jaylin Noel,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4877706,12484,12484,Jayden Higgins,Jayden Higgins,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4682652,12476,12476,Devin Neal,Devin Neal,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4874509,00-0040179,00-0040179,DJ Giddens,DJ Giddens,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430893,28114,28114,Chip Trayanum,Chip Trayanum,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430893,,,Chip Trayanum,Chip Trayanum,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4698597,13533,13533,Barion Brown,Barion Brown,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5079694,8154,8154,Brian Robinson,Brian Robinson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4360689,00-0040743,00-0040743,Tyler Shough,Tyler Shough,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430185,13826,13826,Caullin Lacy,Caullin Lacy,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431292,12476,12476,Devin Neal,Devin Neal,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4869961,13311,13311,Chris Bell,Chris Bell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4808766,12498,12498,Mason Taylor,Mason Taylor,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4688835,13416,13416,Roman Hemby,Roman Hemby,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4678006,12521,12521,Elijah Arroyo,Elijah Arroyo,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4688380,12522,12522,Cam Ward,Cam Ward,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4723086,12517,12517,Colston Loveland,Colston Loveland,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431499,,,Sieh Bangura,Sieh Bangura,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5144785,00-0036040,00-0036040,Julian Johnson,Juwan Johnson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685307,13338,13338,Kevin Coleman Jr.,Kevin Coleman,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5232648,13338,13338,Kevin Coleman Jr.,Kevin Coleman,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5235888,13338,13338,Kevin Coleman Jr.,Kevin Coleman,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685278,12519,12519,Luther Burden III,Luther Burden,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870653,13298,13298,KC Concepcion,KC Concepcion,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832955,13337,13337,Emmett Johnson,Emmett Johnson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4686468,13424,13424,Seth McGowan,Seth McGowan,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685382,12507,12507,Omarion Hampton,Omarion Hampton,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685512,13286,13286,Jadarian Price,Jadarian Price,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870808,13287,13287,Jeremiyah Love,Jeremiyah Love,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5112630,00-0039150,00-0039150,Bryce Young,Bryce Young,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150424,9756,9756,Jordan Faison,Jordan Addison,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4432710,12529,12529,TreVeyon Henderson,TreVeyon Henderson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4567750,12514,12514,Emeka Egbuka,Emeka Egbuka,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685702,12512,12512,Quinshon Judkins,Quinshon Judkins,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4871023,13279,13279,Carnell Tate,Carnell Tate,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683151,13333,13333,Deion Burks,Deion Burks,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685553,13380,13380,Brenen Thompson,Brenen Thompson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4711533,12495,12495,Ollie Gordon II,Ollie Gordon,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4686612,12509,12509,Tre Harris,Tre' Harris,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4689114,12508,12508,Jaxson Dart,Jaxson Dart,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150430,5859,5859,AJ Brown Sr.,A.J. Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4570037,00-0040737,00-0040737,Terrance Ferguson,Terrance Ferguson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4608810,00-0040237,00-0040237,Tez Johnson,Tez Johnson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685397,00-0040177,00-0040177,Jordan James,Jordan James,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431459,12518,12518,Tyler Warren,Tyler Warren,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685246,13405,13405,Kaytron Allen,Kaytron Allen,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685555,13288,13288,Nicholas Singleton,Nicholas Singleton,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4710855,00-0040590,00-0040590,Konata Mumpfield,Konata Mumpfield,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5154304,11560,11560,Caleb Williams,Caleb Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4608686,12534,12534,Kyle Monangai,Kyle Monangai,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4596602,12455,12455,Brashard Smith,Brashard Smith,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685409,13325,13325,Jordan Hudson,Jordan Hudson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430992,13436,13436,Kentrel Bullock,Kentrel Bullock,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4570507,,,Devin Voisin,Devin Voisin,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4601080,00-0040466,00-0040466,Raheim Sanders,Raheim Sanders,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685504,13322,13322,Sam Roush,Sam Roush,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4883647,12499,12499,Elic Ayomanor,Elic Ayomanor,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4575862,13356,13356,Trebor Pena,Trebor Pena,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4595342,12493,12493,Oronde Gadsden II,Oronde Gadsden,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4911851,12544,12544,LeQuint Allen,LeQuint Allen,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431487,12482,12482,Savion Williams,Savion Williams,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4602185,13354,13354,Eric McAlister,Eric McAlister,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4603186,00-0040729,00-0040729,Jack Bech,Jack Bech,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870809,,,Braylon James,Braylon James,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4432775,12541,12541,Dont'e Thornton Jr.,Dont'e Thornton,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5081397,12469,12469,Dylan Sampson,Dylan Sampson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5091739,13353,13353,Chris Brazzell II,Chris Brazzell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685279,12457,12457,Jaydon Blue,Jaydon Blue,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4686728,12502,12502,Gunnar Helm,Gunnar Helm,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4701936,12501,12501,Matthew Golden,Matthew Golden,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4808839,12503,12503,Isaiah Bond,Isaiah Bond,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4429299,00-0040208,00-0040208,Tahj Brooks,Tahj Brooks,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5082374,5859,5859,AJ Brown,A.J. Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4568490,12489,12489,RJ Harvey,RJ Harvey,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5152182,7607,7607,Michael Carter,Michael Carter,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683153,13402,13402,Skyler Bell,Skyler Bell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5155179,13904,13904,Jacob De Jesus,Jacob De Jesus,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4429059,12474,12474,Woody Marks,Woody Marks,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870612,13320,13320,Zachariah Branch,Zachariah Branch,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870795,13294,13294,Makai Lemon,Makai Lemon,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5082630,00-0040646,00-0040646,Jalen Royals,Jalen Royals,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5151317,13418,13418,Robert Henry Jr.,Robert Henry Jr.,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431574,13349,13349,Eli Stowers,Eli Stowers,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4912130,12509,12509,Trell Harris,Tre' Harris,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4602667,00-0040164,00-0040164,Jaylin Lane,Jaylin Lane,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4882093,12490,12490,Bhayshul Tuten,Bhayshul Tuten,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832846,13347,13347,Demond Claiborne,Demond Claiborne,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4702555,13345,13345,Jonah Coleman,Jonah Coleman,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832800,13346,13346,Denzel Boston,Denzel Boston,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4613202,00-0040131,00-0040131,Kyle Williams,Kyle Williams,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5162646,9494,9494,Marvin Sims,Marvin Mims,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4917172,00-0038685,00-0038685,Chris Brooks Jr.,Chris Brooks,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5087012,9224,9224,Chase Brown,Chase Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685261,13274,13274,Germie Bernard,Germie Bernard,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150249,6794,6794,Justin Jefferson,Justin Jefferson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4880281,13281,13281,Jordyn Tyson,Jordyn Tyson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4684173,13304,13304,O'Mega Blake,O'Mega Blake,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5221050,00-0040131,00-0040131,Kyle Williams,Kyle Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5219412,11560,11560,Caleb Williams,Caleb Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4879194,13394,13394,Josh Cameron,Josh Cameron,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4879194,,nan,Josh Cameron,Josh Cameron,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683159,13541,13541,Lewis Bond,Lewis Bond,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4714388,13410,13410,Chase Roberts,Chase Roberts,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5155179,13904,13904,Jacob De Jesus,Jacob De Jesus,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685526,13302,13302,Adam Randall,Adam Randall,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5081432,13301,13301,Antonio Williams,Antonio Williams,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5146639,5870,5870,Daniel Jones,Daniel Jones,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5226090,00-0035537,00-0035537,Ty Johnson,Ty Johnson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431304,13291,13291,Kejon Owens,Kejon Owens,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5079539,7596,7596,Elijah Moore,Elijah Moore,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870612,13320,13320,Zachariah Branch,Zachariah Branch,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150430,5859,5859,AJ Brown Sr.,A.J. Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4611995,13946,13946,Jamal Haynes,Jamal Haynes,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4840124,4983,4983,D.J. Moore,DJ Moore,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4814930,13776,13776,Hank Beatty,Hank Beatty,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4688835,13416,13416,Roman Hemby,Roman Hemby,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4696044,13414,13414,Kaelon Black,Kaelon Black,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4723820,13276,13276,Omar Cooper Jr.,Omar Cooper,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5088338,13268,13268,Elijah Sarratt,Elijah Sarratt,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685381,13313,13313,Emmanuel Henderson Jr.,Emmanuel Henderson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4686468,13424,13424,Seth McGowan,Seth McGowan,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5079694,8154,8154,Brian Robinson,Brian Robinson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430185,13826,13826,Caullin Lacy,Caullin Lacy,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4869961,13311,13311,Chris Bell,Chris Bell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4698597,13533,13533,Barion Brown,Barion Brown,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5141695,11610,11610,Malik Washington,Malik Washington,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4596347,13409,13409,Donaven McCulley,Donaven Mcculley,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5144785,00-0036040,00-0036040,Julian Johnson,Juwan Johnson,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685553,13380,13380,Brenen Thompson,Brenen Thompson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685307,13338,13338,Kevin Coleman Jr.,Kevin Coleman,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832955,13337,13337,Emmett Johnson,Emmett Johnson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5295996,5859,5859,AJ Brown,A.J. Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4594449,7525,7525,DeVonta Smith,DeVonta Smith,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685512,13286,13286,Jadarian Price,Jadarian Price,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870808,13287,13287,Jeremiyah Love,Jeremiyah Love,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5112630,00-0039150,00-0039150,Bryce Young,Bryce Young,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5150424,9756,9756,Jordan Faison,Jordan Addison,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431499,,,Sieh Bangura,Sieh Bangura,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4871023,13279,13279,Carnell Tate,Carnell Tate,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683151,13333,13333,Deion Burks,Deion Burks,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4575862,13356,13356,Trebor Pena,Trebor Pena,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685246,13405,13405,Kaytron Allen,Kaytron Allen,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685555,13288,13288,Nicholas Singleton,Nicholas Singleton,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5154304,11560,11560,Caleb Williams,Caleb Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685409,13325,13325,Jordan Hudson,Jordan Hudson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430992,13436,13436,Kentrel Bullock,Kentrel Bullock,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4570507,,,Devin Voisin,Devin Voisin,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5142607,11560,11560,Caleb Williams,Caleb Williams,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4685504,13322,13322,Sam Roush,Sam Roush,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4602185,13354,13354,Eric McAlister,Eric McAlister,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870809,,,Braylon James,Braylon James,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5091739,13353,13353,Chris Brazzell II,Chris Brazzell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870653,13298,13298,KC Concepcion,KC Concepcion,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5157120,00-0038128,00-0038128,Malik Willis,Malik Willis,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430893,28114,28114,Chip Trayanum,Chip Trayanum,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430893,,,Chip Trayanum,Chip Trayanum,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4430689,13725,13725,Dominic Richardson,Dominic Richardson,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5082374,5859,5859,AJ Brown,A.J. Brown,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4683153,13402,13402,Skyler Bell,Skyler Bell,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4870795,13294,13294,Makai Lemon,Makai Lemon,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5151317,13418,13418,Robert Henry Jr.,Robert Henry Jr.,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431574,13349,13349,Eli Stowers,Eli Stowers,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4431292,12476,12476,Devin Neal,Devin Neal,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4713118,13348,13348,J'Mari Taylor,J'Mari Taylor,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4713118,,nan,J'Mari Taylor,J'Mari Taylor,MEDIUM,ambiguous,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4912130,12509,12509,Trell Harris,Tre' Harris,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832846,13347,13347,Demond Claiborne,Demond Claiborne,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4702555,13345,13345,Jonah Coleman,Jonah Coleman,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4832800,13346,13346,Denzel Boston,Denzel Boston,HIGH,exact_match,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+5162646,9494,9494,Marvin Sims,Marvin Mims,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.
+4917172,00-0038685,00-0038685,Chris Brooks Jr.,Chris Brooks,LOW,possible_candidate,DRAFT_REVIEW_ONLY,false,false,false,Draft link registry only; not source truth and not model input.

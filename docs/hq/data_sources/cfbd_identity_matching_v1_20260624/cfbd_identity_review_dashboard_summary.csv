@@ -1,0 +1,17 @@
+metric,value,notes
+total CFBD rows,31822,Input identity queue rows.
+candidate rows,31827,Review candidate CSV rows.
+high confidence rows,157,Still human-review required.
+medium confidence rows,5,Ambiguous rows.
+low confidence rows,46,Possible fuzzy candidates.
+unknown confidence rows,31614,Unmatched rows.
+unmatched rows,31614,No candidate above threshold.
+ambiguous rows,5,Multiple plausible identities.
+high confidence review rows,157,Exact-match review file rows.
+possible or ambiguous review rows,56,Manual review candidates.
+unmatched priority rows,31614,Prioritized unmatched review.
+draft registry rows,213,Draft review-only registry rows.
+rows with production context,5809,CFBD production context available.
+rows with recruiting context,0,No row-level recruiting artifact exists in V1.
+rows requiring human review,31822,All rows require human review.
+rows approved for model use,0,Must remain zero in V1.

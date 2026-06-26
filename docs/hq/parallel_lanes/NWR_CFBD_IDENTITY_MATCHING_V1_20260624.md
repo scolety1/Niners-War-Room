@@ -66,13 +66,13 @@ Source-row confidence counts:
 | LOW | 46 |
 | UNKNOWN | 31,614 |
 
-Candidate output rows: 32,033. Candidate-row counts are higher than source-row exact/ambiguous counts because one CFBD row may emit multiple supporting candidate-source rows.
+Candidate output rows after final dedupe: 31,827. Candidate-source spam was reduced by selecting one representative source per logical candidate identity.
 
 ## Ambiguous / Unmatched Counts
 
 - Ambiguous source rows: 5
 - Unmatched source rows: 31,614
-- Ambiguous/non-high review CSV rows: 31,697
+- Ambiguous/non-high review CSV rows: 31,670
 - Unmatched review CSV rows: 31,614
 
 ## Artifacts Created
@@ -85,6 +85,13 @@ Tracked under `docs/hq/data_sources/cfbd_identity_matching_v1_20260624/`:
 - `cfbd_identity_match_summary.csv`
 - `cfbd_identity_ambiguous_review.csv`
 - `cfbd_identity_unmatched_review.csv`
+- `cfbd_identity_high_confidence_review.csv`
+- `cfbd_identity_possible_review.csv`
+- `cfbd_identity_unmatched_priority_review.csv`
+- `cfbd_identity_link_registry_DRAFT.csv`
+- `cfbd_identity_review_dashboard_summary.csv`
+- `cfbd_identity_production_context_review.csv`
+- `cfbd_identity_final_review_method.md`
 
 ## Review-Only Confirmation
 
@@ -138,3 +145,29 @@ Run a human review pass on:
 3. The `HIGH` confidence rows in `cfbd_identity_match_candidates.csv`
 
 Only after manual approval should a future lane design a promotion gate or any source-truth crosswalk.
+
+## Finalization Addendum
+
+Final review-ready artifacts were added to separate the queue into human-review slices:
+
+- High-confidence review rows: 157
+- Possible/ambiguous review rows: 56
+- Unmatched priority rows: 31,614
+- Draft registry rows: 213
+- Candidate rows with production context: 5,817
+- Distinct CFBD player-season rows with production context in the dashboard: 5,809
+- Recruiting context rows: 0, because V1 has no tracked row-level recruiting artifact
+
+The draft registry remains `DRAFT_REVIEW_ONLY`; every row has `approved_by_human=false`, `model_use_allowed=false`, and `training_allowed=false`.
+
+Final review files added:
+
+- `cfbd_identity_high_confidence_review.csv`
+- `cfbd_identity_possible_review.csv`
+- `cfbd_identity_unmatched_priority_review.csv`
+- `cfbd_identity_link_registry_DRAFT.csv`
+- `cfbd_identity_review_dashboard_summary.csv`
+- `cfbd_identity_production_context_review.csv`
+- `cfbd_identity_final_review_method.md`
+
+Finalization confirms no model use, no source-truth promotion, and readiness for Master integration review.
