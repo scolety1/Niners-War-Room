@@ -1,0 +1,27 @@
+review_id,priority,field_name,source_family,current_status,issue,recommendation,safe_default,model_input_allowed,app_wiring_allowed,notes
+NFL-P0-001,P0,true_routes_run,licensed_gap,BLOCKED_LICENSED_DATA_GAP,Licensed-data gap in V0,Do not proxy as true routes run,Keep blocked,no,no,Requires licensed source contract.
+NFL-P0-002,P0,true_tprr,licensed_gap,BLOCKED_LICENSED_DATA_GAP,Licensed-data gap in V0,Do not proxy as true TPRR,Keep blocked,no,no,Requires licensed source contract.
+NFL-P0-003,P0,true_yprr,licensed_gap,BLOCKED_LICENSED_DATA_GAP,Licensed-data gap in V0,Do not proxy as true YPRR,Keep blocked,no,no,Requires licensed source contract.
+NFL-P0-004,P0,ranks_projections_adp_market_vendor_values,blocked_vendor_or_market,BLOCKED_UNSAFE,Market/vendor values are not usage evidence,Never use as target truth or model input,Keep blocked,no,no,Remain blocked in this gate.
+NFL-P1-005,P1,red_zone_opportunities,derived_usage,DISPLAY_ONLY_CANDIDATE,Definition and historical coverage require review,Review definition and sample-size caveat before display,Keep review-only,no,no,Do not compare across sources until definition is fixed.
+NFL-P1-006,P1,inside_10_opportunities,derived_usage,DISPLAY_ONLY_CANDIDATE,Small samples require visible caveat,Review sample-size handling before display,Keep review-only,no,no,Historical coverage and backtest gate required.
+NFL-P1-007,P1,inside_5_opportunities,derived_usage,DISPLAY_ONLY_CANDIDATE,Very small samples require visible caveat,Review sample-size handling before display,Keep review-only,no,no,Historical coverage and backtest gate required.
+NFL-P1-008,P1,route_participation_proxy,participation,RESEARCH_ONLY,Proxy can be confused with true routes run,Keep label as proxy and research-only,Do not display as true routes,no,no,Requires historical coverage and backtest gate.
+NFL-P1-009,P1,tprr_like_proxy,derived_proxy,RESEARCH_ONLY,Proxy can be confused with true TPRR,Keep label as proxy and research-only,Do not display as true TPRR,no,no,Requires historical coverage and backtest gate.
+NFL-P1-010,P1,yprr_like_proxy,derived_proxy,RESEARCH_ONLY,Proxy can be confused with true YPRR,Keep label as proxy and research-only,Do not display as true YPRR,no,no,Requires historical coverage and backtest gate.
+NFL-P2-011,P2,ngs_efficiency_fields,ngs,RESEARCH_ONLY,Efficiency fields need denominator and drift checks,Keep as research-only until coverage/backtest passes,Keep research-only,no,no,Do not mix into model candidates.
+NFL-P2-012,P2,participation_personnel_formation_context,participation,RESEARCH_ONLY,Public participation context is not true routes run,Keep as research-only context,Keep research-only,no,no,Requires coverage/backtest gate.
+NFL-P2-013,P2,ftn_pfr_advanced_fields,ftn_pfr,RESEARCH_ONLY,Semantics and coverage still need review,Keep as candidate inventory,Keep research-only,no,no,Requires historical coverage and backtest gate.
+NFL-P2-014,P2,offense_snaps,snap_counts,APPROVED_DISPLAY_ONLY_CONTEXT,Display-only fact can still be overinterpreted,Use only with display-only label,Display-only only,no,no,Point-in-time handling still required for future model gates.
+NFL-P2-015,P2,offense_pct,snap_counts,APPROVED_DISPLAY_ONLY_CONTEXT,Snap share is not role certainty,Display as offensive snap share only,Display-only only,no,no,Do not turn into model input.
+NFL-P2-016,P2,targets,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Counts need denominator caution,Display factual counts only,Display-only only,no,no,No target-share overclaim without denominator audit.
+NFL-P2-017,P2,carries,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Usage count is not standalone value,Display factual counts only,Display-only only,no,no,No model input.
+NFL-P2-018,P2,receptions,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Non-PPR context limits scoring meaning,Display as context only,Display-only only,no,no,Do not treat receptions alone as value.
+NFL-P2-019,P2,touches,derived_usage,APPROVED_DISPLAY_ONLY_CONTEXT,Definition must be visible,Show carries plus receptions definition,Display-only only,no,no,No model input.
+NFL-P2-020,P2,opportunities,derived_usage,APPROVED_DISPLAY_ONLY_CONTEXT,Definition must be visible,Show carries plus targets definition,Display-only only,no,no,No model input.
+NFL-P2-021,P2,rushing_yards,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Production fact not standalone dynasty value,Display as factual production context,Display-only only,no,no,No model input.
+NFL-P2-022,P2,receiving_yards,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Production fact not standalone dynasty value,Display as factual production context,Display-only only,no,no,No model input.
+NFL-P2-023,P2,receiving_air_yards,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Air yards shares remain separate review fields,Display factual air yards context only,Display-only only,no,no,No model input.
+NFL-P2-024,P2,receiving_yards_after_catch,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,YAC is not separation or route quality,Display as YAC only,Display-only only,no,no,No model input.
+NFL-P2-025,P2,rushing_first_downs,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Relevant to NWR scoring but not active feature,Display factual first-down context only,Display-only only,no,no,No model input.
+NFL-P2-026,P2,receiving_first_downs,player_stats,APPROVED_DISPLAY_ONLY_CONTEXT,Relevant to NWR scoring but not active feature,Display factual first-down context only,Display-only only,no,no,No model input.
