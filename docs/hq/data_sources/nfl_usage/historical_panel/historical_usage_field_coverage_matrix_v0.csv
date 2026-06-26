@@ -1,0 +1,32 @@
+field_name,source_family,field_type,data_grain,seasons_available,player_rows_available,player_id_coverage_pct,position_coverage,missingness_pct,coverage_status,display_only_candidate,model_candidate_status,caveats
+offense_snaps,snap_counts,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,17568,100.00,QB;RB;TE;WR,3.98,YELLOW_COVERAGE_ID_JOIN_CAVEAT,yes,no,snap counts joined by normalized name/team/position/week; verify identity before predictive use
+offense_pct,snap_counts,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,17568,100.00,QB;RB;TE;WR,3.98,YELLOW_COVERAGE_ID_JOIN_CAVEAT,yes,no,snap counts joined by normalized name/team/position/week; verify identity before predictive use
+targets,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+carries,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+receptions,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+touches,derived_usage,TRUE_DERIVED_FACT,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+opportunities,derived_usage,TRUE_DERIVED_FACT,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+rushing_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+receiving_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+receiving_air_yards,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+receiving_yards_after_catch,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+rushing_first_downs,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+receiving_first_downs,player_stats,TRUE_FACTUAL_FIELD,player_week,2022;2023;2024,18296,100.00,QB;RB;TE;WR,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,review-only; model_input_allowed=no; app_wiring_allowed=no
+red_zone_carries,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+red_zone_targets,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+red_zone_touches,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_10_carries,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_10_targets,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_10_touches,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_5_carries,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_5_targets,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+inside_5_touches,pbp,TRUE_DERIVED_FACT,player_week,2022;2023;2024,7830,100.00,not_position_scoped,0.00,GREEN_MULTI_SEASON_COVERAGE,yes,no,small-sample event counts; use coverage/readiness only before ablation
+ngs_efficiency_fields,nextgen_stats,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+participation_personnel_formation_context,participation,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+route_participation_proxy,participation,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+tprr_like_proxy,derived_proxy,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+yprr_like_proxy,derived_proxy,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+ftn_pfr_advanced_fields,ftn_pfr,RESEARCH_ONLY,source_defined,,0,0.00,,100.00,RESEARCH_ONLY,no,no,not part of safe historical model candidate panel
+true_routes_run,licensed_gap,LICENSED_DATA_GAP,source_defined,,0,0.00,,100.00,BLOCKED_LICENSED_DATA_GAP,no,no,not part of safe historical model candidate panel
+true_tprr,licensed_gap,LICENSED_DATA_GAP,source_defined,,0,0.00,,100.00,BLOCKED_LICENSED_DATA_GAP,no,no,not part of safe historical model candidate panel
+true_yprr,licensed_gap,LICENSED_DATA_GAP,source_defined,,0,0.00,,100.00,BLOCKED_LICENSED_DATA_GAP,no,no,not part of safe historical model candidate panel

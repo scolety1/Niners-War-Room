@@ -1,0 +1,10 @@
+subject,quarantine_status,reason,model_input_allowed,app_wiring_allowed,notes
+ngs_efficiency_fields,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+participation_personnel_formation_context,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+route_participation_proxy,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+tprr_like_proxy,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+yprr_like_proxy,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+ftn_pfr_advanced_fields,RESEARCH_ONLY,not part of safe historical model candidate panel,no,no,fail closed; review-only
+true_routes_run,BLOCKED_LICENSED_DATA_GAP,not part of safe historical model candidate panel,no,no,fail closed; review-only
+true_tprr,BLOCKED_LICENSED_DATA_GAP,not part of safe historical model candidate panel,no,no,fail closed; review-only
+true_yprr,BLOCKED_LICENSED_DATA_GAP,not part of safe historical model candidate panel,no,no,fail closed; review-only

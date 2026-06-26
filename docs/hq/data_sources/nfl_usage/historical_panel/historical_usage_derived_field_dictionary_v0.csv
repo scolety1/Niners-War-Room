@@ -1,0 +1,16 @@
+field_name,field_type,derivation_formula,grain,model_input_allowed,app_wiring_allowed,caveats
+touches,TRUE_DERIVED_FACT,carries + receptions,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+opportunities,TRUE_DERIVED_FACT,carries + targets,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+red_zone_carries,TRUE_DERIVED_FACT,count of rushing attempts with yardline_100 <= 20,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+red_zone_targets,TRUE_DERIVED_FACT,count of targeted pass attempts with yardline_100 <= 20,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+red_zone_touches,TRUE_DERIVED_FACT,red_zone_carries + completed red_zone_targets,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_10_carries,TRUE_DERIVED_FACT,count of rushing attempts with yardline_100 <= 10,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_10_targets,TRUE_DERIVED_FACT,count of targeted pass attempts with yardline_100 <= 10,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_10_touches,TRUE_DERIVED_FACT,inside_10_carries + completed inside_10_targets,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_5_carries,TRUE_DERIVED_FACT,count of rushing attempts with yardline_100 <= 5,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_5_targets,TRUE_DERIVED_FACT,count of targeted pass attempts with yardline_100 <= 5,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+inside_5_touches,TRUE_DERIVED_FACT,inside_5_carries + completed inside_5_targets,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+first_downs_per_touch,DERIVED_CONTEXT,(rushing_first_downs + receiving_first_downs) / touches,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+rolling_3_game_opportunities,DERIVED_CONTEXT,player-week opportunities rolling mean over prior/current 3 games by player-season,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+rolling_5_game_opportunities,DERIVED_CONTEXT,player-week opportunities rolling mean over prior/current 5 games by player-season,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring
+rolling_8_game_opportunities,DERIVED_CONTEXT,player-week opportunities rolling mean over prior/current 8 games by player-season,player_week/player_season_rolling,no,no,review-only; no model or app decision wiring

@@ -1,0 +1,15 @@
+source_family,loader_name,seasons_attempted,seasons_succeeded,seasons_failed,row_count_summary,column_count,raw_cache_path,raw_committed,status,notes
+player_stats,load_player_stats,2022;2023;2024,2022;2023;2024,,56455,115,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+snap_counts,load_snap_counts,2022;2023;2024,2022;2023;2024,,79536,16,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+pbp,load_pbp,2022;2023;2024,2022;2023;2024,,148591,372,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+nextgen_stats_passing,load_nextgen_stats,2022;2023;2024,2022;2023;2024,,1837,29,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+nextgen_stats_receiving,load_nextgen_stats,2022;2023;2024,2022;2023;2024,,4374,23,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+nextgen_stats_rushing,load_nextgen_stats,2022;2023;2024,2022;2023;2024,,1841,22,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+participation,load_participation,2023;2024,2023;2024,,92087,26,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+ftn_charting,load_ftn_charting,2022;2023;2024,2022;2023;2024,,137899,29,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+pfr_advstats_pass,load_pfr_advstats,2022;2023;2024,2022;2023;2024,,2082,24,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+pfr_advstats_rush,load_pfr_advstats,2022;2023;2024,2022;2023;2024,,7128,16,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+pfr_advstats_rec,load_pfr_advstats,2022;2023;2024,2022;2023;2024,,13594,17,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+rosters,load_rosters,2022;2023;2024,2022;2023;2024,,9440,36,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+players,load_players,all_ids,all_ids,,25032,39,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
+ff_playerids,load_ff_playerids,all_ids,all_ids,,12465,35,C:\NWR_SHARED_DATA\nfl_usage_cache\historical_panel\nflreadpy_cache,no,GREEN,review-only historical smoke
