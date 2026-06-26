@@ -51,12 +51,15 @@ def render_draft_workflow(
     nwr_picks_frame: pd.DataFrame,
     session_key: str,
     source_caption: str,
+    draft_id: str | None = None,
 ) -> None:
     runtime_mode = _runtime_mode_from_session_key(session_key)
+    runtime_draft_id = draft_id or "draft_day_v2"
     runtime_state_key = f"{session_key}_runtime_state"
     if runtime_state_key not in st.session_state:
         load_result = load_runtime_state_with_status(
             mode=runtime_mode,
+            draft_id=runtime_draft_id,
             source_checkpoint=source_caption,
         )
         st.session_state[runtime_state_key] = load_result.state

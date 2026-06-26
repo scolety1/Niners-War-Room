@@ -45,6 +45,19 @@ def test_drafting_mode_route_is_compatibility_pointer() -> None:
     assert "Best Available Board" not in text
 
 
+def test_mock_drafts_page_uses_named_practice_state_scope() -> None:
+    text = _text("app/pages/24_mock_draft_v1.py")
+
+    assert "## MOCK DRAFTS" in text
+    assert "Practice state only" in text
+    assert "Saved mock draft" in text
+    assert "Create Mock" in text
+    assert "Duplicate Mock" in text
+    assert "Delete Mock" in text
+    assert "draft_id=active_session.draft_id" in text
+    assert "session_key=f\"draft_day_v1_mock_draft_workflow_{active_session.draft_id}\"" in text
+
+
 def test_drafting_mode_root_switches_to_live_draft() -> None:
     text = _text("app/pages/32_drafting_mode_root_v1.py")
 
