@@ -37,13 +37,14 @@ def test_evidence_integration_review_blockers_are_priority_sorted() -> None:
     assert data.blockers["priority"].isin(priority_order).all()
 
 
-def test_evidence_integration_review_route_is_hidden_and_read_only() -> None:
+def test_evidence_integration_review_route_is_admin_nav_and_read_only() -> None:
     route = next(
         page for page in ALL_NAVIGATION_PAGES if page.url_path == "evidence-integration-review"
     )
     page_text = (REPO_ROOT / "app" / route.file_path).read_text(encoding="utf-8")
 
-    assert route.visible is False
+    assert route.visible is True
+    assert route.title == "Evidence Review"
     assert route.file_path == "pages/33_evidence_integration_review_v1.py"
     assert "Review-only. This page does not feed rankings" in page_text
     assert "What Is Safe Now" in page_text

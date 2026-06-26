@@ -498,7 +498,7 @@ page_header(
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
 st.markdown(
-    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
     unsafe_allow_html=True,
 )
 st.caption(

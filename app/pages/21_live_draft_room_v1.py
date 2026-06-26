@@ -22,6 +22,98 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
 )
+from src.services.draft_day_runtime_state_service import load_runtime_state, runtime_paths
+from src.services.drafting_mode_cockpit_service import (
+    build_cockpit_summary,
+    owned_pick_rows,
+    recent_event_rows,
+    recent_trade_rows,
+    tier_count_rows,
+)
+
+SOURCE_CAPTION = (
+    "Live runtime draft session. This state is local/manual draft execution data, "
+    "not official source truth and not model input."
+)
+
+
+def _render_live_draft_command_center(
+    *,
+    board_frame,
+    pick_frame,
+    source_caption: str,
+) -> None:
+    state = load_runtime_state(mode="live", source_checkpoint=source_caption)
+    summary = build_cockpit_summary(
+        board_frame=board_frame,
+        pick_frame=pick_frame,
+        runtime_state=state,
+    )
+
+    st.markdown("## LIVE DRAFT")
+    st.error(
+        "LIVE DRAFT - actions on this page write to the local live draft runtime state. "
+        "Use Mock Drafts for practice."
+    )
+    st.caption(
+        "Draft room command center: current pick, owned picks, runtime events, trade log, "
+        "export/import, and the live draft board share one local live state scope."
+    )
+
+    metric_cols = st.columns([1, 1.2, 0.8, 0.8, 1.2])
+    metric_cols[0].metric("Current pick", summary.current_pick)
+    metric_cols[1].metric("On-clock team", summary.on_clock_team)
+    metric_cols[2].metric("Drafted", summary.drafted_count)
+    metric_cols[3].metric("Trades", summary.trade_count)
+    metric_cols[4].metric("Autosave", summary.autosave_status, help=summary.last_saved)
+
+    quick_cols = st.columns(5)
+    quick_cols[0].link_button("Dynasty Rankings", "/rankings", use_container_width=True)
+    quick_cols[1].link_button("Player Compare", "/player-compare", use_container_width=True)
+    quick_cols[2].link_button("Trading Lab", "/trading-lab", use_container_width=True)
+    quick_cols[3].link_button("Post-Draft Review", "/post-draft-mode", use_container_width=True)
+    quick_cols[4].link_button(
+        "Settings / Data Health",
+        "/settings-data-health",
+        use_container_width=True,
+    )
+
+    with st.expander("Your Team / runtime rail", expanded=True):
+        rail_cols = st.columns(3)
+        with rail_cols[0]:
+            st.caption("Owned current picks")
+            owned = owned_pick_rows(pick_frame, state)
+            if owned.empty:
+                st.info("Not enough information")
+            else:
+                st.dataframe(owned.head(8), use_container_width=True, hide_index=True)
+        with rail_cols[1]:
+            st.caption("Recent pick/trade events")
+            events = recent_event_rows(state)
+            if events.empty:
+                st.write("No runtime events yet.")
+            else:
+                st.dataframe(events, use_container_width=True, hide_index=True)
+        with rail_cols[2]:
+            st.caption("Recent trades")
+            trades = recent_trade_rows(state)
+            if trades.empty:
+                st.write("No trade events recorded.")
+            else:
+                st.dataframe(trades, use_container_width=True, hide_index=True)
+
+        tiers = tier_count_rows(board_frame)
+        if tiers:
+            with st.expander("Tier Board / value cliffs", expanded=False):
+                st.dataframe(tiers, use_container_width=True, hide_index=True)
+
+    with st.expander("Live runtime guardrails", expanded=False):
+        paths = runtime_paths()
+        st.caption(f"Runtime root: {paths.root}")
+        st.caption("Runtime state is local/manual and must not be tracked.")
+        st.caption(
+            "No trade valuation, model input, rank changes, or hidden market sort occurs here."
+        )
 
 bundle = load_frozen_board()
 live_board_frame = (
@@ -31,7 +123,7 @@ pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv
 nwr_frame, nwr_path = load_lane_prop_file("mock_draft", "nwr_pick_windows.csv")
 
 page_header(
-    "Live Draft Room",
+    "Live Draft",
     eyebrow="Draft-Day App V1",
     description=(
         "One active draftable-pool table plus an interactive draft board. The frozen "
@@ -45,10 +137,10 @@ page_header(
     ),
 )
 st.markdown(
-    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
     unsafe_allow_html=True,
 )
-st.caption("Deep tool: live draft execution surface. Drafting Mode remains the cockpit.")
+st.caption("Primary draft room: live pick-by-pick execution and command-center context.")
 stop_if_board_blocked(bundle)
 
 if pick_path is None or pick_frame.empty:
@@ -56,6 +148,11 @@ if pick_path is None or pick_frame.empty:
 elif nwr_path is None or nwr_frame.empty:
     render_yellow_hold("NWR pick window props are missing, so NWR pick highlights are limited.")
 else:
+    _render_live_draft_command_center(
+        board_frame=live_board_frame,
+        pick_frame=pick_frame,
+        source_caption=SOURCE_CAPTION,
+    )
     render_draft_workflow(
         mode_label="Live Draft Room",
         board_frame=live_board_frame,

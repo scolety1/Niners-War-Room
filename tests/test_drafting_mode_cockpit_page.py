@@ -9,78 +9,68 @@ def _text(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
-def test_drafting_mode_page_is_cockpit_not_navigation_hub() -> None:
-    text = _text("app/pages/19_drafting_mode_v2.py")
+def test_live_draft_page_is_the_command_center() -> None:
+    text = _text("app/pages/21_live_draft_room_v1.py")
 
-    assert "On-Clock Cockpit" in text
-    assert "Best Available Board" in text
-    assert "Your Draft Rail" in text
-    assert "Decision Panel" in text
-    assert "Record Trade" in text
-    assert "Drafting Mode is a navigation hub" not in text
-
-
-def test_drafting_mode_top_bar_and_guardrails_are_present() -> None:
-    text = _text("app/pages/19_drafting_mode_v2.py")
-
+    assert "## LIVE DRAFT" in text
+    assert "Draft room command center" in text
+    assert "Your Team / runtime rail" in text
     assert "Current pick" in text
     assert "On-clock team" in text
     assert "Drafted" in text
     assert "Trades" in text
     assert "Autosave" in text
-    assert "Refresh Data" in text
-    assert "Save State" in text
-    assert "Load Latest" in text
-    assert "Export" in text
-    assert "Market/ADP context is display-only and never drives default sort" in text
+    assert "build_cockpit_summary" in text
+    assert "render_draft_workflow" in text
 
 
-def test_drafting_mode_top_bar_exposes_session_selector_and_reset_warning() -> None:
+def test_live_draft_page_keeps_trade_and_runtime_guardrails() -> None:
+    text = _text("app/pages/21_live_draft_room_v1.py")
+
+    assert "runtime state is local/manual" in text.lower()
+    assert "No trade valuation" in text
+    assert "No trade valuation, model input, rank changes, or hidden market sort" in text
+    assert "market/ADP/DynastyProcess trade valuation" not in text
+
+
+def test_drafting_mode_route_is_compatibility_pointer() -> None:
     text = _text("app/pages/19_drafting_mode_v2.py")
 
-    assert "Draft Session:" in text
-    assert "Live Draft" in text
-    assert "Mock Draft / Practice" in text
-    assert "LIVE DRAFT MODE" in text
-    assert "MOCK PRACTICE MODE" in text
-    assert "Practice state only — does not affect live draft." in text
-    assert "Resetting Live Draft state clears live picks and trades only" in text
-    assert "reset_runtime_state" in text
+    assert "Drafting Mode moved into Live Draft" in text
+    assert "Compatibility Route" in text
+    assert "Open Live Draft" in text
+    assert "/live-draft-room" in text
+    assert "no longer acts as a separate main workspace" in text
+    assert "On-Clock Cockpit" not in text
+    assert "Best Available Board" not in text
 
 
-def test_drafting_mode_deep_tool_links_carry_session_type_to_cheat_sheets() -> None:
-    text = _text("app/pages/19_drafting_mode_v2.py")
+def test_mock_drafts_page_uses_named_practice_state_scope() -> None:
+    text = _text("app/pages/24_mock_draft_v1.py")
 
-    assert '("Cheat Sheets", f"/cheat-sheets?session_type={session_query}")' in text
-    assert 'with st.expander("Tools / Review", expanded=False):' in text
-    assert "Secondary tools stay available here and by direct URL." in text
-
-
-def test_drafting_mode_selection_and_decision_panel_copy_are_clear() -> None:
-    text = _text("app/pages/19_drafting_mode_v2.py")
-
-    assert "Select player for Decision Panel" in text
-    assert "Selection drives the right-side decision summary" in text
-    assert "**Selected:" in text
-    assert "Why this player" in text
-    assert "Review checks" in text
-    assert "Choose a player to see the decision summary." in text
+    assert "## MOCK DRAFTS" in text
+    assert "Practice state only" in text
+    assert "Saved mock draft" in text
+    assert "Create Mock" in text
+    assert "Duplicate Mock" in text
+    assert "Delete Mock" in text
+    assert "draft_id=active_session.draft_id" in text
+    assert "session_key=f\"draft_day_v1_mock_draft_workflow_{active_session.draft_id}\"" in text
 
 
-def test_settings_data_health_label_spacing_is_consistent_in_cockpit() -> None:
-    text = _text("app/pages/19_drafting_mode_v2.py")
+def test_drafting_mode_root_switches_to_live_draft() -> None:
+    text = _text("app/pages/32_drafting_mode_root_v1.py")
 
-    assert "Settings / Data Health" in text
-    assert "Settings/Data Health" not in text
+    assert 'st.switch_page("pages/21_live_draft_room_v1.py")' in text
 
 
-def test_cheat_sheets_reads_cockpit_session_type_when_launched_from_cockpit() -> None:
+def test_cheat_sheets_still_reads_session_type_when_launched_with_query() -> None:
     text = _text("app/pages/18_cheat_sheets_v2.py")
 
     assert '_query_value("session_type")' in text
     assert "runtime_mode = _runtime_mode_from_query()" in text
     assert "load_runtime_state(mode=runtime_mode)" in text
-    assert "Practice state only — does not affect live draft." in text
+    assert "Practice state only" in text
 
 
 def test_post_draft_mode_defaults_to_live_state() -> None:
@@ -90,7 +80,7 @@ def test_post_draft_mode_defaults_to_live_state() -> None:
     assert 'index=1' not in text
 
 
-def test_deep_pages_expose_back_to_drafting_mode_link() -> None:
+def test_deep_pages_expose_back_to_live_draft_link() -> None:
     pages = [
         "app/pages/18_cheat_sheets_v2.py",
         "app/pages/20_final_board_v1.py",
@@ -101,8 +91,10 @@ def test_deep_pages_expose_back_to_drafting_mode_link() -> None:
         "app/pages/28_settings_data_health_v1.py",
         "app/pages/29_post_draft_mode_v2.py",
         "app/pages/31_unified_universe_review_v1.py",
+        "app/pages/33_evidence_integration_review_v1.py",
     ]
 
     for page in pages:
         text = _text(page)
-        assert '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>' in text
+        assert '<a href="/live-draft-room" target="_self">Back to Live Draft</a>' in text
+        assert "Back to Drafting Mode" not in text
