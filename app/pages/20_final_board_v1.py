@@ -458,6 +458,81 @@ def _render_market_baseline_status(unified: pd.DataFrame) -> None:
             st.warning(stale_warning)
 
 
+def _render_tier_board_cheat_sheet(frame: pd.DataFrame, view_mode: str) -> None:
+    with st.expander("Tier Board / Cheat Sheet", expanded=False):
+        st.caption(
+            "Draft-day scan view for the currently filtered rankings. This is a view of "
+            "existing ranks/tiers only; it does not change sort rules, model values, "
+            "or source truth."
+        )
+        tier_column = _first_existing_column(
+            frame,
+            ("candidate_value_band", "dynasty_asset_tier", "final_tier"),
+        )
+        if tier_column is None or frame.empty:
+            st.info(OUTCOME_NOT_ENOUGH_INFORMATION)
+            return
+        player_column = _first_existing_column(frame, ("player_name", "player"))
+        position_column = _first_existing_column(frame, ("position",))
+        rank_column = _first_existing_column(
+            frame,
+            ("nwr_rank", "dynasty_asset_rank", "final_board_rank"),
+        )
+        working = frame.copy()
+        working["_tier_display"] = (
+            working[tier_column]
+            .fillna(OUTCOME_NOT_ENOUGH_INFORMATION)
+            .astype(str)
+            .replace("", OUTCOME_NOT_ENOUGH_INFORMATION)
+        )
+        if rank_column is not None:
+            working["_rank_sort"] = pd.to_numeric(working[rank_column], errors="coerce")
+        else:
+            working["_rank_sort"] = pd.Series(range(len(working)), index=working.index)
+
+        rows: list[dict[str, str]] = []
+        for tier, tier_frame in working.sort_values("_rank_sort").groupby(
+            "_tier_display",
+            sort=False,
+        ):
+            names = _top_names_for_tier(tier_frame, player_column, position_column)
+            rows.append(
+                {
+                    "View": view_mode,
+                    "Tier / Band": str(tier),
+                    "Rows": str(int(tier_frame.shape[0])),
+                    "Top visible names": names or OUTCOME_NOT_ENOUGH_INFORMATION,
+                    "Guardrail": "Existing rank/tier view only; no hidden market sort.",
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.caption(
+            "Cheat Sheets remain available by direct URL, but the main draft-day tier scan now "
+            "lives inside Dynasty Rankings and Live Draft."
+        )
+
+
+def _first_existing_column(frame: pd.DataFrame, columns: tuple[str, ...]) -> str | None:
+    return next((column for column in columns if column in frame.columns), None)
+
+
+def _top_names_for_tier(
+    frame: pd.DataFrame,
+    player_column: str | None,
+    position_column: str | None,
+) -> str:
+    if player_column is None:
+        return ""
+    names: list[str] = []
+    for _index, row in frame.head(8).iterrows():
+        name = str(row.get(player_column) or "").strip()
+        position = str(row.get(position_column) or "").strip() if position_column else ""
+        if not name:
+            continue
+        names.append(f"{name} ({position})" if position else name)
+    return "; ".join(names)
+
+
 bundle = load_frozen_board()
 dynasty_bundle = load_dynasty_rankings()
 raw_unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
@@ -533,6 +608,7 @@ if show_market_baseline:
         "Market Baseline columns are display-only DynastyProcess context and do not drive "
         "Dynasty Rank, Candidate Rank, Final Board Rank, or default sort."
     )
+_render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(
     display_unified_player_board_frame(
         filtered_board,

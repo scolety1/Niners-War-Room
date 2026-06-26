@@ -68,6 +68,15 @@ def test_market_baseline_controls_are_optional_and_display_only() -> None:
     assert "show_market_baseline=show_market_baseline" in text
 
 
+def test_tier_board_cheat_sheet_is_embedded_as_display_view() -> None:
+    text = _page_text()
+
+    assert '"Tier Board / Cheat Sheet"' in text
+    assert "_render_tier_board_cheat_sheet(filtered_board, view_mode)" in text
+    assert "Existing rank/tier view only; no hidden market sort." in text
+    assert "Cheat Sheets remain available by direct URL" in text
+
+
 def test_market_baseline_filters_have_required_labels() -> None:
     assert _constant_tuple("MARKET_SANITY_FILTERS") == (
         "All",
