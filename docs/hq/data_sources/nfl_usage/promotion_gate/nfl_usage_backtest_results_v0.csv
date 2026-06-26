@@ -1,0 +1,5 @@
+run_id,mode,status,predictive_backtest_run,approved_targets_available,historical_usage_panel_available,model_input_allowed,app_wiring_allowed,notes
+nfl_usage_promotion_gate_v0_20260624,predictive_backtest,BACKTEST_BLOCKED_INSUFFICIENT_COVERAGE,no,limited,no,no,no,"Predictive promotion was not run because committed V0 usage artifacts are field inventories/summaries, not a multi-season leakage-safe player feature panel."
+nfl_usage_promotion_gate_v0_20260624,coverage_only,COVERAGE_ONLY_COMPLETE,no,limited,no,no,no,Coverage diagnostics ran from committed V0 summary artifacts and gate classification.
+nfl_usage_promotion_gate_v0_20260624,leakage_check_only,LEAKAGE_CHECK_PASSED,no,limited,no,no,no,Legal windows require season-N features for season-N+1 targets or explicit in-season cutoffs.
+nfl_usage_promotion_gate_v0_20260624,display_context_sanity,COVERAGE_ONLY_COMPLETE,no,limited,no,no,no,Display candidates remain review-only and are not consumed by decision pages.

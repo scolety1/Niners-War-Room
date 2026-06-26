@@ -1,0 +1,4 @@
+task_id,priority,area,description,expected_files,guardrails,blocker,notes
+NFL-USAGE-GATE-001,P0,targets,Create committed manifest of approved target label artifacts usable by future usage backtests.,docs/hq/data_sources/nfl_usage/promotion_gate/future_target_manifest,no market/rank/projection/vendor targets,current approved labels are local-only backtest artifacts,Needed before predictive field promotion.
+NFL-USAGE-GATE-002,P0,coverage,Build leakage-safe multi-season player usage panel from approved public sources.,ignored shared cache plus committed summary fingerprints only,no raw nflverse payloads tracked,"V0 gate has committed summaries, not full feature panel",Required for field-level ablation.
+NFL-USAGE-GATE-003,P1,licensed gaps,"Evaluate licensed source contract for true routes run, TPRR, and YPRR.",source contract update only,do not scrape blocked vendors,exact public source unavailable,Route proxies remain proxy-labeled.

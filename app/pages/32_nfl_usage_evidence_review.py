@@ -29,6 +29,9 @@ def _metric_grid(summary: dict[str, object]) -> None:
         ("Validation GREEN", summary["validation_green"]),
         ("App wiring allowed", summary["app_wiring_allowed"]),
         ("Model input allowed", summary["model_input_allowed"]),
+        ("Display approved", summary["promotion_display_approved"]),
+        ("Research-only", summary["promotion_research_only"]),
+        ("Blocked/gaps", summary["promotion_blocked"]),
     ]
     columns = st.columns(5)
     for index, (label, value) in enumerate(cards):
@@ -127,4 +130,63 @@ with tabs[4]:
     st.dataframe(data.quarantine, use_container_width=True, hide_index=True)
 
 with tabs[5]:
+    st.warning(
+        "Review-only. Promotion status shown here does not feed rankings, Drafting Mode, "
+        "Player Compare, Trading Lab, Post-Draft, Cheat Sheets, hidden sorts, or model features."
+    )
+    st.metric("Predictive backtest status", data.summary["promotion_backtest_status"])
+
+    st.markdown("#### Promotion Decision Matrix")
+    decision_table = table_columns(
+        data.promotion_decision_matrix,
+        [
+            "field_name",
+            "source_family",
+            "field_type",
+            "coverage_status",
+            "backtest_status",
+            "display_context_status",
+            "final_promotion_status",
+            "approved_for_display_only",
+            "approved_for_model_candidate",
+            "model_input_allowed",
+            "app_wiring_allowed",
+            "required_next_gate",
+            "caveats",
+        ],
+    )
+    st.dataframe(decision_table, use_container_width=True, hide_index=True)
+
+    st.markdown("#### Display-Only Approved")
+    display_approved = (
+        decision_table["approved_for_display_only"].astype(str).str.lower() == "yes"
+    )
+    st.dataframe(
+        decision_table[display_approved],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("#### Research-Only")
+    st.dataframe(
+        decision_table[decision_table["final_promotion_status"].astype(str) == "RESEARCH_ONLY"],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("#### Blocked / Licensed Gaps")
+    st.dataframe(
+        decision_table[
+            decision_table["final_promotion_status"].astype(str).str.startswith("BLOCKED")
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("#### Backtest And Diagnostics")
+    st.dataframe(data.promotion_backtest_results, use_container_width=True, hide_index=True)
+    st.dataframe(data.promotion_coverage_diagnostics, use_container_width=True, hide_index=True)
+    st.dataframe(data.promotion_display_sanity, use_container_width=True, hide_index=True)
+
+    st.markdown("#### V0 Legacy Promotion Candidates")
     st.dataframe(data.promotion_candidates, use_container_width=True, hide_index=True)

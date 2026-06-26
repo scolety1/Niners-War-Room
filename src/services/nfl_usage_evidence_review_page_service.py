@@ -7,6 +7,7 @@ import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REVIEW_ROOT = REPO_ROOT / "docs" / "hq" / "data_sources" / "nfl_usage" / "review_artifacts"
+PROMOTION_ROOT = REVIEW_ROOT.parent / "promotion_gate"
 
 LIVE_SMOKE_PATH = REVIEW_ROOT / "live_smoke" / "nfl_usage_live_smoke_summary_v0.csv"
 FIELD_INVENTORY_PATH = (
@@ -19,6 +20,12 @@ QUARANTINE_PATH = REVIEW_ROOT / "validation" / "nfl_usage_live_quarantine_report
 PROMOTION_CANDIDATES_PATH = (
     REVIEW_ROOT.parent / "NWR_NFL_USAGE_FIELD_PROMOTION_CANDIDATES_V0_20260624.csv"
 )
+PROMOTION_DECISION_MATRIX_PATH = (
+    PROMOTION_ROOT / "nfl_usage_field_promotion_decision_matrix_v0.csv"
+)
+PROMOTION_BACKTEST_RESULTS_PATH = PROMOTION_ROOT / "nfl_usage_backtest_results_v0.csv"
+PROMOTION_COVERAGE_DIAGNOSTICS_PATH = PROMOTION_ROOT / "nfl_usage_coverage_diagnostics_v0.csv"
+PROMOTION_DISPLAY_SANITY_PATH = PROMOTION_ROOT / "nfl_usage_display_context_sanity_v0.csv"
 
 
 @dataclass(frozen=True)
@@ -30,6 +37,10 @@ class NflUsageEvidenceReviewData:
     validation: pd.DataFrame
     quarantine: pd.DataFrame
     promotion_candidates: pd.DataFrame
+    promotion_decision_matrix: pd.DataFrame
+    promotion_backtest_results: pd.DataFrame
+    promotion_coverage_diagnostics: pd.DataFrame
+    promotion_display_sanity: pd.DataFrame
     summary: dict[str, object]
 
 
@@ -45,6 +56,10 @@ def load_nfl_usage_evidence_review_data(
     validation = _read_csv(review_root / "validation" / VALIDATION_PATH.name)
     quarantine = _read_csv(review_root / "validation" / QUARANTINE_PATH.name)
     promotion_candidates = _read_csv(PROMOTION_CANDIDATES_PATH)
+    promotion_decision_matrix = _read_csv(PROMOTION_DECISION_MATRIX_PATH)
+    promotion_backtest_results = _read_csv(PROMOTION_BACKTEST_RESULTS_PATH)
+    promotion_coverage_diagnostics = _read_csv(PROMOTION_COVERAGE_DIAGNOSTICS_PATH)
+    promotion_display_sanity = _read_csv(PROMOTION_DISPLAY_SANITY_PATH)
     return NflUsageEvidenceReviewData(
         smoke=smoke,
         field_inventory=field_inventory,
@@ -53,12 +68,18 @@ def load_nfl_usage_evidence_review_data(
         validation=validation,
         quarantine=quarantine,
         promotion_candidates=promotion_candidates,
+        promotion_decision_matrix=promotion_decision_matrix,
+        promotion_backtest_results=promotion_backtest_results,
+        promotion_coverage_diagnostics=promotion_coverage_diagnostics,
+        promotion_display_sanity=promotion_display_sanity,
         summary=build_summary_counts(
             smoke,
             field_inventory,
             field_gaps,
             validation,
             quarantine,
+            promotion_decision_matrix,
+            promotion_backtest_results,
         ),
     )
 
@@ -69,7 +90,13 @@ def build_summary_counts(
     field_gaps: pd.DataFrame,
     validation: pd.DataFrame,
     quarantine: pd.DataFrame,
+    promotion_decision_matrix: pd.DataFrame | None = None,
+    promotion_backtest_results: pd.DataFrame | None = None,
 ) -> dict[str, object]:
+    if promotion_decision_matrix is None:
+        promotion_decision_matrix = pd.DataFrame()
+    if promotion_backtest_results is None:
+        promotion_backtest_results = pd.DataFrame()
     return {
         "sources_inventoried": int(len(smoke)),
         "sources_green": _count_status(smoke, "status", "GREEN"),
@@ -87,6 +114,26 @@ def build_summary_counts(
         "validation_green": _all_green(validation),
         "app_wiring_allowed": _all_no(field_inventory, "app_wiring_allowed"),
         "model_input_allowed": _all_no(field_inventory, "model_input_allowed"),
+        "promotion_display_approved": _count_status(
+            promotion_decision_matrix,
+            "approved_for_display_only",
+            "yes",
+        ),
+        "promotion_research_only": _count_status(
+            promotion_decision_matrix,
+            "final_promotion_status",
+            "RESEARCH_ONLY",
+        ),
+        "promotion_blocked": _count_prefix(
+            promotion_decision_matrix,
+            "final_promotion_status",
+            "BLOCKED",
+        ),
+        "promotion_backtest_status": _first_value(
+            promotion_backtest_results,
+            "status",
+            "missing",
+        ),
         "raw_data_loaded": "no",
     }
 
@@ -108,6 +155,18 @@ def _count_status(frame: pd.DataFrame, column: str, value: str) -> int:
     if column not in frame.columns:
         return 0
     return int(frame[column].astype(str).str.lower().eq(value.lower()).sum())
+
+
+def _count_prefix(frame: pd.DataFrame, column: str, value: str) -> int:
+    if column not in frame.columns:
+        return 0
+    return int(frame[column].astype(str).str.upper().str.startswith(value.upper()).sum())
+
+
+def _first_value(frame: pd.DataFrame, column: str, default: str) -> str:
+    if column not in frame.columns or frame.empty:
+        return default
+    return str(frame.iloc[0][column])
 
 
 def _all_green(frame: pd.DataFrame) -> str:

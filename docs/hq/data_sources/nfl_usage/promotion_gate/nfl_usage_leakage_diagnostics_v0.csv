@@ -1,0 +1,8 @@
+check_name,status,leakage_risk,model_input_allowed,app_wiring_allowed,notes
+feature_window:season_n_to_season_n_plus_1,LEAKAGE_CHECK_PASSED,low,no,no,Primary legal window if historical player-season panel exists.
+feature_window:weeks_1_8_to_weeks_9_17_same_season,LEAKAGE_CHECK_PASSED,medium,no,no,Requires explicit cutoff and cannot use full-season aggregates.
+feature_window:full_current_season_to_same_season_final,BLOCKED_WINDOW_CONFIRMED,high,no,no,Full-season current stats cannot predict the same final season outcome.
+feature_window:post_decision_updates_to_draft_day_decision,BLOCKED_WINDOW_CONFIRMED,high,no,no,No post-cutoff updates may leak into a prior decision.
+feature_window:display_only_latest_facts,LEAKAGE_CHECK_PASSED,low,no,no,"No prediction, no rank, no hidden sort, no model input."
+blocked_market_rank_projection_tokens,LEAKAGE_CHECK_PASSED,high,no,no,"ADP, market, rank, projection, DynastyProcess, and vendor values are blocked as target truth and inputs."
+route_proxy_overclaim,LEAKAGE_CHECK_PASSED,high,no,no,"Route proxies cannot be labeled true routes, true TPRR, or true YPRR."

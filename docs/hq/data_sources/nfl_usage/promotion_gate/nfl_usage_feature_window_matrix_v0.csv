@@ -1,0 +1,6 @@
+feature_window_id,feature_start,feature_end,target_window,allowed,leakage_risk,use_case,notes
+season_n_to_season_n_plus_1,regular season N start,regular season N final stat lock,regular season N+1,yes,low,next-season predictive backtest after all season-N facts are finalized,Primary legal window if historical player-season panel exists.
+weeks_1_8_to_weeks_9_17_same_season,week 1,week 8 stat lock,weeks 9-17 same season,yes,medium,in-season role continuation research only,Requires explicit cutoff and cannot use full-season aggregates.
+full_current_season_to_same_season_final,regular season N start,regular season N final stat lock,regular season N final outcome,no,high,blocked,Full-season current stats cannot predict the same final season outcome.
+post_decision_updates_to_draft_day_decision,after evaluation date,after decision date,draft-day or pre-decision evaluation,no,high,blocked,No post-cutoff updates may leak into a prior decision.
+display_only_latest_facts,latest approved public summary,latest approved public summary,none,yes,low,hidden review page display context only,"No prediction, no rank, no hidden sort, no model input."

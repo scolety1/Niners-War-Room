@@ -1,0 +1,27 @@
+field_name,display_context_status,proxy_label_required,licensed_data_gap,model_input_allowed,app_wiring_allowed,notes
+offense_snaps,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Public snap count fact; point-in-time handling still required for future model gates.
+offense_pct,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,"Display as offensive snap share, not role certainty."
+targets,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Use factual counts only; no target-share overclaim without denominator audit.
+carries,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Use factual counts only.
+receptions,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,"Non-PPR league context means receptions are context, not scoring input by themselves."
+touches,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Definition must be visible: carries + receptions.
+opportunities,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Definition must be visible: carries + targets.
+rushing_yards,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,"Production fact, not standalone dynasty value."
+receiving_yards,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,"Production fact, not standalone dynasty value."
+receiving_air_yards,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Air yards shares remain separate review fields.
+receiving_yards_after_catch,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,"Call it YAC, not separation or route quality."
+rushing_first_downs,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Relevant to NWR scoring; still not active model input.
+receiving_first_downs,APPROVED_DISPLAY_ONLY_CONTEXT,no,no,no,no,Relevant to NWR scoring; still not active model input.
+red_zone_opportunities,DISPLAY_ONLY_CANDIDATE,no,no,no,no,Do not compare across sources until red-zone definition is fixed.
+inside_10_opportunities,DISPLAY_ONLY_CANDIDATE,no,no,no,no,Small samples require visible caveat.
+inside_5_opportunities,DISPLAY_ONLY_CANDIDATE,no,no,no,no,Very small samples require visible caveat.
+ngs_efficiency_fields,RESEARCH_ONLY,no,no,no,no,Do not mix efficiency fields into model candidates without denominator and drift checks.
+participation_personnel_formation_context,RESEARCH_ONLY,yes,no,no,no,Public participation context is not true routes run.
+route_participation_proxy,RESEARCH_ONLY,yes,no,no,no,Do not call this true routes run.
+tprr_like_proxy,RESEARCH_ONLY,yes,yes,no,no,Do not call this true TPRR.
+yprr_like_proxy,RESEARCH_ONLY,yes,yes,no,no,Do not call this true YPRR.
+ftn_pfr_advanced_fields,RESEARCH_ONLY,yes,no,no,no,Keep as candidate inventory until semantics and coverage pass.
+true_routes_run,BLOCKED,no,yes,no,no,Licensed-data gap in V0.
+true_tprr,BLOCKED,no,yes,no,no,Licensed-data gap in V0.
+true_yprr,BLOCKED,no,yes,no,no,Licensed-data gap in V0.
+ranks_projections_adp_market_vendor_values,BLOCKED,no,yes,no,no,Never target truth or model input in this gate.
