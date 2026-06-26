@@ -19,14 +19,50 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Drafting Mode",
-        file_path="pages/19_drafting_mode_v2.py",
-        url_path="drafting-mode",
+        title="Live Draft",
+        file_path="pages/21_live_draft_room_v1.py",
+        url_path="live-draft-room",
+        default=True,
+    ),
+    NavigationPageSpec(
+        title="Mock Drafts",
+        file_path="pages/24_mock_draft_v1.py",
+        url_path="mock-draft",
+    ),
+    NavigationPageSpec(
+        title="Dynasty Rankings",
+        file_path="pages/20_final_board_v1.py",
+        url_path="rankings",
+    ),
+    NavigationPageSpec(
+        title="Player Compare",
+        file_path="pages/22_player_compare_v1.py",
+        url_path="player-compare",
+    ),
+    NavigationPageSpec(
+        title="Trading Lab",
+        file_path="pages/23_trading_lab_v1.py",
+        url_path="trading-lab",
+    ),
+    NavigationPageSpec(
+        title="Post-Draft Review",
+        file_path="pages/29_post_draft_mode_v2.py",
+        url_path="post-draft-mode",
+    ),
+    NavigationPageSpec(
+        title="Future Tools",
+        file_path="pages/34_future_tools_v1.py",
+        url_path="future-tools",
     ),
     NavigationPageSpec(
         title="Refresh Data",
         file_path="pages/24_refresh_data_v1.py",
         url_path="refresh-data",
+    ),
+    NavigationPageSpec(
+        title="Evidence Review",
+        file_path="pages/33_evidence_integration_review_v1.py",
+        url_path="evidence-integration-review",
     ),
     NavigationPageSpec(
         title="Settings / Data Health",
@@ -37,16 +73,15 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Drafting Mode Root",
-        file_path="pages/32_drafting_mode_root_v1.py",
-        url_path="drafting-mode-root",
-        default=True,
+        title="Drafting Mode Compatibility",
+        file_path="pages/19_drafting_mode_v2.py",
+        url_path="drafting-mode",
         visible=False,
     ),
     NavigationPageSpec(
-        title="Rankings",
-        file_path="pages/20_final_board_v1.py",
-        url_path="rankings",
+        title="Drafting Mode Root",
+        file_path="pages/32_drafting_mode_root_v1.py",
+        url_path="drafting-mode-root",
         visible=False,
     ),
     NavigationPageSpec(
@@ -65,36 +100,6 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Cheat Sheets",
         file_path="pages/18_cheat_sheets_v2.py",
         url_path="cheat-sheets",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Live Draft Room",
-        file_path="pages/21_live_draft_room_v1.py",
-        url_path="live-draft-room",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Mock Draft",
-        file_path="pages/24_mock_draft_v1.py",
-        url_path="mock-draft",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Player Compare",
-        file_path="pages/22_player_compare_v1.py",
-        url_path="player-compare",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Trading Lab",
-        file_path="pages/23_trading_lab_v1.py",
-        url_path="trading-lab",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Post-Draft Mode",
-        file_path="pages/29_post_draft_mode_v2.py",
-        url_path="post-draft-mode",
         visible=False,
     ),
     NavigationPageSpec(
@@ -119,12 +124,6 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="NFL Usage Evidence Review",
         file_path="pages/32_nfl_usage_evidence_review.py",
         url_path="nfl-usage-evidence-review",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Evidence Integration Review",
-        file_path="pages/33_evidence_integration_review_v1.py",
-        url_path="evidence-integration-review",
         visible=False,
     ),
     NavigationPageSpec(

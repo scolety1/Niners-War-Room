@@ -18,7 +18,7 @@ def test_live_draft_room_page_exists_and_has_route() -> None:
 
     assert PAGE.exists()
     assert 'st.title("Live Draft Room")' in text
-    assert 'title="Live Draft Room"' in nav
+    assert 'title="Live Draft"' in nav
     assert 'url_path="live-draft-room"' in nav
 
 

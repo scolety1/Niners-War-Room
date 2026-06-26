@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.components.demo_source_labels import demo_source_label
-from app.navigation import HIDDEN_ADVANCED_PAGES, VISIBLE_NAVIGATION_PAGES
+from app.navigation import VISIBLE_NAVIGATION_PAGES
 from src.services.full_player_board_value_service import (
     FULL_BOARD_SCORE_COLUMN,
     _full_board_row,
@@ -92,14 +92,16 @@ def test_streamlit_status_widget_is_hidden_best_effort_for_demo() -> None:
     assert "footer" in text
 
 
-def test_rankings_has_hidden_direct_route_and_drafting_mode_is_primary() -> None:
-    hidden_rankings = next(page for page in HIDDEN_ADVANCED_PAGES if page.url_path == "rankings")
-    hidden_defaults = [page for page in HIDDEN_ADVANCED_PAGES if page.default]
+def test_rankings_and_live_draft_are_primary_nav_items() -> None:
+    visible_rankings = next(
+        page for page in VISIBLE_NAVIGATION_PAGES if page.url_path == "rankings"
+    )
+    visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
-    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "drafting-mode"
-    assert hidden_rankings.title == "Rankings"
-    assert hidden_rankings.visible is False
-    assert [page.title for page in hidden_defaults] == ["Drafting Mode Root"]
+    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "live-draft-room"
+    assert visible_rankings.title == "Dynasty Rankings"
+    assert visible_rankings.visible is True
+    assert [page.title for page in visible_defaults] == ["Live Draft"]
 
 
 def test_team_and_roster_tags_are_display_only_for_private_score() -> None:
