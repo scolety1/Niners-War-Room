@@ -59,7 +59,7 @@ page_header(
 )
 
 st.markdown(
-    '<a href="/drafting-mode" target="_self">Back to Drafting Mode</a>',
+    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
     unsafe_allow_html=True,
 )
 st.warning("Review-only. Not used by rankings, model, or Drafting Mode.")
