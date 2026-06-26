@@ -1,0 +1,2 @@
+run_id,run_timestamp,source_rows,candidate_rows,exact_match_count,strong_candidate_count,possible_candidate_count,ambiguous_count,unmatched_count,high_confidence_count,medium_confidence_count,low_confidence_count,unknown_confidence_count,review_required_count,review_required,model_use_allowed,training_allowed,notes
+cfbd_identity_matching_v1_20260624_20260626T082248Z,2026-06-26T08:22:48Z,31822,32033,157,0,46,5,31614,157,5,46,31614,31822,true,false,false,Review-only CFBD identity candidates; no source-truth promotion.
