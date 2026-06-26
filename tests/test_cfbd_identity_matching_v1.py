@@ -6,7 +6,11 @@ from scripts.build_cfbd_identity_matching_v1 import (
     TRAINING_ALLOWED,
     CandidateResolver,
     IdentityCandidate,
+    build_draft_registry_rows,
+    build_high_confidence_review_rows,
     build_match_rows,
+    build_production_context_rows,
+    build_unmatched_priority_rows,
     normalize_player_name,
 )
 
@@ -118,3 +122,107 @@ def test_candidate_resolver_does_not_use_external_calls_or_nfl_usage_paths() -> 
         "tests/test_nfl_usage_historical_panel_service.py",
     )
     assert all("cfbd_identity" not in path for path in forbidden_paths)
+
+
+def test_high_confidence_review_file_rows_remain_review_required() -> None:
+    candidate_rows, _ = build_match_rows(
+        cfbd_rows=[
+            {
+                "cfbd_player_id": "1",
+                "player_name": "Example Back",
+                "college_team": "Example",
+                "position": "RB",
+                "season": "2025",
+            }
+        ],
+        candidates=(_candidate(name="Example Back", position="RB"),),
+        run_id="run-1",
+    )
+
+    rows = build_high_confidence_review_rows(candidate_rows)
+
+    assert rows
+    assert rows[0]["review_required"] == "true"
+    assert rows[0]["model_use_allowed"] == "false"
+    assert rows[0]["training_allowed"] == "false"
+    assert rows[0]["human_decision"] == ""
+
+
+def test_draft_registry_marks_links_unapproved_and_review_only() -> None:
+    candidate_rows, _ = build_match_rows(
+        cfbd_rows=[
+            {
+                "cfbd_player_id": "1",
+                "player_name": "Example Back",
+                "college_team": "Example",
+                "position": "RB",
+                "season": "2025",
+            }
+        ],
+        candidates=(_candidate(name="Example Back", position="RB"),),
+        run_id="run-1",
+    )
+
+    rows = build_draft_registry_rows(candidate_rows)
+
+    assert rows[0]["registry_status"] == "DRAFT_REVIEW_ONLY"
+    assert rows[0]["approved_by_human"] == "false"
+    assert rows[0]["model_use_allowed"] == "false"
+    assert rows[0]["training_allowed"] == "false"
+
+
+def test_unmatched_priority_review_loads_with_priority_bucket() -> None:
+    candidate_rows, _ = build_match_rows(
+        cfbd_rows=[
+            {
+                "cfbd_player_id": "9",
+                "player_name": "Unknown Runner",
+                "college_team": "Example",
+                "position": "RB",
+                "season": "2025",
+            }
+        ],
+        candidates=(_candidate(name="Different Runner", position="RB"),),
+        run_id="run-1",
+    )
+
+    rows = build_unmatched_priority_rows(
+        candidate_rows,
+        production_context={("9", "2025"): {"production_context_available": "true"}},
+    )
+
+    assert rows[0]["priority_bucket"] == "P1_RECENT_SKILL_WITH_PRODUCTION"
+    assert rows[0]["production_context_available"] == "true"
+    assert rows[0]["model_use_allowed"] == "false"
+
+
+def test_production_context_join_does_not_create_model_inputs() -> None:
+    candidate_rows, _ = build_match_rows(
+        cfbd_rows=[
+            {
+                "cfbd_player_id": "1",
+                "player_name": "Example Back",
+                "college_team": "Example",
+                "position": "RB",
+                "season": "2025",
+            }
+        ],
+        candidates=(_candidate(name="Example Back", position="RB"),),
+        run_id="run-1",
+    )
+
+    rows = build_production_context_rows(
+        candidate_rows,
+        production_context={
+            ("1", "2025"): {
+                "production_context_available": "true",
+                "production_categories": "rushing",
+                "production_summary": "rushing: YDS=1000",
+            }
+        },
+    )
+
+    assert rows[0]["production_context_available"] == "true"
+    assert rows[0]["production_context_model_use_allowed"] == "false"
+    assert rows[0]["production_context_training_allowed"] == "false"
+    assert rows[0]["production_context_review_required"] == "true"
