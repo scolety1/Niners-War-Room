@@ -6,7 +6,7 @@ Overall verdict: GREEN
 
 Starting HEAD: `a18564738da9c15936a5f9ed85fb7cf064d10211`
 
-Final HEAD: `9f06f391a1f3a22f3ddc481bfa2ee5d083a3ae29`
+Final HEAD: branch HEAD after this closeout commit. Confirm with `git rev-parse HEAD`; the exact pushed hash is also recorded in the final agent response.
 
 Worktree used: `C:\NWR\Niners-War-Room-master-cfbd-identity-final-integration`
 
@@ -120,7 +120,7 @@ Earlier route audit also smoked:
 - `fb15680` - `docs: add nfl usage morning promotion queue`
 - `b56b351` - `docs: add review route navigation audit`
 - `46000a6` - `docs: add morning evidence review brief`
-- `9f06f39` - `docs: add overnight review queue closeout`
+- final closeout commit - `docs: add overnight review queue closeout`
 
 ## Remaining Blockers
 
