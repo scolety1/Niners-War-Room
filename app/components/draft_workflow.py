@@ -431,35 +431,37 @@ def _render_trade_events(
             "Record pick-ownership events during the draft. This updates local runtime board "
             "context only; no trade calculator, model value, rank, or source truth is changed."
         )
-        cols = st.columns(2)
-        team_a = cols[0].text_input(
-            "Team A",
-            key=f"{session_key}_trade_team_a",
-            value="NWR",
-            placeholder="Team A",
-        )
-        team_b = cols[1].text_input(
-            "Team B",
-            key=f"{session_key}_trade_team_b",
-            placeholder="Team B",
-        )
-        asset_cols = st.columns(2)
-        team_a_sends = asset_cols[0].text_area(
-            "Team A sends",
-            key=f"{session_key}_trade_team_a_sends",
-            placeholder="Example: 2026 1.04",
-        )
-        team_b_sends = asset_cols[1].text_area(
-            "Team B sends",
-            key=f"{session_key}_trade_team_b_sends",
-            placeholder="Example: 2026 2.03, 2028 1st",
-        )
-        notes = st.text_area(
-            "Notes",
-            key=f"{session_key}_trade_notes",
-            placeholder="Optional context. No final trade advice.",
-        )
-        if st.button("Record trade", key=f"{session_key}_record_trade"):
+        with st.form(key=f"{session_key}_trade_form", clear_on_submit=False):
+            cols = st.columns(2)
+            team_a = cols[0].text_input(
+                "Team A",
+                key=f"{session_key}_trade_team_a",
+                value="NWR",
+                placeholder="Team A",
+            )
+            team_b = cols[1].text_input(
+                "Team B",
+                key=f"{session_key}_trade_team_b",
+                placeholder="Team B",
+            )
+            asset_cols = st.columns(2)
+            team_a_sends = asset_cols[0].text_area(
+                "Team A sends",
+                key=f"{session_key}_trade_team_a_sends",
+                placeholder="Example: 2026 1.04",
+            )
+            team_b_sends = asset_cols[1].text_area(
+                "Team B sends",
+                key=f"{session_key}_trade_team_b_sends",
+                placeholder="Example: 2026 2.03, 2028 1st",
+            )
+            notes = st.text_area(
+                "Notes",
+                key=f"{session_key}_trade_notes",
+                placeholder="Optional context. No final trade advice.",
+            )
+            submitted = st.form_submit_button("Record trade")
+        if submitted:
             st.session_state[runtime_state_key] = record_trade_event(
                 st.session_state[runtime_state_key],
                 team_a=team_a,
