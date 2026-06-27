@@ -13,6 +13,7 @@ from app.components.development_lab import (  # noqa: E402
     render_guardrails,
     render_lab_links,
     render_lab_warning,
+    render_local_lab_state_status,
     render_safe_v0_table,
     render_tool_status_metrics,
 )
@@ -40,6 +41,9 @@ render_tool_status_metrics(statuses)
 section_label("Safe V0 Tools In The Lab")
 render_safe_v0_table(statuses)
 render_lab_links()
+
+section_label("Local Lab State")
+render_local_lab_state_status()
 
 section_label("Blocked / Gated Tools")
 render_blocked_tools_table(statuses)

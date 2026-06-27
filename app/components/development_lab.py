@@ -3,6 +3,16 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.services.development_lab_state_service import (
+    DevelopmentLabToolState,
+    export_tool_state_json,
+    import_tool_state,
+    list_saved_tool_states,
+    load_tool_state,
+    preview_import_tool_state,
+    reset_tool_state,
+    save_tool_state,
+)
 from src.services.draft_day_runtime_state_service import load_runtime_state_with_status
 from src.services.future_tools_rd_service import (
     FutureToolStatus,
@@ -36,6 +46,15 @@ UPCOMING_DRAFT_PREP_WARNING = (
     "Development Lab tool. Safe V0 / manual planning workflow. Not model input. "
     "Not source truth. No rookie rankings, class grades, or automated recommendations."
 )
+
+TOOL_LABELS = {
+    "roster_weakness_tracker": "Roster Weakness Tracker",
+    "future_pick_planning": "Future Pick Planning",
+    "upcoming_draft_prep": "Upcoming Draft Prep",
+    "keeper_deadline_prep": "Keeper Deadline Prep",
+    "drop_deadline_prep": "Drop Deadline Prep",
+    "trade_deadline_prep": "Trade Deadline Prep",
+}
 
 
 def load_statuses() -> list[FutureToolStatus]:
@@ -108,17 +127,40 @@ def render_lab_links() -> None:
             st.link_button(label, path, use_container_width=True)
 
 
+def render_local_lab_state_status() -> None:
+    rows: list[dict[str, str]] = []
+    for state in list_saved_tool_states():
+        rows.append(
+            {
+                "Tool": TOOL_LABELS.get(state.tool_key, state.tool_key),
+                "Saved state": _local_state_status_label(state),
+                "Last updated": state.saved_at_utc or "Not saved",
+                "Path": str(state.path),
+                "Guardrail": "Local lab notes only; not model input or source truth.",
+            }
+        )
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption(
+        "Saved Development Lab notes live under C:\\NWR_SHARED_DATA by default and are not "
+        "tracked by git. Export JSON before major review sessions if you want a portable copy."
+    )
+
+
 def render_roster_weakness_tracker() -> None:
     render_lab_warning()
-    st.caption("Display-only roster structure. Not a recommendation. Not model input.")
+    st.caption(
+        "Display-only roster structure. Not a recommendation. Not model input. "
+        "Local lab notes can be saved and reloaded."
+    )
+    fields = {"manual_roster_rows": "development_lab_roster_weakness_tracker_rows"}
+    _hydrate_local_lab_state("roster_weakness_tracker", fields)
     roster_text = st.text_area(
         "Manual roster rows",
-        value="",
         placeholder="Player, Position, Age, Dynasty Rank, Notes",
         key="development_lab_roster_weakness_tracker_rows",
         help=(
-            "Optional manual input. This is not stored by the app. Missing age/rank stays "
-            "Not enough information."
+            "Optional manual input. Save local lab state to preserve it across reloads. "
+            "Missing age/rank stays Not enough information."
         ),
     )
     rows = parse_manual_roster_text(roster_text)
@@ -127,6 +169,7 @@ def render_roster_weakness_tracker() -> None:
             "Enter manual roster rows to generate display-only counts. "
             "No roster recommendation is generated."
         )
+        _render_lab_state_controls("roster_weakness_tracker", fields)
         return
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     col_a, col_b = st.columns(2)
@@ -146,11 +189,17 @@ def render_roster_weakness_tracker() -> None:
             rows,
             "nwr_roster_weakness_tracker_v0_display_only.csv",
         )
+    _render_lab_state_controls("roster_weakness_tracker", fields)
 
 
 def render_future_pick_planning() -> None:
     render_lab_warning()
-    st.caption("Planning ledger only. No pick valuation, no trade valuation, no class strength.")
+    st.caption(
+        "Planning ledger only. No pick valuation, no trade valuation, no class strength. "
+        "Local manual notes can be saved and reloaded."
+    )
+    fields = {"manual_future_pick_notes": "development_lab_future_pick_planning_rows"}
+    _hydrate_local_lab_state("future_pick_planning", fields)
     live_state_result = load_runtime_state_with_status(mode="live")
     runtime_rows = future_pick_ledger_from_runtime_state(live_state_result.state)
     st.caption(
@@ -163,10 +212,9 @@ def render_future_pick_planning() -> None:
         st.info("No future picks found in the live runtime trade event log.")
     manual_text = st.text_area(
         "Manual future pick notes",
-        value="",
         placeholder="2028, 1st, acquired, WhoDat, confirm against Sleeper later",
         key="development_lab_future_pick_planning_rows",
-        help="Optional manual notes. This is not stored by the app.",
+        help="Optional manual notes. Save local lab state to preserve them across reloads.",
     )
     manual_rows = parse_manual_future_pick_text(manual_text)
     if manual_rows:
@@ -176,18 +224,31 @@ def render_future_pick_planning() -> None:
         [*runtime_rows, *manual_rows],
         "nwr_future_pick_planning_v0_display_only.csv",
     )
+    _render_lab_state_controls("future_pick_planning", fields)
 
 
 def render_upcoming_draft_prep() -> None:
     st.warning(UPCOMING_DRAFT_PREP_WARNING)
-    st.info("Manual inputs are not saved after reload unless exported.")
+    st.info(
+        "Local lab notes only. Save to preserve manual inputs across reloads. "
+        "This is not model input, source truth, or draft-room runtime state."
+    )
+    fields = {
+        "setup_notes": "development_lab_upcoming_draft_setup_notes",
+        "roster_need_rows": "development_lab_upcoming_roster_needs",
+        "pick_inventory_rows": "development_lab_upcoming_pick_inventory",
+        "watchlist_rows": "development_lab_upcoming_watchlist",
+        "scenario_rows": "development_lab_upcoming_mock_scenarios",
+        "question_notes": "development_lab_upcoming_question_notes",
+        "readiness_notes": "development_lab_upcoming_readiness_notes",
+    }
+    _hydrate_local_lab_state("upcoming_draft_prep", fields)
 
     st.subheader("Draft Setup Checklist")
     setup_notes = st.text_area(
         "Draft setup notes",
-        value="",
         key="development_lab_upcoming_draft_setup_notes",
-        help="Optional manual note for export. This is not stored by the app.",
+        help="Optional manual note. Save local lab state to preserve it across reloads.",
     )
     setup_rows = upcoming_draft_setup_checklist(notes=setup_notes)
     st.dataframe(pd.DataFrame(setup_rows), use_container_width=True, hide_index=True)
@@ -201,7 +262,6 @@ def render_upcoming_draft_prep() -> None:
     st.caption("Manual/display-only planning area. No position target recommendation is generated.")
     roster_need_text = st.text_area(
         "Roster need rows",
-        value="",
         placeholder="Position, short-term need, long-term need, depth concern notes, watch notes",
         key="development_lab_upcoming_roster_needs",
     )
@@ -240,7 +300,6 @@ def render_upcoming_draft_prep() -> None:
     )
     pick_text = st.text_area(
         "Manual pick inventory rows",
-        value="",
         placeholder="Year, round/pick, owned/sent/acquired/uncertain, source/note, action needed",
         key="development_lab_upcoming_pick_inventory",
     )
@@ -263,7 +322,6 @@ def render_upcoming_draft_prep() -> None:
     )
     watchlist_text = st.text_area(
         "Manual rookie/prospect watchlist rows",
-        value="",
         placeholder="Player name, school/team, position, note, source note, review status",
         key="development_lab_upcoming_watchlist",
     )
@@ -285,7 +343,6 @@ def render_upcoming_draft_prep() -> None:
     st.link_button("Open Mock Drafts", "/mock-draft", use_container_width=False)
     scenario_text = st.text_area(
         "Manual mock draft scenario rows",
-        value="",
         placeholder=(
             "Scenario name, what happens before my pick, trade-down scenario, "
             "position run scenario, if player X is gone"
@@ -314,7 +371,6 @@ def render_upcoming_draft_prep() -> None:
     st.subheader("Questions to Answer Before Draft")
     question_notes = st.text_area(
         "Open question notes",
-        value="",
         key="development_lab_upcoming_question_notes",
     )
     question_rows = upcoming_draft_questions_checklist(notes=question_notes)
@@ -329,7 +385,6 @@ def render_upcoming_draft_prep() -> None:
     st.caption("Manual/status checklist only. This is not a refresh button or data promotion tool.")
     readiness_notes = st.text_area(
         "Data readiness notes",
-        value="",
         key="development_lab_upcoming_readiness_notes",
     )
     readiness_rows = upcoming_draft_data_readiness_checklist(notes=readiness_notes)
@@ -339,22 +394,29 @@ def render_upcoming_draft_prep() -> None:
         readiness_rows,
         "nwr_upcoming_draft_data_readiness_v0.csv",
     )
+    _render_lab_state_controls("upcoming_draft_prep", fields)
 
 
 def render_deadline_prep(tool_id: str, title: str) -> None:
     render_lab_warning()
-    st.caption("Manual checklist only. Not a decision engine. Not model input.")
+    st.caption(
+        "Manual checklist only. Not a decision engine. Not model input. "
+        "Local lab notes can be saved and reloaded."
+    )
+    fields = {
+        "manual_deadline_date": f"development_lab_{tool_id}_date",
+        "manual_notes": f"development_lab_{tool_id}_notes",
+    }
+    _hydrate_local_lab_state(tool_id, fields)
     date_text = st.text_input(
         f"{title} manual deadline date",
-        value="",
         placeholder="YYYY-MM-DD or league note",
         key=f"development_lab_{tool_id}_date",
     )
     notes = st.text_area(
         f"{title} manual notes",
-        value="",
         key=f"development_lab_{tool_id}_notes",
-        help="Optional manual note for export. This is not stored by the app.",
+        help="Optional manual note. Save local lab state to preserve it across reloads.",
     )
     rows = deadline_checklist(tool_id, date_text=date_text, notes=notes)
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
@@ -363,6 +425,7 @@ def render_deadline_prep(tool_id: str, title: str) -> None:
         rows,
         f"nwr_{tool_id}_v0_manual_checklist.csv",
     )
+    _render_lab_state_controls(tool_id, fields)
 
 
 def render_guardrails() -> None:
@@ -397,6 +460,123 @@ def _render_optional_manual_table(rows: list[dict[str, str]], empty_message: str
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     else:
         st.info(empty_message)
+
+
+def _hydrate_local_lab_state(tool_key: str, fields: dict[str, str]) -> None:
+    state = load_tool_state(tool_key)
+    if state.status == "LOADED":
+        for payload_key, widget_key in fields.items():
+            if widget_key not in st.session_state and payload_key in state.payload:
+                st.session_state[widget_key] = state.payload[payload_key]
+        st.caption(f"Local lab state loaded. Last updated: {state.saved_at_utc}.")
+    elif state.status == "MISSING":
+        st.caption("Local lab state: no saved notes yet.")
+    else:
+        st.warning(state.message)
+
+
+def _render_lab_state_controls(tool_key: str, fields: dict[str, str]) -> None:
+    st.divider()
+    st.subheader("Local Lab State")
+    st.caption(
+        "Local lab notes only. Not model input. Not source truth. Not draft-room runtime state."
+    )
+    payload = _payload_from_session(fields)
+    col_save, col_export = st.columns(2)
+    if col_save.button(
+        "Save local lab state",
+        key=f"development_lab_{tool_key}_save_state",
+        use_container_width=True,
+    ):
+        result = save_tool_state(tool_key, payload)
+        if result.backup_path:
+            st.success(f"Saved. Previous state backed up to {result.backup_path.name}.")
+        else:
+            st.success("Saved local lab state.")
+    col_export.download_button(
+        "Export state JSON",
+        data=export_tool_state_json(tool_key, payload),
+        file_name=f"nwr_development_lab_{tool_key}_state.json",
+        mime="application/json",
+        key=f"development_lab_{tool_key}_export_state",
+        use_container_width=True,
+    )
+
+    with st.expander("Import / reset local lab state", expanded=False):
+        uploaded = st.file_uploader(
+            "Import Development Lab state JSON",
+            type=["json"],
+            key=f"development_lab_{tool_key}_import_file",
+            help="Preview first; import is blocked until explicitly confirmed.",
+        )
+        if uploaded is not None:
+            raw = uploaded.getvalue()
+            preview = preview_import_tool_state(raw)
+            if preview.valid:
+                st.write(
+                    {
+                        "tool_key": preview.tool_key,
+                        "saved_at_utc": preview.saved_at_utc or "Not provided",
+                        "fields": sorted((preview.payload or {}).keys()),
+                    }
+                )
+                confirm_import = st.checkbox(
+                    "Confirm import overwrite",
+                    key=f"development_lab_{tool_key}_confirm_import",
+                )
+                if st.button(
+                    "Import confirmed state",
+                    key=f"development_lab_{tool_key}_import_confirmed",
+                ):
+                    result = import_tool_state(
+                        tool_key,
+                        raw,
+                        confirmed=confirm_import,
+                    )
+                    if result.status == "SAVED" and preview.payload:
+                        for payload_key, widget_key in fields.items():
+                            st.session_state[widget_key] = preview.payload.get(payload_key, "")
+                        st.success("Imported local lab state.")
+                        st.rerun()
+                    else:
+                        st.warning(result.message)
+            else:
+                st.warning(preview.message)
+
+        confirm_reset = st.checkbox(
+            "Confirm reset saved local state",
+            key=f"development_lab_{tool_key}_confirm_reset",
+        )
+        if st.button(
+            "Reset saved local state",
+            key=f"development_lab_{tool_key}_reset_state",
+        ):
+            result = reset_tool_state(tool_key, confirmed=confirm_reset)
+            if result.status == "RESET":
+                for widget_key in fields.values():
+                    st.session_state[widget_key] = ""
+                if result.backup_path:
+                    st.success(f"Reset complete. Backup created: {result.backup_path.name}.")
+                else:
+                    st.success("Reset complete. No prior saved state existed.")
+                st.rerun()
+            else:
+                st.warning(result.message)
+
+
+def _payload_from_session(fields: dict[str, str]) -> dict[str, str]:
+    return {
+        payload_key: str(st.session_state.get(widget_key, "") or "")
+        for payload_key, widget_key in fields.items()
+    }
+
+
+def _local_state_status_label(state: DevelopmentLabToolState) -> str:
+    if state.status == "LOADED":
+        return "Saved locally"
+    if state.status == "MISSING":
+        return "No saved notes"
+    return state.status.replace("_", " ").title()
 
 
 def _route_for_tool(tool_id: str) -> str:
