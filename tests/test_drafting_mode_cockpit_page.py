@@ -90,14 +90,12 @@ def test_post_draft_mode_defaults_to_live_state() -> None:
     assert 'index=1' not in text
 
 
-def test_deep_pages_expose_back_to_live_draft_link() -> None:
+def test_non_draft_pages_do_not_repeat_back_to_live_draft_link() -> None:
     pages = [
         "app/pages/18_cheat_sheets_v2.py",
         "app/pages/20_final_board_v1.py",
-        "app/pages/21_live_draft_room_v1.py",
         "app/pages/22_player_compare_v1.py",
         "app/pages/23_trading_lab_v1.py",
-        "app/pages/24_mock_draft_v1.py",
         "app/pages/28_settings_data_health_v1.py",
         "app/pages/29_post_draft_mode_v2.py",
         "app/pages/31_unified_universe_review_v1.py",
@@ -106,5 +104,12 @@ def test_deep_pages_expose_back_to_live_draft_link() -> None:
 
     for page in pages:
         text = _text(page)
-        assert '<a href="/live-draft-room" target="_self">Back to Live Draft</a>' in text
+        assert '<a href="/live-draft-room" target="_self">Back to Live Draft</a>' not in text
+        assert "Back to Drafting Mode" not in text
+
+
+def test_live_and_mock_draft_pages_keep_their_own_draft_context() -> None:
+    for page in ("app/pages/21_live_draft_room_v1.py", "app/pages/24_mock_draft_v1.py"):
+        text = _text(page)
+        assert "Live Draft" in text
         assert "Back to Drafting Mode" not in text

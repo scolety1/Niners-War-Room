@@ -467,10 +467,11 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
                 "candidate_value_band": "Priority candidate",
                 "nwr_dynasty_score": "88.8",
                 "trust_status": "Scored",
-                "confidence_band": "Medium",
-                "available_pool_adp_range": "90s",
-                "candidate_key_caveat": "",
-                "wr_t12_display_only": "",
+                    "confidence_band": "Medium",
+                    "available_pool_adp_range": "90s",
+                    "candidate_key_caveat": "",
+                    "outcome_availability_display_only": "",
+                    "wr_t12_display_only": "",
                 "wr_t24_display_only": "74%",
                 "wr_t36_display_only": "88%",
                 "rb_t12_display_only": "N/A",
@@ -493,20 +494,21 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
         "Pos",
         "NFL Team",
         "Age",
-        "Position Rank",
-        "Candidate Band",
         "NWR Dynasty Score",
-        "Trust",
-        "Confidence",
+        "Position Rank",
+        "Outcome Availability (Display-Only)",
         "WR T12 (Display-Only)",
         "WR T24 (Display-Only)",
         "WR T36 (Display-Only)",
-        "Key Caveat / Review Flag",
+        "Value Band (Review-Only)",
+        "Data Trust",
+        "Confidence",
+        "Main Caveat",
     ]
     assert display.loc[0, "NFL Team"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert display.loc[0, "Age"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert display.loc[0, "WR T12 (Display-Only)"] == OUTCOME_NOT_ENOUGH_INFORMATION
-    assert display.loc[0, "Key Caveat / Review Flag"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert display.loc[0, "Main Caveat"] == OUTCOME_NOT_ENOUGH_INFORMATION
     for blocked in (
         "Final Board Rank",
         "Final Tier",

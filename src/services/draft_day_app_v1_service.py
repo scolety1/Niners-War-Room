@@ -217,11 +217,9 @@ FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "position",
     "nfl_team",
     "age",
-    "nwr_position_rank",
-    "candidate_value_band",
     "nwr_dynasty_score",
-    "trust_status",
-    "confidence_band",
+    "nwr_position_rank",
+    "outcome_availability_display_only",
     "qb_t12_display_only",
     "rb_t12_display_only",
     "rb_t24_display_only",
@@ -229,6 +227,9 @@ FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "wr_t24_display_only",
     "wr_t36_display_only",
     "te_t12_display_only",
+    "candidate_value_band",
+    "trust_status",
+    "confidence_band",
     "candidate_key_caveat",
 )
 MARKET_BASELINE_DISPLAY_COLUMNS = (
@@ -1821,7 +1822,7 @@ def display_unified_player_board_frame(
     else:
         display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
     if show_market_baseline:
-        display_columns = (*display_columns, *MARKET_BASELINE_DISPLAY_COLUMNS)
+        display_columns = _display_columns_with_market_baseline(display_columns)
     selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
     outcome_targets = set(
         outcome_columns_for_display(
@@ -1853,6 +1854,20 @@ def display_unified_player_board_frame(
             display[column] = display[column].map(not_enough_information_display_value)
     display = display.fillna("").astype(str)
     return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
+
+
+def _display_columns_with_market_baseline(display_columns: tuple[str, ...]) -> tuple[str, ...]:
+    insert_after = "nwr_dynasty_score"
+    if insert_after not in display_columns:
+        insert_after = "age" if "age" in display_columns else display_columns[-1]
+    split_index = display_columns.index(insert_after) + 1
+    before = display_columns[:split_index]
+    after = tuple(
+        column
+        for column in display_columns[split_index:]
+        if column not in MARKET_BASELINE_DISPLAY_COLUMNS
+    )
+    return (*before, *MARKET_BASELINE_DISPLAY_COLUMNS, *after)
 
 
 MISSING_INFORMATION_DISPLAY_COLUMNS = (
@@ -2262,14 +2277,14 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "nwr_rank": "Dynasty Rank",
     "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
     "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
-    "candidate_value_band": "Candidate Band",
+    "candidate_value_band": "Value Band (Review-Only)",
     "confidence_band": "Confidence",
     "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
     "current_pick_value": "Current Pick Value (Display-Only)",
     "horizon_2026_band": "2026 Horizon Band (Review-Only)",
     "horizon_2027_band": "2027 Horizon Band (Review-Only)",
     "horizon_next5y_band": "Next-5Y Horizon Band (Review-Only)",
-    "candidate_key_caveat": "Key Caveat / Review Flag",
+    "candidate_key_caveat": "Main Caveat",
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
@@ -2282,14 +2297,14 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "availability_status": "Board Availability",
     "draft_action_display_only": "Draft Action (Display-Only)",
     "nwr_dynasty_score": "NWR Dynasty Score",
-    "trust_status": "Trust",
+    "trust_status": "Data Trust",
     "warning_flags": "Warnings",
     "pool_status": "Status",
     "data_needed": "Data Needed",
     "model_posture_used": "Model Posture Used",
     "candidate_status": "Candidate Status",
     "risk_notes": "Risk Notes",
-    "needs_manual_review": "Needs Manual Review",
+    "needs_manual_review": "Review Needed",
     "outcome_availability_display_only": "Outcome Availability (Display-Only)",
     "qb_t12_display_only": "QB T12 (Display-Only)",
     "rb_t12_display_only": "RB T12 (Display-Only)",

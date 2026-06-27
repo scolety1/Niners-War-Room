@@ -71,7 +71,7 @@ PAGE_USAGE: dict[str, MarketBaselinePageUsage] = {
             "market_baseline_stale_warning",
         ),
         display_label=DISPLAY_LABEL,
-        default_visible=False,
+        default_visible=True,
         stale_behavior=DEFAULT_STALE_BEHAVIOR,
         sort_allowed=False,
         model_input_allowed=False,

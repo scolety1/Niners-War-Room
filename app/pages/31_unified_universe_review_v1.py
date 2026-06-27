@@ -58,10 +58,6 @@ page_header(
     ),
 )
 
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.warning("Review-only. Not used by rankings, model, or Drafting Mode.")
 st.caption(
     "This page is for inspection only. It does not change rankings. "
