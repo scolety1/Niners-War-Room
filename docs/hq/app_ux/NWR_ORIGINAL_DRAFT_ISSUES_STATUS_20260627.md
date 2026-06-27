@@ -23,4 +23,3 @@ This maps the original post-draft feedback to current implementation status. Thi
 - No Frozen Final Draft Board V1, `final_board_rank`, Dynasty Rank, tier assignment, pinned snapshot, `latest_candidate`, or `latest_approved` mutation.
 - No production model/rank/source-truth logic changes.
 - No trade valuation, pick valuation, automatic trade finder, automatic offer generator, injury score, medical projection, market-driven answer, CFBD/NFL promotion, or hosted deployment.
-
