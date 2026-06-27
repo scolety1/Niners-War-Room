@@ -44,6 +44,7 @@ REQUIRED_COLUMNS = (
 SAFE_V0_TOOL_IDS = {
     "roster_weakness_tracker",
     "future_pick_planning",
+    "upcoming_draft_prep",
     "keeper_deadline_prep",
     "drop_deadline_prep",
     "trade_deadline_prep",
@@ -294,6 +295,86 @@ def parse_manual_future_pick_text(text: str) -> list[dict[str, str]]:
     return rows
 
 
+def parse_manual_table_text(
+    text: str,
+    columns: tuple[str, ...],
+    *,
+    source: str,
+    guardrail: str,
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for line in text.splitlines():
+        raw = line.strip()
+        if not raw:
+            continue
+        parts = [part.strip() for part in raw.split(",")]
+        row = {
+            column: (
+                parts[index]
+                if index < len(parts) and parts[index]
+                else NOT_ENOUGH_INFORMATION
+            )
+            for index, column in enumerate(columns)
+        }
+        row["source"] = source
+        row["guardrail"] = guardrail
+        rows.append(row)
+    return rows
+
+
+def upcoming_draft_setup_checklist(*, notes: str = "") -> list[dict[str, str]]:
+    tasks = (
+        "Confirm league settings",
+        "Confirm scoring",
+        "Confirm draft date/time",
+        "Confirm draft order",
+        "Confirm owned picks",
+        "Confirm traded picks",
+        "Confirm keeper/drop deadlines",
+        "Confirm available roster spots",
+        "Export current prep notes",
+    )
+    return _manual_checklist_rows(
+        tasks,
+        notes=notes,
+        guardrail="Manual draft setup checklist only; not a recommendation or model output.",
+    )
+
+
+def upcoming_draft_questions_checklist(*, notes: str = "") -> list[dict[str, str]]:
+    questions = (
+        "Who are my must-know players?",
+        "What positions can I ignore?",
+        "Which picks are trade candidates?",
+        "What players need more evidence?",
+        "What roster decisions need human review?",
+    )
+    return _manual_checklist_rows(
+        questions,
+        notes=notes,
+        guardrail="Manual question list only; not a target plan or player recommendation.",
+        task_column="question",
+    )
+
+
+def upcoming_draft_data_readiness_checklist(*, notes: str = "") -> list[dict[str, str]]:
+    checks = (
+        "Sleeper league state checked",
+        "Dynasty Rankings reviewed",
+        "Market baseline freshness checked, display-only",
+        "CFBD review status checked, review-only",
+        "NFL usage status checked, review-only",
+        "Protected artifacts verified",
+        "Runtime draft state backup/export tested",
+    )
+    return _manual_checklist_rows(
+        checks,
+        notes=notes,
+        guardrail="Manual readiness checklist only; not a refresh, promotion, or model gate.",
+        task_column="check",
+    )
+
+
 def deadline_checklist(
     tool_id: str,
     *,
@@ -328,6 +409,24 @@ def deadline_checklist(
             "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
             "manual_notes": notes,
             "guardrail": "Manual checklist only; not a recommendation or model output.",
+        }
+        for task in tasks
+    ]
+
+
+def _manual_checklist_rows(
+    tasks: tuple[str, ...],
+    *,
+    notes: str,
+    guardrail: str,
+    task_column: str = "task",
+) -> list[dict[str, str]]:
+    return [
+        {
+            task_column: task,
+            "status": "Not Started",
+            "manual_notes": notes,
+            "guardrail": guardrail,
         }
         for task in tasks
     ]

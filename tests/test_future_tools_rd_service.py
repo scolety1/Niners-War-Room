@@ -11,10 +11,14 @@ from src.services.future_tools_rd_service import (
     load_future_tools_status_matrix,
     parse_manual_future_pick_text,
     parse_manual_roster_text,
+    parse_manual_table_text,
     roster_age_bucket_summary,
     roster_dynasty_rank_bucket_summary,
     roster_position_summary,
     safe_v0_tools,
+    upcoming_draft_data_readiness_checklist,
+    upcoming_draft_questions_checklist,
+    upcoming_draft_setup_checklist,
 )
 
 EXPECTED_TOOLS = {
@@ -27,6 +31,7 @@ EXPECTED_TOOLS = {
     "Draft Class Strength",
     "Position Strength by Class",
     "Future Pick Planning",
+    "Upcoming Draft Prep",
     "Position Target Plan",
     "Keeper Deadline Prep",
     "Drop Deadline Prep",
@@ -38,7 +43,7 @@ EXPECTED_TOOLS = {
 def test_future_tools_matrix_loads_all_expected_tools() -> None:
     rows = load_future_tools_status_matrix()
 
-    assert len(rows) == 14
+    assert len(rows) == 15
     assert {row.tool_name for row in rows} == EXPECTED_TOOLS
     assert set(group_future_tools(rows)) == {
         "In-Season Tools",
@@ -53,7 +58,7 @@ def test_future_tools_matrix_keeps_all_active_outputs_blocked() -> None:
 
     assert summary["active_outputs"] == 0
     assert summary["model_inputs"] == 0
-    assert summary["safe_v0_candidates"] == 5
+    assert summary["safe_v0_candidates"] == 6
     assert summary["blocked"] >= 8
     assert summary["framework_only"] >= 4
     assert all(row.decision in ALLOWED_DECISIONS for row in rows)
@@ -88,6 +93,7 @@ def test_safe_v0_tool_set_is_limited_to_framework_only_candidates() -> None:
     assert {row.tool_id for row in safe} == {
         "roster_weakness_tracker",
         "future_pick_planning",
+        "upcoming_draft_prep",
         "keeper_deadline_prep",
         "drop_deadline_prep",
         "trade_deadline_prep",
@@ -155,3 +161,35 @@ def test_deadline_prep_toolkit_is_manual_checklist_only() -> None:
     assert rows[0]["status"] == "Not Started"
     assert rows[0]["manual_deadline"] == "2026-10-31"
     assert all("not a recommendation or model output" in row["guardrail"] for row in rows)
+
+
+def test_upcoming_draft_prep_is_manual_only() -> None:
+    setup = upcoming_draft_setup_checklist(notes="manual note")
+    questions = upcoming_draft_questions_checklist(notes="manual question note")
+    readiness = upcoming_draft_data_readiness_checklist(notes="manual readiness note")
+    roster_notes = parse_manual_table_text(
+        "WR,short,long,depth,watch",
+        (
+            "position",
+            "short_term_need",
+            "long_term_need",
+            "depth_concern_notes",
+            "watch_notes",
+        ),
+        source="Manual input / display-only",
+        guardrail="Planning notes only; no position target recommendation.",
+    )
+
+    assert len(setup) == 9
+    assert len(questions) == 5
+    assert len(readiness) == 7
+    assert setup[0]["status"] == "Not Started"
+    assert "not a recommendation" in setup[0]["guardrail"]
+    assert "not a target plan" in questions[0]["guardrail"]
+    assert "not a refresh" in readiness[0]["guardrail"]
+    assert roster_notes[0]["guardrail"] == (
+        "Planning notes only; no position target recommendation."
+    )
+    joined = " ".join(str(row) for row in [*setup, *questions, *readiness, *roster_notes]).lower()
+    assert "valuation" not in joined
+    assert "model score" not in joined

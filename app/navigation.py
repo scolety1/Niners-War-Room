@@ -65,6 +65,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="future-pick-planning",
     ),
     NavigationPageSpec(
+        title="Upcoming Draft Prep",
+        file_path="pages/41_upcoming_draft_prep_v1.py",
+        url_path="upcoming-draft-prep",
+    ),
+    NavigationPageSpec(
         title="Keeper Deadline Prep",
         file_path="pages/38_keeper_deadline_prep_v1.py",
         url_path="keeper-deadline-prep",
@@ -130,14 +135,15 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
             VISIBLE_NAVIGATION_PAGES[10],
             VISIBLE_NAVIGATION_PAGES[11],
             VISIBLE_NAVIGATION_PAGES[12],
+            VISIBLE_NAVIGATION_PAGES[13],
         ),
     ),
     (
         "Admin",
         (
-            VISIBLE_NAVIGATION_PAGES[13],
             VISIBLE_NAVIGATION_PAGES[14],
             VISIBLE_NAVIGATION_PAGES[15],
+            VISIBLE_NAVIGATION_PAGES[16],
         ),
     ),
 )
@@ -177,6 +183,12 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Draft Prep",
         file_path="pages/25_draft_prep_v1.py",
         url_path="draft-room",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Draft Prep Compatibility",
+        file_path="pages/42_draft_prep_compat_v1.py",
+        url_path="draft-prep",
         visible=False,
     ),
     NavigationPageSpec(

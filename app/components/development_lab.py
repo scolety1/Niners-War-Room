@@ -13,10 +13,14 @@ from src.services.future_tools_rd_service import (
     load_future_tools_status_matrix,
     parse_manual_future_pick_text,
     parse_manual_roster_text,
+    parse_manual_table_text,
     roster_age_bucket_summary,
     roster_dynasty_rank_bucket_summary,
     roster_position_summary,
     safe_v0_tools,
+    upcoming_draft_data_readiness_checklist,
+    upcoming_draft_questions_checklist,
+    upcoming_draft_setup_checklist,
 )
 
 LAB_WARNING = (
@@ -26,6 +30,11 @@ LAB_WARNING = (
 
 ROADMAP_WARNING = (
     "Roadmap only. Not active. Requires future data, approval, or model gate."
+)
+
+UPCOMING_DRAFT_PREP_WARNING = (
+    "Development Lab tool. Safe V0 / manual planning workflow. Not model input. "
+    "Not source truth. No rookie rankings, class grades, or automated recommendations."
 )
 
 
@@ -88,6 +97,7 @@ def render_lab_links() -> None:
     links = (
         ("Roster Weakness Tracker", "/roster-weakness-tracker"),
         ("Future Pick Planning", "/future-pick-planning"),
+        ("Upcoming Draft Prep", "/upcoming-draft-prep"),
         ("Keeper Deadline Prep", "/keeper-deadline-prep"),
         ("Drop Deadline Prep", "/drop-deadline-prep"),
         ("Trade Deadline Prep", "/trade-deadline-prep"),
@@ -168,6 +178,169 @@ def render_future_pick_planning() -> None:
     )
 
 
+def render_upcoming_draft_prep() -> None:
+    st.warning(UPCOMING_DRAFT_PREP_WARNING)
+    st.info("Manual inputs are not saved after reload unless exported.")
+
+    st.subheader("Draft Setup Checklist")
+    setup_notes = st.text_area(
+        "Draft setup notes",
+        value="",
+        key="development_lab_upcoming_draft_setup_notes",
+        help="Optional manual note for export. This is not stored by the app.",
+    )
+    setup_rows = upcoming_draft_setup_checklist(notes=setup_notes)
+    st.dataframe(pd.DataFrame(setup_rows), use_container_width=True, hide_index=True)
+    csv_download(
+        "Download draft setup checklist CSV",
+        setup_rows,
+        "nwr_draft_setup_checklist_v0.csv",
+    )
+
+    st.subheader("Roster Needs Snapshot")
+    st.caption("Manual/display-only planning area. No position target recommendation is generated.")
+    roster_need_text = st.text_area(
+        "Roster need rows",
+        value="",
+        placeholder="Position, short-term need, long-term need, depth concern notes, watch notes",
+        key="development_lab_upcoming_roster_needs",
+    )
+    roster_need_rows = parse_manual_table_text(
+        roster_need_text,
+        (
+            "position",
+            "short_term_need",
+            "long_term_need",
+            "depth_concern_notes",
+            "watch_notes",
+        ),
+        source="Manual input / display-only",
+        guardrail="Planning notes only; no position target recommendation.",
+    )
+    _render_optional_manual_table(roster_need_rows, "No roster need notes entered.")
+    csv_download(
+        "Download roster needs CSV",
+        roster_need_rows,
+        "nwr_upcoming_draft_roster_needs_v0.csv",
+    )
+
+    st.subheader("Pick Inventory / Asset Prep")
+    st.caption(
+        "Planning ledger only. No pick valuation, class-strength grade, or trade calculator."
+    )
+    live_state_result = load_runtime_state_with_status(mode="live")
+    runtime_rows = future_pick_ledger_from_runtime_state(live_state_result.state)
+    st.caption(
+        f"Live runtime state status: {live_state_result.status}. Future picks from the event log "
+        "are manual/local context only."
+    )
+    _render_optional_manual_table(
+        runtime_rows,
+        "No future picks found in the live runtime event log.",
+    )
+    pick_text = st.text_area(
+        "Manual pick inventory rows",
+        value="",
+        placeholder="Year, round/pick, owned/sent/acquired/uncertain, source/note, action needed",
+        key="development_lab_upcoming_pick_inventory",
+    )
+    pick_rows = parse_manual_table_text(
+        pick_text,
+        ("year", "round_pick", "status", "source_note", "action_needed"),
+        source="Manual input / display-only",
+        guardrail="Planning ledger only; no pick valuation.",
+    )
+    _render_optional_manual_table(pick_rows, "No manual pick inventory rows entered.")
+    csv_download(
+        "Download pick inventory CSV",
+        [*runtime_rows, *pick_rows],
+        "nwr_upcoming_draft_pick_inventory_v0.csv",
+    )
+
+    st.subheader("Rookie / Prospect Watchlist Placeholder")
+    st.caption(
+        "Manual watchlist only. CFBD/prospect data remains review-only unless separately approved."
+    )
+    watchlist_text = st.text_area(
+        "Manual rookie/prospect watchlist rows",
+        value="",
+        placeholder="Player name, school/team, position, note, source note, review status",
+        key="development_lab_upcoming_watchlist",
+    )
+    watchlist_rows = parse_manual_table_text(
+        watchlist_text,
+        ("player_name", "school_team", "position", "note", "source_note", "review_status"),
+        source="Manual input / display-only",
+        guardrail="Manual watchlist only; no CFBD promotion, ranking, class grade, or model score.",
+    )
+    _render_optional_manual_table(watchlist_rows, "No manual watchlist rows entered.")
+    csv_download(
+        "Download rookie watchlist CSV",
+        watchlist_rows,
+        "nwr_upcoming_draft_manual_watchlist_v0.csv",
+    )
+
+    st.subheader("Mock Draft Scenario Prep")
+    st.caption("Manual scenario notes only. Use Mock Drafts for experiments.")
+    st.link_button("Open Mock Drafts", "/mock-draft", use_container_width=False)
+    scenario_text = st.text_area(
+        "Manual mock draft scenario rows",
+        value="",
+        placeholder=(
+            "Scenario name, what happens before my pick, trade-down scenario, "
+            "position run scenario, if player X is gone"
+        ),
+        key="development_lab_upcoming_mock_scenarios",
+    )
+    scenario_rows = parse_manual_table_text(
+        scenario_text,
+        (
+            "scenario_name",
+            "before_my_pick",
+            "trade_down_scenario",
+            "position_run_scenario",
+            "if_player_x_is_gone",
+        ),
+        source="Manual input / display-only",
+        guardrail="Scenario prep only; no automated mock simulation or recommendation.",
+    )
+    _render_optional_manual_table(scenario_rows, "No manual mock draft scenarios entered.")
+    csv_download(
+        "Download mock scenario CSV",
+        scenario_rows,
+        "nwr_upcoming_draft_mock_scenarios_v0.csv",
+    )
+
+    st.subheader("Questions to Answer Before Draft")
+    question_notes = st.text_area(
+        "Open question notes",
+        value="",
+        key="development_lab_upcoming_question_notes",
+    )
+    question_rows = upcoming_draft_questions_checklist(notes=question_notes)
+    st.dataframe(pd.DataFrame(question_rows), use_container_width=True, hide_index=True)
+    csv_download(
+        "Download draft questions CSV",
+        question_rows,
+        "nwr_upcoming_draft_questions_v0.csv",
+    )
+
+    st.subheader("Data Readiness Checklist")
+    st.caption("Manual/status checklist only. This is not a refresh button or data promotion tool.")
+    readiness_notes = st.text_area(
+        "Data readiness notes",
+        value="",
+        key="development_lab_upcoming_readiness_notes",
+    )
+    readiness_rows = upcoming_draft_data_readiness_checklist(notes=readiness_notes)
+    st.dataframe(pd.DataFrame(readiness_rows), use_container_width=True, hide_index=True)
+    csv_download(
+        "Download data readiness CSV",
+        readiness_rows,
+        "nwr_upcoming_draft_data_readiness_v0.csv",
+    )
+
+
 def render_deadline_prep(tool_id: str, title: str) -> None:
     render_lab_warning()
     st.caption("Manual checklist only. Not a decision engine. Not model input.")
@@ -219,10 +392,18 @@ def _tool_table(rows: list[dict[str, str]]) -> None:
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
+def _render_optional_manual_table(rows: list[dict[str, str]], empty_message: str) -> None:
+    if rows:
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info(empty_message)
+
+
 def _route_for_tool(tool_id: str) -> str:
     return {
         "roster_weakness_tracker": "/roster-weakness-tracker",
         "future_pick_planning": "/future-pick-planning",
+        "upcoming_draft_prep": "/upcoming-draft-prep",
         "keeper_deadline_prep": "/keeper-deadline-prep",
         "drop_deadline_prep": "/drop-deadline-prep",
         "trade_deadline_prep": "/trade-deadline-prep",
