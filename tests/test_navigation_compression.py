@@ -22,6 +22,12 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Player Compare",
         "Trading Lab",
         "Draft Analyzer",
+        "Lab Home",
+        "Roster Weakness Tracker",
+        "Future Pick Planning",
+        "Keeper Deadline Prep",
+        "Drop Deadline Prep",
+        "Trade Deadline Prep",
         "Future Tools",
         "Refresh Data",
         "Evidence Review",
@@ -38,7 +44,15 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     assert grouped_titles == {
         "Draft": ["Live Draft", "Mock Drafts", "Draft Analyzer"],
         "Research": ["Dynasty Rankings", "Player Compare", "Trading Lab"],
-        "Future": ["Future Tools"],
+        "Development Lab": [
+            "Lab Home",
+            "Roster Weakness Tracker",
+            "Future Pick Planning",
+            "Keeper Deadline Prep",
+            "Drop Deadline Prep",
+            "Trade Deadline Prep",
+            "Future Tools",
+        ],
         "Admin": ["Refresh Data", "Evidence Review", "Settings / Data Health"],
     }
 
@@ -102,7 +116,7 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
     titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
 
     assert titles.index("Live Draft") < titles.index("Mock Drafts")
-    assert titles.index("Future Tools") < titles.index("Refresh Data")
+    assert titles.index("Lab Home") < titles.index("Refresh Data")
     assert titles[-3:] == ["Refresh Data", "Evidence Review", "Settings / Data Health"]
 
 
@@ -129,6 +143,12 @@ def test_required_direct_routes_remain_registered() -> None:
         "trading-lab",
         "post-draft-mode",
         "draft-analyzer",
+        "development-lab",
+        "roster-weakness-tracker",
+        "future-pick-planning",
+        "keeper-deadline-prep",
+        "drop-deadline-prep",
+        "trade-deadline-prep",
         "settings-data-health",
         "refresh-data",
         "evidence-integration-review",
@@ -148,6 +168,12 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "player-compare",
         "trading-lab",
         "post-draft-mode",
+        "development-lab",
+        "roster-weakness-tracker",
+        "future-pick-planning",
+        "keeper-deadline-prep",
+        "drop-deadline-prep",
+        "trade-deadline-prep",
         "future-tools",
         "refresh-data",
         "evidence-integration-review",

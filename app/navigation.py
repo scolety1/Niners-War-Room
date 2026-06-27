@@ -50,6 +50,36 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="post-draft-mode",
     ),
     NavigationPageSpec(
+        title="Lab Home",
+        file_path="pages/35_development_lab_v1.py",
+        url_path="development-lab",
+    ),
+    NavigationPageSpec(
+        title="Roster Weakness Tracker",
+        file_path="pages/36_roster_weakness_tracker_v1.py",
+        url_path="roster-weakness-tracker",
+    ),
+    NavigationPageSpec(
+        title="Future Pick Planning",
+        file_path="pages/37_future_pick_planning_v1.py",
+        url_path="future-pick-planning",
+    ),
+    NavigationPageSpec(
+        title="Keeper Deadline Prep",
+        file_path="pages/38_keeper_deadline_prep_v1.py",
+        url_path="keeper-deadline-prep",
+    ),
+    NavigationPageSpec(
+        title="Drop Deadline Prep",
+        file_path="pages/39_drop_deadline_prep_v1.py",
+        url_path="drop-deadline-prep",
+    ),
+    NavigationPageSpec(
+        title="Trade Deadline Prep",
+        file_path="pages/40_trade_deadline_prep_v1.py",
+        url_path="trade-deadline-prep",
+    ),
+    NavigationPageSpec(
         title="Future Tools",
         file_path="pages/34_future_tools_v1.py",
         url_path="future-tools",
@@ -91,15 +121,23 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
         ),
     ),
     (
-        "Future",
-        (VISIBLE_NAVIGATION_PAGES[6],),
+        "Development Lab",
+        (
+            VISIBLE_NAVIGATION_PAGES[6],
+            VISIBLE_NAVIGATION_PAGES[7],
+            VISIBLE_NAVIGATION_PAGES[8],
+            VISIBLE_NAVIGATION_PAGES[9],
+            VISIBLE_NAVIGATION_PAGES[10],
+            VISIBLE_NAVIGATION_PAGES[11],
+            VISIBLE_NAVIGATION_PAGES[12],
+        ),
     ),
     (
         "Admin",
         (
-            VISIBLE_NAVIGATION_PAGES[7],
-            VISIBLE_NAVIGATION_PAGES[8],
-            VISIBLE_NAVIGATION_PAGES[9],
+            VISIBLE_NAVIGATION_PAGES[13],
+            VISIBLE_NAVIGATION_PAGES[14],
+            VISIBLE_NAVIGATION_PAGES[15],
         ),
     ),
 )
