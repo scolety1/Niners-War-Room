@@ -1,0 +1,15 @@
+tool_group,tool_name,intended_user_question,current_safe_answer,primary_blocker
+In-Season Tools,Who Should I Start?,Who should I put in my lineup this week?,Blocked roadmap only; no active start/sit advice,No approved weekly projection/start-sit model
+In-Season Tools,Waiver Wire Rankings,Who should I add from waivers?,Blocked roadmap only; no active waiver rankings,No approved current free-agent and recommendation gate
+In-Season Tools,In-Season Rankings,Who moved up or down rest-of-season?,Blocked roadmap only; no active in-season rank updates,No approved in-season model gate
+In-Season Tools,Trade Targets,Who should I buy or sell?,Blocked roadmap only; no target generation,Trade target/model and roster-source gates missing
+In-Season Tools,Roster Weakness Tracker,Where is my roster thin?,Framework-only descriptive checklist allowed,Need human-approved roster/current-status context before recommendations
+Future Draft Prep,Upcoming Rookie Class Preview,What future rookies should I watch?,Blocked review-only; no class evaluation,CFBD/unified identity and human approval gates
+Future Draft Prep,Draft Class Strength,Which draft years look strong?,Blocked spec-only,No approved class-strength model
+Future Draft Prep,Position Strength by Class,Which positions are strong by year?,Blocked spec-only,No approved position class model
+Future Draft Prep,Future Pick Planning,What future picks do I have?,Framework-only manual/event-log inventory allowed,No pick valuation/source-truth promotion
+Future Draft Prep,Position Target Plan,What positions should I target?,Blocked roadmap only,Depends on roster weakness and class-strength gates
+League Calendar Tools,Keeper Deadline Prep,What should I prepare before keepers lock?,Framework-only checklist allowed,Needs human-entered deadline and keeper-rule confirmation
+League Calendar Tools,Drop Deadline Prep,What should I prepare before drops lock?,Framework-only checklist allowed,Needs human-entered deadline and current roster/status gate
+League Calendar Tools,Trade Deadline Prep,What should I prepare before trading closes?,Framework-only checklist allowed,No trade valuation or target generation gate
+League Calendar Tools,Playoff Push Planner,How should I navigate playoff push?,Blocked roadmap only,No approved standings/schedule/projection framework
