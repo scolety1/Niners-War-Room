@@ -196,6 +196,10 @@ def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
         "Fast on-clock read first. Review-only decision support; frozen baseline rank, "
         "Dynasty Rank, tiers, and model values are not changed."
     )
+    st.info(
+        "Decision Summary is display-only. Use it as a reading guide, then check injury, "
+        "Outcome, and raw detail expanders before making the human decision."
+    )
     if compare_frame.empty:
         st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
         return
@@ -225,11 +229,152 @@ def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
     if summary.display_only_market_note:
         st.caption(summary.display_only_market_note)
 
+    st.markdown("**Plain-language comparison read**")
     st.dataframe(
-        pd.DataFrame(decision_summary_rows(records)),
+        pd.DataFrame(_plain_language_compare_rows(records)),
         use_container_width=True,
         hide_index=True,
     )
+
+    with st.expander("Advanced decision-summary fields", expanded=False):
+        st.dataframe(
+            pd.DataFrame(decision_summary_rows(records)),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
+def _render_how_to_use_compare() -> None:
+    st.subheader("How to use this comparison")
+    st.markdown(
+        "- Start with the display-only Decision Summary.\n"
+        "- Check Safer profile, Upside profile, timing/window, and Main risk in plain language.\n"
+        "- Use Injury / Per-Game Context to separate talent rate from availability risk.\n"
+        "- Open advanced expanders only when you need the underlying evidence.\n"
+        "- Final preference stays a human decision; this page does not change ranks or "
+        "model values."
+    )
+
+
+def _plain_language_compare_rows(records: list[dict[str, object]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for record in records:
+        player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
+        flags = _plain_red_flags(record)
+        rows.append(
+            {
+                "Player": player,
+                "Safer profile": _safer_profile(record),
+                "Upside profile": _upside_profile(record),
+                "League/scoring fit": _league_fit(record),
+                "Timing / window": _plain_timing_window(record),
+                "Main risk": _plain_risk_signal(record),
+                "What still needs review": "; ".join(flags[:3])
+                if flags
+                else "No major display warning in current context.",
+            }
+        )
+    return rows
+
+
+def _safer_profile(record: dict[str, object]) -> str:
+    confidence = _plain_confidence_text(record)
+    risk = _plain_risk_signal(record)
+    if confidence == "High" and risk == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return "Cleaner display profile in current data"
+    if confidence in {"Medium", "High"}:
+        return f"Usable with review: {confidence} confidence"
+    if confidence == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return "Lower certainty; human review needed"
+
+
+def _upside_profile(record: dict[str, object]) -> str:
+    for key in ("candidate_value_band", "outcome_applicable_summary", "on_clock_decision_tier"):
+        value = _plain_field(record, key)
+        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
+            return value
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _league_fit(record: dict[str, object]) -> str:
+    position = _plain_field(record, "position")
+    if position == "QB":
+        return "1QB format check; do not overpay without roster need"
+    if position == "TE":
+        return "TE value depends on role and league scarcity"
+    if position in {"RB", "WR"}:
+        return "RB/WR depth matters, but this is not lineup advice"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _plain_timing_window(record: dict[str, object]) -> str:
+    age = _plain_float(record.get("age"))
+    band = _plain_field(record, "candidate_value_band").lower()
+    position = _plain_field(record, "position")
+    if age is not None and age >= 30:
+        return "win-now / age-window review"
+    if "rookie" in band or "upside" in band:
+        return "upside / long-term"
+    if position == "QB":
+        return "long-term stability; format-dependent in 1QB"
+    return "long-term / best-player-at-value"
+
+
+def _plain_risk_signal(record: dict[str, object]) -> str:
+    for key in ("main_risk", "candidate_key_caveat", "on_clock_warning", "risk_notes"):
+        value = _plain_field(record, key)
+        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
+            return value
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _plain_red_flags(record: dict[str, object]) -> list[str]:
+    flags: list[str] = []
+    player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
+    for label, key in (
+        ("age missing", "age"),
+        ("unsupported outcome", "outcome_applicable_summary"),
+        ("no market match", "available_pool_adp_range"),
+    ):
+        if _plain_field(record, key) == OUTCOME_NOT_ENOUGH_INFORMATION:
+            flags.append(f"{player}: {label}.")
+    warning = _plain_field(record, "on_clock_warning")
+    if warning != OUTCOME_NOT_ENOUGH_INFORMATION:
+        flags.append(f"{player}: {warning}")
+    return flags
+
+
+def _plain_confidence_text(record: dict[str, object]) -> str:
+    for key in ("dynasty_asset_confidence", "confidence_band", "on_clock_confidence"):
+        value = _plain_field(record, key)
+        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
+            if "high" in value.lower():
+                return "High"
+            if "medium" in value.lower():
+                return "Medium"
+            if "low" in value.lower():
+                return "Low"
+            return value
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _plain_field(record: dict[str, object], key: str) -> str:
+    value = record.get(key)
+    text = str(value if value is not None else "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a", "<na>"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
+
+
+def _plain_float(value: object) -> float | None:
+    text = str(value if value is not None else "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a", "<na>"}:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
 
 
 def _player_index(players: list[str], preferred: str = "") -> int:
@@ -376,6 +521,7 @@ def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
         f"coverage shows exactly `{OUTCOME_NOT_ENOUGH_INFORMATION}` and does not mean clean health."
     )
     audit = _load_injury_per_game_audit()
+    _render_injury_availability_status(audit)
     rows = [_injury_display_row(record, audit) for record in compare_frame.to_dict("records")]
     display = pd.DataFrame(rows)
     warning_players = [
@@ -390,6 +536,40 @@ def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
             + ". Use per-game talent and availability risk as separate questions."
         )
     st.table(display)
+
+
+def _render_injury_availability_status(audit: pd.DataFrame) -> None:
+    st.markdown("**Injury / Availability Data Status**")
+    st.warning(
+        "No active injury-risk adjustment is being applied on this page. No medical comeback "
+        "projection is being made. Injury risk remains a human-review/data-gap item unless a "
+        "separately approved injury source and model gate are added later."
+    )
+    st.caption(
+        "Per-game and season totals can diverge because of missed games. This page can flag that "
+        "gap as display-only context, but it does not infer ACL recovery, chronic injury risk, "
+        "or future availability from unapproved news, vendor feeds, or rumors."
+    )
+    status_rows = [
+        {
+            "Question": "Approved current injury feed loaded?",
+            "Status": "Review-only audit rows available"
+            if not audit.empty
+            else OUTCOME_NOT_ENOUGH_INFORMATION,
+            "Guardrail": "Missing injury data is not treated as healthy or low risk.",
+        },
+        {
+            "Question": "Per-game vs season-total gap handled?",
+            "Status": "Display-only warning when supported",
+            "Guardrail": "Does not change rank, tier, model value, or source truth.",
+        },
+        {
+            "Question": "Medical comeback / ACL projection?",
+            "Status": "Not modeled",
+            "Guardrail": "Requires approved injury source and explicit model gate.",
+        },
+    ]
+    st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
 
 
 def _load_injury_per_game_audit() -> pd.DataFrame:
@@ -507,6 +687,7 @@ st.caption(
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
+_render_how_to_use_compare()
 
 players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
 query_players = [
