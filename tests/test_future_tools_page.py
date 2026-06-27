@@ -18,6 +18,7 @@ def test_development_lab_home_is_control_board() -> None:
     assert "render_safe_v0_table" in text
     assert "render_blocked_tools_table" in text
     assert "render_lab_links" in text
+    assert "render_local_lab_state_status" in text
     assert "No model input" in text
     assert "No source truth" in text
 
@@ -68,6 +69,11 @@ def test_development_lab_component_blocks_fake_recommendations() -> None:
     assert "No pick valuation" in text
     assert "No rookie rankings, class grades, or automated recommendations" in text
     assert "Manual checklist only" in text
+    assert "Local lab notes only. Not model input. Not source truth." in text
+    assert "Save local lab state" in text
+    assert "Import Development Lab state JSON" in text
+    assert "Confirm reset saved local state" in text
+    assert "C:\\\\NWR_SHARED_DATA" in text
     assert "fake rankings" in text
     assert "fake projections" in text
     assert "fake trade targets" in text
@@ -96,3 +102,23 @@ def test_upcoming_draft_prep_is_manual_planning_only() -> None:
     assert "trade calculator" in text
     assert "Compatibility page only" in compat_text
     assert "/upcoming-draft-prep" in compat_text
+
+
+def test_safe_v1_persistence_is_local_lab_state_only() -> None:
+    text = (APP_DIR / "components" / "development_lab.py").read_text(encoding="utf-8")
+    service = Path("src/services/development_lab_state_service.py").read_text(encoding="utf-8")
+
+    for tool_key in (
+        "roster_weakness_tracker",
+        "future_pick_planning",
+        "upcoming_draft_prep",
+        "keeper_deadline_prep",
+        "drop_deadline_prep",
+        "trade_deadline_prep",
+    ):
+        assert tool_key in service
+    assert "C:\\NWR_SHARED_DATA\\development_lab_state" in service
+    assert "NWR_DEVELOPMENT_LAB_STATE_ROOT" in service
+    assert "load_runtime_state_with_status(mode=\"live\")" in text
+    assert "Local lab notes only. Not model input. Not source truth." in text
+    assert "Not draft-room runtime state" in text
