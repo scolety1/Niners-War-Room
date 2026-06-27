@@ -677,10 +677,6 @@ page_header(
     ),
     status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.caption(
     "Deep tool: decision aid only. Comparison output does not mutate ranks, tiers, model "
     "values, or source-truth files."

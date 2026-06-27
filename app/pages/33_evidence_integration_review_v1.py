@@ -56,10 +56,6 @@ page_header(
     ),
 )
 
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.warning(
     "Review-only. This page does not feed rankings, Drafting Mode, Player Compare, "
     "Trading Lab, Post-Draft, or model features."

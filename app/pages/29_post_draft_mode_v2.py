@@ -43,10 +43,6 @@ page_header(
         ("No rank mutation", "safe"),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.caption(
     "Deep tool: draft audit and recap. Runtime state is not official source truth and does "
     "not mutate ranks, tiers, or latest files."

@@ -56,11 +56,12 @@ def test_rankings_full_view_source_filter_keeps_frozen_board_optional() -> None:
     assert 'options.append("Frozen Baseline only")' in text
 
 
-def test_market_baseline_controls_are_optional_and_display_only() -> None:
+def test_market_baseline_is_visible_by_preset_and_display_only() -> None:
     text = _page_text()
 
-    assert '"Show Market Baseline columns"' in text
-    assert "value=False" in text
+    assert '"Market Analyzer"' in text
+    assert "_show_market_for_preset" in text
+    assert "VIEW_PRESET_CLEAN_BOARD" in text
     assert "Market Baseline columns are display-only DynastyProcess context" in text
     assert "market_sanity_filter" in text
     assert "market_match_filter" in text
@@ -92,7 +93,7 @@ def test_market_baseline_filters_have_required_labels() -> None:
     )
 
 
-def test_market_columns_hidden_by_default_and_visible_when_requested() -> None:
+def test_market_columns_can_display_without_sort_or_model_use() -> None:
     frame = pd.DataFrame(
         [
             {
@@ -118,17 +119,17 @@ def test_market_columns_hidden_by_default_and_visible_when_requested() -> None:
         ]
     )
 
-    default_display = display_unified_player_board_frame(frame, view_mode=FULL_DYNASTY_VIEW)
     market_display = display_unified_player_board_frame(
         frame,
         view_mode=FULL_DYNASTY_VIEW,
         show_market_baseline=True,
     )
 
-    assert "DP 1QB Value (Market Baseline / Display-Only)" not in default_display.columns
-    assert "Market Sanity Flag (Market Baseline / Display-Only)" not in default_display.columns
     assert "DP 1QB Value (Market Baseline / Display-Only)" in market_display.columns
     assert "Market Sanity Flag (Market Baseline / Display-Only)" in market_display.columns
+    assert list(market_display.columns).index("NWR Dynasty Score") < list(
+        market_display.columns
+    ).index("DP 1QB Value (Market Baseline / Display-Only)")
 
 
 def test_market_baseline_age_fallback_is_display_labeled() -> None:
@@ -178,8 +179,80 @@ def test_market_baseline_registry_allows_rankings_display_only_usage_only() -> N
     usage = PAGE_USAGE["dynasty_rankings"]
 
     assert usage.enabled is True
-    assert usage.default_visible is False
+    assert usage.default_visible is True
     assert usage.sort_allowed is False
     assert usage.model_input_allowed is False
     assert "dp_market_rank_1qb" in usage.fields_allowed
     assert "dp_value_1qb" in usage.fields_allowed
+
+
+def test_rankings_presets_and_advanced_filters_clean_top_controls() -> None:
+    text = _page_text()
+
+    for preset in (
+        "Clean Board",
+        "Market Analyzer",
+        "Outcome Lens",
+        "Data Review",
+        "Compact Draft View",
+    ):
+        assert preset in text
+    assert '"Advanced filters"' in text
+    assert '"Value band / review band"' in text
+    assert '"Review needed"' in text
+    assert '"Market match"' in text
+    assert 'st.radio("View"' not in text
+    assert '"Tier / band"' not in text
+    assert '"Manual review"' not in text
+    assert '"Show Market Baseline columns"' not in text
+
+
+def test_rankings_column_labels_are_human_readable_and_review_fields_late() -> None:
+    display = display_unified_player_board_frame(
+        pd.DataFrame(
+            [
+                {
+                    "nwr_rank": "1",
+                    "player_name": "Puka Nacua",
+                    "position": "WR",
+                    "nfl_team": "LAR",
+                    "age": "25.0",
+                    "nwr_dynasty_score": "99",
+                    "trust_status": "GREEN",
+                    "confidence_band": "HIGH",
+                    "candidate_key_caveat": "None",
+                    "candidate_value_band": "Anchor",
+                }
+            ]
+        ),
+        view_mode=FULL_DYNASTY_VIEW,
+        show_market_baseline=False,
+    )
+    columns = list(display.columns)
+
+    assert columns[:6] == [
+        "Dynasty Rank",
+        "Player",
+        "Pos",
+        "NFL Team",
+        "Age",
+        "NWR Dynasty Score",
+    ]
+    assert "Data Trust" in columns
+    assert "Main Caveat" in columns
+    assert "Key Caveat / Review Flag" not in columns
+    assert "Candidate Band" not in columns
+    assert columns.index("Data Trust") > columns.index("NWR Dynasty Score")
+
+
+def test_outcome_lens_documents_missing_horizons_without_fake_columns() -> None:
+    text = _page_text()
+    audit = Path("docs/hq/app_ux/NWR_DYNASTY_RANKINGS_OUTCOME_COLUMN_AUDIT_20260627.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Outcome Lens uses only approved current outcome heads" in text
+    assert "this-year, next-year, and next-five-year" in text
+    assert "T12 this year" in audit
+    assert "Blocked until an approved artifact exists" in audit
+    assert "Older legacy page text referenced horizon-style placeholder labels" in audit

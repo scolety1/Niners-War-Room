@@ -343,10 +343,6 @@ page_header(
         ("Display only", "review"),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.info(
     "Compatibility route: Cheat Sheets is a secondary tier-board view. The primary "
     "draft-day tier scan now lives inside Live Draft and Dynasty Rankings."

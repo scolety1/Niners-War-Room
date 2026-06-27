@@ -155,10 +155,6 @@ page_header(
         ("Market display-only", "safe"),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 
 st.caption(
     "What this means: GREEN is usable, YELLOW means review the caveat before acting, "

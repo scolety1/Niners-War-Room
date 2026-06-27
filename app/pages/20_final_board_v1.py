@@ -14,6 +14,7 @@ from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     APPROVED_OUTCOME_DISPLAY_FIELDS,
     FULL_DYNASTY_VIEW,
+    OUTCOME_DISPLAY_MODE_HIDE,
     OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
     OUTCOME_DISPLAY_MODES,
     OUTCOME_NOT_ENOUGH_INFORMATION,
@@ -35,7 +36,6 @@ from src.services.draft_day_app_v1_service import (
     sort_unified_player_board_for_view,
 )
 
-VIEW_MODES = (FULL_DYNASTY_VIEW, ROOKIES_DRAFT_BOARD_VIEW, UNIFIED_REVIEW_VIEW)
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
     "Final Board Rank": "final_board_rank",
@@ -53,6 +53,38 @@ MARKET_SANITY_FILTERS = (
     "No market match",
 )
 MARKET_MATCH_FILTERS = ("All", "Has market match", "No market match")
+VIEW_PRESET_CLEAN_BOARD = "Clean Board"
+VIEW_PRESET_MARKET_ANALYZER = "Market Analyzer"
+VIEW_PRESET_OUTCOME_LENS = "Outcome Lens"
+VIEW_PRESET_DATA_REVIEW = "Data Review"
+VIEW_PRESET_COMPACT_DRAFT = "Compact Draft View"
+VIEW_PRESETS = (
+    VIEW_PRESET_CLEAN_BOARD,
+    VIEW_PRESET_MARKET_ANALYZER,
+    VIEW_PRESET_OUTCOME_LENS,
+    VIEW_PRESET_DATA_REVIEW,
+    VIEW_PRESET_COMPACT_DRAFT,
+)
+VIEW_PRESET_HELP = {
+    VIEW_PRESET_CLEAN_BOARD: (
+        "Default full dynasty board. Market basics are visible as display-only context; "
+        "outcome heads stay out of the first scan."
+    ),
+    VIEW_PRESET_MARKET_ANALYZER: (
+        "Full dynasty board with DynastyProcess market sanity columns visible. "
+        "Display-only; Dynasty Rank remains the default sort."
+    ),
+    VIEW_PRESET_OUTCOME_LENS: (
+        "Shows only approved outcome heads that exist in committed display artifacts. "
+        "Missing horizons are noted, not invented."
+    ),
+    VIEW_PRESET_DATA_REVIEW: (
+        "Human-review lens for trust, confidence, caveats, and review flags."
+    ),
+    VIEW_PRESET_COMPACT_DRAFT: (
+        "Fast-scan rookie/draft-board view with review context pushed back."
+    ),
+}
 
 
 def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
@@ -81,13 +113,51 @@ def _view_base_frame(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
     return filtered
 
 
+def _view_mode_for_preset(preset: str) -> str:
+    if preset == VIEW_PRESET_DATA_REVIEW:
+        return UNIFIED_REVIEW_VIEW
+    if preset == VIEW_PRESET_COMPACT_DRAFT:
+        return ROOKIES_DRAFT_BOARD_VIEW
+    return FULL_DYNASTY_VIEW
+
+
+def _outcome_mode_for_preset(preset: str) -> str:
+    if preset in {VIEW_PRESET_OUTCOME_LENS, VIEW_PRESET_DATA_REVIEW}:
+        return OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE
+    return OUTCOME_DISPLAY_MODE_HIDE
+
+
+def _show_market_for_preset(preset: str) -> bool:
+    return preset in {
+        VIEW_PRESET_CLEAN_BOARD,
+        VIEW_PRESET_MARKET_ANALYZER,
+        VIEW_PRESET_OUTCOME_LENS,
+        VIEW_PRESET_DATA_REVIEW,
+    }
+
+
 def _apply_player_filters(
     frame: pd.DataFrame,
-    view_mode: str,
-) -> tuple[pd.DataFrame, str, str, bool]:
+    preset: str,
+) -> tuple[pd.DataFrame, str, str, bool, str]:
+    view_mode = _view_mode_for_preset(preset)
     filtered = _view_base_frame(frame, view_mode)
-    filter_row_one = st.columns([1.4, 1.2, 1.2, 1.0])
-    search = filter_row_one[0].text_input(
+    st.caption(VIEW_PRESET_HELP[preset])
+    filter_row_one = st.columns([1.5, 1.5, 1.2, 1.0])
+    selected_preset = filter_row_one[0].selectbox(
+        "View preset",
+        VIEW_PRESETS,
+        index=VIEW_PRESETS.index(preset),
+        key="dynasty_rankings_view_preset_inline",
+        help=(
+            "Presets change visible columns and review emphasis only. They do not change "
+            "rank values, model values, or hidden sort behavior."
+        ),
+    )
+    if selected_preset != preset:
+        st.session_state["dynasty_rankings_view_preset"] = selected_preset
+        st.rerun()
+    search = filter_row_one[1].text_input(
         "Search player",
         key="dynasty_rankings_search",
         placeholder="Type a player, team, or position",
@@ -96,16 +166,11 @@ def _apply_player_filters(
     default_positions = position_values
     if not default_positions:
         default_positions = position_values
-    selected_positions = filter_row_one[1].multiselect(
+    selected_positions = filter_row_one[2].multiselect(
         "Position",
         position_values,
         default=default_positions,
         key="dynasty_rankings_positions",
-    )
-    source_filter = filter_row_one[2].selectbox(
-        "Player type",
-        _source_filter_options_for_view(view_mode),
-        key=f"dynasty_rankings_source_filter_{view_mode}",
     )
     team_values = ["All", *_column_values(filtered, "nfl_team")]
     selected_team = filter_row_one[3].selectbox(
@@ -114,11 +179,11 @@ def _apply_player_filters(
         key="dynasty_rankings_team",
     )
 
-    filter_row_two = st.columns([1.2, 1.1, 1.0, 1.4])
-    outcome_filter = filter_row_two[0].selectbox(
-        "Outcome availability",
-        ["All", "Has Outcome support", OUTCOME_NOT_ENOUGH_INFORMATION],
-        key="dynasty_rankings_outcome_filter",
+    filter_row_two = st.columns([1.2, 1.0, 1.4, 1.0])
+    source_filter = filter_row_two[0].selectbox(
+        "Player type",
+        _source_filter_options_for_view(view_mode),
+        key=f"dynasty_rankings_source_filter_{view_mode}",
     )
     sort_default = _default_sort_label(view_mode)
     sort_options = _sort_options_for_view(view_mode)
@@ -134,54 +199,63 @@ def _apply_player_filters(
         key="dynasty_rankings_ascending",
     )
     _render_age_filter(filter_row_two[3], filtered)
-    filter_row_three = st.columns([1.2, 1.2, 1.4])
-    tier_values = ["All", *_column_values(filtered, "candidate_value_band")]
-    selected_tier = filter_row_three[0].selectbox(
-        "Tier / band",
-        tier_values,
-        key="dynasty_rankings_candidate_band",
-    )
-    confidence_values = ["All", *_column_values(filtered, "confidence_band")]
-    selected_confidence = filter_row_three[1].selectbox(
-        "Confidence",
-        confidence_values,
-        key="dynasty_rankings_confidence",
-    )
-    review_filter = filter_row_three[2].selectbox(
-        "Manual review",
-        ["All", "Needs manual review", "No manual-review flag"],
-        key="dynasty_rankings_manual_review",
-    )
-    outcome_mode = st.selectbox(
-        "Outcome columns",
-        OUTCOME_DISPLAY_MODES,
-        index=OUTCOME_DISPLAY_MODES.index(OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE),
-        key="dynasty_rankings_outcome_columns",
-        help=(
-            "Outcome columns are display-only. Position-applicable mode hides other-position "
-            "heads; all-outcome mode shows wrong-position heads as N/A."
-        ),
-    )
-    market_row = st.columns([1.2, 1.2, 1.2])
-    show_market_baseline = market_row[0].toggle(
-        "Show Market Baseline columns",
-        value=False,
-        key="dynasty_rankings_show_market_baseline",
-        help=(
-            "Adds DynastyProcess market sanity columns as display-only context. "
-            "They do not change Dynasty Rank, Candidate Rank, or default sort."
-        ),
-    )
-    market_sanity_filter = market_row[1].selectbox(
-        "Market sanity",
-        MARKET_SANITY_FILTERS,
-        key="dynasty_rankings_market_sanity_filter",
-    )
-    market_match_filter = market_row[2].selectbox(
-        "Market match",
-        MARKET_MATCH_FILTERS,
-        key="dynasty_rankings_market_match_filter",
-    )
+    show_market_baseline = _show_market_for_preset(preset)
+    outcome_mode = _outcome_mode_for_preset(preset)
+    outcome_filter = "All"
+    selected_tier = "All"
+    selected_confidence = "All"
+    review_filter = "All"
+    market_sanity_filter = "All"
+    market_match_filter = "All"
+    with st.expander("Advanced filters", expanded=False):
+        st.caption(
+            "Review filters live here so the main board stays readable. These filters do not "
+            "change source values, ranks, model logic, or hidden sort behavior."
+        )
+        advanced_row_one = st.columns([1.2, 1.2, 1.2])
+        outcome_filter = advanced_row_one[0].selectbox(
+            "Outcome availability",
+            ["All", "Has Outcome support", OUTCOME_NOT_ENOUGH_INFORMATION],
+            key="dynasty_rankings_outcome_filter",
+        )
+        tier_values = ["All", *_column_values(filtered, "candidate_value_band")]
+        selected_tier = advanced_row_one[1].selectbox(
+            "Value band / review band",
+            tier_values,
+            key="dynasty_rankings_candidate_band",
+        )
+        confidence_values = ["All", *_column_values(filtered, "confidence_band")]
+        selected_confidence = advanced_row_one[2].selectbox(
+            "Confidence",
+            confidence_values,
+            key="dynasty_rankings_confidence",
+        )
+        advanced_row_two = st.columns([1.2, 1.2, 1.2])
+        review_filter = advanced_row_two[0].selectbox(
+            "Review needed",
+            ["All", "Needs review", "No review flag"],
+            key="dynasty_rankings_manual_review",
+        )
+        outcome_mode = advanced_row_two[1].selectbox(
+            "Outcome columns",
+            OUTCOME_DISPLAY_MODES,
+            index=OUTCOME_DISPLAY_MODES.index(outcome_mode),
+            key="dynasty_rankings_outcome_columns",
+            help=(
+                "Outcome columns are display-only. Position-applicable mode hides "
+                "other-position heads; all-outcome mode shows wrong-position heads as N/A."
+            ),
+        )
+        market_sanity_filter = advanced_row_two[2].selectbox(
+            "Market sanity",
+            MARKET_SANITY_FILTERS,
+            key="dynasty_rankings_market_sanity_filter",
+        )
+        market_match_filter = st.selectbox(
+            "Market match",
+            MARKET_MATCH_FILTERS,
+            key="dynasty_rankings_market_match_filter",
+        )
 
     if search:
         mask = pd.Series(False, index=filtered.index)
@@ -235,14 +309,14 @@ def _apply_player_filters(
         review_mask = filtered["manual_review_flag"].astype(str).str.lower().isin(
             {"yes", "true", "1", "human_decision_only"}
         )
-        if review_filter == "Needs manual review":
+        if review_filter == "Needs review":
             filtered = filtered.loc[review_mask].copy()
         else:
             filtered = filtered.loc[~review_mask].copy()
     filtered = _apply_market_filters(filtered, market_sanity_filter, market_match_filter)
 
     filtered = _sort_player_board(filtered, sort_by, ascending=ascending, view_mode=view_mode)
-    return filtered, sort_by, outcome_mode, show_market_baseline
+    return filtered, sort_by, outcome_mode, show_market_baseline, view_mode
 
 
 def _apply_market_filters(
@@ -433,7 +507,8 @@ def _render_market_baseline_status(unified: pd.DataFrame) -> None:
     st.caption(
         "Market Baseline / Display-Only: "
         f"{freshness_status} | Scrape date: {scrape_date} | "
-        "hidden by default; not used for rank, model value, Candidate Rank, or hidden sort."
+        "visible in the main lenses; not used for rank, model value, Candidate Rank, "
+        "or hidden sort."
     )
     with st.expander("Market Baseline / Display-Only diagnostics", expanded=False):
         st.write(
@@ -564,10 +639,6 @@ page_header(
         ),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.caption(
     "Deep tool: full dynasty source board. Market and Outcome context are display-only and "
     "never replace Dynasty Rank, Final Board Rank, tiers, or model values."
@@ -583,30 +654,39 @@ if not dynasty_bundle.loaded:
     )
 
 _render_market_baseline_status(raw_unified_board)
-view_mode = st.radio(
-    "View",
-    VIEW_MODES,
-    horizontal=True,
-    key="dynasty_rankings_view_mode",
-)
-filtered_board, sort_by, outcome_mode, show_market_baseline = _apply_player_filters(
+preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_CLEAN_BOARD)
+if preset not in VIEW_PRESETS:
+    preset = VIEW_PRESET_CLEAN_BOARD
+filtered_board, sort_by, outcome_mode, show_market_baseline, view_mode = _apply_player_filters(
     unified_board,
-    view_mode,
+    preset,
 )
 
 st.caption(
-    f"Rows shown: {int(filtered_board.shape[0])} | View: {view_mode} | Sort: {sort_by} | "
-    f"Outcome columns: {outcome_mode}. Outcome is display-only and does not drive sort."
+    f"Rows shown: {int(filtered_board.shape[0])} | Preset: {preset} | View: {view_mode} | "
+    f"Sort: {sort_by} | Outcome columns: {outcome_mode}. Outcome is display-only and does "
+    "not drive sort."
 )
 st.caption(
     "Candidate Rank / Candidate Value, when present, are review-only cross-asset context "
     "and do not replace Dynasty Rank or Final Board Rank."
 )
 st.caption(f"Visible Outcome heads: {_outcome_head_caption(filtered_board, outcome_mode)}")
+st.caption(
+    "Market Baseline columns are display-only DynastyProcess context, visible for the main "
+    "lenses, and do not drive Dynasty Rank, Candidate Rank, Final Board Rank, default sort, "
+    "trade value, or model input."
+)
 if show_market_baseline:
     st.caption(
-        "Market Baseline columns are display-only DynastyProcess context and do not drive "
-        "Dynasty Rank, Candidate Rank, Final Board Rank, or default sort."
+        "Visible market basics: DP 1QB Value, DP 1QB Market Rank, NWR vs Market Gap, "
+        "and Market Sanity Flag."
+    )
+if preset == VIEW_PRESET_OUTCOME_LENS:
+    st.info(
+        "Outcome Lens uses only approved current outcome heads: QB T12, RB T12/RB T24, "
+        "WR T12/WR T24/WR T36, and TE T12. Requested this-year, next-year, and next-five-year "
+        "horizon columns are not in the approved display artifact, so they are not shown."
     )
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(

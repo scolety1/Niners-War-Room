@@ -67,10 +67,6 @@ page_header(
         ("No trade model added", "safe"),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
 st.caption(
     "Deep tool: manual trade review. Market context is display-only and not a trade model, "
     "rank input, or source of truth."
