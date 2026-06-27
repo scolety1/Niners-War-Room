@@ -6,6 +6,7 @@ from pathlib import Path
 from app.navigation import (
     ALL_NAVIGATION_PAGES,
     HIDDEN_ADVANCED_PAGES,
+    VISIBLE_NAVIGATION_PAGE_GROUPS,
     VISIBLE_NAVIGATION_PAGES,
     app_page_path,
 )
@@ -20,7 +21,7 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Dynasty Rankings",
         "Player Compare",
         "Trading Lab",
-        "Post-Draft Review",
+        "Draft Analyzer",
         "Future Tools",
         "Refresh Data",
         "Evidence Review",
@@ -28,7 +29,21 @@ def test_visible_navigation_is_decision_focused() -> None:
     ]
 
 
-def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
+def test_visible_navigation_uses_locked_group_structure() -> None:
+    grouped_titles = {
+        section: [page.title for page in pages]
+        for section, pages in VISIBLE_NAVIGATION_PAGE_GROUPS
+    }
+
+    assert grouped_titles == {
+        "Draft": ["Live Draft", "Mock Drafts", "Draft Analyzer"],
+        "Research": ["Dynasty Rankings", "Player Compare", "Trading Lab"],
+        "Future": ["Future Tools"],
+        "Admin": ["Refresh Data", "Evidence Review", "Settings / Data Health"],
+    }
+
+
+def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
     hidden_titles = {page.title for page in HIDDEN_ADVANCED_PAGES}
     visible_titles = {page.title for page in VISIBLE_NAVIGATION_PAGES}
 
@@ -53,9 +68,10 @@ def test_developer_plumbing_pages_are_hidden_from_sidebar() -> None:
         "Command Center Legacy Alias",
         "Trade Lab Legacy Alias",
         "Historical Replay Advanced",
-        "Unified Universe Review",
-        "Settings Data Health Legacy Alias",
-        "Post-Draft Mode Legacy Alias",
+            "Unified Universe Review",
+            "Settings Data Health Legacy Alias",
+            "Post-Draft Mode Legacy Alias",
+            "Draft Analyzer URL Alias",
         "War Board",
         "My Team",
         "League Targets",
@@ -112,6 +128,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "player-compare",
         "trading-lab",
         "post-draft-mode",
+        "draft-analyzer",
         "settings-data-health",
         "refresh-data",
         "evidence-integration-review",

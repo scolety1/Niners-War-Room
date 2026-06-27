@@ -347,6 +347,10 @@ st.markdown(
     '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
     unsafe_allow_html=True,
 )
+st.info(
+    "Compatibility route: Cheat Sheets is a secondary tier-board view. The primary "
+    "draft-day tier scan now lives inside Live Draft and Dynasty Rankings."
+)
 if runtime_mode == "mock":
     st.warning("Practice state only — does not affect live draft.")
 render_frozen_baseline_badge(bundle)

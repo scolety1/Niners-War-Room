@@ -52,8 +52,9 @@ def _render_live_draft_command_center(
 
     st.markdown("## LIVE DRAFT")
     st.error(
-        "LIVE DRAFT - actions on this page write to the local live draft runtime state. "
-        "Use Mock Drafts for practice."
+        "LIVE DRAFT - actions on this page write to the real local live draft runtime state. "
+        "State changes become part of the live draft event log. Use Mock Drafts for "
+        "experiments."
     )
     st.caption(
         "Draft room command center: current pick, owned picks, runtime events, trade log, "
@@ -71,7 +72,7 @@ def _render_live_draft_command_center(
     quick_cols[0].link_button("Dynasty Rankings", "/rankings", use_container_width=True)
     quick_cols[1].link_button("Player Compare", "/player-compare", use_container_width=True)
     quick_cols[2].link_button("Trading Lab", "/trading-lab", use_container_width=True)
-    quick_cols[3].link_button("Post-Draft Review", "/post-draft-mode", use_container_width=True)
+    quick_cols[3].link_button("Draft Analyzer", "/post-draft-mode", use_container_width=True)
     quick_cols[4].link_button(
         "Settings / Data Health",
         "/settings-data-health",
