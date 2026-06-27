@@ -13,6 +13,10 @@ def test_live_draft_page_is_the_command_center() -> None:
     text = _text("app/pages/21_live_draft_room_v1.py")
 
     assert "## LIVE DRAFT" in text
+    assert "real local live draft runtime state" in text
+    assert "live draft event log" in text
+    assert "Use Mock Drafts for" in text
+    assert "experiments" in text
     assert "Draft room command center" in text
     assert "Your Team / runtime rail" in text
     assert "Current pick" in text
@@ -49,7 +53,9 @@ def test_mock_drafts_page_uses_named_practice_state_scope() -> None:
     text = _text("app/pages/24_mock_draft_v1.py")
 
     assert "## MOCK DRAFTS" in text
-    assert "Practice state only" in text
+    assert "practice state only" in text
+    assert "Mock state is separate from Live Draft" in text
+    assert "deletes/resets require confirmation" in text
     assert "Saved mock draft" in text
     assert "Create Mock" in text
     assert "Duplicate Mock" in text
@@ -70,12 +76,16 @@ def test_cheat_sheets_still_reads_session_type_when_launched_with_query() -> Non
     assert '_query_value("session_type")' in text
     assert "runtime_mode = _runtime_mode_from_query()" in text
     assert "load_runtime_state(mode=runtime_mode)" in text
+    assert "Compatibility route: Cheat Sheets is a secondary tier-board view" in text
     assert "Practice state only" in text
 
 
 def test_post_draft_mode_defaults_to_live_state() -> None:
     text = _text("app/pages/29_post_draft_mode_v2.py")
 
+    assert '"Draft Analyzer"' in text
+    assert "event-log recap" in text
+    assert "official source truth" in text
     assert 'st.radio("Draft session", ["Live", "Mock"]' in text
     assert 'index=1' not in text
 

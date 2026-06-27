@@ -31,11 +31,11 @@ from src.services.post_draft_mode_service import (
 )
 
 page_header(
-    "Post-Draft Mode",
+    "Draft Analyzer",
     eyebrow="Draft-Day App V2",
     description=(
-        "Recap local draft picks, manually recorded trades, value context, and follow-up "
-        "work. Runtime state is audit/display data, not official source truth."
+        "Analyze live or mock draft picks, manually recorded trades, event-log recap, "
+        "and follow-up work. Runtime state is audit/display data, not official source truth."
     ),
     status_items=(
         ("Runtime audit", "review"),
@@ -48,7 +48,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.caption(
-    "Deep tool: runtime audit and recap. Runtime state is not official source truth and does "
+    "Deep tool: draft audit and recap. Runtime state is not official source truth and does "
     "not mutate ranks, tiers, or latest files."
 )
 

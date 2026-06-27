@@ -45,7 +45,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="trading-lab",
     ),
     NavigationPageSpec(
-        title="Post-Draft Review",
+        title="Draft Analyzer",
         file_path="pages/29_post_draft_mode_v2.py",
         url_path="post-draft-mode",
     ),
@@ -68,6 +68,39 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Settings / Data Health",
         file_path="pages/28_settings_data_health_v1.py",
         url_path="settings-data-health",
+    ),
+)
+
+VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
+    tuple[str, tuple[NavigationPageSpec, ...]], ...
+] = (
+    (
+        "Draft",
+        (
+            VISIBLE_NAVIGATION_PAGES[0],
+            VISIBLE_NAVIGATION_PAGES[1],
+            VISIBLE_NAVIGATION_PAGES[5],
+        ),
+    ),
+    (
+        "Research",
+        (
+            VISIBLE_NAVIGATION_PAGES[2],
+            VISIBLE_NAVIGATION_PAGES[3],
+            VISIBLE_NAVIGATION_PAGES[4],
+        ),
+    ),
+    (
+        "Future",
+        (VISIBLE_NAVIGATION_PAGES[6],),
+    ),
+    (
+        "Admin",
+        (
+            VISIBLE_NAVIGATION_PAGES[7],
+            VISIBLE_NAVIGATION_PAGES[8],
+            VISIBLE_NAVIGATION_PAGES[9],
+        ),
     ),
 )
 
@@ -142,6 +175,12 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Post-Draft Mode Legacy Alias",
         file_path="pages/29_post_draft_mode_v2.py",
         url_path="post-draft",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Draft Analyzer URL Alias",
+        file_path="pages/29_post_draft_mode_v2.py",
+        url_path="draft-analyzer",
         visible=False,
     ),
     NavigationPageSpec(

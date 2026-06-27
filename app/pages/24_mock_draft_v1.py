@@ -63,7 +63,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown("## MOCK DRAFTS")
-st.warning("Practice state only. These mocks are saved locally and safe to experiment with.")
+st.warning(
+    "MOCK DRAFTS - practice state only. Mock state is separate from Live Draft and safe "
+    "for experimenting; deletes/resets require confirmation."
+)
 st.caption(
     "Mock Drafts use the same draft-room workflow as Live Draft with a separate mock "
     "runtime scope. Mock actions do not overwrite live draft state."
