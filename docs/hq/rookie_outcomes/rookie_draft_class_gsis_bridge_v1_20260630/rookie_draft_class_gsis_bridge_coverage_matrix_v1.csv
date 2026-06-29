@@ -1,0 +1,22 @@
+metric,value,notes,review_only,model_use_allowed,training_allowed
+source_policy_gate,PARTIAL_BRIDGE_SOURCE_POLICY,Public factual source is usable with limits.,true,false,false
+final_bridge_verdict,PARTIAL_DRAFT_CLASS_GSIS_BRIDGE,"Partial bridge, not model/training approved.",true,false,false
+historical_rookie_draft_rows,1025,"Drafted QB/RB/WR/TE rows, 2012-2024.",true,false,false
+rows_with_draft_year,1025,Draft source carries season/draft year.,true,false,false
+rows_with_gsis_or_player_stats_id,1020,GSIS/player_stats IDs from draft_picks.,true,false,false
+rows_missing_gsis_or_player_stats_id,5,Blocked rows.,true,false,false
+rows_linked_to_outcome_labels,919,Joined to Outcome V2 by GSIS/player_stats ID.,true,false,false
+rows_not_linked_to_outcome_labels,106,Missing GSIS or no target-label row.,true,false,false
+rookie_year_label_possible_rows,818,Outcome label row exists in rookie class year.,true,false,false
+year_2_label_possible_rows,737,Outcome label row exists in rookie class year plus one.,true,false,false
+first_3y_calendar_complete_rows,868,Latest target label season allows a 3Y window.,true,false,false
+first_5y_calendar_complete_rows,714,Latest target label season allows a 5Y window.,true,false,false
+linked_first_3y_calendar_complete_rows,779,Linked rows with calendar-complete 3Y windows.,true,false,false
+linked_first_5y_calendar_complete_rows,630,Linked rows with calendar-complete 5Y windows.,true,false,false
+position_coverage,QB:149; RB:273; TE:182; WR:421,All bridge rows by position.,true,false,false
+linked_position_coverage,QB:123; RB:246; TE:167; WR:383,Outcome-linked rows by position.,true,false,false
+draft_year_coverage,2012:77; 2013:80; 2014:77; 2015:79; 2016:77; 2017:83; 2018:83; 2019:80; 2020:78; 2021:75; 2022:79; 2023:80; 2024:77,All bridge rows by draft year.,true,false,false
+linked_draft_year_coverage,2012:69; 2013:69; 2014:65; 2015:70; 2016:64; 2017:73; 2018:75; 2019:70; 2020:75; 2021:72; 2022:77; 2023:74; 2024:66,Outcome-linked rows by draft year.,true,false,false
+latest_outcome_label_season,2024,Outcome V2 target label ceiling.,true,false,false
+rookie_probabilities_created,0,No probabilities created in this lane.,true,false,false
+rankings_wiring_created,0,No Rankings/app wiring created in this lane.,true,false,false
