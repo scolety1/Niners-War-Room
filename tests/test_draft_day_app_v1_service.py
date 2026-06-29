@@ -389,17 +389,40 @@ def test_full_dynasty_rankings_display_hides_source_bookkeeping() -> None:
 
 
 def test_position_aware_outcome_targets_follow_player_position() -> None:
-    assert outcome_targets_for_positions(["WR"]) == (
+    wr_targets = outcome_targets_for_positions(["WR"])
+    rb_targets = outcome_targets_for_positions(["RB"])
+
+    assert all(
+        column in wr_targets
+        for column in (
+            "outcome_v2_status_display_only",
+            "outcome_v2_availability_context_status",
+            "outcome_v2_caveat_display_only",
+        )
+    )
+    assert tuple(
+        column for column in wr_targets if column in {
+            "wr_t12_display_only",
+            "wr_t24_display_only",
+            "wr_t36_display_only",
+        }
+    ) == (
         "wr_t12_display_only",
         "wr_t24_display_only",
         "wr_t36_display_only",
     )
-    assert outcome_targets_for_positions(["RB"]) == (
-        "rb_t12_display_only",
-        "rb_t24_display_only",
-    )
-    assert outcome_targets_for_positions(["QB"]) == ("qb_t12_display_only",)
-    assert outcome_targets_for_positions(["TE"]) == ("te_t12_display_only",)
+    assert "outcome_v2_wr_t6_this_year_display_only" in wr_targets
+    assert "outcome_v2_wr_t36_within_5y_display_only" in wr_targets
+    assert "outcome_v2_rb_t24_within_5y_display_only" in rb_targets
+    assert "outcome_v2_rb_t6_within_5y_display_only" not in rb_targets
+    assert "outcome_v2_rb_t12_within_5y_display_only" not in rb_targets
+    qb_targets = outcome_targets_for_positions(["QB"])
+    te_targets = outcome_targets_for_positions(["TE"])
+    assert "qb_t12_display_only" in qb_targets
+    assert "outcome_v2_qb_t6_this_year_display_only" in qb_targets
+    assert "outcome_v2_qb_t12_within_5y_display_only" in qb_targets
+    assert "te_t12_display_only" in te_targets
+    assert "outcome_v2_te_t12_within_5y_display_only" in te_targets
 
 
 def test_position_aware_display_hides_wrong_position_columns_by_mode() -> None:
@@ -485,6 +508,7 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
     display = display_unified_player_board_frame(
         frame,
         view_mode=FULL_DYNASTY_VIEW,
+        outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
         selected_positions=["WR"],
     )
 
@@ -496,10 +520,6 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
         "Age",
         "NWR Dynasty Score",
         "Position Rank",
-        "Outcome Availability (Display-Only)",
-        "WR T12 (Display-Only)",
-        "WR T24 (Display-Only)",
-        "WR T36 (Display-Only)",
         "Value Band (Review-Only)",
         "Data Trust",
         "Confidence",
@@ -507,13 +527,17 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
     ]
     assert display.loc[0, "NFL Team"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert display.loc[0, "Age"] == OUTCOME_NOT_ENOUGH_INFORMATION
-    assert display.loc[0, "WR T12 (Display-Only)"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert display.loc[0, "Main Caveat"] == OUTCOME_NOT_ENOUGH_INFORMATION
     for blocked in (
         "Final Board Rank",
         "Final Tier",
         "Source Coverage",
         "Asset Type",
+        "Outcome Availability (Display-Only)",
+        "WR T12 (Display-Only)",
+        "WR T24 (Display-Only)",
+        "WR T36 (Display-Only)",
+        "WR T12 This Year (Outcome V2 / Display-Only)",
         "Tuned V2 Candidate Rank (Review-Only)",
         "Tuned V2 Candidate Value (Review-Only)",
         "Available-Pool ADP Range (Display-Only)",
@@ -543,15 +567,16 @@ def test_nwr_position_rank_display_is_derived_without_overwriting_nwr_rank() -> 
 
 
 def test_outcome_column_mode_resolves_columns_for_selected_positions() -> None:
-    assert outcome_columns_for_display(
+    columns = outcome_columns_for_display(
         outcome_mode="Position-applicable only",
         selected_positions=["WR", "TE"],
-    ) == (
-        "wr_t12_display_only",
-        "wr_t24_display_only",
-        "wr_t36_display_only",
-        "te_t12_display_only",
     )
+    assert "wr_t12_display_only" in columns
+    assert "wr_t36_display_only" in columns
+    assert "te_t12_display_only" in columns
+    assert "outcome_v2_wr_t6_this_year_display_only" in columns
+    assert "outcome_v2_te_t12_within_5y_display_only" in columns
+    assert "outcome_v2_rb_t24_within_5y_display_only" not in columns
     assert outcome_columns_for_display(
         outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
         selected_positions=["WR"],
@@ -571,6 +596,114 @@ def test_outcome_display_context_uses_not_enough_information_for_missing_values(
     counts = outcome_display_coverage_counts(frame)
 
     assert counts == {"rows": 1, "available": 0, "not_enough_information": 1}
+
+
+def test_outcome_v2_display_artifact_loads_by_player_id_and_keeps_missing_text(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    artifact_path = tmp_path / "outcome_v2_current_player_display.csv"
+    pd.DataFrame(
+        [
+            _outcome_v2_artifact_row(
+                "1",
+                "Puka Nacua",
+                "WR",
+                "eligible_veteran_feature_covered",
+                {"WR T12 This Year": "43.4%", "WR T36 Within 5Y": "94.5%"},
+            ),
+            _outcome_v2_artifact_row(
+                "2",
+                "Rookie WR",
+                "WR",
+                "out_of_scope_rookie_or_prospect",
+                {},
+            ),
+            _outcome_v2_artifact_row(
+                "3",
+                "Missing RB",
+                "RB",
+                "missing_current_feature_coverage",
+                {},
+            ),
+        ]
+    ).to_csv(artifact_path, index=False)
+    monkeypatch.setattr(
+        draft_day_service,
+        "OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH",
+        artifact_path,
+    )
+    monkeypatch.setattr(
+        draft_day_service,
+        "EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH",
+        draft_day_service.file_sha256(artifact_path),
+    )
+
+    frame = pd.DataFrame(
+        [
+            {"player_id": "1", "player_name": "Puka Nacua", "position": "WR"},
+            {"player_id": "2", "player_name": "Rookie WR", "position": "WR"},
+            {"player_id": "3", "player_name": "Missing RB", "position": "RB"},
+        ]
+    )
+
+    enriched = draft_day_service.integrate_outcome_v2_display_context(frame)
+    puka = enriched.loc[enriched["player_id"].eq("1")].iloc[0]
+    rookie = enriched.loc[enriched["player_id"].eq("2")].iloc[0]
+    missing = enriched.loc[enriched["player_id"].eq("3")].iloc[0]
+
+    assert puka["outcome_v2_status_display_only"] == "Available"
+    assert puka["outcome_v2_wr_t12_this_year_display_only"] == "43.4%"
+    assert puka["outcome_v2_wr_t36_within_5y_display_only"] == "94.5%"
+    assert rookie["outcome_v2_status_display_only"] == "out_of_scope_rookie_or_prospect"
+    assert rookie["outcome_v2_wr_t12_this_year_display_only"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert missing["outcome_v2_status_display_only"] == "missing_current_feature_coverage"
+    assert missing["outcome_v2_rb_t24_within_5y_display_only"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert "outcome_v2_rb_t6_within_5y_display_only" not in enriched.columns
+    assert "outcome_v2_rb_t12_within_5y_display_only" not in enriched.columns
+
+
+def _outcome_v2_artifact_row(
+    player_id: str,
+    player_name: str,
+    position: str,
+    eligibility_status: str,
+    probabilities: dict[str, str],
+) -> dict[str, str]:
+    row = {
+        "nwr_player_id": player_id,
+        "sleeper_id": player_id,
+        "gsis_id": f"00-test-{player_id}",
+        "player_name": player_name,
+        "position": position,
+        "team": "SF",
+        "eligibility_status": eligibility_status,
+        "identity_status": "matched_exact",
+        "feature_coverage_status": (
+            "feature_covered_2025_regular_season"
+            if eligibility_status == "eligible_veteran_feature_covered"
+            else eligibility_status
+        ),
+        "scoring_mode": "partial_exact_first_down_scoring_missing_sack_fumbles_lost",
+        "outcome_v2_version": "test",
+        "as_of_context": "2026-pre-draft",
+        "this_year_definition": "2026 NFL season",
+        "display_only": "true",
+        "model_use_allowed": "false",
+        "training_allowed": "false",
+        "source_truth_allowed": "false",
+        "market_used_as_input": "false",
+        "dynastyprocess_used_as_input": "false",
+        "adp_used_as_input": "false",
+        "cfbd_used_as_input": "false",
+        "data_coverage_status": "partial_2025_feature_source_approval",
+        "availability_context_status": "partial_availability_context_missing_games",
+        "caveat_summary": "Display-only; games missing; no row implies clean health.",
+        "validated_field_status": "validated_position_fields_only",
+    }
+    for source, _target, _label, _position in draft_day_service.APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
+        row[source] = probabilities.get(source, OUTCOME_NOT_ENOUGH_INFORMATION)
+    return row
 
 
 def test_unified_player_board_preserves_dynasty_and_board_only_truths(

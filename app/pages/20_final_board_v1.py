@@ -13,11 +13,14 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     APPROVED_OUTCOME_DISPLAY_FIELDS,
+    APPROVED_OUTCOME_V2_DISPLAY_FIELDS,
+    BLOCKED_OUTCOME_V2_FIELDS,
     FULL_DYNASTY_VIEW,
     OUTCOME_DISPLAY_MODE_HIDE,
     OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
     OUTCOME_DISPLAY_MODES,
     OUTCOME_NOT_ENOUGH_INFORMATION,
+    OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
@@ -28,11 +31,13 @@ from src.services.draft_day_app_v1_service import (
     frozen_board_outcome_support_counts,
     load_dynasty_rankings,
     load_frozen_board,
+    load_outcome_v2_current_player_display,
     market_baseline_age_coverage,
     market_baseline_freshness_status,
     market_baseline_join_coverage,
     outcome_columns_for_display,
     outcome_display_coverage_counts,
+    outcome_v2_display_coverage_counts,
     sort_unified_player_board_for_view,
 )
 
@@ -399,6 +404,12 @@ def _outcome_head_caption(frame: pd.DataFrame, outcome_mode: str) -> str:
         target: f"{label} (Display-Only)"
         for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
     }
+    labels_by_target.update(
+        {
+            target: f"{label} (Outcome V2 / Display-Only)"
+            for _source, target, label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
+        }
+    )
     labels = [labels_by_target[target] for target in targets if target in labels_by_target]
     return ", ".join(labels) if labels else "Hidden"
 
@@ -533,6 +544,51 @@ def _render_market_baseline_status(unified: pd.DataFrame) -> None:
             st.warning(stale_warning)
 
 
+def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
+    counts = outcome_v2_display_coverage_counts(unified)
+    artifact = load_outcome_v2_current_player_display()
+    st.info(
+        "Outcome V2 is display-only. It does not drive Dynasty Rank, model input, "
+        "hidden sort, trade value, or pick value. This Year = 2026 NFL season. "
+        "Missing data is Not enough information, not low probability."
+    )
+    st.caption(
+        "Scoring caveat: partial exact first-down scoring; sack_fumbles_lost missing. "
+        "Availability caveat: games field missing; no row implies clean health."
+    )
+    st.caption(
+        "Outcome V2 coverage: "
+        f"{counts['available']}/{counts['rows']} rows with validated display context; "
+        f"{counts['not_enough_information']} rows remain Not enough information; "
+        f"{counts['rookie_out_of_scope']} rookies/prospects out of scope; "
+        f"{counts['missing_feature']} veterans missing 2025 feature rows."
+    )
+    st.caption(
+        "Blocked V2 fields: "
+        f"{', '.join(BLOCKED_OUTCOME_V2_FIELDS)} = Not enough information; "
+        "weak calibration, no probability shown."
+    )
+    st.caption(f"Outcome V2 artifact: {OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH}")
+    with st.expander("Outcome V1 / Legacy and blocked V2 fields", expanded=False):
+        st.write(
+            {
+                "Outcome V1 / Legacy": (
+                    "QB T12, RB T12, RB T24, WR T12, WR T24, WR T36, TE T12 "
+                    "remain available as legacy display-only context."
+                ),
+                "Outcome V2 blocked fields": (
+                    ", ".join(BLOCKED_OUTCOME_V2_FIELDS)
+                    + " = Not enough information; weak calibration."
+                ),
+                "Outcome V2 artifact status": "GREEN" if artifact.loaded else "YELLOW-HOLD",
+                "Outcome V2 artifact rows": artifact.row_count,
+                "Outcome V2 artifact hash": artifact.source_hash or OUTCOME_NOT_ENOUGH_INFORMATION,
+            }
+        )
+        for error in artifact.errors:
+            st.error(error)
+
+
 def _render_tier_board_cheat_sheet(frame: pd.DataFrame, view_mode: str) -> None:
     with st.expander("Tier Board / Cheat Sheet", expanded=False):
         st.caption(
@@ -613,6 +669,7 @@ dynasty_bundle = load_dynasty_rankings()
 raw_unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
 unified_board = enrich_unified_player_board_with_market_baseline(raw_unified_board)
 outcome_counts = outcome_display_coverage_counts(unified_board)
+outcome_v2_counts = outcome_v2_display_coverage_counts(unified_board)
 frozen_outcome_counts = frozen_board_outcome_support_counts(bundle.frame)
 
 page_header(
@@ -635,6 +692,11 @@ page_header(
         (
             "Outcome support: "
             f"{frozen_outcome_counts['supported']}/{frozen_outcome_counts['rows']}",
+            "review",
+        ),
+        (
+            "Outcome V2 display rows: "
+            f"{outcome_v2_counts['available']}/{outcome_v2_counts['rows']}",
             "review",
         ),
     ),
@@ -683,11 +745,7 @@ if show_market_baseline:
         "and Market Sanity Flag."
     )
 if preset == VIEW_PRESET_OUTCOME_LENS:
-    st.info(
-        "Outcome Lens uses only approved current outcome heads: QB T12, RB T12/RB T24, "
-        "WR T12/WR T24/WR T36, and TE T12. Requested this-year, next-year, and next-five-year "
-        "horizon columns are not in the approved display artifact, so they are not shown."
-    )
+    _render_outcome_lens_status(unified_board)
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(
     display_unified_player_board_frame(
