@@ -729,7 +729,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 def write_csv(path: Path, rows: list[dict[str, str]], columns: tuple[str, ...]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\n")
+        writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\r\n")
         writer.writeheader()
         writer.writerows(rows)
 
