@@ -245,14 +245,18 @@ def test_rankings_column_labels_are_human_readable_and_review_fields_late() -> N
     assert columns.index("Data Trust") > columns.index("NWR Dynasty Score")
 
 
-def test_outcome_lens_documents_missing_horizons_without_fake_columns() -> None:
+def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
     text = _page_text()
     audit = Path("docs/hq/app_ux/NWR_DYNASTY_RANKINGS_OUTCOME_COLUMN_AUDIT_20260627.md").read_text(
         encoding="utf-8"
     )
 
-    assert "Outcome Lens uses only approved current outcome heads" in text
-    assert "this-year, next-year, and next-five-year" in text
+    assert "Outcome V2 is display-only" in text
+    assert "This Year = 2026 NFL season" in text
+    assert "sack_fumbles_lost missing" in text
+    assert "games field missing" in text
+    assert "Outcome V1 / Legacy and blocked V2 fields" in text
+    assert "BLOCKED_OUTCOME_V2_FIELDS" in text
     assert "T12 this year" in audit
     assert "Blocked until an approved artifact exists" in audit
     assert "Older legacy page text referenced horizon-style placeholder labels" in audit

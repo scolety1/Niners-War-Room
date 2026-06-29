@@ -116,6 +116,17 @@ OUTCOME_NUMERIC_DISPLAY_PATH = (
 EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH = (
     "1fb63fec25f7893ed09004830c7eb4e5ed32c6622c08876849fb61a2e4826cb0"
 )
+OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "outcomes"
+    / "outcome_v2_horizon_20260630"
+    / "outcome_v2_current_player_display.csv"
+)
+EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH = (
+    "679f353dabeeae216b51e1592eeb1e750b9a2e0dffbd69ced7259587914d4a79"
+)
 PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
     r"\20260620_controlled_sim_v1\pinned_snapshot_manifest.json"
@@ -319,10 +330,58 @@ APPROVED_OUTCOME_DISPLAY_FIELDS = (
     ("wr_t36_display_pct", "wr_t36_display_only", "WR T36"),
     ("te_t12_display_pct", "te_t12_display_only", "TE T12"),
 )
+OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS = (
+    "outcome_v2_status_display_only",
+    "outcome_v2_availability_context_status",
+    "outcome_v2_caveat_display_only",
+)
+APPROVED_OUTCOME_V2_DISPLAY_FIELDS = (
+    ("QB T6 This Year", "outcome_v2_qb_t6_this_year_display_only", "QB T6 This Year", "QB"),
+    ("QB T12 This Year", "outcome_v2_qb_t12_this_year_display_only", "QB T12 This Year", "QB"),
+    ("RB T6 This Year", "outcome_v2_rb_t6_this_year_display_only", "RB T6 This Year", "RB"),
+    ("RB T12 This Year", "outcome_v2_rb_t12_this_year_display_only", "RB T12 This Year", "RB"),
+    ("RB T24 This Year", "outcome_v2_rb_t24_this_year_display_only", "RB T24 This Year", "RB"),
+    ("RB T36 This Year", "outcome_v2_rb_t36_this_year_display_only", "RB T36 This Year", "RB"),
+    ("WR T6 This Year", "outcome_v2_wr_t6_this_year_display_only", "WR T6 This Year", "WR"),
+    ("WR T12 This Year", "outcome_v2_wr_t12_this_year_display_only", "WR T12 This Year", "WR"),
+    ("WR T24 This Year", "outcome_v2_wr_t24_this_year_display_only", "WR T24 This Year", "WR"),
+    ("WR T36 This Year", "outcome_v2_wr_t36_this_year_display_only", "WR T36 This Year", "WR"),
+    ("TE T6 This Year", "outcome_v2_te_t6_this_year_display_only", "TE T6 This Year", "TE"),
+    ("TE T12 This Year", "outcome_v2_te_t12_this_year_display_only", "TE T12 This Year", "TE"),
+    ("QB T6 Next Year", "outcome_v2_qb_t6_next_year_display_only", "QB T6 Next Year", "QB"),
+    ("QB T12 Next Year", "outcome_v2_qb_t12_next_year_display_only", "QB T12 Next Year", "QB"),
+    ("RB T6 Next Year", "outcome_v2_rb_t6_next_year_display_only", "RB T6 Next Year", "RB"),
+    ("RB T12 Next Year", "outcome_v2_rb_t12_next_year_display_only", "RB T12 Next Year", "RB"),
+    ("RB T24 Next Year", "outcome_v2_rb_t24_next_year_display_only", "RB T24 Next Year", "RB"),
+    ("RB T36 Next Year", "outcome_v2_rb_t36_next_year_display_only", "RB T36 Next Year", "RB"),
+    ("WR T6 Next Year", "outcome_v2_wr_t6_next_year_display_only", "WR T6 Next Year", "WR"),
+    ("WR T12 Next Year", "outcome_v2_wr_t12_next_year_display_only", "WR T12 Next Year", "WR"),
+    ("WR T24 Next Year", "outcome_v2_wr_t24_next_year_display_only", "WR T24 Next Year", "WR"),
+    ("WR T36 Next Year", "outcome_v2_wr_t36_next_year_display_only", "WR T36 Next Year", "WR"),
+    ("TE T6 Next Year", "outcome_v2_te_t6_next_year_display_only", "TE T6 Next Year", "TE"),
+    ("TE T12 Next Year", "outcome_v2_te_t12_next_year_display_only", "TE T12 Next Year", "TE"),
+    ("QB T6 Within 5Y", "outcome_v2_qb_t6_within_5y_display_only", "QB T6 Within 5Y", "QB"),
+    ("QB T12 Within 5Y", "outcome_v2_qb_t12_within_5y_display_only", "QB T12 Within 5Y", "QB"),
+    ("RB T24 Within 5Y", "outcome_v2_rb_t24_within_5y_display_only", "RB T24 Within 5Y", "RB"),
+    ("RB T36 Within 5Y", "outcome_v2_rb_t36_within_5y_display_only", "RB T36 Within 5Y", "RB"),
+    ("WR T6 Within 5Y", "outcome_v2_wr_t6_within_5y_display_only", "WR T6 Within 5Y", "WR"),
+    ("WR T12 Within 5Y", "outcome_v2_wr_t12_within_5y_display_only", "WR T12 Within 5Y", "WR"),
+    ("WR T24 Within 5Y", "outcome_v2_wr_t24_within_5y_display_only", "WR T24 Within 5Y", "WR"),
+    ("WR T36 Within 5Y", "outcome_v2_wr_t36_within_5y_display_only", "WR T36 Within 5Y", "WR"),
+    ("TE T6 Within 5Y", "outcome_v2_te_t6_within_5y_display_only", "TE T6 Within 5Y", "TE"),
+    ("TE T12 Within 5Y", "outcome_v2_te_t12_within_5y_display_only", "TE T12 Within 5Y", "TE"),
+)
+BLOCKED_OUTCOME_V2_FIELDS = ("RB_T6_WITHIN_5Y", "RB_T12_WITHIN_5Y")
 OUTCOME_DISPLAY_FIELD_POSITIONS = {
     target: label.split(" ", maxsplit=1)[0]
     for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
 }
+OUTCOME_DISPLAY_FIELD_POSITIONS.update(
+    {
+        target: position
+        for _source, target, _label, position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -1100,7 +1159,9 @@ def load_dynasty_rankings() -> DynastyRankingsBundle:
             f"{EXPECTED_DYNASTY_RANKINGS_HASH}; found {source_hash}."
         )
     normalized = integrate_cross_asset_candidate_context(
-        integrate_outcome_display_context(normalize_dynasty_rankings_frame(frame)),
+        integrate_outcome_v2_display_context(
+            integrate_outcome_display_context(normalize_dynasty_rankings_frame(frame))
+        ),
         name_column="player_name",
         position_column="position",
     )
@@ -1156,6 +1217,35 @@ def load_outcome_numeric_display() -> OutcomeDisplayBundle:
         frame=frame,
         source_path=path,
         source_label="approved Outcome V1 numeric display",
+        errors=tuple(errors),
+        warnings=(),
+        source_hash=source_hash,
+    )
+
+
+def load_outcome_v2_current_player_display() -> OutcomeDisplayBundle:
+    path = OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH
+    if not path.exists():
+        return OutcomeDisplayBundle(
+            frame=pd.DataFrame(),
+            source_path=None,
+            source_label="missing Outcome V2 current-player display artifact",
+            errors=(f"Outcome V2 current-player display artifact was not found at {path}.",),
+            warnings=(),
+            source_hash=None,
+        )
+    frame = pd.read_csv(path, dtype=str).fillna("")
+    source_hash = file_sha256(path)
+    errors = list(validate_outcome_v2_current_player_display(frame))
+    if source_hash != EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH:
+        errors.append(
+            "Outcome V2 current-player display hash mismatch: expected "
+            f"{EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH}; found {source_hash}."
+        )
+    return OutcomeDisplayBundle(
+        frame=frame,
+        source_path=path,
+        source_label="Outcome V2 current-player display artifact",
         errors=tuple(errors),
         warnings=(),
         source_hash=source_hash,
@@ -1504,6 +1594,59 @@ def validate_outcome_numeric_display(frame: pd.DataFrame) -> tuple[str, ...]:
     return tuple(errors)
 
 
+def validate_outcome_v2_current_player_display(frame: pd.DataFrame) -> tuple[str, ...]:
+    errors: list[str] = []
+    required = (
+        "nwr_player_id",
+        "player_name",
+        "position",
+        "eligibility_status",
+        "feature_coverage_status",
+        "display_only",
+        "model_use_allowed",
+        "training_allowed",
+        "source_truth_allowed",
+        "market_used_as_input",
+        "dynastyprocess_used_as_input",
+        "adp_used_as_input",
+        "cfbd_used_as_input",
+        "availability_context_status",
+        "caveat_summary",
+        *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+    )
+    missing = [column for column in required if column not in frame.columns]
+    if missing:
+        errors.append(f"Missing Outcome V2 display fields: {', '.join(missing)}.")
+    hidden_like = hidden_sort_columns(frame.columns)
+    if hidden_like:
+        errors.append(
+            f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
+        )
+    blocked_columns = [
+        column
+        for column in ("RB T6 Within 5Y", "RB T12 Within 5Y")
+        if column in frame.columns
+    ]
+    if blocked_columns:
+        errors.append(f"Blocked Outcome V2 fields are present: {', '.join(blocked_columns)}.")
+    for flag in (
+        "display_only",
+        "model_use_allowed",
+        "training_allowed",
+        "source_truth_allowed",
+        "market_used_as_input",
+        "dynastyprocess_used_as_input",
+        "adp_used_as_input",
+        "cfbd_used_as_input",
+    ):
+        if flag not in frame.columns:
+            continue
+        expected = "true" if flag == "display_only" else "false"
+        if not frame[flag].astype(str).str.lower().eq(expected).all():
+            errors.append(f"Outcome V2 field {flag} must be {expected}.")
+    return tuple(errors)
+
+
 def integrate_outcome_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     outcome = load_outcome_numeric_display()
     result = frame.copy()
@@ -1540,11 +1683,82 @@ def integrate_outcome_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
+    outcome = load_outcome_v2_current_player_display()
+    result = frame.copy()
+    for column in OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS:
+        result[column] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
+        result[target] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if not outcome.loaded or "player_id" not in result.columns:
+        return result
+
+    outcome_columns = [
+        "nwr_player_id",
+        "eligibility_status",
+        "feature_coverage_status",
+        "availability_context_status",
+        "caveat_summary",
+        *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+    ]
+    outcome_frame = outcome.frame.loc[:, outcome_columns].copy()
+    merged = result.merge(
+        outcome_frame,
+        left_on="player_id",
+        right_on="nwr_player_id",
+        how="left",
+        suffixes=("", "_outcome_v2"),
+    )
+    merged["outcome_v2_status_display_only"] = merged.apply(
+        outcome_v2_status_label,
+        axis=1,
+    )
+    merged["outcome_v2_availability_context_status"] = merged[
+        "availability_context_status"
+    ].map(outcome_v2_text_display)
+    merged["outcome_v2_caveat_display_only"] = merged["caveat_summary"].map(
+        outcome_v2_text_display
+    )
+    for source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
+        merged[target] = merged[source].map(outcome_probability_display)
+    display = apply_position_aware_outcome_values(merged)
+    return display.drop(
+        columns=[
+            "nwr_player_id",
+            "eligibility_status",
+            "feature_coverage_status",
+            "availability_context_status",
+            "caveat_summary",
+            *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+        ],
+        errors="ignore",
+    )
+
+
 def outcome_probability_display(value: object) -> str:
     text = str(value or "").strip()
     if not text or text.lower() in {"nan", "none", "null", "n/a"}:
         return OUTCOME_NOT_ENOUGH_INFORMATION
     return text
+
+
+def outcome_v2_text_display(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "null", "n/a"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return text
+
+
+def outcome_v2_status_label(row: pd.Series) -> str:
+    eligibility = str(row.get("eligibility_status") or "").strip()
+    coverage = str(row.get("feature_coverage_status") or "").strip()
+    if eligibility == "eligible_veteran_feature_covered":
+        return "Available"
+    if eligibility:
+        return eligibility
+    if coverage:
+        return coverage
+    return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def outcome_availability_label(value: object) -> str:
@@ -1554,16 +1768,24 @@ def outcome_availability_label(value: object) -> str:
 
 
 def outcome_display_targets() -> tuple[str, ...]:
-    return tuple(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS)
+    return (
+        *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+        *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
+        *(
+            target
+            for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
+        ),
+    )
 
 
 def outcome_targets_for_positions(positions: Iterable[object]) -> tuple[str, ...]:
     normalized = {str(position or "").strip().upper() for position in positions}
-    return tuple(
+    position_targets = tuple(
         target
         for target, position in OUTCOME_DISPLAY_FIELD_POSITIONS.items()
         if position in normalized
     )
+    return (*OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS, *position_targets)
 
 
 def apply_position_aware_outcome_values(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1604,6 +1826,29 @@ def outcome_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
         "rows": rows,
         "available": available,
         "not_enough_information": rows - available,
+    }
+
+
+def outcome_v2_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
+    rows = int(frame.shape[0])
+    if "outcome_v2_status_display_only" not in frame.columns:
+        return {
+            "rows": rows,
+            "available": 0,
+            "not_enough_information": rows,
+            "rookie_out_of_scope": 0,
+            "missing_feature": 0,
+        }
+    status = frame["outcome_v2_status_display_only"].astype(str)
+    available = int(status.eq("Available").sum())
+    rookie_out = int(status.eq("out_of_scope_rookie_or_prospect").sum())
+    missing_feature = int(status.eq("missing_current_feature_coverage").sum())
+    return {
+        "rows": rows,
+        "available": available,
+        "not_enough_information": rows - available,
+        "rookie_out_of_scope": rookie_out,
+        "missing_feature": missing_feature,
     }
 
 
@@ -1670,8 +1915,10 @@ def build_unified_player_board(
                 axis=1,
             )
         ].copy()
-        board_only_rows = integrate_outcome_display_context(
-            _board_only_rows_for_unified_player_board(board_only)
+        board_only_rows = integrate_outcome_v2_display_context(
+            integrate_outcome_display_context(
+                _board_only_rows_for_unified_player_board(board_only)
+            )
         )
         rows.extend(board_only_rows.to_dict("records"))
 
@@ -1823,6 +2070,7 @@ def display_unified_player_board_frame(
         display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
     if show_market_baseline:
         display_columns = _display_columns_with_market_baseline(display_columns)
+    display_columns = _display_columns_with_outcome_v2(display_columns)
     selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
     outcome_targets = set(
         outcome_columns_for_display(
@@ -1868,6 +2116,22 @@ def _display_columns_with_market_baseline(display_columns: tuple[str, ...]) -> t
         if column not in MARKET_BASELINE_DISPLAY_COLUMNS
     )
     return (*before, *MARKET_BASELINE_DISPLAY_COLUMNS, *after)
+
+
+def _display_columns_with_outcome_v2(display_columns: tuple[str, ...]) -> tuple[str, ...]:
+    v2_columns = (
+        *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
+        *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+    )
+    insert_after = "te_t12_display_only"
+    if insert_after not in display_columns:
+        insert_after = "outcome_availability_display_only"
+    if insert_after not in display_columns:
+        return tuple(dict.fromkeys((*display_columns, *v2_columns)))
+    split_index = display_columns.index(insert_after) + 1
+    before = display_columns[:split_index]
+    after = tuple(column for column in display_columns[split_index:] if column not in v2_columns)
+    return tuple(dict.fromkeys((*before, *v2_columns, *after)))
 
 
 MISSING_INFORMATION_DISPLAY_COLUMNS = (
@@ -2313,6 +2577,43 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "wr_t24_display_only": "WR T24 (Display-Only)",
     "wr_t36_display_only": "WR T36 (Display-Only)",
     "te_t12_display_only": "TE T12 (Display-Only)",
+    "outcome_v2_status_display_only": "Outcome V2 Status (Display-Only)",
+    "outcome_v2_availability_context_status": "Outcome V2 Availability Caveat",
+    "outcome_v2_caveat_display_only": "Outcome V2 Caveat",
+    "outcome_v2_qb_t6_this_year_display_only": "QB T6 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_qb_t12_this_year_display_only": "QB T12 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t6_this_year_display_only": "RB T6 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t12_this_year_display_only": "RB T12 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t24_this_year_display_only": "RB T24 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t36_this_year_display_only": "RB T36 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t6_this_year_display_only": "WR T6 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t12_this_year_display_only": "WR T12 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t24_this_year_display_only": "WR T24 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t36_this_year_display_only": "WR T36 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t6_this_year_display_only": "TE T6 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t12_this_year_display_only": "TE T12 This Year (Outcome V2 / Display-Only)",
+    "outcome_v2_qb_t6_next_year_display_only": "QB T6 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_qb_t12_next_year_display_only": "QB T12 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t6_next_year_display_only": "RB T6 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t12_next_year_display_only": "RB T12 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t24_next_year_display_only": "RB T24 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t36_next_year_display_only": "RB T36 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t6_next_year_display_only": "WR T6 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t12_next_year_display_only": "WR T12 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t24_next_year_display_only": "WR T24 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t36_next_year_display_only": "WR T36 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t6_next_year_display_only": "TE T6 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t12_next_year_display_only": "TE T12 Next Year (Outcome V2 / Display-Only)",
+    "outcome_v2_qb_t6_within_5y_display_only": "QB T6 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_qb_t12_within_5y_display_only": "QB T12 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t24_within_5y_display_only": "RB T24 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_rb_t36_within_5y_display_only": "RB T36 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t6_within_5y_display_only": "WR T6 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t12_within_5y_display_only": "WR T12 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t24_within_5y_display_only": "WR T24 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_wr_t36_within_5y_display_only": "WR T36 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t6_within_5y_display_only": "TE T6 Within 5Y (Outcome V2 / Display-Only)",
+    "outcome_v2_te_t12_within_5y_display_only": "TE T12 Within 5Y (Outcome V2 / Display-Only)",
     "dp_value_1qb": "DP 1QB Value (Market Baseline / Display-Only)",
     "dp_market_rank_1qb": "DP 1QB Market Rank (Market Baseline / Display-Only)",
     "dp_ecr_pos": "DP ECR Pos (Market Baseline / Display-Only)",
