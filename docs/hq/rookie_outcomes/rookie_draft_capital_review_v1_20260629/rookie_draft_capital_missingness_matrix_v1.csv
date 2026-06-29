@@ -1,0 +1,9 @@
+field_name,total_rows,available_rows,missing_rows,coverage_pct,notes,review_only,model_use_allowed,training_allowed
+draft_year,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+draft_round,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+overall_pick,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+drafted_team,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+udfa_status,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+nfl_entry_status,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+rookie_class_year,157,54,103,34.4,Partial coverage; missing rows remain Not enough information.,true,false,false
+age_at_draft,157,0,157,0.0,No approved age-at-draft source in Gate B artifact.,true,false,false

@@ -1,21 +1,27 @@
 # Rookie Draft Capital Review V1
 
-This folder documents the Gate B retry after CFBD identity review-only
-approval. It is a blocker package, not a draft-capital data product.
+Gate B result: `PARTIAL_DRAFT_CAPITAL_REVIEW_ARTIFACT`
 
-## Verdict
+This folder now contains a partial tracked, review-only draft-capital
+artifact for Gate-A-approved CFBD rookie identities.
 
-`BLOCKED_NEEDS_DRAFT_CAPITAL`
+## Files
+
+- `rookie_draft_capital_review_artifact_v1.csv`
+- `ROOKIE_DRAFT_CAPITAL_REVIEW_ARTIFACT_V1_SUMMARY.md`
+- `ROOKIE_DRAFT_CAPITAL_PROVENANCE_V1.md`
+- `rookie_draft_capital_missingness_matrix_v1.csv`
+- `rookie_draft_capital_source_audit_v1.csv`
 
 ## Counts
 
-- Approved identity rows available for Gate B: 157
-- Draft-capital sources audited: 7
-- Review-only draft-capital rows produced: 0
+- Total approved identity rows: 157
+- Rows with review-only draft capital: 54
+- Rows missing draft capital: 103
 
 ## Guardrails
 
-- No rookie outcome labels were built.
-- No model or probability artifact was built.
-- No Rankings integration was attempted.
-- Missing draft capital remains blocked, not converted to `0%`.
+- All rows remain `review_only=true`.
+- All rows remain `model_use_allowed=false`.
+- All rows remain `training_allowed=false`.
+- Missing data remains `Not enough information`, never `0%`.
