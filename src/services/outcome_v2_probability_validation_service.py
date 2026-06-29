@@ -22,10 +22,14 @@ POSITION_THRESHOLDS: dict[str, tuple[int, ...]] = {
 HORIZON_HOLDOUTS: dict[str, tuple[int, ...]] = {
     "this_year": (2022, 2023),
     "next_year": (2021, 2022),
+    "within_5y": (2018, 2019),
 }
 MIN_COMPLETE_LABELS = 100
 MIN_POSITIVES = 20
 MIN_COMPLETE_ANCHOR_SEASONS = 5
+MAX_WEIGHTED_CALIBRATION_ABS_ERROR = 0.15
+MAX_LARGE_BUCKET_CALIBRATION_ABS_ERROR = 0.30
+MIN_ROWS_FOR_LARGE_BUCKET_CALIBRATION = 20
 
 RESULTS_FILENAME = "outcome_v2_probability_validation_results.csv"
 CALIBRATION_FILENAME = "outcome_v2_probability_calibration_buckets.csv"
@@ -242,15 +246,16 @@ def _validate_field(
     model_brier = _brier(probabilities, targets)
     baseline_brier = _brier([baseline_probability] * len(targets), targets)
     brier_delta = baseline_brier - model_brier
-    validation_status = (
-        "PASS_APP_DISPLAY_VALIDATION"
-        if model_brier <= baseline_brier
-        else "BLOCKED_VALIDATION_WEAK"
+    calibration = _calibration_rows(
+        field_id=str(feasibility_row["field_id"]),
+        probabilities=probabilities,
+        targets=targets,
     )
-    notes = (
-        "held-out binned empirical model beats or matches prevalence"
-        if validation_status == "PASS_APP_DISPLAY_VALIDATION"
-        else "held-out binned empirical model underperforms prevalence"
+    calibration_quality = _calibration_quality(calibration)
+    validation_status, notes = _validation_status(
+        model_brier=model_brier,
+        baseline_brier=baseline_brier,
+        calibration_quality=calibration_quality,
     )
     result = {
         **feasibility_row,
@@ -268,17 +273,19 @@ def _validate_field(
         "model_brier": round(model_brier, 6),
         "baseline_brier": round(baseline_brier, 6),
         "brier_delta_vs_baseline": round(brier_delta, 6),
+        "weighted_calibration_abs_error": calibration_quality[
+            "weighted_calibration_abs_error"
+        ],
+        "max_large_bucket_calibration_abs_error": calibration_quality[
+            "max_large_bucket_calibration_abs_error"
+        ],
+        "calibration_status": calibration_quality["calibration_status"],
         "validation_status": validation_status,
         "display_eligible": str(validation_status == "PASS_APP_DISPLAY_VALIDATION").lower(),
         "blocked_inputs_used": "false",
         "model_description": "shrunk empirical prior-finish bucket model",
         "notes": notes,
     }
-    calibration = _calibration_rows(
-        field_id=str(feasibility_row["field_id"]),
-        probabilities=probabilities,
-        targets=targets,
-    )
     bucket_rows = [
         {
             "field_id": feasibility_row["field_id"],
@@ -309,6 +316,9 @@ def _blocked_result(row: dict[str, Any], validation_status: str) -> dict[str, An
         "model_brier": "",
         "baseline_brier": "",
         "brier_delta_vs_baseline": "",
+        "weighted_calibration_abs_error": "",
+        "max_large_bucket_calibration_abs_error": "",
+        "calibration_status": "",
         "validation_status": validation_status,
         "display_eligible": "false",
         "blocked_inputs_used": "false",
@@ -323,11 +333,6 @@ def _feasibility_status(
     positives: int,
     seasons: list[int],
 ) -> tuple[str, str]:
-    if horizon == "within_5y":
-        return (
-            "BLOCKED_INSUFFICIENT_COMPLETE_LABELS",
-            "within-5-year labels have heavy censoring and too few complete seasons",
-        )
     if complete_rows < MIN_COMPLETE_LABELS:
         return "BLOCKED_INSUFFICIENT_COMPLETE_LABELS", "fewer than 100 complete labels"
     if positives < MIN_POSITIVES:
@@ -385,6 +390,28 @@ def _brier(probabilities: list[float], targets: list[int]) -> float:
     return sum(squared_errors) / len(targets)
 
 
+def _validation_status(
+    *,
+    model_brier: float,
+    baseline_brier: float,
+    calibration_quality: dict[str, Any],
+) -> tuple[str, str]:
+    if model_brier > baseline_brier:
+        return (
+            "BLOCKED_VALIDATION_WEAK",
+            "held-out binned empirical model underperforms prevalence",
+        )
+    if calibration_quality["calibration_status"] != "PASS_CALIBRATION_REVIEW":
+        return (
+            "BLOCKED_CALIBRATION_WEAK",
+            "held-out binned empirical model beats prevalence but has weak calibration",
+        )
+    return (
+        "PASS_APP_DISPLAY_VALIDATION",
+        "held-out binned empirical model beats or matches prevalence with acceptable calibration",
+    )
+
+
 def _calibration_rows(
     *,
     field_id: str,
@@ -423,6 +450,38 @@ def _calibration_rows(
     return rows
 
 
+def _calibration_quality(calibration_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    if not calibration_rows:
+        return {
+            "weighted_calibration_abs_error": "",
+            "max_large_bucket_calibration_abs_error": "",
+            "calibration_status": "BLOCKED_NO_CALIBRATION_BUCKETS",
+        }
+    total_rows = sum(int(row["rows"]) for row in calibration_rows)
+    weighted_error = sum(
+        abs(float(row["average_prediction"]) - float(row["observed_rate"]))
+        * int(row["rows"])
+        for row in calibration_rows
+    ) / total_rows
+    large_bucket_errors = [
+        abs(float(row["average_prediction"]) - float(row["observed_rate"]))
+        for row in calibration_rows
+        if int(row["rows"]) >= MIN_ROWS_FOR_LARGE_BUCKET_CALIBRATION
+    ]
+    max_large_bucket_error = max(large_bucket_errors) if large_bucket_errors else 0.0
+    calibration_status = (
+        "PASS_CALIBRATION_REVIEW"
+        if weighted_error <= MAX_WEIGHTED_CALIBRATION_ABS_ERROR
+        and max_large_bucket_error <= MAX_LARGE_BUCKET_CALIBRATION_ABS_ERROR
+        else "BLOCKED_CALIBRATION_WEAK"
+    )
+    return {
+        "weighted_calibration_abs_error": round(weighted_error, 6),
+        "max_large_bucket_calibration_abs_error": round(max_large_bucket_error, 6),
+        "calibration_status": calibration_status,
+    }
+
+
 def _field_id(position: str, threshold: int, horizon: str) -> str:
     return f"{position}_T{threshold}_{horizon.upper()}"
 
@@ -451,6 +510,9 @@ def _validation_header() -> tuple[str, ...]:
         "model_brier",
         "baseline_brier",
         "brier_delta_vs_baseline",
+        "weighted_calibration_abs_error",
+        "max_large_bucket_calibration_abs_error",
+        "calibration_status",
         "validation_status",
         "display_eligible",
         "blocked_inputs_used",
