@@ -1,0 +1,23 @@
+metric,value,notes,review_only,model_use_allowed,training_allowed
+gate_c_verdict,PARTIAL_HISTORICAL_ROOKIE_LABELS,Partial drafted-player labels built.,true,false,false
+bridge_rows_considered,1025,Rows from prior shared bridge.,true,false,false
+label_rows_built,919,Outcome-linked drafted QB/RB/WR/TE rows.,true,false,false
+blocked_bridge_rows,106,Unlinked or missing-ID bridge rows excluded.,true,false,false
+missing_gsis_or_player_stats_id_rows,5,Blocked.,true,false,false
+unlinked_outcome_label_rows,101,Blocked.,true,false,false
+rookie_year_coverage_rows,818,Has rookie-year season outcome row.,true,false,false
+year_2_coverage_rows,737,Has year-2 season outcome row.,true,false,false
+first_3y_calendar_complete_rows,779,Calendar complete by target ceiling.,true,false,false
+first_5y_calendar_complete_rows,630,Calendar complete by target ceiling.,true,false,false
+censoring_summary,complete:630; right_censored:289,5Y censoring status.,true,false,false
+bridge_position_coverage,QB:149; RB:273; TE:182; WR:421,Bridge rows by position.,true,false,false
+label_position_coverage,QB:123; RB:246; TE:167; WR:383,Label rows by position.,true,false,false
+bridge_class_coverage,2012:77; 2013:80; 2014:77; 2015:79; 2016:77; 2017:83; 2018:83; 2019:80; 2020:78; 2021:75; 2022:79; 2023:80; 2024:77,Bridge rows by class.,true,false,false
+label_class_coverage,2012:69; 2013:69; 2014:65; 2015:70; 2016:64; 2017:73; 2018:75; 2019:70; 2020:75; 2021:72; 2022:77; 2023:74; 2024:66,Label rows by class.,true,false,false
+latest_outcome_label_season,2024,Outcome V2 target ceiling.,true,false,false
+scoring_mode,exact_verified_first_downs,Exact vs approximate scoring mode.,true,false,false
+approximation_rows,0,No approximation rows generated.,true,false,false
+rookie_probabilities_created,0,No probabilities created in this lane.,true,false,false
+rankings_wiring_created,0,No Rankings/app wiring created in this lane.,true,false,false
+model_use_rows,0,All generated rows keep model_use_allowed=false.,true,false,false
+training_use_rows,0,All generated rows keep training_allowed=false.,true,false,false
