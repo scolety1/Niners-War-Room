@@ -1,0 +1,17 @@
+feature_family,availability,policy_status,blocker_or_requirement,notes
+draft_capital,partial,review_only,needs approved tracked artifact and identity gate,do not use local_exports as training truth
+age,partial,review_only,rookie/prospect age gaps and conflicts remain,missing age is not average/clean
+size_height_weight,partial,review_only,CFBD roster has height/weight but identity review required,display only after identity approval
+college_production,partial,review_only,CFBD production exists but belongs-to-player validation required,no training until CFBD approval
+age_adjusted_production,missing,blocked,requires approved age plus production timeline,do not derive with unresolved ages
+final_year_production,partial,review_only,CFBD seasons 2024/2025 available; 2026 zero rows; identity review required,status only
+career_production,partial,review_only,multi-season college stats need transfer/team timeline validation,transfer confusion blocker
+market_share_dominator,missing,blocked,team totals/share not approved in CFBD artifact,do not infer
+team_strength_conference,partial,review_only,college team/conference context not validated as feature,needs feature policy gate
+transfer_count_timeline,missing,blocked,not present as approved structured artifact,same player/team timeline risk
+early_declare_experience,missing,blocked,not present as approved structured artifact,needs source
+recruiting_context,partial,review_only,"8162 optional recruiting rows cached/counts only, no tracked player-level artifact",needs tracked artifact and policy gate
+combine_pro_day,missing,blocked,no approved tracked combine/pro-day source,do not scrape
+nfl_landing_spot,partial,review_only,2026 draft capital doc describes team/pick context but processed artifact local-only,needs tracked review artifact
+rookie_news_training_camp,missing,blocked,vendor/news/Gmail automation blocked,no scraped news or rumors
+market_adp_dynastyprocess,available_display_only_elsewhere,blocked_for_model,market data is display-only and not source truth,never target truth/model input in this lane
