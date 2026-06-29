@@ -1,0 +1,11 @@
+metric,value,notes,review_only,model_use_allowed,training_allowed
+gate_a_approved_identity_rows,157,Identity-review-only rows.,true,false,false
+bridge_rows_linked_to_outcome_labels,0,No GSIS/NFL outcome ID bridge exists.,true,false,false
+bridge_rows_with_draft_year,54,Current 2026 draft context only.,true,false,false
+outcome_v2_anchor_rows,7440,Shared-data target rows.,true,false,false
+outcome_v2_season_rows,7440,Shared-data season rows.,true,false,false
+outcome_v2_complete_5y_rows,1064,Complete 5Y rows.,true,false,false
+outcome_v2_position_rows,QB:977; RB:1937; TE:1622; WR:2904,Rows by position in shared target source.,true,false,false
+scoring_mode,exact_verified_first_downs,Exact first-down status from manifest.,true,false,false
+historical_rookie_label_rows_built,0,Blocked before label artifact build.,true,false,false
+gate_c_decision,BLOCKED_NEEDS_DRAFT_CLASS_BRIDGE,Gate D cannot run next.,true,false,false
