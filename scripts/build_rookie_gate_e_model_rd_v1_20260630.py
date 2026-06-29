@@ -19,14 +19,14 @@ LABEL_PATH = Path(
     r"C:\NWR_SHARED_DATA\rookie_outcomes\historical_labels_v1"
     r"\rookie_historical_outcome_labels_v1.csv"
 )
-FEATURE_POLICY_PATH = (
-    REPO_ROOT
-    / "docs"
+FEATURE_POLICY_RELATIVE_PATH = (
+    Path("docs")
     / "hq"
     / "rookie_outcomes"
     / "rookie_gate_d_feature_policy_v1_20260630"
     / "rookie_feature_policy_matrix_v1.csv"
 )
+FEATURE_POLICY_PATH = REPO_ROOT / FEATURE_POLICY_RELATIVE_PATH
 
 BASE_HEAD = "14eeecfd83b3a863ea98a3b8dbdbb8dd621c45e1"
 FINAL_VERDICT = "PARTIAL_REVIEW_ONLY_ROOKIE_MODEL_RD"
@@ -506,7 +506,7 @@ def write_inventory_doc(
         "",
         f"- Actual base HEAD: `{BASE_HEAD}`",
         f"- Historical rookie labels: `{LABEL_PATH}`",
-        f"- Feature policy: `{FEATURE_POLICY_PATH}`",
+        f"- Feature policy: `{FEATURE_POLICY_RELATIVE_PATH.as_posix()}`",
         f"- Label rows available: {len(labels)}",
         f"- Class/year coverage: {years[0]}-{years[-1]}",
         f"- Position coverage: {format_counts(positions)}",
@@ -749,7 +749,7 @@ def build_manifest_rows(
             run_id,
             run_timestamp,
             "rookie_model_rd_feature_audit_v1.csv",
-            str(FEATURE_POLICY_PATH),
+            FEATURE_POLICY_RELATIVE_PATH.as_posix(),
             len(feature_audit_rows),
             feature_audit_path,
             "Allowed feature audit.",
