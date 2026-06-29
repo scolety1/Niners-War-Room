@@ -1,0 +1,13 @@
+metric,value,notes,review_only,model_use_allowed,training_allowed
+gate_e_verdict,PARTIAL_REVIEW_ONLY_ROOKIE_MODEL_RD,"Review-only feasibility, not production.",true,false,false
+allowed_features_used,draft_round|draft_pick|draft_capital_bucket|draft_year|rookie_class_year|position,Gate D whitelist.,true,false,false
+input_label_rows,919,Historical labels considered.,true,false,false
+targets_tested,12,Recommended T12/T24/T36 targets.,true,false,false
+validation_prediction_rows,1571,Historical validation rows only.,true,false,false
+passed_targets,12,Targets with positive Brier improvement.,true,false,false
+weak_targets,0,Targets below validation bar.,true,false,false
+feature_audit_rows,6,Allowed input features audited.,true,false,false
+current_player_predictions_created,0,No current-player probabilities.,true,false,false
+rankings_wiring_created,0,No Rankings/app wiring.,true,false,false
+model_use_rows,0,All rows keep model_use_allowed=false.,true,false,false
+training_use_rows,0,All rows keep training_allowed=false.,true,false,false
