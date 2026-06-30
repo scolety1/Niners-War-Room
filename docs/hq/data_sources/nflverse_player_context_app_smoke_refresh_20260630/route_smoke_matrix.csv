@@ -1,0 +1,10 @@
+route,surface,page_or_alias,status_code,content_length,streamlit_shell_detected,result,notes
+/player-compare,Player Compare,app/pages/22_player_compare_v1.py,200,1522,true,PASS,Route returned Streamlit shell and focused Player Compare NFLVerse tests passed.
+/trading-lab,Trading Lab,app/pages/23_trading_lab_v1.py,200,1522,true,PASS,Route returned Streamlit shell and focused Trading Lab NFLVerse context tests passed.
+/development-lab,Development Lab,app/pages/35_development_lab_v1.py,200,1522,true,PASS,Route returned Streamlit shell and focused Development Lab NFLVerse context tests passed.
+/live-draft-room,Live Draft Room,app/pages/43_live_draft_room_url_alias.py,200,1522,true,PASS,Hidden compatibility route returned Streamlit shell; Live Draft/Draft Cockpit tests passed.
+/mock-draft,Mock Draft,app/pages/24_mock_draft_v1.py,200,1522,true,PASS,Route returned Streamlit shell and Mock Draft route/context tests passed.
+/draft-analyzer,Draft Analyzer,app/pages/29_post_draft_mode_v2.py,200,1522,true,PASS,Hidden alias route returned Streamlit shell and Draft Analyzer tests passed.
+/rankings,Rankings,app/pages/20_final_board_v1.py,200,1522,true,PASS,Route returned Streamlit shell and focused Rankings NFLVerse tests passed.
+/settings-data-health,Settings Data Health,app/pages/28_settings_data_health_v1.py,200,1522,true,PASS,Route returned Streamlit shell and Data Health tests passed.
+/refresh-data,Refresh Data,app/pages/24_refresh_data_v1.py,200,1522,true,PASS,Route returned Streamlit shell and data refresh orchestrator tests passed.
