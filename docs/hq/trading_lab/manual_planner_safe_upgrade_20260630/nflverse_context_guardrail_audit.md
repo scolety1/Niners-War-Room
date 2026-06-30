@@ -65,7 +65,7 @@ Missing draft capital is not confirmed UDFA. Missing injury data is not healthy.
 
 ## Deferred Context
 
-Next game, opponent, and bye context remain unavailable because no current/future safe rows are approved for Trading Lab.
+Next game, opponent, and bye context are allowed only through the shared schedule display gate after the Trading Lab schedule context review. Identity-review rows and missing/gated schedule values still expose no detail beyond `Not enough information`.
 
 Identity proposal rows remain proposals only.
 

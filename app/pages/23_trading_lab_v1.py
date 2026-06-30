@@ -297,7 +297,8 @@ def _render_nflverse_context_panel(lookup: dict[str, dict[str, object]]) -> None
         st.markdown("**Missing evidence / deferred context**")
         st.caption(
             "Missing is not zero, neutral, safe, clean, healthy, no-role, no-usage, "
-            "or favorable. Next game, opponent, and bye context remain unavailable."
+            "or favorable. Schedule context appears only for approved safe rows; missing or "
+            "gated schedule data remains Not enough information."
         )
         st.dataframe(missing, width="stretch", hide_index=True)
 

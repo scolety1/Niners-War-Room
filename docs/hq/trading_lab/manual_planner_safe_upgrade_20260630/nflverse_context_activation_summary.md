@@ -30,7 +30,7 @@ The app page does not read raw `C:\NWR_SHARED_DATA` NFLVerse data. It reads the 
 - Safe display rows: 240
 - Identity review rows: 54
 - Identity proposals: 43 proposals exist in the upstream review packet, but they are proposals only and are not treated as approved joins.
-- Schedule next game, opponent, and bye context: unavailable for current/future safe use.
+- Schedule next game, opponent, and bye context: activated later by the Trading Lab schedule context review for rows passing the shared schedule display gate.
 
 ## Display Rules
 
@@ -68,7 +68,7 @@ Missing values render as exactly `Not enough information`.
 
 ## Deferred
 
-- Next game / opponent / bye
+- Identity-review schedule details
 - Identity proposal rows
 - Any `NEED_*`, `BLOCKED_*`, `Review needed`, or `Not enough information` value as a positive fact
 - `ff_rankings`

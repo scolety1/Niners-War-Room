@@ -1,0 +1,11 @@
+field_name,display_decision,source,required_filter,missing_display,blocked_use
+next_game_context,SAFE_NOW_DISPLAY_ONLY,tracked player context display artifact,nwr_player_id plus safe identity/review/schema gates,Not enough information,"trade timing advice; matchup recommendation; start/sit; schedule strength"
+opponent_context,SAFE_NOW_DISPLAY_ONLY,tracked player context display artifact,nwr_player_id plus safe identity/review/schema gates,Not enough information,"opponent difficulty; matchup recommendation; start/sit; package scoring"
+bye_context,SAFE_NOW_DISPLAY_ONLY,tracked player context display artifact,nwr_player_id plus safe identity/review/schema gates,Not enough information,"rest inference; health inference; trade timing advice"
+game_date,SAFE_NOW_DISPLAY_ONLY,parsed by shared schedule display service from safe next_game_context,nwr_player_id plus safe identity/review/schema gates,Not enough information,"timing recommendation; urgency score; trade window score"
+game_week,SAFE_NOW_DISPLAY_ONLY,parsed by shared schedule display service from safe next_game_context,nwr_player_id plus safe identity/review/schema gates,Not enough information,"playoff odds; schedule strength; recommendation"
+home_away,SAFE_NOW_DISPLAY_ONLY,parsed by shared schedule display service from safe opponent_context,nwr_player_id plus safe identity/review/schema gates,Not enough information,"home/away advantage; matchup grade; model input"
+season,SAFE_NOW_DISPLAY_ONLY,parsed by shared schedule display service from safe next_game_context,nwr_player_id plus safe identity/review/schema gates,Not enough information,"rank logic; source-truth mutation"
+team,SAFE_NOW_DISPLAY_ONLY,shared schedule display service team field,nwr_player_id plus safe identity/review/schema gates,Not enough information,"team strength; opponent difficulty; model input"
+identity-review rows,HIDE_DETAIL,tracked player context display artifact,identity_join_status must be SAFE_NOW_DISPLAY_ONLY and review_required=false,Not enough information,"any schedule detail before identity approval"
+pick/context assets,HIDE_DETAIL,manual Trading Lab planner asset labels,asset_type must be Player and mapped to approved nwr_player_id,Not enough information,"pick valuation; schedule-derived pick value"

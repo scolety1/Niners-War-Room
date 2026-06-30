@@ -27,6 +27,6 @@ Draft Context,draft_round,NFL draft round,draft_picks,Display factual value or N
 Draft Context,draft_pick,NFL draft pick,draft_picks,Display factual value or Not enough information,No pick valuation
 Draft Context,drafted_team,Drafted team,draft_picks,Display factual value or Not enough information,No pick valuation
 Contract Context,contract_context,Contract context,contracts,Display non-financial context only,No APY/guarantees/cap/surplus/valuation
-Missing Evidence,next_game_context,Next game,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved
-Missing Evidence,opponent_context,Opponent,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved
-Missing Evidence,bye_context,Bye,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved
+Schedule Context,next_game_context,Next game,schedules,Display only after the shared schedule display gate passes,No timing advice or matchup recommendation
+Schedule Context,opponent_context,Opponent,schedules,Display only after the shared schedule display gate passes,No opponent difficulty or matchup recommendation
+Schedule Context,bye_context,Bye,schedules,Display only after the shared schedule display gate passes,No rest/health/trade timing inference
