@@ -17,7 +17,11 @@ from app.components.draft_day_v1 import (
 )
 from app.components.draft_workflow import render_draft_workflow
 from app.components.ui_framework import page_header
-from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
+from src.services.draft_day_app_v1_service import (
+    load_expanded_draftable_player_pool,
+    load_frozen_board,
+    load_lane_prop_file,
+)
 from src.services.draft_day_runtime_state_service import (
     load_runtime_state_with_status,
     runtime_paths,
@@ -43,6 +47,9 @@ ACTIVE_MOCK_SESSION_KEY = "mock_draft_room_active_session_id"
 
 
 bundle = load_frozen_board()
+mock_player_context_frame = (
+    load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
+)
 availability_frame, availability_path = load_lane_prop_file(
     "mock_draft",
     "availability_context.csv",
@@ -209,7 +216,7 @@ else:
             st.caption("Mock manifest issues never imply live Draft Cockpit state was reset.")
 
     render_nflverse_player_context_expander(
-        bundle.frame,
+        mock_player_context_frame,
         key=f"mock_draft_{active_session.draft_id}",
         title="NFLVerse player context / display-only",
     )
