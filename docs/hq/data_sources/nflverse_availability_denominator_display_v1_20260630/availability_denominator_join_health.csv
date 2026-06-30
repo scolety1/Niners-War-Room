@@ -1,0 +1,9 @@
+check_name,status,row_count,details,display_only,review_only,model_use_allowed,training_allowed,source_truth_allowed,rank_logic_allowed,hidden_sort_allowed,trade_value_allowed,pick_value_allowed
+artifact_grain,PASS,588,"one row per tracked current NWR player per season anchor; season anchors=2024,2025",true,true,false,false,false,false,false,false,false
+current_player_rows,PASS,294,source player context artifact rows,true,true,false,false,false,false,false,false,false
+safe_identity_player_rows,PASS,240,safe player rows before season expansion,true,true,false,false,false,false,false,false,false
+identity_review_player_rows,PASS,54,review rows retained without denominator detail,true,true,false,false,false,false,false,false,false
+safe_denominator_player_seasons,PASS,437,player-season rows with games_while_rostered/per_game_denominator populated,true,true,false,false,false,false,false,false,false
+need_source_fields_player_seasons,REVIEW,43,safe identity rows without a regular-season weekly_rosters plus schedules join,true,true,false,false,false,false,false,false,false
+need_identity_approval_player_seasons,REVIEW,108,identity-review rows; no unsafe denominator detail exposed,true,true,false,false,false,false,false,false,false
+rostered_week_schedule_join_misses,REVIEW,0,weekly roster rows whose team-season-week did not match a regular-season schedule game; often bye/post-alias context; not used as zero,true,true,false,false,false,false,false,false,false
