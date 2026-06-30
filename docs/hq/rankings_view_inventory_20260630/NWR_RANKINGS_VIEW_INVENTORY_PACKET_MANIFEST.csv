@@ -1,0 +1,9 @@
+packet_path,file_type,bytes,sha256,reason_included,guardrail_note
+protected_path_guardrail_report.md,md,1358,18952597b5180ae3337722ad5b4cdb59c96db6e3533ef0464206bbf497782a87,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_columns_inventory.csv,csv,24868,2a071eba62c4409f919d89e2f79bf64a7f9b43444175ebd3c396a782889f3e9a,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_data_sources_inventory.csv,csv,2133,e2571c0f46b5fbc885ab2f8cea16962c61697e768cc20f0848c16221a66fa76c,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_filters_inventory.csv,csv,3645,0096dd8370bb83f19811f4da30fe1ec661e23213d3532e7cb46aab5a7355f588,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_presets_inventory.csv,csv,3780,7850e589d935a404378113ac9ea0e06ab661d7da3600cb2770b88b5a3fdc27ac,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_route_label_inventory.csv,csv,994,26e1dd657ef78afaf780c8ba4c1abd1037541910c7cd4696ba9162bdcefebfac,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+rankings_sample_screenshots_or_html_notes.md,md,12278,8ecdfdcc2f10a982f823bc934958258287680cb7eeaa54cd951b3bbd97d24fdd,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation
+README.md,md,2851,e68f0915ef2754be23209d7c430c673eeb060c58254c6aed9e4b1ea18b63f0f6,Required Rankings View/Data Inventory Packet V1 artifact,Docs/inventory only; no source-truth/model/rank mutation

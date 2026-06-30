@@ -1,0 +1,6 @@
+route,browser_title,nav_label,page_header,mismatch_yes_no,suggested_fix_blank,notes
+/rankings,Drop Deadline Board,Dynasty Rankings,Dynasty Rankings,yes,,Browser title is global APP_NAME from app/main.py; /rankings nav label and page header match. Hidden aliases intentionally differ.
+/player-board,Drop Deadline Board,Player Board Legacy Alias,Dynasty Rankings,yes,,Hidden/compatibility route; review whether alias should remain discoverable only by direct URL.
+/legacy-rankings,Drop Deadline Board,Legacy Dynasty Rankings,Dynasty Rankings,yes,,Hidden/compatibility route; review whether alias should remain discoverable only by direct URL.
+/draft-day-home,Drop Deadline Board,Dynasty Rankings URL Alias,Dynasty Rankings,yes,,Hidden/compatibility route; review whether alias should remain discoverable only by direct URL.
+/home,Drop Deadline Board,Dynasty Rankings Home,Dynasty Rankings,yes,,Hidden/compatibility route; review whether alias should remain discoverable only by direct URL.
