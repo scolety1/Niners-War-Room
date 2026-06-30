@@ -5,7 +5,7 @@ Current Rankings source: `current_unified_rankings; dynasty=approved control-rep
 Current Rankings rows: `294`
 Artifact rows: `294`
 Safe refresh attempted: `true`
-Safe refresh status: `succeeded: approved scripts/run_nflverse_refresh_v0.ps1 wrote local shared snapshot player_context_display_final_20260630`
+Safe refresh status: `succeeded: approved scripts/run_nflverse_refresh_v0.ps1 schedules-only 2026 overlay player_context_hardening_schedule_20260630`
 
 ## Dataset Inspection
 
@@ -16,7 +16,7 @@ Safe refresh status: `succeeded: approved scripts/run_nflverse_refresh_v0.ps1 wr
 | weekly_rosters | YELLOW | 93428 | seasons=2024-2025; weeks=22 | fresh | identity_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\weekly_rosters.csv |
 | ff_playerids | YELLOW | 12465 | seasons=1970-2026 | fresh | identity_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\ff_playerids.csv |
 | injuries | YELLOW | 12283 | seasons=2024-2025; weeks=22 | fresh | transparency_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\injuries.csv |
-| schedules | YELLOW | 570 | seasons=2024-2025; weeks=22 | fresh | display_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\schedules.csv |
+| schedules | YELLOW | 272 | seasons=2026; weeks=18 | fresh | display_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_hardening_schedule_20260630\schedules.csv |
 | depth_charts | YELLOW | 591527 | seasons=2024; weeks=22 | fresh | review_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\depth_charts.csv |
 | snap_counts | YELLOW | 53227 | seasons=2024-2025; weeks=22 | fresh | safe_review | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\snap_counts.csv |
 | player_stats_weekly | YELLOW | 76804 | seasons=2024-2025; weeks=22 | fresh | safe_review | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\player_stats_weekly.csv |

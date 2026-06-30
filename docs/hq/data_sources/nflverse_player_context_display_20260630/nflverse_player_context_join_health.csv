@@ -4,7 +4,7 @@ players_identity_file_gate,SAFE_NOW_DISPLAY_ONLY,players,294,294,0,0,0,0,0,0,0,p
 ff_playerids_crosswalk_gate,SAFE_NOW_DISPLAY_ONLY,ff_playerids,294,294,0,0,0,0,0,0,0,ff_playerids: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=12465; policy=identity_only.
 weekly_roster_status_gate,SAFE_NOW_DISPLAY_ONLY,weekly_rosters,294,240,0,0,0,0,0,0,0,weekly_rosters: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=93428; policy=identity_only.
 injury_context_gate,SAFE_NOW_DISPLAY_ONLY,injuries,294,224,0,0,0,0,0,0,294,injuries: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=12283; policy=transparency_only.
-next_game_bye_gate,SAFE_NOW_DISPLAY_ONLY,schedules,294,0,0,0,0,0,0,0,0,schedules: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=570; policy=display_only.
+next_game_bye_gate,SAFE_NOW_DISPLAY_ONLY,schedules,294,240,0,0,0,0,0,0,0,schedules: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=272; policy=display_only.
 depth_chart_context_gate,SAFE_NOW_DISPLAY_ONLY,depth_charts,294,240,0,0,0,0,0,0,294,depth_charts: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=591527; policy=review_only.
 snap_count_context_gate,SAFE_NOW_DISPLAY_ONLY,snap_counts,294,223,0,0,0,0,0,0,0,snap_counts: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=53227; policy=safe_review.
 last_active_week_gate,SAFE_NOW_DISPLAY_ONLY,player_stats_weekly,294,240,0,0,0,0,0,0,0,player_stats_weekly: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=76804; policy=safe_review.

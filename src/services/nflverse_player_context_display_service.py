@@ -171,6 +171,8 @@ def build_nflverse_player_context_display(
     shared_root: Path | None = None,
     status_root: Path | None = None,
     snapshot_dir: Path | None = None,
+    schedule_snapshot_dir: Path | None = None,
+    schedule_as_of: date | None = None,
     rankings_rows: Sequence[dict[str, Any]] | None = None,
     rankings_source: str = "",
     safe_refresh_attempted: bool = False,
@@ -188,6 +190,14 @@ def build_nflverse_player_context_display(
         }
     )
     health_by_dataset = {row.dataset_id: row for row in health_rows}
+    schedule_rows = _load_ready_dataset_rows(health_by_dataset, "schedules")
+    if schedule_snapshot_dir is not None:
+        schedule_health_rows = build_nflverse_dataset_health(snapshot_dir=schedule_snapshot_dir)
+        schedule_health_by_dataset = {row.dataset_id: row for row in schedule_health_rows}
+        schedule_health = schedule_health_by_dataset["schedules"]
+        if _dataset_ready(schedule_health):
+            health_by_dataset["schedules"] = schedule_health
+            schedule_rows = _load_ready_dataset_rows(schedule_health_by_dataset, "schedules")
     current_rows, resolved_rankings_source = _current_rankings_rows(
         rankings_rows=rankings_rows,
         rankings_source=rankings_source,
@@ -200,14 +210,15 @@ def build_nflverse_player_context_display(
         weekly_roster_rows=_load_ready_dataset_rows(health_by_dataset, "weekly_rosters"),
         ff_playerid_rows=_load_ready_dataset_rows(health_by_dataset, "ff_playerids"),
         injury_rows=_load_ready_dataset_rows(health_by_dataset, "injuries"),
-        schedule_rows=_load_ready_dataset_rows(health_by_dataset, "schedules"),
+        schedule_rows=schedule_rows,
         depth_chart_rows=_load_ready_dataset_rows(health_by_dataset, "depth_charts"),
         snap_rows=_load_ready_dataset_rows(health_by_dataset, "snap_counts"),
         weekly_stat_rows=_load_ready_dataset_rows(health_by_dataset, "player_stats_weekly"),
         draft_pick_rows=_load_ready_dataset_rows(health_by_dataset, "draft_picks"),
         contract_rows=_load_ready_dataset_rows(health_by_dataset, "contracts"),
     )
-    artifact_rows = tuple(_artifact_row(row, context) for row in current_rows)
+    as_of = schedule_as_of or datetime.now(UTC).date()
+    artifact_rows = tuple(_artifact_row(row, context, schedule_as_of=as_of) for row in current_rows)
     join_health_rows = tuple(_join_health_rows(artifact_rows, health_by_dataset))
     schema_rows = tuple(_schema_manifest_rows(health_by_dataset))
     verdict = _verdict(artifact_rows, join_health_rows)
@@ -230,6 +241,8 @@ def write_nflverse_player_context_display_docs(
     shared_root: Path | None = None,
     status_root: Path | None = None,
     snapshot_dir: Path | None = None,
+    schedule_snapshot_dir: Path | None = None,
+    schedule_as_of: date | None = None,
     rankings_rows: Sequence[dict[str, Any]] | None = None,
     rankings_source: str = "",
     safe_refresh_attempted: bool = False,
@@ -239,6 +252,8 @@ def write_nflverse_player_context_display_docs(
         shared_root=shared_root,
         status_root=status_root,
         snapshot_dir=snapshot_dir,
+        schedule_snapshot_dir=schedule_snapshot_dir,
+        schedule_as_of=schedule_as_of,
         rankings_rows=rankings_rows,
         rankings_source=rankings_source,
         safe_refresh_attempted=safe_refresh_attempted,
@@ -441,7 +456,12 @@ class _FfPlayerIdIndex:
         )
 
 
-def _artifact_row(row: dict[str, Any], context: _NflverseContext) -> dict[str, str]:
+def _artifact_row(
+    row: dict[str, Any],
+    context: _NflverseContext,
+    *,
+    schedule_as_of: date,
+) -> dict[str, str]:
     nwr_player_id = _clean(row.get("player_id"))
     nwr_player_name = _clean(row.get("player_name") or row.get("player"))
     nwr_position = _clean(row.get("position"))
@@ -462,8 +482,14 @@ def _artifact_row(row: dict[str, Any], context: _NflverseContext) -> dict[str, s
     depth_row = context.depth_by_gsis.get(gsis, {}) if gsis else {}
     draft_row = context.draft_by_gsis.get(gsis, {}) if gsis else {}
     contract_row = context.contract_by_gsis.get(gsis, {}) if gsis else {}
-    schedule = _schedule_context(
-        _clean(roster.get("team") or player.get("latest_team") or nwr_team)
+    schedule = (
+        _schedule_context(
+            _clean(roster.get("team") or player.get("latest_team") or nwr_team),
+            context,
+            schedule_as_of,
+        )
+        if identity["status"] == SAFE_NOW_DISPLAY_ONLY
+        else _empty_schedule_context()
     )
 
     age, age_source = _age_from_birth_date(
@@ -1146,15 +1172,95 @@ def _contract_context(health: NflverseDatasetHealth, row: dict[str, str]) -> str
     return "; ".join(parts) if parts else NOT_ENOUGH_INFORMATION
 
 
-def _schedule_context(team: str) -> dict[str, str]:
-    # Schedule snapshots are historical in the current safe refresh, so no future game
-    # or bye should be inferred for current app display.
-    _ = team
+def _schedule_context(team: str, context: _NflverseContext, as_of: date) -> dict[str, str]:
+    if not _dataset_ready(context.health_by_dataset["schedules"]):
+        return _empty_schedule_context()
+    schedule_team = _schedule_team(team)
+    team_rows = context.schedules_by_team.get(schedule_team, ())
+    dated_rows = sorted(
+        (row for row in team_rows if _date_from_row(row) is not None),
+        key=lambda row: _date_from_row(row) or date.max,
+    )
+    future_rows = [row for row in dated_rows if (_date_from_row(row) or date.min) >= as_of]
+    if not future_rows:
+        return _empty_schedule_context()
+    next_game = future_rows[0]
+    next_date = _clean(next_game.get("gameday"))
+    opponent = _next_opponent(schedule_team, next_game)
+    home_away = _home_away(schedule_team, next_game)
+    return {
+        "next_game_context": (
+            f"season={_clean(next_game.get('season'))}; "
+            f"week={_clean(next_game.get('week'))}; "
+            f"date={next_date}; "
+            f"game_id={_clean(next_game.get('game_id'))}"
+        ),
+        "opponent_context": (
+            f"opponent={opponent}; home_away={home_away}"
+            if opponent != NOT_ENOUGH_INFORMATION
+            else NOT_ENOUGH_INFORMATION
+        ),
+        "bye_context": _bye_context(schedule_team, team_rows, next_game),
+    }
+
+
+def _empty_schedule_context() -> dict[str, str]:
     return {
         "next_game_context": NOT_ENOUGH_INFORMATION,
         "opponent_context": NOT_ENOUGH_INFORMATION,
         "bye_context": NOT_ENOUGH_INFORMATION,
     }
+
+
+def _schedule_team(team: str) -> str:
+    return {"LAR": "LA", "JAC": "JAX"}.get(_clean(team), _clean(team))
+
+
+def _next_opponent(team: str, row: dict[str, str]) -> str:
+    home = _clean(row.get("home_team"))
+    away = _clean(row.get("away_team"))
+    if team == home:
+        return away or NOT_ENOUGH_INFORMATION
+    if team == away:
+        return home or NOT_ENOUGH_INFORMATION
+    return NOT_ENOUGH_INFORMATION
+
+
+def _home_away(team: str, row: dict[str, str]) -> str:
+    if team == _clean(row.get("home_team")):
+        return "home"
+    if team == _clean(row.get("away_team")):
+        return "away"
+    return NOT_ENOUGH_INFORMATION
+
+
+def _bye_context(
+    team: str,
+    rows: Sequence[dict[str, str]],
+    next_game: dict[str, str],
+) -> str:
+    season = _clean(next_game.get("season"))
+    played_weeks = {
+        week
+        for row in rows
+        if _clean(row.get("season")) == season and _clean(row.get("game_type")) == "REG"
+        for week in [_as_int(row.get("week"))]
+        if week is not None
+    }
+    missing_weeks = sorted(set(range(1, 19)) - played_weeks)
+    if len(missing_weeks) == 1:
+        return f"week={missing_weeks[0]}"
+    return NOT_ENOUGH_INFORMATION
+
+
+def _date_from_row(row: dict[str, str]) -> date | None:
+    text = _clean(row.get("gameday"))
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10])
+    except ValueError:
+        return None
 
 
 def _snap_recency(row: dict[str, str]) -> str:
@@ -1325,14 +1431,16 @@ def _readme_markdown(result: NflversePlayerContextResult) -> str:
             "`depth_chart_role`, `snap_count_recency`, `latest_snap_season`, "
             "`latest_snap_week`, `snap_sample_size`, `last_active_season`, "
             "`last_active_week`, `draft_year`, `draft_round`, `draft_pick`, "
-            "`drafted_team`, and non-financial `contract_context`, only when values are "
-            "present and not gate tokens.",
+            "`drafted_team`, non-financial `contract_context`, `next_game_context`, "
+            "`opponent_context`, and `bye_context`, only when values are present and "
+            "not gate tokens.",
             "",
             "## Deferred Or Blocked",
             "",
             "- `ff_rankings` is blocked and unused.",
-            "- `next_game_context`, `opponent_context`, and `bye_context` stay unavailable "
-            "until a current/future schedule context is explicitly approved.",
+            "- Schedule fields are display-only and require current/future approved "
+            "schedules. If a row still says `Not enough information`, app lanes must "
+            "not infer an opponent, bye, or clean schedule state.",
             "- Rows with `identity_join_status=NEED_IDENTITY_REVIEW` need separate identity "
             "review before any player-level app display.",
         ]
