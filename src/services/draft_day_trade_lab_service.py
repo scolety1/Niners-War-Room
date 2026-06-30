@@ -19,6 +19,7 @@ DISPLAY_ITEM_COLUMNS = (
     "side",
     "asset_type",
     "label",
+    "nwr_player_id",
     "player",
     "position",
     "nfl_team",
@@ -111,6 +112,7 @@ def build_trade_item_lookup(
             "item_key": key,
             "asset_type": "Player",
             "label": player_label(row),
+            "nwr_player_id": _nwr_player_id(row, context),
             "player": _text(row.get("player")),
             "position": _text(row.get("position")),
             "nfl_team": _text(row.get("nfl_team")),
@@ -134,6 +136,7 @@ def build_trade_item_lookup(
             "item_key": key,
             "asset_type": "Pick context",
             "label": f"{pick_note} - {_text(row.get('player'))}",
+            "nwr_player_id": NOT_ENOUGH_INFORMATION,
             "player": _text(row.get("player")),
             "position": _text(row.get("position")),
             "nfl_team": _text(row.get("nfl_team")),
@@ -319,6 +322,7 @@ def _missing_item(key: str) -> dict[str, object]:
         "item_key": key,
         "asset_type": NOT_ENOUGH_INFORMATION,
         "label": key,
+        "nwr_player_id": NOT_ENOUGH_INFORMATION,
         "player": NOT_ENOUGH_INFORMATION,
         "position": NOT_ENOUGH_INFORMATION,
         "nfl_team": NOT_ENOUGH_INFORMATION,
@@ -342,6 +346,23 @@ def _note(value: object) -> str:
     if text.lower() in {"", "nan", "none", "null", "n/a"}:
         return NOT_ENOUGH_INFORMATION
     return text
+
+
+def _nwr_player_id(
+    row: pd.Series | dict[str, object],
+    context: dict[str, object],
+) -> str:
+    get = row.get
+    for source in (
+        context.get("nwr_player_id"),
+        get("nwr_player_id", ""),
+        context.get("player_id"),
+        get("player_id", ""),
+    ):
+        value = _note(source)
+        if value != NOT_ENOUGH_INFORMATION:
+            return value
+    return NOT_ENOUGH_INFORMATION
 
 
 def _text(value: object) -> str:
@@ -371,6 +392,7 @@ def _display_labels() -> dict[str, str]:
         "risk_notes": "Risk Notes",
         "asset_type": "Asset Type",
         "label": "Asset",
+        "nwr_player_id": "NWR Player ID",
         "player": "Player",
         "position": "Pos",
         "nfl_team": "NFL Team",

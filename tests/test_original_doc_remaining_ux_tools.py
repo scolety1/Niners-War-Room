@@ -65,7 +65,8 @@ def test_trading_lab_planners_are_manual_only_and_do_not_write_runtime_events() 
         "Structured manual planner rows",
         "Editable manual checklist",
         "Download manual trade-away memo",
-        "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN",
+        "NFLVerse player context / display-only",
+        "Display-only context | Manual review only | No valuation calculated",
     ]
     for term in required:
         assert term in text

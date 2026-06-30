@@ -1,0 +1,32 @@
+context_group,artifact_field,display_label,source_dataset,display_rule,deferred_or_blocked_rule
+Identity Context,nwr_player_name,Player name,current_rankings,Display for SAFE_NOW_DISPLAY_ONLY rows only,Hide details for NEED_IDENTITY_REVIEW rows
+Identity Context,nwr_player_id,NWR player ID,current_rankings,Display for SAFE_NOW_DISPLAY_ONLY rows only,Use for identity join/display only
+Identity Context,nflverse_gsis_id,NFLVerse / GSIS ID,rosters,Display for SAFE_NOW_DISPLAY_ONLY rows only,Do not use as model/rank/trade input
+Identity Context,nflverse_sleeper_id,Sleeper ID,rosters,Display for SAFE_NOW_DISPLAY_ONLY rows only,Do not use as model/rank/trade input
+Identity Context,nflverse_player_name,NFLVerse player name,rosters,Display for SAFE_NOW_DISPLAY_ONLY rows only,Hide if identity review is required
+Identity Context,nflverse_position,NFLVerse position,rosters,Display for SAFE_NOW_DISPLAY_ONLY rows only,Do not override frozen board position
+Identity Context,nflverse_team,NFLVerse team,rosters,Display for SAFE_NOW_DISPLAY_ONLY rows only,Do not override frozen board team
+Identity Context,identity_join_status,Identity join status,rosters,Always show status for selected artifacts,Details hidden unless SAFE_NOW_DISPLAY_ONLY and review_required=false
+Identity Context,identity_caveat,Identity caveat,rosters,Display as review note only,No identity proposal row is approved by this pass
+Availability Context,roster_status,Roster status,rosters,Display factual value or Not enough information,Missing is not healthy
+Availability Context,weekly_roster_status,Weekly roster status,weekly_rosters,Display factual value or Not enough information,Missing is not active/healthy
+Availability Context,injury_report_status,Injury report status,injuries,Display factual value or Not enough information,No medical projection or injury-risk score
+Availability Context,practice_status,Practice status,injuries,Display factual value or Not enough information,No medical projection or injury-risk score
+Availability Context,injury_report_date_week,Report week/date,injuries,Display factual value or Not enough information,No freshness inference beyond artifact label
+Role Context,depth_chart_position,Depth chart position,depth_charts,Display factual value or Not enough information,Missing is not no-role
+Role Context,depth_chart_rank,Depth chart rank,depth_charts,Display factual value or Not enough information,No role score or opportunity score
+Role Context,depth_chart_role,Depth chart role,depth_charts,Display factual value or Not enough information,No role score or opportunity score
+Role Context,snap_count_recency,Snap count recency,snap_counts,Display factual value or Not enough information,Missing snaps are not zero
+Role Context,latest_snap_season,Latest snap season,snap_counts,Display factual value or Not enough information,No usage projection
+Role Context,latest_snap_week,Latest snap week,snap_counts,Display factual value or Not enough information,No usage projection
+Role Context,snap_sample_size,Snap sample size,snap_counts,Display factual value or Not enough information,Missing sample is not zero
+Production / Activity Context,last_active_season,Last active season,player_stats_weekly,Display factual value or Not enough information,No projection/ranking/valuation
+Production / Activity Context,last_active_week,Last active week,player_stats_weekly,Display factual value or Not enough information,No projection/ranking/valuation
+Draft Context,draft_year,NFL draft year,draft_picks,Display factual value or Not enough information,Missing draft capital is not confirmed UDFA
+Draft Context,draft_round,NFL draft round,draft_picks,Display factual value or Not enough information,No pick valuation
+Draft Context,draft_pick,NFL draft pick,draft_picks,Display factual value or Not enough information,No pick valuation
+Draft Context,drafted_team,Drafted team,draft_picks,Display factual value or Not enough information,No pick valuation
+Contract Context,contract_context,Contract context,contracts,Display non-financial context only,No APY/guarantees/cap/surplus/valuation
+Missing Evidence,next_game_context,Next game,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved
+Missing Evidence,opponent_context,Opponent,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved
+Missing Evidence,bye_context,Bye,schedules,Show unavailable status only,Deferred because no current/future safe rows are approved

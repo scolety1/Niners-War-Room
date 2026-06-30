@@ -39,6 +39,14 @@ from src.services.draft_day_trade_lab_service import (
     source_context_counts,
     trade_item_rows,
 )
+from src.services.trading_lab_nflverse_context_service import (
+    display_nflverse_context_rows,
+    load_trading_lab_nflverse_context_index,
+    nflverse_context_detail_rows,
+    nflverse_context_summary_rows,
+    nflverse_manual_row_context_rows,
+    nflverse_missing_evidence_rows,
+)
 
 SESSION_KEY = "draft_day_v1_trading_lab_builder"
 TRADE_AWAY_PLANNER_KEY = "draft_day_v1_trade_away_planner_rows"
@@ -65,6 +73,7 @@ PLANNER_COLUMNS = (
     "send_assets",
     "receive_assets",
     "anchor_pick_or_asset",
+    "nwr_player_id",
     "status",
     "open_questions",
     "manual_notes",
@@ -107,6 +116,7 @@ lookup = build_trade_item_lookup(bundle.frame, trade_frame, pick_frame)
 player_select = player_options(lookup)
 pick_select = pick_context_options(lookup)
 counts = source_context_counts(bundle.frame, trade_frame, pick_frame, tier_frame)
+nflverse_context = load_trading_lab_nflverse_context_index()
 
 if trade_path is None or trade_frame.empty:
     render_yellow_hold("Trading Lab helper context is missing; review is board-context only.")
@@ -245,41 +255,51 @@ def _render_selected_items(lookup: dict[str, dict[str, object]]) -> None:
     )
 
 
-def _render_missing_evidence_panel() -> None:
-    with st.expander("Missing evidence / gated context", expanded=True):
+def _render_nflverse_context_panel(lookup: dict[str, dict[str, object]]) -> None:
+    with st.expander("NFLVerse player context / display-only", expanded=True):
         st.caption(
-            "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN: these factual context panes are placeholders "
-            "until the refresh-health lane is merged green. Missing data is not zero, healthy, "
-            "clean, positive, or neutral. Missing values display as: Not enough information."
+            "Display-only context | Manual review only | No valuation calculated | "
+            "No automatic recommendation. Missing values display as: Not enough information."
         )
-        rows = [
-            {
-                "context_area": "Weekly roster status",
-                "source_needed": "nflverse weekly_rosters",
-                "current_status": NOT_ENOUGH_INFORMATION,
-            },
-            {
-                "context_area": "Injury / practice report",
-                "source_needed": "nflverse injuries",
-                "current_status": NOT_ENOUGH_INFORMATION,
-            },
-            {
-                "context_area": "Depth chart slot/rank",
-                "source_needed": "nflverse depth_charts",
-                "current_status": NOT_ENOUGH_INFORMATION,
-            },
-            {
-                "context_area": "Snap counts and raw production",
-                "source_needed": "nflverse snap_counts/player_stats",
-                "current_status": NOT_ENOUGH_INFORMATION,
-            },
-            {
-                "context_area": "Draft capital and contract context",
-                "source_needed": "nflverse draft_picks/contracts",
-                "current_status": NOT_ENOUGH_INFORMATION,
-            },
-        ]
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        metric_cols = st.columns(3)
+        metric_cols[0].metric("Player context artifact rows", nflverse_context.artifact_row_count)
+        metric_cols[1].metric("Safe display rows", nflverse_context.safe_row_count)
+        metric_cols[2].metric(
+            "Identity review rows",
+            nflverse_context.identity_review_row_count,
+        )
+
+        rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
+        if rows.empty:
+            st.info("Select player assets to view display-only NFLVerse context.")
+            return
+
+        summary = display_nflverse_context_rows(
+            nflverse_context_summary_rows(rows, nflverse_context)
+        )
+        st.markdown("**Selected asset context status**")
+        st.dataframe(summary, width="stretch", hide_index=True)
+
+        details = display_nflverse_context_rows(
+            nflverse_context_detail_rows(rows, nflverse_context)
+        )
+        st.markdown("**Approved player context details**")
+        if details.empty:
+            st.info(
+                "No approved player-context details are available for the selected assets."
+            )
+        else:
+            st.dataframe(details, width="stretch", hide_index=True)
+
+        missing = display_nflverse_context_rows(
+            nflverse_missing_evidence_rows(rows, nflverse_context)
+        )
+        st.markdown("**Missing evidence / deferred context**")
+        st.caption(
+            "Missing is not zero, neutral, safe, clean, healthy, no-role, no-usage, "
+            "or favorable. Next game, opponent, and bye context remain unavailable."
+        )
+        st.dataframe(missing, width="stretch", hide_index=True)
 
 
 def _render_diagnostics() -> None:
@@ -342,6 +362,7 @@ def _render_trade_away_pick_planner() -> None:
         default_send=selected_pick,
         default_receive="Manual entry",
     )
+    _render_manual_planner_nflverse_context(rows)
     checklist = _render_manual_checklist(
         key=TRADE_AWAY_CHECKLIST_KEY,
         anchor=selected_pick,
@@ -386,6 +407,7 @@ def _render_trade_for_pick_planner() -> None:
         default_send="Manual entry",
         default_receive=target_pick,
     )
+    _render_manual_planner_nflverse_context(rows)
     checklist = _render_manual_checklist(
         key=TRADE_FOR_CHECKLIST_KEY,
         anchor=target_pick,
@@ -448,6 +470,7 @@ def _render_manual_planner_editor(
                     "send_assets": default_send,
                     "receive_assets": default_receive,
                     "anchor_pick_or_asset": anchor,
+                    "nwr_player_id": "",
                     "status": "Idea",
                     "open_questions": "What information is missing?",
                     "manual_notes": "",
@@ -483,6 +506,25 @@ def _render_manual_planner_editor(
     else:
         st.info("Add manual rows to organize options without scoring or pricing.")
     return rows
+
+
+def _render_manual_planner_nflverse_context(rows: list[dict[str, str]]) -> None:
+    with st.expander("Manual row NFLVerse context / display-only", expanded=False):
+        st.caption(
+            "Enter an approved NWR Player ID on a manual row to show factual player context. "
+            "Display-only context | Manual review only | No valuation calculated | "
+            "No automatic recommendation."
+        )
+        context_rows = display_nflverse_context_rows(
+            nflverse_manual_row_context_rows(rows, nflverse_context)
+        )
+        if context_rows.empty:
+            st.info(
+                "No approved NWR Player ID is present on these manual rows. Pick assets remain "
+                "raw labels only."
+            )
+        else:
+            st.dataframe(context_rows, width="stretch", hide_index=True)
 
 
 def _render_manual_checklist(*, key: str, anchor: str) -> list[dict[str, str]]:
@@ -594,6 +636,7 @@ def _manual_memo_text(
                     f"{row.get('counterparty_or_team', NOT_ENOUGH_INFORMATION)}",
                     f"   - Send assets: {row.get('send_assets', NOT_ENOUGH_INFORMATION)}",
                     f"   - Receive assets: {row.get('receive_assets', NOT_ENOUGH_INFORMATION)}",
+                    f"   - NWR player ID: {row.get('nwr_player_id', NOT_ENOUGH_INFORMATION)}",
                     f"   - Status: {row.get('status', NOT_ENOUGH_INFORMATION)}",
                     f"   - Open questions: {row.get('open_questions', NOT_ENOUGH_INFORMATION)}",
                     f"   - Manual notes: {row.get('manual_notes', NOT_ENOUGH_INFORMATION)}",
@@ -613,8 +656,10 @@ def _manual_memo_text(
         [
             "",
             "## Gated context",
-            "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN. Availability, role, production, "
-            "draft-capital, and contract context remain not wired.",
+            "NFLVerse player context is display-only and manual-review-only when an approved "
+            "NWR Player ID is present. Missing values remain Not enough information. No "
+            "valuation, automatic recommendation, pick pricing, trade pricing, side totals, "
+            "grades, scores, or hidden sort fields are calculated.",
         ]
     )
     return "\n".join(lines)
@@ -637,7 +682,7 @@ with builder_tab:
     _render_builder(player_select, pick_select)
     _render_summary(lookup)
     _render_selected_items(lookup)
-    _render_missing_evidence_panel()
+    _render_nflverse_context_panel(lookup)
 with trade_away_tab:
     _render_trade_away_pick_planner()
 with trade_for_tab:
