@@ -1,0 +1,170 @@
+conflict_type,position,rookie_class_year,recommended_status,blocker_reason,count,notes
+missing_id,QB,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2000,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,RB,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2000,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,WR,2000,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2000,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+missing_id,TE,2000,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2000,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2000,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,QB,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2001,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+wrong_universe_pre_2000_rookie,QB,2001,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,12,Review-only collision triage.
+missing_id,RB,2001,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+wrong_universe_pre_2000_rookie,RB,2001,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,18,Review-only collision triage.
+missing_id,WR,2001,drafted_identity_review,missing_cfb_id,5,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2001,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+wrong_universe_pre_2000_rookie,WR,2001,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,21,Review-only collision triage.
+missing_id,TE,2001,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2001,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2001,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2001,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+wrong_universe_pre_2000_rookie,TE,2001,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,12,Review-only collision triage.
+missing_id,QB,2002,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2002,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+wrong_universe_pre_2000_rookie,QB,2002,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,12,Review-only collision triage.
+missing_id,RB,2002,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2002,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+wrong_universe_pre_2000_rookie,RB,2002,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,9,Review-only collision triage.
+missing_id,WR,2002,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id,5,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2002,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+wrong_universe_pre_2000_rookie,WR,2002,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,21,Review-only collision triage.
+missing_id,TE,2002,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2002,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2002,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+wrong_universe_pre_2000_rookie,TE,2002,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,6,Review-only collision triage.
+wrong_universe_pre_2000_rookie,QB,2003,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,8,Review-only collision triage.
+missing_id,RB,2003,drafted_identity_review,missing_gsis_id;missing_pfr_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2003,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+wrong_universe_pre_2000_rookie,RB,2003,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,5,Review-only collision triage.
+missing_id,WR,2003,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2003,drafted_identity_review,missing_gsis_id;missing_pfr_id,5,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2003,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2003,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+wrong_universe_pre_2000_rookie,WR,2003,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,5,Review-only collision triage.
+missing_id,TE,2003,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+wrong_universe_pre_2000_rookie,TE,2003,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,7,Review-only collision triage.
+missing_id,QB,2004,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2004,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2004,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,4,Review-only collision triage.
+wrong_universe_pre_2000_rookie,QB,2004,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,1,Review-only collision triage.
+missing_id,RB,2004,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2004,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2004,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2004,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+wrong_universe_pre_2000_rookie,WR,2004,wrong_universe,PRE_2000_ROOKIE_NOT_IN_2000_2024_ROOKIE_UNIVERSE,1,Review-only collision triage.
+missing_id,TE,2004,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2004,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2004,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,QB,2005,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2005,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,RB,2005,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2005,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,WR,2005,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2005,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,TE,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2005,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2006,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2006,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,RB,2006,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2006,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,WR,2006,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2006,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2006,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2006,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+missing_id,TE,2006,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2006,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,QB,2007,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2007,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2007,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2007,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+missing_id,WR,2007,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2007,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2007,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,3,Review-only collision triage.
+missing_id,TE,2007,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2007,drafted_identity_review,missing_gsis_id;missing_pfr_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2007,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,TE,2007,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,QB,2008,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2008,drafted_identity_review,missing_gsis_id;missing_pfr_id;missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,QB,2008,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,RB,2008,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2008,drafted_identity_review,missing_cfb_id,5,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2008,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2009,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2009,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2009,drafted_identity_review,missing_cfb_id,5,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2009,drafted_identity_review,missing_gsis_id;missing_pfr_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2009,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,2,Review-only collision triage.
+missing_id,TE,2009,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2010,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2010,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2010,drafted_identity_review,missing_gsis_id;missing_pfr_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,RB,2010,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,WR,2010,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2010,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2011,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2011,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2011,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2012,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2012,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2012,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+same_name_position_class_duplicate,WR,2012,name_collision,SAME_NAME_POSITION_CLASS_REVIEW_REQUIRED,1,Review-only collision triage.
+missing_id,TE,2012,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2013,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2013,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2013,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2013,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2014,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2014,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2014,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2014,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2014,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2015,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2015,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2015,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2015,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2016,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2016,drafted_identity_review,missing_cfb_id,4,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2017,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2017,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2017,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2018,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2018,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2018,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2018,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2019,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+position_mismatch,RB,2019,name_collision,POSITION_MISMATCH_OR_IDENTITY_COLLISION_REVIEW_REQUIRED,1,Position mismatch requires identity review before model or outcome use.
+missing_id,QB,2020,drafted_identity_review,missing_gsis_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2020,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2020,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+position_mismatch,RB,2021,name_collision,POSITION_MISMATCH_OR_IDENTITY_COLLISION_REVIEW_REQUIRED,1,Position mismatch requires identity review before model or outcome use.
+missing_id,WR,2021,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2021,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,QB,2022,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2022,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2022,drafted_identity_review,missing_cfb_id,3,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2022,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2023,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,TE,2023,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,RB,2024,drafted_identity_review,missing_cfb_id,2,Identity key coverage gap; keep out of any cross-source approval until reviewed.
+missing_id,WR,2024,drafted_identity_review,missing_cfb_id,1,Identity key coverage gap; keep out of any cross-source approval until reviewed.
