@@ -89,7 +89,8 @@ VIEW_PRESET_HELP = {
         "Human-review lens for trust, confidence, caveats, and review flags."
     ),
     VIEW_PRESET_COMPACT_DRAFT: (
-        "Fast-scan rookie/draft-board view with review context pushed back."
+        "Fast-scan full dynasty board with review context pushed back. Dynasty Rank "
+        "remains the default sort."
     ),
 }
 
@@ -135,8 +136,6 @@ def _view_base_frame(frame: pd.DataFrame, view_mode: str) -> pd.DataFrame:
 def _view_mode_for_preset(preset: str) -> str:
     if preset == VIEW_PRESET_DATA_REVIEW:
         return UNIFIED_REVIEW_VIEW
-    if preset == VIEW_PRESET_COMPACT_DRAFT:
-        return ROOKIES_DRAFT_BOARD_VIEW
     return FULL_DYNASTY_VIEW
 
 
@@ -394,7 +393,15 @@ def _filter_asset_type(frame: pd.DataFrame, token: str) -> pd.DataFrame:
 def _column_values(frame: pd.DataFrame, column: str) -> list[str]:
     if column not in frame.columns:
         return []
-    return sorted(value for value in frame[column].astype(str).unique().tolist() if value)
+    values = (
+        frame[column]
+        .fillna("")
+        .map(lambda value: str(value).strip())
+        .replace({"nan": "", "NaN": "", "<NA>": "", "None": ""})
+        .unique()
+        .tolist()
+    )
+    return sorted(value for value in values if value)
 
 
 def _position_filter_values(frame: pd.DataFrame) -> list[str]:

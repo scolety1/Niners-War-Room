@@ -32,6 +32,18 @@ def _constant_tuple(name: str) -> tuple[str, ...]:
     raise AssertionError(f"{name} not found")
 
 
+def _page_function(name: str):
+    tree = ast.parse(_page_text())
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            module = ast.Module(body=[node], type_ignores=[])
+            ast.fix_missing_locations(module)
+            namespace: dict[str, object] = {"pd": pd}
+            exec(compile(module, str(PAGE), "exec"), namespace)
+            return namespace[name]
+    raise AssertionError(f"{name} not found")
+
+
 def test_rankings_full_view_position_filter_defaults_to_fantasy_positions() -> None:
     text = _page_text()
 
@@ -224,6 +236,32 @@ def test_rankings_presets_and_advanced_filters_clean_top_controls() -> None:
     assert '"Tier / band"' not in text
     assert '"Manual review"' not in text
     assert '"Show Market Baseline columns"' not in text
+
+
+def test_compact_draft_view_stays_full_dynasty_sorted_by_dynasty_rank() -> None:
+    text = _page_text()
+
+    assert "Fast-scan full dynasty board" in text
+    assert "Dynasty Rank remains the default sort" in text
+    assert "if preset == VIEW_PRESET_COMPACT_DRAFT:" not in text
+
+
+def test_rankings_advanced_filter_values_normalize_missing_and_mixed_types() -> None:
+    column_values = _page_function("_column_values")
+    frame = pd.DataFrame(
+        {
+            "candidate_value_band": [
+                "Anchor",
+                None,
+                float("nan"),
+                " Rookie ",
+                1.0,
+                pd.NA,
+            ]
+        }
+    )
+
+    assert column_values(frame, "candidate_value_band") == ["1.0", "Anchor", "Rookie"]
 
 
 def test_rankings_column_labels_are_human_readable_and_review_fields_late() -> None:
