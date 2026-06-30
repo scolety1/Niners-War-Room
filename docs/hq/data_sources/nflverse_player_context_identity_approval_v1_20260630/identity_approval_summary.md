@@ -1,12 +1,6 @@
-﻿# NFLVerse Player Context Identity Approval V1 Summary
+# NFLVerse Player Context Identity Approval V1 Summary
 
-Final packet verdict: YELLOW_HUMAN_DECISION_SHEET_READY
-
-## Current Artifact State
-
-- Player context artifact rows: 294
-- Safe display rows already approved in the artifact: 240
-- Identity-review rows still blocked from safe display: 54
+Final packet verdict: GREEN_HUMAN_REVIEW_DECISIONS_RECORDED
 
 ## Identity Review Evidence State
 
@@ -14,20 +8,16 @@ Final packet verdict: YELLOW_HUMAN_DECISION_SHEET_READY
 - RECOMMEND_APPROVE_REVIEW_ONLY: 43
 - RECOMMEND_HUMAN_REVIEW: 4
 - RECOMMEND_KEEP_BLOCKED: 7
-- human_decision=PENDING: 54
-- approved_by_human=true: 0
-
-## Candidate ID Coverage
-
-- Candidate GSIS ID present: 46
-- Candidate Sleeper ID present: 32
-- Candidate PFR ID present: 0
-- Candidate NWR player ID missing or unavailable: 54
+- human_decision=APPROVE_REVIEW_ONLY: 43
+- human_decision=PENDING: 4
+- human_decision=KEEP_BLOCKED: 7
 
 ## Approval Rule
 
-approved_by_human=true may only be set by explicit human approval evidence. Codex recommendations, exact local candidates, or prior SAFE_RESOLUTION_PROPOSED rows are not approvals.
+Approved rows are review-only/display-only identity approvals from explicit human instruction. They do not approve model input, training, source truth, rank logic, hidden sort, trade value, pick value, recommendations, or app behavior changes.
 
-## Result
+## Overlay Packet
 
-No overlay was created. The correct next step is human review of identity_human_decision_sheet.csv.
+Approved overlay/apply packet:
+
+`docs/hq/data_sources/nflverse_player_context_identity_approved_overlay_20260630/`

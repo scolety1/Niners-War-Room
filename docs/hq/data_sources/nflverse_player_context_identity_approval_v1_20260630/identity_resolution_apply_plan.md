@@ -1,36 +1,34 @@
 ﻿# NFLVerse Player Context Identity Resolution Apply Plan
 
-## Do Not Apply Yet
+## Status
 
-This packet does not contain approved identities. Every row in identity_human_decision_sheet.csv is still human_decision=PENDING and approved_by_human=false.
+The human decision sheet now records explicit review-only/display-only approval for 43 rows and keeps the remaining 11 rows pending or blocked.
 
-## Human Decision Rules
+A review-only approved overlay was created at:
 
-Allowed human_decision values are:
+`docs/hq/data_sources/nflverse_player_context_identity_approved_overlay_20260630/identity_approved_overlay_v1.csv`
 
-- APPROVE_REVIEW_ONLY
-- KEEP_BLOCKED
-- REJECT_WRONG_IDENTITY
-- NEEDS_MORE_INFO
-- PENDING
+## Overlay Eligibility Rules Used
 
-A future apply lane may include a row in identity_approved_overlay_v1.csv only when all are true:
+Rows were eligible only when all were true:
 
-- human_decision=APPROVE_REVIEW_ONLY
-- approved_by_human=true
-- Candidate identity is tied to the correct NWR player key without ambiguity.
-- The row remains review_only=true.
-- model_use_allowed=false, training_allowed=false, and source_truth_allowed=false.
+- `recommendation=RECOMMEND_APPROVE_REVIEW_ONLY`
+- `human_decision=APPROVE_REVIEW_ONLY`
+- `approved_by_human=true`
+- candidate NFLVerse ID present
+- candidate GSIS ID present
+- team is not `needs_data`
+- `review_only=true`
+- model/training/source-truth/rank/hidden-sort/trade/pick flags remain false
 
 ## Future Apply Steps
 
-1. Collect explicit human decisions in the decision sheet.
-2. Validate every decision value against the allowed enum.
-3. Reject any row where approved_by_human=true but human_decision is not APPROVE_REVIEW_ONLY.
-4. Reject any row where approval depends on name-only or fuzzy evidence.
-5. Create a compact approved overlay only for explicitly approved rows.
-6. Rebuild the player context artifact in a separate lane only after overlay validation passes.
-7. Keep all approved identity output display-only and review-only.
+1. Load the approved overlay.
+2. Bind approved identities to current NWR player rows without ambiguity.
+3. Reject name-only or fuzzy joins.
+4. Keep non-approved rows gated.
+5. Rebuild the player context artifact only in a separate lane after join-key validation passes.
+6. Keep all identity output display-only and review-only.
 
 ## Non-Goals
 
