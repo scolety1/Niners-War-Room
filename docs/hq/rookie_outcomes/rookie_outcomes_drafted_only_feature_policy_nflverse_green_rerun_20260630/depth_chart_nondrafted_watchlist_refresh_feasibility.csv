@@ -1,0 +1,3 @@
+position,likely_udfa_or_nondrafted_count,matched_to_depth_chart_count,high_depth_chart_watchlist_candidate_count,identity_blocker_count,missing_depth_chart_data_count,feasible_for_review_watchlist,blocker_reason,notes
+RB,13,0,0,13,13,blocked_no_depth_match,"Depth-chart context cannot confirm UDFA, cannot model, and needs identity review before watchlist use.",Counts are a feasibility receipt only; no active app output was created.
+WR,15,0,0,14,15,blocked_no_depth_match,"Depth-chart context cannot confirm UDFA, cannot model, and needs identity review before watchlist use.",Counts are a feasibility receipt only; no active app output was created.

@@ -1,0 +1,21 @@
+feature_name,source_family,source_path_or_artifact,pre_draft_allowed,post_draft_allowed,review_only,model_use_allowed,training_allowed,blocked_leakage,required_gate,reason
+draft_round,draft_picks,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+draft_pick,draft_picks,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+draft_capital_bucket,draft_picks,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+draft_year,draft_picks,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+rookie_class_year,draft_picks,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+position,draft_picks / entry-status review,docs/hq/rookie_model/rookie_outcome_drafted_only_review_v1_20260630/,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E model-use approval,Named in six-feature Gate E policy cap; still not model/training approved here.
+overall_pick,draft_picks,nflverse player-context draft receipts,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E feature approval,Factual draft context but not part of the six-feature cap.
+drafted_team,draft_picks,nflverse player-context draft receipts,review_only_after_draft_as_of_gate,review_only,true,false,false,false,Gate E feature approval,Display context only.
+combine measurements,combine,nflverse player-context combine receipt,pending_as_of_gate,review_only,true,false,false,false,Feature/source gate,Factual measurements need explicit feature approval.
+age,rosters,nflverse_player_context_display_artifact.csv,pending_as_of_gate,display_only,true,false,false,false,Feature/source gate,Derived current age is display-only; no model approval.
+roster status,rosters/weekly_rosters,nflverse_player_context_display_artifact.csv,no,display_only,true,false,false,yes,Leakage/as-of gate,Post-draft status cannot be pre-draft input or UDFA proof.
+injury_report_status,injuries,nflverse_player_context_display_artifact.csv,no,display_only,true,false,false,yes,Leakage/as-of gate,Availability transparency only; not injury-risk score.
+depth_chart_rank,depth_charts,nflverse_player_context_display_artifact.csv,no,display_only,true,false,false,yes,Leakage/as-of gate,Opportunity context only; not pre-draft model feature.
+snap_count_recency,snap_counts,nflverse_player_context_display_artifact.csv,no,display_only,true,false,false,yes,Leakage/as-of gate,Future participation is leakage for pre-draft prediction.
+player_stats,player_stats,nflverse player_stats receipts,no,review_sidecar_only,true,false,false,yes,Label-source sidecar gate,Future production cannot be an input feature.
+Outcome V2 labels,Outcome V2,historical label artifacts,no,label_target_only,true,false,false,yes,Label-source gate,Labels are targets/evaluation only.
+RotoWire/model_v4 labels,local/vendor display labels,model_v4 service docs,no,display_only,true,false,false,yes,Blocked source-policy gate,Local/vendor-derived labels are not truth/training.
+CFBD production,CFBD,CFBD review artifacts,pending_identity_approval,no,true,false,false,yes,CFBD approval gate,CFBD remains review-only candidate context.
+UDFA status,entry-status/UDFA packets,rookie_entry_status_hygiene_v1,no,status_only,true,false,false,yes,UDFA source-policy gate,Draft absence does not confirm UDFA.
+ff_rankings,ff_rankings,blocked NFLVerse source policy,no,no,true,false,false,yes,Blocked,Vendor/private-like rankings remain blocked.
