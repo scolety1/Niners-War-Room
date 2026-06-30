@@ -2,20 +2,28 @@
 
 Date: 2026-06-30
 
-Lane: `work/lane-injury-availability-upgrade-20260630`
+Lane: `work/lane-injury-availability-denominator-followup-20260630`
 
-Worktree: `C:\NWR\Niners-War-Room-lane-injury-availability-upgrade-20260630`
+Worktree: `C:\NWR\Niners-War-Room-lane-injury-availability-denominator-followup-20260630`
 
 Base checked after fetch:
 
-`e598249a2a9915366fc2087991bb0519be7c8403`
+`13dc684d5173f20230708126b6b82d121cbc3ed0`
 
 ## Verdict
 
-`YELLOW_PARTIAL_AVAILABILITY_CONTEXT_GATED`
+`GREEN_AVAILABILITY_DENOMINATOR_DISPLAY_READY`
 
-This rerun activates safe direct display of tracked NFLVerse player availability
-context where the merged artifact and schema allow it.
+This follow-up activates safe display-only denominator fields from the merged
+Data Hygiene denominator artifact while preserving identity, schedule, model,
+rank, and source-truth guardrails.
+
+## Tracked Artifacts Consumed
+
+- `docs/hq/data_sources/nflverse_player_context_display_20260630/`
+- `docs/hq/data_sources/nflverse_availability_denominator_display_v1_20260630/`
+- `docs/hq/data_sources/nflverse_schedule_context_display_gate_v1_20260630/`
+- `docs/hq/data_sources/nflverse_player_context_identity_approval_v1_20260630/`
 
 ## Files In This Packet
 
@@ -42,14 +50,14 @@ context where the merged artifact and schema allow it.
 Allowed and completed:
 
 - Preserve existing factual `nflreadpy.load_injuries` review-only context.
-- Add safe tracked-artifact service/schema/docs/tests for availability display context.
-- Add Player Compare display rows for safe NFLVerse identity rows.
+- Consume tracked NFLVerse player context and denominator artifacts.
+- Add Player Compare display rows for safe denominator fields.
 - Keep missing injury or availability context as `Not enough information`.
-- Explain season-total report-week counts versus future per-game denominators.
+- Explain season-total report-week counts versus per-game denominators.
 
-Not activated:
+Still not activated:
 
-- `weekly_rosters`, `rosters`, `schedules`, `snap_counts`, and `player_stats`
-  denominator computations.
-- Dynamic season-anchor computation.
-- Any model, rank, trade, pick, source-truth, or hidden-sort use.
+- `games_missed_while_rostered`.
+- Identity-review or identity-recommendation rows as approved joins.
+- Schedule-derived health or availability inference.
+- Any model, rank, trade, pick, source-truth, recommendation, or hidden-sort use.

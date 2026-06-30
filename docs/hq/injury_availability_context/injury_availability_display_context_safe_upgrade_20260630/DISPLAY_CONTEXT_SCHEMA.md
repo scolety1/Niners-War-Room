@@ -6,10 +6,22 @@ Service reference:
 
 ## Contract
 
-The safe upgrade now exposes tracked-artifact NFLVerse display fields for safe
-identity rows. Dataset-backed denominator fields remain reserved contract fields
-and stay `Not enough information` until a tracked artifact provides approved
-denominators.
+The display service exposes factual NFLVerse availability context only from
+tracked artifacts. Denominator values are not computed in app pages.
+
+Detailed player context requires:
+
+- `nwr_player_id` join
+- `identity_join_status=SAFE_NOW_DISPLAY_ONLY`
+- `review_required=false`
+- schema-approved display-only field status
+
+Denominator detail additionally requires:
+
+- `denominator_status=SAFE_NOW_DISPLAY_ONLY`
+- schema-approved display-only denominator field status
+
+## Field Status
 
 | Field | Group | Status | Notes |
 | --- | --- | --- | --- |
@@ -21,19 +33,10 @@ denominators.
 | `injury_context_available` | Factual injury context | `SAFE_NOW` | `true` only when approved injury report rows exist. |
 | `prior_season_injury_report_weeks` | Factual injury context | `SAFE_NOW` | Season-total distinct report weeks. |
 | `prior_season_out_or_doubtful_weeks` | Factual injury context | `SAFE_NOW` | Season-total distinct out/doubtful report weeks. |
-| `games_while_rostered` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; NEI until refreshed weekly-roster and schedule coverage is green. |
-| `games_with_snaps` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; NEI until refreshed snap count coverage is green. |
-| `games_with_recorded_stats` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; NEI until refreshed stat coverage is green. |
-| `games_played_context` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; NEI until denominator validation is complete. |
-| `games_missed_while_rostered` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; not a cause label. |
-| `per_game_denominator` | Availability denominator context | `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` | Reserved now; NEI until refreshed denominator inputs are green. |
-| `season_total_caveat` | Caveat | `SAFE_NOW` | Explains injury-report counts are season totals by report week. |
-| `per_game_caveat` | Caveat | `SAFE_NOW` | Explains per-game values wait for refreshed denominator coverage. |
-| `availability_caveat` | Caveat | `SAFE_NOW` | States display-only/review-only and missing context as NEI. |
-| `roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
-| `weekly_roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
+| `roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not healthy/clean/safe. |
+| `weekly_roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not inactive by assumption. |
 | `injury_report_status` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not healthy. |
-| `practice_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
+| `practice_status` | Tracked NFLVerse player context | `SAFE_NOW` | Factual practice report display only. |
 | `injury_report_date_week` | Tracked NFLVerse player context | `SAFE_NOW` | Report-week context only. |
 | `last_active_season` | Tracked NFLVerse player context | `SAFE_NOW` | Factual last active season context. |
 | `last_active_week` | Tracked NFLVerse player context | `SAFE_NOW` | Factual last active week context. |
@@ -41,6 +44,16 @@ denominators.
 | `snap_sample_size` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not zero. |
 | `roster_birth_date_derived_age` | Tracked NFLVerse player context | `SAFE_NOW` | Display-only age context. |
 | `age_source` | Tracked NFLVerse player context | `SAFE_NOW` | Display-only age source. |
+| `season_anchor` | Availability denominator context | `SAFE_NOW` | Direct from safe denominator rows. |
+| `games_while_rostered` | Availability denominator context | `SAFE_NOW` | Direct from safe denominator rows. |
+| `games_with_snaps` | Availability denominator context | `SAFE_NOW` | Missing snaps remain NEI, not zero. |
+| `games_with_recorded_stats` | Availability denominator context | `SAFE_NOW` | Missing stats remain NEI, not zero. |
+| `games_played_context` | Availability denominator context | `SAFE_NOW` | Factual rostered/snap/stat context only. |
+| `per_game_denominator` | Availability denominator context | `SAFE_NOW` | Direct from safe denominator rows. |
+| `games_missed_while_rostered` | Availability denominator context | `YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION` | Still blocked; remains NEI. |
+| `season_total_caveat` | Caveat | `SAFE_NOW` | Explains injury-report counts are season totals by report week. |
+| `per_game_caveat` | Caveat | `SAFE_NOW` | Explains denominator values are tracked-artifact display only. |
+| `availability_caveat` | Caveat | `SAFE_NOW` | States display-only/review-only and missing context as NEI. |
 | `display_only` | Guardrail | `SAFE_NOW` | Always `true`. |
 | `review_only` | Guardrail | `SAFE_NOW` | Always `true`. |
 | `model_input_allowed` | Guardrail | `SAFE_NOW` | Always `false`. |
@@ -57,5 +70,6 @@ They do not answer:
 
 `How many games was the player available, active, inactive, or rostered?`
 
-Per-game denominator fields require refreshed roster, schedule, snap, and stat inputs.
-Until then, these fields remain `Not enough information`.
+Per-game denominator fields now display only from the tracked denominator
+artifact. They do not create missed-games, injury-risk, recovery, or medical
+availability inference.

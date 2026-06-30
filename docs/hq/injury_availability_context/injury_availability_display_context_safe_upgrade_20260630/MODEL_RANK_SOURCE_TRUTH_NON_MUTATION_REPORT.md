@@ -4,7 +4,7 @@
 
 `PASS`
 
-This safe upgrade lane does not mutate:
+This denominator follow-up does not mutate:
 
 - model inputs
 - model outputs
@@ -16,31 +16,32 @@ This safe upgrade lane does not mutate:
 - pick values
 - source-truth files
 - latest approved or pinned model artifacts
+- recommendations
 
 ## Code Scope
 
-Added:
+Changed:
 
 - `src/services/injury_availability_context_service.py`
 - `tests/test_injury_availability_context_service.py`
 
-No app page, model, rank, source-truth, or runtime state file is changed by the
-implementation.
+No model, rank, source-truth, latest pointer, frozen board, Live Draft, Mock
+Draft, Trading Lab valuation, trade-value, pick-value, or recommendation file
+is changed by the implementation.
 
 ## Service Guardrails
 
-The safe service returns:
+The safe service returns display-only/review-only context and enforces:
 
-- `display_only=true`
-- `review_only=true`
-- `model_input_allowed=false`
-- `rank_use_allowed=false`
-- `source_truth_allowed=false`
+- safe identity gate before player context detail
+- `denominator_status=SAFE_NOW_DISPLAY_ONLY` before denominator detail
+- `games_missed_while_rostered=Not enough information`
+- missing injury/status/snap/stat/denominator data remains `Not enough information`
+- no raw `C:\NWR_SHARED_DATA` reads from app pages
 
-Dataset-backed availability fields return `Not enough information` while the
-Refresh Health gate is not green.
+## Existing Display
 
-## Existing V0 Display
-
-Existing Rankings and Player Compare V0 display context remains review-only. This
-lane preserves that display path and does not promote it.
+Existing Rankings and Player Compare display context remains review-only. The
+Player Compare table now includes safe denominator fields but does not promote
+them to rank, model, source-truth, hidden sort, recommendation, trade value, or
+pick value logic.

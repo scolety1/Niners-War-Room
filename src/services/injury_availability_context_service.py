@@ -29,14 +29,36 @@ AVAILABILITY_CONTEXT_UNAVAILABLE: Final = NOT_ENOUGH_INFORMATION
 
 SAFE_UPGRADE_VERSION: Final = "injury_availability_display_context_safe_upgrade_20260630"
 
-WAITING_AVAILABILITY_FIELDS: Final = (
+NFLVERSE_DENOMINATOR_DISPLAY_DIR: Final = Path(
+    "docs/hq/data_sources/nflverse_availability_denominator_display_v1_20260630"
+)
+NFLVERSE_DENOMINATOR_DISPLAY_PATH: Final = (
+    NFLVERSE_DENOMINATOR_DISPLAY_DIR / "availability_denominator_display_artifact.csv"
+)
+NFLVERSE_DENOMINATOR_SCHEMA_MANIFEST_PATH: Final = (
+    NFLVERSE_DENOMINATOR_DISPLAY_DIR / "availability_denominator_schema_manifest.csv"
+)
+NFLVERSE_DENOMINATOR_SAFE_STATUS: Final = "SAFE_NOW_DISPLAY_ONLY"
+NFLVERSE_DENOMINATOR_SAFE_FIELD_STATUSES: Final = frozenset(
+    {
+        NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS,
+        "SAFE_NOW_DISPLAY_ONLY_WHEN_POPULATED",
+    }
+)
+
+DENOMINATOR_DISPLAY_FIELDS: Final = (
+    "season_anchor",
     "games_while_rostered",
     "games_with_snaps",
     "games_with_recorded_stats",
     "games_played_context",
-    "games_missed_while_rostered",
     "per_game_denominator",
 )
+BLOCKED_DENOMINATOR_FIELDS: Final = ("games_missed_while_rostered",)
+DENOMINATOR_CONTEXT_FIELDS: Final = (
+    DENOMINATOR_DISPLAY_FIELDS + BLOCKED_DENOMINATOR_FIELDS
+)
+WAITING_AVAILABILITY_FIELDS: Final = DENOMINATOR_CONTEXT_FIELDS
 
 FORBIDDEN_DISPLAY_FIELDS: Final = (
     "injury_risk_score",
@@ -119,11 +141,14 @@ def availability_dataset_status_rows() -> list[dict[str, str]]:
         ),
         _dataset_status(
             "nflverse_weekly_rosters",
-            "SAFE_NOW_DISPLAY_ONLY via tracked player context artifact",
+            (
+                "SAFE_NOW_DISPLAY_ONLY via tracked player context and "
+                "availability denominator artifacts"
+            ),
             SAFE_NOW,
-            "Weekly roster status display for safe identity rows.",
-            "Do not compute games while rostered from app pages.",
-            "Per-game denominators need a future artifact extension.",
+            "Weekly roster status plus games_while_rostered display for safe rows.",
+            "Consume tracked denominator rows only; do not compute from app pages.",
+            "Missing or gated roster values remain Not enough information.",
         ),
         _dataset_status(
             "nflverse_rosters",
@@ -135,38 +160,47 @@ def availability_dataset_status_rows() -> list[dict[str, str]]:
         ),
         _dataset_status(
             "nflverse_schedules",
-            "tracked artifact present; Injury / Availability schedule display remains gated",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Document schedule availability status only.",
-            "Do not display next game, opponent, bye, or per-game denominators.",
+            (
+                "SAFE_NOW_DISPLAY_ONLY for regular-season denominator support; "
+                "next-game/opponent/bye context remains gated"
+            ),
+            SAFE_NOW,
+            "Regular-season schedule joins support per_game_denominator display.",
+            "Do not display next game, opponent, bye, or schedule-derived health.",
             (
                 "Schedule context needs a separate lane-specific activation review before "
-                "appearing in Injury / Availability."
+                "next-game/opponent/bye appears in Injury / Availability."
             ),
         ),
         _dataset_status(
             "nflverse_snap_counts",
-            "SAFE_NOW_DISPLAY_ONLY via tracked player context artifact",
+            (
+                "SAFE_NOW_DISPLAY_ONLY via tracked player context and "
+                "availability denominator artifacts"
+            ),
             SAFE_NOW,
-            "Snap recency, latest snap season/week, and sample size display.",
+            "Snap recency, sample size, and games_with_snaps display.",
             "Do not treat missing snap data as zero.",
-            "Games with snaps still needs a future denominator artifact.",
+            "Missing or gated snap game counts remain Not enough information.",
         ),
         _dataset_status(
             "nflverse_player_stats",
-            "SAFE_NOW_DISPLAY_ONLY via tracked player context artifact",
+            (
+                "SAFE_NOW_DISPLAY_ONLY via tracked player context and "
+                "availability denominator artifacts"
+            ),
             SAFE_NOW,
-            "Last active season/week display.",
-            "Do not compute games with recorded stats from app pages.",
-            "Games-played denominators need a future artifact extension.",
+            "Last active season/week, games_with_recorded_stats, and context display.",
+            "Consume tracked denominator rows only; do not compute from app pages.",
+            "Missing or gated stats game counts remain Not enough information.",
         ),
         _dataset_status(
             "refresh_metadata",
-            "tracked refresh-health contract present",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Document status only.",
-            "Do not choose dynamic season anchors in this lane.",
-            "Dynamic anchors need an explicit display artifact field.",
+            "tracked denominator artifact provides explicit season_anchor values",
+            SAFE_NOW,
+            "Display season_anchor for safe denominator rows.",
+            "Do not choose dynamic season anchors in app pages.",
+            "Missing or gated season anchors remain Not enough information.",
         ),
         _dataset_status(
             "ff_rankings",
@@ -212,6 +246,7 @@ def build_injury_availability_display_context(
         "injury_context_available": context_available,
         "prior_season_injury_report_weeks": report_weeks,
         "prior_season_out_or_doubtful_weeks": out_or_doubtful,
+        "season_anchor": NOT_ENOUGH_INFORMATION,
         "games_while_rostered": NOT_ENOUGH_INFORMATION,
         "games_with_snaps": NOT_ENOUGH_INFORMATION,
         "games_with_recorded_stats": NOT_ENOUGH_INFORMATION,
@@ -227,11 +262,12 @@ def build_injury_availability_display_context(
         ),
         "season_total_caveat": (
             "Injury-report counts are season totals by report week. Per-game "
-            "denominators wait for refreshed roster, schedule, snap, and stat coverage."
+            "denominators display only from approved tracked denominator rows."
         ),
         "per_game_caveat": (
-            "Per-game availability context waits for refreshed roster and schedule "
-            "denominators; do not infer unavailable games from report counts."
+            "Per-game availability context is not inferred from report counts. "
+            "Do not infer unavailable games from report counts. "
+            "Missing or gated denominator rows remain Not enough information."
         ),
         "availability_caveat": (
             "Display-only/review-only factual context. Missing availability context "
@@ -286,13 +322,24 @@ def display_context_schema_rows() -> list[dict[str, str]]:
         _schema_row(
             field,
             "availability denominator context",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
+            SAFE_NOW,
             (
-                "Display field is reserved now and remains Not enough information "
-                "until a tracked artifact provides an approved denominator."
+                "Display-only value from the tracked denominator artifact for safe "
+                "identity rows with denominator_status=SAFE_NOW_DISPLAY_ONLY."
             ),
         )
-        for field in WAITING_AVAILABILITY_FIELDS
+        for field in DENOMINATOR_DISPLAY_FIELDS
+    )
+    rows.append(
+        _schema_row(
+            "games_missed_while_rostered",
+            "availability denominator context",
+            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
+            (
+                "Blocked until an explicit game-status source distinguishes missed "
+                f"games from missing snap/stat rows; display remains {NOT_ENOUGH_INFORMATION}."
+            ),
+        )
     )
     rows.extend(
         [
@@ -306,7 +353,7 @@ def display_context_schema_rows() -> list[dict[str, str]]:
                 "per_game_caveat",
                 "caveat",
                 SAFE_NOW,
-                "Explains per-game denominators are blocked until refresh green.",
+                "Explains denominator values are tracked-artifact display only.",
             ),
             _schema_row(
                 "availability_caveat",
@@ -347,39 +394,39 @@ def proposal_classification_rows() -> list[dict[str, str]]:
         ),
         ProposalClassification(
             "IAC-05",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Compute games while rostered.",
-            "Requires a tracked denominator artifact; not computed in app pages.",
+            SAFE_NOW,
+            "Display games while rostered.",
+            "Tracked denominator artifact supports display for safe rows.",
         ),
         ProposalClassification(
             "IAC-06",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Compute games with snaps and games with recorded stats.",
-            "Snap recency/sample display is safe; game counts need an artifact extension.",
+            SAFE_NOW,
+            "Display games with snaps and games with recorded stats.",
+            "Tracked denominator artifact supports display for safe rows.",
         ),
         ProposalClassification(
             "IAC-07",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Compute games played context.",
-            "Last active season/week display is safe; games played remains uncomputed.",
+            SAFE_NOW,
+            "Display games played context.",
+            "Tracked denominator artifact supports factual context for safe rows.",
         ),
         ProposalClassification(
             "IAC-08",
             YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
-            "Compute games missed while rostered.",
-            "Requires rostered-game denominator artifact and must not infer cause.",
+            "Display games missed while rostered.",
+            "Still blocked; requires explicit game-status source and must not infer cause.",
         ),
         ProposalClassification(
             "IAC-09",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
+            SAFE_NOW,
             "Populate per-game denominator labels.",
-            "Labels/spec safe now; populated values need an artifact extension.",
+            "Tracked denominator artifact supports display for safe rows.",
         ),
         ProposalClassification(
             "IAC-10",
-            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
+            SAFE_NOW,
             "Use dynamic season anchors.",
-            "Requires explicit tracked artifact support.",
+            "Tracked denominator artifact provides explicit season_anchor values.",
         ),
         ProposalClassification(
             "IAC-11",
@@ -433,6 +480,21 @@ def load_tracked_nflverse_availability_sources(
     )
 
 
+def load_tracked_nflverse_availability_denominator_sources(
+    *,
+    artifact_path: str | Path = NFLVERSE_DENOMINATOR_DISPLAY_PATH,
+    schema_path: str | Path = NFLVERSE_DENOMINATOR_SCHEMA_MANIFEST_PATH,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    artifact = Path(artifact_path)
+    schema = Path(schema_path)
+    if not artifact.exists() or not schema.exists():
+        return pd.DataFrame(), pd.DataFrame()
+    return (
+        pd.read_csv(artifact, dtype=str).fillna(""),
+        pd.read_csv(schema, dtype=str).fillna(""),
+    )
+
+
 def nflverse_availability_artifact_counts(
     artifact_frame: pd.DataFrame | None = None,
 ) -> dict[str, int]:
@@ -468,10 +530,59 @@ def nflverse_availability_artifact_counts(
     }
 
 
+def nflverse_availability_denominator_artifact_counts(
+    denominator_frame: pd.DataFrame | None = None,
+) -> dict[str, int]:
+    if denominator_frame is None:
+        denominator_frame, _schema = load_tracked_nflverse_availability_denominator_sources()
+    rows = int(denominator_frame.shape[0])
+    if denominator_frame.empty:
+        return {
+            "rows": 0,
+            "safe_denominator_rows": 0,
+            "safe_denominator_players": 0,
+            "need_source_fields_rows": 0,
+            "identity_review_rows": 0,
+            "games_missed_populated_rows": 0,
+        }
+    safe_rows = _safe_denominator_mask(denominator_frame)
+    games_missed = pd.Series(False, index=denominator_frame.index)
+    if "games_missed_while_rostered" in denominator_frame.columns:
+        games_missed = denominator_frame["games_missed_while_rostered"].apply(
+            lambda value: _display_value(value) != NOT_ENOUGH_INFORMATION
+        )
+    return {
+        "rows": rows,
+        "safe_denominator_rows": int(safe_rows.sum()),
+        "safe_denominator_players": int(
+            denominator_frame.loc[safe_rows, "nwr_player_id"].astype(str).nunique()
+        )
+        if "nwr_player_id" in denominator_frame.columns
+        else 0,
+        "need_source_fields_rows": int(
+            denominator_frame.get("denominator_status", pd.Series(dtype=str))
+            .astype(str)
+            .eq("NEED_SOURCE_FIELDS")
+            .sum()
+        ),
+        "identity_review_rows": int(
+            denominator_frame.get("identity_join_status", pd.Series(dtype=str))
+            .astype(str)
+            .eq(NEED_IDENTITY_REVIEW)
+            .sum()
+        ),
+        "games_missed_populated_rows": int(games_missed.sum()),
+    }
+
+
 def nflverse_availability_status_rows(
     artifact_frame: pd.DataFrame | None = None,
+    denominator_frame: pd.DataFrame | None = None,
 ) -> list[dict[str, str]]:
     counts = nflverse_availability_artifact_counts(artifact_frame)
+    denominator_counts = nflverse_availability_denominator_artifact_counts(
+        denominator_frame
+    )
     return [
         {
             "Question": "NFLVerse player context artifact",
@@ -485,6 +596,26 @@ def nflverse_availability_status_rows(
             "Question": "Identity review rows",
             "Status": REVIEW_NEEDED,
             "Guardrail": "Show review status only; do not expose detailed NFLVerse context.",
+        },
+        {
+            "Question": "Availability denominator artifact",
+            "Status": (
+                f"{denominator_counts['safe_denominator_rows']}/"
+                f"{denominator_counts['rows']} safe player-season rows; "
+                f"{denominator_counts['need_source_fields_rows']} source-field gated rows"
+            ),
+            "Guardrail": (
+                "Join by nwr_player_id; require safe identity gates and "
+                "denominator_status=SAFE_NOW_DISPLAY_ONLY."
+            ),
+        },
+        {
+            "Question": "Games missed while rostered",
+            "Status": NOT_ENOUGH_INFORMATION,
+            "Guardrail": (
+                "Blocked until explicit game-status source exists; missing snap/stat "
+                "rows are not missed games."
+            ),
         },
         {
             "Question": "Schedule next game/opponent/bye",
@@ -507,12 +638,29 @@ def build_nflverse_availability_panel_rows(
     *,
     artifact_frame: pd.DataFrame | None = None,
     schema_frame: pd.DataFrame | None = None,
+    denominator_frame: pd.DataFrame | None = None,
+    denominator_schema_frame: pd.DataFrame | None = None,
 ) -> list[dict[str, str]]:
     if artifact_frame is None or schema_frame is None:
         artifact_frame, schema_frame = load_tracked_nflverse_availability_sources()
+    if denominator_frame is None or denominator_schema_frame is None:
+        (
+            denominator_frame,
+            denominator_schema_frame,
+        ) = load_tracked_nflverse_availability_denominator_sources()
     schema_safe_fields = _schema_safe_fields(schema_frame)
+    denominator_schema_safe_fields = _schema_safe_fields(
+        denominator_schema_frame,
+        safe_field_statuses=NFLVERSE_DENOMINATOR_SAFE_FIELD_STATUSES,
+    )
     return [
-        _nflverse_availability_panel_row(record, artifact_frame, schema_safe_fields)
+        _nflverse_availability_panel_row(
+            record,
+            artifact_frame,
+            schema_safe_fields,
+            denominator_frame,
+            denominator_schema_safe_fields,
+        )
         for record in records
     ]
 
@@ -521,6 +669,8 @@ def _nflverse_availability_panel_row(
     record: dict[str, object],
     artifact_frame: pd.DataFrame,
     schema_safe_fields: set[str],
+    denominator_frame: pd.DataFrame,
+    denominator_schema_safe_fields: set[str],
 ) -> dict[str, str]:
     player = _clean(record.get("player"), default=NOT_ENOUGH_INFORMATION)
     position = _clean(record.get("position"), default=NOT_ENOUGH_INFORMATION)
@@ -562,6 +712,12 @@ def _nflverse_availability_panel_row(
     base["Age Context"] = _age_context_value(context_row, schema_safe_fields)
     base["Schedule Context"] = NOT_ENOUGH_INFORMATION
     base["Data Coverage"] = _field_value(context_row, "data_coverage_status", schema_safe_fields)
+    _apply_denominator_context(
+        base,
+        record,
+        denominator_frame,
+        denominator_schema_safe_fields,
+    )
     return base
 
 
@@ -582,9 +738,16 @@ def _wait_dataset_status(
     )
 
 
-def _schema_safe_fields(schema_frame: pd.DataFrame) -> set[str]:
+def _schema_safe_fields(
+    schema_frame: pd.DataFrame,
+    *,
+    safe_field_statuses: frozenset[str] | None = None,
+) -> set[str]:
     if schema_frame.empty:
         return set()
+    allowed_statuses = safe_field_statuses or frozenset(
+        {NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS}
+    )
     required = {
         "column_name",
         "field_status",
@@ -600,7 +763,7 @@ def _schema_safe_fields(schema_frame: pd.DataFrame) -> set[str]:
     if not required.issubset(schema_frame.columns):
         return set()
     safe = schema_frame.loc[
-        schema_frame["field_status"].astype(str).eq(NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS)
+        schema_frame["field_status"].astype(str).isin(allowed_statuses)
         & schema_frame["display_only"].astype(str).str.lower().eq("true")
         & schema_frame["model_use_allowed"].astype(str).str.lower().eq("false")
         & schema_frame["training_allowed"].astype(str).str.lower().eq("false")
@@ -614,9 +777,40 @@ def _schema_safe_fields(schema_frame: pd.DataFrame) -> set[str]:
 
 
 def _safe_identity_mask(frame: pd.DataFrame) -> pd.Series:
+    if {"identity_join_status", "review_required"} - set(frame.columns):
+        return pd.Series(False, index=frame.index)
     return frame["identity_join_status"].astype(str).eq(
         NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS
     ) & frame["review_required"].astype(str).str.lower().eq("false")
+
+
+def _safe_denominator_mask(frame: pd.DataFrame) -> pd.Series:
+    required = {"denominator_status", "nwr_player_id"}
+    if not required.issubset(frame.columns):
+        return pd.Series(False, index=frame.index)
+    return (
+        _safe_identity_mask(frame)
+        & frame["denominator_status"].astype(str).eq(NFLVERSE_DENOMINATOR_SAFE_STATUS)
+        & frame.apply(_display_only_row_flags_pass, axis=1)
+    )
+
+
+def _display_only_row_flags_pass(row: pd.Series) -> bool:
+    expected = {
+        "display_only": "true",
+        "review_only": "true",
+        "model_use_allowed": "false",
+        "training_allowed": "false",
+        "source_truth_allowed": "false",
+        "rank_logic_allowed": "false",
+        "hidden_sort_allowed": "false",
+        "trade_value_allowed": "false",
+        "pick_value_allowed": "false",
+    }
+    return all(
+        _clean(row.get(field), default="").lower() == expected_value
+        for field, expected_value in expected.items()
+    )
 
 
 def _artifact_row_for_record(
@@ -632,6 +826,32 @@ def _artifact_row_for_record(
     if len(matches) != 1:
         return None
     return matches.iloc[0].to_dict()
+
+
+def _denominator_rows_for_record(
+    record: dict[str, object],
+    denominator_frame: pd.DataFrame,
+) -> list[dict[str, object]]:
+    if denominator_frame.empty or "nwr_player_id" not in denominator_frame.columns:
+        return []
+    player_id = _clean(record.get("player_id"), default="")
+    if not player_id:
+        return []
+    matches = denominator_frame.loc[
+        denominator_frame["nwr_player_id"].astype(str).eq(player_id)
+    ]
+    if matches.empty:
+        return []
+    safe_matches = matches.loc[_safe_denominator_mask(matches)]
+    if safe_matches.empty:
+        return []
+    sort_column = (
+        "season_anchor" if "season_anchor" in safe_matches.columns else "nwr_player_id"
+    )
+    return [
+        row.to_dict()
+        for _index, row in safe_matches.sort_values(by=sort_column).iterrows()
+    ]
 
 
 def _empty_panel_row(player: str, position: str) -> dict[str, str]:
@@ -651,8 +871,103 @@ def _empty_panel_row(player: str, position: str) -> dict[str, str]:
         "Snap Sample Size": NOT_ENOUGH_INFORMATION,
         "Age Context": NOT_ENOUGH_INFORMATION,
         "Schedule Context": NOT_ENOUGH_INFORMATION,
+        "Season Anchor": NOT_ENOUGH_INFORMATION,
+        "Games While Rostered": NOT_ENOUGH_INFORMATION,
+        "Games With Snaps": NOT_ENOUGH_INFORMATION,
+        "Games With Recorded Stats": NOT_ENOUGH_INFORMATION,
+        "Games Played Context": NOT_ENOUGH_INFORMATION,
+        "Per-Game Denominator": NOT_ENOUGH_INFORMATION,
+        "Games Missed While Rostered": NOT_ENOUGH_INFORMATION,
         "Data Coverage": NOT_ENOUGH_INFORMATION,
     }
+
+
+def _apply_denominator_context(
+    base: dict[str, str],
+    record: dict[str, object],
+    denominator_frame: pd.DataFrame,
+    schema_safe_fields: set[str],
+) -> None:
+    denominator_rows = _denominator_rows_for_record(record, denominator_frame)
+    if not denominator_rows:
+        return
+    base["Season Anchor"] = _joined_denominator_field(
+        denominator_rows,
+        "season_anchor",
+        schema_safe_fields,
+    )
+    base["Games While Rostered"] = _joined_denominator_field(
+        denominator_rows,
+        "games_while_rostered",
+        schema_safe_fields,
+    )
+    base["Games With Snaps"] = _joined_denominator_field(
+        denominator_rows,
+        "games_with_snaps",
+        schema_safe_fields,
+    )
+    base["Games With Recorded Stats"] = _joined_denominator_field(
+        denominator_rows,
+        "games_with_recorded_stats",
+        schema_safe_fields,
+    )
+    base["Games Played Context"] = _joined_denominator_field(
+        denominator_rows,
+        "games_played_context",
+        schema_safe_fields,
+    )
+    base["Per-Game Denominator"] = _joined_denominator_field(
+        denominator_rows,
+        "per_game_denominator",
+        schema_safe_fields,
+    )
+    base["Games Missed While Rostered"] = NOT_ENOUGH_INFORMATION
+
+
+def _joined_denominator_field(
+    rows: list[dict[str, object]],
+    field_name: str,
+    schema_safe_fields: set[str],
+) -> str:
+    values: list[str] = []
+    for row in rows:
+        value = _denominator_field_value(row, field_name, schema_safe_fields)
+        if field_name == "season_anchor":
+            if value != NOT_ENOUGH_INFORMATION:
+                values.append(value)
+            continue
+        if len(rows) > 1:
+            season = _denominator_field_value(row, "season_anchor", schema_safe_fields)
+            if season != NOT_ENOUGH_INFORMATION:
+                value = f"{season}: {value}"
+        values.append(value)
+    if not values:
+        return NOT_ENOUGH_INFORMATION
+    return " | ".join(values)
+
+
+def _denominator_field_value(
+    row: dict[str, object],
+    field_name: str,
+    schema_safe_fields: set[str],
+) -> str:
+    value = _field_value(row, field_name, schema_safe_fields)
+    if field_name != "games_played_context":
+        return value
+    return _factual_games_played_context(value)
+
+
+def _factual_games_played_context(value: str) -> str:
+    if value == NOT_ENOUGH_INFORMATION:
+        return value
+    cleaned = value.replace(
+        "; not an injury-risk/durability/medical score",
+        "",
+    ).replace(
+        "not an injury-risk/durability/medical score",
+        "",
+    )
+    return _display_value(cleaned.rstrip(" ;"))
 
 
 def _field_value(
