@@ -1,0 +1,11 @@
+feature_name,source,population_scope,allowed_for_review_reporting,allowed_for_future_review_only_rd,active_probability_column_allowed,rankings_wiring_allowed,model_use_allowed,training_allowed,missing_value_policy,blocker_reason,notes,review_only
+position,nflverse draft_picks / entry status,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,Factual class/position context only.,true
+draft_year,nflverse draft_picks,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,Factual class context.,true
+rookie_class_year,entry status hygiene,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,Factual class context when sourced from draft/entry artifact.,true
+draft_round,nflverse draft_picks,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,Post-draft factual feature for future review-only R&D only.,true
+overall_pick,nflverse draft_picks,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,Post-draft factual feature for future review-only R&D only.,true
+draft_capital_bucket,derived from draft round/pick,drafted_only,true,true,false,false,false,false,Not enough information,Not enough information,No fake round 8; unknown remains Not enough information.,true
+confirmed_udfa_review_only_status,user accepted review-only UDFA status packet,current_rookie_status_only,true,false,false,false,false,false,Not enough information,Not enough information,Status-only display context; not model/training/source truth.,true
+likely_udfa_needs_review,draft absence / candidate evidence,blocked,false,false,false,false,false,false,Not enough information,blocked_by_source_policy_or_leakage,Draft absence cannot confirm UDFA.,true
+CFBD production,CFBD review artifacts,blocked,false,false,false,false,false,false,Not enough information,blocked_by_source_policy_or_leakage,Candidate-only rows remain review-only and identity-review-required.,true
+future NFL production / Outcome labels,Outcome V2 labels,target_only,false,false,false,false,false,false,Not enough information,blocked_by_source_policy_or_leakage,Blocked as input feature due to leakage.,true
