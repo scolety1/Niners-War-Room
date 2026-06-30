@@ -399,6 +399,60 @@ def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
     assert "Older legacy page text referenced horizon-style placeholder labels" in audit
 
 
+def test_rankings_dataset_refresh_panel_uses_central_nflverse_health_service() -> None:
+    text = _page_text()
+
+    assert '"Dataset Refresh / Outcome Status"' in text
+    assert "dataset_registry_rows" in text
+    assert "safe_refresh_dataset_ids" in text
+    assert "full_safe_refresh_dataset_ids" in text
+    assert "NFLVERSE_REFRESH_HEALTH_WAIT_STATUS" in text
+    assert "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN" in text
+    assert "GREEN_TRACKED_REFRESH_HEALTH_CONTRACT_PRESENT" in text
+    assert "nflverse_dataset_level_refresh_health_20260630" in text
+    assert "ff_rankings" in text
+    assert "This panel reads only tracked repo artifacts" in text
+    assert "does not read raw/cache/shared" in text
+    assert "dataset health/status panel" in text
+    assert "source-policy display warnings" in text
+    assert "approved row-level display artifact or join gate" in text
+
+
+def test_rankings_does_not_surface_nflverse_player_fields_without_refresh_gate() -> None:
+    display = display_unified_player_board_frame(
+        pd.DataFrame(
+            [
+                {
+                    "nwr_rank": "1",
+                    "player_name": "Puka Nacua",
+                    "position": "WR",
+                    "nfl_team": "LAR",
+                    "age": "25.0",
+                    "nwr_dynasty_score": "99",
+                    "trust_status": "GREEN",
+                    "confidence_band": "HIGH",
+                    "candidate_key_caveat": "None",
+                    "candidate_value_band": "Anchor",
+                }
+            ]
+        ),
+        view_mode=FULL_DYNASTY_VIEW,
+        show_market_baseline=False,
+    )
+
+    blocked_until_refresh = {
+        "Roster Status",
+        "Injury Report Status",
+        "Next Game",
+        "Bye Context",
+        "Depth Chart Role",
+        "Snap Share Recency",
+        "Draft Capital",
+        "Identity Bridge Health",
+    }
+    assert blocked_until_refresh.isdisjoint(set(display.columns))
+
+
 def test_statistic_analysis_preset_is_read_only_without_invented_components() -> None:
     text = _page_text()
     doc = SCORE_FEASIBILITY.read_text(encoding="utf-8")
