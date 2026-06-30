@@ -1,0 +1,9 @@
+panel,dataset,required_columns_or_keys,dataset_status_found,safe_to_wire,fallback_behavior,source_policy_notes
+Recent production,player_stats weekly,"player_id/gsis_id, season, week, recent active games, position-specific stats",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Disabled/spec-only panel or Not enough information,Same-position only after health green; no missing-as-zero
+Season production,player_stats seasonal,"player_id/gsis_id, season, games_with_data, totals/per-game",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Not enough information,No cross-position winner; no model value
+Usage / role,snap_counts,"player_id/gsis_id, season, week, offense_snaps, offense_pct or equivalent",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Disabled/spec-only panel,Median last 4 active games only after health green
+Depth snapshot,depth_charts,"player_id/gsis_id or stable ID, team, season, week, depth position/slot",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Depth chart disabled / Dataset refresh required,Review-only snapshot; not source truth
+Availability transparency,injuries,"player_id/gsis_id, season, week, report_status, practice_status",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Existing approved injury context artifact or Not enough information,No medical projection; no injury-risk score; missing is not healthy
+Roster status,weekly_rosters,"player_id/gsis_id, season, week, team, status",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Not enough information,Point-in-time factual context only
+Roster-window context,schedules,"season, week, team, game_date, opponent, bye/upcoming context",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Not enough information,No win-now/long-term recommendation
+Identity/data coverage,ff_playerids,"gsis_id, sleeper_id, pfr_id if available, name, position, birthdate/age",WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,No,Current IDs plus explicit ambiguity/match notes,Suppress affected edges if ambiguous
