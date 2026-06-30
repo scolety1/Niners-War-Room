@@ -1,0 +1,101 @@
+rookie_class_year,position,likely_udfa_candidate_count,confirmed_udfa_candidate_count,still_likely_udfa_needs_review_count,free_agent_rookie_needs_review_count,name_collision_count,wrong_universe_count,unknown_count,promotion_rate,notes
+2000,QB,10,0,9,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2000,RB,22,0,21,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2000,WR,31,0,28,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2000,TE,16,0,15,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2001,QB,9,0,7,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2001,RB,25,0,25,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2001,WR,26,0,26,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2001,TE,22,0,21,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2002,QB,6,0,4,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2002,RB,26,0,23,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2002,WR,39,0,36,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2002,TE,8,0,7,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2003,QB,8,0,8,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2003,RB,25,0,23,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2003,WR,33,0,32,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2003,TE,14,0,14,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2004,QB,7,0,3,0,4,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2004,RB,22,0,22,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2004,WR,23,0,22,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2004,TE,11,0,10,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2005,QB,5,0,3,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2005,RB,17,0,15,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2005,WR,30,0,28,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2005,TE,15,0,15,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2006,QB,17,0,15,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2006,RB,48,0,47,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2006,WR,55,0,52,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2006,TE,30,0,28,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2007,QB,17,0,17,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2007,RB,31,0,28,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2007,WR,46,0,43,0,3,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2007,TE,24,0,22,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2008,QB,3,0,2,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2008,RB,25,0,25,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2008,WR,32,0,32,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2008,TE,14,0,14,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2009,QB,8,0,8,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2009,RB,21,0,21,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2009,WR,43,0,41,0,2,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2009,TE,15,0,15,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2010,QB,4,0,4,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2010,RB,27,0,26,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2010,WR,53,0,53,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2010,TE,13,0,13,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2011,QB,9,0,9,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2011,RB,24,0,24,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2011,WR,52,0,52,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2011,TE,27,0,27,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2012,QB,6,0,6,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2012,RB,28,0,28,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2012,WR,55,0,54,0,1,0,0,0.0000,zero auto-promotions; identity collision blockers present
+2012,TE,30,0,30,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2013,QB,11,0,11,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2013,RB,26,0,26,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2013,WR,58,0,58,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2013,TE,15,0,15,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2014,QB,5,0,5,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2014,RB,29,0,29,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2014,WR,48,0,48,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2014,TE,35,0,35,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2015,QB,4,0,4,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2015,RB,26,0,26,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2015,WR,58,0,58,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2015,TE,29,0,29,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2016,QB,5,0,5,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2016,RB,25,0,25,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2016,WR,60,0,60,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2016,TE,26,0,26,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2017,QB,9,0,9,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2017,RB,23,0,23,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2017,WR,61,0,61,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2017,TE,33,0,33,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2018,QB,7,0,7,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2018,RB,33,0,33,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2018,WR,55,0,55,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2018,TE,18,0,18,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2019,QB,12,0,12,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2019,RB,26,0,26,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2019,WR,68,0,68,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2019,TE,27,0,27,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2020,QB,6,0,6,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2020,RB,29,0,29,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2020,WR,37,0,37,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2020,TE,29,0,29,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2021,QB,6,0,6,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2021,RB,19,0,19,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2021,WR,32,0,32,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2021,TE,25,0,25,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2022,QB,8,0,8,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2022,RB,23,0,23,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2022,WR,51,0,51,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2022,TE,25,0,25,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2023,QB,7,0,7,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2023,RB,23,0,23,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2023,WR,50,0,50,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2023,TE,19,0,19,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2024,QB,9,0,9,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2024,RB,22,0,22,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2024,WR,36,0,36,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
+2024,TE,19,0,19,0,0,0,0,0.0000,zero auto-promotions; source-policy blocker only
