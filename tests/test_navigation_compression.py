@@ -162,6 +162,16 @@ def test_required_direct_routes_remain_registered() -> None:
         assert route in route_map
 
 
+def test_rankings_compatibility_route_uses_app_shell() -> None:
+    route_map = {page.url_path: page for page in ALL_NAVIGATION_PAGES}
+    rankings_compat = (APP_DIR / "pages" / "05_rankings.py").read_text()
+
+    assert "from app.main import main" in rankings_compat
+    assert "main()" in rankings_compat
+    assert "runpy.run_path" not in rankings_compat
+    assert route_map["player-board"].file_path == "pages/20_final_board_v1.py"
+
+
 def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
     visible_routes = {page.url_path for page in VISIBLE_NAVIGATION_PAGES}
     hidden_routes = {page.url_path for page in HIDDEN_ADVANCED_PAGES}

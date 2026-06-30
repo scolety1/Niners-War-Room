@@ -319,7 +319,7 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
     NavigationPageSpec(
         title="Player Board Legacy Alias",
-        file_path="pages/05_rankings.py",
+        file_path="pages/20_final_board_v1.py",
         url_path="player-board",
         visible=False,
     ),

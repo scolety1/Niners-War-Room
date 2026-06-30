@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import runpy
-from pathlib import Path
+from app.main import main
 
-runpy.run_path(str(Path(__file__).with_name("20_final_board_v1.py")), run_name="__main__")
+main()
