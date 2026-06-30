@@ -1,0 +1,34 @@
+panel,label,artifact_column,source_dataset,display_condition,missing_rule,guardrail_note
+Identity / Join Transparency,NWR player id,nwr_player_id,current_rankings,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Join key only; no source-truth promotion
+Identity / Join Transparency,NFLVerse/GSIS ID,nflverse_gsis_id,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only ID transparency
+Identity / Join Transparency,Sleeper ID,nflverse_sleeper_id,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only ID transparency
+Identity / Join Transparency,NFLVerse player,nflverse_player_name,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only joined name
+Identity / Join Transparency,NFLVerse team,nflverse_team,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only roster context
+Identity / Join Transparency,NFLVerse position,nflverse_position,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only roster context
+Identity / Join Transparency,Identity caveat,identity_caveat,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,NEED_IDENTITY_REVIEW rows show only Needs identity review
+Identity / Join Transparency,Source/as-of,"per_field_dataset_source, per_field_freshness_source_status",guardrail_static,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema fields,Not enough information,Source/freshness display only
+Recent Production / Activity Context,Last active season,last_active_season,player_stats_weekly,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No projection or ranking
+Recent Production / Activity Context,Last active week,last_active_week,player_stats_weekly,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No projection or ranking
+Recent Production / Activity Context,Snap recency,snap_count_recency,snap_counts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Missing snaps is not zero
+Recent Production / Activity Context,Snap sample size,snap_sample_size,snap_counts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Missing snaps is not zero
+Recent Production / Activity Context,Weekly roster status,weekly_roster_status,weekly_rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual status only
+Usage / Role Context,Depth chart position,depth_chart_position,depth_charts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Missing depth is not no-role
+Usage / Role Context,Depth chart rank,depth_chart_rank,depth_charts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Depth chart rank is review/display-only; not NWR ranking
+Usage / Role Context,Depth chart role,depth_chart_role,depth_charts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No role score or better-role verdict
+Usage / Role Context,Snap recency,snap_count_recency,snap_counts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Missing snaps is not zero
+Usage / Role Context,Last active season,last_active_season,player_stats_weekly,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual context only
+Usage / Role Context,Last active week,last_active_week,player_stats_weekly,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual context only
+Availability Timeline,Roster status,roster_status,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No injury-risk score
+Availability Timeline,Weekly roster status,weekly_roster_status,weekly_rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No injury-risk score
+Availability Timeline,Injury report status,injury_report_status,injuries,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Missing injury is not healthy
+Availability Timeline,Practice status,practice_status,injuries,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No medical or comeback projection
+Availability Timeline,Injury report date/week,injury_report_date_week,injuries,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual report date/week only
+Roster-Window Context,Age,roster_birth_date_derived_age,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,No age-based recommendation
+Roster-Window Context,Age source,age_source,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Source transparency only
+Roster-Window Context,Roster team,nflverse_team,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual team context only
+Roster-Window Context,Roster position,nflverse_position,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual position context only
+Roster-Window Context,Roster status,roster_status,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual status only
+Roster-Window Context,Contract context,contract_context,contracts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Non-financial only; no contract valuation
+Deferred / Manual Review Items,Next game context,next_game_context,schedules,No current/future safe rows,Not enough information,Deferred
+Deferred / Manual Review Items,Opponent context,opponent_context,schedules,No current/future safe rows,Not enough information,Deferred
+Deferred / Manual Review Items,Bye context,bye_context,schedules,No current/future safe rows,Not enough information,Deferred

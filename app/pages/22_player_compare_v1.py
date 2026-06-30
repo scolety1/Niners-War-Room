@@ -30,7 +30,9 @@ from src.services.draft_day_app_v1_service import (
     load_outcome_v2_current_player_display,
 )
 from src.services.player_compare_decision_service import (
+    MARKET_DISPLAY_ONLY_NOTE,
     build_player_compare_decision_summary,
+    build_player_compare_nflverse_context,
     decision_summary_rows,
 )
 
@@ -181,7 +183,7 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
                 "pos": "Pos",
                 "horizon_metric": "Horizon Metric",
                 "horizon_value_or_band": "Band (Candidate / Review-Only)",
-                "horizon_confidence": "Confidence",
+                "horizon_confidence": "Review Coverage",
                 "horizon_reason": "Reason",
                 "display_status": "Status",
             }
@@ -191,15 +193,15 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
     )
 
 
-def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
-    st.subheader("Decision Summary")
+def _render_visible_context_summary(compare_frame: pd.DataFrame) -> None:
+    st.subheader("Visible Context Summary")
     st.caption(
-        "Fast on-clock read first. Review-only decision support; frozen baseline rank, "
-        "Dynasty Rank, tiers, and model values are not changed."
+        "Fast visible-context read first. Frozen baseline rank, Dynasty Rank, tiers, "
+        "and model values are not changed."
     )
     st.info(
-        "Decision Summary is display-only. Use it as a reading guide, then check injury, "
-        "Outcome, and raw detail expanders before making the human decision."
+        "Player Compare shows visible context only. It does not create a model score, "
+        "recommend a player, value trades, project injuries, or change rankings."
     )
     if compare_frame.empty:
         st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
@@ -212,32 +214,34 @@ def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
         records[2:],
     )
     cols = st.columns(4)
-    cols[0].metric("Lean", summary.lean)
-    cols[1].metric("Confidence", summary.confidence)
-    cols[2].metric("Best use case", summary.best_use_case)
-    cols[3].metric("Data quality", summary.data_quality)
+    cols[0].metric("Visible-context read", summary.visible_context_read)
+    cols[1].metric("Evidence coverage", summary.evidence_coverage)
+    cols[2].metric("Context note", summary.context_note)
+    cols[3].metric("Open review flags", str(len(summary.open_review_flags)))
 
     reason_col, flag_col = st.columns(2)
     with reason_col:
-        st.markdown("**Main reasons**")
-        for reason in summary.reason_bullets:
+        st.markdown("**Visible facts / context notes**")
+        for reason in summary.context_bullets:
             st.markdown(f"- {reason}")
     with flag_col:
-        st.markdown("**Red flags / checks**")
-        for flag in summary.red_flags:
+        st.markdown("**Open review flags**")
+        for flag in summary.open_review_flags:
             st.markdown(f"- {flag}")
 
+    if summary.multi_player_note:
+        st.caption(summary.multi_player_note)
     if summary.display_only_market_note:
         st.caption(summary.display_only_market_note)
 
-    st.markdown("**Plain-language comparison read**")
+    st.markdown("**Visible per-player context**")
     st.dataframe(
-        pd.DataFrame(_plain_language_compare_rows(records)),
+        pd.DataFrame(_visible_context_rows(records)),
         use_container_width=True,
         hide_index=True,
     )
 
-    with st.expander("Advanced decision-summary fields", expanded=False):
+    with st.expander("Advanced visible-context fields", expanded=False):
         st.dataframe(
             pd.DataFrame(decision_summary_rows(records)),
             use_container_width=True,
@@ -248,116 +252,112 @@ def _render_decision_summary(compare_frame: pd.DataFrame) -> None:
 def _render_how_to_use_compare() -> None:
     st.subheader("How to use this comparison")
     st.markdown(
-        "- Start with the display-only Decision Summary.\n"
-        "- Check Safer profile, Upside profile, timing/window, and Main risk in plain language.\n"
+        "- Start with the display-only Visible Context Summary.\n"
+        "- Check Stability evidence, Ceiling evidence, roster-window context, "
+        "and Main review flags.\n"
         "- Use Injury / Availability Context for review-only caveats and recent-sample gaps.\n"
         "- Open advanced expanders only when you need the underlying evidence.\n"
-        "- Final preference stays a human decision; this page does not change ranks or "
+        "- Final roster preference stays a human decision; this page does not change ranks or "
         "model values."
     )
 
 
-def _plain_language_compare_rows(records: list[dict[str, object]]) -> list[dict[str, str]]:
+def _render_player_compare_policy() -> None:
+    st.info(
+        "Player Compare shows visible context only. It does not create a model score, "
+        "recommend a player, value trades, project injuries, or change rankings."
+    )
+
+
+def _visible_context_rows(records: list[dict[str, object]]) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for record in records:
         player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
-        flags = _plain_red_flags(record)
+        flags = _plain_review_flags(record)
         rows.append(
             {
                 "Player": player,
-                "Safer profile": _safer_profile(record),
-                "Upside profile": _upside_profile(record),
+                "Stability evidence": _stability_evidence(record),
+                "Ceiling evidence": _ceiling_evidence(record),
                 "League/scoring fit": _league_fit(record),
-                "Timing / window": _plain_timing_window(record),
-                "Main risk": _plain_risk_signal(record),
+                "Roster-window context": _plain_roster_window_context(record),
+                "Main review flags": _plain_review_signal(record),
                 "What still needs review": "; ".join(flags[:3])
                 if flags
-                else "No major display warning in current context.",
+                else "No major open review flag in visible context.",
             }
         )
     return rows
 
 
-def _safer_profile(record: dict[str, object]) -> str:
-    confidence = _plain_confidence_text(record)
-    risk = _plain_risk_signal(record)
-    if confidence == "High" and risk == OUTCOME_NOT_ENOUGH_INFORMATION:
-        return "Cleaner display profile in current data"
-    if confidence in {"Medium", "High"}:
-        return f"Usable with review: {confidence} confidence"
-    if confidence == OUTCOME_NOT_ENOUGH_INFORMATION:
-        return OUTCOME_NOT_ENOUGH_INFORMATION
-    return "Lower certainty; human review needed"
+def _stability_evidence(record: dict[str, object]) -> str:
+    age = _plain_field(record, "age")
+    if _plain_review_signal(record) != OUTCOME_NOT_ENOUGH_INFORMATION:
+        return "Review notes available below"
+    if age != OUTCOME_NOT_ENOUGH_INFORMATION:
+        return f"Age shown: {age}"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
-def _upside_profile(record: dict[str, object]) -> str:
-    for key in ("candidate_value_band", "outcome_applicable_summary", "on_clock_decision_tier"):
-        value = _plain_field(record, key)
-        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
-            return value
+def _ceiling_evidence(record: dict[str, object]) -> str:
+    outcome = _plain_outcome_signal(record)
+    if outcome != OUTCOME_NOT_ENOUGH_INFORMATION:
+        return outcome
+    if _plain_field(record, "candidate_value_band") != OUTCOME_NOT_ENOUGH_INFORMATION:
+        return "Review band shown below"
     return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def _league_fit(record: dict[str, object]) -> str:
     position = _plain_field(record, "position")
     if position == "QB":
-        return "1QB format check; do not overpay without roster need"
+        return "1QB format context; roster need stays human-reviewed"
     if position == "TE":
-        return "TE value depends on role and league scarcity"
+        return "TE context depends on role and league scarcity"
     if position in {"RB", "WR"}:
         return "RB/WR depth matters, but this is not lineup advice"
     return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
-def _plain_timing_window(record: dict[str, object]) -> str:
+def _plain_roster_window_context(record: dict[str, object]) -> str:
     age = _plain_float(record.get("age"))
-    band = _plain_field(record, "candidate_value_band").lower()
     position = _plain_field(record, "position")
     if age is not None and age >= 30:
-        return "win-now / age-window review"
-    if "rookie" in band or "upside" in band:
-        return "upside / long-term"
+        return "Age-window review"
     if position == "QB":
-        return "long-term stability; format-dependent in 1QB"
-    return "long-term / best-player-at-value"
-
-
-def _plain_risk_signal(record: dict[str, object]) -> str:
-    for key in ("main_risk", "candidate_key_caveat", "on_clock_warning", "risk_notes"):
-        value = _plain_field(record, key)
-        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
-            return value
+        return "1QB format context requires human roster fit"
+    if age is not None:
+        return "Age context shown; roster fit is a human decision"
     return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
-def _plain_red_flags(record: dict[str, object]) -> list[str]:
+def _plain_review_signal(record: dict[str, object]) -> str:
+    for key in ("main_risk", "candidate_key_caveat", "on_clock_warning", "risk_notes"):
+        value = _plain_field(record, key)
+        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
+            return "Review notes available below"
+    return OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _plain_review_flags(record: dict[str, object]) -> list[str]:
     flags: list[str] = []
     player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
     for label, key in (
         ("age missing", "age"),
         ("unsupported outcome", "outcome_applicable_summary"),
-        ("no market match", "available_pool_adp_range"),
     ):
         if _plain_field(record, key) == OUTCOME_NOT_ENOUGH_INFORMATION:
             flags.append(f"{player}: {label}.")
-    warning = _plain_field(record, "on_clock_warning")
-    if warning != OUTCOME_NOT_ENOUGH_INFORMATION:
-        flags.append(f"{player}: {warning}")
+    if _plain_review_signal(record) != OUTCOME_NOT_ENOUGH_INFORMATION:
+        flags.append(f"{player}: review notes available below.")
     return flags
 
 
-def _plain_confidence_text(record: dict[str, object]) -> str:
-    for key in ("dynasty_asset_confidence", "confidence_band", "on_clock_confidence"):
-        value = _plain_field(record, key)
-        if value != OUTCOME_NOT_ENOUGH_INFORMATION:
-            if "high" in value.lower():
-                return "High"
-            if "medium" in value.lower():
-                return "Medium"
-            if "low" in value.lower():
-                return "Low"
-            return value
-    return OUTCOME_NOT_ENOUGH_INFORMATION
+def _plain_outcome_signal(record: dict[str, object]) -> str:
+    value = _plain_field(record, "outcome_applicable_summary")
+    if value.lower() in {"unsupported", "no", "none"}:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    return value
 
 
 def _plain_field(record: dict[str, object], key: str) -> str:
@@ -433,7 +433,7 @@ def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
                 "position_rank": "Position Rank",
                 "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
                 "candidate_value_band": "Candidate Band",
-                "confidence_band": "Confidence",
+                "confidence_band": "Review Coverage",
                 "candidate_vs_frozen_note": "Candidate vs Frozen Note",
                 "candidate_action_summary": "Candidate Action Summary",
                 "candidate_key_caveat": "Key Caveat / Review Flag",
@@ -452,15 +452,13 @@ def _render_market_context(compare_frame: pd.DataFrame) -> None:
         "startup_adp_display",
         "available_pool_adp_rank",
         "available_pool_adp_range",
-        "current_pick_value",
     ]
     columns = [column for column in market_columns if column in compare_frame.columns]
     if len(columns) <= 2:
         st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
         return
     st.caption(
-        "Market/ADP context is display-only timing sanity. It is not a model input and "
-        "does not override NWR ranks."
+        MARKET_DISPLAY_ONLY_NOTE
     )
     st.dataframe(
         compare_frame.loc[:, columns].fillna(OUTCOME_NOT_ENOUGH_INFORMATION).rename(
@@ -471,7 +469,6 @@ def _render_market_context(compare_frame: pd.DataFrame) -> None:
                 "startup_adp_display": "Startup ADP (Display-Only)",
                 "available_pool_adp_rank": "Available-Pool ADP Rank (Display-Only)",
                 "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
-                "current_pick_value": "Current Pick Value (Display-Only)",
             }
         ),
         use_container_width=True,
@@ -519,17 +516,23 @@ def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
     st.subheader("Injury / Availability Context")
     st.caption("Review-only context. No medical projection or injury-risk score is made.")
     st.caption(
+        "Availability context is review-only. It does not project recovery, estimate "
+        "injury risk, or change rankings. Missing injury context does not mean clean health."
+    )
+    st.caption(
         "Missing injury context is not clean health. Missing / limited recent sample is "
         "not a low-probability signal. This panel does not change comparison scoring, "
-        "ranking, lean, or hidden decision logic."
+        "ranking, visible-context read, or hidden decision logic."
     )
-    _render_injury_availability_status()
+    with st.expander("Injury / Availability Data Status", expanded=True):
+        _render_injury_availability_status()
     outcome_bundle = load_outcome_v2_current_player_display()
     rows = [
         _injury_display_row(record, outcome_bundle.frame)
         for record in compare_frame.to_dict("records")
     ]
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    with st.expander("Selected-player injury / availability rows", expanded=True):
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
 def _render_injury_availability_status() -> None:
@@ -548,7 +551,7 @@ def _render_injury_availability_status() -> None:
         {
             "Question": "Medical projection",
             "Status": "Not made",
-            "Guardrail": "No comeback odds, recovery odds, or ranking adjustment.",
+            "Guardrail": "No recovery estimate or ranking adjustment.",
         },
     ]
     st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
@@ -560,11 +563,13 @@ def _injury_display_row(
 ) -> dict[str, str]:
     player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
     position = str(record.get("position") or OUTCOME_NOT_ENOUGH_INFORMATION)
-    row = _outcome_v2_context_row_for_player(record, outcome_frame)
+    row, match_basis, match_note = _outcome_v2_context_row_for_player(record, outcome_frame)
     if not row:
         return {
             "Player": player,
             "Pos": position,
+            "Match Basis": match_basis,
+            "Match Note": match_note,
             "Injury Context Available": "No approved injury context available",
             "Availability Caveat": (
                 "No approved injury context available. This does not mean clean health."
@@ -580,6 +585,8 @@ def _injury_display_row(
     return {
         "Player": player,
         "Pos": position,
+        "Match Basis": match_basis,
+        "Match Note": match_note,
         "Injury Context Available": (
             "Available" if available == "true" else "No approved injury context available"
         ),
@@ -603,14 +610,14 @@ def _injury_display_row(
 def _outcome_v2_context_row_for_player(
     record: dict[str, object],
     outcome_frame: pd.DataFrame,
-) -> dict[str, object]:
+) -> tuple[dict[str, object], str, str]:
     if outcome_frame.empty:
-        return {}
+        return {}, "No approved artifact match", OUTCOME_NOT_ENOUGH_INFORMATION
     player_id = str(record.get("player_id") or "").strip()
     if player_id and "nwr_player_id" in outcome_frame.columns:
         rows = outcome_frame.loc[outcome_frame["nwr_player_id"].astype(str).eq(player_id)]
         if not rows.empty:
-            return rows.iloc[0].to_dict()
+            return rows.iloc[0].to_dict(), "Stable player_id", "Deterministic artifact match."
 
     if {"player_name", "position"}.issubset(outcome_frame.columns):
         key = (_player_key(record.get("player")), str(record.get("position") or "").upper())
@@ -619,8 +626,96 @@ def _outcome_v2_context_row_for_player(
             & outcome_frame["position"].astype(str).str.upper().eq(key[1])
         ]
         if len(candidates) == 1:
-            return candidates.iloc[0].to_dict()
-    return {}
+            return (
+                candidates.iloc[0].to_dict(),
+                "Name + position fallback",
+                "Review-only fallback match; not treated as deterministic identity truth.",
+            )
+        if len(candidates) > 1:
+            return (
+                {},
+                "Ambiguous name + position fallback",
+                "Multiple artifact rows matched; affected context stays Not enough information.",
+            )
+    return {}, "No approved artifact match", OUTCOME_NOT_ENOUGH_INFORMATION
+
+
+def _render_nflverse_player_context(compare_frame: pd.DataFrame) -> None:
+    st.subheader("NFLVerse Player Context")
+    st.caption(
+        "Display-only context from the tracked NFLVerse player-context artifact. "
+        "No recommendation calculated. Not model input."
+    )
+    st.caption(
+        "Rows must match on NWR player id, have identity_join_status=SAFE_NOW_DISPLAY_ONLY, "
+        "review_required=false, and pass the SAFE_NOW_DISPLAY_ONLY schema manifest. "
+        "Needs identity review rows show only identity-review status."
+    )
+    context = build_player_compare_nflverse_context(compare_frame.to_dict("records"))
+    if not context.artifact_available:
+        render_yellow_hold(context.caveat)
+        return
+
+    cols = st.columns(4)
+    cols[0].metric("Artifact rows", str(context.artifact_rows))
+    cols[1].metric("Safe display rows", str(context.safe_display_rows))
+    cols[2].metric("Identity review rows", str(context.identity_review_rows))
+    cols[3].metric("Schedule rows", str(context.schedule_available_rows))
+    st.caption(f"Source/as-of: {context.artifact_path}")
+    st.caption(
+        "Missing data remains Not enough information. Missing injury is not healthy; "
+        "missing depth is not no-role; missing snaps is not zero; missing draft capital "
+        "is not confirmed UDFA."
+    )
+
+    with st.expander("Identity / Join Transparency", expanded=True):
+        st.dataframe(pd.DataFrame(context.identity_rows), use_container_width=True, hide_index=True)
+
+    with st.expander("Recent Production / Activity Context", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.recent_activity_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Usage / Role Context", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.usage_role_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Availability Timeline", expanded=False):
+        st.caption(
+            "Availability context is factual and review-only. No injury-risk score, medical "
+            "projection, or comeback projection is calculated."
+        )
+        st.dataframe(
+            pd.DataFrame(context.availability_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Roster-Window Context", expanded=False):
+        st.caption(
+            "Roster-window context is non-financial. It does not create contract valuation, "
+            "trade value, pick value, or ranking changes."
+        )
+        st.dataframe(
+            pd.DataFrame(context.roster_window_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Dataset Freshness / Coverage Badges", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.dataset_badge_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Deferred / Manual Review Items", expanded=False):
+        st.dataframe(pd.DataFrame(context.deferred_rows), use_container_width=True, hide_index=True)
 
 
 def _context_value(row: dict[str, object], column: str) -> str:
@@ -646,14 +741,15 @@ page_header(
         "Compare 2 to 4 players using the active draftable pool, frozen baseline checkpoint, "
         "and verified PDF free-agent overlay."
     ),
-    status_items=(("Frozen board comparison", "safe"), ("Missing props show hold", "review")),
+    status_items=(("Frozen board comparison", "review"), ("Missing props show hold", "review")),
 )
 st.caption(
-    "Deep tool: decision aid only. Comparison output does not mutate ranks, tiers, model "
-    "values, or source-truth files."
+    "Deep tool: visible-context aid only. Comparison output does not mutate ranks, tiers, "
+    "model values, or source-truth files."
 )
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
+_render_player_compare_policy()
 _render_how_to_use_compare()
 
 players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
@@ -697,15 +793,16 @@ else:
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
     )
-    _render_decision_summary(compare)
+    _render_visible_context_summary(compare)
 
     detail_tabs = st.tabs(
         [
             "Dynasty / NWR Context",
-            "Market Baseline / Display-Only",
+            "Market timing context",
             "Injury / Availability Context",
             "Outcome / Horizon",
             "Age / Injury / Risk",
+            "NFLVerse Player Context",
             "Raw Details / Diagnostics",
         ]
     )
@@ -719,6 +816,8 @@ else:
         _render_injury_per_game_context(compare)
     with detail_tabs[4]:
         _render_age_risk_context(compare)
+    with detail_tabs[5]:
+        _render_nflverse_player_context(compare)
 
     prop_files = {
         "outcome_columns": "outcome_player_context.csv",
@@ -737,33 +836,36 @@ else:
             _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
             _render_horizon_candidate_compare(compare)
 
-    with detail_tabs[5]:
-        st.caption("Raw context is diagnostic-only and intentionally below the decision summary.")
+    with detail_tabs[6]:
+        st.caption(
+            "Raw context is diagnostic-only and intentionally below the visible context summary."
+        )
         for lane, file_name in prop_files.items():
-            prop_frame, prop_path = load_lane_prop_file(lane, file_name)
-            if prop_path is None:
-                render_yellow_hold(f"{lane} props are missing.")
-                continue
-            if prop_frame.empty:
-                render_yellow_hold(f"{lane} props are missing: {prop_path}.")
-                continue
-            st.caption(f"{lane} props: {prop_path}")
-            join_columns = [
-                column
-                for column in ("player", "position", "final_board_rank")
-                if column in prop_frame.columns
-            ]
-            if not join_columns:
+            with st.expander(f"{lane} props", expanded=False):
+                prop_frame, prop_path = load_lane_prop_file(lane, file_name)
+                if prop_path is None:
+                    render_yellow_hold(f"{lane} props are missing.")
+                    continue
+                if prop_frame.empty:
+                    render_yellow_hold(f"{lane} props are missing: {prop_path}.")
+                    continue
+                st.caption(f"{lane} props: {prop_path}")
+                join_columns = [
+                    column
+                    for column in ("player", "position", "final_board_rank")
+                    if column in prop_frame.columns
+                ]
+                if not join_columns:
+                    st.dataframe(
+                        display_lane_prop_frame(prop_frame).head(25),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    continue
+                base_columns = [column for column in join_columns if column in compare.columns]
+                context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
                 st.dataframe(
-                    display_lane_prop_frame(prop_frame).head(25),
+                    display_lane_prop_frame(context),
                     use_container_width=True,
                     hide_index=True,
                 )
-                continue
-            base_columns = [column for column in join_columns if column in compare.columns]
-            context = pd.merge(compare[base_columns], prop_frame, on=base_columns, how="left")
-            st.dataframe(
-                display_lane_prop_frame(context),
-                use_container_width=True,
-                hide_index=True,
-            )
