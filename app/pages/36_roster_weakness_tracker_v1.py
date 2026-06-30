@@ -18,12 +18,12 @@ page_header(
     eyebrow="Development Lab / Safe V0",
     description=(
         "Manual roster structure view for position counts, starter/depth coverage, and "
-        "display-only notes. It does not recommend drops, trades, waivers, or starters."
+        "display-only notes. Decisions remain human/manual outside this page."
     ),
     status_items=(
         ("Display-only", "review"),
         ("Manual workflow", "safe"),
-        ("No recommendations", "safe"),
+        ("Manual decisions", "safe"),
     ),
 )
 

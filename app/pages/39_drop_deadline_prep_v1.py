@@ -14,13 +14,13 @@ page_header(
     "Drop Deadline Prep",
     eyebrow="Development Lab / Safe V0",
     description=(
-        "Manual drop-deadline checklist and review notes. It does not recommend drops "
-        "or use hidden ranking logic."
+        "Manual drop-deadline checklist and review notes. It records missing data and "
+        "human-review status only."
     ),
     status_items=(
         ("Checklist only", "review"),
         ("Manual notes", "safe"),
-        ("No drop advice", "safe"),
+        ("Human review", "safe"),
     ),
 )
 

@@ -1,0 +1,12 @@
+feature_id,feature_name,classification,implemented_now,waiting_reason,guardrail_notes
+F1,Development Lab Home control board,SAFE_NOW_DISPLAY_ONLY,yes,,Lab Home shows refresh-health status, player-context artifact counts, safe rows, identity-review rows, blocked ff_rankings, and missing-data rule.
+F2,Auto roster snapshot,SAFE_NOW_DISPLAY_ONLY,yes,,Uses tracked player-context artifact rows only; manual roster rows can join by nwr_player_id.
+F3,Roster status/depth/snap/contract context,SAFE_NOW_DISPLAY_ONLY_PARTIAL,yes,Schedule next game/opponent/bye still has no current/future safe rows,Displays only schema-approved fields for SAFE_NOW_DISPLAY_ONLY rows; schedule remains Not enough information.
+F4,Future Pick Planning NFL draft context,SAFE_NOW_DISPLAY_ONLY,yes,,Displays factual NFL draft year/round/pick/team when present; fantasy pick ownership remains manual/runtime only.
+F5,Upcoming Draft Prep readiness/context,SAFE_NOW_DISPLAY_ONLY,yes,,Shows dataset/player-context readiness and factual draft-capital display rows only.
+F6,Post-draft rookie identity import,YELLOW_NEEDS_IDENTITY_REVIEW,no,43 proposals are review-only; 4 rows need human review; 7 remain KEEP_NEED_IDENTITY_REVIEW,Identity-review rows show status only and do not expose player context details.
+F7,Deadline prep roster/status context,SAFE_NOW_DISPLAY_ONLY,yes,,Displays roster/status/availability labels for manual checklist support only.
+F8,Bulk local Development Lab state export/import,SAFE_NOW,yes,,All six manual note states can be exported/imported with preview and confirmation; refreshed context is not persisted as manual state.
+F9,Future Tools gate badge matrix,SAFE_NOW,yes,,Ideas stay inactive; active output/model input flags remain no.
+F10,Refresh adapter consumption contract,SAFE_NOW_DISPLAY_ONLY,yes,,Development Lab consumes tracked artifact/schema docs through service helpers; app pages do not read raw shared/cache files.
+F11,Guardrail and wording tests,SAFE_NOW,yes,,Focused tests cover manual wording, safe player-context gating, identity-review privacy, missing data, and blocked future tools.

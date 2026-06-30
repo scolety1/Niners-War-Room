@@ -51,8 +51,29 @@ SAFE_V0_TOOL_IDS = {
 }
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
+REFRESH_HEALTH_WAITING = "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN"
+SAFE_REFRESH_CONTEXT_READY = "SAFE_REFRESH_CONTEXT_READY_DISPLAY_ONLY"
+NEEDS_IDENTITY_REVIEW = "Needs identity review"
 POSITIONS = ("QB", "RB", "WR", "TE", "K", "DST")
 STARTER_FORMAT = {"QB": 1, "RB": 2, "WR": 3, "TE": 1}
+
+LAB_TOOL_ROUTES = {
+    "roster_weakness_tracker": "/roster-weakness-tracker",
+    "future_pick_planning": "/future-pick-planning",
+    "upcoming_draft_prep": "/upcoming-draft-prep",
+    "keeper_deadline_prep": "/keeper-deadline-prep",
+    "drop_deadline_prep": "/drop-deadline-prep",
+    "trade_deadline_prep": "/trade-deadline-prep",
+}
+
+LAB_TOOL_CLASSIFICATION = {
+    "roster_weakness_tracker": "SAFE_NOW_UI_OR_DOCS_ONLY",
+    "future_pick_planning": "SAFE_NOW_UI_OR_DOCS_ONLY",
+    "upcoming_draft_prep": "SAFE_NOW_UI_OR_DOCS_ONLY",
+    "keeper_deadline_prep": "SAFE_NOW_UI_OR_DOCS_ONLY",
+    "drop_deadline_prep": "SAFE_NOW_UI_OR_DOCS_ONLY",
+    "trade_deadline_prep": "SAFE_NOW_UI_OR_DOCS_ONLY",
+}
 
 
 @dataclass(frozen=True)
@@ -141,6 +162,119 @@ def blocked_tools(rows: list[FutureToolStatus]) -> list[FutureToolStatus]:
     return [row for row in rows if not row.is_safe_v0_candidate]
 
 
+def future_tool_gate_badge(row: FutureToolStatus) -> str:
+    if row.is_safe_v0_candidate:
+        return "Safe manual sibling exists"
+    if row.decision in {"BLOCKED_NEEDS_HUMAN_APPROVAL", "BLOCKED_NEEDS_SOURCE_POLICY"}:
+        return "Needs human/source approval"
+    if row.decision in {"BLOCKED_NEEDS_DATA", "BLOCKED_NEEDS_API"}:
+        return "Needs dataset refresh"
+    if row.uses_cfbd_or_nfl_usage.lower() == "yes":
+        return "Dataset exists but not approved for model/rank logic"
+    if row.decision == "BLOCKED_NEEDS_MODEL_GATE":
+        return "Needs model gate"
+    return "Blocked by guardrail"
+
+
+def future_tool_gate_badge_rows(rows: list[FutureToolStatus]) -> list[dict[str, str]]:
+    return [
+        {
+            "Tool": row.tool_name,
+            "Gate badge": future_tool_gate_badge(row),
+            "Active output": row.active_output_allowed,
+            "Model input": row.model_input_allowed,
+            "Manual sibling route": LAB_TOOL_ROUTES.get(row.tool_id, "Inactive roadmap idea"),
+            "Status": row.status_label,
+        }
+        for row in rows
+    ]
+
+
+def development_lab_readiness_rows(
+    rows: list[FutureToolStatus],
+    *,
+    local_state_by_tool: dict[str, str] | None = None,
+) -> list[dict[str, str]]:
+    local_state_by_tool = local_state_by_tool or {}
+    return [
+        {
+            "Tool": row.tool_name,
+            "Route": LAB_TOOL_ROUTES[row.tool_id],
+            "Classification": LAB_TOOL_CLASSIFICATION[row.tool_id],
+            "Readiness": "Manual only",
+            "Saved state": local_state_by_tool.get(row.tool_id, "Not checked"),
+            "nflverse context": SAFE_REFRESH_CONTEXT_READY,
+            "Missing data display": NOT_ENOUGH_INFORMATION,
+            "Active output": row.active_output_allowed,
+            "Model input": row.model_input_allowed,
+        }
+        for row in safe_v0_tools(rows)
+    ]
+
+
+def nflverse_waiting_context_rows() -> list[dict[str, str]]:
+    return [
+        {
+            "Item": "F2 auto roster snapshot",
+            "Tools": "Roster Weakness Tracker",
+            "Classification": SAFE_REFRESH_CONTEXT_READY,
+            "Current display": "Safe artifact rows only",
+            "Allowed now": "Manual notes plus display-only player context",
+        },
+        {
+            "Item": "F3 roster status/depth/snap/contract context",
+            "Tools": "Roster Weakness Tracker; deadline prep",
+            "Classification": SAFE_REFRESH_CONTEXT_READY,
+            "Current display": "Safe roster/status/depth/snap/contract labels",
+            "Allowed now": "Display-only context; no raw loaders",
+        },
+        {
+            "Item": "F4 NFL draft context for future pick planning",
+            "Tools": "Future Pick Planning; Upcoming Draft Prep",
+            "Classification": SAFE_REFRESH_CONTEXT_READY,
+            "Current display": "NFL draft year/round/pick/team when present",
+            "Allowed now": "Factual NFL draft display; no fantasy ownership overwrite",
+        },
+        {
+            "Item": "F6 post-draft rookie identity import",
+            "Tools": "Upcoming Draft Prep",
+            "Classification": NEEDS_IDENTITY_REVIEW,
+            "Current display": "Identity-review status only",
+            "Allowed now": "Proposals remain review-only until approved",
+        },
+        {
+            "Item": "F7 shared deadline review context table",
+            "Tools": "Keeper; Drop; Trade Deadline Prep",
+            "Classification": SAFE_REFRESH_CONTEXT_READY,
+            "Current display": "Roster/status/availability labels",
+            "Allowed now": "Manual checklist support only",
+        },
+        {
+            "Item": "F10 refresh adapter consumption contract",
+            "Tools": "Development Lab docs/spec",
+            "Classification": SAFE_REFRESH_CONTEXT_READY,
+            "Current display": "Tracked artifact and schema manifest only",
+            "Allowed now": "Repo-backed service consumption; no raw shared reads",
+        },
+        {
+            "Item": "Schedule next game / opponent / bye",
+            "Tools": "Roster Weakness Tracker; deadline prep",
+            "Classification": REFRESH_HEALTH_WAITING,
+            "Current display": NOT_ENOUGH_INFORMATION,
+            "Allowed now": "Keep unavailable until current/future schedule artifact exists",
+        },
+    ]
+
+
+def tool_refresh_waiting_rows(tool_id: str) -> list[dict[str, str]]:
+    return [
+        row
+        for row in nflverse_waiting_context_rows()
+        if tool_id in row["Tools"].lower().replace(" ", "_")
+        or _tool_waiting_alias(tool_id) in row["Tools"].lower()
+    ]
+
+
 def parse_manual_roster_text(text: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for line in text.splitlines():
@@ -159,6 +293,9 @@ def parse_manual_roster_text(text: str) -> list[dict[str, str]]:
                     parts[3] if len(parts) > 3 and parts[3] else NOT_ENOUGH_INFORMATION
                 ),
                 "notes": parts[4] if len(parts) > 4 and parts[4] else "",
+                "nwr_player_id": (
+                    parts[5] if len(parts) > 5 and parts[5] else NOT_ENOUGH_INFORMATION
+                ),
                 "source": "Manual input / display-only",
             }
         )
@@ -190,7 +327,7 @@ def roster_position_summary(rows: list[dict[str, str]]) -> list[dict[str, str]]:
                 "player_count": str(count),
                 "starter_threshold": str(starter_need) if starter_need is not None else "",
                 "coverage_note": coverage,
-                "guardrail": "Display-only roster structure; not a recommendation.",
+                "guardrail": "Display-only roster structure; not active output.",
             }
         )
     if unknown:
@@ -289,7 +426,7 @@ def parse_manual_future_pick_text(text: str) -> list[dict[str, str]]:
                 "counterparty": parts[3] if len(parts) > 3 else NOT_ENOUGH_INFORMATION,
                 "source": "Manual input / display-only",
                 "notes": parts[4] if len(parts) > 4 else "",
-                "guardrail": "Planning ledger only; no pick valuation.",
+                "guardrail": "Planning ledger only; no pick/trade math.",
             }
         )
     return rows
@@ -337,7 +474,7 @@ def upcoming_draft_setup_checklist(*, notes: str = "") -> list[dict[str, str]]:
     return _manual_checklist_rows(
         tasks,
         notes=notes,
-        guardrail="Manual draft setup checklist only; not a recommendation or model output.",
+        guardrail="Manual draft setup checklist only; not active output or model output.",
     )
 
 
@@ -352,7 +489,7 @@ def upcoming_draft_questions_checklist(*, notes: str = "") -> list[dict[str, str
     return _manual_checklist_rows(
         questions,
         notes=notes,
-        guardrail="Manual question list only; not a target plan or player recommendation.",
+        guardrail="Manual question list only; not a target plan or player action.",
         task_column="question",
     )
 
@@ -367,12 +504,26 @@ def upcoming_draft_data_readiness_checklist(*, notes: str = "") -> list[dict[str
         "Protected artifacts verified",
         "Runtime draft state backup/export tested",
     )
-    return _manual_checklist_rows(
+    rows = _manual_checklist_rows(
         checks,
         notes=notes,
         guardrail="Manual readiness checklist only; not a refresh, promotion, or model gate.",
         task_column="check",
     )
+    rows.extend(
+        {
+            "check": check,
+            "status": SAFE_REFRESH_CONTEXT_READY,
+            "manual_notes": notes,
+            "guardrail": "Tracked artifact context only; no raw loaders or app wiring.",
+        }
+        for check in (
+            "nflverse refresh metadata handoff checked",
+            "Approved roster/status snapshot path checked",
+            "Post-draft rookie identity handoff checked",
+        )
+    )
+    return rows
 
 
 def deadline_checklist(
@@ -392,7 +543,7 @@ def deadline_checklist(
             "Confirm league drop deadline",
             "Review roster/status missing data",
             "List players requiring human review",
-            "Do not produce automatic drop decisions",
+            "Keep human decisions outside this checklist",
         ),
         "trade_deadline_prep": (
             "Confirm league trade deadline",
@@ -402,16 +553,26 @@ def deadline_checklist(
         ),
     }
     tasks = rows_by_tool.get(tool_id, ())
-    return [
+    rows = [
         {
             "task": task,
             "status": "Not Started",
             "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
             "manual_notes": notes,
-            "guardrail": "Manual checklist only; not a recommendation or model output.",
+            "guardrail": "Manual checklist only; not active output or model output.",
         }
         for task in tasks
     ]
+    rows.append(
+        {
+            "task": "Read-only roster/status context handoff checked",
+            "status": SAFE_REFRESH_CONTEXT_READY,
+            "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
+            "manual_notes": notes,
+            "guardrail": "Tracked artifact context only; manual checklist remains usable.",
+        }
+    )
+    return rows
 
 
 def _manual_checklist_rows(
@@ -445,8 +606,19 @@ def _future_pick_row(
         "counterparty": str(trade.get("team_b") or NOT_ENOUGH_INFORMATION),
         "source": "Draft Cockpit runtime event log / manual",
         "notes": str(trade.get("notes") or ""),
-        "guardrail": "Planning ledger only; no pick valuation.",
+        "guardrail": "Planning ledger only; no pick/trade math.",
     }
+
+
+def _tool_waiting_alias(tool_id: str) -> str:
+    return {
+        "roster_weakness_tracker": "roster weakness tracker",
+        "future_pick_planning": "future pick planning",
+        "upcoming_draft_prep": "upcoming draft prep",
+        "keeper_deadline_prep": "keeper",
+        "drop_deadline_prep": "drop",
+        "trade_deadline_prep": "trade",
+    }.get(tool_id, tool_id)
 
 
 def _position(value: object) -> str:

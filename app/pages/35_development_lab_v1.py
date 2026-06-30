@@ -10,10 +10,14 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.development_lab import (  # noqa: E402
     load_statuses,
     render_blocked_tools_table,
+    render_bulk_lab_state_controls,
+    render_development_lab_readiness,
+    render_future_tool_gate_badges,
     render_guardrails,
     render_lab_links,
     render_lab_warning,
     render_local_lab_state_status,
+    render_refresh_health_waiting_panel,
     render_safe_v0_table,
     render_tool_status_metrics,
 )
@@ -24,7 +28,7 @@ page_header(
     eyebrow="Development Lab",
     description=(
         "Control board for Safe V0 manual/display tools, blocked gates, and future-only ideas. "
-        "Nothing here is model truth or source truth."
+        "Everything here is display-only/manual, not model truth or source truth."
     ),
     status_items=(
         ("Safe V0 only", "review"),
@@ -42,8 +46,18 @@ section_label("Safe V0 Tools In The Lab")
 render_safe_v0_table(statuses)
 render_lab_links()
 
+section_label("Manual Readiness / Saved State")
+render_development_lab_readiness(statuses)
+
+section_label("NFLVerse Display Context Status")
+render_refresh_health_waiting_panel()
+
 section_label("Local Lab State")
 render_local_lab_state_status()
+render_bulk_lab_state_controls()
+
+section_label("Future Tool Gate Badges")
+render_future_tool_gate_badges(statuses)
 
 section_label("Blocked / Gated Tools")
 render_blocked_tools_table(statuses)

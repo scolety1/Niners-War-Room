@@ -3,12 +3,26 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.services.development_lab_nflverse_context_service import (
+    dataset_readiness_rows,
+    deadline_status_context_rows,
+    development_lab_context_status_rows,
+    draft_capital_context_rows,
+    identity_review_status_rows,
+    manual_nwr_player_ids,
+    player_context_artifact_status_rows,
+    roster_status_context_rows,
+    schedule_unavailable_rows,
+)
 from src.services.development_lab_state_service import (
     DevelopmentLabToolState,
+    export_all_tool_states_json,
     export_tool_state_json,
+    import_all_tool_states,
     import_tool_state,
     list_saved_tool_states,
     load_tool_state,
+    preview_import_all_tool_states,
     preview_import_tool_state,
     reset_tool_state,
     save_tool_state,
@@ -18,7 +32,10 @@ from src.services.future_tools_rd_service import (
     FutureToolStatus,
     blocked_tools,
     deadline_checklist,
+    development_lab_readiness_rows,
     future_pick_ledger_from_runtime_state,
+    future_tool_gate_badge,
+    future_tool_gate_badge_rows,
     future_tools_summary,
     load_future_tools_status_matrix,
     parse_manual_future_pick_text,
@@ -27,7 +44,6 @@ from src.services.future_tools_rd_service import (
     roster_age_bucket_summary,
     roster_dynasty_rank_bucket_summary,
     roster_position_summary,
-    safe_v0_tools,
     upcoming_draft_data_readiness_checklist,
     upcoming_draft_questions_checklist,
     upcoming_draft_setup_checklist,
@@ -44,7 +60,7 @@ ROADMAP_WARNING = (
 
 UPCOMING_DRAFT_PREP_WARNING = (
     "Development Lab tool. Safe V0 / manual planning workflow. Not model input. "
-    "Not source truth. No rookie rankings, class grades, or automated recommendations."
+    "Not source truth. Rookie/prospect context stays manual until approved gates clear."
 )
 
 TOOL_LABELS = {
@@ -79,19 +95,7 @@ def render_tool_status_metrics(statuses: list[FutureToolStatus]) -> None:
 
 
 def render_safe_v0_table(statuses: list[FutureToolStatus]) -> None:
-    _tool_table(
-        [
-            {
-                "Tool": row.tool_name,
-                "Route": _route_for_tool(row.tool_id),
-                "Mode": "Safe V0 display/manual",
-                "Data used": row.required_data_summary,
-                "Why safe": row.notes,
-                "Next approval": row.blocker_next_gate,
-            }
-            for row in safe_v0_tools(statuses)
-        ]
-    )
+    _tool_table(development_lab_readiness_rows(statuses))
 
 
 def render_blocked_tools_table(statuses: list[FutureToolStatus]) -> None:
@@ -100,14 +104,49 @@ def render_blocked_tools_table(statuses: list[FutureToolStatus]) -> None:
             {
                 "Tool": row.tool_name,
                 "Status": row.decision,
-                "Why blocked": row.blocker_next_gate,
-                "Missing data / gate": row.required_data_summary,
-                "Next step": row.next_step,
+                "Gate badge": future_tool_gate_badge(row),
+                "Missing data display": "Not enough information",
+                "Scaffold": row.scaffold_status,
                 "Active output": row.active_output_allowed,
                 "Model input": row.model_input_allowed,
             }
             for row in blocked_tools(statuses)
         ]
+    )
+
+
+def render_development_lab_readiness(statuses: list[FutureToolStatus]) -> None:
+    state_by_tool = {
+        state.tool_key: _local_state_status_label(state) for state in list_saved_tool_states()
+    }
+    _tool_table(development_lab_readiness_rows(statuses, local_state_by_tool=state_by_tool))
+    st.caption(
+        "Readiness is manual/display-only. NFLVerse context uses tracked display artifacts; "
+        "missing or unapproved context stays Not enough information."
+    )
+
+
+def render_refresh_health_waiting_panel() -> None:
+    st.info(
+        "NFLVerse refresh health and player context are available as tracked "
+        "display-only artifacts. Development Lab pages consume only those repo artifacts, "
+        "not raw shared/cache files."
+    )
+    st.caption("Player-context artifact status")
+    _tool_table(player_context_artifact_status_rows())
+    st.caption("Development Lab context status")
+    _tool_table(development_lab_context_status_rows())
+    st.caption("Dataset readiness / source policy")
+    _tool_table(dataset_readiness_rows())
+    st.caption("Schedule fields still unavailable")
+    _tool_table(schedule_unavailable_rows())
+
+
+def render_future_tool_gate_badges(statuses: list[FutureToolStatus]) -> None:
+    _tool_table(future_tool_gate_badge_rows(statuses))
+    st.caption(
+        "Active output and model input flags remain no. Safe manual siblings are separate "
+        "Development Lab pages; all other rows are inactive roadmap ideas."
     )
 
 
@@ -141,37 +180,99 @@ def render_local_lab_state_status() -> None:
         )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     st.caption(
-        "Saved Development Lab notes live under C:\\NWR_SHARED_DATA by default and are not "
+        "Saved Development Lab notes use the configured local manual-state root and are not "
         "tracked by git. Export JSON before major review sessions if you want a portable copy."
     )
+
+
+def render_bulk_lab_state_controls() -> None:
+    st.caption(
+        "Bulk package covers all six local/manual Development Lab note files. It does not "
+        "include auto-filled context, source truth, model input, ranks, or draft runtime state."
+    )
+    st.download_button(
+        "Export all local lab notes JSON",
+        data=export_all_tool_states_json(),
+        file_name="nwr_development_lab_all_manual_state.json",
+        mime="application/json",
+        key="development_lab_bulk_export_state",
+        use_container_width=True,
+    )
+    with st.expander("Import all local lab notes", expanded=False):
+        uploaded = st.file_uploader(
+            "Import Development Lab bulk state JSON",
+            type=["json"],
+            key="development_lab_bulk_import_file",
+            help="Preview first; import is blocked until explicitly confirmed.",
+        )
+        if uploaded is None:
+            st.caption(
+                "Waiting for a JSON package. Missing package data is Not enough information."
+            )
+            return
+        raw = uploaded.getvalue()
+        preview = preview_import_all_tool_states(raw)
+        if not preview.valid:
+            st.warning(preview.message)
+            return
+        st.write(
+            {
+                "exported_at_utc": preview.exported_at_utc or "Not provided",
+                "tools": list(preview.tool_keys),
+                "fields": {
+                    tool_key: sorted(payload.keys())
+                    for tool_key, payload in preview.payloads.items()
+                },
+            }
+        )
+        confirm_import = st.checkbox(
+            "Confirm import overwrite for all local lab notes",
+            key="development_lab_bulk_confirm_import",
+        )
+        if st.button(
+            "Import confirmed local lab notes package",
+            key="development_lab_bulk_import_confirmed",
+        ):
+            result = import_all_tool_states(raw, confirmed=confirm_import)
+            if result.status == "SAVED":
+                st.success(
+                    "Imported all local Development Lab manual notes. "
+                    f"Backups created: {len(result.backup_paths)}."
+                )
+                st.rerun()
+            else:
+                st.warning(result.message)
 
 
 def render_roster_weakness_tracker() -> None:
     render_lab_warning()
     st.caption(
-        "Display-only roster structure. Not a recommendation. Not model input. "
-        "Local lab notes can be saved and reloaded."
+        "Display-only roster structure. Not model input. Local lab notes can be saved "
+        "and reloaded."
     )
     fields = {"manual_roster_rows": "development_lab_roster_weakness_tracker_rows"}
     _hydrate_local_lab_state("roster_weakness_tracker", fields)
     roster_text = st.text_area(
         "Manual roster rows",
-        placeholder="Player, Position, Age, Dynasty Rank, Notes",
+        placeholder="Player, Position, Age, Dynasty Rank, Notes, NWR Player ID",
         key="development_lab_roster_weakness_tracker_rows",
         help=(
             "Optional manual input. Save local lab state to preserve it across reloads. "
-            "Missing age/rank stays Not enough information."
+            "Add NWR Player ID to join display-only NFLVerse context. Missing values stay "
+            "Not enough information."
         ),
     )
     rows = parse_manual_roster_text(roster_text)
     if not rows:
+        _render_roster_status_context(())
         st.info(
             "Enter manual roster rows to generate display-only counts. "
-            "No roster recommendation is generated."
+            "Only manual/display-only summaries are shown."
         )
         _render_lab_state_controls("roster_weakness_tracker", fields)
         return
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    _render_roster_status_context(manual_nwr_player_ids(rows))
     col_a, col_b = st.columns(2)
     with col_a:
         st.caption("Position coverage versus simple starter-count thresholds")
@@ -195,9 +296,10 @@ def render_roster_weakness_tracker() -> None:
 def render_future_pick_planning() -> None:
     render_lab_warning()
     st.caption(
-        "Planning ledger only. No pick valuation, no trade valuation, no class strength. "
+        "Planning ledger only. Pick and trade context stays descriptive/manual. "
         "Local manual notes can be saved and reloaded."
     )
+    _render_draft_capital_context()
     fields = {"manual_future_pick_notes": "development_lab_future_pick_planning_rows"}
     _hydrate_local_lab_state("future_pick_planning", fields)
     live_state_result = load_runtime_state_with_status(mode="live")
@@ -233,6 +335,7 @@ def render_upcoming_draft_prep() -> None:
         "Local lab notes only. Save to preserve manual inputs across reloads. "
         "This is not model input, source truth, or draft-room runtime state."
     )
+    _render_draft_capital_context()
     fields = {
         "setup_notes": "development_lab_upcoming_draft_setup_notes",
         "roster_need_rows": "development_lab_upcoming_roster_needs",
@@ -259,7 +362,7 @@ def render_upcoming_draft_prep() -> None:
     )
 
     st.subheader("Roster Needs Snapshot")
-    st.caption("Manual/display-only planning area. No position target recommendation is generated.")
+    st.caption("Manual/display-only planning area. No position target plan is generated.")
     roster_need_text = st.text_area(
         "Roster need rows",
         placeholder="Position, short-term need, long-term need, depth concern notes, watch notes",
@@ -275,7 +378,7 @@ def render_upcoming_draft_prep() -> None:
             "watch_notes",
         ),
         source="Manual input / display-only",
-        guardrail="Planning notes only; no position target recommendation.",
+        guardrail="Planning notes only; no position target plan.",
     )
     _render_optional_manual_table(roster_need_rows, "No roster need notes entered.")
     csv_download(
@@ -286,7 +389,8 @@ def render_upcoming_draft_prep() -> None:
 
     st.subheader("Pick Inventory / Asset Prep")
     st.caption(
-        "Planning ledger only. No pick valuation, class-strength grade, or trade calculator."
+        "Planning ledger only. Pick context stays descriptive; no class-strength labels "
+        "or trade calculator."
     )
     live_state_result = load_runtime_state_with_status(mode="live")
     runtime_rows = future_pick_ledger_from_runtime_state(live_state_result.state)
@@ -307,7 +411,7 @@ def render_upcoming_draft_prep() -> None:
         pick_text,
         ("year", "round_pick", "status", "source_note", "action_needed"),
         source="Manual input / display-only",
-        guardrail="Planning ledger only; no pick valuation.",
+        guardrail="Planning ledger only; no pick/trade math.",
     )
     _render_optional_manual_table(pick_rows, "No manual pick inventory rows entered.")
     csv_download(
@@ -329,7 +433,7 @@ def render_upcoming_draft_prep() -> None:
         watchlist_text,
         ("player_name", "school_team", "position", "note", "source_note", "review_status"),
         source="Manual input / display-only",
-        guardrail="Manual watchlist only; no CFBD promotion, ranking, class grade, or model score.",
+        guardrail="Manual watchlist only; no CFBD promotion, rank change, or model output.",
     )
     _render_optional_manual_table(watchlist_rows, "No manual watchlist rows entered.")
     csv_download(
@@ -359,7 +463,7 @@ def render_upcoming_draft_prep() -> None:
             "if_player_x_is_gone",
         ),
         source="Manual input / display-only",
-        guardrail="Scenario prep only; no automated mock simulation or recommendation.",
+        guardrail="Scenario prep only; no automated mock simulation or active output.",
     )
     _render_optional_manual_table(scenario_rows, "No manual mock draft scenarios entered.")
     csv_download(
@@ -403,6 +507,7 @@ def render_deadline_prep(tool_id: str, title: str) -> None:
         "Manual checklist only. Not a decision engine. Not model input. "
         "Local lab notes can be saved and reloaded."
     )
+    _render_deadline_status_context()
     fields = {
         "manual_deadline_date": f"development_lab_{tool_id}_date",
         "manual_notes": f"development_lab_{tool_id}_notes",
@@ -430,9 +535,8 @@ def render_deadline_prep(tool_id: str, title: str) -> None:
 
 def render_guardrails() -> None:
     st.caption(
-        "All active-output and model-input flags in the status matrix are no. There are no "
-        "fake rankings, fake projections, fake waiver recommendations, fake start/sit advice, "
-        "fake trade targets, or fake rookie class evaluations."
+        "All active-output and model-input flags in the status matrix are no. Blocked future "
+        "tool ideas stay inactive until HQ approves the required gates."
     )
     st.caption(
         "Development Lab pages do not promote CFBD, NFL usage, Gmail, vendor, proxy, "
@@ -460,6 +564,51 @@ def _render_optional_manual_table(rows: list[dict[str, str]], empty_message: str
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     else:
         st.info(empty_message)
+
+
+def _render_roster_status_context(player_ids: tuple[str, ...]) -> None:
+    st.subheader("NFLVerse Player Context")
+    st.caption(
+        "Tracked artifact context only. Joins use NWR Player ID; rows needing identity "
+        "review do not show player-context details."
+    )
+    _tool_table(roster_status_context_rows(player_ids=player_ids))
+    _render_identity_review_status()
+
+
+def _render_draft_capital_context() -> None:
+    st.subheader("NFLVerse Draft Capital Context")
+    st.caption(
+        "Factual NFL draft labels from the tracked display artifact only. Fantasy pick "
+        "ownership remains manual/runtime context."
+    )
+    rows = draft_capital_context_rows()
+    if rows:
+        _tool_table(rows)
+    else:
+        st.info("NFL draft capital context is Not enough information.")
+    _tool_table(schedule_unavailable_rows())
+    _render_identity_review_status()
+
+
+def _render_deadline_status_context() -> None:
+    st.subheader("NFLVerse Roster / Status Context")
+    st.caption(
+        "Display-only roster/status labels for manual checklist support. Missing context "
+        "does not imply health, role, safety, or priority."
+    )
+    _tool_table(deadline_status_context_rows())
+    _tool_table(schedule_unavailable_rows())
+    _render_identity_review_status()
+
+
+def _render_identity_review_status() -> None:
+    with st.expander("Identity review rows", expanded=False):
+        st.caption(
+            "Rows needing identity review show status only. Proposed identity matches are "
+            "not approved joins."
+        )
+        _tool_table(identity_review_status_rows(limit=10))
 
 
 def _hydrate_local_lab_state(tool_key: str, fields: dict[str, str]) -> None:
@@ -577,14 +726,3 @@ def _local_state_status_label(state: DevelopmentLabToolState) -> str:
     if state.status == "MISSING":
         return "No saved notes"
     return state.status.replace("_", " ").title()
-
-
-def _route_for_tool(tool_id: str) -> str:
-    return {
-        "roster_weakness_tracker": "/roster-weakness-tracker",
-        "future_pick_planning": "/future-pick-planning",
-        "upcoming_draft_prep": "/upcoming-draft-prep",
-        "keeper_deadline_prep": "/keeper-deadline-prep",
-        "drop_deadline_prep": "/drop-deadline-prep",
-        "trade_deadline_prep": "/trade-deadline-prep",
-    }.get(tool_id, "/development-lab")

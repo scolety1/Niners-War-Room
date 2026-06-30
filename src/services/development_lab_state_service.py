@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 STATE_SCHEMA_VERSION = 1
+STATE_PACKAGE_SCHEMA_VERSION = 1
 DEFAULT_STATE_ROOT = Path(r"C:\NWR_SHARED_DATA\development_lab_state")
 STATE_ROOT_ENV_VAR = "NWR_DEVELOPMENT_LAB_STATE_ROOT"
 
@@ -47,6 +48,23 @@ class DevelopmentLabImportPreview:
     tool_key: str = ""
     payload: dict[str, str] | None = None
     saved_at_utc: str = ""
+    message: str = ""
+
+
+@dataclass(frozen=True)
+class DevelopmentLabStatePackagePreview:
+    valid: bool
+    payloads: dict[str, dict[str, str]]
+    tool_keys: tuple[str, ...] = ()
+    exported_at_utc: str = ""
+    message: str = ""
+
+
+@dataclass(frozen=True)
+class DevelopmentLabStatePackageImportResult:
+    status: str
+    imported_tool_keys: tuple[str, ...]
+    backup_paths: tuple[Path, ...] = ()
     message: str = ""
 
 
@@ -150,6 +168,29 @@ def export_tool_state_json(tool_key: str, payload: dict[str, Any]) -> str:
     return json.dumps(_state_document(tool_key, payload), indent=2, sort_keys=True)
 
 
+def export_all_tool_states_json(
+    *,
+    root: str | Path | None = None,
+) -> str:
+    states = list_saved_tool_states(root=root)
+    document = {
+        "schema_version": STATE_PACKAGE_SCHEMA_VERSION,
+        "exported_at_utc": _timestamp(),
+        "tool_keys": list(VALID_TOOL_KEYS),
+        "states": {
+            state.tool_key: {
+                "status": state.status,
+                "saved_at_utc": state.saved_at_utc,
+                "payload": _clean_payload(state.payload),
+                "guardrail": "local_lab_notes_only_not_model_input_not_source_truth",
+            }
+            for state in states
+        },
+        "guardrail": "bulk_local_lab_notes_only_not_model_input_not_source_truth",
+    }
+    return json.dumps(document, indent=2, sort_keys=True)
+
+
 def preview_import_tool_state(raw_json: str | bytes) -> DevelopmentLabImportPreview:
     try:
         text = raw_json.decode("utf-8-sig") if isinstance(raw_json, bytes) else raw_json
@@ -207,6 +248,101 @@ def import_tool_state(
             message="Import preview shown. Confirm overwrite before importing.",
         )
     return save_tool_state(tool_key, preview.payload, root=root)
+
+
+def preview_import_all_tool_states(
+    raw_json: str | bytes,
+) -> DevelopmentLabStatePackagePreview:
+    try:
+        text = raw_json.decode("utf-8-sig") if isinstance(raw_json, bytes) else raw_json
+        raw = json.loads(text)
+    except Exception as exc:
+        return DevelopmentLabStatePackagePreview(
+            valid=False,
+            payloads={},
+            message=f"Invalid JSON: {exc}",
+        )
+    if raw.get("schema_version") != STATE_PACKAGE_SCHEMA_VERSION:
+        return DevelopmentLabStatePackagePreview(
+            valid=False,
+            payloads={},
+            message="Import package has an unsupported Development Lab schema version.",
+        )
+    states = raw.get("states")
+    if not isinstance(states, dict):
+        return DevelopmentLabStatePackagePreview(
+            valid=False,
+            payloads={},
+            message="Import package is missing Development Lab states.",
+        )
+    unknown = sorted(str(tool_key) for tool_key in states if tool_key not in VALID_TOOL_KEYS)
+    if unknown:
+        return DevelopmentLabStatePackagePreview(
+            valid=False,
+            payloads={},
+            tool_keys=tuple(unknown),
+            message="Import package has unknown Development Lab tool keys.",
+        )
+    missing = [tool_key for tool_key in VALID_TOOL_KEYS if tool_key not in states]
+    if missing:
+        return DevelopmentLabStatePackagePreview(
+            valid=False,
+            payloads={},
+            tool_keys=tuple(missing),
+            message="Import package is missing one or more Development Lab tool keys.",
+        )
+    payloads: dict[str, dict[str, str]] = {}
+    for tool_key in VALID_TOOL_KEYS:
+        state = states.get(tool_key)
+        if not isinstance(state, dict):
+            return DevelopmentLabStatePackagePreview(
+                valid=False,
+                payloads={},
+                tool_keys=(tool_key,),
+                message="Import package has an invalid Development Lab state entry.",
+            )
+        payloads[tool_key] = _clean_payload(state.get("payload", {}))
+    return DevelopmentLabStatePackagePreview(
+        valid=True,
+        payloads=payloads,
+        tool_keys=VALID_TOOL_KEYS,
+        exported_at_utc=str(raw.get("exported_at_utc", "") or ""),
+        message="Bulk import preview ready.",
+    )
+
+
+def import_all_tool_states(
+    raw_json: str | bytes,
+    *,
+    confirmed: bool,
+    root: str | Path | None = None,
+) -> DevelopmentLabStatePackageImportResult:
+    preview = preview_import_all_tool_states(raw_json)
+    if not preview.valid:
+        return DevelopmentLabStatePackageImportResult(
+            status="IMPORT_BLOCKED_INVALID",
+            imported_tool_keys=(),
+            message=preview.message,
+        )
+    if not confirmed:
+        return DevelopmentLabStatePackageImportResult(
+            status="IMPORT_BLOCKED_CONFIRMATION_REQUIRED",
+            imported_tool_keys=(),
+            message="Import preview shown. Confirm overwrite before importing all lab notes.",
+        )
+    backup_paths: list[Path] = []
+    imported: list[str] = []
+    for tool_key in VALID_TOOL_KEYS:
+        result = save_tool_state(tool_key, preview.payloads[tool_key], root=root)
+        imported.append(tool_key)
+        if result.backup_path:
+            backup_paths.append(result.backup_path)
+    return DevelopmentLabStatePackageImportResult(
+        status="SAVED",
+        imported_tool_keys=tuple(imported),
+        backup_paths=tuple(backup_paths),
+        message="Imported all local Development Lab manual notes.",
+    )
 
 
 def list_saved_tool_states(

@@ -14,13 +14,13 @@ page_header(
     "Keeper Deadline Prep",
     eyebrow="Development Lab / Safe V0",
     description=(
-        "Manual keeper-deadline checklist and notes. It does not produce automatic keeper "
-        "recommendations or model-derived keep/drop advice."
+        "Manual keeper-deadline checklist and notes. It records checklist context only "
+        "and leaves keep/drop decisions to human review."
     ),
     status_items=(
         ("Checklist only", "review"),
         ("Manual notes", "safe"),
-        ("No keeper advice", "safe"),
+        ("Human review", "safe"),
     ),
 )
 

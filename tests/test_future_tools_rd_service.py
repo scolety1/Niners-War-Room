@@ -4,11 +4,16 @@ from pathlib import Path
 
 from src.services.future_tools_rd_service import (
     ALLOWED_DECISIONS,
+    REFRESH_HEALTH_WAITING,
+    SAFE_REFRESH_CONTEXT_READY,
     deadline_checklist,
+    development_lab_readiness_rows,
     future_pick_ledger_from_runtime_state,
+    future_tool_gate_badge_rows,
     future_tools_summary,
     group_future_tools,
     load_future_tools_status_matrix,
+    nflverse_waiting_context_rows,
     parse_manual_future_pick_text,
     parse_manual_roster_text,
     parse_manual_table_text,
@@ -16,6 +21,7 @@ from src.services.future_tools_rd_service import (
     roster_dynasty_rank_bucket_summary,
     roster_position_summary,
     safe_v0_tools,
+    tool_refresh_waiting_rows,
     upcoming_draft_data_readiness_checklist,
     upcoming_draft_questions_checklist,
     upcoming_draft_setup_checklist,
@@ -102,6 +108,55 @@ def test_safe_v0_tool_set_is_limited_to_framework_only_candidates() -> None:
     assert all(row.model_input_allowed == "no" for row in safe)
 
 
+def test_future_tools_gate_badges_keep_blocked_tools_inactive() -> None:
+    rows = load_future_tools_status_matrix()
+    badge_rows = future_tool_gate_badge_rows(rows)
+
+    assert len(badge_rows) == len(rows)
+    assert all(row["Active output"] == "no" for row in badge_rows)
+    assert all(row["Model input"] == "no" for row in badge_rows)
+    assert any(row["Gate badge"] == "Safe manual sibling exists" for row in badge_rows)
+    assert any(row["Gate badge"] == "Needs dataset refresh" for row in badge_rows)
+    assert any(
+        row["Gate badge"] == "Dataset exists but not approved for model/rank logic"
+        for row in badge_rows
+    )
+    assert any(row["Manual sibling route"] == "Inactive roadmap idea" for row in badge_rows)
+
+
+def test_development_lab_readiness_marks_nflverse_context_display_ready() -> None:
+    rows = load_future_tools_status_matrix()
+    readiness = development_lab_readiness_rows(
+        rows,
+        local_state_by_tool={"future_pick_planning": "Saved locally"},
+    )
+
+    assert len(readiness) == 6
+    assert {row["Readiness"] for row in readiness} == {"Manual only"}
+    assert {row["nflverse context"] for row in readiness} == {
+        SAFE_REFRESH_CONTEXT_READY
+    }
+    assert {row["Missing data display"] for row in readiness} == {
+        "Not enough information"
+    }
+    assert any(row["Saved state"] == "Saved locally" for row in readiness)
+
+
+def test_nflverse_context_status_keeps_schedule_and_identity_caveats() -> None:
+    rows = nflverse_waiting_context_rows()
+    roster_rows = tool_refresh_waiting_rows("roster_weakness_tracker")
+    deadline_rows = tool_refresh_waiting_rows("trade_deadline_prep")
+
+    assert len(rows) >= 6
+    classifications = {row["Classification"] for row in rows}
+    assert SAFE_REFRESH_CONTEXT_READY in classifications
+    assert REFRESH_HEALTH_WAITING in classifications
+    assert "Needs identity review" in classifications
+    assert any(row["Current display"] == "Not enough information" for row in rows)
+    assert roster_rows
+    assert deadline_rows
+
+
 def test_roster_weakness_tracker_is_descriptive_only() -> None:
     rows = parse_manual_roster_text(
         "Player One,QB,24,12\nPlayer Two,RB,30,80\nPlayer Three,WR,,"
@@ -115,7 +170,7 @@ def test_roster_weakness_tracker_is_descriptive_only() -> None:
     assert any(row["position"] == "QB" and row["player_count"] == "1" for row in position_summary)
     assert any(row["age_bucket"] == "Not enough information" for row in age_summary)
     assert any(row["dynasty_rank_bucket"] == "73+" for row in rank_summary)
-    assert all("recommendation" in row["guardrail"] for row in position_summary)
+    assert all("not active output" in row["guardrail"] for row in position_summary)
 
 
 def test_future_pick_planning_does_not_value_picks() -> None:
@@ -143,9 +198,9 @@ def test_future_pick_planning_does_not_value_picks() -> None:
 
     assert ledger[0]["pick_year"] == "2028"
     assert ledger[0]["direction"] == "Received by Team A"
-    assert manual[0]["guardrail"] == "Planning ledger only; no pick valuation."
+    assert manual[0]["guardrail"] == "Planning ledger only; no pick/trade math."
     joined = " ".join(str(row) for row in [*ledger, *manual]).lower()
-    assert "valuation" in joined
+    assert "valuation" not in joined
     assert "market_value" not in joined
     assert "dynastyprocess" not in joined
 
@@ -160,7 +215,8 @@ def test_deadline_prep_toolkit_is_manual_checklist_only() -> None:
     assert rows
     assert rows[0]["status"] == "Not Started"
     assert rows[0]["manual_deadline"] == "2026-10-31"
-    assert all("not a recommendation or model output" in row["guardrail"] for row in rows)
+    assert rows[-1]["status"] == SAFE_REFRESH_CONTEXT_READY
+    assert all("model output" in row["guardrail"] for row in rows[:4])
 
 
 def test_upcoming_draft_prep_is_manual_only() -> None:
@@ -177,18 +233,19 @@ def test_upcoming_draft_prep_is_manual_only() -> None:
             "watch_notes",
         ),
         source="Manual input / display-only",
-        guardrail="Planning notes only; no position target recommendation.",
+        guardrail="Planning notes only; no position target plan.",
     )
 
     assert len(setup) == 9
     assert len(questions) == 5
-    assert len(readiness) == 7
+    assert len(readiness) == 10
     assert setup[0]["status"] == "Not Started"
-    assert "not a recommendation" in setup[0]["guardrail"]
+    assert "not active output" in setup[0]["guardrail"]
     assert "not a target plan" in questions[0]["guardrail"]
     assert "not a refresh" in readiness[0]["guardrail"]
+    assert readiness[-1]["status"] == SAFE_REFRESH_CONTEXT_READY
     assert roster_notes[0]["guardrail"] == (
-        "Planning notes only; no position target recommendation."
+        "Planning notes only; no position target plan."
     )
     joined = " ".join(str(row) for row in [*setup, *questions, *readiness, *roster_notes]).lower()
     assert "valuation" not in joined

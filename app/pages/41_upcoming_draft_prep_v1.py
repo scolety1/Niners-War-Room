@@ -22,8 +22,8 @@ page_header(
     ),
     status_items=(
         ("Manual planning", "review"),
-        ("No rookie ranks", "safe"),
-        ("No recommendations", "safe"),
+        ("Display-only", "safe"),
+        ("Manual context", "safe"),
     ),
 )
 

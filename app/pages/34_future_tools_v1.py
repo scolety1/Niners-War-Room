@@ -12,6 +12,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.development_lab import (  # noqa: E402
     load_statuses,
     render_blocked_tools_table,
+    render_future_tool_gate_badges,
     render_guardrails,
     render_roadmap_warning,
 )
@@ -37,6 +38,9 @@ statuses = load_statuses()
 
 section_label("Blocked / Needs Gate")
 render_blocked_tools_table(statuses)
+
+section_label("Gate Badge Matrix")
+render_future_tool_gate_badges(statuses)
 
 section_label("What Is Not Active Here")
 render_guardrails()

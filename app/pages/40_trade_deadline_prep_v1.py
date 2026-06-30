@@ -17,12 +17,12 @@ page_header(
     eyebrow="Development Lab / Safe V0",
     description=(
         "Manual trade-deadline checklist and notes with links to existing review tools. "
-        "It does not generate trade targets or value trades."
+        "It records factual/manual context only."
     ),
     status_items=(
         ("Checklist only", "review"),
         ("Manual notes", "safe"),
-        ("No trade valuation", "safe"),
+        ("Display-only", "safe"),
     ),
 )
 
