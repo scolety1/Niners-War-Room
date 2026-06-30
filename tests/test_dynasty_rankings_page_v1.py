@@ -406,6 +406,8 @@ def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
 
 def test_rankings_dataset_refresh_panel_uses_central_nflverse_health_service() -> None:
     text = _page_text()
+    compact_text = " ".join(text.split())
+    rendered_source_text = compact_text.replace('" "', "")
 
     assert '"Dataset Refresh / Outcome Status"' in text
     assert "dataset_registry_rows" in text
@@ -420,7 +422,34 @@ def test_rankings_dataset_refresh_panel_uses_central_nflverse_health_service() -
     assert "does not read raw/cache/shared" in text
     assert "dataset health/status panel" in text
     assert "source-policy display warnings" in text
-    assert "approved row-level display artifact or join gate" in text
+    assert "rebuilt NFLVerse player context display artifact" in text
+    assert "safe row-level NFLVerse context where identity/status/schema gates pass" in text
+    assert "GREEN rebuilt tracked display artifact" in text
+    assert "NFLVerse artifact total rows" in text
+    assert "NFLVerse artifact safe display rows" in text
+    assert "NFLVerse artifact gated rows" in text
+    assert "Needs identity review / Not enough information" in text
+    assert "display/review-only" in text
+    assert (
+        "never drives Dynasty Rank, model input, source truth, hidden sort, "
+        "trade value, pick value, recommendations, injury risk, or medical projection"
+        in rendered_source_text
+    )
+    assert "approved row-level display artifact or join gate" not in text
+    assert "separate safe schema/join artifact" not in text
+
+
+def test_rankings_dataset_refresh_panel_reports_rebuilt_nflverse_artifact_counts() -> None:
+    player_context = load_nflverse_player_context_display()
+    artifact = player_context.frame
+
+    assert player_context.loaded
+    assert player_context.errors == ()
+    assert int(artifact.shape[0]) == 294
+    assert int(artifact["identity_join_status"].eq("SAFE_NOW_DISPLAY_ONLY").sum()) == 281
+    assert int(artifact["identity_join_status"].eq("NEED_IDENTITY_REVIEW").sum()) == 13
+    assert int(artifact["review_required"].astype(str).str.lower().eq("false").sum()) == 281
+    assert int(artifact["review_required"].astype(str).str.lower().eq("true").sum()) == 13
 
 
 def test_rankings_does_not_surface_nflverse_player_fields_without_refresh_gate() -> None:
