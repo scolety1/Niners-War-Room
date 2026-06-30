@@ -8,12 +8,17 @@ import pandas as pd
 from src.config.constants import APP_NAME
 from src.services.draft_day_app_v1_service import (
     FULL_DYNASTY_VIEW,
+    OUTCOME_NOT_ENOUGH_INFORMATION,
     RANKINGS_IDENTITY_COLUMN_CONFIG,
     RANKINGS_TABLE_COLUMN_CONFIG,
+    UNIFIED_REVIEW_VIEW,
     display_unified_player_board_frame,
     enrich_statistic_analysis_display_context,
     enrich_unified_player_board_with_market_baseline,
+    integrate_nflverse_player_context_display,
+    load_nflverse_player_context_display,
     market_baseline_age_coverage,
+    nflverse_player_context_display_counts,
     sort_rankings_frame_by_column,
 )
 from src.services.market_baseline_registry import PAGE_USAGE
@@ -451,6 +456,86 @@ def test_rankings_does_not_surface_nflverse_player_fields_without_refresh_gate()
         "Identity Bridge Health",
     }
     assert blocked_until_refresh.isdisjoint(set(display.columns))
+
+
+def test_nflverse_player_context_integrates_safe_rows_and_age_fallback() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "player_id": "9493",
+                "nwr_rank": "1",
+                "player_name": "Puka Nacua",
+                "position": "WR",
+                "nfl_team": "LAR",
+                "age": "",
+                "nwr_dynasty_score": "99",
+                "source_coverage": "Full Dynasty source",
+            }
+        ]
+    )
+
+    integrated = integrate_nflverse_player_context_display(frame)
+    counts = nflverse_player_context_display_counts(integrated)
+    enriched = enrich_unified_player_board_with_market_baseline(integrated)
+    display = display_unified_player_board_frame(
+        enriched,
+        view_mode=UNIFIED_REVIEW_VIEW,
+        show_market_baseline=False,
+    )
+    clean_display = display_unified_player_board_frame(
+        enriched,
+        view_mode=FULL_DYNASTY_VIEW,
+        show_market_baseline=False,
+    )
+
+    assert integrated.loc[0, "nflverse_context_status_display_only"] == "Available"
+    assert integrated.loc[0, "age"] == "25.0"
+    assert integrated.loc[0, "age_source_display"] == "NFLVerse rosters.birth_date"
+    assert enriched.loc[0, "age_source_display"] == "NFLVerse rosters.birth_date"
+    assert counts["safe"] == 1
+    assert counts["age_fallback"] == 1
+    assert "NFLVerse" in display.columns
+    assert "Roster" in display.columns
+    assert "Depth Role" in display.columns
+    assert "NFLVerse" not in clean_display.columns
+    assert "Roster" not in clean_display.columns
+
+
+def test_nflverse_player_context_identity_review_rows_do_not_expose_details() -> None:
+    context = load_nflverse_player_context_display()
+    review_row = next(
+        row
+        for row in context.frame.to_dict("records")
+        if row["identity_join_status"] == "NEED_IDENTITY_REVIEW"
+    )
+    frame = pd.DataFrame(
+        [
+            {
+                "player_id": review_row["nwr_player_id"],
+                "nwr_rank": review_row["nwr_rank"],
+                "player_name": review_row["nwr_player_name"],
+                "position": review_row["nwr_position"],
+                "nfl_team": review_row["nwr_team"],
+                "age": "",
+                "nwr_dynasty_score": "1",
+                "source_coverage": review_row["nwr_source_coverage"],
+            }
+        ]
+    )
+
+    integrated = integrate_nflverse_player_context_display(frame)
+
+    assert integrated.loc[0, "nflverse_context_status_display_only"] == "Review needed"
+    assert integrated.loc[0, "nflverse_identity_status_display_only"] == "Review needed"
+    assert integrated.loc[0, "nflverse_roster_status_display_only"] == (
+        OUTCOME_NOT_ENOUGH_INFORMATION
+    )
+    assert integrated.loc[0, "nflverse_injury_report_status_display_only"] == (
+        OUTCOME_NOT_ENOUGH_INFORMATION
+    )
+    assert integrated.loc[0, "nflverse_draft_capital_display_only"] == (
+        OUTCOME_NOT_ENOUGH_INFORMATION
+    )
 
 
 def test_statistic_analysis_preset_is_read_only_without_invented_components() -> None:

@@ -10,15 +10,16 @@ Market/DynastyProcess display-only wording,SAFE_NOW,Market warnings remain visib
 nflverse dataset refresh-health status panel,SAFE_NOW,Centralized refresh-health service and tracked registry are present in HQ.,implemented,Dataset status only; no raw/shared app reads.
 nflverse safe/full refresh dataset lists,SAFE_NOW,Centralized service exposes safe_refresh_dataset_ids and full_safe_refresh_dataset_ids.,implemented,Status display only.
 nflverse ff_rankings blocked status,SAFE_NOW,Registry marks ff_rankings blocked/blocked_policy.,implemented,Blocked dataset remains review-status-only.
-nflverse roster age fallback,NEED_DATASET_REFRESH,Health contract confirms rosters/players status but no approved row-level Rankings join artifact exists.,deferred,Do not replace age fallback without row-level artifact.
-nflverse roster status,NEED_DATASET_REFRESH,Health contract confirms roster datasets but no approved row-level Rankings display artifact exists.,deferred,Missing is Not enough information.
-nflverse injury report status,NEED_DATASET_REFRESH,Health contract confirms injury dataset but no approved row-level Rankings display artifact exists.,deferred,No medical projection.
-nflverse next game / bye context,NEED_DATASET_REFRESH,Health contract confirms schedules dataset but no approved row-level Rankings display artifact exists.,deferred,No schedule fields guessed.
-nflverse depth chart role context,NEED_DATASET_REFRESH,Health contract confirms depth_charts dataset but no approved row-level Rankings display artifact exists.,deferred,No role projection.
-nflverse snap-share recency,NEED_DATASET_REFRESH,Health contract confirms snap_counts dataset but no approved row-level Rankings display artifact exists.,deferred,No no-role default.
-nflverse last active season,NEED_DATASET_REFRESH,Health contract confirms snap/participation datasets but no approved row-level Rankings display artifact exists.,deferred,No healthy/active inference from absence.
-nflverse draft capital display,NEED_DATASET_REFRESH,Health contract confirms draft_picks dataset but no approved row-level Rankings display artifact exists.,deferred,No trade/pick valuation.
-nflverse identity bridge health,NEED_DATASET_REFRESH,Health contract confirms ff_playerids/identity datasets but no approved row-level Rankings display artifact exists.,deferred,Identity plumbing only if approved.
+nflverse roster age fallback,SAFE_NOW,Player context artifact and schema support roster birth-date age for 240 safe identity rows.,implemented,NWR age takes precedence; missing remains Not enough information.
+nflverse roster status,SAFE_NOW,Player context artifact and schema support roster status for 240 safe identity rows.,implemented,Display-only; missing is Not enough information.
+nflverse injury report status,SAFE_NOW,Player context artifact and schema support review-only injury report/practice/date fields for safe rows.,implemented,No medical projection; missing is not clean health.
+nflverse next game / bye context,NEED_DATASET_REFRESH,Artifact has zero safe non-Not-enough-information next-game/opponent/bye rows.,deferred,No schedule context guessed.
+nflverse depth chart role context,SAFE_NOW,Player context artifact and schema support depth chart context for safe rows.,implemented,Display-only; not a role projection.
+nflverse snap-share recency,SAFE_NOW,Player context artifact and schema support snap recency/sample fields for safe rows.,implemented,Missing is not zero snaps.
+nflverse last active season,SAFE_NOW,Player context artifact and schema support last active season/week for safe rows.,implemented,Missing is not clean health or inactivity proof.
+nflverse draft capital display,SAFE_NOW,Player context artifact and schema support draft capital where present for safe rows.,implemented,Missing is not confirmed UDFA; no pick/trade valuation.
+nflverse identity bridge health,SAFE_NOW,Player context artifact and schema support identity status; review-required rows show Review needed only.,implemented,No context details exposed for NEED_IDENTITY_REVIEW rows.
+nflverse NEED_IDENTITY_REVIEW rows,NEED_IDENTITY_REVIEW,Artifact contains 54 rows requiring identity review.,deferred,Context values are not surfaced for review-required rows.
 current-player T12 this year / next year / 5Y fields,SAFE_NOW,Existing Outcome V2 artifact has validated veteran display fields and blocked RB 5Y heads removed.,implemented_as_prior_safe_prep,Display-only/review-only.
 injury risk / recovery projection,BLOCKED,Medical projection language is forbidden.,blocked,No injury-risk score.
 blocked RB 5Y heads if still blocked by Outcome V2 docs,BLOCKED,RB T6/RB T12 Within 5Y remain weak-calibration blocked.,blocked,No fake probabilities.

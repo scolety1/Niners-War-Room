@@ -31,12 +31,15 @@ from src.services.draft_day_app_v1_service import (
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
     frozen_board_outcome_support_counts,
+    integrate_nflverse_player_context_display,
     load_dynasty_rankings,
     load_frozen_board,
+    load_nflverse_player_context_display,
     load_outcome_v2_current_player_display,
     market_baseline_age_coverage,
     market_baseline_freshness_status,
     market_baseline_join_coverage,
+    nflverse_player_context_display_counts,
     outcome_columns_for_display,
     outcome_display_coverage_counts,
     outcome_v2_display_coverage_counts,
@@ -710,8 +713,10 @@ def _nflverse_refresh_health_status() -> dict[str, object]:
     }
 
 
-def _render_dataset_refresh_status_panel() -> None:
+def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
     status = _nflverse_refresh_health_status()
+    player_context = load_nflverse_player_context_display()
+    counts = nflverse_player_context_display_counts(unified)
     with st.expander("Dataset Refresh / Outcome Status", expanded=False):
         st.write(
             {
@@ -724,6 +729,18 @@ def _render_dataset_refresh_status_panel() -> None:
                 ),
                 "nflverse refresh-health": status["status"],
                 "dataset_rows": status["dataset_rows"],
+                "NFLVerse player context artifact": (
+                    "GREEN" if player_context.loaded else "YELLOW-HOLD"
+                ),
+                "NFLVerse context rows": counts["rows"],
+                "NFLVerse safe context rows": counts["safe"],
+                "NFLVerse identity review rows": counts["review"],
+                "NFLVerse missing context rows": counts["missing"],
+                "NFLVerse age fallback rows": counts["age_fallback"],
+                "NFLVerse injury context rows": counts["injury_available"],
+                "NFLVerse depth context rows": counts["depth_available"],
+                "NFLVerse snap context rows": counts["snap_available"],
+                "NFLVerse draft capital rows": counts["draft_available"],
                 "blocked_datasets": ", ".join(status["blocked_datasets"])
                 or OUTCOME_NOT_ENOUGH_INFORMATION,
                 "available_dataset_display_fields": ", ".join(
@@ -747,6 +764,10 @@ def _render_dataset_refresh_status_panel() -> None:
         )
         if NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT.exists():
             st.caption(f"Safety report: {NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT}")
+        if player_context.source_path:
+            st.caption(f"Player context artifact: {player_context.source_path}")
+        for error in player_context.errors:
+            st.error(error)
 
 
 def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
@@ -924,9 +945,11 @@ def _top_names_for_tier(
 bundle = load_frozen_board()
 dynasty_bundle = load_dynasty_rankings()
 raw_unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
-unified_board = enrich_unified_player_board_with_market_baseline(raw_unified_board)
+nflverse_unified_board = integrate_nflverse_player_context_display(raw_unified_board)
+unified_board = enrich_unified_player_board_with_market_baseline(nflverse_unified_board)
 outcome_counts = outcome_display_coverage_counts(unified_board)
 outcome_v2_counts = outcome_v2_display_coverage_counts(unified_board)
+nflverse_context_counts = nflverse_player_context_display_counts(unified_board)
 frozen_outcome_counts = frozen_board_outcome_support_counts(bundle.frame)
 
 page_header(
@@ -956,6 +979,11 @@ page_header(
             f"{outcome_v2_counts['available']}/{outcome_v2_counts['rows']}",
             "review",
         ),
+        (
+            "NFLVerse context rows: "
+            f"{nflverse_context_counts['safe']}/{nflverse_context_counts['rows']}",
+            "review",
+        ),
     ),
 )
 st.caption(
@@ -973,7 +1001,7 @@ if not dynasty_bundle.loaded:
     )
 
 _render_market_baseline_status(raw_unified_board)
-_render_dataset_refresh_status_panel()
+_render_dataset_refresh_status_panel(unified_board)
 preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)
 if preset not in VIEW_PRESETS:
     preset = VIEW_PRESET_DYNASTY_REVIEW

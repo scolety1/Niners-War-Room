@@ -124,6 +124,19 @@ OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH = (
     / "outcome_v2_horizon_20260630"
     / "outcome_v2_current_player_display_with_injury_context.csv"
 )
+NFLVERSE_PLAYER_CONTEXT_DISPLAY_ROOT = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "data_sources"
+    / "nflverse_player_context_display_20260630"
+)
+NFLVERSE_PLAYER_CONTEXT_DISPLAY_PATH = (
+    NFLVERSE_PLAYER_CONTEXT_DISPLAY_ROOT / "nflverse_player_context_display_artifact.csv"
+)
+NFLVERSE_PLAYER_CONTEXT_SCHEMA_MANIFEST_PATH = (
+    NFLVERSE_PLAYER_CONTEXT_DISPLAY_ROOT / "nflverse_player_context_schema_manifest.csv"
+)
 EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH = (
     "63569e3758ab20e74eef30c1723afc72c80b5f6174f66d9a4015c24f0f44723e"
 )
@@ -300,6 +313,54 @@ ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
     "wr_t36_display_only",
     "te_t12_display_only",
 )
+NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS = "SAFE_NOW_DISPLAY_ONLY"
+NFLVERSE_CONTEXT_AVAILABLE = "Available"
+NFLVERSE_CONTEXT_REVIEW_NEEDED = "Review needed"
+NFLVERSE_PLAYER_CONTEXT_DISPLAY_FIELDS = (
+    (
+        "identity_join_status",
+        "nflverse_identity_status_display_only",
+        "NFLVerse Identity",
+    ),
+    ("identity_caveat", "nflverse_identity_caveat_display_only", "Identity Caveat"),
+    ("age_source", "nflverse_age_source_display_only", "Age Source"),
+    ("roster_status", "nflverse_roster_status_display_only", "Roster Status"),
+    (
+        "weekly_roster_status",
+        "nflverse_weekly_roster_status_display_only",
+        "Weekly Roster Status",
+    ),
+    (
+        "injury_report_status",
+        "nflverse_injury_report_status_display_only",
+        "Injury Report Status",
+    ),
+    ("practice_status", "nflverse_practice_status_display_only", "Practice Status"),
+    (
+        "injury_report_date_week",
+        "nflverse_injury_report_date_week_display_only",
+        "Injury Report Date",
+    ),
+    ("depth_chart_role", "nflverse_depth_chart_role_display_only", "Depth Chart Role"),
+    (
+        "snap_count_recency",
+        "nflverse_snap_count_recency_display_only",
+        "Snap Recency",
+    ),
+    ("snap_sample_size", "nflverse_snap_sample_size_display_only", "Snap Sample"),
+    ("last_active_context", "nflverse_last_active_display_only", "Last Active"),
+    ("draft_capital_context", "nflverse_draft_capital_display_only", "Draft Capital"),
+    ("contract_context", "nflverse_contract_context_display_only", "Contract Context"),
+    (
+        "data_coverage_status",
+        "nflverse_data_coverage_status_display_only",
+        "NFLVerse Coverage",
+    ),
+)
+NFLVERSE_PLAYER_CONTEXT_DISPLAY_COLUMNS = (
+    "nflverse_context_status_display_only",
+    *(target for _source, target, _label in NFLVERSE_PLAYER_CONTEXT_DISPLAY_FIELDS),
+)
 UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "nwr_rank",
     "cross_asset_candidate_rank",
@@ -310,6 +371,7 @@ UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS = (
     "age",
     "asset_type_display",
     "source_coverage",
+    *NFLVERSE_PLAYER_CONTEXT_DISPLAY_COLUMNS,
     "final_board_rank",
     "final_tier",
     "position_rank",
@@ -1311,6 +1373,167 @@ def load_outcome_v2_current_player_display() -> OutcomeDisplayBundle:
     )
 
 
+def load_nflverse_player_context_display() -> OutcomeDisplayBundle:
+    path = NFLVERSE_PLAYER_CONTEXT_DISPLAY_PATH
+    schema_path = NFLVERSE_PLAYER_CONTEXT_SCHEMA_MANIFEST_PATH
+    if not path.exists() or not schema_path.exists():
+        missing = [str(item) for item in (path, schema_path) if not item.exists()]
+        return OutcomeDisplayBundle(
+            frame=pd.DataFrame(),
+            source_path=None,
+            source_label="missing NFLVerse player context display artifact",
+            errors=(f"NFLVerse player context display artifact was not found: {missing}.",),
+            warnings=(),
+            source_hash=None,
+        )
+    frame = pd.read_csv(path, dtype=str).fillna("")
+    schema = pd.read_csv(schema_path, dtype=str).fillna("")
+    source_hash = file_sha256(path)
+    errors = list(validate_nflverse_player_context_display(frame, schema))
+    return OutcomeDisplayBundle(
+        frame=frame,
+        source_path=path,
+        source_label="NFLVerse player context display artifact",
+        errors=tuple(errors),
+        warnings=(),
+        source_hash=source_hash,
+    )
+
+
+def validate_nflverse_player_context_display(
+    frame: pd.DataFrame,
+    schema: pd.DataFrame,
+) -> tuple[str, ...]:
+    errors: list[str] = []
+    required_artifact = (
+        "nwr_player_id",
+        "identity_join_status",
+        "review_required",
+        "display_only",
+        "model_use_allowed",
+        "training_allowed",
+        "source_truth_allowed",
+        "rank_logic_allowed",
+        "hidden_sort_allowed",
+        "trade_value_allowed",
+        "pick_value_allowed",
+        "roster_birth_date_derived_age",
+        "age_source",
+        "roster_status",
+        "weekly_roster_status",
+        "injury_report_status",
+        "injury_report_date_week",
+        "practice_status",
+        "depth_chart_role",
+        "snap_count_recency",
+        "snap_sample_size",
+        "last_active_season",
+        "last_active_week",
+        "draft_year",
+        "draft_round",
+        "draft_pick",
+        "drafted_team",
+        "contract_context",
+        "data_coverage_status",
+    )
+    missing_artifact = [column for column in required_artifact if column not in frame.columns]
+    if missing_artifact:
+        errors.append(
+            "Missing NFLVerse player context artifact fields: "
+            + ", ".join(missing_artifact)
+            + "."
+        )
+    required_schema = (
+        "column_name",
+        "field_status",
+        "display_only",
+        "model_use_allowed",
+        "training_allowed",
+        "source_truth_allowed",
+        "rank_logic_allowed",
+        "hidden_sort_allowed",
+        "trade_value_allowed",
+        "pick_value_allowed",
+    )
+    missing_schema = [column for column in required_schema if column not in schema.columns]
+    if missing_schema:
+        errors.append(
+            "Missing NFLVerse player context schema fields: "
+            + ", ".join(missing_schema)
+            + "."
+        )
+    if errors:
+        return tuple(errors)
+
+    schema_by_column = {
+        str(row.get("column_name", "")).strip(): row for row in schema.to_dict("records")
+    }
+    schema_fields = (
+        "identity_join_status",
+        "identity_caveat",
+        "roster_birth_date_derived_age",
+        "age_source",
+        "roster_status",
+        "weekly_roster_status",
+        "injury_report_status",
+        "injury_report_date_week",
+        "practice_status",
+        "depth_chart_role",
+        "snap_count_recency",
+        "snap_sample_size",
+        "last_active_season",
+        "last_active_week",
+        "draft_year",
+        "draft_round",
+        "draft_pick",
+        "drafted_team",
+        "contract_context",
+        "data_coverage_status",
+    )
+    unsafe_schema: list[str] = []
+    for field in schema_fields:
+        row = schema_by_column.get(field)
+        if not row:
+            unsafe_schema.append(f"{field}: missing schema row")
+            continue
+        if row.get("field_status") != NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS:
+            unsafe_schema.append(f"{field}: {row.get('field_status')}")
+        expected_flags = {
+            "display_only": "true",
+            "model_use_allowed": "false",
+            "training_allowed": "false",
+            "source_truth_allowed": "false",
+            "rank_logic_allowed": "false",
+            "hidden_sort_allowed": "false",
+            "trade_value_allowed": "false",
+            "pick_value_allowed": "false",
+        }
+        for flag, expected in expected_flags.items():
+            if str(row.get(flag, "")).strip().lower() != expected:
+                unsafe_schema.append(f"{field}.{flag}: {row.get(flag)}")
+    if unsafe_schema:
+        errors.append(
+            "NFLVerse player context schema has unsafe fields: "
+            + "; ".join(unsafe_schema)
+            + "."
+        )
+
+    artifact_flags = {
+        "display_only": "true",
+        "model_use_allowed": "false",
+        "training_allowed": "false",
+        "source_truth_allowed": "false",
+        "rank_logic_allowed": "false",
+        "hidden_sort_allowed": "false",
+        "trade_value_allowed": "false",
+        "pick_value_allowed": "false",
+    }
+    for flag, expected in artifact_flags.items():
+        if not frame[flag].astype(str).str.lower().eq(expected).all():
+            errors.append(f"NFLVerse player context field {flag} must be {expected}.")
+    return tuple(errors)
+
+
 @lru_cache(maxsize=1)
 def load_cross_asset_candidate_board() -> pd.DataFrame:
     base_path = (
@@ -1807,6 +2030,146 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def integrate_nflverse_player_context_display(frame: pd.DataFrame) -> pd.DataFrame:
+    context = load_nflverse_player_context_display()
+    result = frame.copy()
+    result["nflverse_context_status_display_only"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for _source, target, _label in NFLVERSE_PLAYER_CONTEXT_DISPLAY_FIELDS:
+        result[target] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if "nflverse_age_fallback_used" not in result.columns:
+        result["nflverse_age_fallback_used"] = False
+    if "age_source_display" not in result.columns:
+        result["age_source_display"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    if not context.loaded or "player_id" not in result.columns:
+        return result
+
+    context_columns = [
+        "nwr_player_id",
+        "identity_join_status",
+        "identity_caveat",
+        "roster_birth_date_derived_age",
+        "age_source",
+        "roster_status",
+        "weekly_roster_status",
+        "injury_report_status",
+        "injury_report_date_week",
+        "practice_status",
+        "depth_chart_role",
+        "snap_count_recency",
+        "snap_sample_size",
+        "last_active_season",
+        "last_active_week",
+        "draft_year",
+        "draft_round",
+        "draft_pick",
+        "drafted_team",
+        "contract_context",
+        "data_coverage_status",
+        "review_required",
+    ]
+    context_frame = context.frame.loc[:, context_columns].copy()
+    merged = result.merge(
+        context_frame,
+        left_on="player_id",
+        right_on="nwr_player_id",
+        how="left",
+        suffixes=("", "_nflverse_context"),
+    )
+    safe_mask = _nflverse_context_safe_mask(merged)
+    review_mask = merged["identity_join_status"].astype(str).str.strip().ne("")
+    merged.loc[safe_mask, "nflverse_context_status_display_only"] = NFLVERSE_CONTEXT_AVAILABLE
+    merged.loc[
+        review_mask & ~safe_mask,
+        "nflverse_context_status_display_only",
+    ] = NFLVERSE_CONTEXT_REVIEW_NEEDED
+    merged.loc[safe_mask, "nflverse_identity_status_display_only"] = "Matched"
+    merged.loc[
+        review_mask & ~safe_mask,
+        "nflverse_identity_status_display_only",
+    ] = NFLVERSE_CONTEXT_REVIEW_NEEDED
+    merged.loc[safe_mask, "nflverse_identity_caveat_display_only"] = merged.loc[
+        safe_mask,
+        "identity_caveat",
+    ].map(outcome_v2_text_display)
+    merged.loc[safe_mask, "nflverse_age_source_display_only"] = merged.loc[
+        safe_mask,
+        "age_source",
+    ].map(outcome_v2_text_display)
+    for source, target in (
+        ("roster_status", "nflverse_roster_status_display_only"),
+        ("weekly_roster_status", "nflverse_weekly_roster_status_display_only"),
+        ("injury_report_status", "nflverse_injury_report_status_display_only"),
+        ("practice_status", "nflverse_practice_status_display_only"),
+        ("injury_report_date_week", "nflverse_injury_report_date_week_display_only"),
+        ("depth_chart_role", "nflverse_depth_chart_role_display_only"),
+        ("snap_count_recency", "nflverse_snap_count_recency_display_only"),
+        ("snap_sample_size", "nflverse_snap_sample_size_display_only"),
+        ("contract_context", "nflverse_contract_context_display_only"),
+        ("data_coverage_status", "nflverse_data_coverage_status_display_only"),
+    ):
+        merged.loc[safe_mask, target] = merged.loc[safe_mask, source].map(
+            outcome_v2_text_display
+        )
+    merged.loc[safe_mask, "nflverse_last_active_display_only"] = merged.loc[
+        safe_mask
+    ].apply(_nflverse_last_active_display, axis=1)
+    merged.loc[safe_mask, "nflverse_draft_capital_display_only"] = merged.loc[
+        safe_mask
+    ].apply(_nflverse_draft_capital_display, axis=1)
+    merged = _apply_nflverse_age_fallback(merged, safe_mask)
+    return merged.drop(columns=context_columns, errors="ignore")
+
+
+def _nflverse_context_safe_mask(frame: pd.DataFrame) -> pd.Series:
+    return frame["identity_join_status"].astype(str).eq(
+        NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS
+    ) & frame["review_required"].astype(str).str.lower().eq("false")
+
+
+def _apply_nflverse_age_fallback(frame: pd.DataFrame, safe_mask: pd.Series) -> pd.DataFrame:
+    output = frame.copy()
+    if "age" not in output.columns:
+        output["age"] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for index, row in output.loc[safe_mask].iterrows():
+        current_age = age_display_value(row.get("age"))
+        roster_age = age_display_value(row.get("roster_birth_date_derived_age"))
+        if current_age != OUTCOME_NOT_ENOUGH_INFORMATION:
+            continue
+        if roster_age == OUTCOME_NOT_ENOUGH_INFORMATION:
+            continue
+        output.at[index, "age"] = roster_age
+        output.at[index, "age_source_display"] = "NFLVerse rosters.birth_date"
+        output.at[index, "nflverse_age_fallback_used"] = True
+    return output
+
+
+def _nflverse_last_active_display(row: pd.Series) -> str:
+    season = outcome_v2_text_display(row.get("last_active_season"))
+    week = outcome_v2_text_display(row.get("last_active_week"))
+    if season == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    if week == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return f"season={season}"
+    return f"season={season}; week={week}"
+
+
+def _nflverse_draft_capital_display(row: pd.Series) -> str:
+    year = outcome_v2_text_display(row.get("draft_year"))
+    round_value = outcome_v2_text_display(row.get("draft_round"))
+    pick = outcome_v2_text_display(row.get("draft_pick"))
+    team = outcome_v2_text_display(row.get("drafted_team"))
+    if year == OUTCOME_NOT_ENOUGH_INFORMATION:
+        return OUTCOME_NOT_ENOUGH_INFORMATION
+    parts = [f"year={year}"]
+    if round_value != OUTCOME_NOT_ENOUGH_INFORMATION:
+        parts.append(f"round={round_value}")
+    if pick != OUTCOME_NOT_ENOUGH_INFORMATION:
+        parts.append(f"pick={pick}")
+    if team != OUTCOME_NOT_ENOUGH_INFORMATION:
+        parts.append(f"team={team}")
+    return "; ".join(parts)
+
+
 def outcome_probability_display(value: object) -> str:
     text = str(value or "").strip()
     if not text or text.lower() in {"nan", "none", "null", "n/a"}:
@@ -1954,6 +2317,45 @@ def outcome_v2_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
     }
 
 
+def nflverse_player_context_display_counts(frame: pd.DataFrame) -> dict[str, int]:
+    rows = int(frame.shape[0])
+    status = frame.get(
+        "nflverse_context_status_display_only",
+        pd.Series(dtype=str),
+    ).astype(str)
+    safe = int(status.eq(NFLVERSE_CONTEXT_AVAILABLE).sum())
+    review = int(status.eq(NFLVERSE_CONTEXT_REVIEW_NEEDED).sum())
+    missing = max(rows - safe - review, 0)
+    age_fallback = int(
+        frame.get("nflverse_age_fallback_used", pd.Series(dtype=bool))
+        .astype(str)
+        .str.lower()
+        .eq("true")
+        .sum()
+    )
+
+    def _available_count(column: str) -> int:
+        return int(
+            frame.get(column, pd.Series(dtype=str))
+            .astype(str)
+            .map(outcome_v2_text_display)
+            .ne(OUTCOME_NOT_ENOUGH_INFORMATION)
+            .sum()
+        )
+
+    return {
+        "rows": rows,
+        "safe": safe,
+        "review": review,
+        "missing": missing,
+        "age_fallback": age_fallback,
+        "injury_available": _available_count("nflverse_injury_report_status_display_only"),
+        "depth_available": _available_count("nflverse_depth_chart_role_display_only"),
+        "snap_available": _available_count("nflverse_snap_count_recency_display_only"),
+        "draft_available": _available_count("nflverse_draft_capital_display_only"),
+    }
+
+
 def frozen_board_outcome_support_counts(frame: pd.DataFrame) -> dict[str, int]:
     rows = int(frame.shape[0])
     outcome = load_outcome_numeric_display()
@@ -2067,7 +2469,10 @@ def enrich_unified_player_board_with_market_baseline(frame: pd.DataFrame) -> pd.
         dp_age = age_display_value(row.get("dp_age"))
         if nwr_age != OUTCOME_NOT_ENOUGH_INFORMATION:
             output.at[index, "age"] = nwr_age
-            output.at[index, "age_source_display"] = "NWR approved source"
+            if str(row.get("age_source_display", "")).strip() != (
+                "NFLVerse rosters.birth_date"
+            ):
+                output.at[index, "age_source_display"] = "NWR approved source"
         elif dp_age != OUTCOME_NOT_ENOUGH_INFORMATION:
             output.at[index, "age"] = dp_age
             output.at[index, "age_source_display"] = (
@@ -2368,6 +2773,7 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "score_contribution_percent_display",
     "manual_review_flag",
     *OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS,
+    *NFLVERSE_PLAYER_CONTEXT_DISPLAY_COLUMNS,
 )
 
 NUMERIC_RANKINGS_DISPLAY_COLUMNS = (
@@ -2763,6 +3169,22 @@ DYNASTY_DISPLAY_LABELS = {
 
 UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "source_coverage": "Source",
+    "nflverse_context_status_display_only": "NFLVerse",
+    "nflverse_identity_status_display_only": "NV Identity",
+    "nflverse_identity_caveat_display_only": "NV Identity Caveat",
+    "nflverse_age_source_display_only": "NV Age Source",
+    "nflverse_roster_status_display_only": "Roster",
+    "nflverse_weekly_roster_status_display_only": "Weekly Roster",
+    "nflverse_injury_report_status_display_only": "Injury Report",
+    "nflverse_practice_status_display_only": "Practice",
+    "nflverse_injury_report_date_week_display_only": "Injury Date",
+    "nflverse_depth_chart_role_display_only": "Depth Role",
+    "nflverse_snap_count_recency_display_only": "Snap Recency",
+    "nflverse_snap_sample_size_display_only": "Snap Sample",
+    "nflverse_last_active_display_only": "Last Active",
+    "nflverse_draft_capital_display_only": "Draft Capital",
+    "nflverse_contract_context_display_only": "Contract",
+    "nflverse_data_coverage_status_display_only": "NV Coverage",
     "nwr_rank": "Dynasty Rank",
     "cross_asset_candidate_rank": "Candidate Rank",
     "cross_asset_candidate_value": "Candidate Value",
@@ -2968,7 +3390,60 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Age Src": {
         "label": "Age Src",
         "width": 94,
-        "help": "Age source note. Market fallback remains display-only when present.",
+        "help": (
+            "Age source note. NFLVerse roster birth date may fill missing NWR age. "
+            "Market age remains separate display-only context when present."
+        ),
+    },
+    "NFLVerse": {
+        "label": "NFLVerse",
+        "width": 92,
+        "help": "NFLVerse player context availability. Display-only; not rank logic.",
+    },
+    "NV Identity": {
+        "label": "NV Identity",
+        "width": 96,
+        "help": "NFLVerse identity bridge status. Review needed rows do not expose context.",
+    },
+    "Roster": {
+        "label": "Roster",
+        "width": 82,
+        "help": "NFLVerse roster status. Missing is Not enough information.",
+    },
+    "Weekly Roster": {
+        "label": "Weekly Roster",
+        "width": 112,
+        "help": "NFLVerse weekly roster status. Display-only.",
+    },
+    "Injury Report": {
+        "label": "Injury",
+        "width": 104,
+        "help": "Review-only injury report context. No medical projection is made.",
+    },
+    "Practice": {
+        "label": "Practice",
+        "width": 126,
+        "help": "Review-only practice status. Missing is not clean health.",
+    },
+    "Depth Role": {
+        "label": "Depth Role",
+        "width": 140,
+        "help": "NFLVerse depth-chart context. Not a role projection.",
+    },
+    "Snap Recency": {
+        "label": "Snap Recency",
+        "width": 118,
+        "help": "Latest factual snap-count context. Missing is not zero snaps.",
+    },
+    "Draft Capital": {
+        "label": "Draft Capital",
+        "width": 126,
+        "help": "NFLVerse draft-pick context. Missing is not confirmed UDFA.",
+    },
+    "Contract": {
+        "label": "Contract",
+        "width": 150,
+        "help": "Non-financial contract context. Not valuation.",
     },
     "Candidate Rank": {
         "label": "Cand Rank",

@@ -4,7 +4,7 @@
 
 - Lane branch: `work/lane-rankings-outcome-upgrade-20260630`
 - Lane worktree: `C:\NWR\Niners-War-Room-lane-rankings-outcome-upgrade-20260630`
-- Actual fetched HQ head: `c1aa6c3a76aed86b48ae377135df5151d00b0f83`
+- Actual fetched HQ head: `3be529f37fe931adc95883a2698d72409c0c8a2d`
 - Lane start head before fast-forward: `e598249a2a9915366fc2087991bb0519be7c8403`
 - Prior safe prep work: present in current HQ after fast-forward. The page already uses the safer preset names `Dynasty Review`, `Market Context`, `Outcome Context`, `Data Review`, `Statistic Analysis`, and `Draft Rankings`.
 
@@ -18,7 +18,17 @@ Expected dataset-level refresh-health artifacts are present after fetching and r
 
 Decision: `GREEN_TRACKED_REFRESH_HEALTH_CONTRACT_PRESENT` for dataset-level status display.
 
-Because the contract is dataset-level and does not provide a row-level Rankings display artifact or approved join output, the lane did not implement roster age fallback, roster status, injury report status, next game / bye context, depth chart role context, snap-share recency, draft capital display, or identity bridge health as player-table columns.
+The NFLVerse player context display artifact is also present:
+
+- Present: `docs/hq/data_sources/nflverse_player_context_display_20260630/nflverse_player_context_display_artifact.csv`
+- Present: `docs/hq/data_sources/nflverse_player_context_display_20260630/nflverse_player_context_schema_manifest.csv`
+- Present: `src/services/nflverse_player_context_display_service.py`
+
+Artifact rows: `294`.
+
+- SAFE_NOW display rows: `240`
+- NEED_IDENTITY_REVIEW rows: `54`
+- review-required rows: `54`
 
 ## Dataset Rows Available
 
@@ -65,23 +75,32 @@ Dataset-level nflverse status moved from waiting to implementable:
 - `ff_rankings` blocked status: `SAFE_NOW`
 - source-policy display warnings: `SAFE_NOW`
 
+Player-level NFLVerse context moved from waiting to implementable where the tracked artifact and schema both say `SAFE_NOW_DISPLAY_ONLY`:
+
+- roster birth-date age fallback and age source
+- roster status
+- weekly roster status
+- injury report status/date and practice status
+- depth chart context
+- snap recency and sample size
+- last active season/week
+- draft capital
+- non-financial contract context
+- identity bridge health/status
+
 SAFE_NOW items retained/implemented:
 
 - Default Dynasty Review board remains clean.
 - Market context stays localized to Market Context / Data Review.
 - Outcome Context remains V2-first, display-only, and position-applicable.
-- A centralized-service dataset refresh status panel was added so the UI reports the GREEN tracked contract without implying unsupported player-level dataset fields.
+- A centralized-service dataset refresh status panel reports the GREEN tracked contract.
+- Data Review exposes NFLVerse player context only for `identity_join_status=SAFE_NOW_DISPLAY_ONLY` and `review_required=false`.
+- Clean Board, Market Context, Outcome Context, and Draft Rankings do not show dense NFLVerse context by default.
 
 ## Still Blocked / Deferred
 
-- nflverse roster age fallback: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse roster status: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse injury report status: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse next game / bye context: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse depth chart role context: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse snap-share recency / last active season: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse draft capital display: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
-- nflverse identity bridge health: `NEED_DATASET_REFRESH` for an approved row-level display artifact or join gate
+- NFLVerse rows with `NEED_IDENTITY_REVIEW`: deferred from player context display except review status.
+- NFLVerse next game / opponent / bye context: deferred because the artifact contains `0` safe non-`Not enough information` rows.
 - Rookie Outcome Gate G app wiring: `NEED_MODEL_GATE`
 - Injury risk / recovery projection: `BLOCKED`
 - Missing data as zero: `BLOCKED`
