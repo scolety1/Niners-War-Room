@@ -21,7 +21,8 @@ Final commit: reported by Codex after commit creation
 - manual memo export with required disclaimer
 - NFLVerse display-only player context panel for approved safe identity rows
 - NFLVerse identity-review status display with player context details hidden
-- missing-evidence panel with explicit next game/opponent/bye deferral
+- NFLVerse schedule context panel rows for approved safe identity rows
+- missing-evidence panel with explicit Not enough information handling for gated schedule data
 
 ## NFLVerse Context Activated
 
@@ -32,10 +33,10 @@ Final commit: reported by Codex after commit creation
 - NWR Player ID is used for manual row identity lookup where supplied
 - selected board rows can resolve to the artifact's approved NWR Player ID when the artifact has a unique safe visible identity match
 - identity-review rows show status only and hide details
+- schedule context uses the shared schedule display gate and remains display-only/manual-review-only
 
 ## NFLVerse Items Still Deferred
 
-- next game, opponent, and bye context
 - identity proposal rows
 - any `NEED_*`, `BLOCKED_*`, `Review needed`, or `Not enough information` value as a positive fact
 - `ff_rankings`
@@ -64,7 +65,7 @@ This lane keeps Trading Lab as manual planning only. It does not wire raw NFLVer
 
 ## Known Limitations
 
-- schedule, opponent, and bye context remain unavailable.
+- schedule context is factual display only and cannot become trade timing advice, matchup advice, or model input.
 - identity proposals remain unapproved and hidden from details.
 - human review still needs to confirm the page workflow in browser.
 

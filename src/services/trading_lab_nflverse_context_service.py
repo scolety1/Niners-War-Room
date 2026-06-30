@@ -6,11 +6,21 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.services.nflverse_schedule_context_display_service import (
+    ScheduleContextIndex,
+    load_schedule_context_index,
+    schedule_context_display_for_player_id,
+)
+
 NOT_ENOUGH_INFORMATION = "Not enough information"
 SAFE_NOW_DISPLAY_ONLY = "SAFE_NOW_DISPLAY_ONLY"
 NEED_IDENTITY_REVIEW = "NEED_IDENTITY_REVIEW"
 DISPLAY_GUARDRAIL = (
     "Display-only context | Manual review only | No valuation calculated | "
+    "No automatic recommendation"
+)
+SCHEDULE_GUARDRAIL = (
+    "Display-only | Manual review only | Not model input | No valuation calculated | "
     "No automatic recommendation"
 )
 
@@ -67,6 +77,11 @@ SCHEDULE_FIELDS = (
     ("next_game_context", "Next game"),
     ("opponent_context", "Opponent"),
     ("bye_context", "Bye"),
+    ("game_date", "Game date"),
+    ("game_week", "Game week"),
+    ("home_away", "Home/Away"),
+    ("season", "Season"),
+    ("team", "Team"),
 )
 CONTEXT_GROUPS = (
     ("Identity Context", IDENTITY_FIELDS),
@@ -90,6 +105,7 @@ class TradingLabNflverseContextIndex:
     safe_by_nwr_player_id: dict[str, dict[str, str]]
     row_by_nwr_player_id: dict[str, dict[str, str]]
     visible_identity_index: dict[tuple[str, str, str, str], dict[str, str]]
+    schedule_index: ScheduleContextIndex
     source_path: Path
     schema_path: Path
 
@@ -124,6 +140,7 @@ def load_trading_lab_nflverse_context_index(
     *,
     artifact_path: Path = DEFAULT_CONTEXT_ARTIFACT,
     schema_path: Path = DEFAULT_SCHEMA_MANIFEST,
+    schedule_index: ScheduleContextIndex | None = None,
 ) -> TradingLabNflverseContextIndex:
     rows = tuple(_read_csv(artifact_path))
     schema_rows = tuple(_read_csv(schema_path))
@@ -155,6 +172,7 @@ def load_trading_lab_nflverse_context_index(
         safe_by_nwr_player_id=safe_by_id,
         row_by_nwr_player_id=row_by_id,
         visible_identity_index=unique_visible_rows,
+        schedule_index=schedule_index or load_schedule_context_index(),
         source_path=artifact_path,
         schema_path=schema_path,
     )
@@ -244,6 +262,7 @@ def nflverse_context_detail_rows(
                         value=_safe_value(result.row.get(field)),
                     )
                 )
+        rows.extend(_schedule_detail_rows(item, result, index))
     return rows
 
 
@@ -295,17 +314,19 @@ def nflverse_missing_evidence_rows(
                         status="Missing fields display as Not enough information",
                     )
                 )
-        rows.append(
-            _missing_row(
-                item=item,
-                block="Schedule / next game / opponent / bye",
-                reason=(
-                    "Schedule context remains gated pending Trading Lab-specific display "
-                    "review; no valuation or recommendation use is approved."
-                ),
-                status=NOT_ENOUGH_INFORMATION,
-            )
+        schedule = schedule_context_display_for_player_id(
+            result.row.get("nwr_player_id"),
+            index.schedule_index,
         )
+        if not schedule.available:
+            rows.append(
+                _missing_row(
+                    item=item,
+                    block="Schedule Context",
+                    reason=schedule.reason,
+                    status=NOT_ENOUGH_INFORMATION,
+                )
+            )
     return rows
 
 
@@ -384,6 +405,43 @@ def _identity_review_detail_row(
     }
 
 
+def _schedule_detail_rows(
+    item: dict[str, object],
+    result: TradingLabNflverseContextResult,
+    index: TradingLabNflverseContextIndex,
+) -> list[dict[str, str]]:
+    if not result.row or not result.show_details:
+        return []
+    schedule = schedule_context_display_for_player_id(
+        result.row.get("nwr_player_id"),
+        index.schedule_index,
+    )
+    if not schedule.available:
+        return []
+    values = {
+        "next_game_context": schedule.next_game_context,
+        "opponent_context": schedule.opponent_context,
+        "bye_context": schedule.bye_context,
+        "game_date": schedule.game_date,
+        "game_week": schedule.game_week,
+        "home_away": schedule.home_away,
+        "season": schedule.season,
+        "team": schedule.team,
+    }
+    return [
+        _detail_row(
+            item=item,
+            result=result,
+            group="Schedule Context",
+            label=label,
+            value=_safe_value(values.get(field)),
+            guardrail=SCHEDULE_GUARDRAIL,
+            source=schedule.source,
+        )
+        for field, label in SCHEDULE_FIELDS
+    ]
+
+
 def _detail_row(
     *,
     item: dict[str, object],
@@ -391,6 +449,8 @@ def _detail_row(
     group: str,
     label: str,
     value: str,
+    guardrail: str = DISPLAY_GUARDRAIL,
+    source: str | None = None,
 ) -> dict[str, str]:
     row = result.row or {}
     return {
@@ -399,9 +459,9 @@ def _detail_row(
         "Context Group": group,
         "Field": label,
         "Value": value,
-        "Source / As Of": _safe_value(row.get("per_field_dataset_source")),
+        "Source / As Of": source or _safe_value(row.get("per_field_dataset_source")),
         "Freshness": _safe_value(row.get("per_field_freshness_source_status")),
-        "Guardrail": DISPLAY_GUARDRAIL,
+        "Guardrail": guardrail,
     }
 
 

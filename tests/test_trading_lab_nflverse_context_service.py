@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
 
+from src.services.nflverse_schedule_context_display_service import (
+    ScheduleContextIndex,
+)
 from src.services.trading_lab_nflverse_context_service import (
     NEED_IDENTITY_REVIEW,
     NOT_ENOUGH_INFORMATION,
@@ -78,6 +82,8 @@ def test_context_artifact_counts_and_schema_safe_fields() -> None:
     assert "depth_chart_position" in index.schema_safe_fields
     assert "draft_pick" in index.schema_safe_fields
     assert "contract_context" in index.schema_safe_fields
+    assert "next_game_context" in index.schema_safe_fields
+    assert index.schedule_index.errors == ()
 
 
 def test_safe_player_context_details_render_only_for_safe_identity_rows() -> None:
@@ -98,6 +104,14 @@ def test_safe_player_context_details_render_only_for_safe_identity_rows() -> Non
     assert "Availability Context" in combined
     assert "Role Context" in combined
     assert "Draft Context" in combined
+    assert "Schedule Context" in combined
+    assert "Next game" in combined
+    assert "Opponent" in combined
+    assert "Bye" in combined
+    assert "Game date" in combined
+    assert "Home/Away" in combined
+    assert "2026_01_BAL_IND" in combined
+    assert "Display-only | Manual review only | Not model input" in combined
     assert "Source / As Of" in details.columns
     assert "Freshness" in details.columns
 
@@ -116,9 +130,11 @@ def test_identity_review_rows_hide_player_context_details() -> None:
     assert "Depth chart position" not in combined
     assert "NFL draft pick" not in combined
     assert "Contract context" not in combined
+    assert "Schedule Context" not in combined
+    assert "Next game" not in combined
 
 
-def test_missing_values_and_deferred_context_do_not_become_positive_defaults() -> None:
+def test_missing_values_do_not_become_positive_defaults() -> None:
     index = _index()
     frame = pd.DataFrame([_safe_item()])
 
@@ -128,12 +144,44 @@ def test_missing_values_and_deferred_context_do_not_become_positive_defaults() -
     missing_text = missing.to_string()
 
     assert NOT_ENOUGH_INFORMATION in details_text
-    assert "Schedule / next game / opponent / bye" in missing_text
-    assert "gated pending Trading Lab-specific display review" in missing_text
     assert "Missing is not zero" in missing_text
+    assert "Schedule Context" not in missing_text
     for forbidden in ("healthy", "no-role", "no-usage", "confirmed UDFA"):
         assert forbidden.lower() not in details_text.lower()
     assert "zero" not in details_text.lower()
+
+
+def test_missing_schedule_data_displays_not_enough_information_without_positive_defaults() -> None:
+    index = _index()
+    safe_row = dict(index.safe_by_nwr_player_id["9997"])
+    safe_row.update(
+        {
+            "next_game_context": NOT_ENOUGH_INFORMATION,
+            "opponent_context": "",
+            "bye_context": "NEED_DATASET_REFRESH",
+        }
+    )
+    schedule_index = ScheduleContextIndex(
+        artifact_rows=(safe_row,),
+        schema_safe_fields=index.schedule_index.schema_safe_fields,
+        errors=(),
+        artifact_path=index.schedule_index.artifact_path,
+        schema_path=index.schedule_index.schema_path,
+    )
+    display_index = replace(index, schedule_index=schedule_index)
+    frame = pd.DataFrame([_safe_item_by_id()])
+
+    details = display_nflverse_context_rows(nflverse_context_detail_rows(frame, display_index))
+    missing = display_nflverse_context_rows(nflverse_missing_evidence_rows(frame, display_index))
+    details_text = details.to_string().lower()
+    missing_text = missing.to_string()
+
+    assert "Schedule Context" in missing_text
+    assert NOT_ENOUGH_INFORMATION in missing_text
+    assert "Missing is not zero" in missing_text
+    assert "next game" not in details.to_string().lower()
+    for forbidden in ("favorable", "neutral", "easy", "hard", "healthy", "clean"):
+        assert forbidden not in details_text
 
 
 def test_pick_assets_remain_raw_labels_without_player_context_or_pick_valuation() -> None:
@@ -147,6 +195,7 @@ def test_pick_assets_remain_raw_labels_without_player_context_or_pick_valuation(
     assert result.status == "Pick asset raw label only"
     assert "Pick/context assets do not receive NFLVerse player context" in summary.to_string()
     assert details.empty
+    assert "schedule" not in details.to_string().lower()
     assert "pick value" not in summary.to_string().lower()
 
 

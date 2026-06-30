@@ -231,7 +231,7 @@ def test_no_recommendation_adjacent_strings_in_active_page_or_service() -> None:
 def test_missing_context_uses_explicit_not_enough_information() -> None:
     assert NOT_ENOUGH_INFORMATION == "Not enough information"
     page = _read(PAGE_PATH)
-    assert "Next game, opponent, and bye context remain unavailable" in page
+    assert "Schedule context appears only for approved safe rows" in page
     for unsafe_default in (
         "missing data is healthy",
         "missing data is clean",
