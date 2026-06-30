@@ -4,17 +4,33 @@ param(
     [string]$NflreadpyPath = "C:\NWR_SHARED_DATA\vendor_spikes\nflverse\scratch\pydeps",
     [string[]]$Seasons = @("2024", "2025"),
     [string[]]$Datasets = @(
-        "weekly_stats",
-        "season_stats",
+        "schedules",
+        "teams",
+        "players",
         "rosters",
         "weekly_rosters",
+        "ff_playerids",
+        "depth_charts",
+        "injuries",
+        "player_stats_weekly",
         "snap_counts",
+        "trades",
+        "player_stats_seasonal",
+        "play_by_play",
+        "team_stats",
         "participation",
-        "opportunity"
+        "ftn_charting",
+        "pfr_advstats",
+        "nextgen_stats",
+        "draft_picks",
+        "combine",
+        "contracts",
+        "officials",
+        "espn_qbr",
+        "ff_opportunity"
     ),
     [string]$SnapshotLabel = "",
-    [switch]$CheckDependencies,
-    [switch]$WriteCandidates
+    [switch]$CheckDependencies
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,10 +65,13 @@ try {
     Write-Host "Repo: $RepoRoot"
     Write-Host "Snapshot: $SnapshotDir"
     Write-Host "Datasets: $($Datasets -join ', ')"
-    Write-Host "WriteCandidates: $WriteCandidates"
-    Write-Host "Guardrail: latest_approved is never created or updated by this runner."
+    Write-Host "Guardrail: this safe runner never writes candidates, latest_candidate, or latest_approved."
 
-    $env:PYTHONPATH = $NflreadpyPath
+    $PythonPathParts = @($RepoRoot, $NflreadpyPath)
+    if (-not [string]::IsNullOrWhiteSpace($OriginalPythonPath)) {
+        $PythonPathParts += $OriginalPythonPath
+    }
+    $env:PYTHONPATH = ($PythonPathParts -join [IO.Path]::PathSeparator)
     Set-Location $RepoRoot
     & $Python scripts/nflverse_scheduled_pull_v0.py `
         --seasons $Seasons `
@@ -64,19 +83,7 @@ try {
         throw "nflverse scheduled pull failed with exit code $LASTEXITCODE"
     }
 
-    if ($WriteCandidates) {
-        Write-Host "Running nflverse normalizer in latest_candidate mode only."
-        & $Python scripts/nflverse_normalize_snapshot_v0.py `
-            --snapshot-dir $SnapshotDir `
-            --output-root (Join-Path $SharedRoot "lane_exchange") `
-            --write-candidates
-        if ($LASTEXITCODE -ne 0) {
-            throw "nflverse normalizer failed with exit code $LASTEXITCODE"
-        }
-    }
-    else {
-        Write-Host "Skipping nflverse candidate generation; pass -WriteCandidates to opt in."
-    }
+    Write-Host "Skipping candidate generation by design; use a separate approved lane for normalization."
 }
 finally {
     $env:PYTHONPATH = $OriginalPythonPath

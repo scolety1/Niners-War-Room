@@ -1,0 +1,16 @@
+gate,status,source_dataset,current_rankings_rows,clean_join_rows,no_nflverse_identity_rows,ambiguous_identity_rows,many_to_one_conflict_rows,one_to_many_conflict_rows,need_dataset_refresh_rows,blocked_rows,review_only_rows,message
+current_rankings_identity_gate,NEED_IDENTITY_REVIEW,rosters,294,240,54,0,0,0,0,0,54,Current Rankings rows join only through exact NWR player_id to rosters.sleeper_id.
+players_identity_file_gate,SAFE_NOW_DISPLAY_ONLY,players,294,294,0,0,0,0,0,0,0,players: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=25033; policy=identity_only.
+ff_playerids_crosswalk_gate,SAFE_NOW_DISPLAY_ONLY,ff_playerids,294,294,0,0,0,0,0,0,0,ff_playerids: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=12465; policy=identity_only.
+weekly_roster_status_gate,SAFE_NOW_DISPLAY_ONLY,weekly_rosters,294,240,0,0,0,0,0,0,0,weekly_rosters: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=93428; policy=identity_only.
+injury_context_gate,SAFE_NOW_DISPLAY_ONLY,injuries,294,224,0,0,0,0,0,0,294,injuries: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=12283; policy=transparency_only.
+next_game_bye_gate,SAFE_NOW_DISPLAY_ONLY,schedules,294,0,0,0,0,0,0,0,0,schedules: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=570; policy=display_only.
+depth_chart_context_gate,SAFE_NOW_DISPLAY_ONLY,depth_charts,294,240,0,0,0,0,0,0,294,depth_charts: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=591527; policy=review_only.
+snap_count_context_gate,SAFE_NOW_DISPLAY_ONLY,snap_counts,294,223,0,0,0,0,0,0,0,snap_counts: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=53227; policy=safe_review.
+last_active_week_gate,SAFE_NOW_DISPLAY_ONLY,player_stats_weekly,294,240,0,0,0,0,0,0,0,player_stats_weekly: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=76804; policy=safe_review.
+seasonal_stats_presence_gate,SAFE_NOW_DISPLAY_ONLY,player_stats_seasonal,294,294,0,0,0,0,0,0,0,player_stats_seasonal: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=42419; policy=safe_review.
+draft_capital_context_gate,SAFE_NOW_DISPLAY_ONLY,draft_picks,294,75,0,0,0,0,0,0,0,draft_picks: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=514; policy=safe_review.
+combine_context_gate,SAFE_NOW_DISPLAY_ONLY,combine,294,294,0,0,0,0,0,0,0,combine: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=650; policy=safe_review.
+contract_context_gate,SAFE_NOW_DISPLAY_ONLY,contracts,294,240,0,0,0,0,0,0,0,contracts: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=51672; policy=display_only.
+teams_metadata_gate,SAFE_NOW_DISPLAY_ONLY,teams,294,294,0,0,0,0,0,0,0,teams: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=36; policy=display_only.
+ff_rankings_source_policy_gate,BLOCKED_VENDOR_OR_PRIVATE,ff_rankings,294,0,0,0,0,0,0,294,0,ff_rankings: status=BLOCKED; execution=blocked_policy; schema=not_applicable; coverage=not_applicable; rows=Not enough information; policy=blocked_policy.

@@ -60,9 +60,13 @@ def test_trading_lab_planners_are_manual_only_and_do_not_write_runtime_events() 
     required = [
         "Trade Away Pick Planner",
         "Trade For Pick Planner",
-        "Manual planning only. Not a trade calculator. Not model input. Not market valuation.",
-        "does not find offers, value picks, or update draft state",
-        "workspace, not an offer generator",
+        "Manual planning only. No trade valuation, market valuation, pick valuation, model",
+        "does not find offers, appraise picks, or update",
+        "manual workspace, not an offer generator",
+        "Structured manual planner rows",
+        "Editable manual checklist",
+        "Download manual trade-away memo",
+        "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN",
     ]
     for term in required:
         assert term in text
@@ -75,9 +79,11 @@ def test_trading_lab_planners_are_manual_only_and_do_not_write_runtime_events() 
         "Cheapest Plausible",
         "Worth Pursuing?",
         "least acceptable",
-        "trade valuation",
-        "pick valuation",
         "market-driven answer",
+        "Market sanity",
+        "Visible score gap",
+        "Looks favorable",
+        "Risky",
     ]
     for term in forbidden:
         assert term not in text

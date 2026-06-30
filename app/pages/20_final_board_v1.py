@@ -31,17 +31,25 @@ from src.services.draft_day_app_v1_service import (
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
     frozen_board_outcome_support_counts,
+    integrate_nflverse_player_context_display,
     load_dynasty_rankings,
     load_frozen_board,
+    load_nflverse_player_context_display,
     load_outcome_v2_current_player_display,
     market_baseline_age_coverage,
     market_baseline_freshness_status,
     market_baseline_join_coverage,
+    nflverse_player_context_display_counts,
     outcome_columns_for_display,
     outcome_display_coverage_counts,
     outcome_v2_display_coverage_counts,
     sort_rankings_frame_by_column,
     sort_unified_player_board_for_view,
+)
+from src.services.nflverse_refresh_health_service import (
+    dataset_registry_rows,
+    full_safe_refresh_dataset_ids,
+    safe_refresh_dataset_ids,
 )
 
 SORT_COLUMNS = {
@@ -101,6 +109,20 @@ VIEW_PRESET_HELP = {
         "remains the default sort."
     ),
 }
+NFLVERSE_REFRESH_HEALTH_ROOT = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "data_sources"
+    / "nflverse_dataset_level_refresh_health_20260630"
+)
+NFLVERSE_REFRESH_HEALTH_REGISTRY = (
+    NFLVERSE_REFRESH_HEALTH_ROOT / "nflverse_dataset_registry_v1.csv"
+)
+NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT = (
+    NFLVERSE_REFRESH_HEALTH_ROOT / "NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT_20260630.md"
+)
+NFLVERSE_REFRESH_HEALTH_WAIT_STATUS = "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN"
 
 
 def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
@@ -610,6 +632,144 @@ def _render_market_baseline_status(unified: pd.DataFrame) -> None:
             st.warning(stale_warning)
 
 
+def _nflverse_refresh_health_status() -> dict[str, object]:
+    try:
+        registry = dataset_registry_rows()
+        safe_ids = set(safe_refresh_dataset_ids())
+        full_safe_ids = set(full_safe_refresh_dataset_ids())
+    except Exception as exc:  # pragma: no cover - defensive app display guard
+        return {
+            "status": "YELLOW_REFRESH_HEALTH_SERVICE_UNAVAILABLE",
+            "dataset_rows": 0,
+            "blocked_datasets": ("ff_rankings",),
+            "available_display_fields": (),
+            "unavailable_display_fields": ("dataset-backed fields",),
+            "note": f"Centralized nflverse refresh-health service could not load: {exc}",
+        }
+    if not registry or not NFLVERSE_REFRESH_HEALTH_REGISTRY.exists():
+        return {
+            "status": NFLVERSE_REFRESH_HEALTH_WAIT_STATUS,
+            "dataset_rows": 0,
+            "blocked_datasets": ("ff_rankings",),
+            "available_display_fields": (),
+            "unavailable_display_fields": (
+                "roster age fallback",
+                "roster status",
+                "injury report status",
+                "next game / bye context",
+                "depth chart role context",
+                "snap-share recency",
+                "draft capital display",
+                "identity bridge health",
+            ),
+            "note": (
+                "Dataset-level nflverse refresh-health registry is not present in this "
+                "branch. Dataset-backed fields remain unavailable rather than guessed."
+            ),
+        }
+    blocked = [
+        row["dataset_id"]
+        for row in registry
+        if row.get("default_mode") == "blocked"
+        or row.get("policy_status") == "blocked_policy"
+    ]
+    if "ff_rankings" not in blocked:
+        blocked.append("ff_rankings")
+    player_context_sources = tuple(
+        dataset
+        for dataset in (
+            "players",
+            "rosters",
+            "weekly_rosters",
+            "schedules",
+            "depth_charts",
+            "injuries",
+            "snap_counts",
+            "draft_picks",
+            "ff_playerids",
+        )
+        if dataset in safe_ids or dataset in full_safe_ids
+    )
+    return {
+        "status": "GREEN_TRACKED_REFRESH_HEALTH_CONTRACT_PRESENT",
+        "dataset_rows": len(registry),
+        "blocked_datasets": tuple(dict.fromkeys(blocked)),
+        "available_display_fields": (
+            "dataset health/status panel",
+            "safe refresh dataset list",
+            "full safe refresh dataset list",
+            "ff_rankings blocked status",
+            "source-policy display warnings",
+        ),
+        "unavailable_display_fields": (
+            "player-level nflverse fields until a separate safe schema/join artifact maps "
+            f"{', '.join(player_context_sources)} to Rankings rows",
+        ),
+        "note": (
+            "Centralized dataset-level refresh-health contract is present and GREEN for "
+            "guardrails. Rankings displays dataset status only; player-level fields still "
+            "require an approved row-level display artifact or join gate."
+        ),
+    }
+
+
+def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
+    status = _nflverse_refresh_health_status()
+    player_context = load_nflverse_player_context_display()
+    counts = nflverse_player_context_display_counts(unified)
+    with st.expander("Dataset Refresh / Outcome Status", expanded=False):
+        st.write(
+            {
+                "Outcome V2": (
+                    "Display-only/review-only. Missing data is Not enough information, "
+                    "not low probability."
+                ),
+                "Rookie Outcome Gate G": (
+                    "Blocked unless an explicit GREEN Gate G approval artifact exists."
+                ),
+                "nflverse refresh-health": status["status"],
+                "dataset_rows": status["dataset_rows"],
+                "NFLVerse player context artifact": (
+                    "GREEN" if player_context.loaded else "YELLOW-HOLD"
+                ),
+                "NFLVerse context rows": counts["rows"],
+                "NFLVerse safe context rows": counts["safe"],
+                "NFLVerse identity review rows": counts["review"],
+                "NFLVerse missing context rows": counts["missing"],
+                "NFLVerse age fallback rows": counts["age_fallback"],
+                "NFLVerse injury context rows": counts["injury_available"],
+                "NFLVerse depth context rows": counts["depth_available"],
+                "NFLVerse snap context rows": counts["snap_available"],
+                "NFLVerse draft capital rows": counts["draft_available"],
+                "blocked_datasets": ", ".join(status["blocked_datasets"])
+                or OUTCOME_NOT_ENOUGH_INFORMATION,
+                "available_dataset_display_fields": ", ".join(
+                    status["available_display_fields"]
+                )
+                or OUTCOME_NOT_ENOUGH_INFORMATION,
+                "unavailable_dataset_display_fields": ", ".join(
+                    status["unavailable_display_fields"]
+                )
+                or OUTCOME_NOT_ENOUGH_INFORMATION,
+                "missing_data_rule": "Not enough information; never 0%, false, or clean health.",
+                "market_warning": (
+                    "DynastyProcess/market context is display-only and never rank logic."
+                ),
+                "note": status["note"],
+            }
+        )
+        st.caption(
+            "This panel reads only tracked repo artifacts. It does not read raw/cache/shared "
+            "nflverse paths and does not create app-facing dataset fields."
+        )
+        if NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT.exists():
+            st.caption(f"Safety report: {NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT}")
+        if player_context.source_path:
+            st.caption(f"Player context artifact: {player_context.source_path}")
+        for error in player_context.errors:
+            st.error(error)
+
+
 def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
     counts = outcome_v2_display_coverage_counts(unified)
     artifact = load_outcome_v2_current_player_display()
@@ -785,9 +945,11 @@ def _top_names_for_tier(
 bundle = load_frozen_board()
 dynasty_bundle = load_dynasty_rankings()
 raw_unified_board = build_unified_player_board(dynasty_bundle.frame, bundle.frame)
-unified_board = enrich_unified_player_board_with_market_baseline(raw_unified_board)
+nflverse_unified_board = integrate_nflverse_player_context_display(raw_unified_board)
+unified_board = enrich_unified_player_board_with_market_baseline(nflverse_unified_board)
 outcome_counts = outcome_display_coverage_counts(unified_board)
 outcome_v2_counts = outcome_v2_display_coverage_counts(unified_board)
+nflverse_context_counts = nflverse_player_context_display_counts(unified_board)
 frozen_outcome_counts = frozen_board_outcome_support_counts(bundle.frame)
 
 page_header(
@@ -817,6 +979,11 @@ page_header(
             f"{outcome_v2_counts['available']}/{outcome_v2_counts['rows']}",
             "review",
         ),
+        (
+            "NFLVerse context rows: "
+            f"{nflverse_context_counts['safe']}/{nflverse_context_counts['rows']}",
+            "review",
+        ),
     ),
 )
 st.caption(
@@ -834,6 +1001,7 @@ if not dynasty_bundle.loaded:
     )
 
 _render_market_baseline_status(raw_unified_board)
+_render_dataset_refresh_status_panel(unified_board)
 preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)
 if preset not in VIEW_PRESETS:
     preset = VIEW_PRESET_DYNASTY_REVIEW

@@ -1,0 +1,27 @@
+item,classification,status_reason,implementation_status,guardrail_note
+Clean Board market hiding,SAFE_NOW,Default Dynasty Review hides market columns by default.,implemented_as_prior_safe_prep,Market remains display-only and not rank logic.
+Market Analyzer display-only focus,SAFE_NOW,Market Context shows DynastyProcess market sanity context with display-only wording.,implemented_as_prior_safe_prep,No model input or hidden sort.
+Preset-specific advanced filters,SAFE_NOW,Advanced filters remain tucked away and do not change source values or hidden sort.,implemented_as_prior_safe_prep,Filters are display/review controls only.
+Outcome Lens narrowing/grouping,SAFE_NOW,Outcome Context defaults to position-applicable Outcome columns and V2 status/caveats.,implemented_as_prior_safe_prep,Missing data remains Not enough information.
+Outcome missing-data reason display,SAFE_NOW,Outcome V2 and injury-context caveats expose Not enough information reasons where artifact supports them.,implemented_as_prior_safe_prep,No missing value becomes 0%.
+Veteran Outcome V2 display status,SAFE_NOW,Existing approved current-player display artifact is loaded as review-only/display-only context.,implemented_as_prior_safe_prep,No rank/model/source-truth use.
+Rookie Outcome Gate G status,NEED_MODEL_GATE,Gate G remains blocked unless explicit GREEN approval appears.,documented,No rookie probabilities wired.
+Market/DynastyProcess display-only wording,SAFE_NOW,Market warnings remain visible when market fields are visible.,implemented_as_prior_safe_prep,Market is not trade value or model input.
+nflverse dataset refresh-health status panel,SAFE_NOW,Centralized refresh-health service and tracked registry are present in HQ.,implemented,Dataset status only; no raw/shared app reads.
+nflverse safe/full refresh dataset lists,SAFE_NOW,Centralized service exposes safe_refresh_dataset_ids and full_safe_refresh_dataset_ids.,implemented,Status display only.
+nflverse ff_rankings blocked status,SAFE_NOW,Registry marks ff_rankings blocked/blocked_policy.,implemented,Blocked dataset remains review-status-only.
+nflverse roster age fallback,SAFE_NOW,Player context artifact and schema support roster birth-date age for 240 safe identity rows.,implemented,NWR age takes precedence; missing remains Not enough information.
+nflverse roster status,SAFE_NOW,Player context artifact and schema support roster status for 240 safe identity rows.,implemented,Display-only; missing is Not enough information.
+nflverse injury report status,SAFE_NOW,Player context artifact and schema support review-only injury report/practice/date fields for safe rows.,implemented,No medical projection; missing is not clean health.
+nflverse next game / bye context,NEED_DATASET_REFRESH,Artifact has zero safe non-Not-enough-information next-game/opponent/bye rows.,deferred,No schedule context guessed.
+nflverse depth chart role context,SAFE_NOW,Player context artifact and schema support depth chart context for safe rows.,implemented,Display-only; not a role projection.
+nflverse snap-share recency,SAFE_NOW,Player context artifact and schema support snap recency/sample fields for safe rows.,implemented,Missing is not zero snaps.
+nflverse last active season,SAFE_NOW,Player context artifact and schema support last active season/week for safe rows.,implemented,Missing is not clean health or inactivity proof.
+nflverse draft capital display,SAFE_NOW,Player context artifact and schema support draft capital where present for safe rows.,implemented,Missing is not confirmed UDFA; no pick/trade valuation.
+nflverse identity bridge health,SAFE_NOW,Player context artifact and schema support identity status; review-required rows show Review needed only.,implemented,No context details exposed for NEED_IDENTITY_REVIEW rows.
+nflverse NEED_IDENTITY_REVIEW rows,NEED_IDENTITY_REVIEW,Artifact contains 54 rows requiring identity review.,deferred,Context values are not surfaced for review-required rows.
+current-player T12 this year / next year / 5Y fields,SAFE_NOW,Existing Outcome V2 artifact has validated veteran display fields and blocked RB 5Y heads removed.,implemented_as_prior_safe_prep,Display-only/review-only.
+injury risk / recovery projection,BLOCKED,Medical projection language is forbidden.,blocked,No injury-risk score.
+blocked RB 5Y heads if still blocked by Outcome V2 docs,BLOCKED,RB T6/RB T12 Within 5Y remain weak-calibration blocked.,blocked,No fake probabilities.
+missing data as zero,BLOCKED,Missing data must say Not enough information.,blocked,Never 0% or false.
+hidden outcome/market sort,BLOCKED,Outcome and market fields cannot drive hidden sort.,blocked,Default sort remains Dynasty Rank.

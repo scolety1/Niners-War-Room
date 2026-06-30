@@ -29,8 +29,8 @@ def test_nflverse_pull_writes_snapshot_manifest_and_report(tmp_path: Path) -> No
     assert result.snapshot_dir == tmp_path / "20260620_210000"
     assert result.report_path.exists()
     assert result.metadata_path.exists()
-    assert (result.snapshot_dir / "weekly_stats.csv").exists()
-    assert (result.snapshot_dir / "season_stats.csv").exists()
+    assert (result.snapshot_dir / "player_stats_weekly.csv").exists()
+    assert (result.snapshot_dir / "player_stats_seasonal.csv").exists()
 
     metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
     assert metadata["creates_lane_exchange_packages"] is False
@@ -40,12 +40,12 @@ def test_nflverse_pull_writes_snapshot_manifest_and_report(tmp_path: Path) -> No
     assert metadata["package_version"] == "0.1.5-test"
 
     datasets = {row["name"]: row for row in metadata["datasets"]}
-    assert datasets["weekly_stats"]["status"] == "ok"
-    assert datasets["weekly_stats"]["row_count"] == 3
-    assert datasets["weekly_stats"]["column_count"] == 9
-    assert "fantasy_points_ppr" in datasets["weekly_stats"]["quarantined_fields"]
-    assert "target_share" in datasets["weekly_stats"]["quarantined_fields"]
-    assert datasets["weekly_stats"]["matched_sample_players"] == [
+    assert datasets["player_stats_weekly"]["status"] == "ok"
+    assert datasets["player_stats_weekly"]["row_count"] == 3
+    assert datasets["player_stats_weekly"]["column_count"] == 9
+    assert "fantasy_points_ppr" in datasets["player_stats_weekly"]["quarantined_fields"]
+    assert "target_share" in datasets["player_stats_weekly"]["quarantined_fields"]
+    assert datasets["player_stats_weekly"]["matched_sample_players"] == [
         "Drake Maye",
         "Jaylen Warren",
         "Brian Thomas Jr",
@@ -57,13 +57,15 @@ def test_nflverse_pull_writes_snapshot_manifest_and_report(tmp_path: Path) -> No
         "match_type": "alias",
         "matched_on": "Brian Thomas Jr",
         "source_field": "player_name",
-    } in datasets["weekly_stats"]["identity_matches"]
-    assert datasets["weekly_stats"]["field_roles"]["player_name"] == ["player_name"]
-    assert datasets["weekly_stats"]["field_roles"]["player_id"] == ["player_id"]
-    assert datasets["weekly_stats"]["field_roles"]["team"] == ["team"]
+    } in datasets["player_stats_weekly"]["identity_matches"]
+    assert datasets["player_stats_weekly"]["field_roles"]["player_name"] == ["player_name"]
+    assert datasets["player_stats_weekly"]["field_roles"]["player_id"] == ["player_id"]
+    assert datasets["player_stats_weekly"]["field_roles"]["team"] == ["team"]
+    assert datasets["player_stats_weekly"]["health_summary"]["season_coverage"]
+    assert datasets["player_stats_weekly"]["schema_fingerprint"]
 
-    weekly_body = (result.snapshot_dir / "weekly_stats.csv").read_bytes()
-    assert datasets["weekly_stats"]["sha256"] == hashlib.sha256(weekly_body).hexdigest()
+    weekly_body = (result.snapshot_dir / "player_stats_weekly.csv").read_bytes()
+    assert datasets["player_stats_weekly"]["sha256"] == hashlib.sha256(weekly_body).hexdigest()
     report = result.report_path.read_text(encoding="utf-8")
     assert "Stats are display/stat context only" in report
     assert "latest_approved" in report
@@ -82,11 +84,13 @@ def test_skip_live_creates_report_without_raw_dataset_files(tmp_path: Path) -> N
 
     assert result.metadata_path.exists()
     assert result.report_path.exists()
-    assert not (result.snapshot_dir / "weekly_stats.csv").exists()
+    assert not (result.snapshot_dir / "player_stats_weekly.csv").exists()
 
     metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
     dataset = metadata["datasets"][0]
+    assert dataset["name"] == "player_stats_weekly"
     assert dataset["status"] == "skipped"
+    assert dataset["row_count"] is None
     assert dataset["warning"] == "YELLOW: skip_live requested"
     assert metadata["skip_live"] is True
 
@@ -134,7 +138,9 @@ def test_loader_warning_is_reported_for_missing_optional_function(tmp_path: Path
 
     metadata = json.loads(result.metadata_path.read_text(encoding="utf-8"))
     dataset = metadata["datasets"][0]
-    assert dataset["status"] == "skipped"
+    assert dataset["name"] == "ff_opportunity"
+    assert dataset["status"] == "missing_loader"
+    assert dataset["row_count"] is None
     assert "YELLOW: no supported nflreadpy function" in dataset["warning"]
 
 
@@ -156,16 +162,16 @@ def test_expanded_dataset_loaders_are_supported_and_soft_quarantined(tmp_path: P
     assert "headshot_url" in datasets["rosters"]["quarantined_fields"]
     assert datasets["weekly_rosters"]["function_name"] == "load_rosters_weekly"
     assert datasets["participation"]["function_name"] == "load_participation"
-    assert datasets["opportunity"]["function_name"] == "load_ff_opportunity"
-    assert "pass_completions_exp" in datasets["opportunity"]["quarantined_fields"]
-    assert "total_fantasy_points" in datasets["opportunity"]["quarantined_fields"]
-    assert datasets["opportunity"]["warning"].startswith("YELLOW:")
+    assert datasets["ff_opportunity"]["function_name"] == "load_ff_opportunity"
+    assert "pass_completions_exp" in datasets["ff_opportunity"]["quarantined_fields"]
+    assert "total_fantasy_points" in datasets["ff_opportunity"]["quarantined_fields"]
+    assert datasets["ff_opportunity"]["warning"].startswith("YELLOW:")
 
     for file_name in (
         "rosters.csv",
         "weekly_rosters.csv",
         "participation.csv",
-        "opportunity.csv",
+        "ff_opportunity.csv",
     ):
         assert (result.snapshot_dir / file_name).exists()
 

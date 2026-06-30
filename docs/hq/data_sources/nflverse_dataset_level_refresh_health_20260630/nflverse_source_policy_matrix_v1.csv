@@ -1,0 +1,9 @@
+policy_status,meaning,refresh_behavior,allowed_now,blocked_use
+safe_review,Public factual/review source with health checks,Auto-safe runner can refresh local cache,Refresh health and factual review status only,Model input/rank/source-truth/hidden-sort/candidate mutation
+identity_only,Identity or roster support only,Auto-safe runner can refresh local cache,Identity coverage/status review only,Source-truth promotion without separate approval
+display_only,Display/support context only,Auto-safe runner can refresh local cache,Data Health/status display only,Valuation/rank/model/trade value use
+transparency_only,Availability transparency only,Auto-safe runner can refresh local cache,Availability status visibility,Healthy default/injury-risk/model/rank use
+derived_only,Derived/raw-heavy source with summary health only,Auto-safe runner can refresh local cache,Derived refresh health only,Raw row tracking/model/rank use
+review_only,Needs source-policy review before downstream use,Auto-safe runner can refresh local cache,Refresh health and source visibility only,Model/rank/source-truth/hidden-sort use
+leakage_gated,Potential leakage/as-of risk,Auto-safe runner can refresh local cache,Refresh health only,Any model/rank use without future leakage gate
+blocked_policy,Blocked vendor-like/review source,No auto-refresh,Blocked inventory row only,Auto-refresh/model/rank/source-truth/hidden-sort/app decision logic

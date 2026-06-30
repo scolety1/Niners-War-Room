@@ -28,7 +28,7 @@ def test_runners_call_expected_master_scripts() -> None:
     assert "scripts/sleeper_scheduled_pull_v0.py" in sleeper
     assert "scripts/sleeper_normalize_snapshot_v0.py" in sleeper
     assert "scripts/nflverse_scheduled_pull_v0.py" in nflverse
-    assert "scripts/nflverse_normalize_snapshot_v0.py" in nflverse
+    assert "scripts/nflverse_normalize_snapshot_v0.py" not in nflverse
     assert "scripts/nwr_operator_status_v0.py" in health
     assert "--write-report" in health
 
@@ -43,8 +43,10 @@ def test_candidate_generation_is_explicit_and_latest_approved_is_not_written() -
         )
     )
 
-    assert "[switch]$WriteCandidates" in combined
-    assert "--write-candidates" in combined
+    nflverse = _read(SCRIPTS / "run_nflverse_refresh_v0.ps1")
+
+    assert "[switch]$WriteCandidates" not in nflverse
+    assert "--write-candidates" not in nflverse
     assert "--write-approved" not in combined
     assert "latest_approved.json" not in combined
 
@@ -54,12 +56,19 @@ def test_nflverse_runner_uses_local_only_pythonpath_and_restores_it() -> None:
 
     assert r"C:\NWR_SHARED_DATA\vendor_spikes\nflverse\scratch\pydeps" in nflverse
     assert "$OriginalPythonPath = $env:PYTHONPATH" in nflverse
-    assert "$env:PYTHONPATH = $NflreadpyPath" in nflverse
+    assert "$PythonPathParts = @($RepoRoot, $NflreadpyPath)" in nflverse
+    assert "$env:PYTHONPATH = ($PythonPathParts -join [IO.Path]::PathSeparator)" in nflverse
     assert "$env:PYTHONPATH = $OriginalPythonPath" in nflverse
     assert "--seasons $Seasons" in nflverse
     assert "--datasets $Datasets" in nflverse
-    for dataset in ("rosters", "weekly_rosters", "participation", "opportunity"):
+    for dataset in (
+        "player_stats_weekly",
+        "player_stats_seasonal",
+        "play_by_play",
+        "ff_opportunity",
+    ):
         assert dataset in nflverse
+    assert "ff_rankings" not in nflverse
 
 
 def test_runbook_uses_disabled_task_examples_only() -> None:

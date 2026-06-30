@@ -11,17 +11,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.services.nflverse_refresh_health_service import (
+    FULL_SAFE_REFRESH_DATASET_IDS,
+)
+from src.services.nflverse_refresh_health_service import (
+    NFLVERSE_DATASET_SPECS as HEALTH_DATASET_SPECS,
+)
+
 DEFAULT_OUTPUT_ROOT = Path(r"C:\NWR_SHARED_DATA\scheduled_ingest\nflverse")
 USER_AGENT = "NWR-nflverse-Scheduled-Puller-V0"
-DEFAULT_DATASETS = (
-    "weekly_stats",
-    "season_stats",
-    "rosters",
-    "weekly_rosters",
-    "snap_counts",
-    "participation",
-    "opportunity",
-)
+DEFAULT_DATASETS = FULL_SAFE_REFRESH_DATASET_IDS
 SAMPLE_PLAYERS = (
     "Drake Maye",
     "Jaylen Warren",
@@ -101,7 +100,7 @@ class DatasetSpec:
     function_names: tuple[str, ...]
     file_name: str
     required: bool = False
-    loader_kwargs: dict[str, Any] | None = None
+    loader_kwargs_variants: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -110,12 +109,13 @@ class DatasetResult:
     function_name: str
     file_name: str
     status: str
-    row_count: int
-    column_count: int
+    row_count: int | None
+    column_count: int | None
     byte_count: int
     sha256: str
     field_names: list[str]
     field_roles: dict[str, list[str]]
+    health_summary: dict[str, str | int | None]
     quarantined_fields: list[str]
     matched_players: list[str]
     identity_matches: list[dict[str, str]]
@@ -133,47 +133,158 @@ class NflversePullResult:
     warnings: list[str]
 
 
+DATASET_ALIASES: dict[str, str] = {
+    alias: spec.dataset_id
+    for spec in HEALTH_DATASET_SPECS
+    for alias in spec.runner_dataset_names
+    if alias != spec.dataset_id
+}
+
 DATASET_SPECS = {
-    "weekly_stats": DatasetSpec(
-        name="weekly_stats",
-        function_names=("import_weekly_data", "load_player_stats"),
-        file_name="weekly_stats.csv",
+    "player_stats_weekly": DatasetSpec(
+        name="player_stats_weekly",
+        function_names=("load_player_stats", "import_weekly_data"),
+        file_name="player_stats_weekly.csv",
+        loader_kwargs_variants=({"summary_level": "week"}, {}),
     ),
-    "season_stats": DatasetSpec(
-        name="season_stats",
-        function_names=("import_seasonal_data", "load_player_stats", "load_seasonal_data"),
-        file_name="season_stats.csv",
-        loader_kwargs={"summary_level": "reg"},
+    "player_stats_seasonal": DatasetSpec(
+        name="player_stats_seasonal",
+        function_names=("load_player_stats", "import_seasonal_data", "load_seasonal_data"),
+        file_name="player_stats_seasonal.csv",
+        loader_kwargs_variants=({"summary_level": "reg"}, {}),
+    ),
+    "play_by_play": DatasetSpec(
+        name="play_by_play",
+        function_names=("load_pbp", "import_pbp_data"),
+        file_name="play_by_play.csv",
+    ),
+    "team_stats": DatasetSpec(
+        name="team_stats",
+        function_names=("load_team_stats", "import_team_stats"),
+        file_name="team_stats.csv",
+    ),
+    "schedules": DatasetSpec(
+        name="schedules",
+        function_names=("load_schedules", "import_schedules"),
+        file_name="schedules.csv",
+    ),
+    "players": DatasetSpec(
+        name="players",
+        function_names=("load_players", "import_players"),
+        file_name="players.csv",
     ),
     "rosters": DatasetSpec(
         name="rosters",
-        function_names=("import_rosters", "load_rosters"),
+        function_names=("load_rosters", "import_rosters"),
         file_name="rosters.csv",
     ),
     "weekly_rosters": DatasetSpec(
         name="weekly_rosters",
-        function_names=("import_weekly_rosters", "load_rosters_weekly", "load_weekly_rosters"),
+        function_names=("load_rosters_weekly", "load_weekly_rosters", "import_weekly_rosters"),
         file_name="weekly_rosters.csv",
+    ),
+    "ff_playerids": DatasetSpec(
+        name="ff_playerids",
+        function_names=("load_ff_playerids", "import_ff_playerids"),
+        file_name="ff_playerids.csv",
+    ),
+    "depth_charts": DatasetSpec(
+        name="depth_charts",
+        function_names=("load_depth_charts", "import_depth_charts"),
+        file_name="depth_charts.csv",
+    ),
+    "injuries": DatasetSpec(
+        name="injuries",
+        function_names=("load_injuries", "import_injuries"),
+        file_name="injuries.csv",
     ),
     "snap_counts": DatasetSpec(
         name="snap_counts",
-        function_names=("import_snap_counts", "load_snap_counts"),
+        function_names=("load_snap_counts", "import_snap_counts"),
         file_name="snap_counts.csv",
     ),
     "participation": DatasetSpec(
         name="participation",
-        function_names=("import_participation", "load_participation"),
+        function_names=("load_participation", "import_participation"),
         file_name="participation.csv",
     ),
-    "opportunity": DatasetSpec(
-        name="opportunity",
+    "ftn_charting": DatasetSpec(
+        name="ftn_charting",
+        function_names=("load_ftn_charting", "import_ftn_charting"),
+        file_name="ftn_charting.csv",
+    ),
+    "pfr_advstats": DatasetSpec(
+        name="pfr_advstats",
+        function_names=("load_pfr_advstats", "import_pfr_advstats"),
+        file_name="pfr_advstats.csv",
+        loader_kwargs_variants=(
+            {"stat_type": "pass"},
+            {"stat_type": "rush"},
+            {"stat_type": "rec"},
+            {},
+        ),
+    ),
+    "nextgen_stats": DatasetSpec(
+        name="nextgen_stats",
+        function_names=("load_nextgen_stats", "import_nextgen_stats"),
+        file_name="nextgen_stats.csv",
+        loader_kwargs_variants=(
+            {"stat_type": "passing"},
+            {"stat_type": "rushing"},
+            {"stat_type": "receiving"},
+            {},
+        ),
+    ),
+    "draft_picks": DatasetSpec(
+        name="draft_picks",
+        function_names=("load_draft_picks", "import_draft_picks"),
+        file_name="draft_picks.csv",
+    ),
+    "combine": DatasetSpec(
+        name="combine",
+        function_names=("load_combine", "import_combine"),
+        file_name="combine.csv",
+    ),
+    "contracts": DatasetSpec(
+        name="contracts",
+        function_names=("load_contracts", "import_contracts"),
+        file_name="contracts.csv",
+    ),
+    "trades": DatasetSpec(
+        name="trades",
+        function_names=("load_trades", "import_trades"),
+        file_name="trades.csv",
+    ),
+    "teams": DatasetSpec(
+        name="teams",
+        function_names=("load_teams", "import_teams"),
+        file_name="teams.csv",
+    ),
+    "officials": DatasetSpec(
+        name="officials",
+        function_names=("load_officials", "import_officials"),
+        file_name="officials.csv",
+    ),
+    "espn_qbr": DatasetSpec(
+        name="espn_qbr",
+        function_names=("load_espn_qbr", "import_espn_qbr"),
+        file_name="espn_qbr.csv",
+    ),
+    "ff_opportunity": DatasetSpec(
+        name="ff_opportunity",
         function_names=(
-            "import_player_stats",
             "load_ff_opportunity",
             "load_opportunity",
             "import_opportunity",
+            "import_player_stats",
         ),
-        file_name="opportunity.csv",
+        file_name="ff_opportunity.csv",
+        loader_kwargs_variants=(
+            {"stat_type": "weekly"},
+            {"stat_type": "pbp_pass"},
+            {"stat_type": "pbp_rush"},
+            {},
+        ),
     ),
 }
 
@@ -255,7 +366,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--datasets",
         nargs="+",
-        choices=tuple(DATASET_SPECS),
+        choices=tuple(sorted(set(DATASET_SPECS) | set(DATASET_ALIASES))),
         default=list(DEFAULT_DATASETS),
     )
     parser.add_argument(
@@ -302,6 +413,7 @@ def _import_nflreadpy() -> Any:
 
 
 def _dataset_spec(name: str) -> DatasetSpec:
+    name = DATASET_ALIASES.get(name, name)
     try:
         return DATASET_SPECS[name]
     except KeyError as exc:
@@ -321,12 +433,30 @@ def _load_dataset(
         return _skipped_dataset_result(
             spec,
             f"no supported nflreadpy function found: {', '.join(spec.function_names)}",
+            status="missing_loader",
         )
 
     output_path = snapshot_dir / spec.file_name
     try:
-        frame = _call_loader(loader, seasons, spec.loader_kwargs or {})
-        rows, fields = _frame_to_rows(frame)
+        rows: list[dict[str, Any]] = []
+        fields: list[str] = []
+        last_type_error: TypeError | None = None
+        for kwargs in spec.loader_kwargs_variants or ({},):
+            try:
+                frame = _call_loader(loader, seasons, kwargs)
+            except TypeError as exc:
+                if len(spec.loader_kwargs_variants) > 1:
+                    last_type_error = exc
+                    continue
+                raise
+            variant_rows, variant_fields = _frame_to_rows(frame)
+            if kwargs and len(spec.loader_kwargs_variants) > 1:
+                variant_rows = [_with_loader_variant(row, kwargs) for row in variant_rows]
+                variant_fields = _field_names(variant_rows, (*variant_fields, *kwargs))
+            rows.extend(variant_rows)
+            fields = _field_names(rows, (*fields, *variant_fields))
+        if not fields and last_type_error is not None:
+            raise last_type_error
         body = _csv_bytes(rows, fields)
         output_path.write_bytes(body)
         field_roles = _field_roles(fields)
@@ -344,6 +474,7 @@ def _load_dataset(
             sha256=_sha256(body),
             field_names=fields,
             field_roles=field_roles,
+            health_summary=_dataset_health_summary(rows, fields),
             quarantined_fields=quarantined,
             matched_players=matched,
             identity_matches=identity_matches,
@@ -351,18 +482,22 @@ def _load_dataset(
             warning=_dataset_warning(spec.name, quarantined),
         )
     except Exception as exc:
-        output_path.write_text("", encoding="utf-8")
         return DatasetResult(
             name=spec.name,
             function_name=function_name,
             file_name=spec.file_name,
-            status="error" if spec.required else "warning",
-            row_count=0,
-            column_count=0,
+            status="failed",
+            row_count=None,
+            column_count=None,
             byte_count=0,
             sha256=_sha256(b""),
             field_names=[],
             field_roles={},
+            health_summary={
+                "season_coverage": None,
+                "key_column_coverage": None,
+                "duplicate_key_count": None,
+            },
             quarantined_fields=[],
             matched_players=[],
             identity_matches=[],
@@ -380,14 +515,21 @@ def _find_loader(nflreadpy: Any, spec: DatasetSpec) -> tuple[str, Any | None]:
 
 
 def _call_loader(loader: Any, seasons: list[int], kwargs: dict[str, Any]) -> Any:
-    attempts = (
+    attempts = [
         lambda: loader(seasons, **kwargs),
-        lambda: loader(seasons),
         lambda: loader(seasons=seasons, **kwargs),
-        lambda: loader(seasons=seasons),
         lambda: loader(years=seasons, **kwargs),
-        lambda: loader(years=seasons),
-    )
+        lambda: loader(**kwargs),
+    ]
+    if not kwargs:
+        attempts.extend(
+            [
+                lambda: loader(seasons),
+                lambda: loader(seasons=seasons),
+                lambda: loader(years=seasons),
+                lambda: loader(),
+            ]
+        )
     last_error: TypeError | None = None
     for attempt in attempts:
         try:
@@ -396,6 +538,13 @@ def _call_loader(loader: Any, seasons: list[int], kwargs: dict[str, Any]) -> Any
             last_error = exc
     assert last_error is not None
     raise last_error
+
+
+def _with_loader_variant(row: dict[str, Any], kwargs: dict[str, Any]) -> dict[str, Any]:
+    output = dict(row)
+    for key, value in kwargs.items():
+        output.setdefault(key, value)
+    return output
 
 
 def _frame_to_rows(frame: Any) -> tuple[list[dict[str, Any]], list[str]]:
@@ -429,6 +578,70 @@ def _field_names(rows: list[dict[str, Any]], columns: Any | None) -> list[str]:
                 names.append(name)
                 seen.add(name)
     return names
+
+
+def _dataset_health_summary(
+    rows: list[dict[str, Any]],
+    fields: list[str],
+) -> dict[str, str | int | None]:
+    season_field = _first_field(fields, ("season", "draft_year", "year"))
+    week_field = _first_field(fields, ("week",))
+    player_field = _first_field(
+        fields,
+        (
+            "player_id",
+            "gsis_id",
+            "player_name",
+            "player_display_name",
+            "full_name",
+            "player",
+            "name",
+        ),
+    )
+    seasons = {str(row.get(season_field)) for row in rows if season_field and row.get(season_field)}
+    weeks = {str(row.get(week_field)) for row in rows if week_field and row.get(week_field)}
+    key_fields = [field for field in (season_field, week_field, player_field) if field]
+    seen: set[tuple[str, ...]] = set()
+    duplicate_count = 0
+    if key_fields:
+        for row in rows:
+            key = tuple(str(row.get(field) or "") for field in key_fields)
+            if not any(key):
+                continue
+            if key in seen:
+                duplicate_count += 1
+            seen.add(key)
+    missing_key_columns = [
+        label
+        for label, field in (
+            ("season", season_field),
+            ("week", week_field),
+            ("player", player_field),
+        )
+        if not field
+    ]
+    season_coverage = _range_text(seasons) if seasons else "Not enough information"
+    if weeks:
+        season_coverage = f"seasons={season_coverage}; weeks={len(weeks)}"
+    else:
+        season_coverage = f"seasons={season_coverage}"
+    return {
+        "season_coverage": season_coverage,
+        "key_column_coverage": (
+            f"present={3 - len(missing_key_columns)}/3; "
+            f"missing={'; '.join(missing_key_columns) or 'none'}"
+        ),
+        "duplicate_key_count": duplicate_count,
+    }
+
+
+def _first_field(fields: list[str], candidates: tuple[str, ...]) -> str:
+    by_lower = {field.lower(): field for field in fields}
+    for candidate in candidates:
+        match = by_lower.get(candidate.lower())
+        if match:
+            return match
+    return ""
 
 
 def _csv_bytes(rows: list[dict[str, Any]], fields: list[str]) -> bytes:
@@ -557,18 +770,28 @@ def _dataset_warning(name: str, quarantined_fields: list[str]) -> str:
     )
 
 
-def _skipped_dataset_result(spec: DatasetSpec, reason: str) -> DatasetResult:
+def _skipped_dataset_result(
+    spec: DatasetSpec,
+    reason: str,
+    *,
+    status: str = "skipped",
+) -> DatasetResult:
     return DatasetResult(
         name=spec.name,
         function_name="",
         file_name=spec.file_name,
-        status="skipped",
-        row_count=0,
-        column_count=0,
+        status=status,
+        row_count=None,
+        column_count=None,
         byte_count=0,
         sha256=_sha256(b""),
         field_names=[],
         field_roles={},
+        health_summary={
+            "season_coverage": None,
+            "key_column_coverage": None,
+            "duplicate_key_count": None,
+        },
         quarantined_fields=[],
         matched_players=[],
         identity_matches=[],
@@ -617,6 +840,7 @@ def _metadata_payload(
         "datasets": [
             {
                 "name": result.name,
+                "dataset_id": result.name,
                 "function_name": result.function_name,
                 "file_name": result.file_name,
                 "status": result.status,
@@ -624,9 +848,11 @@ def _metadata_payload(
                 "column_count": result.column_count,
                 "byte_count": result.byte_count,
                 "sha256": result.sha256,
+                "schema_fingerprint": _schema_fingerprint(result.field_names),
                 "field_names": result.field_names,
                 "field_name_summary": result.field_names[:60],
                 "field_roles": result.field_roles,
+                "health_summary": result.health_summary,
                 "quarantined_fields": result.quarantined_fields,
                 "matched_sample_players": result.matched_players,
                 "identity_matches": result.identity_matches,
@@ -743,12 +969,30 @@ def _json_bytes(payload: Any) -> bytes:
     ).encode("utf-8")
 
 
+def _schema_fingerprint(fields: list[str]) -> str:
+    if not fields:
+        return ""
+    body = "\n".join(f"{index}:{field}" for index, field in enumerate(fields)).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
+
+
 def _sha256(body: bytes) -> str:
     return hashlib.sha256(body).hexdigest()
 
 
 def _norm(value: Any) -> str:
     return "".join(char for char in str(value).lower() if char.isalnum())
+
+
+def _range_text(values: set[str]) -> str:
+    numeric: list[int] = []
+    for value in values:
+        try:
+            numeric.append(int(value))
+        except (TypeError, ValueError):
+            return "; ".join(sorted(values))
+    numeric = sorted(numeric)
+    return f"{numeric[0]}-{numeric[-1]}" if len(numeric) > 1 else str(numeric[0])
 
 
 if __name__ == "__main__":

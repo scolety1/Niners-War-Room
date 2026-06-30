@@ -166,6 +166,48 @@ def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:
     assert _value(report, "Refresh Data", "DynastyProcess freshness after refresh") == "GREEN"
 
 
+def test_data_health_summarizes_nflverse_dataset_rows(tmp_path: Path) -> None:
+    refresh_status = tmp_path / "latest_refresh_status.json"
+    refresh_status.write_text(
+        json.dumps(
+            {
+                "run_id": "20260630_120000",
+                "finished_at_utc": "2026-06-30T12:00:00+00:00",
+                "overall_status": "YELLOW",
+                "results": [
+                    {
+                        "source_id": "nflverse_player_stats_weekly",
+                        "source_kind": "public_structured_nfl_dataset",
+                        "dataset_id": "player_stats_weekly",
+                        "status": "GREEN",
+                        "configured": True,
+                        "refreshed": False,
+                    },
+                    {
+                        "source_id": "nflverse_ff_rankings",
+                        "source_kind": "public_structured_nfl_dataset",
+                        "dataset_id": "ff_rankings",
+                        "status": "BLOCKED",
+                        "configured": False,
+                        "refreshed": False,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_data_health_dashboard(
+        runtime_root=tmp_path / "runtime",
+        refresh_status_path=refresh_status,
+    )
+
+    assert _value(report, "Refresh Data", "NFLVerse dataset health rows") == "2"
+    assert _value(report, "Refresh Data", "NFLVerse blocked policy datasets") == "1"
+    assert _value(report, "Refresh Data", "NFLVerse NOT_CONFIGURED datasets") == "0"
+    assert _status(report, "Refresh Data", "NFLVerse review/stale/unknown datasets") == "GREEN"
+
+
 def test_settings_data_health_route_and_legacy_alias_exist() -> None:
     route_map = {page.url_path: page.file_path for page in ALL_NAVIGATION_PAGES}
 

@@ -122,15 +122,68 @@ def _render_safe_loader_controls() -> None:
                     "runner_exists",
                     "exit_code",
                     "freshness",
+                    "source_family",
+                    "dataset_id",
+                    "dataset_default_mode",
+                    "headline_status",
+                    "execution_status",
+                    "dataset_health_status",
+                    "dataset_row_count",
+                    "season_coverage",
+                    "key_column_coverage",
+                    "schema_status",
+                    "coverage_status",
+                    "row_count_status",
+                    "freshness_status",
+                    "missingness_status",
+                    "source_policy_status",
+                    "raw_cache_path",
+                    "tracked_summary_path",
+                    "full_safe_refresh_health",
                     "raw_cache_location",
                     "tracked_artifacts_written",
                     "user_explanation",
+                    "model_use_allowed",
                     "model_use_warning",
                 ],
             ],
             use_container_width=True,
             hide_index=True,
         )
+        nflverse = rows.loc[
+            rows.get("source_family", pd.Series(dtype=str)).astype(str).eq("nflverse")
+            | rows.get("source_id", pd.Series(dtype=str)).astype(str).str.startswith("nflverse_")
+        ]
+        if not nflverse.empty:
+            st.markdown("### NFLVerse Dataset Health")
+            st.dataframe(
+                nflverse.loc[
+                    :,
+                    [
+                        "source_id",
+                        "dataset_id",
+                        "dataset_default_mode",
+                        "headline_status",
+                        "execution_status",
+                        "schema_status",
+                        "coverage_status",
+                        "row_count_status",
+                        "freshness_status",
+                        "missingness_status",
+                        "source_policy_status",
+                        "dataset_row_count",
+                        "season_coverage",
+                        "key_column_coverage",
+                        "raw_cache_path",
+                        "tracked_summary_path",
+                        "model_use_allowed",
+                        "training_allowed",
+                        "rank_logic_allowed",
+                    ],
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
         st.download_button(
             "Export Results",
             data=export_results_csv(run),

@@ -1,0 +1,26 @@
+dataset_id,primary_coverage_check,missing_semantics
+player_stats_weekly,season/week/player key coverage,Missing is Not enough information
+player_stats_seasonal,season/player key coverage,Missing is Not enough information
+play_by_play,game/week/play key coverage,Raw rows stay local-only
+team_stats,team/season or team/game coverage,Leakage-gated until separate approval
+schedules,unique game/team/week coverage,Display support only
+players,ID and duplicate identity coverage,Identity support only
+rosters,player/team/season coverage,Identity support only
+weekly_rosters,player/team/week coverage,Missing roster row is not inactive/healthy
+ff_playerids,crosswalk field presence,Identity bridge review only
+depth_charts,team/week/position coverage,Missing is not no-role
+injuries,team/week/status coverage,Missing is not healthy
+snap_counts,player/game snap coverage,Missing is not zero snaps
+participation,season/play attribution coverage,Review-only source visibility
+ftn_charting,season/week charting coverage,Manual charting caveat remains visible
+pfr_advstats,pass/rush/rec subtype coverage,Review-only source visibility
+nextgen_stats,passing/rushing/receiving subtype coverage,Missing threshold row is not bad/zero performance
+draft_picks,draft-year/pick/player coverage,Missing row is not confirmed UDFA
+combine,draft-class measurement coverage,Missing drill stays missing
+contracts,current contract row coverage,No valuation use
+trades,transaction-date coverage,No Trading Lab valuation use
+teams,team metadata completeness,Display support only
+officials,game/week assignment coverage,Low-priority display inventory
+espn_qbr,season/week QBR coverage,Vendor-derived review only
+ff_opportunity,weekly/pbp subtype coverage,External model-derived review only
+ff_rankings,blocked policy inventory only,No auto-refresh

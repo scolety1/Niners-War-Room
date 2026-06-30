@@ -42,12 +42,61 @@ RESULT_COLUMNS = [
     "runner_path",
     "exit_code",
     "freshness",
+    "source_family",
+    "dataset_id",
+    "dataset_default_mode",
+    "headline_status",
+    "execution_status",
+    "dataset_health_status",
+    "dataset_row_count",
+    "dataset_column_count",
+    "season_coverage",
+    "key_column_coverage",
+    "schema_fingerprint",
+    "schema_status",
+    "coverage_status",
+    "row_count_status",
+    "freshness_status",
+    "missingness_status",
+    "source_policy_status",
+    "raw_cache_path",
+    "tracked_summary_path",
+    "training_allowed",
+    "rank_logic_allowed",
+    "last_attempt_at",
+    "last_success_at",
+    "full_safe_refresh_health",
     "expected_artifacts",
     "found_artifacts",
     "raw_cache_location",
     "tracked_artifacts_written",
     "user_explanation",
+    "model_use_allowed",
     "model_use_warning",
+]
+
+NFLVERSE_COLUMNS = [
+    "source_id",
+    "dataset_id",
+    "dataset_default_mode",
+    "headline_status",
+    "execution_status",
+    "schema_status",
+    "coverage_status",
+    "row_count_status",
+    "freshness_status",
+    "missingness_status",
+    "source_policy_status",
+    "dataset_row_count",
+    "season_coverage",
+    "key_column_coverage",
+    "schema_fingerprint",
+    "raw_cache_path",
+    "tracked_summary_path",
+    "model_use_allowed",
+    "training_allowed",
+    "rank_logic_allowed",
+    "user_explanation",
 ]
 
 REGISTRY_COLUMNS = [
@@ -67,6 +116,7 @@ REGISTRY_COLUMNS = [
     "raw_cache_location",
     "writes_tracked_artifact",
     "freshness_policy",
+    "expected_artifacts",
     "model_use_allowed",
     "model_use_warning",
     "default_action",
@@ -114,11 +164,25 @@ def _display_results(rows: list[dict[str, object]]) -> pd.DataFrame:
     return frame.loc[:, RESULT_COLUMNS]
 
 
+def _display_nflverse_results(rows: list[dict[str, object]]) -> pd.DataFrame:
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return pd.DataFrame(columns=NFLVERSE_COLUMNS)
+    nflverse = frame.loc[
+        frame.get("source_family", pd.Series(dtype=str)).astype(str).eq("nflverse")
+        | frame.get("source_id", pd.Series(dtype=str)).astype(str).str.startswith("nflverse_")
+    ]
+    if nflverse.empty:
+        return pd.DataFrame(columns=NFLVERSE_COLUMNS)
+    return nflverse.loc[:, NFLVERSE_COLUMNS]
+
+
 def _display_registry() -> pd.DataFrame:
     rows = []
     for entry in build_refresh_registry():
         row = entry.__dict__.copy()
         row["required_env_vars"] = "; ".join(entry.required_env_vars)
+        row["expected_artifacts"] = "; ".join(entry.expected_artifacts)
         rows.append(row)
     return pd.DataFrame(rows).loc[:, REGISTRY_COLUMNS]
 
@@ -159,9 +223,11 @@ with col4:
 
 st.info(
     "Quick Refresh pulls Sleeper league state and DynastyProcess market baseline. "
-    "Full Safe Refresh also includes the nflverse runner and CFBD only when CFBD_API_KEY "
-    "is configured. Vendor, Gmail, frozen/latest/pinned, model, Outcome, PDF, ADP, and "
-    "runtime sources are not pulled automatically. Pulled data is review/status/cache "
+    "Full Safe Refresh also includes the nflverse runner plus dataset-level nflverse "
+    "health rows, and CFBD only when CFBD_API_KEY is configured. Vendor, Gmail, "
+    "frozen/latest/pinned, model, Outcome, PDF, ADP, and runtime sources are not pulled "
+    "automatically. Missing nflverse data means Not enough information, not zero, false, "
+    "healthy, clean, no-role, no-injury, or no-usage. Pulled data is review/status/cache "
     "material until a separate approved lane admits it."
 )
 
@@ -198,6 +264,14 @@ if last_run:
         use_container_width=True,
         hide_index=True,
     )
+    nflverse_results = _display_nflverse_results(list(last_run["rows"]))
+    if not nflverse_results.empty:
+        st.subheader("NFLVerse Dataset Health")
+        st.dataframe(
+            nflverse_results,
+            use_container_width=True,
+            hide_index=True,
+        )
     st.download_button(
         "Export Results",
         data=export_results_csv(run),

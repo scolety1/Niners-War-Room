@@ -1,0 +1,10 @@
+finding_id,classification,area,current_risk,safe_action,status
+TL-001,SAFE_NOW,package review,directional outcome labels and visible-score gap framing,replace with neutral context completeness labels,implemented
+TL-002,SAFE_NOW,market panel,market sanity panel could imply valuation or fairness,remove from primary Trading Lab UI and service path,implemented
+TL-003,SAFE_NOW,manual planner rows,comma-split text made planner rows fragile,replace with structured editable manual rows,implemented
+TL-004,SAFE_NOW,manual checklist,static checklist could not track user review state,add editable checklist rows with manual statuses,implemented
+TL-005,WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,identity availability,refresh-health lane not merged green,placeholder only; no dataset wiring,deferred
+TL-006,WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,role production,refresh-health lane not merged green,placeholder only; no dataset wiring,deferred
+TL-007,WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,contract context,refresh-health lane not merged green,placeholder only; no dataset wiring,deferred
+TL-008,WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,missing evidence,missing data could be misread as clean,explicit Not enough information placeholders,prepared
+TL-009,BLOCKED,automated decisions,auto finder/generator/pricing would violate HQ guardrails,document and test absence,blocked
