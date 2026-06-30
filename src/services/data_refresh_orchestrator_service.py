@@ -31,6 +31,13 @@ from src.services.draft_day_runtime_state_service import (
     runtime_state_path,
 )
 from src.services.lve_refresh_service import run_sleeper_refresh
+from src.services.nflverse_refresh_health_service import (
+    NFLVERSE_DATASET_SPECS,
+    NflverseDatasetHealth,
+    build_nflverse_dataset_health,
+    configured_dataset_ids,
+    nflverse_dataset_source_id,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STATUS_ROOT = REPO_ROOT / "local_exports" / "refresh_data"
@@ -88,6 +95,7 @@ RESULT_SCHEMA = (
     "found_artifacts",
     "tracked_artifacts_written",
     "user_explanation",
+    "model_use_allowed",
     "model_use_warning",
     "requires_api_key",
     "required_env_vars",
@@ -113,6 +121,33 @@ RESULT_SCHEMA = (
     "last_success_timestamp",
     "user_message",
     "caveat",
+    "source_family",
+    "dataset_id",
+    "dataset_default_mode",
+    "dataset_loader",
+    "headline_status",
+    "execution_status",
+    "dataset_health_status",
+    "dataset_row_count",
+    "dataset_column_count",
+    "season_coverage",
+    "key_column_coverage",
+    "schema_fingerprint",
+    "schema_status",
+    "coverage_status",
+    "row_count_status",
+    "freshness_status",
+    "missingness_status",
+    "source_policy_status",
+    "raw_cache_path",
+    "tracked_summary_path",
+    "training_allowed",
+    "rank_logic_allowed",
+    "last_attempt_at",
+    "last_success_at",
+    "package_version",
+    "safe_refresh_health",
+    "full_safe_refresh_health",
 )
 
 
@@ -187,6 +222,7 @@ class RefreshSourceResult:
     found_artifacts: tuple[str, ...]
     tracked_artifacts_written: str
     user_explanation: str
+    model_use_allowed: bool
     model_use_warning: str
     requires_api_key: bool
     required_env_vars: tuple[str, ...]
@@ -212,6 +248,33 @@ class RefreshSourceResult:
     last_success_timestamp: str
     user_message: str
     caveat: str
+    source_family: str
+    dataset_id: str
+    dataset_default_mode: str
+    dataset_loader: str
+    headline_status: str
+    execution_status: str
+    dataset_health_status: str
+    dataset_row_count: str
+    dataset_column_count: str
+    season_coverage: str
+    key_column_coverage: str
+    schema_fingerprint: str
+    schema_status: str
+    coverage_status: str
+    row_count_status: str
+    freshness_status: str
+    missingness_status: str
+    source_policy_status: str
+    raw_cache_path: str
+    tracked_summary_path: str
+    training_allowed: str
+    rank_logic_allowed: str
+    last_attempt_at: str
+    last_success_at: str
+    package_version: str
+    safe_refresh_health: str
+    full_safe_refresh_health: str
 
 
 @dataclass(frozen=True)
@@ -344,9 +407,9 @@ def build_refresh_registry(
             expected_runtime="< 2 minutes",
         ),
         RefreshSourceEntry(
-            source_id="nflverse_public_data",
-            source_name="nflverse public data",
-            source_kind="public_structured_nfl",
+            source_id="nflverse_refresh_runner",
+            source_name="nflverse refresh runner",
+            source_kind="public_structured_nfl_runner",
             loader_category=AUTO_SLOW,
             enabled_in_quick_refresh=False,
             enabled_in_full_safe_refresh=True,
@@ -375,6 +438,7 @@ def build_refresh_registry(
             command_or_function=str(nflverse_script),
             expected_runtime="several minutes",
         ),
+        *_nflverse_dataset_entries(shared_root, nflverse_configured, nflverse_script.exists()),
         RefreshSourceEntry(
             source_id="cfbd_college_football_data",
             source_name="CollegeFootballData",
@@ -603,7 +667,7 @@ def _default_handlers() -> dict[str, SourceHandler]:
     return {
         "sleeper_league_state": _refresh_sleeper,
         "dynastyprocess_market_baseline": _refresh_dynastyprocess,
-        "nflverse_public_data": _refresh_nflverse,
+        "nflverse_refresh_runner": _refresh_nflverse,
         "cfbd_college_football_data": _refresh_cfbd,
         "frozen_baseline_board": _check_frozen_board,
         "pinned_manifest_hash": _check_pinned_manifest,
@@ -614,6 +678,10 @@ def _default_handlers() -> dict[str, SourceHandler]:
         "runtime_draft_state": _check_runtime_state,
         "model_evaluation_harness": _check_artifact_source,
         "sleeper_adp_display_context": _check_artifact_source,
+        **{
+            nflverse_dataset_source_id(spec.dataset_id): _check_nflverse_dataset
+            for spec in NFLVERSE_DATASET_SPECS
+        },
     }
 
 
@@ -1021,6 +1089,51 @@ def _check_artifact_source(
     )
 
 
+def _check_nflverse_dataset(
+    entry: RefreshSourceEntry, context: RefreshContext
+) -> RefreshSourceResult:
+    started = perf_counter()
+    health = _nflverse_health_for_entry(entry, context)
+    action_type = ACTION_NOT_CONFIGURED if health.status == NOT_CONFIGURED else ACTION_CHECK_ONLY
+    freshness = (
+        f"row_count={health.row_count}; columns={health.column_count}; "
+        f"schema={health.schema_status}; coverage={health.coverage_status}; "
+        f"freshness={health.freshness_status}; missingness={health.missingness_status}; "
+        f"source_policy={health.source_policy_status}"
+    )
+    return _result(
+        entry,
+        context,
+        started=started,
+        action_type=action_type,
+        status=health.status,
+        refreshed=False,
+        freshness=freshness,
+        found_artifacts=health.found_artifacts,
+        explanation=health.user_explanation,
+        artifact=health.data_path or health.metadata_path,
+        dataset_health=health,
+    )
+
+
+def _nflverse_health_for_entry(
+    entry: RefreshSourceEntry, context: RefreshContext
+) -> NflverseDatasetHealth:
+    rows = build_nflverse_dataset_health(
+        shared_root=context.shared_root,
+        status_root=context.status_root,
+    )
+    by_source = {row.source_id: row for row in rows}
+    try:
+        return by_source[entry.source_id]
+    except KeyError as exc:
+        raise ValueError(f"Unknown nflverse dataset health source: {entry.source_id}") from exc
+
+
+def _nflverse_dataset_source_ids() -> set[str]:
+    return {nflverse_dataset_source_id(spec.dataset_id) for spec in NFLVERSE_DATASET_SPECS}
+
+
 def _run_command(command: list[str], cwd: Path, timeout_seconds: int) -> CommandResult:
     completed = subprocess.run(
         command,
@@ -1072,6 +1185,7 @@ def _result(
     exit_code: int | str | None = None,
     runner_path: str = "",
     tracked_artifacts_written: str = "",
+    dataset_health: NflverseDatasetHealth | None = None,
 ) -> RefreshSourceResult:
     timestamp = _utc_now()
     return RefreshSourceResult(
@@ -1094,6 +1208,7 @@ def _result(
         found_artifacts=found_artifacts,
         tracked_artifacts_written=tracked_artifacts_written,
         user_explanation=explanation,
+        model_use_allowed=entry.model_use_allowed,
         model_use_warning=entry.model_use_warning,
         requires_api_key=entry.requires_api_key,
         required_env_vars=entry.required_env_vars,
@@ -1118,7 +1233,38 @@ def _result(
         last_result=status,
         last_success_timestamp=timestamp if refreshed and status == "GREEN" else "",
         user_message=explanation,
-        caveat=entry.model_use_warning,
+        caveat=dataset_health.caveat if dataset_health else entry.model_use_warning,
+        source_family=dataset_health.source_family if dataset_health else "",
+        dataset_id=dataset_health.dataset_id if dataset_health else "",
+        dataset_default_mode=dataset_health.default_mode if dataset_health else "",
+        dataset_loader=(
+            dataset_health.loader_name_canonical if dataset_health else ""
+        ),
+        headline_status=dataset_health.headline_status if dataset_health else "",
+        execution_status=dataset_health.execution_status if dataset_health else "",
+        dataset_health_status=dataset_health.status if dataset_health else "",
+        dataset_row_count=dataset_health.row_count if dataset_health else "",
+        dataset_column_count=dataset_health.column_count if dataset_health else "",
+        season_coverage=dataset_health.season_coverage if dataset_health else "",
+        key_column_coverage=dataset_health.key_column_coverage if dataset_health else "",
+        schema_fingerprint=dataset_health.schema_fingerprint if dataset_health else "",
+        schema_status=dataset_health.schema_status if dataset_health else "",
+        coverage_status=dataset_health.coverage_status if dataset_health else "",
+        row_count_status=dataset_health.row_count_status if dataset_health else "",
+        freshness_status=dataset_health.freshness_status if dataset_health else "",
+        missingness_status=dataset_health.missingness_status if dataset_health else "",
+        source_policy_status=dataset_health.source_policy_status if dataset_health else "",
+        raw_cache_path=dataset_health.raw_cache_path if dataset_health else "",
+        tracked_summary_path=dataset_health.tracked_summary_path if dataset_health else "",
+        training_allowed=dataset_health.training_allowed if dataset_health else "false",
+        rank_logic_allowed=dataset_health.rank_logic_allowed if dataset_health else "false",
+        last_attempt_at=dataset_health.last_attempt_at if dataset_health else "",
+        last_success_at=dataset_health.last_success_at if dataset_health else "",
+        package_version=dataset_health.package_version if dataset_health else "",
+        safe_refresh_health=dataset_health.safe_refresh_health if dataset_health else "",
+        full_safe_refresh_health=(
+            dataset_health.full_safe_refresh_health if dataset_health else ""
+        ),
     )
 
 
@@ -1130,6 +1276,11 @@ def _policy_result(
     status: str,
     explanation: str,
 ) -> RefreshSourceResult:
+    dataset_health = (
+        _nflverse_health_for_entry(entry, context)
+        if entry.source_id in _nflverse_dataset_source_ids()
+        else None
+    )
     return _result(
         entry,
         context,
@@ -1141,6 +1292,7 @@ def _policy_result(
         found_artifacts=(),
         explanation=explanation,
         artifact="",
+        dataset_health=dataset_health,
     )
 
 
@@ -1163,6 +1315,60 @@ def _entry_selected(
     if loader_mode == MANUAL_SOURCES_CHECKLIST:
         return entry.loader_category == MANUAL_BLOCKED
     return False
+
+
+def _nflverse_dataset_entries(
+    shared_root: Path,
+    nflverse_configured: bool,
+    nflverse_runner_exists: bool,
+) -> tuple[RefreshSourceEntry, ...]:
+    configured_ids = configured_dataset_ids()
+    return tuple(
+        RefreshSourceEntry(
+            source_id=nflverse_dataset_source_id(spec.dataset_id),
+            source_name=spec.display_name,
+            source_kind="public_structured_nfl_dataset",
+            loader_category=CHECK_ONLY,
+            enabled_in_quick_refresh=spec.default_mode == "safe_refresh",
+            enabled_in_full_safe_refresh=True,
+            requires_api_key=False,
+            required_env_vars=(),
+            runner_exists=nflverse_runner_exists and spec.dataset_id in configured_ids,
+            configured=(
+                spec.source_policy_status == "blocked_policy"
+                or (nflverse_configured and spec.dataset_id in configured_ids)
+            ),
+            safe_to_pull=False,
+            protected_artifact=False,
+            writes_raw_cache=False,
+            raw_cache_location=str(shared_root / "scheduled_ingest" / "nflverse"),
+            writes_tracked_artifact=False,
+            expected_artifacts=(
+                "scheduled_ingest/nflverse/<snapshot>/snapshot_metadata.json",
+                f"scheduled_ingest/nflverse/<snapshot>/{spec.file_name}",
+            ),
+            freshness_policy=spec.freshness_policy,
+            model_use_allowed=False,
+            model_use_warning=(
+                "Dataset health is refresh visibility only; it does not make nflverse "
+                "data model input, rank logic, source truth, hidden sort, trade value, "
+                "pick value, or a clean/default signal."
+            ),
+            default_action=ACTION_CHECK_ONLY,
+            failure_mode=(
+                "Report dataset health as GREEN/YELLOW/RED/NOT_CONFIGURED without "
+                "mutating raw data, candidates, approvals, model outputs, or ranks."
+            ),
+            user_explanation=(
+                f"Dataset-level Safe Refresh health for {spec.display_name}. "
+                "Missing dataset evidence is Not enough information, not zero, false, "
+                "healthy, clean, no-role, no-injury, or no-usage."
+            ),
+            command_or_function="dataset_health_check",
+            expected_runtime="< 1 second",
+        )
+        for spec in NFLVERSE_DATASET_SPECS
+    )
 
 
 def _check_only_entries(repo_root: Path, shared_root: Path) -> tuple[RefreshSourceEntry, ...]:

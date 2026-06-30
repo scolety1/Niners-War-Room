@@ -28,6 +28,7 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
+from src.services.nflverse_refresh_health_service import CANONICAL_DATASET_IDS
 
 
 def _settings(*, cfbd_api_key: str = "", sleeper_league_id: str = "123") -> ApiSettings:
@@ -66,6 +67,25 @@ def _fake_refreshed(entry, context) -> RefreshSourceResult:
 
 def _runner(command: list[str], cwd: Path, timeout: int) -> CommandResult:
     return CommandResult(0, "ok", "")
+
+
+def test_nflverse_registry_uses_25_canonical_dataset_rows() -> None:
+    registry = build_refresh_registry(settings=_settings())
+    dataset_entries = [
+        entry for entry in registry if entry.source_kind == "public_structured_nfl_dataset"
+    ]
+
+    assert [entry.source_id for entry in dataset_entries] == [
+        f"nflverse_{dataset_id}" for dataset_id in CANONICAL_DATASET_IDS
+    ]
+    assert len(dataset_entries) == 25
+    assert "nflverse_weekly_stats" not in {entry.source_id for entry in dataset_entries}
+    assert "nflverse_opportunity" not in {entry.source_id for entry in dataset_entries}
+    assert all(entry.model_use_allowed is False for entry in dataset_entries)
+    ff_rankings = next(
+        entry for entry in dataset_entries if entry.source_id == "nflverse_ff_rankings"
+    )
+    assert ff_rankings.configured
 
 
 def test_registry_contains_required_source_policy_fields() -> None:
@@ -122,13 +142,23 @@ def test_full_safe_refresh_includes_nflverse_when_runner_exists(tmp_path: Path) 
         },
         write_status=False,
     )
-    nflverse = next(row for row in run.results if row.source_id == "nflverse_public_data")
+    nflverse = next(row for row in run.results if row.source_id == "nflverse_refresh_runner")
 
     assert nflverse.runner_exists is True
     assert nflverse.action_type == REFRESHED
     assert nflverse.refreshed is True
     assert nflverse.exit_code == "0"
     assert "nflverse_refresh_manifest.json" in nflverse.found_artifacts[-1]
+    dataset_rows = [
+        row for row in run.results if row.source_kind == "public_structured_nfl_dataset"
+    ]
+    assert [row.source_id for row in dataset_rows] == [
+        f"nflverse_{dataset_id}" for dataset_id in CANONICAL_DATASET_IDS
+    ]
+    assert all(row.model_use_allowed is False for row in dataset_rows)
+    assert all(row.training_allowed == "false" for row in dataset_rows)
+    assert all(row.rank_logic_allowed == "false" for row in dataset_rows)
+    assert any(row.status == "BLOCKED" for row in dataset_rows)
 
 
 def test_nflverse_missing_runner_or_deps_returns_not_configured(tmp_path: Path) -> None:
@@ -139,17 +169,43 @@ def test_nflverse_missing_runner_or_deps_returns_not_configured(tmp_path: Path) 
         repo_root=repo_root,
         status_root=tmp_path / "status",
         shared_root=tmp_path / "shared",
-        source_ids=["nflverse_public_data"],
+        source_ids=["nflverse_refresh_runner"],
         settings=_settings(),
         command_runner=_runner,
         write_status=False,
     )
-    nflverse = next(row for row in run.results if row.source_id == "nflverse_public_data")
+    nflverse = next(row for row in run.results if row.source_id == "nflverse_refresh_runner")
 
     assert nflverse.action_type == ACTION_NOT_CONFIGURED
     assert nflverse.refreshed is False
     assert "not configured" in nflverse.user_explanation
     assert "runner missing" in nflverse.user_explanation
+
+
+def test_nflverse_dataset_rows_are_refresh_health_only(tmp_path: Path) -> None:
+    run = run_full_safe_refresh(
+        status_root=tmp_path / "status",
+        shared_root=tmp_path / "shared",
+        source_ids=["nflverse_player_stats_weekly", "nflverse_ff_rankings"],
+        settings=_settings(),
+        write_status=False,
+    )
+    by_source = {row.source_id: row for row in run.results}
+    weekly = by_source["nflverse_player_stats_weekly"]
+    rankings = by_source["nflverse_ff_rankings"]
+
+    assert weekly.action_type == ACTION_CHECK_ONLY
+    assert weekly.refreshed is False
+    assert weekly.status == "YELLOW"
+    assert weekly.dataset_id == "player_stats_weekly"
+    assert weekly.dataset_row_count == "Not enough information"
+    assert weekly.full_safe_refresh_health == "YELLOW"
+    assert "zero/false/healthy/clean" in weekly.user_message
+    assert rankings.action_type == ACTION_CHECK_ONLY
+    assert rankings.refreshed is False
+    assert rankings.status == "BLOCKED"
+    assert rankings.execution_status == "blocked_policy"
+    assert rankings.model_use_allowed is False
 
 
 def test_full_safe_refresh_reports_cfbd_not_configured_without_key(tmp_path: Path) -> None:
