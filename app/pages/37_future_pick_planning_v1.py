@@ -18,12 +18,12 @@ page_header(
     eyebrow="Development Lab / Safe V0",
     description=(
         "Future pick and asset ledger for planning notes. It may read manual Draft Cockpit "
-        "trade events, but it does not value picks or calculate trade fairness."
+        "trade events, while keeping pick/trade context descriptive and manual."
     ),
     status_items=(
         ("Planning ledger", "review"),
-        ("No pick value", "safe"),
-        ("No trade calculator", "safe"),
+        ("Display-only", "safe"),
+        ("Manual context", "safe"),
     ),
 )
 

@@ -27,8 +27,8 @@ page_header(
 )
 
 st.warning(
-    "Compatibility page only. This route does not create rookie rankings, class grades, "
-    "player recommendations, or model outputs."
+    "Compatibility page only. This route does not create rookie ranks, class labels, "
+    "active player outputs, or model outputs."
 )
 
 section_label("Go To")
