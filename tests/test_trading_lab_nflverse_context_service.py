@@ -129,7 +129,7 @@ def test_missing_values_and_deferred_context_do_not_become_positive_defaults() -
 
     assert NOT_ENOUGH_INFORMATION in details_text
     assert "Schedule / next game / opponent / bye" in missing_text
-    assert "No current/future safe schedule rows" in missing_text
+    assert "gated pending Trading Lab-specific display review" in missing_text
     assert "Missing is not zero" in missing_text
     for forbidden in ("healthy", "no-role", "no-usage", "confirmed UDFA"):
         assert forbidden.lower() not in details_text.lower()

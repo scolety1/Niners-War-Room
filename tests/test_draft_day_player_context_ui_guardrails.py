@@ -13,6 +13,7 @@ def test_draft_day_context_pages_do_not_read_raw_shared_nflverse_data() -> None:
     for path in (
         "app/components/draft_day_player_context.py",
         "src/services/draft_day_player_context_service.py",
+        "src/services/nflverse_schedule_context_display_service.py",
         "app/pages/21_live_draft_room_v1.py",
         "app/pages/24_mock_draft_v1.py",
         "app/pages/29_post_draft_mode_v2.py",
@@ -24,7 +25,13 @@ def test_draft_day_context_pages_do_not_read_raw_shared_nflverse_data() -> None:
 
 
 def test_draft_day_context_service_uses_tracked_artifact_only() -> None:
-    text = _text("src/services/draft_day_player_context_service.py")
+    text = "\n".join(
+        _text(path)
+        for path in (
+            "src/services/draft_day_player_context_service.py",
+            "src/services/nflverse_schedule_context_display_service.py",
+        )
+    )
 
     assert "NFLVERSE_PLAYER_CONTEXT_DISPLAY_PATH" in text
     assert "NFLVERSE_PLAYER_CONTEXT_SCHEMA_MANIFEST_PATH" in text

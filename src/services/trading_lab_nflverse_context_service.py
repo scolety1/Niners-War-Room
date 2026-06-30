@@ -299,7 +299,10 @@ def nflverse_missing_evidence_rows(
             _missing_row(
                 item=item,
                 block="Schedule / next game / opponent / bye",
-                reason="No current/future safe schedule rows are approved for Trading Lab.",
+                reason=(
+                    "Schedule context remains gated pending Trading Lab-specific display "
+                    "review; no valuation or recommendation use is approved."
+                ),
                 status=NOT_ENOUGH_INFORMATION,
             )
         )

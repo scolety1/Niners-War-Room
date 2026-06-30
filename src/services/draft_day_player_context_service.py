@@ -15,6 +15,9 @@ from src.services.draft_day_app_v1_service import (
     outcome_v2_text_display,
     validate_nflverse_player_context_display,
 )
+from src.services.nflverse_schedule_context_display_service import (
+    schedule_context_display_for_row,
+)
 
 NEED_IDENTITY_REVIEW = "NEED_IDENTITY_REVIEW"
 DISPLAY_STATUS = "Display-only / Review-only context / Not model input"
@@ -233,16 +236,7 @@ def draft_day_player_context_for_player(
         ),
         DraftDayPlayerContextSection(
             "Schedule Context",
-            (
-                ("Next game", OUTCOME_NOT_ENOUGH_INFORMATION),
-                ("Opponent", OUTCOME_NOT_ENOUGH_INFORMATION),
-                ("Bye", OUTCOME_NOT_ENOUGH_INFORMATION),
-                ("Status", "Not enough information"),
-                (
-                    "Reason",
-                    "Schedule context is gated for a separate draft-day display review.",
-                ),
-            ),
+            _schedule_section_rows(row, safe_fields),
         ),
     )
     return DraftDayPlayerContextResult(
@@ -305,6 +299,30 @@ def _section_rows(
             continue
         rows.append((label, _display_value(row.get(field))))
     return tuple(rows)
+
+
+def _schedule_section_rows(
+    row: dict[str, Any],
+    safe_fields: set[str],
+) -> tuple[tuple[str, str], ...]:
+    display = schedule_context_display_for_row(row, safe_fields)
+    return (
+        ("Next game", display.next_game_context),
+        ("Opponent", display.opponent_context),
+        ("Bye", display.bye_context),
+        ("Game date", display.game_date),
+        ("Game week", display.game_week),
+        ("Home/Away", display.home_away),
+        ("Season", display.season),
+        ("Team", display.team),
+        ("Status", display.status),
+        ("Display policy", display.display_policy),
+        (
+            "Guardrail",
+            "No matchup strength, start/sit, model, rank, hidden sort, "
+            "recommendation, trade value, pick value, health, or availability inference.",
+        ),
+    )
 
 
 def _safe_identity_row(row: dict[str, Any]) -> bool:
