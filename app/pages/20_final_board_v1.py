@@ -27,6 +27,7 @@ from src.services.draft_day_app_v1_service import (
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
     FrozenBoardBundle,
+    OutcomeDisplayBundle,
     build_unified_player_board,
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
@@ -700,22 +701,38 @@ def _nflverse_refresh_health_status() -> dict[str, object]:
             "full safe refresh dataset list",
             "ff_rankings blocked status",
             "source-policy display warnings",
+            "rebuilt NFLVerse player context display artifact",
+            "safe row-level NFLVerse context where identity/status/schema gates pass",
         ),
         "unavailable_display_fields": (
-            "player-level nflverse fields until a separate safe schema/join artifact maps "
-            f"{', '.join(player_context_sources)} to Rankings rows",
+            "gated NFLVerse player context rows remain Needs identity review / "
+            "Not enough information",
         ),
         "note": (
             "Centralized dataset-level refresh-health contract is present and GREEN for "
-            "guardrails. Rankings displays dataset status only; player-level fields still "
-            "require an approved row-level display artifact or join gate."
+            "guardrails. The rebuilt row-level NFLVerse player context display artifact "
+            f"exists for {', '.join(player_context_sources)} context and remains "
+            "display-only/review-only."
         ),
     }
+
+
+def _nflverse_player_context_artifact_counts(
+    player_context: OutcomeDisplayBundle,
+) -> dict[str, int]:
+    frame = player_context.frame
+    if frame.empty or "identity_join_status" not in frame.columns:
+        return {"rows": 0, "safe": 0, "gated": 0}
+    status = frame["identity_join_status"].astype(str)
+    safe = int(status.eq("SAFE_NOW_DISPLAY_ONLY").sum())
+    gated = int(status.eq("NEED_IDENTITY_REVIEW").sum())
+    return {"rows": int(frame.shape[0]), "safe": safe, "gated": gated}
 
 
 def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
     status = _nflverse_refresh_health_status()
     player_context = load_nflverse_player_context_display()
+    artifact_counts = _nflverse_player_context_artifact_counts(player_context)
     counts = nflverse_player_context_display_counts(unified)
     with st.expander("Dataset Refresh / Outcome Status", expanded=False):
         st.write(
@@ -730,8 +747,13 @@ def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
                 "nflverse refresh-health": status["status"],
                 "dataset_rows": status["dataset_rows"],
                 "NFLVerse player context artifact": (
-                    "GREEN" if player_context.loaded else "YELLOW-HOLD"
+                    "GREEN rebuilt tracked display artifact"
+                    if player_context.loaded
+                    else "YELLOW-HOLD"
                 ),
+                "NFLVerse artifact total rows": artifact_counts["rows"],
+                "NFLVerse artifact safe display rows": artifact_counts["safe"],
+                "NFLVerse artifact gated rows": artifact_counts["gated"],
                 "NFLVerse context rows": counts["rows"],
                 "NFLVerse safe context rows": counts["safe"],
                 "NFLVerse identity review rows": counts["review"],
@@ -752,8 +774,16 @@ def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
                 )
                 or OUTCOME_NOT_ENOUGH_INFORMATION,
                 "missing_data_rule": "Not enough information; never 0%, false, or clean health.",
+                "NFLVerse gated row rule": (
+                    "Needs identity review / Not enough information; gated values stay hidden."
+                ),
                 "market_warning": (
                     "DynastyProcess/market context is display-only and never rank logic."
+                ),
+                "NFLVerse display warning": (
+                    "NFLVerse is display/review-only. It never drives Dynasty Rank, model "
+                    "input, source truth, hidden sort, trade value, pick value, recommendations, "
+                    "injury risk, or medical projection."
                 ),
                 "note": status["note"],
             }
