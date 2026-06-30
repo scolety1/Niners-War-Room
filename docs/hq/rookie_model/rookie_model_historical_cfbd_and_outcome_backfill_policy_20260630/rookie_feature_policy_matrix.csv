@@ -1,0 +1,30 @@
+source,field_name,description,pre_draft_allowed,post_draft_allowed,label_only,display_only,blocked_leakage,review_only,reason,required_approval_gate
+draft_picks,draft_year,NFL Draft year / rookie class.,yes,yes,no,no,no,yes,Factual class context; not a result.,source_policy_gate
+draft_picks,position,Draft source position.,yes,yes,no,no,no,yes,Factual prospect context.,source_policy_gate
+draft_picks,college,Draft source college field.,yes,yes,no,no,no,yes,Factual school context; historical identity still needs review.,source_policy_gate
+draft_picks,age,Age at draft when provided.,pending,yes,no,no,no,yes,Pre-draft use requires factual date-of-birth/source timing policy.,age_source_gate
+draft_picks,round,NFL draft round.,no,yes,no,no,no,yes,Post-draft draft capital; forbidden pre-draft.,post_draft_source_gate
+draft_picks,overall_pick,NFL overall pick.,no,yes,no,no,no,yes,Post-draft draft capital; forbidden pre-draft.,post_draft_source_gate
+draft_picks,draft_team,NFL team that drafted the player.,no,yes,no,no,no,yes,Post-draft landing spot; forbidden pre-draft.,post_draft_source_gate
+draft_picks,gsis_id/pfr_id/cfb_id,Identity keys.,pending,pending,no,no,no,yes,"Join keys only, not model features.",identity_join_gate
+draft_picks,games,Career NFL games from draft source.,no,no,no,no,yes,Future NFL production/career result.,blocked,
+draft_picks,starts,Career seasons started / starts proxy.,no,no,no,no,yes,Future NFL usage/result.,blocked,
+draft_picks,AV,Career/draft/weighted Approximate Value fields.,no,no,no,no,yes,Future outcome summary.,blocked,
+draft_picks,seasons_played,Final season / seasons played context.,no,no,no,no,yes,Future career survival result.,blocked,
+draft_picks,Pro_Bowl,Career Pro Bowls.,no,no,no,no,yes,Future accolade.,blocked,
+draft_picks,All-Pro,Career All-Pro honors.,no,no,no,no,yes,Future accolade.,blocked,
+draft_picks,Hall_of_Fame,Hall of Fame flag.,no,no,no,no,yes,Future/career accolade.,blocked,
+combine,combine_measurements,"Height, weight, forty, bench, vertical, broad, cone, shuttle.",yes,yes,no,no,no,yes,Factual pre-draft measurement after source approval.,combine_source_gate
+combine,pro_day_measurements,Pro day measurements if separately sourced.,pending,pending,no,no,no,yes,Needs approved source and combine/pro-day distinction.,pro_day_source_gate
+combine,combine_draft_round/pick/team,Draft result fields embedded in combine source.,no,yes,no,no,no,yes,Draft result context is post-draft only.,post_draft_source_gate
+CFBD,CFBD_production,College passing/rushing/receiving production.,pending,pending,no,no,no,yes,Needs historical identity approval and model-input gate.,cfbd_identity_and_source_gate
+CFBD,transfer/team_timeline,College team timeline and transfers.,pending,pending,no,no,no,yes,Needs identity-approved timeline source and cutoff policy.,timeline_source_gate
+CFBD,recruiting_context,Recruiting stars/rankings if sourced.,pending,pending,no,no,no,yes,Not approved in this lane.,recruiting_source_gate
+Outcome V2,Outcome_V2_labels,Rookie/2Y/3Y/5Y fantasy outcome labels.,no,no,yes,no,no,yes,Evaluation target only; never an input.,label_source_gate
+Outcome V2,fantasy_points,League-scoring fantasy points.,no,no,yes,no,yes,Future result after prediction date; label-only.,label_source_gate,
+Outcome V2,position_finish,Season positional finish.,no,no,yes,no,yes,Future fantasy outcome; label-only.,label_source_gate,
+NFL usage/production,NFL_production,NFL passing/rushing/receiving/usage after prediction date.,no,no,no,no,yes,Future performance leakage.,blocked,
+DynastyProcess/market,DynastyProcess_value,Market/dynasty process value.,no,no,no,yes,yes,Market signal; not approved as model input.,display_only_policy_gate,
+market,ADP/rankings/projections,"ADP, rankings, and projections.",no,no,no,yes,yes,Market/projection leakage unless explicitly display-only.,display_only_policy_gate,
+manual/vendor/proxy,Gmail/vendor/manual_notes,"Gmail, vendor, manual, or proxy notes.",no,no,no,pending,yes,Private/vendor/proxy notes cannot become model input.,blocked_or_display_policy_gate,
+manual/vendor/proxy,RotoWire/FantasyPros/FootballDB,Vendor/site data families.,no,no,no,no,yes,Explicitly blocked from scraping and model promotion.,blocked,
