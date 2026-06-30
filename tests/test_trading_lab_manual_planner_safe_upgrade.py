@@ -106,8 +106,9 @@ def test_page_exposes_manual_planning_workspace_without_market_panel() -> None:
         "Editable manual checklist",
         "Download manual trade-away memo",
         "Download manual trade-for memo",
-        "Missing evidence / gated context",
-        "WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN",
+        "NFLVerse player context / display-only",
+        "Display-only context | Manual review only | No valuation calculated",
+        "Manual row NFLVerse context / display-only",
         "Not enough information",
     ]
     for term in required:
@@ -230,6 +231,7 @@ def test_no_recommendation_adjacent_strings_in_active_page_or_service() -> None:
 def test_missing_context_uses_explicit_not_enough_information() -> None:
     assert NOT_ENOUGH_INFORMATION == "Not enough information"
     page = _read(PAGE_PATH)
+    assert "Next game, opponent, and bye context remain unavailable" in page
     for unsafe_default in (
         "missing data is healthy",
         "missing data is clean",

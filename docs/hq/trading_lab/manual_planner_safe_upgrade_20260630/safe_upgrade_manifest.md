@@ -19,15 +19,26 @@ Final commit: reported by Codex after commit creation
 - structured manual planner rows
 - editable manual checklist
 - manual memo export with required disclaimer
-- missing-evidence and gated nflverse placeholder panel
+- NFLVerse display-only player context panel for approved safe identity rows
+- NFLVerse identity-review status display with player context details hidden
+- missing-evidence panel with explicit next game/opponent/bye deferral
 
-## WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN Items Prepared/Deferred
+## NFLVerse Context Activated
 
-- identity and availability cards
-- role and production cards
-- contract context pane
-- freshness/as-of labels from refreshed datasets
-- ff_playerids identity-only joins
+- identity and availability cards use the tracked player context display artifact
+- role and production/activity cards use tracked artifact facts only
+- draft and non-financial contract context use tracked artifact facts only
+- source/as-of/freshness labels are displayed where available
+- NWR Player ID is used for manual row identity lookup where supplied
+- selected board rows can resolve to the artifact's approved NWR Player ID when the artifact has a unique safe visible identity match
+- identity-review rows show status only and hide details
+
+## NFLVerse Items Still Deferred
+
+- next game, opponent, and bye context
+- identity proposal rows
+- any `NEED_*`, `BLOCKED_*`, `Review needed`, or `Not enough information` value as a positive fact
+- `ff_rankings`
 
 ## NEED_MODEL_GATE Items
 
@@ -49,11 +60,12 @@ Final commit: reported by Codex after commit creation
 
 ## Guardrail Confirmation
 
-This lane keeps Trading Lab as manual planning only. It does not wire real NWR data, import nflverse datasets, fetch public sources, mutate ranks, create hidden scores, or deploy.
+This lane keeps Trading Lab as manual planning only. It does not wire raw NFLVerse data, import external datasets from app pages, fetch public sources, mutate ranks, create hidden scores, calculate trade or pick values, or deploy.
 
 ## Known Limitations
 
-- nflverse-dependent factual cards remain placeholders pending refresh-health green.
+- schedule, opponent, and bye context remain unavailable.
+- identity proposals remain unapproved and hidden from details.
 - human review still needs to confirm the page workflow in browser.
 
 ## Merge Readiness Verdict
