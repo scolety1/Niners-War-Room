@@ -9,6 +9,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.draft_day_player_context import render_nflverse_player_context_expander
 from app.components.draft_day_v1 import (
     render_lane_status_table,
     render_source_of_truth_badge,
@@ -127,6 +128,12 @@ def _render_live_draft_command_center(
             "No trade valuation, model input, rank changes, or hidden market sort occurs here."
         )
         st.caption("Reload safety uses local runtime status; missing state is not a silent reset.")
+
+    render_nflverse_player_context_expander(
+        board_frame,
+        key="live_draft_room",
+        title="NFLVerse player context / display-only",
+    )
 
 bundle = load_frozen_board()
 live_board_frame = (

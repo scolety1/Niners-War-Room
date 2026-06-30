@@ -10,6 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.draft_day_player_context import render_nflverse_player_context_expander
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_expanded_draftable_player_pool,
@@ -185,8 +186,8 @@ st.caption(
     "Confirm all picks and trades against official league history before model/backtest use."
 )
 st.caption(
-    "nflverse-backed availability context cards are WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN "
-    "in this lane and are not used by Draft Analyzer."
+    "NFLVerse-backed player context is display-only review context and is not used by "
+    "Draft Analyzer scoring, sorting, rank logic, or runtime state."
 )
 
 control_cols = st.columns([1, 1, 2])
@@ -280,6 +281,12 @@ with st.expander("Event log", expanded=False):
             hide_index=True,
             key="post_draft_event_log",
         )
+
+render_nflverse_player_context_expander(
+    player_context,
+    key=f"post_draft_{runtime_mode}_{runtime_draft_id}",
+    title="NFLVerse player context / display-only",
+)
 
 with st.expander("Runtime paths / display-only guardrails", expanded=False):
     paths = runtime_paths()

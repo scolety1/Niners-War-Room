@@ -9,6 +9,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.draft_day_player_context import render_nflverse_player_context_expander
 from app.components.draft_day_v1 import (
     render_source_of_truth_badge,
     render_yellow_hold,
@@ -206,6 +207,12 @@ else:
             st.caption("Mock state stays local/untracked and separate from Draft Cockpit.")
             st.caption("No trade valuation, model input, rank changes, or source-truth mutation.")
             st.caption("Mock manifest issues never imply live Draft Cockpit state was reset.")
+
+    render_nflverse_player_context_expander(
+        bundle.frame,
+        key=f"mock_draft_{active_session.draft_id}",
+        title="NFLVerse player context / display-only",
+    )
 
     render_draft_workflow(
         mode_label="Mock Draft manual practice",
