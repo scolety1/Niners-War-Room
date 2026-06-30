@@ -358,6 +358,37 @@ def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:
     ]
     blocked = [row for row in rows if str(row.get("status")) == "BLOCKED"]
     failed = [row for row in rows if str(row.get("status")) == "RED"]
+    nflverse_dataset_rows = [
+        row
+        for row in rows
+        if str(row.get("source_kind")) == "public_structured_nfl_dataset"
+        or str(row.get("source_family") or "") == "nflverse"
+        or str(row.get("source_id", "")).startswith("nflverse_")
+    ]
+    nflverse_failed = [
+        row
+        for row in nflverse_dataset_rows
+        if str(row.get("status")) == "RED"
+        or str(row.get("execution_status") or "") == "failed"
+    ]
+    nflverse_blocked = [
+        row
+        for row in nflverse_dataset_rows
+        if str(row.get("status")) == "BLOCKED"
+        or str(row.get("execution_status") or "") == "blocked_policy"
+    ]
+    nflverse_not_configured = [
+        row
+        for row in nflverse_dataset_rows
+        if str(row.get("status")) == "NOT_CONFIGURED"
+        or str(row.get("execution_status") or "") == "blocked_config"
+    ]
+    nflverse_review = [
+        row
+        for row in nflverse_dataset_rows
+        if str(row.get("headline_status") or "")
+        in {"review", "review_only", "stale", "skipped", "unknown"}
+    ]
     dynasty = next(
         (
             row
@@ -402,6 +433,41 @@ def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:
                 _health_status_from_refresh(str(dynasty.get("status") or "YELLOW")),
                 str(dynasty.get("status") or NOT_ENOUGH_INFORMATION),
                 str(dynasty.get("user_message") or ""),
+            ),
+            _row(
+                "Refresh Data",
+                "NFLVerse dataset health rows",
+                "GREEN" if len(nflverse_dataset_rows) == 25 else "YELLOW",
+                str(len(nflverse_dataset_rows)),
+                "Dataset-level Safe Refresh/Full Safe Refresh rows; packet expects 25.",
+            ),
+            _row(
+                "Refresh Data",
+                "NFLVerse failed datasets",
+                "RED" if nflverse_failed else "GREEN",
+                str(len(nflverse_failed)),
+                _nflverse_dataset_detail(nflverse_failed),
+            ),
+            _row(
+                "Refresh Data",
+                "NFLVerse blocked policy datasets",
+                "YELLOW" if nflverse_blocked else "GREEN",
+                str(len(nflverse_blocked)),
+                _nflverse_dataset_detail(nflverse_blocked),
+            ),
+            _row(
+                "Refresh Data",
+                "NFLVerse NOT_CONFIGURED datasets",
+                "YELLOW" if nflverse_not_configured else "GREEN",
+                str(len(nflverse_not_configured)),
+                _nflverse_dataset_detail(nflverse_not_configured),
+            ),
+            _row(
+                "Refresh Data",
+                "NFLVerse review/stale/unknown datasets",
+                "YELLOW" if nflverse_review else "GREEN",
+                str(len(nflverse_review)),
+                _nflverse_dataset_detail(nflverse_review),
             ),
         ]
     )
@@ -681,6 +747,19 @@ def _health_status_from_refresh(status: str) -> str:
     if status == "RED":
         return "RED"
     return "YELLOW"
+
+
+def _nflverse_dataset_detail(rows: list[dict[str, Any]]) -> str:
+    if not rows:
+        return "All dataset rows in this group are GREEN."
+    labels: list[str] = []
+    for row in rows[:8]:
+        source_id = str(row.get("source_id") or "")
+        dataset_id = str(row.get("dataset_id") or source_id.removeprefix("nflverse_"))
+        status = str(row.get("status") or NOT_ENOUGH_INFORMATION)
+        labels.append(f"{dataset_id}={status}")
+    suffix = "" if len(rows) <= 8 else f"; +{len(rows) - 8} more"
+    return "; ".join(labels) + suffix
 
 
 def _nonnull_count(frame: pd.DataFrame, column: str) -> int:

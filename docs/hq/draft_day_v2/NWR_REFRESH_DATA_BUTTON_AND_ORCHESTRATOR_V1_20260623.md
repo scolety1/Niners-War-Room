@@ -35,7 +35,8 @@ The orchestrator registry includes:
 
 - `dynastyprocess_market_baseline`: public display-only market baseline, safe to run when the existing script is present.
 - `sleeper_league_state`: public Sleeper league state, safe to run when the existing Sleeper runner/league configuration is present.
-- `nflverse_public_data`: existing public nflverse runner, skipped by default because it is slow and writes large shared snapshots.
+- `nflverse_refresh_runner`: existing public nflverse runner, skipped by default because it is slow and writes large shared snapshots.
+- `nflverse_dataset_*`: dataset-level nflverse health rows for schema, coverage, freshness, missingness, row-count, and source-policy visibility. Missing dataset evidence is `Not enough information` or `NOT_CONFIGURED`, not zero/false/healthy/clean/no-role/no-injury/no-usage.
 - `collegefootballdata`: key-gated, not run unless an approved app refresh connector is later registered.
 - `rotowire_vendor_exports`: manual/vendor export only, blocked from button scraping.
 - `gmail_league_history`: manual metadata/evidence queue only, raw email bodies are not pulled.
