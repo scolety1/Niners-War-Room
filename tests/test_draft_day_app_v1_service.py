@@ -655,12 +655,39 @@ def test_outcome_v2_display_artifact_loads_by_player_id_and_keeps_missing_text(
     assert puka["outcome_v2_status_display_only"] == "Available"
     assert puka["outcome_v2_wr_t12_this_year_display_only"] == "43.4%"
     assert puka["outcome_v2_wr_t36_within_5y_display_only"] == "94.5%"
+    assert puka["injury_context_available_display_only"] == "true"
+    assert puka["injury_context_limited_recent_sample_display_only"] == "false"
+    assert (
+        puka["injury_context_not_enough_information_reason_display_only"]
+        == "Outcome V2 probabilities are unchanged; injury context is a review-only "
+        "availability caveat, not a model input."
+    )
     assert rookie["outcome_v2_status_display_only"] == "out_of_scope_rookie_or_prospect"
     assert rookie["outcome_v2_wr_t12_this_year_display_only"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert missing["outcome_v2_status_display_only"] == "missing_current_feature_coverage"
     assert missing["outcome_v2_rb_t24_within_5y_display_only"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert "outcome_v2_rb_t6_within_5y_display_only" not in enriched.columns
     assert "outcome_v2_rb_t12_within_5y_display_only" not in enriched.columns
+
+    clean_display = display_unified_player_board_frame(
+        enriched,
+        view_mode=FULL_DYNASTY_VIEW,
+        outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
+        selected_positions=["WR", "RB"],
+    )
+    outcome_lens_display = display_unified_player_board_frame(
+        enriched,
+        view_mode=FULL_DYNASTY_VIEW,
+        selected_positions=["WR", "RB"],
+        include_injury_context=True,
+    )
+
+    assert "Availability Caveat" not in clean_display.columns
+    assert "Limited Recent Sample" not in clean_display.columns
+    assert "Availability Caveat" in outcome_lens_display.columns
+    assert "Last Materially Active Season" in outcome_lens_display.columns
+    assert "Not Enough Information Reason" in outcome_lens_display.columns
+    assert outcome_lens_display.loc[0, "WR T12 This Year (Outcome V2 / Display-Only)"] == "43.4%"
 
 
 def _outcome_v2_artifact_row(
@@ -698,7 +725,32 @@ def _outcome_v2_artifact_row(
         "cfbd_used_as_input": "false",
         "data_coverage_status": "partial_2025_feature_source_approval",
         "availability_context_status": "partial_availability_context_missing_games",
-        "caveat_summary": "Display-only; games missing; no row implies clean health.",
+        "caveat_summary": (
+            "Display-only; games missing; no row is Not enough information, "
+            "not clean health."
+        ),
+        "injury_context_available": "true",
+        "most_recent_injury_context_season": "2025",
+        "prior_season_injury_context_available": "true",
+        "prior_season_injury_report_weeks": "2",
+        "prior_season_out_or_doubtful_weeks": "1",
+        "prior_season_questionable_weeks": "1",
+        "missed_prior_season_context_flag": "review_required_prior_out_or_doubtful_context",
+        "limited_recent_sample": "false",
+        "last_materially_active_season": "2025",
+        "seasons_since_material_activity": "1",
+        "availability_caveat": (
+            "Review-only injury context: 2 report weeks in 2025; 1 out/doubtful weeks. "
+            "This is not a medical projection and does not change Outcome probabilities."
+        ),
+        "not_enough_information_reason": (
+            "Outcome V2 probabilities are unchanged; injury context is a review-only "
+            "availability caveat, not a model input."
+        ),
+        "injury_context_source_status": "review_only_nflreadpy_injury_context",
+        "injury_context_review_only": "true",
+        "injury_used_as_model_input": "false",
+        "medical_projection_made": "false",
         "validated_field_status": "validated_position_fields_only",
     }
     for source, _target, _label, _position in draft_day_service.APPROVED_OUTCOME_V2_DISPLAY_FIELDS:

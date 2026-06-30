@@ -27,6 +27,7 @@ from src.services.draft_day_app_v1_service import (
     load_expanded_draftable_player_pool,
     load_frozen_board,
     load_lane_prop_file,
+    load_outcome_v2_current_player_display,
 )
 from src.services.player_compare_decision_service import (
     build_player_compare_decision_summary,
@@ -249,7 +250,7 @@ def _render_how_to_use_compare() -> None:
     st.markdown(
         "- Start with the display-only Decision Summary.\n"
         "- Check Safer profile, Upside profile, timing/window, and Main risk in plain language.\n"
-        "- Use Injury / Per-Game Context to separate talent rate from availability risk.\n"
+        "- Use Injury / Availability Context for review-only caveats and recent-sample gaps.\n"
         "- Open advanced expanders only when you need the underlying evidence.\n"
         "- Final preference stays a human decision; this page does not change ranks or "
         "model values."
@@ -515,148 +516,118 @@ def _render_age_risk_context(compare_frame: pd.DataFrame) -> None:
 
 
 def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
-    st.subheader("Injury / Per-Game Context")
+    st.subheader("Injury / Availability Context")
+    st.caption("Review-only context. No medical projection or injury-risk score is made.")
     st.caption(
-        "Display-only context. Not used to change rank or model value. Missing injury "
-        f"coverage shows exactly `{OUTCOME_NOT_ENOUGH_INFORMATION}` and does not mean clean health."
+        "Missing injury context is not clean health. Missing / limited recent sample is "
+        "not a low-probability signal. This panel does not change comparison scoring, "
+        "ranking, lean, or hidden decision logic."
     )
-    audit = _load_injury_per_game_audit()
-    _render_injury_availability_status(audit)
-    rows = [_injury_display_row(record, audit) for record in compare_frame.to_dict("records")]
-    display = pd.DataFrame(rows)
-    warning_players = [
-        row["Player"]
-        for row in rows
-        if str(row.get("Annual Totals Warning", "")).startswith("YES")
+    _render_injury_availability_status()
+    outcome_bundle = load_outcome_v2_current_player_display()
+    rows = [
+        _injury_display_row(record, outcome_bundle.frame)
+        for record in compare_frame.to_dict("records")
     ]
-    if warning_players:
-        st.warning(
-            "Annual totals may be misleading for: "
-            + ", ".join(warning_players)
-            + ". Use per-game talent and availability risk as separate questions."
-        )
-    st.table(display)
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
-def _render_injury_availability_status(audit: pd.DataFrame) -> None:
+def _render_injury_availability_status() -> None:
     st.markdown("**Injury / Availability Data Status**")
-    st.warning(
-        "No active injury-risk adjustment is being applied on this page. No medical comeback "
-        "projection is being made. Injury risk remains a human-review/data-gap item unless a "
-        "separately approved injury source and model gate are added later."
-    )
-    st.caption(
-        "Per-game and season totals can diverge because of missed games. This page can flag that "
-        "gap as display-only context, but it does not infer ACL recovery, chronic injury risk, "
-        "or future availability from unapproved news, vendor feeds, or rumors."
-    )
     status_rows = [
         {
-            "Question": "Approved current injury feed loaded?",
-            "Status": "Review-only audit rows available"
-            if not audit.empty
-            else OUTCOME_NOT_ENOUGH_INFORMATION,
-            "Guardrail": "Missing injury data is not treated as healthy or low risk.",
-        },
-        {
-            "Question": "Per-game vs season-total gap handled?",
-            "Status": "Display-only warning when supported",
+            "Question": "Outcome V2 Injury Context Flags V0 loaded?",
+            "Status": "Review-only display context when the enhanced artifact loads",
             "Guardrail": "Does not change rank, tier, model value, or source truth.",
         },
         {
-            "Question": "Medical comeback / ACL projection?",
-            "Status": "Not modeled",
-            "Guardrail": "Requires approved injury source and explicit model gate.",
+            "Question": "Missing injury context interpretation",
+            "Status": "Not enough information",
+            "Guardrail": "No approved injury context available does not mean clean health.",
+        },
+        {
+            "Question": "Medical projection",
+            "Status": "Not made",
+            "Guardrail": "No comeback odds, recovery odds, or ranking adjustment.",
         },
     ]
     st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
 
 
-def _load_injury_per_game_audit() -> pd.DataFrame:
-    if not INJURY_PER_GAME_AUDIT_PATH.exists():
-        return pd.DataFrame()
-    try:
-        return pd.read_csv(INJURY_PER_GAME_AUDIT_PATH, dtype=str).fillna(
-            OUTCOME_NOT_ENOUGH_INFORMATION
-        )
-    except Exception:
-        return pd.DataFrame()
-
-
 def _injury_display_row(
     record: dict[str, object],
-    audit: pd.DataFrame,
+    outcome_frame: pd.DataFrame,
 ) -> dict[str, str]:
     player = str(record.get("player") or OUTCOME_NOT_ENOUGH_INFORMATION)
     position = str(record.get("position") or OUTCOME_NOT_ENOUGH_INFORMATION)
-    audit_row = _audit_row_for_player(player, position, audit)
-    current_available = _audit_value(
-        audit_row,
-        "current_injury_status_available",
-    ).lower()
+    row = _outcome_v2_context_row_for_player(record, outcome_frame)
+    if not row:
+        return {
+            "Player": player,
+            "Pos": position,
+            "Injury Context Available": "No approved injury context available",
+            "Availability Caveat": (
+                "No approved injury context available. This does not mean clean health."
+            ),
+            "Limited Recent Sample": OUTCOME_NOT_ENOUGH_INFORMATION,
+            "Last Materially Active Season": OUTCOME_NOT_ENOUGH_INFORMATION,
+            "Seasons Since Material Activity": OUTCOME_NOT_ENOUGH_INFORMATION,
+            "Not Enough Information Reason": (
+                "No approved injury context available for this comparison row."
+            ),
+        }
+    available = _context_value(row, "injury_context_available")
     return {
         "Player": player,
         "Pos": position,
-        "Per-Game Signal Available": _audit_value(
-            audit_row,
-            "per_game_signal_available",
+        "Injury Context Available": (
+            "Available" if available == "true" else "No approved injury context available"
         ),
-        "Annual Total Signal Available": _audit_value(
-            audit_row,
-            "annual_total_signal_available",
+        "Availability Caveat": _context_value(row, "availability_caveat"),
+        "Limited Recent Sample": _context_value(row, "limited_recent_sample"),
+        "Last Materially Active Season": _context_value(
+            row,
+            "last_materially_active_season",
         ),
-        "Injury Data Available": (
-            "Verified current injury data"
-            if current_available in {"yes", "true", "verified"}
-            else OUTCOME_NOT_ENOUGH_INFORMATION
+        "Seasons Since Material Activity": _context_value(
+            row,
+            "seasons_since_material_activity",
         ),
-        "Current Injury Status": (
-            _audit_value(audit_row, "current_injury_status")
-            if current_available in {"yes", "true", "verified"}
-            else OUTCOME_NOT_ENOUGH_INFORMATION
-        ),
-        "Recovery Risk Band": _supported_band(audit_row, "recovery_risk_band"),
-        "Chronic Injury Risk Band": _supported_band(audit_row, "chronic_injury_risk_band"),
-        "Human Review Warning": _audit_value(audit_row, "human_review_warning"),
-        "Model Treatment Summary": _audit_value(audit_row, "model_treatment_summary"),
-        "Annual Totals Warning": _audit_value(
-            audit_row,
-            "current_display_likely_misleading",
+        "Not Enough Information Reason": _context_value(
+            row,
+            "not_enough_information_reason",
         ),
     }
 
 
-def _audit_row_for_player(
-    player: str,
-    position: str,
-    audit: pd.DataFrame,
+def _outcome_v2_context_row_for_player(
+    record: dict[str, object],
+    outcome_frame: pd.DataFrame,
 ) -> dict[str, object]:
-    if audit.empty or "player" not in audit.columns:
+    if outcome_frame.empty:
         return {}
-    player_key = _player_key(player)
-    rows = audit.loc[audit["player"].map(_player_key).eq(player_key)]
-    if rows.empty and player_key == "brianthomas":
-        rows = audit.loc[audit["player"].map(_player_key).isin({"brianthomas", "brianthomasjr"})]
-    if rows.empty and "pos" in audit.columns:
-        rows = audit.loc[
-            audit["player"].map(_player_key).eq(player_key)
-            & audit["pos"].astype(str).str.upper().eq(str(position).upper())
+    player_id = str(record.get("player_id") or "").strip()
+    if player_id and "nwr_player_id" in outcome_frame.columns:
+        rows = outcome_frame.loc[outcome_frame["nwr_player_id"].astype(str).eq(player_id)]
+        if not rows.empty:
+            return rows.iloc[0].to_dict()
+
+    if {"player_name", "position"}.issubset(outcome_frame.columns):
+        key = (_player_key(record.get("player")), str(record.get("position") or "").upper())
+        candidates = outcome_frame.loc[
+            outcome_frame["player_name"].map(_player_key).eq(key[0])
+            & outcome_frame["position"].astype(str).str.upper().eq(key[1])
         ]
-    if rows.empty:
-        return {}
-    return rows.iloc[0].to_dict()
+        if len(candidates) == 1:
+            return candidates.iloc[0].to_dict()
+    return {}
 
 
-def _audit_value(row: dict[str, object], column: str) -> str:
+def _context_value(row: dict[str, object], column: str) -> str:
     text = str(row.get(column, "") if row else "").strip()
     if not text or text.lower() in {"nan", "none", "null", "n/a"}:
         return OUTCOME_NOT_ENOUGH_INFORMATION
     return text
-
-
-def _supported_band(row: dict[str, object], column: str) -> str:
-    value = _audit_value(row, column)
-    return value if value != OUTCOME_NOT_ENOUGH_INFORMATION else OUTCOME_NOT_ENOUGH_INFORMATION
 
 
 def _player_key(value: object) -> str:
@@ -732,7 +703,7 @@ else:
         [
             "Dynasty / NWR Context",
             "Market Baseline / Display-Only",
-            "Injury / Per-Game Context",
+            "Injury / Availability Context",
             "Outcome / Horizon",
             "Age / Injury / Risk",
             "Raw Details / Diagnostics",

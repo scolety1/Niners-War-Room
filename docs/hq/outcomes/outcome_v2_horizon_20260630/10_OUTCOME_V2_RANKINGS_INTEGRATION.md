@@ -99,7 +99,7 @@ Displayed in the Outcome Lens:
 
 Displayed in the Outcome Lens:
 
-- `Availability caveat: games field missing; no row implies clean health`
+- `Availability caveat: games field missing; no row is Not enough information, not clean health`
 
 The integration does not create injury risk, medical projection, recovery projection, or health assumptions.
 
@@ -134,7 +134,7 @@ Blocked inputs remain unused:
 - trade values
 - true routes / TPRR / YPRR
 - injury projections
-- medical comeback assumptions
+- medical recovery assumptions
 - rookie/prospect college data
 
 ## 9. UI Behavior
