@@ -67,7 +67,11 @@ try {
     Write-Host "Datasets: $($Datasets -join ', ')"
     Write-Host "Guardrail: this safe runner never writes candidates, latest_candidate, or latest_approved."
 
-    $env:PYTHONPATH = $NflreadpyPath
+    $PythonPathParts = @($RepoRoot, $NflreadpyPath)
+    if (-not [string]::IsNullOrWhiteSpace($OriginalPythonPath)) {
+        $PythonPathParts += $OriginalPythonPath
+    }
+    $env:PYTHONPATH = ($PythonPathParts -join [IO.Path]::PathSeparator)
     Set-Location $RepoRoot
     & $Python scripts/nflverse_scheduled_pull_v0.py `
         --seasons $Seasons `
