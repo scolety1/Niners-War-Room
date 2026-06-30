@@ -1,0 +1,2 @@
+audit_record_type,total_drafted_rows_in_entry_artifact,total_drafted_bridge_rows,mismatched_draft_round_count,mismatched_draft_pick_count,mismatched_overall_pick_count,mismatched_drafted_team_count,duplicate_player_year_rows,missing_required_draft_capital_rows,player_name,position,draft_year,field_name,entry_value,bridge_value,qa_issue_flag,qa_notes
+summary,1999,1999,0,0,0,0,0,0,,,,,,,no,No drafted bridge mismatches found.

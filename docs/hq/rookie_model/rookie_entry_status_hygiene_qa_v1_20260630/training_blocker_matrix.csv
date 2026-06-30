@@ -1,0 +1,8 @@
+entry_status,row_count,allowed_for_training_now,allowed_for_model_use_now,allowed_for_outcome_review_now,allowed_for_drafted_only_review_now,required_next_gate,notes
+drafted,1999,no,no,yes - review-only coverage and bridge QA,"yes - drafted-only review, not training",Rookie Outcome drafted-only review gate,"Draft capital is source-backed, but artifact remains review-only."
+confirmed_udfa,0,no,no,no - no confirmed rows and no approved policy,no - not drafted,approved confirmed_udfa source policy,Zero rows in packet.
+likely_udfa_needs_review,2514,no,no,yes - coverage and blocker review only,no - not drafted and not confirmed UDFA,approved confirmed_udfa source policy plus identity gate,Cannot be treated as clean UDFA.
+free_agent_rookie_needs_review,0,no,no,no - zero rows in packet,no - not drafted,approved free-agent rookie source policy,Zero rows in packet.
+wrong_universe,138,no,no,yes - exclusion gate review only,no - wrong universe rows blocked,universe exclusion review,Must remain excluded from training/model use.
+name_collision,2,no,no,yes - identity triage only,no - identity collision rows blocked,identity collision resolution,Name collision blocks model and training use.
+unknown,0,no,no,no - zero rows in packet,no - insufficient evidence by definition,source-policy expansion and candidate universe review,"Zero rows here means no low-information candidates were included, not universal completeness."
