@@ -56,7 +56,8 @@ def test_nflverse_runner_uses_local_only_pythonpath_and_restores_it() -> None:
 
     assert r"C:\NWR_SHARED_DATA\vendor_spikes\nflverse\scratch\pydeps" in nflverse
     assert "$OriginalPythonPath = $env:PYTHONPATH" in nflverse
-    assert "$env:PYTHONPATH = $NflreadpyPath" in nflverse
+    assert "$PythonPathParts = @($RepoRoot, $NflreadpyPath)" in nflverse
+    assert "$env:PYTHONPATH = ($PythonPathParts -join [IO.Path]::PathSeparator)" in nflverse
     assert "$env:PYTHONPATH = $OriginalPythonPath" in nflverse
     assert "--seasons $Seasons" in nflverse
     assert "--datasets $Datasets" in nflverse
