@@ -1,5 +1,5 @@
 field,source_artifact_column,source_dataset,status,display_surface,caveat
-Availability context present,nwr_player_id + identity_join_status + review_required,guardrail_static,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,"Only when identity_join_status=SAFE_NOW_DISPLAY_ONLY and review_required=false."
+Availability context present,nwr_player_id + identity_join_status + review_required,guardrail_static,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Only when identity_join_status=SAFE_NOW_DISPLAY_ONLY and review_required=false.
 Identity status,identity_join_status,rosters,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Identity review rows show Review needed only.
 Identity caveat,identity_caveat,rosters,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Safe rows only.
 Roster status,roster_status,rosters,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Missing remains Not enough information; not clean/safe by assumption.
@@ -11,11 +11,13 @@ Last active season/week,last_active_season + last_active_week,player_stats_weekl
 Snap recency,snap_count_recency,snap_counts,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Missing remains Not enough information; not zero.
 Snap sample size,snap_sample_size,snap_counts,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Missing remains Not enough information; not zero.
 Age context,roster_birth_date_derived_age + age_source,rosters,SAFE_NOW,Player Compare Injury / Availability; Rankings Data Review,Display-only age source context.
-Schedule context,next_game_context + opponent_context + bye_context,schedules,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Docs/status only,Schedule context needs a separate lane-specific activation review and remains Not enough information in Injury / Availability.
-games_while_rostered,not present in tracked artifact,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Needs approved denominator artifact.
-games_with_snaps,not present in tracked artifact,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Needs approved denominator artifact.
-games_with_recorded_stats,not present in tracked artifact,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Needs approved denominator artifact.
-games_missed_while_rostered,not present in tracked artifact,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Must not infer cause.
-per_game_denominator,not present in tracked artifact,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Needs approved denominator artifact.
-dynamic season anchors,not present in tracked artifact,refresh_metadata,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Deferred,Needs explicit tracked display field.
+Season anchor,season_anchor,availability_denominator_display_artifact,SAFE_NOW,Player Compare Injury / Availability,Only for rows with denominator_status=SAFE_NOW_DISPLAY_ONLY.
+Games while rostered,games_while_rostered,weekly_rosters + schedules,SAFE_NOW,Player Compare Injury / Availability,Display-only denominator count; missing/gated remains Not enough information.
+Games with snaps,games_with_snaps,snap_counts,SAFE_NOW,Player Compare Injury / Availability,Missing snap data is not zero.
+Games with recorded stats,games_with_recorded_stats,player_stats_weekly,SAFE_NOW,Player Compare Injury / Availability,Missing stat data is not zero.
+Games played context,games_played_context,derived_display_context,SAFE_NOW,Player Compare Injury / Availability,Factual rostered/snap/stat context only; no projection or score language shown in player rows.
+Per-game denominator,per_game_denominator,weekly_rosters + schedules,SAFE_NOW,Player Compare Injury / Availability,Equal to supportable rostered-game denominator in the tracked artifact.
+Games missed while rostered,games_missed_while_rostered,not_applicable,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Not displayed,Blocked until explicit game-status source; stays Not enough information.
+Schedule next game/opponent/bye,next_game_context + opponent_context + bye_context,schedules,YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,Docs/status only,No schedule-derived health or availability inference in this lane.
+Identity recommendations,identity_human_decision_sheet.csv,identity_approval_packet,YELLOW_NEEDS_IDENTITY_REVIEW,Not displayed,Recommendations are not approved joins.
 ff_rankings,not consumed,ff_rankings,BLOCKED,None,Blocked source policy.

@@ -1,6 +1,8 @@
 # Injury Availability Source Gate
 
-## Approved Source Already In Use
+## Approved Sources In Use
+
+Existing injury-report source:
 
 `nflreadpy.load_injuries`
 
@@ -11,37 +13,32 @@ Approved use:
 - Distinct out/doubtful report-week counts.
 - Review-only display caveats.
 
-Current source-gate doc:
+Tracked NFLVerse artifacts:
 
-`docs/hq/outcomes/injury_context_20260630/INJURY_CONTEXT_SOURCE_GATE.md`
+- `docs/hq/data_sources/nflverse_player_context_display_20260630/`
+- `docs/hq/data_sources/nflverse_availability_denominator_display_v1_20260630/`
 
-Current app-display doc:
+Approved use:
 
-`docs/hq/outcomes/injury_context_20260630/INJURY_CONTEXT_APP_DISPLAY_V0.md`
+- Direct display for safe identity rows.
+- Direct denominator display for rows with `denominator_status=SAFE_NOW_DISPLAY_ONLY`.
+- Missing and gated values as `Not enough information`.
 
-## Waiting Sources
+## Still Gated Sources Or Uses
 
-The following sources are not activated for availability denominator computation in
-this lane:
-
-- `weekly_rosters`
-- `rosters`
-- `schedules`
-- `snap_counts`
-- `player_stats`
-- refresh metadata for dynamic season anchors
-
-Reason:
-
-The current completion gate lists `nflverse pull/status` as `YELLOW`, so these
-implementation items remain `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN`.
+- Raw `C:\NWR_SHARED_DATA` reads from app pages.
+- Identity-review rows as approved joins.
+- Identity recommendations as approved joins.
+- `games_missed_while_rostered`.
+- Schedule next-game, opponent, bye, health, or availability inference.
+- Any model, rank, source-truth, trade-value, pick-value, recommendation, or hidden-sort use.
 
 ## Source Rules
 
 Allowed:
 
 - Public NFLVerse factual injury/status data through approved source gates.
-- Factual roster, schedule, snap, and stat context only after refresh health is green.
+- Factual roster, schedule, snap, and stat context through tracked artifacts only.
 - Display-only/review-only labels and caveats.
 
 Blocked:
@@ -49,6 +46,7 @@ Blocked:
 - Injury-risk score.
 - Medical projection.
 - ACL/comeback projection.
+- Durability score.
 - Scraped, vendor, Gmail, or rumor sources.
 - Missing-data-as-healthy logic.
 - Model, rank, source-truth, trade-value, or pick-value promotion.
@@ -64,5 +62,6 @@ It must not be interpreted as a positive availability status.
 Existing injury-report counts are season totals by report week. They are not
 per-game availability denominators.
 
-Per-game fields require refreshed roster, schedule, snap, and stat coverage before
-values can be populated.
+Per-game denominator values display only from the tracked denominator artifact
+after identity and denominator gates pass. They do not infer missed games,
+injury status, health status, recovery, role, or recommendations.

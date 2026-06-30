@@ -2,12 +2,14 @@
 
 ## Existing Approved Surfaces
 
-Existing V0 display surfaces remain the only app surfaces:
+Existing display surfaces remain:
 
-- Rankings -> Outcome Context.
+- Rankings -> Outcome Context / Data Review visibility.
 - Player Compare -> Injury / Availability Context.
 
-No new app wiring is activated by this lane.
+The denominator follow-up uses the existing Player Compare NFLVerse
+Availability Context table. No ranking, recommendation, or draft-decision
+surface is added.
 
 ## Required Copy
 
@@ -15,13 +17,13 @@ Existing V0 copy remains approved:
 
 `Injury context is review-only. No medical recovery projection is made. Missing injury context is not clean health.`
 
-Player Compare V0 copy remains approved:
+Player Compare copy remains approved:
 
 `Review-only context. No medical projection or injury-risk score is made.`
 
-Safe upgrade denominator copy for future activation:
+Denominator context:
 
-`Availability denominator context is display-only/review-only. Per-game fields remain Not enough information until NFLVerse Refresh Health is green.`
+`Availability denominator context is display-only/review-only. Missing or gated denominator values remain Not enough information.`
 
 Season-total caveat:
 
@@ -29,14 +31,15 @@ Season-total caveat:
 
 Per-game caveat:
 
-`Per-game availability values require refreshed roster, schedule, snap, and stat coverage before display.`
+`Per-game denominator values display only from approved tracked denominator rows. Do not infer unavailable games from report counts.`
 
 ## Display Rules
 
 - Missing injury context must remain `Not enough information`.
 - Missing availability context must remain `Not enough information`.
-- Ambiguous identity must keep the row as `Not enough information`.
-- `games_missed_while_rostered` is not a causal injury label.
+- Ambiguous identity must keep detailed rows as `Not enough information`.
+- Identity-review rows expose no denominator detail.
+- `games_missed_while_rostered` remains `Not enough information`.
 - No surface may use this context for sort, rank, model input, trade value, or pick value.
 
 ## Blocked Language
@@ -53,5 +56,6 @@ Do not add:
 
 ## UI Status
 
-The service and docs prepare the display contract. This lane does not add live
-denominator values to app tables.
+Player Compare renders safe denominator fields in the existing NFLVerse
+Availability Context table. Missing and gated values remain
+`Not enough information`.
