@@ -1,23 +1,29 @@
 # Final Verdict
 
-Verdict: `YELLOW_WAITING_FOR_NFLVERSE_REFRESH_HEALTH_GREEN`
+Verdict: `YELLOW_PARTIAL_AVAILABILITY_CONTEXT_GATED`
 
 ## Reason
 
-The lane can safely add docs, schema, a service contract, and tests for
-display-only/review-only injury and availability context.
+The merged HQ player context artifact supports safe factual availability display
+for 240 safe identity rows. The lane now activates direct tracked-artifact fields
+in Player Compare and preserves existing Rankings Data Review visibility.
 
-It cannot activate refreshed NFLVerse roster, schedule, snap, stat, or dynamic
-season-anchor calculations because the current completion gate still lists
-`nflverse pull/status` as `YELLOW`.
+It remains partial because 54 rows require identity review, schedule
+next-game/opponent/bye has 0 current/future safe rows, and per-game denominator
+fields are not present in the tracked artifact.
 
 ## Safe Now
 
-- Preserve existing injury-report source gate.
-- Preserve existing V0 Rankings and Player Compare display.
-- Add display-only/review-only schema for future availability denominators.
-- Keep missing injury or availability context as `Not enough information`.
-- Explain season-total report-week counts versus per-game denominator caveats.
+- roster status
+- weekly roster status
+- injury report status
+- practice status
+- injury report date/week
+- last active season/week
+- snap recency and sample size
+- age and age source
+- identity join status and caveat
+- availability context present/unavailable labels
 
 ## Waiting
 
@@ -28,6 +34,7 @@ season-anchor calculations because the current completion gate still lists
 - `games_missed_while_rostered`
 - `per_game_denominator`
 - dynamic season anchors
+- current/future next-game, opponent, and bye context
 
 ## Blocked
 
@@ -42,4 +49,4 @@ season-anchor calculations because the current completion gate still lists
 ## Final Status
 
 Safe prep is complete. Active dataset-backed availability computation waits for
-`WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN`.
+tracked artifact extension and identity/schedule review where applicable.

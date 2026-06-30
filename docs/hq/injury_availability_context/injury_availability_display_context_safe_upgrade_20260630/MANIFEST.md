@@ -12,12 +12,10 @@ Base checked after fetch:
 
 ## Verdict
 
-`YELLOW_WAITING_FOR_NFLVERSE_REFRESH_HEALTH_GREEN`
+`YELLOW_PARTIAL_AVAILABILITY_CONTEXT_GATED`
 
-This lane adds safe display-context prep for injury and availability transparency. It
-does not activate refreshed NFLVerse roster, schedule, snap, stat, or dynamic-anchor
-computations because the current completion gate still lists `nflverse pull/status`
-as `YELLOW`.
+This rerun activates safe direct display of tracked NFLVerse player availability
+context where the merged artifact and schema allow it.
 
 ## Files In This Packet
 
@@ -30,6 +28,9 @@ as `YELLOW`.
 - `MODEL_RANK_SOURCE_TRUTH_NON_MUTATION_REPORT.md`
 - `TEST_RESULTS.md`
 - `FINAL_VERDICT.md`
+- `nflverse_availability_context_activation_summary.md`
+- `nflverse_availability_field_map.csv`
+- `nflverse_availability_guardrail_audit.md`
 
 ## Code Artifacts
 
@@ -41,13 +42,14 @@ as `YELLOW`.
 Allowed and completed:
 
 - Preserve existing factual `nflreadpy.load_injuries` review-only context.
-- Add safe service/schema/docs/tests for future availability denominator context.
+- Add safe tracked-artifact service/schema/docs/tests for availability display context.
+- Add Player Compare display rows for safe NFLVerse identity rows.
 - Keep missing injury or availability context as `Not enough information`.
 - Explain season-total report-week counts versus future per-game denominators.
 
 Not activated:
 
 - `weekly_rosters`, `rosters`, `schedules`, `snap_counts`, and `player_stats`
-  availability computations.
+  denominator computations.
 - Dynamic season-anchor computation.
 - Any model, rank, trade, pick, source-truth, or hidden-sort use.

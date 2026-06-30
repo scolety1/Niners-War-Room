@@ -29,6 +29,10 @@ from src.services.draft_day_app_v1_service import (
     load_lane_prop_file,
     load_outcome_v2_current_player_display,
 )
+from src.services.injury_availability_context_service import (
+    build_nflverse_availability_panel_rows,
+    nflverse_availability_status_rows,
+)
 from src.services.player_compare_decision_service import (
     build_player_compare_decision_summary,
     decision_summary_rows,
@@ -525,11 +529,15 @@ def _render_injury_per_game_context(compare_frame: pd.DataFrame) -> None:
     )
     _render_injury_availability_status()
     outcome_bundle = load_outcome_v2_current_player_display()
-    rows = [
+    nflverse_rows = build_nflverse_availability_panel_rows(compare_frame.to_dict("records"))
+    st.markdown("**NFLVerse Availability Context**")
+    st.dataframe(pd.DataFrame(nflverse_rows), use_container_width=True, hide_index=True)
+    st.markdown("**Outcome V2 Injury Context Flags**")
+    outcome_rows = [
         _injury_display_row(record, outcome_bundle.frame)
         for record in compare_frame.to_dict("records")
     ]
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(outcome_rows), use_container_width=True, hide_index=True)
 
 
 def _render_injury_availability_status() -> None:
@@ -551,6 +559,7 @@ def _render_injury_availability_status() -> None:
             "Guardrail": "No comeback odds, recovery odds, or ranking adjustment.",
         },
     ]
+    status_rows.extend(nflverse_availability_status_rows())
     st.dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
 
 

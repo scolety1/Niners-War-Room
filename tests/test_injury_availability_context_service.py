@@ -2,16 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
+
 from src.services.injury_availability_context_service import (
     BLOCKED,
     NEED_MODEL_GATE,
     NOT_ENOUGH_INFORMATION,
     SAFE_NOW,
-    WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN,
+    YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION,
     availability_dataset_status_rows,
     build_injury_availability_display_context,
+    build_nflverse_availability_panel_rows,
     display_context_schema_rows,
     lve_injury_durability_reuse_allowed,
+    nflverse_availability_artifact_counts,
     proposal_classification_rows,
     unsafe_availability_field_names,
 )
@@ -38,7 +42,7 @@ def test_missing_injury_and_availability_context_remains_nei() -> None:
     assert row["games_while_rostered"] == NOT_ENOUGH_INFORMATION
     assert row["games_missed_while_rostered"] == NOT_ENOUGH_INFORMATION
     assert row["per_game_denominator"] == NOT_ENOUGH_INFORMATION
-    assert row["availability_context_status"] == WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
+    assert row["availability_context_status"] == NOT_ENOUGH_INFORMATION
     assert "Not enough information" in row["availability_caveat"]
     assert "healthy" not in _row_text(row)
     assert "clean health" not in _row_text(row)
@@ -109,20 +113,22 @@ def test_no_projection_scoring_or_blocked_fields_in_display_row() -> None:
         assert term not in display_text
 
 
-def test_dataset_statuses_wait_until_nflverse_refresh_health_green() -> None:
+def test_dataset_statuses_move_safe_direct_fields_from_wait_to_safe_now() -> None:
     rows = {row["dataset"]: row for row in availability_dataset_status_rows()}
 
     assert rows["nflverse_injuries"]["classification"] == SAFE_NOW
+    assert rows["nflverse_rosters"]["classification"] == SAFE_NOW
+    assert rows["nflverse_weekly_rosters"]["classification"] == SAFE_NOW
+    assert rows["nflverse_snap_counts"]["classification"] == SAFE_NOW
+    assert rows["nflverse_player_stats"]["classification"] == SAFE_NOW
     for dataset in (
-        "nflverse_weekly_rosters",
-        "nflverse_rosters",
         "nflverse_schedules",
-        "nflverse_snap_counts",
-        "nflverse_player_stats",
         "refresh_metadata",
     ):
-        assert rows[dataset]["classification"] == WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
-        assert "until refresh health is green" in rows[dataset]["active_compute_use"]
+        assert rows[dataset]["classification"] == (
+            YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION
+        )
+    assert rows["ff_rankings"]["classification"] == BLOCKED
 
 
 def test_schema_explains_season_total_and_per_game_caveats() -> None:
@@ -130,12 +136,78 @@ def test_schema_explains_season_total_and_per_game_caveats() -> None:
 
     assert rows["prior_season_injury_report_weeks"]["status"] == SAFE_NOW
     assert "Season-total" in rows["prior_season_injury_report_weeks"]["notes"]
+    assert rows["roster_status"]["status"] == SAFE_NOW
+    assert rows["injury_report_status"]["status"] == SAFE_NOW
+    assert rows["snap_sample_size"]["status"] == SAFE_NOW
     assert rows["games_while_rostered"]["status"] == (
-        WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
+        YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION
     )
     assert rows["per_game_denominator"]["status"] == (
-        WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
+        YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION
     )
+
+
+def test_actual_tracked_artifact_has_expected_safe_and_review_coverage() -> None:
+    counts = nflverse_availability_artifact_counts()
+
+    assert counts["rows"] == 294
+    assert counts["safe_display_rows"] == 240
+    assert counts["identity_review_rows"] == 54
+    assert counts["schedule_current_future_rows"] == 0
+
+
+def test_safe_identity_row_exposes_only_schema_safe_factual_availability_context() -> None:
+    rows = build_nflverse_availability_panel_rows(
+        [{"player_id": "p-safe", "player": "Safe WR", "position": "WR"}],
+        artifact_frame=_artifact_rows(),
+        schema_frame=_schema_rows(),
+    )
+    row = rows[0]
+
+    assert row["NFLVerse Availability Context"] == "Availability context present"
+    assert row["NFLVerse Identity Status"] == "Matched"
+    assert row["Roster Status"] == "ACT"
+    assert row["Weekly Roster Status"] == "ACT"
+    assert row["Injury Report Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Practice Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Snap Sample Size"] == NOT_ENOUGH_INFORMATION
+    assert row["Last Active"] == "season=2025; week=17"
+    assert row["Schedule Context"] == NOT_ENOUGH_INFORMATION
+    assert "healthy" not in _row_text(row)
+    assert "risk" not in _row_text(row)
+
+
+def test_identity_review_row_does_not_expose_detailed_nflverse_context() -> None:
+    rows = build_nflverse_availability_panel_rows(
+        [{"player_id": "p-review", "player": "Review RB", "position": "RB"}],
+        artifact_frame=_artifact_rows(),
+        schema_frame=_schema_rows(),
+    )
+    row = rows[0]
+
+    assert row["NFLVerse Availability Context"] == "Review needed"
+    assert row["NFLVerse Identity Status"] == "Review needed"
+    assert row["Identity Caveat"] == "Review needed"
+    assert row["Roster Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Injury Report Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Snap Sample Size"] == NOT_ENOUGH_INFORMATION
+
+
+def test_missing_roster_snap_and_injury_values_do_not_become_clean_zero_or_safe() -> None:
+    rows = build_nflverse_availability_panel_rows(
+        [{"player_id": "p-missing", "player": "Missing TE", "position": "TE"}],
+        artifact_frame=_artifact_rows(),
+        schema_frame=_schema_rows(),
+    )
+    row = rows[0]
+
+    assert row["Roster Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Weekly Roster Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Injury Report Status"] == NOT_ENOUGH_INFORMATION
+    assert row["Snap Sample Size"] == NOT_ENOUGH_INFORMATION
+    assert row["Snap Sample Size"] != "0"
+    assert "clean" not in _row_text(row)
+    assert "safe" not in _row_text(row)
 
 
 def test_proposal_classification_matrix_preserves_hq_guardrails() -> None:
@@ -143,8 +215,12 @@ def test_proposal_classification_matrix_preserves_hq_guardrails() -> None:
 
     assert rows["IAC-01"]["classification"] == SAFE_NOW
     assert rows["IAC-04"]["classification"] == SAFE_NOW
-    assert rows["IAC-05"]["classification"] == WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
-    assert rows["IAC-10"]["classification"] == WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN
+    assert rows["IAC-05"]["classification"] == (
+        YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION
+    )
+    assert rows["IAC-10"]["classification"] == (
+        YELLOW_NEEDS_PLAYER_CONTEXT_ARTIFACT_EXTENSION
+    )
     assert rows["IAC-11"]["classification"] == NEED_MODEL_GATE
     assert rows["IAC-12"]["classification"] == BLOCKED
     assert rows["IAC-13"]["classification"] == BLOCKED
@@ -165,12 +241,21 @@ def test_existing_display_context_surfaces_remain_display_only() -> None:
     assert "Injury context is review-only" in rankings_text
     assert "Missing injury context is not clean health" in rankings_text
     assert "Injury / Availability Context" in player_compare_text
+    assert "NFLVerse Availability Context" in player_compare_text
+    assert "build_nflverse_availability_panel_rows" in player_compare_text
     assert (
         "Review-only context. No medical projection or injury-risk score is made."
         in player_compare_text
     )
     assert "does not change comparison scoring" in player_compare_text
     assert "ranking, lean, or hidden decision logic" in player_compare_text
+
+
+def test_player_compare_page_does_not_read_raw_shared_nflverse_data() -> None:
+    text = PLAYER_COMPARE_PAGE.read_text(encoding="utf-8")
+
+    assert "C:\\NWR_SHARED_DATA" not in text
+    assert "NWR_SHARED_DATA" not in text
 
 
 def test_required_documentation_packet_files_exist() -> None:
@@ -184,12 +269,120 @@ def test_required_documentation_packet_files_exist() -> None:
         "MODEL_RANK_SOURCE_TRUTH_NON_MUTATION_REPORT.md",
         "TEST_RESULTS.md",
         "FINAL_VERDICT.md",
+        "nflverse_availability_context_activation_summary.md",
+        "nflverse_availability_field_map.csv",
+        "nflverse_availability_guardrail_audit.md",
     }
 
     assert expected <= {path.name for path in DOC_ROOT.iterdir()}
     verdict = (DOC_ROOT / "FINAL_VERDICT.md").read_text(encoding="utf-8")
-    assert "YELLOW_WAITING_FOR_NFLVERSE_REFRESH_HEALTH_GREEN" in verdict
+    assert "YELLOW_PARTIAL_AVAILABILITY_CONTEXT_GATED" in verdict
 
 
 def _row_text(row: dict[str, str]) -> str:
     return " ".join(row.values()).lower()
+
+
+def _schema_rows() -> pd.DataFrame:
+    columns = (
+        "identity_join_status",
+        "identity_caveat",
+        "roster_birth_date_derived_age",
+        "age_source",
+        "roster_status",
+        "weekly_roster_status",
+        "injury_report_status",
+        "injury_report_date_week",
+        "practice_status",
+        "snap_count_recency",
+        "latest_snap_season",
+        "latest_snap_week",
+        "snap_sample_size",
+        "last_active_season",
+        "last_active_week",
+        "data_coverage_status",
+    )
+    return pd.DataFrame(
+        [
+            {
+                "column_name": column,
+                "field_status": "SAFE_NOW_DISPLAY_ONLY",
+                "display_only": "true",
+                "model_use_allowed": "false",
+                "training_allowed": "false",
+                "source_truth_allowed": "false",
+                "rank_logic_allowed": "false",
+                "hidden_sort_allowed": "false",
+                "trade_value_allowed": "false",
+                "pick_value_allowed": "false",
+            }
+            for column in columns
+        ]
+    )
+
+
+def _artifact_rows() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "nwr_player_id": "p-safe",
+                "identity_join_status": "SAFE_NOW_DISPLAY_ONLY",
+                "review_required": "false",
+                "identity_caveat": "exact_nwr_player_id_to_rosters_sleeper_id",
+                "roster_birth_date_derived_age": "25.0",
+                "age_source": "rosters.birth_date",
+                "roster_status": "ACT",
+                "weekly_roster_status": "ACT",
+                "injury_report_status": NOT_ENOUGH_INFORMATION,
+                "injury_report_date_week": NOT_ENOUGH_INFORMATION,
+                "practice_status": NOT_ENOUGH_INFORMATION,
+                "snap_count_recency": NOT_ENOUGH_INFORMATION,
+                "latest_snap_season": NOT_ENOUGH_INFORMATION,
+                "latest_snap_week": NOT_ENOUGH_INFORMATION,
+                "snap_sample_size": NOT_ENOUGH_INFORMATION,
+                "last_active_season": "2025",
+                "last_active_week": "17",
+                "data_coverage_status": "ready=rosters;weekly_rosters;injuries",
+            },
+            {
+                "nwr_player_id": "p-review",
+                "identity_join_status": "NEED_IDENTITY_REVIEW",
+                "review_required": "true",
+                "identity_caveat": "ambiguous",
+                "roster_birth_date_derived_age": "24.0",
+                "age_source": "rosters.birth_date",
+                "roster_status": "ACT",
+                "weekly_roster_status": "ACT",
+                "injury_report_status": "Questionable",
+                "injury_report_date_week": "season=2025; week=18",
+                "practice_status": "Limited",
+                "snap_count_recency": "season=2025; week=18",
+                "latest_snap_season": "2025",
+                "latest_snap_week": "18",
+                "snap_sample_size": "10",
+                "last_active_season": "2025",
+                "last_active_week": "18",
+                "data_coverage_status": "ready=rosters",
+            },
+            {
+                "nwr_player_id": "p-missing",
+                "identity_join_status": "SAFE_NOW_DISPLAY_ONLY",
+                "review_required": "false",
+                "identity_caveat": "exact_nwr_player_id_to_rosters_sleeper_id",
+                "roster_birth_date_derived_age": NOT_ENOUGH_INFORMATION,
+                "age_source": NOT_ENOUGH_INFORMATION,
+                "roster_status": NOT_ENOUGH_INFORMATION,
+                "weekly_roster_status": NOT_ENOUGH_INFORMATION,
+                "injury_report_status": NOT_ENOUGH_INFORMATION,
+                "injury_report_date_week": NOT_ENOUGH_INFORMATION,
+                "practice_status": NOT_ENOUGH_INFORMATION,
+                "snap_count_recency": NOT_ENOUGH_INFORMATION,
+                "latest_snap_season": NOT_ENOUGH_INFORMATION,
+                "latest_snap_week": NOT_ENOUGH_INFORMATION,
+                "snap_sample_size": NOT_ENOUGH_INFORMATION,
+                "last_active_season": NOT_ENOUGH_INFORMATION,
+                "last_active_week": NOT_ENOUGH_INFORMATION,
+                "data_coverage_status": NOT_ENOUGH_INFORMATION,
+            },
+        ]
+    )

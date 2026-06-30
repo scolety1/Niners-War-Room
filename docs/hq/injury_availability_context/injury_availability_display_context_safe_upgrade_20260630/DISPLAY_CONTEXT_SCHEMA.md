@@ -6,9 +6,10 @@ Service reference:
 
 ## Contract
 
-The safe upgrade exposes a reserved display-context schema. Dataset-backed
-availability denominator fields are present as contract fields, but values remain
-`Not enough information` until NFLVerse Refresh Health is green.
+The safe upgrade now exposes tracked-artifact NFLVerse display fields for safe
+identity rows. Dataset-backed denominator fields remain reserved contract fields
+and stay `Not enough information` until a tracked artifact provides approved
+denominators.
 
 | Field | Group | Status | Notes |
 | --- | --- | --- | --- |
@@ -29,6 +30,17 @@ availability denominator fields are present as contract fields, but values remai
 | `season_total_caveat` | Caveat | `SAFE_NOW` | Explains injury-report counts are season totals by report week. |
 | `per_game_caveat` | Caveat | `SAFE_NOW` | Explains per-game values wait for refreshed denominator coverage. |
 | `availability_caveat` | Caveat | `SAFE_NOW` | States display-only/review-only and missing context as NEI. |
+| `roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
+| `weekly_roster_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
+| `injury_report_status` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not healthy. |
+| `practice_status` | Tracked NFLVerse player context | `SAFE_NOW` | Safe direct display for safe identity rows only. |
+| `injury_report_date_week` | Tracked NFLVerse player context | `SAFE_NOW` | Report-week context only. |
+| `last_active_season` | Tracked NFLVerse player context | `SAFE_NOW` | Factual last active season context. |
+| `last_active_week` | Tracked NFLVerse player context | `SAFE_NOW` | Factual last active week context. |
+| `snap_count_recency` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not zero. |
+| `snap_sample_size` | Tracked NFLVerse player context | `SAFE_NOW` | Missing remains NEI, not zero. |
+| `roster_birth_date_derived_age` | Tracked NFLVerse player context | `SAFE_NOW` | Display-only age context. |
+| `age_source` | Tracked NFLVerse player context | `SAFE_NOW` | Display-only age source. |
 | `display_only` | Guardrail | `SAFE_NOW` | Always `true`. |
 | `review_only` | Guardrail | `SAFE_NOW` | Always `true`. |
 | `model_input_allowed` | Guardrail | `SAFE_NOW` | Always `false`. |
