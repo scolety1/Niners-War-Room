@@ -24,6 +24,10 @@ def test_live_draft_page_is_the_command_center() -> None:
     assert "Drafted" in text
     assert "Trades" in text
     assert "Autosave" in text
+    assert "Runtime state status" in text
+    assert "Runtime state path" in text
+    assert "render_nflverse_player_context_expander" in text
+    assert "NFLVerse player context / display-only" in text
     assert "build_cockpit_summary" in text
     assert "render_draft_workflow" in text
 
@@ -34,6 +38,7 @@ def test_live_draft_page_keeps_trade_and_runtime_guardrails() -> None:
     assert "runtime state is local/manual" in text.lower()
     assert "No trade valuation" in text
     assert "No trade valuation, model input, rank changes, or hidden market sort" in text
+    assert "Reload safety uses local runtime status" in text
     assert "market/ADP/DynastyProcess trade valuation" not in text
 
 
@@ -60,6 +65,11 @@ def test_mock_drafts_page_uses_named_practice_state_scope() -> None:
     assert "Create Mock" in text
     assert "Duplicate Mock" in text
     assert "Delete Mock" in text
+    assert "Mock manifest status" in text
+    assert "Mock manifest path" in text
+    assert "Runtime state status" in text
+    assert "render_nflverse_player_context_expander" in text
+    assert "NFLVerse player context / display-only" in text
     assert "draft_id=active_session.draft_id" in text
     assert "session_key=f\"draft_day_v1_mock_draft_workflow_{active_session.draft_id}\"" in text
 
@@ -86,6 +96,13 @@ def test_post_draft_mode_defaults_to_live_state() -> None:
     assert '"Draft Analyzer"' in text
     assert "event-log recap" in text
     assert "official source truth" in text
+    assert "Saved mock draft to analyze" in text
+    assert "runtime_draft_id" in text
+    assert "Import preview diff" in text
+    assert "NFLVerse-backed player context is display-only review context" in text
+    assert "render_nflverse_player_context_expander" in text
+    assert "does not compute trade valuation" in text
+    assert "pick valuation, market value, or model advice" in text
     assert 'st.radio("Draft session", ["Live", "Mock"]' in text
     assert 'index=1' not in text
 

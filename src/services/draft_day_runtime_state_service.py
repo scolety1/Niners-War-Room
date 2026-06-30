@@ -521,6 +521,52 @@ def preview_runtime_state_import(
     )
 
 
+def runtime_import_preview_diff(
+    current_state: RuntimeState,
+    preview: RuntimeImportPreview,
+) -> tuple[dict[str, str], ...]:
+    if not preview.valid or preview.state is None:
+        return ()
+    current = normalize_runtime_state(
+        current_state,
+        mode=str(current_state.get("mode") or preview.summary.get("mode") or "live").lower(),
+        draft_id=str(
+            current_state.get("draft_session_id")
+            or current_state.get("draft_id")
+            or preview.summary.get("draft_id")
+            or DEFAULT_DRAFT_ID
+        ),
+    )
+    current_summary = {
+        "mode": str(current.get("mode") or ""),
+        "draft_id": str(current.get("draft_id") or current.get("draft_session_id") or ""),
+        "assignment_count": str(len(current["workflow_state"]["assignments"])),
+        "trade_count": str(len(current["trade_events"])),
+        "event_count": str(len(current["event_log"])),
+        "updated_at": str(current.get("updated_at_utc") or current.get("updated_at") or ""),
+    }
+    rows: list[dict[str, str]] = []
+    for field in (
+        "mode",
+        "draft_id",
+        "assignment_count",
+        "trade_count",
+        "event_count",
+        "updated_at",
+    ):
+        current_value = current_summary.get(field, "")
+        imported_value = str(preview.summary.get(field, ""))
+        rows.append(
+            {
+                "Field": field,
+                "Current": current_value,
+                "Imported": imported_value,
+                "Change": "same" if current_value == imported_value else "will change",
+            }
+        )
+    return tuple(rows)
+
+
 def restore_runtime_state_from_json_if_confirmed(
     payload: str | bytes,
     *,

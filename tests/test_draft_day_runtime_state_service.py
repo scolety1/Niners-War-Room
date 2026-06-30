@@ -22,6 +22,7 @@ from src.services.draft_day_runtime_state_service import (
     reset_runtime_state_if_confirmed,
     restore_runtime_state_from_json,
     restore_runtime_state_from_json_if_confirmed,
+    runtime_import_preview_diff,
     runtime_paths,
     runtime_state_path,
     undo_last_trade_event,
@@ -401,6 +402,36 @@ def test_import_preview_blocks_overwrite_without_confirmation(tmp_path: Path) ->
     assert load_runtime_state(mode="live", root=tmp_path)["drafted_player_ids"] == [
         "current|player"
     ]
+
+
+def test_import_preview_diff_is_display_only_summary(tmp_path: Path) -> None:
+    current = update_workflow_state(
+        empty_runtime_state(mode="mock", draft_id="mock_a"),
+        {"assignments": [{"player_key": "alpha", "overall_pick": 1, "player": "Alpha"}]},
+        event_type="pick_assigned",
+        root=tmp_path,
+    )
+    incoming = record_trade_event(
+        empty_runtime_state(mode="mock", draft_id="mock_a"),
+        team_a="NWR",
+        team_b="Other",
+        team_a_sends="1.04",
+        team_b_sends="2.03",
+        root=tmp_path / "incoming",
+    )
+    preview = preview_runtime_state_import(
+        export_runtime_state_json(incoming),
+        mode="mock",
+        draft_id="mock_a",
+    )
+
+    diff = runtime_import_preview_diff(current, preview)
+    by_field = {row["Field"]: row for row in diff}
+
+    assert by_field["assignment_count"]["Current"] == "1"
+    assert by_field["assignment_count"]["Imported"] == "0"
+    assert by_field["assignment_count"]["Change"] == "will change"
+    assert by_field["trade_count"]["Imported"] == "1"
 
 
 def test_import_with_confirmation_creates_backup_and_restores(tmp_path: Path) -> None:

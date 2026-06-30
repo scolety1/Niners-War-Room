@@ -9,6 +9,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.draft_day_player_context import render_nflverse_player_context_expander
 from app.components.draft_day_v1 import (
     render_lane_status_table,
     render_source_of_truth_badge,
@@ -22,7 +23,10 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
 )
-from src.services.draft_day_runtime_state_service import load_runtime_state, runtime_paths
+from src.services.draft_day_runtime_state_service import (
+    load_runtime_state_with_status,
+    runtime_paths,
+)
 from src.services.drafting_mode_cockpit_service import (
     build_cockpit_summary,
     owned_pick_rows,
@@ -43,7 +47,11 @@ def _render_live_draft_command_center(
     pick_frame,
     source_caption: str,
 ) -> None:
-    state = load_runtime_state(mode="live", source_checkpoint=source_caption)
+    load_result = load_runtime_state_with_status(
+        mode="live",
+        source_checkpoint=source_caption,
+    )
+    state = load_result.state
     summary = build_cockpit_summary(
         board_frame=board_frame,
         pick_frame=pick_frame,
@@ -59,6 +67,11 @@ def _render_live_draft_command_center(
         "Draft Cockpit command center: current pick, owned picks, runtime events, trade log, "
         "export/import, and the live draft board share one local live state scope."
     )
+    if load_result.status == "LOADED":
+        st.success("Runtime state status: loaded existing live draft runtime state.")
+    else:
+        st.warning(f"Runtime state status: {load_result.warning}")
+    st.caption(f"Runtime state path: {load_result.path}")
 
     metric_cols = st.columns([1, 1.2, 0.8, 0.8, 1.2])
     metric_cols[0].metric("Current pick", summary.current_pick)
@@ -114,6 +127,13 @@ def _render_live_draft_command_center(
         st.caption(
             "No trade valuation, model input, rank changes, or hidden market sort occurs here."
         )
+        st.caption("Reload safety uses local runtime status; missing state is not a silent reset.")
+
+    render_nflverse_player_context_expander(
+        board_frame,
+        key="live_draft_room",
+        title="NFLVerse player context / display-only",
+    )
 
 bundle = load_frozen_board()
 live_board_frame = (
