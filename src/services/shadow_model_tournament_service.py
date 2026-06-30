@@ -1225,7 +1225,7 @@ def _tournament_doc(
         "",
         (
             "This is a shadow/evaluation tournament only. No production Rankings, "
-            "Draft Prep, Live Draft Room, data pack, or Decision Board output is "
+            "Draft Prep, Draft Cockpit, data pack, or Decision Board output is "
             "promoted or overwritten."
         ),
         "",

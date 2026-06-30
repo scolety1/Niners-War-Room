@@ -17,8 +17,9 @@ def test_live_draft_room_page_exists_and_has_route() -> None:
     nav = NAVIGATION.read_text(encoding="utf-8")
 
     assert PAGE.exists()
-    assert 'st.title("Live Draft Room")' in text
-    assert 'title="Live Draft"' in nav
+    assert 'st.title("Draft Cockpit")' in text
+    assert 'title="Draft Cockpit"' in nav
+    assert 'url_path="draft-cockpit"' in nav
     assert 'url_path="live-draft-room"' in nav
 
 
@@ -130,7 +131,7 @@ def test_decision_board_is_not_modified_by_live_draft_room_page() -> None:
     decision_text = DECISION_BOARD.read_text(encoding="utf-8")
 
     assert "Decision Board" not in page_text
-    assert "Live Draft Room" not in decision_text
+    assert "Draft Cockpit" not in decision_text
 
 
 def test_live_draft_room_handoff_exists() -> None:

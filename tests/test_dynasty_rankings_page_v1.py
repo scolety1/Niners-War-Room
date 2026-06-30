@@ -8,13 +8,18 @@ import pandas as pd
 from src.services.draft_day_app_v1_service import (
     FULL_DYNASTY_VIEW,
     RANKINGS_IDENTITY_COLUMN_CONFIG,
+    RANKINGS_TABLE_COLUMN_CONFIG,
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
     market_baseline_age_coverage,
+    sort_rankings_frame_by_column,
 )
 from src.services.market_baseline_registry import PAGE_USAGE
 
 PAGE = Path("app/pages/20_final_board_v1.py")
+SCORE_FEASIBILITY = Path(
+    "docs/hq/rankings_draft_cockpit_ux_fix_20260630/SCORE_BREAKDOWN_FEASIBILITY.md"
+)
 
 
 def _page_text() -> str:
@@ -56,9 +61,10 @@ def test_rankings_full_view_sort_options_do_not_foreground_draft_board_rank() ->
     text = _page_text()
 
     assert 'if view_mode == FULL_DYNASTY_VIEW:' in text
-    assert 'return ["Dynasty Rank", "Position Rank", "Age", "Player"]' in text
+    assert 'return ["Dynasty Rank", "NWR Dynasty Score", "Position Rank", "Age", "Player"]' in text
     assert 'sort_default = _default_sort_label(view_mode)' in text
     assert 'index=sort_options.index(sort_default)' in text
+    assert '_default_ascending_for_sort(sort_by)' in text
     assert '"Candidate Rank (Review-Only)"' in text
     assert 'if sort_by == "Position Rank" and view_mode != FULL_DYNASTY_VIEW:' in text
 
@@ -77,6 +83,10 @@ def test_rankings_identity_columns_are_pinned_and_sized() -> None:
     assert rank_config["label"] == "Rank"
     assert rank_config["help"] == "Dynasty Rank"
     assert player_config["label"] == "Player"
+    assert RANKINGS_TABLE_COLUMN_CONFIG["NWR Dynasty Score"]["label"] == "NWR Score"
+    assert "missing scores are blank and sort last" in RANKINGS_TABLE_COLUMN_CONFIG[
+        "NWR Dynasty Score"
+    ]["help"]
 
 
 def test_rankings_full_view_source_filter_keeps_frozen_board_optional() -> None:
@@ -156,11 +166,11 @@ def test_market_columns_can_display_without_sort_or_model_use() -> None:
         show_market_baseline=True,
     )
 
-    assert "DP 1QB Value (Market Baseline / Display-Only)" in market_display.columns
-    assert "Market Sanity Flag (Market Baseline / Display-Only)" in market_display.columns
+    assert "DP Value" in market_display.columns
+    assert "Market Flag" in market_display.columns
     assert list(market_display.columns).index("NWR Dynasty Score") < list(
         market_display.columns
-    ).index("DP 1QB Value (Market Baseline / Display-Only)")
+    ).index("DP Value")
 
 
 def test_market_baseline_age_fallback_is_display_labeled() -> None:
@@ -225,6 +235,7 @@ def test_rankings_presets_and_advanced_filters_clean_top_controls() -> None:
         "Market Analyzer",
         "Outcome Lens",
         "Data Review",
+        "NWR Score Audit",
         "Compact Draft View",
     ):
         assert preset in text
@@ -295,11 +306,54 @@ def test_rankings_column_labels_are_human_readable_and_review_fields_late() -> N
         "Age",
         "NWR Dynasty Score",
     ]
-    assert "Data Trust" in columns
-    assert "Main Caveat" in columns
+    assert "Trust" in columns
+    assert "Caveat" in columns
     assert "Key Caveat / Review Flag" not in columns
     assert "Candidate Band" not in columns
-    assert columns.index("Data Trust") > columns.index("NWR Dynasty Score")
+    assert columns.index("Trust") > columns.index("NWR Dynasty Score")
+
+
+def test_rankings_numeric_sort_uses_numeric_keys_and_missing_last() -> None:
+    frame = pd.DataFrame(
+        [
+            {"player_name": "Rank 89", "nwr_rank": "89", "nwr_dynasty_score": "89"},
+            {"player_name": "Rank 10", "nwr_rank": "10", "nwr_dynasty_score": "9.3"},
+            {"player_name": "Rank Missing", "nwr_rank": "", "nwr_dynasty_score": ""},
+            {"player_name": "Rank 2", "nwr_rank": "2", "nwr_dynasty_score": "88"},
+            {"player_name": "Rank 88", "nwr_rank": "88", "nwr_dynasty_score": "87"},
+            {"player_name": "Rank 1", "nwr_rank": "1", "nwr_dynasty_score": "9.1"},
+        ]
+    )
+
+    rank_sorted = sort_rankings_frame_by_column(
+        frame,
+        "nwr_rank",
+        ascending=True,
+        view_mode=FULL_DYNASTY_VIEW,
+    )
+    score_sorted = sort_rankings_frame_by_column(
+        frame,
+        "nwr_dynasty_score",
+        ascending=False,
+        view_mode=FULL_DYNASTY_VIEW,
+    )
+
+    assert rank_sorted["player_name"].tolist() == [
+        "Rank 1",
+        "Rank 2",
+        "Rank 10",
+        "Rank 88",
+        "Rank 89",
+        "Rank Missing",
+    ]
+    assert score_sorted["player_name"].tolist() == [
+        "Rank 89",
+        "Rank 2",
+        "Rank 88",
+        "Rank 10",
+        "Rank 1",
+        "Rank Missing",
+    ]
 
 
 def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
@@ -317,3 +371,16 @@ def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
     assert "T12 this year" in audit
     assert "Blocked until an approved artifact exists" in audit
     assert "Older legacy page text referenced horizon-style placeholder labels" in audit
+
+
+def test_score_audit_preset_is_placeholder_without_invented_components() -> None:
+    text = _page_text()
+    doc = SCORE_FEASIBILITY.read_text(encoding="utf-8")
+
+    assert "NWR Score Audit" in text
+    assert "_render_score_audit_status()" in text
+    assert "component weights or contribution rows" in text
+    assert "Status: DEFER" in doc
+    assert "Future candidate status: MODEL_FEATURE_CANDIDATE" in doc
+    assert "does not expose approved component-level score rows" in doc
+    assert "does not calculate or display invented score breakdown math" in doc

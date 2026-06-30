@@ -245,7 +245,11 @@ def display_ranking_frame(
         visible_columns = [*DRAFTED_CONTEXT_COLUMNS, *visible_columns]
     columns = [column for column in visible_columns if column in contextual.columns]
     display = contextual.loc[:, columns].copy()
-    return display.rename(columns=RANKING_LABELS)
+    display = display.rename(columns=RANKING_LABELS)
+    for column in display.columns:
+        if display[column].dtype == object:
+            display[column] = display[column].map(_text_display_value)
+    return display
 
 
 def with_display_context(
@@ -461,6 +465,12 @@ def pool_adp_pick_equivalent(available_pool_adp_rank: str) -> str:
     round_number = ((rank - 1) // 10) + 1
     round_pick = ((rank - 1) % 10) + 1
     return f"{round_number}.{round_pick:02d}"
+
+
+def _text_display_value(value: object) -> str:
+    if pd.isna(value):
+        return ""
+    return str(value)
 
 
 def _dynasty_asset_tier_sort(value: object) -> int:

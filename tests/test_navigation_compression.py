@@ -16,7 +16,7 @@ APP_DIR = Path("app")
 
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
-        "Live Draft",
+        "Draft Cockpit",
         "Mock Drafts",
         "Dynasty Rankings",
         "Player Compare",
@@ -43,7 +43,7 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Draft": ["Live Draft", "Mock Drafts", "Draft Analyzer"],
+        "Draft": ["Draft Cockpit", "Mock Drafts", "Draft Analyzer"],
         "Research": ["Dynasty Rankings", "Player Compare", "Trading Lab"],
         "Development Lab": [
             "Lab Home",
@@ -64,7 +64,9 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
     visible_titles = {page.title for page in VISIBLE_NAVIGATION_PAGES}
 
     assert hidden_titles == {
+        "Draft Cockpit Root",
         "Drafting Mode Compatibility",
+        "Draft Cockpit Legacy URL Alias",
         "Drafting Mode Root",
         "Dynasty Rankings Home",
         "Dynasty Rankings URL Alias",
@@ -76,7 +78,7 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
             "NFL Usage Evidence Review",
             "Legacy Dynasty Rankings",
         "Legacy Draft Prep",
-        "Legacy Live Draft Room",
+        "Legacy Draft Cockpit",
         "Legacy Decision Board",
         "Legacy External Asset Reviews",
         "Legacy Settings",
@@ -118,7 +120,7 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_refresh_data_nav_precedes_mock_draft() -> None:
     titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
 
-    assert titles.index("Live Draft") < titles.index("Mock Drafts")
+    assert titles.index("Draft Cockpit") < titles.index("Mock Drafts")
     assert titles.index("Lab Home") < titles.index("Refresh Data")
     assert titles[-3:] == ["Refresh Data", "Evidence Review", "Settings / Data Health"]
 
@@ -127,9 +129,11 @@ def test_no_special_default_page_keeps_drafting_mode_direct_route_stable() -> No
     visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
     all_defaults = [page for page in ALL_NAVIGATION_PAGES if page.default]
 
-    assert [(page.title, page.visible) for page in visible_defaults] == [("Live Draft", True)]
-    assert [(page.title, page.visible) for page in all_defaults] == [("Live Draft", True)]
-    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "live-draft-room"
+    assert visible_defaults == []
+    assert [(page.title, page.visible) for page in all_defaults] == [
+        ("Draft Cockpit Root", False)
+    ]
+    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "draft-cockpit"
 
 
 def test_required_direct_routes_remain_registered() -> None:
@@ -140,6 +144,8 @@ def test_required_direct_routes_remain_registered() -> None:
         "future-tools",
         "rankings",
         "cheat-sheets",
+        "draft-cockpit",
+        "draft-cockpit-root",
         "live-draft-room",
         "mock-draft",
         "player-compare",
@@ -177,7 +183,7 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
     hidden_routes = {page.url_path for page in HIDDEN_ADVANCED_PAGES}
 
     assert visible_routes == {
-        "live-draft-room",
+        "draft-cockpit",
         "mock-draft",
         "rankings",
         "player-compare",
@@ -197,6 +203,8 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
     }
     assert {
         "cheat-sheets",
+        "draft-cockpit-root",
+        "live-draft-room",
         "drafting-mode",
         "unified-universe-review",
     }.issubset(hidden_routes)

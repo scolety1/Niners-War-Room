@@ -345,7 +345,7 @@ page_header(
 )
 st.info(
     "Compatibility route: Cheat Sheets is a secondary tier-board view. The primary "
-    "draft-day tier scan now lives inside Live Draft and Dynasty Rankings."
+    "draft-day tier scan now lives inside Draft Cockpit and Dynasty Rankings."
 )
 if runtime_mode == "mock":
     st.warning("Practice state only — does not affect live draft.")

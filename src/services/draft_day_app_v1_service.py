@@ -2133,6 +2133,66 @@ def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> p
     )
 
 
+NUMERIC_RANKINGS_SORT_COLUMNS = {
+    "nwr_rank",
+    "final_board_rank",
+    "position_rank",
+    "nwr_position_rank",
+    "cross_asset_candidate_rank",
+    "age",
+    "nwr_dynasty_score",
+}
+
+
+def sort_rankings_frame_by_column(
+    frame: pd.DataFrame,
+    column: str,
+    *,
+    ascending: bool,
+    view_mode: str = UNIFIED_REVIEW_VIEW,
+) -> pd.DataFrame:
+    """Sort app-visible rankings rows with numeric keys and missing values last."""
+
+    if frame.empty:
+        return frame.copy()
+    if column not in frame.columns:
+        return sort_unified_player_board_for_view(frame, view_mode)
+
+    sorted_frame = frame.copy()
+    if column in NUMERIC_RANKINGS_SORT_COLUMNS:
+        values = sorted_frame[column]
+        if column == "nwr_position_rank":
+            values = values.astype(str).str.extract(r"(\d+)", expand=False)
+        sorted_frame["_ui_sort"] = pd.to_numeric(values, errors="coerce")
+        sorted_frame["_ui_sort_missing"] = sorted_frame["_ui_sort"].isna().map(
+            {True: 1, False: 0}
+        )
+        by = ["_ui_sort_missing", "_ui_sort"]
+        sort_ascending = [True, ascending]
+        if "player_name" in sorted_frame.columns:
+            by.append("player_name")
+            sort_ascending.append(True)
+        sorted_frame = sorted_frame.sort_values(
+            by=by,
+            ascending=sort_ascending,
+            na_position="last",
+            kind="stable",
+        ).drop(columns=["_ui_sort", "_ui_sort_missing"])
+    else:
+        by = [column]
+        sort_ascending = [ascending]
+        if column != "player_name" and "player_name" in sorted_frame.columns:
+            by.append("player_name")
+            sort_ascending.append(True)
+        sorted_frame = sorted_frame.sort_values(
+            by=by,
+            ascending=sort_ascending,
+            na_position="last",
+            kind="stable",
+        )
+    return sorted_frame.reset_index(drop=True)
+
+
 def display_unified_player_board_frame(
     frame: pd.DataFrame,
     view_mode: str = UNIFIED_REVIEW_VIEW,
@@ -2183,7 +2243,12 @@ def display_unified_player_board_frame(
     for column in MISSING_INFORMATION_DISPLAY_COLUMNS:
         if column in display.columns:
             display[column] = display[column].map(not_enough_information_display_value)
-    display = display.fillna("").astype(str)
+    for column in NUMERIC_RANKINGS_DISPLAY_COLUMNS:
+        if column in display.columns:
+            display[column] = pd.to_numeric(display[column], errors="coerce")
+    for column in display.columns:
+        if column not in NUMERIC_RANKINGS_DISPLAY_COLUMNS:
+            display[column] = display[column].fillna("").astype(str)
     return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
 
 
@@ -2242,6 +2307,11 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "market_gap",
     "age_source_display",
     *OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS,
+)
+
+NUMERIC_RANKINGS_DISPLAY_COLUMNS = (
+    "nwr_rank",
+    "nwr_dynasty_score",
 )
 
 
@@ -2630,18 +2700,18 @@ DYNASTY_DISPLAY_LABELS = {
 }
 
 UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
-    "source_coverage": "Source Coverage",
+    "source_coverage": "Source",
     "nwr_rank": "Dynasty Rank",
-    "cross_asset_candidate_rank": "Tuned V2 Candidate Rank (Review-Only)",
-    "cross_asset_candidate_value": "Tuned V2 Candidate Value (Review-Only)",
-    "candidate_value_band": "Value Band (Review-Only)",
+    "cross_asset_candidate_rank": "Candidate Rank",
+    "cross_asset_candidate_value": "Candidate Value",
+    "candidate_value_band": "Value Band",
     "confidence_band": "Confidence",
-    "available_pool_adp_range": "Available-Pool ADP Range (Display-Only)",
-    "current_pick_value": "Current Pick Value (Display-Only)",
-    "horizon_2026_band": "2026 Horizon Band (Review-Only)",
-    "horizon_2027_band": "2027 Horizon Band (Review-Only)",
-    "horizon_next5y_band": "Next-5Y Horizon Band (Review-Only)",
-    "candidate_key_caveat": "Main Caveat",
+    "available_pool_adp_range": "Pool ADP",
+    "current_pick_value": "Pick Value",
+    "horizon_2026_band": "2026 Horizon",
+    "horizon_2027_band": "2027 Horizon",
+    "horizon_next5y_band": "Next-5Y",
+    "candidate_key_caveat": "Caveat",
     "final_board_rank": "Final Board Rank",
     "final_tier": "Final Tier",
     "position_rank": "Position Rank",
@@ -2652,9 +2722,9 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "nfl_team": "NFL Team",
     "asset_type_display": "Asset Type",
     "availability_status": "Board Availability",
-    "draft_action_display_only": "Draft Action (Display-Only)",
+    "draft_action_display_only": "Draft Action",
     "nwr_dynasty_score": "NWR Dynasty Score",
-    "trust_status": "Data Trust",
+    "trust_status": "Trust",
     "warning_flags": "Warnings",
     "pool_status": "Status",
     "data_needed": "Data Needed",
@@ -2662,71 +2732,71 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "candidate_status": "Candidate Status",
     "risk_notes": "Risk Notes",
     "needs_manual_review": "Review Needed",
-    "outcome_availability_display_only": "Outcome Availability (Display-Only)",
-    "qb_t12_display_only": "QB T12 (Display-Only)",
-    "rb_t12_display_only": "RB T12 (Display-Only)",
-    "rb_t24_display_only": "RB T24 (Display-Only)",
-    "wr_t12_display_only": "WR T12 (Display-Only)",
-    "wr_t24_display_only": "WR T24 (Display-Only)",
-    "wr_t36_display_only": "WR T36 (Display-Only)",
-    "te_t12_display_only": "TE T12 (Display-Only)",
-    "outcome_v2_status_display_only": "Outcome V2 Status (Display-Only)",
-    "outcome_v2_availability_context_status": "Outcome V2 Availability Caveat",
+    "outcome_availability_display_only": "Outcome",
+    "qb_t12_display_only": "QB T12",
+    "rb_t12_display_only": "RB T12",
+    "rb_t24_display_only": "RB T24",
+    "wr_t12_display_only": "WR T12",
+    "wr_t24_display_only": "WR T24",
+    "wr_t36_display_only": "WR T36",
+    "te_t12_display_only": "TE T12",
+    "outcome_v2_status_display_only": "Outcome V2",
+    "outcome_v2_availability_context_status": "V2 Caveat",
     "outcome_v2_caveat_display_only": "Outcome V2 Caveat",
-    "injury_context_available_display_only": "Injury Context Available",
+    "injury_context_available_display_only": "Injury Ctx",
     "injury_context_availability_caveat_display_only": "Availability Caveat",
-    "injury_context_limited_recent_sample_display_only": "Limited Recent Sample",
+    "injury_context_limited_recent_sample_display_only": "Limited Sample",
     "injury_context_last_materially_active_season_display_only": (
-        "Last Materially Active Season"
+        "Last Active"
     ),
     "injury_context_seasons_since_material_activity_display_only": (
-        "Seasons Since Material Activity"
+        "Inactive Yrs"
     ),
     "injury_context_not_enough_information_reason_display_only": (
-        "Not Enough Information Reason"
+        "Missing Reason"
     ),
-    "outcome_v2_qb_t6_this_year_display_only": "QB T6 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_qb_t12_this_year_display_only": "QB T12 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t6_this_year_display_only": "RB T6 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t12_this_year_display_only": "RB T12 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t24_this_year_display_only": "RB T24 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t36_this_year_display_only": "RB T36 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t6_this_year_display_only": "WR T6 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t12_this_year_display_only": "WR T12 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t24_this_year_display_only": "WR T24 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t36_this_year_display_only": "WR T36 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t6_this_year_display_only": "TE T6 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t12_this_year_display_only": "TE T12 This Year (Outcome V2 / Display-Only)",
-    "outcome_v2_qb_t6_next_year_display_only": "QB T6 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_qb_t12_next_year_display_only": "QB T12 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t6_next_year_display_only": "RB T6 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t12_next_year_display_only": "RB T12 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t24_next_year_display_only": "RB T24 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t36_next_year_display_only": "RB T36 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t6_next_year_display_only": "WR T6 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t12_next_year_display_only": "WR T12 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t24_next_year_display_only": "WR T24 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t36_next_year_display_only": "WR T36 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t6_next_year_display_only": "TE T6 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t12_next_year_display_only": "TE T12 Next Year (Outcome V2 / Display-Only)",
-    "outcome_v2_qb_t6_within_5y_display_only": "QB T6 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_qb_t12_within_5y_display_only": "QB T12 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t24_within_5y_display_only": "RB T24 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_rb_t36_within_5y_display_only": "RB T36 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t6_within_5y_display_only": "WR T6 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t12_within_5y_display_only": "WR T12 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t24_within_5y_display_only": "WR T24 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_wr_t36_within_5y_display_only": "WR T36 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t6_within_5y_display_only": "TE T6 Within 5Y (Outcome V2 / Display-Only)",
-    "outcome_v2_te_t12_within_5y_display_only": "TE T12 Within 5Y (Outcome V2 / Display-Only)",
-    "dp_value_1qb": "DP 1QB Value (Market Baseline / Display-Only)",
-    "dp_market_rank_1qb": "DP 1QB Market Rank (Market Baseline / Display-Only)",
-    "dp_ecr_pos": "DP ECR Pos (Market Baseline / Display-Only)",
-    "dp_age": "DP Age (Market Baseline / Display-Only)",
-    "market_gap": "NWR vs Market Gap (Market Baseline / Display-Only)",
-    "market_sanity_label": "Market Sanity Flag (Market Baseline / Display-Only)",
-    "age_source_display": "Age Source",
-    "market_baseline_label": "Market Baseline Label",
+    "outcome_v2_qb_t6_this_year_display_only": "QB T6 2026",
+    "outcome_v2_qb_t12_this_year_display_only": "QB T12 2026",
+    "outcome_v2_rb_t6_this_year_display_only": "RB T6 2026",
+    "outcome_v2_rb_t12_this_year_display_only": "RB T12 2026",
+    "outcome_v2_rb_t24_this_year_display_only": "RB T24 2026",
+    "outcome_v2_rb_t36_this_year_display_only": "RB T36 2026",
+    "outcome_v2_wr_t6_this_year_display_only": "WR T6 2026",
+    "outcome_v2_wr_t12_this_year_display_only": "WR T12 2026",
+    "outcome_v2_wr_t24_this_year_display_only": "WR T24 2026",
+    "outcome_v2_wr_t36_this_year_display_only": "WR T36 2026",
+    "outcome_v2_te_t6_this_year_display_only": "TE T6 2026",
+    "outcome_v2_te_t12_this_year_display_only": "TE T12 2026",
+    "outcome_v2_qb_t6_next_year_display_only": "QB T6 2027",
+    "outcome_v2_qb_t12_next_year_display_only": "QB T12 2027",
+    "outcome_v2_rb_t6_next_year_display_only": "RB T6 2027",
+    "outcome_v2_rb_t12_next_year_display_only": "RB T12 2027",
+    "outcome_v2_rb_t24_next_year_display_only": "RB T24 2027",
+    "outcome_v2_rb_t36_next_year_display_only": "RB T36 2027",
+    "outcome_v2_wr_t6_next_year_display_only": "WR T6 2027",
+    "outcome_v2_wr_t12_next_year_display_only": "WR T12 2027",
+    "outcome_v2_wr_t24_next_year_display_only": "WR T24 2027",
+    "outcome_v2_wr_t36_next_year_display_only": "WR T36 2027",
+    "outcome_v2_te_t6_next_year_display_only": "TE T6 2027",
+    "outcome_v2_te_t12_next_year_display_only": "TE T12 2027",
+    "outcome_v2_qb_t6_within_5y_display_only": "QB T6 5Y",
+    "outcome_v2_qb_t12_within_5y_display_only": "QB T12 5Y",
+    "outcome_v2_rb_t24_within_5y_display_only": "RB T24 5Y",
+    "outcome_v2_rb_t36_within_5y_display_only": "RB T36 5Y",
+    "outcome_v2_wr_t6_within_5y_display_only": "WR T6 5Y",
+    "outcome_v2_wr_t12_within_5y_display_only": "WR T12 5Y",
+    "outcome_v2_wr_t24_within_5y_display_only": "WR T24 5Y",
+    "outcome_v2_wr_t36_within_5y_display_only": "WR T36 5Y",
+    "outcome_v2_te_t6_within_5y_display_only": "TE T6 5Y",
+    "outcome_v2_te_t12_within_5y_display_only": "TE T12 5Y",
+    "dp_value_1qb": "DP Value",
+    "dp_market_rank_1qb": "DP Rank",
+    "dp_ecr_pos": "DP ECR",
+    "dp_age": "DP Age",
+    "market_gap": "Market Gap",
+    "market_sanity_label": "Market Flag",
+    "age_source_display": "Age Src",
+    "market_baseline_label": "Market Label",
 }
 
 RANKINGS_IDENTITY_COLUMN_CONFIG = {
@@ -2741,6 +2811,105 @@ RANKINGS_IDENTITY_COLUMN_CONFIG = {
         "width": 210,
         "pinned": True,
         "help": "Player name",
+    },
+}
+
+RANKINGS_TABLE_COLUMN_CONFIG = {
+    **RANKINGS_IDENTITY_COLUMN_CONFIG,
+    "Pos": {"label": "Pos", "width": 52, "help": "Player position."},
+    "NFL Team": {"label": "Team", "width": 64, "help": "Current NFL team when available."},
+    "Age": {
+        "label": "Age",
+        "width": 58,
+        "help": "Approved display age when available. Missing age is not treated as zero.",
+    },
+    "NWR Dynasty Score": {
+        "label": "NWR Score",
+        "width": 96,
+        "type": "number",
+        "format": "%.4f",
+        "help": (
+            "Approved NWR Dynasty Score from the current rankings output. Numeric sorting "
+            "uses the score value; missing scores are blank and sort last, never as zero."
+        ),
+    },
+    "Position Rank": {
+        "label": "Pos Rank",
+        "width": 84,
+        "help": "Position rank derived from approved NWR rank for display only.",
+    },
+    "Outcome": {
+        "label": "Outcome",
+        "width": 90,
+        "help": (
+            "Display-only outcome availability. Missing outcome data remains Not enough "
+            "information and is not a low-probability signal."
+        ),
+    },
+    "Trust": {"label": "Trust", "width": 82, "help": "Data trust/status label."},
+    "Confidence": {"label": "Conf", "width": 76, "help": "Confidence band for review."},
+    "Value Band": {
+        "label": "Value Band",
+        "width": 92,
+        "help": "Review-only value band. It does not replace Dynasty Rank or tiers.",
+    },
+    "Caveat": {
+        "label": "Caveat",
+        "width": 160,
+        "help": "Main review caveat; missing caveat text is not clean evidence.",
+    },
+    "Market Flag": {
+        "label": "Market Flag",
+        "width": 104,
+        "help": (
+            "DynastyProcess market sanity context, display-only. It is not model input, "
+            "trade value, source truth, or a hidden sort driver."
+        ),
+    },
+    "Market Label": {
+        "label": "Market Label",
+        "width": 110,
+        "help": "Market baseline provenance label; display-only context.",
+    },
+    "Market Gap": {
+        "label": "Market Gap",
+        "width": 92,
+        "help": "NWR-vs-market display-only gap. Not used for model value or rank.",
+    },
+    "DP Value": {
+        "label": "DP Value",
+        "width": 92,
+        "help": "DynastyProcess display-only 1QB market value.",
+    },
+    "DP Rank": {
+        "label": "DP Rank",
+        "width": 82,
+        "help": "DynastyProcess display-only 1QB market rank.",
+    },
+    "Age Src": {
+        "label": "Age Src",
+        "width": 94,
+        "help": "Age source note. Market fallback remains display-only when present.",
+    },
+    "Candidate Rank": {
+        "label": "Cand Rank",
+        "width": 92,
+        "help": "Review-only candidate rank. It does not replace Dynasty Rank.",
+    },
+    "Candidate Value": {
+        "label": "Cand Value",
+        "width": 96,
+        "help": "Review-only candidate value. It is not player value or trade value.",
+    },
+    "Pool ADP": {
+        "label": "Pool ADP",
+        "width": 92,
+        "help": "Display-only timing context; not model input or hidden sort.",
+    },
+    "Pick Value": {
+        "label": "Pick Value",
+        "width": 90,
+        "help": "Display-only pick context; not trade or pick valuation.",
     },
 }
 

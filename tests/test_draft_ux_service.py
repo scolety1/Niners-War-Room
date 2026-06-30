@@ -217,7 +217,7 @@ def test_rankings_table_uses_draft_focused_labels_and_default_sort(tmp_path: Pat
 
 
 def test_draft_surfaces_use_war_board_value_language() -> None:
-    rankings_page = Path("app/pages/05_rankings.py").read_text()
+    rankings_page = Path("app/legacy_pages/05_rankings_legacy.py").read_text()
     draft_board_page = Path("app/pages/06_draft_board.py").read_text()
     live_draft_room_page = Path("app/pages/07_live_draft_room.py").read_text()
     player_detail_service = Path("src/services/player_detail_card_service.py").read_text()
@@ -237,13 +237,13 @@ def test_draft_surfaces_use_war_board_value_language() -> None:
     assert "Draft Prep source status, prior draft history, spreadsheet highlights" in (
         player_detail_service
     )
-    assert "Live Draft Room player context is source/context only." in player_detail_service
+    assert "Draft Cockpit player context is source/context only." in player_detail_service
     assert "Sorted by Stats Value" not in rankings_page
     assert "Stats/Model Value" not in draft_board_page
 
 
 def test_draft_surfaces_keep_source_details_advanced() -> None:
-    rankings_page = Path("app/pages/05_rankings.py").read_text()
+    rankings_page = Path("app/legacy_pages/05_rankings_legacy.py").read_text()
     draft_board_page = Path("app/pages/06_draft_board.py").read_text()
     live_draft_room_page = Path("app/pages/07_live_draft_room.py").read_text()
     player_detail_component = Path("app/components/player_detail_card.py").read_text()
@@ -259,10 +259,10 @@ def test_draft_surfaces_keep_source_details_advanced() -> None:
     assert '"Scouting Prep Pool"' in draft_board_page
     assert '"League History Context"' in draft_board_page
     assert 'with st.expander("Advanced Audit", expanded=False):' in draft_board_page
-    assert 'with st.expander("Live Draft Room tools moved", expanded=False):' in (
+    assert 'with st.expander("Draft Cockpit tools moved", expanded=False):' in (
         draft_board_page
     )
-    assert '"Live Draft Room"' in live_draft_room_page
+    assert '"Draft Cockpit"' in live_draft_room_page
     assert '"Player Search"' in live_draft_room_page
     assert 'with st.expander("Advanced Session Details", expanded=False):' in (
         live_draft_room_page

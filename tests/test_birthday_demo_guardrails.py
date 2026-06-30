@@ -92,16 +92,16 @@ def test_streamlit_status_widget_is_hidden_best_effort_for_demo() -> None:
     assert "footer" in text
 
 
-def test_rankings_and_live_draft_are_primary_nav_items() -> None:
+def test_rankings_and_draft_cockpit_are_primary_nav_items() -> None:
     visible_rankings = next(
         page for page in VISIBLE_NAVIGATION_PAGES if page.url_path == "rankings"
     )
     visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
-    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "live-draft-room"
+    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "draft-cockpit"
     assert visible_rankings.title == "Dynasty Rankings"
     assert visible_rankings.visible is True
-    assert [page.title for page in visible_defaults] == ["Live Draft"]
+    assert visible_defaults == []
 
 
 def test_team_and_roster_tags_are_display_only_for_private_score() -> None:

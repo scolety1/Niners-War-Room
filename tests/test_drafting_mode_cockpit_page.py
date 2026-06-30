@@ -12,13 +12,13 @@ def _text(path: str) -> str:
 def test_live_draft_page_is_the_command_center() -> None:
     text = _text("app/pages/21_live_draft_room_v1.py")
 
-    assert "## LIVE DRAFT" in text
-    assert "real local live draft runtime state" in text
-    assert "live draft event log" in text
+    assert "## DRAFT COCKPIT" in text
+    assert "real local draft runtime state" in text
+    assert "draft event log" in text
     assert "Use Mock Drafts for" in text
     assert "experiments" in text
-    assert "Draft room command center" in text
-    assert "Your Team / runtime rail" in text
+    assert "Draft Cockpit command center" in text
+    assert "Draft Cockpit rail" in text
     assert "Current pick" in text
     assert "On-clock team" in text
     assert "Drafted" in text
@@ -40,10 +40,10 @@ def test_live_draft_page_keeps_trade_and_runtime_guardrails() -> None:
 def test_drafting_mode_route_is_compatibility_pointer() -> None:
     text = _text("app/pages/19_drafting_mode_v2.py")
 
-    assert "Drafting Mode moved into Live Draft" in text
+    assert "Drafting Mode moved into Draft Cockpit" in text
     assert "Compatibility Route" in text
-    assert "Open Live Draft" in text
-    assert "/live-draft-room" in text
+    assert "Open Draft Cockpit" in text
+    assert "/draft-cockpit" in text
     assert "no longer acts as a separate main workspace" in text
     assert "On-Clock Cockpit" not in text
     assert "Best Available Board" not in text
@@ -54,7 +54,7 @@ def test_mock_drafts_page_uses_named_practice_state_scope() -> None:
 
     assert "## MOCK DRAFTS" in text
     assert "practice state only" in text
-    assert "Mock state is separate from Live Draft" in text
+    assert "Mock state is separate from Draft Cockpit" in text
     assert "deletes/resets require confirmation" in text
     assert "Saved mock draft" in text
     assert "Create Mock" in text
@@ -105,11 +105,25 @@ def test_non_draft_pages_do_not_repeat_back_to_live_draft_link() -> None:
     for page in pages:
         text = _text(page)
         assert '<a href="/live-draft-room" target="_self">Back to Live Draft</a>' not in text
+        assert '<a href="/draft-cockpit" target="_self">Back to Draft Cockpit</a>' not in text
         assert "Back to Drafting Mode" not in text
 
 
 def test_live_and_mock_draft_pages_keep_their_own_draft_context() -> None:
-    for page in ("app/pages/21_live_draft_room_v1.py", "app/pages/24_mock_draft_v1.py"):
-        text = _text(page)
-        assert "Live Draft" in text
-        assert "Back to Drafting Mode" not in text
+    live_text = _text("app/pages/21_live_draft_room_v1.py")
+    mock_text = _text("app/pages/24_mock_draft_v1.py")
+
+    assert "Draft Cockpit" in live_text
+    assert "Back to Draft Cockpit" not in live_text
+    assert "Back to Draft Cockpit" in mock_text
+    assert "Back to Drafting Mode" not in live_text + mock_text
+
+
+def test_draft_workflow_uses_compact_cockpit_layout() -> None:
+    text = _text("app/components/draft_workflow.py")
+
+    assert 'st.columns([2.25, 1.0], gap="small")' in text
+    assert "#### Available Players" in text
+    assert "#### Draft Board / Pick Tracker" in text
+    assert "height=560" in text
+    assert "Full draft board" in text
