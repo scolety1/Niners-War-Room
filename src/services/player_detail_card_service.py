@@ -461,7 +461,7 @@ def _build_live_draft_room_payload(row: Mapping[str, Any]) -> PlayerDetailCardPa
         receipts=_receipts(row, warning_flags),
         raw_warning_flags=warning_flags,
         display_only_note=(
-            "Live Draft Room player context is source/context only. Draft state is "
+            "Draft Cockpit player context is source/context only. Draft state is "
             "session/local mock state and does not mutate source data."
         ),
     )

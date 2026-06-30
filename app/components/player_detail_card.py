@@ -65,7 +65,7 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
                 hide_index=True,
             )
     elif payload.context == "live_draft_room":
-        st.markdown("**Live Draft Room context**")
+        st.markdown("**Draft Cockpit context**")
         st.caption(payload.display_only_note)
         if payload.live_draft_room_context_metrics:
             st.dataframe(
@@ -74,7 +74,7 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
                 hide_index=True,
             )
         else:
-            st.write("Live Draft Room context is not available from current source rows.")
+            st.write("Draft Cockpit context is not available from current source rows.")
         st.info("Draft state is session/local mock state and does not mutate source data.")
 
     st.markdown("**Trust, warnings, and data needed**")

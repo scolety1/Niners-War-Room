@@ -218,6 +218,24 @@ def test_display_frames_do_not_expose_internal_or_hidden_columns() -> None:
     assert "Draft Status" not in display.columns
 
 
+def test_display_rank_keeps_pdf_overlay_reason_as_text() -> None:
+    board = _board(2)
+    board["final_board_rank"] = board["final_board_rank"].astype(object)
+    board["position_rank"] = board["position_rank"].astype(object)
+    board.loc[1, "final_board_rank"] = "Not on frozen board"
+    board.loc[1, "position_rank"] = "Not enough information"
+    workflow = with_workflow_columns(board, empty_workflow_state())
+
+    display = display_ranking_frame(workflow)
+
+    assert display.loc[0, "Final Board Rank"] == "1"
+    assert display.loc[1, "Final Board Rank"] == "Not on frozen board"
+    assert display["Final Board Rank"].map(type).eq(str).all()
+    assert display.loc[0, "Position Rank"] == "1"
+    assert display.loc[1, "Position Rank"] == "Not enough information"
+    assert display["Position Rank"].map(type).eq(str).all()
+
+
 def test_live_draft_table_prioritizes_practical_visible_columns() -> None:
     board = _board(2)
     workflow = with_workflow_columns(board, empty_workflow_state())

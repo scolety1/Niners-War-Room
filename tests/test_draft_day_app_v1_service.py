@@ -462,13 +462,13 @@ def test_position_aware_display_hides_wrong_position_columns_by_mode() -> None:
         selected_positions=["WR"],
     )
 
-    assert "WR T12 (Display-Only)" in position_display.columns
-    assert "WR T36 (Display-Only)" in position_display.columns
-    assert "RB T12 (Display-Only)" not in position_display.columns
-    assert all_display.loc[0, "RB T12 (Display-Only)"] == OUTCOME_NOT_APPLICABLE
-    assert all_display.loc[0, "QB T12 (Display-Only)"] == OUTCOME_NOT_APPLICABLE
-    assert "WR T12 (Display-Only)" not in hidden_display.columns
-    assert "Outcome Availability (Display-Only)" not in hidden_display.columns
+    assert "WR T12" in position_display.columns
+    assert "WR T36" in position_display.columns
+    assert "RB T12" not in position_display.columns
+    assert all_display.loc[0, "RB T12"] == OUTCOME_NOT_APPLICABLE
+    assert all_display.loc[0, "QB T12"] == OUTCOME_NOT_APPLICABLE
+    assert "WR T12" not in hidden_display.columns
+    assert "Outcome" not in hidden_display.columns
 
 
 def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
@@ -520,27 +520,27 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
         "Age",
         "NWR Dynasty Score",
         "Position Rank",
-        "Value Band (Review-Only)",
-        "Data Trust",
+        "Value Band",
+        "Trust",
         "Confidence",
-        "Main Caveat",
+        "Caveat",
     ]
     assert display.loc[0, "NFL Team"] == OUTCOME_NOT_ENOUGH_INFORMATION
     assert display.loc[0, "Age"] == OUTCOME_NOT_ENOUGH_INFORMATION
-    assert display.loc[0, "Main Caveat"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert display.loc[0, "Caveat"] == OUTCOME_NOT_ENOUGH_INFORMATION
     for blocked in (
         "Final Board Rank",
         "Final Tier",
-        "Source Coverage",
+        "Source",
         "Asset Type",
-        "Outcome Availability (Display-Only)",
-        "WR T12 (Display-Only)",
-        "WR T24 (Display-Only)",
-        "WR T36 (Display-Only)",
-        "WR T12 This Year (Outcome V2 / Display-Only)",
-        "Tuned V2 Candidate Rank (Review-Only)",
-        "Tuned V2 Candidate Value (Review-Only)",
-        "Available-Pool ADP Range (Display-Only)",
+        "Outcome",
+        "WR T12",
+        "WR T24",
+        "WR T36",
+        "WR T12 2026",
+        "Candidate Rank",
+        "Candidate Value",
+        "Pool ADP",
     ):
         assert blocked not in display.columns
 
@@ -683,11 +683,11 @@ def test_outcome_v2_display_artifact_loads_by_player_id_and_keeps_missing_text(
     )
 
     assert "Availability Caveat" not in clean_display.columns
-    assert "Limited Recent Sample" not in clean_display.columns
+    assert "Limited Sample" not in clean_display.columns
     assert "Availability Caveat" in outcome_lens_display.columns
-    assert "Last Materially Active Season" in outcome_lens_display.columns
-    assert "Not Enough Information Reason" in outcome_lens_display.columns
-    assert outcome_lens_display.loc[0, "WR T12 This Year (Outcome V2 / Display-Only)"] == "43.4%"
+    assert "Last Active" in outcome_lens_display.columns
+    assert "Missing Reason" in outcome_lens_display.columns
+    assert outcome_lens_display.loc[0, "WR T12 2026"] == "43.4%"
 
 
 def _outcome_v2_artifact_row(
@@ -841,11 +841,11 @@ def test_unified_player_board_preserves_dynasty_and_board_only_truths(
         "Frozen Baseline only",
     }
     board_only = display.loc[display["Player"].eq("Draft Prospect")].iloc[0]
-    assert board_only["Dynasty Rank"] == "Frozen-baseline only"
-    assert board_only["NWR Dynasty Score"] == OUTCOME_NOT_ENOUGH_INFORMATION
-    assert "Outcome Availability (Display-Only)" not in display.columns
+    assert pd.isna(board_only["Dynasty Rank"])
+    assert pd.isna(board_only["NWR Dynasty Score"])
+    assert "Outcome" not in display.columns
     assert "player_id" not in display.columns
-    assert "WR T12 (Display-Only)" in display.columns
+    assert "WR T12" in display.columns
     assert frozen_board_outcome_support_counts(board) == {
         "rows": 2,
         "supported": 1,

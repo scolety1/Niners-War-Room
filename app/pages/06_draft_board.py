@@ -719,12 +719,12 @@ def _render_advanced(
         with audit_tabs[3]:
             st.dataframe(history_frame.head(250), use_container_width=True, hide_index=True)
 
-    with st.expander("Live Draft Room tools moved", expanded=False):
+    with st.expander("Draft Cockpit tools moved", expanded=False):
         st.info(
-            "Mock/live draft controls now live on the separate Live Draft Room page. "
+            "Mock/live draft controls now live on the separate Draft Cockpit page. "
             "Draft Prep stays planning-only and does not mutate draft state."
         )
-        st.markdown("[Open Live Draft Room](/live-draft-room)")
+        st.markdown("[Open Draft Cockpit](/draft-cockpit)")
 
 
 def main() -> None:

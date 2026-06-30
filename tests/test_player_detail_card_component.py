@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 COMPONENT = Path("app/components/player_detail_card.py")
-RANKINGS_PAGE = Path("app/pages/05_rankings.py")
+RANKINGS_PAGE = Path("app/legacy_pages/05_rankings_legacy.py")
 
 
 def test_component_uses_shared_payload_sections_without_forbidden_actions() -> None:
@@ -14,7 +14,7 @@ def test_component_uses_shared_payload_sections_without_forbidden_actions() -> N
         "NWR / private model context",
         "Rankings context",
         "Draft Prep context",
-        "Live Draft Room context",
+        "Draft Cockpit context",
         "Outcome Model Status",
         "Outcome status details",
         'with st.expander("Outcome status details", expanded=False):',

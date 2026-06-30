@@ -754,7 +754,7 @@ def main() -> None:
     )
     selected_pick = selected_pick_number(state, selected_key)
 
-    st.title("Live Draft Room")
+    st.title("Draft Cockpit")
     st.caption("Mock/live draft tracking. Draft state is separate from source data.")
     st.markdown(
         """
