@@ -22,6 +22,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_ENOUGH_INFORMATION,
     OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
     OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
+    RANKINGS_IDENTITY_COLUMN_CONFIG,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
@@ -97,6 +98,18 @@ def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
     if "source_coverage" not in frame.columns:
         return 0
     return int(frame["source_coverage"].astype(str).eq(source_coverage).sum())
+
+
+def _rankings_identity_column_config() -> dict[str, object]:
+    return {
+        column: st.column_config.TextColumn(
+            str(config["label"]),
+            width=int(config["width"]),
+            pinned=bool(config["pinned"]),
+            help=str(config["help"]),
+        )
+        for column, config in RANKINGS_IDENTITY_COLUMN_CONFIG.items()
+    }
 
 
 def _supported_age_count(frame: pd.DataFrame) -> int:
@@ -792,6 +805,7 @@ st.dataframe(
     ),
     use_container_width=True,
     hide_index=True,
+    column_config=_rankings_identity_column_config(),
     key="dynasty_unified_player_board_table",
 )
 st.caption(
