@@ -2,9 +2,9 @@
 
 ## Safety Verdict
 
-YELLOW_HUMAN_DECISION_SHEET_READY
+GREEN_HUMAN_REVIEW_DECISIONS_RECORDED
 
-This packet is safe to review as documentation because it does not approve identities, does not create an overlay, and does not change app/model/rank/source-truth behavior.
+This packet is safe to review as documentation because the approvals are explicitly review-only/display-only and do not change app/model/rank/source-truth behavior.
 
 ## Guardrails
 
@@ -22,13 +22,14 @@ This packet is safe to review as documentation because it does not approve ident
 ## CSV Invariants Required
 
 - identity_human_decision_sheet.csv has 54 rows.
-- All rows are review_only=true.
-- All rows are model_use_allowed=false.
-- All rows are training_allowed=false.
-- All rows are source_truth_allowed=false.
-- All rows are human_decision=PENDING.
-- All rows are approved_by_human=false.
+- 43 rows have `human_decision=APPROVE_REVIEW_ONLY` and `approved_by_human=true`.
+- 4 rows remain `human_decision=PENDING`.
+- 7 rows are `human_decision=KEEP_BLOCKED`.
+- All rows remain `review_only=true`.
+- All rows remain `model_use_allowed=false`.
+- All rows remain `training_allowed=false`.
+- All rows remain `source_truth_allowed=false`.
 
 ## Overlay Status
 
-No identity_approved_overlay_v1.csv exists in this packet because no explicit human approval evidence exists.
+`identity_approved_overlay_v1.csv` exists under `docs/hq/data_sources/nflverse_player_context_identity_approved_overlay_20260630/` and contains only the 43 explicitly approved review-only/display-only rows.

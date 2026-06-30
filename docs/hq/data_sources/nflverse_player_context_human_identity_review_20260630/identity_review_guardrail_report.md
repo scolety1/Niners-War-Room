@@ -1,14 +1,13 @@
-﻿# Identity Review Guardrail Report
+# Identity Review Guardrail Report
 
-Verdict: YELLOW_HUMAN_IDENTITY_REVIEW_PENDING
+Verdict: GREEN_HUMAN_REVIEW_DECISIONS_RECORDED
 
 ## CSV Guardrails
 
 - Rows reviewed: 54
-- pproved_by_human=true rows: 0
-- Invalid approval rows: 0
-- All rows remain review-only.
-- Model, training, source-truth, rank, hidden-sort, trade, and pick flags remain false in the review packet.
+- `approved_by_human=true` rows: 43
+- Approved rows are review-only/display-only.
+- Model, training, source-truth, rank, hidden-sort, trade, and pick flags remain false.
 
 ## Repository Guardrails
 
@@ -19,7 +18,3 @@ Verdict: YELLOW_HUMAN_IDENTITY_REVIEW_PENDING
 - No runtime JSON changed.
 - No raw/shared/local/secrets tracked.
 - No player context artifact rebuild occurred.
-
-## Non-Approval Statement
-
-No identity has been approved by this lane. Pending decisions and Codex recommendations must not be exposed as safe joins.

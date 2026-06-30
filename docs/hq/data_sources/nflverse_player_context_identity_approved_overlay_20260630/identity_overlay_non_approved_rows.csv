@@ -1,0 +1,12 @@
+player_name,position,team,recommendation,human_decision,approved_by_human,blocked_reason,review_only,display_only,model_use_allowed,training_allowed,source_truth_allowed,rank_logic_allowed,hidden_sort_allowed,trade_value_allowed,pick_value_allowed
+Eric McAlister,WR,FA,RECOMMEND_HUMAN_REVIEW,PENDING,false,Still needs human review; not included in approved overlay.,true,true,false,false,false,false,false,false,false
+Sieh Bangura,RB,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Chris Brazzell,WR,CAR,RECOMMEND_HUMAN_REVIEW,PENDING,false,Still needs human review; not included in approved overlay.,true,true,false,false,false,false,false,false,false
+Jacob De Jesus,WR,needs_data,RECOMMEND_HUMAN_REVIEW,PENDING,false,Still needs human review; not included in approved overlay.,true,true,false,false,false,false,false,false,false
+Omar Cooper,WR,NYJ,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Devin Voisin,WR,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+O'Mega Blake,WR,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Barika Kpeenu,RB,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Braylon James,WR,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Jamarion Miller,RB,needs_data,RECOMMEND_KEEP_BLOCKED,KEEP_BLOCKED,false,Kept blocked by prior recommendation and current human instruction.,true,true,false,false,false,false,false,false,false
+Chip Trayanum,RB,needs_data,RECOMMEND_HUMAN_REVIEW,PENDING,false,Still needs human review; not included in approved overlay.,true,true,false,false,false,false,false,false,false
