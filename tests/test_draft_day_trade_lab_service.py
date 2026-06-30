@@ -3,17 +3,12 @@ from __future__ import annotations
 import pandas as pd
 
 from src.services.draft_day_trade_lab_service import (
-    NOT_ENOUGH_INFORMATION,
     add_trade_item,
     build_trade_item_lookup,
-    classify_market_trade_gap,
     clear_trade_state,
-    display_market_package_rows,
     display_package_summary,
     display_trade_item_rows,
     empty_trade_state,
-    lookup_pick_market_value,
-    lookup_player_market_value,
     package_summary_rows,
     parse_trade_asset_text,
     pick_context_options,
@@ -21,10 +16,8 @@ from src.services.draft_day_trade_lab_service import (
     player_options,
     remove_trade_item,
     review_trade_package,
-    summarize_trade_package_market,
     trade_item_rows,
 )
-from src.services.market_baseline_registry import PAGE_USAGE, validate_market_baseline_registry
 
 
 def _board() -> pd.DataFrame:
@@ -123,14 +116,15 @@ def test_trade_summary_uses_visible_context_and_not_enough_information() -> None
     review = review_trade_package(state, lookup)
 
     assert set(summary["side"]) == {"NWR gives", "NWR gets"}
-    assert review.status == "Looks favorable"
-    assert review.score_gap_display == "+35.00"
-    assert "Best get rank 1" in review.rank_context
+    assert review.status == "Context ready for manual review"
+    assert review.missing_context_display == "Manual review required"
+    assert review.rank_context == "Board-rank labels present"
     display = display_package_summary(summary)
-    assert "Visible Score Sum" in display.columns
+    assert "Best Board Rank" in display.columns
+    assert "Visible Score Sum" not in display.columns
 
 
-def test_pick_context_can_be_added_but_does_not_create_trade_value() -> None:
+def test_pick_context_can_be_added_but_does_not_create_numeric_pick_context() -> None:
     lookup = build_trade_item_lookup(_board(), _trade_context(), _pick_context())
     picks = pick_context_options(lookup)
     pick_key = next(iter(picks.values()))
@@ -144,9 +138,13 @@ def test_pick_context_can_be_added_but_does_not_create_trade_value() -> None:
     review = review_trade_package(state, lookup)
     rows = trade_item_rows(state, lookup)
 
-    assert review.status == NOT_ENOUGH_INFORMATION
-    assert "standalone pick/context" in review.explanation.lower()
-    assert rows.loc[rows["asset_type"] == "Pick context", "visible_score_for_context"].isna().all()
+    assert review.status == "Pick-only context present"
+    assert "no numeric pick context is inferred" in review.explanation.lower()
+    pick_rows = rows.loc[rows["asset_type"] == "Pick context"]
+    assert set(pick_rows["data_status"]) == {
+        "Display-only context; no standalone numeric pick context"
+    }
+    assert "visible_score_for_context" not in rows.columns
 
 
 def test_display_items_hide_internal_keys() -> None:
@@ -170,70 +168,7 @@ def test_player_key_is_visible_board_identity() -> None:
     assert player_key(row) == "1|Premium RB|RB|SF"
 
 
-def _market_artifacts(tmp_path) -> str:
-    pd.DataFrame(
-        [
-            {
-                "player": "Premium RB",
-                "pos": "RB",
-                "dp_market_rank_1qb": "10",
-                "dp_value_1qb": "5000",
-                "join_method": "exact_name_position",
-                "join_confidence": "high",
-                "dp_display_only_warning": "Display-only DynastyProcess market baseline",
-                "freshness_status": "GREEN_CURRENT",
-            }
-        ]
-    ).to_csv(tmp_path / "dp_market_baseline_context.csv", index=False)
-    pd.DataFrame(
-        [
-            {
-                "pick_label": "2026 1.04",
-                "value_1qb": "3920",
-                "ecr_1qb": "41.925",
-                "freshness_status": "GREEN_CURRENT",
-            },
-            {
-                "pick_label": "2026 2.03",
-                "value_1qb": "1024",
-                "ecr_1qb": "109.000",
-                "freshness_status": "GREEN_CURRENT",
-            },
-            {
-                "pick_label": "2028 1st",
-                "value_1qb": "1490",
-                "ecr_1qb": "83.094",
-                "freshness_status": "GREEN_CURRENT",
-            },
-            {
-                "pick_label": "2028 2nd",
-                "value_1qb": "169",
-                "ecr_1qb": "175.795",
-                "freshness_status": "GREEN_CURRENT",
-            },
-            {
-                "pick_label": "2027 3rd",
-                "value_1qb": "38",
-                "ecr_1qb": "239.462",
-                "freshness_status": "GREEN_CURRENT",
-            },
-        ]
-    ).to_csv(tmp_path / "dp_pick_value_context.csv", index=False)
-    pd.DataFrame(
-        [
-            {
-                "nwr_fetch_timestamp": "2026-06-23T22:37:05+00:00",
-                "upstream_scrape_date": "2026-06-19",
-                "upstream_latest_commit_sha": "abc",
-                "upstream_latest_commit_timestamp": "2026-06-19T07:33:57Z",
-                "freshness_status": "GREEN_CURRENT",
-            }
-        ]
-    ).to_csv(tmp_path / "dp_freshness_report.csv", index=False)
-    return str(tmp_path)
-
-
-def test_market_pick_parsing_required_examples() -> None:
+def test_trade_asset_parser_keeps_pick_labels_without_pricing() -> None:
     rows = parse_trade_asset_text(
         "2026 1.04, 2026 2.03, 2028 1st, 2028 2nd, 2027 3rd, unknown text"
     )
@@ -247,82 +182,30 @@ def test_market_pick_parsing_required_examples() -> None:
     assert by_raw["unknown text"]["status"] == "REVIEW_NEEDED"
 
 
-def test_pick_market_lookup_matches_pick_values(tmp_path) -> None:
-    artifact_dir = _market_artifacts(tmp_path)
+def test_trading_lab_service_has_no_market_or_pick_pricing_helpers() -> None:
+    import src.services.draft_day_trade_lab_service as trade_lab_service
 
-    value = lookup_pick_market_value("2026 1.04", artifact_dir=artifact_dir)
-
-    assert value["dp_value"] == "3920"
-    assert value["market_baseline_label"] == "Market Baseline / Display-Only"
-
-
-def test_player_market_lookup_with_and_without_match(tmp_path) -> None:
-    artifact_dir = _market_artifacts(tmp_path)
-
-    matched = lookup_player_market_value(
-        {"player": "Premium RB", "position": "RB"},
-        artifact_dir=artifact_dir,
-    )
-    missing = lookup_player_market_value(
-        {"player": "Unknown WR", "position": "WR"},
-        artifact_dir=artifact_dir,
-    )
-
-    assert matched["dp_value"] == "5000"
-    assert missing["dp_value"] == NOT_ENOUGH_INFORMATION
-    assert missing["match_status"] == "No market match"
+    blocked_helpers = [
+        "lookup_pick_market_value",
+        "lookup_player_market_value",
+        "summarize_trade_package_market",
+        "classify_market_trade_gap",
+        "display_market_package_rows",
+        "display_market_totals",
+    ]
+    for helper in blocked_helpers:
+        assert not hasattr(trade_lab_service, helper)
 
 
-def test_market_package_total_excludes_unknown_without_zeroing(tmp_path) -> None:
-    artifact_dir = _market_artifacts(tmp_path)
+def test_manual_review_language_is_not_automatic_recommendation() -> None:
     lookup = build_trade_item_lookup(_board(), _trade_context(), _pick_context())
-    option = player_options(lookup)["#1 - Premium RB (RB, SF)"]
-    state = add_trade_item(empty_trade_state(), "give", option)
+    players = player_options(lookup)
+    state = add_trade_item(empty_trade_state(), "give", players["#20 - Depth WR (WR, DAL)"])
+    state = add_trade_item(state, "get", players["#1 - Premium RB (RB, SF)"])
 
-    summary = summarize_trade_package_market(
-        state,
-        lookup,
-        get_assets_text="2026 2.03, 2028 1st, unknown text",
-        artifact_dir=artifact_dir,
-    )
+    review = review_trade_package(state, lookup)
+    text = " ".join((review.status, review.missing_context_display, review.explanation))
 
-    totals = {row["side"]: row for row in summary.totals.to_dict("records")}
-    assert totals["NWR gives"]["dp_market_total"] == 5000.0
-    assert totals["NWR gets"]["dp_market_total"] == 2514.0
-    assert totals["NWR gets"]["unknown_assets"] == 1
-    assert summary.status == "Market says give side higher"
-    assert display_market_package_rows(summary.rows).columns.tolist()[0] == "Side"
-
-
-def test_market_gap_not_enough_information_when_side_missing() -> None:
-    status, difference = classify_market_trade_gap(
-        pd.DataFrame(
-            [
-                {
-                    "side": "NWR gives",
-                    "dp_market_total": NOT_ENOUGH_INFORMATION,
-                    "matched_assets": 0,
-                    "unknown_assets": 1,
-                },
-                {
-                    "side": "NWR gets",
-                    "dp_market_total": 1490,
-                    "matched_assets": 1,
-                    "unknown_assets": 0,
-                },
-            ]
-        )
-    )
-
-    assert status == NOT_ENOUGH_INFORMATION
-    assert difference == NOT_ENOUGH_INFORMATION
-
-
-def test_market_registry_allows_trading_lab_display_only_usage() -> None:
-    usage = PAGE_USAGE["trading_lab"]
-
-    assert usage.enabled
-    assert not usage.model_input_allowed
-    assert not usage.sort_allowed
-    assert "dp_value_1qb" in usage.fields_allowed
-    assert validate_market_baseline_registry() == []
+    assert "manual review" in text.lower()
+    for forbidden in ("looks favorable", "risky", "fair", "winner", "score gap"):
+        assert forbidden not in text.lower()
