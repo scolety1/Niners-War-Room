@@ -74,7 +74,7 @@ def test_schedule_context_remains_unavailable() -> None:
     assert rows["Next game"] == "Not enough information"
     assert rows["Opponent"] == "Not enough information"
     assert rows["Bye"] == "Not enough information"
-    assert rows["Reason"] == "Current artifact has no current/future safe schedule rows."
+    assert rows["Reason"] == "Schedule context is gated for a separate draft-day display review."
 
 
 def test_context_service_does_not_mutate_runtime_json(tmp_path: Path) -> None:

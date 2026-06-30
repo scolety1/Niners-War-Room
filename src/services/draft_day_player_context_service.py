@@ -238,7 +238,10 @@ def draft_day_player_context_for_player(
                 ("Opponent", OUTCOME_NOT_ENOUGH_INFORMATION),
                 ("Bye", OUTCOME_NOT_ENOUGH_INFORMATION),
                 ("Status", "Not enough information"),
-                ("Reason", "Current artifact has no current/future safe schedule rows."),
+                (
+                    "Reason",
+                    "Schedule context is gated for a separate draft-day display review.",
+                ),
             ),
         ),
     )
@@ -272,6 +275,7 @@ def _load_source(*, artifact_path: Path, schema_path: Path) -> dict[str, Any]:
         if str(row.get("field_status", "")).strip() == NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS
         and str(row.get("display_only", "")).strip().lower() == "true"
         and str(row.get("model_use_allowed", "")).strip().lower() == "false"
+        and str(row.get("training_allowed", "")).strip().lower() == "false"
         and str(row.get("source_truth_allowed", "")).strip().lower() == "false"
         and str(row.get("rank_logic_allowed", "")).strip().lower() == "false"
         and str(row.get("hidden_sort_allowed", "")).strip().lower() == "false"
@@ -307,6 +311,14 @@ def _safe_identity_row(row: dict[str, Any]) -> bool:
     return (
         str(row.get("identity_join_status", "")).strip() == NFLVERSE_PLAYER_CONTEXT_SAFE_STATUS
         and str(row.get("review_required", "")).strip().lower() == "false"
+        and str(row.get("display_only", "")).strip().lower() == "true"
+        and str(row.get("model_use_allowed", "")).strip().lower() == "false"
+        and str(row.get("training_allowed", "")).strip().lower() == "false"
+        and str(row.get("source_truth_allowed", "")).strip().lower() == "false"
+        and str(row.get("rank_logic_allowed", "")).strip().lower() == "false"
+        and str(row.get("hidden_sort_allowed", "")).strip().lower() == "false"
+        and str(row.get("trade_value_allowed", "")).strip().lower() == "false"
+        and str(row.get("pick_value_allowed", "")).strip().lower() == "false"
     )
 
 

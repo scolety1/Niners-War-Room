@@ -95,14 +95,14 @@ expose NFLVerse player details.
 
 ## Unavailable / Deferred Context
 
-Schedule context remains unavailable:
+Schedule context remains unavailable in the Draft Room / Analyzer surfaces:
 
 - next game: `Not enough information`
 - opponent: `Not enough information`
 - bye: `Not enough information`
 
-Reason: current schedule audit covers historical local rows only and has `0`
-current/future safe rows as of 2026-06-30.
+Reason: schedule context is intentionally gated for a separate draft-day
+display review. The card remains `Not enough information` in this lane.
 
 Blocked/deferred items:
 
@@ -177,8 +177,8 @@ UDFA.
 
 - Browser proof should continue checking the context expanders on draft routes
 after any future navigation/data-loader merge.
-- Schedule context may be revisited only after a current/future schedule
-artifact is explicitly approved.
+- Schedule context may be revisited only after a separate draft-day schedule
+display review approves the exact fields and UI behavior.
 - Identity review rows remain blocked until human review approves joins.
 
 ## Verdict
