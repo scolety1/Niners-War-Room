@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+from datetime import date
 from pathlib import Path
 
 from src.services.nflverse_player_context_display_service import (
@@ -46,6 +47,11 @@ def test_player_context_artifact_loads_with_required_guardrails(tmp_path: Path) 
     assert artifact[0]["draft_round"] == "1"
     assert artifact[0]["draft_pick"] == "3"
     assert artifact[0]["contract_context"] == "active=True; team=NE; year_signed=2025; years=4"
+    assert artifact[0]["next_game_context"] == (
+        "season=2026; week=1; date=2026-09-13; game_id=2026_01_NYJ_NE"
+    )
+    assert artifact[0]["opponent_context"] == "opponent=NYJ; home_away=home"
+    assert artifact[0]["bye_context"] == "week=7"
     assert _join_gate(join_health, "current_rankings_identity_gate")["clean_join_rows"] == "1"
     assert {row["model_use_allowed"] for row in artifact} == {"false"}
     assert {row["training_allowed"] for row in artifact} == {"false"}
@@ -102,7 +108,55 @@ def test_ambiguous_identity_remains_review_needed(tmp_path: Path) -> None:
     assert row["identity_join_status"] == NEED_IDENTITY_REVIEW
     assert row["identity_caveat"] == "one_nwr_player_id_maps_to_multiple_gsis_ids"
     assert row["nflverse_gsis_id"] == "Not enough information"
+    assert row["next_game_context"] == "Not enough information"
+    assert row["opponent_context"] == "Not enough information"
+    assert row["bye_context"] == "Not enough information"
     assert row["review_required"] == "true"
+
+
+def test_schedule_overlay_can_refresh_future_context_without_raw_app_reads(
+    tmp_path: Path,
+) -> None:
+    snapshot = _snapshot_with_context_rows(tmp_path, include_schedule=False)
+    schedule_snapshot = tmp_path / "shared" / "scheduled_ingest" / "nflverse" / "schedule_run"
+    schedule_snapshot.mkdir(parents=True)
+    _write_schedule_rows(schedule_snapshot / "schedules.csv")
+    (schedule_snapshot / "snapshot_metadata.json").write_text(
+        json.dumps(
+            {
+                "created_at": "2026-06-30T12:00:00+00:00",
+                "package_version": "test",
+                "seasons": [2026],
+                "datasets": [
+                    _metadata_row(
+                        "schedules",
+                        "schedules.csv",
+                        ["season", "week", "game_id", "home_team", "away_team", "game_type"],
+                        17,
+                    )
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = build_nflverse_player_context_display(
+        shared_root=tmp_path / "shared",
+        status_root=tmp_path / "status",
+        snapshot_dir=snapshot,
+        schedule_snapshot_dir=schedule_snapshot,
+        schedule_as_of=date(2026, 6, 30),
+        rankings_rows=[_ranking_row()],
+    )
+
+    row = result.artifact_rows[0]
+    assert row["next_game_context"] == (
+        "season=2026; week=1; date=2026-09-13; game_id=2026_01_NYJ_NE"
+    )
+    assert row["opponent_context"] == "opponent=NYJ; home_away=home"
+    assert row["bye_context"] == "week=7"
+    schedule_gate = _join_gate(result.join_health_rows, "next_game_bye_gate")
+    assert schedule_gate["clean_join_rows"] == "1"
 
 
 def test_ff_rankings_is_blocked_and_not_used(tmp_path: Path) -> None:
@@ -129,6 +183,7 @@ def _snapshot_with_context_rows(
     include_injury: bool = True,
     include_depth: bool = True,
     include_draft: bool = True,
+    include_schedule: bool = True,
 ) -> Path:
     snapshot = tmp_path / "shared" / "scheduled_ingest" / "nflverse" / "run"
     snapshot.mkdir(parents=True)
@@ -281,19 +336,8 @@ def _snapshot_with_context_rows(
             }
         ],
     )
-    _write_csv(
-        snapshot / "schedules.csv",
-        [
-            {
-                "game_id": "2025_02_NE_NYJ",
-                "season": "2025",
-                "week": "2",
-                "home_team": "NE",
-                "away_team": "NYJ",
-                "game_type": "REG",
-            }
-        ],
-    )
+    if include_schedule:
+        _write_schedule_rows(snapshot / "schedules.csv")
     _write_csv(
         snapshot / "weekly_stats.csv",
         [
@@ -334,12 +378,6 @@ def _snapshot_with_context_rows(
             1,
         ),
         _metadata_row(
-            "schedules",
-            "schedules.csv",
-            ["season", "week", "game_id", "home_team", "away_team", "game_type"],
-            1,
-        ),
-        _metadata_row(
             "player_stats_weekly",
             "weekly_stats.csv",
             ["season", "week", "player_id", "player_name", "player_display_name"],
@@ -353,6 +391,15 @@ def _snapshot_with_context_rows(
                 "snap_counts.csv",
                 ["season", "week", "player", "position", "team", "offense_snaps"],
                 1,
+            )
+        )
+    if include_schedule:
+        datasets.append(
+            _metadata_row(
+                "schedules",
+                "schedules.csv",
+                ["season", "week", "game_id", "home_team", "away_team", "game_type"],
+                17,
             )
         )
     if include_injury:
@@ -443,6 +490,25 @@ def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _write_schedule_rows(path: Path) -> None:
+    rows = []
+    for week in range(1, 19):
+        if week == 7:
+            continue
+        rows.append(
+            {
+                "game_id": f"2026_{week:02d}_NYJ_NE",
+                "season": "2026",
+                "week": str(week),
+                "gameday": f"2026-09-{12 + week:02d}",
+                "home_team": "NE",
+                "away_team": "NYJ",
+                "game_type": "REG",
+            }
+        )
+    _write_csv(path, rows)
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
