@@ -1,0 +1,101 @@
+draft_year,position,drafted_count,rookie_year_label_count,2y_label_count,3y_label_count,5y_label_count,missing_label_count,incomplete_window_count,notes,review_only,model_use_allowed,training_allowed
+2000,QB,12,0,0,0,0,12,12,No Outcome V2 label file coverage before 2012.,true,false,false
+2000,RB,20,0,0,0,0,20,20,No Outcome V2 label file coverage before 2012.,true,false,false
+2000,TE,14,0,0,0,0,14,14,No Outcome V2 label file coverage before 2012.,true,false,false
+2000,WR,35,0,0,0,0,35,35,No Outcome V2 label file coverage before 2012.,true,false,false
+2001,QB,11,0,0,0,0,11,11,No Outcome V2 label file coverage before 2012.,true,false,false
+2001,RB,16,0,0,0,0,16,16,No Outcome V2 label file coverage before 2012.,true,false,false
+2001,TE,15,0,0,0,0,15,15,No Outcome V2 label file coverage before 2012.,true,false,false
+2001,WR,34,0,0,0,0,34,34,No Outcome V2 label file coverage before 2012.,true,false,false
+2002,QB,15,0,0,0,0,15,15,No Outcome V2 label file coverage before 2012.,true,false,false
+2002,RB,23,0,0,0,0,23,23,No Outcome V2 label file coverage before 2012.,true,false,false
+2002,TE,23,0,0,0,0,23,23,No Outcome V2 label file coverage before 2012.,true,false,false
+2002,WR,34,0,0,0,0,34,34,No Outcome V2 label file coverage before 2012.,true,false,false
+2003,QB,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2003,RB,15,0,0,0,0,15,15,No Outcome V2 label file coverage before 2012.,true,false,false
+2003,TE,12,0,0,0,0,12,12,No Outcome V2 label file coverage before 2012.,true,false,false
+2003,WR,36,0,0,0,0,36,36,No Outcome V2 label file coverage before 2012.,true,false,false
+2004,QB,17,0,0,0,0,17,17,No Outcome V2 label file coverage before 2012.,true,false,false
+2004,RB,16,0,0,0,0,16,16,No Outcome V2 label file coverage before 2012.,true,false,false
+2004,TE,16,0,0,0,0,16,16,No Outcome V2 label file coverage before 2012.,true,false,false
+2004,WR,31,0,0,0,0,31,31,No Outcome V2 label file coverage before 2012.,true,false,false
+2005,QB,14,0,0,0,0,14,14,No Outcome V2 label file coverage before 2012.,true,false,false
+2005,RB,22,0,0,0,0,22,22,No Outcome V2 label file coverage before 2012.,true,false,false
+2005,TE,10,0,0,0,0,10,10,No Outcome V2 label file coverage before 2012.,true,false,false
+2005,WR,31,0,0,0,0,31,31,No Outcome V2 label file coverage before 2012.,true,false,false
+2006,QB,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2006,RB,17,0,0,0,0,17,17,No Outcome V2 label file coverage before 2012.,true,false,false
+2006,TE,15,0,0,0,0,15,15,No Outcome V2 label file coverage before 2012.,true,false,false
+2006,WR,30,0,0,0,0,30,30,No Outcome V2 label file coverage before 2012.,true,false,false
+2007,QB,11,0,0,0,0,11,11,No Outcome V2 label file coverage before 2012.,true,false,false
+2007,RB,22,0,0,0,0,22,22,No Outcome V2 label file coverage before 2012.,true,false,false
+2007,TE,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2007,WR,34,0,0,0,0,34,34,No Outcome V2 label file coverage before 2012.,true,false,false
+2008,QB,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2008,RB,23,0,0,0,0,23,23,No Outcome V2 label file coverage before 2012.,true,false,false
+2008,TE,16,0,0,0,0,16,16,No Outcome V2 label file coverage before 2012.,true,false,false
+2008,WR,35,0,0,0,0,35,35,No Outcome V2 label file coverage before 2012.,true,false,false
+2009,QB,11,0,0,0,0,11,11,No Outcome V2 label file coverage before 2012.,true,false,false
+2009,RB,23,0,0,0,0,23,23,No Outcome V2 label file coverage before 2012.,true,false,false
+2009,TE,19,0,0,0,0,19,19,No Outcome V2 label file coverage before 2012.,true,false,false
+2009,WR,34,0,0,0,0,34,34,No Outcome V2 label file coverage before 2012.,true,false,false
+2010,QB,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2010,RB,15,0,0,0,0,15,15,No Outcome V2 label file coverage before 2012.,true,false,false
+2010,TE,19,0,0,0,0,19,19,No Outcome V2 label file coverage before 2012.,true,false,false
+2010,WR,31,0,0,0,0,31,31,No Outcome V2 label file coverage before 2012.,true,false,false
+2011,QB,12,0,0,0,0,12,12,No Outcome V2 label file coverage before 2012.,true,false,false
+2011,RB,29,0,0,0,0,29,29,No Outcome V2 label file coverage before 2012.,true,false,false
+2011,TE,13,0,0,0,0,13,13,No Outcome V2 label file coverage before 2012.,true,false,false
+2011,WR,28,0,0,0,0,28,28,No Outcome V2 label file coverage before 2012.,true,false,false
+2012,QB,11,9,8,8,7,2,4,Contains partial/missing drafted-player review labels.,true,false,false
+2012,RB,21,18,18,14,9,2,12,Contains partial/missing drafted-player review labels.,true,false,false
+2012,TE,12,9,9,5,3,2,9,Contains partial/missing drafted-player review labels.,true,false,false
+2012,WR,33,26,26,18,13,4,20,Contains partial/missing drafted-player review labels.,true,false,false
+2013,QB,11,4,5,2,2,6,9,Contains partial/missing drafted-player review labels.,true,false,false
+2013,RB,25,19,17,13,13,4,15,Contains partial/missing drafted-player review labels.,true,false,false
+2013,TE,16,13,12,12,9,2,8,Contains partial/missing drafted-player review labels.,true,false,false
+2013,WR,28,19,22,16,11,4,17,Contains partial/missing drafted-player review labels.,true,false,false
+2014,QB,14,8,7,3,3,5,11,Contains partial/missing drafted-player review labels.,true,false,false
+2014,RB,19,16,14,13,11,3,8,Contains partial/missing drafted-player review labels.,true,false,false
+2014,TE,10,7,6,6,3,3,7,Contains partial/missing drafted-player review labels.,true,false,false
+2014,WR,34,27,27,21,16,3,19,Contains partial/missing drafted-player review labels.,true,false,false
+2015,QB,7,4,6,4,3,1,4,Contains partial/missing drafted-player review labels.,true,false,false
+2015,RB,18,17,14,14,11,1,7,Contains partial/missing drafted-player review labels.,true,false,false
+2015,TE,19,12,17,10,9,2,10,Contains partial/missing drafted-player review labels.,true,false,false
+2015,WR,35,26,27,16,13,5,23,Contains partial/missing drafted-player review labels.,true,false,false
+2016,QB,15,9,9,5,4,4,11,Contains partial/missing drafted-player review labels.,true,false,false
+2016,RB,20,15,13,11,10,5,10,Contains partial/missing drafted-player review labels.,true,false,false
+2016,TE,11,8,7,6,5,3,6,Contains partial/missing drafted-player review labels.,true,false,false
+2016,WR,31,26,20,17,11,5,20,Contains partial/missing drafted-player review labels.,true,false,false
+2017,QB,10,6,8,3,3,2,7,Contains partial/missing drafted-player review labels.,true,false,false
+2017,RB,27,21,21,15,15,5,12,Contains partial/missing drafted-player review labels.,true,false,false
+2017,TE,14,10,13,9,9,1,5,Contains partial/missing drafted-player review labels.,true,false,false
+2017,WR,32,25,23,15,12,5,20,Contains partial/missing drafted-player review labels.,true,false,false
+2018,QB,13,6,7,4,4,5,9,Contains partial/missing drafted-player review labels.,true,false,false
+2018,RB,21,18,20,15,13,0,8,Contains partial/missing drafted-player review labels.,true,false,false
+2018,TE,15,12,14,12,10,1,5,Contains partial/missing drafted-player review labels.,true,false,false
+2018,WR,34,25,27,22,13,5,21,Contains partial/missing drafted-player review labels.,true,false,false
+2019,QB,11,9,9,4,3,1,8,Contains partial/missing drafted-player review labels.,true,false,false
+2019,RB,25,20,18,14,11,4,14,Contains partial/missing drafted-player review labels.,true,false,false
+2019,TE,16,13,12,7,6,1,10,Contains partial/missing drafted-player review labels.,true,false,false
+2019,WR,28,22,21,15,13,4,15,Contains partial/missing drafted-player review labels.,true,false,false
+2020,QB,13,7,7,4,5,3,9,Contains partial/missing drafted-player review labels.,true,false,false
+2020,RB,18,17,15,13,12,0,7,Contains partial/missing drafted-player review labels.,true,false,false
+2020,TE,12,11,10,9,7,0,5,Contains partial/missing drafted-player review labels.,true,false,false
+2020,WR,35,31,32,23,17,1,19,Contains partial/missing drafted-player review labels.,true,false,false
+2021,QB,10,9,8,5,0,0,10,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2021,RB,19,17,17,14,0,1,19,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2021,TE,11,10,10,10,0,1,11,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2021,WR,35,32,29,20,0,2,35,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2022,QB,9,7,6,6,0,2,9,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2022,RB,23,23,17,15,0,0,23,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2022,TE,19,16,18,12,0,0,19,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2022,WR,28,25,25,21,0,1,28,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2023,QB,14,9,10,0,0,2,14,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2023,RB,18,15,13,0,0,2,18,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2023,TE,15,13,13,0,0,2,15,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2023,WR,33,31,30,0,0,0,33,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2024,QB,11,7,0,0,0,4,11,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2024,RB,19,18,0,0,0,1,19,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2024,TE,12,11,0,0,0,1,12,Contains right-censored windows; incomplete windows are not misses.,true,false,false
+2024,WR,35,30,0,0,0,5,35,Contains right-censored windows; incomplete windows are not misses.,true,false,false
