@@ -1,7 +1,9 @@
 # NFLVerse Player Context Display Artifact
 
-Verdict: `YELLOW_PARTIAL_PLAYER_CONTEXT_ARTIFACT`
+Verdict: `YELLOW_PARTIAL_REBUILD_WITH_GATED_ROWS`
 Current Rankings rows evaluated: `294`
+Safe display rows after approved binding apply: `281`
+Identity-review/gated rows remaining: `13`
 
 This directory contains compact, derived, review/display-only player context from the approved local nflverse refresh-health contract. It is not raw cache.
 
@@ -32,3 +34,15 @@ App lanes may read `nflverse_player_context_display_artifact.csv` and `nflverse_
 - `ff_rankings` is blocked and unused.
 - Schedule fields are display-only and require current/future approved schedules. If a row still says `Not enough information`, app lanes must not infer an opponent, bye, or clean schedule state.
 - Rows with `identity_join_status=NEED_IDENTITY_REVIEW` need separate identity review before any player-level app display.
+
+## Approved Identity Binding Apply - 2026-06-30
+
+The review-only binding packet `docs/hq/data_sources/nflverse_approved_identity_nwr_binding_v1_20260630/approved_identity_nwr_binding_matrix.csv` was applied to the tracked display artifact.
+
+- Previously safe display rows: `240`
+- Newly bound review/display rows: `41`
+- Safe display rows after apply: `281`
+- Remaining identity-review/gated rows: `13`
+- Still gated from the binding packet: `Kentrel Bullock`, `Jamal Haynes`
+
+This apply does not backfill raw context fields. For newly bound rows, unavailable injury, schedule, depth, snap, draft, and contract values remain `Not enough information` unless already present in the tracked artifact. All rows remain display-only and review-only; no model/rank/source-truth/hidden-sort/trade/pick use is allowed.

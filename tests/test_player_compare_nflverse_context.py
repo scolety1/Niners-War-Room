@@ -104,8 +104,8 @@ def test_tracked_artifact_counts_and_schedule_are_current_contract() -> None:
 
     assert context.artifact_available
     assert context.artifact_rows == 294
-    assert context.safe_display_rows == 240
-    assert context.identity_review_rows == 54
+    assert context.safe_display_rows == 281
+    assert context.identity_review_rows == 13
     assert context.schedule_available_rows == 240
     assert not any(
         row["Item"] == "Next game / opponent / bye context"

@@ -153,8 +153,8 @@ def test_actual_tracked_artifact_has_expected_safe_and_review_coverage() -> None
     denominator_counts = nflverse_availability_denominator_artifact_counts()
 
     assert counts["rows"] == 294
-    assert counts["safe_display_rows"] == 240
-    assert counts["identity_review_rows"] == 54
+    assert counts["safe_display_rows"] == 281
+    assert counts["identity_review_rows"] == 13
     assert counts["schedule_current_future_rows"] == 240
     assert denominator_counts["rows"] == 588
     assert denominator_counts["safe_denominator_rows"] == 437

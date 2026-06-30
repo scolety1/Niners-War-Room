@@ -53,12 +53,12 @@ def _review_item() -> dict[str, object]:
     return {
         "side": "NWR gets",
         "asset_type": "Player",
-        "label": "#1 - Jeremiyah Love (RB, ARI)",
+        "label": "#25 - Kentrel Bullock (RB, CIN)",
         "nwr_player_id": "",
-        "player": "Jeremiyah Love",
+        "player": "Kentrel Bullock",
         "position": "RB",
-        "nfl_team": "ARI",
-        "final_board_rank": "1",
+        "nfl_team": "CIN",
+        "final_board_rank": "25",
     }
 
 
@@ -75,8 +75,8 @@ def test_context_artifact_counts_and_schema_safe_fields() -> None:
     index = _index()
 
     assert index.artifact_row_count == 294
-    assert index.safe_row_count == 240
-    assert index.identity_review_row_count == 54
+    assert index.safe_row_count == 281
+    assert index.identity_review_row_count == 13
     assert "nwr_player_id" in index.schema_safe_fields
     assert "injury_report_status" in index.schema_safe_fields
     assert "depth_chart_position" in index.schema_safe_fields

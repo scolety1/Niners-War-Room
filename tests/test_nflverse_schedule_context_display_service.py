@@ -16,7 +16,7 @@ def test_tracked_schedule_context_counts_match_display_gate() -> None:
     assert index.errors == ()
     assert counts["artifact_rows"] == 294
     assert counts["safe_schedule_rows"] == 240
-    assert counts["identity_review_rows"] == 54
+    assert counts["identity_review_rows"] == 13
     assert counts["safe_next_game_rows"] == 240
     assert counts["safe_opponent_rows"] == 240
     assert counts["safe_bye_rows"] == 240

@@ -1,5 +1,5 @@
 gate,status,source_dataset,current_rankings_rows,clean_join_rows,no_nflverse_identity_rows,ambiguous_identity_rows,many_to_one_conflict_rows,one_to_many_conflict_rows,need_dataset_refresh_rows,blocked_rows,review_only_rows,message
-current_rankings_identity_gate,NEED_IDENTITY_REVIEW,rosters,294,240,54,0,0,0,0,0,54,Current Rankings rows join only through exact NWR player_id to rosters.sleeper_id.
+current_rankings_identity_gate,NEED_IDENTITY_REVIEW,rosters,294,281,13,0,0,0,0,0,13,Current Rankings rows include 240 original safe rows plus 41 review-only approved/bound identity rows; 13 rows remain gated.
 players_identity_file_gate,SAFE_NOW_DISPLAY_ONLY,players,294,294,0,0,0,0,0,0,0,players: status=GREEN; execution=succeeded; schema=pass; coverage=pass; rows=25033; policy=identity_only.
 ff_playerids_crosswalk_gate,SAFE_NOW_DISPLAY_ONLY,ff_playerids,294,294,0,0,0,0,0,0,0,ff_playerids: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=12465; policy=identity_only.
 weekly_roster_status_gate,SAFE_NOW_DISPLAY_ONLY,weekly_rosters,294,240,0,0,0,0,0,0,0,weekly_rosters: status=YELLOW; execution=succeeded; schema=pass; coverage=review; rows=93428; policy=identity_only.
