@@ -19,16 +19,34 @@
   `Roster-window context`, and `Main review flags`.
 - Strengthened injury / availability copy while keeping it review-only.
 - Added match-basis and fallback/ambiguity notes to injury availability rows.
-- Added disabled/spec-only NFLVerse factual panel status rows.
+- Activated a display-only `NFLVerse Player Context` tab backed only by the
+  tracked player context display artifact and schema manifest.
+- Added identity/join transparency, recent activity, usage/role, availability,
+  roster-window, dataset freshness, and deferred/manual review expanders.
+- Suppressed detailed NFLVerse context for `NEED_IDENTITY_REVIEW` rows.
+
+## Implemented NFLVerse Context Display Pass
+
+- Consumes only
+  `docs/hq/data_sources/nflverse_player_context_display_20260630/nflverse_player_context_display_artifact.csv`
+  and the schema manifest in the same folder.
+- Joins on `nwr_player_id`.
+- Displays player context only for `identity_join_status=SAFE_NOW_DISPLAY_ONLY`
+  and `review_required=false`.
+- Confirms displayed fields are `SAFE_NOW_DISPLAY_ONLY` in the schema manifest.
+- Shows `Needs identity review` instead of player context details for review
+  rows.
+- Keeps missing values as `Not enough information`.
 
 ## Deferred
 
-All nflverse-dependent panels remain
-`WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` because this branch does not contain a
-merged dataset-level refresh-health green approval for those datasets.
+- Next game / opponent / bye context remains unavailable because the tracked
+  artifact has `0` current/future safe schedule rows.
+- Identity proposal rows remain manual-review-only and are not approved joins.
+- `ff_rankings` remains blocked by source policy and unused.
 
 ## Blocked
 
 No aggregate compare score, hidden sort, market decision logic, trade value,
-pick value, injury-risk score, medical projection, rank mutation, or source-truth
-promotion was implemented.
+pick value, injury-risk score, medical projection, comeback projection, rank
+mutation, or source-truth promotion was implemented.

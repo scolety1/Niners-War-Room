@@ -13,10 +13,18 @@
 - No rank/source-truth changes.
 - No injury-risk score.
 - No medical projection.
+- No comeback projection.
 - No scraped news, rumors, Gmail evidence, or vendor blurbs.
 - Missing injury context is not treated as clean health.
 - Missing production/usage data is not treated as zero.
-- NFLVerse-dependent panels are disabled/spec-only until refresh health is green.
+- Missing depth context is not treated as no-role.
+- Missing draft capital is not treated as confirmed UDFA.
+- Player Compare reads only the tracked NFLVerse player context artifact and
+  schema manifest for player-level NFLVerse context.
+- `NEED_IDENTITY_REVIEW` rows display only identity-review status, not detailed
+  NFLVerse player context.
+- Schedule/opponent/bye context remains deferred because current/future safe
+  schedule rows are unavailable.
 
 ## Notes
 

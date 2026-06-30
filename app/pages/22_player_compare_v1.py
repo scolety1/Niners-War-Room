@@ -32,8 +32,8 @@ from src.services.draft_day_app_v1_service import (
 from src.services.player_compare_decision_service import (
     MARKET_DISPLAY_ONLY_NOTE,
     build_player_compare_decision_summary,
+    build_player_compare_nflverse_context,
     decision_summary_rows,
-    nflverse_spec_panel_rows,
 )
 
 OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
@@ -640,21 +640,82 @@ def _outcome_v2_context_row_for_player(
     return {}, "No approved artifact match", OUTCOME_NOT_ENOUGH_INFORMATION
 
 
-def _render_nflverse_spec_panels() -> None:
-    st.subheader("NFLVerse factual panels")
+def _render_nflverse_player_context(compare_frame: pd.DataFrame) -> None:
+    st.subheader("NFLVerse Player Context")
     st.caption(
-        "Spec-only / disabled until the NFLVerse refresh-health lane lands and each "
-        "dataset passes status, schema, coverage, freshness, and source-policy checks."
+        "Display-only context from the tracked NFLVerse player-context artifact. "
+        "No recommendation calculated. Not model input."
     )
     st.caption(
-        "Disabled panels do not create production edges, usage edges, model inputs, "
-        "rank changes, injury projections, trade values, or draft decisions."
+        "Rows must match on NWR player id, have identity_join_status=SAFE_NOW_DISPLAY_ONLY, "
+        "review_required=false, and pass the SAFE_NOW_DISPLAY_ONLY schema manifest. "
+        "Needs identity review rows show only identity-review status."
     )
-    st.dataframe(
-        pd.DataFrame(nflverse_spec_panel_rows()),
-        use_container_width=True,
-        hide_index=True,
+    context = build_player_compare_nflverse_context(compare_frame.to_dict("records"))
+    if not context.artifact_available:
+        render_yellow_hold(context.caveat)
+        return
+
+    cols = st.columns(4)
+    cols[0].metric("Artifact rows", str(context.artifact_rows))
+    cols[1].metric("Safe display rows", str(context.safe_display_rows))
+    cols[2].metric("Identity review rows", str(context.identity_review_rows))
+    cols[3].metric("Schedule rows", str(context.schedule_available_rows))
+    st.caption(f"Source/as-of: {context.artifact_path}")
+    st.caption(
+        "Missing data remains Not enough information. Missing injury is not healthy; "
+        "missing depth is not no-role; missing snaps is not zero; missing draft capital "
+        "is not confirmed UDFA."
     )
+
+    with st.expander("Identity / Join Transparency", expanded=True):
+        st.dataframe(pd.DataFrame(context.identity_rows), use_container_width=True, hide_index=True)
+
+    with st.expander("Recent Production / Activity Context", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.recent_activity_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Usage / Role Context", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.usage_role_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Availability Timeline", expanded=False):
+        st.caption(
+            "Availability context is factual and review-only. No injury-risk score, medical "
+            "projection, or comeback projection is calculated."
+        )
+        st.dataframe(
+            pd.DataFrame(context.availability_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Roster-Window Context", expanded=False):
+        st.caption(
+            "Roster-window context is non-financial. It does not create contract valuation, "
+            "trade value, pick value, or ranking changes."
+        )
+        st.dataframe(
+            pd.DataFrame(context.roster_window_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Dataset Freshness / Coverage Badges", expanded=False):
+        st.dataframe(
+            pd.DataFrame(context.dataset_badge_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    with st.expander("Deferred / Manual Review Items", expanded=False):
+        st.dataframe(pd.DataFrame(context.deferred_rows), use_container_width=True, hide_index=True)
 
 
 def _context_value(row: dict[str, object], column: str) -> str:
@@ -741,7 +802,7 @@ else:
             "Injury / Availability Context",
             "Outcome / Horizon",
             "Age / Injury / Risk",
-            "NFLVerse Specs / Disabled",
+            "NFLVerse Player Context",
             "Raw Details / Diagnostics",
         ]
     )
@@ -756,7 +817,7 @@ else:
     with detail_tabs[4]:
         _render_age_risk_context(compare)
     with detail_tabs[5]:
-        _render_nflverse_spec_panels()
+        _render_nflverse_player_context(compare)
 
     prop_files = {
         "outcome_columns": "outcome_player_context.csv",

@@ -104,7 +104,8 @@ def test_missing_data_and_missing_injury_context_copy_stay_neutral() -> None:
     assert summary.visible_context_read == NOT_ENOUGH_INFORMATION
     assert NOT_ENOUGH_INFORMATION in " ".join(summary.open_review_flags)
     assert "No approved injury context available does not mean clean health." in page
-    assert "healthy" not in page.lower()
+    assert "Missing injury is not healthy" in page
+    assert " is healthy" not in page.lower()
     assert "clean health" in page
 
 
@@ -142,9 +143,11 @@ def test_identity_fallback_and_nflverse_panels_are_disabled_spec_only() -> None:
     assert "Name + position fallback" in page
     assert "not treated as deterministic identity truth" in page
     assert "Ambiguous name + position fallback" in page
-    assert "NFLVerse Specs / Disabled" in page
+    assert "NFLVerse Player Context" in page
+    assert "Needs identity review rows show only identity-review status" in page
+    assert "No recommendation calculated" in page
+    assert "Not model input" in page
     assert {row["Status"] for row in rows} == {NFLVERSE_WAIT_STATUS}
-    assert "Spec-only / disabled until the NFLVerse refresh-health lane lands" in page
 
 
 def test_player_compare_lane_does_not_touch_protected_paths() -> None:
