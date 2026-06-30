@@ -16,11 +16,19 @@ from src.services.draft_day_app_v1_service import (
     load_frozen_board,
 )
 from src.services.draft_day_runtime_state_service import (
+    DEFAULT_DRAFT_ID,
     export_runtime_state,
     load_latest_runtime_state,
     preview_runtime_state_import,
     restore_runtime_state_from_json_if_confirmed,
+    runtime_import_preview_diff,
     runtime_paths,
+)
+from src.services.mock_draft_room_service import (
+    load_mock_draft_sessions,
+    mock_draft_manifest_health,
+    selected_mock_draft_session,
+    session_options,
 )
 from src.services.post_draft_mode_service import (
     MARKET_DISPLAY_ONLY_LABEL,
@@ -50,16 +58,51 @@ st.caption(
 
 mode = st.radio("Draft session", ["Live", "Mock"], horizontal=True, key="post_draft_mode")
 runtime_mode = mode.lower()
+runtime_draft_id = DEFAULT_DRAFT_ID
+active_mock_session = None
 
+if runtime_mode == "mock":
+    manifest_health = mock_draft_manifest_health()
+    if manifest_health.status == "OK":
+        st.caption(f"Mock manifest status: {manifest_health.message}")
+    else:
+        st.warning(f"Mock manifest status: {manifest_health.message}")
+    sessions = load_mock_draft_sessions()
+    active_mock_session = selected_mock_draft_session(
+        sessions,
+        st.session_state.get("post_draft_active_mock_session_id"),
+    )
+    options = session_options(sessions)
+    selected_label = st.selectbox(
+        "Saved mock draft to analyze",
+        list(options),
+        index=list(options.values()).index(active_mock_session.draft_id),
+        key="post_draft_mock_session",
+        help="Selects which local mock runtime state Draft Analyzer reads. Live state is separate.",
+    )
+    runtime_draft_id = options[selected_label]
+    st.session_state["post_draft_active_mock_session_id"] = runtime_draft_id
+    active_mock_session = selected_mock_draft_session(sessions, runtime_draft_id)
+    st.caption(
+        f"Analyzing mock session: {active_mock_session.name} ({active_mock_session.draft_id}). "
+        "This does not load or overwrite live Draft Cockpit state."
+    )
+else:
+    st.caption("Analyzing live Draft Cockpit runtime state.")
+
+state_key = f"post_draft_state_{runtime_mode}_{runtime_draft_id}"
 if st.button("Load latest draft state", key="post_draft_load_latest"):
-    st.session_state[f"post_draft_state_{runtime_mode}"] = load_latest_runtime_state(
-        mode=runtime_mode
+    st.session_state[state_key] = load_latest_runtime_state(
+        mode=runtime_mode,
+        draft_id=runtime_draft_id,
     )
     st.success("Loaded latest local runtime state.")
 
-state_key = f"post_draft_state_{runtime_mode}"
 if state_key not in st.session_state:
-    st.session_state[state_key] = load_latest_runtime_state(mode=runtime_mode)
+    st.session_state[state_key] = load_latest_runtime_state(
+        mode=runtime_mode,
+        draft_id=runtime_draft_id,
+    )
 
 uploaded = st.file_uploader(
     "Upload/import draft state JSON",
@@ -68,7 +111,11 @@ uploaded = st.file_uploader(
 )
 if uploaded is not None:
     payload = uploaded.getvalue()
-    preview = preview_runtime_state_import(payload, mode=runtime_mode)
+    preview = preview_runtime_state_import(
+        payload,
+        mode=runtime_mode,
+        draft_id=runtime_draft_id,
+    )
     if preview.valid:
         st.caption("Import preview. Confirm restore before overwriting local runtime state.")
         st.dataframe(
@@ -77,6 +124,18 @@ if uploaded is not None:
             hide_index=True,
             key=f"post_draft_import_preview_{runtime_mode}",
         )
+        diff_rows = runtime_import_preview_diff(st.session_state[state_key], preview)
+        if diff_rows:
+            st.caption(
+                "Import preview diff: current local state vs imported JSON. "
+                "This comparison is display-only until restore is confirmed."
+            )
+            st.dataframe(
+                pd.DataFrame(diff_rows),
+                use_container_width=True,
+                hide_index=True,
+                key=f"post_draft_import_preview_diff_{runtime_mode}",
+            )
         for warning in preview.warnings:
             st.warning(warning)
     else:
@@ -94,11 +153,7 @@ if uploaded is not None:
                 confirmed=confirm_import,
                 current_state=st.session_state[state_key],
                 root=None,
-                draft_id=str(
-                    st.session_state[state_key].get("draft_session_id")
-                    or st.session_state[state_key].get("draft_id")
-                    or "draft_day_v2"
-                ),
+                draft_id=runtime_draft_id,
                 mode=runtime_mode,
             )
             if not confirm_import:
@@ -128,6 +183,10 @@ metric_cols[4].metric("Last updated", summary.metrics["last_updated"] or "Not lo
 st.caption(
     f"{RUNTIME_SOURCE_LABEL}. {MARKET_DISPLAY_ONLY_LABEL}. "
     "Confirm all picks and trades against official league history before model/backtest use."
+)
+st.caption(
+    "nflverse-backed availability context cards are WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN "
+    "in this lane and are not used by Draft Analyzer."
 )
 
 control_cols = st.columns([1, 1, 2])
@@ -159,6 +218,10 @@ else:
     )
 
 st.subheader("Trade Recap")
+st.caption(
+    "Trade recap shows manually recorded runtime events. It does not compute trade valuation, "
+    "pick valuation, market value, or model advice."
+)
 if summary.trade_recap.empty:
     st.info("No trade events recorded for this draft session yet.")
 else:
@@ -204,6 +267,10 @@ with st.expander("Missing data warnings", expanded=bool(summary.missing_data_war
         st.success("No missing-data warnings from the post-draft summary builder.")
 
 with st.expander("Event log", expanded=False):
+    st.caption(
+        "Event log is local runtime sequencing for audit/replay review. It is not official "
+        "league history or source truth."
+    )
     if summary.event_log.empty:
         st.info("No runtime events recorded yet.")
     else:

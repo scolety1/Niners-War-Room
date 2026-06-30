@@ -17,7 +17,10 @@ from app.components.draft_day_v1 import (
 from app.components.draft_workflow import render_draft_workflow
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import load_frozen_board, load_lane_prop_file
-from src.services.draft_day_runtime_state_service import load_runtime_state, runtime_paths
+from src.services.draft_day_runtime_state_service import (
+    load_runtime_state_with_status,
+    runtime_paths,
+)
 from src.services.drafting_mode_cockpit_service import (
     build_cockpit_summary,
     owned_pick_rows,
@@ -29,6 +32,7 @@ from src.services.mock_draft_room_service import (
     delete_mock_draft_session,
     duplicate_mock_draft_session,
     load_mock_draft_sessions,
+    mock_draft_manifest_health,
     rename_mock_draft_session,
     selected_mock_draft_session,
     session_options,
@@ -79,6 +83,13 @@ if pick_path is None or pick_frame.empty:
 elif nwr_path is None or nwr_frame.empty:
     render_yellow_hold("NWR pick windows are missing, so pick highlights are limited.")
 else:
+    manifest_health = mock_draft_manifest_health()
+    if manifest_health.status == "OK":
+        st.caption(f"Mock manifest status: {manifest_health.message}")
+    else:
+        st.warning(f"Mock manifest status: {manifest_health.message}")
+    st.caption(f"Mock manifest path: {manifest_health.path}")
+
     sessions = load_mock_draft_sessions()
     active_session = selected_mock_draft_session(
         sessions,
@@ -143,16 +154,22 @@ else:
         f"Selected mock draft: {active_session.name} ({active_session.draft_id}). "
         "This is manual practice state, not a simulator run or model input."
     )
-    mock_state = load_runtime_state(
+    load_result = load_runtime_state_with_status(
         mode="mock",
         draft_id=active_session.draft_id,
         source_checkpoint=source_caption,
     )
+    mock_state = load_result.state
     summary = build_cockpit_summary(
         board_frame=bundle.frame,
         pick_frame=pick_frame,
         runtime_state=mock_state,
     )
+    if load_result.status == "LOADED":
+        st.success("Runtime state status: loaded existing mock runtime state.")
+    else:
+        st.warning(f"Runtime state status: {load_result.warning}")
+    st.caption(f"Runtime state path: {load_result.path}")
     metric_cols = st.columns([1, 1.2, 0.8, 0.8, 1.2])
     metric_cols[0].metric("Current pick", summary.current_pick)
     metric_cols[1].metric("On-clock team", summary.on_clock_team)
@@ -188,6 +205,7 @@ else:
             st.caption(f"Runtime root: {paths.root}")
             st.caption("Mock state stays local/untracked and separate from Draft Cockpit.")
             st.caption("No trade valuation, model input, rank changes, or source-truth mutation.")
+            st.caption("Mock manifest issues never imply live Draft Cockpit state was reset.")
 
     render_draft_workflow(
         mode_label="Mock Draft manual practice",

@@ -11,6 +11,7 @@ from src.services.mock_draft_room_service import (
     delete_mock_draft_session,
     duplicate_mock_draft_session,
     load_mock_draft_sessions,
+    mock_draft_manifest_health,
     mock_manifest_path,
     rename_mock_draft_session,
 )
@@ -18,9 +19,12 @@ from src.services.mock_draft_room_service import (
 
 def test_mock_draft_sessions_default_without_writing_manifest(tmp_path) -> None:
     sessions = load_mock_draft_sessions(tmp_path)
+    health = mock_draft_manifest_health(tmp_path)
 
     assert len(sessions) == 1
     assert sessions[0].draft_id == DEFAULT_MOCK_DRAFT_ID
+    assert health.status == "MISSING_MANIFEST_USING_DEFAULT"
+    assert "does not affect live Draft Cockpit state" in health.message
     assert not mock_manifest_path(tmp_path).exists()
 
 
@@ -70,3 +74,15 @@ def test_mock_duplicate_preserves_trade_state_without_touching_live(tmp_path) ->
     assert copied_state["pick_ownership_overrides"]["2.03"]["new_owner"] == "NWR"
     assert live_state["trade_events"] == []
     assert live_state["pick_ownership_overrides"] == {}
+
+
+def test_mock_manifest_health_warns_on_unreadable_manifest(tmp_path) -> None:
+    mock_manifest_path(tmp_path).parent.mkdir(parents=True, exist_ok=True)
+    mock_manifest_path(tmp_path).write_text("{not-json", encoding="utf-8")
+
+    health = mock_draft_manifest_health(tmp_path)
+    sessions = load_mock_draft_sessions(tmp_path)
+
+    assert health.status == "UNREADABLE_MANIFEST_USING_DEFAULT"
+    assert "using the default mock session" in health.message
+    assert sessions[0].draft_id == DEFAULT_MOCK_DRAFT_ID

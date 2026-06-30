@@ -76,6 +76,11 @@ def test_post_draft_summary_works_with_trade_events(tmp_path) -> None:
     assert summary.trade_recap.iloc[0]["Team A Sends"] == "2026 1.04, mystery asset"
     assert "2028 1st" in summary.trade_recap.iloc[0]["Future Picks"]
     assert "mystery asset" in summary.trade_recap.iloc[0]["Review-Needed Assets"]
+    assert "Pick Ownership Effect" in summary.trade_recap.columns
+    assert (
+        summary.trade_recap.iloc[0]["Valuation Status"]
+        == "No trade valuation or pick valuation; manual runtime event only."
+    )
 
 
 def test_future_pick_assets_display_without_crashing(tmp_path) -> None:

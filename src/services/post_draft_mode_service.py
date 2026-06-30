@@ -142,6 +142,7 @@ def _trade_recap_frame(state: RuntimeState) -> pd.DataFrame:
             continue
         review_assets = _review_needed_assets(trade)
         current_year = trade.get("current_year_pick_changes", [])
+        pick_effect = _join_pick_changes(current_year)
         rows.append(
             {
                 "Trade ID": str(trade.get("trade_id") or ""),
@@ -154,10 +155,16 @@ def _trade_recap_frame(state: RuntimeState) -> pd.DataFrame:
                 "Parsed Current-Year Picks": _join_pick_changes(current_year),
                 "Future Picks": _join_values(trade.get("future_picks")),
                 "Review-Needed Assets": _join_values(review_assets),
-                "Ownership Overrides": _join_pick_changes(current_year),
+                "Ownership Overrides": pick_effect,
+                "Pick Ownership Effect": (
+                    pick_effect or "No current-year pick ownership changes recorded."
+                ),
                 "Notes": _text(trade.get("notes")) or NOT_ENOUGH_INFORMATION,
                 "Source": (
                     "Manually recorded runtime trade event; not official source truth"
+                ),
+                "Valuation Status": (
+                    "No trade valuation or pick valuation; manual runtime event only."
                 ),
             }
         )

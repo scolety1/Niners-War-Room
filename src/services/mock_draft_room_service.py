@@ -29,6 +29,14 @@ class MockDraftSession:
     updated_at_utc: str
 
 
+@dataclass(frozen=True)
+class MockDraftManifestHealth:
+    status: str
+    message: str
+    path: Path
+    session_count: int
+
+
 def mock_manifest_path(root: Path | None = None) -> Path:
     return runtime_paths(root).state_dir / MOCK_MANIFEST_FILE
 
@@ -55,6 +63,59 @@ def load_mock_draft_sessions(root: Path | None = None) -> list[MockDraftSession]
         return [default_mock_draft_session()]
     sessions = [_session_from_raw(row) for row in raw if isinstance(row, dict)]
     return sessions or [default_mock_draft_session()]
+
+
+def mock_draft_manifest_health(root: Path | None = None) -> MockDraftManifestHealth:
+    path = mock_manifest_path(root)
+    if not path.exists():
+        return MockDraftManifestHealth(
+            status="MISSING_MANIFEST_USING_DEFAULT",
+            message=(
+                "No saved mock manifest exists yet; using the default mock session. "
+                "This does not affect live Draft Cockpit state."
+            ),
+            path=path,
+            session_count=1,
+        )
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return MockDraftManifestHealth(
+            status="UNREADABLE_MANIFEST_USING_DEFAULT",
+            message=(
+                "Saved mock manifest is unreadable; using the default mock session. "
+                "Review the local manifest before deleting or restoring mock sessions."
+            ),
+            path=path,
+            session_count=1,
+        )
+    if not isinstance(raw, list):
+        return MockDraftManifestHealth(
+            status="INVALID_MANIFEST_USING_DEFAULT",
+            message=(
+                "Saved mock manifest is not a session list; using the default mock session. "
+                "Live Draft Cockpit state is separate and unchanged."
+            ),
+            path=path,
+            session_count=1,
+        )
+    sessions = [_session_from_raw(row) for row in raw if isinstance(row, dict)]
+    if not sessions:
+        return MockDraftManifestHealth(
+            status="EMPTY_MANIFEST_USING_DEFAULT",
+            message=(
+                "Saved mock manifest has no valid sessions; using the default mock session. "
+                "Mock runtime state remains local practice context only."
+            ),
+            path=path,
+            session_count=1,
+        )
+    return MockDraftManifestHealth(
+        status="OK",
+        message=f"Saved mock manifest loaded with {len(sessions)} session(s).",
+        path=path,
+        session_count=len(sessions),
+    )
 
 
 def save_mock_draft_sessions(
