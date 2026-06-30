@@ -707,6 +707,17 @@ def _render_nflverse_player_context(compare_frame: pd.DataFrame) -> None:
             hide_index=True,
         )
 
+    with st.expander("Schedule Context", expanded=False):
+        st.caption(
+            "Schedule context is factual and display-only. It does not create matchup advice, "
+            "recommendations, hidden sort, or projections."
+        )
+        st.dataframe(
+            pd.DataFrame(context.schedule_rows),
+            use_container_width=True,
+            hide_index=True,
+        )
+
     with st.expander("Dataset Freshness / Coverage Badges", expanded=False):
         st.dataframe(
             pd.DataFrame(context.dataset_badge_rows),

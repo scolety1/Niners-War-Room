@@ -23,8 +23,8 @@
   schema manifest for player-level NFLVerse context.
 - `NEED_IDENTITY_REVIEW` rows display only identity-review status, not detailed
   NFLVerse player context.
-- Schedule/opponent/bye context remains deferred because current/future safe
-  schedule rows are unavailable.
+- Schedule/opponent/bye context is display-only for safe rows and does not
+  create matchup advice, projection, hidden sort, trade value, or pick value.
 
 ## Notes
 

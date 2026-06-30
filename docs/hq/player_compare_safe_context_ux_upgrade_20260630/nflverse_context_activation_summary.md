@@ -23,7 +23,7 @@ It does not read raw shared nflverse cache files.
 - Safe display rows: `240`
 - Identity review rows: `54`
 - Identity proposal rows in the tracked proposal artifact: `54`
-- Safe current/future schedule rows for next game/opponent/bye: `0`
+- Safe current/future schedule rows for next game/opponent/bye: `240`
 
 The packet referenced 43 proposal rows, but the current tracked HQ artifact
 contains 54 proposal rows. Player Compare treats all proposal rows as
@@ -39,6 +39,7 @@ dense context in expanders:
 - Usage / Role Context
 - Availability Timeline
 - Roster-Window Context
+- Schedule Context
 - Dataset Freshness / Coverage Badges
 - Deferred / Manual Review Items
 
@@ -55,10 +56,14 @@ not expose NFLVerse detail fields.
 Missing values display as `Not enough information`. Missing data is not treated
 as zero, no-role, healthy, clean, safe, bad, or confirmed UDFA.
 
+## Current Schedule Context
+
+- Next game / opponent / bye context is displayed only for rows that pass the
+  same `SAFE_NOW_DISPLAY_ONLY`, `review_required=false`, and schema-manifest
+  guardrails as the rest of the NFLVerse context.
+
 ## Deferred
 
-- Next game / opponent / bye context remains unavailable because there are `0`
-  current/future safe schedule context rows in the tracked artifact.
 - Identity proposals remain manual-review-only and are not approved joins.
 - `ff_rankings` remains blocked by source policy and unused.
 

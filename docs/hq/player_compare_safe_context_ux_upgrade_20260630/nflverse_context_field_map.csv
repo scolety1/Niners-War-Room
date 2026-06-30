@@ -29,6 +29,6 @@ Roster-Window Context,Roster team,nflverse_team,rosters,SAFE_NOW_DISPLAY_ONLY ro
 Roster-Window Context,Roster position,nflverse_position,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual position context only
 Roster-Window Context,Roster status,roster_status,rosters,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Factual status only
 Roster-Window Context,Contract context,contract_context,contracts,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Non-financial only; no contract valuation
-Deferred / Manual Review Items,Next game context,next_game_context,schedules,No current/future safe rows,Not enough information,Deferred
-Deferred / Manual Review Items,Opponent context,opponent_context,schedules,No current/future safe rows,Not enough information,Deferred
-Deferred / Manual Review Items,Bye context,bye_context,schedules,No current/future safe rows,Not enough information,Deferred
+Schedule Context,Next game context,next_game_context,schedules,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only factual schedule context; no matchup recommendation
+Schedule Context,Opponent context,opponent_context,schedules,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only factual schedule context; no matchup recommendation
+Schedule Context,Bye context,bye_context,schedules,SAFE_NOW_DISPLAY_ONLY row and SAFE_NOW_DISPLAY_ONLY schema field,Not enough information,Display-only factual schedule context; no matchup recommendation

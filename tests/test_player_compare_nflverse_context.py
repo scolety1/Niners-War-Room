@@ -33,6 +33,9 @@ def test_safe_identity_rows_render_display_only_context(tmp_path: Path) -> None:
     assert safe_identity["NFLVerse/GSIS ID"] == "00-0000001"
     assert safe_identity["Sleeper ID"] == "safe-1"
     assert safe_identity["No recommendation"] == NO_RECOMMENDATION_CALCULATED
+    assert context.schedule_rows[0]["Next game context"] == "season=2026; week=1; date=2026-09-13"
+    assert context.schedule_rows[0]["Opponent context"] == "opponent=SEA; home_away=away"
+    assert context.schedule_rows[0]["Bye context"] == "week=10"
     assert review_identity["Context status"] == NEEDS_IDENTITY_REVIEW
     assert review_identity["NFLVerse/GSIS ID"] == NOT_ENOUGH_INFORMATION
     assert review_identity["Sleeper ID"] == NOT_ENOUGH_INFORMATION
@@ -55,6 +58,7 @@ def test_identity_review_rows_do_not_expose_detailed_context(tmp_path: Path) -> 
             context.usage_role_rows,
             context.availability_rows,
             context.roster_window_rows,
+            context.schedule_rows,
         )
         for row in table
         for value in row.values()
@@ -102,8 +106,11 @@ def test_tracked_artifact_counts_and_schedule_are_current_contract() -> None:
     assert context.artifact_rows == 294
     assert context.safe_display_rows == 240
     assert context.identity_review_rows == 54
-    assert context.schedule_available_rows == 0
-    assert any(row["Item"] == "Next game / opponent / bye context" for row in context.deferred_rows)
+    assert context.schedule_available_rows == 240
+    assert not any(
+        row["Item"] == "Next game / opponent / bye context"
+        for row in context.deferred_rows
+    )
 
 
 def test_player_compare_page_uses_tracked_artifact_only() -> None:
@@ -112,6 +119,7 @@ def test_player_compare_page_uses_tracked_artifact_only() -> None:
     assert "build_player_compare_nflverse_context" in page
     assert "NFLVerse Player Context" in page
     assert "Dataset Freshness / Coverage Badges" in page
+    assert "Schedule Context" in page
     assert "C:\\NWR_SHARED_DATA" not in page
     assert "NWR_SHARED_DATA" not in page
     assert "current_pick_value" not in page
@@ -159,6 +167,9 @@ def _safe_row() -> dict[str, str]:
             "injury_report_status": "Questionable",
             "injury_report_date_week": "season=2025; week=9",
             "practice_status": "Limited Participation in Practice",
+            "next_game_context": "season=2026; week=1; date=2026-09-13",
+            "opponent_context": "opponent=SEA; home_away=away",
+            "bye_context": "week=10",
             "depth_chart_position": "WR",
             "depth_chart_rank": "1",
             "depth_chart_role": "formation=Offense; depth_team=1; pos_group=WR",

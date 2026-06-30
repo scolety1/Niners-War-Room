@@ -91,7 +91,11 @@ ROSTER_WINDOW_CONTEXT_FIELDS = (
     ("Roster status", "roster_status"),
     ("Contract context", "contract_context"),
 )
-SCHEDULE_CONTEXT_FIELDS = ("next_game_context", "opponent_context", "bye_context")
+SCHEDULE_CONTEXT_FIELDS = (
+    ("Next game context", "next_game_context"),
+    ("Opponent context", "opponent_context"),
+    ("Bye context", "bye_context"),
+)
 
 FIELD_GROUPS = {
     "Identity / Join Transparency": IDENTITY_CONTEXT_FIELDS,
@@ -99,6 +103,7 @@ FIELD_GROUPS = {
     "Usage / Role Context": USAGE_ROLE_CONTEXT_FIELDS,
     "Availability Timeline": AVAILABILITY_CONTEXT_FIELDS,
     "Roster-Window Context": ROSTER_WINDOW_CONTEXT_FIELDS,
+    "Schedule Context": SCHEDULE_CONTEXT_FIELDS,
 }
 
 
@@ -116,6 +121,7 @@ class PlayerCompareNflverseContext:
     usage_role_rows: tuple[dict[str, str], ...]
     availability_rows: tuple[dict[str, str], ...]
     roster_window_rows: tuple[dict[str, str], ...]
+    schedule_rows: tuple[dict[str, str], ...]
     dataset_badge_rows: tuple[dict[str, str], ...]
     deferred_rows: tuple[dict[str, str], ...]
     caveat: str
@@ -298,6 +304,10 @@ def build_player_compare_nflverse_context(
             _field_group_context_row(view, safe_fields, ROSTER_WINDOW_CONTEXT_FIELDS)
             for view in selected
         ),
+        schedule_rows=tuple(
+            _field_group_context_row(view, safe_fields, SCHEDULE_CONTEXT_FIELDS)
+            for view in selected
+        ),
         dataset_badge_rows=tuple(_dataset_badge_rows(schema_rows)),
         deferred_rows=tuple(_nflverse_deferred_rows(schedule_available_rows)),
         caveat=(
@@ -444,28 +454,35 @@ def _dataset_badge_rows(schema_rows: list[dict[str, str]]) -> list[dict[str, str
 
 
 def _nflverse_deferred_rows(schedule_available_rows: int) -> list[dict[str, str]]:
-    return [
-        {
-            "Item": "Next game / opponent / bye context",
-            "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": (
-                f"Tracked artifact has {schedule_available_rows} safe current/future "
-                "schedule context row(s); schedule context remains unavailable."
-            ),
-        },
-        {
-            "Item": "Identity proposal rows",
-            "Status": MANUAL_REVIEW_ONLY,
-            "Reason": (
-                "Identity proposals are not approved joins and are not shown as player context."
-            ),
-        },
-        {
-            "Item": "ff_rankings",
-            "Status": MANUAL_REVIEW_ONLY,
-            "Reason": "Blocked by source policy for Player Compare display.",
-        },
-    ]
+    rows: list[dict[str, str]] = []
+    if schedule_available_rows == 0:
+        rows.append(
+            {
+                "Item": "Next game / opponent / bye context",
+                "Status": NOT_ENOUGH_INFORMATION,
+                "Reason": (
+                    "Tracked artifact has 0 safe current/future schedule context rows; "
+                    "schedule context remains unavailable."
+                ),
+            }
+        )
+    rows.extend(
+        [
+            {
+                "Item": "Identity proposal rows",
+                "Status": MANUAL_REVIEW_ONLY,
+                "Reason": (
+                    "Identity proposals are not approved joins and are not shown as player context."
+                ),
+            },
+            {
+                "Item": "ff_rankings",
+                "Status": MANUAL_REVIEW_ONLY,
+                "Reason": "Blocked by source policy for Player Compare display.",
+            },
+        ]
+    )
+    return rows
 
 
 def _safe_nflverse_schema_fields(schema_rows: list[dict[str, str]]) -> set[str]:
@@ -550,7 +567,7 @@ def _schedule_available_rows(
         if _is_safe_nflverse_row(row)
         and any(
             _safe_context_value(row, field, safe_fields) != NOT_ENOUGH_INFORMATION
-            for field in SCHEDULE_CONTEXT_FIELDS
+            for _label, field in SCHEDULE_CONTEXT_FIELDS
         )
     )
 

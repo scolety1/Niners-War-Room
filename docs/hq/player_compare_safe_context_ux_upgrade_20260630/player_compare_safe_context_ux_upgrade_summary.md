@@ -22,7 +22,8 @@
 - Activated a display-only `NFLVerse Player Context` tab backed only by the
   tracked player context display artifact and schema manifest.
 - Added identity/join transparency, recent activity, usage/role, availability,
-  roster-window, dataset freshness, and deferred/manual review expanders.
+  roster-window, schedule, dataset freshness, and deferred/manual review
+  expanders.
 - Suppressed detailed NFLVerse context for `NEED_IDENTITY_REVIEW` rows.
 
 ## Implemented NFLVerse Context Display Pass
@@ -38,10 +39,14 @@
   rows.
 - Keeps missing values as `Not enough information`.
 
+## Current Schedule Context
+
+- Next game / opponent / bye context is display-only for rows that pass
+  `identity_join_status=SAFE_NOW_DISPLAY_ONLY`, `review_required=false`, and
+  the `SAFE_NOW_DISPLAY_ONLY` schema manifest.
+
 ## Deferred
 
-- Next game / opponent / bye context remains unavailable because the tracked
-  artifact has `0` current/future safe schedule rows.
 - Identity proposal rows remain manual-review-only and are not approved joins.
 - `ff_rankings` remains blocked by source policy and unused.
 

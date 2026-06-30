@@ -49,10 +49,15 @@ This pass does not add or change:
 - model/rank/source-truth gates
 - Live Draft / Mock Draft behavior
 
+## Schedule Context
+
+- Next game / opponent / bye context is display-only for safe rows only.
+- The same identity, schema, model, source-truth, rank, hidden-sort, trade
+  value, and pick value guards apply to schedule fields.
+- Missing schedule context remains `Not enough information`.
+
 ## Deferred
 
-- Next game / opponent / bye context remains unavailable because the tracked
-  artifact has `0` current/future safe schedule rows.
 - `ff_rankings` remains blocked by source policy.
 - Identity proposal rows remain manual review only.
 
