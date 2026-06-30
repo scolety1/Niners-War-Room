@@ -2729,6 +2729,21 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "market_baseline_label": "Market Baseline Label",
 }
 
+RANKINGS_IDENTITY_COLUMN_CONFIG = {
+    "Dynasty Rank": {
+        "label": "Rank",
+        "width": 72,
+        "pinned": True,
+        "help": "Dynasty Rank",
+    },
+    "Player": {
+        "label": "Player",
+        "width": 210,
+        "pinned": True,
+        "help": "Player name",
+    },
+}
+
 
 def manual_review_frame(frame: pd.DataFrame) -> pd.DataFrame:
     if "needs_manual_review" not in frame.columns:

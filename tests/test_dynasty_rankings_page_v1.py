@@ -7,6 +7,7 @@ import pandas as pd
 
 from src.services.draft_day_app_v1_service import (
     FULL_DYNASTY_VIEW,
+    RANKINGS_IDENTITY_COLUMN_CONFIG,
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
     market_baseline_age_coverage,
@@ -44,8 +45,26 @@ def test_rankings_full_view_sort_options_do_not_foreground_draft_board_rank() ->
 
     assert 'if view_mode == FULL_DYNASTY_VIEW:' in text
     assert 'return ["Dynasty Rank", "Position Rank", "Age", "Player"]' in text
+    assert 'sort_default = _default_sort_label(view_mode)' in text
+    assert 'index=sort_options.index(sort_default)' in text
     assert '"Candidate Rank (Review-Only)"' in text
     assert 'if sort_by == "Position Rank" and view_mode != FULL_DYNASTY_VIEW:' in text
+
+
+def test_rankings_identity_columns_are_pinned_and_sized() -> None:
+    text = _page_text()
+    rank_config = RANKINGS_IDENTITY_COLUMN_CONFIG["Dynasty Rank"]
+    player_config = RANKINGS_IDENTITY_COLUMN_CONFIG["Player"]
+
+    assert "_rankings_identity_column_config()" in text
+    assert "column_config=_rankings_identity_column_config()" in text
+    assert rank_config["pinned"] is True
+    assert player_config["pinned"] is True
+    assert 60 <= int(rank_config["width"]) <= 80
+    assert 180 <= int(player_config["width"]) <= 220
+    assert rank_config["label"] == "Rank"
+    assert rank_config["help"] == "Dynasty Rank"
+    assert player_config["label"] == "Player"
 
 
 def test_rankings_full_view_source_filter_keeps_frozen_board_optional() -> None:
