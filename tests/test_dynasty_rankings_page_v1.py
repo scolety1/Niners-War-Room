@@ -5,11 +5,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.config.constants import APP_NAME
 from src.services.draft_day_app_v1_service import (
     FULL_DYNASTY_VIEW,
     RANKINGS_IDENTITY_COLUMN_CONFIG,
     RANKINGS_TABLE_COLUMN_CONFIG,
     display_unified_player_board_frame,
+    enrich_statistic_analysis_display_context,
     enrich_unified_player_board_with_market_baseline,
     market_baseline_age_coverage,
     sort_rankings_frame_by_column,
@@ -18,7 +20,7 @@ from src.services.market_baseline_registry import PAGE_USAGE
 
 PAGE = Path("app/pages/20_final_board_v1.py")
 SCORE_FEASIBILITY = Path(
-    "docs/hq/rankings_draft_cockpit_ux_fix_20260630/SCORE_BREAKDOWN_FEASIBILITY.md"
+    "docs/hq/rankings/statistic_analysis_v0_20260630/statistic_analysis_design.md"
 )
 
 
@@ -100,10 +102,12 @@ def test_rankings_full_view_source_filter_keeps_frozen_board_optional() -> None:
 def test_market_baseline_is_visible_by_preset_and_display_only() -> None:
     text = _page_text()
 
-    assert '"Market Analyzer"' in text
+    assert '"Market Context"' in text
     assert "_show_market_for_preset" in text
-    assert "VIEW_PRESET_CLEAN_BOARD" in text
-    assert "Market Baseline columns are display-only DynastyProcess context" in text
+    assert "VIEW_PRESET_DYNASTY_REVIEW" in text
+    assert "VIEW_PRESET_MARKET_CONTEXT" in text
+    assert "Full dynasty board with DynastyProcess market sanity columns visible" in text
+    assert "external market context only" in text
     assert "market_sanity_filter" in text
     assert "market_match_filter" in text
     assert "display_unified_player_board_frame(" in text
@@ -220,7 +224,7 @@ def test_market_baseline_registry_allows_rankings_display_only_usage_only() -> N
     usage = PAGE_USAGE["dynasty_rankings"]
 
     assert usage.enabled is True
-    assert usage.default_visible is True
+    assert usage.default_visible is False
     assert usage.sort_allowed is False
     assert usage.model_input_allowed is False
     assert "dp_market_rank_1qb" in usage.fields_allowed
@@ -231,14 +235,19 @@ def test_rankings_presets_and_advanced_filters_clean_top_controls() -> None:
     text = _page_text()
 
     for preset in (
-        "Clean Board",
-        "Market Analyzer",
-        "Outcome Lens",
+        "Dynasty Review",
+        "Market Context",
+        "Outcome Context",
         "Data Review",
-        "NWR Score Audit",
-        "Compact Draft View",
+        "Statistic Analysis",
+        "Draft Rankings",
     ):
         assert preset in text
+    assert "Player Compare Prep" not in text
+    assert "Roster Triage" not in text
+    assert "Market Analyzer" not in text
+    assert "Outcome Lens" not in text
+    assert "Compact Draft View" not in text
     assert '"Advanced filters"' in text
     assert '"Value band / review band"' in text
     assert '"Review needed"' in text
@@ -254,7 +263,24 @@ def test_compact_draft_view_stays_full_dynasty_sorted_by_dynasty_rank() -> None:
 
     assert "Fast-scan full dynasty board" in text
     assert "Dynasty Rank remains the default sort" in text
-    assert "if preset == VIEW_PRESET_COMPACT_DRAFT:" not in text
+    assert "if preset == VIEW_PRESET_DRAFT_RANKINGS:" not in text
+
+
+def test_rankings_default_preset_is_dynasty_review_clean_board() -> None:
+    text = _page_text()
+
+    assert 'VIEW_PRESET_DYNASTY_REVIEW = "Dynasty Review"' in text
+    assert (
+        'st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)'
+        in text
+    )
+    assert "preset = VIEW_PRESET_DYNASTY_REVIEW" in text
+    assert "injury-review detail columns stay hidden by default" in text
+    assert "VIEW_PRESET_DYNASTY_REVIEW," in text
+
+
+def test_rankings_browser_title_uses_niners_war_room_not_drop_deadline() -> None:
+    assert APP_NAME == "Niners War Room"
 
 
 def test_rankings_advanced_filter_values_normalize_missing_and_mixed_types() -> None:
@@ -373,14 +399,49 @@ def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
     assert "Older legacy page text referenced horizon-style placeholder labels" in audit
 
 
-def test_score_audit_preset_is_placeholder_without_invented_components() -> None:
+def test_statistic_analysis_preset_is_read_only_without_invented_components() -> None:
     text = _page_text()
     doc = SCORE_FEASIBILITY.read_text(encoding="utf-8")
 
-    assert "NWR Score Audit" in text
-    assert "_render_score_audit_status()" in text
-    assert "component weights or contribution rows" in text
+    assert "Statistic Analysis" in text
+    assert "_render_statistic_analysis_status()" in text
+    assert "component weights or per-component" in text
+    assert "show_statistic_analysis=show_statistic_analysis" in text
+    assert "show_market_baseline = False" in Path(
+        "src/services/draft_day_app_v1_service.py"
+    ).read_text(encoding="utf-8")
     assert "Status: DEFER" in doc
     assert "Future candidate status: MODEL_FEATURE_CANDIDATE" in doc
     assert "does not expose approved component-level score rows" in doc
     assert "does not calculate or display invented score breakdown math" in doc
+
+
+def test_statistic_analysis_missing_components_are_not_zero_or_false() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "nwr_rank": "1",
+                "player_name": "Puka Nacua",
+                "position": "WR",
+                "nfl_team": "LAR",
+                "age": "25.0",
+                "nwr_dynasty_score": "99",
+                "nwr_position_rank": "WR1",
+            }
+        ]
+    )
+
+    enriched = enrich_statistic_analysis_display_context(frame)
+    display = display_unified_player_board_frame(
+        enriched,
+        view_mode=FULL_DYNASTY_VIEW,
+        show_market_baseline=True,
+        show_statistic_analysis=True,
+    )
+
+    assert "Contribution %" in display.columns
+    assert display.loc[0, "Contribution %"] == "Not enough information"
+    assert display.loc[0, "Missing Component Count"] == "Not enough information"
+    assert display.loc[0, "Capped Component Count"] == "Not enough information"
+    assert "Market Flag" not in display.columns
+    assert "Outcome" not in display.columns

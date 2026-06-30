@@ -1,0 +1,26 @@
+column_name,source_component,shown_in_main_table_yes_no,tooltip,approved_model_input_yes_no,display_only_yes_no,review_only_yes_no,blocked_for_model_yes_no,missing_behavior,implementation_status,notes
+Dynasty Rank,NWR Dynasty Rank,yes,Dynasty Rank,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Read from approved rankings artifact and not mutated
+Player,Identity,yes,Player name,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Identity display
+Pos,Identity,yes,Player position,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Position display
+NFL Team,Identity,yes,Current NFL team when available,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Label remains NFL Team
+Age,Approved display age,yes,Approved display age when available. Missing age is not treated as zero,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Market fallback remains separately labeled when used outside Statistic Analysis
+NWR Dynasty Score,NWR Dynasty Score,yes,Approved NWR Dynasty Score from the current rankings output. Missing scores sort last and never as zero,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Displayed only with no recalculation
+Position Rank,Derived display rank,yes,Position rank derived from approved NWR rank for display only,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Derived in memory from approved Dynasty Rank
+Score Status,Score metadata,yes,Read-only score explanation view. Does not change Dynasty Rank or tiers or model source approvals,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Source metadata
+Score Type,Score metadata,yes,Approved score metadata from the current rankings artifact,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Source metadata
+Score Date,Score metadata,yes,Score as-of context from the approved rankings artifact,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Source metadata
+Base NWR Score,Score metadata,yes,Current displayed score component if available. Missing means not enough information and not zero or bad,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Not a component receipt
+Confidence Cap,Score metadata,yes,Approved confidence cap metadata. Missing is not enough information,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Metadata only
+Confidence Status,Score metadata,yes,Approved confidence status metadata for audit only,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Metadata only
+Allowed Use,Use metadata,yes,Approved-use metadata from the current rankings artifact,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Source gate metadata
+Blocked Use,Use metadata,yes,Blocked-use metadata. This preset does not bypass source gates,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Source gate metadata
+Evidence Fields,Evidence metadata,yes,Approved evidence-field names when available. This is context and not a new formula decomposition,yes,no,no,no,Not enough information,SAFE_APP_PATCH,Field names only
+Missing Component Count,Component decomposition,yes,Shown only when safely supported by current scoring artifacts. Missing means not enough information and not zero or bad,no,no,yes,yes,Not enough information,DEFER,No approved component receipt artifact exists
+Capped Component Count,Component decomposition,yes,Shown only when safely supported by current scoring artifacts. Missing means not enough information and not false or clean,no,no,yes,yes,Not enough information,DEFER,No approved component receipt artifact exists
+Contribution %,Component decomposition,yes,Shown only when safely decomposable from current scoring artifacts. Does not imply independent player value,no,no,yes,yes,Not enough information,DEFER,No approved contribution artifact exists
+Trust,Data trust,yes,Data trust status label,yes,no,no,no,Not enough information,SAFE_DISPLAY_CONTEXT,Existing trust/status display
+Review Needed,Manual review,yes,Manual-review flag from approved display context,yes,no,yes,no,Not enough information,SAFE_APP_PATCH,Review flag only
+Caveat,Main caveat,yes,Main review caveat. Missing caveat text is not clean evidence,yes,no,yes,no,Not enough information,SAFE_DISPLAY_CONTEXT,Existing caveat display
+Market Flag,Market Baseline,no,External market context only. Not rank logic or model input or trade value or replacement for Dynasty Rank,no,yes,no,yes,Not enough information,SAFE_DISPLAY_CONTEXT,Hidden in Dynasty Review and Statistic Analysis and visible in Market Context
+Outcome,Outcome context,no,Display-only review-only outcome context. Missing data means not enough information and not low probability,no,yes,yes,yes,Not enough information,SAFE_DISPLAY_CONTEXT,Hidden in Dynasty Review and Statistic Analysis and visible in Outcome Context
+Injury Context,Injury context,no,Review-only availability context. Not a medical projection and not a current-health judgment,no,yes,yes,yes,Not enough information,SAFE_DISPLAY_CONTEXT,Hidden in Dynasty Review and Statistic Analysis and visible in Outcome Context

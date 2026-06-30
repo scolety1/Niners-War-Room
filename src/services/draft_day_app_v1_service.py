@@ -253,6 +253,30 @@ MARKET_BASELINE_DISPLAY_COLUMNS = (
     "age_source_display",
     "market_baseline_label",
 )
+STATISTIC_ANALYSIS_DISPLAY_COLUMNS = (
+    "nwr_rank",
+    "player_name",
+    "position",
+    "nfl_team",
+    "age",
+    "nwr_dynasty_score",
+    "nwr_position_rank",
+    "score_status",
+    "score_type",
+    "score_as_of_date",
+    "base_nwr_dynasty_score",
+    "confidence_cap",
+    "confidence_status",
+    "allowed_use",
+    "blocked_use",
+    "candidate_evidence_fields_used",
+    "missing_score_component_count_display",
+    "capped_score_component_count_display",
+    "score_contribution_percent_display",
+    "trust_status",
+    "manual_review_flag",
+    "candidate_key_caveat",
+)
 ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS = (
     "cross_asset_candidate_rank",
     "final_board_rank",
@@ -2200,8 +2224,15 @@ def display_unified_player_board_frame(
     selected_positions: Iterable[object] | None = None,
     show_market_baseline: bool = False,
     include_injury_context: bool = False,
+    show_statistic_analysis: bool = False,
 ) -> pd.DataFrame:
-    if view_mode == FULL_DYNASTY_VIEW:
+    working_frame = enrich_statistic_analysis_display_context(frame)
+    if show_statistic_analysis:
+        display_columns = STATISTIC_ANALYSIS_DISPLAY_COLUMNS
+        outcome_mode = OUTCOME_DISPLAY_MODE_HIDE
+        show_market_baseline = False
+        include_injury_context = False
+    elif view_mode == FULL_DYNASTY_VIEW:
         display_columns = FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS
     elif view_mode == ROOKIES_DRAFT_BOARD_VIEW:
         display_columns = ROOKIES_DRAFT_BOARD_DISPLAY_COLUMNS
@@ -2213,7 +2244,10 @@ def display_unified_player_board_frame(
         display_columns,
         include_injury_context=include_injury_context,
     )
-    selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
+    selected_positions = selected_positions or working_frame.get(
+        "position",
+        pd.Series(dtype=str),
+    )
     outcome_targets = set(
         outcome_columns_for_display(
             outcome_mode=outcome_mode,
@@ -2234,8 +2268,8 @@ def display_unified_player_board_frame(
             for column in display_columns
             if column not in outcome_display_targets() or column in outcome_targets
         )
-    available = [column for column in display_columns if column in frame.columns]
-    display = apply_position_aware_outcome_values(frame).loc[:, available].copy()
+    available = [column for column in display_columns if column in working_frame.columns]
+    display = apply_position_aware_outcome_values(working_frame).loc[:, available].copy()
     if "warning_flags" in display.columns:
         display["warning_flags"] = display["warning_flags"].map(warning_summary)
     if "age" in display.columns:
@@ -2250,6 +2284,20 @@ def display_unified_player_board_frame(
         if column not in NUMERIC_RANKINGS_DISPLAY_COLUMNS:
             display[column] = display[column].fillna("").astype(str)
     return display.rename(columns=UNIFIED_PLAYER_BOARD_DISPLAY_LABELS)
+
+
+def enrich_statistic_analysis_display_context(frame: pd.DataFrame) -> pd.DataFrame:
+    """Add read-only score-analysis placeholders without deriving new player value."""
+
+    enriched = frame.copy()
+    for column in (
+        "missing_score_component_count_display",
+        "capped_score_component_count_display",
+        "score_contribution_percent_display",
+    ):
+        if column not in enriched.columns:
+            enriched[column] = OUTCOME_NOT_ENOUGH_INFORMATION
+    return enriched
 
 
 def _display_columns_with_market_baseline(display_columns: tuple[str, ...]) -> tuple[str, ...]:
@@ -2306,12 +2354,26 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "dp_age",
     "market_gap",
     "age_source_display",
+    "score_status",
+    "score_type",
+    "score_as_of_date",
+    "base_nwr_dynasty_score",
+    "confidence_cap",
+    "confidence_status",
+    "allowed_use",
+    "blocked_use",
+    "candidate_evidence_fields_used",
+    "missing_score_component_count_display",
+    "capped_score_component_count_display",
+    "score_contribution_percent_display",
+    "manual_review_flag",
     *OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS,
 )
 
 NUMERIC_RANKINGS_DISPLAY_COLUMNS = (
     "nwr_rank",
     "nwr_dynasty_score",
+    "base_nwr_dynasty_score",
 )
 
 
@@ -2797,6 +2859,19 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "market_sanity_label": "Market Flag",
     "age_source_display": "Age Src",
     "market_baseline_label": "Market Label",
+    "score_status": "Score Status",
+    "score_type": "Score Type",
+    "score_as_of_date": "Score Date",
+    "base_nwr_dynasty_score": "Base NWR Score",
+    "confidence_cap": "Confidence Cap",
+    "confidence_status": "Confidence Status",
+    "allowed_use": "Allowed Use",
+    "blocked_use": "Blocked Use",
+    "candidate_evidence_fields_used": "Evidence Fields",
+    "missing_score_component_count_display": "Missing Component Count",
+    "capped_score_component_count_display": "Capped Component Count",
+    "score_contribution_percent_display": "Contribution %",
+    "manual_review_flag": "Review Needed",
 }
 
 RANKINGS_IDENTITY_COLUMN_CONFIG = {
@@ -2817,7 +2892,11 @@ RANKINGS_IDENTITY_COLUMN_CONFIG = {
 RANKINGS_TABLE_COLUMN_CONFIG = {
     **RANKINGS_IDENTITY_COLUMN_CONFIG,
     "Pos": {"label": "Pos", "width": 52, "help": "Player position."},
-    "NFL Team": {"label": "Team", "width": 64, "help": "Current NFL team when available."},
+    "NFL Team": {
+        "label": "NFL Team",
+        "width": 82,
+        "help": "Current NFL team when available.",
+    },
     "Age": {
         "label": "Age",
         "width": 58,
@@ -2910,6 +2989,91 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
         "label": "Pick Value",
         "width": 90,
         "help": "Display-only pick context; not trade or pick valuation.",
+    },
+    "Score Status": {
+        "label": "Score Status",
+        "width": 112,
+        "help": (
+            "Read-only score explanation view. Does not change Dynasty Rank, tiers, "
+            "or model/source approvals."
+        ),
+    },
+    "Score Type": {
+        "label": "Score Type",
+        "width": 118,
+        "help": "Approved score metadata from the current rankings artifact.",
+    },
+    "Score Date": {
+        "label": "Score Date",
+        "width": 104,
+        "help": "Score as-of context from the approved rankings artifact.",
+    },
+    "Base NWR Score": {
+        "label": "Base NWR",
+        "width": 98,
+        "type": "number",
+        "format": "%.4f",
+        "help": (
+            "Current displayed score component if available. Missing means not enough "
+            "information, not zero or bad."
+        ),
+    },
+    "Confidence Cap": {
+        "label": "Conf Cap",
+        "width": 82,
+        "help": "Approved confidence cap metadata. Missing is not enough information.",
+    },
+    "Confidence Status": {
+        "label": "Conf Status",
+        "width": 118,
+        "help": "Approved confidence status metadata for audit only.",
+    },
+    "Allowed Use": {
+        "label": "Allowed Use",
+        "width": 160,
+        "help": "Approved-use metadata from the current rankings artifact.",
+    },
+    "Blocked Use": {
+        "label": "Blocked Use",
+        "width": 180,
+        "help": "Blocked-use metadata. This preset does not bypass source gates.",
+    },
+    "Evidence Fields": {
+        "label": "Evidence Fields",
+        "width": 220,
+        "help": (
+            "Approved evidence-field names when available. This is context, not a "
+            "new formula decomposition."
+        ),
+    },
+    "Missing Component Count": {
+        "label": "Missing Cmp",
+        "width": 104,
+        "help": (
+            "Shown only when safely supported by current scoring artifacts. Missing means "
+            "not enough information, not zero or bad."
+        ),
+    },
+    "Capped Component Count": {
+        "label": "Capped Cmp",
+        "width": 104,
+        "help": (
+            "Shown only when safely supported by current scoring artifacts. Missing means "
+            "not enough information, not false or clean."
+        ),
+    },
+    "Contribution %": {
+        "label": "Contribution %",
+        "width": 116,
+        "help": (
+            "Shown only when safely decomposable from current scoring artifacts. Does not "
+            "imply independent player value."
+        ),
+    },
+    "Review Needed": {
+        "label": "Review",
+        "width": 86,
+        "help": "Manual-review flag from approved display context.",
     },
 }
 
