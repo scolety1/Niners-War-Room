@@ -406,7 +406,15 @@ APPROVED_OUTCOME_V2_DISPLAY_FIELDS = (
     ("TE T6 Within 5Y", "outcome_v2_te_t6_within_5y_display_only", "TE T6 Within 5Y", "TE"),
     ("TE T12 Within 5Y", "outcome_v2_te_t12_within_5y_display_only", "TE T12 Within 5Y", "TE"),
 )
-BLOCKED_OUTCOME_V2_FIELDS = ("RB_T6_WITHIN_5Y", "RB_T12_WITHIN_5Y")
+BLOCKED_OUTCOME_V2_FIELDS = ("RB_T6_WITHIN_5Y",)
+REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS = ("RB_T12_WITHIN_5Y",)
+OUTCOME_V2_UNAVAILABLE_FIELD_STATUS_LINES = (
+    "RB_T6_WITHIN_5Y = Not enough information; weak calibration.",
+    (
+        "RB_T12_WITHIN_5Y = Not enough information; 2000-2024 historical gate "
+        "is review-only and not current-player activated."
+    ),
+)
 OUTCOME_DISPLAY_FIELD_POSITIONS = {
     target: label.split(" ", maxsplit=1)[0]
     for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS

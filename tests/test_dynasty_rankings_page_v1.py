@@ -6,9 +6,12 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.draft_day_app_v1_service import (
+    APPROVED_OUTCOME_V2_DISPLAY_FIELDS,
+    BLOCKED_OUTCOME_V2_FIELDS,
     FULL_DYNASTY_VIEW,
     RANKINGS_IDENTITY_COLUMN_CONFIG,
     RANKINGS_TABLE_COLUMN_CONFIG,
+    REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS,
     display_unified_player_board_frame,
     enrich_unified_player_board_with_market_baseline,
     market_baseline_age_coverage,
@@ -361,16 +364,36 @@ def test_outcome_lens_documents_v2_display_only_and_blocked_fields() -> None:
     audit = Path("docs/hq/app_ux/NWR_DYNASTY_RANKINGS_OUTCOME_COLUMN_AUDIT_20260627.md").read_text(
         encoding="utf-8"
     )
+    safe_upgrade = Path(
+        "docs/hq/app_ux/NWR_RANKINGS_OUTCOME_LENS_SAFE_UPGRADE_20260630.md"
+    ).read_text(encoding="utf-8")
 
     assert "Outcome V2 is display-only" in text
     assert "This Year = 2026 NFL season" in text
+    assert "Historical 2000-2024 Outcome V2 validation evidence is review-only" in text
     assert "sack_fumbles_lost missing" in text
     assert "games field missing" in text
-    assert "Outcome V1 / Legacy and blocked V2 fields" in text
+    assert "Outcome V1 / Legacy and unavailable V2 fields" in text
     assert "BLOCKED_OUTCOME_V2_FIELDS" in text
+    assert "REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS" in text
     assert "T12 this year" in audit
     assert "Blocked until an approved artifact exists" in audit
     assert "Older legacy page text referenced horizon-style placeholder labels" in audit
+    assert "RB_T6_WITHIN_5Y" in BLOCKED_OUTCOME_V2_FIELDS
+    assert "RB_T12_WITHIN_5Y" in REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS
+    assert "current-player activated" in safe_upgrade
+
+
+def test_outcome_lens_does_not_activate_review_only_historical_fields() -> None:
+    active_sources = {
+        source
+        for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
+    }
+
+    assert "RB T6 Within 5Y" not in active_sources
+    assert "RB T12 Within 5Y" not in active_sources
+    assert BLOCKED_OUTCOME_V2_FIELDS == ("RB_T6_WITHIN_5Y",)
+    assert REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS == ("RB_T12_WITHIN_5Y",)
 
 
 def test_score_audit_preset_is_placeholder_without_invented_components() -> None:

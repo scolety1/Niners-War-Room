@@ -22,7 +22,9 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_ENOUGH_INFORMATION,
     OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
     OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
+    OUTCOME_V2_UNAVAILABLE_FIELD_STATUS_LINES,
     RANKINGS_TABLE_COLUMN_CONFIG,
+    REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
@@ -602,6 +604,10 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
         "Missing data is Not enough information, not low probability."
     )
     st.caption(
+        "Historical 2000-2024 Outcome V2 validation evidence is review-only. It does "
+        "not activate new current-player probabilities or app-facing fields."
+    )
+    st.caption(
         "Scoring caveat: partial exact first-down scoring; sack_fumbles_lost missing. "
         "Availability caveat: games field missing; no row is Not enough information, "
         "not clean health."
@@ -627,21 +633,25 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
         f"{counts['limited_recent_sample']} rows with limited recent sample caveats."
     )
     st.caption(
-        "Blocked V2 fields: "
-        f"{', '.join(BLOCKED_OUTCOME_V2_FIELDS)} = Not enough information; "
-        "weak calibration, no probability shown."
+        "Unavailable V2 fields: "
+        + " ".join(OUTCOME_V2_UNAVAILABLE_FIELD_STATUS_LINES)
     )
     st.caption(f"Outcome V2 artifact: {OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH}")
-    with st.expander("Outcome V1 / Legacy and blocked V2 fields", expanded=False):
+    with st.expander("Outcome V1 / Legacy and unavailable V2 fields", expanded=False):
         st.write(
             {
                 "Outcome V1 / Legacy": (
                     "QB T12, RB T12, RB T24, WR T12, WR T24, WR T36, TE T12 "
                     "remain available as legacy display-only context."
                 ),
-                "Outcome V2 blocked fields": (
+                "Outcome V2 weak-calibration blocked fields": (
                     ", ".join(BLOCKED_OUTCOME_V2_FIELDS)
                     + " = Not enough information; weak calibration."
+                ),
+                "Outcome V2 historical-review-only inactive fields": (
+                    ", ".join(REVIEW_ONLY_INACTIVE_OUTCOME_V2_FIELDS)
+                    + " = Not enough information in the current-player app artifact; "
+                    "historical review-only evidence is not current-player activation."
                 ),
                 "Outcome V2 artifact status": "GREEN" if artifact.loaded else "YELLOW-HOLD",
                 "Outcome V2 artifact rows": artifact.row_count,

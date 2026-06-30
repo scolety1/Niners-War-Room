@@ -60,14 +60,28 @@ Outcome V2 status/caveat columns shown in the Outcome Lens:
 - `Outcome V2 Availability Caveat`
 - `Outcome V2 Caveat`
 
-## 4. Fields Blocked
+Historical 2000-2024 validation evidence is not displayed as a new current-player
+probability column unless a separate current-player artifact/gate explicitly
+approves it.
 
-Blocked weak-calibration fields are not emitted as probability columns:
+## 4. Fields Unavailable In Current-Player App Display
+
+Weak-calibration blocked fields are not emitted as probability columns:
 
 - `RB_T6_WITHIN_5Y`
+
+Historical-review-only inactive fields are also not emitted as current-player
+probability columns:
+
 - `RB_T12_WITHIN_5Y`
 
-The Outcome Lens callout lists those fields as blocked / `Not enough information`.
+The 2000-2024 historical gate moved `RB_T12_WITHIN_5Y` to
+`APPROVE_REVIEW_ONLY`, but that approval is historical review evidence only. It
+does not activate a current-player display artifact field, Rankings integration,
+model input, source truth, hidden sort, or any app-facing probability.
+
+The Outcome Lens callout lists unavailable fields as `Not enough information`
+with the correct reason.
 
 ## 5. Missing-Data Behavior
 
@@ -159,6 +173,8 @@ Outcome V1 remains available as legacy display context in the same Outcome Lens 
 - Confirm the scoring and availability caveats are visible.
 - Confirm missing data says `Not enough information`.
 - Confirm rookies/prospects are marked out of scope or not enough information.
-- Confirm RB T6/RB T12 Within 5Y are not shown as probability columns.
+- Confirm RB T6 Within 5Y is not shown as a probability column.
+- Confirm RB T12 Within 5Y is not shown as a current-player probability column
+  unless a future current-player artifact/gate explicitly approves it.
 - Confirm Clean Board hides Outcome columns.
 - Confirm default full-board sort remains Dynasty Rank.
