@@ -66,15 +66,21 @@ def test_identity_review_row_does_not_expose_nflverse_details() -> None:
     assert "Roster status" not in rows
 
 
-def test_schedule_context_remains_unavailable() -> None:
+def test_schedule_context_uses_safe_display_gate() -> None:
     result = draft_day_player_context_for_player("9493")
 
     schedule = next(section for section in result.sections if section.title == "Schedule Context")
     rows = dict(schedule.rows)
-    assert rows["Next game"] == "Not enough information"
-    assert rows["Opponent"] == "Not enough information"
-    assert rows["Bye"] == "Not enough information"
-    assert rows["Reason"] == "Schedule context is gated for a separate draft-day display review."
+    assert rows["Next game"] == "season=2026; week=1; date=2026-09-10; game_id=2026_01_SF_LA"
+    assert rows["Opponent"] == "opponent=SF; home_away=home"
+    assert rows["Bye"] == "week=11"
+    assert rows["Game date"] == "2026-09-10"
+    assert rows["Game week"] == "1"
+    assert rows["Home/Away"] == "home"
+    assert rows["Season"] == "2026"
+    assert rows["Team"] == "LA"
+    assert rows["Status"] == "SAFE_NOW_DISPLAY_ONLY"
+    assert "Display-only" in rows["Display policy"]
 
 
 def test_context_service_does_not_mutate_runtime_json(tmp_path: Path) -> None:

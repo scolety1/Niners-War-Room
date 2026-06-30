@@ -12,7 +12,7 @@ from src.services.development_lab_nflverse_context_service import (
     manual_nwr_player_ids,
     player_context_artifact_status_rows,
     roster_status_context_rows,
-    schedule_unavailable_rows,
+    schedule_context_display_rows,
 )
 from src.services.development_lab_state_service import (
     DevelopmentLabToolState,
@@ -138,8 +138,8 @@ def render_refresh_health_waiting_panel() -> None:
     _tool_table(development_lab_context_status_rows())
     st.caption("Dataset readiness / source policy")
     _tool_table(dataset_readiness_rows())
-    st.caption("Schedule fields still unavailable")
-    _tool_table(schedule_unavailable_rows())
+    st.caption("Schedule context / display-only")
+    _tool_table(schedule_context_display_rows(limit=10))
 
 
 def render_future_tool_gate_badges(statuses: list[FutureToolStatus]) -> None:
@@ -573,6 +573,7 @@ def _render_roster_status_context(player_ids: tuple[str, ...]) -> None:
         "review do not show player-context details."
     )
     _tool_table(roster_status_context_rows(player_ids=player_ids))
+    _render_schedule_context(player_ids)
     _render_identity_review_status()
 
 
@@ -587,7 +588,7 @@ def _render_draft_capital_context() -> None:
         _tool_table(rows)
     else:
         st.info("NFL draft capital context is Not enough information.")
-    _tool_table(schedule_unavailable_rows())
+    _render_schedule_context(())
     _render_identity_review_status()
 
 
@@ -598,8 +599,13 @@ def _render_deadline_status_context() -> None:
         "does not imply health, role, safety, or priority."
     )
     _tool_table(deadline_status_context_rows())
-    _tool_table(schedule_unavailable_rows())
+    _render_schedule_context(())
     _render_identity_review_status()
+
+
+def _render_schedule_context(player_ids: tuple[str, ...]) -> None:
+    st.caption("Schedule context / display-only")
+    _tool_table(schedule_context_display_rows(player_ids=player_ids, limit=10))
 
 
 def _render_identity_review_status() -> None:

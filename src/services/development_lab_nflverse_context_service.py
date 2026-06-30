@@ -10,6 +10,10 @@ from src.services.nflverse_player_context_display_service import (
     SAFE_NOW_DISPLAY_ONLY,
 )
 from src.services.nflverse_refresh_health_service import NOT_ENOUGH_INFORMATION
+from src.services.nflverse_schedule_context_display_service import (
+    schedule_context_display_for_row,
+    unavailable_schedule_context_row,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PLAYER_CONTEXT_DIR = (
@@ -43,7 +47,7 @@ DATASET_COVERAGE_PATH = REFRESH_HEALTH_DIR / "nflverse_dataset_coverage_matrix_v
 
 NEEDS_IDENTITY_REVIEW_LABEL = "Needs identity review"
 SAFE_CONTEXT_READY = "SAFE_REFRESH_CONTEXT_READY_DISPLAY_ONLY"
-SCHEDULE_UNAVAILABLE = "SCHEDULE_CONTEXT_UNAVAILABLE"
+SCHEDULE_DISPLAY_READY = "SCHEDULE_CONTEXT_DISPLAY_READY"
 FF_RANKINGS_BLOCKED = "BLOCKED_VENDOR_OR_PRIVATE"
 
 UNAVAILABLE_VALUES = {
@@ -210,6 +214,11 @@ def player_context_artifact_status_rows(
     context: DevelopmentLabNflverseContext | None = None,
 ) -> list[dict[str, str]]:
     context = context or load_development_lab_nflverse_context()
+    schedule_ready = sum(
+        1
+        for row in context.artifact_rows
+        if schedule_context_display_for_row(row, context.allowed_fields).available
+    )
     proposal_counts = _identity_proposal_counts(context.identity_review_rows)
     ff_rankings = next(
         (
@@ -229,7 +238,10 @@ def player_context_artifact_status_rows(
             "Identity rows kept for future review",
             proposal_counts["KEEP_NEED_IDENTITY_REVIEW"],
         ),
-        _status_row("next game / opponent / bye", NOT_ENOUGH_INFORMATION),
+        _status_row(
+            "next game / opponent / bye",
+            f"{schedule_ready}/{len(context.safe_rows)} display rows",
+        ),
         _status_row(
             "ff_rankings",
             ff_rankings.get("policy_status") or FF_RANKINGS_BLOCKED,
@@ -277,7 +289,7 @@ def development_lab_context_status_rows() -> list[dict[str, str]]:
             "Item": "F3 roster/status/depth/snap/contract context",
             "Status": SAFE_CONTEXT_READY,
             "Display": "Roster, weekly status, report status, depth, snap, and contract labels",
-            "Remaining caveat": "next game / opponent / bye stays Not enough information.",
+            "Remaining caveat": "Schedule facts are shown only for safe display rows.",
         },
         {
             "Item": "F4 NFL draft context",
@@ -311,11 +323,11 @@ def development_lab_context_status_rows() -> list[dict[str, str]]:
         },
         {
             "Item": "Schedule next game / opponent / bye",
-            "Status": SCHEDULE_UNAVAILABLE,
-            "Display": NOT_ENOUGH_INFORMATION,
+            "Status": SCHEDULE_DISPLAY_READY,
+            "Display": "next game, opponent, bye, date, week, home/away, season, team",
             "Remaining caveat": (
-                "Development Lab keeps schedule context gated for a later lane-specific "
-                "display review."
+                "Display-only/manual context; no model, training, hidden-sort, or "
+                "recommendation use."
             ),
         },
     ]
@@ -392,23 +404,61 @@ def manual_nwr_player_ids(rows: Iterable[dict[str, str]]) -> tuple[str, ...]:
 
 
 def schedule_unavailable_rows() -> list[dict[str, str]]:
+    row = unavailable_schedule_context_row()
     return [
         {
             "Field": "next_game_context",
-            "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "Schedule context is not activated in Development Lab in this lane.",
+            "Status": row["Status"],
+            "Reason": row["Reason"],
         },
         {
             "Field": "opponent_context",
-            "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "Schedule context is not activated in Development Lab in this lane.",
+            "Status": row["Status"],
+            "Reason": row["Reason"],
         },
         {
             "Field": "bye_context",
-            "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "Schedule context is not activated in Development Lab in this lane.",
+            "Status": row["Status"],
+            "Reason": row["Reason"],
         },
     ]
+
+
+def schedule_context_display_rows(
+    player_ids: Iterable[str] = (),
+    *,
+    limit: int = 25,
+    context: DevelopmentLabNflverseContext | None = None,
+) -> list[dict[str, str]]:
+    context = context or load_development_lab_nflverse_context()
+    requested_ids = {_clean(value) for value in player_ids if _clean(value)}
+    output: list[dict[str, str]] = []
+    if requested_ids:
+        rows_by_id = {
+            _clean(row.get("nwr_player_id", "")): row
+            for row in context.artifact_rows
+            if _clean(row.get("nwr_player_id", ""))
+        }
+        for player_id in sorted(requested_ids):
+            row = rows_by_id.get(player_id)
+            if row is None:
+                output.append(unavailable_schedule_context_row(player_id))
+                continue
+            output.append(
+                schedule_context_display_for_row(
+                    row,
+                    context.allowed_fields,
+                ).as_display_row()
+            )
+        return output[:limit]
+
+    for row in context.safe_rows:
+        display = schedule_context_display_for_row(row, context.allowed_fields)
+        if display.available:
+            output.append(display.as_display_row())
+        if len(output) >= limit:
+            break
+    return output or [unavailable_schedule_context_row()]
 
 
 def _player_context_rows(

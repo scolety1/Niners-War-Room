@@ -10,6 +10,7 @@ from src.services.development_lab_nflverse_context_service import (
     manual_nwr_player_ids,
     player_context_artifact_status_rows,
     roster_status_context_rows,
+    schedule_context_display_rows,
     schedule_unavailable_rows,
 )
 from src.services.nflverse_player_context_display_service import SAFE_NOW_DISPLAY_ONLY
@@ -26,7 +27,7 @@ def test_player_context_artifact_status_matches_hq_expected_counts() -> None:
     assert status_by_check["Identity proposals"] == "43"
     assert status_by_check["Identity rows needing human review"] == "4"
     assert status_by_check["Identity rows kept for future review"] == "7"
-    assert status_by_check["next game / opponent / bye"] == "Not enough information"
+    assert status_by_check["next game / opponent / bye"] == "240/240 display rows"
     assert status_by_check["ff_rankings"] == "blocked_policy"
 
 
@@ -142,8 +143,38 @@ def test_schedule_and_context_status_keep_unavailable_fields_explicit() -> None:
     statuses = development_lab_context_status_rows()
 
     assert {row["Status"] for row in schedule} == {"Not enough information"}
-    assert any(row["Status"] == "SCHEDULE_CONTEXT_UNAVAILABLE" for row in statuses)
+    assert any(row["Status"] == "SCHEDULE_CONTEXT_DISPLAY_READY" for row in statuses)
     assert any(row["Status"] == "Needs identity review" for row in statuses)
+
+
+def test_schedule_context_display_rows_show_only_safe_schedule_facts() -> None:
+    rows = schedule_context_display_rows(player_ids=("9493",))
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["NWR Player ID"] == "9493"
+    assert row["Player"] == "Puka Nacua"
+    assert row["Next Game Context"] == (
+        "season=2026; week=1; date=2026-09-10; game_id=2026_01_SF_LA"
+    )
+    assert row["Opponent Context"] == "opponent=SF; home_away=home"
+    assert row["Bye Context"] == "week=11"
+    assert row["Game Date"] == "2026-09-10"
+    assert row["Game Week"] == "1"
+    assert row["Home/Away"] == "home"
+    assert row["Season"] == "2026"
+    assert row["Team"] == "LA"
+    assert row["Status"] == SAFE_NOW_DISPLAY_ONLY
+
+
+def test_schedule_context_unknown_player_id_stays_not_enough_information() -> None:
+    rows = schedule_context_display_rows(player_ids=("not-real",))
+
+    assert rows[0]["NWR Player ID"] == "not-real"
+    assert rows[0]["Next Game Context"] == "Not enough information"
+    assert rows[0]["Opponent Context"] == "Not enough information"
+    assert rows[0]["Bye Context"] == "Not enough information"
+    assert rows[0]["Status"] == "Not enough information"
 
 
 def test_manual_nwr_player_ids_are_manual_only_inputs() -> None:
