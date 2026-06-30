@@ -313,7 +313,10 @@ def development_lab_context_status_rows() -> list[dict[str, str]]:
             "Item": "Schedule next game / opponent / bye",
             "Status": SCHEDULE_UNAVAILABLE,
             "Display": NOT_ENOUGH_INFORMATION,
-            "Remaining caveat": "No current/future schedule rows in the approved artifact.",
+            "Remaining caveat": (
+                "Development Lab keeps schedule context gated for a later lane-specific "
+                "display review."
+            ),
         },
     ]
 
@@ -393,17 +396,17 @@ def schedule_unavailable_rows() -> list[dict[str, str]]:
         {
             "Field": "next_game_context",
             "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "No current/future safe schedule rows in approved artifact.",
+            "Reason": "Schedule context is not activated in Development Lab in this lane.",
         },
         {
             "Field": "opponent_context",
             "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "No current/future safe schedule rows in approved artifact.",
+            "Reason": "Schedule context is not activated in Development Lab in this lane.",
         },
         {
             "Field": "bye_context",
             "Status": NOT_ENOUGH_INFORMATION,
-            "Reason": "No current/future safe schedule rows in approved artifact.",
+            "Reason": "Schedule context is not activated in Development Lab in this lane.",
         },
     ]
 

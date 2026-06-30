@@ -12,7 +12,7 @@ Remaining yellow reasons:
 - 43 identity proposals are proposals only, not approved joins.
 - 4 identity rows need human review.
 - 7 identity rows remain `KEEP_NEED_IDENTITY_REVIEW`.
-- Schedule next game / opponent / bye has 0 current/future safe rows and remains `Not enough information`.
+- Schedule next game / opponent / bye remains intentionally gated in Development Lab and displays `Not enough information`.
 - `ff_rankings` remains blocked.
 
 Guardrails checked:

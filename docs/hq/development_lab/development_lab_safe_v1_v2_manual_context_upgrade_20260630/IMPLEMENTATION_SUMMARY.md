@@ -85,7 +85,7 @@ Player-context artifact status:
 - Identity proposals: 43, proposals only.
 - Human review identity rows: 4.
 - `KEEP_NEED_IDENTITY_REVIEW` rows: 7.
-- Current/future schedule rows for next game/opponent/bye: 0.
+- Schedule next game/opponent/bye: intentionally gated in Development Lab for a later lane-specific display review.
 - `ff_rankings`: blocked.
 
 Fields displayed:

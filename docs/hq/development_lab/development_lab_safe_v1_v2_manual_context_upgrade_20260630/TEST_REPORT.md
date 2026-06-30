@@ -17,7 +17,7 @@ Artifact coverage confirmed:
 - Identity proposals: 43, review-only.
 - Human review identity rows: 4.
 - `KEEP_NEED_IDENTITY_REVIEW` rows: 7.
-- Schedule next game / opponent / bye current/future safe rows: 0.
+- Schedule next game / opponent / bye: intentionally gated in Development Lab for a later lane-specific display review.
 - `ff_rankings`: blocked.
 
 Verification commands:

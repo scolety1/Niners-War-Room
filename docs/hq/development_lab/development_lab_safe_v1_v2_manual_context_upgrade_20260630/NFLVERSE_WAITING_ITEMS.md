@@ -24,7 +24,7 @@ Moved from `WAIT_FOR_NFLVERSE_REFRESH_HEALTH_GREEN` to implemented:
 Still gated:
 
 - F6 identity proposals: `YELLOW_NEEDS_IDENTITY_REVIEW`. There are 54 identity-review artifact rows; 43 proposals exist but are not approved joins, 4 rows need human review, and 7 rows remain `KEEP_NEED_IDENTITY_REVIEW`.
-- Schedule next game / opponent / bye: unavailable. The schedule audit found 0 current/future safe rows, so these fields remain `Not enough information`.
+- Schedule next game / opponent / bye: intentionally gated in Development Lab for a later lane-specific display review, so these fields remain `Not enough information`.
 - `ff_rankings`: blocked by source policy and unused.
 
 Displayed player fields:
