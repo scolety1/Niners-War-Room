@@ -1,0 +1,15 @@
+component_name,current_source,current_formula_location_if_known,available_in_app_yes_no,available_as_main_table_column_yes_no,exact_contribution_percent_supported_yes_no,approved_model_input_yes_no,display_only_yes_no,review_only_yes_no,blocked_for_model_yes_no,missing_value_behavior,notes
+NWR Dynasty Score,approved full dynasty rankings artifact,source artifact nwr_dynasty_score column,yes,yes,no,yes,no,no,no,Not enough information,Displayed score only and this lane does not recalculate it
+Score Status,approved full dynasty rankings artifact,source artifact score_status column,yes,yes,no,yes,no,no,no,Not enough information,Explains score row status without changing rank
+Base NWR Score,approved full dynasty rankings artifact,source artifact base_nwr_dynasty_score column,yes,yes,no,yes,no,no,no,Not enough information,Shown when present and not decomposed into components
+Confidence Cap,approved full dynasty rankings artifact,source artifact confidence_cap column,yes,yes,no,yes,no,no,no,Not enough information,Metadata only and not a component-count substitute
+Confidence Status,approved full dynasty rankings artifact,source artifact confidence_status column,yes,yes,no,yes,no,no,no,Not enough information,Metadata only
+Allowed Use,approved full dynasty rankings artifact,source artifact allowed_use column,yes,yes,no,yes,no,no,no,Not enough information,Use-policy metadata
+Blocked Use,approved full dynasty rankings artifact,source artifact blocked_use column,yes,yes,no,yes,no,no,no,Not enough information,Use-policy metadata and this lane does not bypass it
+Evidence Fields Used,approved full dynasty rankings artifact,source artifact candidate_evidence_fields_used column,yes,yes,no,yes,no,no,no,Not enough information,Field-name context only and not component receipt math
+Component Scores,not available,not available,no,no,no,no,no,yes,yes,Not enough information,Requires approved score component receipt artifact
+Component Weights,not available,not available,no,no,no,no,no,yes,yes,Not enough information,Requires approved score component receipt artifact
+Contribution Percentages,not available,not available,no,yes,no,no,no,yes,yes,Not enough information,Main table shows Not enough information until safely decomposable
+Market Baseline,DynastyProcess market baseline service,src/services/market_baseline_service.py,yes,no,no,no,yes,no,yes,Not enough information,External market context only and not model or rank logic
+Outcome V2,approved Outcome V2 display artifact,src/services/draft_day_app_v1_service.py,yes,no,no,no,yes,yes,yes,Not enough information,Display-only and review-only context not rank logic
+Injury Context,approved Outcome V2 display artifact,src/services/draft_day_app_v1_service.py,yes,no,no,no,yes,yes,yes,Not enough information,Review-only availability context and not medical projection

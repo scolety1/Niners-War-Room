@@ -62,41 +62,41 @@ MARKET_SANITY_FILTERS = (
     "No market match",
 )
 MARKET_MATCH_FILTERS = ("All", "Has market match", "No market match")
-VIEW_PRESET_CLEAN_BOARD = "Clean Board"
-VIEW_PRESET_MARKET_ANALYZER = "Market Analyzer"
-VIEW_PRESET_OUTCOME_LENS = "Outcome Lens"
+VIEW_PRESET_DYNASTY_REVIEW = "Dynasty Review"
+VIEW_PRESET_MARKET_CONTEXT = "Market Context"
+VIEW_PRESET_OUTCOME_CONTEXT = "Outcome Context"
 VIEW_PRESET_DATA_REVIEW = "Data Review"
-VIEW_PRESET_SCORE_AUDIT = "NWR Score Audit"
-VIEW_PRESET_COMPACT_DRAFT = "Compact Draft View"
+VIEW_PRESET_STATISTIC_ANALYSIS = "Statistic Analysis"
+VIEW_PRESET_DRAFT_RANKINGS = "Draft Rankings"
 VIEW_PRESETS = (
-    VIEW_PRESET_CLEAN_BOARD,
-    VIEW_PRESET_MARKET_ANALYZER,
-    VIEW_PRESET_OUTCOME_LENS,
+    VIEW_PRESET_DYNASTY_REVIEW,
+    VIEW_PRESET_MARKET_CONTEXT,
+    VIEW_PRESET_OUTCOME_CONTEXT,
     VIEW_PRESET_DATA_REVIEW,
-    VIEW_PRESET_SCORE_AUDIT,
-    VIEW_PRESET_COMPACT_DRAFT,
+    VIEW_PRESET_STATISTIC_ANALYSIS,
+    VIEW_PRESET_DRAFT_RANKINGS,
 )
 VIEW_PRESET_HELP = {
-    VIEW_PRESET_CLEAN_BOARD: (
-        "Default full dynasty board. Market basics are visible as display-only context; "
-        "outcome heads stay out of the first scan."
+    VIEW_PRESET_DYNASTY_REVIEW: (
+        "Default full dynasty board. Dynasty Rank remains primary; market, Outcome, "
+        "and injury-review detail columns stay hidden by default."
     ),
-    VIEW_PRESET_MARKET_ANALYZER: (
+    VIEW_PRESET_MARKET_CONTEXT: (
         "Full dynasty board with DynastyProcess market sanity columns visible. "
         "Display-only; Dynasty Rank remains the default sort."
     ),
-    VIEW_PRESET_OUTCOME_LENS: (
+    VIEW_PRESET_OUTCOME_CONTEXT: (
         "Shows only approved outcome heads that exist in committed display artifacts. "
         "Missing horizons are noted, not invented."
     ),
     VIEW_PRESET_DATA_REVIEW: (
         "Human-review lens for trust, confidence, caveats, and review flags."
     ),
-    VIEW_PRESET_SCORE_AUDIT: (
-        "Placeholder score-audit lens. The approved board exposes NWR Dynasty Score and "
-        "source metadata, but not approved component weights or contribution rows."
+    VIEW_PRESET_STATISTIC_ANALYSIS: (
+        "Read-only score explanation view. It exposes approved NWR Score metadata where "
+        "available and does not change Dynasty Rank, tiers, or model/source approvals."
     ),
-    VIEW_PRESET_COMPACT_DRAFT: (
+    VIEW_PRESET_DRAFT_RANKINGS: (
         "Fast-scan full dynasty board with review context pushed back. Dynasty Rank "
         "remains the default sort."
     ),
@@ -157,18 +157,20 @@ def _view_mode_for_preset(preset: str) -> str:
 
 
 def _outcome_mode_for_preset(preset: str) -> str:
-    if preset in {VIEW_PRESET_OUTCOME_LENS, VIEW_PRESET_DATA_REVIEW}:
+    if preset in {VIEW_PRESET_OUTCOME_CONTEXT, VIEW_PRESET_DATA_REVIEW}:
         return OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE
     return OUTCOME_DISPLAY_MODE_HIDE
 
 
 def _show_market_for_preset(preset: str) -> bool:
     return preset in {
-        VIEW_PRESET_CLEAN_BOARD,
-        VIEW_PRESET_MARKET_ANALYZER,
-        VIEW_PRESET_OUTCOME_LENS,
+        VIEW_PRESET_MARKET_CONTEXT,
         VIEW_PRESET_DATA_REVIEW,
     }
+
+
+def _show_statistic_analysis_for_preset(preset: str) -> bool:
+    return preset == VIEW_PRESET_STATISTIC_ANALYSIS
 
 
 def _default_ascending_for_sort(sort_by: str) -> bool:
@@ -184,7 +186,7 @@ def _sort_state_key(sort_by: str) -> str:
 def _apply_player_filters(
     frame: pd.DataFrame,
     preset: str,
-) -> tuple[pd.DataFrame, str, str, bool, str]:
+) -> tuple[pd.DataFrame, str, str, bool, bool, str]:
     view_mode = _view_mode_for_preset(preset)
     filtered = _view_base_frame(frame, view_mode)
     st.caption(VIEW_PRESET_HELP[preset])
@@ -249,6 +251,7 @@ def _apply_player_filters(
     )
     _render_age_filter(filter_row_two[3], filtered)
     show_market_baseline = _show_market_for_preset(preset)
+    show_statistic_analysis = _show_statistic_analysis_for_preset(preset)
     outcome_mode = _outcome_mode_for_preset(preset)
     outcome_filter = "All"
     selected_tier = "All"
@@ -365,7 +368,14 @@ def _apply_player_filters(
     filtered = _apply_market_filters(filtered, market_sanity_filter, market_match_filter)
 
     filtered = _sort_player_board(filtered, sort_by, ascending=ascending, view_mode=view_mode)
-    return filtered, sort_by, outcome_mode, show_market_baseline, view_mode
+    return (
+        filtered,
+        sort_by,
+        outcome_mode,
+        show_market_baseline,
+        show_statistic_analysis,
+        view_mode,
+    )
 
 
 def _apply_market_filters(
@@ -410,6 +420,13 @@ def _apply_age_range_if_available(frame: pd.DataFrame) -> pd.DataFrame:
     if not selected or "age" not in frame.columns:
         return frame
     ages = pd.to_numeric(frame["age"], errors="coerce")
+    supported_ages = ages.dropna()
+    if supported_ages.empty:
+        return frame
+    minimum = round(float(supported_ages.min()), 1)
+    maximum = round(float(supported_ages.max()), 1)
+    if float(selected[0]) <= minimum and float(selected[1]) >= maximum:
+        return frame
     return frame.loc[ages.between(float(selected[0]), float(selected[1]), inclusive="both")].copy()
 
 
@@ -652,12 +669,12 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
             st.error(error)
 
 
-def _render_score_audit_status() -> None:
+def _render_statistic_analysis_status() -> None:
     st.info(
-        "NWR Score Audit is a placeholder. The approved rankings output exposes "
-        "NWR Dynasty Score, score source metadata, confidence, and evidence-field names, "
-        "but it does not include approved component weights or per-component contribution "
-        "rows."
+        "Statistic Analysis is a read-only score explanation view. It exposes approved "
+        "NWR Dynasty Score metadata, confidence, and evidence-field names where safely "
+        "available, but it does not include approved component weights or per-component "
+        "contribution rows."
     )
     st.caption(
         "No score component, market, Outcome V2, injury, CFBD, NFL usage, vendor, Gmail, "
@@ -679,9 +696,12 @@ def _render_score_audit_status() -> None:
                     "weighted contribution amounts, percent contribution, and component "
                     "receipt rows"
                 ),
+                "main_table_behavior": (
+                    "Unsupported contribution/count fields display Not enough information."
+                ),
                 "doc": (
-                    "docs/hq/rankings_draft_cockpit_ux_fix_20260630/"
-                    "SCORE_BREAKDOWN_FEASIBILITY.md"
+                    "docs/hq/rankings/statistic_analysis_v0_20260630/"
+                    "statistic_analysis_design.md"
                 ),
             }
         )
@@ -814,10 +834,17 @@ if not dynasty_bundle.loaded:
     )
 
 _render_market_baseline_status(raw_unified_board)
-preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_CLEAN_BOARD)
+preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)
 if preset not in VIEW_PRESETS:
-    preset = VIEW_PRESET_CLEAN_BOARD
-filtered_board, sort_by, outcome_mode, show_market_baseline, view_mode = _apply_player_filters(
+    preset = VIEW_PRESET_DYNASTY_REVIEW
+(
+    filtered_board,
+    sort_by,
+    outcome_mode,
+    show_market_baseline,
+    show_statistic_analysis,
+    view_mode,
+) = _apply_player_filters(
     unified_board,
     preset,
 )
@@ -836,23 +863,22 @@ st.caption(
     + _outcome_head_caption(
         filtered_board,
         outcome_mode,
-        include_injury_context=preset == VIEW_PRESET_OUTCOME_LENS,
+        include_injury_context=preset == VIEW_PRESET_OUTCOME_CONTEXT,
     )
 )
 st.caption(
-    "Market Baseline columns are display-only DynastyProcess context, visible for the main "
-    "lenses, and do not drive Dynasty Rank, Candidate Rank, Final Board Rank, default sort, "
-    "trade value, or model input."
+    "Market fields, when visible, are external market context only. Not rank logic, "
+    "not model input, not trade value, and not a replacement for Dynasty Rank."
 )
 if show_market_baseline:
     st.caption(
         "Visible market basics: DP 1QB Value, DP 1QB Market Rank, NWR vs Market Gap, "
         "and Market Sanity Flag."
     )
-if preset == VIEW_PRESET_OUTCOME_LENS:
+if preset == VIEW_PRESET_OUTCOME_CONTEXT:
     _render_outcome_lens_status(unified_board)
-if preset == VIEW_PRESET_SCORE_AUDIT:
-    _render_score_audit_status()
+if preset == VIEW_PRESET_STATISTIC_ANALYSIS:
+    _render_statistic_analysis_status()
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(
     display_unified_player_board_frame(
@@ -861,7 +887,8 @@ st.dataframe(
         outcome_mode=outcome_mode,
         selected_positions=filtered_board.get("position", pd.Series(dtype=str)).tolist(),
         show_market_baseline=show_market_baseline,
-        include_injury_context=preset == VIEW_PRESET_OUTCOME_LENS,
+        include_injury_context=preset == VIEW_PRESET_OUTCOME_CONTEXT,
+        show_statistic_analysis=show_statistic_analysis,
     ),
     use_container_width=True,
     hide_index=True,
