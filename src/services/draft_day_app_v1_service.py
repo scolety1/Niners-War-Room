@@ -122,10 +122,10 @@ OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH = (
     / "hq"
     / "outcomes"
     / "outcome_v2_horizon_20260630"
-    / "outcome_v2_current_player_display.csv"
+    / "outcome_v2_current_player_display_with_injury_context.csv"
 )
 EXPECTED_OUTCOME_V2_CURRENT_PLAYER_DISPLAY_HASH = (
-    "679f353dabeeae216b51e1592eeb1e750b9a2e0dffbd69ced7259587914d4a79"
+    "63569e3758ab20e74eef30c1723afc72c80b5f6174f66d9a4015c24f0f44723e"
 )
 PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
@@ -334,6 +334,41 @@ OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS = (
     "outcome_v2_status_display_only",
     "outcome_v2_availability_context_status",
     "outcome_v2_caveat_display_only",
+)
+OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS = (
+    (
+        "injury_context_available",
+        "injury_context_available_display_only",
+        "Injury Context Available",
+    ),
+    (
+        "availability_caveat",
+        "injury_context_availability_caveat_display_only",
+        "Availability Caveat",
+    ),
+    (
+        "limited_recent_sample",
+        "injury_context_limited_recent_sample_display_only",
+        "Limited Recent Sample",
+    ),
+    (
+        "last_materially_active_season",
+        "injury_context_last_materially_active_season_display_only",
+        "Last Materially Active Season",
+    ),
+    (
+        "seasons_since_material_activity",
+        "injury_context_seasons_since_material_activity_display_only",
+        "Seasons Since Material Activity",
+    ),
+    (
+        "not_enough_information_reason",
+        "injury_context_not_enough_information_reason_display_only",
+        "Not Enough Information Reason",
+    ),
+)
+OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS = tuple(
+    target for _source, target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS
 )
 APPROVED_OUTCOME_V2_DISPLAY_FIELDS = (
     ("QB T6 This Year", "outcome_v2_qb_t6_this_year_display_only", "QB T6 This Year", "QB"),
@@ -1612,6 +1647,10 @@ def validate_outcome_v2_current_player_display(frame: pd.DataFrame) -> tuple[str
         "cfbd_used_as_input",
         "availability_context_status",
         "caveat_summary",
+        "injury_context_review_only",
+        "injury_used_as_model_input",
+        "medical_projection_made",
+        *(source for source, _target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS),
         *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
     )
     missing = [column for column in required if column not in frame.columns]
@@ -1638,10 +1677,13 @@ def validate_outcome_v2_current_player_display(frame: pd.DataFrame) -> tuple[str
         "dynastyprocess_used_as_input",
         "adp_used_as_input",
         "cfbd_used_as_input",
+        "injury_context_review_only",
+        "injury_used_as_model_input",
+        "medical_projection_made",
     ):
         if flag not in frame.columns:
             continue
-        expected = "true" if flag == "display_only" else "false"
+        expected = "true" if flag in {"display_only", "injury_context_review_only"} else "false"
         if not frame[flag].astype(str).str.lower().eq(expected).all():
             errors.append(f"Outcome V2 field {flag} must be {expected}.")
     return tuple(errors)
@@ -1688,6 +1730,8 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     result = frame.copy()
     for column in OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS:
         result[column] = OUTCOME_NOT_ENOUGH_INFORMATION
+    for _source, target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS:
+        result[target] = OUTCOME_NOT_ENOUGH_INFORMATION
     for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
         result[target] = OUTCOME_NOT_ENOUGH_INFORMATION
     if not outcome.loaded or "player_id" not in result.columns:
@@ -1699,6 +1743,7 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
         "feature_coverage_status",
         "availability_context_status",
         "caveat_summary",
+        *(source for source, _target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS),
         *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
     ]
     outcome_frame = outcome.frame.loc[:, outcome_columns].copy()
@@ -1719,6 +1764,8 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
     merged["outcome_v2_caveat_display_only"] = merged["caveat_summary"].map(
         outcome_v2_text_display
     )
+    for source, target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS:
+        merged[target] = merged[source].map(outcome_v2_text_display)
     for source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
         merged[target] = merged[source].map(outcome_probability_display)
     display = apply_position_aware_outcome_values(merged)
@@ -1729,6 +1776,7 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
             "feature_coverage_status",
             "availability_context_status",
             "caveat_summary",
+            *(source for source, _target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS),
             *(source for source, _target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
         ],
         errors="ignore",
@@ -1767,10 +1815,14 @@ def outcome_availability_label(value: object) -> str:
     return OUTCOME_NOT_ENOUGH_INFORMATION
 
 
-def outcome_display_targets() -> tuple[str, ...]:
+def outcome_display_targets(*, include_injury_context: bool = False) -> tuple[str, ...]:
+    injury_columns = (
+        OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
+    )
     return (
         *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
         *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
+        *injury_columns,
         *(
             target
             for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
@@ -1778,14 +1830,21 @@ def outcome_display_targets() -> tuple[str, ...]:
     )
 
 
-def outcome_targets_for_positions(positions: Iterable[object]) -> tuple[str, ...]:
+def outcome_targets_for_positions(
+    positions: Iterable[object],
+    *,
+    include_injury_context: bool = False,
+) -> tuple[str, ...]:
     normalized = {str(position or "").strip().upper() for position in positions}
     position_targets = tuple(
         target
         for target, position in OUTCOME_DISPLAY_FIELD_POSITIONS.items()
         if position in normalized
     )
-    return (*OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS, *position_targets)
+    injury_columns = (
+        OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
+    )
+    return (*OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS, *injury_columns, *position_targets)
 
 
 def apply_position_aware_outcome_values(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1809,12 +1868,16 @@ def outcome_columns_for_display(
     *,
     outcome_mode: str,
     selected_positions: Iterable[object],
+    include_injury_context: bool = False,
 ) -> tuple[str, ...]:
     if outcome_mode == OUTCOME_DISPLAY_MODE_HIDE:
         return ()
     if outcome_mode == OUTCOME_DISPLAY_MODE_ALL:
-        return outcome_display_targets()
-    return outcome_targets_for_positions(selected_positions)
+        return outcome_display_targets(include_injury_context=include_injury_context)
+    return outcome_targets_for_positions(
+        selected_positions,
+        include_injury_context=include_injury_context,
+    )
 
 
 def outcome_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
@@ -1838,17 +1901,32 @@ def outcome_v2_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
             "not_enough_information": rows,
             "rookie_out_of_scope": 0,
             "missing_feature": 0,
+            "injury_context_available": 0,
+            "limited_recent_sample": 0,
         }
     status = frame["outcome_v2_status_display_only"].astype(str)
     available = int(status.eq("Available").sum())
     rookie_out = int(status.eq("out_of_scope_rookie_or_prospect").sum())
     missing_feature = int(status.eq("missing_current_feature_coverage").sum())
+    injury_context_available = 0
+    if "injury_context_available_display_only" in frame.columns:
+        injury_context_available = int(
+            frame["injury_context_available_display_only"].astype(str).eq("true").sum()
+        )
+    limited_recent_sample = 0
+    if "injury_context_limited_recent_sample_display_only" in frame.columns:
+        limited = frame["injury_context_limited_recent_sample_display_only"].astype(str)
+        limited_recent_sample = int(
+            limited.str.startswith("true").sum()
+        )
     return {
         "rows": rows,
         "available": available,
         "not_enough_information": rows - available,
         "rookie_out_of_scope": rookie_out,
         "missing_feature": missing_feature,
+        "injury_context_available": injury_context_available,
+        "limited_recent_sample": limited_recent_sample,
     }
 
 
@@ -2061,6 +2139,7 @@ def display_unified_player_board_frame(
     outcome_mode: str = OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
     selected_positions: Iterable[object] | None = None,
     show_market_baseline: bool = False,
+    include_injury_context: bool = False,
 ) -> pd.DataFrame:
     if view_mode == FULL_DYNASTY_VIEW:
         display_columns = FULL_DYNASTY_PLAYER_BOARD_DISPLAY_COLUMNS
@@ -2070,19 +2149,23 @@ def display_unified_player_board_frame(
         display_columns = UNIFIED_PLAYER_BOARD_DISPLAY_COLUMNS
     if show_market_baseline:
         display_columns = _display_columns_with_market_baseline(display_columns)
-    display_columns = _display_columns_with_outcome_v2(display_columns)
+    display_columns = _display_columns_with_outcome_v2(
+        display_columns,
+        include_injury_context=include_injury_context,
+    )
     selected_positions = selected_positions or frame.get("position", pd.Series(dtype=str))
     outcome_targets = set(
         outcome_columns_for_display(
             outcome_mode=outcome_mode,
             selected_positions=selected_positions,
+            include_injury_context=include_injury_context,
         )
     )
     if outcome_mode == OUTCOME_DISPLAY_MODE_HIDE:
         display_columns = tuple(
             column
             for column in display_columns
-            if column not in outcome_display_targets()
+            if column not in outcome_display_targets(include_injury_context=True)
             and column != "outcome_availability_display_only"
         )
     else:
@@ -2118,9 +2201,18 @@ def _display_columns_with_market_baseline(display_columns: tuple[str, ...]) -> t
     return (*before, *MARKET_BASELINE_DISPLAY_COLUMNS, *after)
 
 
-def _display_columns_with_outcome_v2(display_columns: tuple[str, ...]) -> tuple[str, ...]:
+def _display_columns_with_outcome_v2(
+    display_columns: tuple[str, ...],
+    *,
+    include_injury_context: bool = False,
+) -> tuple[str, ...]:
     v2_columns = (
         *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
+        *(
+            OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS
+            if include_injury_context
+            else ()
+        ),
         *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
     )
     insert_after = "te_t12_display_only"
@@ -2149,6 +2241,7 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "dp_age",
     "market_gap",
     "age_source_display",
+    *OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS,
 )
 
 
@@ -2580,6 +2673,18 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "outcome_v2_status_display_only": "Outcome V2 Status (Display-Only)",
     "outcome_v2_availability_context_status": "Outcome V2 Availability Caveat",
     "outcome_v2_caveat_display_only": "Outcome V2 Caveat",
+    "injury_context_available_display_only": "Injury Context Available",
+    "injury_context_availability_caveat_display_only": "Availability Caveat",
+    "injury_context_limited_recent_sample_display_only": "Limited Recent Sample",
+    "injury_context_last_materially_active_season_display_only": (
+        "Last Materially Active Season"
+    ),
+    "injury_context_seasons_since_material_activity_display_only": (
+        "Seasons Since Material Activity"
+    ),
+    "injury_context_not_enough_information_reason_display_only": (
+        "Not Enough Information Reason"
+    ),
     "outcome_v2_qb_t6_this_year_display_only": "QB T6 This Year (Outcome V2 / Display-Only)",
     "outcome_v2_qb_t12_this_year_display_only": "QB T12 This Year (Outcome V2 / Display-Only)",
     "outcome_v2_rb_t6_this_year_display_only": "RB T6 This Year (Outcome V2 / Display-Only)",

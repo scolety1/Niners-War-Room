@@ -21,6 +21,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_DISPLAY_MODES,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
+    OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
@@ -395,10 +396,16 @@ def _source_filter_options_for_view(view_mode: str) -> list[str]:
     return options
 
 
-def _outcome_head_caption(frame: pd.DataFrame, outcome_mode: str) -> str:
+def _outcome_head_caption(
+    frame: pd.DataFrame,
+    outcome_mode: str,
+    *,
+    include_injury_context: bool = False,
+) -> str:
     targets = outcome_columns_for_display(
         outcome_mode=outcome_mode,
         selected_positions=frame.get("position", pd.Series(dtype=str)).tolist(),
+        include_injury_context=include_injury_context,
     )
     labels_by_target = {
         target: f"{label} (Display-Only)"
@@ -408,6 +415,12 @@ def _outcome_head_caption(frame: pd.DataFrame, outcome_mode: str) -> str:
         {
             target: f"{label} (Outcome V2 / Display-Only)"
             for _source, target, label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
+        }
+    )
+    labels_by_target.update(
+        {
+            target: label
+            for _source, target, label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS
         }
     )
     labels = [labels_by_target[target] for target in targets if target in labels_by_target]
@@ -554,7 +567,16 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
     )
     st.caption(
         "Scoring caveat: partial exact first-down scoring; sack_fumbles_lost missing. "
-        "Availability caveat: games field missing; no row implies clean health."
+        "Availability caveat: games field missing; no row is Not enough information, "
+        "not clean health."
+    )
+    st.info(
+        "Injury context is review-only. No medical recovery projection is made. "
+        "Missing injury context is not clean health."
+    )
+    st.caption(
+        "Missing / limited recent sample is not a low-probability signal. Injury context "
+        "does not change Dynasty Rank, hidden sort, model input, trade value, or pick value."
     )
     st.caption(
         "Outcome V2 coverage: "
@@ -562,6 +584,11 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
         f"{counts['not_enough_information']} rows remain Not enough information; "
         f"{counts['rookie_out_of_scope']} rookies/prospects out of scope; "
         f"{counts['missing_feature']} veterans missing 2025 feature rows."
+    )
+    st.caption(
+        "Injury Context Flags V0 coverage: "
+        f"{counts['injury_context_available']} rows with review-only injury context; "
+        f"{counts['limited_recent_sample']} rows with limited recent sample caveats."
     )
     st.caption(
         "Blocked V2 fields: "
@@ -733,7 +760,14 @@ st.caption(
     "Candidate Rank / Candidate Value, when present, are review-only cross-asset context "
     "and do not replace Dynasty Rank or Final Board Rank."
 )
-st.caption(f"Visible Outcome heads: {_outcome_head_caption(filtered_board, outcome_mode)}")
+st.caption(
+    "Visible Outcome heads: "
+    + _outcome_head_caption(
+        filtered_board,
+        outcome_mode,
+        include_injury_context=preset == VIEW_PRESET_OUTCOME_LENS,
+    )
+)
 st.caption(
     "Market Baseline columns are display-only DynastyProcess context, visible for the main "
     "lenses, and do not drive Dynasty Rank, Candidate Rank, Final Board Rank, default sort, "
@@ -754,6 +788,7 @@ st.dataframe(
         outcome_mode=outcome_mode,
         selected_positions=filtered_board.get("position", pd.Series(dtype=str)).tolist(),
         show_market_baseline=show_market_baseline,
+        include_injury_context=preset == VIEW_PRESET_OUTCOME_LENS,
     ),
     use_container_width=True,
     hide_index=True,
