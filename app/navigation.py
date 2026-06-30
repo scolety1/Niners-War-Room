@@ -19,10 +19,9 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Live Draft",
+        title="Draft Cockpit",
         file_path="pages/21_live_draft_room_v1.py",
-        url_path="live-draft-room",
-        default=True,
+        url_path="draft-cockpit",
     ),
     NavigationPageSpec(
         title="Mock Drafts",
@@ -150,9 +149,22 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
+        title="Draft Cockpit Root",
+        file_path="pages/44_draft_cockpit_root.py",
+        url_path="draft-cockpit-root",
+        default=True,
+        visible=False,
+    ),
+    NavigationPageSpec(
         title="Drafting Mode Compatibility",
         file_path="pages/19_drafting_mode_v2.py",
         url_path="drafting-mode",
+        visible=False,
+    ),
+    NavigationPageSpec(
+        title="Draft Cockpit Legacy URL Alias",
+        file_path="pages/43_live_draft_room_url_alias.py",
+        url_path="live-draft-room",
         visible=False,
     ),
     NavigationPageSpec(
@@ -246,7 +258,7 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         visible=False,
     ),
     NavigationPageSpec(
-        title="Legacy Live Draft Room",
+        title="Legacy Draft Cockpit",
         file_path="pages/07_live_draft_room.py",
         url_path="legacy-live-draft-room",
         visible=False,

@@ -915,7 +915,7 @@ def _write_page_architecture(path: Path) -> None:
 - League-history context.
 - Conservative, cost-aware labels only.
 
-## Live Draft Room
+## Draft Cockpit
 - Mock/live draft grid.
 - Drafted player state.
 - Undo/replace/reset/save/load.
@@ -931,7 +931,7 @@ def _write_page_architecture(path: Path) -> None:
 - Pick equivalence/debug context.
 
 ## Recommendation
-Keep Draft Prep focused on planning and move all live/mock state to a future Live Draft Room page.
+Keep Draft Prep focused on planning and move all live/mock state to a future Draft Cockpit page.
 """
     path.write_text(content, encoding="utf-8")
 

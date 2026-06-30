@@ -111,46 +111,52 @@ def render_draft_workflow(
     on_clock_watch = _on_clock_watch_caption(board_frame)
     if on_clock_watch:
         st.caption(on_clock_watch)
-    st.subheader("Main Ranking Table")
-    st.dataframe(
-        display_ranking_frame(
-            filtered,
-            show_drafted_context=show_drafted_players,
-            current_pick=current_pick,
-        ),
-        use_container_width=True,
-        hide_index=True,
-        key=f"{session_key}_ranking_table",
-    )
-
-    _render_pick_controls(
-        mode_label=mode_label,
-        filtered_frame=filtered,
-        board_frame=board_frame,
-        pick_frame=effective_pick_frame,
-        current_pick=current_pick,
-        session_key=session_key,
-        runtime_state_key=runtime_state_key,
-    )
-
-    _render_trade_events(
-        pick_frame=effective_pick_frame,
-        session_key=session_key,
-        runtime_state_key=runtime_state_key,
-    )
-
-    st.subheader("Draft Board")
     board_rows = draft_board_frame(
         effective_pick_frame,
         nwr_picks_frame,
         st.session_state[session_key],
     )
-    st.dataframe(
-        display_draft_board_frame(board_rows),
-        use_container_width=True,
-        hide_index=True,
-        key=f"{session_key}_draft_board",
+    ranking_display = display_ranking_frame(
+        filtered,
+        show_drafted_context=show_drafted_players,
+        current_pick=current_pick,
     )
+    cockpit_cols = st.columns([2.25, 1.0], gap="small")
+    with cockpit_cols[0]:
+        st.markdown("#### Available Players")
+        st.dataframe(
+            ranking_display,
+            use_container_width=True,
+            hide_index=True,
+            height=560,
+            key=f"{session_key}_ranking_table",
+        )
+    with cockpit_cols[1]:
+        _render_pick_controls(
+            mode_label=mode_label,
+            filtered_frame=filtered,
+            board_frame=board_frame,
+            pick_frame=effective_pick_frame,
+            current_pick=current_pick,
+            session_key=session_key,
+            runtime_state_key=runtime_state_key,
+        )
+        st.markdown("#### Draft Board / Pick Tracker")
+        st.dataframe(
+            display_draft_board_frame(board_rows).head(24),
+            use_container_width=True,
+            hide_index=True,
+            height=360,
+            key=f"{session_key}_draft_board_compact",
+        )
+
+    with st.expander("Full draft board", expanded=False):
+        st.dataframe(
+            display_draft_board_frame(board_rows),
+            use_container_width=True,
+            hide_index=True,
+            key=f"{session_key}_draft_board",
+        )
 
     issues = validate_no_duplicate_assignments(st.session_state[session_key])
     if issues:
@@ -168,6 +174,12 @@ def render_draft_workflow(
                 hide_index=True,
                 key=f"{session_key}_history",
             )
+
+    _render_trade_events(
+        pick_frame=effective_pick_frame,
+        session_key=session_key,
+        runtime_state_key=runtime_state_key,
+    )
 
     _render_runtime_state_controls(
         session_key=session_key,
@@ -317,7 +329,7 @@ def _render_pick_controls(
     session_key: str,
     runtime_state_key: str,
 ) -> None:
-    st.subheader("Pick Selection")
+    st.markdown("#### Pick")
     st.caption(
         f"{mode_label}: manual selection only. No simulator pick algorithm or automatic "
         "recommendation is running."
@@ -329,19 +341,19 @@ def _render_pick_controls(
         return
     _sync_pick_slot_selectbox(session_key, pick_options, pick_frame)
 
-    cols = st.columns([2, 2, 1, 1])
-    player_label = cols[0].selectbox(
+    player_label = st.selectbox(
         "Player from current table",
         list(player_options),
         index=_adp_timing_suggestion_index(filtered_frame, list(player_options), current_pick),
         key=f"{session_key}_selected_player",
     )
-    pick_label = cols[1].selectbox(
+    pick_label = st.selectbox(
         "Pick slot",
         list(pick_options),
         key=f"{session_key}_selected_pick",
     )
-    if cols[2].button("Assign Pick", key=f"{session_key}_assign", use_container_width=True):
+    action_cols = st.columns(2)
+    if action_cols[0].button("Assign Pick", key=f"{session_key}_assign", use_container_width=True):
         try:
             next_state = assign_player_to_pick(
                 st.session_state[session_key],
@@ -377,7 +389,7 @@ def _render_pick_controls(
             st.rerun()
         except DraftWorkflowError as exc:
             st.error(str(exc))
-    if cols[3].button("Undo Last", key=f"{session_key}_undo", use_container_width=True):
+    if action_cols[1].button("Undo Last", key=f"{session_key}_undo", use_container_width=True):
         next_state, message = undo_last_pick(st.session_state[session_key])
         runtime_state = update_workflow_state(
             st.session_state[runtime_state_key],
@@ -391,36 +403,36 @@ def _render_pick_controls(
         st.info(message)
         st.rerun()
 
-    edit_cols = st.columns([2, 1])
-    remove_pick_label = edit_cols[0].selectbox(
-        "Edit/remove assigned pick",
-        list(pick_options),
-        key=f"{session_key}_remove_pick",
-    )
-    if edit_cols[1].button(
-        "Remove Player",
-        key=f"{session_key}_remove_assignment",
-        use_container_width=True,
-    ):
-        next_state, message = remove_pick_assignment(
-            st.session_state[session_key],
-            pick_options[remove_pick_label],
+    with st.expander("Edit assigned pick", expanded=False):
+        remove_pick_label = st.selectbox(
+            "Edit/remove assigned pick",
+            list(pick_options),
+            key=f"{session_key}_remove_pick",
         )
-        runtime_state = update_workflow_state(
-            st.session_state[runtime_state_key],
-            next_state,
-            event_type="pick_removed",
-            event_detail={
-                "pick_label": remove_pick_label,
-                "overall_pick": pick_options[remove_pick_label],
-                "message": message,
-            },
-        )
-        st.session_state[runtime_state_key] = runtime_state
-        st.session_state[session_key] = runtime_state["workflow_state"]
-        st.session_state[f"{session_key}_sync_pick_to_current"] = True
-        st.info(message)
-        st.rerun()
+        if st.button(
+            "Remove Player",
+            key=f"{session_key}_remove_assignment",
+            use_container_width=True,
+        ):
+            next_state, message = remove_pick_assignment(
+                st.session_state[session_key],
+                pick_options[remove_pick_label],
+            )
+            runtime_state = update_workflow_state(
+                st.session_state[runtime_state_key],
+                next_state,
+                event_type="pick_removed",
+                event_detail={
+                    "pick_label": remove_pick_label,
+                    "overall_pick": pick_options[remove_pick_label],
+                    "message": message,
+                },
+            )
+            st.session_state[runtime_state_key] = runtime_state
+            st.session_state[session_key] = runtime_state["workflow_state"]
+            st.session_state[f"{session_key}_sync_pick_to_current"] = True
+            st.info(message)
+            st.rerun()
 
 
 def _render_trade_events(

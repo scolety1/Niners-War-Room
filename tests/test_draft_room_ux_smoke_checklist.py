@@ -75,7 +75,7 @@ def test_draft_room_page_contains_ui_labels_referenced_by_checklist() -> None:
         "Scouting Prep Pool",
         "League History Context",
         "Advanced Audit",
-        "Live Draft Room tools moved",
+        "Draft Cockpit tools moved",
         "2026 1.03",
         "2026 1.04",
         "2026 2.04",

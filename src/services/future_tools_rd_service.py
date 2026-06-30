@@ -443,7 +443,7 @@ def _future_pick_row(
         "pick_round": str(asset.get("round") or asset.get("pick_label") or NOT_ENOUGH_INFORMATION),
         "direction": direction,
         "counterparty": str(trade.get("team_b") or NOT_ENOUGH_INFORMATION),
-        "source": "Live Draft runtime event log / manual",
+        "source": "Draft Cockpit runtime event log / manual",
         "notes": str(trade.get("notes") or ""),
         "guardrail": "Planning ledger only; no pick valuation.",
     }

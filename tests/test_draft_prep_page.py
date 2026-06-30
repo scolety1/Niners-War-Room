@@ -112,8 +112,8 @@ def test_legal_status_and_history_are_context_only() -> None:
 def test_live_tools_are_collapsed_and_decision_board_not_referenced() -> None:
     text = _page_text()
 
-    assert "Live Draft Room tools moved" in text
-    assert "Open Live Draft Room" in text
+    assert "Draft Cockpit tools moved" in text
+    assert "Open Draft Cockpit" in text
     assert "does not mutate draft state" in text
     assert "Decision Board" not in text
 
@@ -130,7 +130,8 @@ def test_visible_navigation_uses_draft_prep_label() -> None:
 
     assert 'title="Draft Prep"' in text
     assert 'url_path="draft-room"' in text
-    assert 'title="Live Draft"' in text
+    assert 'title="Draft Cockpit"' in text
+    assert 'url_path="draft-cockpit"' in text
     assert 'url_path="live-draft-room"' in text
 
 

@@ -471,7 +471,7 @@ def _trade_away_checklist(selected_pick: str) -> list[dict[str, str]]:
         ),
         _checklist_row(
             selected_pick,
-            "After a real deal is agreed, record it in the Live Draft trade event workflow.",
+            "After a real deal is agreed, record it in the Draft Cockpit trade event workflow.",
         ),
     ]
 
@@ -492,7 +492,7 @@ def _trade_for_checklist(target_pick: str) -> list[dict[str, str]]:
         ),
         _checklist_row(
             target_pick,
-            "If a real deal happens, use the Live Draft trade event workflow to record it.",
+            "If a real deal happens, use the Draft Cockpit trade event workflow to record it.",
         ),
     ]
 

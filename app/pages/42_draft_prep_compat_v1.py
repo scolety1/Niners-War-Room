@@ -16,7 +16,7 @@ page_header(
     eyebrow="Compatibility Route",
     description=(
         "Draft Prep has been split into clearer destinations. Use Upcoming Draft Prep for "
-        "manual next-draft planning, Live Draft for real draft state, Mock Drafts for practice, "
+        "manual next-draft planning, Draft Cockpit for real draft state, Mock Drafts for practice, "
         "and Dynasty Rankings for the approved rankings view."
     ),
     status_items=(
@@ -34,7 +34,7 @@ st.warning(
 section_label("Go To")
 cols = st.columns(4)
 cols[0].link_button("Upcoming Draft Prep", "/upcoming-draft-prep", use_container_width=True)
-cols[1].link_button("Live Draft", "/live-draft-room", use_container_width=True)
+cols[1].link_button("Draft Cockpit", "/draft-cockpit", use_container_width=True)
 cols[2].link_button("Mock Drafts", "/mock-draft", use_container_width=True)
 cols[3].link_button("Dynasty Rankings", "/rankings", use_container_width=True)
 

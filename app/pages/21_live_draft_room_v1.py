@@ -32,7 +32,7 @@ from src.services.drafting_mode_cockpit_service import (
 )
 
 SOURCE_CAPTION = (
-    "Live runtime draft session. This state is local/manual draft execution data, "
+    "Draft Cockpit live runtime session. This state is local/manual draft execution data, "
     "not official source truth and not model input."
 )
 
@@ -50,14 +50,13 @@ def _render_live_draft_command_center(
         runtime_state=state,
     )
 
-    st.markdown("## LIVE DRAFT")
-    st.error(
-        "LIVE DRAFT - actions on this page write to the real local live draft runtime state. "
-        "State changes become part of the live draft event log. Use Mock Drafts for "
-        "experiments."
+    st.markdown("## DRAFT COCKPIT")
+    st.warning(
+        "DRAFT COCKPIT - actions on this page write to the real local draft runtime state. "
+        "State changes become part of the draft event log. Use Mock Drafts for experiments."
     )
     st.caption(
-        "Draft room command center: current pick, owned picks, runtime events, trade log, "
+        "Draft Cockpit command center: current pick, owned picks, runtime events, trade log, "
         "export/import, and the live draft board share one local live state scope."
     )
 
@@ -79,7 +78,7 @@ def _render_live_draft_command_center(
         use_container_width=True,
     )
 
-    with st.expander("Your Team / runtime rail", expanded=True):
+    with st.expander("Draft Cockpit rail", expanded=False):
         rail_cols = st.columns(3)
         with rail_cols[0]:
             st.caption("Owned current picks")
@@ -124,7 +123,7 @@ pick_frame, pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv
 nwr_frame, nwr_path = load_lane_prop_file("mock_draft", "nwr_pick_windows.csv")
 
 page_header(
-    "Live Draft",
+    "Draft Cockpit",
     eyebrow="Draft-Day App V1",
     description=(
         "One active draftable-pool table plus an interactive draft board. The frozen "
@@ -137,11 +136,7 @@ page_header(
         ("Persistent local draft state", "safe"),
     ),
 )
-st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
-    unsafe_allow_html=True,
-)
-st.caption("Primary draft room: live pick-by-pick execution and command-center context.")
+st.caption("Primary draft cockpit: live pick-by-pick execution and command-center context.")
 stop_if_board_blocked(bundle)
 
 if pick_path is None or pick_frame.empty:
@@ -155,7 +150,7 @@ else:
         source_caption=SOURCE_CAPTION,
     )
     render_draft_workflow(
-        mode_label="Live Draft Room",
+        mode_label="Draft Cockpit",
         board_frame=live_board_frame,
         pick_frame=pick_frame,
         nwr_picks_frame=nwr_frame,

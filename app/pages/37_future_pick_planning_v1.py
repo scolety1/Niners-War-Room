@@ -17,7 +17,7 @@ page_header(
     "Future Pick Planning",
     eyebrow="Development Lab / Safe V0",
     description=(
-        "Future pick and asset ledger for planning notes. It may read manual Live Draft "
+        "Future pick and asset ledger for planning notes. It may read manual Draft Cockpit "
         "trade events, but it does not value picks or calculate trade fairness."
     ),
     status_items=(

@@ -22,7 +22,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_ENOUGH_INFORMATION,
     OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
     OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
-    RANKINGS_IDENTITY_COLUMN_CONFIG,
+    RANKINGS_TABLE_COLUMN_CONFIG,
     ROOKIES_DRAFT_BOARD_VIEW,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
@@ -40,11 +40,13 @@ from src.services.draft_day_app_v1_service import (
     outcome_columns_for_display,
     outcome_display_coverage_counts,
     outcome_v2_display_coverage_counts,
+    sort_rankings_frame_by_column,
     sort_unified_player_board_for_view,
 )
 
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
+    "NWR Dynasty Score": "nwr_dynasty_score",
     "Final Board Rank": "final_board_rank",
     "Position Rank": "nwr_position_rank",
     "Age": "age",
@@ -64,12 +66,14 @@ VIEW_PRESET_CLEAN_BOARD = "Clean Board"
 VIEW_PRESET_MARKET_ANALYZER = "Market Analyzer"
 VIEW_PRESET_OUTCOME_LENS = "Outcome Lens"
 VIEW_PRESET_DATA_REVIEW = "Data Review"
+VIEW_PRESET_SCORE_AUDIT = "NWR Score Audit"
 VIEW_PRESET_COMPACT_DRAFT = "Compact Draft View"
 VIEW_PRESETS = (
     VIEW_PRESET_CLEAN_BOARD,
     VIEW_PRESET_MARKET_ANALYZER,
     VIEW_PRESET_OUTCOME_LENS,
     VIEW_PRESET_DATA_REVIEW,
+    VIEW_PRESET_SCORE_AUDIT,
     VIEW_PRESET_COMPACT_DRAFT,
 )
 VIEW_PRESET_HELP = {
@@ -88,6 +92,10 @@ VIEW_PRESET_HELP = {
     VIEW_PRESET_DATA_REVIEW: (
         "Human-review lens for trust, confidence, caveats, and review flags."
     ),
+    VIEW_PRESET_SCORE_AUDIT: (
+        "Placeholder score-audit lens. The approved board exposes NWR Dynasty Score and "
+        "source metadata, but not approved component weights or contribution rows."
+    ),
     VIEW_PRESET_COMPACT_DRAFT: (
         "Fast-scan full dynasty board with review context pushed back. Dynasty Rank "
         "remains the default sort."
@@ -102,15 +110,24 @@ def _source_count(frame: pd.DataFrame, source_coverage: str) -> int:
 
 
 def _rankings_identity_column_config() -> dict[str, object]:
-    return {
-        column: st.column_config.TextColumn(
-            str(config["label"]),
-            width=int(config["width"]),
-            pinned=bool(config["pinned"]),
-            help=str(config["help"]),
-        )
-        for column, config in RANKINGS_IDENTITY_COLUMN_CONFIG.items()
-    }
+    configs: dict[str, object] = {}
+    for column, config in RANKINGS_TABLE_COLUMN_CONFIG.items():
+        common = {
+            "label": str(config["label"]),
+            "width": int(config["width"]),
+            "help": str(config["help"]),
+        }
+        pinned = config.get("pinned")
+        if pinned is not None:
+            common["pinned"] = bool(pinned)
+        if config.get("type") == "number":
+            configs[column] = st.column_config.NumberColumn(
+                **common,
+                format=str(config.get("format", "%s")),
+            )
+        else:
+            configs[column] = st.column_config.TextColumn(**common)
+    return configs
 
 
 def _supported_age_count(frame: pd.DataFrame) -> int:
@@ -152,6 +169,16 @@ def _show_market_for_preset(preset: str) -> bool:
         VIEW_PRESET_OUTCOME_LENS,
         VIEW_PRESET_DATA_REVIEW,
     }
+
+
+def _default_ascending_for_sort(sort_by: str) -> bool:
+    return sort_by != "NWR Dynasty Score"
+
+
+def _sort_state_key(sort_by: str) -> str:
+    return "dynasty_rankings_ascending_" + "".join(
+        char.lower() if char.isalnum() else "_" for char in sort_by
+    )
 
 
 def _apply_player_filters(
@@ -213,8 +240,12 @@ def _apply_player_filters(
     )
     ascending = filter_row_two[2].toggle(
         "Ascending",
-        value=True,
-        key="dynasty_rankings_ascending",
+        value=_default_ascending_for_sort(sort_by),
+        key=_sort_state_key(sort_by),
+        help=(
+            "Dynasty Rank defaults ascending. NWR Dynasty Score defaults descending. "
+            "Missing numeric values sort last and never as zero."
+        ),
     )
     _render_age_filter(filter_row_two[3], filtered)
     show_market_baseline = _show_market_for_preset(preset)
@@ -455,11 +486,19 @@ def _default_sort_label(view_mode: str) -> str:
 
 def _sort_options_for_view(view_mode: str) -> list[str]:
     if view_mode == FULL_DYNASTY_VIEW:
-        return ["Dynasty Rank", "Position Rank", "Age", "Player"]
+        return ["Dynasty Rank", "NWR Dynasty Score", "Position Rank", "Age", "Player"]
     if view_mode == ROOKIES_DRAFT_BOARD_VIEW:
-        return ["Final Board Rank", "Player", "Position Rank", "Age", "Dynasty Rank"]
+        return [
+            "Final Board Rank",
+            "Player",
+            "Position Rank",
+            "Age",
+            "Dynasty Rank",
+            "NWR Dynasty Score",
+        ]
     return [
         "Dynasty Rank",
+        "NWR Dynasty Score",
         "Final Board Rank",
         "Position Rank",
         "Age",
@@ -479,35 +518,12 @@ def _sort_player_board(
     column = _sort_column_for_view(sort_by, view_mode)
     if column not in filtered.columns:
         return sort_unified_player_board_for_view(filtered, view_mode)
-    sorted_frame = filtered.copy()
-    if column in {
-        "nwr_rank",
-        "final_board_rank",
-        "position_rank",
-        "nwr_position_rank",
-        "cross_asset_candidate_rank",
-        "age",
-    }:
-        sorted_frame["_ui_sort"] = pd.to_numeric(sorted_frame[column], errors="coerce")
-        if column == "nwr_position_rank":
-            sorted_frame["_ui_sort"] = pd.to_numeric(
-                sorted_frame[column].astype(str).str.extract(r"(\d+)", expand=False),
-                errors="coerce",
-            )
-        sorted_frame = sorted_frame.sort_values(
-            by=["_ui_sort", "player_name"],
-            ascending=[ascending, True],
-            na_position="last",
-            kind="stable",
-        ).drop(columns=["_ui_sort"])
-    else:
-        sorted_frame = sorted_frame.sort_values(
-            by=[column],
-            ascending=[ascending],
-            na_position="last",
-            kind="stable",
-        )
-    return sorted_frame.reset_index(drop=True)
+    return sort_rankings_frame_by_column(
+        filtered,
+        column,
+        ascending=ascending,
+        view_mode=view_mode,
+    )
 
 
 def _sort_column_for_view(sort_by: str, view_mode: str) -> str:
@@ -636,6 +652,41 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
             st.error(error)
 
 
+def _render_score_audit_status() -> None:
+    st.info(
+        "NWR Score Audit is a placeholder. The approved rankings output exposes "
+        "NWR Dynasty Score, score source metadata, confidence, and evidence-field names, "
+        "but it does not include approved component weights or per-component contribution "
+        "rows."
+    )
+    st.caption(
+        "No score component, market, Outcome V2, injury, CFBD, NFL usage, vendor, Gmail, "
+        "or proxy evidence is used to explain or calculate score contribution here."
+    )
+    with st.expander("Score Breakdown feasibility", expanded=False):
+        st.write(
+            {
+                "current_status": "DEFER",
+                "future_candidate_status": "MODEL_FEATURE_CANDIDATE",
+                "available_fields": (
+                    "nwr_dynasty_score, score_status, source_path, source_column, "
+                    "model_version, score_type, score_as_of_date, confidence_cap, "
+                    "confidence_status, allowed_use, blocked_use, "
+                    "candidate_evidence_fields_used"
+                ),
+                "missing_fields": (
+                    "approved component names, component weights, component scores, "
+                    "weighted contribution amounts, percent contribution, and component "
+                    "receipt rows"
+                ),
+                "doc": (
+                    "docs/hq/rankings_draft_cockpit_ux_fix_20260630/"
+                    "SCORE_BREAKDOWN_FEASIBILITY.md"
+                ),
+            }
+        )
+
+
 def _render_tier_board_cheat_sheet(frame: pd.DataFrame, view_mode: str) -> None:
     with st.expander("Tier Board / Cheat Sheet", expanded=False):
         st.caption(
@@ -686,7 +737,7 @@ def _render_tier_board_cheat_sheet(frame: pd.DataFrame, view_mode: str) -> None:
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
         st.caption(
             "Cheat Sheets remain available by direct URL, but the main draft-day tier scan now "
-            "lives inside Dynasty Rankings and Live Draft."
+            "lives inside Dynasty Rankings and Draft Cockpit."
         )
 
 
@@ -800,6 +851,8 @@ if show_market_baseline:
     )
 if preset == VIEW_PRESET_OUTCOME_LENS:
     _render_outcome_lens_status(unified_board)
+if preset == VIEW_PRESET_SCORE_AUDIT:
+    _render_score_audit_status()
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(
     display_unified_player_board_frame(

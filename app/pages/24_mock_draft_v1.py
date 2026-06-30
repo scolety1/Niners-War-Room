@@ -59,16 +59,16 @@ page_header(
     ),
 )
 st.markdown(
-    '<a href="/live-draft-room" target="_self">Back to Live Draft</a>',
+    '<a href="/draft-cockpit" target="_self">Back to Draft Cockpit</a>',
     unsafe_allow_html=True,
 )
 st.markdown("## MOCK DRAFTS")
 st.warning(
-    "MOCK DRAFTS - practice state only. Mock state is separate from Live Draft and safe "
+    "MOCK DRAFTS - practice state only. Mock state is separate from Draft Cockpit and safe "
     "for experimenting; deletes/resets require confirmation."
 )
 st.caption(
-    "Mock Drafts use the same draft-room workflow as Live Draft with a separate mock "
+    "Mock Drafts use the same draft-room workflow as Draft Cockpit with a separate mock "
     "runtime scope. Mock actions do not overwrite live draft state."
 )
 render_source_of_truth_badge(bundle)
@@ -186,7 +186,7 @@ else:
         with st.expander("Mock runtime guardrails", expanded=False):
             paths = runtime_paths()
             st.caption(f"Runtime root: {paths.root}")
-            st.caption("Mock state stays local/untracked and separate from Live Draft.")
+            st.caption("Mock state stays local/untracked and separate from Draft Cockpit.")
             st.caption("No trade valuation, model input, rank changes, or source-truth mutation.")
 
     render_draft_workflow(
