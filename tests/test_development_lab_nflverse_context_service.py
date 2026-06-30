@@ -22,12 +22,12 @@ def test_player_context_artifact_status_matches_hq_expected_counts() -> None:
     status_by_check = {row["Check"]: row["Status"] for row in rows}
 
     assert len(context.artifact_rows) == 294
-    assert len(context.safe_rows) == 240
-    assert len(context.needs_identity_review_rows) == 54
+    assert len(context.safe_rows) == 281
+    assert len(context.needs_identity_review_rows) == 13
     assert status_by_check["Identity proposals"] == "43"
     assert status_by_check["Identity rows needing human review"] == "4"
     assert status_by_check["Identity rows kept for future review"] == "7"
-    assert status_by_check["next game / opponent / bye"] == "240/240 display rows"
+    assert status_by_check["next game / opponent / bye"] == "240/281 display rows"
     assert status_by_check["ff_rankings"] == "blocked_policy"
 
 

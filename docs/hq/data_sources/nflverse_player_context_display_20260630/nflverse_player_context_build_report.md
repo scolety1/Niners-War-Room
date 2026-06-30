@@ -1,6 +1,6 @@
 # NFLVerse Player Context Build Report
 
-Verdict: `YELLOW_PARTIAL_PLAYER_CONTEXT_ARTIFACT`
+Verdict: `YELLOW_PARTIAL_REBUILD_WITH_GATED_ROWS`
 Current Rankings source: `current_unified_rankings; dynasty=approved control-repo dynasty rankings; frozen=local frozen board`
 Current Rankings rows: `294`
 Artifact rows: `294`
@@ -26,3 +26,17 @@ Safe refresh status: `succeeded: approved scripts/run_nflverse_refresh_v0.ps1 sc
 | contracts | YELLOW | 51672 | seasons=1983-2026 | fresh | display_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\contracts.csv |
 | teams | GREEN | 36 | seasons=Not enough information | fresh | display_only | SAFE_NOW_DISPLAY_ONLY | C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\teams.csv |
 | ff_rankings | BLOCKED | Not enough information | Not enough information | not_applicable | blocked_policy | BLOCKED_VENDOR_OR_PRIVATE | Not enough information |
+
+## Approved Identity Binding Apply - 2026-06-30
+
+Source binding packet: `docs/hq/data_sources/nflverse_approved_identity_nwr_binding_v1_20260630/approved_identity_nwr_binding_matrix.csv`
+
+| Metric | Count |
+| --- | ---: |
+| Previously safe display rows | 240 |
+| Approved/bound rows applied | 41 |
+| Safe display rows after apply | 281 |
+| Remaining identity-review/gated rows | 13 |
+| Non-approved or unbound rows exposed as safe context | 0 |
+
+No raw shared-cache refresh was run in this apply. Newly bound rows received approved NWR/Sleeper/GSIS identity fields only; unavailable context fields remain `Not enough information`.
