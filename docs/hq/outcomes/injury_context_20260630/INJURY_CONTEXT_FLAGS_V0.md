@@ -9,8 +9,8 @@ Injury Context Flags V0 builds review-only injury and availability caveats from 
 artifact without changing any Outcome V2 probability, Dynasty Rank, tier, hidden sort, trade
 value, pick value, or app behavior.
 
-The app display gate is `ARTIFACT_ONLY_NO_APP_DISPLAY`. Rankings and Player Compare were not
-changed in this lane.
+Follow-up app display lane status: `GREEN_APP_DISPLAY_V0`. Rankings Outcome Lens and
+Player Compare can display these flags as review-only context.
 
 ## Source data
 
@@ -82,7 +82,7 @@ V0 does not use:
 - vendor injury feeds
 - Gmail
 - hidden rank adjustments
-- medical comeback assumptions
+- medical recovery assumptions
 
 ## Flag definitions
 
@@ -146,11 +146,21 @@ Plain-language explanation for rows where Outcome V2 remains unavailable or cave
 
 ## App display gate
 
-Decision: `ARTIFACT_ONLY_NO_APP_DISPLAY`
+Decision after follow-up app display lane: `GREEN_APP_DISPLAY_V0`
 
-Reason: V0 safely creates a compact enhanced review artifact, but app runtime integration is a
-separate product decision. The existing Rankings Outcome Lens continues to use the approved
-Outcome V2 display artifact. No app files were touched in this lane.
+Display surfaces:
+
+- Dynasty Rankings Outcome Lens
+- Player Compare Injury / Availability Context
+
+Blocked surfaces:
+
+- Clean Board
+- Live Draft
+- Mock Draft
+- Trading Lab
+- hidden sort
+- rank/model/source-truth logic
 
 ## Guardrails
 

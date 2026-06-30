@@ -42,10 +42,10 @@ def test_player_compare_page_contains_simplified_summary_and_injury_transparency
         "Main risk",
         "What still needs review",
         "Injury / Availability Data Status",
-        "No active injury-risk adjustment is being applied",
-        "No medical comeback",
-        "projection is being made",
-        "Missing injury data is not treated as healthy or low risk",
+        "Injury / Availability Context",
+        "Review-only context. No medical projection or injury-risk score is made.",
+        "Missing injury context is not clean health",
+        "No approved injury context available does not mean clean health.",
     ]
     for term in required:
         assert term in text
