@@ -1,0 +1,2 @@
+artifact_name,row_count,drafted_review_rate_rows,confirmed_udfa_status_only_rows,not_enough_information_rows,wrong_universe_blocked_rows,rankings_wiring_allowed_rows,model_use_allowed_rows,training_allowed_rows,active_probability_columns_created,review_only,model_use_allowed,training_allowed,notes
+rookie_display_artifact_v5_coverage_matrix.csv,157,117,28,10,2,0,0,0,0,true,false,false,"Existing V5 is audited only. No new display artifact, app wiring, hidden sort, or active rookie probability columns are created."
