@@ -1,0 +1,40 @@
+# NFLVerse Point-in-Time Snapshot Manifest Builder V1 Manifest
+
+- artifact: `nflverse_point_in_time_snapshot_manifest_builder_v1_20260630`
+- verdict: `YELLOW_POINT_IN_TIME_MANIFEST_BUILT_REPLAY_NOT_APPROVED`
+- base_head: `888c4f13a1b39a24d6b95393508ca759203baa18`
+- scope: review-only substrate-building
+- raw_shared_reads_performed: `false`
+- display_artifacts_rebuilt: `false`
+- app_behavior_changed: `false`
+- replay_approved: `false`
+- experiment_approved: `false`
+- model_training_source_truth_approved: `false`
+
+## Inputs
+
+- `docs\hq\outcomes\nflverse_experiment_substrate_build_plan_v1_20260630\point_in_time_manifest_contract.md` sha256 `5eb9cb78b72ce1f14d275e8b9b38688f7178bec6dedd53402bf99c603e08558f`
+- `docs\hq\outcomes\nflverse_experiment_substrate_build_plan_v1_20260630\build_plan_summary.md` sha256 `d53db61c60493d59dd737d6beb0989c108413dec1fcbef1d18256fe64c45743f`
+- `docs\hq\outcomes\nflverse_experiment_substrate_build_plan_v1_20260630\allowed_source_inputs.csv` sha256 `dc6fc5617bc4cd2a9294fd890697fc1a5aaa2dd213277c23db496faba738b375`
+- `docs\hq\outcomes\nflverse_experiment_substrate_build_plan_v1_20260630\substrate_artifact_contracts.csv` sha256 `3b3a671e7dc231b266a8d361e78d1495ac5619d541d41681807f69332536a99d`
+- `docs\hq\data_sources\nflverse_point_in_time_snapshot_feasibility_v1_20260630\feature_snapshot_feasibility_matrix.csv` sha256 `b1e99d754a20eea26a2aea6ed805162f8771e524539769a89733191a95a4fea5`
+- `docs\hq\data_sources\nflverse_point_in_time_snapshot_feasibility_v1_20260630\source_timestamp_inventory.csv` sha256 `3893798fd8c9928e9533a1f30e91e54dee893b15a0b4d15ecdd5d197acfeef80`
+- `docs\hq\outcomes\nflverse_historical_replay_leakage_evidence_v1_20260630\historical_replay_feature_matrix.csv` sha256 `9dcdba741622480623899bd10621cbfb4935e4f115cd62a488e83633e10414a6`
+- `docs\hq\data_sources\nflverse_dataset_level_refresh_health_20260630\nflverse_dataset_registry_v1.csv` sha256 `86f398e2dfae026db4b91650c944832406cdfde91b466fbc8d2f7994bb1e2624`
+- `docs\hq\data_sources\nflverse_dataset_level_refresh_health_20260630\nflverse_dataset_coverage_matrix_v1.csv` sha256 `a6f89522575764f37b49960810b45b6440822a11ceb5bed11fc85e6c1269623f`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_display_artifact.csv` sha256 `129461e3972d6d378e4a4d00e1fb962ffa37d1a4732ad340af2ba90394c6ad94`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_schema_manifest.csv` sha256 `ce1fb5a3db4c4255b8f11302a613ecc458fc5e491c290a50c7f6eb21ddfbe759`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_join_health.csv` sha256 `b8d8edd2486be07fa431150cc3ea4430e00e985e7b6d2748f4247e7a15a53cf9`
+- `docs\hq\data_sources\nflverse_availability_denominator_display_v1_20260630\availability_denominator_display_artifact.csv` sha256 `ce09a8ea5a76833aa88bf748725f16318095ac7688e78b77c9bc7537afd548d3`
+- `docs\hq\data_sources\nflverse_availability_denominator_missingness_evidence_v1_20260630\denominator_field_policy_matrix.csv` sha256 `2cb1add1a4394106fa6fcf9f08a0cdbc46a689abe18f910b3e762d0b75fb658e`
+- `docs\hq\data_sources\nflverse_approved_identity_nwr_binding_v1_20260630\approved_identity_nwr_binding_matrix.csv` sha256 `e49a6331ed7b21727f85bab2baa12e0955200229b4dc2589e92a1511ec8e581d`
+
+## Outputs
+
+- `point_in_time_manifest_summary.md`
+- `source_snapshot_manifest.csv`
+- `feature_replay_manifest.csv`
+- `missing_asof_fields_report.md`
+- `replay_blocker_report.md`
+- `next_gate_recommendations.md`
+- `merge_safety_report.md`
