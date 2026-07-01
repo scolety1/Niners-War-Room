@@ -1,0 +1,27 @@
+source_dataset,field_name,field_present,numeric_zero_observed,null_or_missing_observed,explicit_zero_safe_for_observed_rows,missing_row_can_be_zero,safe_for_full_sidecar_now,label_truth_allowed,model_use_allowed,training_allowed,source_truth_allowed,blocker_reason,notes
+player_stats_weekly,passing_yards,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=74166; nonzero_count=2638
+player_stats_weekly,passing_tds,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=74968; nonzero_count=1836
+player_stats_weekly,passing_interceptions,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=75648; nonzero_count=1156
+player_stats_weekly,passing_first_downs,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=74238; nonzero_count=2566
+player_stats_weekly,passing_2pt_conversions,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=76644; nonzero_count=160
+player_stats_weekly,sacks_suffered,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=74686; nonzero_count=2118
+player_stats_weekly,sack_yards_lost,true,true,false,true,false,false,false,false,false,false,OPTIONAL_NOT_CURRENT_SCORING_INPUT,zero_count=74726; nonzero_count=2078; audited but current NWR scoring weight applies to sacks_suffered not sack yards
+player_stats_weekly,carries,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=67378; nonzero_count=9426
+player_stats_weekly,rushing_yards,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=67632; nonzero_count=9172
+player_stats_weekly,rushing_tds,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=75056; nonzero_count=1748
+player_stats_weekly,rushing_first_downs,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=70340; nonzero_count=6464
+player_stats_weekly,rushing_2pt_conversions,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=76734; nonzero_count=70
+player_stats_weekly,receptions,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=60656; nonzero_count=16148
+player_stats_weekly,receiving_yards,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=60812; nonzero_count=15992
+player_stats_weekly,receiving_tds,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=73770; nonzero_count=3034
+player_stats_weekly,receiving_first_downs,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=64874; nonzero_count=11930
+player_stats_weekly,receiving_2pt_conversions,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=76634; nonzero_count=170
+player_stats_weekly,rushing_fumbles_lost,true,true,false,true,false,true,false,false,false,false,COMPOSITE_SOURCE_FIELD_ONLY,zero_count=76416; nonzero_count=388; feeds fumbles_lost composite
+player_stats_weekly,receiving_fumbles_lost,true,true,false,true,false,true,false,false,false,false,COMPOSITE_SOURCE_FIELD_ONLY,zero_count=76578; nonzero_count=226; feeds fumbles_lost composite
+player_stats_weekly,sack_fumbles_lost,true,true,false,true,false,true,false,false,false,false,COMPOSITE_SOURCE_FIELD_ONLY,zero_count=76492; nonzero_count=312; feeds fumbles_lost composite
+player_stats_weekly,kickoff_return_yards,true,true,false,true,false,true,false,false,false,false,COMPOSITE_SOURCE_FIELD_ONLY,zero_count=73900; nonzero_count=2904; feeds return_yards composite
+player_stats_weekly,punt_return_yards,true,true,false,true,false,true,false,false,false,false,COMPOSITE_SOURCE_FIELD_ONLY,zero_count=75088; nonzero_count=1716; feeds return_yards composite
+player_stats_weekly,special_teams_tds,true,true,false,true,false,false,false,false,false,false,AMBIGUOUS_RETURN_SPECIAL_TD_MAPPING,zero_count=76710; nonzero_count=94; cannot safely split return_td and special_td
+player_stats_weekly,fumble_recovery_tds,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=76724; nonzero_count=80
+player_stats_weekly,misc_yards,true,true,false,true,false,true,false,false,false,false,NO_BLOCKER_FOR_OBSERVED_ROWS,zero_count=76744; nonzero_count=60
+player_stats_seasonal,games,true,false,true,false,false,false,false,false,false,false,SEASONAL_CONTEXT_NOT_WEEKLY_ZERO_SOURCE,zero_count=0; null_count=38402; nonzero_count=4017; useful for coverage review only
