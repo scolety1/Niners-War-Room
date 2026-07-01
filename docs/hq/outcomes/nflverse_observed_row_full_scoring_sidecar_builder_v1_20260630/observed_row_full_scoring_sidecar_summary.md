@@ -2,7 +2,7 @@
 
 ## Verdict
 
-`YELLOW_OBSERVED_ROW_FULL_SCORING_SIDECAR_PARTIAL_COMPONENT_BLOCKERS`
+`YELLOW_OBSERVED_ROW_FULL_SCORING_SIDECAR_PARTIAL_COMPONENT_BLOCKERS_SHA_FIXED`
 
 The builder created a compact review-only observed-row scoring component sidecar from the admitted local-only `player_stats_weekly` source.
 
