@@ -1,0 +1,5 @@
+split,feature_seasons,target_seasons,rows,qb_rows,rb_rows,wr_rows,te_rows,primary_use,readiness_status,notes
+train,2012-2020,2013-2021,3716,498,980,1425,813,"Fit candidate weights only within predeclared families",PASS,"Nine feature seasons provide enough depth for bounded review-only candidate construction."
+validation,2021-2022,2022-2023,912,130,235,352,195,"Select or reject candidates using fixed gates",PASS,"Two validation seasons provide recency without using holdout."
+holdout,2023-2024,2024-2025,890,126,214,347,203,"Final untouched review check",PASS,"Holdout includes the newest two target seasons; any instability stops promotion."
+all_review,2012-2024,2013-2025,5518,754,1429,2124,1211,"Reporting only after train/validation/holdout review",PASS,"Aggregate reporting may not override holdout failure."
