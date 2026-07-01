@@ -1,0 +1,6 @@
+coverage_slice,drafted_player_count,rookie_class_year_min,rookie_class_year_max,draft_capital_complete_count,review_only,model_use_allowed,training_allowed,source_truth_allowed,notes
+ALL_QB_RB_WR_TE,1999,2000,2024,1999,true,false,false,false,Drafted-only review universe; no model/training/source-truth approval.
+QB,304,2000,2024,304,true,false,false,false,QB drafted-only review slice.
+RB,514,2000,2024,514,true,false,false,false,RB drafted-only review slice.
+WR,814,2000,2024,814,true,false,false,false,WR drafted-only review slice.
+TE,367,2000,2024,367,true,false,false,false,TE drafted-only review slice.
