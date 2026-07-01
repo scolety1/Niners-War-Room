@@ -1,0 +1,37 @@
+feature_name,feature_family,source_artifact,candidate_review_allowed,model_use_allowed,training_allowed,source_truth_allowed,rank_logic_allowed,hidden_sort_allowed,production_formula_allowed,missingness_policy,blocked_reason
+attempts,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+carries,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+feature_games,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+feature_nwr_points,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+feature_nwr_ppg,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+goal_to_go_rushes,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+offense_pct,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+offense_snaps,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+passing_first_downs,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+passing_tds,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+passing_yards,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receiving_air_yards,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receiving_first_downs,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receiving_tds,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receiving_yards,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receiving_yards_after_catch,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+receptions,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushes_inside_10,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushes_inside_20,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushes_inside_5,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushing_first_downs,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushing_tds,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+rushing_yards,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+targets,candidate_formula_input,local_backtest_v1_feature_dataset,True,False,False,False,False,False,False,No new fillna. Null candidate scores are excluded from that variant evaluation.,NO_BLOCKER_REVIEW_ONLY
+routes,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+routes_run,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+route_participation,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+tprr,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+yprr,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+rz_att,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+market_rank,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+adp,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+vendor_projection,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+current_injury_status,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+current_depth_chart,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
+current_schedule_context,blocked_guardrail,blocked,False,False,False,False,False,False,False,Blocked; not evaluated.,BLOCKED_PACKET_GUARDRAIL
