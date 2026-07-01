@@ -1,0 +1,25 @@
+column_name,required,field_type,nullable,source_field_or_rule,missingness_rule,allowed_use,prohibited_use,notes
+sidecar_row_id,true,string,false,compact candidate sidecar_candidate_row_id,Not enough information if source row missing,review-only row identity,label truth or model feature key,Deterministic row identifier from compact candidate
+nwr_player_id,true,string,false,compact candidate nwr_player_id,Not enough information if missing,review-only identity,label truth or model input,All emitted rows are identity-safe display rows
+player_name,true,string,true,compact candidate player_name,Not enough information if missing,review-only display context,source truth,Factual source display value
+position,true,string,false,compact candidate position,Not enough information if missing,review-only grouping,rank logic,K/QB/RB/TE/WR present in V1 artifact
+season,true,integer,false,compact candidate season,Not enough information if missing,review-only season grain,training truth,Seasons 2024-2025
+week,true,integer,false,compact candidate week,Not enough information if missing,review-only weekly grain,training truth,Weeks 1-22
+source_dataset,true,string,false,compact candidate source_dataset,Not enough information if missing,review-only provenance,source truth promotion,V1 uses player_stats_weekly
+source_receipt_sha,true,string,false,compact candidate source_receipt_sha,Not enough information if missing,review-only provenance,integrity proof for model/training,Does not approve model or training use
+source_artifact,true,string,false,tracked compact candidate path,Not enough information if missing,review-only provenance,raw shared path dependency in app,Uses tracked compact candidate, not raw local snapshot
+source_as_of,true,string,true,compact candidate source_as_of,Not enough information if missing,review-only provenance,point-in-time replay proof,Current source_as_of is Not enough information
+stat_family,true,string,false,compact candidate stat_family,Not enough information if missing,review-only stat grouping,model feature activation,passing/receiving/rushing
+raw_stat_name,true,string,false,compact candidate stat_name,Not enough information if missing,review-only comparison,feature promotion,Only first-down stat candidates included
+raw_stat_value,true,string,false,compact candidate stat_value,Not enough information if missing,review-only comparison,zero-fill,All emitted rows are explicit nonzero first-down rows
+normalized_stat_name,true,string,false,compact candidate stat_name,Not enough information if missing,review-only comparison,model feature activation,No scoring transformation applied in this packet
+normalized_stat_value,true,string,false,compact candidate stat_value,Not enough information if missing,review-only comparison,zero-fill,No scoring transformation applied in this packet
+identity_join_status,true,string,false,compact candidate identity_join_status,Not enough information if missing,review-only identity health,source truth,All emitted rows must be SAFE_NOW_DISPLAY_ONLY
+review_required,true,boolean,false,compact candidate review_required,Not enough information if missing,review-only QA flag,hidden sort,All emitted rows must be false
+sidecar_review_allowed,true,boolean,false,compact candidate sidecar_review_allowed,false if missing,review-only comparison,app probability output,All emitted rows must be true
+label_truth_allowed,true,boolean,false,false,false,guardrail,label truth promotion,Must remain false everywhere
+model_use_allowed,true,boolean,false,false,false,guardrail,model input,Must remain false everywhere
+training_allowed,true,boolean,false,false,false,guardrail,training truth,Must remain false everywhere
+source_truth_allowed,true,boolean,false,false,false,guardrail,source truth promotion,Must remain false everywhere
+blocker_reason,true,string,true,compact candidate blocker_reason,Not enough information if missing,review-only blocker context,rank adjustment,States no blocker for review-only row while activation remains blocked
+notes,true,string,true,compact candidate notes,Not enough information if missing,review-only context,model signal,Notes are not features
