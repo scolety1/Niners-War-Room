@@ -1,0 +1,41 @@
+field_name,dtype,nullable,source_or_derivation,review_only,model_use_allowed,training_allowed,source_truth_allowed,missingness_rule
+season,Int64,true,NFLVerse player_stats_weekly season,true,false,false,false,Not enough information when null; no missing-as-zero.
+week,Int64,true,NFLVerse player_stats_weekly week,true,false,false,false,Not enough information when null; no missing-as-zero.
+season_type,str,true,NFLVerse player_stats_weekly season_type,true,false,false,false,Not enough information when null; no missing-as-zero.
+player_id_gsis,str,true,NFLVerse player_stats_weekly player_id,true,false,false,false,Not enough information when null; no missing-as-zero.
+player_id_sleeper,str,true,ff_playerids sleeper_id joined by gsis_id where available,true,false,false,false,Not enough information when null; no missing-as-zero.
+player_name,str,true,NFLVerse player_stats_weekly player_display_name,true,false,false,false,Not enough information when null; no missing-as-zero.
+team,str,true,NFLVerse player_stats_weekly team,true,false,false,false,Not enough information when null; no missing-as-zero.
+opponent_team,str,true,NFLVerse player_stats_weekly opponent_team,true,false,false,false,Not enough information when null; no missing-as-zero.
+position,str,true,NFLVerse player_stats_weekly position,true,false,false,false,Not enough information when null; no missing-as-zero.
+targets,int64,true,NFLVerse player_stats_weekly targets,true,false,false,false,Not enough information when null; no missing-as-zero.
+carries,int64,true,NFLVerse player_stats_weekly carries,true,false,false,false,Not enough information when null; no missing-as-zero.
+receptions,int64,true,NFLVerse player_stats_weekly receptions,true,false,false,false,Not enough information when null; no missing-as-zero.
+touches,float64,true,carries + receptions when both source components are known,true,false,false,false,Not enough information when null; no missing-as-zero.
+opportunities,float64,true,carries + targets when both source components are known,true,false,false,false,Not enough information when null; no missing-as-zero.
+rushing_yards,int64,true,NFLVerse player_stats_weekly rushing_yards,true,false,false,false,Not enough information when null; no missing-as-zero.
+receiving_yards,int64,true,NFLVerse player_stats_weekly receiving_yards,true,false,false,false,Not enough information when null; no missing-as-zero.
+receiving_air_yards,int64,true,NFLVerse player_stats_weekly receiving_air_yards,true,false,false,false,Not enough information when null; no missing-as-zero.
+receiving_yards_after_catch,int64,true,NFLVerse player_stats_weekly receiving_yards_after_catch,true,false,false,false,Not enough information when null; no missing-as-zero.
+rushing_first_downs,int64,true,NFLVerse player_stats_weekly rushing_first_downs,true,false,false,false,Not enough information when null; no missing-as-zero.
+receiving_first_downs,int64,true,NFLVerse player_stats_weekly receiving_first_downs,true,false,false,false,Not enough information when null; no missing-as-zero.
+completions,int64,true,NFLVerse player_stats_weekly completions,true,false,false,false,Not enough information when null; no missing-as-zero.
+passing_attempts,int64,true,NFLVerse player_stats_weekly attempts,true,false,false,false,Not enough information when null; no missing-as-zero.
+passing_yards,int64,true,NFLVerse player_stats_weekly passing_yards,true,false,false,false,Not enough information when null; no missing-as-zero.
+passing_touchdowns,int64,true,NFLVerse player_stats_weekly passing_tds,true,false,false,false,Not enough information when null; no missing-as-zero.
+passing_interceptions,int64,true,NFLVerse player_stats_weekly passing_interceptions,true,false,false,false,Not enough information when null; no missing-as-zero.
+passing_first_downs,int64,true,NFLVerse player_stats_weekly passing_first_downs,true,false,false,false,Not enough information when null; no missing-as-zero.
+offensive_snaps,float64,true,NFLVerse snap_counts offense_snaps review-only name/team/week join,true,false,false,false,Not enough information when null; no missing-as-zero.
+offense_pct,float64,true,NFLVerse snap_counts offense_pct review-only name/team/week join,true,false,false,false,Not enough information when null; no missing-as-zero.
+snap_join_status,str,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+usage_source,str,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+snap_source,str,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+review_only,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+model_use_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+training_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+source_truth_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+rank_logic_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+hidden_sort_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+recommendation_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+app_wiring_allowed,bool,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.
+missingness_notes,str,true,policy/metadata field,true,false,false,false,Not enough information when null; no missing-as-zero.

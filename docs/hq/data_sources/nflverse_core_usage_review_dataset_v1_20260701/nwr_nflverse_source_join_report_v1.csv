@@ -1,0 +1,5 @@
+join_name,left_source,right_source,left_rows,matched_rows,unmatched_rows,join_status,notes
+usage_spine,C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_stats_source_admission_v1_20260630\player_stats_weekly.csv,none,76804,76804,0,SOURCE_SPINE_CREATED,NFLVerse player_stats_weekly admitted local snapshot; raw source not tracked.
+sleeper_id_crosswalk,player_stats_weekly.player_id,C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\ff_playerids.csv,76804,72140,4664,REVIEW_ONLY_ID_CROSSWALK,ff_playerids joined by gsis_id; missing sleeper_id remains Not enough information.
+snap_counts,player_stats_weekly name/team/opponent/week,C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\snap_counts.csv,76804,71600,5204,REVIEW_ONLY_NAME_TEAM_WEEK_JOIN_WITH_CAVEAT,No missing snaps converted to zero/no-role.
+redzone_sidecar_sleeper_to_gsis,Sleeper weekly stats sparse red-zone keys,C:\NWR_SHARED_DATA\scheduled_ingest\nflverse\player_context_display_final_20260630\ff_playerids.csv,6424,5347,1077,REVIEW_ONLY_REDZONE_SIDECAR,rz_att not normalized; sparse missing keys remain Not enough information.
