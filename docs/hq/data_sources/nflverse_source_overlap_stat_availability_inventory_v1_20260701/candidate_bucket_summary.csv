@@ -1,0 +1,16 @@
+recommended_bucket,field_rows,unique_normalized_fields_best_bucket,model_use_allowed,training_allowed,source_truth_allowed,notes
+BLOCKED_AMBIGUOUS_SEMANTICS,1,1,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+BLOCKED_LICENSED_GAP,3,1,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+BLOCKED_LOW_COVERAGE,5,5,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+BLOCKED_MARKET_OR_PROJECTION,73,39,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+BLOCKED_SOURCE_POLICY,47,11,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+DISPLAY_ONLY_CONTEXT,255,93,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+EXPERIMENT_CANDIDATE_REQUIRES_GATE,363,210,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+HIGH_CONFIDENCE_CONTEXT_FIELD,127,79,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+HIGH_CONFIDENCE_FACTUAL_STAT,209,45,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+HIGH_CONFIDENCE_IDENTITY_PLUMBING,106,55,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+NEEDS_ASOF_OR_LEAKAGE_GATE,807,438,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+NEEDS_IDENTITY_GATE,211,123,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+NEEDS_ZERO_OR_MISSINGNESS_GATE,43,19,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+NOT_AVAILABLE,14,14,false,false,false,Inventory bucket only; no model/training/source-truth approval.
+REVIEW_ONLY_DERIVED_STAT,0,0,false,false,false,Inventory bucket only; no model/training/source-truth approval.
