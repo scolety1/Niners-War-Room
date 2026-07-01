@@ -1,0 +1,11 @@
+position,season,sidecar_players,sidecar_rows,label_players,label_rows,matched_players,unmatched_sidecar_players,unmatched_label_players,overlap_rate,parity_ready,blocker_reason,notes
+K,2024,0,0,0,0,0,0,0,0.000000,false,K_SIDE_ROWS_EXCLUDED_NO_APPROVED_OUTCOME_LABEL_FAMILY,K sidecar rows are excluded from Outcome label parity.
+K,2025,1,2,0,0,0,1,0,0.000000,false,K_SIDE_ROWS_EXCLUDED_NO_APPROVED_OUTCOME_LABEL_FAMILY,K sidecar rows are excluded from Outcome label parity.
+QB,2024,24,1308,78,1248,24,0,54,1.000000,false,SCORING_PARITY_PARTIAL_SIDECAR_HAS_FIRST_DOWNS_ONLY,2024 row-level identity/season overlap exists; scoring parity remains partial.
+QB,2025,28,1400,0,0,0,28,0,0.000000,false,LABEL_SOURCE_STOPS_AT_2024,2025 sidecar rows have no admitted 2025 Outcome labels.
+RB,2024,61,2228,148,2368,61,0,87,1.000000,false,SCORING_PARITY_PARTIAL_SIDECAR_HAS_FIRST_DOWNS_ONLY,2024 row-level identity/season overlap exists; scoring parity remains partial.
+RB,2025,76,2656,0,0,0,76,0,0.000000,false,LABEL_SOURCE_STOPS_AT_2024,2025 sidecar rows have no admitted 2025 Outcome labels.
+TE,2024,24,686,128,2048,24,0,104,1.000000,false,SCORING_PARITY_PARTIAL_SIDECAR_HAS_FIRST_DOWNS_ONLY,2024 row-level identity/season overlap exists; scoring parity remains partial.
+TE,2025,32,826,0,0,0,32,0,0.000000,false,LABEL_SOURCE_STOPS_AT_2024,2025 sidecar rows have no admitted 2025 Outcome labels.
+WR,2024,77,2150,234,3744,77,0,157,1.000000,false,SCORING_PARITY_PARTIAL_SIDECAR_HAS_FIRST_DOWNS_ONLY,2024 row-level identity/season overlap exists; scoring parity remains partial.
+WR,2025,91,2372,0,0,0,91,0,0.000000,false,LABEL_SOURCE_STOPS_AT_2024,2025 sidecar rows have no admitted 2025 Outcome labels.
