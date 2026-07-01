@@ -1,0 +1,26 @@
+column_name,required,field_type,nullable,source_or_rule,allowed_values,missingness_rule,notes
+label_row_id,true,string,false,deterministic source candidate + source row + label name,unique artifact id,Not enough information if source row absent,Stable row key for parity validator.
+source_candidate,true,string,false,source receipt candidate id,admitted source id,Not enough information if unavailable,Identifies local source candidate.
+source_sha256,true,string,false,source file sha256,sha256 hex,Not enough information if unavailable,Locks row to receipt.
+player_id,true,string,false,source player_id or GSIS-like id,source identity,Not enough information if unavailable,Source player identity.
+nwr_player_id,true,string,true,source nwr id if present else Not enough information,source identity or Not enough information,Not enough information if absent,"Most historical labels use GSIS player_id, not NWR ids."
+player_name,true,string,false,source player name,display name,Not enough information if unavailable,Review display only.
+position,true,string,false,source position,QB|RB|WR|TE,Not enough information if unavailable,Veteran Outcome V2 positions.
+season,true,string,true,target season for season labels; target year A+1/A+2/window for horizon labels if direct season exists,year or Not enough information,Not enough information for anchor-only labels,Anchor rows keep target season implicit in label_window.
+anchor_season,true,string,true,source anchor_season for horizon labels,year or Not enough information,Not enough information for season labels,Preserves horizon window semantics.
+team,true,string,true,source team,team code or Not enough information,Not enough information if unavailable,Review context only.
+label_family,true,string,false,derived label family,season_outcome|anchor_horizon,Not enough information if unavailable,No new label family invented.
+label_name,true,string,false,source hit column name,top_6_hit etc.,Not enough information if unavailable,Original threshold/horizon name.
+label_value,true,string,true,source cell value,hit|miss|not_applicable|Not enough information,Not enough information if censored/missing,Raw source label value preserved.
+hit_status,true,string,true,normalized source cell,observed_hit|observed_miss|not_applicable|Not enough information,Not enough information if censored/missing,No missing-as-miss conversion.
+window_complete,true,string,true,source window_complete or complete_factual_season,true|false|not_applicable,Not enough information if unavailable,Season labels are complete factual seasons.
+censoring_status,true,string,false,source censoring_status or derived complete factual status,complete|censored statuses|not_applicable,Not enough information if unavailable,Incomplete horizons retain source censoring.
+scoring_mode,true,string,true,source scoring_mode or exact_verified_first_downs from manifest,exact_verified_first_downs,Not enough information if unavailable,Review scoring provenance.
+source_as_of,true,string,true,source as-of if present,date/time or Not enough information,Not enough information if unavailable,Extended manifest lacks created_at.
+review_use_allowed,true,boolean,false,source review-only approval,true|false,false if not approved,True for admitted compact rows.
+label_truth_allowed,true,boolean,false,always false in this lane,false,false,No label truth promotion.
+model_use_allowed,true,boolean,false,always false in this lane,false,false,No model input approval.
+training_allowed,true,boolean,false,always false in this lane,false,false,No training approval.
+source_truth_allowed,true,boolean,false,always false in this lane,false,false,No source-truth approval.
+blocker_reason,true,string,true,row/source blocker,NO_BLOCKER_COMPACT_REVIEW_SOURCE_ADMITTED or blocker,Not enough information if none,Rows admitted for review use only.
+notes,true,string,true,plain language row note,text,Not enough information if none,No app/model/rank use.
