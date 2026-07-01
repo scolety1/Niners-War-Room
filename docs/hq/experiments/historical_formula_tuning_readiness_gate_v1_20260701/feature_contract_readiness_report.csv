@@ -1,0 +1,13 @@
+feature_group,features,count,readiness_status,allowed_next_phase_use,notes
+prior_scoring,"prior_nwr_points; prior_nwr_ppg",2,PASS,"Primary baseline and conservative blend inputs","Derived scoring inputs are review-only and not production-approved."
+games_context,prior_games,1,PASS,"Exposure dampener only","No injury, durability, or medical inference allowed."
+receiving_usage,"prior_targets; prior_receptions",2,PASS,"Usage and opportunity variants","Zeros follow Source Contract semantics."
+rushing_usage,prior_carries,1,PASS,"Usage and opportunity variants","Relevant for RB and dual-threat QB/RB contexts."
+derived_usage,"prior_touches; prior_opportunities",2,PASS,"Interpretable volume features","Derived only from allowed V3 components."
+rushing_production,"prior_rushing_yards; prior_rushing_first_downs",2,PASS,"Production and first-down variants","No source-truth promotion."
+receiving_production,"prior_receiving_yards; prior_receiving_first_downs",2,PASS,"Production and first-down variants","No route proxy interpretation."
+passing_usage,"prior_passing_attempts; prior_passing_completions",2,PASS,"QB-only or position-specific variants","Do not overfit non-QB rows to passing noise."
+passing_production,"prior_passing_yards; prior_passing_td; prior_interceptions; prior_passing_first_downs",4,PASS,"QB-heavy and position-specific variants","Passing TD can be reviewed but no touchdown-chasing production rule may be promoted."
+optional_receiving_context,"prior_receiving_air_yards; prior_receiving_yards_after_catch",2,PASS_WITH_NULL_FENCE,"Sensitivity-only in first pass","Exclude from primary pass; preserve nulls."
+optional_snap_context,"prior_offensive_snaps; prior_offense_pct",2,PASS_WITH_NULL_FENCE,"Sensitivity-only in first pass","Exclude from primary pass; no role, depth, or route proxy claims."
+blocked_families,"red-zone sidecar; ambiguous rz_att; routes; TPRR; YPRR; route proxies; market; ADP; vendor; projection; rank; current-only context",11,BLOCKED,"No use","Blocked by Source Contract V1 and this readiness gate."

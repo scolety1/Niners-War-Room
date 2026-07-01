@@ -1,0 +1,11 @@
+target_outcome,rows,coverage_rate,primary_positions,allowed_metric_use,readiness_status,notes
+target_games,5518,1.0,QB|RB|WR|TE,"supporting denominator and availability context only",PASS,"Do not use as injury-risk or durability projection."
+next_nwr_points,5518,1.0,QB|RB|WR|TE,"MAE/RMSE/Spearman scoring evaluation",PASS,"Primary continuous target for point-error review."
+next_nwr_ppg,5518,1.0,QB|RB|WR|TE,"PPG error and rank correlation evaluation",PASS,"Use alongside total points to avoid pure games-volume bias."
+next_position_finish,5518,1.0,QB|RB|WR|TE,"position finish rank evaluation",PASS,"Use position-specific rank metrics only."
+qb_t12,5518,1.0,QB,"QB Top 12 hit-rate",PASS,"Evaluate only on QB rows."
+rb_t24,5518,1.0,RB,"RB Top 24 hit-rate",PASS,"Primary RB startable threshold."
+wr_t36,5518,1.0,WR,"WR Top 36 hit-rate",PASS,"Primary WR startable threshold."
+te_t12,5518,1.0,TE,"TE Top 12 hit-rate",PASS,"Primary TE startable threshold."
+startable_hit,5518,1.0,QB|RB|WR|TE,"position-aware aggregate hit-rate",PASS,"Useful aggregate metric but cannot replace position-specific thresholds."
+startable_bucket,5518,1.0,QB|RB|WR|TE,"descriptive bucket analysis",PASS,"Review-only reporting bucket; not a production classification."

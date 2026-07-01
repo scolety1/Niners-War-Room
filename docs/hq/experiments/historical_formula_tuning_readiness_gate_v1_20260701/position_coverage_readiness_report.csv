@@ -1,0 +1,6 @@
+position,total_rows,train_rows,validation_rows,holdout_rows,minimum_season_rows,top_label,train_positive_hits,validation_positive_hits,holdout_positive_hits,readiness_status,notes
+QB,754,498,130,126,50,qb_t12,104,23,22,PASS,"Adequate for QB Top 12 review-only evaluation; use caution because QB is the smallest group."
+RB,1429,980,235,214,100,rb_t24,183,43,43,PASS,"Adequate for RB Top 24 and startable review-only evaluation."
+WR,2124,1425,352,347,148,wr_t36,291,61,64,PASS,"Strongest position coverage; adequate for WR Top 36 evaluation."
+TE,1211,813,195,203,85,te_t12,100,23,20,PASS,"Adequate for TE Top 12 evaluation with smaller hit counts than WR/RB."
+ALL,5518,3716,912,890,397,startable_hit,678,150,149,PASS,"All positions have enough rows for bounded review-only search; no production claims allowed."

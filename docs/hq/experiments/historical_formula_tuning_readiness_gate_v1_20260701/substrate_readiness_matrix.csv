@@ -1,0 +1,13 @@
+readiness_question,evidence,threshold,gate_status,decision_notes
+V3 substrate row depth,"5518 player-season rows",">=5000 rows",PASS,"Enough for limited review-only candidate search."
+Feature season coverage,"2012-2024 feature seasons","At least 8 feature seasons",PASS,"13 feature seasons support train/validation/holdout splits."
+Target season coverage,"2013-2025 target seasons","At least 8 target seasons",PASS,"13 target seasons support N to N+1 evaluation."
+Lag preservation,"target_season equals feature_season + 1 for all rows","100 percent N to N+1 lag",PASS,"Feature season N and target season N+1 remain separated."
+Identity joins,"5518/5518 matched feature-label rows","No unmatched feature or label rows",PASS,"Identity risk is controlled for review-only use."
+Position coverage,"QB 754; RB 1429; TE 1211; WR 2124","Every position has >=700 rows",PASS,"QB is thinnest but still adequate for bounded review."
+Allowed feature contract,"18 allowed review-only features","At least core scoring plus usage plus production families",PASS,"Useful formula variants can be tested without blocked families."
+Null-fenced feature handling,"4 optional features with required null fence","Deterministic include/exclude policy",PASS_WITH_CONDITION,"Exclude from primary pass; use sensitivity only."
+Blocked families,"11 blocked feature families","Forbidden families explicitly blocked",PASS,"Routes, TPRR, YPRR, route proxies, rz_att, market/vendor/projection/rank/current-only families remain blocked."
+Target outcomes,"13 target fields at full 5518-row coverage","Points, PPG, finish, hit-rate fields available",PASS,"Targets are adequate for review-only scoring and hit-rate evaluation."
+Production readiness,"No production approvals in V3 or contract","All production/model/source-truth flags false",PASS,"Future search remains review-only and non-production."
+Overall readiness,"Substrate and contract pass limited-search preconditions","All critical criteria pass",GO_LIMITED_FORMULA_SEARCH_REVIEW_ONLY,"Permit only bounded future candidate search after frozen V3 baseline rerun."

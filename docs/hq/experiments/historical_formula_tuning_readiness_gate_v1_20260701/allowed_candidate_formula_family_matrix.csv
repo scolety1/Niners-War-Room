@@ -1,0 +1,10 @@
+family_id,family_name,allowed_features,positions,primary_or_sensitivity,allowed_next_phase,review_only_constraints
+baseline_v3_prior_points,"Frozen V3 baseline rerun","prior_nwr_points; prior_nwr_ppg; prior_games",QB|RB|WR|TE,primary,True,"Must be rerun before candidates; not a new production formula."
+conservative_ppg_games_blend,"Conservative PPG and games exposure blend","prior_nwr_ppg; prior_games; prior_nwr_points",QB|RB|WR|TE,primary,True,"Games is exposure context only; no durability or injury inference."
+usage_volume_opportunity,"Usage and opportunity volume","prior_targets; prior_carries; prior_receptions; prior_touches; prior_opportunities",QB|RB|WR|TE,primary,True,"Interpretable bounded weights only; no route or red-zone proxy."
+production_yards_first_downs,"Production plus first-down context","prior_rushing_yards; prior_receiving_yards; prior_passing_yards; prior_rushing_first_downs; prior_receiving_first_downs; prior_passing_first_downs",QB|RB|WR|TE,primary,True,"No fantasy-points leakage and no target-season data."
+td_dampened_scoring_review,"TD-dampened scoring review","prior_nwr_points; prior_nwr_ppg; prior_passing_td; prior_interceptions",QB,primary,True,"QB-focused only; no rushing/receiving TD components are admitted as standalone fields."
+position_specific_interpretable_blend,"Position-specific interpretable blend","all 18 allowed review-only features",QB|RB|WR|TE,primary,True,"Weights must be predeclared by family and bounded; no automated unconstrained search."
+optional_air_yac_sensitivity,"Optional air-yard/YAC sensitivity","prior_receiving_air_yards; prior_receiving_yards_after_catch",RB|WR|TE,sensitivity,True,"Sensitivity-only; preserve null fence and report row handling."
+optional_snap_context_sensitivity,"Optional snap context sensitivity","prior_offensive_snaps; prior_offense_pct",QB|RB|WR|TE,sensitivity,True,"Sensitivity-only; no route, depth, or role-proxy claims."
+simple_ranked_ensemble_review,"Small fixed ensemble of approved family scores","outputs from primary review-only candidates",QB|RB|WR|TE,secondary_review,True,"Allowed only as review summary; no hidden sort, recommendation, or production rank."
