@@ -1,0 +1,4 @@
+split,group,baseline_mae,candidate_mae,mae_delta_candidate_minus_baseline,baseline_spearman,candidate_spearman,spearman_delta,baseline_startable_precision_at_n,candidate_startable_precision_at_n,startable_precision_delta,review_note
+train,all_positions,38.048654,36.958417,-1.090237,0.677341,0.676843,-0.000498,0.531746,0.529101,-0.002645,positive_mae_with_stable_rank_order
+validation,all_positions,34.86049,32.823869,-2.036621,0.727249,0.725075,-0.002174,0.60119,0.60119,0.0,positive_mae_with_stable_rank_order
+holdout,all_positions,35.880449,34.233957,-1.646492,0.72397,0.725096,0.001126,0.559524,0.559524,0.0,positive_mae_with_stable_rank_order
