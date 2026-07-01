@@ -22,7 +22,7 @@
 - Explicit zero component rows: `35,106`
 - Mapped observed player-week rows considered: `12,268`
 - Mapped players: `232`
-- Artifact SHA256: `6d0037bbe9e19b5e04e468dc9b7a6c638ae43d9a31f8ed2cee64ebdf4c31d34e`
+- Artifact SHA256: `e3c19d3c047e47fc2a34a5533cd477aa011a38c28f9a1d3a80b97fe8c9304d74`
 
 ## Files
 
