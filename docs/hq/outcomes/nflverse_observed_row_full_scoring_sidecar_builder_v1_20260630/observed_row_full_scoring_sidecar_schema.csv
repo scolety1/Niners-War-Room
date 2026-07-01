@@ -1,0 +1,29 @@
+column_name,required,field_type,nullable,source_or_rule,missingness_rule,notes
+sidecar_row_id,true,string,false,deterministic source row + component id,Not enough information if source row absent,Stable review key.
+nwr_player_id,true,string,false,safe NFLVerse player context identity bridge,Do not emit if no safe NWR identity,Rows require SAFE_NOW_DISPLAY_ONLY identity.
+player_name,true,string,false,player_display_name or player_name,Not enough information if missing,Review display only.
+position,true,string,false,source position,Do not emit non-QB/RB/WR/TE in this artifact,K rows excluded.
+season,true,integer,false,source season,Do not emit if missing,Observed row season.
+week,true,integer,false,source week,Do not emit if missing,Observed row week.
+source_dataset,true,string,false,player_stats_weekly,Not enough information if unknown,Only weekly observed rows used.
+source_receipt_sha,true,string,false,admitted weekly receipt SHA,Do not emit if SHA mismatch,Validated before build.
+source_artifact,true,string,false,tracked receipt path,Not enough information if unavailable,No app raw dependency.
+source_as_of,true,string,true,receipt source_as_of,Not enough information if unavailable,Still blocks model/training/source truth.
+component_family,true,string,false,formula family,Not enough information if unavailable,Passing/rushing/receiving/etc.
+component_name,true,string,false,normalized formula component,Not enough information if unavailable,No quarantined names.
+component_value,true,number,false,direct or composite observed value,Do not emit missing value,Nonzero rows plus selected composite explicit zeros.
+component_unit,true,string,false,yards or count,Not enough information if unavailable,Review context.
+scoring_weight,true,number,false,NWR formula weight,Not enough information if unavailable,Formula alignment V1.
+weighted_component_value,true,number,false,component_value * scoring_weight,Not enough information if unavailable,"Review calculation only, not model output."
+component_mapping_status,true,string,false,DIRECT_FIELD or composite policy,Blocked if ambiguous,No double counting.
+explicit_zero_observed,true,boolean,false,true only for emitted composite zero rows,Missing rows are not zero,Direct zero expansion not emitted in compact V1.
+missingness_status,true,string,false,observed_nonzero_component or explicit_zero_observed,Missing rows remain Not enough information,No missing-as-zero.
+identity_join_status,true,string,false,SAFE_NOW_DISPLAY_ONLY,Do not emit if unsafe,Identity gate.
+review_required,true,boolean,false,false,Do not emit review-required rows,Identity gate.
+sidecar_review_allowed,true,boolean,false,true for emitted rows,false if blocked,Review-only sidecar substrate.
+label_truth_allowed,true,boolean,false,always false,false,No label truth.
+model_use_allowed,true,boolean,false,always false,false,No model input.
+training_allowed,true,boolean,false,always false,false,No training.
+source_truth_allowed,true,boolean,false,always false,false,No source truth.
+blocker_reason,true,string,false,row-level gate result,Not enough information if none,Plain blocker.
+notes,true,string,true,plain-language caveat,Not enough information if none,Review-only caveat.
