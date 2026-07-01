@@ -1,0 +1,36 @@
+# NFLVerse Point-In-Time Snapshot Feasibility Manifest
+
+- artifact: `nflverse_point_in_time_snapshot_feasibility_v1_20260630`
+- verdict: `YELLOW_POINT_IN_TIME_SNAPSHOT_FEASIBILITY_READY_NO_REPLAY_APPROVAL`
+- base_head: `9dafea81b3316a02f8a051762b9d53dc84791fc7`
+- scope: feasibility/audit only
+- display_artifacts_rebuilt: `false`
+- app_behavior_changed: `false`
+- model_or_source_truth_changed: `false`
+
+## Inputs
+
+- `docs\hq\outcomes\nflverse_model_candidate_readiness_matrix_v1_20260630\nflverse_model_candidate_readiness_matrix.csv` sha256 `364c1259ad59f3181377b5f979ebfdd185c0191be097212bb2bfb86007ae57e3`
+- `docs\hq\outcomes\nflverse_model_candidate_readiness_matrix_v1_20260630\readiness_summary.md` sha256 `8f618fb2371672f82a7f0ac85ca6b09fa591a0c05e196b6a80219a0f7b061f96`
+- `docs\hq\outcomes\nflverse_historical_replay_leakage_evidence_v1_20260630\historical_replay_feature_matrix.csv` sha256 `9dcdba741622480623899bd10621cbfb4935e4f115cd62a488e83633e10414a6`
+- `docs\hq\outcomes\nflverse_historical_replay_leakage_evidence_v1_20260630\point_in_time_requirements.md` sha256 `c5cea157ebdadc896903d3f378e9e1b29002e68b8512c915c43d479e50507339`
+- `docs\hq\outcomes\nflverse_historical_replay_leakage_evidence_v1_20260630\prediction_time_availability_rules.md` sha256 `9946ba71c0e8feb341c9070e36b808bcdbe1e5a1b159cc7a8eafbb63bd168b6e`
+- `docs\hq\data_sources\nflverse_dataset_level_refresh_health_20260630\nflverse_dataset_registry_v1.csv` sha256 `86f398e2dfae026db4b91650c944832406cdfde91b466fbc8d2f7994bb1e2624`
+- `docs\hq\data_sources\nflverse_dataset_level_refresh_health_20260630\nflverse_dataset_coverage_matrix_v1.csv` sha256 `a6f89522575764f37b49960810b45b6440822a11ceb5bed11fc85e6c1269623f`
+- `docs\hq\data_sources\nflverse_dataset_level_refresh_health_20260630\nflverse_source_policy_matrix_v1.csv` sha256 `17a1d17bc6b2938df777853e1f1708b31e93c04f111fec6f0c44257bddb2224e`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_display_artifact.csv` sha256 `129461e3972d6d378e4a4d00e1fb962ffa37d1a4732ad340af2ba90394c6ad94`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_schema_manifest.csv` sha256 `ce1fb5a3db4c4255b8f11302a613ecc458fc5e491c290a50c7f6eb21ddfbe759`
+- `docs\hq\data_sources\nflverse_player_context_display_20260630\nflverse_player_context_join_health.csv` sha256 `b8d8edd2486be07fa431150cc3ea4430e00e985e7b6d2748f4247e7a15a53cf9`
+- `docs\hq\data_sources\nflverse_availability_denominator_display_v1_20260630\availability_denominator_display_artifact.csv` sha256 `ce09a8ea5a76833aa88bf748725f16318095ac7688e78b77c9bc7537afd548d3`
+- `docs\hq\data_sources\nflverse_availability_denominator_missingness_evidence_v1_20260630\denominator_field_policy_matrix.csv` sha256 `2cb1add1a4394106fa6fcf9f08a0cdbc46a689abe18f910b3e762d0b75fb658e`
+- `docs\hq\data_sources\nflverse_display_update_final_closeout_20260630\final_closeout_status.md` sha256 `d80beeb7c077aa9cd23e0dacce33adcb0844e5c4146264d188453717cd2c83b4`
+
+## Outputs
+
+- `snapshot_feasibility_summary.md`
+- `source_timestamp_inventory.csv`
+- `feature_snapshot_feasibility_matrix.csv`
+- `replay_anchor_requirements.md`
+- `point_in_time_blocker_report.md`
+- `next_gate_recommendations.md`
+- `merge_safety_report.md`
