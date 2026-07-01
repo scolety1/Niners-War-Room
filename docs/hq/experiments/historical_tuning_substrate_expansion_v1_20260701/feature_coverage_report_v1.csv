@@ -1,0 +1,23 @@
+feature,source_column,rows,non_null_count,null_count,coverage_rate,zero_count,zero_rate,non_zero_count,min_value,max_value,mean_value,missingness_note,description
+prior_nwr_points,feature_nwr_points,3108,3108,0,1.0,88,0.028314,3020,-1.3,383.766667,73.429719,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season total NWR scoring from local Backtest V1.
+prior_games,feature_games,3108,3108,0,1.0,0,0.0,3108,1.0,17.0,10.888674,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season games with stats from local Backtest V1.
+prior_nwr_ppg,feature_nwr_ppg,3108,3108,0,1.0,88,0.028314,3020,-1.1,25.548889,5.829248,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season NWR points per game from local Backtest V1.
+prior_targets,targets,3108,3108,0,1.0,483,0.155405,2625,0.0,191.0,35.361969,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season targets.
+prior_carries,carries,3108,3108,0,1.0,1244,0.400257,1864,0.0,378.0,29.100708,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season carries.
+prior_receptions,receptions,3108,3108,0,1.0,551,0.177284,2557,0.0,149.0,23.913771,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season receptions.
+prior_rushing_yards,rushing_yards,3108,3108,0,1.0,1293,0.416023,1815,-16.0,2027.0,128.623874,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season rushing yards.
+prior_receiving_yards,receiving_yards,3108,3108,0,1.0,551,0.177284,2557,-11.0,1947.0,267.037323,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season receiving yards.
+prior_receiving_air_yards,receiving_air_yards,3108,3108,0,1.0,511,0.164414,2597,-159.0,2377.0,281.661197,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season receiving air yards where available in Backtest V1.
+prior_receiving_yards_after_catch,receiving_yards_after_catch,3108,3108,0,1.0,591,0.190154,2517,-5.0,987.0,125.804698,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season receiving yards after catch where available in Backtest V1.
+prior_rushing_first_downs,rushing_first_downs,3108,3108,0,1.0,1586,0.510296,1522,0.0,109.0,7.61583,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season rushing first downs.
+prior_receiving_first_downs,receiving_first_downs,3108,3108,0,1.0,727,0.233912,2381,0.0,92.0,12.888996,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season receiving first downs.
+prior_passing_attempts,attempts,3108,3108,0,1.0,2545,0.818855,563,0.0,719.0,37.175676,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing attempts.
+prior_passing_completions,completions,3108,3108,0,1.0,2609,0.839447,499,0.0,485.0,24.095238,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing completions.
+prior_passing_yards,passing_yards,3108,3108,0,1.0,2609,0.839447,499,-7.0,5316.0,268.698842,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing yards.
+prior_passing_td,passing_tds,3108,3108,0,1.0,2709,0.871622,399,0.0,50.0,1.712677,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing touchdowns.
+prior_interceptions,passing_interceptions,3108,3108,0,1.0,2745,0.883205,363,0.0,30.0,0.833333,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing interceptions.
+prior_passing_first_downs,passing_first_downs,3108,3108,0,1.0,2624,0.844273,484,0.0,273.0,13.010618,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season passing first downs.
+prior_offensive_snaps,offense_snaps,3108,3108,0,1.0,3105,0.999035,3,0.0,1038.0,0.782175,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season offensive snaps where available in Backtest V1.
+prior_offense_pct,offense_pct,3108,3108,0,1.0,3105,0.999035,3,0.0,0.867752,0.000661,No new zero fill in builder; source V1 missingness semantics apply.,Prior feature-season offensive snap share where available in Backtest V1.
+prior_touches,derived,3108,3108,0,1.0,140,0.045045,2968,0.0,403.0,53.014479,No new zero fill in builder; source V1 missingness semantics apply.,Derived as prior carries plus prior receptions from source V1 values.
+prior_opportunities,derived,3108,3108,0,1.0,95,0.030566,3013,0.0,429.0,64.462677,No new zero fill in builder; source V1 missingness semantics apply.,Derived as prior carries plus prior targets from source V1 values.

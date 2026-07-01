@@ -1,0 +1,14 @@
+target_outcome,rows,non_null_count,null_count,coverage_rate,source,positive_or_true_count,min_value,max_value,mean_value
+target_games,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,3108,1.0,18.0,10.440798
+next_nwr_points,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,2970,-1.3,383.766667,67.856231
+next_nwr_ppg,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,2970,-1.1,25.548889,5.435121
+next_position_finish,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,3108,1.0,187.0,63.66184
+qb_t12,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,79,0.0,1.0,0.025418
+rb_t12,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,78,0.0,1.0,0.025097
+rb_t24,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,145,0.0,1.0,0.046654
+wr_t12,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,77,0.0,1.0,0.024775
+wr_t24,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,150,0.0,1.0,0.048263
+wr_t36,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,219,0.0,1.0,0.070463
+te_t12,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,76,0.0,1.0,0.024453
+startable_hit,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,519,0.0,1.0,0.166988
+startable_bucket,3108,3108,0,1.0,labels_v1.csv plus deterministic position finish/startable derivations,3108,,,

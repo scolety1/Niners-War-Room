@@ -1,0 +1,12 @@
+metric,value,notes
+feature_rows,3108,Rows in local feature_dataset_v1_clean_expanded.csv.
+label_rows,3108,Rows in local labels_v1.csv.
+matched_feature_label_rows,3108,Inner canonical rows matched on player_id and target_season.
+unmatched_feature_rows,0,Feature rows without matching label rows.
+unmatched_label_rows,0,Label rows without matching feature rows.
+canonical_rows,3108,Rows emitted to the canonical review-only substrate.
+distinct_gsis_player_ids,1005,Stable player_id_gsis values used as identity.
+gsis_format_rows,3108,Rows whose player_id_gsis matches the 00-numeric GSIS format.
+position_mismatch_rows,0,Feature position differs from target position.
+duplicate_identity_season_keys,0,Duplicate player_id_gsis + season-pair keys.
+ambiguous_same_name_feature_season_groups,86,Names are audit fields only; no name matching used.

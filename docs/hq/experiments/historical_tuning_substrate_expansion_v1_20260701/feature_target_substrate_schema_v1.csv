@@ -1,0 +1,63 @@
+column_name,dtype,nullable,role,source_column_or_rule,description,review_only,model_use_allowed,training_allowed,source_truth_allowed,production_approved,missingness_semantics
+substrate_row_id,str,False,identity,builder,,True,False,False,False,False,Not a feature value or derived target outcome.
+player_id_gsis,str,False,identity,builder,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_season,int64,False,coverage_metadata,feature and label keys,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_season,int64,False,coverage_metadata,feature and label keys,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_target_year_lag,int64,False,coverage_metadata,feature and label keys,,True,False,False,False,False,Not a feature value or derived target outcome.
+position,str,False,coverage_metadata,feature and label keys,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_position,str,False,coverage_metadata,feature and label keys,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_player_name,str,False,audit_field_not_identity_truth,feature or label audit field,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_team,str,False,audit_field_not_identity_truth,feature or label audit field,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_player_name,str,False,audit_field_not_identity_truth,feature or label audit field,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_team,str,False,audit_field_not_identity_truth,feature or label audit field,,True,False,False,False,False,Not a feature value or derived target outcome.
+prior_nwr_points,float64,False,safe_lagged_feature,feature_nwr_points,Prior feature-season total NWR scoring from local Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_games,int64,False,safe_lagged_feature,feature_games,Prior feature-season games with stats from local Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_nwr_ppg,float64,False,safe_lagged_feature,feature_nwr_ppg,Prior feature-season NWR points per game from local Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_targets,int64,False,safe_lagged_feature,targets,Prior feature-season targets.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_carries,int64,False,safe_lagged_feature,carries,Prior feature-season carries.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_receptions,int64,False,safe_lagged_feature,receptions,Prior feature-season receptions.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_rushing_yards,int64,False,safe_lagged_feature,rushing_yards,Prior feature-season rushing yards.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_receiving_yards,int64,False,safe_lagged_feature,receiving_yards,Prior feature-season receiving yards.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_receiving_air_yards,float64,False,safe_lagged_feature,receiving_air_yards,Prior feature-season receiving air yards where available in Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_receiving_yards_after_catch,float64,False,safe_lagged_feature,receiving_yards_after_catch,Prior feature-season receiving yards after catch where available in Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_rushing_first_downs,int64,False,safe_lagged_feature,rushing_first_downs,Prior feature-season rushing first downs.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_receiving_first_downs,int64,False,safe_lagged_feature,receiving_first_downs,Prior feature-season receiving first downs.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_passing_attempts,int64,False,safe_lagged_feature,attempts,Prior feature-season passing attempts.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_passing_completions,int64,False,safe_lagged_feature,completions,Prior feature-season passing completions.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_passing_yards,int64,False,safe_lagged_feature,passing_yards,Prior feature-season passing yards.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_passing_td,int64,False,safe_lagged_feature,passing_tds,Prior feature-season passing touchdowns.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_interceptions,int64,False,safe_lagged_feature,passing_interceptions,Prior feature-season passing interceptions.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_passing_first_downs,int64,False,safe_lagged_feature,passing_first_downs,Prior feature-season passing first downs.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_offensive_snaps,float64,False,safe_lagged_feature,offense_snaps,Prior feature-season offensive snaps where available in Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_offense_pct,float64,False,safe_lagged_feature,offense_pct,Prior feature-season offensive snap share where available in Backtest V1.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_touches,int64,False,safe_lagged_feature,derived_from_prior_components,Derived as prior carries plus prior receptions from source V1 values.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+prior_opportunities,int64,False,safe_lagged_feature,derived_from_prior_components,Derived as prior carries plus prior targets from source V1 values.,True,False,False,False,False,No new zero fill in builder; source missingness semantics documented separately.
+target_games,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+next_nwr_points,float64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+next_nwr_ppg,float64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+next_position_finish,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+qb_t12,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+rb_t12,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+rb_t24,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+wr_t12,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+wr_t24,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+wr_t36,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+te_t12,int64,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+startable_hit,bool,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+startable_bucket,str,False,target_outcome,labels_v1.csv or deterministic target derivation,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_source_artifact,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_source_artifact,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+source_lineage,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+feature_asof_rule,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+target_window,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+leakage_check_result,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+asof_check_result,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+source_missingness_policy,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+missingness_metadata_source,str,False,lineage_or_guardrail_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+review_only,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+model_use_allowed,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+training_allowed,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+source_truth_allowed,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+hidden_sort_allowed,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+recommendation_allowed,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
+production_approved,bool,False,approval_metadata,builder constant,,True,False,False,False,False,Not a feature value or derived target outcome.
