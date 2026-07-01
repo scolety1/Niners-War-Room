@@ -1,0 +1,14 @@
+target_outcome,rows,non_null_count,null_count,coverage_rate,target_only,source,positive_or_true_count,min_value,max_value,mean_value
+target_games,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,5518,1.0,18.0,10.495832
+next_nwr_points,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,5302,-1.8,383.766667,69.360928
+next_nwr_ppg,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,5302,-1.8,25.548889,5.572872
+next_position_finish,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,5518,1.0,187.0,60.686662
+qb_t12,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,149,0.0,1.0,0.027003
+rb_t12,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,139,0.0,1.0,0.02519
+rb_t24,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,269,0.0,1.0,0.04875
+wr_t12,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,144,0.0,1.0,0.026096
+wr_t24,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,279,0.0,1.0,0.050562
+wr_t36,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,416,0.0,1.0,0.07539
+te_t12,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,143,0.0,1.0,0.025915
+startable_hit,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,977,0.0,1.0,0.177057
+startable_bucket,5518,5518,0,1.0,True,V2 target labels carried forward without feature-side use.,5518,,,

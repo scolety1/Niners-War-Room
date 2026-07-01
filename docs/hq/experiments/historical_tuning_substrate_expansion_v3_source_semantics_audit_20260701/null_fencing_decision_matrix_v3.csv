@@ -1,0 +1,23 @@
+feature,null_fenced_by,source_missing_flag_rows,v2_null_count,v3_null_count,fence_decision,decision_reason,review_only,production_approved
+prior_nwr_points,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_games,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_nwr_ppg,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_targets,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_carries,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_receptions,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_rushing_yards,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_receiving_yards,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_receiving_air_yards,air_yards_missing,663,663,663,KEEP_NULL_FENCE,V1 generated missingness flag identifies 663 rows where zero could mean missing source coverage.,True,False
+prior_receiving_yards_after_catch,air_yards_missing,663,663,663,KEEP_NULL_FENCE,V1 generated missingness flag identifies 663 rows where zero could mean missing source coverage.,True,False
+prior_rushing_first_downs,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_receiving_first_downs,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_passing_attempts,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_passing_completions,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_passing_yards,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_passing_td,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_interceptions,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_passing_first_downs,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_offensive_snaps,snap_pct_missing,811,811,811,KEEP_NULL_FENCE,V1 generated missingness flag identifies 811 rows where zero could mean missing source coverage.,True,False
+prior_offense_pct,snap_pct_missing,811,811,811,KEEP_NULL_FENCE,V1 generated missingness flag identifies 811 rows where zero could mean missing source coverage.,True,False
+prior_touches,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
+prior_opportunities,,0,0,0,NO_NULL_FENCE_NEEDED_AFTER_SOURCE_SEMANTICS_AUDIT,"Column is either source-recorded, structural by role, or derived from reviewed components.",True,False
