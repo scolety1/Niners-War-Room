@@ -1,0 +1,1134 @@
+normalized_field_name,source_count,accuracy_confidence_values,coverage_confidence_values,consistency_confidence,primary_blockers,review_only,model_use_allowed,training_allowed,source_truth_allowed
+aborted_play,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+active_indicator,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+age,2,HIGH:2,HIGH:1|MEDIUM:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+age_source,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+aggressiveness,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+air_epa,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+air_wpa,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+air_yards,2,MEDIUM:2,MEDIUM:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+air_yards_share,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+allowed_for_display_context,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_for_model_now,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_for_review,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_for_review_only_model_rd,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_for_source_truth_now,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_for_training_now,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+allowed_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+allpro,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+app_wiring_allowed,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+approval_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+apy,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+apy_cap_pct,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+as_of_safe_now,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+assist_tackle,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+assist_tackle_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_1_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+assist_tackle_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+assist_tackle_3_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_3_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_3_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+assist_tackle_4_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_4_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+assist_tackle_4_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+attribution_required,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+availability_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_air_distance,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+avg_air_yards_differential,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_air_yards_to_sticks,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_completed_air_yards,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_cushion,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+avg_expected_yac,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_intended_air_yards,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_rush_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_separation,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_time_to_los,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+avg_time_to_throw,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+avg_yac,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+avg_yac_above_expectation,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+away_coach,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_moneyline,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_qb_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+away_qb_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+away_rest,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_score,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_spread_odds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_team,2,HIGH:1|MEDIUM:1,HIGH:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+away_timeouts_remaining,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+away_wp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+away_wp_post,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+bench,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+birth_date,3,MEDIUM:3,HIGH:3,MEDIUM,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+birthdate,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+blocked_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+blocked_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+blocker_reason,5,NOT_ENOUGH_INFORMATION:5,HIGH:4|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+broad_jump,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+bye_context,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+bye_week,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+bye_week_flag,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+car_av,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+catch_percentage,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+category,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+caveat,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+cbs_id,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+cfb_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+cfb_player_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+cfbref_id,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+club_code,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+college,5,HIGH:4|MEDIUM:1,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+college_conference,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+college_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+cols,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+combine_height,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+combine_weight,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+common_first_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+comp_air_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+comp_air_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+comp_yac_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+comp_yac_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+complete_pass,2,MEDIUM:2,HIGH:1|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+completion_percentage,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+completion_percentage_above_expectation,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+completions,4,HIGH:5|MEDIUM:2,HIGH:5|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+component_family,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+component_mapping_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+component_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+component_unit,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+component_value,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+conditional,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+cone,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+contract_context,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+coverage_rows,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+coverage_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+cp,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+cpoe,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+data_coverage_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+data_grain,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+date_modified,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+date_of_birth,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+date_pulled,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+db_season,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_fumbles,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_fumbles_forced,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_interception_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_interceptions,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_ints,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_pass_defended,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_qb_hits,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_sack_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_sacks,4,HIGH:5|MEDIUM:1,HIGH:5|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_safeties,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_solo_tackles,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_tackle_assists,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_tackles_for_loss,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_tackles_for_loss_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_tackles_solo,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_tackles_with_assist,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+def_tds,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+def_times_blitzed,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+def_times_hitqb,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+def_times_hurried,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+def_wp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+default_recommendation,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defenders_in_box,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_coverage_type,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defense_man_zone_type,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_names,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+defense_numbers,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_pct,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_personnel,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_players,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defense_positions,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defense_snaps,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defensive_extra_point_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defensive_extra_point_conv,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defensive_two_point_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defensive_two_point_conv,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+defteam,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defteam_score,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defteam_score_post,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+defteam_timeouts_remaining,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+denominator_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+depth_chart_position,3,MEDIUM:3,HIGH:2|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+depth_chart_rank,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+depth_chart_role,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+depth_position,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+depth_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+desc,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+display_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+display_only,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+display_only_candidate,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+display_surface,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+div_game,2,HIGH:1|MEDIUM:1,HIGH:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+down,2,NOT_ENOUGH_INFORMATION:3,HIGH:2|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+dr_av,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+draft_club,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_number,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_overall,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_ovr,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_pick,3,HIGH:3,LOW:1|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_round,5,HIGH:4|MEDIUM:1,LOW:1|MEDIUM:4,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_team,3,HIGH:2|MEDIUM:1,HIGH:1|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+draft_year,5,HIGH:4|MEDIUM:1,HIGH:2|LOW:1|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+drafted_player_match_count,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+drafted_team,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+drive,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_end_transition,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_end_yard_line,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_ended_with_score,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_first_downs,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+drive_game_clock_end,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+drive_game_clock_start,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+drive_inside20,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_play_count,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_play_id_ended,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_play_id_started,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_quarter_end,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_quarter_start,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_real_start_time,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+drive_start_transition,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_start_yard_line,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+drive_time_of_possession,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+drive_yards_penalized,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+dt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+efficiency,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+elias_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+end_clock_time,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+end_yard_line,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+entry_year,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+ep,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+era,1,NOT_ENOUGH_INFORMATION:2,HIGH:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+esb_id,3,HIGH:3,HIGH:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+espn,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+espn_id,5,HIGH:4|MEDIUM:1,HIGH:1|MEDIUM:4,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+evidence_sources,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+evidence_summary,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+expected_completion_percentage,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+expected_coverage,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+expected_rush_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+experience,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+experiment_safe_now,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+explicit_stat_zero_components_present,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+explicit_zero_observed,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+extra_point_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+extra_point_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+extra_point_result,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fantasy,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fantasy_data_id,3,HIGH:3,MEDIUM:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+fantasy_id,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fantasy_player_id,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fantasy_player_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fantasy_points,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+fantasy_points_ppr,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+fantasypros_id,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+feature_family,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+feature_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fg_att,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_blocked,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_blocked_distance,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_blocked_list,3,NOT_ENOUGH_INFORMATION:5,LOW:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_long,3,NOT_ENOUGH_INFORMATION:5,LOW:4|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_0_19,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_20_29,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_30_39,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_40_49,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_50_59,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_60,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_distance,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_made_list,3,NOT_ENOUGH_INFORMATION:5,LOW:4|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_0_19,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_20_29,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_30_39,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_40_49,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_50_59,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_60,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_distance,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_missed_list,3,NOT_ENOUGH_INFORMATION:5,LOW:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_pct,3,NOT_ENOUGH_INFORMATION:5,LOW:4|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fg_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+field,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+field_category,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+field_goal_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+field_goal_result,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+field_name,6,HIGH:2|MEDIUM:4,HIGH:6,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+field_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+field_type,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+field_type_or_example,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+final_board_rank,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+first_down,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+first_down_pass,2,MEDIUM:2,HIGH:1|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+first_down_penalty,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+first_down_rush,2,MEDIUM:2,HIGH:1|LOW:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+first_name,5,HIGH:3|MEDIUM:2,HIGH:4|LOW:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fixed_drive,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fixed_drive_result,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fleaflicker_id,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+football_name,4,HIGH:3|MEDIUM:1,HIGH:2|LOW:2,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+forced_fumble_player_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+forced_fumble_player_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+forced_fumble_player_1_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+forced_fumble_player_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+forced_fumble_player_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+forced_fumble_player_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+formation,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+formula_notes,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+forty,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fourth_down_converted,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fourth_down_failed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+ftn,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+ftn_game_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+ftn_play_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+full_name,5,HIGH:2|MEDIUM:5,HIGH:6|LOW:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumble,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_forced,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_lost,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_not_forced,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_out_of_bounds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_recovery_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumble_recovery_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumble_recovery_1_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumble_recovery_1_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Very low observed coverage in inspected artifact.,true,false,false,false
+fumble_recovery_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumble_recovery_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumble_recovery_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumble_recovery_2_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Very low observed coverage in inspected artifact.,true,false,false,false
+fumble_recovery_opp,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_recovery_own,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+fumble_recovery_touchdowns,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumble_recovery_yards_opp,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumble_recovery_yards_own,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumbled_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumbled_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumbled_1_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumbled_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumbled_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+fumbled_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumbles,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+fumbles_lost,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+game_date,2,MEDIUM:2,HIGH:1|MEDIUM:1,MEDIUM,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+game_half,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+game_id,9,HIGH:5|MEDIUM:11,HIGH:14|MEDIUM:2,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+game_key,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+game_seconds_remaining,2,MEDIUM:3,HIGH:3,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+game_stadium,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+game_type,7,HIGH:3|MEDIUM:7,HIGH:9|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+gameday,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+games,2,HIGH:1|MEDIUM:1,HIGH:1|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+games_missed_while_rostered,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+games_played_context,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+games_while_rostered,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+games_with_recorded_stats,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+games_with_snaps,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+gametime,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+gave,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+goal_to_go,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+grain,3,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+gsis,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+gsis_id,10,HIGH:4|MEDIUM:6,HIGH:9|MEDIUM:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+gsis_it_id,2,HIGH:2,HIGH:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+guaranteed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_att,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_blocked,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_distance,3,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_distance_list,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_made,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+gwfg_missed,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+half_sack_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+half_sack_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+half_sack_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+half_sack_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+half_seconds_remaining,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+headshot,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+headshot_url,4,BLOCKED:6,BLOCKED:6,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+height,5,HIGH:4|MEDIUM:1,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+hidden_sort_allowed,3,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+hof,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_coach,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_moneyline,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_opening_kickoff,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_qb_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+home_qb_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+home_rest,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_score,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_spread_odds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_team,2,HIGH:1|MEDIUM:1,HIGH:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+home_timeouts_remaining,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+home_wp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+home_wp_post,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+ht,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+id,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+identity_caveat,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+identity_join_status,4,HIGH:2|MEDIUM:2,HIGH:4,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+identity_status,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+implied_total,1,NOT_ENOUGH_INFORMATION:2,HIGH:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+inactive_indicator,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+incomplete_pass,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inflated_apy,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+inflated_guaranteed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+inflated_value,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+injury_report_date_week,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+injury_report_status,3,MEDIUM:3,LOW:2|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_10_carries,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_10_targets,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_10_touches,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_5_carries,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_5_targets,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+inside_5_touches,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+interception,2,NOT_ENOUGH_INFORMATION:2,HIGH:1|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+interception_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+interception_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+is_active,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+is_catchable_ball,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_contested_ball,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_created_reception,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+is_drop,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_interception_worthy,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_motion,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_no_huddle,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_play_action,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_qb_fault_sack,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_qb_out_of_pocket,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_qb_sneak,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_rpo,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_screen_pass,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+is_throw_away,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+is_trick_play,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+jersey_number,6,NOT_ENOUGH_INFORMATION:6,HIGH:4|LOW:1|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+kick_distance,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kicker_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+kicker_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+kickoff_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kickoff_downed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kickoff_fair_catch,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kickoff_in_endzone,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kickoff_inside_twenty,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+kickoff_out_of_bounds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+kickoff_return_yards,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+kickoff_returner_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+kickoff_returner_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+kickoff_returns,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+ktc_id,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+label_truth_allowed,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+last_active_season,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+last_active_week,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+last_name,5,HIGH:3|MEDIUM:2,HIGH:4|LOW:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+last_season,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+lateral_interception_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_interception_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_kickoff_returner_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_kickoff_returner_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_punt_returner_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_punt_returner_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_receiver_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_receiver_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_receiving_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Very low observed coverage in inspected artifact.,true,false,false,false
+lateral_reception,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+lateral_recovery,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+lateral_return,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+lateral_rush,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+lateral_rusher_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_rusher_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_rushing_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Very low observed coverage in inspected artifact.,true,false,false,false
+lateral_sack_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+lateral_sack_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+latest_snap_season,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+latest_snap_week,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+latest_team,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+leakage_risk,2,MEDIUM:2,HIGH:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+license,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+licensed_data_gap,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+loader_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+location,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+max_air_distance,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+max_completed_air_distance,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+merge_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+mfl_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+misc_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+missing_count,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+missing_reason,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+missingness_risk,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+missingness_rule,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+missingness_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+model_candidate,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+model_input_allowed,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+model_use_allowed,8,NOT_ENOUGH_INFORMATION:8,HIGH:8,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_blitzers,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_defense,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_defense_box,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_offense,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_offense_backfield,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+n_pass_rushers,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+name,2,HIGH:1|MEDIUM:1,HIGH:1|MEDIUM:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+next_game_context,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nfl_api_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+nfl_detail_id,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nfl_id,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+nflverse_game_id,2,MEDIUM:2,HIGH:2,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+nflverse_gsis_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nflverse_play_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+nflverse_player_id,2,MEDIUM:2,HIGH:2,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+nflverse_player_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nflverse_position,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nflverse_sleeper_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nflverse_team,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+ngs_air_yards,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Very low observed coverage in inspected artifact.,true,false,false,false
+ngs_position,3,MEDIUM:3,LOW:1|MEDIUM:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+ngs_position_group,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+ngs_status,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+ngs_status_short_description,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+no_huddle,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+no_score_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+nonzero_stat_components_present,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+not_zero_reason,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+notes,9,NOT_ENOUGH_INFORMATION:9,HIGH:9,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+number_of_pass_rushers,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nwr_player_id,5,HIGH:2|MEDIUM:3,HIGH:4|MEDIUM:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+nwr_player_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nwr_position,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nwr_rank,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+nwr_source_coverage,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+nwr_team,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+offense_formation,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+offense_names,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+offense_numbers,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+offense_pct,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+offense_personnel,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+offense_players,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+offense_positions,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+offense_snaps,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+official_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+official_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+old_game_id,3,HIGH:1|MEDIUM:2,HIGH:3,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+opp_fg_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+opp_safety_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+opp_td_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+opponent,3,MEDIUM:6,HIGH:5|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+opponent_context,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+opponent_team,3,HIGH:1|MEDIUM:3,HIGH:4,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+opportunities,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+order_sequence,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+otc_id,2,HIGH:1|MEDIUM:1,HIGH:1|MEDIUM:1,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+out_of_bounds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+over_odds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+overtime,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+own_kickoff_recovery,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+own_kickoff_recovery_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+own_kickoff_recovery_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+own_kickoff_recovery_td,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pacr,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_air_yards,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_air_yards_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_attempt,2,MEDIUM:4,HIGH:4,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_attempt_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_attempts,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completion_exp,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions,2,MEDIUM:3,HIGH:1|MEDIUM:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_completions_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_defense_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pass_defense_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pass_defense_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pass_defense_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pass_fantasy_points,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_fantasy_points_diff,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_fantasy_points_diff_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_fantasy_points_exp,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_fantasy_points_exp_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_fantasy_points_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pass_first_down,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_first_down_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_first_down_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_first_down_exp,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_first_down_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_first_down_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception_exp,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_interception_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_ints,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_length,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_location,2,MEDIUM:2,MEDIUM:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_oe,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_tds,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown,2,MEDIUM:4,HIGH:4,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown_exp,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdown_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_touchdowns,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_two_point_conv_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards,2,MEDIUM:3,HIGH:1|MEDIUM:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pass_yards_gained_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passer,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passer_full_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+passer_id,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+passer_jersey_number,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passer_player_id,2,MEDIUM:2,MEDIUM:2,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+passer_player_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+passer_position,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passer_rating,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_air_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_attempts,4,HIGH:5|MEDIUM:2,HIGH:5|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_bad_throw_pct,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_bad_throws,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_cpoe,3,BLOCKED:5,BLOCKED:5,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+passing_drop_pct,1,MEDIUM:3,MEDIUM:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_drops,1,MEDIUM:3,MEDIUM:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_epa,3,BLOCKED:5,BLOCKED:5,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+passing_first_downs,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_interceptions,4,HIGH:5|MEDIUM:2,HIGH:5|MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_touchdowns,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_two_point_conversions,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_yards,4,HIGH:5|MEDIUM:1,HIGH:5|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+passing_yards_after_catch,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+pat_att,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+pat_blocked,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+pat_made,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+pat_missed,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+pat_pct,3,NOT_ENOUGH_INFORMATION:5,HIGH:1|LOW:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+penalties,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+penalty,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+penalty_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+penalty_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+penalty_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+penalty_type,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+penalty_yards,4,HIGH:5|MEDIUM:1,HIGH:5|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+per_field_dataset_source,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+per_field_freshness_source_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+per_game_denominator,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+percent_attempts_gte_eight_defenders,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+percent_share_of_intended_air_yards,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pff,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pff_id,4,HIGH:4,MEDIUM:4,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+pff_position,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pff_status,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pfr,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pfr_game_id,2,HIGH:1|MEDIUM:4,HIGH:5,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pfr_id,9,HIGH:5|MEDIUM:7,HIGH:7|MEDIUM:5,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pfr_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pfr_player_name,2,MEDIUM:5,HIGH:5,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pick,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pick_number,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pick_round,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pick_season,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+pick_value_allowed,2,BLOCKED:2,BLOCKED:2,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+play,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+play_clock,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+play_deleted,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+play_id,3,MEDIUM:4,HIGH:4,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+play_type,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+play_type_nfl,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+player,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+player_display_name,3,HIGH:4|MEDIUM:4,HIGH:8,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_first_name,1,MEDIUM:4,HIGH:4,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_gsis_id,1,MEDIUM:4,HIGH:4,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_id,3,HIGH:4|MEDIUM:2,HIGH:4|MEDIUM:2,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_jersey_number,1,NOT_ENOUGH_INFORMATION:4,HIGH:4,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+player_last_name,1,MEDIUM:4,HIGH:4,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_name,8,HIGH:5|MEDIUM:5,HIGH:10,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+player_page,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+player_position,1,MEDIUM:4,HIGH:4,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+player_short_name,1,MEDIUM:4,HIGH:4,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+players_on_play,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pos,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pos_abb,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pos_grp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+pos_grp_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pos_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pos_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+pos_rank,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+pos_slot,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+position,17,HIGH:6|MEDIUM:15,HIGH:20|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+position_group,3,HIGH:1|MEDIUM:4,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+possession_team,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+post_draft_only,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+posteam,2,MEDIUM:5,HIGH:5,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+posteam_score,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+posteam_score_post,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+posteam_timeouts_remaining,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+posteam_type,2,MEDIUM:3,HIGH:3,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+practice_primary_injury,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+practice_secondary_injury,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+practice_status,3,HIGH:3,HIGH:1|LOW:1|MEDIUM:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+pre_draft_allowed_candidate,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+probowls,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+promotion_candidate_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+proxy_risk,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_attempt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_blocked,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_downed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_fair_catch,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_in_endzone,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_inside_twenty,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+punt_out_of_bounds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+punt_return_yards,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+punt_returner_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+punt_returner_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+punt_returns,3,NOT_ENOUGH_INFORMATION:5,HIGH:5,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+punter_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+punter_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+qb_dropback,2,NOT_ENOUGH_INFORMATION:2,HIGH:1|LOW:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+qb_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+qb_hit,2,NOT_ENOUGH_INFORMATION:2,HIGH:1|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+qb_hit_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+qb_hit_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+qb_hit_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+qb_hit_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+qb_kneel,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+qb_location,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+qb_scramble,2,NOT_ENOUGH_INFORMATION:2,HIGH:1|LOW:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+qb_spike,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+qtr,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+quarter_end,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+quarter_seconds_remaining,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+racr,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rank_logic_allowed,3,BLOCKED:3,BLOCKED:3,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+read_thrown,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_air_yards,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_air_yards_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_attempt,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_attempt_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_fantasy_points,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_fantasy_points_diff,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_fantasy_points_diff_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_fantasy_points_exp,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_fantasy_points_exp_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_fantasy_points_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rec_first_down,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_first_down_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_first_down_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_first_down_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_first_down_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_first_down_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_fumble_lost,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_fumble_lost_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_interception,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_interception_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_interception_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_interception_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_interception_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_interception_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_tds,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_touchdown,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_touchdown_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_touchdown_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_touchdown_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_touchdown_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_touchdown_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_touchdowns,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_two_point_conv,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_two_point_conv_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_two_point_conv_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_two_point_conv_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+rec_two_point_conv_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_two_point_conv_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rec_yards_gained_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+received,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiver,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiver_full_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+receiver_id,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+receiver_jersey_number,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiver_player_id,2,MEDIUM:2,MEDIUM:2,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+receiver_player_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+receiver_position,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_air_yards,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_broken_tackles,1,MEDIUM:2,HIGH:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_drop,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_drop_pct,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_epa,3,BLOCKED:5,BLOCKED:5,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+receiving_first_downs,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_fumbles,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_fumbles_lost,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+receiving_int,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_rat,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_touchdowns,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_two_point_conversions,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_yards,5,HIGH:5|MEDIUM:2,HIGH:5|LOW:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receiving_yards_after_catch,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+recent_team,2,MEDIUM:2,HIGH:1|LOW:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions,6,HIGH:5|MEDIUM:4,HIGH:6|MEDIUM:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+receptions_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+recommendation_allowed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+red_zone_carries,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+red_zone_targets,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+red_zone_touches,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+referee,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+relative_to_endzone,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+relative_to_sticks,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+replay_or_challenge,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+replay_or_challenge_result,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+replay_safe_now,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+report_primary_injury,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+report_secondary_injury,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+required_backtest,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+required_caveat,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+required_coverage,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+required_for_sidecar,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+required_next_gate,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+result,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+return_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+return_touchdown,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+return_touchdowns,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Direct return touchdown subtype not found; special_teams_tds is not an approved substitute.,true,false,false,false
+return_yards,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+review_only,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+review_required,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+roof,3,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+rookie_season,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rookie_year,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+roster_birth_date_derived_age,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+roster_status,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rotowire_id,3,BLOCKED:3,BLOCKED:3,MEDIUM,Licensed/vendor/private source not approved for model-safe field use.,true,false,false,false
+rotoworld_id,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+round,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+route,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+routes_run,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+run_gap,2,NOT_ENOUGH_INFORMATION:2,LOW:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+run_gap_dir,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+run_location,2,NOT_ENOUGH_INFORMATION:2,LOW:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+rush,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_attempt,2,MEDIUM:4,HIGH:4,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_attempt_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_attempts,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_atts,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_fantasy_points,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_fantasy_points_diff,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_fantasy_points_diff_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_fantasy_points_exp,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_fantasy_points_exp_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_fantasy_points_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rush_first_down,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_first_down_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_first_down_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_first_down_exp,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_first_down_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_first_down_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_fumble_lost,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_fumble_lost_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_pct_over_expected,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_tds,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown,2,MEDIUM:4,HIGH:4,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown_exp,1,MEDIUM:3,HIGH:3,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdown_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_touchdowns,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_two_point_conv_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards,2,MEDIUM:2,HIGH:1|LOW:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_exp,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_gained_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_over_expected,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rush_yards_over_expected_per_att,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rusher,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rusher_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+rusher_jersey_number,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rusher_player_id,2,MEDIUM:2,LOW:2,MEDIUM,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+rusher_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+rushing_attempts,4,HIGH:5|MEDIUM:1,HIGH:5|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_broken_tackles,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_epa,3,BLOCKED:5,BLOCKED:5,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+rushing_fd_exp,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_first_downs,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_fumbles,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_fumbles_lost,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+rushing_td_exp,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_touchdowns,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_two_point_conversions,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards,5,HIGH:5|MEDIUM:2,HIGH:5|LOW:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards_after_contact,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards_after_contact_avg,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards_before_contact,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards_before_contact_avg,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+rushing_yards_exp,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+sack,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+sack_fumbles,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+sack_fumbles_lost,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+sack_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+sack_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+sack_yards_lost,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+sacks_suffered,3,HIGH:5,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+safe_for_display,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+safe_zero_allowed,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+safety,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+safety_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+safety_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+safety_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+schedule,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+school,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+score_differential,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+score_differential_post,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+scoring_weight,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+season,21,HIGH:6|MEDIUM:26,HIGH:31|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+season_anchor,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+season_index,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+season_type,7,HIGH:1|MEDIUM:11,HIGH:11|MEDIUM:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+seasons_started,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+series,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+series_result,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+series_success,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+short_name,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+shotgun,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+shuttle,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+side,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+side_of_field,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+sidecar_candidate_row_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+sidecar_review_allowed,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+sidecar_row_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+sleeper_id,3,HIGH:3,MEDIUM:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+smart_id,3,HIGH:3,HIGH:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+snap_count_present,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+snap_count_recency,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+snap_sample_size,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+solo_tackle,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+solo_tackle_1_player_id,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+solo_tackle_1_player_name,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+solo_tackle_1_team,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+solo_tackle_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+solo_tackle_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+solo_tackle_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+source,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_artifact,3,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_artifact_column,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_as_of,3,MEDIUM:3,HIGH:1|LOW:2,MEDIUM,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+source_dataset,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_datasets,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_family,4,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_player_stats_row_present,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_receipt_sha,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+source_truth_allowed,7,NOT_ENOUGH_INFORMATION:7,HIGH:7,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+sp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+special,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+special_teams_play,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+special_teams_tds,3,MEDIUM:5,HIGH:5,MEDIUM,Needs zero/missingness gate; missing values cannot be inferred as zero/healthy/clean.,true,false,false,false
+sportradar_id,3,HIGH:3,MEDIUM:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+spread_line,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+st_pct,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+st_play_type,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+st_snaps,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+stadium,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+stadium_id,2,HIGH:1|MEDIUM:1,HIGH:2,HIGH,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+start_time,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+starting_hash,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+stat_family,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+stat_name,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+stat_type,4,NOT_ENOUGH_INFORMATION:10,HIGH:10,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+stat_unit,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+stat_value,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+stats_global_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+stats_id,1,HIGH:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+stats_source_coverage_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+status,4,HIGH:4,HIGH:4,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+status_description_abbr,2,HIGH:2,HIGH:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+success,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+suffix,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+summary_level,2,NOT_ENOUGH_INFORMATION:2,LOW:1|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+surface,3,NOT_ENOUGH_INFORMATION:4,HIGH:4,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+swish_id,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+tackle_for_loss_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_for_loss_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_for_loss_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_for_loss_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_with_assist,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+tackle_with_assist_1_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_with_assist_1_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_with_assist_1_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+tackle_with_assist_2_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_with_assist_2_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+tackle_with_assist_2_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+tackled_for_loss,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+target_share,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+targets,4,HIGH:5|MEDIUM:1,HIGH:5|MEDIUM:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+td_player_id,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+td_player_name,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+td_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+td_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team,14,HIGH:6|MEDIUM:12,HIGH:18,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_abbr,2,HIGH:1|MEDIUM:4,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_color,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_color2,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_color3,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_color4,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_conf,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_conference_logo,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_division,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_game_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_id,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_league_logo,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_logo_espn,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_logo_squared,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_logo_wikipedia,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_name,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_nick,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+team_wordmark,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+temp,3,NOT_ENOUGH_INFORMATION:4,HIGH:2|NOT_ENOUGH_INFORMATION:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+third_down_converted,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+third_down_failed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+time,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+time_of_day,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+time_to_throw,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+timeout,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+timeout_team,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+timeouts,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_blitzed,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_hit,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_hurried,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_pressured,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_pressured_pct,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+times_sacked,1,MEDIUM:2,LOW:2,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+to,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_away_comp_air_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_comp_air_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_away_comp_yac_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_comp_yac_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_pass_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_pass_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_raw_air_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_raw_air_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_away_raw_yac_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_raw_yac_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_rush_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_rush_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_away_score,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_fantasy_points,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_fantasy_points_diff,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_fantasy_points_diff_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_fantasy_points_exp,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_fantasy_points_exp_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_fantasy_points_team,1,BLOCKED:2,BLOCKED:2,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+total_first_down,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_first_down_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_first_down_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_first_down_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_first_down_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_first_down_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_comp_air_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_comp_air_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_home_comp_yac_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_comp_yac_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_pass_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_pass_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_raw_air_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_raw_air_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_home_raw_yac_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_raw_yac_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_rush_epa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_rush_wpa,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_home_score,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_line,3,NOT_ENOUGH_INFORMATION:3,HIGH:2|NOT_ENOUGH_INFORMATION:1,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_touchdown,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_touchdown_diff,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_touchdown_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_touchdown_exp,1,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+total_touchdown_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_touchdown_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained_diff,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained_diff_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained_exp,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained_exp_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+total_yards_gained_team,1,MEDIUM:2,MEDIUM:2,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+touchback,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+touchdown,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+touches,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+tprr,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+trade_date,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Timestamp/as-of semantics must be proved before historical replay or experiment use.,true,false,false,false
+trade_id,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,Identity plumbing only; not a model feature in this lane.,true,false,false,false
+trade_value_allowed,2,BLOCKED:2,BLOCKED:2,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+training_allowed,8,NOT_ENOUGH_INFORMATION:8,HIGH:8,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+twitter_username,1,HIGH:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+two_point_attempt,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+two_point_conv_exp,1,NOT_ENOUGH_INFORMATION:2,HIGH:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+two_point_conv_result,1,NOT_ENOUGH_INFORMATION:1,LOW:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+two_point_conversion_prob,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+two_point_converted,1,NOT_ENOUGH_INFORMATION:2,HIGH:2,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+under_odds,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+value,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+vegas_home_wp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+vegas_home_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+vegas_wp,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+vegas_wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+vertical,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+w_av,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+was_pressure,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+weather,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+week,18,HIGH:4|MEDIUM:24,HIGH:27|LOW:1,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+weekday,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+weekly_roster_status,2,HIGH:2,MEDIUM:2,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+weight,5,HIGH:4|MEDIUM:1,HIGH:5,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+weighted_component_value,1,BLOCKED:1,BLOCKED:1,NOT_ENOUGH_INFORMATION,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+wind,3,NOT_ENOUGH_INFORMATION:4,HIGH:2|NOT_ENOUGH_INFORMATION:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+wopr,2,BLOCKED:4,BLOCKED:4,MEDIUM,"Quarantined, market/projection, imported fantasy total, or source-policy-blocked field.",true,false,false,false
+wp,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+wpa,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+wt,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+xpass,2,MEDIUM:3,HIGH:2|MEDIUM:1,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+xyac_epa,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+xyac_fd,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+xyac_mean_yardage,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+xyac_median_yardage,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+xyac_success,1,MEDIUM:1,LOW:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yac_epa,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yac_wpa,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yahoo_id,3,HIGH:3,MEDIUM:3,HIGH,No blocker for review inventory; separate gates still required.,true,false,false,false
+yardline_100,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+yardline_exp,1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+yards,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yards_after_catch,2,MEDIUM:2,LOW:2,MEDIUM,No blocker for review inventory; separate gates still required.,true,false,false,false
+yards_after_catch_exp,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yards_gained,1,MEDIUM:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+ydsnet,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+ydstogo,2,NOT_ENOUGH_INFORMATION:3,HIGH:3,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+year_signed,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+years,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+years_exp,2,NOT_ENOUGH_INFORMATION:2,HIGH:2,MEDIUM,Semantics not classified by inventory; requires source review.,true,false,false,false
+years_of_experience,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yprr,1,MEDIUM:1,MEDIUM:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
+yrdln,1,NOT_ENOUGH_INFORMATION:1,HIGH:1,NOT_ENOUGH_INFORMATION,Semantics not classified by inventory; requires source review.,true,false,false,false
+zero_eligibility_status,1,HIGH:1,HIGH:1,NOT_ENOUGH_INFORMATION,No blocker for review inventory; separate gates still required.,true,false,false,false
