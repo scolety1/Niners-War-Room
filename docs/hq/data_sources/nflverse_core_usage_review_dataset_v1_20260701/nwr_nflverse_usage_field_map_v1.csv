@@ -1,0 +1,41 @@
+field_name,source_field_or_rule,feature_family,grain,null_preserving,review_only,model_use_allowed,training_allowed,source_truth_allowed,rank_logic_allowed,hidden_sort_allowed,notes
+season,NFLVerse player_stats_weekly season,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+week,NFLVerse player_stats_weekly week,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+season_type,NFLVerse player_stats_weekly season_type,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+player_id_gsis,NFLVerse player_stats_weekly player_id,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+player_id_sleeper,ff_playerids sleeper_id joined by gsis_id where available,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+player_name,NFLVerse player_stats_weekly player_display_name,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+team,NFLVerse player_stats_weekly team,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+opponent_team,NFLVerse player_stats_weekly opponent_team,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+position,NFLVerse player_stats_weekly position,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+targets,NFLVerse player_stats_weekly targets,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+carries,NFLVerse player_stats_weekly carries,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+receptions,NFLVerse player_stats_weekly receptions,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+touches,carries + receptions when both source components are known,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+opportunities,carries + targets when both source components are known,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+rushing_yards,NFLVerse player_stats_weekly rushing_yards,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+receiving_yards,NFLVerse player_stats_weekly receiving_yards,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+receiving_air_yards,NFLVerse player_stats_weekly receiving_air_yards,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+receiving_yards_after_catch,NFLVerse player_stats_weekly receiving_yards_after_catch,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+rushing_first_downs,NFLVerse player_stats_weekly rushing_first_downs,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+receiving_first_downs,NFLVerse player_stats_weekly receiving_first_downs,core_usage,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+completions,NFLVerse player_stats_weekly completions,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+passing_attempts,NFLVerse player_stats_weekly attempts,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+passing_yards,NFLVerse player_stats_weekly passing_yards,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+passing_touchdowns,NFLVerse player_stats_weekly passing_tds,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+passing_interceptions,NFLVerse player_stats_weekly passing_interceptions,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+passing_first_downs,NFLVerse player_stats_weekly passing_first_downs,qb_passing,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+offensive_snaps,NFLVerse snap_counts offense_snaps review-only name/team/week join,snap_share,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+offense_pct,NFLVerse snap_counts offense_pct review-only name/team/week join,snap_share,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+snap_join_status,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+usage_source,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+snap_source,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+review_only,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+model_use_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+training_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+source_truth_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+rank_logic_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+hidden_sort_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+recommendation_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+app_wiring_allowed,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
+missingness_notes,policy/metadata field,identity_or_guardrail,player_week,true,true,false,false,false,false,false,No production approval; preserve nulls.
