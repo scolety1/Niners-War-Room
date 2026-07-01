@@ -1,0 +1,9 @@
+zero_eligibility_status,row_count,in_parity_subset,safe_zero_allowed,blocker_category,review_only,label_truth_allowed,model_use_allowed,training_allowed,source_truth_allowed,experiment_allowed,notes
+IDENTITY_GATED,44,false,false,IDENTITY_GAP,true,false,false,false,false,false,Excluded from parity subset; not converted to zero.
+INJURY_OUT_NOT_ZERO,324,false,false,NOT_SAFE_ZERO_CONTEXT,true,false,false,false,false,false,Excluded from parity subset; not converted to zero.
+NOT_ENOUGH_INFORMATION,51,false,false,NOT_ENOUGH_INFORMATION,true,false,false,false,false,false,Excluded from parity subset; not converted to zero.
+NOT_ROSTERED_NOT_APPLICABLE,2683,false,false,NOT_SAFE_ZERO_CONTEXT,true,false,false,false,false,false,Excluded from parity subset; not converted to zero.
+OBSERVED_EXPLICIT_ZERO_STATS,135,true,false,NO_BLOCKER_PARITY_SUBSET,true,false,false,false,false,false,Allowed for review-only parity subset.
+OBSERVED_NONZERO_STATS,5999,true,false,NO_BLOCKER_PARITY_SUBSET,true,false,false,false,false,false,Allowed for review-only parity subset.
+ROSTERED_ACTIVE_NO_STATS_SAFE_ZERO,88,true,true,NO_BLOCKER_PARITY_SUBSET,true,false,false,false,false,false,Allowed for review-only parity subset.
+ROSTERED_INACTIVE_NOT_ZERO,928,false,false,NOT_SAFE_ZERO_CONTEXT,true,false,false,false,false,false,Excluded from parity subset; not converted to zero.
