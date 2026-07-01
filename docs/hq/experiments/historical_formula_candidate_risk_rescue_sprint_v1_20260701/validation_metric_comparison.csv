@@ -1,0 +1,8 @@
+candidate_id,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,mae_delta_vs_baseline,mae_delta_vs_original,spearman_delta_vs_baseline,spearman_delta_vs_original,startable_precision_delta_vs_baseline,startable_precision_delta_vs_original,selection_policy
+baseline_v3_prior_points,validation,all_positions,912,34.86049,0.727249,0.60119,0.673333,0.63522,0.0,2.036621,0.0,0.002174,0.0,0.0,validation_only
+original_usage_opportunity_volume,validation,all_positions,912,32.823869,0.725075,0.60119,0.673333,0.63522,-2.036621,0.0,-0.002174,0.0,0.0,0.0,validation_only
+conservative_blend_50,validation,all_positions,912,33.541127,0.726921,0.595238,0.666667,0.628931,-1.319363,0.717258,-0.000328,0.001846,-0.005952,-0.005952,validation_only
+qb_guard_baseline_lock,validation,all_positions,912,33.227591,0.72529,0.60119,0.673333,0.63522,-1.632899,0.403722,-0.001959,0.000215,0.0,0.0,validation_only
+qb_guard_soft_blend,validation,all_positions,912,33.040018,0.725277,0.60119,0.673333,0.63522,-1.820472,0.216149,-0.001972,0.000202,0.0,0.0,validation_only
+cutline_guard_soft_blend,validation,all_positions,912,32.870079,0.725308,0.60119,0.673333,0.63522,-1.990411,0.04621,-0.001941,0.000233,0.0,0.0,validation_only
+position_specific_safe_blend,validation,all_positions,912,33.278311,0.726139,0.60119,0.673333,0.63522,-1.582179,0.454442,-0.00111,0.001064,0.0,0.0,validation_only

@@ -1,0 +1,33 @@
+split,position,archetype_label,rows,mean_baseline_error,mean_candidate_error,mean_error_delta,median_error_delta,severe_regression_count,severe_improvement_count,regression_share,improvement_share,review_note
+holdout,QB,elite_qb_prior_scoring_usage_proxy_drag_risk,17,84.164706,70.632549,-13.532157,-9.541667,7,8,0.411765,0.470588,Elite QB regression pattern requires Tim review before shadow prep.
+holdout,QB,qb_prior_points_and_passing_context,109,56.655657,56.777706,0.122049,0.195,24,22,0.220183,0.201835,Mean error regressed; inspect before any next step.
+holdout,RB,balanced_usage_profile,58,39.364368,39.366695,0.002328,-0.3325,0,0,0.0,0.0,Mean error regressed; inspect before any next step.
+holdout,RB,high_prior_scoring_low_usage_adjustment,1,112.6,98.575,-14.025,-14.025,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,RB,high_rush_volume_back,68,62.770588,60.631422,-2.139167,-1.695,2,4,0.029412,0.058824,Mean error improved for this archetype.
+holdout,RB,low_volume_prior_season,63,21.389947,21.329153,-0.060794,0.0,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,RB,moderate_rush_volume,24,37.5625,39.100833,1.538333,1.2825,1,0,0.041667,0.0,Mean error regressed; inspect before any next step.
+holdout,TE,balanced_usage_profile,58,34.386207,32.785603,-1.600603,-2.7825,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,TE,high_prior_scoring_low_usage_adjustment,4,53.95,43.73875,-10.21125,-18.7425,1,2,0.25,0.5,Mean error improved for this archetype.
+holdout,TE,low_volume_prior_season,132,11.417172,11.304823,-0.112348,-0.045,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,TE,moderate_rush_volume,1,32.766667,21.646667,-11.12,-11.12,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,TE,moderate_target_volume,8,45.9625,38.67625,-7.28625,-11.115,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,WR,balanced_usage_profile,123,35.914905,34.729119,-1.185786,-2.535,1,0,0.00813,0.0,Mean error improved for this archetype.
+holdout,WR,high_prior_scoring_low_usage_adjustment,34,45.106863,39.386029,-5.720833,-17.58,4,11,0.117647,0.323529,Mean error improved for this archetype.
+holdout,WR,high_target_volume_receiver,1,102.4,62.89,-39.51,-39.51,0,1,0.0,1.0,Mean error improved for this archetype.
+holdout,WR,low_volume_prior_season,148,19.707432,19.47839,-0.229043,0.0,0,0,0.0,0.0,Mean error improved for this archetype.
+holdout,WR,moderate_target_volume,41,56.734959,44.767073,-11.967886,-15.24,1,12,0.02439,0.292683,Mean error improved for this archetype.
+validation,QB,elite_qb_prior_scoring_usage_proxy_drag_risk,20,76.381667,57.971917,-18.40975,-61.09,7,12,0.35,0.6,Elite QB regression pattern requires Tim review before shadow prep.
+validation,QB,qb_prior_points_and_passing_context,110,55.220909,51.988439,-3.23247,-0.635,19,24,0.172727,0.218182,Mean error improved for this archetype.
+validation,RB,balanced_usage_profile,65,39.430769,38.832538,-0.598231,-0.66,0,0,0.0,0.0,Mean error improved for this archetype.
+validation,RB,high_rush_volume_back,69,70.310145,66.544493,-3.765652,-4.455,0,3,0.0,0.043478,Mean error improved for this archetype.
+validation,RB,low_volume_prior_season,76,22.483333,21.884408,-0.598925,-0.11,0,0,0.0,0.0,Mean error improved for this archetype.
+validation,RB,moderate_rush_volume,25,61.713333,60.977533,-0.7358,-0.63,0,0,0.0,0.0,Mean error improved for this archetype.
+validation,TE,balanced_usage_profile,58,25.414943,23.825747,-1.589195,-2.5875,1,0,0.017241,0.0,Mean error improved for this archetype.
+validation,TE,high_prior_scoring_low_usage_adjustment,6,31.022222,27.126944,-3.895278,-14.2275,1,0,0.166667,0.0,Mean error improved for this archetype.
+validation,TE,low_volume_prior_season,127,12.93622,12.576417,-0.359803,-0.12,0,0,0.0,0.0,Mean error improved for this archetype.
+validation,TE,moderate_target_volume,4,48.8,42.1575,-6.6425,-10.09,1,2,0.25,0.5,Mean error improved for this archetype.
+validation,WR,balanced_usage_profile,128,33.75651,30.782161,-2.974349,-5.115,0,2,0.0,0.015625,Mean error improved for this archetype.
+validation,WR,high_prior_scoring_low_usage_adjustment,25,36.982667,37.4918,0.509133,4.495,1,5,0.04,0.2,Mean error regressed; inspect before any next step.
+validation,WR,high_target_volume_receiver,4,122.216667,82.341667,-39.875,-40.0775,0,4,0.0,1.0,Mean error improved for this archetype.
+validation,WR,low_volume_prior_season,152,17.636184,17.408092,-0.228092,0.0075,0,0,0.0,0.0,Mean error improved for this archetype.
+validation,WR,moderate_target_volume,43,37.47907,36.989884,-0.489186,-3.27,8,6,0.186047,0.139535,Mean error improved for this archetype.
