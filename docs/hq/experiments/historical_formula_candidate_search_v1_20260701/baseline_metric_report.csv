@@ -1,0 +1,4 @@
+candidate_id,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,primary_or_sensitivity
+baseline_v3_prior_points,train,all_positions,3716,38.048654,0.677341,0.531746,0.59292,0.560669,primary_baseline
+baseline_v3_prior_points,validation,all_positions,912,34.86049,0.727249,0.60119,0.673333,0.63522,primary_baseline
+baseline_v3_prior_points,holdout,all_positions,890,35.880449,0.72397,0.559524,0.630872,0.59306,primary_baseline

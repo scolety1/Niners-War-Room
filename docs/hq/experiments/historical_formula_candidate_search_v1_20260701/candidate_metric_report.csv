@@ -1,0 +1,17 @@
+candidate_id,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,primary_or_sensitivity
+conservative_ppg_games_blend,train,all_positions,3716,37.712743,0.680664,0.53836,0.600295,0.567643,primary
+conservative_ppg_games_blend,validation,all_positions,912,34.934001,0.728259,0.60119,0.673333,0.63522,primary
+usage_opportunity_volume,train,all_positions,3716,36.958417,0.676843,0.529101,0.589971,0.55788,primary
+usage_opportunity_volume,validation,all_positions,912,32.823869,0.725075,0.60119,0.673333,0.63522,primary
+yards_first_down_production,train,all_positions,3716,38.955769,0.676071,0.53836,0.600295,0.567643,primary
+yards_first_down_production,validation,all_positions,912,35.546988,0.727107,0.595238,0.666667,0.628931,primary
+qb_td_dampened_review,train,all_positions,3716,38.254403,0.675418,0.531746,0.59292,0.560669,primary
+qb_td_dampened_review,validation,all_positions,912,34.992514,0.728942,0.60119,0.673333,0.63522,primary
+position_specific_interpretable_blend,train,all_positions,3716,37.843389,0.670888,0.529101,0.589971,0.55788,primary
+position_specific_interpretable_blend,validation,all_positions,912,34.403932,0.724961,0.577381,0.646667,0.610063,primary
+optional_air_yac_sensitivity,train,all_positions,2838,32.120752,0.667525,0.489198,0.635271,0.552746,sensitivity
+optional_air_yac_sensitivity,validation,all_positions,680,26.710417,0.739403,0.583333,0.75,0.65625,sensitivity
+optional_snap_context_sensitivity,train,all_positions,2989,39.635165,0.658952,0.535714,0.652174,0.588235,sensitivity
+optional_snap_context_sensitivity,validation,all_positions,870,37.157575,0.714134,0.565476,0.669014,0.612903,sensitivity
+small_fixed_review_ensemble,train,all_positions,3716,37.206585,0.679459,0.534392,0.59587,0.563459,secondary_review
+small_fixed_review_ensemble,validation,all_positions,912,33.967552,0.730156,0.595238,0.666667,0.628931,secondary_review
