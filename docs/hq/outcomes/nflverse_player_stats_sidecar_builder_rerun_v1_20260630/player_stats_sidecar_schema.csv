@@ -1,0 +1,25 @@
+column_name,required,field_type,nullable,source_field_or_rule,missingness_rule,allowed_use,prohibited_use,notes
+sidecar_row_id,true,string,false,deterministic sidecar row identifier,Not enough information if source row missing,review-only row identity,label truth or model feature key,Only valid for real compact derived rows
+nwr_player_id,true,string,true,approved identity bridge from source row,Not enough information if no safe bridge,review-only identity,label truth or model input,Do not infer by fuzzy name-only matching
+player_name,true,string,true,player_display_name or player_name,Not enough information if missing,review-only display context,source truth,Factual source value only
+position,true,string,true,source position,Not enough information if missing,review-only grouping,rank logic,QB/RB/WR/TE expected for Outcome sidecar
+season,true,integer,false,source season,Not enough information if missing,review-only season grain,training truth,Required for row-level sidecar
+week,true,integer,true,source week,Not enough information if missing,review-only weekly grain,training truth,Weekly rows use source week; seasonal rows need a later seasonal-grain convention
+source_dataset,true,string,false,admitted receipt source_dataset,Not enough information if missing,review-only provenance,source truth promotion,Only player_stats_weekly and player_stats_seasonal admitted
+source_receipt_sha,true,string,false,sha256 from admitted receipt notes,Not enough information if missing,review-only provenance,integrity proof for model/training,Does not approve model or training use
+source_artifact,true,string,false,tracked receipt row source_artifact,Not enough information if missing,review-only provenance,raw shared path dependency in app,Raw local snapshot remains untracked
+source_as_of,true,string,true,source_asof_timestamp if known,Not enough information if missing,review-only provenance,point-in-time replay proof,Current admission says source_asof_timestamp is Not enough information
+stat_family,true,string,true,passing/rushing/receiving/return/turnover/context,Not enough information if missing,review-only stat grouping,model feature activation,Must not use quarantined fields
+raw_stat_name,true,string,false,allowed non-quarantined stat column,Not enough information if missing,review-only comparison,feature promotion,Quarantined names are blocked
+raw_stat_value,true,string,true,source stat value,Not enough information if missing,review-only comparison,zero-fill,Missing is not zero production
+normalized_stat_name,true,string,false,approved normalized stat name,Not enough information if missing,review-only comparison,model feature activation,Normalization needs derivation runner
+normalized_stat_value,true,string,true,normalized stat value,Not enough information if missing,review-only comparison,zero-fill,Missing is not zero production
+identity_join_status,true,string,false,safe identity status,Not enough information if missing,review-only identity health,source truth,Ambiguous rows require review
+review_required,true,boolean,false,true if identity/schema/source issue exists,Not enough information if missing,review-only QA flag,hidden sort,Review flag cannot drive rank
+sidecar_review_allowed,true,boolean,false,true only for compact derived rows passing gates,false if no compact row,review-only comparison,app probability output,No rows are created in this packet
+label_truth_allowed,true,boolean,false,false,false,guardrail,label truth promotion,Must remain false everywhere
+model_use_allowed,true,boolean,false,false,false,guardrail,model input,Must remain false everywhere
+training_allowed,true,boolean,false,false,false,guardrail,training truth,Must remain false everywhere
+source_truth_allowed,true,boolean,false,false,false,guardrail,source truth promotion,Must remain false everywhere
+blocker_reason,true,string,true,reason row is blocked or caveated,Not enough information if missing,review-only blocker context,rank adjustment,Required for blocked rows
+notes,true,string,true,human-readable notes,Not enough information if missing,review-only context,model signal,Notes are not features
