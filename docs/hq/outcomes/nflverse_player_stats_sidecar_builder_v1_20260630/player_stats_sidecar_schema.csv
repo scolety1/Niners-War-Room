@@ -1,0 +1,24 @@
+column_name,required,field_type,nullable,source_field_or_rule,missingness_rule,allowed_use,prohibited_use,notes
+sidecar_row_id,true,string,false,deterministic sidecar row identifier,Not enough information if source row missing,review-only row identity,label truth or model feature key,Only valid for real source rows
+nwr_player_id,true,string,true,identity bridge from tracked safe source,Not enough information if no safe bridge,review-only identity,label truth or model input,Do not infer by fuzzy name-only matching
+player_name,true,string,true,source player display name,Not enough information if missing,review-only display context,source truth,Factual source value only
+position,true,string,true,source position,Not enough information if missing,review-only grouping,rank logic,QB/RB/WR/TE expected for Outcome sidecar
+season,true,integer,false,source season,Not enough information if missing,review-only season grain,training truth,Required for row-level sidecar
+week,true,integer,true,source week,Not enough information if missing,review-only weekly grain,training truth,Seasonal rows would use Not enough information or seasonal marker after separate schema gate
+source_dataset,true,string,false,nflverse player_stats weekly or seasonal,Not enough information if missing,review-only provenance,source truth promotion,Must come from tracked safe source rows
+source_artifact,true,string,false,tracked source artifact path,Not enough information if missing,review-only provenance,raw shared path promotion,Raw shared paths are not allowed in this packet
+source_as_of,true,string,true,tracked source extraction or artifact timestamp,Not enough information if missing,review-only provenance,point-in-time proof,Does not create historical replay approval by itself
+stat_family,true,string,true,passing/rushing/receiving/return/turnover/usage,Not enough information if missing,review-only stat grouping,model feature activation,Derived only from raw stat name
+raw_stat_name,true,string,false,source stat column name,Not enough information if missing,review-only comparison,feature promotion,Must be a real tracked stat column
+raw_stat_value,true,string,true,source stat value,Not enough information if missing,review-only comparison,zero-fill,Missing is not zero production
+normalized_stat_name,true,string,false,approved normalized stat name,Not enough information if missing,review-only comparison,model feature activation,Normalization needs schema review
+normalized_stat_value,true,string,true,normalized stat value,Not enough information if missing,review-only comparison,zero-fill,Missing is not zero production
+identity_join_status,true,string,false,safe identity status,Not enough information if missing,review-only identity health,source truth,Ambiguous rows require review
+review_required,true,boolean,false,true if identity/schema/source issue exists,Not enough information if missing,review-only QA flag,hidden sort,Review flag cannot drive rank
+sidecar_review_allowed,true,boolean,false,true only for real source rows passing gates,false if no real row,review-only comparison,app probability output,No rows are created in this packet
+label_truth_allowed,true,boolean,false,false,false,guardrail,label truth promotion,Must remain false everywhere
+model_use_allowed,true,boolean,false,false,false,guardrail,model input,Must remain false everywhere
+training_allowed,true,boolean,false,false,false,guardrail,training truth,Must remain false everywhere
+source_truth_allowed,true,boolean,false,false,false,guardrail,source truth promotion,Must remain false everywhere
+blocker_reason,true,string,true,reason row is blocked or caveated,Not enough information if missing,review-only blocker context,rank adjustment,Required for blocked rows
+notes,true,string,true,human-readable notes,Not enough information if missing,review-only context,model signal,Notes are not features
