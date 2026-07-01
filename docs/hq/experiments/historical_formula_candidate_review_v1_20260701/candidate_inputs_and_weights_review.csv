@@ -1,0 +1,6 @@
+candidate_id,input_feature,feature_family,effective_weight,contract_status,primary_pass,null_fenced,production_approved,notes
+usage_opportunity_volume,prior_nwr_points,prior_scoring,0.7,ALLOW_REVIEW_ONLY,True,False,False,Frozen V3 baseline component.
+usage_opportunity_volume,prior_carries,usage_volume,0.12,ALLOW_REVIEW_ONLY,True,False,False,0.30 candidate usage blend times 0.40 carry weight.
+usage_opportunity_volume,prior_receptions,usage_volume,0.165,ALLOW_REVIEW_ONLY,True,False,False,0.30 candidate usage blend times 0.55 reception weight.
+usage_opportunity_volume,prior_targets,usage_volume,0.06,ALLOW_REVIEW_ONLY,True,False,False,0.30 candidate usage blend times 0.20 target weight.
+usage_opportunity_volume,prior_opportunities,usage_volume,0.045,ALLOW_REVIEW_ONLY,True,False,False,0.30 candidate usage blend times 0.15 opportunity weight.

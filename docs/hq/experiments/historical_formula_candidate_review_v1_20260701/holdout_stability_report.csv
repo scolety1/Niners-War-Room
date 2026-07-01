@@ -1,0 +1,8 @@
+review_axis,segment,mae_delta_candidate_minus_baseline,spearman_delta,startable_precision_delta,stability_result
+aggregate_holdout,all_positions,-1.646492000000002,0.0011259999999999,0.0,PASS_NO_MATERIAL_HOLDOUT_DEGRADATION
+position_holdout,QB,-1.720185,-0.001128,0.0,PASS_MAE_IMPROVED
+position_holdout,RB,-0.590015,0.002148,0.020833,PASS_MAE_IMPROVED
+position_holdout,TE,-1.073498,0.005329,0.0,PASS_MAE_IMPROVED
+position_holdout,WR,-2.606489,0.000737,-0.013889,PASS_MAE_IMPROVED
+season_holdout,target_season_2024,-1.609958,0.000668,0.011905,PASS_MAE_IMPROVED
+season_holdout,target_season_2025,-1.681895,0.00133,-0.011905,PASS_MAE_IMPROVED

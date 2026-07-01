@@ -1,0 +1,14 @@
+split,group,baseline_mae,candidate_mae,mae_delta_candidate_minus_baseline,baseline_spearman,candidate_spearman,spearman_delta,baseline_startable_precision_at_n,candidate_startable_precision_at_n,startable_precision_delta,review_note
+train,target_season_2013,39.043266,38.101288,-0.941978,0.70719,0.704871,-0.002319,0.464286,0.452381,-0.011905,positive_mae_with_stable_rank_order
+train,target_season_2014,39.725405,38.273086,-1.452319,0.66197,0.663782,0.001812,0.547619,0.559524,0.011905,positive_mae_with_stable_rank_order
+train,target_season_2015,42.033577,41.112579,-0.920998,0.637673,0.638673,0.001,0.464286,0.464286,0.0,positive_mae_with_stable_rank_order
+train,target_season_2016,39.169818,37.922471,-1.247347,0.676578,0.676551,-2.7e-05,0.559524,0.559524,0.0,positive_mae_with_stable_rank_order
+train,target_season_2017,34.03643,32.301345,-1.735085,0.701552,0.697788,-0.003764,0.571429,0.583333,0.011904,positive_mae_with_stable_rank_order
+train,target_season_2018,37.25744,37.311388,0.053948,0.685268,0.685545,0.000277,0.52381,0.511905,-0.011905,mixed_or_negative_metric_tradeoff
+train,target_season_2019,37.948851,35.968937,-1.979914,0.660935,0.661425,0.00049,0.547619,0.535714,-0.011905,positive_mae_with_stable_rank_order
+train,target_season_2020,37.967358,37.577957,-0.389401,0.669052,0.665348,-0.003704,0.535714,0.535714,0.0,positive_mae_with_stable_rank_order
+train,target_season_2021,35.679757,34.4574,-1.222357,0.690774,0.691851,0.001077,0.571429,0.559524,-0.011905,positive_mae_with_stable_rank_order
+validation,target_season_2022,33.295127,31.524449,-1.770678,0.750117,0.747283,-0.002834,0.619048,0.607143,-0.011905,positive_mae_with_stable_rank_order
+validation,target_season_2023,36.539697,34.217792,-2.321905,0.698533,0.697434,-0.001099,0.583333,0.595238,0.011905,positive_mae_with_stable_rank_order
+holdout,target_season_2024,37.316667,35.706709,-1.609958,0.705071,0.705739,0.000668,0.559524,0.571429,0.011905,positive_mae_with_stable_rank_order
+holdout,target_season_2025,34.488717,32.806822,-1.681895,0.740292,0.741622,0.00133,0.559524,0.547619,-0.011905,positive_mae_with_stable_rank_order

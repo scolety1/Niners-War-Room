@@ -1,0 +1,13 @@
+split,group,baseline_mae,candidate_mae,mae_delta_candidate_minus_baseline,baseline_spearman,candidate_spearman,spearman_delta,baseline_startable_precision_at_n,candidate_startable_precision_at_n,startable_precision_delta,review_note
+train,QB,52.573695,54.432724,1.859029,0.724873,0.725959,0.001086,0.564815,0.555556,-0.009259,mixed_or_negative_metric_tradeoff
+train,RB,47.029252,45.76294,-1.266312,0.604737,0.605739,0.001002,0.490741,0.476852,-0.013889,positive_mae_with_stable_rank_order
+train,TE,22.662977,21.397651,-1.265326,0.674541,0.675997,0.001456,0.481481,0.490741,0.00926,positive_mae_with_stable_rank_order
+train,WR,35.574339,33.674392,-1.899947,0.654456,0.656414,0.001958,0.564815,0.567901,0.003086,positive_mae_with_stable_rank_order
+validation,QB,58.47641,52.908974,-5.567436,0.69457,0.694329,-0.000241,0.541667,0.541667,0.0,positive_mae_with_stable_rank_order
+validation,RB,45.387092,43.843993,-1.543099,0.658535,0.654112,-0.004423,0.5625,0.541667,-0.020833,positive_mae_with_stable_rank_order
+validation,TE,17.94,16.976872,-0.963128,0.767179,0.770256,0.003077,0.583333,0.583333,0.0,positive_mae_with_stable_rank_order
+validation,WR,28.484564,26.827765,-1.656799,0.758677,0.761036,0.002359,0.652778,0.666667,0.013889,positive_mae_with_stable_rank_order
+holdout,QB,60.367196,58.647011,-1.720185,0.662284,0.661156,-0.001128,0.541667,0.541667,0.0,positive_mae_with_stable_rank_order
+holdout,RB,41.650467,41.060452,-0.590015,0.729558,0.731706,0.002148,0.604167,0.625,0.020833,positive_mae_with_stable_rank_order
+holdout,TE,20.284401,19.210903,-1.073498,0.74331,0.748639,0.005329,0.375,0.375,0.0,positive_mae_with_stable_rank_order
+holdout,WR,32.554467,29.947978,-2.606489,0.718317,0.719054,0.000737,0.597222,0.583333,-0.013889,positive_mae_with_stable_rank_order
