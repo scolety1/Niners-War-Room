@@ -1,0 +1,12 @@
+feature,feature_family,source_column_or_rule,source_kind,contract_decision,reason,production_approved,model_use_allowed,training_allowed,source_truth_allowed,formula_search_allowed_now
+ambiguous_rz_att,ambiguous_red_zone,not_in_v3_substrate,blocked_or_absent,BLOCKED_FORBIDDEN,The packet explicitly forbids normalizing ambiguous rz_att.,False,False,False,False,False
+current_roster_status_injury_depth_schedule_fields,current_only_context,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_HISTORICAL_FEATURE_DATA,"Current-only roster, status, injury, depth, and schedule context cannot be used as historical feature data.",False,False,False,False,False
+adp_fields,market_or_price,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_SOURCE_TRUTH,ADP fields are not source truth for historical tuning features.,False,False,False,False,False
+market_fields,market_or_price,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_SOURCE_TRUTH,Market fields are not source truth for historical tuning features.,False,False,False,False,False
+rank_fields,rank_or_sort,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_SOURCE_TRUTH,"Rank, ranking, and sort fields are not source truth for historical tuning features.",False,False,False,False,False
+red_zone_carries,red_zone_sidecar,not_in_v3_substrate,blocked_or_absent,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,No admitted typed historical sidecar was available in this lane.,False,False,False,False,False
+red_zone_pass_attempts,red_zone_sidecar,not_in_v3_substrate,blocked_or_absent,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,No admitted typed historical sidecar was available in this lane.,False,False,False,False,False
+red_zone_targets,red_zone_sidecar,not_in_v3_substrate,blocked_or_absent,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,No admitted typed historical sidecar was available in this lane.,False,False,False,False,False
+routes_tprr_yprr_family,route_proxy_family,not_in_v3_substrate,blocked_or_absent,BLOCKED_FORBIDDEN,The packet forbids route fields and route proxy families.,False,False,False,False,False
+projection_fields,vendor_or_projection,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_SOURCE_TRUTH,Projection fields are not source truth for historical tuning features.,False,False,False,False,False
+vendor_fields,vendor_or_projection,not_allowed_by_source_contract,blocked_guardrail_family,BLOCKED_AS_SOURCE_TRUTH,Vendor fields are not source truth for historical tuning features.,False,False,False,False,False

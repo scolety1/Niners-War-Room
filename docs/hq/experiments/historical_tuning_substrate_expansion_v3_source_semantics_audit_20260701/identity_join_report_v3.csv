@@ -1,0 +1,12 @@
+metric,value,notes
+feature_rows,5518,Rows in local generated feature source.
+label_rows,5518,Rows in local generated label source.
+canonical_rows,5518,Rows emitted to V3 parquet.
+matched_feature_label_rows,5518,Rows carried forward from matched V2 feature-target substrate.
+unmatched_feature_rows,0,V3 starts from V2 matched rows; no new name matching.
+unmatched_label_rows,0,V3 starts from V2 matched rows; no new name matching.
+distinct_gsis_player_ids,1552,GSIS/nflverse IDs used as canonical identity.
+gsis_format_rows,5518,Rows with GSIS-style 00-numeric ID.
+position_mismatch_rows,0,Feature/target position mismatch rows.
+duplicate_identity_season_keys,0,Duplicate player-season-pair keys.
+ambiguous_same_name_feature_season_groups,153,Names are audit fields only; no name matching used.

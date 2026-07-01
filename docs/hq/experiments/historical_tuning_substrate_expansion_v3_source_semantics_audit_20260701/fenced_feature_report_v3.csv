@@ -1,0 +1,10 @@
+feature,feature_family,fence_or_block_decision,null_fenced_by,null_count_in_v3,blocked_in_v3,reason,review_only,production_approved
+prior_receiving_air_yards,optional_receiving_context,ALLOW_REVIEW_ONLY_WITH_NULL_FENCE,air_yards_missing,663,False,Values flagged by air_yards_missing are null in V3; remaining zeros are source-recorded review-only values.,True,False
+prior_receiving_yards_after_catch,optional_receiving_context,ALLOW_REVIEW_ONLY_WITH_NULL_FENCE,air_yards_missing,663,False,Values flagged by air_yards_missing are null in V3; remaining zeros are source-recorded review-only values.,True,False
+prior_offensive_snaps,optional_snap_context,ALLOW_REVIEW_ONLY_WITH_NULL_FENCE,snap_pct_missing,811,False,Values flagged by snap_pct_missing are null in V3; remaining zeros are source-recorded review-only values.,True,False
+prior_offense_pct,optional_snap_context,ALLOW_REVIEW_ONLY_WITH_NULL_FENCE,snap_pct_missing,811,False,Values flagged by snap_pct_missing are null in V3; remaining zeros are source-recorded review-only values.,True,False
+red_zone_targets,red_zone_sidecar,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,,0,True,No admitted typed historical sidecar was available in this lane.,True,False
+red_zone_carries,red_zone_sidecar,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,,0,True,No admitted typed historical sidecar was available in this lane.,True,False
+red_zone_pass_attempts,red_zone_sidecar,BLOCKED_NOT_PRESENT_IN_CANONICAL_V3,,0,True,No admitted typed historical sidecar was available in this lane.,True,False
+ambiguous_rz_att,ambiguous_red_zone,BLOCKED_FORBIDDEN,,0,True,The packet explicitly forbids normalizing ambiguous rz_att.,True,False
+routes_tprr_yprr_family,route_proxy_family,BLOCKED_FORBIDDEN,,0,True,The packet forbids route fields and route proxy families.,True,False
