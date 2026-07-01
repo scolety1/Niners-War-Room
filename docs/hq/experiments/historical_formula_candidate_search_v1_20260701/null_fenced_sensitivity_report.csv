@@ -1,0 +1,5 @@
+candidate_id,split,eligible_rows,excluded_null_fenced_rows,sensitivity_mae,eligible_comparator_mae,mae_delta_vs_eligible_comparator,null_handling,primary_pass_used,production_approved
+optional_air_yac_sensitivity,train,2838,878,32.120752,32.83629,-0.715538,Rows with null-fenced inputs are excluded from this sensitivity metric; missing values are not filled with zero.,False,False
+optional_air_yac_sensitivity,validation,680,232,26.710417,27.281296,-0.570879,Rows with null-fenced inputs are excluded from this sensitivity metric; missing values are not filled with zero.,False,False
+optional_snap_context_sensitivity,train,2989,727,39.635165,38.274889,1.360276,Rows with null-fenced inputs are excluded from this sensitivity metric; missing values are not filled with zero.,False,False
+optional_snap_context_sensitivity,validation,870,42,37.157575,35.058346,2.099229,Rows with null-fenced inputs are excluded from this sensitivity metric; missing values are not filled with zero.,False,False

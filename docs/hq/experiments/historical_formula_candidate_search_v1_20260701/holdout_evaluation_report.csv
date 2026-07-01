@@ -1,0 +1,3 @@
+candidate_id,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,primary_or_sensitivity,holdout_mae_delta_vs_baseline,holdout_spearman_delta_vs_baseline,holdout_startable_precision_delta_vs_baseline,holdout_evaluated_after_validation_selection
+baseline_v3_prior_points,holdout,all_positions,890,35.880449,0.72397,0.559524,0.630872,0.59306,primary_baseline,0.0,0.0,0.0,True
+usage_opportunity_volume,holdout,all_positions,890,34.233957,0.725096,0.559524,0.630872,0.59306,primary,-1.646492000000002,0.0011259999999999604,0.0,True
