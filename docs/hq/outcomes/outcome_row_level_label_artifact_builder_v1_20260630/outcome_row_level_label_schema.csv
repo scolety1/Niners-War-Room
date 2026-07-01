@@ -1,0 +1,22 @@
+column_name,required,field_type,nullable,source_field_or_rule,missingness_rule,allowed_use,prohibited_use,notes
+label_row_id,true,string,false,deterministic stable artifact row id,Not enough information if source row absent,review parity key,model input,Must be reproducible from approved row-level source.
+nwr_player_id,true,string,false,approved NWR identity bridge,Not enough information if unmapped,review identity join,source-truth promotion,Required for parity to current/sidecar artifacts.
+player_name,true,string,false,approved label source or identity bridge,Not enough information if unavailable,review display,identity fabrication,Display only.
+position,true,string,false,approved player-season position,Not enough information if unavailable,review grouping,position inference without source,Expected QB/RB/WR/TE for Veteran Outcome V2.
+season,true,integer,false,label target or anchor season,Not enough information if unavailable,review temporal key,temporal fabrication,Must preserve target/anchor semantics.
+label_family,true,string,false,approved Outcome label family,Not enough information if unavailable,review grouping,probability creation,Example Outcome V2 historical labels.
+label_name,true,string,false,approved threshold/horizon label name,Not enough information if unavailable,review field mapping,new fake label heads,Example RB_T24_WITHIN_5Y.
+label_value,true,string,true,approved label hit value or Not enough information,Not enough information for censored or missing,review comparison,zero-fill,false/0 is allowed only for observed misses from approved source.
+label_window,true,string,false,approved window definition,Not enough information if unavailable,review censoring context,window inference,Examples this_year next_year within_5y.
+hit_status,true,string,true,approved observed hit/miss/not_applicable value,Not enough information for unobserved windows,review comparison,missing-as-miss,Must distinguish observed_miss from censored.
+censoring_status,true,string,false,approved censoring policy/status,Not enough information if unavailable,review comparison,missing-as-failure,Incomplete windows must remain censored.
+label_source,true,string,false,approved source name,Not enough information if unavailable,review provenance,source-truth promotion,No new source approval is created by this artifact.
+source_artifact,true,string,false,tracked source artifact path or approved derivation receipt,Not enough information if unavailable,review provenance,raw/shared dependency,Must not require app/runtime raw shared reads.
+source_as_of,true,string,true,source as-of date or build timestamp,Not enough information if unavailable,review provenance,temporal leakage,Needed for replay/parity audits.
+review_use_allowed,true,boolean,false,existing approval or packet policy,false if no approved row-level source,review-only use,model/training/source truth,True only for real approved rows.
+label_truth_allowed,true,boolean,false,existing explicit source approval,false unless already approved,label-truth if already approved,new label-truth promotion,This packet cannot create new label truth approval.
+model_use_allowed,true,boolean,false,always false,false,none,model input,Labels are not model input features.
+training_allowed,true,boolean,false,always false,false,none,training input,Labels are evaluation targets only.
+source_truth_allowed,true,boolean,false,existing explicit approval only,false unless already approved,none unless separately approved,source truth promotion,This packet sets false for all created inventory rows.
+blocker_reason,true,string,true,artifact or row blocker,Not enough information if no blocker,review diagnostics,hidden suppression,Required when row cannot be used.
+notes,true,string,true,plain-language caveat,Not enough information if unavailable,review explanation,rank/model logic,No probabilities or recommendations.
