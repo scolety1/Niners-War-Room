@@ -1,0 +1,19 @@
+feature,primary_input_status,production_approved,model_use_allowed,source_truth_allowed,hidden_sort_allowed,recommendation_allowed,notes
+prior_carries,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_games,BLOCKED_NULL_IN_PARTIAL_EXPORT,false,false,false,false,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_interceptions,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_nwr_points,BLOCKED_NULL_IN_PARTIAL_EXPORT,false,false,false,false,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_nwr_ppg,BLOCKED_NULL_IN_PARTIAL_EXPORT,false,false,false,false,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_opportunities,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_attempts,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_completions,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_first_downs,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_td,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_yards,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_first_downs,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_yards,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receptions,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_first_downs,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_yards,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_targets,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_touches,AVAILABLE_PARTIAL_EXPORT,false,false,false,false,false,Generated only for exact stable-id joins; missing rows remain null.

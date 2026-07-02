@@ -1,0 +1,12 @@
+metric,value,notes
+baseline_rows,370,Rows read from approved current-board baseline input.
+candidate_feature_input_rows,370,Rows written to local-only feature input.
+exact_feature_join_rows,245,Rows joined by stable_player_id to player_id_sleeper.
+candidate_feature_ready_rows,0,Rows with every required primary feature available.
+missing_or_not_eligible_rows,125,Rows not joined or not eligible by position.
+outside_export_path,C:\NWR_REVIEW\current_board_candidate_feature_input_gate_v1_20260702\current_board_candidate_feature_input_review_only.csv,Full export path outside repo.
+outside_export_sha256,163da41dedb5c4a05f16c00a8788ff3130db5d794894d400c5f111bf58af1235,SHA256 checksum for outside export.
+feature_anchor_season,2025,Completed season factual anchor.
+usage_rows_2025_raw,37078,Raw 2025 REG rows read from core usage dataset.
+usage_rows_2025_exact_duplicate_rows,37078,Rows participating in exact duplicate groups.
+usage_rows_2025_after_exact_dedup,18539,Rows used for aggregation after dropping exact duplicates.

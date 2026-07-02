@@ -1,0 +1,4 @@
+feature,status,source_or_derivation,null_policy,review_only,production_approved,notes
+prior_nwr_points,COMPLETED_FOR_EXACT_2025_REG_OBSERVED_ROWS,sum scored player-week rows using NWR scoring config,null for players without an exact 2025 REG scoring source match,true,false,Imported fantasy_points and fantasy_points_ppr are blocked and not used.
+prior_games,COMPLETED_FOR_EXACT_2025_REG_OBSERVED_ROWS,count distinct explicit 2025 REG player-week rows after exact dedup,null for players without an exact 2025 REG scoring source match,true,false,"This is games-with-explicit-stats evidence, not current availability context."
+prior_nwr_ppg,COMPLETED_WHEN_PRIOR_GAMES_GT_0,prior_nwr_points / prior_games,null unless prior_games > 0,true,false,No division is performed for no-stat/null-fenced players.

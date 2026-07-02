@@ -1,0 +1,19 @@
+feature,required_for_primary_candidate,source_contract_decision,candidate_gate_status,null_fenced_primary_excluded,notes
+prior_carries,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_games,true,ALLOW_REVIEW_ONLY,BLOCKED_WEEKLY_ROW_COUNT_NOT_ADMITTED_AS_GAMES,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_interceptions,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_nwr_points,true,ALLOW_REVIEW_ONLY,BLOCKED_CORE_USAGE_DATASET_LACKS_FULL_SCORING_COMPONENTS,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_nwr_ppg,true,ALLOW_REVIEW_ONLY,BLOCKED_CORE_USAGE_DATASET_LACKS_FULL_SCORING_COMPONENTS_AND_GAMES,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_opportunities,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_attempts,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_completions,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_first_downs,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_td,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_yards,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_first_downs,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_yards,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receptions,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_first_downs,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_yards,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_targets,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_touches,true,ALLOW_REVIEW_ONLY,AVAILABLE_FROM_2025_USAGE_AGGREGATE,false,Generated only for exact stable-id joins; missing rows remain null.
