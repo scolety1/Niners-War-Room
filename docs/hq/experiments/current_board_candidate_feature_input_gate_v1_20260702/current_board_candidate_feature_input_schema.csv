@@ -1,0 +1,38 @@
+field_name,field_type,source_or_derivation,primary_candidate_input,review_only,production_approved,notes
+stable_player_id,string,baseline input or gate metadata,False,true,false,
+player_name,string,baseline input or gate metadata,False,true,false,
+position,string,baseline input or gate metadata,False,true,false,
+team,string,baseline input or gate metadata,False,true,false,
+feature_anchor_season,string,baseline input or gate metadata,False,true,false,
+prediction_anchor,string,baseline input or gate metadata,False,true,false,
+player_id_sleeper,string,stable_player_id exact join to nflverse player_id_sleeper,False,true,false,
+player_id_gsis,string,nflverse player_id_gsis audit field after exact sleeper join,False,true,false,
+feature_join_status,string,baseline input or gate metadata,False,true,false,
+candidate_feature_ready,boolean_string,baseline input or gate metadata,False,true,false,
+missing_required_features,string,baseline input or gate metadata,False,true,false,
+prior_carries,number_or_null,2025 REG sum of carries,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_games,number_or_null,BLOCKED_WEEKLY_ROW_COUNT_NOT_ADMITTED_AS_GAMES,True,true,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_interceptions,number_or_null,2025 REG sum of passing_interceptions,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_nwr_points,number_or_null,BLOCKED_CORE_USAGE_DATASET_LACKS_FULL_SCORING_COMPONENTS,True,true,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_nwr_ppg,number_or_null,BLOCKED_CORE_USAGE_DATASET_LACKS_FULL_SCORING_COMPONENTS_AND_GAMES,True,true,false,Required for candidate rank calculation; remains null pending a safer source gate.
+prior_opportunities,number_or_null,2025 REG sum of opportunities,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_attempts,number_or_null,2025 REG sum of passing_attempts,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_completions,number_or_null,2025 REG sum of completions,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_first_downs,number_or_null,2025 REG sum of passing_first_downs,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_td,number_or_null,2025 REG sum of passing_touchdowns,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_passing_yards,number_or_null,2025 REG sum of passing_yards,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_first_downs,number_or_null,2025 REG sum of receiving_first_downs,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receiving_yards,number_or_null,2025 REG sum of receiving_yards,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_receptions,number_or_null,2025 REG sum of receptions,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_first_downs,number_or_null,2025 REG sum of rushing_first_downs,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_rushing_yards,number_or_null,2025 REG sum of rushing_yards,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_targets,number_or_null,2025 REG sum of targets,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+prior_touches,number_or_null,2025 REG sum of touches,True,true,false,Generated only for exact stable-id joins; missing rows remain null.
+feature_source_artifact,string,baseline input or gate metadata,False,true,false,
+join_method,string,baseline input or gate metadata,False,true,false,
+review_only,boolean_string,baseline input or gate metadata,False,true,false,
+candidate_rank_output_present,boolean_string,baseline input or gate metadata,False,true,false,
+production_approved,boolean_string,baseline input or gate metadata,False,true,false,
+app_wiring_allowed,boolean_string,baseline input or gate metadata,False,true,false,
+model_use_allowed,boolean_string,baseline input or gate metadata,False,true,false,
+source_truth_allowed,boolean_string,baseline input or gate metadata,False,true,false,
