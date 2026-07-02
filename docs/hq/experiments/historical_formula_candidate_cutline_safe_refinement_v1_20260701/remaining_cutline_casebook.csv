@@ -1,0 +1,6 @@
+player_id,player_name,position,feature_season,target_season,split,cutline,baseline_rank,qb_guard_rank,selected_refinement_rank,actual_position_finish,baseline_prediction,qb_guard_prediction,selected_refinement_prediction,actual_next_points,review_note
+00-0035261,T.Pollard,RB,2021,2022,validation,24,24,26,25,7,154.7,141.005,147.8525,211.4,Remaining actual cutline hit moved below cutline by selected partial refinement.
+00-0036358,C.Lamb,WR,2021,2022,validation,12,11,14,13,6,169.633333,145.863333,157.748333,204.6,Remaining actual cutline hit moved below cutline by selected partial refinement.
+00-0037247,G.Pickens,WR,2022,2023,validation,36,33,38,37,18,120.5,102.245,111.3725,154.033333,Remaining actual cutline hit moved below cutline by selected partial refinement.
+00-0038994,J.Addison,WR,2023,2024,holdout,24,24,28,25,21,146.5,125.605,136.0525,145.5,Remaining actual cutline hit moved below cutline by selected partial refinement.
+00-0037664,A.Pierce,WR,2024,2025,holdout,36,36,41,38,16,123.2,99.59,111.395,140.7,Remaining actual cutline hit moved below cutline by selected partial refinement.
