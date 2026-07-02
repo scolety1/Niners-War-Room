@@ -1,0 +1,12 @@
+metric,value,notes
+current_board_rows,370,Rows processed from approved baseline universe.
+scoring_feature_rows_generated,245,Rows with exact GSIS scoring match and completed scoring features.
+candidate_feature_ready_count,245,Rows with all 18 primary candidate input features present.
+null_fenced_or_missing_count,125,Rows left null-fenced/not enough information.
+raw_weekly_rows,76804,Rows in local raw player_stats weekly snapshot.
+raw_2025_reg_raw_rows,37078,2025 REG rows before exact dedup.
+raw_2025_reg_exact_duplicate_rows,37078,Rows participating in exact duplicate groups before dedup.
+raw_2025_reg_after_exact_dedup,18539,2025 REG rows after exact dedup.
+duplicate_keys_after_dedup,0,Duplicate player/season/week keys after exact dedup.
+outside_export_path,C:\NWR_REVIEW\current_board_candidate_scoring_feature_completion_gate_v1_20260702\current_board_candidate_feature_input_completed_review_only.csv,Full completed feature input path outside repo.
+outside_export_sha256,bdff4e6c0c51b64a3f867c6ed11f72cda088046e1ffd194c32fb55f49357d1e0,Checksum for outside-repo completed feature input.

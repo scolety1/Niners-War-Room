@@ -1,0 +1,45 @@
+field_name,field_type,source_or_derivation,review_only,production_approved,candidate_rank_output
+stable_player_id,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+player_name,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+position,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+team,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+feature_anchor_season,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+prediction_anchor,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+player_id_sleeper,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+player_id_gsis,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+feature_join_status,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+candidate_feature_ready,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+missing_required_features,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+prior_carries,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_games,number_or_null,2025 REG explicit player-week count after exact dedup,true,false,false
+prior_interceptions,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_nwr_points,number_or_null,2025 REG observed-row NWR scoring sum,true,false,false
+prior_nwr_ppg,number_or_null,prior_nwr_points / prior_games when prior_games > 0,true,false,false
+prior_opportunities,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_passing_attempts,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_passing_completions,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_passing_first_downs,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_passing_td,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_passing_yards,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_receiving_first_downs,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_receiving_yards,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_receptions,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_rushing_first_downs,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_rushing_yards,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_targets,number_or_null,prior candidate feature input gate v1,true,false,false
+prior_touches,number_or_null,prior candidate feature input gate v1,true,false,false
+feature_source_artifact,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+join_method,string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+review_only,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+candidate_rank_output_present,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,true
+production_approved,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+app_wiring_allowed,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+model_use_allowed,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+source_truth_allowed,boolean_string,prior candidate feature input gate v1 baseline/metadata,true,false,false
+scoring_feature_status,string,scoring completion gate metadata,true,false,false
+scoring_missing_reason,string,scoring completion gate metadata,true,false,false
+scoring_source_artifact,string,scoring completion gate metadata,true,false,false
+scoring_version_id,string,scoring completion gate metadata,true,false,false
+prior_games_derivation,string,scoring completion gate metadata,true,false,false
+prior_nwr_points_derivation,string,scoring completion gate metadata,true,false,false
+prior_nwr_ppg_derivation,string,scoring completion gate metadata,true,false,false
