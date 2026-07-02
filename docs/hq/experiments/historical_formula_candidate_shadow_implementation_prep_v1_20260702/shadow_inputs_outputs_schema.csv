@@ -1,0 +1,17 @@
+field_name,field_type,required,source_or_derivation,allowed_use,blocked_use,notes
+player_id_gsis,string,yes,identity bridge / nflverse,review_identity_join,source truth promotion,Canonical football identity where available.
+player_name,string,yes,display audit field,display_only,identity truth,Name is not identity truth.
+position,string,yes,feature-season position,review_filter_and_cutline,current-only context,QB/RB/WR/TE only.
+feature_season,integer,yes,completed feature season N,asof_check,target-season feature use,For current-board shadow this would be completed 2025 only after a source gate.
+prior_nwr_points,number,yes,V3/source-contract allowed scoring derivation,review_formula_input,production formula source truth,Baseline comparator.
+prior_games,number,yes for QB guard,V3/source-contract allowed games field,review_formula_input,zero-fill,Required by QB elite guard.
+prior_carries,number,yes,V3/source-contract allowed rushing usage,review_formula_input,zero-fill,Source zero or role-structural zero only.
+prior_receptions,number,yes,V3/source-contract allowed receiving usage,review_formula_input,zero-fill,Source zero or role-structural zero only.
+prior_targets,number,yes,V3/source-contract allowed receiving usage,review_formula_input,zero-fill,Source zero or role-structural zero only.
+prior_opportunities,number,yes,prior_carries + prior_targets,review_formula_input,zero-fill,Derived from allowed components.
+baseline_score,number,yes,prior_nwr_points,review_comparator,rank wiring,Side-by-side only.
+selected_candidate_score,number,yes,review-only selected candidate formula,review_comparator,rank wiring,Side-by-side only.
+baseline_position_rank,integer,yes,rank within static review output,review_comparator,hidden sort,Not app rank.
+selected_position_rank,integer,yes,rank within static review output,review_comparator,hidden sort,Not app rank.
+movement_vs_baseline,integer,yes,selected_position_rank - baseline_position_rank,review_comparator,recommendation,Review label only.
+watchlist_flag,string,optional,predeclared review policy,human_review_queue,recommendation,Pollard/Lamb and large movement flags.

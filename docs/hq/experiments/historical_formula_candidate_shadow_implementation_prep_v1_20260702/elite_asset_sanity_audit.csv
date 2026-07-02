@@ -1,0 +1,4 @@
+audit_item,scope,original_usage_opportunity_volume,selected_candidate,status,notes
+elite_qb_severe_regressions,validation_holdout,14,1,PASS_REVIEW_ONLY,Elite-QB issue remains materially reduced.
+holdout_position_mae,QB/RB/WR/TE,improved_all_positions,improved_4_of_4_positions,PASS_REVIEW_ONLY,No position collapse in merged gate evidence.
+elite_watchlist_policy,future_static_shadow,watch,watch,WATCHLIST_REVIEW_ONLY,Top movers and elite assets must be reviewed manually before any later implementation gate.

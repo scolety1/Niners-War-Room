@@ -1,0 +1,8 @@
+metric,baseline_or_prior_value,selected_value,decision,production_approved,notes
+holdout_mae_delta_vs_baseline,baseline_v3_prior_points,-1.196383,PASS_REVIEW_ONLY,false,Review-only comparison contract; no runtime use.
+holdout_spearman_delta_vs_baseline,baseline_v3_prior_points,0.001089,PASS_REVIEW_ONLY,false,Review-only comparison contract; no runtime use.
+holdout_startable_precision_delta_vs_baseline,baseline_v3_prior_points,0.0,PASS_REVIEW_ONLY,false,Review-only comparison contract; no runtime use.
+validation_mae_delta_vs_baseline,validation baseline_v3_prior_points,-1.424033,PASS_REVIEW_ONLY,false,Review-only comparison contract; no runtime use.
+validation_startable_precision_delta_vs_baseline,validation baseline_v3_prior_points,0.0,PASS_REVIEW_ONLY,false,Review-only comparison contract; no runtime use.
+actual_hits_moved_below_cutline_validation_holdout,original=8; rb_wr_cutline_safe_blend=5,2,PASS_WATCHLIST_REVIEW,false,Review-only comparison contract; no runtime use.
+elite_qb_severe_regressions_validation_holdout,original=14,1,PASS_WATCHLIST_REVIEW,false,Review-only comparison contract; no runtime use.

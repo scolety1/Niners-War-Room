@@ -1,0 +1,6 @@
+source_id,path,exists_in_clean_worktree,available_for_tracking,decision,notes
+raw_full_player_board_local_export,local_exports/model_v4/current_value/latest/full_player_board_value_review_rows.csv,false,false,DO_NOT_TRACK_RAW_LOCAL_EXPORT,Approved app source is local/ignored and not available in this clean worktree.
+unified_player_universe_review,docs\hq\model\unified_player_universe_v0\unified_player_universe_v1_review.csv,true,true,USED_FOR_SAFE_REVIEW_ONLY_EXPORT,Tracked review artifact with app_wiring_allowed/model_input_allowed false; market fields stripped from generated export.
+outcome_v2_current_player_display,docs/hq/outcomes/outcome_v2_horizon_20260630/outcome_v2_current_player_display.csv,true,true,CONTEXT_ONLY_NOT_BASELINE,Contains display probabilities/context but no baseline rank or score.
+rankings_view_inventory,docs/hq/rankings_view_inventory_20260630/,true,true,INVENTORY_ONLY,Confirms current rank source but is not row-level baseline export.
+shared_current_feature_gate,C:\NWR_SHARED_DATA\outcome_v2_horizon\current_feature_gate\outcome_v2_current_feature_source_gate_audit.csv,external_read_only,false,FEATURE_CONTEXT_ONLY_NOT_BASELINE,"Useful for future candidate feature input gate, not a baseline board source."

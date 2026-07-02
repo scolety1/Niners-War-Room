@@ -1,0 +1,13 @@
+player_id,player_name,position,split,feature_season,target_season,baseline_prediction,selected_prediction,actual_next_points,selected_error_delta_vs_baseline,status,notes
+00-0033106,J.Goff,QB,holdout,2023,2024,243.4,175.66,269.6,67.74000000000001,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0033106,J.Goff,QB,validation,2022,2023,238.53333333333336,172.02833333333334,243.4,66.50500000000002,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0033873,P.Mahomes,QB,holdout,2024,2025,245.63333333333333,181.78333333333333,250.96666666666664,63.849999999999994,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0036355,J.Herbert,QB,holdout,2024,2025,247.6,184.70499999999998,261.83333333333337,62.89500000000001,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0034855,B.Mayfield,QB,holdout,2023,2024,237.7,176.61999999999998,319.2,61.08000000000001,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0039918,C.Williams,QB,holdout,2024,2025,233.9333333333333,177.1183333333333,276.9,56.815,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0036264,J.Love,QB,holdout,2024,2025,200.0666666666667,144.17166666666668,204.0,55.89500000000001,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0036212,T.Tagovailoa,QB,validation,2022,2023,194.06666666666663,139.80666666666664,234.7333333333333,54.25999999999999,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0031280,D.Carr,QB,validation,2022,2023,190.0,136.96,203.26666666666668,53.03999999999999,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0030565,G.Smith,QB,holdout,2023,2024,196.50000000000003,143.925,236.8,52.57500000000002,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0036355,J.Herbert,QB,holdout,2023,2024,201.86666666666667,150.15666666666667,247.6,51.71000000000001,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.
+00-0029263,R.Wilson,QB,validation,2022,2023,201.46666666666664,150.37166666666664,233.0333333333333,51.095,HISTORICAL_TOP_REGRESSION_REVIEW_ONLY,Historical stress row for manual review; no current ranking use.

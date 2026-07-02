@@ -1,0 +1,21 @@
+field_name,field_type,description,review_only,production_approved
+stable_player_id,string,Stable current-board/player-universe id.,true,false
+player_name,string,Display name for audit only.,true,false
+position,string,Player position.,true,false
+team,string,Display team where available.,true,false
+current_baseline_rank,integer,Static baseline display rank.,true,false
+current_baseline_position_rank,integer,Position rank derived from baseline order.,true,false
+current_baseline_tier_bucket,string,Baseline tier/bucket if present.,true,false
+current_baseline_score,number_or_blank,Blank because tracked review source does not expose a safe score.,true,false
+current_baseline_score_status,string,Why score is blank or included.,true,false
+data_quality_status,string,Source review data-quality label.,true,false
+manual_review_flag,string,Source review manual-review flag.,true,false
+review_status,string,Source review status.,true,false
+warning_flags,string,Sanitized warning summary.,true,false
+source_layer,string,Source review layer label.,true,false
+source_artifact,string,Tracked source artifact path.,true,false
+review_only,boolean,Always true.,true,false
+candidate_formula_output_present,boolean,Always false for baseline input.,true,false
+production_approved,boolean,Always false.,true,false
+app_wiring_allowed,boolean,Always false.,true,false
+model_input_allowed,boolean,Always false.,true,false
