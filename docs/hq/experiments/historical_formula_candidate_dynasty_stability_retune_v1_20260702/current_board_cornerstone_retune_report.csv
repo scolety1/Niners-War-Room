@@ -1,0 +1,8 @@
+metric,value,notes
+current_board_rows,370,Rows in approved static current-board shadow packet.
+candidate_ready_rows,245,Null-fenced rows excluded from candidate rank changes.
+null_fenced_rows,125,Retained as not enough information.
+dangerous_demotions_before_retune_preview,0,After WR role guard adjustment.
+dangerous_demotions_after_retune_preview,0,No new dangerous-demotion flag is introduced by the preview guard.
+players_changed_by_retune_preview,10,General guard footprint; no player-specific exceptions.
+key_players_improved_or_reduced,8,Key audit rows whose position-rank preview moved upward.
