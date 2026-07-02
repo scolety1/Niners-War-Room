@@ -14,6 +14,15 @@ from src.services.development_lab_nflverse_context_service import (
     roster_status_context_rows,
     schedule_context_display_rows,
 )
+from src.services.development_lab_review_upgrade_service import (
+    artifact_manifest_rows,
+    candidate_review_panel_rows,
+    current_stats_review_improvement_rows,
+    dataset_browser_rows,
+    guardrail_ledger_rows,
+    lab_status_board_rows,
+    next_lane_idea_rows,
+)
 from src.services.development_lab_state_service import (
     DevelopmentLabToolState,
     export_all_tool_states_json,
@@ -124,6 +133,45 @@ def render_development_lab_readiness(statuses: list[FutureToolStatus]) -> None:
         "Readiness is manual/display-only. NFLVerse context uses tracked display artifacts; "
         "missing or unapproved context stays Not enough information."
     )
+
+
+def render_review_upgrade_status_board() -> None:
+    st.caption(
+        "Review cockpit for current tracked experiment evidence. Display-only/manual; "
+        "no production formula, rank, source-truth, hidden-sort, model, or default app change."
+    )
+    _tool_table(lab_status_board_rows())
+
+
+def render_review_upgrade_dataset_browser() -> None:
+    st.caption(
+        "Tracked artifact summaries only. Raw shared/cache/local exports are not loaded here."
+    )
+    _tool_table(dataset_browser_rows())
+    with st.expander("Tracked artifact paths", expanded=False):
+        _tool_table(artifact_manifest_rows())
+
+
+def render_review_upgrade_candidate_panel() -> None:
+    st.caption(
+        "Candidate evidence remains on HOLD for human review. Variants are labels for "
+        "review packets only and are not wired into normal product behavior."
+    )
+    _tool_table(candidate_review_panel_rows())
+
+
+def render_review_upgrade_guardrail_ledger() -> None:
+    _tool_table(guardrail_ledger_rows())
+
+
+def render_review_upgrade_current_stats_options() -> None:
+    st.caption("These are safe review-only summaries that current tracked stats can support.")
+    _tool_table(current_stats_review_improvement_rows())
+
+
+def render_review_upgrade_next_lane_ideas() -> None:
+    st.caption("Ideas only. Nothing here starts an action or promotes evidence.")
+    _tool_table(next_lane_idea_rows())
 
 
 def render_refresh_health_waiting_panel() -> None:
