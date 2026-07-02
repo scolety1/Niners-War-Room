@@ -1,0 +1,9 @@
+# Usage Lens Vs Main Formula Update
+
+Decision: keep the candidate on HOLD rather than advancing it as a main-formula candidate.
+
+The selected `multi_year_plus_cornerstone_guard` variant is more suitable than the unretuned guarded usage lens for future review because it reduces current-board cornerstone underrank risk while retaining historical MAE improvement. However, validation startable precision has a small downtick and holdout RB MAE is slightly worse than baseline, so this remains a partial retune HOLD rather than a main-formula-ready candidate.
+
+Keep the original usage/opportunity idea available as a separate usage/stability lens during Tim review. Do not treat it as main-formula-ready unless a future targeted proven-cornerstone fix protects CeeDee/Jefferson/Bowers-type profiles without blindly boosting injury/context discount cases or adding new startable, position, or season harm.
+
+Closeout interpretation: the candidate should not be tuned to match market. It can remain useful as a review-only usage/stability lens, but main-formula readiness is not approved and no further broad tuning is recommended now.

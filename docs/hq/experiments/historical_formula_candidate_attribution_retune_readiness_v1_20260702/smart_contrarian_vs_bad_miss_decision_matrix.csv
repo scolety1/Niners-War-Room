@@ -1,0 +1,11 @@
+stable_player_id,player_name,attribution_label,smart_contrarian_or_bad_miss,market_disagreement_is_blocker,model_flaw_signal,recommended_next_action
+6786,CeeDee Lamb,DYNASTY_STABILITY_UNDERRANK,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+6794,Justin Jefferson,DYNASTY_STABILITY_UNDERRANK,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+7525,DeVonta Smith,REQUIRES_TARGETED_RETUNE,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+7526,Jaylen Waddle,EXPLAINABLE_WATCHLIST,reviewable_or_smart,false,false,Keep as human-review watchlist; do not promote without stability gate.
+5846,DK Metcalf,REQUIRES_TARGETED_RETUNE,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+12514,Emeka Egbuka,REQUIRES_TARGETED_RETUNE,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+11604,Brock Bowers,DYNASTY_STABILITY_UNDERRANK,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
+11632,Malik Nabers,INJURY_TIMELINE_DISCOUNT_WATCHLIST,reviewable_or_smart,false,false,Keep as injury timeline watchlist; do not blindly boost market-favored names.
+8146,Garrett Wilson,EXPLAINABLE_WATCHLIST,reviewable_or_smart,false,false,Keep as explainable context/talent watchlist; do not blindly boost market-favored names.
+5967,Tony Pollard,SMART_CONTRARIAN_FADE,reviewable_or_smart,false,false,No immediate retune required for this row.
