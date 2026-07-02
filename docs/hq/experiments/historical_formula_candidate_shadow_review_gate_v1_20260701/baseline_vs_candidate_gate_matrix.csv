@@ -1,0 +1,10 @@
+gate_question,status,evidence,decision_effect,review_only,production_approved
+material_holdout_mae_improvement,PASS,Selected holdout MAE delta is -1.196383 versus baseline.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+startable_precision_flat_or_better,PASS,Validation / holdout startable precision deltas are 0.0 / 0.0.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+spearman_no_material_degradation,PASS,Holdout Spearman delta is 0.001089; validation delta is small at -0.001865.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+elite_qb_issue_remains_fixed,PASS,Elite-QB severe regressions are 1 versus original 14.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+cutline_harm_reduced_and_explainable,PASS,"Actual cutline hits moved below cutline improved original 8 -> rb/wr safe 5 -> selected 2; remaining players are T.Pollard, C.Lamb.",GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+no_position_or_season_collapse,PASS,Holdout MAE improved across 4/4 positions and 2/2 seasons.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+tim_review_notes_support_gate,PASS,Tim marked Pollard acceptable/explainable and Lamb worth watching but not a blocker.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+interpretable_shadow_packet_candidate,PASS,Selected redesign is a fixed WR24/WR36 boundary sensitivity guard using feature-season usage ranks and prediction ranks.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false
+production_promotion_blocked,PASS,This gate authorizes only a review-only shadow comparison packet; production promotion remains blocked.,GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY,true,false

@@ -1,0 +1,14 @@
+candidate_id,split,mae,mae_delta_vs_baseline,spearman_delta_vs_baseline,startable_precision_delta_vs_baseline,actual_hits_moved_below_cutline,elite_qb_severe_regressions,review_only,production_approved,shadow_review_packet_gate_candidate
+baseline_v3_prior_points,validation,34.86049,0.0,0.0,0.0,0,0,True,False,False
+original_usage_opportunity_volume,validation,32.823869,-2.036621,-0.002174,0.0,4,7,True,False,False
+qb_guard_soft_blend,validation,33.040018,-1.820472,-0.001972,0.0,4,1,True,False,False
+rb_wr_cutline_safe_blend,validation,33.424726,-1.435764,-0.001861,-0.005952,3,1,True,False,False
+conservative_blend_50,validation,33.541127,-1.319363,-0.000328,-0.005952,3,6,True,False,False
+wr_boundary_breakout_sensitivity_guard,validation,33.436457,-1.424033,-0.001865,0.0,2,1,True,False,True
+baseline_v3_prior_points,holdout,35.880449,0.0,0.0,0.0,0,0,True,False,False
+original_usage_opportunity_volume,holdout,34.233957,-1.646492,0.001126,0.0,4,7,True,False,False
+qb_guard_soft_blend,holdout,34.238792,-1.641657,0.001224,0.0,4,0,True,False,False
+rb_wr_cutline_safe_blend,holdout,34.691529,-1.18892,0.001057,-0.005953,2,0,True,False,False
+conservative_blend_50,holdout,34.597495,-1.282954,0.001194,-0.005953,2,2,True,False,False
+wr_boundary_breakout_sensitivity_guard,holdout,34.684066,-1.196383,0.001089,0.0,0,0,True,False,True
+wr_boundary_breakout_sensitivity_guard,validation_holdout,,,,,2,1,True,False,True
