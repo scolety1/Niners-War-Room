@@ -18,6 +18,12 @@ from app.components.development_lab import (  # noqa: E402
     render_lab_warning,
     render_local_lab_state_status,
     render_refresh_health_waiting_panel,
+    render_review_upgrade_candidate_panel,
+    render_review_upgrade_current_stats_options,
+    render_review_upgrade_dataset_browser,
+    render_review_upgrade_guardrail_ledger,
+    render_review_upgrade_next_lane_ideas,
+    render_review_upgrade_status_board,
     render_safe_v0_table,
     render_tool_status_metrics,
 )
@@ -41,6 +47,24 @@ render_lab_warning()
 
 statuses = load_statuses()
 render_tool_status_metrics(statuses)
+
+section_label("Lab Home / Status Board")
+render_review_upgrade_status_board()
+
+section_label("Dataset Browser")
+render_review_upgrade_dataset_browser()
+
+section_label("Candidate Review Panel")
+render_review_upgrade_candidate_panel()
+
+section_label("Guardrail Ledger")
+render_review_upgrade_guardrail_ledger()
+
+section_label("What Can Be Improved With Current Stats")
+render_review_upgrade_current_stats_options()
+
+section_label("Next-Lane Ideas")
+render_review_upgrade_next_lane_ideas()
 
 section_label("Safe V0 Tools In The Lab")
 render_safe_v0_table(statuses)
