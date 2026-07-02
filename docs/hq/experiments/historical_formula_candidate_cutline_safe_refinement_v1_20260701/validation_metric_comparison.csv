@@ -1,0 +1,10 @@
+candidate_id,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,mae_delta_vs_baseline,mae_delta_vs_original,mae_delta_vs_qb_guard,mae_delta_vs_conservative_blend_50,spearman_delta_vs_baseline,spearman_delta_vs_qb_guard,startable_precision_delta_vs_baseline,startable_precision_delta_vs_qb_guard,selection_policy
+baseline_v3_prior_points,validation,all_positions,912,34.86049,0.727249,0.60119,0.673333,0.63522,0.0,2.036621,1.820472,1.319363,0.0,0.001972,0.0,0.0,validation_only
+original_usage_opportunity_volume,validation,all_positions,912,32.823869,0.725075,0.60119,0.673333,0.63522,-2.036621,0.0,-0.216149,-0.717258,-0.002174,-0.000202,0.0,0.0,validation_only
+qb_guard_soft_blend,validation,all_positions,912,33.040018,0.725277,0.60119,0.673333,0.63522,-1.820472,0.216149,0.0,-0.501109,-0.001972,0.0,0.0,0.0,validation_only
+conservative_blend_50,validation,all_positions,912,33.541127,0.726921,0.595238,0.666667,0.628931,-1.319363,0.717258,0.501109,0.0,-0.000328,0.001644,-0.005952,-0.005952,validation_only
+qb_guard_plus_cutline_blend_50,validation,all_positions,912,33.093551,0.72532,0.589286,0.66,0.622642,-1.766939,0.269682,0.053533,-0.447576,-0.001929,4.3e-05,-0.011904,-0.011904,validation_only
+qb_guard_plus_cutline_blend_65,validation,all_positions,912,33.076735,0.725346,0.595238,0.666667,0.628931,-1.783755,0.252866,0.036717,-0.464392,-0.001903,6.9e-05,-0.005952,-0.005952,validation_only
+qb_guard_plus_cutline_floor,validation,all_positions,912,33.174563,0.725289,0.595238,0.666667,0.628931,-1.685927,0.350694,0.134545,-0.366564,-0.00196,1.2e-05,-0.005952,-0.005952,validation_only
+rb_wr_cutline_safe_blend,validation,all_positions,912,33.424726,0.725388,0.595238,0.666667,0.628931,-1.435764,0.600857,0.384708,-0.116401,-0.001861,0.000111,-0.005952,-0.005952,validation_only
+startable_band_blend,validation,all_positions,912,33.092063,0.725182,0.589286,0.66,0.622642,-1.768427,0.268194,0.052045,-0.449064,-0.002067,-9.5e-05,-0.011904,-0.011904,validation_only
