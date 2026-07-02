@@ -11,3 +11,9 @@ Status: PASS for review-only evidence.
 - No broad or unbounded search was run.
 - Routes, TPRR, YPRR, red-zone sidecars, ambiguous `rz_att`, and unsafe current context remain absent.
 - Missing values were not forced to zero.
+
+Validation completion:
+
+- Focused artifact/schema test through project-approved runner: `4 passed in 0.08s`.
+- Relevant candidate/source/substrate/governance/scoring suite through project-approved runner: `82 passed in 2.93s`.
+- No focused project-runner tests were skipped.

@@ -121,6 +121,10 @@ KEY_PLAYERS = [
     "Tony Pollard",
 ]
 
+PROJECT_TEST_RUNNER = r"C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
+FOCUSED_TEST_RESULT = "4 passed in 0.08s"
+RELEVANT_SUITE_RESULT = "82 passed in 2.93s"
+
 REQUIRED_ARTIFACTS = [
     "artifact_manifest.md",
     "dynasty_stability_retune_summary.md",
@@ -806,6 +810,22 @@ This packet is a bounded review-only retune evaluation. It does not change produ
 - Key audit players improved or reduced: `{context['key_players_improved_or_reduced']}`
 
 No candidate is production-approved.
+
+## Validation Completion
+
+- Project-approved test runner: `{PROJECT_TEST_RUNNER}`
+- Focused artifact/schema test: `{FOCUSED_TEST_RESULT}`
+- Relevant candidate/source/substrate/governance/scoring suite: `{RELEVANT_SUITE_RESULT}`
+- Default Python pytest gap is resolved by the project-approved runner. No focused tests were skipped in the completed runner pass.
+
+## Final Decision Clarification
+
+- Candidate remains `HOLD`.
+- Production promotion is not approved.
+- Main-formula readiness is not approved.
+- Retune evidence is useful because it reduces current-board cornerstone underrank risk while preserving holdout MAE/Spearman gains.
+- Malik Nabers and Garrett Wilson remain the main current-board blockers.
+- Treat the candidate as a usage/stability lens unless a future targeted cornerstone-player fix clears those cases without reintroducing startable or position-level harm.
 """
     write_text("dynasty_stability_retune_summary.md", summary)
 
@@ -815,7 +835,11 @@ Decision label: `{context['decision_label']}`
 
 Selected variant: `{context['selected_retune']}`
 
-The selected retune remains human-review-only and on HOLD. It keeps useful usage/opportunity signal while adding a small multi-year production anchor and a general cornerstone floor for extreme demotions, but it does not clear the full human-review candidate bar because validation startable precision slips slightly and holdout RB MAE is mildly worse than baseline. Validation selection was made from fixed variants only; holdout was reviewed after the variant definitions were fixed.
+The selected retune remains human-review-only and on HOLD. It keeps useful usage/opportunity signal while adding a small multi-year production anchor and a general cornerstone floor for extreme demotions, but it does not clear the full human-review candidate bar because validation startable precision slips slightly and holdout RB MAE is mildly worse than baseline. Malik Nabers and Garrett Wilson remain the main current-board blockers.
+
+Production promotion is not approved. Main-formula readiness is not approved. The evidence is useful, but the safest interpretation is usage/stability lens pending a future targeted cornerstone-player fix.
+
+Validation selection was made from fixed variants only; holdout was reviewed after the variant definitions were fixed.
 
 Production promotion is not approved.
 """
@@ -845,7 +869,7 @@ Decision: keep the candidate on HOLD rather than advancing it as a main-formula 
 
 The selected `{SELECTED_RETUNE}` variant is more suitable than the unretuned guarded usage lens for future review because it reduces current-board cornerstone underrank risk while retaining historical MAE improvement. However, validation startable precision has a small downtick and holdout RB MAE is slightly worse than baseline, so this remains a partial retune HOLD rather than a main-formula-ready candidate.
 
-Keep the original usage/opportunity idea available as a separate lens during Tim review.
+Keep the original usage/opportunity idea available as a separate usage/stability lens during Tim review. Do not treat it as main-formula-ready unless a future targeted cornerstone-player fix clears the Nabers/Garrett Wilson blockers without adding new startable, position, or season harm.
 """
     write_text("usage_lens_vs_main_formula_update.md", usage_lens)
 
@@ -855,6 +879,7 @@ Keep the original usage/opportunity idea available as a separate lens during Tim
 - Null-fenced players remain not enough information and were not zero-filled.
 - The current-board retune preview uses rank-level guard rules because no live ranking implementation is approved.
 - Tim should still inspect Justin Jefferson, CeeDee Lamb, Brock Bowers, Malik Nabers, Garrett Wilson, DeVonta Smith, Jaylen Waddle, DK Metcalf, and Emeka Egbuka before any next gate.
+- Malik Nabers and Garrett Wilson remain the main current-board blockers after the partial retune.
 - Validation startable precision is slightly below baseline, so the selected retune does not clear the full candidate-for-human-review bar.
 - Holdout RB MAE is slightly worse than baseline, so position-level review remains required.
 - Production promotion, shadow implementation, and app wiring remain blocked.
@@ -877,7 +902,7 @@ Do not wire these outputs into app pages, rankings, recommendations, hidden sort
 """
     write_text("do_not_promote_notice.md", do_not_promote)
 
-    guardrail = """# Guardrail Report
+    guardrail = f"""# Guardrail Report
 
 Status: PASS for review-only evidence.
 
@@ -890,6 +915,12 @@ Status: PASS for review-only evidence.
 - No broad or unbounded search was run.
 - Routes, TPRR, YPRR, red-zone sidecars, ambiguous `rz_att`, and unsafe current context remain absent.
 - Missing values were not forced to zero.
+
+Validation completion:
+
+- Focused artifact/schema test through project-approved runner: `{FOCUSED_TEST_RESULT}`.
+- Relevant candidate/source/substrate/governance/scoring suite through project-approved runner: `{RELEVANT_SUITE_RESULT}`.
+- No focused project-runner tests were skipped.
 """
     write_text("guardrail_report.md", guardrail)
 
@@ -903,14 +934,21 @@ Changed paths are limited to:
 - `tests/test_historical_formula_candidate_dynasty_stability_retune_v1_20260702.py`
 
 No production formulas, rankings, app wiring, model behavior, source truth, hidden sort, recommendations, runtime behavior, or production configs are changed.
+
+Validation notes:
+
+- Test runner used: `{PROJECT_TEST_RUNNER}`.
+- Focused artifact/schema test: `{FOCUSED_TEST_RESULT}`.
+- Relevant candidate/source/substrate/governance/scoring suite: `{RELEVANT_SUITE_RESULT}`.
+- Merge readiness is review-only partial-HOLD evidence. It is not formula promotion, shadow approval, app wiring, or main-formula approval.
 """
     write_text("merge_safety_report.md", merge_safety)
 
     handoff = f"""# Next Phase Handoff
 
-Recommended next phase: create a static dynasty-stability retune review packet for Tim using `{SELECTED_RETUNE}` side by side with baseline, current guarded candidate, and usage-lens control.
+Recommended next phase: run a narrow Nabers/Garrett Wilson cornerstone-player blocker review or static review packet using `{SELECTED_RETUNE}` side by side with baseline, current guarded candidate, and usage-lens control.
 
-Do not promote or wire the candidate. The next decision should remain human-review-only.
+Do not run broad formula search. Do not promote or wire the candidate. The next decision should remain human-review-only, with the candidate treated as a usage/stability lens unless the blockers clear.
 """
     write_text("next_phase_handoff.md", handoff)
 
