@@ -6,6 +6,6 @@ stable_player_id,player_name,attribution_label,smart_contrarian_or_bad_miss,mark
 5846,DK Metcalf,REQUIRES_TARGETED_RETUNE,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
 12514,Emeka Egbuka,REQUIRES_TARGETED_RETUNE,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
 11604,Brock Bowers,DYNASTY_STABILITY_UNDERRANK,needs_retune,false,true,Test dynasty_cornerstone_floor plus multi_year_production_anchor.
-11632,Malik Nabers,ONE_YEAR_OVERREACTION_RISK,needs_retune,false,true,Test multi_year_production_anchor or career_peak_or_ceiling_anchor.
-8146,Garrett Wilson,ONE_YEAR_OVERREACTION_RISK,needs_retune,false,true,Test multi_year_production_anchor or career_peak_or_ceiling_anchor.
+11632,Malik Nabers,INJURY_TIMELINE_DISCOUNT_WATCHLIST,reviewable_or_smart,false,false,Keep as injury timeline watchlist; do not blindly boost market-favored names.
+8146,Garrett Wilson,EXPLAINABLE_WATCHLIST,reviewable_or_smart,false,false,Keep as explainable context/talent watchlist; do not blindly boost market-favored names.
 5967,Tony Pollard,SMART_CONTRARIAN_FADE,reviewable_or_smart,false,false,No immediate retune required for this row.

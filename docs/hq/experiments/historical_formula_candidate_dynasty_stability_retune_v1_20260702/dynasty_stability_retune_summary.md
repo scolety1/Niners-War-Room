@@ -33,8 +33,8 @@ No candidate is production-approved.
 ## Validation Completion
 
 - Project-approved test runner: `C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`
-- Focused artifact/schema test: `4 passed in 0.08s`
-- Relevant candidate/source/substrate/governance/scoring suite: `82 passed in 2.93s`
+- Focused artifact/schema test: `4 passed`
+- Relevant candidate/source/substrate/governance/scoring suite: `82 passed`
 - Default Python pytest gap is resolved by the project-approved runner. No focused tests were skipped in the completed runner pass.
 
 ## Final Decision Clarification
@@ -43,5 +43,8 @@ No candidate is production-approved.
 - Production promotion is not approved.
 - Main-formula readiness is not approved.
 - Retune evidence is useful because it reduces current-board cornerstone underrank risk while preserving holdout MAE/Spearman gains.
-- Malik Nabers and Garrett Wilson remain the main current-board blockers.
-- Treat the candidate as a usage/stability lens unless a future targeted cornerstone-player fix clears those cases without reintroducing startable or position-level harm.
+- Malik Nabers should be treated as `INJURY_TIMELINE_DISCOUNT_WATCHLIST`, not an automatic dynasty-stability failure.
+- Garrett Wilson should be treated as `EXPLAINABLE_WATCHLIST`, not an automatic formula failure.
+- CeeDee Lamb, Justin Jefferson, and Brock Bowers still deserve stronger dynasty-stability protection if the formula is too low.
+- DeVonta Smith and Jaylen Waddle role-up context remains important review evidence.
+- Treat the candidate as a usage/stability lens unless a future targeted proven-cornerstone fix clears those cases without blindly boosting market-favored names.

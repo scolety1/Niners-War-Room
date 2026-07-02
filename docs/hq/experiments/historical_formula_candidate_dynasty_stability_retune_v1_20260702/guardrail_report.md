@@ -14,6 +14,6 @@ Status: PASS for review-only evidence.
 
 Validation completion:
 
-- Focused artifact/schema test through project-approved runner: `4 passed in 0.08s`.
-- Relevant candidate/source/substrate/governance/scoring suite through project-approved runner: `82 passed in 2.93s`.
+- Focused artifact/schema test through project-approved runner: `4 passed`.
+- Relevant candidate/source/substrate/governance/scoring suite through project-approved runner: `82 passed`.
 - No focused project-runner tests were skipped.

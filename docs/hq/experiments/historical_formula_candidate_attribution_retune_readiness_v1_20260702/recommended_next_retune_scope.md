@@ -14,3 +14,5 @@ Scope:
 - Do not promote or wire anything into NWR.
 
 Reason: the candidate signal is useful, but key WR/TE cornerstone cases still show risk of one-year overreaction and underweighting dynasty stability.
+
+Tim review clarification: do not blindly boost all market-favored names. The next adjustment should distinguish proven cornerstone stability cases such as CeeDee Lamb, Justin Jefferson, and Brock Bowers from injury/context discount watchlist cases such as Malik Nabers and Garrett Wilson. Market/context remains display-only and must not become source truth.

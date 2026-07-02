@@ -85,9 +85,9 @@
 - Guarded current candidate: overall 111, position 43
 - Feature readiness: `true` via `EXACT_SLEEPER_MATCH_2025_USAGE`
 - Likely driver: limited games (4.000) suppress total-season usage/scoring; prior total points percentile only 10.9 within position; PPG percentile 85.1 argues the fade may be total-volume/games driven; 35 lagged targets and 271.000 receiving yards are the main factual receiving inputs
-- Classification: `ONE_YEAR_OVERREACTION_RISK`
-- Read: Limited games/sample in the lagged season can suppress total-season usage and scoring, so this looks like one-year overreaction risk.
-- Retune note: Test multi_year_production_anchor or career_peak_or_ceiling_anchor.
+- Classification: `INJURY_TIMELINE_DISCOUNT_WATCHLIST`
+- Read: Tim review says Nabers being lower is not automatically a blocker because severe injury / unclear recovery timeline makes an injury discount reasonable. This remains a watchlist case, not an automatic dynasty-stability failure.
+- Retune note: Keep as injury timeline watchlist; do not blindly boost market-favored names.
 
 ## Garrett Wilson (WR - NYJ)
 
@@ -96,9 +96,9 @@
 - Guarded current candidate: overall 115, position 46
 - Feature readiness: `true` via `EXACT_SLEEPER_MATCH_2025_USAGE`
 - Likely driver: limited games (7.000) suppress total-season usage/scoring; prior total points percentile only 29.7 within position; PPG percentile 76.2 argues the fade may be total-volume/games driven; 59 lagged targets and 395.000 receiving yards are the main factual receiving inputs
-- Classification: `ONE_YEAR_OVERREACTION_RISK`
-- Read: Limited games/sample in the lagged season can suppress total-season usage and scoring, so this looks like one-year overreaction risk.
-- Retune note: Test multi_year_production_anchor or career_peak_or_ceiling_anchor.
+- Classification: `EXPLAINABLE_WATCHLIST`
+- Read: Tim review says Wilson being lower than market is not automatically a formula flaw. Talent is real, but frame/traffic limitations and poor team context are real concerns.
+- Retune note: Keep as explainable watchlist; do not blindly boost market-favored names.
 
 ## Tony Pollard (RB - TEN)
 

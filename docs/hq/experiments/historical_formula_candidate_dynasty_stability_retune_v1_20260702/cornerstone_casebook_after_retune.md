@@ -4,7 +4,7 @@
 |---|---:|---:|---:|---|
 | Justin Jefferson | 12 | 19 | 16 | DYNASTY_STABILITY_RISK_REDUCED |
 | CeeDee Lamb | 11 | 17 | 16 | DYNASTY_STABILITY_RISK_REDUCED |
-| Malik Nabers | 32 | 43 | 40 | EXPLAINABLE_WATCHLIST |
+| Malik Nabers | 32 | 43 | 40 | INJURY_TIMELINE_DISCOUNT_WATCHLIST |
 | Brock Bowers | 3 | 7 | 5 | DYNASTY_STABILITY_RISK_REDUCED |
 | Garrett Wilson | 34 | 46 | 42 | EXPLAINABLE_WATCHLIST |
 | Emeka Egbuka | 23 | 29 | 28 | DYNASTY_STABILITY_RISK_REDUCED |

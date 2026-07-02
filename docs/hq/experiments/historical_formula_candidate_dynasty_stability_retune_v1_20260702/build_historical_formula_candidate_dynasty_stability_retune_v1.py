@@ -122,8 +122,8 @@ KEY_PLAYERS = [
 ]
 
 PROJECT_TEST_RUNNER = r"C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
-FOCUSED_TEST_RESULT = "4 passed in 0.08s"
-RELEVANT_SUITE_RESULT = "82 passed in 2.93s"
+FOCUSED_TEST_RESULT = "4 passed"
+RELEVANT_SUITE_RESULT = "82 passed"
 
 REQUIRED_ARTIFACTS = [
     "artifact_manifest.md",
@@ -672,6 +672,10 @@ def classify_key_player(
 ) -> str:
     if not after_pos:
         return "MISSING_FEATURE_CONTEXT"
+    if name == "Malik Nabers":
+        return "INJURY_TIMELINE_DISCOUNT_WATCHLIST"
+    if name == "Garrett Wilson":
+        return "EXPLAINABLE_WATCHLIST"
     before = safe_float(before_pos)
     after = safe_float(after_pos)
     baseline = safe_float(baseline_pos)
@@ -824,8 +828,11 @@ No candidate is production-approved.
 - Production promotion is not approved.
 - Main-formula readiness is not approved.
 - Retune evidence is useful because it reduces current-board cornerstone underrank risk while preserving holdout MAE/Spearman gains.
-- Malik Nabers and Garrett Wilson remain the main current-board blockers.
-- Treat the candidate as a usage/stability lens unless a future targeted cornerstone-player fix clears those cases without reintroducing startable or position-level harm.
+- Malik Nabers should be treated as `INJURY_TIMELINE_DISCOUNT_WATCHLIST`, not an automatic dynasty-stability failure.
+- Garrett Wilson should be treated as `EXPLAINABLE_WATCHLIST`, not an automatic formula failure.
+- CeeDee Lamb, Justin Jefferson, and Brock Bowers still deserve stronger dynasty-stability protection if the formula is too low.
+- DeVonta Smith and Jaylen Waddle role-up context remains important review evidence.
+- Treat the candidate as a usage/stability lens unless a future targeted proven-cornerstone fix clears those cases without blindly boosting market-favored names.
 """
     write_text("dynasty_stability_retune_summary.md", summary)
 
@@ -835,9 +842,9 @@ Decision label: `{context['decision_label']}`
 
 Selected variant: `{context['selected_retune']}`
 
-The selected retune remains human-review-only and on HOLD. It keeps useful usage/opportunity signal while adding a small multi-year production anchor and a general cornerstone floor for extreme demotions, but it does not clear the full human-review candidate bar because validation startable precision slips slightly and holdout RB MAE is mildly worse than baseline. Malik Nabers and Garrett Wilson remain the main current-board blockers.
+The selected retune remains human-review-only and on HOLD. It keeps useful usage/opportunity signal while adding a small multi-year production anchor and a general cornerstone floor for extreme demotions, but it does not clear the full human-review candidate bar because validation startable precision slips slightly and holdout RB MAE is mildly worse than baseline. Tim review clarified that Nabers and Garrett Wilson are watchlist/context cases, not automatic blockers.
 
-Production promotion is not approved. Main-formula readiness is not approved. The evidence is useful, but the safest interpretation is usage/stability lens pending a future targeted cornerstone-player fix.
+Production promotion is not approved. Main-formula readiness is not approved. The evidence is useful, but the safest interpretation is usage/stability lens pending a future targeted proven-cornerstone stability fix that distinguishes CeeDee/Jefferson/Bowers-type profiles from injury/context discount cases.
 
 Validation selection was made from fixed variants only; holdout was reviewed after the variant definitions were fixed.
 
@@ -869,7 +876,7 @@ Decision: keep the candidate on HOLD rather than advancing it as a main-formula 
 
 The selected `{SELECTED_RETUNE}` variant is more suitable than the unretuned guarded usage lens for future review because it reduces current-board cornerstone underrank risk while retaining historical MAE improvement. However, validation startable precision has a small downtick and holdout RB MAE is slightly worse than baseline, so this remains a partial retune HOLD rather than a main-formula-ready candidate.
 
-Keep the original usage/opportunity idea available as a separate usage/stability lens during Tim review. Do not treat it as main-formula-ready unless a future targeted cornerstone-player fix clears the Nabers/Garrett Wilson blockers without adding new startable, position, or season harm.
+Keep the original usage/opportunity idea available as a separate usage/stability lens during Tim review. Do not treat it as main-formula-ready unless a future targeted proven-cornerstone fix protects CeeDee/Jefferson/Bowers-type profiles without blindly boosting injury/context discount cases or adding new startable, position, or season harm.
 """
     write_text("usage_lens_vs_main_formula_update.md", usage_lens)
 
@@ -879,7 +886,10 @@ Keep the original usage/opportunity idea available as a separate usage/stability
 - Null-fenced players remain not enough information and were not zero-filled.
 - The current-board retune preview uses rank-level guard rules because no live ranking implementation is approved.
 - Tim should still inspect Justin Jefferson, CeeDee Lamb, Brock Bowers, Malik Nabers, Garrett Wilson, DeVonta Smith, Jaylen Waddle, DK Metcalf, and Emeka Egbuka before any next gate.
-- Malik Nabers and Garrett Wilson remain the main current-board blockers after the partial retune.
+- Malik Nabers is now an injury timeline discount watchlist case, not an automatic dynasty-stability failure.
+- Garrett Wilson is now an explainable watchlist case, not an automatic formula failure.
+- CeeDee Lamb, Justin Jefferson, and Brock Bowers remain the core proven-cornerstone stability protection cases.
+- DeVonta Smith and Jaylen Waddle role-up context remains important review evidence.
 - Validation startable precision is slightly below baseline, so the selected retune does not clear the full candidate-for-human-review bar.
 - Holdout RB MAE is slightly worse than baseline, so position-level review remains required.
 - Production promotion, shadow implementation, and app wiring remain blocked.
@@ -946,9 +956,9 @@ Validation notes:
 
     handoff = f"""# Next Phase Handoff
 
-Recommended next phase: run a narrow Nabers/Garrett Wilson cornerstone-player blocker review or static review packet using `{SELECTED_RETUNE}` side by side with baseline, current guarded candidate, and usage-lens control.
+Recommended next phase: run a narrow proven-cornerstone stability review or static review packet using `{SELECTED_RETUNE}` side by side with baseline, current guarded candidate, and usage-lens control.
 
-Do not run broad formula search. Do not promote or wire the candidate. The next decision should remain human-review-only, with the candidate treated as a usage/stability lens unless the blockers clear.
+Do not run broad formula search. Do not promote or wire the candidate. The next decision should remain human-review-only, with the candidate treated as a usage/stability lens unless CeeDee Lamb, Justin Jefferson, and Brock Bowers-style stability concerns clear without blindly boosting market-favored injury/context watchlist players.
 """
     write_text("next_phase_handoff.md", handoff)
 
@@ -998,7 +1008,12 @@ def write_outside_bundle(context: dict[str, Any], board: list[dict[str, Any]], k
         row
         for row in key_matrix
         if row["after_retune_label"]
-        in {"REMAINS_HUMAN_REVIEW_WATCHLIST", "EXPLAINABLE_WATCHLIST", "MISSING_FEATURE_CONTEXT"}
+        in {
+            "REMAINS_HUMAN_REVIEW_WATCHLIST",
+            "EXPLAINABLE_WATCHLIST",
+            "INJURY_TIMELINE_DISCOUNT_WATCHLIST",
+            "MISSING_FEATURE_CONTEXT",
+        }
     ]
     write_csv(OUTSIDE_BUNDLE / "remaining_watchlist.csv", watchlist)
     write_file(
@@ -1133,8 +1148,12 @@ def rank_delta(after: Any, before: Any) -> str:
 def retune_driver_summary(attr: dict[str, Any], current: dict[str, Any], classification: str) -> str:
     if classification == "DYNASTY_STABILITY_RISK_REDUCED":
         return "General baseline-rank cornerstone guard reduced an extreme current-board demotion without using names or market source truth."
+    if classification == "INJURY_TIMELINE_DISCOUNT_WATCHLIST":
+        return "Tim review says the lower view can be explainable because severe injury / unclear recovery timeline makes an injury discount reasonable."
     if classification == "SMART_CONTRARIAN_FADE":
         return "Non-blocking usage/opportunity fade retained."
+    if classification == "EXPLAINABLE_WATCHLIST":
+        return "Tim review says the lower view is not automatically a formula flaw because talent is real but contextual football concerns are real."
     if classification == "REMAINS_HUMAN_REVIEW_WATCHLIST":
         return "Still needs Tim review because the usage lens may underweight stability or limited-game context."
     if classification == "MISSING_FEATURE_CONTEXT":
