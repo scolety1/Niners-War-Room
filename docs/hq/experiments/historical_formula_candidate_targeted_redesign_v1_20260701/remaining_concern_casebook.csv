@@ -1,0 +1,3 @@
+player_id,player_name,position,feature_season,target_season,split,cutline,baseline_rank,rb_wr_cutline_safe_rank,selected_redesign_rank,actual_position_finish,baseline_prediction,rb_wr_cutline_safe_prediction,selected_redesign_prediction,actual_next_points,review_note
+00-0035261,T.Pollard,RB,2021,2022,validation,24,24,25,25,7,154.7,147.8525,147.8525,211.4,Remaining actual cutline hit moved below cutline by selected targeted redesign.
+00-0036358,C.Lamb,WR,2021,2022,validation,12,11,13,13,6,169.633333,157.748333,157.748333,204.6,Remaining actual cutline hit moved below cutline by selected targeted redesign.
