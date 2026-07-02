@@ -28,6 +28,7 @@ REQUIRED_ARTIFACTS = {
     "usage_lens_vs_main_formula_update.md",
     "remaining_risk_report.md",
     "human_review_update.md",
+    "tim_human_review_addendum.md",
     "do_not_promote_notice.md",
     "guardrail_report.md",
     "merge_safety_report.md",
@@ -74,6 +75,7 @@ def test_retune_definitions_are_review_only_and_bounded():
 def test_selected_retune_decision_is_partial_hold_review_only():
     summary = (ARTIFACT_DIR / "dynasty_stability_retune_summary.md").read_text(encoding="utf-8")
     decision = (ARTIFACT_DIR / "selected_retune_decision.md").read_text(encoding="utf-8")
+    addendum = (ARTIFACT_DIR / "tim_human_review_addendum.md").read_text(encoding="utf-8")
     notice = (ARTIFACT_DIR / "do_not_promote_notice.md").read_text(encoding="utf-8")
 
     assert "PARTIAL_DYNASTY_STABILITY_RETUNE_STILL_HOLD" in summary
@@ -81,6 +83,10 @@ def test_selected_retune_decision_is_partial_hold_review_only():
     assert "Decision label: `PARTIAL_DYNASTY_STABILITY_RETUNE_STILL_HOLD`" in decision
     assert "on HOLD" in decision
     assert "Production promotion is not approved" in decision
+    assert "Main-formula readiness is not approved" in addendum
+    assert "INJURY_TIMELINE_DISCOUNT_WATCHLIST" in addendum
+    assert "EXPLAINABLE_WATCHLIST" in addendum
+    assert "Do not recommend more broad tuning right now" in addendum
     assert "No formula candidate in this packet is production-ready or production-approved" in notice
 
 

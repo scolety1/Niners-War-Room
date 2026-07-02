@@ -10,4 +10,4 @@ Production promotion is not approved. Main-formula readiness is not approved. Th
 
 Validation selection was made from fixed variants only; holdout was reviewed after the variant definitions were fixed.
 
-Production promotion is not approved.
+Closeout update: do not run another broad tuning pass right now. The next useful step is either usage-lens shadow review or a very specific Tim-requested targeted fix; the candidate should not be retuned to mirror market.

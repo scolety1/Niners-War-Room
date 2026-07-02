@@ -3,7 +3,7 @@
 - Verdict: `YELLOW_PARTIAL_DYNASTY_STABILITY_RETUNE_STILL_HOLD_REVIEW_ONLY`
 - Decision label: `PARTIAL_DYNASTY_STABILITY_RETUNE_STILL_HOLD`
 - Selected retune: `multi_year_plus_cornerstone_guard`
-- Generated at: `2026-07-02T21:03:26.926543+00:00`
+- Generated at: `2026-07-02T15:08:10.1486542-06:00`
 - Branch: `work/historical-formula-candidate-attribution-retune-readiness-v1-20260702`
 
 | Artifact | Bytes | SHA256 |
@@ -19,11 +19,12 @@
 | `key_player_before_after_matrix.csv` | 3244 | `e2ef6099fd190e44aef05ed8f46dff45c92979c294fb12be3aa45be498c2076c` |
 | `cornerstone_casebook_after_retune.md` | 980 | `076126bf5ecd30b3e1b04e020899175cd2c23ceace0661b1860a9c129c8ca4dd` |
 | `market_context_not_source_truth_report.md` | 380 | `2ffb9c66ac7f3d5808de80dcd42cc4b712277ee2794548263e1f0ee11e9cb628` |
-| `selected_retune_decision.md` | 1086 | `3843c10f770a4e9c5002a78f92db907cbb767f9b83592412f27d19e9c76c29f6` |
-| `usage_lens_vs_main_formula_update.md` | 903 | `67ba536ff4e8e147e1b725005cf8158d14ef967284619587b0f13995cbf17911` |
-| `remaining_risk_report.md` | 1186 | `cedea1571c6ad2569a5148ea57a66553149cc8cd5437bd84b0b2b3a34e372ce3` |
+| `selected_retune_decision.md` | 1270 | `054d6c6758e56b5bc614559ecf2c8195a0fa2c64cb1f738fec04f627b64d2ee9` |
+| `usage_lens_vs_main_formula_update.md` | 1131 | `e25862478e8591294c10e1bb6a74a5d51bf0056d647ea8c810ebcb3afddb5288` |
+| `remaining_risk_report.md` | 1479 | `b749fc90ae3cab35247132d00bae1e966e9e1d670538051100dc9a32920923d7` |
 | `human_review_update.md` | 505 | `e2c5e6c62b217dd74480c58e93f2b323cd11b3a8126f456bd1b711c68dbd9bde` |
+| `tim_human_review_addendum.md` | 1492 | `fb2401508c21249111a7d997be7e11957a6163143fc891aa8765a4ad4b134795` |
 | `do_not_promote_notice.md` | 259 | `af78500297011e11a48860d9ec4244a85627faa26470d701ef4a529e43a95fdb` |
-| `guardrail_report.md` | 849 | `7d42a1d2bb758c462f11be03cbe8c71e8ec600cd161acb1c18718d80f60d388d` |
-| `merge_safety_report.md` | 868 | `9d5325cf3af6e17de3a5668eb715ab43078e4d47112cf179357ad07f4a762407` |
-| `next_phase_handoff.md` | 576 | `61c28916aa09874a3082a9ec94974ad0c3f5594ab81f84c08380b157aa45e1c1` |
+| `guardrail_report.md` | 1013 | `998f7ac507e09fae5bab86d537a15d277cf95c5b97b153c7ccc0ec863ad7f514` |
+| `merge_safety_report.md` | 1123 | `c49d0611bf1fffd87d934fa42689cf23d3302b57818189879292ca035efd06f9` |
+| `next_phase_handoff.md` | 771 | `877ab04391aa8d72ebf95c9223b5e4af1b70b8311b036040542e81e3e1caeaeb` |

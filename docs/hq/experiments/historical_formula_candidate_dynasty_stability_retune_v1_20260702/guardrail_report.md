@@ -9,8 +9,10 @@ Status: PASS for review-only evidence.
 - No player-name hard-coded formula exceptions were created.
 - Holdout was not used to define or choose variants.
 - No broad or unbounded search was run.
+- No additional tuning or variants were added in the Tim human review closeout.
 - Routes, TPRR, YPRR, red-zone sidecars, ambiguous `rz_att`, and unsafe current context remain absent.
 - Missing values were not forced to zero.
+- Market/cornerstone context remains display-only and was not used as source truth.
 
 Validation completion:
 

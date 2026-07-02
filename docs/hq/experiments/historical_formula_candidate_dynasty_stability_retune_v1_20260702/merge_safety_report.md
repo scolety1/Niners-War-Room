@@ -9,6 +9,8 @@ Changed paths are limited to:
 
 No production formulas, rankings, app wiring, model behavior, source truth, hidden sort, recommendations, runtime behavior, or production configs are changed.
 
+Tim human review closeout is documentation-only. It adds an explicit addendum and clarifies that the candidate remains HOLD, production promotion is not approved, main-formula readiness is not approved, and no more broad tuning is recommended right now.
+
 Validation notes:
 
 - Test runner used: `C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`.

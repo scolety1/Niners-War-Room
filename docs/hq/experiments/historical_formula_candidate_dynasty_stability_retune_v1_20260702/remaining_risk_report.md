@@ -8,6 +8,9 @@
 - Garrett Wilson is now an explainable watchlist case, not an automatic formula failure.
 - CeeDee Lamb, Justin Jefferson, and Brock Bowers remain the core proven-cornerstone stability protection cases.
 - DeVonta Smith and Jaylen Waddle role-up context remains important review evidence.
+- Market/cornerstone disagreement alone is not formula failure; the issue is only being low for the wrong reason.
+- Do not retune toward market. Any future fix should distinguish proven cornerstone stability from injury/context discount cases.
 - Validation startable precision is slightly below baseline, so the selected retune does not clear the full candidate-for-human-review bar.
 - Holdout RB MAE is slightly worse than baseline, so position-level review remains required.
 - Production promotion, shadow implementation, and app wiring remain blocked.
+- No more broad tuning is recommended right now.
