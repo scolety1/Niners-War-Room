@@ -34,6 +34,9 @@ def test_evidence_review_hub_service_indexes_current_hq_artifacts() -> None:
     assert artifacts["Targeted Redesign V1"]["Rows / counts"] == (
         "12 fixed redesign variants / 2 remaining concern rows"
     )
+    assert artifacts["Shadow Review Gate V1"]["Rows / counts"] == (
+        "GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY"
+    )
     assert all(row["Path"].startswith("docs/hq/") for row in artifacts.values())
 
 
@@ -47,12 +50,14 @@ def test_evidence_review_hub_timeline_and_decision_board_are_hold_only() -> None
     assert timeline["Historical substrate V2"]["Status"] == "MERGED_REVIEW_ONLY"
     assert timeline["Historical substrate V3"]["Status"] == "MERGED_REVIEW_ONLY"
     assert timeline["Targeted Redesign"]["Status"] == "MERGED_HUMAN_REVIEW_ONLY"
+    assert timeline["Shadow Review Gate"]["Status"] == "MERGED_REVIEW_ONLY_GO_PACKET"
+    assert timeline["Development Lab Review Upgrade"]["Status"] == "MERGED_REVIEW_ONLY"
     assert timeline["Current candidate status"]["Status"] == "usage_opportunity_volume HOLD"
     assert decision["usage_opportunity_volume"]["Status"] == "HOLD"
     assert decision["qb_guard_soft_blend"]["Status"] == "USEFUL_RESCUE"
     assert decision["rb_wr_cutline_safe_blend"]["Status"] == "PARTIAL_REFINEMENT"
     assert decision["wr_boundary_breakout_sensitivity_guard"]["Status"] == "HUMAN_REVIEW_ONLY"
-    assert decision["Shadow review"]["Status"] == "NOT_APPROVED"
+    assert decision["Shadow review packet"]["Status"] == "GO_REVIEW_ONLY_PACKET"
     assert decision["Production"]["Status"] == "NOT_APPROVED"
 
 
@@ -67,8 +72,13 @@ def test_evidence_review_hub_guardrails_and_queue_are_review_only() -> None:
     assert queue["Remaining cutline players"]["Status"] == "5 rows open"
     assert queue["Targeted redesign result"]["Status"] == "PRESENT"
     assert "targeted_redesign_summary.md" in queue["Targeted redesign result"]["Evidence"]
+    assert queue["Shadow review gate result"]["Status"] == "PRESENT"
+    assert "shadow_review_decision.md" in queue["Shadow review gate result"]["Evidence"]
     assert queue["UI alternatives result"]["Status"] == "Not present in current HQ"
-    assert queue["Development Lab review upgrade"]["Status"] == "NOT_PRESENT_ON_THIS_BASE"
+    assert queue["Development Lab review upgrade"]["Status"] == "PRESENT"
+    assert "development_lab_review_upgrade_v1_20260701" in queue[
+        "Development Lab review upgrade"
+    ]["Evidence"]
     assert {row["Status"] for row in actions} == {"SAFE_REVIEW_ONLY"}
 
 

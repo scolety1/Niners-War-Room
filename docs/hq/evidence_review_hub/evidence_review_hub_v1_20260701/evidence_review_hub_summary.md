@@ -26,14 +26,15 @@ Evidence Review Hub V1 creates a visible review-only page at `/evidence-review-h
 - `qb_guard_soft_blend`: useful rescue evidence
 - `rb_wr_cutline_safe_blend`: partial refinement evidence
 - `wr_boundary_breakout_sensitivity_guard`: targeted redesign evidence for human review only
-- Shadow review: not approved
+- Shadow review packet: `GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY`
 - Production: not approved
 
 ## Review Queue
 
 - Remaining cutline players: 5 rows open
 - Targeted redesign result: present in current HQ; selected redesign `wr_boundary_breakout_sensitivity_guard`
+- Shadow review gate result: present in current HQ; static side-by-side packet may proceed as review-only
 - UI alternatives result: not present in current HQ
-- Development Lab review upgrade: not present on this base branch; expected to arrive via Lane A if reviewed and merged first
+- Development Lab review upgrade: present in current HQ after Lane A merge; remains review-only
 
 The hub is a navigation and evidence-status surface. It does not compute, rank, score, sort, tune, train, promote, or wire candidate output into normal product behavior.

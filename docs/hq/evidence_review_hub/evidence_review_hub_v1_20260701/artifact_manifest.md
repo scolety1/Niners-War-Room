@@ -4,7 +4,7 @@ Verdict: `GREEN_REVIEW_ONLY_HUB`
 
 - Lane: Evidence Review Hub V1
 - Branch: `work/evidence-review-hub-v1-20260701`
-- Base/control HEAD: `567e3a9e2ab91d36f65e694a25e3b67356dbe2b5`
+- Base/control HEAD: `41699c64a4a6db3c2f4fade4471338b9e13ef0cf`
 - Worktree: `C:\NWR\Niners-War-Room-evidence-review-hub-v1-20260701`
 - Scope: new review-only Evidence Review Hub page, service helpers, navigation route, tests, and docs.
 - Production formula changes: no
@@ -28,6 +28,14 @@ Verdict: `GREEN_REVIEW_ONLY_HUB`
 - `docs/hq/evidence_review_hub/evidence_review_hub_v1_20260701/screenshots_or_route_smoke_report.md`
 - `docs/hq/evidence_review_hub/evidence_review_hub_v1_20260701/merge_safety_report.md`
 - `docs/hq/evidence_review_hub/evidence_review_hub_v1_20260701/next_phase_handoff.md`
+
+## Refresh Note
+
+- Refreshed after Development Lab Review Upgrade V1 merged at `d80219abe7954452e1372c794ffe2f5355783304`.
+- Refreshed again after Shadow Review Gate V1 merged at `41699c64a4a6db3c2f4fade4471338b9e13ef0cf`.
+- Development Lab Review Upgrade V1 is now represented as present/merged in the hub.
+- Shadow Review Gate V1 is now represented as present/merged and review-only.
+- UI Alternatives Preview remains listed separately as unmerged unless that lane merges later.
 
 ## Validation Snapshot
 

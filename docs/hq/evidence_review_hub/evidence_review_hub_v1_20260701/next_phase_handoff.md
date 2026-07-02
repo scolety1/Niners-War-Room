@@ -3,14 +3,14 @@
 Suggested next review-only lanes:
 
 1. Static cutline casebook for the five remaining cutline rows.
-2. Human decision gate on `wr_boundary_breakout_sensitivity_guard` and the two remaining concern rows.
+2. Static side-by-side shadow comparison packet for `wr_boundary_breakout_sensitivity_guard`.
 3. UI preview lane for alternate evidence displays, if HQ wants a non-navigation visual.
-4. Development Lab review upgrade integration check after Lane A review.
+4. Development Lab review upgrade monitoring through the merged review-only cockpit.
 
 ## Still Blocked
 
 - Production promotion of `usage_opportunity_volume`.
-- Shadow review approval.
+- Shadow app/live-preview wiring.
 - Formula output wiring into normal app behavior.
 - Routes, TPRR, YPRR, and route proxies.
 - Ambiguous `rz_att`.

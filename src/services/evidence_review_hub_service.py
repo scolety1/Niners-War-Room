@@ -98,6 +98,13 @@ TARGETED_REDESIGN_DIR = (
     / "experiments"
     / "historical_formula_candidate_targeted_redesign_v1_20260701"
 )
+SHADOW_REVIEW_GATE_DIR = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "experiments"
+    / "historical_formula_candidate_shadow_review_gate_v1_20260701"
+)
 UI_ALTERNATIVES_DIR = (
     REPO_ROOT
     / "docs"
@@ -138,6 +145,16 @@ def phase_timeline_rows() -> list[dict[str, str]]:
         _phase_row("Risk Rescue Sprint", "MERGED_REVIEW_ONLY", RISK_RESCUE_DIR),
         _phase_row("Cutline Refinement", "MERGED_PARTIAL_HOLD", CUTLINE_REFINEMENT_DIR),
         _phase_row("Targeted Redesign", "MERGED_HUMAN_REVIEW_ONLY", TARGETED_REDESIGN_DIR),
+        _phase_row(
+            "Shadow Review Gate",
+            "MERGED_REVIEW_ONLY_GO_PACKET",
+            SHADOW_REVIEW_GATE_DIR,
+        ),
+        _phase_row(
+            "Development Lab Review Upgrade",
+            "MERGED_REVIEW_ONLY",
+            DEVELOPMENT_LAB_REVIEW_UPGRADE_DIR,
+        ),
         {
             "Phase": "Current candidate status",
             "Status": "usage_opportunity_volume HOLD",
@@ -170,9 +187,12 @@ def current_decision_board_rows() -> list[dict[str, str]]:
             "Meaning": "Targeted redesign evidence; no shadow-review approval.",
         },
         {
-            "Item": "Shadow review",
-            "Status": "NOT_APPROVED",
-            "Meaning": "No shadow-review approval exists in current HQ.",
+            "Item": "Shadow review packet",
+            "Status": "GO_REVIEW_ONLY_PACKET",
+            "Meaning": (
+                "Only a static side-by-side review packet may proceed; no app, "
+                "ranking, model, runtime, or production wiring is approved."
+            ),
         },
         {
             "Item": "Production",
@@ -257,10 +277,22 @@ def artifact_index_rows() -> list[dict[str, str]]:
             "`wr_boundary_breakout_sensitivity_guard` recorded for human review only.",
         ),
         _artifact_row(
+            "Shadow Review Gate V1",
+            SHADOW_REVIEW_GATE_DIR,
+            "GO_SHADOW_REVIEW_PACKET_REVIEW_ONLY",
+            "Static side-by-side shadow packet approved for review only.",
+        ),
+        _artifact_row(
             "Development Lab Safe Manual Context",
             DEVELOPMENT_LAB_SAFE_DIR,
             "tracked",
             "Existing display-only/manual Development Lab context packet.",
+        ),
+        _artifact_row(
+            "Development Lab Review Upgrade V1",
+            DEVELOPMENT_LAB_REVIEW_UPGRADE_DIR,
+            "tracked",
+            "Review-only Development Lab cockpit upgrade merged before Evidence Hub.",
         ),
     ]
 
@@ -315,7 +347,17 @@ def review_queue_rows() -> list[dict[str, str]]:
                 if TARGETED_REDESIGN_DIR.exists()
                 else ""
             ),
-            "Next review": "Human decision gate on remaining concern cases.",
+            "Next review": "Covered by Shadow Review Gate; keep concern cases visible.",
+        },
+        {
+            "Queue item": "Shadow review gate result",
+            "Status": "PRESENT" if SHADOW_REVIEW_GATE_DIR.exists() else NOT_PRESENT,
+            "Evidence": (
+                _relative(SHADOW_REVIEW_GATE_DIR / "shadow_review_decision.md")
+                if SHADOW_REVIEW_GATE_DIR.exists()
+                else ""
+            ),
+            "Next review": "Static side-by-side shadow comparison packet only.",
         },
         {
             "Queue item": "UI alternatives result",
@@ -335,7 +377,7 @@ def review_queue_rows() -> list[dict[str, str]]:
                 if DEVELOPMENT_LAB_REVIEW_UPGRADE_DIR.exists()
                 else "Lane A branch should merge before this artifact appears on HQ."
             ),
-            "Next review": "Merge-order check after Lane A review.",
+            "Next review": "Present after Lane A merge; monitor from Evidence Hub only.",
         },
     ]
 
