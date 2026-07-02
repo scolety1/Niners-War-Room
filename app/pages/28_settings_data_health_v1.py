@@ -29,6 +29,14 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
+from src.services.settings_data_health_review_upgrade_service import (
+    artifact_health_board_rows,
+    blocked_today_rows,
+    dataset_availability_rows,
+    guardrail_status_rows,
+    safe_use_today_rows,
+    source_contract_summary_rows,
+)
 
 STATUS_STYLES = {
     "GREEN": ("safe", "Ready"),
@@ -63,6 +71,14 @@ def _render_section(title: str, frame: pd.DataFrame, *, expanded: bool = False) 
             st.info("Not enough information")
             return
         st.dataframe(_display_frame(frame), use_container_width=True, hide_index=True)
+
+
+def _render_review_rows(title: str, rows: list[dict[str, str]], *, expanded: bool = True) -> None:
+    with st.expander(title, expanded=expanded):
+        if not rows:
+            st.info("Not enough information")
+            return
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
 def _display_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -231,6 +247,18 @@ if not report.warnings.empty:
     )
 else:
     st.success("No data-health warnings found by the dashboard checks.")
+
+st.markdown("### Review-Only Source And Artifact Health")
+st.caption(
+    "Tracked artifact summaries only. This cockpit does not promote source truth, "
+    "change rankings, tune models, or wire evidence into production behavior."
+)
+_render_review_rows("Artifact Health Board", artifact_health_board_rows(), expanded=True)
+_render_review_rows("Source Contract Summary", source_contract_summary_rows(), expanded=True)
+_render_review_rows("Dataset Availability", dataset_availability_rows())
+_render_review_rows("Guardrail Status", guardrail_status_rows(), expanded=True)
+_render_review_rows("What Can Safely Be Used Today?", safe_use_today_rows())
+_render_review_rows("What Is Still Blocked?", blocked_today_rows(), expanded=True)
 
 _render_safe_loader_controls()
 _render_warning_summary(report)
