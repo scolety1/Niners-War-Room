@@ -1,0 +1,28 @@
+priority,field_family,requested_field_or_fields,preferred_grain,required_for_sample,why_needed,zero_missing_semantics_needed,notes
+1,player_identity,"gsis_player_id",all,yes,Primary NFL player join key,yes,Ask whether GSIS is native or mapped.
+1,player_identity,"pff_player_id",all,yes,Needed if TruMedia/PFF fields are provided and to reconcile PFF-derived metrics,yes,If not available request explicit unavailable note.
+1,player_identity,"trumedia_player_id",all,yes,Source-native identity and audit key,yes,Needed for vendor support and correction tracking.
+1,player_identity,"player_name,team,position",all,yes,Human review and join validation,yes,Team should be team at event/week grain.
+1,game_identity,"season,season_type,week,game_id",all,yes,Season/week coverage and joins,yes,Season type should separate regular/postseason/preseason.
+1,play_identity,"play_id,drive_id,game_clock,quarter",play;player-play,yes,Play-level join and red-zone validation,yes,Stable IDs preferred.
+1,team_context,"offense_team,defense_team",play;player-play;player-game;player-week,yes,Context and matchup joins,yes,Use source team abbreviations plus stable IDs if available.
+1,route_denominator,"routes_run",player-play;player-game;player-week,yes,Core denominator for TPRR/YPRR,yes,Do not approximate from snaps.
+1,route_denominator,"route_participation_flag",player-play,yes,Player-play route denominator validation,yes,True zero and non-route participation must be distinguishable.
+1,route_detail,"route_type",player-play;player-game;player-week,if_available,Route tree and target context,yes,If taxonomy is proprietary ask for allowed labels and data dictionary.
+1,receiving_usage,"targets",player-play;player-game;player-week,yes,TPRR numerator and opportunity,yes,Explicit zero required.
+1,receiving_usage,"receptions",player-play;player-game;player-week,if_available,Validation against receiving yards and catch context,yes,Helpful even if not listed as first-order requirement.
+1,receiving_usage,"receiving_yards",player-play;player-game;player-week,yes,YPRR numerator and box-score validation,yes,Explicit zero required.
+1,receiving_usage,"air_yards,target_depth,depth_of_target",player-play;player-game;player-week,yes,Opportunity quality and route depth context,yes,Accept source-preferred field name.
+1,receiving_usage,"yards_after_catch,yac",player-play;player-game;player-week,yes,Receiving production split and validation,yes,Explicit zero required.
+1,route_efficiency,"targets_per_route_run,tprr",player-game;player-week,if_available,Compare vendor-computed TPRR to raw numerator/denominator,yes,Raw targets/routes are required even if TPRR is provided.
+1,route_efficiency,"yards_per_route_run,yprr",player-game;player-week,if_available,Compare vendor-computed YPRR to raw numerator/denominator,yes,Raw receiving yards/routes are required even if YPRR is provided.
+1,alignment,"alignment,wide_slot_backfield_inline",player-play;player-game;player-week,yes,Requested role context and alignment split validation,yes,Ask for taxonomy and whether values are pre-snap or route alignment.
+1,snap_participation,"offensive_snaps,snap_share,eligible_route_snaps",player-game;player-week,yes,Validate route denominator against opportunity,yes,Explicit zero and denominator needed.
+1,coverage,"coverage_type",play;player-play;player-game;player-week,yes,Coverage split validation and requested field family,yes,Ask whether man/zone and named shell are separate fields.
+1,matchup,"primary_defender_id,primary_defender_name,defense_team,matchup_id",player-play,if_available,Defender/matchup field family and coverage validation,yes,Ask if defender IDs can include GSIS/PFF.
+1,tracking,"separation,nearest_defender_distance,tracking_metric_name",player-play;player-game;player-week,if_available,Tracking-derived context and target-window validation,yes,Ask timing definition such as at throw or arrival.
+1,red_zone_context,"yardline_100,red_zone_flag,inside_10_flag,inside_5_flag,goal_to_go_flag",play;player-play;player-game;player-week,yes,Red-zone and inside-10/inside-5 context,yes,Needed to separate opportunity from production.
+1,semantics,"explicit_zero_missing_semantics",schema_dictionary,yes,Prevents zero-fill and sparse-row errors,yes,Required per field.
+1,metadata,"as_of_timestamp,export_timestamp,correction_timestamp,schema_version",all,yes,Point-in-time and correction audit,yes,Needed for source receipt and reproducibility.
+1,rights,"data_license_use_note,field_rights_owner,redistribution_allowed,derived_artifact_allowed",schema_dictionary,yes,Determines whether NWR may inspect/store/derive,yes,Must be written before sample use.
+

@@ -1,0 +1,18 @@
+priority,field_family,requested_field_or_fields,preferred_grain,why_useful,zero_missing_semantics_needed,notes
+2,identity,"sleeper_player_id",all,Local fantasy-platform join convenience,yes,Not expected; ask whether vendor can include or whether local joining is permitted.
+2,identity,"birthdate,height,weight,draft_year,draft_round,draft_pick",player-season;player-week,Identity and cohort validation,yes,Only if rights allow and already present.
+2,play_context,"personnel,formation,motion,shift,play_action,rpo,screen_flag",play;player-play,Role and route context,yes,Do not block first sample if absent.
+2,route_detail,"route_depth,break_point_depth,route_stem,route_side,field_side,hash_side",player-play,Route taxonomy validation,yes,Useful for route type QA and air-yard interpretation.
+2,target_context,"target_location,pass_location,catchable,contested_target,tight_window",player-play,Target quality and separation interpretation,yes,Ask definitions.
+2,tracking,"separation_at_snap,separation_at_throw,separation_at_arrival,max_speed,acceleration,total_distance",player-play,Tracking-derived role and separation validation,yes,Only if licensed for export.
+2,expected_metrics,"expected_yac,catch_probability,cpoe,expected_receiving_yards",player-play;player-game;player-week,Contextual production evaluation,yes,Requires clear model/source rights.
+2,defense_context,"coverage_shell,coverage_family,man_zone,press_coverage,bracket,double_team,leverage",play;player-play,Coverage/matchup depth,yes,Ask if values are charted or modeled.
+2,defender_metrics,"defender_gsis_id,defender_pff_id,defender_alignment,defender_depth,defender_leverage",player-play,Matchup joins and defender review,yes,Requires stable defender identity.
+2,pressure_context,"pressure,blitz,pass_rush_win,quick_pressure,time_to_pressure",play;player-play,Separates receiver opportunity from QB pressure context,yes,Only if available and licensed.
+2,qb_context,"qb_gsis_id,qb_pff_id,time_to_throw,scramble,throwaway,sack_flag",play;player-play,Receiving opportunity context and validation,yes,Useful for player-play rows.
+2,run_context,"run_scheme,gap,box_count,run_direction",play;player-play,Optional adjacent usage context,yes,Not required for route source admission.
+2,red_zone_context,"end_zone_target,first_read,target_share_inside_10,target_share_inside_5",player-play;player-week,Fantasy/dynasty context and validation,yes,Only if definitions are clear.
+2,quality_flags,"charted_flag,modeled_flag,manual_override_flag,suppressed_by_license_flag",all,Separates missing, modeled, charted, and rights-suppressed values,yes,High value for source governance.
+2,schema_metadata,"field_type,unit,allowed_values,field_description,source_owner,field_update_cadence",schema_dictionary,Schema stability and validation,yes,May be provided as data dictionary.
+2,export_metadata,"export_query,export_scope,export_row_count,export_created_by,license_id",schema_dictionary,Receipt and audit trail,no,Sanitize anything credential-bearing.
+
