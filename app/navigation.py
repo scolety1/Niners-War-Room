@@ -99,6 +99,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="evidence-integration-review",
     ),
     NavigationPageSpec(
+        title="Evidence Review Hub",
+        file_path="pages/45_evidence_review_hub_v1.py",
+        url_path="evidence-review-hub",
+    ),
+    NavigationPageSpec(
         title="Settings / Data Health",
         file_path="pages/28_settings_data_health_v1.py",
         url_path="settings-data-health",
@@ -143,6 +148,7 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
             VISIBLE_NAVIGATION_PAGES[14],
             VISIBLE_NAVIGATION_PAGES[15],
             VISIBLE_NAVIGATION_PAGES[16],
+            VISIBLE_NAVIGATION_PAGES[17],
         ),
     ),
 )
