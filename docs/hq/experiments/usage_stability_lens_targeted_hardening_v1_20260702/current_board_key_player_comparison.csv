@@ -1,0 +1,11 @@
+player_name,stable_player_id,position,team,baseline_rank,baseline_position_rank,original_candidate_rank,guarded_candidate_rank,selected_retune_preview_rank,targeted_hardening_action,watchlist_label,production_rank_change_allowed,market_source_truth_used,player_name_exception_used,review_note
+Justin Jefferson,6794,WR,MIN,22,12,83,68,68,cornerstone_warning_flag,DYNASTY_STABILITY_PROTECTION_CASE,false,false,false,Proven elite WR stability case; warning flag is useful but rank replacement remains unapproved
+CeeDee Lamb,6786,WR,DAL,20,11,81,67,67,cornerstone_warning_flag,DYNASTY_STABILITY_PROTECTION_CASE,false,false,false,Strong cornerstone-stability protection case; should be reviewed before any future shadow gate
+Brock Bowers,11604,TE,LV,45,3,122,128,128,cornerstone_warning_flag,DYNASTY_STABILITY_PROTECTION_CASE,false,false,false,Elite young TE profile remains too low for main formula readiness; warning flag required
+Malik Nabers,11632,WR,NYG,58,32,223,111,111,preserve_context_discount,INJURY_TIMELINE_DISCOUNT_WATCHLIST,false,false,false,Lower output is not automatic failure because injury and recovery uncertainty can justify caution
+Garrett Wilson,8146,WR,NYJ,63,34,186,115,115,preserve_explainable_watchlist,EXPLAINABLE_WATCHLIST,false,false,false,Do not blindly boost due market; Tim sees real profile and team-context concerns
+DeVonta Smith,7525,WR,PHI,25,13,84,70,70,role_up_context_review,ROLE_UP_CONTEXT_IMPORTANT,false,false,false,Role-up context remains important; warning useful but not production rank logic
+Jaylen Waddle,7526,WR,DEN,33,18,82,81,81,role_up_context_review,ROLE_UP_CONTEXT_IMPORTANT,false,false,false,Review context remains important; not a blind market-correction case
+DK Metcalf,5846,WR,PIT,36,21,91,84,84,role_stability_review,REQUIRES_HUMAN_REVIEW,false,false,false,Still reviewable under stability lens; no production change
+Emeka Egbuka,12514,WR,TB,42,23,85,86,86,null_or_young_asset_review,YOUNG_ASSET_REVIEW,false,false,false,Needs human review because rookie/current-board context should not be forced into production logic
+Tony Pollard,5967,RB,TEN,76,20,43,43,43,no_blocking_action,NON_BLOCKING_SMART_CONTRARIAN,false,false,false,Pollard remains non-blocking and does not justify broad retune

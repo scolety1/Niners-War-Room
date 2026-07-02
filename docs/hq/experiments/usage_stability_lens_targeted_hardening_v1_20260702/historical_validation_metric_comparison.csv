@@ -1,0 +1,7 @@
+variant_id,metric_source_candidate,split,group,rows,mae,spearman,startable_precision_at_n,startable_recall_at_n,startable_f1_at_n,mae_delta_vs_baseline,holdout_used_for_selection,selection_interpretation
+current_usage_stability_lens,multi_year_plus_cornerstone_guard,validation,all_positions,912,34.019924,0.73663,0.595238,0.666667,0.628931,-0.840566,false,current best lens evidence; not production approved
+proven_cornerstone_stability_guard,multi_year_plus_cornerstone_guard,validation,all_positions,912,34.019924,0.73663,0.595238,0.666667,0.628931,-0.840566,false,useful but not selected as rank replacement
+injury_context_discount_preserver,current_guarded_candidate,validation,all_positions,912,33.436457,0.725384,0.60119,0.673333,0.63522,-1.424033,false,classification policy only; metrics inherited from non-rank-changing lens
+young_wr_te_stability_selective_guard,young_wr_te_stability_guard,validation,all_positions,912,33.436457,0.725384,0.60119,0.673333,0.63522,-1.424033,false,fixed prior variant; not selected due remaining context risk
+usage_lens_with_cornerstone_warning_flags,current_guarded_candidate,validation,all_positions,912,33.436457,0.725384,0.60119,0.673333,0.63522,-1.424033,false,selected review posture because warning flags do not alter ranks
+lens_only_no_rank_replacement,usage_lens_only_control,validation,all_positions,912,33.436457,0.725384,0.60119,0.673333,0.63522,-1.424033,false,control confirms lens remains review-only
