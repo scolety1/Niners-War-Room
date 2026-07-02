@@ -103,6 +103,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         file_path="pages/28_settings_data_health_v1.py",
         url_path="settings-data-health",
     ),
+    NavigationPageSpec(
+        title="UI Alternatives Preview",
+        file_path="pages/45_ui_alternatives_preview_v1.py",
+        url_path="ui-alternatives-preview",
+    ),
 )
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
@@ -143,6 +148,7 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
             VISIBLE_NAVIGATION_PAGES[14],
             VISIBLE_NAVIGATION_PAGES[15],
             VISIBLE_NAVIGATION_PAGES[16],
+            VISIBLE_NAVIGATION_PAGES[17],
         ),
     ),
 )

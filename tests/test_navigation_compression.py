@@ -33,6 +33,7 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Refresh Data",
         "Evidence Review",
         "Settings / Data Health",
+        "UI Alternatives Preview",
     ]
 
 
@@ -55,7 +56,12 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
             "Trade Deadline Prep",
             "Future Tools",
         ],
-        "Admin": ["Refresh Data", "Evidence Review", "Settings / Data Health"],
+        "Admin": [
+            "Refresh Data",
+            "Evidence Review",
+            "Settings / Data Health",
+            "UI Alternatives Preview",
+        ],
     }
 
 
@@ -122,7 +128,12 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
 
     assert titles.index("Draft Cockpit") < titles.index("Mock Drafts")
     assert titles.index("Lab Home") < titles.index("Refresh Data")
-    assert titles[-3:] == ["Refresh Data", "Evidence Review", "Settings / Data Health"]
+    assert titles[-4:] == [
+        "Refresh Data",
+        "Evidence Review",
+        "Settings / Data Health",
+        "UI Alternatives Preview",
+    ]
 
 
 def test_no_special_default_page_keeps_drafting_mode_direct_route_stable() -> None:
@@ -161,6 +172,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "trade-deadline-prep",
         "draft-prep",
         "settings-data-health",
+        "ui-alternatives-preview",
         "refresh-data",
         "evidence-integration-review",
         "unified-universe-review",
@@ -200,6 +212,7 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "refresh-data",
         "evidence-integration-review",
         "settings-data-health",
+        "ui-alternatives-preview",
     }
     assert {
         "cheat-sheets",
