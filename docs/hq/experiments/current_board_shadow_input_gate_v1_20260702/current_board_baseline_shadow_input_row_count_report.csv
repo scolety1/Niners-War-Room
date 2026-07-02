@@ -1,0 +1,11 @@
+metric,value,notes
+total_rows,370,Rows in local-only generated baseline input export.
+outside_export_path,C:\NWR_REVIEW\current_board_shadow_input_gate_v1_20260702\current_board_baseline_shadow_input_review_only.csv,Full export is outside the repo and not tracked.
+outside_export_sha256,85bca72a67860260eb03e5907087c3fe7e7e521fb69779bd3264e747d5908952,Checksum for local-only full export.
+sample_rows_tracked,40,Rows tracked in sample CSV.
+position_rows_DST,2,Position count in generated baseline input.
+position_rows_K,12,Position count in generated baseline input.
+position_rows_QB,41,Position count in generated baseline input.
+position_rows_RB,120,Position count in generated baseline input.
+position_rows_TE,47,Position count in generated baseline input.
+position_rows_WR,148,Position count in generated baseline input.

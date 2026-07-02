@@ -1,0 +1,12 @@
+field_name,field_type,required,meaning,allowed_use,blocked_use
+stable_player_id,string,required,Current board/player universe player id.,identity join,fabricated ids
+player_name,string,required,Audit/display name.,display audit,identity truth
+position,string,required,QB/RB/WR/TE and other current-board positions.,filter/join,current-only feature
+team,string,optional,Display team if available.,display audit,source truth feature
+current_baseline_rank,integer,required,Baseline display rank from approved review artifact.,static comparison,production rank replacement
+current_baseline_position_rank,integer,required,Derived from baseline rank within position for static review.,static comparison,hidden sort
+current_baseline_tier_bucket,string,optional,Tier/bucket if present in source artifact.,display audit,fabricated tier
+current_baseline_score,number,optional,Only if already display-safe in source artifact.,static comparison,model input
+warning_flags,string,required,Sanitized data-quality/review flags.,human review queue,recommendation
+candidate_formula_output_present,boolean,required,Must be false for baseline input.,guardrail,candidate output
+production_approved,boolean,required,Must be false.,guardrail,production approval
