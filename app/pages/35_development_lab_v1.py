@@ -26,6 +26,7 @@ from app.components.development_lab import (  # noqa: E402
     render_review_upgrade_status_board,
     render_safe_v0_table,
     render_tool_status_metrics,
+    render_usage_stability_lens_parking_panel,
 )
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 
@@ -56,6 +57,9 @@ render_review_upgrade_dataset_browser()
 
 section_label("Candidate Review Panel")
 render_review_upgrade_candidate_panel()
+
+section_label("Usage/Stability Lens Parking")
+render_usage_stability_lens_parking_panel()
 
 section_label("Guardrail Ledger")
 render_review_upgrade_guardrail_ledger()

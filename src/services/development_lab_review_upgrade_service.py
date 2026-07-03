@@ -70,6 +70,17 @@ TARGETED_REDESIGN_DIR = (
     / "experiments"
     / "historical_formula_candidate_targeted_redesign_v1_20260701"
 )
+USAGE_STABILITY_HARDENING_DIR = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "experiments"
+    / "usage_stability_lens_targeted_hardening_v1_20260702"
+)
+USAGE_STABILITY_STATIC_PACKET_PATH = (
+    r"C:\NWR_REVIEW\static_human_review_usage_stability_lens_packet_v1_20260703_label_fix"
+    r"\index.html"
+)
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
 REVIEW_ONLY = "review-only/manual display"
@@ -225,6 +236,105 @@ def candidate_review_panel_rows() -> list[dict[str, str]]:
     ]
 
 
+def usage_stability_lens_parking_rows() -> list[dict[str, str]]:
+    return [
+        {
+            "Item": "Lens interpretation",
+            "Value": "REVIEW_ONLY_USAGE_STABILITY_LENS",
+            "Status": "HOLD",
+            "Review-only note": "Review-only usage/stability lens. Not a ranking system.",
+        },
+        {
+            "Item": "Production promotion",
+            "Value": "Not approved",
+            "Status": "BLOCKED",
+            "Review-only note": "Does not affect the main board.",
+        },
+        {
+            "Item": "Main-formula readiness",
+            "Value": "Not approved",
+            "Status": "BLOCKED",
+            "Review-only note": "Parked in Development Lab as dormant experiment evidence.",
+        },
+        {
+            "Item": "App/live preview",
+            "Value": "Not approved",
+            "Status": "MANUAL_PATH_ONLY",
+            "Review-only note": "No app generation or scoring; static packet path is optional.",
+        },
+        {
+            "Item": "Static label-fixed packet",
+            "Value": USAGE_STABILITY_STATIC_PACKET_PATH,
+            "Status": "OPTIONAL_OUTSIDE_REPO_PACKET",
+            "Review-only note": "Show as a manual path only; missing path cannot break the app.",
+        },
+        {
+            "Item": "Warmer rows",
+            "Value": "115",
+            "Status": "DISPLAY_ONLY_FACT",
+            "Review-only note": "Lens ranks these rows better than baseline.",
+        },
+        {
+            "Item": "Colder rows",
+            "Value": "127",
+            "Status": "DISPLAY_ONLY_FACT",
+            "Review-only note": "Lens ranks these rows worse than baseline.",
+        },
+        {
+            "Item": "Null-fenced rows",
+            "Value": "125",
+            "Status": NOT_ENOUGH_INFORMATION,
+            "Review-only note": "Missing context stays null / Not enough information.",
+        },
+        {
+            "Item": "CeeDee Lamb example",
+            "Value": "LENS_COLDER_THAN_BASELINE",
+            "Status": "WARNING_CHECK_CASE",
+            "Review-only note": "Lens is colder: player moved from WR11 to WR18.",
+        },
+    ]
+
+
+def usage_stability_lens_good_parts_rows() -> list[dict[str, str]]:
+    return [
+        {
+            "Extracted part": "NFLVerse usage/opportunity data pipeline",
+            "Useful later as": "safe factual review evidence after separate approval gates",
+            "Parking status": "KEEP_REVIEW_ONLY",
+        },
+        {
+            "Extracted part": "Null-fencing / Not enough information semantics",
+            "Useful later as": "missing-data guardrail for model QA and artifact review",
+            "Parking status": "KEEP",
+        },
+        {
+            "Extracted part": "Warmer/colder movement labels",
+            "Useful later as": "clear human-review language for rank-direction deltas",
+            "Parking status": "KEEP",
+        },
+        {
+            "Extracted part": "Static human-review packet generation pattern",
+            "Useful later as": "offline review bundle pattern without app behavior changes",
+            "Parking status": "KEEP",
+        },
+        {
+            "Extracted part": "Cornerstone warning flags",
+            "Useful later as": "candidate diagnostic and failure-mode discovery",
+            "Parking status": "KEEP_REVIEW_ONLY",
+        },
+        {
+            "Extracted part": "Injury/timeline and role-up watchlists",
+            "Useful later as": "human-review context, not formula logic",
+            "Parking status": "KEEP_REVIEW_ONLY",
+        },
+        {
+            "Extracted part": "No-promotion validation checks",
+            "Useful later as": "guardrail tests for dormant experiments",
+            "Parking status": "KEEP",
+        },
+    ]
+
+
 def guardrail_ledger_rows() -> list[dict[str, str]]:
     return [
         {
@@ -264,6 +374,14 @@ def guardrail_ledger_rows() -> list[dict[str, str]]:
             "Evidence": (
                 "No production formula, config, model, rank, hidden sort, or "
                 "default app behavior changes."
+            ),
+        },
+        {
+            "Guardrail": "Usage/stability lens parking",
+            "Status": "ACTIVE",
+            "Evidence": (
+                "Candidate status remains HOLD; Development Lab only shows dormant "
+                "review metadata and a manual static-packet path."
             ),
         },
     ]
@@ -329,6 +447,7 @@ def artifact_manifest_rows() -> list[dict[str, str]]:
         _artifact_row("Risk Rescue Sprint V1", RISK_RESCUE_DIR),
         _artifact_row("Cutline Safe Refinement V1", CUTLINE_REFINEMENT_DIR),
         _artifact_row("Targeted Redesign V1", TARGETED_REDESIGN_DIR),
+        _artifact_row("Usage/Stability Lens Targeted Hardening V1", USAGE_STABILITY_HARDENING_DIR),
     ]
 
 
