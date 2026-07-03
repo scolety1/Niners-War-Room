@@ -1,0 +1,7 @@
+variant_id,variant_type,rank_changing,formula_search_run,holdout_used_for_selection,market_source_truth_used,player_name_exception_used,blocked_feature_used,description,selection_status
+current_usage_stability_lens,comparison,true,false,false,false,false,false,Current best lens lineage represented by multi_year_plus_cornerstone_guard and prior usage/opportunity evidence,comparison_only
+proven_cornerstone_stability_guard,fixed_rank_guard,true,false,false,false,false,false,Small general guard concept for proven cornerstone profiles using approved baseline rank/tier position and historical production evidence only,not_selected_rank_replacement_risk
+injury_context_discount_preserver,review_classification,false,false,false,false,false,false,Preserve caution for injury or missing recent factual evidence cases without using current injury fields as formula features,selected_policy_component
+young_wr_te_stability_selective_guard,fixed_rank_guard,true,false,false,false,false,false,Narrow WR/TE guard for young productive assets where approved evidence suggests recent-dip overreaction,not_selected_overfit_risk
+usage_lens_with_cornerstone_warning_flags,review_warning_flags,false,false,false,false,false,false,Do not alter ranks materially; flag candidate usage-overreaction risks for human review,selected_review_posture
+lens_only_no_rank_replacement,control,false,false,false,false,false,false,Keep formula as usage/stability lens only and recommend no further rank retune without a new gate,decision_control
