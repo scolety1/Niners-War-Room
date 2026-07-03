@@ -22,6 +22,8 @@ from src.services.development_lab_review_upgrade_service import (
     guardrail_ledger_rows,
     lab_status_board_rows,
     next_lane_idea_rows,
+    usage_stability_lens_good_parts_rows,
+    usage_stability_lens_parking_rows,
 )
 from src.services.development_lab_state_service import (
     DevelopmentLabToolState,
@@ -158,6 +160,22 @@ def render_review_upgrade_candidate_panel() -> None:
         "review packets only and are not wired into normal product behavior."
     )
     _tool_table(candidate_review_panel_rows())
+
+
+def render_usage_stability_lens_parking_panel() -> None:
+    st.caption(
+        "Review-only usage/stability lens. Not a ranking system. Does not affect the "
+        "main board. Candidate status: HOLD. Production promotion and main-formula "
+        "readiness are not approved."
+    )
+    _tool_table(usage_stability_lens_parking_rows())
+    st.caption(
+        "Use only to review where usage/stability evidence is warmer or colder than "
+        "baseline. The optional static packet path is manual only; the app does not "
+        "open it, score it, regenerate it, or fail if it is missing."
+    )
+    with st.expander("Reusable good parts extracted from the held lens", expanded=False):
+        _tool_table(usage_stability_lens_good_parts_rows())
 
 
 def render_review_upgrade_guardrail_ledger() -> None:
