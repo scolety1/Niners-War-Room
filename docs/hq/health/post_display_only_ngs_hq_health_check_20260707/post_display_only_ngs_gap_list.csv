@@ -1,0 +1,6 @@
+gap,status,next_action
+broad_repo_ruff_preexisting_test_style,CAVEAT,Leave unrelated tests untouched; address in separate hygiene lane if desired
+pfr_identity_hardening,NOT_STARTED,Safe to open only as separate guarded source/identity lane
+player_compare_browser_visual_qa,OPTIONAL,Manual Streamlit visual review can follow if desired
+rankings_ngs_preset,BLOCKED,Requires separate approval and remains out of scope
+trading_live_draft_ngs_context,BLOCKED,Requires separate approval and remains out of scope

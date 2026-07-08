@@ -1,0 +1,7 @@
+packet_path,status,file_count,notes
+docs/hq/data_sources/hq_advanced_metrics_source_backtest_v0_20260707/,present,15,V0 source/backtest packet
+docs/hq/data_sources/advanced_metrics_hardening_v2_backtest_20260707/,present,23,V2 hardening/backtest packet
+docs/hq/data_sources/advanced_metrics_display_only_ngs_v1_20260707/,present,12,Display-only NGS docs packet
+docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/,present,11,Development Lab and Data Health implementation packet
+docs/hq/data_sources/player_compare_display_only_ngs_v1_20260707/,present,10,Player Compare implementation packet
+docs/hq/data_sources/display_only_ngs_hq_merge_review_20260707/,present,7,HQ merge-review packet

@@ -1,0 +1,18 @@
+validation,result,details
+fresh_worktree,PASS,Created from origin/work/hq-parallel-control
+head_matches_remote,PASS,1c2f1c0275dc5c53bb26694b137850e1dcc45345
+packet_inventory,PASS,All six expected packet directories present
+focused_ngs_ui_tests,PASS,52 passed
+source_governance_nflverse_dev_lab_tests,PASS,14 passed
+rankings_default_sort_checks,PASS,2 passed
+standard_app_smoke_tests,PASS,64 passed
+route_smoke_key_pages,PASS,8 key page imports passed
+scoped_ruff,PASS,NGS/key runtime/test surfaces passed
+broad_repo_ruff,CAVEAT,Pre-existing unrelated style issues in older tests
+compileall,PASS,app src tests compileall passed
+csv_parse,PASS,48 CSV files parsed with 12213 data rows
+git_diff_check,PASS,git diff --check and git diff --cached --check passed before packet creation
+forbidden_tracked_path_scan,PASS,No raw/shared/cache/local/secrets tracked paths found
+changed_protected_path_scan,PASS,No protected runtime change after health packet branch start
+approval_nonpromotion_scan,PASS,Hits were blocked-list documentation only
+zero_force_scan,PASS,NGS unavailable/thresholded display not converted to zero

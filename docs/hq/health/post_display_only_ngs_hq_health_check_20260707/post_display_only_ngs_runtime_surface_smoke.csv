@@ -1,0 +1,9 @@
+route,page,result,notes
+/player-compare,app/pages/22_player_compare_v1.py,PASS,Review-only NGS Context route smoke passed
+/development-lab,app/pages/35_development_lab_v1.py,PASS,Review-only NGS Context route smoke passed
+/settings-data-health,app/pages/28_settings_data_health_v1.py,PASS,Review-only NGS Context route smoke passed
+/rankings,app/pages/05_rankings.py,PASS,No NGS ranking preset activation
+/trading-lab,app/pages/23_trading_lab_v1.py,PASS,No NGS advanced metric activation
+/live-draft,app/pages/21_live_draft_room_v1.py,PASS,No NGS advanced metric activation
+/mock-draft,app/pages/24_mock_draft_v1.py,PASS,No NGS advanced metric activation
+/refresh-data,app/pages/24_refresh_data_v1.py,PASS,Refresh page import smoke passed

@@ -1,0 +1,11 @@
+guardrail,result,evidence
+no_rankings_formula_change,PASS,Default-sort tests passed and no health branch runtime diffs
+no_default_sort_change,PASS,Rankings/default-sort tests passed
+no_hidden_sort,PASS,Guardrail language remains negative only
+no_recommendation_verdict_boost_logic,PASS,Runtime language says no winner recommendation verdict boost score
+no_trade_draft_player_decision_logic,PASS,Trading Lab Live Draft Mock Draft smokes passed with no NGS activation
+no_source_truth_or_model_promotion,PASS,Labels state display-only not model score not source truth
+no_blocked_source_activation,PASS,PFR ESPN QBR FTN PFF ffopportunity routes TPRR YPRR rz_att exact PFF Elusive Rating and nwr_elusive_proxy_review_only remain blocked
+missing_thresholded_not_zero_forced,PASS,Player Compare text says unavailable/thresholded is not converted to zero
+identity_review_not_approved,PASS,Existing gate files keep identity-review rows hidden by default
+dirty_primary_untouched,PASS,Dirty local HQ checkout status unchanged

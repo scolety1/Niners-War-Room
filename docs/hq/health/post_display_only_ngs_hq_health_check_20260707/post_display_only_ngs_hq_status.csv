@@ -1,0 +1,10 @@
+field,value
+verdict,YELLOW_POST_NGS_HQ_HEALTH_CAVEATS
+worktree,C:\NWR\Niners-War-Room-post-ngs-hq-health-20260707
+branch,work/post-display-only-ngs-hq-health-check-20260707
+head,1c2f1c0275dc5c53bb26694b137850e1dcc45345
+remote_hq_head,1c2f1c0275dc5c53bb26694b137850e1dcc45345
+head_matches_remote,true
+dirty_primary_touched,false
+health_packet_only_change,true
+push_status,pending
