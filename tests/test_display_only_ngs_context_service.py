@@ -9,6 +9,7 @@ from src.services.display_only_ngs_context_service import (
     data_health_ngs_rows,
     development_lab_ngs_rows,
     ngs_gate_validation_rows,
+    player_compare_ngs_rows,
 )
 
 
@@ -78,3 +79,16 @@ def test_development_lab_page_wires_ngs_panel_without_rank_promotion_language() 
     assert "review_only_ngs_context".lower() in text
     assert "source truth" not in text
     assert "hidden sort" not in text
+
+
+def test_player_compare_ngs_context_can_build_from_tracked_artifacts() -> None:
+    rows = player_compare_ngs_rows(
+        [
+            {"player": "Puka Nacua", "position": "WR", "player_id": "9493"},
+            {"player": "Jaxon Smith-Njigba", "position": "WR", "player_id": "9488"},
+        ]
+    )
+
+    assert rows
+    assert {row["Gate"] for row in rows} == {NGS_GATE}
+    assert any(row["Metric"] == "Avg separation" for row in rows)

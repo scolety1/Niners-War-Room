@@ -1,0 +1,6 @@
+artifact,path,rows,purpose,runtime_read_allowed,guardrail
+Player Compare NGS fields,docs/hq/data_sources/player_compare_display_only_ngs_v1_20260707/player_compare_display_only_ngs_fields.csv,19,Curated side-by-side Player Compare NGS metric fields,true,Review-only NGS context; no winner score recommendation or ranking effect
+Prior Dev Lab/Data Health NGS packet,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/,7,Shared source dictionary and blocked metric scan,true,Reuse only curated REVIEW_ONLY_NGS_CONTEXT rows
+NFLVerse player context artifact,docs/hq/data_sources/nflverse_player_context_display_20260630/nflverse_player_context_display_artifact.csv,294,Safe NWR player ID to GSIS bridge,true,Use only SAFE_NOW_DISPLAY_ONLY rows with review_required=false
+V2 advanced metrics feature panel,docs/hq/data_sources/advanced_metrics_hardening_v2_backtest_20260707/advanced_metrics_v2_joined_feature_panel_review_only.csv,5518,Historical review-only NGS feature values,true,Read only public NGS fields approved for display-only context
+Blocked metrics scan,docs/hq/data_sources/player_compare_display_only_ngs_v1_20260707/player_compare_display_only_ngs_blocked_metrics_scan.csv,13,Blocked source and metric families,true,Visible only as guardrail context

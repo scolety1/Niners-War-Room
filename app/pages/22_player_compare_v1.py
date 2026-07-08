@@ -18,6 +18,11 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
+from src.services.display_only_ngs_context_service import (
+    REVIEW_ONLY_WARNING,
+    blocked_ngs_metric_rows,
+    player_compare_ngs_rows,
+)
 from src.services.draft_day_app_v1_service import (
     APPROVED_OUTCOME_DISPLAY_FIELDS,
     OUTCOME_DISPLAY_FIELD_POSITIONS,
@@ -738,6 +743,30 @@ def _render_nflverse_player_context(compare_frame: pd.DataFrame) -> None:
         st.dataframe(pd.DataFrame(context.deferred_rows), use_container_width=True, hide_index=True)
 
 
+def _render_display_only_ngs_context(compare_frame: pd.DataFrame) -> None:
+    st.subheader("Review-only NGS Context")
+    st.caption(REVIEW_ONLY_WARNING)
+    st.caption(
+        "Values are side-by-side context only. They do not create a winner, recommendation, "
+        "verdict, boost, score, hidden sort, ranking change, trade decision, or draft decision."
+    )
+    rows = player_compare_ngs_rows(compare_frame.to_dict("records"))
+    if not rows:
+        render_yellow_hold(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption(
+        "Unavailable/thresholded means the safe identity chain or public NGS threshold coverage "
+        "did not support a value. It is not converted to zero."
+    )
+    with st.expander("Blocked advanced metrics kept out of Player Compare", expanded=False):
+        st.dataframe(
+            pd.DataFrame(blocked_ngs_metric_rows()),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
 def _context_value(row: dict[str, object], column: str) -> str:
     text = str(row.get(column, "") if row else "").strip()
     if not text or text.lower() in {"nan", "none", "null", "n/a"}:
@@ -823,6 +852,7 @@ else:
             "Outcome / Horizon",
             "Age / Injury / Risk",
             "NFLVerse Player Context",
+            "Review-only NGS Context",
             "Raw Details / Diagnostics",
         ]
     )
@@ -838,6 +868,8 @@ else:
         _render_age_risk_context(compare)
     with detail_tabs[5]:
         _render_nflverse_player_context(compare)
+    with detail_tabs[6]:
+        _render_display_only_ngs_context(compare)
 
     prop_files = {
         "outcome_columns": "outcome_player_context.csv",
@@ -856,7 +888,7 @@ else:
             _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
             _render_horizon_candidate_compare(compare)
 
-    with detail_tabs[6]:
+    with detail_tabs[7]:
         st.caption(
             "Raw context is diagnostic-only and intentionally below the visible context summary."
         )
