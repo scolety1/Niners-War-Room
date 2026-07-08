@@ -1,0 +1,11 @@
+source_family,id_field,source_rows,unique_source_players,matched_players,unmatched_players,duplicate_key_rows,identity_review_rows,join_confidence,match_basis,blocked_ambiguous_join_note
+ngs_passing,player_gsis_id,1835,100,94,6,1735,0,GREEN_SHADOW_BACKTEST_CANDIDATE,gsis-like id to V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+ngs_rushing,player_gsis_id,1862,145,143,2,1717,0,GREEN_SHADOW_BACKTEST_CANDIDATE,gsis-like id to V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+ngs_receiving,player_gsis_id,4522,333,325,8,4189,0,GREEN_SHADOW_BACKTEST_CANDIDATE,gsis-like id to V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+pfr_advstats_pass,pfr_id,848,312,0,312,536,312,RED_IDENTITY_UNSAFE,pfr_id to current approved binding only; not broad historical V3 bridge,No name fallback used; unmatched IDs remain quarantined.
+pfr_advstats_rush,pfr_id,2820,1014,0,1014,1806,1014,RED_IDENTITY_UNSAFE,pfr_id to current approved binding only; not broad historical V3 bridge,No name fallback used; unmatched IDs remain quarantined.
+pfr_advstats_rec,pfr_id,4130,1386,0,1386,2744,1386,RED_IDENTITY_UNSAFE,pfr_id to current approved binding only; not broad historical V3 bridge,No name fallback used; unmatched IDs remain quarantined.
+ftn_charting,,0,0,0,0,0,0,YELLOW_SOURCE_COVERAGE_PARTIAL,gsis-like id to V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+espn_qbr_season,player_id,1523,451,0,451,1072,451,RED_IDENTITY_UNSAFE,espn id map not canonical in V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+espn_qbr_week,player_id,10709,274,0,274,10435,274,RED_IDENTITY_UNSAFE,espn id map not canonical in V3 substrate,No name fallback used; unmatched IDs remain quarantined.
+ffopportunity_weekly,player_id,24189,1078,853,225,21463,0,GREEN_SHADOW_BACKTEST_CANDIDATE,gsis-like id to V3 substrate,No name fallback used; unmatched IDs remain quarantined.

@@ -1,0 +1,6 @@
+source_family,id_field,identity_review_reason,unmatched_or_blocked_players,policy
+pfr_advstats_pass,pfr_id,RED_IDENTITY_UNSAFE,312,No name fallback; require explicit source-specific ID map.
+pfr_advstats_rush,pfr_id,RED_IDENTITY_UNSAFE,1014,No name fallback; require explicit source-specific ID map.
+pfr_advstats_rec,pfr_id,RED_IDENTITY_UNSAFE,1386,No name fallback; require explicit source-specific ID map.
+espn_qbr_season,player_id,RED_IDENTITY_UNSAFE,451,No name fallback; require explicit source-specific ID map.
+espn_qbr_week,player_id,RED_IDENTITY_UNSAFE,274,No name fallback; require explicit source-specific ID map.
