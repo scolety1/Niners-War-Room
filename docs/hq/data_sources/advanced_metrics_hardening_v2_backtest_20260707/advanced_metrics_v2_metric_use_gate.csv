@@ -1,0 +1,12 @@
+source_or_metric,gate,identity_gate,semantics_gate,backtest_gate,display_gate,production_allowed,notes
+NGS passing,GREEN_SHADOW_BACKTEST_CANDIDATE,pass,pass,mixed,GREEN_DISPLAY_ONLY_CANDIDATE,false,"Best QB display/review candidate: CPOE, expected completion %, time to throw."
+NGS rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,pass,pass,mixed,GREEN_DISPLAY_ONLY_CANDIDATE,false,"Best RB display/review candidate: RYOE/att, efficiency, 8+ box rate."
+NGS receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,pass,pass,mixed,GREEN_DISPLAY_ONLY_CANDIDATE,false,"Best WR/TE display/review candidate: separation, cushion, expected YAC."
+ffopportunity,YELLOW_SOURCE_COVERAGE_PARTIAL,partial,partial,mixed,YELLOW_REVIEW_ONLY,false,Needs NWR scoring semantics review.
+PFR advanced,RED_IDENTITY_UNSAFE,fail,partial,blocked,YELLOW_REVIEW_ONLY,false,Bridge before use.
+ESPN QBR,RED_IDENTITY_UNSAFE,fail,partial,blocked,YELLOW_REVIEW_ONLY,false,QB-only ID bridge needed.
+FTN charting,RED_SEMANTICS_UNSAFE,partial,fail,blocked,YELLOW_REVIEW_ONLY,false,Dictionary/aggregation needed.
+routes/TPRR/YPRR,RED_SEMANTICS_UNSAFE,blocked,blocked,blocked,false,false,Still blocked.
+rz_att,RED_SEMANTICS_UNSAFE,n/a,blocked,blocked,false,false,Ambiguous; do not normalize.
+PFF Elusive Rating,RED_BLOCKED_PROPRIETARY,blocked,blocked,blocked,false,false,Exact proprietary metric unavailable.
+nwr_elusive_proxy_review_only,RED_IDENTITY_UNSAFE,fail,proxy_only,blocked,false,false,Not calculated because PFR bridge unsafe.

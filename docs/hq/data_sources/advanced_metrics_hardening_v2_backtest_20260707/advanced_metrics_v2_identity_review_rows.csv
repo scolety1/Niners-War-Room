@@ -1,0 +1,10 @@
+source_family,id_field,identity_issue,row_count,policy
+ngs_passing,player_gsis_id,unmatched_or_unbridged_ids,6,No name fallback auto-approval; bridge in a future identity lane.
+ngs_rushing,player_gsis_id,unmatched_or_unbridged_ids,2,No name fallback auto-approval; bridge in a future identity lane.
+ngs_receiving,player_gsis_id,unmatched_or_unbridged_ids,8,No name fallback auto-approval; bridge in a future identity lane.
+pfr_advstats_pass,pfr_id,unmatched_or_unbridged_ids,312,No name fallback auto-approval; bridge in a future identity lane.
+pfr_advstats_rush,pfr_id,unmatched_or_unbridged_ids,1014,No name fallback auto-approval; bridge in a future identity lane.
+pfr_advstats_rec,pfr_id,unmatched_or_unbridged_ids,1386,No name fallback auto-approval; bridge in a future identity lane.
+espn_qbr_season,player_id,unmatched_or_unbridged_ids,451,No name fallback auto-approval; bridge in a future identity lane.
+espn_qbr_week,player_id,unmatched_or_unbridged_ids,274,No name fallback auto-approval; bridge in a future identity lane.
+ffopportunity_weekly,player_id,unmatched_or_unbridged_ids,225,No name fallback auto-approval; bridge in a future identity lane.

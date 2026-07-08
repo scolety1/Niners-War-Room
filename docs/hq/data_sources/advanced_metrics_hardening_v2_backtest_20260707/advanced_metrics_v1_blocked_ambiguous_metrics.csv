@@ -1,0 +1,7 @@
+metric_family,raw_or_candidate_field,classification,reason
+routes,routes,blocked,No safe route source admitted; do not derive route proxies.
+route participation,route_participation,blocked,"Legacy/model term exists, but no current admitted source."
+TPRR,targets_per_route_run,blocked,Requires routes; routes blocked.
+YPRR,yards_per_route_run,blocked,Requires routes; routes blocked.
+red-zone,rz_att,blocked,Ambiguous red-zone attempts; do not normalize.
+red-zone,duplicate mixed red-zone fields,needs_source_dictionary,"May mix rushing attempts, targets, or team attempts without clear semantics."

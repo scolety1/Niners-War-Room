@@ -1,0 +1,8 @@
+gap_family,gap_status,severity,recommended_next_action
+PFR bridge,historical PFR ID bridge missing,high,identity hardening
+ESPN bridge,canonical ESPN ID bridge missing,high,QB-only identity hardening
+FTN semantics,field dictionary and player aggregation not safe,high,source semantics lane
+ffopportunity semantics,expected fantasy scoring basis needs NWR conversion review,medium,semantics lane
+NGS missingness,public thresholding likely informative; V2 indicators required,medium,display-only candidate plus deeper V3 backtest
+routes/TPRR/YPRR,blocked,high,no action without safe source
+rz_att,blocked ambiguous red-zone field,high,do not normalize
