@@ -1,0 +1,14 @@
+metric_or_source,blocked_status,reason
+PFR advanced,RED_IDENTITY_UNSAFE,PFR bridge is not safe enough for display approval in this NGS packet
+ESPN QBR,RED_IDENTITY_UNSAFE,ESPN ID bridge is missing from canonical V3/player universe
+FTN charting,RED_SEMANTICS_UNSAFE,Field semantics and player aggregation remain unsafe
+ffopportunity,YELLOW_SOURCE_COVERAGE_PARTIAL,Semantics are partial and not included in UI yet
+PFF Elusive Rating,RED_BLOCKED_PROPRIETARY,Exact PFF metric is proprietary unless legal exported source is explicitly gated
+nwr_elusive_proxy_review_only,RED_IDENTITY_UNSAFE,Proxy was not calculated because PFR bridge is unsafe
+routes,RED_SEMANTICS_UNSAFE,No safe route source admitted
+route_participation,RED_SEMANTICS_UNSAFE,Would imply route source/proxy not approved
+TPRR,RED_SEMANTICS_UNSAFE,Requires routes; routes are blocked
+YPRR,RED_SEMANTICS_UNSAFE,Requires routes; routes are blocked
+rz_att,RED_SEMANTICS_UNSAFE,Ambiguous red-zone attempt field; do not normalize
+hidden_sort,RED_BLOCKED_GUARDRAIL,No NGS hidden sort or ranking behavior approved
+recommendation_logic,RED_BLOCKED_GUARDRAIL,No NGS recommendations verdicts boosts trade or draft advice approved

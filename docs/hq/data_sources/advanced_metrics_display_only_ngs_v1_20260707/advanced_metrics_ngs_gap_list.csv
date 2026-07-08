@@ -1,0 +1,7 @@
+gap_family,current_state,severity,recommended_next_action
+runtime integration,not implemented in this lane,medium,Open a separate gated Development Lab and Player Compare implementation lane
+NGS refresh timestamp,not normalized into Data Health yet,low,Add timestamp/source freshness display if implementation lane proceeds
+identity-review rows,6 passing; 2 rushing; 8 receiving unmatched/blocked,medium,Keep hidden by default and add identity review queue if needed
+missingness explanation,thresholded public NGS missingness is informative,medium,Show caveat and sample coverage on every surface
+Rankings optional preset,high risk for implicit sorting,high,Defer until explicit approval; no default sort
+Trading Lab and Draft surfaces,high risk for advice,high,Keep blocked until separate gate
