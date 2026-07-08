@@ -1,0 +1,13 @@
+artifact,row_count_basis,row_count,purpose
+DEEP_RESEARCH_UPGRADES_ORCHESTRATION_V1_REPORT.md,markdown_lines,76,Human-readable orchestration report with verdict separation plan overlap risks and recommended lane order.
+DR_HQ1_FEATURE_DISCOVERY_CHARTER.md,markdown_lines,65,Charter defining HQ 1 ownership of broad feature discovery source maps metric backlog and future tournament architecture.
+DR_HQ2_PRIOR_YEAR_CHALLENGER_CHARTER.md,markdown_lines,75,Charter defining HQ 2 ownership of the immediate prior-year baseline challenger and model-failure response.
+WORKSTREAM_BOUNDARY_MATRIX.csv,csv_data_rows,20,Area-by-area ownership and parallel safety matrix for HQ 1 and HQ 2 workstreams.
+FILE_OWNERSHIP_MATRIX.csv,csv_data_rows,18,Path ownership and protected-file matrix preventing overlapping edits and protected runtime changes.
+LANE_QUEUE_AND_DEPENDENCIES.csv,csv_data_rows,6,Recommended future lane order with dependencies outputs parallel guidance and merge gates.
+PARALLEL_WORK_RULES.md,markdown_lines,51,Rules for fresh worktrees packet collisions protected files scripts and final scans.
+MERGE_ORDER_PLAN.md,markdown_lines,36,Recommended merge order separating evidence packets review-only scripts production changes and source promotion.
+SHARED_GUARDRAILS.md,markdown_lines,39,Shared hard guardrails for all future Deep Research upgrade lanes.
+DR_HQ1_STARTER_PROMPT.md,markdown_lines,57,Starter prompt for HQ 1 broad feature discovery registry and source-safe future research lane.
+DR_HQ2_STARTER_PROMPT.md,markdown_lines,63,Starter prompt for HQ 2 immediate source-safe prior-year baseline challenger lane.
+artifact_manifest.csv,csv_data_rows,12,Manifest of every orchestration artifact with row-count basis row count and purpose.

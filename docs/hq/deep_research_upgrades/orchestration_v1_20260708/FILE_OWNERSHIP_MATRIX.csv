@@ -1,0 +1,19 @@
+path_pattern,owner,allowed_workstream,parallel_safe,restriction,notes
+docs/hq/deep_research_upgrades/orchestration_v1_20260708/*,orchestration_v1,this_lane_only,no,review_artifacts_only,This packet owns only the coordination artifacts.
+docs/hq/deep_research_upgrades/hq1_feature_discovery_*/**,HQ1,HQ1_only,yes,review_artifacts_only,HQ1 should create future source maps and broad registries here.
+docs/hq/deep_research_upgrades/hq2_prior_year_challenger_*/**,HQ2,HQ2_only,yes,review_artifacts_only,HQ2 should create immediate challenger plans and scorecards here.
+docs/hq/model/production_rankings_backtest_v1_20260708/**,protected_existing_packet,both_read_only,yes,read_only_context,Do not edit prior backtest packet.
+docs/hq/model/historical_model_v4_replay_substrate_v1_20260708/**,protected_existing_packet,both_read_only,yes,read_only_context,Do not edit prior replay substrate packet.
+docs/hq/data_sources/**,source_gate_docs,both_read_only_or_new_review_packet,conditional,no_source_promotion,Read existing gates; new review docs must not change source status.
+docs/hq/rankings/**,protected_rankings,both_read_only,no,no_rankings_changes,Do not alter rankings docs or app-facing ranking packet status.
+docs/hq/rankings_view_inventory_*/**,protected_rankings_inventory,both_read_only,no,read_only_context,Do not edit existing inventory while research lanes run.
+app/pages/**,protected_ui,none,no,no_ui_changes,No app or UI behavior changes.
+app/legacy_pages/**,protected_ui,none,no,no_ui_changes,No legacy app edits.
+src/services/**,protected_runtime,none,no,no_runtime_or_formula_changes,No runtime/model service edits in orchestration or research prep lanes.
+src/services/model_v4*.py,protected_model_formula,none,no,no_formula_changes,No formula or model weight changes.
+src/services/draft_day_app_v1_service.py,protected_rankings_runtime,none,no,no_default_or_hidden_sort_changes,No app loader or sort behavior changes.
+scripts/**,conditional_review_scripts,assigned_lane_only,no,no_parallel_script_edits,Only future explicitly assigned runner lanes may add review-only scripts.
+local_exports/**,protected_runtime_artifacts,both_read_only,no,no_runtime_artifact_changes,Do not rewrite current board or runtime exports.
+data/**,protected_data,both_read_only,no,no_raw_data_mutation,No data mutation or cache refresh in this lane.
+docs/hq/**/artifact_manifest.*,owning_packet,owning_lane_only,no,no_cross_packet_edits,Each lane owns only its own manifest.
+C:/NWR/Niners-War-Room/**,dirty_primary_checkout,none,no,do_not_touch,Primary checkout may be dirty and must not be reset cleaned stashed or edited.

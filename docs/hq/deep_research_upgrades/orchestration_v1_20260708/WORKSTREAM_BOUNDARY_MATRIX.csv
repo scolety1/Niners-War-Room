@@ -1,0 +1,21 @@
+area,HQ1_owner,HQ2_owner,shared_context_allowed,parallel_safe,notes
+source discovery,yes,no,yes,yes,HQ1 owns broad source discovery; HQ2 may read accepted source gates only.
+metric ideation,yes,no,yes,yes,HQ1 owns broad metric idea backlog; HQ2 keeps only immediate challenger candidates.
+prior-year baseline challenger,no,yes,yes,no,HQ2 owns champion baseline response and scorecards.
+feature tournament methodology,yes,limited,yes,conditional,HQ1 owns broad methodology; HQ2 may define immediate tournament mechanics only.
+model failure autopsy,no,yes,yes,conditional,HQ2 owns failure taxonomy and prior-year baseline interpretation.
+route/YPRR/TPRR,yes,no,yes,yes,HQ1 owns source/proxy research; HQ2 must not rely on these unless later admitted.
+PFR/NGS,yes,limited_read,yes,conditional,HQ1 maps source status; HQ2 may read admitted/review gates for immediate safe features.
+first-down features,source_map_only,yes,yes,conditional,HQ2 owns immediate first-down challenger usage; HQ1 documents source availability.
+role stability,source_map_only,yes,yes,conditional,HQ2 owns source-safe role stability challenger features.
+baseline registry,methodology_only,yes,yes,conditional,HQ2 owns prior-year baseline comparison; HQ1 may design future baseline ladder.
+candidate registry,yes,tournament_local_only,yes,conditional,HQ1 owns broad registry; HQ2 owns only immediate local candidate list.
+review-only scripts,no_by_default,conditional,yes,no,Do not run parallel scripts touching same tournament or scorecard files.
+model formula,no,no,read_only,no,Protected; neither workstream may edit production formula.
+rankings,no,no,read_only,no,Protected; neither may change rankings files or rank outputs.
+UI,no,no,read_only,no,Protected; neither may change app pages or UI behavior.
+source-truth,no,no,read_only,no,Protected; neither may promote or edit source truth.
+production model tuning,no,no,read_only,no,Out of scope for both research workstreams.
+miss taxonomy,no,yes,yes,conditional,HQ2 owns immediate miss taxonomy reductions and deltas.
+future feature tournament registry,yes,no,yes,yes,HQ1 owns future registry; HQ2 may read after accepted.
+dirty primary checkout,no,no,no,no,Must not be used, reset, cleaned, stashed, or otherwise disturbed.

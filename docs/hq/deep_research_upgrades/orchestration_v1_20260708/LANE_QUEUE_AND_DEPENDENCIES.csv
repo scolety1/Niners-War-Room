@@ -1,0 +1,7 @@
+lane_order,lane_name,owner,depends_on,outputs,parallel_allowed,gate_before_merge
+1,HQ2 Source-Safe Feature Tournament V1 / Prior-Year Baseline Challenger,HQ2,"Production Rankings Backtest V1; Historical Model v4 Replay Substrate; source-safe input gates","review-only challenger scorecard; miss taxonomy deltas; baseline comparison",conditional,"review-only guardrail scan; no production files changed"
+2,HQ1 Experimental Feature Discovery Registry V1,HQ1,"outside research synthesis; source gates","broad metric backlog; public source map; source status matrix",yes_if_separate_folder,"source status no-promotion scan"
+3,HQ1 Future Feature Tournament Registry V1,HQ1,"HQ1 Experimental Feature Discovery Registry V1","future candidate metric registry; validation methodology; baseline ladder",yes_if_no_script_overlap,"registry/schema guardrail scan"
+4,Later Feature Tournament Runner V1,assigned_later,"HQ2 challenger results; HQ1 future registry; human-approved experiment scope","review-only tournament runner and scorecards",no_if_touching_scripts,"script scope review; leakage scan; no production formula changes"
+5,Later Position-Specific Candidate Formula Lanes,assigned_later,"accepted review evidence; human formula experiment approval","candidate formulas in review-only artifacts",no,"human approval; source admission; replay evidence; no production bundle"
+6,Production Promotion Lane,assigned_later,"accepted benchmark evidence; explicit human approval","production proposal only if approved",no,"separate approval; separate merge; no research artifact bundle"
