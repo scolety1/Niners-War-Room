@@ -1,0 +1,11 @@
+artifact,row_count_basis,row_count,purpose
+"HQ1_PUBLIC_SOURCE_STATUS_RECONCILIATION_V2_REPORT.md","markdown_lines","65","Human-readable report summarizing reconciled status taxonomy, major V1 changes, route/YPRR/TPRR status, future source admission queue, and final use gate."
+"HQ1_RECONCILED_SOURCE_STATUS_MATRIX.csv","csv_data_rows","25","Reconciled source status matrix with V1 status, V2 taxonomy, current gates, no-new-approval columns, blockers, and unblock requirements."
+"HQ1_SOURCE_STATUS_DELTAS_FROM_V1.csv","csv_data_rows","25","Delta log documenting label normalization, gate clarifications, PFR splits, route boundary hardening, and blocked-source preservation from Registry V1."
+"HQ1_BLOCKED_SOURCE_REQUIREMENTS.csv","csv_data_rows","19","Requirements matrix for partial, blocked, display-only, identity-unsafe, route-denominator-unsafe, and do-not-use sources."
+"HQ1_ROUTE_YPRR_TPRR_RECONCILIATION.md","markdown_lines","33","Dedicated route/YPRR/TPRR reconciliation stating true route metrics remain blocked and proxies must be labeled proxies."
+"HQ1_ROUTE_PROXY_SOURCE_MAP.csv","csv_data_rows","8","Route-like proxy source map explaining source status, required gates, and why each proxy is not true YPRR or TPRR."
+"HQ1_FUTURE_SOURCE_ADMISSION_QUEUE.csv","csv_data_rows","10","Prioritized future source-admission lane queue with required inputs, expected artifacts, blockers, and notes."
+"HQ1_SOURCE_RECONCILIATION_USE_GATE.md","markdown_lines","24","Use gate confirming this packet is research planning only and approves no sources, model inputs, UI, display integration, source truth, or route metrics."
+"HQ1_HQ2_BOUNDARY_CONFIRMATION.md","markdown_lines","21","Boundary confirmation that no HQ2 packet path, prior-year challenger scoring, miss taxonomy output, feature tournament scorecard, or beat-prior-year claim was created."
+"artifact_manifest.csv","csv_data_rows","10","Manifest listing every created artifact with row count basis, row count, and purpose."
