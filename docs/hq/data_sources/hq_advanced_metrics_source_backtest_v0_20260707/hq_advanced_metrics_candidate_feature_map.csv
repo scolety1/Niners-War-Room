@@ -1,0 +1,25 @@
+position_scope,metric_family,candidate_metric,source_family,candidate_status,source_path_or_url,feature_use_note,production_allowed
+RB,NGS rushing,rush_yards_over_expected_per_att,ngs_rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+RB,NGS rushing,rush_pct_over_expected,ngs_rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+RB,NGS rushing,efficiency,ngs_rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+RB,NGS rushing,percent_attempts_gte_eight_defenders,ngs_rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+RB,NGS rushing,avg_time_to_los,ngs_rushing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+WR/TE,NGS receiving,avg_separation,ngs_receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+WR/TE,NGS receiving,avg_cushion,ngs_receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+WR/TE,NGS receiving,avg_expected_yac,ngs_receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+WR/TE,NGS receiving,avg_yac_above_expectation,ngs_receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+WR/TE,NGS receiving,percent_share_of_intended_air_yards,ngs_receiving,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available; review-only.,false
+QB,NGS passing,avg_time_to_throw,ngs_passing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available for QBs.,false
+QB,NGS passing,expected_completion_percentage,ngs_passing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available for QBs.,false
+QB,NGS passing,completion_percentage_above_expectation,ngs_passing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available for QBs.,false
+QB,NGS passing,aggressiveness,ngs_passing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available for QBs.,false
+QB,NGS passing,avg_air_yards_to_sticks,ngs_passing,GREEN_SHADOW_BACKTEST_CANDIDATE,public acquired or canonical review artifact,ID-safe GSIS join available for QBs.,false
+QB/RB/WR/TE,PFR advanced,broken_tackles,pfr_advstats,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,"Public PFR data acquired, but broad historical PFR ID bridge is missing.",false
+QB/RB/WR/TE,PFR advanced,yards_after_contact,pfr_advstats,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,"Public PFR data acquired, but broad historical PFR ID bridge is missing.",false
+QB/RB/WR/TE,PFR advanced,bad_throws,pfr_advstats,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,"Public PFR data acquired, but broad historical PFR ID bridge is missing.",false
+QB/RB/WR/TE,PFR advanced,on_target_throws,pfr_advstats,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,"Public PFR data acquired, but broad historical PFR ID bridge is missing.",false
+QB,ESPN QBR,qbr_total/epa/qbr,espn_qbr,RED_IDENTITY_UNSAFE,public acquired or canonical review artifact,ESPN IDs not mapped to V3.,false
+QB/RB/WR/TE,ffopportunity,expected fantasy/opportunity fields,ffopportunity_weekly,YELLOW_SOURCE_COVERAGE_PARTIAL,public acquired or canonical review artifact,Public weekly files acquired; semantics need review.,false
+RB,NWR elusive proxy,nwr_elusive_proxy_review_only,pfr_advstats_rush,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,Formula documented only if legal inputs exist; not PFF Elusive Rating.,false
+RB/WR/TE,red-zone opportunity,redzone opportunity share,canonical_redzone_sidecar,GREEN_DISPLAY_ONLY_CANDIDATE,public acquired or canonical review artifact,Canonical sidecar is review-only; rz_att remains blocked.,false
+WR/TE,WOPR,target share + air-yards share,canonical_core_usage_or_ngs,YELLOW_REVIEW_ONLY,public acquired or canonical review artifact,Derive only after semantic gate; not production.,false

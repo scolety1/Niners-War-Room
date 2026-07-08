@@ -1,0 +1,5 @@
+artifact,path,rows,purpose,runtime_read_allowed,guardrail
+Development Lab NGS fields,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/display_only_ngs_development_lab_fields.csv,19,Curated position-scoped NGS display fields,true,Review-only NGS context; no score or recommendation
+Data Health NGS fields,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/display_only_ngs_data_health_fields.csv,3,Curated NGS source coverage and missingness rows,true,Review-only NGS context; not model-approved
+Blocked metrics scan,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/display_only_ngs_blocked_metrics_scan.csv,13,Runtime blocklist for advanced metrics excluded from this lane,true,Blocked rows are visible only as guardrail context
+Gate validation,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/display_only_ngs_gate_validation.csv,8,Runtime guardrail checks for NGS display,false,Validation evidence only

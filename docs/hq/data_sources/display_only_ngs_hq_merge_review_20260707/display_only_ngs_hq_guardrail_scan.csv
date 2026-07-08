@@ -1,0 +1,13 @@
+guardrail,result,evidence
+no_production_rank_formula_change,PASS,rankings/default-sort tests passed and changed-path scan found no rank formula path
+no_default_sort_change,PASS,2 ranking/default-sort checks passed
+no_hidden_sort,PASS,runtime text explicitly says no hidden sort and no sort wiring was added
+no_recommendation_logic,PASS,runtime text explicitly says no recommendation/winner/verdict/boost/score
+no_trade_or_draft_logic,PASS,Trading Lab Live Draft Mock Draft and Rankings preset untouched
+no_model_approval,PASS,visible labels state not model score and not model-approved
+no_source_truth_promotion,PASS,labels state context only and not source truth
+identity_review_hidden,PASS,Data Health and service tests confirm identity-review rows hidden/default blocked
+name_fallback_not_approved,PASS,service uses safe joined rows and no name-fallback approval
+missing_not_zero_forced,PASS,Player Compare caption states unavailable/thresholded is not converted to zero
+blocked_metrics_preserved,PASS,PFR ESPN QBR FTN PFF ffopportunity routes TPRR YPRR rz_att exact PFF Elusive Rating and nwr_elusive_proxy_review_only remain blocked
+ngs_gate_preserved,PASS,REVIEW_ONLY_NGS_CONTEXT used across Development Lab Data Health and Player Compare

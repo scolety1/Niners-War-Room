@@ -1,0 +1,9 @@
+gap_family,gap_status,severity,recommended_next_action
+PFF Elusive Rating,RED_BLOCKED_PROPRIETARY: no legal/exported PFF source was provided or gated.,high,do not use; keep blocked
+PFR advanced,"Acquired publicly, but broad historical PFR ID bridge to V3 is missing.",medium,identity hardening lane
+ESPN QBR,"Acquired publicly, but ESPN IDs are not mapped to V3.",medium,QB-only ESPN ID bridge
+FTN charting,"Acquired recent public files, but charting semantics and aggregation need review.",medium,source semantics hardening
+ffopportunity,"Acquired weekly files, but metric semantics require review.",medium,metric dictionary lane
+Routes/TPRR/YPRR,Still blocked; do not build route proxies.,high,no action without safe source gate
+rz_att,Still blocked/ambiguous; do not normalize.,high,red-zone semantics gate only if requested
+2025 caveat,2025 target/evidence windows may be incomplete.,medium,do not use as production conclusion

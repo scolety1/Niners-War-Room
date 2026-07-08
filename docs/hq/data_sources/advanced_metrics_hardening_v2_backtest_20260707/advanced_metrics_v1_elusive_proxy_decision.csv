@@ -1,0 +1,3 @@
+metric,decision,calculated,formula,input_sources,missingness,position_scope,proxy_warning
+PFF Elusive Rating,RED_BLOCKED_PROPRIETARY,false,,,,RB,Exact PFF metric unavailable and blocked.
+nwr_elusive_proxy_review_only,RED_IDENTITY_UNSAFE,false,((broken_tackles_or_missed_tackles_forced) / touches) * yards_after_contact_per_attempt * 100,PFR advanced rushing only if PFR bridge is hardened,not computed because bridge unsafe,RB,Do not call this PFF Elusive Rating; keep out of production/model/rankings.

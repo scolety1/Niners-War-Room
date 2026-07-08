@@ -1,0 +1,3 @@
+espn_family,row_count,id_field,unique_espn_ids,exact_safe_espn_matches,missing_espn_id_rows,duplicate_espn_id_rows,qb_only_rows,name_only_proposals,blocked_ambiguous_proposals,bridge_gate
+season,1523,player_id,451,0,0,1072,1523,quarantined_not_generated,451,RED_IDENTITY_UNSAFE
+week,10709,player_id,274,0,0,10435,10709,quarantined_not_generated,274,RED_IDENTITY_UNSAFE

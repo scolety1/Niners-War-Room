@@ -1,0 +1,13 @@
+source_family,season,position_scope,source_players,canonical_eligible_players,missing_canonical_players,missingness_likely_informative,complete_case_v0_bias_likely,v2_missing_indicator_required,safe_for_backtesting_by_position,recommended_gate
+ngs_passing,2021,QB,62,67,15,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_passing,2022,QB,67,63,10,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_passing,2023,QB,67,63,7,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_passing,2024,QB,2,63,61,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_rushing,2021,RB,93,120,39,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_rushing,2022,RB,85,115,41,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_rushing,2023,RB,85,108,34,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_rushing,2024,RB,2,106,104,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_receiving,2021,WR/TE,225,285,92,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_receiving,2022,WR/TE,206,262,84,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_receiving,2023,WR/TE,203,267,83,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE
+ngs_receiving,2024,WR/TE,4,283,279,true,true,true,true_with_missing_indicators,GREEN_SHADOW_BACKTEST_CANDIDATE

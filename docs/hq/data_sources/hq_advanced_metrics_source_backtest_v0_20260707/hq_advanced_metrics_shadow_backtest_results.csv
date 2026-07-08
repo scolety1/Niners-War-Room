@@ -1,0 +1,41 @@
+position,feature_set,target,validation_policy,target_season,train_rows,test_rows,mae,spearman,baseline_comparison,leakage_guardrail
+QB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,481,62,3.996175,0.564705,see aggregate rows,feature season N only; target season N+1
+QB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,543,62,3.778624,0.55851,see aggregate rows,feature season N only; target season N+1
+QB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2025,605,60,3.676406,0.691692,see aggregate rows,feature season N only; target season N+1
+QB,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,51,52,4.648877,0.480577,see aggregate rows,feature season N only; target season N+1
+QB,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,103,55,3.978648,0.440476,see aggregate rows,feature season N only; target season N+1
+QB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,51,52,4.898783,0.468966,see aggregate rows,feature season N only; target season N+1
+QB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,103,55,3.925571,0.45368,see aggregate rows,feature season N only; target season N+1
+RB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,877,108,2.730813,0.648039,see aggregate rows,feature season N only; target season N+1
+RB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,985,100,2.570421,0.77553,see aggregate rows,feature season N only; target season N+1
+RB,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2025,1085,99,2.184353,0.79798,see aggregate rows,feature season N only; target season N+1
+RB,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,78,72,3.456897,0.505997,see aggregate rows,feature season N only; target season N+1
+RB,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,150,72,3.179807,0.669432,see aggregate rows,feature season N only; target season N+1
+RB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,78,72,3.520501,0.503296,see aggregate rows,feature season N only; target season N+1
+RB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,150,72,3.19397,0.677696,see aggregate rows,feature season N only; target season N+1
+WR,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,1333,158,1.811667,0.741908,see aggregate rows,feature season N only; target season N+1
+WR,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,1491,163,1.939788,0.724843,see aggregate rows,feature season N only; target season N+1
+WR,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2025,1654,167,1.675511,0.722433,see aggregate rows,feature season N only; target season N+1
+WR,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,131,116,1.890375,0.737964,see aggregate rows,feature season N only; target season N+1
+WR,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,247,122,2.204645,0.67364,see aggregate rows,feature season N only; target season N+1
+WR,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,131,116,1.911482,0.72953,see aggregate rows,feature season N only; target season N+1
+WR,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,247,122,2.235004,0.672418,see aggregate rows,feature season N only; target season N+1
+TE,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,746,94,1.251204,0.757724,see aggregate rows,feature season N only; target season N+1
+TE,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,840,93,1.298591,0.694997,see aggregate rows,feature season N only; target season N+1
+TE,baseline_core_usage,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2025,933,104,1.260059,0.736192,see aggregate rows,feature season N only; target season N+1
+TE,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,56,56,1.252418,0.701733,see aggregate rows,feature season N only; target season N+1
+TE,baseline_plus_position_ngs,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,112,54,1.629653,0.669309,see aggregate rows,feature season N only; target season N+1
+TE,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2023,56,56,1.620682,0.555385,see aggregate rows,feature season N only; target season N+1
+TE,baseline_plus_position_ngs_ffopp,next_nwr_ppg,season-forward; train prior target seasons only; position-specific complete-case features,2024,112,54,1.6294,0.66767,see aggregate rows,feature season N only; target season N+1
+QB,baseline_core_usage,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,184,3.817068,,0,baseline
+QB,baseline_plus_position_ngs,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,107,4.313763,,-0.496694,positive means MAE improved versus baseline_core_usage
+QB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,107,4.412177,,-0.595109,positive means MAE improved versus baseline_core_usage
+RB,baseline_core_usage,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,307,2.495196,,0,baseline
+RB,baseline_plus_position_ngs,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,144,3.318352,,-0.823156,positive means MAE improved versus baseline_core_usage
+RB,baseline_plus_position_ngs_ffopp,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,144,3.357235,,-0.86204,positive means MAE improved versus baseline_core_usage
+WR,baseline_core_usage,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,488,1.808989,,0,baseline
+WR,baseline_plus_position_ngs,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,238,2.04751,,-0.238521,positive means MAE improved versus baseline_core_usage
+WR,baseline_plus_position_ngs_ffopp,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,238,2.073243,,-0.264254,positive means MAE improved versus baseline_core_usage
+TE,baseline_core_usage,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,291,1.269951,,0,baseline
+TE,baseline_plus_position_ngs,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,110,1.441035,,-0.171084,positive means MAE improved versus baseline_core_usage
+TE,baseline_plus_position_ngs_ffopp,next_nwr_ppg,aggregate across evaluated target seasons,aggregate,,110,1.625041,,-0.35509,positive means MAE improved versus baseline_core_usage

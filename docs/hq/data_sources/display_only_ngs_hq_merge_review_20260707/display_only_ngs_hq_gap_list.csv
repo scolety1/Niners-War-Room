@@ -1,0 +1,7 @@
+gap,status,next_action
+origin_hq_branch_checked_out_dirty_elsewhere,OPEN,Push is pending and local branch update was avoided to protect dirty stale checkout
+streamlit_bare_mode_warnings,KNOWN,Warnings are expected for route import smoke outside streamlit run
+use_container_width_deprecation,KNOWN,Existing Streamlit deprecation warnings observed during route smoke
+rankings_preset_for_ngs,BLOCKED,Requires separate approval and remains out of scope
+trading_lab_or_draft_ngs_context,BLOCKED,Requires separate approval and remains out of scope
+player_compare_visual_browser_qa,OPTIONAL,Manual UI review can inspect /player-compare after push or local run

@@ -1,0 +1,6 @@
+check,status,result
+Development Lab focused test,PASS,tests/test_display_only_ngs_context_service.py and tests/test_development_lab_review_upgrade_service.py passed
+Data Health focused test,PASS,tests/test_display_only_ngs_context_service.py and tests/test_data_health_dashboard_service.py passed
+Ruff,PASS,ruff check passed on touched runtime service page and test files
+Compileall,PASS,compileall passed on touched runtime service page and test files
+Diff check,PASS,git diff --check and git diff --cached --check passed

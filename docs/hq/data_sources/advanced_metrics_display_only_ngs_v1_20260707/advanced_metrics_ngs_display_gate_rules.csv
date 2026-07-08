@@ -1,0 +1,13 @@
+rule_id,rule_text,applies_to,enforcement,blocked_if_violated
+ngs_gate_01,Display only rows joined by safe GSIS or nflverse identifiers,all NGS rows,filter to safe rows,true
+ngs_gate_02,Identity-review rows must be hidden by default,all NGS rows,exclude identity-review rows from default display,true
+ngs_gate_03,Name-only fallback can be shown only as quarantined proposal and never approved,identity joins,do not render as approved,true
+ngs_gate_04,Every NGS section must be labeled Review-only NGS context,all surfaces,visible copy required,true
+ngs_gate_05,NGS metrics must not be labeled model-approved or source-truth,all surfaces,forbidden copy scan,true
+ngs_gate_06,Missingness warnings must mention public NGS thresholding,all surfaces,visible caveat required,true
+ngs_gate_07,Show sample size or coverage where available,Development Lab; Player Compare; Data Health,display count or coverage summary,false
+ngs_gate_08,Do not sort main rankings by NGS by default,Rankings,blocked by default,true
+ngs_gate_09,Any user table sorting must be explicit table interaction only and not hidden ranking logic,all table surfaces,implementation review,true
+ngs_gate_10,Do not show score grade recommendation verdict boost trade or draft advice language,all surfaces,forbidden copy scan,true
+ngs_gate_11,Do not include PFR ESPN FTN PFF routes TPRR YPRR rz_att ffopportunity or elusive proxy in this NGS display packet,all surfaces,source allowlist,true
+ngs_gate_12,No production model training formula or source-truth paths may be touched,repo changes,protected path scan,true

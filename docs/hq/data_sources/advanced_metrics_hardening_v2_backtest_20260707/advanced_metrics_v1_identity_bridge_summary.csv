@@ -1,0 +1,11 @@
+source_family,source_row_count,unique_player_count,matched_count,unmatched_count,duplicate_key_count,ambiguous_identity_count,identity_review_rows,safe_rows,blocked_rows,recommended_gate,match_basis,notes
+ngs_passing,1835,100,94,6,1735,0,6,94,6,GREEN_SHADOW_BACKTEST_CANDIDATE,GSIS to V3,NGS is the best ID-safe family.
+ngs_rushing,1862,145,143,2,1717,0,2,143,2,GREEN_SHADOW_BACKTEST_CANDIDATE,GSIS to V3,NGS is the best ID-safe family.
+ngs_receiving,4522,333,325,8,4189,0,8,325,8,GREEN_SHADOW_BACKTEST_CANDIDATE,GSIS to V3,NGS is the best ID-safe family.
+pfr_advstats_pass,848,312,0,312,536,0,312,0,312,RED_IDENTITY_UNSAFE,PFR ID to current approved binding only,Current approved binding has little/no historical PFR coverage; name proposals remain quarantined.
+pfr_advstats_rush,2820,1014,0,1014,1806,0,1014,0,1014,RED_IDENTITY_UNSAFE,PFR ID to current approved binding only,Current approved binding has little/no historical PFR coverage; name proposals remain quarantined.
+pfr_advstats_rec,4130,1386,0,1386,2744,0,1386,0,1386,RED_IDENTITY_UNSAFE,PFR ID to current approved binding only,Current approved binding has little/no historical PFR coverage; name proposals remain quarantined.
+espn_qbr_season,1523,451,0,451,1072,0,451,0,451,RED_IDENTITY_UNSAFE,No canonical ESPN ID bridge in V3,"QB-only source acquired, but cannot be joined safely yet."
+espn_qbr_week,10709,274,0,274,10435,0,274,0,274,RED_IDENTITY_UNSAFE,No canonical ESPN ID bridge in V3,"QB-only source acquired, but cannot be joined safely yet."
+ftn_charting,137899,0,0,0,0,0,0,0,0,RED_SEMANTICS_UNSAFE,ID availability unclear/insufficient in acquired schema,FTN field semantics and player aggregation are not hardened.
+ffopportunity_weekly,24189,1078,853,225,21463,0,225,853,225,YELLOW_SOURCE_COVERAGE_PARTIAL,GSIS-like player_id to V3,"Join works for many rows, but expected-points semantics need scoring review."

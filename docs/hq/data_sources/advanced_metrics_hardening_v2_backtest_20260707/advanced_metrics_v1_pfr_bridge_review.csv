@@ -1,0 +1,4 @@
+pfr_family,row_count,unique_pfr_ids,exact_safe_pfr_matches,missing_pfr_id_rows,duplicate_pfr_id_rows,name_only_proposals,team_year_disambiguated_proposals,blocked_ambiguous_proposals,bridge_gate
+pass,848,312,0,0,536,quarantined_not_generated,quarantined_not_generated,312,RED_IDENTITY_UNSAFE
+rush,2820,1014,0,0,1806,quarantined_not_generated,quarantined_not_generated,1014,RED_IDENTITY_UNSAFE
+rec,4130,1386,0,0,2744,quarantined_not_generated,quarantined_not_generated,1386,RED_IDENTITY_UNSAFE

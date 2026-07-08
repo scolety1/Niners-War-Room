@@ -1,0 +1,20 @@
+check,result,details
+fetch_origin,PASS,origin fetched before merge review
+clean_merge_worktree,PASS,detached merge worktree started clean at origin/work/hq-parallel-control
+source_head,PASS,44f75fe6d61606c9046d85988151356d83053f90
+merge_conflicts,PASS,no conflicts
+focused_ui_service_tests,PASS,52 passed
+source_governance_nflverse_dev_lab_guardrails,PASS,14 passed
+rankings_default_sort_checks,PASS,2 passed
+player_compare_route_smoke,PASS,bare Streamlit import completed
+development_lab_route_smoke,PASS,bare Streamlit import completed
+settings_data_health_route_smoke,PASS,bare Streamlit import completed
+ruff,PASS,touched runtime and tests
+compileall,PASS,touched runtime and tests
+csv_parse,PASS,44 CSV files parsed before HQ packet; HQ packet CSVs parsed after creation
+git_diff_check,PASS,git diff --check and git diff --cached --check
+forbidden_path_scan,PASS,no raw/shared/cache/local/secrets paths
+protected_path_scan,PASS,no model/rank/source-truth protected paths
+approval_nonpromotion_scan,PASS,blocked-list documentation only
+runtime_language_scan,PASS,negative guardrail language only
+zero_force_scan,PASS,NGS missing/thresholded values are unavailable/thresholded not zero

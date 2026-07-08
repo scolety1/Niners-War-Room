@@ -1,0 +1,17 @@
+category,path,status,notes
+runtime,app/components/development_lab.py,modified,Development Lab review-only NGS panel
+runtime,app/pages/22_player_compare_v1.py,modified,Player Compare review-only NGS context
+runtime,app/pages/28_settings_data_health_v1.py,modified,Settings/Data Health NGS section
+runtime,app/pages/35_development_lab_v1.py,modified,Development Lab NGS section entry point
+runtime,src/services/data_health_dashboard_service.py,modified,Data Health NGS source coverage context
+runtime,src/services/display_only_ngs_context_service.py,added,Curated tracked packet loader for REVIEW_ONLY_NGS_CONTEXT
+tests,tests/test_display_only_ngs_context_service.py,added,NGS service guardrail tests
+tests,tests/test_player_compare_display_only_ngs.py,added,Player Compare NGS guardrail tests
+tests,tests/test_data_health_dashboard_service.py,modified,Data Health NGS gate coverage
+tests,tests/test_development_lab_review_upgrade_service.py,modified,Development Lab NGS label coverage
+docs,docs/hq/data_sources/hq_advanced_metrics_source_backtest_v0_20260707/,added,V0 source/backtest packet
+docs,docs/hq/data_sources/advanced_metrics_hardening_v2_backtest_20260707/,added,V2 hardening/backtest packet
+docs,docs/hq/data_sources/advanced_metrics_display_only_ngs_v1_20260707/,added,Display-only NGS docs packet
+docs,docs/hq/data_sources/display_only_ngs_devlab_datahealth_v1_20260707/,added,Development Lab and Data Health implementation packet
+docs,docs/hq/data_sources/player_compare_display_only_ngs_v1_20260707/,added,Player Compare implementation packet
+docs,docs/hq/data_sources/display_only_ngs_hq_merge_review_20260707/,added,HQ merge review packet

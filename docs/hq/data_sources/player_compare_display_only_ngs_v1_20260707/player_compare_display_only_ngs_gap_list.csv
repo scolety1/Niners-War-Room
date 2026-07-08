@@ -1,0 +1,10 @@
+gap,status,next_action
+Rankings optional preset,BLOCKED,Requires separate approval and remains out of this lane
+Trading Lab NGS context,DEFERRED,Requires separate heavily gated context-only lane
+Live Draft Mock Draft NGS context,BLOCKED,No draft advice or live decision logic approved
+ffopportunity UI use,DEFERRED,Needs scoring semantics review before display
+PFR advanced display,BLOCKED,Identity bridge remains unsafe
+ESPN QBR display,BLOCKED,Identity bridge remains unsafe
+FTN charting display,BLOCKED,Source semantics remain unsafe
+Routes TPRR YPRR,BLOCKED,No safe route source admitted
+rz_att,BLOCKED,Ambiguous red-zone field remains blocked

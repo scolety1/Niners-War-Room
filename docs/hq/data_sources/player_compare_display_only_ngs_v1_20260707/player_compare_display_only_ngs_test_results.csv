@@ -1,0 +1,8 @@
+check,status,result
+Player Compare focused test,PASS,tests/test_player_compare_display_only_ngs.py and Player Compare context tests passed
+Existing NGS service tests,PASS,tests/test_display_only_ngs_context_service.py passed
+Development Lab/Data Health NGS tests,PASS,tests/test_data_health_dashboard_service.py and tests/test_development_lab_review_upgrade_service.py passed
+Route smoke,PASS,Player Compare Development Lab and Settings/Data Health page scripts executed in bare Streamlit mode
+Ruff,PASS,ruff check passed on touched Player Compare NGS files
+Compileall,PASS,compileall passed on touched Player Compare NGS files
+Diff check,PASS,git diff --check and git diff --cached --check passed

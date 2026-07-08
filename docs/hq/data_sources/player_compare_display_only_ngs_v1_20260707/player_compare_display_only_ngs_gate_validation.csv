@@ -1,0 +1,11 @@
+gate_check,status,evidence
+Review-only label present,PASS,Player Compare tab title and captions use Review-only NGS Context
+Display-only context label present,PASS,Player Compare caption includes Display-only context
+Not used in rankings label present,PASS,Player Compare caption includes Not used in rankings
+Not model score label present,PASS,Player Compare caption includes Not a model score
+No winner or recommendation created,PASS,Player Compare caption explicitly blocks winner recommendation verdict boost and score behavior
+No hidden sort,PASS,No ranking or sort paths changed
+Safe identity chain only,PASS,Service uses NWR player_id to SAFE_NOW_DISPLAY_ONLY player context rows before reading GSIS feature rows
+Identity-review rows hidden,PASS,Rows without safe identity chain show Unavailable/thresholded
+Missing NGS not zero-forced,PASS,Unavailable or thresholded values are displayed as Unavailable/thresholded
+Blocked metrics excluded,PASS,PFR ESPN FTN PFF ffopportunity routes TPRR YPRR rz_att and elusive proxy remain excluded

@@ -1,0 +1,9 @@
+gate_check,status,evidence
+Review-only label present,PASS,Development Lab and Data Health use Review-only NGS context labels
+Not used in rankings label present,PASS,Development Lab caption states Not used in rankings
+Not model-approved label present,PASS,Data Health gate detail states Not a model score and not model-approved
+No hidden sort,PASS,No ranking sort path changed and hidden_sort remains blocked
+No recommendation language,PASS,Blocked metric scan keeps recommendation_logic blocked
+Identity-review rows hidden,PASS,Data Health counts identity-review rows but runtime table only exposes safe display counts
+Blocked source families excluded,PASS,PFR ESPN FTN PFF ffopportunity routes TPRR YPRR rz_att and elusive proxy remain blocked
+Missingness caveat present,PASS,All Development Lab NGS rows include public-threshold or sample caveat
