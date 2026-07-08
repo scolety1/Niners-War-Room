@@ -1,0 +1,9 @@
+gap,status,next_action
+Player Compare NGS context,DEFERRED,Run a separate isolated Player Compare lane if Tim approves
+Rankings optional preset,BLOCKED,Requires separate approval and must remain non-default if ever revisited
+ffopportunity UI use,DEFERRED,Needs scoring semantics review before any display surface
+PFR advanced display,BLOCKED,Identity bridge remains unsafe
+ESPN QBR display,BLOCKED,Identity bridge remains unsafe
+FTN charting display,BLOCKED,Source semantics remain unsafe
+Routes TPRR YPRR,BLOCKED,No safe route source admitted
+rz_att,BLOCKED,Ambiguous red-zone field remains blocked

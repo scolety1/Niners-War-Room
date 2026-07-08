@@ -15,6 +15,12 @@ from src.services.data_refresh_orchestrator_service import (
 from src.services.data_refresh_orchestrator_service import (
     load_latest_refresh_status,
 )
+from src.services.display_only_ngs_context_service import (
+    NGS_GATE,
+    REVIEW_ONLY_WARNING,
+    blocked_ngs_metric_rows,
+    data_health_ngs_rows,
+)
 from src.services.draft_day_app_v1_service import (
     EXPECTED_DYNASTY_ROW_COUNT,
     EXPECTED_PINNED_MANIFEST_HASH,
@@ -82,6 +88,7 @@ class HealthDashboardReport:
     board_health: pd.DataFrame
     market_health: pd.DataFrame
     refresh_health: pd.DataFrame
+    ngs_context: pd.DataFrame
     runtime_health: pd.DataFrame
     evidence_health: pd.DataFrame
     missing_data_health: pd.DataFrame
@@ -100,6 +107,7 @@ def build_data_health_dashboard(
         "board_health": _board_health(),
         "market_health": _market_health(),
         "refresh_health": _refresh_health(refresh_status_path),
+        "ngs_context": _ngs_context_health(),
         "runtime_health": _runtime_health(runtime_root),
         "evidence_health": _evidence_health(),
         "missing_data_health": _missing_data_health(),
@@ -114,6 +122,7 @@ def build_data_health_dashboard(
         board_health=sections["board_health"],
         market_health=sections["market_health"],
         refresh_health=sections["refresh_health"],
+        ngs_context=sections["ngs_context"],
         runtime_health=sections["runtime_health"],
         evidence_health=sections["evidence_health"],
         missing_data_health=sections["missing_data_health"],
@@ -144,6 +153,11 @@ def compact_status_cards(report: HealthDashboardReport) -> list[dict[str, str]]:
             "Refresh Data",
             _status_for_check(report.refresh_health, "Last manual Refresh Data run"),
             _value_for_check(report.refresh_health, "Last manual Refresh Data run"),
+        ),
+        _card(
+            "NGS context",
+            _status_for_check(report.ngs_context, "NGS display gate"),
+            _value_for_check(report.ngs_context, "NGS display gate"),
         ),
         _card(
             "Runtime state",
@@ -325,6 +339,57 @@ def _runtime_health(runtime_root: Path | None) -> pd.DataFrame:
             ),
         ]
     )
+
+
+def _ngs_context_health() -> pd.DataFrame:
+    rows = data_health_ngs_rows()
+    blocked_rows = blocked_ngs_metric_rows()
+    if not rows:
+        return _frame(
+            [
+                _row(
+                    "NGS context",
+                    "NGS display gate",
+                    "YELLOW",
+                    NOT_ENOUGH_INFORMATION,
+                    "Display-only NGS packet is missing or unreadable.",
+                )
+            ]
+        )
+    health_rows: list[dict[str, str]] = [
+        _row(
+            "NGS context",
+            "NGS display gate",
+            "GREEN",
+            NGS_GATE,
+            REVIEW_ONLY_WARNING,
+        )
+    ]
+    for row in rows:
+        health_rows.append(
+            _row(
+                "NGS context",
+                f"{row['Source family']} safe display coverage",
+                "GREEN",
+                row["Safe display count"],
+                (
+                    f"{row['Seasons']} seasons; {row['Source rows']} source rows; "
+                    f"{row['Identity-review count']} identity-review rows hidden by default. "
+                    f"{row['Caveat']}"
+                ),
+            )
+        )
+    health_rows.append(
+        _row(
+            "NGS context",
+            "Blocked advanced metric families",
+            "GREEN",
+            str(len(blocked_rows)),
+            "PFR, ESPN QBR, FTN, PFF, ffopportunity UI use, routes, TPRR, YPRR, rz_att, "
+            "and elusive proxy remain outside this runtime lane.",
+        )
+    )
+    return _frame(health_rows)
 
 
 def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:

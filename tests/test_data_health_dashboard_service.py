@@ -21,6 +21,7 @@ def _value(report, section: str, check: str) -> str:
         "Board": report.board_health,
         "Market": report.market_health,
         "Refresh Data": report.refresh_health,
+        "NGS": report.ngs_context,
         "Runtime": report.runtime_health,
         "Evidence": report.evidence_health,
         "Missing data": report.missing_data_health,
@@ -36,6 +37,7 @@ def _status(report, section: str, check: str) -> str:
         "Board": report.board_health,
         "Market": report.market_health,
         "Refresh Data": report.refresh_health,
+        "NGS": report.ngs_context,
         "Runtime": report.runtime_health,
         "Evidence": report.evidence_health,
         "Missing data": report.missing_data_health,
@@ -129,8 +131,20 @@ def test_dashboard_status_cards_are_compact(tmp_path: Path) -> None:
         "Market baseline",
         "Refresh Data",
         "Runtime state",
+        "NGS context",
         "Model evidence",
     }
+
+
+def test_data_health_dashboard_reports_display_only_ngs_context(tmp_path: Path) -> None:
+    report = build_data_health_dashboard(runtime_root=tmp_path)
+
+    assert _value(report, "NGS", "NGS display gate") == "REVIEW_ONLY_NGS_CONTEXT"
+    assert _status(report, "NGS", "NGS display gate") == "GREEN"
+    assert _value(report, "NGS", "ngs_passing safe display coverage") == "94"
+    assert _value(report, "NGS", "ngs_rushing safe display coverage") == "143"
+    assert _value(report, "NGS", "ngs_receiving safe display coverage") == "325"
+    assert _value(report, "NGS", "Blocked advanced metric families") == "13"
 
 
 def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:

@@ -38,6 +38,11 @@ from src.services.development_lab_state_service import (
     reset_tool_state,
     save_tool_state,
 )
+from src.services.display_only_ngs_context_service import (
+    REVIEW_ONLY_WARNING,
+    blocked_ngs_metric_rows,
+    development_lab_ngs_rows,
+)
 from src.services.draft_day_runtime_state_service import load_runtime_state_with_status
 from src.services.future_tools_rd_service import (
     FutureToolStatus,
@@ -176,6 +181,21 @@ def render_usage_stability_lens_parking_panel() -> None:
     )
     with st.expander("Reusable good parts extracted from the held lens", expanded=False):
         _tool_table(usage_stability_lens_good_parts_rows())
+
+
+def render_display_only_ngs_context_panel() -> None:
+    st.caption(
+        "Review-only NGS context. Display-only context. Not used in rankings. "
+        "Not a model score. NGS public thresholds may exclude low-volume players."
+    )
+    _tool_table(development_lab_ngs_rows())
+    st.caption(
+        "The rows above are position-scoped context fields only. They do not create a "
+        "score, recommendation, verdict, boost, hidden sort, or ranking effect."
+    )
+    with st.expander("Blocked advanced metrics kept out of this UI lane", expanded=False):
+        _tool_table(blocked_ngs_metric_rows())
+        st.caption(REVIEW_ONLY_WARNING)
 
 
 def render_review_upgrade_guardrail_ledger() -> None:

@@ -12,6 +12,7 @@ from app.components.development_lab import (  # noqa: E402
     render_blocked_tools_table,
     render_bulk_lab_state_controls,
     render_development_lab_readiness,
+    render_display_only_ngs_context_panel,
     render_future_tool_gate_badges,
     render_guardrails,
     render_lab_links,
@@ -60,6 +61,9 @@ render_review_upgrade_candidate_panel()
 
 section_label("Usage/Stability Lens Parking")
 render_usage_stability_lens_parking_panel()
+
+section_label("Review-only NGS Context")
+render_display_only_ngs_context_panel()
 
 section_label("Guardrail Ledger")
 render_review_upgrade_guardrail_ledger()

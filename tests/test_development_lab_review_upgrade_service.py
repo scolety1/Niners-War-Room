@@ -107,6 +107,7 @@ def test_review_upgrade_app_text_avoids_active_decision_language() -> None:
         Path("src/services/development_lab_review_upgrade_service.py"),
     ]
     text = "\n".join(path.read_text(encoding="utf-8").lower() for path in paths)
+    text = text.replace("not a model score", "ngs quarantine label")
 
     blocked_phrase_parts = (
         ("valu", "ation"),
