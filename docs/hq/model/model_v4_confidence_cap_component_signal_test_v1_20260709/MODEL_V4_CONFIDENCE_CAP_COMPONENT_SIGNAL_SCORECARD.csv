@@ -1,0 +1,5 @@
+position,seasons,rows,confidence_unique_values,low_confidence_rows,full_confidence_rows,confidence_spearman_vs_next_points,confidence_spearman_vs_finish,pyf_spearman_vs_next_points,pyf_spearman_vs_finish,confidence_beats_pyf,low_confidence_startable_rate,full_confidence_startable_rate,interpretation
+QB,13,754,1.000,0,754,,,0.710,0.705,no,,19.8%,no_variation_direct_signal_not_measurable
+RB,13,1429,1.000,0,1429,,,0.635,0.629,no,,18.8%,no_variation_direct_signal_not_measurable
+WR,13,2124,0.875|1.000,28,2096,0.081,0.085,0.684,0.685,no,3.6%,19.8%,tiny_wr_only_variation_direct_signal_far_below_pyf
+TE,13,1211,1.000,0,1211,,,0.702,0.698,no,,11.8%,no_variation_direct_signal_not_measurable

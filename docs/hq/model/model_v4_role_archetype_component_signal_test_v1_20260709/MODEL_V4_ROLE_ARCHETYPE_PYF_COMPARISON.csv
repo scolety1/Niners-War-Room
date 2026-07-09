@@ -1,0 +1,6 @@
+position,rows,pyf_false_positives,pyf_false_negatives,high_volume_archetype_pyf_false_positives,share_of_pyf_false_positives_high_volume,sparse_history_rows,sparse_history_startable_hits,sparse_history_startable_rate,sparse_history_pyf_false_negatives,low_or_sparse_archetype_pyf_false_negatives,share_of_pyf_false_negatives_low_or_sparse,adds_signal_beyond_pyf,caveat
+QB,754,55,74,43,78.2%,328,11,3.4%,11,12,16.2%,contextual_guardrail_only_not_rank_score,archetype_uses_prior_context_and_outcome_slice_analysis_only
+RB,1429,207,86,162,78.3%,344,20,5.8%,20,22,25.6%,contextual_guardrail_only_not_rank_score,archetype_uses_prior_context_and_outcome_slice_analysis_only
+WR,2124,229,125,183,79.9%,439,13,3.0%,13,16,12.8%,contextual_guardrail_only_not_rank_score,archetype_uses_prior_context_and_outcome_slice_analysis_only
+TE,1211,81,68,80,98.8%,342,4,1.2%,4,4,5.9%,contextual_guardrail_only_not_rank_score,archetype_uses_prior_context_and_outcome_slice_analysis_only
+ALL,5518,572,353,468,81.8%,1453,48,3.3%,48,54,15.3%,contextual_guardrail_only_not_rank_score,archetype_uses_prior_context_and_outcome_slice_analysis_only

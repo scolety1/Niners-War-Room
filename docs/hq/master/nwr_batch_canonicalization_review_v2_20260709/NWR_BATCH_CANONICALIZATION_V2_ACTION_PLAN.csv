@@ -1,0 +1,5 @@
+packet_id,action,include_in_combined_commit,reason,next_owner,blocked_or_parked_reason
+confidence_cap_component_signal_test_v1,CANONICALIZE_NOW_DOCS_ONLY,true,"Accepted review-only signal test; not upstream; docs/review-only path scope.",Master HQ,
+role_archetype_receipt_regeneration_pilot_v1,CANONICALIZE_NOW_DOCS_ONLY,true,"Accepted review-only regeneration pilot; not upstream; docs/review-only path scope.",Master HQ,
+role_archetype_component_signal_test_v1,CANONICALIZE_NOW_DOCS_ONLY,true,"Accepted review-only signal test; not upstream; docs/review-only path scope.",Master HQ,
+role_archetype_master_review_v1,CANONICALIZE_NOW_DOCS_ONLY,true,"Accepted Master HQ admission review; not upstream; docs/review-only path scope.",Master HQ,

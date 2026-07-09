@@ -1,0 +1,6 @@
+position,rows,pyf_false_positives,pyf_false_negatives,low_confidence_rows,low_confidence_pyf_false_positives,low_confidence_pyf_false_negatives,low_confidence_startable_hits,low_confidence_startable_rate,share_of_pyf_false_positives_explained,share_of_pyf_false_negatives_flagged,adds_signal_beyond_pyf,caveat
+QB,754,55,74,0,0,0,0,,0.0%,0.0%,no,confidence_cap_is_coverage_context_not_rank_score
+RB,1429,207,86,0,0,0,0,,0.0%,0.0%,no,confidence_cap_is_coverage_context_not_rank_score
+WR,2124,229,125,28,0,1,1,3.6%,0.0%,0.8%,no,confidence_cap_is_coverage_context_not_rank_score
+TE,1211,81,68,0,0,0,0,,0.0%,0.0%,no,confidence_cap_is_coverage_context_not_rank_score
+ALL,5518,572,353,28,0,1,1,3.6%,0.0%,0.3%,no,confidence_cap_is_coverage_context_not_rank_score

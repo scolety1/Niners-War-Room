@@ -1,0 +1,9 @@
+check,result,passed,caveat
+row_count,5518,True,expected player-season rows from partial replay panel
+required_columns_present,season|feature_season|player_id|canonical_player_key|player_name|position|receipt_family|role_archetype|role_archetype_status|role_archetype_method|role_inputs_used|games_context|volume_context|usage_bucket|sparse_history_flag|low_games_flag|source_artifact|source_hash|source_sha256|source_gate_status|decision_date_safe|leakage_flag|identity_flag|missingness_flag|true_zero_flag|unknown_flag|true_zero_vs_unknown_status|review_only_status|allowed_use|blocked_use|receipt_version|warning_flags|receipt_hash|caveat,True,
+duplicate_key_count,0,True,key is season/player_id/position
+forbidden_columns_absent,,True,
+decision_date_safe,5518,True,role labels use prior-season fields only
+leakage_flag_pass,5518,True,
+identity_flag_pass,5518,True,
+review_only_allowed_use,5518,True,not production/model-use
