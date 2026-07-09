@@ -1,0 +1,9 @@
+artifact,row_count,purpose
+"ROUTE_SOURCE_RECOVERY_FINAL_CLOSEOUT_V1_SUMMARY.md","34","Human-readable final closeout summary and no-admission verdict."
+"route_recovery_final_status_matrix_v1.csv","12","Final route/YPRR/TPRR source status matrix."
+"route_source_leads_preserved_for_future_v1.csv","15","Preserved lead inventory for future provider or source-admission work."
+"true_yprr_tprr_blocked_reason_v1.md","29","Explanation of why true YPRR and TPRR remain blocked."
+"route_proxy_boundary_final_v1.md","27","Final proxy boundary preserving route honesty."
+"provider_response_reopen_conditions_v1.md","41","Conditions required before route recovery can reopen."
+"ROUTE_SOURCE_RECOVERY_FINAL_HANDOFF.md","35","Final handoff with closeout status and reopen path."
+"artifact_manifest.csv","8","Manifest of all closeout artifacts."
