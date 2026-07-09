@@ -1,0 +1,10 @@
+artifact,row_count_basis,row_count,purpose
+"HQ1_ROUTE_YPRR_TPRR_SOURCE_ADMISSION_SEARCH_V1_REPORT.md","markdown_lines","115","Human-readable route-source admission search report summarizing scope, inspected sources, no full-route source finding, partial display leads, proxy status, future recommendations, and verdict."
+"HQ1_ROUTE_SOURCE_CANDIDATE_INVENTORY.csv","csv_data_rows","10","Inventory of public, partial, display, documentation, and sample route-source candidates with admission criteria and candidate status."
+"HQ1_ROUTE_BLOCKED_SOURCE_REGISTER.csv","csv_data_rows","10","Blocked route-source register for proprietary, identity-unsafe, non-reproducible, current-only, and public-fragment sources."
+"HQ1_ROUTE_PARTIAL_SOURCE_REGISTER.csv","csv_data_rows","9","Partial source register distinguishing safe review use from unsafe true route-denominator use."
+"HQ1_ROUTE_PROXY_METRIC_MAP_V1.csv","csv_data_rows","12","Route-like proxy metric map with formulas, sources, source gates, identity gates, and why each proxy is not a true route metric."
+"HQ1_ROUTE_SOURCE_ADMISSION_REQUIREMENTS.csv","csv_data_rows","16","Mandatory source-admission requirements for any future route/YPRR/TPRR source-hardening lane."
+"HQ1_ROUTE_YPRR_TPRR_USE_GATE.md","markdown_lines","39","Use gate confirming true routes/YPRR/TPRR remain blocked, no source is promoted, proxies remain proxies, and future scoring needs a separate lane."
+"HQ1_HQ2_BOUNDARY_CONFIRMATION.md","markdown_lines","17","Boundary confirmation documenting no HQ2 packet path, prior-year challenger, miss taxonomy, feature tournament, or multi-year stability work was touched."
+"artifact_manifest.csv","csv_data_rows","9","Manifest listing every artifact, row-count basis, row count, and purpose."
