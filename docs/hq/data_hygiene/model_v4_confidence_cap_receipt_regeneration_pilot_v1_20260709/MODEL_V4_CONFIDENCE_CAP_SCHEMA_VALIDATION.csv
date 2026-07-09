@@ -1,0 +1,2 @@
+artifact,row_count,column_count,required_columns_present,missing_required_columns,duplicate_key_count,blank_player_id_count,season_coverage,position_coverage,source_hash_present,allowed_use_review_only,blocked_use_present,schema_validation_status
+MODEL_V4_CONFIDENCE_CAP_RECEIPTS_REVIEW_ONLY.csv,5518,38,yes,,0,0,2013-2025,QB|RB|TE|WR,yes,yes,yes,pass

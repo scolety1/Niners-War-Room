@@ -1,0 +1,13 @@
+Position,Seasons,Rows,Metric Type,Signal,Spearman,Top-12,Top-24,Top-36,Startable Precision,Caveat
+QB,13,754,prior_year_points_baseline,prior_year_points_baseline::prior_nwr_points,0.712,57.1%,,,57.7%,same_underlying_pyf_anchor
+QB,13,754,best_component_source,review_scoring_points::prior_nwr_points,0.712,57.1%,,,57.7%,same_underlying_pyf_anchor
+QB,13,754,best_non_pyf_component_source,passing_production::prior_passing_yards,0.683,48.1%,,,50.8%,single_component_proxy_not_formula_score
+RB,13,1429,prior_year_points_baseline,prior_year_points_baseline::prior_nwr_points,0.633,41.0%,58.0%,,46.9%,same_underlying_pyf_anchor
+RB,13,1429,best_component_source,review_scoring_points::prior_nwr_points,0.633,41.0%,58.0%,,46.9%,same_underlying_pyf_anchor
+RB,13,1429,best_non_pyf_component_source,first_down_high_value::prior_rushing_yards,0.628,41.7%,55.1%,,46.9%,single_component_proxy_not_formula_score
+WR,13,2124,prior_year_points_baseline,prior_year_points_baseline::prior_nwr_points,0.691,42.3%,56.4%,63.7%,56.0%,same_underlying_pyf_anchor
+WR,13,2124,best_component_source,review_scoring_points::prior_nwr_points,0.691,42.3%,56.4%,63.7%,56.0%,same_underlying_pyf_anchor
+WR,13,2124,best_non_pyf_component_source,first_down_yardage::prior_receiving_yards,0.683,39.1%,55.1%,63.0%,55.4%,single_component_proxy_not_formula_score
+TE,13,1211,prior_year_points_baseline,prior_year_points_baseline::prior_nwr_points,0.701,50.6%,,,48.1%,same_underlying_pyf_anchor
+TE,13,1211,best_component_source,review_scoring_points::prior_nwr_points,0.701,50.6%,,,48.1%,same_underlying_pyf_anchor
+TE,13,1211,best_non_pyf_component_source,first_down_yardage::prior_receiving_yards,0.691,50.6%,,,48.1%,single_component_proxy_not_formula_score

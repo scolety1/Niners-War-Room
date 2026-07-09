@@ -1,0 +1,11 @@
+component,current_status,blocker,required_gate,human_review_needed,production_eligible_now,notes
+current candidate board final artifact,candidate_review_only_not_active_rankings,policy stamp blocks production use,human label/promotion review plus receipt reconciliation,yes,no,hash-pinned observable board only
+nwr_dynasty_score,candidate_review_only,upstream checkpoint/component receipts absent,component receipt reconciliation and source-admission review,yes,no,final score observable but not reconstructable
+checkpoint_review_score,review_only_missing_receipt,current_player_value_review_rows.csv absent,current value checkpoint receipt backfill,yes,no,formula is position_specific_review_score * lifecycle_modifier_review * confidence_cap
+RB/WR current value,review_only_missing_receipt,RB/WR value/component/receipt rows absent,RB/WR component source gate and deterministic rebuild,yes,no,weights are source-traced in code but row values are missing
+QB/TE current value,review_only_missing_receipt,QB/TE value/component/receipt rows absent,QB/TE component source gate and deterministic rebuild,yes,no,discipline multipliers require row receipts
+replacement/VORP,review_only_missing_receipt,replacement/VORP player/component/receipt rows absent,replacement/VORP source-admission and receipt rebuild,yes,no,depends on first-down and return scoring evidence
+first-down scoring inputs,source-gated but current receipt missing,admitted first-down artifacts absent in clean worktree/control runtime,first-down receipt integrity gate,yes,no,must stay matched/admitted; no inferred values
+lifecycle modifier,review_only_missing_receipt,lifecycle rows/component/receipts absent,decision-date lifecycle source gate,yes,no,current age/role context is leakage-risk for history
+confidence cap,review_only_missing_receipt,confidence rows/receipts absent,source coverage and warning matrix gate,yes,no,missingness semantics must be preserved
+WR/QB v2 candidate overlay,candidate_review_only,candidate output folder/reason/guardrail reports absent,candidate overlay human review and guardrail report,yes,no,explicitly not active rankings

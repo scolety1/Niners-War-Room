@@ -1,0 +1,11 @@
+component,current_receipt_status,historical_replay_status,decision_date_safety,identity_risk,source_gate_status,blocker,next_requirement
+current candidate board final artifact,observable hash-pinned final artifact,not replay-ready,current-only artifact,not revalidated historically,candidate_review_only,not a season-by-season decision-date receipt,historical candidate target selection and receipt schema
+nwr_dynasty_score,final field observed only,blocked,unsafe without season-specific receipts,medium,candidate_review_only,underlying checkpoint and candidate receipts missing,reconcile current score before historical replay
+checkpoint_review_score,missing,blocked,not proven,medium,review_only_current_value_checkpoint,current checkpoint rows/component/receipts absent,current and historical checkpoint receipt backfill
+RB/WR current value,missing,partial only,partial proxy only,medium,review_only,component row receipts absent; route/proxy evidence incomplete,source-gated season-by-season RB/WR component receipts
+QB/TE current value,missing,partial only,partial proxy only,medium,review_only,component row receipts absent; discipline context not historically receipted,source-gated season-by-season QB/TE component receipts
+replacement/VORP,missing,partial proxy only,requires lagged labels/source proof,medium,review_only,player VORP and first-down/return receipts absent,"replacement/VORP current receipt rebuild, then historical partition"
+first-down scoring inputs,missing in runtime,partial availability,must be season-lagged and matched-only,medium,matched/admitted only,exact current receipt absent,first-down source-admission receipt lane
+lifecycle modifier,missing,blocked,current role/age context leakage risk,medium,review_only,no decision-date lifecycle receipts,historical lifecycle receipt design
+confidence cap,missing,blocked,not proven,medium,review_only,source coverage/warning matrices absent,confidence/missingness receipt rebuild
+WR/QB v2 candidate overlay,final fields observed; reason/guardrail reports missing,blocked,not proven,medium,candidate_review_only,candidate input files and historical metrics absent,candidate overlay source receipt lane if selected as target

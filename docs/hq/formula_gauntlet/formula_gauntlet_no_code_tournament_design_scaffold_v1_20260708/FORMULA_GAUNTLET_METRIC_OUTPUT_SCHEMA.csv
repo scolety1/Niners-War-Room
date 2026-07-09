@@ -1,0 +1,34 @@
+output_artifact,field_name,data_type,required,description,applies_to
+position_metrics,position,string,true,"QB/RB/WR/TE position scope",all_tournaments
+position_metrics,seasons_tested,string,true,"Season range and count included",all_tournaments
+position_metrics,row_count,integer,true,"Rows evaluated for the position",all_tournaments
+position_metrics,spearman,double,true,"Rank correlation versus outcome finish or points",score_or_signal_tests
+position_metrics,mae,double,conditional,"Mean absolute error when predicted rank/finish is defined",rank_prediction_tests
+position_metrics,rmse,double,conditional,"Root mean squared error when predicted rank/finish is defined",rank_prediction_tests
+position_metrics,top12_hit_rate,double,conditional,"Top-12 hit rate where position-relevant",QB/RB/WR/TE
+position_metrics,top24_hit_rate,double,conditional,"Top-24 hit rate where position-relevant",RB/WR
+position_metrics,top36_hit_rate,double,conditional,"Top-36 hit rate where position-relevant",WR
+position_metrics,startable_precision,double,true,"Precision against NWR startable definition",all_tournaments
+baseline_comparison,candidate_id,string,true,"Candidate or signal ID",all_tournaments
+baseline_comparison,baseline_id,string,true,"PYF or other baseline ID",all_tournaments
+baseline_comparison,metric,string,true,"Metric compared",all_tournaments
+baseline_comparison,candidate_result,double,true,"Candidate metric result",all_tournaments
+baseline_comparison,baseline_result,double,true,"Baseline metric result",all_tournaments
+baseline_comparison,beat_baseline,boolean,true,"Whether candidate beat baseline under predeclared rule",all_tournaments
+slice_metrics,slice_name,string,true,"low_games; sparse_history; prior_production_decline; rookie_second_year; role_change; breakout",guardrail_tournaments
+slice_metrics,slice_row_count,integer,true,"Rows in slice",guardrail_tournaments
+slice_metrics,slice_delta_vs_pyf,double,true,"Candidate delta versus PYF in the slice",guardrail_tournaments
+miss_patterns,miss_bucket,string,true,"Failure bucket name",all_tournaments
+miss_patterns,row_count,integer,true,"Rows in miss bucket",all_tournaments
+miss_patterns,rate,double,true,"Share of evaluated rows",all_tournaments
+coverage_missingness,field_name,string,true,"Input or label field",all_tournaments
+coverage_missingness,coverage_rate,double,true,"Non-missing coverage rate",all_tournaments
+coverage_missingness,missingness_policy,string,true,"true_zero; unknown; excluded; imputed_review_only",all_tournaments
+source_use_gate,source_or_field,string,true,"Source or field used by candidate",all_tournaments
+source_use_gate,use_gate_status,string,true,"model-use; review-only; display-only; blocked; identity-unsafe; leakage-unsafe; not_enough_information",all_tournaments
+source_use_gate,receipt_id,string,true,"Source receipt identifier",all_tournaments
+leakage_audit,check_name,string,true,"Leakage/as-of check name",all_tournaments
+leakage_audit,result,string,true,"pass; fail; not_applicable",all_tournaments
+advancement_decision,candidate_id,string,true,"Candidate ID",all_tournaments
+advancement_decision,decision,string,true,"advance_review_only; hold; reject; blocked",all_tournaments
+advancement_decision,decision_reason,string,true,"Why the candidate advanced or stopped",all_tournaments

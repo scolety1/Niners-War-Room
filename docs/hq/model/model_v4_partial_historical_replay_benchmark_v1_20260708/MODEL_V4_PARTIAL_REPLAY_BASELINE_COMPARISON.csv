@@ -1,0 +1,21 @@
+Model / Signal / Baseline,Scope,Metric,Result,Beat Baseline?,Caveat
+prior_year_points_baseline,QB,Spearman rank vs next-season finish,0.712,,safe baseline from completed feature-season NWR points
+prior_year_ppg_baseline,QB,Spearman rank vs next-season finish,0.665,,safe baseline from completed feature-season NWR PPG
+best_component_source,QB,Spearman rank vs next-season finish,0.712,No,best allowed component source; may be the same PYF anchor
+best_non_pyf_component_source,QB,Spearman rank vs next-season finish,0.683,No,best allowed component source excluding prior_nwr_points/prior_nwr_ppg
+Production Rankings Backtest V1 current-formula-family proxy,QB,Spearman,0.699,not_comparable_in_this_lane,prior accepted packet says proxy did not beat simple prior-year finish overall
+prior_year_points_baseline,RB,Spearman rank vs next-season finish,0.633,,safe baseline from completed feature-season NWR points
+prior_year_ppg_baseline,RB,Spearman rank vs next-season finish,0.625,,safe baseline from completed feature-season NWR PPG
+best_component_source,RB,Spearman rank vs next-season finish,0.633,No,best allowed component source; may be the same PYF anchor
+best_non_pyf_component_source,RB,Spearman rank vs next-season finish,0.628,No,best allowed component source excluding prior_nwr_points/prior_nwr_ppg
+Production Rankings Backtest V1 current-formula-family proxy,RB,Spearman,0.636,not_comparable_in_this_lane,prior accepted packet says proxy did not beat simple prior-year finish overall
+prior_year_points_baseline,WR,Spearman rank vs next-season finish,0.691,,safe baseline from completed feature-season NWR points
+prior_year_ppg_baseline,WR,Spearman rank vs next-season finish,0.683,,safe baseline from completed feature-season NWR PPG
+best_component_source,WR,Spearman rank vs next-season finish,0.691,No,best allowed component source; may be the same PYF anchor
+best_non_pyf_component_source,WR,Spearman rank vs next-season finish,0.683,No,best allowed component source excluding prior_nwr_points/prior_nwr_ppg
+Production Rankings Backtest V1 current-formula-family proxy,WR,Spearman,0.686,not_comparable_in_this_lane,prior accepted packet says proxy did not beat simple prior-year finish overall
+prior_year_points_baseline,TE,Spearman rank vs next-season finish,0.701,,safe baseline from completed feature-season NWR points
+prior_year_ppg_baseline,TE,Spearman rank vs next-season finish,0.681,,safe baseline from completed feature-season NWR PPG
+best_component_source,TE,Spearman rank vs next-season finish,0.701,No,best allowed component source; may be the same PYF anchor
+best_non_pyf_component_source,TE,Spearman rank vs next-season finish,0.691,No,best allowed component source excluding prior_nwr_points/prior_nwr_ppg
+Production Rankings Backtest V1 current-formula-family proxy,TE,Spearman,0.685,not_comparable_in_this_lane,prior accepted packet says proxy did not beat simple prior-year finish overall

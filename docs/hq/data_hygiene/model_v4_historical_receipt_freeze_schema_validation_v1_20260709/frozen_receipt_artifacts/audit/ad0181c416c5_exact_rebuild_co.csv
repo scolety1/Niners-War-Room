@@ -1,0 +1,13 @@
+check,result,match,evidence,caveat
+row_count,rebuilt=240; pinned_final=240,true,C:\NWR\Niners-War-Room-current-board-deterministic-rebuild-with-recovery-inputs-v1-20260708\docs\hq\model\current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708\rebuilt_full_player_board_value_review_rows.csv,
+unique_player_ids,rebuilt=240; pinned_final=240,true,player_id set comparison,
+player_id_order,exact ordered player_id sequence compared,true,ordered player_id comparison,
+player_names,exact ordered player_name sequence compared,true,ordered player_name comparison,
+positions,"position_counts={'WR': 93, 'RB': 79, 'TE': 32, 'QB': 28, 'K': 8}",true,ordered position comparison,
+ranks,nwr_rank values compared,true,ordered nwr_rank comparison,
+candidate_mode,wr_qb_v2_candidate,true,rebuilt candidate_mode values,
+row_level_status_stamp,candidate_review_only_not_active_rankings,true,rebuilt allowed_use values,Status field is stored as allowed_use in the board CSV.
+checkpoint_review_score,matches=232; mismatches=0,true,C:\NWR\_manual_recovery_dropzone\current_board_rebuild_inputs_v1\z1\recovered_from_vacation_repo\local_exports\model_v4\current_value\latest\current_player_value_full_board_review_rows.csv,Compared recovered checkpoint_review_score to rebuilt base_nwr_dynasty_score.
+nwr_dynasty_score,field_diff_count=0,true,C:\NWR\Niners-War-Room-current-board-deterministic-rebuild-with-recovery-inputs-v1-20260708\docs\hq\model\current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708\rebuilt_full_player_board_value_review_rows.csv,
+final_board_hash,rebuilt=263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4; pinned=263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4,true,C:\NWR\Niners-War-Room-current-board-deterministic-rebuild-with-recovery-inputs-v1-20260708\docs\hq\model\current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708\rebuilt_full_player_board_value_review_rows.csv,
+all_available_score_display_fields,field_diffs=0,true,CURRENT_BOARD_RECOVERY_REBUILD_FIELD_DIFFS.csv,

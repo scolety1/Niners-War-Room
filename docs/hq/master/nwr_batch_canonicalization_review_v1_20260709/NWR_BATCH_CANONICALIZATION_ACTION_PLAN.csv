@@ -1,0 +1,27 @@
+packet_id,packet_name,action,include_in_combined_commit,reason,next_step
+BCR-001,Full System Audit / Integration Map V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only consolidation spine not present upstream,Include in guarded batch push.
+BCR-002,PFR RB Broken Tackle Addendum V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only addendum preserves narrow review-only PFR boundary,Include in guarded batch push.
+BCR-003,Data Hygiene Operating Charter rebased canonicalization,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only charter and merge-review history not present upstream,Include in guarded batch push.
+BCR-004,Formula Gauntlet Data Readiness Gate V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only readiness gate preserves current block state,Include in guarded batch push.
+BCR-005,Formula Gauntlet No-Code Tournament Design Scaffold V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only scaffold preserves design without execution,Include in guarded batch push.
+BCR-006,PFR RB Broken Tackle Gauntlet Execution Readiness V1,NEEDS_HUMAN_REVIEW,false,Gauntlet execution remains blocked and packet overlaps PFR addendum,Park until Master HQ explicitly reviews execution-readiness wording.
+BCR-007,Historical Label / Identity / Source Gate Closure V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only Data Hygiene clearance packet not present upstream,Include in guarded batch push.
+BCR-008,Model v4 Historical Receipt Gap Closure Plan V1,SUPERSEDED_DO_NOT_CANONICALIZE,false,Source plan is included through BCR-009 merge-review canonicalization,Do not duplicate.
+BCR-009,Model v4 Historical Receipt Gap Plan Merge Review,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only merge-review packet includes source gap plan,Include in guarded batch push.
+BCR-010,Model v4 Historical Receipt Locator and Ledger V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only locator ledger not present upstream,Include in guarded batch push.
+BCR-011,Model v4 Historical Receipt Freeze and Schema Validation V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only freeze/schema packet under review artifacts,Include in guarded batch push.
+BCR-012,Model v4 Historical Receipt Master Review and Admission Decision V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only Master HQ admission decision not present upstream,Include in guarded batch push.
+BCR-013,Model v4 Historical Receipt Regeneration Contract Planning V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only planning packet; no regeneration included,Include in guarded batch push.
+BCR-014,Model v4 Confidence Cap Receipt Regeneration Pilot V1,CANONICALIZE_NOW_DOCS_ONLY,true,Review-only receipt artifacts under docs; admitted only for component tests,Include in guarded batch push.
+BCR-015,Model v4 Confidence Cap Receipt Master Review V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only Master HQ use-gate decision not present upstream,Include in guarded batch push.
+BCR-016,Current Board Deterministic Rebuild With Recovery Inputs V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only exact rebuild proof not present upstream,Include in guarded batch push.
+BCR-017,Model v4 Human Review Packet V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only production consideration packet not present upstream,Include in guarded batch push.
+BCR-018,Model v4 Formula / App-Label Correction Packet V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only label recommendation not present upstream,Include in guarded batch push.
+BCR-019,App-Visible Model v4 Label Correction Implementation V1,CANONICALIZE_LATER_AFTER_REVIEW,false,Touches app/service/test files and is outside docs-only batch scope,Park for separate implementation merge review.
+BCR-020,Model v4 Historical Component Receipt Backfill V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only receipt backfill packet not present upstream,Include in guarded batch push.
+BCR-021,Model v4 Partial Historical Replay Benchmark V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only benchmark packet not present upstream,Include in guarded batch push.
+BCR-022,Model v4 Formula Documentation Cleanup V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only formula documentation packet not present upstream,Include in guarded batch push.
+BCR-023,Model v4 Component Receipt Backfill V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only component receipt packet not present upstream,Include in guarded batch push.
+BCR-024,Historical Model v4 Replay Substrate V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only replay substrate packet not present upstream,Include in guarded batch push.
+BCR-025,Production Rankings Backtest V1,CANONICALIZE_NOW_DOCS_ONLY,true,Docs-only benchmark caveat packet not present upstream,Include in guarded batch push.
+BCR-026,Dedicated Formula Gauntlet Chat Packet,PARK_LOCAL_ONLY,false,Outside canonical worktree and overlaps canonical Formula Gauntlet packet,Keep as context only unless Master HQ requests later ingestion.

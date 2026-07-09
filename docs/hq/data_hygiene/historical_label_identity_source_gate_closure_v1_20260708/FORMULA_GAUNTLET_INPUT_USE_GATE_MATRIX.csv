@@ -1,0 +1,19 @@
+input_family,status,evidence,source_or_receipt_status,allowed_for_component_signal_tests,allowed_for_position_tournaments,allowed_for_full_gauntlet,blocked_reason,next_gate_required
+PYF_prior_year_points,REVIEW_ONLY,"partial replay benchmark baseline; prior_nwr_points",review_only_baseline,yes,no,no,"Comparator only; no production formula claim",Master_HQ_component_signal_execution_contract
+prior_year_ppg,REVIEW_ONLY,"partial replay baseline",review_only_baseline,yes,no,no,"Secondary comparator only",Master_HQ_component_signal_execution_contract
+partial_V3_lagged_factual_panel,REVIEW_ONLY,"5518 rows; 83 input signals; leakage errors 0",partial_replay_proxy_only,yes,no,no,"Not exact Model v4; not production/model-use",Master_HQ_component_signal_execution_contract
+first_down_yardage_and_points,REVIEW_ONLY,"historical component receipt coverage and exact first-down label sources",partial_replay_proxy_only,yes,no,no,"Review-only component evidence; exact transforms missing",Source_receipt_hardening
+passing_rushing_receiving_yards,REVIEW_ONLY,"best non-PYF signal tests by position",partial_replay_proxy_only,yes,no,no,"Did not beat PYF; evidence only",Master_HQ_component_signal_execution_contract
+snap_share_and_opportunity,REVIEW_ONLY,"NFLVerse source decision and V2 null fences",admitted_candidate_review_only,conditional,no,no,"Coverage and missingness must be predeclared",Data_Hygiene_missingness_threshold_contract
+NGS_advanced_metrics,REVIEW_ONLY,"advanced metrics use gate",green_shadow_backtest_candidate,conditional,no,no,"Review-only; no model/source truth approval",Historical_coverage_and_asof_gate
+PFR_advanced_stats,IDENTITY_UNSAFE,"advanced metrics join coverage shows 0 matched players",red_identity_unsafe,no,no,no,"Historical PFR identity bridge not approved",PFR_identity_bridge_gate
+Routes_YPRR_TPRR,BLOCKED,"HQ1 route use gate and provider readiness packets",red_route_denominator_unsafe,no,no,no,"No admitted route denominator source",Route_source_admission_gate
+current_ADP_market,LEAKAGE_UNSAFE,"partial replay exclusions and HQ1 standard",current_or_market_context,no,no,no,"Current/future market data unsafe historically",Point_in_time_market_gate
+current_injury_depth_roster,LEAKAGE_UNSAFE,"partial replay exclusions and source decision leakage audit",current_only_context,no,no,no,"Current context cannot be backfilled",Point_in_time_availability_gate
+Outcome_labels_as_inputs,LEAKAGE_UNSAFE,"HQ1 leakage standard",label_only,no,no,no,"Target labels cannot be features",No_input_use
+checkpoint_review_score_historical,MISSING_RECEIPT,"historical component blockers",missing_exact_receipt,no,no,no,"Blocks exact Model v4 replay",Exact_receipt_recovery
+position_specific_review_score_historical,MISSING_RECEIPT,"historical component blockers",missing_exact_receipt,no,no,no,"Blocks exact component replay",Exact_receipt_recovery
+lifecycle_age_role_confidence,MISSING_RECEIPT,"historical component blockers",missing_exact_receipt,no,no,no,"Blocks age/role/confidence replay",Historical_sidecar_recovery
+WR_QB_v2_candidate_overlay,MISSING_RECEIPT,"historical component blockers",missing_exact_receipt,no,no,no,"Blocks exact WR/QB overlay replay",Overlay_receipt_recovery
+shadow_model_v2_metrics,MISSING_SOURCE,"historical component blockers",missing_sidecar,no,no,no,"Blocks exact shadow/guardrail replay if required",Manual_recovery_or_rebuild
+CFBD_rookie_profile_context,REVIEW_ONLY_OR_BLOCKED,"prior CFBD identity/status packets",review_only_no_model_use,no,no,no,"Approved model-use previously 0; rookie gates unresolved",Rookie_source_identity_gate

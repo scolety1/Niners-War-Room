@@ -1,0 +1,14 @@
+receipt_family,decision,frozen_artifacts,manifest_only_artifacts,schemas_validated,schema_supports_exact_historical_replay,schema_supports_future_review,source_admission_required,human_review_required,notes
+checkpoint_review_score,freeze_ready_for_master_review,5,0,5,no,current_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+position_specific_review_score,freeze_ready_for_master_review,5,1,6,no,partial_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+lifecycle_age_receipts,freeze_ready_for_master_review,5,0,5,no,no,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+role_archetype_receipts,requires_regeneration_contract,0,1,1,no,partial_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+confidence_cap_receipts,requires_regeneration_contract,8,1,9,no,partial_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+WR_QB_v2_candidate_overlay,requires_human_review,4,2,6,no,no,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+exact_nwr_dynasty_score_and_rank,requires_human_review,6,0,6,no,current_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+route_yprr_tprr_exact_receipts,requires_source_admission,0,0,0,no,no,yes,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+red_zone_exact_receipts,requires_regeneration_contract,0,0,0,no,no,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+shadow_model_v2_metrics,missing_source,0,0,0,no,no,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+return_scoring_receipts,requires_source_admission,0,0,0,no,no,yes,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+source_coverage_matrix_history,freeze_ready_for_master_review,4,1,5,no,partial_only,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.
+exact_transform_weight_receipts,requires_human_review,4,3,7,no,no,no,yes,Exact historical equivalent not found; evidence is current-only or partial unless separately admitted.

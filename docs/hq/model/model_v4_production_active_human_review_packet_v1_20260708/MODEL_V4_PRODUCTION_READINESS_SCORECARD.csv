@@ -1,0 +1,12 @@
+Layer,Status,Evidence,Remaining Caveat,Human Decision Needed?
+exact_current_board_rebuild,GREEN_CURRENT_ONLY_REPRODUCIBLE,"Rebuilt SHA256 equals pinned SHA256 263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4; 240 rows; 0 field diffs","Current-board proof only; not historical replay",Yes
+formula_documentation,YELLOW_CONTRACT_PARTIAL,"Formula documentation lane classified the board as candidate_review_only_main_display with candidate_mode wr_qb_v2_candidate","Production-active formula not approved; row stamp remains candidate_review_only_not_active_rankings",Yes
+source_trace,YELLOW_CURRENT_CHAIN_RECOVERED,"Recovery export, ZIP validation, dropzone validation, and exact rebuild source trace connect recovered inputs to the pinned board","Source gates remain unchanged; recovered inputs are not promoted",Yes
+score_receipts_current,GREEN_CURRENT_SCORE_RECONCILED,"checkpoint_review_score reconciled for 232 rows with 0 mismatches; nwr_dynasty_score has 0 field diffs","Historical component receipts remain missing",Yes
+candidate_board_stability,GREEN_HASH_PINNED_AND_REBUILT,"Final board hash was recovered and rebuilt exactly","Stable current artifact does not imply proven future accuracy",Yes
+current_app_display,YELLOW_VISIBLE_CANDIDATE_BOARD,"Board is app-visible and hash-pinned","App-visible status may be confused with production approval unless label is corrected",Yes
+source_gates,YELLOW_RESPECTED_NOT_PROMOTED,"No source promotion occurred in recovery or rebuild lanes","Any production use requires a separate source-gate approval",Yes
+historical_replay,RED_BLOCKED,"Historical replay substrate reported 0 exact replay rows and missing season-by-season receipts","Season-by-season Model v4 receipts and sidecars are not available",Yes
+accuracy_benchmark,YELLOW_PARTIAL_COLD_WATER,"Production Rankings Backtest V1 measured a partial proxy with rank MAE 21.65, Spearman 0.675, startable precision 58.3%; prior-year finish baseline was 21.39, 0.681, 58.4%","Proxy is not exact current formula replay and did not beat prior-year finish overall",Yes
+production_active_status,RED_BLOCKED_PENDING_HUMAN_APPROVAL,"No promotion receipt or production-active formula approval exists","Human approval and likely historical replay evidence are required",Yes
+draft_day_use,YELLOW_REVIEW_BOARD_ONLY,"Exact current board is reproducible and score-reconciled","Use as review aid only; not a proven production recommendation engine",Yes

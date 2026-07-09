@@ -1,0 +1,15 @@
+input_or_label_family,status,evidence,decision_date_safe,current_or_future_risk,allowed_use,caveat,next_gate
+partial_V3_lagged_component_panel,PASS_REVIEW_ONLY,"V2/V3 as-of reports; partial replay benchmark",yes,low_for_existing_panel,component_signal_tests_only,"Feature season N to target N+1 only",Master_HQ_execution_contract
+next_season_outcome_labels,PASS_AS_LABELS,"target outcome coverage; Outcome V2 labels",labels_only,high_if_used_as_inputs,evaluation_targets_only,"Never use labels as features",No_input_use
+PYF_prior_year_points,PASS_REVIEW_ONLY,"partial replay baseline",yes,low_for_existing_panel,anchor_comparator_only,"Comparator not production formula",Master_HQ_execution_contract
+current_board_fields,BLOCKED_CURRENT_ONLY,"partial replay exclusions",no,high,blocked,"Do not backfill current board into historical seasons",Exact_replay_receipt_recovery
+current_ADP_market_projection,BLOCKED_CURRENT_OR_MARKET,"HQ1 leakage standard",no,high,blocked,"Current or retroactive market/projection data can leak",Point_in_time_market_gate
+current_injury_depth_roster,BLOCKED_CURRENT_ONLY,"partial replay exclusions; nflverse leakage audit",no,high,blocked,"Current context cannot be historical input",Point_in_time_availability_gate
+NFLVerse_completed_week_or_season_facts,REVIEW_ONLY_CONDITIONAL,"source admission decision",conditional,medium,component_signal_research_after_gate,"Must be anchored to season/week and preserve missingness",Field_level_asof_gate
+weekly_rosters,REVIEW_ONLY_CONDITIONAL,"source admission leakage audit",conditional,medium,context_only_after_gate,"Can leak if used as current roster status",Field_level_asof_gate
+snap_counts,REVIEW_ONLY_CONDITIONAL,"source admission and null fences",conditional,medium,component_signal_research_after_gate,"Missing snaps are unknown not zero",Missingness_threshold_gate
+opportunity_fields,REVIEW_ONLY_CONDITIONAL,"source admission and partial replay panel",conditional,medium,component_signal_research_after_gate,"Semantics field-by-field",Source_semantics_gate
+routes_YPRR_TPRR,BLOCKED,"HQ1 route use gate",no,high,blocked,"No admitted route denominator source",Route_source_admission_gate
+PFR_advanced_stats,BLOCKED_IDENTITY,"advanced metric use gate",not_cleared,medium,blocked,"Identity unsafe; no name fallback",PFR_identity_gate
+NGS_advanced_metrics,REVIEW_ONLY_CONDITIONAL,"advanced metric use gate",conditional,medium,review_only_after_historical_gate,"Need historical coverage/as-of proof for specific fields",Advanced_metric_historical_gate
+CFBD_rookie_profile,REVIEW_ONLY_OR_BLOCKED,"CFBD identity/status packets",not_cleared,medium,blocked_for_gauntlet,"Rookie identity/model-use not approved for tournament",Rookie_source_gate

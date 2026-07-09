@@ -1,0 +1,14 @@
+family_name,decision,safe_to_freeze_next_lane,safe_to_regenerate_next_lane,requires_human_review,requires_source_admission,reason
+checkpoint_review_score,manifest_only_this_lane,yes,no,yes,no,found only current-board equivalent; locator lane does not copy or regenerate artifacts
+position_specific_review_score,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+lifecycle_age_receipts,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+role_archetype_receipts,manifest_only_this_lane,yes,yes with Master HQ contract,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+confidence_cap_receipts,manifest_only_this_lane,yes,yes with Master HQ contract,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+WR_QB_v2_candidate_overlay,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+exact_nwr_dynasty_score_and_rank,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+route_yprr_tprr_exact_receipts,manifest_only_this_lane,no,no,yes,yes,blocked by source gate; locator lane does not copy or regenerate artifacts
+red_zone_exact_receipts,manifest_only_this_lane,yes,yes with Master HQ contract,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+shadow_model_v2_metrics,manifest_only_this_lane,no,no,yes,no,not found; locator lane does not copy or regenerate artifacts
+return_scoring_receipts,manifest_only_this_lane,no,no,yes,yes,blocked by source gate; locator lane does not copy or regenerate artifacts
+source_coverage_matrix_history,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts
+exact_transform_weight_receipts,manifest_only_this_lane,yes,no,yes,no,found partial equivalent; locator lane does not copy or regenerate artifacts

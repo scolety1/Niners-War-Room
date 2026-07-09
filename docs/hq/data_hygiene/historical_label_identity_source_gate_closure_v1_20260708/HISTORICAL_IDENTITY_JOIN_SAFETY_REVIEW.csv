@@ -1,0 +1,11 @@
+identity_scope,status,rows_or_count,evidence,canonical_id_safe,duplicate_safe,name_conflict_safe,season_position_aligned,formula_gauntlet_readiness,caveat
+V2 feature-label substrate,READY_REVIEW_ONLY,5518,"identity_join_report_v2.csv",yes,yes,yes_names_audit_only,yes,CLEARED_FOR_COMPONENT_SIGNAL_TESTS,"153 ambiguous same-name groups are audit only; no name matching used"
+V3 feature-label substrate,READY_REVIEW_ONLY,5518,"identity_join_report_v3.csv",yes,yes,yes_names_audit_only,yes,CLEARED_FOR_COMPONENT_SIGNAL_TESTS,"V3 carries V2 matched rows; no new name matching"
+Historical receipt readiness matrix,READY_REVIEW_ONLY,"52 season-position rows","MODEL_V4_HISTORICAL_REPLAY_READINESS_MATRIX.csv",yes,yes,yes,yes,CLEARED_FOR_COMPONENT_SIGNAL_TESTS,"identity_coverage=1.0 and label_coverage=1.0"
+Partial component receipts,READY_REVIEW_ONLY,42933,"MODEL_V4_HISTORICAL_COMPONENT_RECEIPTS.csv",yes,not_applicable,yes_names_not_join_keys,yes,CLEARED_FOR_COMPONENT_SIGNAL_TESTS,Partial replay proxy only
+NFLVerse approved identity overlay,PARTIAL_REVIEW_ONLY,"43 approved overlay rows","identity_overlay_summary.md",partial,not_applicable,partial,partial,NOT_CLEARED_FOR_BROAD_TOURNAMENTS,"Requires binding; review-only only"
+Approved identity NWR binding,PARTIAL_REVIEW_ONLY,"41 of 43 bound; 2 needs more information","approved_identity_nwr_binding_summary.md",partial,not_applicable,partial,partial,NOT_CLEARED_FOR_BROAD_TOURNAMENTS,"Current/source identity rows not universal"
+Remaining identity review,NOT_CLEARED,"13 gated current rows","remaining_identity_review_summary.md",no,not_applicable,no,not_applicable,BLOCKED,"6 human review; 7 keep blocked"
+PFR advanced stats,IDENTITY_UNSAFE,"0 matched players in advanced metric join coverage","hq_advanced_metrics_join_coverage.csv",no,no,no,no,BLOCKED,Requires approved PFR historical bridge
+ESPN QBR,IDENTITY_UNSAFE,"0 matched players in advanced metric join coverage","hq_advanced_metrics_join_coverage.csv",no,no,no,no,BLOCKED,ESPN ID not canonical in NWR spine
+Route provider identity,NOT_ENOUGH_INFORMATION,unknown,"route feed readiness packets",no,no,no,no,BLOCKED,Provider identity/crosswalk not admitted

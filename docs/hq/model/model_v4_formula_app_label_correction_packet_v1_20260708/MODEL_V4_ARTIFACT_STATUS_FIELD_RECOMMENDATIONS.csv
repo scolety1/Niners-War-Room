@@ -1,0 +1,14 @@
+Field,Current Value,Recommended Value,Reason,Requires Implementation Lane?
+board_level_status,candidate_review_only_main_display,candidate_review_only_main_display_rebuild_verified,"Adds exact rebuild verification while preserving candidate/review-only status.",Yes
+row_level_allowed_use,candidate_review_only_not_active_rankings,candidate_review_only_rebuild_verified_not_production_active,"Clarifies app-visible/rebuild-verified status without implying production activation.",Yes
+candidate_mode,wr_qb_v2_candidate,wr_qb_v2_candidate,"Accurate candidate-mode identifier; keep unchanged.",No
+formula_id,"model_v4_full_player_board_value_0.1.0 plus model_v4_wr_qb_v2_old_pocket_qb_guardrail",model_v4_review_board_wr_qb_v2_candidate_2026_pre_draft,"Provides a clear review-board formula label for docs and future manifests.",Yes
+rebuild_verification_status,not_explicit,hash_rebuild_verified_exact_match,"Makes exact current-board rebuild result machine-readable.",Yes
+production_approval_status,not_active_or_absent,not_production_active_pending_human_approval,"Prevents label correction from becoming production promotion.",Yes
+historical_replay_status,blocked,exact_historical_replay_blocked,"Preserves historical replay blocker.",Yes
+accuracy_approval_status,not_approved_or_absent,not_historically_accuracy_approved,"Preserves cold-water accuracy caveat.",Yes
+source_promotion_status,not_promoted,not_source_promoted,"Makes explicit that label correction does not promote sources.",Yes
+draft_day_use_status,implicit_review_only,human_review_aid_only_not_recommendation,"Allows practical human review while blocking autonomous advice.",Yes
+blocked_use,do_not_use_as_final_trade_cut_keep_draft_buy_sell_defer_target_or_start_sit_recommendation,do_not_use_as_final_trade_cut_keep_draft_buy_sell_defer_target_or_start_sit_recommendation,"Current blocked-use value remains correct and should not be weakened.",No
+app_source_label,approved local dynasty rankings,hash_rebuild_verified_review_dynasty_board,"Avoids implying production approval.",Yes
+app_score_tooltip,Approved NWR Dynasty Score from the current rankings output.,Hash-rebuild verified review score from the current candidate board. Not production-active or historically accuracy-approved.,"Makes tooltip consistent with evidence chain.",Yes
