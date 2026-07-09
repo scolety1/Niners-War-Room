@@ -1,0 +1,10 @@
+artifact,row_count_basis,row_count,purpose
+"HQ1_CLOSEOUT_ADOPTION_MAP_V1_REPORT.md","markdown_lines","88","Final HQ1 closeout report explaining completed canonical stack, packet roles, delegated work, future artifact adoption, continuing guardrails, and why HQ1 can close."
+"HQ1_CANONICAL_ARTIFACT_INDEX.csv","csv_data_rows","6","Index of canonical HQ1/deep-research artifact groups with paths, purposes, key files, owners, downstream users, and notes."
+"HQ1_ADOPTION_MAP.csv","csv_data_rows","10","Map from future lane types to HQ1 artifacts, use gates, receipt standards, owners, and adoption notes."
+"HQ1_OPEN_WORK_DELEGATION.csv","csv_data_rows","12","Delegation register for work that remains active outside HQ1, including route recovery, HQ2 work, Formula Gauntlet, replay/rebuild, source promotion, and production changes."
+"HQ1_DO_NOT_REOPEN_FOR.csv","csv_data_rows","12","List of work items HQ1 should not be reopened for, with correct owner and reason."
+"HQ1_RECEIPT_CHAIN_ADOPTION_PRIORITY.csv","csv_data_rows","9","Priority map for future lanes that should adopt the Source Receipt Chain Standard first."
+"HQ1_FINAL_USE_GATE.md","markdown_lines","31","Final use gate confirming HQ1 artifacts are governance/planning context and approve no production metric, source, model, rankings, UI, runtime, source-truth, sort, or logic changes."
+"HQ1_FINAL_BOUNDARY_CONFIRMATION.md","markdown_lines","27","Boundary confirmation preserving no HQ2, route recovery, Formula Gauntlet scoring/tuning, prior-year challenger, miss taxonomy, feature tournament, or production changes."
+"artifact_manifest.csv","csv_data_rows","9","Manifest listing every closeout artifact, count basis, row count, and purpose."

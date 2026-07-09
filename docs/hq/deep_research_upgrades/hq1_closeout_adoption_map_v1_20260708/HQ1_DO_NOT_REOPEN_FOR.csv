@@ -1,0 +1,13 @@
+work_item,correct_owner,reason,notes
+"prior-year challenger scoring","HQ2","HQ2 owns direct prior-year baseline comparison and immediate model-failure response.","HQ1 may provide read-only source/metric context only."
+"route-source recovery","Route Recovery lane","Active routes-run/YPRR/TPRR source recovery is now separated from HQ1.","HQ1 preserved blocked status and proxy boundaries."
+"Formula Gauntlet tournaments","Formula Gauntlet lane","Formula candidate competitions, scoring, tuning, and combinations belong to Formula Gauntlet.","HQ1 artifacts are context only."
+"model formula tuning","Formula Gauntlet or explicit production/model lane","Tuning changes model behavior and is outside HQ1 governance closeout.","Requires separate authorization."
+"production rankings","Master HQ and explicit production lane","Ranking changes are protected production behavior.","HQ1 approves no rankings change."
+"UI/runtime changes","assigned UI/runtime lane","App/UI/runtime work is protected and outside HQ1 docs closeout.","Requires separate lane and tests."
+"source promotion","Master HQ and source-admission lane","Source promotion changes source-truth/source status.","HQ1 documents requirements only."
+"miss taxonomy","HQ2","Miss taxonomy is HQ2 model-failure work.","Do not reopen HQ1 for miss classification."
+"low-games/sparse-history guardrail testing","HQ2","Sparse-history guardrail testing is HQ2-owned.","HQ1 provides receipt/checklist context only."
+"Candidate Formula Shadow V1","HQ2","Candidate Formula Shadow V1 is HQ2-owned context/work.","Do not duplicate in HQ1."
+"three_year_missingness_aware","HQ2","This named candidate/context work is HQ2-owned.","Do not use HQ1 to score or refine it."
+"direct beat-prior-year claims","HQ2 or Formula Gauntlet when explicitly opened","Direct comparison claims are scoring outputs, not HQ1 closeout.","HQ1 makes no beat-prior-year claim."
