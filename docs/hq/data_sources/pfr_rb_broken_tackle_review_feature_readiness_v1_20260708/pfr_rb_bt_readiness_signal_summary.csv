@@ -1,0 +1,7 @@
+evidence_stage,result,key_metric,value,interpretation
+exhaustive_sweep,RB broken tackles emerged as a narrow candidate.,green_narrow_candidates,27 total; RB broken-tackle raw/per-game examples retained,Discovery only; multiple-testing caveat substantial.
+narrow_candidate_hardening,RB broken tackles survived as weak but interesting.,candidate_status,YELLOW_PFR_NARROW_CANDIDATES_WEAK_BUT_INTERESTING,"Justified one RB-only feasibility lane, not promotion."
+rb_feature_feasibility,Raw/per-game/per-attempt feasible but weak.,full_control_incremental_mae_delta_raw,0.011461,Weak review-only signal; broad PFR remained parked.
+locked_shadow_feature_raw,Raw survived weakly in locked design.,full_control_incremental_mae_delta,0.001531,Tiny positive full-control lift; review-only only.
+locked_shadow_feature_per_game,Per-game survived weakly in locked design.,full_control_incremental_mae_delta,0.000651,Tiny positive full-control lift; review-only only.
+locked_shadow_feature_baseline,Baseline-only comparison larger than full-control result.,raw_baseline_delta,0.039865,Controls absorb most signal; do not overstate edge.

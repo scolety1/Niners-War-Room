@@ -1,0 +1,10 @@
+control_area,future_test_requirement
+rushing_volume,"rush attempts, rushing yards, rushing TDs, games/starts"
+prior_production,prior fantasy PPG and prior role/opportunity where source-governed
+coverage,PFR coverage indicator and missingness handling
+age_draft_capital,Include only if historically valid and already admitted
+row_grain,player-season or clearly safe player-team-season grain only
+holdout,walk-forward and leave-one-season-out season splits
+matched_cohort,similar rush attempts/yards/games/prior PPG cohorts
+outlier,top positive/negative influence rows and outlier-drive flag
+guardrails,no low-games/missingness regression and no hidden sorting

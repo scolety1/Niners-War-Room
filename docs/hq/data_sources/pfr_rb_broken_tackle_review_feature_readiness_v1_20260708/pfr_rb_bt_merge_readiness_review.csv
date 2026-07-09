@@ -1,0 +1,5 @@
+assessment_area,status,evidence
+canonical_preservation_readiness,READY_FOR_FUTURE_HQ_MERGE_REVIEW_WITH_CAVEATS,Prior packets are readable and current packet replays evidence on current HQ.
+feature_promotion_readiness,NOT_READY_BLOCKED,Weak tiny lift; no production/model/rankings/UI use approved.
+future_gauntlet_readiness,READY_FOR_REVIEW_ONLY_DESIGN,"Scope, controls, stop/success conditions, and names are bounded."
+source_governance,REVIEW_ONLY_SOURCE_HARDENED,PFR source provenance previously hardened; no raw cache copied.

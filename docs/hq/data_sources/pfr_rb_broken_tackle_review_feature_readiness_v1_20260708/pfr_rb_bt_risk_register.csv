@@ -1,0 +1,8 @@
+risk,description,severity
+tiny_lift,Full-control lift was +0.001531 raw and +0.000651 per-game.,HIGH
+multiple_testing,Candidate emerged after broad PFR sweep.,HIGH
+coverage_bias,PFR rows represent covered players and may proxy role/quality.,MEDIUM
+volume_proxy,Broken tackles can proxy workload and talent already in baseline.,HIGH
+pfr_only_source,Public PFR/nflverse source is hardened but remains review-only.,LOW
+no_production_replay,No exact production replay or model promotion is approved.,HIGH
+pff_equivalence,Must not be named or treated as PFF Elusive Rating.,HIGH

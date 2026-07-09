@@ -1,0 +1,11 @@
+guardrail,status,evidence
+production_formula_changed,PASS,No formula/model files changed.
+pfr_ui_integration_added,PASS,No UI/app/runtime files changed.
+rankings_or_default_sort_changed,PASS,No rankings/default-sort files changed.
+development_lab_changed,PASS,No Development Lab runtime changes.
+player_compare_changed,PASS,No Player Compare runtime changes.
+data_health_changed,PASS,No Data Health surfacing/approval changes.
+recommendation_verdict_boost_logic_added,PASS,No decision logic changed.
+exact_pff_elusive_rating_calculated,PASS,Exact PFF Elusive Rating remains blocked.
+nwr_elusive_proxy_review_only_calculated,PASS,nwr_elusive_proxy_review_only was not calculated.
+raw_parquet_cache_added,PASS,No raw parquet/cache files added to git.

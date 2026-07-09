@@ -1,0 +1,11 @@
+design_area,requirement
+scope,RB-only review-only Formula Gauntlet experiment.
+candidate_features,Test raw and per-game broken tackles separately.
+diagnostic_features,Per-attempt remains diagnostic/parked unless explicitly approved.
+baseline,Use locked conservative historical baseline; no production formula changes.
+controls,"Include volume, prior production, coverage, age/draft capital if valid."
+temporal_rule,Source season N predicts target season N+1; no future leakage.
+identity_rule,Use only safe PFR rushing bridge rows; exclude blocked/collision rows.
+validation,"Season-based holdout, matched cohort, direction stability, outlier audit."
+promotion_rule,Promotion impossible from future Gauntlet lane alone.
+blocked_changes,"No rankings, default sort, hidden sort, UI, source-truth, or model changes."

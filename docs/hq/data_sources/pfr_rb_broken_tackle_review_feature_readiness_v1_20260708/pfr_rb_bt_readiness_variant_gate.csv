@@ -1,0 +1,11 @@
+variant,gate,reason
+pfr_rush_brk_tkl__raw,ALLOWED_REVIEW_ONLY_PRIMARY,Survived feasibility and locked tests weakly.
+pfr_rush_brk_tkl__per_game,ALLOWED_REVIEW_ONLY_PRIMARY,Survived feasibility and locked tests weakly.
+pfr_rush_brk_tkl__per_attempt,DIAGNOSTIC_ONLY_PARKED,Locked full-control diagnostic delta was negative.
+pfr_rush_brk_tkl__pos_season_zscore,PARKED,Failed earlier hardening/feasibility gates.
+pfr_rush_brk_tkl__rb_season_rank,PARKED,Failed hardening checks and direction robustness.
+pfr_rush_brk_tkl__bottom_quartile,PARKED,Failed hardening checks.
+pfr_rush_brk_tkl__above_median,PARKED,Failed locked/feasibility robustness as a primary threshold.
+pfr_rush_brk_tkl__missingness_indicator,BLOCKED_NOT_SIGNAL,Missingness is not the review feature and failed prior checks.
+nwr_elusive_proxy_review_only,BLOCKED_NOT_CALCULATED,This lane is not an elusive proxy and must not use PFF-like naming.
+elusive_rating_or_pff_elusive,BLOCKED_PROPRIETARY_OR_MISLEADING,Exact PFF Elusive Rating remains blocked.

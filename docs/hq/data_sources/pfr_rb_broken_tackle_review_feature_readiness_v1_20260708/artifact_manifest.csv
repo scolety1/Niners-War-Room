@@ -1,0 +1,14 @@
+artifact,row_count,purpose
+PFR_RB_BROKEN_TACKLE_READINESS_HQ_REPLAY_NOTE.md,19,HQ replay note.
+PFR_RB_BROKEN_TACKLE_REVIEW_FEATURE_READINESS_V1_REPORT.md,43,Human report.
+PFR_RB_BROKEN_TACKLE_REVIEW_FEATURE_READINESS_V1_USE_GATE.md,20,Use gate.
+pfr_rb_bt_formula_gauntlet_design.csv,10,Bounded future Formula Gauntlet design.
+pfr_rb_bt_future_test_controls.csv,9,Required future controls.
+pfr_rb_bt_guardrail_scan.csv,10,Guardrail evidence.
+pfr_rb_bt_merge_readiness_review.csv,4,Merge-readiness preservation review.
+pfr_rb_bt_readiness_evidence_manifest.csv,7,Prior evidence chain manifest.
+pfr_rb_bt_readiness_signal_summary.csv,6,Consolidated signal summary.
+pfr_rb_bt_readiness_variant_gate.csv,10,Allowed/diagnostic/parked/blocked variants.
+pfr_rb_bt_review_feature_definition.csv,4,Future review-only feature definition.
+pfr_rb_bt_risk_register.csv,7,Risk register.
+pfr_rb_bt_success_stop_conditions.csv,13,Success and stop conditions.
