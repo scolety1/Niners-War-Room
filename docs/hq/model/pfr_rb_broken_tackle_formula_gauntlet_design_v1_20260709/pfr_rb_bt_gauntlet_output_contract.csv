@@ -1,0 +1,10 @@
+path_or_output,status,notes
+docs/hq/model/pfr_rb_broken_tackle_formula_gauntlet_v1_<date>/,ALLOWED_REVIEW_ONLY_OUTPUT,Future Gauntlet packet location
+runtime_app_data,FORBIDDEN,No runtime data writes
+rankings_formula_files,FORBIDDEN,No rankings formula changes
+model_production_files,FORBIDDEN,No production model changes
+source_truth_files,FORBIDDEN,No source-truth promotion or writes
+ui_files,FORBIDDEN,No UI or display integration
+data_health_surfacing_paths,FORBIDDEN,No Data Health approval or surfacing
+local_exports_or_board_artifacts,FORBIDDEN,No canonical exports or board artifact writes
+recommendation_trade_draft_logic,FORBIDDEN,No decision logic writes

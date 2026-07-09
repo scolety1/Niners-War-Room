@@ -1,0 +1,7 @@
+split_name,required_status,design
+source_to_target,REQUIRED,Source season N predicts target season N+1
+walk_forward,REQUIRED,Train/calibrate on earlier seasons and test later seasons
+leave_one_season_out,REQUIRED,Hold out each available season as a robustness check
+random_row_split,FORBIDDEN_PRIMARY,May not be primary because it can leak era/player context
+same_season_target,FORBIDDEN,Would violate temporal design
+future_labels_for_selection,FORBIDDEN,No future outcomes for feature choice thresholds or inclusion

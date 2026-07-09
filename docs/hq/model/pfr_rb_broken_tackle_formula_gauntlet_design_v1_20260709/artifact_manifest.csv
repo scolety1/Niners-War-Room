@@ -1,0 +1,14 @@
+artifact,row_count,purpose
+PFR_RB_BROKEN_TACKLE_GAUNTLET_DESIGN_HQ_REPLAY_NOTE.md,20,HQ replay note
+pfr_rb_bt_gauntlet_design_source_manifest.csv,7,Source and evidence manifest
+pfr_rb_bt_gauntlet_locked_feature_contract.csv,10,Locked review-only feature contract
+pfr_rb_bt_gauntlet_candidate_classes.csv,10,Candidate experiment classes
+pfr_rb_bt_gauntlet_control_contract.csv,13,Required controls
+pfr_rb_bt_gauntlet_split_contract.csv,6,Season split contract
+pfr_rb_bt_gauntlet_audit_contract.csv,10,Required audit contract
+pfr_rb_bt_gauntlet_success_stop_conditions.csv,19,Success and stop conditions
+pfr_rb_bt_gauntlet_output_contract.csv,9,Allowed and forbidden output paths
+pfr_rb_bt_gauntlet_promotion_wall.csv,9,Promotion wall
+pfr_rb_bt_gauntlet_guardrail_scan.csv,14,Guardrail scan
+PFR_RB_BROKEN_TACKLE_FORMULA_GAUNTLET_DESIGN_V1_REPORT.md,45,Human report
+PFR_RB_BROKEN_TACKLE_FORMULA_GAUNTLET_DESIGN_V1_USE_GATE.md,25,Use gate

@@ -1,0 +1,14 @@
+control,required_status,reason
+rushing_attempts,REQUIRED,Separates tackle breaking from workload volume
+rushing_yards,REQUIRED,Controls for prior rushing production
+rushing_tds,REQUIRED,Controls for scoring opportunity
+games,REQUIRED,Controls availability and per-game denominator
+games_started,REQUIRED,Controls role and starter status where available
+prior_fantasy_ppg,REQUIRED,Controls prior fantasy production
+prior_fantasy_finish_or_outcome_proxy,IF_SOURCE_GOVERNED,Use only if historically valid and already admitted
+pfr_coverage_indicator,REQUIRED,Detects whether PFR coverage itself is the signal
+age,IF_HISTORICALLY_VALID,Allowed only if source-governed and time-valid
+draft_capital,IF_HISTORICALLY_VALID,Allowed only if source-governed and time-valid
+low_games_guardrail,REQUIRED,Protects against low-availability artifacts
+missingness_guardrail,REQUIRED,Protects against coverage/missingness artifacts
+row_grain_guardrail,REQUIRED,Excludes ambiguous blocked collision or unsafe rows

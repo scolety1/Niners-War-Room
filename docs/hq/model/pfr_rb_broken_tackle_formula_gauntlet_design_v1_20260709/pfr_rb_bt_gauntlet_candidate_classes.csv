@@ -1,0 +1,11 @@
+class_id,candidate_class,feature_set,allowed_status,notes
+baseline_only,baseline only,baseline proxy only,REQUIRED,Reference comparison
+baseline_plus_raw,baseline + raw broken tackles,pfr_rush_brk_tkl__raw,REQUIRED,Primary locked candidate
+baseline_plus_per_game,baseline + per-game broken tackles,pfr_rush_brk_tkl__per_game,REQUIRED,Primary locked candidate
+baseline_plus_raw_per_game,baseline + raw and per-game together,raw|per_game,REQUIRED,Interaction-by-inclusion only; no tuning
+baseline_plus_volume,baseline + volume controls,rush_attempts|rush_yards|rush_td|games|games_started,REQUIRED,Volume absorption check
+baseline_plus_prior,baseline + prior production controls,prior_fantasy_ppg|prior_finish_if_valid,REQUIRED,Prior production absorption check
+baseline_plus_coverage,baseline + PFR coverage controls,pfr_coverage_indicator,REQUIRED,Coverage bias check
+full_controls_plus_raw,baseline + volume/prior/coverage + raw,full_controls|raw,REQUIRED,Primary full-control test
+full_controls_plus_per_game,baseline + volume/prior/coverage + per-game,full_controls|per_game,REQUIRED,Primary full-control test
+diagnostic_per_attempt,full controls + per-attempt,full_controls|per_attempt,DIAGNOSTIC_ONLY,No promotion or primary decision from diagnostic

@@ -1,0 +1,11 @@
+audit,required_status,purpose
+matched_cohort_audit,REQUIRED,Compare similar RBs by volume role and prior production
+outlier_influence_audit,REQUIRED,Detect if a few players drive the result
+threshold_robustness_audit,REQUIRED,Check predeclared thresholds without tuning
+direction_stability_audit,REQUIRED,Confirm raw and per-game point in compatible direction
+coverage_missingness_audit,REQUIRED,Detect PFR coverage or missingness artifact
+prior_production_leakage_audit,REQUIRED,Confirm signal is not just prior fantasy production
+no_future_info_audit,REQUIRED,Confirm no future data is used in feature selection or joins
+low_games_harm_audit,REQUIRED,Check whether low-game players are harmed or distorted
+blocked_rows_audit,REQUIRED,Confirm blocked collision ambiguous rows stay excluded
+promotion_guardrail_audit,REQUIRED,Confirm no production paths are changed or approved

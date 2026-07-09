@@ -1,0 +1,11 @@
+contract_area,value,status,notes
+feature_name,PFR_RB_BROKEN_TACKLE_CONTEXT_REVIEW_ONLY,LOCKED_REVIEW_ONLY,Weak context hypothesis only
+scope,RB only,LOCKED,No QB WR TE testing in this Gauntlet
+allowed_input,pfr_rush_brk_tkl,ALLOWED,Raw PFR rushing broken tackles
+allowed_input,pfr_rush_g,ALLOWED,Used only for per-game denominator where needed
+allowed_variant,pfr_rush_brk_tkl__raw,ALLOWED_PRIMARY,Test separately
+allowed_variant,pfr_rush_brk_tkl__per_game,ALLOWED_PRIMARY,Test separately
+diagnostic_variant,pfr_rush_brk_tkl__per_attempt,DIAGNOSTIC_ONLY,Parked unless separately approved
+blocked_variant,z_score_rank_bottom_quartile_above_median_missingness,BLOCKED,Failed or parked in prior evidence
+blocked_name,nwr_elusive_proxy_review_only,BLOCKED_NOT_CALCULATED,Not an elusive proxy
+blocked_name,elusive_rating_or_pff_elusive,BLOCKED_PROPRIETARY_OR_MISLEADING,Do not imply PFF equivalence
