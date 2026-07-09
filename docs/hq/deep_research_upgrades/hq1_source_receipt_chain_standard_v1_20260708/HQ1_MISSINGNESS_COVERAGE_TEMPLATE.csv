@@ -1,0 +1,1 @@
+audit_id,source_name,field_name,season,week_or_date,position,team,row_grain,expected_rows,observed_rows,missing_rows,missing_rate,missing_reason,coverage_status,coverage_bias_risk,eligibility_filter,zero_fill_used,exclusion_rule,review_owner,notes

@@ -1,0 +1,1 @@
+source_row_id,source_name,source_record_key,source_player_name,source_team,source_season,canonical_player_id,canonical_player_name,canonical_position,join_keys,join_method,identity_confidence,collision_flag,unmatched_flag,name_only_flag,row_grain,status,review_owner,notes
