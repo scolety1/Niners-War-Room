@@ -1,0 +1,7 @@
+artifact,row_count,purpose
+README.md,0,packet overview
+PARALLEL_CHAT_CONTEXT_UPDATE_20260709.md,0,context update and next-step boundaries
+FORMULA_GAUNTLET_CANONICAL_OWNERSHIP_RECONCILIATION_20260709.md,0,reconcile original setup packet versus dedicated continuation packet
+PARALLEL_CHAT_OWNERSHIP_MATRIX_20260709.csv,5,chat and packet ownership matrix
+PARALLEL_CHAT_GUARDRAILS_20260709.md,0,shared parallel-work guardrails
+SOURCE_TRACE_20260709.md,0,source trace and preserved facts
