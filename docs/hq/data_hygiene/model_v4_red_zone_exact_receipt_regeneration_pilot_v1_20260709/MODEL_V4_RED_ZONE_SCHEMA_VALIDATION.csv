@@ -1,0 +1,11 @@
+check_name,result,passed,caveat
+required_columns_present,season|player_id|player_name|position|receipt_family|red_zone_metric_name|red_zone_value|red_zone_value_type|source_artifact|source_hash|source_gate_status|decision_date_safe|leakage_flag|identity_flag|missingness_flag|true_zero_vs_unknown_status|regeneration_method|review_only_status|caveat,True,missing=
+row_count,1306,True,partial 2024-2025 only
+duplicate_key_count,0,True,key=season|player_id|position|red_zone_metric_name
+review_only_status_all_rows,True,True,
+no_model_training_source_truth_claims,True,True,
+ambiguous_rz_att_excluded,True,True,typed fields only: red_zone_targets|red_zone_carries|red_zone_pass_attempts
+season_coverage,2024=648|2025=658,True,source coverage is not exact 2013-2025
+position_coverage,QB=228|RB=346|TE=198|UNKNOWN=159|WR=375,True,UNKNOWN rows lack safe position/name join
+identity_flags,IDENTITY_LIMITED_GSIS_PRESENT_BUT_NO_REVIEW_MART_POSITION_NAME=159|PARTIAL_GSIS_TO_REVIEW_MART_LATEST_IDENTITY=605|PASS_GSIS_TO_REVIEW_MART_IDENTITY=542,True,position/name from review mart only where available
+source_rows_excluded_missing_gsis,1077,True,team/no-GSIS rows excluded from player-season receipts

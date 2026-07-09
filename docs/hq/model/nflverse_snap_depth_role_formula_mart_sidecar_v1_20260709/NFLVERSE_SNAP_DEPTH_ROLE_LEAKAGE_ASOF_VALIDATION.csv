@@ -1,0 +1,2 @@
+ingredient,joined_rows,bad_lag_rows,asof_result,source_use_gate_result,rule
+nflverse_snap_depth_role,5518,0,PASS,PASS_REVIEW_ONLY_PUBLIC_NFLVERSE_NO_KEY_NOT_MODEL_USE,feature_season must be less than target season

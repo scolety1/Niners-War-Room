@@ -1,0 +1,9 @@
+decision_area,admission_status,allowed_use,blocked_use,evidence,caveat
+component_signal_tests,ADMITTED,REVIEW_ONLY_COMPONENT_SIGNAL_TESTS,production_model_use,"Age/lifecycle rows tested: 5518; missingness 0.14%; duplicate keys 0; signal is useful for context slices.",Does not replace PYF and is not a standalone ranker.
+guardrail_context,ADMITTED,REVIEW_ONLY_GUARDRAIL_CONTEXT,automatic_boost_or_penalty,"Older/late lifecycle captured 179 of 572 PYF false positives; young/early lifecycle captured 173 of 353 PYF false negatives.",Can create false confidence if used without PYF role and sparse-history context.
+formula_family_context,ADMITTED,REVIEW_ONLY_FORMULA_FAMILY_CONTEXT,direct_ranking_input,"Useful for dynasty decline-risk and breakout-window formula-family design.",Formula design only; no weights or tuning approved.
+formula_pilot_context,ADMITTED,REVIEW_ONLY_FORMULA_PILOT_CONTEXT,formula_tournament_or_winner_selection,"May be included in next small review-only pilot as context diagnostic slice or guarded candidate variant.",Pilot must remain small review-only and separately approved.
+evidence_only,ADMITTED,EVIDENCE_ONLY,source_promotion,"Source trace and validation packets exist; no source was promoted.",Evidence does not clear production/model-use.
+exact_model_v4_replay,BLOCKED,none,exact_replay_support,"Exact checkpoint and historical Model v4 receipt chain remains incomplete.",Age/lifecycle does not unblock exact replay.
+production_model_use,BLOCKED,none,production_model_input,"No production/model-use approval was requested or granted.",Production/model-use remains blocked.
+ranking_integration,BLOCKED,none,direct_ranking_input_or_hidden_sort,"No ranking/app/runtime/model behavior changed.",Requires separate Master HQ approval and staging lane.

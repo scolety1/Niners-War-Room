@@ -1,0 +1,8 @@
+coverage_scope,rows,joined_rows,coverage_rate,notes
+all_formula_mart_rows,5518,4044,0.732874,Positive drafted evidence only; missing does not imply UDFA.
+blocked_future_draft_rows,0,0,0.000000,Draft info would be future context for these rows.
+no_positive_draft_evidence_rows,1474,0,0.000000,"Not enough information, not confirmed UDFA."
+position_QB,754,645,0.855438,Positive drafted evidence only.
+position_RB,1429,1007,0.704689,Positive drafted evidence only.
+position_WR,2124,1518,0.714689,Positive drafted evidence only.
+position_TE,1211,874,0.721718,Positive drafted evidence only.

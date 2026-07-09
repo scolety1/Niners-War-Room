@@ -1,0 +1,2 @@
+artifact,row_count,required_columns_present,missing_columns,duplicate_keys,rows_with_receiving_targets,true_zero_no_target_rows,review_only_status
+nflverse_receiving_opportunity,5518,yes,,0,4663,855,PASS

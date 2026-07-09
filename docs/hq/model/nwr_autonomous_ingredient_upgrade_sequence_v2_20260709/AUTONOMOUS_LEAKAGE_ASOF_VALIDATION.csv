@@ -1,0 +1,3 @@
+ingredient,joined_rows,bad_lag_rows,asof_result,rule
+ffopportunity,1740,0,PASS,feature_season must be less than target season
+nflverse_ngs,944,0,PASS,feature_season must be less than target season

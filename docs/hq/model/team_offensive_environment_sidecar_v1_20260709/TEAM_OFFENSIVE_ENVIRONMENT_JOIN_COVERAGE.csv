@@ -1,0 +1,8 @@
+coverage_scope,rows,joined_rows,coverage_rate,notes
+all_formula_mart_rows,5518,5513,0.999094,Prior-team evidence required; no target-season team projection.
+position_QB,754,754,1.000000,Prior-team environment joined where lagged prior team could be proven.
+position_RB,1429,1425,0.997201,Prior-team environment joined where lagged prior team could be proven.
+position_WR,2124,2124,1.000000,Prior-team environment joined where lagged prior team could be proven.
+position_TE,1211,1210,0.999174,Prior-team environment joined where lagged prior team could be proven.
+join_status_JOINED_PRIOR_TEAM_ENVIRONMENT,5518,5513,0.999094,Join status distribution.
+join_status_NO_TEAM_ENVIRONMENT_FOR_PRIOR_TEAM,5518,5,0.000906,Join status distribution.

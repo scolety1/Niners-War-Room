@@ -1,0 +1,8 @@
+check_name,status,value,notes
+sidecar_row_count,pass,5518,Formula Mart player-season grain.
+duplicate_player_season_position_keys,pass,0,Duplicate key check.
+source_files_hashed,pass,13,Public PBP files hashed.
+source_use_gate,pass,PUBLIC_NFLVERSE_NO_KEY_REVIEW_ONLY_NOT_MODEL_USE,No source promotion.
+leakage_asof,pass,0,Feature season N joined only to target season N+1.
+team_env_joined_rows,pass,5513,Rows with prior-team environment values.
+target_team_projection,pass,not_used,No same-season or future team context used.

@@ -1,0 +1,2 @@
+artifact,row_count,required_columns_present,missing_columns,duplicate_keys,rows_with_snap_record,rows_with_depth_record,review_only_status
+nflverse_snap_depth_role,5518,yes,,0,5118,5405,PASS

@@ -1,0 +1,19 @@
+metric_id,metric_name,required,scope,definition,baseline_comparator,pass_condition,caveat
+METRIC_001,PYF baseline metrics,true,overall_and_position,Reproduce PYF baseline outcome metrics before evaluating variants,PYF,Must calculate successfully for all included positions,No variant may be interpreted if PYF baseline fails
+METRIC_002,Spearman by position,true,QB/RB/WR/TE,Spearman rank relationship between candidate signal/rank and outcome finish,PYF,Must report candidate and PYF side by side,Position-level report required
+METRIC_003,Startable precision,true,overall_and_position,Precision among rows classified as startable under NWR review format,PYF,Must not materially worsen versus PYF without clear caveat,Definition must match label artifact
+METRIC_004,Top-12 hit rate,true,position_relevant,Top-12 hit rate where relevant by position,PYF,Must report when position-relevant,May be sparse for some positions
+METRIC_005,Top-24 hit rate,true,position_relevant,Top-24 hit rate where relevant by position,PYF,Must report when position-relevant,May be sparse for some positions
+METRIC_006,Top-36 hit rate,true,position_relevant,Top-36 hit rate where relevant by position,PYF,Must report when position-relevant,May be sparse for QB/TE
+METRIC_007,PYF delta,true,overall_and_position,Difference between candidate metric and PYF metric,PYF,Must be explicit whether positive negative or neutral,Delta alone does not create a winner
+METRIC_008,Sparse-history harm,true,slice,Performance and miss deltas on sparse-history rows,PYF,Must not materially worsen sparse-history errors without clear caveat,Guardrail slice only
+METRIC_009,Low-games harm,true,slice,Performance and miss deltas on low-games rows,PYF,Must not materially worsen low-games errors without clear caveat,Guardrail slice only
+METRIC_010,Prior-production decline false positives,true,slice,Count and concentration of PYF false positives among prior-decline rows,PYF,Must report whether candidate explains or reduces false positives,No automatic decline penalty
+METRIC_011,PYF false-positive improvement,true,overall_and_slice,Change in PYF false positives under candidate interpretation,PYF,May be promising only if broad harm does not increase,Review-only only
+METRIC_012,PYF false-negative improvement,true,overall_and_slice,Change in PYF false negatives under candidate interpretation,PYF,May be promising only if breakouts are not suppressed,Review-only only
+METRIC_013,Age/lifecycle slice effects,true,slice,Outcome and PYF miss behavior by age and lifecycle buckets,PYF,Must report older elite and young sparse-history harm risks,Age/lifecycle is context not direct input
+METRIC_014,Role-archetype slice effects,true,slice,Outcome and PYF miss behavior by role archetype,PYF,Must report high-volume false positives and sparse/low-volume false negatives,Role archetype is context not direct input
+METRIC_015,Confidence/coverage caution slice,true,slice,Outcome and PYF miss behavior by confidence/coverage status,PYF,Can only support caution/coverage interpretation,Weak signal previously observed
+METRIC_016,Coverage and missingness,true,overall_and_position,Rows present missing values and blocked-field flags by feature family,N/A,Must be reported before result interpretation,Missing values must not be faked
+METRIC_017,Leakage/as-of validation,true,input_family,Confirm all candidate inputs are decision-date safe for historical evaluation,N/A,Any failure stops the pilot,No future/current-only inputs
+METRIC_018,Source/use-gate status,true,input_family,Document source/use-gate status for every input,N/A,Any ambiguous or blocked gate stops affected candidate,No source promotion

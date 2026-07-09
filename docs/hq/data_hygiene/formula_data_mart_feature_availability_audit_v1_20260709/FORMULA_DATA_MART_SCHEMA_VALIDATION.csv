@@ -1,0 +1,15 @@
+check,result,passed,caveat
+row_count,5518,true,Expected accepted partial replay panel grain.
+season_coverage,2013-2025,true,
+position_coverage,QB=754|RB=1429|WR=2124|TE=1211,true,
+duplicate_player_season_position_keys,0,true,
+required_columns_present,86,true,
+role_join_missing_rows,0,true,
+confidence_join_missing_rows,0,true,
+review_only_all_rows,5518,true,
+model_use_allowed_all_false,5518,true,
+production_approved_all_false,5518,true,
+leakage_check_pass,5518,true,
+asof_check_pass,5518,true,
+exact_replay_status_blocked,5518,true,
+blocked_fields_are_status_flags_only,yes,true,Blocked fields are not fake numeric values.

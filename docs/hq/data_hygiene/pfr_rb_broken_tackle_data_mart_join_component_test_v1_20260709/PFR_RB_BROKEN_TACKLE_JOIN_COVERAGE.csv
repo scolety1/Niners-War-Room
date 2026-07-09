@@ -1,0 +1,16 @@
+coverage_scope,rows,eligible_rows,joined_rows,join_rate,missing_rows,missing_rate,seasons,notes
+all_formula_mart_rb_rows,1429,789,716,50.1%,713,49.9%,2013-2025,Includes 2013-2018 target rows whose feature seasons precede PFR coverage.
+lag_eligible_target_rows_feature_season_2018_2024,789,789,716,90.7%,73,9.3%,2019-2025,Component-test coverage after applying N to N+1 leakage rule.
+target_season_2013,105,0,0,0.0%,105,100.0%,2013,Season-level RB Formula Mart join coverage.
+target_season_2014,100,0,0,0.0%,100,100.0%,2014,Season-level RB Formula Mart join coverage.
+target_season_2015,108,0,0,0.0%,108,100.0%,2015,Season-level RB Formula Mart join coverage.
+target_season_2016,116,0,0,0.0%,116,100.0%,2016,Season-level RB Formula Mart join coverage.
+target_season_2017,108,0,0,0.0%,108,100.0%,2017,Season-level RB Formula Mart join coverage.
+target_season_2018,103,0,0,0.0%,103,100.0%,2018,Season-level RB Formula Mart join coverage.
+target_season_2019,106,106,89,84.0%,17,16.0%,2019,Season-level RB Formula Mart join coverage.
+target_season_2020,113,113,104,92.0%,9,8.0%,2020,Season-level RB Formula Mart join coverage.
+target_season_2021,121,121,113,93.4%,8,6.6%,2021,Season-level RB Formula Mart join coverage.
+target_season_2022,120,120,110,91.7%,10,8.3%,2022,Season-level RB Formula Mart join coverage.
+target_season_2023,115,115,106,92.2%,9,7.8%,2023,Season-level RB Formula Mart join coverage.
+target_season_2024,108,108,96,88.9%,12,11.1%,2024,Season-level RB Formula Mart join coverage.
+target_season_2025,106,106,98,92.5%,8,7.5%,2025,Season-level RB Formula Mart join coverage.
