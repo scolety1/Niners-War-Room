@@ -1,0 +1,10 @@
+summary_item,value,window,rows_or_count,caveat
+formula_references_analyzed,"PYF baseline; best full-history snap/depth depth-stability candidate; best broad-window snap-not-low candidate; best partial-window ffopportunity candidate",mixed,,Partial-window reference remains separate from full-history comparisons.
+windows_analyzed,"full-history 2013-2025; broad-window 2014-2025; partial-window 2022-2025",mixed,,Do not compare partial-window result as full-history.
+top_false_positive_categories,"prior-production traps; injury/availability caveats; older/late lifecycle decline; veteran high-volume decline; low snap/depth warnings",all,,Taxonomy categories are review-only explanatory buckets.
+top_false_negative_categories,"availability rebound / clean-report context; young breakouts; starter depth-chart signals; snap/depth role-promotion signals; expected fantasy opportunity; sparse-history breakouts",all,,Taxonomy categories are review-only explanatory buckets.
+best_pyf_miss_reducer,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_SNAP_NOT_LOW_PCT100,broad-window 2014-2025,54 same-row misses reduced,Broad-window only.
+full_history_depth_stability_miss_reduction,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_DEPTH_STABILITY_PCT100,full-history 2013-2025,42 misses reduced,Full-history comparable.
+full_history_depth_stability_new_misses,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_DEPTH_STABILITY_PCT100,full-history 2013-2025,146 new misses vs PYF,Resolved 188 PYF misses while creating 146 new misses.
+most_actionable_next_opportunity,Sparse-History Breakout Red Team / Rookie-Young Player Model Design V1,next lane,,Not started in this addendum.
+ranking_simulation_decision,not justified,all,,Ranking simulation remains blocked.
