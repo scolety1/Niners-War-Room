@@ -1,0 +1,5 @@
+scoreboard_window,formula_id,rows_compared,false_positives,false_negatives,total_misses,pyf_false_positives_same_rows,pyf_false_negatives_same_rows,pyf_total_misses_same_rows,pyf_misses_resolved,new_misses_vs_pyf,net_miss_reduction_vs_pyf,false_positive_reduction_vs_pyf,false_negative_reduction_vs_pyf,window_comparability
+full_history_2013_2025,PYF_BASELINE,5518,573,354,927,573,354,927,0,0,0,0,0,Full 2013-2025 review-only Formula Data Mart scope.
+full_history_2013_2025,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_DEPTH_STABILITY_PCT100,5518,552,333,885,573,354,927,188,146,42,21,21,"Full-history comparable, 5,518 rows."
+broad_window_2014_2025,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_SNAP_NOT_LOW_PCT100,5122,497,293,790,524,320,844,184,130,54,27,27,Broad-window comparable only; 2014-2025 rows with lagged snap counts.
+partial_window_2022_2025,GAUNTLET_083_DECLINE_DECLINE_COMBO_GUARD__PLUS_FFOPPORTUNITY_PCT10,1740,161,91,252,167,99,266,51,37,14,6,8,Partial modern window only; not full-history comparable.

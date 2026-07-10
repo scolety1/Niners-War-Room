@@ -1,0 +1,25 @@
+position,false_positive_trap,trap_rows,false_positive_sparse_rows,share,policy_response
+QB,draft capital without role,0,18,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+QB,young player with no snap/depth growth,1,18,5.6%,flag for review-only caution; do not auto-penalize or alter production ranking
+QB,low snap / low depth signal,0,18,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+QB,injury/availability caveat,8,18,44.4%,flag for review-only caution; do not auto-penalize or alter production ranking
+QB,weak role archetype,0,18,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+QB,sparse production without role promotion,5,18,27.8%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,draft capital without role,10,117,8.5%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,young player with no snap/depth growth,49,117,41.9%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,low snap / low depth signal,28,117,23.9%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,injury/availability caveat,83,117,70.9%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,weak role archetype,0,117,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+RB,sparse production without role promotion,85,117,72.6%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,draft capital without role,5,125,4.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,young player with no snap/depth growth,14,125,11.2%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,low snap / low depth signal,12,125,9.6%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,injury/availability caveat,95,125,76.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,weak role archetype,0,125,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+WR,sparse production without role promotion,33,125,26.4%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,draft capital without role,0,42,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,young player with no snap/depth growth,3,42,7.1%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,low snap / low depth signal,4,42,9.5%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,injury/availability caveat,33,42,78.6%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,weak role archetype,0,42,0.0%,flag for review-only caution; do not auto-penalize or alter production ranking
+TE,sparse production without role promotion,9,42,21.4%,flag for review-only caution; do not auto-penalize or alter production ranking

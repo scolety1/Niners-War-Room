@@ -1,0 +1,12 @@
+input_name,allowed_use,source,v2_status,blocked_use
+sparse-history flags,eligibility gate,Formula Data Mart / design ledger,ALLOWED_REVIEW_ONLY,production ranking logic
+age/lifecycle bucket,early-career window context,Age lifecycle sidecar,ALLOWED_REVIEW_ONLY_CONTEXT,automatic production boost/penalty
+years since draft,rookie/year-two/year-three windows,Rookie draft sidecar,ALLOWED_REVIEW_ONLY,future pre-draft use
+draft capital bucket,positive evidence only with role,Rookie draft sidecar,ALLOWED_REVIEW_ONLY_POSITIVE_EVIDENCE,UDFA inference or draft capital alone
+snap/depth role score,role promotion and starter confirmation,Snap/depth sidecar,ALLOWED_REVIEW_ONLY,target-season depth chart
+snap growth signal,limited diagnostic,Snap/depth sidecar,ALLOWED_IF_LAGGED,same-season growth
+injury/availability caveat,negative confirmation/context,Injury availability sidecar,GUARDRAIL_CONTEXT_ONLY,injury prediction
+clean availability context,"confirmation, not prediction",Injury availability sidecar,ALLOWED_CONTEXT,future health projection
+ffopportunity / NGS,partial-window diagnostic only,Autonomous V2 sidecars,PARTIAL_WINDOW_ONLY,full-history plateau claim
+current-only ADP / market,none,Market/ADP gate,BLOCKED,historical formula input
+CFBD/prospect production,none,Rookie/draft gate,BLOCKED,model input without source and identity gates

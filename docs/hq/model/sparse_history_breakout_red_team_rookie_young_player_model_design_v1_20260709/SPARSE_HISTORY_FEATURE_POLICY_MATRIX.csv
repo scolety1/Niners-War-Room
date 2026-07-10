@@ -1,0 +1,11 @@
+feature_module,allowed_use,inputs,source_status,blocked_use,caveat
+SPARSE_HISTORY_ELIGIBILITY_GATE,review-only population filter,sparse_history_flag;low_games_flag;prior_games;prior_points;prior_snaps;years_since_draft,available review-only,automatic production ranking boost/penalty,Gate only defines test population.
+ROLE_PROMOTION_SIGNAL,diagnostic breakout signal,snap_role_score;role_archetype;role_usage_bucket,available review-only,hidden sort/recommendation logic,Must stay lagged N-to-N+1.
+DEPTH_CHART_STARTER_SIGNAL,diagnostic breakout signal,depth_weeks_as_starter;depth_role_tier,available review-only,production starter projection,Prior-season depth chart cannot project team changes.
+SNAP_GROWTH_SIGNAL,candidate rule-test input,snap_share_trend;snap_games_with_offensive_snaps,available review-only,same-season use,Trend is prior-season only.
+AVAILABILITY_REBOUND_SIGNAL,guardrail/context,availability_score;prior missed games;injury caveat flag,partial with caveats,injury prediction,Not a medical model.
+DRAFT_CAPITAL_CONTEXT,rookie/sparse context,draft_overall;draft_capital_bucket;years_since_draft,safe review-only for positive draft evidence,UDFA inference or CFBD/prospect model input,Missing draft evidence remains unknown.
+AGE_LIFECYCLE_WINDOW,age-window slice/context,age;age_bucket;lifecycle_bucket,available review-only,automatic age boost/penalty,Position-specific aging curves differ.
+EXPECTED_OPPORTUNITY_PARTIAL_WINDOW_SIGNAL,partial-window diagnostic only,ffopportunity XFP;NGS position signal,partial-window promising,full-history plateau claim,2022-2025 style comparisons only.
+POSITION_SPECIFIC_BREAKOUT_RULES,future rule-test design,position-specific combinations of allowed modules,design only,dynamic tuning or broad Gauntlet,Predeclare rules before testing.
+FALSE_POSITIVE_TRAP_FLAGS,review-only harm check,low snap;weak depth;injury caveat;draft without role,available review-only,production demotion,"Flag for review, not automatic penalty."

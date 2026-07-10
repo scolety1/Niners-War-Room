@@ -1,0 +1,15 @@
+input_name,allowed_status,source,blocked_use,asof_status
+sparse-history population flags,ALLOWED_REVIEW_ONLY,Formula Data Mart and sparse design ledger,production rank input,lagged N-to-N+1
+age/lifecycle bucket,ALLOWED_REVIEW_ONLY,Age/lifecycle sidecar,automatic production boost/penalty,stable identity metadata review-only
+years since draft,ALLOWED_REVIEW_ONLY,Draft capital sidecar,future pre-draft use before draft year,static after NFL entry
+draft capital bucket,ALLOWED_REVIEW_ONLY_POSITIVE_EVIDENCE,Draft capital sidecar,UDFA inference or CFBD/prospect model input,static after NFL entry
+snap/depth role score,ALLOWED_REVIEW_ONLY,Snap/depth role sidecar,same-season target depth chart,lagged N-to-N+1
+starter/depth signal,ALLOWED_REVIEW_ONLY,Snap/depth role sidecar,future starter projection,lagged N-to-N+1
+snap growth signal,ALLOWED_REVIEW_ONLY_IF_LAGGED,Snap/depth role sidecar,target-season growth,lagged N-to-N+1
+low snap flag,ALLOWED_REVIEW_ONLY_GUARDRAIL,Snap/depth role sidecar,production demotion,lagged N-to-N+1
+injury/availability caveat,ALLOWED_REVIEW_ONLY_GUARDRAIL,Injury availability sidecar,injury prediction,lagged N-to-N+1
+availability rebound / clean-report context,ALLOWED_REVIEW_ONLY_CONTEXT,Injury availability sidecar,future health projection,lagged N-to-N+1
+role archetype,ALLOWED_REVIEW_ONLY_CONTEXT,Formula Data Mart role context,direct ranking input,lagged prior production context
+ffopportunity / NGS context,PARTIAL_WINDOW_ONLY,Autonomous V2 sidecars,full-history plateau claim,partial-window lagged 2022-2025 targets
+current-only ADP / market,BLOCKED,Market/ADP gate,historical formula input,as-of gate not passed
+CFBD/prospect production,BLOCKED,Rookie/draft gate,model input without source and identity gates,not approved

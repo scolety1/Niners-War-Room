@@ -1,0 +1,5 @@
+position,sparse_history_rows,startable_hits,startable_rate,false_negative_rows,false_positive_rows,dominant_population_type,dominant_false_negative_reason,design_implication
+QB,515,66,12.8%,43,18,veteran_sparse_recent_history,availability_rebound_or_clean_report_context,Prefer starter/depth and availability rebound signals; avoid pure low-prior-production dismissal.
+RB,1132,157,13.9%,79,117,sparse_multiyear_production,young_breakout,Separate role-promotion touches from low-snap traps; draft capital alone is insufficient.
+WR,1667,219,13.1%,100,125,sparse_multiyear_production,availability_rebound_or_clean_report_context,"Use young breakout, starter/depth, and expected opportunity as review-only diagnostics."
+TE,1068,86,8.1%,60,42,veteran_sparse_recent_history,availability_rebound_or_clean_report_context,Expect delayed breakouts; treat depth/starter context and age window by position.

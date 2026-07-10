@@ -1,0 +1,33 @@
+position,characteristic,dominant_value,rows_with_characteristic,successful_sparse_rows,share,interpretation
+QB,starter/depth signal,true,62,66,93.9%,Review-only breakout profile; not production ranking logic.
+QB,snap/depth role-promotion signal,true,47,66,71.2%,Review-only breakout profile; not production ranking logic.
+QB,availability rebound / clean-report context,true,59,66,89.4%,Review-only breakout profile; not production ranking logic.
+QB,expected fantasy opportunity present,present,14,66,21.2%,Review-only breakout profile; not production ranking logic.
+QB,NGS context present,present,10,66,15.2%,Review-only breakout profile; not production ranking logic.
+QB,draft capital bucket,round_1,47,66,71.2%,Review-only breakout profile; not production ranking logic.
+QB,age/lifecycle bucket,early_career_1_to_3,43,66,65.2%,Review-only breakout profile; not production ranking logic.
+QB,role archetype,qb_moderate_volume_passing_volume,29,66,43.9%,Review-only breakout profile; not production ranking logic.
+RB,starter/depth signal,true,109,157,69.4%,Review-only breakout profile; not production ranking logic.
+RB,snap/depth role-promotion signal,false,124,157,79.0%,Review-only breakout profile; not production ranking logic.
+RB,availability rebound / clean-report context,true,123,157,78.3%,Review-only breakout profile; not production ranking logic.
+RB,expected fantasy opportunity present,present,32,157,20.4%,Review-only breakout profile; not production ranking logic.
+RB,NGS context present,present,22,157,14.0%,Review-only breakout profile; not production ranking logic.
+RB,draft capital bucket,round_1,38,157,24.2%,Review-only breakout profile; not production ranking logic.
+RB,age/lifecycle bucket,early_career_1_to_3,109,157,69.4%,Review-only breakout profile; not production ranking logic.
+RB,role archetype,rb_high_volume_touch_volume,78,157,49.7%,Review-only breakout profile; not production ranking logic.
+WR,starter/depth signal,true,186,219,84.9%,Review-only breakout profile; not production ranking logic.
+WR,snap/depth role-promotion signal,true,135,219,61.6%,Review-only breakout profile; not production ranking logic.
+WR,availability rebound / clean-report context,true,196,219,89.5%,Review-only breakout profile; not production ranking logic.
+WR,expected fantasy opportunity present,present,53,219,24.2%,Review-only breakout profile; not production ranking logic.
+WR,NGS context present,present,42,219,19.2%,Review-only breakout profile; not production ranking logic.
+WR,draft capital bucket,round_1,75,219,34.2%,Review-only breakout profile; not production ranking logic.
+WR,age/lifecycle bucket,early_career_1_to_3,147,219,67.1%,Review-only breakout profile; not production ranking logic.
+WR,role archetype,wr_high_volume_target_volume,118,219,53.9%,Review-only breakout profile; not production ranking logic.
+TE,starter/depth signal,true,67,86,77.9%,Review-only breakout profile; not production ranking logic.
+TE,snap/depth role-promotion signal,false,51,86,59.3%,Review-only breakout profile; not production ranking logic.
+TE,availability rebound / clean-report context,true,73,86,84.9%,Review-only breakout profile; not production ranking logic.
+TE,expected fantasy opportunity present,present,18,86,20.9%,Review-only breakout profile; not production ranking logic.
+TE,NGS context present,present,13,86,15.1%,Review-only breakout profile; not production ranking logic.
+TE,draft capital bucket,round_2,27,86,31.4%,Review-only breakout profile; not production ranking logic.
+TE,age/lifecycle bucket,early_career_1_to_3,45,86,52.3%,Review-only breakout profile; not production ranking logic.
+TE,role archetype,te_high_volume_target_volume,48,86,55.8%,Review-only breakout profile; not production ranking logic.
