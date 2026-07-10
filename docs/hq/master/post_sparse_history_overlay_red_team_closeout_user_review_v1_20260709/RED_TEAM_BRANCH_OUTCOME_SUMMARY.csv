@@ -1,0 +1,11 @@
+lane,verdict,key_result,final_status
+Sparse-History Overlay Phase Handoff,GREEN_SPARSE_HISTORY_OVERLAY_PHASE_HANDOFF_READY,Preserved current model state and next red-team cluster,Accepted
+Targeted Veteran Decline / Role-Loss Guard Design,GREEN_TARGETED_VETERAN_DECLINE_ROLE_LOSS_GUARD_DESIGN_READY_FOR_RULE_TEST,"Ledgered 1716 target veteran / role-loss false-positive rows",Accepted
+Targeted Veteran Decline / Role-Loss Guard Candidate Rule Test,YELLOW_TARGETED_VETERAN_DECLINE_GUARD_TEST_MIXED_WITH_CAVEATS,"Tested 12 rules across 48 rule/reference/window rows",Accepted with caveats
+Sparse-History Primary Overlay Candidate,REVIEW_ONLY_OVERLAY_PRESERVED,REFINE_005_A_EARLY_ROLE_015,Preserve for review-only analysis
+Veteran Decline Best Mixed Rule,MIXED_CONTEXT_ONLY,VET_008_FALSE_NEGATIVE_PROTECTION_RULE,Do not advance without user review
+Review-Only Ranking Simulation,NOT_JUSTIFIED,No readiness gate authorized,Blocked
+Production / Model Use,BLOCKED,No production approval,Blocked
+Rankings Integration,BLOCKED,No ranking behavior changes,Blocked
+App / Runtime Behavior,UNCHANGED,No runtime edits,Blocked from this lane
+Source Promotion,BLOCKED,No source promotion,Blocked
