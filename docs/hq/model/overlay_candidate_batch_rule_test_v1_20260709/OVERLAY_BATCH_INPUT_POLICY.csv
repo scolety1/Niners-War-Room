@@ -1,0 +1,5 @@
+input_group,input_detail,status
+allowed,lagged sparse-history flags age/lifecycle draft-with-role snap/depth role starter/depth injury availability context,REVIEW_ONLY_ALLOWED
+partial_window,ffopportunity / NGS expected opportunity only if separately partial-window labeled,PARTIAL_WINDOW_ONLY_NOT_USED_IN_THIS_FULL_BATCH
+blocked,current-only ADP market without as-of proof same-season/future context SportsDataIO paid API PFF Elusive nwr_elusive_proxy_review_only,BLOCKED
+source_gate,all inputs inherited from accepted review-only sidecars and red-team panel,PASS_REVIEW_ONLY_SOURCE_GATE
