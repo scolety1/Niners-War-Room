@@ -1,0 +1,6 @@
+"scoreboard_window","candidate_id","ingredient_set","rows","seasons","spearman","comparability","canonical_decision"
+"baseline","PYF_PRIOR_YEAR_POINTS","PYF","5518","2013-2025","0.741","full_history","anchor_baseline"
+"pre_ingredient_formula_plateau","REFINE_007_OVERALL_THREE_65_25_10_LATE_20","multi_year_production_age_role","5518","2013-2025","0.755","full_history","review_only_plateau_reference"
+"best_full_history","GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_DEPTH_STABILITY_PCT100","snap_depth_role","5518","2013-2025","0.758","full_history_comparable","best_full_history_but_not_material_production_break"
+"best_broad_window","GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_SNAP_NOT_LOW_PCT100","snap_depth_role","5122","2014-2025","0.763","broad_window_comparable","best_broad_window_review_only"
+"best_partial_window","GAUNTLET_083_DECLINE_DECLINE_COMBO_GUARD__PLUS_FFOPPORTUNITY_PCT10","ffopportunity","1740","2022-2025","0.790","partial_window_modern","promising_but_not_full_history_comparable"

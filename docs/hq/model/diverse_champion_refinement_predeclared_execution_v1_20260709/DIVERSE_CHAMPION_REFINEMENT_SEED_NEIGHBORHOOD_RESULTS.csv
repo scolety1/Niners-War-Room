@@ -1,0 +1,7 @@
+seed_candidate,cluster_id,seed_neighborhood,seed_reference_spearman,refinement_candidates,best_refined_candidate,best_refined_spearman,best_delta_vs_seed,best_delta_vs_pyf,candidates_beating_pyf,candidates_beating_seed,candidates_beating_prior_gauntlet_best,material_seed_improvement,neighborhood_interpretation
+GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE,C01,overall_decline_age_role_hybrid,0.755,24,REFINE_007_OVERALL_THREE_65_25_10_LATE_20,0.755,-0.000,0.013,24,0,0,false,no_seed_improvement
+GAUNTLET_103_HYBRID_WR_TE_THREE_65_ROLE_AGE,C02,wr_te_hybrid_role_age,0.749,24,REFINE_033_WRTE_THREE_65_25_10_PLAIN,0.749,-0.000,0.012,24,0,0,false,no_seed_improvement
+GAUNTLET_039_QB_THREE_55_30_15,C03,qb_three_year,0.736,20,REFINE_057_QB_THREE_55_30_15,0.736,-0.000,0.024,20,0,0,false,no_seed_improvement
+GAUNTLET_057_TE_THREE_75_20_5,C05,te_three_year,0.719,22,REFINE_073_TE_THREE_75_20_5,0.719,-0.000,0.018,22,0,0,false,no_seed_improvement
+GAUNTLET_051_WR_THREE_65_25_10,C06,wr_three_year,0.703,22,REFINE_093_WR_THREE_75_20_5,0.703,-0.000,0.012,22,0,0,false,no_seed_improvement
+GAUNTLET_093_ROLE_RB_TOUCH_ROLE_REPORT,C07,rb_role_touch_context,0.651,24,REFINE_119_RB_THREE_70_20_10,0.650,-0.001,0.017,24,0,0,false,no_seed_improvement

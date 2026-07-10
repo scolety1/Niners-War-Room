@@ -1,0 +1,9 @@
+check_name,status,value,notes
+source_rows_ledgered,pass,220,Market/ADP candidate rows were ledgered from the prior locator plus targeted DynastyProcess/Sleeper checks.
+historical_asof_safe_sources,fail,0,No source proved historical player-season as-of-safe market or ADP values.
+likely_historical_needs_proof_sources,review,0,"These are schemas or candidates with date fields, not gate-passed formula inputs."
+current_or_display_only_sources,blocked_for_historical,88,Current-only market snapshots cannot be backfilled into historical formula tests.
+sidecar_built,blocked,no,Source/as-of gate did not pass.
+component_tests_run,blocked,no,Testing is blocked until a review-only historical/as-of-safe sidecar exists.
+formula_x_ingredient_tests_run,blocked,no,Testing is blocked until a review-only historical/as-of-safe sidecar exists.
+production_or_ranking_use,blocked,no,"No production/model-use, ranking integration, app/runtime change, source promotion, push, or merge."

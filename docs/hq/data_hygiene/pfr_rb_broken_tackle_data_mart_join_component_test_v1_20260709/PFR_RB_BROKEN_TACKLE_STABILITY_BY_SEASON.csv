@@ -1,0 +1,8 @@
+season,rows,pyf_spearman,raw_spearman,per_game_spearman,per_attempt_spearman_diagnostic,raw_delta_vs_pyf,per_game_delta_vs_pyf,joined_rate_within_mart_rb_season,notes
+2019,89,0.687,0.610,0.535,0.302,-0.077,-0.152,100.0%,Season-level stability only; small seasonal samples can swing.
+2020,104,0.587,0.564,0.520,0.282,-0.022,-0.067,100.0%,Season-level stability only; small seasonal samples can swing.
+2021,113,0.626,0.558,0.580,0.304,-0.069,-0.046,100.0%,Season-level stability only; small seasonal samples can swing.
+2022,110,0.665,0.594,0.558,0.260,-0.071,-0.107,100.0%,Season-level stability only; small seasonal samples can swing.
+2023,106,0.620,0.561,0.482,0.108,-0.059,-0.138,100.0%,Season-level stability only; small seasonal samples can swing.
+2024,96,0.705,0.650,0.599,0.249,-0.054,-0.106,100.0%,Season-level stability only; small seasonal samples can swing.
+2025,98,0.702,0.640,0.603,0.308,-0.062,-0.099,100.0%,Season-level stability only; small seasonal samples can swing.

@@ -1,0 +1,2 @@
+artifact,row_count,required_columns_present,missing_columns,duplicate_keys,review_only_status
+nflverse_epa_opportunity,5360,yes,,0,PASS

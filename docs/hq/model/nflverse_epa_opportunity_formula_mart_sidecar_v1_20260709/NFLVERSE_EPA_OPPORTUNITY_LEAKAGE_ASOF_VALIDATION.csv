@@ -1,0 +1,2 @@
+ingredient,joined_rows,bad_lag_rows,asof_result,rule
+nflverse_epa_opportunity,5360,0,PASS,feature_season must be less than target season

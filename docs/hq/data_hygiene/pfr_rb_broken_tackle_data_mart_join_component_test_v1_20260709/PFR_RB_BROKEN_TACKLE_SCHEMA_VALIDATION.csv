@@ -1,0 +1,15 @@
+check_name,status,observed_value,expected_value,notes
+source_file_exists,PASS,True,True,C:\NWR_REVIEW\pfr_advanced_source_provenance_hardening_v1_20260707\advstats_season_rush.parquet
+source_hash_matches_prior_addendum,PASS,28f44be62bd30291d5310ff62a453025d804b4d0b6720da820cb6cd943c45187,28f44be62bd30291d5310ff62a453025d804b4d0b6720da820cb6cd943c45187,Matches the PFR rushing source SHA recorded by the addendum.
+cache_hash_matches_primary,PASS,28f44be62bd30291d5310ff62a453025d804b4d0b6720da820cb6cd943c45187,28f44be62bd30291d5310ff62a453025d804b4d0b6720da820cb6cd943c45187,Duplicate cache is manifest-only.
+required_source_columns_present,PASS,att|brk_tkl|g|pfr_id|player|pos|season|tm,att|brk_tkl|g|pfr_id|player|pos|season|tm,"Allowed broken-tackle fields derive from brk_tkl, g, and att."
+source_season_coverage,PASS,2018-2025,2018-2025 observed; lagged mart test uses 2018-2024,Does not cover full 2013-2025 source history.
+rb_source_rows_present,PASS,1110,>0,After preferring 2TM total rows for multi-team players.
+duplicate_source_player_season_after_aggregation,PASS,0,0,Pre-aggregation duplicate split rows observed: 21.
+ambiguous_pfr_name_season_keys,PASS,0,0,Join blocks ambiguous PFR name-season rows if encountered.
+mart_rb_player_season_duplicate_keys,PASS,0,0,Formula Data Mart sidecar grain remains player_id + season + position.
+sidecar_required_columns_present,PASS,coverage_status|join_status|pfr_rush_brk_tkl__per_attempt|pfr_rush_brk_tkl__per_game|pfr_rush_brk_tkl__raw|player_id|player_name|position|review_only_status|season|source_hash|source_path,coverage_status|join_status|pfr_rush_brk_tkl__per_attempt|pfr_rush_brk_tkl__per_game|pfr_rush_brk_tkl__raw|player_id|player_name|position|review_only_status|season|source_hash|source_path,Output sidecar retains required review-only columns.
+sidecar_duplicate_output_keys,PASS,0,0,Sidecar is safe to inspect at RB player-season grain.
+joined_rows_available_for_component_test,PASS,716,>=100,Enough rows for a focused RB-only component signal test.
+leakage_asof_lag_rule,PASS,source_feature_season < target season for all joined rows,True,No same-season PFR values are used for target-season outcomes.
+blocked_broad_pfr_and_pff_guard,PASS,only brk_tkl derived raw/per_game/per_attempt included; no PFF/proxy fields,narrow RB-only PFR broken tackle,PFR remains not production-approved.

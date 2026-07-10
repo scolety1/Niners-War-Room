@@ -1,0 +1,8 @@
+check_name,status,value,notes
+sidecar_row_count,pass,5518,Expected Formula Data Mart player-season grain.
+duplicate_player_season_position_keys,pass,0,Duplicate key check.
+manifest_duplicate_player_ids,review,101,Primary manifest duplicate player_id check.
+source_use_gate_safe_sources,pass,6,Sources classified as draft-capital safe for review-only.
+future_draft_leakage_rows,pass,0,Rows where draft event would be future context.
+model_use_allowed,pass,false,Sidecar is review-only only; source files explicitly block model/training/production use.
+udfa_inference,pass,not_inferred,"Missing draft evidence remains Not enough information, not UDFA."

@@ -1,0 +1,11 @@
+ingredient,position,eligible_rows,joined_rows,join_coverage_pct,target_seasons,feature_seasons,join_key,asof_status
+ffopportunity,ALL,1802,1740,96.6%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+ffopportunity,QB,256,256,100.0%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+ffopportunity,RB,449,428,95.3%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+ffopportunity,WR,699,678,97.0%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+ffopportunity,TE,398,378,95.0%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+nflverse_ngs,ALL,1802,944,52.4%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+nflverse_ngs,QB,256,163,63.7%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+nflverse_ngs,RB,449,227,50.6%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+nflverse_ngs,WR,699,386,55.2%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1
+nflverse_ngs,TE,398,168,42.2%,2022|2023|2024|2025,2021|2022|2023|2024,player_id + feature_season + position,PASS_LAGGED_N_TO_N_PLUS_1

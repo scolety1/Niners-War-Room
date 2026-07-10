@@ -1,0 +1,23 @@
+metric_id,metric_name,required,scope,definition,baseline_comparator,pass_condition,caveat
+METRIC_001,PYF baseline metrics,true,overall_and_position,Reproduce PYF baseline before evaluating candidates,PYF,Must calculate for every included position,No interpretation if PYF fails
+METRIC_002,Spearman overall,true,overall,Spearman rank relationship between candidate rank and outcome finish,PYF,Must report candidate PYF and delta,Review-only only
+METRIC_003,Spearman by position,true,QB/RB/WR/TE,Position-level Spearman rank relationship,PYF,Must report all positions or explicitly scoped position,No pooled-only advancement
+METRIC_004,Startable precision,true,overall_and_position,Precision among rows predicted as startable under NWR review format,PYF,Must not materially worsen versus PYF without caveat,Definition must match labels
+METRIC_005,Top-12 precision,true,position_relevant,Precision or hit rate for top-12 where relevant,PYF,Must report for QB/RB/WR/TE where meaningful,Slice size caveats required
+METRIC_006,Top-24 precision,true,position_relevant,Precision or hit rate for top-24 where relevant,PYF,Must report for RB/WR where meaningful,Slice size caveats required
+METRIC_007,Top-36 precision,true,position_relevant,Precision or hit rate for top-36 where relevant,PYF,Must report for WR where meaningful,Slice size caveats required
+METRIC_008,MAE rank vs finish,true,overall_and_position,Mean absolute rank error where meaningful,PYF,Must report with caveat,Rank error is not production accuracy
+METRIC_009,RMSE rank vs finish,true,overall_and_position,Root mean squared rank error where meaningful,PYF,Must report with caveat,Outlier-sensitive
+METRIC_010,PYF delta,true,overall_and_position,Difference between candidate and PYF metrics,PYF,Must show direction and size,Delta does not imply winner
+METRIC_011,Sparse-history harm,true,slice,Error delta on sparse-history rows,PYF,Must not materially worsen sparse-history rows,Guardrail only
+METRIC_012,Low-games harm,true,slice,Error delta on low-games rows,PYF,Must not materially worsen low-games rows,Guardrail only
+METRIC_013,Prior-production decline false positives,true,slice,False-positive concentration in prior-decline or high-volume prior-production slices,PYF,Must report count share and delta,No automatic decline penalty
+METRIC_014,PYF false-positive improvement,true,overall_and_slice,Change in PYF false positives,PYF,Can be promising only without broad harm,Review-only only
+METRIC_015,PYF false-negative improvement,true,overall_and_slice,Change in PYF false negatives,PYF,Must protect breakout rows,Review-only only
+METRIC_016,Age/lifecycle slice effects,true,slice,Metrics by age and lifecycle buckets,PYF,Must report older elite and young sparse-history harm risks,Age is not a direct score
+METRIC_017,Role-archetype slice effects,true,slice,Metrics by role archetype and role buckets,PYF,Must report high-volume and low/sparse misses,Role is not a direct score
+METRIC_018,Coverage and missingness,true,overall_and_input_family,Rows non-null values and fallback counts,N/A,Must report before result interpretation,No fake values
+METRIC_019,Candidate stability by season,true,season,Season-by-season candidate delta versus PYF,PYF,Must flag unstable or sign-flipping candidates,Review-only stability check
+METRIC_020,Leave-one-season-out directional check,true,season_if_feasible,Check whether candidate direction remains positive when each season is omitted,PYF,Feasible candidates must report direction count,Not champion refinement
+METRIC_021,Leakage/as-of validation,true,input_family,Confirm all inputs are decision-date safe,N/A,Any failure stops affected candidate,No current/future context
+METRIC_022,Source/use-gate status,true,input_family,Document use gate for every input,N/A,Ambiguous or blocked gate stops affected candidate,No source promotion

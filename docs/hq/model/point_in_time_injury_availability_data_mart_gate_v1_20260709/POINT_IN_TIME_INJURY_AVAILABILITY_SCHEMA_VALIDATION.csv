@@ -1,0 +1,2 @@
+artifact,row_count,required_columns_present,missing_columns,duplicate_keys,rows_with_roster_record,rows_with_injury_report_record,rows_missing_availability_score,review_only_status
+point_in_time_injury_availability,5518,yes,,0,5490,3977,28,PASS

@@ -1,0 +1,12 @@
+check,result,evidence,caveat
+csv_parse,PASS,All generated CSV artifacts parsed with Python csv module.,
+row_count,PASS,5518,"Expected Formula Data Mart row universe is 5,518."
+season_coverage,PASS,2013-2025 (13 seasons),
+position_coverage,PASS,QB=754;RB=1429;TE=1211;WR=2124,
+duplicate_key_check,PASS,0,
+age_missingness_rate,PASS_WITH_CAVEAT,8/5518 (0.14%),"Missing DOB remains unknown, not zero-filled."
+lifecycle_missingness_rate,PASS_WITH_CAVEAT,8/5518 (0.14%),Lifecycle bucket derived only where draft_year is present.
+identity_join_status,PASS_WITH_CAVEAT,IDENTITY_REVIEW_REQUIRED_DUPLICATE_GSIS_DOB_CONFLICT=3;JOIN_MISSING_DP_GSIS=8;PASS_GSIS_ID_JOIN=5507,Any missing or conflicting IDs remain flagged.
+leakage_asof_status,PASS,NOT_USABLE_FOR_AGE_SIGNAL_WHEN_BIRTHDATE_MISSING=8;PASS_STABLE_DOB_AND_DRAFT_YEAR_DERIVED_ASOF_SEPT_01_NO_OUTCOME_FIELDS=5510,DOB/draft-year are stable identity metadata and age is computed as of Sept. 1 of target season.
+source_gate_status,PASS_WITH_CAVEAT,review_only_stable_identity_dob_candidate_not_production_model_use,No production/model-use approval or source promotion.
+maximum_allowed_use,PASS_WITH_CAVEAT,REVIEW_ONLY_COMPONENT_SIGNAL_TESTS plus REVIEW_ONLY_GUARDRAIL_CONTEXT and REVIEW_ONLY_FORMULA_FAMILY_CONTEXT,"Not exact replay, not Formula Gauntlet tournament clearance, not rankings integration."

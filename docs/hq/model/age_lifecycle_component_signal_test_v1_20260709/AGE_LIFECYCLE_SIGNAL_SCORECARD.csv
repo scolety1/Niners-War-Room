@@ -1,0 +1,6 @@
+position,rows,age_missing_rows,age_missing_rate,age_vs_finish_spearman,pyf_rank_vs_finish_spearman,pyf_false_positives,pyf_false_negatives,older_age_pyf_false_positives,older_age_share_of_pyf_false_positives,young_age_pyf_false_negatives,young_age_share_of_pyf_false_negatives,early_lifecycle_pyf_false_negatives,early_lifecycle_share_of_pyf_false_negatives,sparse_history_rows,low_games_rows,signal_interpretation
+QB,754,0,0.0%,0.060,0.712,55,74,26,47.3%,24,32.4%,24,32.4%,328,328,review_only_context; does not replace PYF
+RB,1429,0,0.0%,0.052,0.634,207,86,48,23.2%,46,53.5%,46,53.5%,344,344,review_only_context; does not replace PYF
+TE,1211,4,0.3%,-0.065,0.703,81,68,26,32.1%,32,47.1%,35,51.5%,342,342,review_only_context; does not replace PYF
+WR,2124,4,0.2%,0.025,0.691,229,125,79,34.5%,69,55.2%,68,54.4%,439,439,review_only_context; does not replace PYF
+ALL,5518,8,0.1%,,,572,353,179,31.3%,171,48.4%,173,49.0%,1453,1453,review_only_context; does not replace PYF

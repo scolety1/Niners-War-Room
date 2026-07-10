@@ -1,0 +1,9 @@
+lane,ingredient,status,best_result,next_use_decision
+PFR RB broken tackle,pfr_rb_broken_tackle,AVAILABLE_REVIEW_ONLY_DESCRIPTIVE_ONLY,0.595 vs PYF 0.655 same rows,closed as priority formula ingredient; descriptive RB slice only
+nflverse advanced ingredient audit,advanced ingredient inventory,AVAILABLE_REVIEW_ONLY_DESCRIPTIVE_ONLY,ffopportunity identified as next executable lane,audit complete; use as source trace only
+ffopportunity / NGS autonomous V2,ffopportunity + NGS,AVAILABLE_BUT_PARTIAL_WINDOW_ONLY,0.790 partial-window formula x ffopportunity,promising interaction context; no full-history claim
+nflverse EPA/opportunity,EPA/opportunity,AVAILABLE_REVIEW_ONLY_INTERACTION_CONTEXT,0.747 full-history EPA x formula; 0.789 partial ffop combo,do not run EPA-only branch
+nflverse receiving opportunity,receiving opportunity,AVAILABLE_REVIEW_ONLY_INTERACTION_CONTEXT,0.755 full-history tie; 0.790 partial combo,use as context in bounded combos only
+nflverse snap/depth role,snap/depth role,AVAILABLE_REVIEW_ONLY_ADDITIVE_SIGNAL,0.763 broad-window 2014-2025 rows 5122,best broad-window non-V2 sidecar; still not production/ranking
+point-in-time injury availability,injury/availability,AVAILABLE_REVIEW_ONLY_GUARDRAIL_CONTEXT,0.757 broad/full; 0.789 partial ffop combo,guardrail/context only; did not beat snap/depth .763
+Historical Market / ADP,market/adp,PARK_FOR_LATER,not yet source/as-of gated,recommended next data lane after normalization

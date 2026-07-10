@@ -1,0 +1,16 @@
+field_name,present,notes
+result_id,true,Required normalized result field.
+result_type,true,Required normalized result field.
+base_candidate_id,true,Required normalized result field.
+ingredient_family,true,Required normalized result field.
+ingredient,true,Required normalized result field.
+weight,true,Required normalized result field.
+position,true,Required normalized result field.
+rows_tested,true,Required normalized result field.
+candidate_spearman,true,Required normalized result field.
+pyf_spearman_same_rows,true,Required normalized result field.
+spearman_delta_vs_pyf,true,Required normalized result field.
+formula_alone_spearman_same_rows,true,Required normalized result field.
+spearman_delta_vs_formula_alone,true,Required normalized result field.
+full_history_comparable,true,Required normalized result field.
+interpretation,true,Required normalized result field.

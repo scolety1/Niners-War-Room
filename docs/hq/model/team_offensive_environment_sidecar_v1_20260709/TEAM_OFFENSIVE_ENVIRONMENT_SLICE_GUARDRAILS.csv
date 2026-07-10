@@ -1,0 +1,10 @@
+slice,metric,rows,value,notes
+best_result,run_id,1740,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_TEAM_FFOP_PCT050_050,Best team-environment result by Spearman.
+best_result,spearman,1740,0.788,PARTIAL_WINDOW_PROMISING
+prior_team_joined,coverage,5518,99.9%,Prior-team evidence coverage.
+missing_prior_team,coverage,5518,0.0%,Rows where prior team could not be safely inferred.
+team_change,caveat,5518,prior_team_only,Target-season team changes are not projected or used.
+sparse_history,impact,1740,rows=437;candidate_error=2.3%;pyf_error=2.5%,From best result row.
+low_games,impact,1740,rows=437;candidate_error=2.3%;pyf_error=2.5%,From best result row.
+age_lifecycle,interaction,1740,older_late_rows=130;young_early_rows=857,From best result row.
+role_archetype,interaction,1740,high_role_rows=456;low_sparse_role_rows=543,From best result row.
