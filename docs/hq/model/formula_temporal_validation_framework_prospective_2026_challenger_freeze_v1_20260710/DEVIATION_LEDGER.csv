@@ -1,0 +1,2 @@
+deviation_id,recorded_at_utc,materiality,status,affected_scope,description,resolution
+DEV-000,2026-07-10T22:34:06Z,none,NO_DEVIATION,experiment,"No deviation existed when preregistration was locked and hashed.",none_required

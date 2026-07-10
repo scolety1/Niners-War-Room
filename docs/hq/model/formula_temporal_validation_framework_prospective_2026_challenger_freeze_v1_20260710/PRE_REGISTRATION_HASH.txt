@@ -1,0 +1,8 @@
+file=PRE_REGISTRATION_LOCK.md
+sha256=1b8cfac3807613c453588a60b24b6303e8bcaac35d03639c1927ec8d81735e28
+bytes=21061
+lock_effective_timestamp=2026-07-10T22:34:06Z
+hash_recorded_before_scoring=true
+repository_base=c8c798cf0987a4ddc10dc7668a494e7569bfe960
+branch=work/formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710
+status=LOCKED_AND_HASHED_BEFORE_ANY_SCORED_ORIGIN

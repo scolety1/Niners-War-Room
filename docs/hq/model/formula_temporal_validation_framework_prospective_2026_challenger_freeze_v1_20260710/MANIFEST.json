@@ -1,0 +1,258 @@
+{
+  "accepted_controlling_audit_commit": "dce5131d77f9fb671bdf6141650677d2a3444641",
+  "app_runtime_change_allowed": false,
+  "branch": "work/formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710",
+  "files": [
+    {
+      "bytes": 58,
+      "conditional": false,
+      "exists": true,
+      "path": ".gitattributes",
+      "required": false,
+      "sha256": "bf3a745870d04e370cc4b3ac81440cd5763c306c52818567bc5f538558ead01e"
+    },
+    {
+      "bytes": 17481,
+      "conditional": false,
+      "exists": true,
+      "path": "CANDIDATE_MINUS_PYF_DELTAS.csv",
+      "required": true,
+      "sha256": "4861fdf375427e301547c441475d63cf83c03eb41ac394e0b99ffd45709da067"
+    },
+    {
+      "bytes": 1483,
+      "conditional": false,
+      "exists": true,
+      "path": "CANDIDATE_REGISTRY.csv",
+      "required": true,
+      "sha256": "47a36872cb2872c9d2fc96e72b8073219c4d6a808bcc5acc088f553b6c502ccf"
+    },
+    {
+      "bytes": 984,
+      "conditional": false,
+      "exists": true,
+      "path": "CHALLENGER_GATE_DECISION.md",
+      "required": true,
+      "sha256": "20db4fb9c9524dfda6d8fb69f51f0807c5db65cd2682a83bc3636227b81661d9"
+    },
+    {
+      "bytes": 225,
+      "conditional": false,
+      "exists": true,
+      "path": "DEVIATION_LEDGER.csv",
+      "required": true,
+      "sha256": "c5b2b853eeeaaead13a435f3d3b2b41f4e4d2d2b8bb6b7f2a191b8aacbda1b91"
+    },
+    {
+      "bytes": 1061,
+      "conditional": false,
+      "exists": true,
+      "path": "EXECUTIVE_VERDICT.md",
+      "required": true,
+      "sha256": "4e6d98952bb3599c58ae7264129f107aa2dde14496f81edd73446733c53b3b91"
+    },
+    {
+      "bytes": 3394,
+      "conditional": false,
+      "exists": true,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "required": true,
+      "sha256": "11d88cefdd2c2b40859e282087fc55b7d926a3d7edeebd2119009db6530a39af"
+    },
+    {
+      "bytes": 3618,
+      "conditional": false,
+      "exists": true,
+      "path": "FORMULA_TEMPORAL_VALIDATION_FRAMEWORK_V1_REPORT.md",
+      "required": true,
+      "sha256": "938dfc09dd7dd58f1ef2dd685227a9cd3598c966baccdb68cdb039c57e794212"
+    },
+    {
+      "bytes": 15876,
+      "conditional": false,
+      "exists": true,
+      "path": "FULL_COVERAGE_SCOREBOARD.csv",
+      "required": true,
+      "sha256": "0f998d9f83a60a0262b477646cff486176f80db803ceae932e5fad221a404be6"
+    },
+    {
+      "bytes": 1882,
+      "conditional": false,
+      "exists": true,
+      "path": "FUTURE_2026_OUTCOME_EVALUATION_CONTRACT.md",
+      "required": true,
+      "sha256": "49865c6271a2664afa1088b212edf1621e7a8e817aee91e5500f51e944a0c1e3"
+    },
+    {
+      "bytes": 263874,
+      "conditional": false,
+      "exists": true,
+      "path": "MODEL_FEATURE_AND_COEFFICIENT_LEDGER.csv",
+      "required": true,
+      "sha256": "cf6f6eea5785694b274395c507326f4e3cbaa9ffdca8a54a5eeff4f98cb52ea4"
+    },
+    {
+      "bytes": 4789818,
+      "conditional": false,
+      "exists": true,
+      "path": "OUT_OF_FOLD_PREDICTIONS.csv",
+      "required": true,
+      "sha256": "afa3a87bee6230f2e455c0c01f542b12d17bb737ddb76f1f5af45b607833d390"
+    },
+    {
+      "bytes": 1621,
+      "conditional": false,
+      "exists": true,
+      "path": "POSITION_BALANCED_SCOREBOARD.csv",
+      "required": true,
+      "sha256": "7f7f5502ed63991be13dbab15ff1d27c3e680c029a017b69a7c126e97b46e842"
+    },
+    {
+      "bytes": 388,
+      "conditional": false,
+      "exists": true,
+      "path": "PRE_REGISTRATION_HASH.txt",
+      "required": true,
+      "sha256": "340034e3bbfad1b22ed12b389ba6add360a5c739a1a4f4ea68cd17259f539501"
+    },
+    {
+      "bytes": 21061,
+      "conditional": false,
+      "exists": true,
+      "path": "PRE_REGISTRATION_LOCK.md",
+      "required": true,
+      "sha256": "1b8cfac3807613c453588a60b24b6303e8bcaac35d03639c1927ec8d81735e28"
+    },
+    {
+      "bytes": 1148885,
+      "conditional": false,
+      "exists": true,
+      "path": "PROSPECTIVE_2026_BASELINE_FREEZE.csv",
+      "required": true,
+      "sha256": "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
+    },
+    {
+      "absence_reason": "REGULARIZED_CHALLENGER_DID_NOT_PASS_EVERY_PREREGISTERED_HISTORICAL_STABILITY_GATE",
+      "bytes": null,
+      "conditional": true,
+      "exists": false,
+      "path": "PROSPECTIVE_2026_CHALLENGER_FREEZE.csv",
+      "required": false,
+      "sha256": null
+    },
+    {
+      "bytes": 5616,
+      "conditional": false,
+      "exists": true,
+      "path": "PROSPECTIVE_2026_FREEZE_MANIFEST.json",
+      "required": true,
+      "sha256": "e3138680da27350239e8f0f5dea6b43cd778c3daab979c17fd7ba76280b16d94"
+    },
+    {
+      "bytes": 60564,
+      "conditional": false,
+      "exists": true,
+      "path": "ROLLING_ORIGIN_REGISTRY.csv",
+      "required": true,
+      "sha256": "f03f3e5202a3c0d69a169198e7f29382e6d7fd3fb7999d0a9b6df90670010c14"
+    },
+    {
+      "bytes": 3415,
+      "conditional": false,
+      "exists": true,
+      "path": "SEASON_BALANCED_SCOREBOARD.csv",
+      "required": true,
+      "sha256": "3c26b5a69bf62fc80b58a6ea5c74a3913000e72fca0ad49236bda66200fbb752"
+    },
+    {
+      "bytes": 31839,
+      "conditional": false,
+      "exists": true,
+      "path": "SEASON_POSITION_METRICS.csv",
+      "required": true,
+      "sha256": "91f1bbb746e044942649ee657787ce4e70d1d4de6de0f3b4cc9b78bff3526748"
+    },
+    {
+      "bytes": 19414,
+      "conditional": false,
+      "exists": true,
+      "path": "SHARED_ROW_COMPARISON_SCOREBOARD.csv",
+      "required": true,
+      "sha256": "96e5afc8a6bb4a686ed7070f289221fefc4769f4c4cb6b7b020301655b2b8877"
+    },
+    {
+      "bytes": 2621,
+      "conditional": false,
+      "exists": true,
+      "path": "SOURCE_AND_RECEIPT_GATE.md",
+      "required": true,
+      "sha256": "2117d16ff7ca80b48306fb865d6e8aa98ca16f7482292feb307275bf0c6ef6f1"
+    },
+    {
+      "bytes": 5952,
+      "conditional": false,
+      "exists": true,
+      "path": "SOURCE_HASH_LEDGER.csv",
+      "required": true,
+      "sha256": "d8baefe7b41fcd8a601f33d6dc9d6c0f2753d4f3e3b5189d25b72cb065a594df"
+    },
+    {
+      "bytes": 134458,
+      "conditional": false,
+      "exists": true,
+      "path": "TOP_K_AND_SEVERE_MISS_REVIEW.csv",
+      "required": true,
+      "sha256": "435d82e822a608505fd3d23c3aa0d95b26c65b820b8596cbe4805f2978dfeebb"
+    },
+    {
+      "bytes": 1521,
+      "conditional": false,
+      "exists": true,
+      "path": "UNCERTAINTY_AND_STABILITY_REVIEW.md",
+      "required": true,
+      "sha256": "89f999c38859c770e8fc9180843995bc31ca5dd8dbb6fcbc8a32b44f51c624a4"
+    },
+    {
+      "bytes": 2400,
+      "conditional": false,
+      "exists": true,
+      "path": "VALIDATION_RESULTS.md",
+      "required": true,
+      "sha256": "4196a8628af7a4123a334485e7fe9ac168eebe68a4f2a6bf75e372c7c57f3868"
+    },
+    {
+      "bytes": 125275,
+      "conditional": false,
+      "exists": true,
+      "path": "run_formula_temporal_validation_framework_v1.py",
+      "required": false,
+      "sha256": "6e55007d5a6e5353388945971de2c268b44801b0bbb71b27303c71da42af3961"
+    },
+    {
+      "bytes": 1315,
+      "conditional": false,
+      "exists": true,
+      "path": "validate_csvs_with_artifact_tool.mjs",
+      "required": false,
+      "sha256": "20e6db09b46c17be3191619cd39a989afc7cf3eeaf4b5e0e98fbd7ce223cf42c"
+    },
+    {
+      "bytes": 20516,
+      "conditional": false,
+      "exists": true,
+      "path": "validate_formula_temporal_validation_framework_v1.py",
+      "required": false,
+      "sha256": "540682374910312c5a5cbf0b17b1e6174f5e2faf22179b701300a93564afb667"
+    }
+  ],
+  "generated_at_utc": "2026-07-10T23:35:16Z",
+  "manifest_self_hash_policy": "MANIFEST.json excludes its own recursive hash; all other packet files are hashed",
+  "packet": "formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710",
+  "precommit_base_and_verified_remote_hq": "c8c798cf0987a4ddc10dc7668a494e7569bfe960",
+  "production_model_use_allowed": false,
+  "push_authorized": false,
+  "rankings_integration_allowed": false,
+  "schema_version": "formula_temporal_validation_packet_manifest_v1",
+  "source_promotion_allowed": false,
+  "verdict": "RED_REGULARIZED_CHALLENGER_FAILED_TEMPORAL_VALIDATION"
+}

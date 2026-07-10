@@ -1,0 +1,94 @@
+{
+  "app_runtime_change_allowed": false,
+  "baseline_freeze": {
+    "path": "PROSPECTIVE_2026_BASELINE_FREEZE.csv",
+    "rows": 924,
+    "sha256": "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179",
+    "valid_rows_by_candidate": {
+      "CURRENT_APP_VISIBLE_REVIEW_BOARD_COMPARATOR_2026_PRE_DRAFT": 232,
+      "GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE": 231,
+      "PYF": 231
+    }
+  },
+  "challenger_freeze": {
+    "absence_reason": "REGULARIZED_CHALLENGER_DID_NOT_PASS_EVERY_PREREGISTERED_HISTORICAL_STABILITY_GATE",
+    "applicable": false,
+    "path": null,
+    "rows": 0,
+    "sha256": null
+  },
+  "correction_policy": "Never rewrite V1. Retain V1 and create a separately versioned snapshot.",
+  "current_board_comparator_caveat": "Exact current app-visible/current-board review artifact; candidate_review_only_not_active_rankings; current-information and proprietary-component advantage; not equivalent to controlled receipt-safe formulas.",
+  "feature_season": 2025,
+  "freeze_timestamp": "2026-07-10T22:34:06Z",
+  "immutable": true,
+  "inputs": [
+    {
+      "name": "FORMULA_DATA_MART",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\data_hygiene\\formula_data_mart_feature_availability_audit_v1_20260709\\FORMULA_DATA_MART_REVIEW_ONLY.csv",
+      "sha256": "4c63a01cc4d56d0496d56ff13d4dabb4faa0b7a24d8f7510a368ad48d9714151",
+      "source_asof": "2013-2025 target seasons"
+    },
+    {
+      "name": "AGE_LIFECYCLE_SIDECAR",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\data_hygiene\\age_lifecycle_sidecar_freeze_validation_v1_20260709\\MODEL_V4_AGE_LIFECYCLE_SIDECAR_REVIEW_ONLY.csv",
+      "sha256": "ea5ec2455c89031b8deb6077847b7c10e4da4a09f604bf1dae0e6250983f883b",
+      "source_asof": "target-season September 1 age"
+    },
+    {
+      "name": "ACCEPTED_GAUNTLET_RUNNER",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\model\\full_review_only_formula_gauntlet_candidate_arena_v1_20260709\\run_full_review_only_formula_gauntlet_candidate_arena_v1.py",
+      "sha256": "791f22187d98cd58e11be34a474f63688001887affd583fb1fd5d2c392231038",
+      "source_asof": "2026-07-09 repository artifact"
+    },
+    {
+      "name": "FORMULA_MART_BUILDER",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\data_hygiene\\formula_data_mart_feature_availability_audit_v1_20260709\\build_formula_data_mart_feature_availability_audit_v1.py",
+      "sha256": "bbaec148c2edd1c57ace89d371357180228e65ba5e1d15ca8e04bb9c9f054e34",
+      "source_asof": "2026-07-09 repository artifact"
+    },
+    {
+      "name": "CANONICAL_SEVERE_MISS_RUNNER",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\model\\formula_miss_taxonomy_red_team_review_v1_20260709\\build_formula_miss_taxonomy_red_team_review_v1.py",
+      "sha256": "eb8066a38bb05cded46719bc532b7c1467215cdd29e0bcb3ad869fecbf2ff75e",
+      "source_asof": "2026-07-09 repository artifact"
+    },
+    {
+      "name": "2026_COMPLETED_FEATURE_INPUT",
+      "path": "C:\\NWR_REVIEW\\current_board_candidate_scoring_feature_completion_gate_v1_20260702\\current_board_candidate_feature_input_completed_review_only.csv",
+      "sha256": "bdff4e6c0c51b64a3f867c6ed11f72cda088046e1ffd194c32fb55f49357d1e0",
+      "source_asof": "feature season 2025; gate 2026-07-02"
+    },
+    {
+      "name": "RAW_PLAYER_STATS_RECEIPT",
+      "path": "C:\\NWR_SHARED_DATA\\scheduled_ingest\\nflverse\\player_stats_source_admission_v1_20260630\\player_stats_weekly.csv",
+      "sha256": "a38c47ea830e6929e8de31d822496862d13873d13689ff90d2e50dac854901ba",
+      "source_asof": "created 2026-07-01T01:35:45.256663Z; 2025 REG facts"
+    },
+    {
+      "name": "DYNASTYPROCESS_ID_DOB_DRAFT",
+      "path": "C:\\NWR\\_manual_recovery_dropzone\\current_board_rebuild_inputs_v1\\z1\\recovered_from_final_laptop_handoff\\local_exports\\data_packs\\lve_sleeper_20260505_pdf_ranks_draft_pool_20260508_213233\\draft_pool_downloads\\dynastyprocess_db_playerids.csv",
+      "sha256": "8b3f5d19e29163363dce579b61574277ea138c7b6f292b899f9ecfe672cd6cc1",
+      "source_asof": "stable identity metadata; age as of 2026-09-01"
+    },
+    {
+      "name": "EXACT_CURRENT_BOARD_COMPARATOR",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\docs\\hq\\model\\current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708\\rebuilt_full_player_board_value_review_rows.csv",
+      "sha256": "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4",
+      "source_asof": "native score_as_of_date=2026-pre-draft; rebuilt 2026-07-08"
+    },
+    {
+      "name": "NWR_1QB_NONPPR_FIRST_DOWN_SCORING_CONFIG",
+      "path": "C:\\NWR\\Niners-War-Room-formula-temporal-validation-prospective-2026-challenger-freeze-v1-20260710\\config\\nwr_scoring_rules_nwr_1qb_nonppr_fd_v1.json",
+      "sha256": "03986944a57f0f73c78a8f56413b53749b3e384a10788ff7ab262d21e0b1eab2",
+      "source_asof": "repository scoring contract"
+    }
+  ],
+  "production_model_use_allowed": false,
+  "rankings_integration_allowed": false,
+  "review_only": true,
+  "schema_version": "formula_temporal_validation_prospective_freeze_v1",
+  "source_promotion_allowed": false,
+  "target_season": 2026,
+  "verdict": "RED_REGULARIZED_CHALLENGER_FAILED_TEMPORAL_VALIDATION"
+}

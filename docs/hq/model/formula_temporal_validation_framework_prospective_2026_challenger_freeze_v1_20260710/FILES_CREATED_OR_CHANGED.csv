@@ -1,0 +1,32 @@
+path,change_type,required_status,presence_status,purpose
+.gitattributes,created,supporting,present,Preserves the immutable preregistration hard-break bytes while scoping Git whitespace validation
+FORMULA_TEMPORAL_VALIDATION_FRAMEWORK_V1_REPORT.md,created,required,present,Full retrospective temporal-validation report and prospective freeze summary
+EXECUTIVE_VERDICT.md,created,required,present,Executive decision and closeout
+PRE_REGISTRATION_LOCK.md,created,required,present,Immutable pre-score candidate metric and gate contract
+PRE_REGISTRATION_HASH.txt,created,required,present,Pre-score SHA-256 receipt for the preregistration
+DEVIATION_LEDGER.csv,created,required,present,Append-only deviation record; V1 executed with no deviation
+SOURCE_AND_RECEIPT_GATE.md,created,required,present,Source identity receipt and blocked-use decision
+SOURCE_HASH_LEDGER.csv,created,required,present,Exact input hashes source dates and allowed uses
+ROLLING_ORIGIN_REGISTRY.csv,created,required,present,All 132 candidate-season-position origins and hashes
+CANDIDATE_REGISTRY.csv,created,required,present,Exactly three locked historical candidates
+MODEL_FEATURE_AND_COEFFICIENT_LEDGER.csv,created,required,present,Ridge preprocessing statistics coefficients and hashes
+OUT_OF_FOLD_PREDICTIONS.csv,created,required,present,Hashed rolling-origin predictions with post-hash outcome joins
+SEASON_POSITION_METRICS.csv,created,required,present,Spearman and Kendall for every evaluation group
+SHARED_ROW_COMPARISON_SCOREBOARD.csv,created,required,present,Paired candidate-versus-PYF metrics and shared coverage
+FULL_COVERAGE_SCOREBOARD.csv,created,required,present,Candidate-complete performance coverage and missingness
+POSITION_BALANCED_SCOREBOARD.csv,created,required,present,Equal-position historical summaries
+SEASON_BALANCED_SCOREBOARD.csv,created,required,present,Equal-season historical summaries
+TOP_K_AND_SEVERE_MISS_REVIEW.csv,created,required,present,Canonical top-K and severe-miss results
+CANDIDATE_MINUS_PYF_DELTAS.csv,created,required,present,Season-position season position and LOSO deltas
+UNCERTAINTY_AND_STABILITY_REVIEW.md,created,required,present,Paired season-cluster uncertainty and LOSO review
+CHALLENGER_GATE_DECISION.md,created,required,present,Mechanical all-gates decision
+PROSPECTIVE_2026_BASELINE_FREEZE.csv,created,required,present,Immutable PYF legacy and current-board 2026 tracking baselines
+PROSPECTIVE_2026_CHALLENGER_FREEZE.csv,not_created,conditional,intentionally_absent,Ridge failed non-compensable gates; no fake challenger artifact
+PROSPECTIVE_2026_FREEZE_MANIFEST.json,created,required,present,Freeze hashes sources status and correction policy
+FUTURE_2026_OUTCOME_EVALUATION_CONTRACT.md,created,required,present,Future outcome join metrics and decision boundary
+FILES_CREATED_OR_CHANGED.csv,created,required,present,Packet inventory
+VALIDATION_RESULTS.md,created,required,present,Required final validation evidence
+MANIFEST.json,created,required,present,Hash and size manifest with conditional-absence record
+run_formula_temporal_validation_framework_v1.py,created,supporting,present,Deterministic locked scoring and freeze runner
+validate_formula_temporal_validation_framework_v1.py,created,supporting,present,Final schema identity hash path and language validator
+validate_csvs_with_artifact_tool.mjs,created,supporting,present,Spreadsheet-engine CSV parser validation
