@@ -1,0 +1,11 @@
+decision_item,status,value,evidence,next_use_decision,gate_status
+primary_overlay_candidate,PRIMARY_REVIEW_ONLY_OVERLAY_CANDIDATE,REFINE_005_A_EARLY_ROLE_015,"net miss reduction 16; misses resolved 25; new misses 9; false-negative reduction 8",preserve_for_review_only_analysis,BLOCKED_FROM_PRODUCTION_MODEL_USE
+batch_overlay_improvement,NOT_IMPROVED,no_batch_overlay_beat_primary,"best batch policy row net 8; best individual family net 6; primary benchmark net 16",stop_batch_overlay_experimentation,NO_RANKING_SIMULATION
+overlay_stacking,NOT_JUSTIFIED,non_stacking_policy_only,"batch policy applied one primary overlay per player-season; no stacking result beat primary",do_not_stack_overlays,BLOCKED
+ranking_simulation,NOT_JUSTIFIED,blocked,"no overlay beat primary; no promising overlay found",do_not_run_ranking_simulation,BLOCKED
+active_overlay_testing,STOP_UNLESS_USER_AUTHORIZED,stop,"broader overlay batch did not improve on sparse-history primary",pause_active_overlay_testing,USER_REVIEW_REQUIRED
+production_model_use,BLOCKED,not_approved,"review-only evidence only",do_not_promote,BLOCKED
+rankings_integration,BLOCKED,not_approved,"review-only evidence only",do_not_integrate,BLOCKED
+app_runtime_behavior,UNCHANGED,no_change,"docs-only closeout",no_app_runtime_change,BLOCKED
+source_promotion,BLOCKED,not_performed,"no source promotion lane",do_not_promote_sources,BLOCKED
+push_merge,NOT_PERFORMED,local_only,"local docs/review packet only",do_not_push_or_merge_without_user_instruction,BLOCKED
