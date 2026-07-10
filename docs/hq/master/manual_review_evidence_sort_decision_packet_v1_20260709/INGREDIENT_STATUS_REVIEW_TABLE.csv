@@ -1,0 +1,14 @@
+ingredient,status,review_value,next_use
+snap/depth role,BROAD_WINDOW_ADDITIVE_SIGNAL,Best broad-window additive signal,Preserve for review-only context and future user-authorized review
+ffopportunity,PARTIAL_WINDOW_PROMISING,Strong partial-window modern signal,Keep partial-window caveat explicit
+NGS,PARTIAL_WINDOW_PROMISING,Useful partial-window modern context,Keep partial-window caveat explicit
+age/lifecycle,ADDITIVE_SIGNAL,Useful additive context,Preserve as review-only context
+EPA/opportunity,INTERACTION_CONTEXT,Useful only in interactions/descriptive context,Do not run EPA-only branch
+receiving opportunity,INTERACTION_CONTEXT,Useful interaction context,Do not run receiving-only branch
+injury availability,GUARDRAIL_CONTEXT,Useful caveat/guardrail context,Preserve for miss review
+rookie/draft capital,GUARDRAIL_CONTEXT,Useful sparse-history/rookie context,No standalone branch without user authorization
+role archetype,GUARDRAIL_CONTEXT,Useful miss-taxonomy context,Preserve for review-only analysis
+confidence cap,GUARDRAIL_CONTEXT,Useful caution context,Do not treat as scoring feature
+market/ADP,BLOCKED_FOR_HISTORICAL,Current/as-of gate not passed,Do not use historically without proof
+PFR RB broken tackles,FAILED_NO_INCREMENTAL_SIGNAL,No sufficient incremental formula signal,Stop formula tests
+team offensive environment,NO_MATERIAL_INCREMENTAL_SIGNAL_WITH_TEAM_CHANGE_CAVEAT,No material lift and team-change caveat is material,Preserve caveat only

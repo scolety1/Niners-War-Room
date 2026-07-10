@@ -1,0 +1,6 @@
+scoreboard_window,candidate_id,spearman,rows,seasons,caveat,interpretation
+Original PYF baseline,PYF_BASELINE,0.741,5518,2013-2025,Reference baseline,Anchor for all formula and ingredient comparisons
+Pre-ingredient formula plateau,Best review-only formula neighborhood,about 0.755,5518,2013-2025,Review-only plateau before ingredient upgrades,Same-ingredient refinement plateaued
+Best full-history,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_DEPTH_STABILITY_PCT100,0.758,5518,2013-2025,Full-history comparable but only small lift over 0.755,Best full-history review-only result preserved
+Best broad-window,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE__PLUS_SNAPDEPTH_SNAP_NOT_LOW_PCT100,0.763,5122,2014-2025,Broad-window comparable not full-history,Best broad-window additive snap/depth result
+Best partial-window,GAUNTLET_083_DECLINE_DECLINE_COMBO_GUARD__PLUS_FFOPPORTUNITY_PCT10,0.790,1740,2022-2025,Partial-window only and not full-history comparable,Promising modern ingredient signal but cannot justify full-history claims
