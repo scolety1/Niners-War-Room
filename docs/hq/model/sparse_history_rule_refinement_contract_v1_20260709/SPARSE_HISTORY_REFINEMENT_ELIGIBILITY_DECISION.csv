@@ -1,0 +1,13 @@
+rule_id,rule_class,eligibility_decision,max_allowed_v2_use,rationale,v1_best_net_miss_reduction,v1_spearman_delta
+RULE_001_ROLE_PROMOTION_BREAKOUT_05,MIXED_REVIEW_ONLY_RULE,OPTIONAL_LIMITED_DIAGNOSTIC,REVIEW_ONLY_DIAGNOSTIC_VARIANT,Mixed V1 result; may test stricter smaller variants without expanding scope.,6,-0.000
+RULE_002_DEPTH_STARTER_BREAKOUT_05,PROMISING_REVIEW_ONLY_RULE,SELECTED_FOR_REFINEMENT,REVIEW_ONLY_REFINEMENT_VARIANT,Promising V1 miss-reduction profile and fits allowed full/broad-window review-only inputs.,8,-0.003
+RULE_003_SNAP_GROWTH_BREAKOUT_05,MIXED_REVIEW_ONLY_RULE,OPTIONAL_LIMITED_DIAGNOSTIC,REVIEW_ONLY_DIAGNOSTIC_VARIANT,Mixed V1 result; may test stricter smaller variants without expanding scope.,6,-0.004
+RULE_004_AVAILABILITY_REBOUND_05,CONTEXT_ONLY_RULE,EXCLUDED_FROM_SCORING_REFINEMENT,CONTEXT_ONLY,Availability rebound is useful context but did not justify scoring-rule refinement.,0,0.000
+RULE_005_EARLY_CAREER_LIFECYCLE_025,PROMISING_REVIEW_ONLY_RULE,SELECTED_FOR_REFINEMENT,REVIEW_ONLY_REFINEMENT_VARIANT,Promising V1 miss-reduction profile and fits allowed full/broad-window review-only inputs.,12,0.001
+RULE_006_DRAFT_CAPITAL_WITH_ROLE_05,PROMISING_REVIEW_ONLY_RULE,SELECTED_FOR_REFINEMENT,REVIEW_ONLY_REFINEMENT_VARIANT,Promising V1 miss-reduction profile and fits allowed full/broad-window review-only inputs.,10,0.004
+RULE_007_EXPECTED_OPPORTUNITY_PARTIAL_05,PARTIAL_WINDOW_ONLY_RULE,EXCLUDED_FROM_FULL_HISTORY_REFINEMENT,PARTIAL_WINDOW_CONTEXT_ONLY,Depends on partial-window expected-opportunity inputs; cannot be a full-history rule.,-4,-0.001
+RULE_008_POSITION_SPECIFIC_BREAKOUT_05,MIXED_REVIEW_ONLY_RULE,OPTIONAL_LIMITED_DIAGNOSTIC,REVIEW_ONLY_DIAGNOSTIC_VARIANT,Mixed V1 result; may test stricter smaller variants without expanding scope.,6,0.000
+RULE_009_FALSE_POSITIVE_TRAP_DOWNGRADE_05,HARMFUL_RULE,EXCLUDED_HARMFUL,DO_NOT_REFINE,Trap downgrade produced harmful displacement.,-2,0.001
+RULE_010_FALSE_POSITIVE_TRAP_STRICT_10,CONTEXT_ONLY_RULE,EXCLUDED_FROM_SCORING_REFINEMENT,CONTEXT_HARM_REVIEW_ONLY,Trap strict rule had no FP reduction and should remain harm-review context only.,0,-0.001
+RULE_011_SPARSE_HISTORY_COMPOSITE_BALANCED,PROMISING_REVIEW_ONLY_RULE,SELECTED_FOR_REFINEMENT,REVIEW_ONLY_REFINEMENT_VARIANT,Promising V1 miss-reduction profile and fits allowed full/broad-window review-only inputs.,10,-0.004
+RULE_012_COMPOSITE_PARTIAL_EXPECTED_OPP,PARTIAL_WINDOW_ONLY_RULE,EXCLUDED_FROM_FULL_HISTORY_REFINEMENT,PARTIAL_WINDOW_CONTEXT_ONLY,Depends on partial-window expected-opportunity inputs; cannot be a full-history rule.,-2,0.000
