@@ -1,0 +1,11 @@
+rank,overlay_family_id,priority_band,miss_frequency,evidence_strength,signal_availability,leakage_safety,expected_net_miss_reduction,collateral_risk,population_size,position_coverage,current_tested_evidence,testing_recommendation
+1,OVERLAY_001_SPARSE_EARLY_ROLE_BREAKOUT,HIGH,high,strong,high,high,proven_positive,moderate,broad,QB/RB/WR/TE,REFINE_005_A preserved,Use as benchmark/control and preserve
+2,OVERLAY_002_AVAILABILITY_REBOUND,HIGH,high,moderate,medium,medium,unknown_positive,moderate,medium,QB/RB/WR/TE,red-team FN category and injury sidecar context,Test in bounded batch
+3,OVERLAY_003_STARTER_DEPTH_PROMOTION,HIGH,high,moderate,high,high,unknown_positive,moderate,medium,QB/RB/WR/TE,top sparse-history trait and snap/depth sidecar,Test in bounded batch
+4,OVERLAY_004_SNAP_GROWTH_ROLE_PROMOTION,HIGH,high,moderate,high,high,unknown_positive,moderate,medium,RB/WR/TE plus QB role cases,top sparse-history trait and snap/depth sidecar,Test in bounded batch
+5,OVERLAY_008_DRAFT_CAPITAL_WITH_ROLE,MEDIUM,medium,moderate,medium,high,unknown_positive,moderate,early-career,QB/RB/WR/TE,REFINE_006_A preserved; draft alone weak,Test only with role confirmation
+6,OVERLAY_007_LOW_SNAP_DEPTH_WARNING,MEDIUM,medium,mixed,high,high,unknown,high,medium,QB/RB/WR/TE,veteran test mixed,Context/guardrail unless redesigned
+7,OVERLAY_006_INJURY_AVAILABILITY_CAVEAT,MEDIUM,high,mixed,medium,medium,unknown,high,medium,QB/RB/WR/TE,injury caveat major FP category,Context/guardrail unless redesigned
+8,OVERLAY_005_VETERAN_ROLE_LOSS_PRIOR_PRODUCTION_TRAP,LOW,high,mixed,high,high,mixed,high,medium,QB/RB/WR/TE,VET_008 mixed and no promising rule,Narrow second design only after user review
+9,OVERLAY_009_PARTIAL_EXPECTED_OPPORTUNITY,LOW,medium,moderate,medium,medium,partial_only,moderate,modern-window,QB/RB/WR/TE,ffop/NGS partial-window promising,Partial-window only
+10,OVERLAY_010_POSITION_SPECIFIC_MISS_PATTERNS,LOW,unknown,early,medium,medium,unknown,high,small_by_position,position-specific,not separately proven,Design before test
