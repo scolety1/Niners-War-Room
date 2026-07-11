@@ -10,6 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.decision_trust_strip import render_decision_trust_strips
 from app.components.draft_day_v1 import (
     render_lane_status_table,
     render_source_of_truth_badge,
@@ -17,6 +18,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
+from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.draft_day_app_v1_service import (
     display_lane_prop_frame,
     load_frozen_board,
@@ -252,6 +254,22 @@ def _render_selected_items(lookup: dict[str, dict[str, object]]) -> None:
         width="stretch",
         hide_index=True,
         key="trading_lab_selected_items",
+    )
+    render_decision_trust_strips(
+        [
+            build_decision_trust_strip(
+                row,
+                surface="Trading Lab",
+                entity_label=str(row.get("label") or row.get("player") or "Selected asset"),
+                receipt_label="Existing selected-item and NFLVerse detail disclosures",
+                receipt_available=(
+                    bool(str(row.get("nwr_player_id") or "").strip())
+                    and str(row.get("nwr_player_id")) != NOT_ENOUGH_INFORMATION
+                ),
+            )
+            for row in rows.to_dict("records")
+        ],
+        heading="Selected-asset evidence trust",
     )
 
 

@@ -1,0 +1,9 @@
+state_code,user_facing_label,deterministic_trigger,meaning,not_equivalent_to
+VALID_CURRENT,Valid / current,Existing status explicitly says available current green matched exact ready scored or admitted identifier present,Existing admitted evidence is available under the source system's own state,Recommendation or production approval
+STALE,Stale,Existing status explicitly contains stale or last-cache language,Evidence exists but the existing system marks it stale,Missing or unavailable
+MISSING,Missing,Existing status explicitly says missing absent or not found,Expected evidence is absent in the existing context,Zero neutral healthy or unfavorable
+GATED,Gated,Existing status explicitly says gated not admitted or blocked use,Evidence is intentionally unavailable for this use,Missing or source failure
+UNAVAILABLE,Unavailable,Existing status explicitly says unavailable not_available or cannot supply,Existing system cannot currently supply the evidence,Missing stale or gated
+IDENTITY_EXCEPTION,Identity exception,Existing identity status explicitly says review unresolved partial ambiguous exception or blocked,Identity authority is caveated and no fallback is attempted,Successful join
+SOURCE_EXCEPTION,Source exception,Existing source or caveat text explicitly says caveat conflict restricted review-only review only or warning,Source use has an existing restriction or caveat,Generic warning or production approval
+NOT_ENOUGH_INFORMATION,Not enough information,Blank unknown or unrecognized existing state,The adapter lacks enough explicit status to classify safely,Valid current missing gated stale or unavailable

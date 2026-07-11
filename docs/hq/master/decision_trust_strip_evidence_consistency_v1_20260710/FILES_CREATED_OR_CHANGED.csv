@@ -1,0 +1,25 @@
+path,change_type,purpose
+app/pages/20_final_board_v1.py,modified,Render visible-board display-only trust strip
+app/pages/22_player_compare_v1.py,modified,Render one display-only trust strip per selected player
+app/pages/23_trading_lab_v1.py,modified,Render one display-only trust strip per manually selected asset
+app/components/decision_trust_strip.py,created,Shared accessible Streamlit presentation component
+src/services/decision_trust_strip_service.py,created,Pure display adapter and canonical status schema
+tests/test_decision_trust_strip_service.py,created,Schema and deterministic state contract tests
+tests/test_decision_trust_strip_surfaces.py,created,Three-surface and safety source tests
+tests/test_decision_trust_strip_render.py,created,Representative Streamlit AppTest render
+tests/fixtures/decision_trust_strip_fixture.py,created,Explicitly synthetic state fixture
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/DECISION_TRUST_STRIP_V1_REPORT.md,created,Implementation report
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/EXECUTIVE_VERDICT.md,created,Executive verdict
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/FIELD_LEVEL_REUSE_MAP.csv,created,Mandatory preflight field reuse ledger
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/TRUST_STRIP_SCHEMA.md,created,Canonical schema
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/TRUST_STRIP_LABEL_GLOSSARY.csv,created,Canonical state glossary
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/SURFACE_IMPLEMENTATION_MAP.csv,created,Surface integration ledger
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/STATUS_STATE_FIXTURE_MATRIX.csv,created,Representative status fixtures
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/IDENTITY_AND_SOURCE_SEMANTICS_REVIEW.md,created,Identity and source review
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/ACCESSIBILITY_REVIEW.md,created,Accessibility result
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/REPRESENTATIVE_RENDER_REVIEW.md,created,Rendered fixture review
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/ROLLBACK_PLAN.md,created,Reversible removal plan
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/PROTECTED_AND_FROZEN_PATH_PROOF.md,created,Protected-path evidence
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/FILES_CREATED_OR_CHANGED.csv,created,Change inventory
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/VALIDATION_RESULTS.md,created,Exact validation commands and results
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/MANIFEST.json,created,Packet inventory and hashes

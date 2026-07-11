@@ -1,0 +1,9 @@
+fixture,state_code,synthetic_or_existing,source_status,freshness_status,identity_status,missingness,receipt_available,expected_render
+valid_current,VALID_CURRENT,synthetic display fixture,Available,GREEN_CURRENT,admitted identifier present,Complete,true,Text state plus compact marker and expandable details
+stale,STALE,synthetic display fixture,Available,YELLOW_STALE,admitted identifier present,Not enough information,true,Stale remains distinct
+missing,MISSING,synthetic display fixture,missing receipt,Not enough information,admitted identifier present,Missing evidence: 1,false,Missing remains distinct and receipt is unavailable
+gated,GATED,synthetic display fixture,gated / not admitted,Not enough information,admitted identifier present,Not enough information,false,Gated remains distinct
+unavailable,UNAVAILABLE,synthetic display fixture,source unavailable,Not enough information,admitted identifier present,Not enough information,false,Unavailable remains distinct
+identity_exception,IDENTITY_EXCEPTION,synthetic display fixture,Available,Not enough information,identity review required,Not enough information,true,Exception shown without fallback matching
+source_exception,SOURCE_EXCEPTION,synthetic display fixture,review-only source restriction,Not enough information,admitted identifier present,Not enough information,true,Restriction remains source exception
+not_enough_information,NOT_ENOUGH_INFORMATION,synthetic display fixture,blank,blank,blank,blank,false,Unknown state is not coerced to another state

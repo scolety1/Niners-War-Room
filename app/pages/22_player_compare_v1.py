@@ -11,6 +11,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.decision_trust_strip import render_decision_trust_strips
 from app.components.draft_day_v1 import (
     render_final_board_table,
     render_source_of_truth_badge,
@@ -18,6 +19,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
+from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.display_only_ngs_context_service import (
     REVIEW_ONLY_WARNING,
     blocked_ngs_metric_rows,
@@ -841,6 +843,19 @@ else:
     )
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
+    )
+    render_decision_trust_strips(
+        [
+            build_decision_trust_strip(
+                row,
+                surface="Player Compare",
+                entity_label=str(row.get("player") or "Selected player"),
+                receipt_label="Existing comparison detail and diagnostic disclosures",
+                receipt_available=bool(str(row.get("source_coverage") or "").strip()),
+            )
+            for row in compare.to_dict("records")
+        ],
+        heading="Selected-player evidence trust",
     )
     _render_visible_context_summary(compare)
 

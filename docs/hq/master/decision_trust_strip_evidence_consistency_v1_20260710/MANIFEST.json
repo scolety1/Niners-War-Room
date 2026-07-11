@@ -1,0 +1,103 @@
+{
+  "schema_version": "decision_trust_strip_evidence_consistency_manifest_v1",
+  "packet": "decision_trust_strip_evidence_consistency_v1_20260710",
+  "verdict": "GREEN_DECISION_TRUST_STRIP_V1_READY_FOR_HQ_REVIEW",
+  "starting_remote_hq": "3f41919c506175293465b134f1495c042f710168",
+  "remote_advanced": false,
+  "files": [
+    {
+      "path": "DECISION_TRUST_STRIP_V1_REPORT.md",
+      "bytes": 1365,
+      "sha256": "d87fa2fd792f91848d293932708b75a7486986b822c4723d03582fcc06131659",
+      "required": true
+    },
+    {
+      "path": "EXECUTIVE_VERDICT.md",
+      "bytes": 481,
+      "sha256": "c3aa58d7e2f9a322b55cad1c39fc4b9994c869e1dbc9186735bec50f1c5a2f4b",
+      "required": true
+    },
+    {
+      "path": "FIELD_LEVEL_REUSE_MAP.csv",
+      "bytes": 3262,
+      "sha256": "6f84db7240aea531bd7f1320b64e53147cc16808120a189eb1f2bc86d051214f",
+      "required": true
+    },
+    {
+      "path": "TRUST_STRIP_SCHEMA.md",
+      "bytes": 1204,
+      "sha256": "7958b48277da84ad171456af7b09cb8b0edd251a980ffb507faa2e82a7360657",
+      "required": true
+    },
+    {
+      "path": "TRUST_STRIP_LABEL_GLOSSARY.csv",
+      "bytes": 1627,
+      "sha256": "5858c649ea30005d3fb8c9a2f42f130d0b1ad084d78caf912521c472287eaad8",
+      "required": true
+    },
+    {
+      "path": "SURFACE_IMPLEMENTATION_MAP.csv",
+      "bytes": 1208,
+      "sha256": "81299b351e672fa1500548474719deb464dc0c2af586cf72c4530d665358e676",
+      "required": true
+    },
+    {
+      "path": "STATUS_STATE_FIXTURE_MATRIX.csv",
+      "bytes": 1522,
+      "sha256": "f243b4ae01bdbcb3b3c4d4c3dacc1e4dfd499af9eb64b34380154dfab2130fbc",
+      "required": true
+    },
+    {
+      "path": "IDENTITY_AND_SOURCE_SEMANTICS_REVIEW.md",
+      "bytes": 1010,
+      "sha256": "4b29ef42ca9bc5e479d0dd336815ce23a16a54b03f6fef677a9aa90c5e8cbdd0",
+      "required": true
+    },
+    {
+      "path": "ACCESSIBILITY_REVIEW.md",
+      "bytes": 739,
+      "sha256": "d9fa77f8839671d42c2aef52f2a20d4815050dc3869e4a50d03939db6469e450",
+      "required": true
+    },
+    {
+      "path": "REPRESENTATIVE_RENDER_REVIEW.md",
+      "bytes": 751,
+      "sha256": "e9669d8d746d00cb29fbdea803d627e1821890ad7f399add2142f315fe5c8439",
+      "required": true
+    },
+    {
+      "path": "ROLLBACK_PLAN.md",
+      "bytes": 530,
+      "sha256": "8ea6fca69d607f3a387b37480c22cb676c47f839fac1151ff16fb81aaa5d6ed0",
+      "required": true
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "bytes": 658,
+      "sha256": "d305da0bd6c01e7db9ae5c61d1bdf23b106e849b54ce0c1eb6f9b90252618c60",
+      "required": true
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 2828,
+      "sha256": "4f3e380fe08ccce0828b5abcdec7073992026a31ac378de8c89ffe973f6aa612",
+      "required": true
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "bytes": 3090,
+      "sha256": "d6de8fe5110d412f6f5b67c26a47581c32abff8d08e890aad04ce92d729498bf",
+      "required": true
+    }
+  ],
+  "controls": {
+    "display_only": true,
+    "frozen_comparator_consumed": false,
+    "scores_or_ranks_changed": false,
+    "sorting_or_recommendations_changed": false,
+    "source_or_identity_authority_changed": false,
+    "trading_lab_manual_only": true,
+    "push_authorized": false
+  },
+  "manifest_self_hash_policy": "MANIFEST.json excludes its own recursive hash"
+}

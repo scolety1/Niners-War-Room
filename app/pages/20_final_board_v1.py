@@ -10,7 +10,9 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.decision_trust_strip import render_decision_trust_strips
 from app.components.ui_framework import page_header
+from src.services.decision_trust_strip_service import build_rankings_dataset_trust_strip
 from src.services.draft_day_app_v1_service import (
     APPROVED_OUTCOME_DISPLAY_FIELDS,
     APPROVED_OUTCOME_V2_DISPLAY_FIELDS,
@@ -1029,6 +1031,24 @@ if not dynasty_bundle.loaded:
         "Full Dynasty Rankings cannot be fabricated from sample data. Frozen-baseline rows remain "
         "visible as frozen-baseline-only context until the approved dynasty source is available."
     )
+
+_rankings_freshness = market_baseline_freshness_status()
+render_decision_trust_strips(
+    [
+        build_rankings_dataset_trust_strip(
+            source_available=dynasty_bundle.loaded,
+            source_label=str(dynasty_bundle.source_path or "approved dynasty source"),
+            source_hash=dynasty_bundle.source_hash or "",
+            freshness_status=(
+                _rankings_freshness.get("freshness_status") or OUTCOME_NOT_ENOUGH_INFORMATION
+            ),
+            identity_review_rows=int(nflverse_context_counts.get("review", 0)),
+            missing_rows=_source_count(unified_board, "Frozen Baseline only"),
+            warnings=(*dynasty_bundle.warnings, *bundle.warnings),
+        )
+    ],
+    heading="Visible board evidence trust",
+)
 
 _render_market_baseline_status(raw_unified_board)
 _render_dataset_refresh_status_panel(unified_board)
