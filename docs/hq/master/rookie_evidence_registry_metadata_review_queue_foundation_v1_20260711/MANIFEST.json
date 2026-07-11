@@ -1,0 +1,85 @@
+{
+  "automatically_closed_count": 0,
+  "files": [
+    {
+      "bytes": 932,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/ROOKIE_EVIDENCE_REGISTRY_REVIEW_QUEUE_FOUNDATION_V1_REPORT.md",
+      "sha256": "e4b215524e388b251247d15c9ade89b33f07b004f9bd2680265309d22c1d7e21"
+    },
+    {
+      "bytes": 537,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/EXECUTIVE_VERDICT.md",
+      "sha256": "077eb5ba0c93b36003ca2f84732400c8f4eb55550fc32d8a7a4dc8004365cb05"
+    },
+    {
+      "bytes": 2668,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/QUEUE_SCHEMA_AND_PRIORITY_CONTRACT.md",
+      "sha256": "e6c5d46f114afb4edc59b007e3422c0e543e1a3403be6708e93b610d67c30075"
+    },
+    {
+      "bytes": 3945751,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/METADATA_REVIEW_QUEUE.csv",
+      "sha256": "9ef64f1a3a06dc96a968da37bc53e825de656b0545e177c6d9c899485db6971f"
+    },
+    {
+      "bytes": 972,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/QUEUE_CATEGORY_SUMMARY.csv",
+      "sha256": "e9eef98391a0cf371b9bafba13d0a6545a4c352fc885174ee644b63d9801880e"
+    },
+    {
+      "bytes": 378,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/QUEUE_PRIORITY_SUMMARY.csv",
+      "sha256": "a511ae4e77caaa691626ccee6aa20c8311c21935f0e6b9776a44cf464e49ad65"
+    },
+    {
+      "bytes": 556,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/QUEUE_CLOSURE_PROOF_CONTRACT.md",
+      "sha256": "1db0dd76082d8e8332d0b4704e270b758dfa6bc16f487691706cd3acb8d551db"
+    },
+    {
+      "bytes": 417,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/APPEND_ONLY_HISTORY_CONTRACT.md",
+      "sha256": "68f8a1cae58883103c7446aeba7dae8fb264d96c16dc4a03e7c16af12b964653"
+    },
+    {
+      "bytes": 408,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/ZERO_PLAYER_LEVEL_QUEUE_PROOF.md",
+      "sha256": "ab403ac03d52ff89d799c2c5c7f92bcd86dd3411ea6fec96a6d7933eccf317aa"
+    },
+    {
+      "bytes": 481,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/PRIVACY_RIGHTS_AND_LOCATOR_REVIEW.md",
+      "sha256": "bdeb050695b80665abdb56c7be2ee2dc81c26955e74866a4906f6ee482810b2b"
+    },
+    {
+      "bytes": 308,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/ROLLBACK_PLAN.md",
+      "sha256": "b3939cd7bcd2f701c4c8472ad331e94162b79646e84a4ffdac92fa69c9e92e5e"
+    },
+    {
+      "bytes": 343,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "8a5580a6361311c006eb6086563e971411b06b81e0a5992bd5c6df12eda4b3ec"
+    },
+    {
+      "bytes": 3501,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "a471445fadf558c0a58d926ae38f6591b3f6e4e059553551a523fb81b36073a0"
+    },
+    {
+      "bytes": 3082,
+      "path": "docs/hq/master/rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711/VALIDATION_RESULTS.md",
+      "sha256": "b2a674cd2398d61a3d1b8881e4693dafa2137715ccc0fba3c862bab8a0f134ae"
+    }
+  ],
+  "manifest_self_hash_excluded": true,
+  "packet": "rookie_evidence_registry_metadata_review_queue_foundation_v1_20260711",
+  "phase_b_commit": "660b59d4068e87df6fa997a0a0513c0f0c326eb1",
+  "player_level_row_count": 0,
+  "queue_contract_sha256": "e6c5d46f114afb4edc59b007e3422c0e543e1a3403be6708e93b610d67c30075",
+  "queue_row_count": 5147,
+  "required_file_count": 15,
+  "schema_version": "1.0.0",
+  "text_hash_normalization": "CRLF_TO_LF_BEFORE_SHA256",
+  "verdict": "YELLOW_ROOKIE_REGISTRY_METADATA_REVIEW_QUEUE_READY_WITH_VOLUME_CAVEATS"
+}

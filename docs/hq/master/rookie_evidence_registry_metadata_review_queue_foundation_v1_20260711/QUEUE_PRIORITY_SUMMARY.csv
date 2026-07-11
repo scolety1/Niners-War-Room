@@ -1,0 +1,6 @@
+priority,queue_count,governance_basis
+P0_INTEGRITY_BLOCKER,0,Conflicting explicit metadata endpoints
+P1_AUTHORITY_OR_RIGHTS_BLOCKER,2428,"Authority, source, permission, or rights blocker"
+P2_LINEAGE_GAP,2538,Dataset or receipt lineage endpoint absent
+P3_AUDIT_OR_NO_RECREATE_GAP,181,Local availability or off-HQ audit obligation
+P4_INFORMATIONAL,0,No stronger governance impact
