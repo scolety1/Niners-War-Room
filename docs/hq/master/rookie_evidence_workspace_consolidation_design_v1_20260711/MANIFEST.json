@@ -1,0 +1,167 @@
+{
+  "allowed_write_prefix": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/",
+  "branch": "work/rookie-evidence-workspace-consolidation-design-v1-20260711",
+  "documentation_only": true,
+  "evidence_migrated": false,
+  "files": [
+    {
+      "bytes": 18903,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/ROOKIE_EVIDENCE_WORKSPACE_CONSOLIDATION_DESIGN_V1_REPORT.md",
+      "purpose": "Master design report and required verdict",
+      "sha256": "ae816f778d52ca23df3e1c2e2db6915aa47e22bd824f02c692c1616f3e96c87d"
+    },
+    {
+      "bytes": 3001,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/EXECUTIVE_VERDICT.md",
+      "purpose": "Concise verdict and handoff summary",
+      "sha256": "1403d75e6d8d52479911869059af0102a241d9775973872af34adaa9bf0d6d6e"
+    },
+    {
+      "bytes": 1388609,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/EXISTING_WORKSPACE_INVENTORY.csv",
+      "purpose": "File-level live, local, restricted, and off-HQ artifact inventory",
+      "sha256": "a61c3b86cb528e97cc485f7dcaab3538844933f8ab34dc4031c9755855326136"
+    },
+    {
+      "bytes": 12817,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/EVIDENCE_AUTHORITY_CLASSIFICATION.csv",
+      "purpose": "Scoped authority decisions by evidence family",
+      "sha256": "dd03f8c7bf8a923e3e4a55c2dd5175f7a0403c78f353bc623dbffe5330c7df5a"
+    },
+    {
+      "bytes": 15363,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/DUPLICATION_AND_CONFLICT_REGISTER.csv",
+      "purpose": "Duplicate, overlap, conflict, and disposition register",
+      "sha256": "3e7eeae2610dd799048e29907a46614948ebdaf4b47ec8a001c19bd1c16d79a6"
+    },
+    {
+      "bytes": 10419,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/CANONICAL_INFORMATION_ARCHITECTURE.md",
+      "purpose": "Future workspace layout and information layers",
+      "sha256": "e99cb61b9890fadc7005b3fdd60691c00dc22b39fdc38e5f5b2ee4fa99452381"
+    },
+    {
+      "bytes": 15884,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/CANONICAL_SCHEMA_AND_KEY_CONTRACT.md",
+      "purpose": "Schemas, keys, constraints, and append-only rules",
+      "sha256": "132098ecf866f68432d1c76c0cbd0c3e2df75c4697a99f1b5d4ea16e75ba1324"
+    },
+    {
+      "bytes": 10916,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/EVIDENCE_STATE_AND_LIFECYCLE_CONTRACT.md",
+      "purpose": "Required evidence states and lifecycle boundaries",
+      "sha256": "fa0cfad53b8e800bcf94efe0e61c72c1980ee99cb5cca5ed930f2bacbb0011c6"
+    },
+    {
+      "bytes": 8073,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/IDENTITY_AND_LINEAGE_CONTRACT.md",
+      "purpose": "Identity, join, special-case, and field-lineage rules",
+      "sha256": "b7316d4908244301ccec0d262b2ff87e78cbd97ec87ede2d1e14b440490eafba"
+    },
+    {
+      "bytes": 16292,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/SOURCE_ADMISSION_RIGHTS_AND_PRIVACY_BOUNDARY.md",
+      "purpose": "Purpose-specific source, rights, and privacy boundary",
+      "sha256": "29ae557c8aad9d6238bd7f15d4a6c027d9138738de2810501cfcb615026ddac0"
+    },
+    {
+      "bytes": 7201,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/MANUAL_REVIEW_QUEUE_DESIGN.md",
+      "purpose": "Typed manual-review queues and closure proof",
+      "sha256": "fa151e8e496f09cb2070f5743cd9dbcab2e7169509b5e4ea0a87b0424346c107"
+    },
+    {
+      "bytes": 8112,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/MIGRATION_AND_SUPERSESSION_PLAN.md",
+      "purpose": "Ten-phase additive migration and rollback contract",
+      "sha256": "53dd35fa3c86af5b70ec9e87f819320c63ab6ecd03d7faeeb2b49d156644fa55"
+    },
+    {
+      "bytes": 4901,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/ARCHIVE_AND_RETENTION_POLICY.md",
+      "purpose": "Non-destructive retention and logical archive policy",
+      "sha256": "bbcce8ad6b7155ca87f8fb60bb6ce09575eb440a17fc2fb614ad0f0b4f13f201"
+    },
+    {
+      "bytes": 7728,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/NO_RECREATE_ROOKIE_EVIDENCE_INDEX.csv",
+      "purpose": "Existing systems and evidence that must not be recreated",
+      "sha256": "d91214c8ffa5f79f000392183175eda30c80a0666443ea2f1bc29bb42e8b7a8a"
+    },
+    {
+      "bytes": 5873,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/DEPENDENCY_AND_RISK_MAP.md",
+      "purpose": "Dependency chain, risks, controls, and stop conditions",
+      "sha256": "890e271e18e844449227c55324b825e1d627c953e247939b88bbd8ade65dfb65"
+    },
+    {
+      "bytes": 3404,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/RECOMMENDED_IMPLEMENTATION_SEQUENCE.md",
+      "purpose": "Immediate and later lane sequence plus parked work",
+      "sha256": "889ff7cc350c64d674a61641ca16ecdacb4d3de3af3442d21977333821cabd81"
+    },
+    {
+      "bytes": 5263,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/IMMEDIATE_NEXT_LANE_CONTRACT.md",
+      "purpose": "Bounded metadata-only scaffold contract",
+      "sha256": "1cb2c4a247f2e3770fd7b7e00af9d46b8643c6330301bf19960398bf143532c3"
+    },
+    {
+      "bytes": 5306,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/NEXT_LANE_READY_TO_PASTE_PROMPT.md",
+      "purpose": "Ready-to-paste next-lane work request",
+      "sha256": "1b3678cf9a0678ab9088f058650360020ba490a5ad9ac5669a8d1dc4bca5924c"
+    },
+    {
+      "bytes": 1626,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "purpose": "Scope and frozen-artifact proof",
+      "sha256": "223adf93ff3aa88dff33f089e9e0b1aa46c1c83f5dea0d575b839f30416e4049"
+    },
+    {
+      "bytes": 5305,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "purpose": "Required deliverable file ledger",
+      "sha256": "a83deca50c7fe13f1cd9ab04427ec2b2f2f4f0a5f9929f3c67ccf8f3ce67b151"
+    },
+    {
+      "bytes": 4245,
+      "path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/VALIDATION_RESULTS.md",
+      "purpose": "Validation evidence and blocker-aware results",
+      "sha256": "162242bcb39a7485f6a8640650a659698ef8d33432a13e4b759528ab53eb1b12"
+    }
+  ],
+  "formula_research_reopened": false,
+  "frozen_artifacts_changed": false,
+  "hashed_file_count": 21,
+  "inventory_counts": {
+    "authority_rows": 23,
+    "blocked_artifacts": 1150,
+    "canonical_admitted_rows": 34,
+    "canonical_review_only_rows": 56,
+    "conflict_register_rows": 9,
+    "csv_rows": 463,
+    "duplicate_flagged_artifacts": 38,
+    "duplicate_register_rows": 30,
+    "exact_duplicate_register_rows": 6,
+    "inventory_rows": 1269,
+    "live_hq_rows": 1085,
+    "local_only_rows": 162,
+    "local_restricted_rows": 3,
+    "no_recreate_rows": 40,
+    "off_hq_rows": 19,
+    "superseded_artifacts": 54
+  },
+  "manifest_self_hash_excluded": true,
+  "packet": "rookie_evidence_workspace_consolidation_design_v1_20260711",
+  "plugin_research_reopened": false,
+  "production_behavior_changed": false,
+  "remote_advanced": false,
+  "required_file_count": 22,
+  "schema_version": "1.0.0",
+  "source_promoted": false,
+  "starting_remote_branch": "origin/work/hq-parallel-control",
+  "starting_remote_head": "9368a083ae59bdb9dfc7744b90fae0c449097e1d",
+  "verdict": "YELLOW_ROOKIE_EVIDENCE_WORKSPACE_DESIGN_READY_WITH_AUTHORITY_CAVEATS",
+  "worktree": "C:\\NWR\\Niners-War-Room-rookie-evidence-workspace-consolidation-design-v1-20260711"
+}
