@@ -1,0 +1,122 @@
+{
+  "manifest_version": "1.0.0",
+  "packet_date": "2026-07-11",
+  "verdict": "YELLOW_ROOKIE_REGISTRY_QUEUE_TRIAGE_PLAN_READY_PROOF_PREPARATION_REQUIRED",
+  "starting_live_hq_head": "774ebe881ffbaa7774119243b22292cd477ca62d",
+  "verified_remote_head": "774ebe881ffbaa7774119243b22292cd477ca62d",
+  "remote_advance_commits": 0,
+  "branch": "work/rookie-registry-queue-triage-planning-v1-20260711",
+  "mapping_contract_sha256": "19bb737de35f476ad39bff50d41f25e5ec6ef3b88dacd48d23b47917960fa264",
+  "queue_contract_sha256": "e6c5d46f114afb4edc59b007e3422c0e543e1a3403be6708e93b610d67c30075",
+  "queue_file_sha256": "9ef64f1a3a06dc96a968da37bc53e825de656b0545e177c6d9c899485db6971f",
+  "canonical_queue_rows": 5147,
+  "canonical_closed_rows": 0,
+  "automatically_closed_rows": 0,
+  "unique_execution_safe_proof_patterns": 69,
+  "proposed_batches": 69,
+  "current_exact_proof_closable_rows": 0,
+  "first_proof_preparation_batch_id": "batch_836e8658fea7760a7278dd66",
+  "first_proof_preparation_batch_rows": 2,
+  "active_artifact_authority_links": 113,
+  "other_active_relationship_types": 0,
+  "deferred_candidates_inactive": 28,
+  "explicit_source_use_decisions": 0,
+  "player_rows": 0,
+  "evidence_observation_rows": 0,
+  "manifest_self_hash_excluded": true,
+  "text_hash_normalization": "LF",
+  "required_deliverable_count": 19,
+  "manifest_file_count_excluding_self": 18,
+  "files": [
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/APPEND_ONLY_CLOSURE_HISTORY_CONTRACT.md",
+      "bytes": 2777,
+      "sha256": "ab8a7734fd9583e08935fed73570b5432926b920eaf898a94d9f0ff0988672cb"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/CLOSURE_PROOF_REQUIREMENT_MATRIX.csv",
+      "bytes": 3689,
+      "sha256": "7fa2ef15dd129f9171f19f5a056c89b2cafb9f6074901395eb980ef7af132cbe"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/CONFLICT_ESCALATION_CONTRACT.md",
+      "bytes": 2617,
+      "sha256": "4f6add62783a0df46ed2ed919ffaf00658b784e8df58c32b6fb2454b47f309f4"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/EXECUTIVE_VERDICT.md",
+      "bytes": 1634,
+      "sha256": "f385fe96699acfb836e2147d61563965244d4d865d78aed15237514d8cda70fd"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/EXISTING_PROOF_CANDIDATE_LEDGER.csv",
+      "bytes": 5362,
+      "sha256": "43c88a939125dd3cfb2e28a17d451cf7b2885f59ade096163515eabd861bf32b"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 3414,
+      "sha256": "f54ca5c7c7f5da522c35d889584dcd99ff6f40af100d3e5f0be65cf501174608"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/FIRST_EXECUTION_BATCH_CONTRACT.md",
+      "bytes": 2779,
+      "sha256": "db233a34386636b411120be905e73b3a6227a70aa654986c0577a69cac4ac1ff"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/NEXT_LANE_READY_TO_PASTE_PROMPT.md",
+      "bytes": 3179,
+      "sha256": "bfcc51849ba971fb0ff35ae1ed4a9dc9418220376cbc00b7438c71c7244dfef3"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/NO_QUEUE_MUTATION_PROOF.md",
+      "bytes": 1136,
+      "sha256": "73d1ef2b56d11514588e0a2f022a8f570c5adcfcf31d33c342ad2721c57d07d4"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/PROPOSED_BATCH_GROUPS.csv",
+      "bytes": 139073,
+      "sha256": "1d0a8317a36e75f9de91dfa4865ee7132f78c1f555803e32592576f8067b6e86"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "bytes": 1093,
+      "sha256": "4c35ed48ade7dda4c4145abde70cf411683dbdcedd4219f293506ebf8f0c3e5b"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/QUEUE_TRIAGE_RECONCILIATION.csv",
+      "bytes": 7215823,
+      "sha256": "13417f9ce7ab3cbe7fcf507992e99d8702f1b49908e5302948b02325f5d704e7"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/QUEUE_VOLUME_REDUCTION_ANALYSIS.csv",
+      "bytes": 3125,
+      "sha256": "65426e41d18f81f2eb05d1c5d81de0e6f58de44780e030c03223e3a6756ef2df"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/RIGHTS_PRIVACY_AND_LOCATOR_BOUNDARY.md",
+      "bytes": 2871,
+      "sha256": "07313d603f70841a99abb69c8f99670a3facd0553e5823d7b625ad4e52e4dff8"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/ROOKIE_REGISTRY_QUEUE_TRIAGE_CLOSURE_PLANNING_V1_REPORT.md",
+      "bytes": 8488,
+      "sha256": "1bb1d443ee35649740d09893b6bdb7d47ccd8b33ccf08a1faf908265bfcec8af"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/TRIAGE_CLASSIFICATION_CONTRACT.md",
+      "bytes": 5083,
+      "sha256": "961af9cc20a96ce96658aac5f45547569c5113c311090d0fd238f6c5ebc16958"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/VALIDATION_RESULTS.md",
+      "bytes": 2844,
+      "sha256": "511325147a49a7fe073dd755f5af7bd43be0208fa8d26aec43a880b67676831a"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_metadata_queue_triage_closure_planning_v1_20260711/ZERO_PLAYER_AND_EVIDENCE_ROW_PROOF.md",
+      "bytes": 842,
+      "sha256": "6ff1a2efe7739fa5c870102f87d115f943cb1fed4edaf5f7afdfdc7087a8c43d"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+metric,count,counting_semantics,interpretation
+RAW_QUEUE_ROWS,5147,CANONICAL,All immutable queue creation rows; no reduction or closure
+COARSE_CONTRACT_PROOF_FAMILIES,19,DERIVED_NONMUTATING,Category by locality/rights family
+EXECUTION_SAFE_UNIQUE_PROOF_PATTERNS,69,DERIVED_NONMUTATING,Conservative evidence-state/locality/closure-gate groups plus two protected-candidate splits
+PROPOSED_BATCHES,69,DERIVED_NONMUTATING,One proposed administrative batch per execution-safe pattern
+ROWS_POTENTIALLY_CLOSABLE_CURRENT_EXACT_PROOF,0,EXCLUSIVE,No queue row has a complete exact endpoint-plus-relationship-plus-hash chain
+ACTIVE_EXACT_RELATIONSHIPS_ALREADY_OUTSIDE_QUEUE,113,NONQUEUE,Already active artifact-to-authority metadata links; cannot reduce queue
+DEFERRED_PARTIAL_CANDIDATES,28,NONADDITIVE,3 queue-relevant protected hash candidates plus 25 nonqueue external ID pairs; all inactive
+AUTHORITY_MISSING_DEPENDENCY,1156,INCLUSIVE_DEPENDENCY,All authority-category rows; 970 carry this as primary planning status
+PRIMARY_REQUIRES_NEW_AUTHORITY_DECISION,970,EXCLUSIVE_PRIMARY_STATUS,After conflict/locality/rights/off-HQ precedence
+SOURCE_DATASET_RECEIPT_ENDPOINT_OR_RELATIONSHIP_DEPENDENCY,3807,INCLUSIVE_DEPENDENCY,"1,269 rows for each of source, dataset, and receipt"
+PRIMARY_REQUIRES_NEW_SOURCE_OR_DATASET_ENDPOINT,2166,EXCLUSIVE_PRIMARY_STATUS,Live-HQ source/dataset rows after conflict/locality precedence
+PRIMARY_RECEIPT_NOT_ENOUGH_INFORMATION,1083,EXCLUSIVE_PRIMARY_STATUS,Frozen planning enum has no requires-new-receipt status
+PRIMARY_GOVERNANCE_DECISION_OR_CONFLICT_ESCALATION,996,EXCLUSIVE_PRIMARY_STATUS_SUM,970 authority decisions + 3 rights decisions + 23 conflict escalations
+SOURCE_ADMISSION_OR_USE_DECISION_SECONDARY_FOOTPRINT,36,CROSSCUT,Nine SOURCE_UNADMITTED artifact subjects across four relationship categories
+RIGHTS_PRIVACY_LOCALITY_FOOTPRINT,920,CROSSCUT,810 local-only + 15 restricted-local + 95 off-HQ rows
+PRIMARY_CONFLICTING_EVIDENCE_ESCALATION,23,EXCLUSIVE_PRIMARY_STATUS,Five artifact subjects; no conflicting explicit endpoint links
+PRIMARY_LOCAL_ONLY_AVAILABILITY_BLOCKER,795,EXCLUSIVE_PRIMARY_STATUS,Fifteen local-only conflict rows take conflict precedence
+PRIMARY_RESTRICTED_LOCATOR_OR_RIGHTS_BLOCKER,15,EXCLUSIVE_PRIMARY_STATUS_SUM,12 restricted locator relationship rows + 3 rights review rows
+PRIMARY_OFF_HQ_AUDIT_ONLY,95,EXCLUSIVE_PRIMARY_STATUS,Includes 19 canonically deferred audit rows and 76 related link rows
+PRIMARY_NOT_ENOUGH_INFORMATION,1083,EXCLUSIVE_PRIMARY_STATUS,"Derived planning status; canonical NOT_ENOUGH_INFORMATION remains 2,700"
+CANONICAL_NOT_ENOUGH_INFORMATION_STATUS,2700,CANONICAL,Unchanged canonical queue status
+PRIMARY_NOT_APPLICABLE,0,EXCLUSIVE_PRIMARY_STATUS,Superseded state alone never proves N/A
+ROWS_UNCLOSABLE_UNDER_CURRENT_EXACT_PROOF,5147,CURRENT_STATE,Every row remains fail-closed today
+PERMANENT_UNTIL_EXTERNAL_TRIGGER_DIRECT_OFF_HQ_ROWS,19,CANONICAL_DEFERRED,Dedicated off-HQ audit rows stay deferred until recovery/admission trigger
+FIRST_PROOF_PREPARATION_BATCH_ROWS,2,BOUNDED_NEXT_LANE,Batch batch_836e8658fea7760a7278dd66; no closure execution
