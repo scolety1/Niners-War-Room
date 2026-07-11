@@ -46,6 +46,49 @@ from src.services.mock_draft_room_service import (
 ACTIVE_MOCK_SESSION_KEY = "mock_draft_room_active_session_id"
 
 
+def _render_mock_secondary_context(*, player_context_frame, pick_frame, mock_state, draft_id):
+    st.markdown("### Secondary mock-draft context")
+    st.caption(
+        "Runtime rails, guardrails, and display-only player context follow the primary pick "
+        "controls so keyboard and compact-width reading order stays logical."
+    )
+    with st.expander("Mock runtime rail", expanded=False):
+        rail_cols = st.columns(3)
+        with rail_cols[0]:
+            st.caption("Owned current picks")
+            owned = owned_pick_rows(pick_frame, mock_state)
+            if owned.empty:
+                st.info("Not enough information")
+            else:
+                st.dataframe(owned.head(8), use_container_width=True, hide_index=True)
+        with rail_cols[1]:
+            st.caption("Recent pick/trade events")
+            events = recent_event_rows(mock_state)
+            if events.empty:
+                st.write("No mock events yet.")
+            else:
+                st.dataframe(events, use_container_width=True, hide_index=True)
+        with rail_cols[2]:
+            st.caption("Recent trades")
+            trades = recent_trade_rows(mock_state)
+            if trades.empty:
+                st.write("No mock trade events recorded.")
+            else:
+                st.dataframe(trades, use_container_width=True, hide_index=True)
+        with st.expander("Mock runtime guardrails", expanded=False):
+            paths = runtime_paths()
+            st.caption(f"Runtime root: {paths.root}")
+            st.caption("Mock state stays local/untracked and separate from Draft Cockpit.")
+            st.caption("No trade valuation, model input, rank changes, or source-truth mutation.")
+            st.caption("Mock manifest issues never imply live Draft Cockpit state was reset.")
+
+    render_nflverse_player_context_expander(
+        player_context_frame,
+        key=f"mock_draft_{draft_id}",
+        title="NFLVerse player context / display-only",
+    )
+
+
 bundle = load_frozen_board()
 mock_player_context_frame = (
     load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
@@ -113,49 +156,61 @@ else:
     st.session_state[ACTIVE_MOCK_SESSION_KEY] = selected_id
     active_session = selected_mock_draft_session(sessions, selected_id)
 
-    manage_cols = st.columns([1, 1, 1, 1])
-    new_name = manage_cols[0].text_input(
-        "New mock name",
-        value=f"Mock Draft {len(sessions) + 1}",
-        key="mock_draft_room_new_name",
-    )
-    if manage_cols[0].button("Create Mock", use_container_width=True):
-        sessions = create_mock_draft_session(new_name)
-        st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[-1].draft_id
-        st.rerun()
+    with st.expander("Manage saved mock drafts", expanded=False):
+        st.caption(
+            "Session management is secondary to the active pick workflow. Delete remains "
+            "unavailable until its confirmation is checked."
+        )
+        manage_cols = st.columns([1, 1, 1, 1])
+        new_name = manage_cols[0].text_input(
+            "New mock name",
+            value=f"Mock Draft {len(sessions) + 1}",
+            key="mock_draft_room_new_name",
+        )
+        if manage_cols[0].button("Create Mock", use_container_width=True):
+            sessions = create_mock_draft_session(new_name)
+            st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[-1].draft_id
+            st.rerun()
 
-    rename_name = manage_cols[1].text_input(
-        "Rename selected",
-        value=active_session.name,
-        key=f"mock_draft_room_rename_{active_session.draft_id}",
-    )
-    if manage_cols[1].button("Rename Mock", use_container_width=True):
-        rename_mock_draft_session(active_session.draft_id, rename_name)
-        st.session_state[ACTIVE_MOCK_SESSION_KEY] = active_session.draft_id
-        st.rerun()
+        rename_name = manage_cols[1].text_input(
+            "Rename selected",
+            value=active_session.name,
+            key=f"mock_draft_room_rename_{active_session.draft_id}",
+        )
+        if manage_cols[1].button("Rename Mock", use_container_width=True):
+            rename_mock_draft_session(active_session.draft_id, rename_name)
+            st.session_state[ACTIVE_MOCK_SESSION_KEY] = active_session.draft_id
+            st.rerun()
 
-    duplicate_name = manage_cols[2].text_input(
-        "Duplicate as",
-        value=f"{active_session.name} Copy",
-        key=f"mock_draft_room_duplicate_{active_session.draft_id}",
-    )
-    if manage_cols[2].button("Duplicate Mock", use_container_width=True):
-        sessions = duplicate_mock_draft_session(active_session.draft_id, duplicate_name)
-        st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[-1].draft_id
-        st.rerun()
+        duplicate_name = manage_cols[2].text_input(
+            "Duplicate as",
+            value=f"{active_session.name} Copy",
+            key=f"mock_draft_room_duplicate_{active_session.draft_id}",
+        )
+        if manage_cols[2].button("Duplicate Mock", use_container_width=True):
+            sessions = duplicate_mock_draft_session(active_session.draft_id, duplicate_name)
+            st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[-1].draft_id
+            st.rerun()
 
-    delete_confirmed = manage_cols[3].checkbox(
-        "Confirm delete selected mock",
-        key=f"mock_draft_room_delete_confirm_{active_session.draft_id}",
-    )
-    if manage_cols[3].button(
-        "Delete Mock",
-        disabled=not delete_confirmed,
-        use_container_width=True,
-    ):
-        sessions = delete_mock_draft_session(active_session.draft_id)
-        st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[0].draft_id
-        st.rerun()
+        delete_confirmed = manage_cols[3].checkbox(
+            "Confirm delete selected mock",
+            key=f"mock_draft_room_delete_confirm_{active_session.draft_id}",
+        )
+        if manage_cols[3].button(
+            "Delete Mock",
+            disabled=not delete_confirmed,
+            help=(
+                "Delete the selected mock draft."
+                if delete_confirmed
+                else "Delete unavailable: confirm deletion first."
+            ),
+            use_container_width=True,
+        ):
+            sessions = delete_mock_draft_session(active_session.draft_id)
+            st.session_state[ACTIVE_MOCK_SESSION_KEY] = sessions[0].draft_id
+            st.rerun()
+        if not delete_confirmed:
+            manage_cols[3].caption("Delete unavailable: confirm deletion first.")
 
     source_caption = (
         f"Ranking source: {bundle.source_path}. Mock Draft pick props: {pick_path}. "
@@ -185,42 +240,6 @@ else:
     metric_cols[3].metric("Trades", summary.trade_count)
     metric_cols[4].metric("Autosave", summary.autosave_status, help=summary.last_saved)
 
-    with st.expander("Mock runtime rail", expanded=True):
-        rail_cols = st.columns(3)
-        with rail_cols[0]:
-            st.caption("Owned current picks")
-            owned = owned_pick_rows(pick_frame, mock_state)
-            if owned.empty:
-                st.info("Not enough information")
-            else:
-                st.dataframe(owned.head(8), use_container_width=True, hide_index=True)
-        with rail_cols[1]:
-            st.caption("Recent pick/trade events")
-            events = recent_event_rows(mock_state)
-            if events.empty:
-                st.write("No mock events yet.")
-            else:
-                st.dataframe(events, use_container_width=True, hide_index=True)
-        with rail_cols[2]:
-            st.caption("Recent trades")
-            trades = recent_trade_rows(mock_state)
-            if trades.empty:
-                st.write("No mock trade events recorded.")
-            else:
-                st.dataframe(trades, use_container_width=True, hide_index=True)
-        with st.expander("Mock runtime guardrails", expanded=False):
-            paths = runtime_paths()
-            st.caption(f"Runtime root: {paths.root}")
-            st.caption("Mock state stays local/untracked and separate from Draft Cockpit.")
-            st.caption("No trade valuation, model input, rank changes, or source-truth mutation.")
-            st.caption("Mock manifest issues never imply live Draft Cockpit state was reset.")
-
-    render_nflverse_player_context_expander(
-        mock_player_context_frame,
-        key=f"mock_draft_{active_session.draft_id}",
-        title="NFLVerse player context / display-only",
-    )
-
     render_draft_workflow(
         mode_label="Mock Draft manual practice",
         board_frame=bundle.frame,
@@ -228,6 +247,12 @@ else:
         nwr_picks_frame=nwr_frame,
         session_key=f"draft_day_v1_mock_draft_workflow_{active_session.draft_id}",
         source_caption=source_caption,
+        draft_id=active_session.draft_id,
+    )
+    _render_mock_secondary_context(
+        player_context_frame=mock_player_context_frame,
+        pick_frame=pick_frame,
+        mock_state=mock_state,
         draft_id=active_session.draft_id,
     )
 

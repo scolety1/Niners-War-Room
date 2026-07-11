@@ -1,0 +1,7 @@
+path,change_type,scope
+app/components/draft_workflow.py,modified,Shared presentation labels ordering disclosures and unavailable reasons
+app/pages/21_live_draft_room_v1.py,modified,Live presentation ordering and secondary context
+app/pages/24_mock_draft_v1.py,modified,Mock presentation ordering session disclosure and secondary context
+tests/test_drafting_mode_cockpit_page.py,modified,Updated compact layout contract assertion
+tests/test_live_mock_draft_accessibility_compact.py,created,Focused accessibility compact and no-change wiring tests
+docs/hq/master/live_mock_draft_accessibility_compact_width_hardening_v1_20260710/,created,Required HQ packet fixtures and rendered evidence

@@ -42,6 +42,10 @@ from src.services.draft_day_workflow_service import (
     workflow_summary,
 )
 
+ASSIGN_PICK_LABEL = "Assign selected player to pick"
+UNDO_PICK_LABEL = "Undo last assigned pick"
+REMOVE_PICK_LABEL = "Remove player from assigned pick"
+
 
 def render_draft_workflow(
     *,
@@ -96,6 +100,19 @@ def render_draft_workflow(
         )
     )
 
+    if summary.current_pick_label == "Draft complete":
+        st.success(
+            "Draft board status: Draft complete. All configured pick slots are assigned."
+        )
+    else:
+        current_team = summary.current_pick_owner or "Not enough information"
+        st.info(
+            f"Current pick: {summary.current_pick_label}. "
+            f"Current drafting team: {current_team}. "
+            f"Draft board status: {summary.drafted_count} drafted; "
+            f"{summary.available_count} players available."
+        )
+
     current_pick = current_pick_number(effective_pick_frame, state)
     filtered, show_drafted_players = _render_filters(
         board_frame,
@@ -121,17 +138,8 @@ def render_draft_workflow(
         show_drafted_context=show_drafted_players,
         current_pick=current_pick,
     )
-    cockpit_cols = st.columns([2.25, 1.0], gap="small")
-    with cockpit_cols[0]:
-        st.markdown("#### Available Players")
-        st.dataframe(
-            ranking_display,
-            use_container_width=True,
-            hide_index=True,
-            height=560,
-            key=f"{session_key}_ranking_table",
-        )
-    with cockpit_cols[1]:
+    primary_cols = st.columns([1.0, 1.25], gap="medium")
+    with primary_cols[0]:
         _render_pick_controls(
             mode_label=mode_label,
             filtered_frame=filtered,
@@ -141,13 +149,35 @@ def render_draft_workflow(
             session_key=session_key,
             runtime_state_key=runtime_state_key,
         )
+    with primary_cols[1]:
         st.markdown("#### Draft Board / Pick Tracker")
+        st.caption(
+            "Status is expressed in text: Current, Open, or Drafted. "
+            "The board does not rely on color alone."
+        )
         st.dataframe(
             display_draft_board_frame(board_rows).head(24),
             use_container_width=True,
             hide_index=True,
             height=360,
             key=f"{session_key}_draft_board_compact",
+        )
+
+    st.markdown("#### Available Players")
+    if ranking_display.empty:
+        st.info("Empty player table: no players match the current filters.")
+    else:
+        st.caption(
+            "Player table. Dense columns scroll inside the table; the page itself remains "
+            "within the viewport. Drafted rows are identified by Draft Status and Assigned "
+            "Pick when the drafted-player toggle is on."
+        )
+        st.dataframe(
+            ranking_display,
+            use_container_width=True,
+            hide_index=True,
+            height=560,
+            key=f"{session_key}_ranking_table",
         )
 
     with st.expander("Full draft board", expanded=False):
@@ -208,7 +238,11 @@ def _render_filters(
     session_key: str,
 ) -> tuple[pd.DataFrame, bool]:
     frame = with_workflow_columns(board_frame, state)
-    with st.container():
+    with st.expander("Filter and sort players", expanded=False):
+        st.caption(
+            "Keyboard-operable filter disclosure. All existing search, filter, visibility, "
+            "view, and sort controls remain available without preceding the primary pick action."
+        )
         filter_cols = st.columns([1.35, 0.9, 0.9, 1.1, 0.9, 0.9, 0.9])
         search = filter_cols[0].text_input(
             "Search player",
@@ -329,7 +363,7 @@ def _render_pick_controls(
     session_key: str,
     runtime_state_key: str,
 ) -> None:
-    st.markdown("#### Pick")
+    st.markdown("#### Select and assign a player")
     st.caption(
         f"{mode_label}: manual selection only. No simulator pick algorithm or automatic "
         "recommendation is running."
@@ -337,7 +371,18 @@ def _render_pick_controls(
     player_options = player_select_options(filtered_frame)
     pick_options = pick_select_options(pick_frame)
     if not player_options or not pick_options:
-        st.warning("Player or pick context is missing, so picks cannot be assigned.")
+        if not player_options:
+            reason = "No player is available in the current filtered table."
+        else:
+            reason = "No pick slot is available in the configured draft board."
+        st.warning(f"Assign unavailable: {reason}")
+        st.button(
+            ASSIGN_PICK_LABEL,
+            key=f"{session_key}_assign_unavailable",
+            disabled=True,
+            help=reason,
+            use_container_width=True,
+        )
         return
     _sync_pick_slot_selectbox(session_key, pick_options, pick_frame)
 
@@ -352,8 +397,14 @@ def _render_pick_controls(
         list(pick_options),
         key=f"{session_key}_selected_pick",
     )
+    st.caption(f"Selected player: {player_label}. Selected pick: {pick_label}.")
     action_cols = st.columns(2)
-    if action_cols[0].button("Assign Pick", key=f"{session_key}_assign", use_container_width=True):
+    if action_cols[0].button(
+        ASSIGN_PICK_LABEL,
+        key=f"{session_key}_assign",
+        help=f"Assign {player_label} to {pick_label}.",
+        use_container_width=True,
+    ):
         try:
             next_state = assign_player_to_pick(
                 st.session_state[session_key],
@@ -389,7 +440,18 @@ def _render_pick_controls(
             st.rerun()
         except DraftWorkflowError as exc:
             st.error(str(exc))
-    if action_cols[1].button("Undo Last", key=f"{session_key}_undo", use_container_width=True):
+    has_assignments = bool(st.session_state[session_key].get("assignments"))
+    if action_cols[1].button(
+        UNDO_PICK_LABEL,
+        key=f"{session_key}_undo",
+        disabled=not has_assignments,
+        help=(
+            "Undo the most recent assigned pick."
+            if has_assignments
+            else "Undo unavailable: no assigned picks are in this session."
+        ),
+        use_container_width=True,
+    ):
         next_state, message = undo_last_pick(st.session_state[session_key])
         runtime_state = update_workflow_state(
             st.session_state[runtime_state_key],
@@ -402,16 +464,28 @@ def _render_pick_controls(
         st.session_state[f"{session_key}_sync_pick_to_current"] = True
         st.info(message)
         st.rerun()
+    if not has_assignments:
+        st.caption("Undo unavailable: no assigned picks are in this session.")
 
-    with st.expander("Edit assigned pick", expanded=False):
+    with st.expander("Edit or remove an assigned pick", expanded=False):
+        st.caption(
+            "Keyboard-operable disclosure. Choose a pick, then use the separately labeled "
+            "remove action. This does not run from the disclosure heading."
+        )
         remove_pick_label = st.selectbox(
             "Edit/remove assigned pick",
             list(pick_options),
             key=f"{session_key}_remove_pick",
         )
         if st.button(
-            "Remove Player",
+            REMOVE_PICK_LABEL,
             key=f"{session_key}_remove_assignment",
+            disabled=not has_assignments,
+            help=(
+                f"Remove the player assigned to {remove_pick_label}."
+                if has_assignments
+                else "Remove unavailable: no assigned picks are in this session."
+            ),
             use_container_width=True,
         ):
             next_state, message = remove_pick_assignment(
@@ -433,6 +507,8 @@ def _render_pick_controls(
             st.session_state[f"{session_key}_sync_pick_to_current"] = True
             st.info(message)
             st.rerun()
+        if not has_assignments:
+            st.caption("Remove unavailable: no assigned picks are in this session.")
 
 
 def _render_trade_events(

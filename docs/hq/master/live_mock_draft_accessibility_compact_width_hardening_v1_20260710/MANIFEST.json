@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "packet": "live_mock_draft_accessibility_compact_width_hardening_v1_20260710",
+  "verdict": "GREEN_LIVE_MOCK_DRAFT_ACCESSIBILITY_COMPACT_V1_READY_FOR_HQ_REVIEW",
+  "verified_starting_head": "73cadea025ec582a976ec68d1ef5232e032167e2",
+  "remote_advanced": false,
+  "required_files": [
+    "LIVE_MOCK_DRAFT_ACCESSIBILITY_COMPACT_V1_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "CONTROL_LEVEL_REUSE_MAP.csv",
+    "ACCESSIBILITY_CONTROL_AUDIT.csv",
+    "COMPACT_WIDTH_LAYOUT_CONTRACT.md",
+    "LIVE_MOCK_SEMANTIC_CONSISTENCY_REVIEW.md",
+    "STATE_AND_RENDER_FIXTURE_MATRIX.csv",
+    "KEYBOARD_AND_FOCUS_REVIEW.md",
+    "SCREEN_READER_LABEL_REVIEW.md",
+    "REPRESENTATIVE_RENDER_REVIEW.md",
+    "DRAFT_LOGIC_NO_CHANGE_PROOF.md",
+    "ROLLBACK_PLAN.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "evidence": [
+    "rendered_evidence/desktop_live_draft.png",
+    "rendered_evidence/compact_live_draft.png",
+    "rendered_evidence/desktop_mock_draft.png",
+    "rendered_evidence/compact_mock_draft.png",
+    "rendered_evidence/compact_mock_expanded_secondary_details.png",
+    "fixtures/representative_draft_states.json"
+  ],
+  "test_totals": {"focused": 70, "expanded_regression": 235},
+  "protected_path_changes": 0,
+  "frozen_artifact_changes": 0,
+  "push_performed": false
+}

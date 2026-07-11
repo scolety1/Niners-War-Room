@@ -139,7 +139,8 @@ def test_live_and_mock_draft_pages_keep_their_own_draft_context() -> None:
 def test_draft_workflow_uses_compact_cockpit_layout() -> None:
     text = _text("app/components/draft_workflow.py")
 
-    assert 'st.columns([2.25, 1.0], gap="small")' in text
+    assert 'st.columns([1.0, 1.25], gap="medium")' in text
+    assert text.index("_render_pick_controls(") < text.index("#### Available Players")
     assert "#### Available Players" in text
     assert "#### Draft Board / Pick Tracker" in text
     assert "height=560" in text

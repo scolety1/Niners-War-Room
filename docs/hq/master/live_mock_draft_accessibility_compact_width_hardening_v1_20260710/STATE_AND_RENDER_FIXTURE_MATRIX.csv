@@ -1,0 +1,12 @@
+fixture_id,surface,state,synthetic,evidence,expected_contract,result
+LIVE_DESKTOP,Live,current pick and no assignments,No,rendered_evidence/desktop_live_draft.png,Current pick visible and undo unavailable,PASS
+LIVE_COMPACT,Live,selected player current pick disabled undo,No,rendered_evidence/compact_live_draft.png,390px no page overflow and assign fits,PASS
+MOCK_DESKTOP,Mock,current pick no assignments,No,rendered_evidence/desktop_mock_draft.png,Equivalent labels and separated mock state,PASS
+MOCK_COMPACT,Mock,selected player disabled undo,No,rendered_evidence/compact_mock_draft.png,390px no page overflow and assign fits,PASS
+MOCK_DETAILS,Mock,expanded secondary details,No,rendered_evidence/compact_mock_expanded_secondary_details.png,Disclosure expands without moving primary ownership,PASS
+NO_SELECTION,Both,no player selected,Yes,fixtures/representative_draft_states.json,Assign disabled with state-backed reason,PASS
+DRAFTED_PLAYER,Both,drafted row visible,Yes,fixtures/representative_draft_states.json,Draft Status Drafted and Assigned Pick text,PASS
+UNDO_AVAILABLE,Both,one assignment,Yes,fixtures/representative_draft_states.json,Undo enabled and remove available,PASS
+UNDO_UNAVAILABLE,Both,zero assignments,Yes,fixtures/representative_draft_states.json,Undo disabled with explicit reason,PASS
+DRAFT_COMPLETE,Both,all picks assigned,Yes,fixtures/representative_draft_states.json,Draft complete text status,PASS
+EMPTY_STATE,Both,filters return zero rows,Yes,fixtures/representative_draft_states.json,Empty player table message and disabled assign,PASS

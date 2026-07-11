@@ -1,0 +1,11 @@
+surface,control,accessible_name,keyboard,focus_order,disabled_reason,non_color_status,result
+Both,Player selection,Player from current table,Native combobox,Before assign action,No player available in filtered table,Selected player repeated as text,PASS
+Both,Pick selection,Pick slot,Native combobox,Immediately after player,No pick slot available,Selected pick repeated as text,PASS
+Both,Assign,Assign selected player to pick,Native button,Before draft board and table,Explicit assign-unavailable message,Selected context is text,PASS
+Both,Undo,Undo last assigned pick,Native button,Adjacent after assign,No assigned picks are in this session,Disabled state plus text reason,PASS
+Both,Remove,Remove player from assigned pick,Native button in native disclosure,After select and assign,No assigned picks are in this session,Separate destructive label,PASS
+Both,Drafted visibility,Show drafted players,Native switch,Inside filter disclosure,Not applicable,Draft Status and Assigned Pick columns,PASS
+Both,Filters and sorting,Filter and sort players,Native SUMMARY disclosure and labeled widgets,Before primary action as one collapsed group,Not applicable,Text labels remain,PASS
+Both,Draft board,Draft Board / Pick Tracker,Dataframe keyboard surface,After primary action,Not applicable,Current Open Drafted text,PASS
+Live,Runtime details,Live runtime status and path,Native SUMMARY disclosure,After current metrics,Not applicable,Loaded or warning text,PASS
+Mock,Session deletion,Delete Mock,Native button,Inside management disclosure,Confirm deletion first,Disabled plus text reason,PASS

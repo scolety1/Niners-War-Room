@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "purpose": "Presentation-state fixtures only; not production data and not loaded by the app.",
+  "states": [
+    {"id": "no_player_selected", "assign_enabled": false, "reason": "No player is available in the current filtered table."},
+    {"id": "player_selected", "player": "Fixture Player 1", "pick": "1.01", "selected_context_visible": true},
+    {"id": "drafted_player", "draft_status": "Drafted", "assigned_pick": "1.01", "show_drafted_players": true},
+    {"id": "current_pick", "pick": "1.02", "team": "Fixture Team", "status": "Current"},
+    {"id": "disabled_assign", "assign_enabled": false, "reason": "No pick slot is available in the configured draft board."},
+    {"id": "undo_available", "assignments": 1, "undo_enabled": true, "remove_enabled": true},
+    {"id": "undo_unavailable", "assignments": 0, "undo_enabled": false, "reason": "No assigned picks are in this session."},
+    {"id": "draft_complete", "status": "Draft complete", "all_configured_picks_assigned": true},
+    {"id": "empty_state", "rows": 0, "message": "Empty player table: no players match the current filters."},
+    {"id": "expanded_secondary_details", "disclosure": "Manage saved mock drafts", "expanded": true}
+  ]
+}

@@ -46,7 +46,7 @@ def _render_live_draft_command_center(
     board_frame,
     pick_frame,
     source_caption: str,
-) -> None:
+) -> dict[str, object]:
     load_result = load_runtime_state_with_status(
         mode="live",
         source_checkpoint=source_caption,
@@ -63,22 +63,33 @@ def _render_live_draft_command_center(
         "DRAFT COCKPIT - actions on this page write to the real local draft runtime state. "
         "State changes become part of the draft event log. Use Mock Drafts for experiments."
     )
-    st.caption(
-        "Draft Cockpit command center: current pick, owned picks, runtime events, trade log, "
-        "export/import, and the live draft board share one local live state scope."
-    )
-    if load_result.status == "LOADED":
-        st.success("Runtime state status: loaded existing live draft runtime state.")
-    else:
-        st.warning(f"Runtime state status: {load_result.warning}")
-    st.caption(f"Runtime state path: {load_result.path}")
-
     metric_cols = st.columns([1, 1.2, 0.8, 0.8, 1.2])
     metric_cols[0].metric("Current pick", summary.current_pick)
     metric_cols[1].metric("On-clock team", summary.on_clock_team)
     metric_cols[2].metric("Drafted", summary.drafted_count)
     metric_cols[3].metric("Trades", summary.trade_count)
     metric_cols[4].metric("Autosave", summary.autosave_status, help=summary.last_saved)
+
+    with st.expander("Live runtime status and path", expanded=False):
+        st.caption(
+            "Draft Cockpit command center: current pick, owned picks, runtime events, trade "
+            "log, export/import, and the live draft board share one local live state scope."
+        )
+        if load_result.status == "LOADED":
+            st.success("Runtime state status: loaded existing live draft runtime state.")
+        else:
+            st.warning(f"Runtime state status: {load_result.warning}")
+        st.caption(f"Runtime state path: {load_result.path}")
+
+    return state
+
+
+def _render_live_secondary_context(*, board_frame, pick_frame, state) -> None:
+    st.markdown("### Secondary draft context")
+    st.caption(
+        "Reference links, event rails, guardrails, and display-only player context follow "
+        "the primary pick controls so keyboard and compact-width reading order stays logical."
+    )
 
     quick_cols = st.columns(5)
     quick_cols[0].link_button("Dynasty Rankings", "/rankings", use_container_width=True)
@@ -164,7 +175,7 @@ if pick_path is None or pick_frame.empty:
 elif nwr_path is None or nwr_frame.empty:
     render_yellow_hold("NWR pick window props are missing, so NWR pick highlights are limited.")
 else:
-    _render_live_draft_command_center(
+    live_state = _render_live_draft_command_center(
         board_frame=live_board_frame,
         pick_frame=pick_frame,
         source_caption=SOURCE_CAPTION,
@@ -186,6 +197,11 @@ else:
             "ADP context, when present, is display-only timing context and does not "
             "drive Dynasty Asset Score."
         ),
+    )
+    _render_live_secondary_context(
+        board_frame=live_board_frame,
+        pick_frame=pick_frame,
+        state=live_state,
     )
 
 with st.expander("Frozen baseline / guardrails", expanded=False):
