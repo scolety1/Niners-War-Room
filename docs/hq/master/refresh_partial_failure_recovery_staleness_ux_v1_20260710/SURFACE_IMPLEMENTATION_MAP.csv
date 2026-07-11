@@ -1,0 +1,3 @@
+surface,integration,existing_inputs,new_output,execution_change,health_change
+Refresh Data,After run summary and in empty state,refresh_results_table and RefreshRunResult,Passive recovery disclosure,false,false
+Settings / Data Health,After loader results and beside current refresh health,loader rows and report.refresh_health,Passive recovery disclosure,false,false

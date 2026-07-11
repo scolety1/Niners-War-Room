@@ -10,6 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.refresh_recovery_panel import render_refresh_recovery_panel
 from app.components.ui_framework import page_header
 from src.services.data_health_dashboard_service import (
     HealthDashboardReport,
@@ -28,6 +29,9 @@ from src.services.data_refresh_orchestrator_service import (
     run_manual_sources_checklist,
     run_quick_refresh,
     validate_refresh_result_schema,
+)
+from src.services.refresh_recovery_presentation_service import (
+    build_refresh_recovery_presentations,
 )
 
 STATUS_STYLES = {
@@ -109,6 +113,10 @@ def _render_safe_loader_controls() -> None:
     if loader_run:
         run = loader_run["run"]
         rows = pd.DataFrame(loader_run["rows"])
+        render_refresh_recovery_panel(
+            build_refresh_recovery_presentations(loader_run["rows"]),
+            title="Latest loader recovery guidance",
+        )
         st.dataframe(
             rows.loc[
                 :,
@@ -233,6 +241,11 @@ else:
     st.success("No data-health warnings found by the dashboard checks.")
 
 _render_safe_loader_controls()
+refresh_status_rows = report.refresh_health.to_dict(orient="records")
+render_refresh_recovery_panel(
+    build_refresh_recovery_presentations(refresh_status_rows),
+    title="Current refresh health and recovery guidance",
+)
 _render_warning_summary(report)
 _render_section("App / Version Status", report.app_status, expanded=True)
 _render_section("Board Health", report.board_health, expanded=True)

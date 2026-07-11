@@ -1,0 +1,9 @@
+fixture,state,trigger,diagnostic,action_availability,synthetic
+Success,REFRESH_SUCCESS,action_type REFRESHED,none,INFORMATION_ONLY,true
+Partial,PARTIAL_SUCCESS,headline_status partial_success,none,AVAILABLE_ACTION,true
+Stale,STALE_RETAINED_DATA,freshness_status stale,none,AVAILABLE_ACTION,true
+Skipped,SOURCE_SKIPPED,action_type SKIPPED_BY_POLICY,none,INFORMATION_ONLY,true
+Unavailable,SOURCE_UNAVAILABLE,execution_status blocked_config,none,UNAVAILABLE_ACTION,true
+Gated,SOURCE_GATED,execution_status blocked_policy,none,REVIEW_LINK,true
+Failed,REFRESH_FAILED,action_type FAILED,diagnostic.txt,AVAILABLE_ACTION,true
+Unknown,NOT_ENOUGH_INFORMATION,no trusted status,none,UNAVAILABLE_ACTION,true

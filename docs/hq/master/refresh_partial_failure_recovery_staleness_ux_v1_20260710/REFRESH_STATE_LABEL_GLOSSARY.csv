@@ -1,0 +1,9 @@
+state,label,meaning,safe_next_action,action_availability
+REFRESH_SUCCESS,Refresh succeeded,Approved refresh completed under existing records,No recovery action is needed,INFORMATION_ONLY
+PARTIAL_SUCCESS,Partial success,Some portions succeeded and at least one did not,Review breakdown before choosing existing approved refresh,AVAILABLE_ACTION
+STALE_RETAINED_DATA,Stale retained data,Existing freshness policy labels retained data stale,Keep stale label visible or choose approved refresh,AVAILABLE_ACTION
+SOURCE_SKIPPED,Source skipped,Existing workflow intentionally did not attempt source,Take no action,INFORMATION_ONLY
+SOURCE_UNAVAILABLE,Source unavailable,Source could not be accessed or supplied,Wait and review recorded diagnostic,UNAVAILABLE_ACTION
+SOURCE_GATED,Source gated,Existing policy intentionally blocks admission,Request source-admission review,REVIEW_LINK
+REFRESH_FAILED,Refresh failed,Approved refresh attempt failed,Review diagnostic then choose approved refresh if appropriate,AVAILABLE_ACTION
+NOT_ENOUGH_INFORMATION,Not enough information,No trustworthy record supports a more specific state,Review status record; no safe recovery recommendation,UNAVAILABLE_ACTION

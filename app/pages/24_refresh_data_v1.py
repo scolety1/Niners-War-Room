@@ -10,6 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.refresh_recovery_panel import render_refresh_recovery_panel
 from app.components.ui_framework import page_header
 from src.services.data_refresh_orchestrator_service import (
     CHECK_PROTECTED_ARTIFACTS,
@@ -24,6 +25,10 @@ from src.services.data_refresh_orchestrator_service import (
     run_manual_sources_checklist,
     run_quick_refresh,
     validate_refresh_result_schema,
+)
+from src.services.refresh_recovery_presentation_service import (
+    build_refresh_recovery_presentations,
+    build_run_recovery_summary,
 )
 
 RESULT_COLUMNS = [
@@ -253,6 +258,13 @@ if last_run:
     st.subheader("Run Summary")
     st.metric("Overall", run.overall_status)
     st.caption(f"{run.loader_mode} finished at {run.finished_at_utc}")
+    recovery_rows = list(last_run["rows"])
+    render_refresh_recovery_panel(
+        (
+            build_run_recovery_summary(recovery_rows, finished_at=run.finished_at_utc),
+            *build_refresh_recovery_presentations(recovery_rows),
+        )
+    )
     st.dataframe(
         pd.DataFrame(last_run["summary"]),
         use_container_width=True,
@@ -280,3 +292,4 @@ if last_run:
     )
 else:
     st.info("No safe loader run has been started in this session.")
+    render_refresh_recovery_panel(())

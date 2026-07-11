@@ -1,0 +1,9 @@
+path,change_type,purpose
+app/pages/24_refresh_data_v1.py,modified,Render passive recovery guidance
+app/pages/28_settings_data_health_v1.py,modified,Render passive recovery guidance
+app/components/refresh_recovery_panel.py,created,Accessible compact disclosure
+src/services/refresh_recovery_presentation_service.py,created,Pure deterministic adapter
+tests/fixtures/refresh_recovery_panel_fixture.py,created,Synthetic eight-state render fixture
+tests/test_refresh_recovery_panel_render.py,created,Render contract
+tests/test_refresh_recovery_presentation_service.py,created,Eight-state and passivity tests
+docs/hq/master/refresh_partial_failure_recovery_staleness_ux_v1_20260710/,created,HQ evidence packet
