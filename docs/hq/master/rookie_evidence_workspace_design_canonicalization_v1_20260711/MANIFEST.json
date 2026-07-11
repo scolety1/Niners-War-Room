@@ -1,0 +1,108 @@
+{
+  "allowed_write_prefix": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/",
+  "branch": "work/rookie-evidence-design-canonicalization-hq-v1-20260711",
+  "documentation_only": true,
+  "evidence_migrated": false,
+  "files": [
+    {
+      "bytes": 3463,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/HQ_ADOPTION_AND_MERGE_REVIEW.md",
+      "purpose": "Canonical HQ adoption and merge-review record",
+      "sha256": "e009696fdf8998dc31e6c558a66751b029deff936a9334dd9e993dc6d23c3a08"
+    },
+    {
+      "bytes": 6911,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/SOURCE_COMMIT_INVENTORY.csv",
+      "purpose": "Exact 22-file source commit and hash inventory",
+      "sha256": "8067fbaf1f1dc7e00ace220eee8e3b9884b0ca2d031445e67dc9fa9dad733d30"
+    },
+    {
+      "bytes": 4933,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/AUTHORITY_FIELD_NORMALIZATION_CONTRACT.md",
+      "purpose": "Closed machine-readable authority normalization contract",
+      "sha256": "478de0c8b3dc4d21c5bc1cdbcea037814a136b6d0c810efec191d54100b1c320"
+    },
+    {
+      "bytes": 9306,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/AUTHORITY_CANONICALITY_NORMALIZED.csv",
+      "purpose": "Fail-closed normalization of all 23 source authority rows",
+      "sha256": "83b1463295ea1c24a379838b3b4ca9109d5b1a8b8b10c1ce0b25cec2e4156235"
+    },
+    {
+      "bytes": 3351,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/LOCAL_AND_RESTRICTED_LOCATOR_CONTRACT.md",
+      "purpose": "Live local restricted and off-HQ locator interpretation lock",
+      "sha256": "4be9934b194c946aad8551e4aa6212a5b5f0a1d5b2cad66f0f93d27bac9eca2f"
+    },
+    {
+      "bytes": 6456,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/SCAFFOLD_ENTRY_AND_POPULATION_LOCK.md",
+      "purpose": "Immediate scaffold lane population lock and corrected prompt",
+      "sha256": "ac51f556225c060df3241ab8a77246378a66e917432839c510dc67e770bd2e80"
+    },
+    {
+      "bytes": 2347,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/SOURCE_USE_DECISION_FAIL_CLOSED_REVIEW.md",
+      "purpose": "Exact purpose set and fail-closed source-use review",
+      "sha256": "f0242f6d1da65add31cf964fbb145be46e3f407ade9bbc25b0adf7744fee5d4d"
+    },
+    {
+      "bytes": 2414,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/DESIGN_CONSISTENCY_REVIEW.md",
+      "purpose": "Cross-contract design consistency review",
+      "sha256": "a76b8922a06c0e6d5db3d568f6ae407f9296ae816d94f5e933a100ab76fa94cc"
+    },
+    {
+      "bytes": 1568,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/PRIVACY_AND_RIGHTS_REVIEW.md",
+      "purpose": "Privacy and provider-rights boundary review",
+      "sha256": "2e65b195ea21b310aad60e2f382a5b8c924d6f6150cfa2b62151dd239b26eb86"
+    },
+    {
+      "bytes": 1601,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "purpose": "Protected scope and immutable freeze validation",
+      "sha256": "e5683b362a6889393b78ae751bf31ff87ea5ce677c6ccaf0447702fe2036a0e3"
+    },
+    {
+      "bytes": 3893,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/VALIDATION_RESULTS.md",
+      "purpose": "Canonicalization validation evidence",
+      "sha256": "6dcb9d41cb70a130d9c6effd417c42ea6de7fdd35f25214674e7d0387b70804b"
+    },
+    {
+      "bytes": 2433,
+      "path": "docs/hq/master/rookie_evidence_workspace_design_canonicalization_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "purpose": "Canonicalization packet file ledger",
+      "sha256": "c9b7cd431bb11242d575107394ab6d69a5ea30c0a7eb651ea3efb1e28b1ef0fd"
+    }
+  ],
+  "frozen_artifacts_changed": false,
+  "hashed_file_count": 12,
+  "inventory_counts": {
+    "authority_rows": 23,
+    "live_hq_locators": 1085,
+    "local_only_locators": 162,
+    "off_hq_git_locators": 19,
+    "player_value_rows": 0,
+    "restricted_sanitized_locators": 3,
+    "source_packet_files": 22
+  },
+  "legacy_authority_field_interpretation": "NON_MACHINE_INTERPRETABLE_LEGACY_SCOPE_FIELD",
+  "manifest_self_hash_excluded": true,
+  "normalized_player_value_authority_all_false": true,
+  "normalized_production_authority_all_false": true,
+  "packet": "rookie_evidence_workspace_design_canonicalization_v1_20260711",
+  "production_behavior_changed": false,
+  "remote_advanced_before_review": false,
+  "required_file_count": 13,
+  "schema_version": "1.0.0",
+  "source_commit": "93dd4d5268faebed5c43a213cc430255c30eaa78",
+  "source_manifest_non_self_hashes_verified": 21,
+  "source_packet_modified": false,
+  "source_packet_path": "docs/hq/master/rookie_evidence_workspace_consolidation_design_v1_20260711/",
+  "source_promoted": false,
+  "starting_remote_branch": "origin/work/hq-parallel-control",
+  "starting_remote_head": "9368a083ae59bdb9dfc7744b90fae0c449097e1d",
+  "verdict": "GREEN_ROOKIE_EVIDENCE_DESIGN_NORMALIZED_CANONICALIZED_AND_PUSHED_TO_HQ"
+}
