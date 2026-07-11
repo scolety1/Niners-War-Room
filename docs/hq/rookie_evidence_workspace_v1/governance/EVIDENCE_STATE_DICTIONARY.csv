@@ -1,0 +1,15 @@
+evidence_state,precedence,controlling_rule,record_version
+CANONICAL_ADMITTED,1,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+CANONICAL_REVIEW_ONLY,2,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+SUPPORTING_EVIDENCE,3,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+PROVISIONAL,4,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+IDENTITY_UNRESOLVED,5,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+SOURCE_UNADMITTED,6,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+USE_BLOCKED,7,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+DUPLICATE_EQUIVALENT,8,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+DUPLICATE_CONFLICTING,9,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+SUPERSEDED,10,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+LOCAL_ONLY_RESTRICTED,11,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+MISSING_EXPECTED,12,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+UNAVAILABLE,13,Closed state; orthogonal dimensions remain separately recorded.,1.0.0
+NOT_ENOUGH_INFORMATION,14,Closed state; orthogonal dimensions remain separately recorded.,1.0.0

@@ -1,0 +1,90 @@
+{
+  "files": [
+    {
+      "bytes": 511,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/ARTIFACT_REGISTRY_RECONCILIATION.csv",
+      "sha256": "f3993937ef79e1f380e6a87f9b40e133d458e7e70c01b10090bdf20fb4adbaf9"
+    },
+    {
+      "bytes": 1955,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/AUTHORITY_REGISTRY_VALIDATION.csv",
+      "sha256": "4b021b134d5f15e728c2cc0bf74e740c3d5217649c2d1419ea7fa38df7d32b68"
+    },
+    {
+      "bytes": 768,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/DUPLICATE_CONFLICT_AND_NO_RECREATE_REVIEW.md",
+      "sha256": "c1327c0798c4a516ab4063b5b60f79fefb42d8c511f45ccc1c2982b250ab039f"
+    },
+    {
+      "bytes": 658,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/EMPTY_PLAYER_SCHEMA_PROOF.md",
+      "sha256": "d9c1698de5f6569bed5511759d9c1b933ff3de2bb2b69d414cc2630c299d6f58"
+    },
+    {
+      "bytes": 607,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/EXECUTIVE_VERDICT.md",
+      "sha256": "a1ee7d4d4c96b9db77b150ea83f380221c5cc0558b913625880805e6c048aff3"
+    },
+    {
+      "bytes": 8652,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "970418e267d9e4bde22d410a3029eced3abcc50616512fb2c194e5af795670be"
+    },
+    {
+      "bytes": 281,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/LOCATOR_SANITIZATION_REVIEW.csv",
+      "sha256": "782ca5bed7819ff094fd71e2f03e9e091101fb9674f3c4201df11d96ffded4b6"
+    },
+    {
+      "bytes": 2568,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/PREFLIGHT_REUSE_MAP.csv",
+      "sha256": "bf31c0c6e73d31df2de4ff05acc82dbbd26d2479f1fba8596e1ec647d9e7f2ae"
+    },
+    {
+      "bytes": 743,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/PRIVACY_AND_RIGHTS_REVIEW.md",
+      "sha256": "a8f27f7461196d210679079aa04620247f6ecacc7f5c2153d13997756d28a7af"
+    },
+    {
+      "bytes": 549,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "779ec8ac8475fa391fd46cd59285928204c4826f638f8d6d9af0ceaeb027f2f5"
+    },
+    {
+      "bytes": 591,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/READ_ONLY_RUNTIME_BOUNDARY.md",
+      "sha256": "4aff99476bc47a2d40b9cdca65cfa08487a6a7eb80520ed131807c0ac8bebbbf"
+    },
+    {
+      "bytes": 424,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/ROLLBACK_PLAN.md",
+      "sha256": "96f89f2e3bfcec464db1e9bc1fe450fb13507256dfa62401ffd5193200f19236"
+    },
+    {
+      "bytes": 1184,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/ROOKIE_EVIDENCE_REGISTRY_SCAFFOLD_V1_REPORT.md",
+      "sha256": "41b9aaaae7b3b85a47a4e013201e64669329814a3f75a2471eac438f13e48cbb"
+    },
+    {
+      "bytes": 3866,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/SCAFFOLD_FILE_AND_SCHEMA_INVENTORY.csv",
+      "sha256": "aea848ac4f3bbc62461f592814adcc1571a240f3c2581065950f7e97eb774299"
+    },
+    {
+      "bytes": 710,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/SOURCE_USE_DECISION_REVIEW.csv",
+      "sha256": "aef07b5cee54c79475a1499d2c03eb1521b036eb4237e58abcc437d749d9f7fe"
+    },
+    {
+      "bytes": 4149,
+      "path": "docs/hq/master/rookie_evidence_registry_read_only_scaffold_v1_20260711/VALIDATION_RESULTS.md",
+      "sha256": "98db6138cee18db8fdda6cb67f39726ad1a9554fb29e2e4493d0e7cc5c92161c"
+    }
+  ],
+  "manifest_self_hash_excluded": true,
+  "packet": "rookie_evidence_registry_read_only_scaffold_v1_20260711",
+  "remote_advanced": false,
+  "schema_version": "1.0.0",
+  "starting_remote_head": "e6d680195f9e4512885ac281c215f2fb2ae4b64c",
+  "text_hash_normalization": "CRLF_TO_LF_BEFORE_SHA256"
+}

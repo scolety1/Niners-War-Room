@@ -1,0 +1,41 @@
+no_recreate_id,artifact_id,repository_relative_reference,sanitized_reference_locator_id,classification,required_treatment,blocker_or_guardrail,active_use_state,record_version
+NR-001,,docs/hq/data_sources/cfbd_review_artifacts_20260624/,,RETAIN_NO_RECREATE,Register metadata only; do not repull or copy raw.,source/rights/identity gate,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-002,,docs/hq/data_sources/cfbd_identity_matching_v1_20260624/,,RETAIN_NO_RECREATE,Reuse assertions and queues; no new fuzzy/name matcher.,identity unresolved,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-003,,docs/hq/rookie_outcomes/cfbd_rookie_identity_approval_v1_20260629/,,RETAIN_NO_RECREATE,Preserve decisions and duplicate occurrences.,key review,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-004,,docs/hq/rookie_model/rookie_entry_status_hygiene_v1_20260630/,,RETAIN_NO_RECREATE,Do not recreate absent builder; record failed lineage.,builder/input receipts missing,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-005,,docs/hq/rookie_model/rookie_entry_status_hygiene_qa_v1_20260630/,,RETAIN_NO_RECREATE,Append new duplicate findings separately.,collision propagation,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-006,,docs/hq/rookie_model/rookie_udfa_source_policy_confirmation_pilot_v1_20260630/,,RETAIN_NO_RECREATE,Keep zero-confirmation outcome and policy.,no admitted source,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-007,,docs/hq/rookie_outcomes/current_rookie_udfa_unknown_review_packet_v1_20260630/ | docs/hq/rookie_outcomes/udfa_review_application_v1_20260630/,,RETAIN_NO_RECREATE,Preserve review history; do not infer verified truth.,semantic/proof review,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-008,,docs/hq/rookie_outcomes/rookie_draft_capital_review_v1_20260629/,,SUPERSEDED_RETAIN,Keep conflicting predecessor.,seven draft-round conflicts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-009,,docs/hq/rookie_outcomes/rookie_draft_capital_coverage_repair_v2_20260630/,,RETAIN_NO_RECREATE,Reuse review evidence; no name-based promotion.,duplicate/identity caveats,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-010,,docs/hq/rookie_outcomes/rookie_pre_draft_asof_coverage_builder_v1_20260630/rookie_drafted_admission_manifest.csv,,RETAIN_NO_RECREATE,"Reference existing 1,999 rows.",102 missing IDs,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-011,,scripts/build_rookie_draft_class_gsis_bridge_v1_20260630.py,,RETAIN_NO_RECREATE,Do not rerun during consolidation.,local raw receipt incomplete,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-012,,,nrref_3ba0a6c9e08efe5652c5ca5a,RETAIN_NO_RECREATE,Register hash/locator only.,local-only,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-013,,scripts/build_rookie_historical_label_builder_v1_20260630.py,,RETAIN_NO_RECREATE,Do not regenerate 919 labels.,formula work parked,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-014,,,nrref_62f2ab2108436c5c99f56063,RETAIN_NO_RECREATE,Reference by hash; no raw copy yet.,receipt/retention decision,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-015,,docs/hq/rookie_outcomes/rookie_gate_d_feature_policy_v1_20260630/,,RETAIN_NO_RECREATE,Reuse policy.,all use remains review-only,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-016,,,nrref_f61f1ebf95994fd8faf4201d,RETAIN_PARKED,"No rerun, tuning, or activation.",formula research paused,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-017,,,nrref_ac4ea3f81575f6d53981a2b4,SUPERSEDED_RETAIN,Keep version chain; V5 latest review snapshot.,duplicate-inflated counts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-018,,,nrref_b632a607d13d4c35d8222469,RETAIN_NO_RECREATE,Reference only.,partial coverage/duplicates,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-019,,docs/hq/rookie_outcomes/rookie_outcomes_drafted_only_feature_policy_safe_upgrade_20260630/,,RETAIN_NO_RECREATE,Reuse strict missing/source/use policies.,no production gate,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-020,,docs/hq/rookie_outcomes/rookie_outcomes_drafted_only_feature_policy_nflverse_green_rerun_20260630/,,RETAIN_NO_RECREATE,Reuse receipts and policy; no source promotion.,review-only,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-021,,docs/hq/model/rookie_draft_capital_data_mart_join_component_test_v1_20260709/,,RETAIN_PARKED,No component rerun or formula activation.,formula research paused,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-022,,docs/hq/model/sparse_history_*/ | docs/hq/master/sparse_history_*/,,RETAIN_PARKED,Preserve results and stop decisions.,formula/ranking work parked,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-023,,,nrref_95ba6b153cfa9d634b01f7ad,LOCAL_ONLY_BLOCKED,Index existence only; do not canonicalize.,source/identity/authority conflicts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-024,,,nrref_5c85475c080d1a8c077de975,SUPERSEDED_RETAIN,Keep fixture tool; not evidence truth.,synthetic IDs/no receipts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-025,,src/services/model_v4_rookie_outcome_label_service.py,,SUPERSEDED_DO_NOT_RUN,Do not recreate absent output.,restricted source/name join,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-026,,src/services/model_v4_historical_rookie_tuning_service.py,,SUPERSEDED_DO_NOT_RUN,Do not rerun formula tuning.,formula paused/source blocked,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-027,,,nrref_29eb5779ad3470b15373acbc,LOCAL_ONLY_RESTRICTED,Keep locator/hash only; no raw copy.,provider rights and identity,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-028,,,nrref_d9630b1e5ffa3224b6624534,RETAIN_INDEPENDENT,Do not select over Outcome V2 without parity.,scoring conflicts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-029,,,nrref_ae0716abbabf3c6f09e8e16b,RETAIN_INDEPENDENT,Do not merge with Formula Data Mart labels.,target conflicts,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-030,,docs/hq/outcomes/outcome_row_level_label_source_admission_v1_20260630/,,RETAIN_NO_RECREATE,Reuse compact source and semantics.,rookie applicability separate,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-031,,app/pages/22_player_compare_v1.py | docs/hq/player_compare_safe_context_ux_upgrade_20260630/,,DO_NOT_RECREATE,Existing consumer; no new compare engine.,name+position fallback is non-controlling,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-032,,app/pages/23_trading_lab_v1.py | docs/hq/trading_lab/,,DO_NOT_RECREATE,Manual planner stays manual.,no automated valuation,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-033,,app/pages/35_development_lab_v1.py | docs/hq/development_lab/,,DO_NOT_RECREATE,Existing safe review surface.,no model/source truth,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-034,,app/pages/28_settings_data_health_v1.py | src/services/data_health_dashboard_service.py,,DO_NOT_RECREATE,Reuse diagnostics only.,does not admit/repair sources,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-035,,app/pages/21_live_draft_room_v1.py | app/pages/24_mock_draft_v1.py,,DO_NOT_RECREATE,Preserve separate runtime state and behavior.,no workspace wiring now,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-036,,config/source_registry.csv,,PROTECTED_NO_CHANGE,Read-only authority input.,scoped gate precedence,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-037,,docs/hq/model/formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710/,,FROZEN_IMMUTABLE,Never rewrite/recreate comparators.,future outcomes only,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-038,,docs/hq/master/fantasy_plugin_research_canonicalization_closeout_v1_20260711/,,DO_NOT_REOPEN,Manual-only 0%; do not call Flaim/FantasyBot.,rights/privacy,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-039,,docs/hq/**/manual*review* | docs/hq/**/review*queue*,,DO_NOT_RECREATE,"Future workspace references source queue entries and adds typed routing, not a silent replacement.",closure receipts required,NO_ACTIVE_USE_AUTHORIZED,1.0.0
+NR-040,,config/source_registry.csv market rows + existing display packets,,PARK_HISTORICAL_USE,No historical backfill from current data.,point-in-time receipts missing,NO_ACTIVE_USE_AUTHORIZED,1.0.0

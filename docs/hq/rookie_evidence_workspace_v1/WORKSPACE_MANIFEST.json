@@ -1,0 +1,139 @@
+{
+  "files": [
+    {
+      "bytes": 9448,
+      "path": "docs/hq/rookie_evidence_workspace_v1/conflicts/DUPLICATE_CONFLICT_RELATIONSHIP_LEDGER.csv",
+      "sha256": "9be12d9e7686aaee29e0ac320fdedf03a88badf1e9bc73caf48b3b5029140c92"
+    },
+    {
+      "bytes": 1449,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/ARTIFACT_SCOPE_DICTIONARY.csv",
+      "sha256": "ffa5517c150ce76fe6dd5f912a2d4e108533203f3bdad8427a2243b3802ae919"
+    },
+    {
+      "bytes": 1322,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/EVIDENCE_STATE_DICTIONARY.csv",
+      "sha256": "4982bc25b6a173f4fc8557df78584081fbb642652313de33cbaa66344bc85d85"
+    },
+    {
+      "bytes": 502,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/LIFECYCLE_DICTIONARY.csv",
+      "sha256": "42b8235033164de0327c4a902bb9d675b037e9577fbe96c61cf92bbedea464c0"
+    },
+    {
+      "bytes": 7550,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/NO_RECREATE_RELATIONSHIP_LEDGER.csv",
+      "sha256": "87660de661eddc6df4389ed68e5d787693b6db748a0b9ee28417972de7fb6df4"
+    },
+    {
+      "bytes": 17216,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/SCHEMAS.json",
+      "sha256": "e741c088714f9fa2012d9f1520f51f7186b65be2f0fed7709c3e6a672caf2afd"
+    },
+    {
+      "bytes": 153,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/SOURCE_USE_DECISION_VALUE_DICTIONARY.csv",
+      "sha256": "095945293a34bfaa8da795c3e9a812abae1c87f1fcdaef90cf19cf65ff70867b"
+    },
+    {
+      "bytes": 207,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/SOURCE_USE_PURPOSE_DICTIONARY.csv",
+      "sha256": "641f14262564195ca423c00fc747cd291768feca34f3671fc78312c85b447a7b"
+    },
+    {
+      "bytes": 596,
+      "path": "docs/hq/rookie_evidence_workspace_v1/governance/VALIDATION_RULES.md",
+      "sha256": "5171686a56196529b48535fc9ce740ee2d07014fde93d2ae23c5e2fbadfb2503"
+    },
+    {
+      "bytes": 2371,
+      "path": "docs/hq/rookie_evidence_workspace_v1/IMPLEMENTATION_STATUS.csv",
+      "sha256": "2556b10f2fb0f541d3085978ca806c26776c6704c5d8aec2d23ce91c9a7157f9"
+    },
+    {
+      "bytes": 829,
+      "path": "docs/hq/rookie_evidence_workspace_v1/README.md",
+      "sha256": "eda45bbb04de1c36a72f0ccd2a757124c8feeeb770b51f9436db5d92b319a202"
+    },
+    {
+      "bytes": 181803,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/ARTIFACT_LIFECYCLE_LINK.csv",
+      "sha256": "43976f5db6d9d9b1786c6b0d0aa6348017dba2d7148b2ebf7b9851a9ea97726c"
+    },
+    {
+      "bytes": 9306,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/AUTHORITY_REGISTRY.csv",
+      "sha256": "83b1463295ea1c24a379838b3b4ca9109d5b1a8b8b10c1ce0b25cec2e4156235"
+    },
+    {
+      "bytes": 119,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/DATASET_LIFECYCLE_LINK.csv",
+      "sha256": "bca3637d2b0e443bf2fa8185e94d1abfaf4649831580d4d9431b8791c31c9668"
+    },
+    {
+      "bytes": 178,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/DATASET_REGISTRY.csv",
+      "sha256": "75b1c96c7f67780df2ac26ab7e6cb9ff767345d310699748bb08324570922f00"
+    },
+    {
+      "bytes": 805735,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/EVIDENCE_ARTIFACT_REGISTRY.csv",
+      "sha256": "f054de9106431237e781068ea410531017bfc894709bf3e7fa917b86c4997bd0"
+    },
+    {
+      "bytes": 497,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/EVIDENCE_OBSERVATION_REGISTRY.csv",
+      "sha256": "7831017891cbc3ecc7c1f409fb8468492f55c75a7aea506c02ace2b7adfbdd9e"
+    },
+    {
+      "bytes": 276,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/IDENTITY_ASSERTION_LEDGER.csv",
+      "sha256": "e6b3b8c6b70b09c13b5db04ce85f9a23ec66fb149fe6b70ba328e667dd76ab40"
+    },
+    {
+      "bytes": 201,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/PLAYER_ALIAS_REGISTRY.csv",
+      "sha256": "079e3c001885b4b923abc73b4f73b457f40090d31ae9f644e5211a8a6e819019"
+    },
+    {
+      "bytes": 211,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/PLAYER_IDENTITY_REGISTRY.csv",
+      "sha256": "d3645ec3ec6602915230a7d70b5ad6ddc42021d6f2410a8065f8943f430c4bdc"
+    },
+    {
+      "bytes": 337213,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/SANITIZED_LOCATOR_REGISTRY.csv",
+      "sha256": "7a3860489f12af1ecbbc9faccd01b0fb6bab7600863e432d20bdf0932f75cc0e"
+    },
+    {
+      "bytes": 156,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/SOURCE_RECEIPT_REGISTRY.csv",
+      "sha256": "e13fe4394b316f56b7731ba53a1ef5d7ec6e97dd048eaf08a3da23dbea814887"
+    },
+    {
+      "bytes": 131,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/SOURCE_REGISTRY.csv",
+      "sha256": "8eb9add1e6383e9054c9b5baa6441e5a29f27f917aa01fb908bcea1feac1b67f"
+    },
+    {
+      "bytes": 206,
+      "path": "docs/hq/rookie_evidence_workspace_v1/registries/SOURCE_USE_DECISION_LEDGER.csv",
+      "sha256": "e3c5642b1ac6cacd22383a593dd003e2492e753aba9ecc3841aba033c4dbe01f"
+    },
+    {
+      "bytes": 4260,
+      "path": "docs/hq/rookie_evidence_workspace_v1/REGISTRY_FILE_MANIFEST.csv",
+      "sha256": "e42ce780a9607fb8a773d990ac5cc5b07b2f7b70a4dc925015d4e0a1df0dd037"
+    }
+  ],
+  "manifest_self_hash_excluded": true,
+  "player_value_authority": false,
+  "production_authority": false,
+  "read_only": true,
+  "runtime_wiring": false,
+  "schema_version": "1.0.0",
+  "snapshot_version": "20260711.1",
+  "source_promotion": false,
+  "starting_remote_head": "e6d680195f9e4512885ac281c215f2fb2ae4b64c",
+  "text_hash_normalization": "CRLF_TO_LF_BEFORE_SHA256"
+}

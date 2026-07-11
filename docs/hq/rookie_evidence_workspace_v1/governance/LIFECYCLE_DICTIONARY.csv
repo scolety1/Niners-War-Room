@@ -1,0 +1,6 @@
+lifecycle_stage,phase_order,display_label,scope,record_version
+PRE_DRAFT,1,Pre-draft,Player evidence before the draft event.,1.0.0
+DRAFT_EVENT,2,Draft-event,"Draft, supplemental, or entry-event evidence.",1.0.0
+POST_DRAFT_PRESEASON,3,Post-draft / pre-season,Player evidence after the draft and before the regular season.,1.0.0
+ROOKIE_SEASON,4,Rookie-season,Player evidence from the rookie season.,1.0.0
+MULTI_YEAR_OUTCOME,5,Multi-year outcomes,Outcome evidence beyond the rookie-season boundary.,1.0.0

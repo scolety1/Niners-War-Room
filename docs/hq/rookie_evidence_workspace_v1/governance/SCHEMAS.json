@@ -1,0 +1,682 @@
+{
+  "ARTIFACT_LIFECYCLE_LINK.csv": {
+    "deterministic_order": [
+      "artifact_id",
+      "lifecycle_stage"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "artifact_id": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id"
+    },
+    "headers": [
+      "artifact_id",
+      "lifecycle_stage",
+      "link_scope",
+      "link_basis",
+      "primary_for_artifact_or_dataset",
+      "decision_or_receipt_id",
+      "record_version"
+    ],
+    "path": "registries/ARTIFACT_LIFECYCLE_LINK.csv",
+    "primary_key": [
+      "artifact_id",
+      "lifecycle_stage"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "ARTIFACT_SCOPE_DICTIONARY.csv": {
+    "deterministic_order": [
+      "artifact_scope_class"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "artifact_scope_class",
+      "scope_kind",
+      "record_version"
+    ],
+    "path": "governance/ARTIFACT_SCOPE_DICTIONARY.csv",
+    "primary_key": [
+      "artifact_scope_class"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "AUTHORITY_REGISTRY.csv": {
+    "deterministic_order": [
+      "authority_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "authority_id",
+      "evidence_family",
+      "metadata_registration_status",
+      "authority_scope_class",
+      "player_value_authority",
+      "production_authority",
+      "source_admission_effect",
+      "locality_class",
+      "permitted_use_class",
+      "controlling_caveat",
+      "legacy_canonical_now_value",
+      "legacy_field_interpretation",
+      "source_authority_row"
+    ],
+    "path": "registries/AUTHORITY_REGISTRY.csv",
+    "primary_key": [
+      "authority_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "DATASET_LIFECYCLE_LINK.csv": {
+    "deterministic_order": [
+      "dataset_id",
+      "lifecycle_stage"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "dataset_id": "DATASET_REGISTRY.csv.dataset_id"
+    },
+    "headers": [
+      "dataset_id",
+      "lifecycle_stage",
+      "link_scope",
+      "link_basis",
+      "primary_for_artifact_or_dataset",
+      "decision_or_receipt_id",
+      "record_version"
+    ],
+    "path": "registries/DATASET_LIFECYCLE_LINK.csv",
+    "primary_key": [
+      "dataset_id",
+      "lifecycle_stage"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "DATASET_REGISTRY.csv": {
+    "deterministic_order": [
+      "dataset_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "authority_id": "AUTHORITY_REGISTRY.csv.authority_id?",
+      "source_id": "SOURCE_REGISTRY.csv.source_id"
+    },
+    "headers": [
+      "dataset_id",
+      "source_id",
+      "dataset_name",
+      "lifecycle_stage",
+      "schema_summary",
+      "season_population_coverage",
+      "authority_id",
+      "evidence_state",
+      "receipt_status",
+      "permitted_use_decision_refs",
+      "record_version"
+    ],
+    "path": "registries/DATASET_REGISTRY.csv",
+    "primary_key": [
+      "dataset_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "DUPLICATE_CONFLICT_RELATIONSHIP_LEDGER.csv": {
+    "deterministic_order": [
+      "relationship_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "artifact_id_a": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id?",
+      "artifact_id_b": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id?"
+    },
+    "headers": [
+      "relationship_id",
+      "relationship_type",
+      "duplicate_class",
+      "artifact_id_a",
+      "artifact_id_b",
+      "design_reference_a",
+      "design_reference_b",
+      "relationship_scope",
+      "count_basis",
+      "disposition",
+      "human_review_required",
+      "blocker",
+      "relationship_validation_status",
+      "decision_receipt_status",
+      "resolution_status",
+      "record_version"
+    ],
+    "path": "conflicts/DUPLICATE_CONFLICT_RELATIONSHIP_LEDGER.csv",
+    "primary_key": [
+      "relationship_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "EVIDENCE_ARTIFACT_REGISTRY.csv": {
+    "deterministic_order": [
+      "artifact_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "authority_id": "AUTHORITY_REGISTRY.csv.authority_id?",
+      "dataset_id": "DATASET_REGISTRY.csv.dataset_id?",
+      "locator_id": "SANITIZED_LOCATOR_REGISTRY.csv.locator_id",
+      "receipt_id": "SOURCE_RECEIPT_REGISTRY.csv.receipt_id?",
+      "source_id": "SOURCE_REGISTRY.csv.source_id?"
+    },
+    "headers": [
+      "artifact_id",
+      "artifact_type",
+      "artifact_scope_class",
+      "evidence_state",
+      "authority_id",
+      "locality_class",
+      "locator_id",
+      "source_id",
+      "dataset_id",
+      "receipt_id",
+      "canonical_flag",
+      "supporting_flag",
+      "duplicate_status",
+      "superseded_status",
+      "no_recreate_status",
+      "implementation_status",
+      "manifest_hash_status",
+      "sha256",
+      "row_count_metadata",
+      "schema_summary",
+      "as_of_metadata",
+      "controlling_caveat",
+      "record_version"
+    ],
+    "path": "registries/EVIDENCE_ARTIFACT_REGISTRY.csv",
+    "primary_key": [
+      "artifact_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "EVIDENCE_OBSERVATION_REGISTRY.csv": {
+    "deterministic_order": [
+      "evidence_observation_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "evidence_observation_id",
+      "nwr_player_id",
+      "artifact_id",
+      "source_id",
+      "dataset_id",
+      "receipt_id",
+      "lineage_id",
+      "source_row_key",
+      "evidence_type",
+      "field_definition_id",
+      "original_value",
+      "typed_value",
+      "lifecycle_stage",
+      "evidence_state",
+      "identity_state",
+      "source_admission_state",
+      "use_decision_state",
+      "use_decision_id",
+      "availability_state",
+      "duplication_state",
+      "duplicate_relationship_id",
+      "locality_state",
+      "censoring_state",
+      "confidence",
+      "effective_at",
+      "source_timestamp",
+      "as_of_date",
+      "transformation_version",
+      "superseded_observation_id",
+      "fixture_class",
+      "record_version"
+    ],
+    "path": "registries/EVIDENCE_OBSERVATION_REGISTRY.csv",
+    "primary_key": [
+      "evidence_observation_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "EVIDENCE_STATE_DICTIONARY.csv": {
+    "deterministic_order": [
+      "precedence"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "evidence_state",
+      "precedence",
+      "controlling_rule",
+      "record_version"
+    ],
+    "path": "governance/EVIDENCE_STATE_DICTIONARY.csv",
+    "primary_key": [
+      "evidence_state"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "IDENTITY_ASSERTION_LEDGER.csv": {
+    "deterministic_order": [
+      "identity_assertion_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "identity_assertion_id",
+      "candidate_nwr_player_id",
+      "asserted_nwr_player_id",
+      "source_namespace",
+      "provider_id",
+      "normalized_name_review_only",
+      "identity_confidence",
+      "join_method",
+      "join_evidence",
+      "conflict_reason",
+      "manual_review_status",
+      "source_id",
+      "receipt_id",
+      "as_of_metadata",
+      "use_decision_id",
+      "record_version"
+    ],
+    "path": "registries/IDENTITY_ASSERTION_LEDGER.csv",
+    "primary_key": [
+      "identity_assertion_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "IMPLEMENTATION_STATUS.csv": {
+    "deterministic_order": [
+      "component_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "component_id",
+      "implementation_status",
+      "runtime_wiring",
+      "caveat",
+      "record_version"
+    ],
+    "path": "IMPLEMENTATION_STATUS.csv",
+    "primary_key": [
+      "component_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "LIFECYCLE_DICTIONARY.csv": {
+    "deterministic_order": [
+      "phase_order"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "lifecycle_stage",
+      "phase_order",
+      "display_label",
+      "scope",
+      "record_version"
+    ],
+    "path": "governance/LIFECYCLE_DICTIONARY.csv",
+    "primary_key": [
+      "lifecycle_stage"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "NO_RECREATE_RELATIONSHIP_LEDGER.csv": {
+    "deterministic_order": [
+      "no_recreate_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "artifact_id": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id?"
+    },
+    "headers": [
+      "no_recreate_id",
+      "artifact_id",
+      "repository_relative_reference",
+      "sanitized_reference_locator_id",
+      "classification",
+      "required_treatment",
+      "blocker_or_guardrail",
+      "active_use_state",
+      "record_version"
+    ],
+    "path": "governance/NO_RECREATE_RELATIONSHIP_LEDGER.csv",
+    "primary_key": [
+      "no_recreate_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "PLAYER_ALIAS_REGISTRY.csv": {
+    "deterministic_order": [
+      "alias_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "nwr_player_id": "PLAYER_IDENTITY_REGISTRY.csv.nwr_player_id"
+    },
+    "headers": [
+      "alias_id",
+      "nwr_player_id",
+      "namespace",
+      "provider_id",
+      "provider_name",
+      "valid_from",
+      "valid_to",
+      "team_context",
+      "season_context",
+      "source_id",
+      "receipt_id",
+      "identity_assertion_id",
+      "alias_status",
+      "superseded_by_alias_id",
+      "record_version"
+    ],
+    "path": "registries/PLAYER_ALIAS_REGISTRY.csv",
+    "primary_key": [
+      "alias_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "PLAYER_IDENTITY_REGISTRY.csv": {
+    "deterministic_order": [
+      "nwr_player_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "nwr_player_id",
+      "display_name",
+      "normalized_name_review_only",
+      "declared_position_current",
+      "birth_date",
+      "identity_status",
+      "identity_confidence",
+      "created_at",
+      "created_by_lane",
+      "valid_from",
+      "valid_to",
+      "manual_review_status",
+      "record_version"
+    ],
+    "path": "registries/PLAYER_IDENTITY_REGISTRY.csv",
+    "primary_key": [
+      "nwr_player_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SANITIZED_LOCATOR_REGISTRY.csv": {
+    "deterministic_order": [
+      "locator_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "artifact_id": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id"
+    },
+    "headers": [
+      "locator_id",
+      "artifact_id",
+      "locality_class",
+      "repository_relative_location",
+      "sanitized_locator_id",
+      "audit_git_commit",
+      "audit_git_object_path",
+      "availability_state",
+      "active_use_state",
+      "rights_state",
+      "privacy_class",
+      "reversibility_review",
+      "record_version"
+    ],
+    "path": "registries/SANITIZED_LOCATOR_REGISTRY.csv",
+    "primary_key": [
+      "locator_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SOURCE_RECEIPT_REGISTRY.csv": {
+    "deterministic_order": [
+      "receipt_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "artifact_id": "EVIDENCE_ARTIFACT_REGISTRY.csv.artifact_id?",
+      "dataset_id": "DATASET_REGISTRY.csv.dataset_id?",
+      "locator_id": "SANITIZED_LOCATOR_REGISTRY.csv.locator_id?",
+      "source_id": "SOURCE_REGISTRY.csv.source_id?"
+    },
+    "headers": [
+      "receipt_id",
+      "artifact_id",
+      "dataset_id",
+      "source_id",
+      "receipt_type",
+      "locator_id",
+      "hash_status",
+      "as_of_metadata",
+      "rights_state",
+      "privacy_class",
+      "availability_state",
+      "record_version"
+    ],
+    "path": "registries/SOURCE_RECEIPT_REGISTRY.csv",
+    "primary_key": [
+      "receipt_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SOURCE_REGISTRY.csv": {
+    "deterministic_order": [
+      "source_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "source_id",
+      "source_family",
+      "governance_state",
+      "locality_class",
+      "rights_use_review_status",
+      "receipt_availability",
+      "source_caveat",
+      "record_version"
+    ],
+    "path": "registries/SOURCE_REGISTRY.csv",
+    "primary_key": [
+      "source_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SOURCE_USE_DECISION_LEDGER.csv": {
+    "deterministic_order": [
+      "use_decision_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "approval_receipt_id": "SOURCE_RECEIPT_REGISTRY.csv.receipt_id",
+      "dataset_id": "DATASET_REGISTRY.csv.dataset_id"
+    },
+    "headers": [
+      "use_decision_id",
+      "dataset_id",
+      "field_family",
+      "purpose",
+      "decision_value",
+      "decision_version",
+      "effective_at",
+      "evidence_links",
+      "rights_status",
+      "privacy_class",
+      "caveat_text",
+      "owner_role",
+      "approval_receipt_id",
+      "supersedes_use_decision_id"
+    ],
+    "path": "registries/SOURCE_USE_DECISION_LEDGER.csv",
+    "primary_key": [
+      "use_decision_id"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SOURCE_USE_DECISION_VALUE_DICTIONARY.csv": {
+    "deterministic_order": [
+      "decision_value"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "decision_value",
+      "record_version"
+    ],
+    "path": "governance/SOURCE_USE_DECISION_VALUE_DICTIONARY.csv",
+    "primary_key": [
+      "decision_value"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "SOURCE_USE_PURPOSE_DICTIONARY.csv": {
+    "deterministic_order": [
+      "purpose"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {},
+    "headers": [
+      "purpose",
+      "record_version"
+    ],
+    "path": "governance/SOURCE_USE_PURPOSE_DICTIONARY.csv",
+    "primary_key": [
+      "purpose"
+    ],
+    "schema_version": "1.0.0"
+  },
+  "closed_enums": {
+    "artifact_scope_class": [
+      "CROSS_LIFECYCLE",
+      "CROSS_LIFECYCLE_IDENTITY",
+      "CROSS_LIFECYCLE_REVIEW_SIMULATION",
+      "DRAFT_EVENT",
+      "DRAFT_EVENT_AND_POST_DRAFT_PRESEASON",
+      "DRAFT_EVENT_TO_ROOKIE_OUTCOME_BRIDGE",
+      "GOVERNANCE",
+      "LATER_OUTCOME_RESEARCH",
+      "PRE_DRAFT",
+      "PRE_DRAFT_AND_TIMING_GOVERNANCE",
+      "PRE_DRAFT_LEGACY",
+      "PRE_DRAFT_TO_MULTI_YEAR_LEGACY",
+      "PRODUCT_CONSUMER",
+      "PROTECTED_FROZEN_GOVERNANCE",
+      "ROOKIE_SEASON_AND_MULTI_YEAR_OUTCOME"
+    ],
+    "authority_scope_class": [
+      "GOVERNANCE_POLICY_ONLY",
+      "PROTECTED_EVALUATION_POLICY_ONLY",
+      "SOURCE_FAMILY_ROUTING_CEILING_ONLY",
+      "RECEIPT_STANDARD_ONLY",
+      "EVIDENCE_REVIEW_ONLY",
+      "DECISION_RECEIPT_ONLY",
+      "BLOCK_POLICY_ONLY",
+      "LOCAL_REVIEW_LOCATOR_ONLY",
+      "OFF_HQ_AUDIT_LOCATOR_ONLY",
+      "NO_RECREATE_REFERENCE_ONLY",
+      "PRODUCT_DEPENDENCY_REFERENCE_ONLY"
+    ],
+    "decision_value": [
+      "ALLOWED",
+      "ALLOWED_WITH_CAVEATS",
+      "REVIEW_ONLY",
+      "BLOCKED",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_APPLICABLE"
+    ],
+    "duplicate_class": [
+      "EXACT_DUPLICATE",
+      "SCHEMA_EQUIVALENT_DUPLICATE",
+      "TRANSFORMED_DERIVATIVE",
+      "OVERLAPPING_POPULATION",
+      "STALE_PREDECESSOR",
+      "CONFLICTING_EVIDENCE",
+      "INDEPENDENT_CORROBORATION",
+      "NOT_ACTUALLY_DUPLICATED"
+    ],
+    "duplicate_disposition": [
+      "RETAIN_BOTH",
+      "DESIGNATE_CANONICAL_AND_SUPPORTING",
+      "SUPERSEDE",
+      "ARCHIVE_LOGICALLY",
+      "MERGE_LATER",
+      "MANUAL_REVIEW",
+      "BLOCK_CONSOLIDATION"
+    ],
+    "evidence_state": [
+      "CANONICAL_ADMITTED",
+      "CANONICAL_REVIEW_ONLY",
+      "SUPPORTING_EVIDENCE",
+      "PROVISIONAL",
+      "IDENTITY_UNRESOLVED",
+      "SOURCE_UNADMITTED",
+      "USE_BLOCKED",
+      "DUPLICATE_EQUIVALENT",
+      "DUPLICATE_CONFLICTING",
+      "SUPERSEDED",
+      "LOCAL_ONLY_RESTRICTED",
+      "MISSING_EXPECTED",
+      "UNAVAILABLE",
+      "NOT_ENOUGH_INFORMATION"
+    ],
+    "lifecycle_stage": [
+      "PRE_DRAFT",
+      "DRAFT_EVENT",
+      "POST_DRAFT_PRESEASON",
+      "ROOKIE_SEASON",
+      "MULTI_YEAR_OUTCOME"
+    ],
+    "locality_class": [
+      "LIVE_HQ",
+      "LOCAL_ONLY",
+      "LOCAL_ONLY_RESTRICTED",
+      "OFF_HQ_BRANCH_ONLY"
+    ],
+    "metadata_registration_status": [
+      "REGISTER_AUTHORITY_METADATA",
+      "REGISTER_LOCATOR_METADATA_ONLY",
+      "REGISTER_NO_RECREATE_METADATA_ONLY",
+      "REGISTER_DEPENDENCY_METADATA_ONLY"
+    ],
+    "permitted_use_class": [
+      "GOVERNANCE_METADATA_ONLY",
+      "PROTECTED_EVALUATION_POLICY_METADATA_ONLY",
+      "RECEIPT_STANDARD_METADATA_ONLY",
+      "REVIEW_METADATA_ONLY",
+      "DECISION_RECEIPT_METADATA_ONLY",
+      "BLOCKER_METADATA_ONLY",
+      "LOCAL_LOCATOR_METADATA_ONLY",
+      "OFF_HQ_AUDIT_METADATA_ONLY",
+      "NO_RECREATE_METADATA_ONLY",
+      "DEPENDENCY_METADATA_ONLY"
+    ],
+    "purpose": [
+      "LOCAL_RETENTION",
+      "CANONICAL_HQ_SUMMARY",
+      "RAW_RECEIPT_STORAGE",
+      "DISPLAY",
+      "RESEARCH",
+      "MODEL_TRAINING",
+      "PRODUCTION_SCORING",
+      "REDISTRIBUTION",
+      "EXPORT"
+    ],
+    "source_admission_effect": [
+      "BLOCKS_ADMISSION",
+      "NO_SOURCE_ADMISSION",
+      "ROUTING_CEILING_ONLY",
+      "SEPARATE_EXPLICIT_DECISION_REQUIRED"
+    ]
+  }
+}

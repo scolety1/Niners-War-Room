@@ -1,0 +1,5 @@
+locality_class,design_count,registered_count,raw_absolute_paths_stored,reversible_restricted_locators_stored,active_use_authorized_by_locator,result
+LIVE_HQ,1085,1085,0,0,0,PASS
+LOCAL_ONLY,162,162,0,0,0,PASS
+LOCAL_ONLY_RESTRICTED,3,3,0,0,0,PASS
+OFF_HQ_BRANCH_ONLY,19,19,0,0,0,PASS
