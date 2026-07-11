@@ -1,0 +1,5 @@
+no_recreate_id,scope,prohibited_repeat,controlling_evidence,reentry_requirement
+no_recreate_836e_001,batch_836e8658fea7760a7278dd66,Repeat SRC-004 or SRC-005 endpoint inference attempt,source proof-preparation packet and canonical closeout,NEW_CANONICAL_METADATA_TRIGGER
+no_recreate_836e_002,queue_88b3986f5da27f5d0c585b6b;queue_d7111a1782f7cdba7c75f78a,Repeat the same two-row proof-preparation search,source proof-preparation packet and canonical closeout,NEW_CANONICAL_METADATA_TRIGGER
+no_recreate_836e_003,batch_836e8658fea7760a7278dd66,Repeat packet-reference-to-endpoint assumption,source proof-preparation packet and canonical closeout,NEW_CANONICAL_METADATA_TRIGGER
+no_recreate_836e_004,Equivalent missing-endpoint-proof batch,Repeat the same search without new canonical metadata,queue closure pause and reentry gate,ALL_EIGHT_REENTRY_ELEMENTS_PRESENT

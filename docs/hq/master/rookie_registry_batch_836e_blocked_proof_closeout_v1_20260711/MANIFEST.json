@@ -1,0 +1,129 @@
+{
+  "manifest_version": "1.0.0",
+  "packet": "rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711",
+  "verdict": "GREEN_BATCH_836E_BLOCKED_PROOF_CANONICALIZED_QUEUE_CLOSURE_PAUSED",
+  "starting_live_hq_head": "b6d16e64d4c182f4a9a5cce558a4b389d0d48bc1",
+  "expected_live_hq_head": "b6d16e64d4c182f4a9a5cce558a4b389d0d48bc1",
+  "remote_advance_commits": 0,
+  "source_branch": "work/rookie-registry-batch-836e-proof-preparation-v1-20260711",
+  "source_commit": "497e5f0b5dd1020b47f53cf862aa63571cd735eb",
+  "source_parent": "b6d16e64d4c182f4a9a5cce558a4b389d0d48bc1",
+  "source_ancestry": "DIRECT_CHILD_OF_VERIFIED_LIVE_HQ",
+  "source_file_count": 15,
+  "source_scope": "DOCS_ONLY_SINGLE_PACKET_PREFIX",
+  "source_packet_preserved_unchanged": true,
+  "canonicalization_method": "FAST_FORWARD_ADOPT_SOURCE_THEN_SEPARATE_DOCS_ONLY_CLOSEOUT_COMMIT",
+  "target_batch_id": "batch_836e8658fea7760a7278dd66",
+  "target_queue_results": {
+    "queue_88b3986f5da27f5d0c585b6b": "PROOF_PARTIAL_MISSING_EXACT_ELEMENT",
+    "queue_d7111a1782f7cdba7c75f78a": "PROOF_PARTIAL_MISSING_EXACT_ELEMENT"
+  },
+  "target_rows_remain_open": true,
+  "target_rows_remain_blocked": true,
+  "target_rows_closure_eligible": false,
+  "mapping_contract_sha256": "19bb737de35f476ad39bff50d41f25e5ec6ef3b88dacd48d23b47917960fa264",
+  "queue_contract_sha256": "e6c5d46f114afb4edc59b007e3422c0e543e1a3403be6708e93b610d67c30075",
+  "queue_file_sha256": "9ef64f1a3a06dc96a968da37bc53e825de656b0545e177c6d9c899485db6971f",
+  "evidence_sha256": "d8baefe7b41fcd8a601f33d6dc9d6c0f2753d4f3e3b5189d25b72cb065a594df",
+  "candidate_locality": "LIVE_HQ",
+  "source_admission_boundary": "NO_SOURCE_ADMISSION_NO_RANKING_FORMULA_RUNTIME_USE",
+  "pause_statement": "ROOKIE_REGISTRY_METADATA_QUEUE_CLOSURE_PAUSED_PENDING_EXACT_CANONICAL_SOURCE_ENDPOINT_EVIDENCE",
+  "reentry_requires_all_eight_elements": true,
+  "endpoint_created": false,
+  "mapping_created": false,
+  "source_use_decision_created": false,
+  "closure_event_created": false,
+  "queue_mutation_count": 0,
+  "deferred_candidate_activation_count": 0,
+  "player_or_evidence_row_count": 0,
+  "identity_resolution_count": 0,
+  "source_promotion_count": 0,
+  "rights_expansion_count": 0,
+  "authority_effect": "NONE",
+  "use_permission_effect": "NONE",
+  "rights_effect": "NONE",
+  "player_truth_effect": "NONE",
+  "player_value_effect": "NONE",
+  "closure_effect": "NONE",
+  "pytest_timeout_seconds": 120,
+  "pytest_baseline": "68_PASSED_TEARDOWN_COMPLETED_EXIT_0_1.82_SECONDS",
+  "pytest_source": "68_PASSED_TEARDOWN_COMPLETED_EXIT_0_1.70_SECONDS",
+  "pytest_differential": "PASS_EQUIVALENT_NORMAL_TEARDOWN",
+  "registry_validator": "146_CHECKS_0_ISSUES_BOTH_REVISIONS",
+  "queue_validator": "5147_ROWS_0_ISSUES_0_AUTOMATIC_CLOSURES_BOTH_REVISIONS",
+  "privacy_rights_locator_result": "PASS_FAIL_CLOSED_NO_EXPANSION",
+  "protected_path_change_count": 0,
+  "frozen_artifact_change_count": 0,
+  "manifest_self_hash_excluded": true,
+  "text_hash_normalization": "CRLF_TO_LF_BEFORE_SHA256",
+  "required_file_count": 14,
+  "manifest_file_count_excluding_self": 13,
+  "canonicalization_commit": "SELF_COMMIT_REPORTED_OUT_OF_BAND",
+  "files": [
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/EXACT_AND_MISSING_PROOF_RECONCILIATION.csv",
+      "bytes": 4652,
+      "sha256": "86fa8c23c2b3f5c7cac239f44d15f9033ee943a740834d9b6da3d07bac0997c6"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 2142,
+      "sha256": "d3c974a5d24c08ff64b574b38dcf4d939ce8620edb4196b6114dd69544983cb5"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/HQ_ADOPTION_AND_BLOCKED_RESULT_REVIEW.md",
+      "bytes": 2563,
+      "sha256": "a7cd259505bb7be8e4f27374fb236119eddf269abafe82fab2e3a133d56bbad9"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/NO_QUEUE_MAPPING_AUTHORITY_OR_USE_MUTATION_PROOF.md",
+      "bytes": 1293,
+      "sha256": "2547fada717ba69029d5cbc8c0e33ed9334b734674299acb5d68514ad1c68a9f"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/NO_RECREATE_BATCH_836E_INDEX.csv",
+      "bytes": 861,
+      "sha256": "323bf1e30b85cd9800bc1e4f0af04d871f0595735947b0646030c8b1d12c410e"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/PRIVACY_RIGHTS_AND_LOCATOR_REVIEW.md",
+      "bytes": 1112,
+      "sha256": "cb74b8d82f8c50a81b3993e481fb677554bce789e868f4b0a44452bdc663073b"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "bytes": 1117,
+      "sha256": "01efcf7d0360da5b2ec599d417f5207afebadb93bc658332ca3c1ac8f6d0084d"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/PYTEST_TEARDOWN_DIFFERENTIAL.md",
+      "bytes": 1455,
+      "sha256": "91ecc7e5717369df98b40d1279f26df1845effb22380c167a1c7214aab91be30"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/QUEUE_CLOSURE_PAUSE_AND_REENTRY_GATE.md",
+      "bytes": 1269,
+      "sha256": "69f3fdc7b3a4a941cd00a75d889f877dbedf086c6e54e4328321cd5f014b4a25"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/SOURCE_COMMIT_INVENTORY.csv",
+      "bytes": 2581,
+      "sha256": "b9ac194306a08076741bacd1196aff07c1a6cf2a0a1707213e5bb4f13bdf4d83"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/SOURCE_ENDPOINT_NON_CREATION_PROOF.md",
+      "bytes": 947,
+      "sha256": "fe3d15f82e712b20aca88da5ec930b4c39792839f6ab5fdee08e80ad932e8dfb"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/TARGET_QUEUE_ROW_VERIFICATION.csv",
+      "bytes": 630,
+      "sha256": "ef42cb720d4ca773181be56cafe578e49ce6b8a403f3c1cd5b9f59885cc95a54"
+    },
+    {
+      "path": "docs/hq/master/rookie_registry_batch_836e_blocked_proof_closeout_v1_20260711/VALIDATION_RESULTS.md",
+      "bytes": 3377,
+      "sha256": "4ecaba3c9415a421fc353156d17d5069f87ecca0c47d1dec01988a7fe959a45d"
+    }
+  ]
+}
