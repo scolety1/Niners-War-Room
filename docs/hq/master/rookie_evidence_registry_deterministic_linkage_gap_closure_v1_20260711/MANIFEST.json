@@ -1,0 +1,92 @@
+{
+  "base_hq_commit": "7bc0523057562b75be6d2d6da890b58526aeaec5",
+  "files": [
+    {
+      "bytes": 1344,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/ROOKIE_EVIDENCE_REGISTRY_LINKAGE_GAP_CLOSURE_V1_REPORT.md",
+      "sha256": "9e21e139eb15948300ee9cefefbc47552c2efafa538f8a4978040cfb70e02d4b"
+    },
+    {
+      "bytes": 714,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/EXECUTIVE_VERDICT.md",
+      "sha256": "cbabe45437c500a16af936b17bf1d1adb4424d2a1ff374dc40229bc89960865f"
+    },
+    {
+      "bytes": 2626,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/DETERMINISTIC_MAPPING_EVIDENCE_CONTRACT.md",
+      "sha256": "19bb737de35f476ad39bff50d41f25e5ec6ef3b88dacd48d23b47917960fa264"
+    },
+    {
+      "bytes": 350820,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/ARTIFACT_MAPPING_RECONCILIATION.csv",
+      "sha256": "5af3e3b598eeb47e849f32faaf9b54b9ab771a5e061f29180c076e3243fa2786"
+    },
+    {
+      "bytes": 87429,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/VERIFIED_METADATA_LINKS.csv",
+      "sha256": "66b33a9608ad4cbdc0b477502245feb30dce02ca8f8082750fd343582a43e432"
+    },
+    {
+      "bytes": 1948189,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/UNRESOLVED_METADATA_LINKS.csv",
+      "sha256": "f0c3687dc0b57c205ac0f34a96b319edde91086ab0e77d3a00da3a8c2e1b4d46"
+    },
+    {
+      "bytes": 258,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/CONFLICTING_EXPLICIT_LINKS.csv",
+      "sha256": "9c59d7e6081e3ee6acabd3f8027b710a313f54f6ac05f6fbf0e5b3a0acd47bb2"
+    },
+    {
+      "bytes": 1407,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/SOURCE_USE_EXPLICIT_DECISION_REVIEW.csv",
+      "sha256": "a2d4b2eadd5b16f900a55f0c2c29f113306a6af4f7e7c5cfe36d24fd085da5f5"
+    },
+    {
+      "bytes": 471,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/MAPPING_COUNTS_AND_COVERAGE.csv",
+      "sha256": "70cf6ee39f5f1d0102e8addba0ea5109145312e37b990d9a506677ee8109ac61"
+    },
+    {
+      "bytes": 621,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/LOCATOR_AUTHORITY_AND_RIGHTS_REVIEW.md",
+      "sha256": "94ad350daba58370edb6795c6ac1b2224f39c1da8c1aa75aa9f74c32534f92ce"
+    },
+    {
+      "bytes": 422,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/ZERO_PLAYER_AND_EVIDENCE_ROW_PROOF.md",
+      "sha256": "c448ec96b5c39fd1cbe0e7696946617fa81539e9bb6381b7af94d200e588c522"
+    },
+    {
+      "bytes": 368,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/READ_ONLY_RUNTIME_BOUNDARY.md",
+      "sha256": "975b67290b14804c93befc12ad232545c84ceb89f6f589bbbb0f43ef969cc07b"
+    },
+    {
+      "bytes": 363,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/ROLLBACK_PLAN.md",
+      "sha256": "7616c7e86c19e5ab884ffcd57808bd09b877fd5cb86f97bdf7ee4d6c1982df71"
+    },
+    {
+      "bytes": 373,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "ecab01fd1e858066e319bd93d6dbffddcab13b69e899613473c768385219f0e5"
+    },
+    {
+      "bytes": 6318,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "b2be0dbbaa0f7b00711663887e2e763e63511cf1ccb404e4d9698aa220c98dae"
+    },
+    {
+      "bytes": 1875,
+      "path": "docs/hq/master/rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711/VALIDATION_RESULTS.md",
+      "sha256": "7e0bda0e0c8ef5a66d69a4bfe7e8eb3ab83b608b88912cd936b45ce85ed26886"
+    }
+  ],
+  "manifest_self_hash_excluded": true,
+  "mapping_contract_sha256": "19bb737de35f476ad39bff50d41f25e5ec6ef3b88dacd48d23b47917960fa264",
+  "packet": "rookie_evidence_registry_deterministic_linkage_gap_closure_v1_20260711",
+  "required_file_count": 17,
+  "schema_version": "1.1.0",
+  "text_hash_normalization": "CRLF_TO_LF_BEFORE_SHA256",
+  "verdict": "YELLOW_ROOKIE_REGISTRY_LINKAGE_AUDIT_COMPLETE_EXPLICIT_MAPPINGS_REMAIN_SPARSE"
+}

@@ -1,8 +1,14 @@
 component_id,implementation_status,runtime_wiring,caveat,record_version
 alias_registry_schema,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
+artifact_authority_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
+artifact_dataset_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
+artifact_receipt_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
 artifact_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
+artifact_source_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
 authority_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
+dataset_receipt_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
 dataset_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
+dataset_source_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
 duplicate_conflict_relationships,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 evidence_observation_schema,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 evidence_state_dictionary,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
@@ -12,6 +18,7 @@ no_recreate_relationships,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, sourc
 player_registry_schema,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 read_only_loader_and_validator,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 receipt_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
+receipt_source_registry,IMPLEMENTED_METADATA_ONLY,NONE,Exact links only; unresolved endpoints absent; no authority or permission effect.,1.1.0
 sanitized_locator_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 source_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0
 source_use_decision_registry,IMPLEMENTED_METADATA_ONLY,NONE,"No player truth, source promotion, identity resolution, or production authority.",1.0.0

@@ -447,6 +447,85 @@ def validate_registry(root: Path = WORKSPACE_ROOT) -> ValidationReport:
                 row["use_decision_id"],
             )
 
+    if "ARTIFACT_AUTHORITY_LINK.csv" in rows_by_file:
+        mapping_statuses = set(schemas["closed_enums"]["mapping_status"])
+        authority_links = rows_by_file["ARTIFACT_AUTHORITY_LINK.csv"]
+        if len(authority_links) != 113:
+            _issue(
+                issues,
+                "artifact_authority_link_count",
+                REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                str(len(authority_links)),
+            )
+        for row in authority_links:
+            if (
+                row["left_endpoint_type"] != "ARTIFACT"
+                or row["left_endpoint_id"] not in artifact_ids
+            ):
+                _issue(
+                    issues,
+                    "artifact_authority_left_fk",
+                    REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                    row["mapping_id"],
+                )
+            if (
+                row["right_endpoint_type"] != "AUTHORITY"
+                or row["right_endpoint_id"] not in authority_ids
+            ):
+                _issue(
+                    issues,
+                    "artifact_authority_right_fk",
+                    REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                    row["mapping_id"],
+                )
+            if row["mapping_status"] not in mapping_statuses:
+                _issue(
+                    issues,
+                    "mapping_status_enum",
+                    REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                    row["mapping_id"],
+                )
+            if row["locality_class"] != "LIVE_HQ":
+                _issue(
+                    issues,
+                    "non_live_active_metadata_link",
+                    REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                    row["mapping_id"],
+                )
+            if row["authority_effect"] != "NO_AUTHORITY_CHANGE_METADATA_REFERENCE_ONLY":
+                _issue(
+                    issues,
+                    "mapping_authority_effect",
+                    REGISTRY_ROOT / "ARTIFACT_AUTHORITY_LINK.csv",
+                    row["mapping_id"],
+                )
+        for name in (
+            "ARTIFACT_SOURCE_LINK.csv",
+            "ARTIFACT_DATASET_LINK.csv",
+            "ARTIFACT_RECEIPT_LINK.csv",
+            "DATASET_SOURCE_LINK.csv",
+            "DATASET_RECEIPT_LINK.csv",
+            "RECEIPT_SOURCE_LINK.csv",
+        ):
+            if rows_by_file[name]:
+                _issue(
+                    issues,
+                    "unexpected_active_link_rows",
+                    REGISTRY_ROOT / name,
+                    str(len(rows_by_file[name])),
+                )
+        if any(
+            row[field]
+            for row in artifacts
+            for field in ("authority_id", "source_id", "dataset_id", "receipt_id")
+        ):
+            _issue(
+                issues,
+                "active_artifact_optional_fk_populated",
+                REGISTRY_ROOT / "EVIDENCE_ARTIFACT_REGISTRY.csv",
+                "Phase B must keep active optional artifact FKs blank",
+            )
+
     empty_names = (
         "PLAYER_IDENTITY_REGISTRY.csv",
         "PLAYER_ALIAS_REGISTRY.csv",

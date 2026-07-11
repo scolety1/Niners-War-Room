@@ -1,0 +1,10 @@
+purpose,exact_dataset_field_purpose_candidates,verified_decisions,decision_result,reason
+LOCAL_RETENTION,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+CANONICAL_HQ_SUMMARY,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+RAW_RECEIPT_STORAGE,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+DISPLAY,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+RESEARCH,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+MODEL_TRAINING,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+PRODUCTION_SCORING,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+REDISTRIBUTION,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."
+EXPORT,0,0,NOT_ENOUGH_INFORMATION,"No dataset IDs, exact field-family decision rows, and approval receipts coexist at the required grain."

@@ -1,0 +1,9 @@
+relationship_type,candidate_count,active_verified_count,deferred_verified_count,unresolved_without_verified_candidate,active_gap_count,conflicting_count,not_applicable_count
+ARTIFACT_AUTHORITY,1269,113,0,1156,1156,0,0
+ARTIFACT_SOURCE,1269,0,3,1266,1269,0,0
+ARTIFACT_DATASET,1269,0,0,1269,1269,0,0
+ARTIFACT_RECEIPT,1269,0,0,1269,1269,0,0
+DATASET_SOURCE,25,0,25,0,25,0,0
+DATASET_RECEIPT,0,0,0,0,0,0,0
+RECEIPT_SOURCE,0,0,0,0,0,0,0
+EXPLICIT_SOURCE_USE_DECISION,0,0,0,0,0,0,0

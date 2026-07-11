@@ -1,4 +1,72 @@
 {
+  "ARTIFACT_AUTHORITY_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "ARTIFACT_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "AUTHORITY_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/ARTIFACT_AUTHORITY_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "ARTIFACT_AUTHORITY",
+    "schema_version": "1.1.0"
+  },
+  "ARTIFACT_DATASET_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "ARTIFACT_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "DATASET_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/ARTIFACT_DATASET_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "ARTIFACT_DATASET",
+    "schema_version": "1.1.0"
+  },
   "ARTIFACT_LIFECYCLE_LINK.csv": {
     "deterministic_order": [
       "artifact_id",
@@ -24,6 +92,40 @@
     ],
     "schema_version": "1.0.0"
   },
+  "ARTIFACT_RECEIPT_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "ARTIFACT_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "RECEIPT_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/ARTIFACT_RECEIPT_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "ARTIFACT_RECEIPT",
+    "schema_version": "1.1.0"
+  },
   "ARTIFACT_SCOPE_DICTIONARY.csv": {
     "deterministic_order": [
       "artifact_scope_class"
@@ -40,6 +142,40 @@
       "artifact_scope_class"
     ],
     "schema_version": "1.0.0"
+  },
+  "ARTIFACT_SOURCE_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "ARTIFACT_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "SOURCE_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/ARTIFACT_SOURCE_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "ARTIFACT_SOURCE",
+    "schema_version": "1.1.0"
   },
   "AUTHORITY_REGISTRY.csv": {
     "deterministic_order": [
@@ -93,6 +229,40 @@
     ],
     "schema_version": "1.0.0"
   },
+  "DATASET_RECEIPT_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "DATASET_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "RECEIPT_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/DATASET_RECEIPT_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "DATASET_RECEIPT",
+    "schema_version": "1.1.0"
+  },
   "DATASET_REGISTRY.csv": {
     "deterministic_order": [
       "dataset_id"
@@ -120,6 +290,40 @@
       "dataset_id"
     ],
     "schema_version": "1.0.0"
+  },
+  "DATASET_SOURCE_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "DATASET_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "SOURCE_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/DATASET_SOURCE_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "DATASET_SOURCE",
+    "schema_version": "1.1.0"
   },
   "DUPLICATE_CONFLICT_RELATIONSHIP_LEDGER.csv": {
     "deterministic_order": [
@@ -411,6 +615,40 @@
     ],
     "schema_version": "1.0.0"
   },
+  "RECEIPT_SOURCE_LINK.csv": {
+    "deterministic_order": [
+      "mapping_id"
+    ],
+    "duplicate_key_policy": "REJECT",
+    "foreign_keys": {
+      "left_endpoint_id": "RECEIPT_REGISTRY_METADATA_ID",
+      "right_endpoint_id": "SOURCE_REGISTRY_METADATA_ID"
+    },
+    "headers": [
+      "mapping_id",
+      "left_endpoint_type",
+      "left_endpoint_id",
+      "right_endpoint_type",
+      "right_endpoint_id",
+      "mapping_status",
+      "proof_type",
+      "evidence_artifact",
+      "evidence_field",
+      "evidence_sha256",
+      "locality_class",
+      "authority_effect",
+      "source_use_effect",
+      "controlling_caveat",
+      "review_status",
+      "record_version"
+    ],
+    "path": "registries/RECEIPT_SOURCE_LINK.csv",
+    "primary_key": [
+      "mapping_id"
+    ],
+    "relationship_type": "RECEIPT_SOURCE",
+    "schema_version": "1.1.0"
+  },
   "SANITIZED_LOCATOR_REGISTRY.csv": {
     "deterministic_order": [
       "locator_id"
@@ -642,6 +880,18 @@
       "LOCAL_ONLY",
       "LOCAL_ONLY_RESTRICTED",
       "OFF_HQ_BRANCH_ONLY"
+    ],
+    "mapping_status": [
+      "VERIFIED_EXPLICIT_ID_REFERENCE",
+      "VERIFIED_EXACT_MANIFEST_REFERENCE",
+      "VERIFIED_EXACT_HASH_RECEIPT",
+      "VERIFIED_EXPLICIT_DECISION_REFERENCE",
+      "UNRESOLVED_NO_EXPLICIT_LINK",
+      "CONFLICTING_EXPLICIT_LINKS",
+      "LOCAL_ONLY_METADATA_ONLY",
+      "RESTRICTED_SANITIZED_ONLY",
+      "OFF_HQ_AUDIT_ONLY",
+      "NOT_APPLICABLE"
     ],
     "metadata_registration_status": [
       "REGISTER_AUTHORITY_METADATA",
