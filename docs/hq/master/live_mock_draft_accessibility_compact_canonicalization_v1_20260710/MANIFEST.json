@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "packet": "live_mock_draft_accessibility_compact_canonicalization_v1_20260710",
+  "starting_hq_head": "73cadea025ec582a976ec68d1ef5232e032167e2",
+  "source_branch": "work/live-mock-draft-accessibility-compact-v1-20260710",
+  "source_commit": "8bd85f870c35623d3e51f4bc54dc7638ebc15069",
+  "source_packet": "docs/hq/master/live_mock_draft_accessibility_compact_width_hardening_v1_20260710/",
+  "remote_advanced_before_review": false,
+  "canonicalization_method": "exact fast-forward plus separate evidence-and-review canonicalization commit",
+  "required_files": [
+    "HQ_ADOPTION_AND_MERGE_REVIEW.md",
+    "SOURCE_COMMIT_INVENTORY.csv",
+    "SHARED_DRAFT_WORKFLOW_REVIEW.md",
+    "CALLBACK_AND_STATE_DIFFERENTIAL.csv",
+    "LIVE_MOCK_BEHAVIOR_EQUIVALENCE_REVIEW.md",
+    "KEYBOARD_ACCESSIBILITY_TREE_REVIEW.md",
+    "COMPACT_WIDTH_MEASUREMENT_REVIEW.csv",
+    "VISUAL_AND_ACCESSIBILITY_REVIEW.md",
+    "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+    "VALIDATION_RESULTS.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "MANIFEST.json"
+  ],
+  "test_totals": {
+    "focused": 70,
+    "expanded_regression": 235,
+    "behavioral_differential_baseline": 11,
+    "behavioral_differential_source": 11
+  },
+  "browser_viewports": ["1440x1000", "390x844"],
+  "protected_path_changes": 0,
+  "frozen_artifact_changes": 0,
+  "decision_trust_strip_changes": 0,
+  "refresh_recovery_changes": 0,
+  "keyboard_harness_limitation_documented": true,
+  "rookie_evidence_workspace_executed": false
+}

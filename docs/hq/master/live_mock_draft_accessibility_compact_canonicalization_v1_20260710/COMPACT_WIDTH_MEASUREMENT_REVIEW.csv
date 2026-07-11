@@ -1,0 +1,5 @@
+route,requested_viewport,inner_width,inner_height,client_width,document_scroll_width,body_scroll_width,page_overflow,assign_x,assign_width,assign_right,assign_height,pick_heading_y,board_heading_y,player_table_heading_y,primary_before_table,result
+Live Draft,1440x1000,1440,1000,1440,1440,1440,false,80,266,346,36,1008,1008,1496,true,PASS
+Live Draft,390x844,390,844,390,390,390,false,12,356,368,36,1922,2455,2944,true,PASS
+Mock Draft,1440x1000,1440,1000,1440,1440,1440,false,80,266,346,36,1474,1474,1963,true,PASS
+Mock Draft,390x844,390,844,390,390,390,false,12,356,368,36,2673,3228,3718,true,PASS
