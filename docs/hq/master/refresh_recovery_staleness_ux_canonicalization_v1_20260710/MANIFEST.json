@@ -1,0 +1,33 @@
+{
+  "schema_version": "refresh_recovery_staleness_ux_canonicalization_manifest_v1",
+  "packet": "refresh_recovery_staleness_ux_canonicalization_v1_20260710",
+  "verdict": "GREEN_REFRESH_RECOVERY_STALENESS_UX_V1_CANONICALIZED_AND_PUSHED_TO_HQ",
+  "starting_live_hq": "250c28853a4bc175b2702e206e68f49560c4e6e0",
+  "source_branch": "work/refresh-recovery-staleness-ux-v1-20260710",
+  "source_commit": "46c19263df84015352e7a8bc6728507f48dc69ba",
+  "source_preservation": "EXACT_FAST_FORWARD",
+  "files": [
+    {"path": "DEPRECATION_MESSAGE_DIFFERENTIAL.md", "bytes": 978, "sha256": "487daaf24152edd3b83d80a7f92bddb8aa5f47f3a9b1c93eb7cb397e41bbb611", "required": true},
+    {"path": "FILES_CREATED_OR_CHANGED.csv", "bytes": 1690, "sha256": "722b3ce7fc9765a98a5a21bcc4bdf478545de79dbe7acd1eda04310ae4b95c49", "required": true},
+    {"path": "HQ_ADOPTION_AND_MERGE_REVIEW.md", "bytes": 1785, "sha256": "f878465267af86d244a3f742cc58e5a65d2e8bd24bb628e0cd150f9e09c9a7a6", "required": true},
+    {"path": "PASSIVE_ADAPTER_REVIEW.md", "bytes": 1610, "sha256": "50a1ee8dda3e919b458b1a2e31c459e6f6c822b9d8ad9309ea1073cfae24dcb0", "required": true},
+    {"path": "PROTECTED_AND_FROZEN_PATH_VALIDATION.md", "bytes": 1004, "sha256": "fa6c2e8041ae560f64998ccb65be83aaa62a549909184f6f0227570982a0c99f", "required": true},
+    {"path": "RECOVERY_ACTION_SAFETY_REVIEW.md", "bytes": 1103, "sha256": "876ebcc97e5f8ae6a11a7005940ed5a88c91ff20711b520b7b32d6dd3827fcc9", "required": true},
+    {"path": "SOURCE_COMMIT_INVENTORY.csv", "bytes": 2638, "sha256": "0f2fa088a7d3786473e624f712fc080fe3b49764089e7d43c9bc1c907f9c9019", "required": true},
+    {"path": "STATE_SEMANTIC_CONSISTENCY_REVIEW.md", "bytes": 1388, "sha256": "7235baa0406266d44e270301af1285a87f61432e3fde095081f7ae7b97d088ce", "required": true},
+    {"path": "VALIDATION_RESULTS.md", "bytes": 2279, "sha256": "6d28082ed9e28ce3874e653f3968a501303c1eecfc815c721307fe0a4d5e22ba", "required": true},
+    {"path": "VISUAL_AND_ACCESSIBILITY_REVIEW.md", "bytes": 1421, "sha256": "3d5f64fcaba88acd565b57df478f806bc0f14f02fd44c84eeadd53e90bc5a7e6", "required": true}
+  ],
+  "controls": {
+    "source_scope_passed": true,
+    "passive_adapter_passed": true,
+    "eight_state_semantics_passed": true,
+    "recovery_action_safety_passed": true,
+    "deprecation_differential_passed": true,
+    "visual_accessibility_passed": true,
+    "frozen_paths_changed": false,
+    "protected_behavior_changed": false,
+    "normal_push_only": true
+  },
+  "manifest_self_hash_policy": "MANIFEST.json excludes its own recursive hash"
+}
