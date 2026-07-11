@@ -1,0 +1,16 @@
+area,check,status,evidence,severity
+schema,required columns,PASS,35 columns; 924 rows,STOP_IF_FAIL
+structure,total frozen rows,PASS,924,STOP_IF_FAIL
+structure,candidate identifiers,PASS,CURRENT_APP_VISIBLE_REVIEW_BOARD_COMPARATOR_2026_PRE_DRAFT | GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE | PYF,STOP_IF_FAIL
+structure,freeze timestamp,PASS,Counter({'2026-07-10T22:34:06Z': 924}),STOP_IF_FAIL
+identity,duplicate comparator player keys,PASS,unique=924,STOP_IF_FAIL
+identity,required identity populated,PASS,all 924 populated,STOP_IF_FAIL
+semantic,valid score numeric,PASS,all valid rows numeric,STOP_IF_FAIL
+semantic,invalid score explicit reason,PASS,all invalid rows reasoned and unranked,STOP_IF_FAIL
+semantic,no rank without valid score,PASS,all rows,STOP_IF_FAIL
+semantic,supported positions,PASS,formula comparators QB/RB/WR/TE; current board separately preserves K,STOP_IF_FAIL
+semantic,current-board caveat,PASS,all 240 rows caveated,STOP_IF_FAIL
+semantic,ridge absent,PASS,challenger file absent; no ridge freeze rows,STOP_IF_FAIL
+hash,prediction record hashes,PASS,924/924,STOP_IF_FAIL
+semantic,rank direction and ordinal sequence,PASS,higher-is-better formulas; native overall order current board; score ties=3,STOP_IF_FAIL
+hash,all manifest and source hashes,PASS,pass=40/40,STOP_IF_FAIL
