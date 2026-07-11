@@ -1,0 +1,9 @@
+inventory_key,source_class,file_type,count,canonical_action,privacy_note
+SRC_NONRAW_MD,Non-raw research artifacts,Markdown,11,SELECTIVE_PARAPHRASE_ONLY,No document was copied wholesale
+SRC_NONRAW_CSV,Non-raw research artifacts,CSV,11,AGGREGATE_RECONSTRUCTION_ONLY,No row-level private content was imported
+SRC_NONRAW_JSON,Non-raw research artifacts,JSON,1,STRUCTURE_NOT_COPIED,Original manifest remains local evidence
+SRC_RESTRICTED_JSON,Restricted receipt evidence,JSON,53,EXCLUDED_LOCAL_ONLY,No path hash body or identifier is canonicalized
+SRC_RESTRICTED_CSV,Restricted receipt evidence,CSV,1,EXCLUDED_LOCAL_ONLY,No row or provider output is canonicalized
+SRC_TOTAL,All source-commit paths,All,77,READ_ONLY_EVIDENCE,Source commit was not merged cherry-picked fast-forwarded or pushed
+SRC_RESTRICTED_TOTAL,All restricted receipt paths,All,54,EXCLUDED_LOCAL_ONLY,Private evidence archive remains local-only
+SRC_CANONICALIZED_TOTAL,Canonical closeout artifacts,All,18,NEW_SANITIZED_PACKET,Only aggregate conclusions and governance are preserved

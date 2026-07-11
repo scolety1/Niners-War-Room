@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "fantasy_plugin_research_canonicalization_closeout_v1_20260711",
+  "verdict": "GREEN_FANTASY_PLUGIN_RESEARCH_SANITIZED_AND_CLOSED_MANUAL_ONLY",
+  "overall_research_verdict": "YELLOW_PLUGIN_RESEARCH_USEFUL_WITH_SCORING_AND_GOVERNANCE_CAVEATS",
+  "starting_hq_head": "5c04f8aeca6269c71778bc3ca0b94591efd8797c",
+  "source_branch": "work/fantasy-plugin-accuracy-gate-v1-20260711",
+  "source_commit": "1ecfb9cdb7812e3b8ccf999057cf2bfaa93270cc",
+  "source_parent": "5c04f8aeca6269c71778bc3ca0b94591efd8797c",
+  "source_handling": "READ_ONLY_LOCAL_EVIDENCE_NOT_MERGED_OR_PUSHED",
+  "production_external_influence_percent": 0,
+  "flaim_classification": "USEFUL_MANUALLY_NOT_READY_FOR_ADAPTER",
+  "fantasybot_classification": "MANUAL_EXTERNAL_SECOND_OPINION_ONLY",
+  "required_file_count": 18,
+  "hash_algorithm": "SHA-256",
+  "manifest_self_hash": "OMITTED_TO_AVOID_SELF_REFERENCE",
+  "files": [
+    {
+      "path": "EXTERNAL_SIGNAL_GOVERNANCE_BOUNDARY.md",
+      "sha256": "a506bc1863bf811e4f7166710d914204f2f70bd8d2cff3a0161cdb17a331d761"
+    },
+    {
+      "path": "FANTASYBOT_AGGREGATE_TEST_SUMMARY.csv",
+      "sha256": "7a12bb6ef0b43de60d7a3e930e2779845256166180d997eb7a52095bac1fdc02"
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "ef7810ec2614d7cc2852ab0aa2e5c17817412c2d4e482ecd34bb9ea4c772946b"
+    },
+    {
+      "path": "FLAIM_LIVE_CONTEXT_RELIABILITY_SUMMARY.csv",
+      "sha256": "c62b02fd6437329ca8db22df11b41195d484d9505b4013531e06e0450c617638"
+    },
+    {
+      "path": "FLAIM_SETTINGS_FIDELITY_SUMMARY.csv",
+      "sha256": "1a90d8a6773d05cc7f5f5cd560f2a17892d59dcc34468933dfa21930814cdec5"
+    },
+    {
+      "path": "HQ_ADOPTION_AND_PRIVACY_REVIEW.md",
+      "sha256": "8bc53a132894d302c1123a7e8d90b7e90a8ef93aa799a8fbd0af365be56b5193"
+    },
+    {
+      "path": "INTEGRATION_DECISION_MATRIX.csv",
+      "sha256": "790c2dd2c4e8d70bd0004a44204fa555aa45014eade2151bb4f075c1d4a06840"
+    },
+    {
+      "path": "MANUAL_PLUGIN_OPERATING_GUIDE.md",
+      "sha256": "2733421acbd0dc582d65993a4ae328982032eaa914a4ec98faf82560904c2f91"
+    },
+    {
+      "path": "NO_RECREATE_PLUGIN_RESEARCH_INDEX.csv",
+      "sha256": "97f996c4beb2c2a9edec7f9a82159b0e21f321697bedf7f676244a393a24bbc7"
+    },
+    {
+      "path": "PLUGIN_CAPABILITY_SUMMARY.csv",
+      "sha256": "a82f1e4312df033417f63221b87a615f124908e56129bc7d93e39e23fabcaa8a"
+    },
+    {
+      "path": "PRIVATE_DATA_EXCLUSION_PROOF.md",
+      "sha256": "f954bbf42d262fa1b5de7d896cd9db95e556bf7dcd74818d401c8f7116a7634f"
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "sha256": "701c2b8080361e23183838b58e2afe438633f333fedb90edecab8d77ef82b2e3"
+    },
+    {
+      "path": "PROVIDER_CHANGE_REENTRY_GATE.md",
+      "sha256": "5cffda9b650603d7bae81e3d312b6e4750cb2906851c392018e368e5ed99f901"
+    },
+    {
+      "path": "SANITIZED_EXECUTIVE_VERDICT.md",
+      "sha256": "a3e699993aca748001d0663cd685130163aea9bdf3bd458a8fd6712d246163d6"
+    },
+    {
+      "path": "SOURCE_COMMIT_SANITIZED_INVENTORY.csv",
+      "sha256": "fa43e9feda16c94f937ee3f8e187f83947574fe39cab06982d6f14d269ef46b2"
+    },
+    {
+      "path": "SOURCE_USE_RIGHTS_AND_PRIVACY_BOUNDARY.md",
+      "sha256": "594f8882584c1032ef48550917173db29497551bcd0180e48a0eb5b215dd958f"
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "da84526860ed869f7298bdd267897fd6e77c2bee1af32e393972255a49abd0d6"
+    }
+  ]
+}

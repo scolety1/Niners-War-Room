@@ -1,0 +1,11 @@
+metric,count_or_result,interpretation,governance_effect
+Preregistered cases,12,One probe was unsupported,No untested inference is admitted
+Supported cases,11,Each supported case was executed twice,Aggregate review only
+Supported executions,22,Two executions per supported case,No raw output is preserved here
+Immediate exact repeats,11/11,All supported pairs repeated exactly,Does not establish longitudinal or version stability
+FORMAT_MISMATCH,18,Returned form did not match the needed NWR comparison or decision construct,Blocks formula and ranking use
+CONTEXT_MISSING,4,Required league or scoring context was absent,Blocks roster-specific and NWR-scoring use
+Unsupported probes,1,Custom-scoring and dynasty-pick capability was not supported,Blocks the tested custom use
+Validated useful external blind spots,0,No case qualified,No research weight is justified
+Qualifying numerical signals,0,No comparable reproducible value scale was demonstrated,External influence remains 0 percent
+Numerical blends constructed,0,Neither 2.5 percent nor 5 percent was justified,NWR base score remains controlling

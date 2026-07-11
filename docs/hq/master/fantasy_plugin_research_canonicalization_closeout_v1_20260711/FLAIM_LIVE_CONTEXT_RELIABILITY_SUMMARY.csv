@@ -1,0 +1,11 @@
+surface,tested_observation,reliability,manual_status,authoritative_status,reason
+Roster membership,Ten calls were internally coherent,CONDITIONALLY_USEFUL,PERMITTED_WITH_CAVEATS,BLOCKED,No independent same-time native verification or universal freshness field
+Player identity,Stable provider player identifiers existed,USEFUL,PERMITTED,BLOCKED_FOR_PRODUCTION,Identity lookup does not establish roster or transaction truth
+Ownership,Identifier-consumable ownership was returned,CONDITIONALLY_USEFUL,PERMITTED_WITH_CAVEATS,BLOCKED,Not independently verified against same-time native truth
+Matchups,Tentative matchup context was returned,TENTATIVE,PERMITTED_WITH_CAVEATS,BLOCKED,Phase and playoff semantics were incomplete
+Free agents,Retrieval was capped alphabetic noisy and incomplete,UNSAFE_AS_POOL,INDIVIDUAL_LOOKUP_ONLY,BLOCKED,The result cannot represent a complete actionable pool
+Standings,Returned standings materially misrepresented the tested league,UNSAFE,PROHIBITED_AS_AUTHORITY,BLOCKED,Rank and related status cannot be trusted
+Add and drop transactions,Normalization was materially unsafe,UNSAFE,PROHIBITED_AS_AUTHORITY,BLOCKED,Direction cannot be safely inferred
+Trade sides,Exact side reconstruction was unsafe,UNSAFE,PROHIBITED_AS_AUTHORITY,BLOCKED,Side membership cannot be safely reconstructed
+Transaction windows,Completeness was not established,UNKNOWN,PROHIBITED_AS_AUTHORITY,BLOCKED,Window coverage cannot be assumed
+Freshness and versioning,Most records lacked adequate source-as-of or version fields,INSUFFICIENT,REQUIRES_EXPLICIT_CAVEAT,BLOCKED,Currentness and implementation version cannot be reproduced

@@ -1,0 +1,6 @@
+fidelity_status,count,scope,canonical_interpretation
+EXACT,23,Field-level settings audit,Core scoring and starting-slot values were mostly explicit
+PARTIAL,5,Field-level settings audit,Some relevant meaning was present but insufficient for complete authoritative interpretation
+NOT_EXPOSED,2,Field-level settings audit,Required semantics were absent from the tested surface
+TOTAL,30,Completed settings audit,Counts reconcile to the completed field-level review
+LIMITATION,0,Cross-field interpretation,FLEX eligibility; full keeper or dynasty semantics; full playoff structure; and phase-specific roster limits were not all explicitly available

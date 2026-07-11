@@ -1,0 +1,16 @@
+plugin,capability,aggregate_observation,canonical_reliability,permitted_manual_use,prohibited_authoritative_use,required_caveat
+Flaim,League connection,One 2026 Sleeper league connected,Observed connection only,Explicit read-only settings consultation,Production source truth,Connection does not validate every returned semantic
+Flaim,Settings,Core scoring and starting-slot values were mostly explicit,Mixed with 23 EXACT; 5 PARTIAL; 2 NOT_EXPOSED,Explicit settings and lineup-slot counts,Unexposed or partial league semantics,Retain field-level fidelity labels
+Flaim,Rosters,Ten calls were internally coherent,Internally coherent; not independent native verification,Read-only roster membership snapshot,Current authoritative roster truth when freshness is absent,State that same-time native truth was not verified
+Flaim,Ownership,Stable provider player IDs existed,Identifier-consumable; not independently verified,Provider-ID-based ownership review,Production ownership truth,State the verification and freshness limits
+Flaim,Matchups,Tentative context was available,Tentative,Approximate matchup context,Playoff or season-phase authority,Do not infer unexposed competition semantics
+Flaim,Free agents,Results were capped alphabetic noisy and incomplete,Not complete,Single-player identity lookup only,Complete actionable free-agent pool,Never treat retrieval as exhaustive
+Flaim,Standings,Standings were materially misrepresented,Unsafe,None,Rank or playoff status,Do not use for authoritative standing
+Flaim,Transactions,Add/drop normalization was materially unsafe,Unsafe,None,Add/drop direction or transaction completeness,Do not reconstruct transaction direction
+Flaim,Trades,Exact trade-side reconstruction was unsafe,Unsafe,None,Exact trade sides,Do not infer side membership
+Flaim,Freshness and provenance,Most records lacked adequate source-as-of or version fields,Insufficient,Manual consultation with explicit uncertainty,Current production truth,State when source-as-of and version are unavailable
+FantasyBot,Repeatability,Eleven supported cases repeated exactly in immediate pairs,Immediate repeatability only,Approximate second opinion,Longitudinal stability claim,Immediate repeats do not prove future stability
+FantasyBot,Statistical context,Tested outputs supplied general statistics,Generic context only,Hypothesis generation and general statistical context,NWR dynasty value or ranking,Exact NWR scoring and league context are unsupported
+FantasyBot,Player comparison,Outputs did not establish dependable dynasty-value verdicts,Format mismatch or context missing,Generic external opinion,Trade winner or player rank,Do not translate production statistics into dynasty value
+FantasyBot,Trade analysis,Outputs used season or PPR production totals rather than comparable dynasty trade values,Not comparable to NWR value,Approximate external opinion only,Production recommendation or formula input,Exact NWR scoring and league context are unsupported
+FantasyBot,Context and provenance,Scoring scarcity dynasty roster ownership pick timestamp version and source support were insufficient,Insufficient,Clearly labeled manual consultation,Hidden confidence sorting roster truth or persistent panel,No numerical or source-admitted use
