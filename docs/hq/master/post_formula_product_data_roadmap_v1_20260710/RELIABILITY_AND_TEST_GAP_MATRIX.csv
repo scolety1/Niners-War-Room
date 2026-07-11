@@ -1,0 +1,8 @@
+gap,scope,existing_coverage,missing_test_or_control,impact,classification
+Trust-schema contract tests,three decision surfaces,individual tests,labels/order/unknown/stale/no-rank-mutation,high,READY_NOW_LOW_RISK
+Protected-path regression,repository diff,HQ gates,assert rank/formula/source/freeze unchanged,very_high,READY_NOW_LOW_RISK
+Refresh failure scenarios,Refresh/Data Health,loader tests,visible recovery/stale scenarios,high,READY_NOW_MODERATE_RISK
+Draft keyboard/focus,Live/Mock,functional tests,keyboard-only audit,high,NEEDS_BOUNDED_DESIGN
+Draft compact-width,Live/Mock,route tests,overflow/compact visual checks,high,NEEDS_BOUNDED_DESIGN
+Evidence-hub drift,Evidence Hub,index exists,periodic reconciliation,medium,READY_NOW_LOW_RISK
+Formula validation,Research,completed; ridge failed,actual 2026 outcomes,critical,DEFER_UNTIL_2026_OUTCOMES

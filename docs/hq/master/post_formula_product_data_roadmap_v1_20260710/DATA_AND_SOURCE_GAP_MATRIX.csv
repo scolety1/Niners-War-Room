@@ -1,0 +1,8 @@
+gap,current_evidence,admitted_data,missing_or_gated,user_impact,classification,control
+Cross-surface evidence contract,metadata exists but varies,admitted metadata,none for V1,high,READY_NOW_LOW_RISK,display-only; no promotion
+Identity exceptions,audit/crosswalk gates exist,resolved IDs,human exception resolution,high,NEEDS_HUMAN_REVIEW,no normalized-name fallback
+Injury freshness,partial coverage,admitted availability,receipt-safe gaps,high,NEEDS_DATA_OR_SOURCE_GATE,show unknown/stale distinctly
+Snap/depth/opportunity,partial NFLVerse/depth context,admitted rows,coverage and cutoffs,medium,NEEDS_DATA_OR_SOURCE_GATE,no current backfill
+Historical receipts,mixed recovered inventory,canonical receipts,point-in-time receipts and joins,medium,NEEDS_DATA_OR_SOURCE_GATE,existence is not admission
+Market/ADP history,current display context,current admitted context,as-of-safe history,medium,NEEDS_DATA_OR_SOURCE_GATE,no current proxy
+2026 outcomes,predictions frozen,immutable snapshots,future outcomes,very_high,DEFER_UNTIL_2026_OUTCOMES,required for accuracy claims

@@ -1,0 +1,7 @@
+source,url,relevant_idea,evidence_quality,applicability_to_nwr,implementation_complexity,data_and_source_risk
+NIST AI RMF Core,https://airc.nist.gov/airmf-resources/airmf/5-sec-core/,"document limits, oversight, evaluation conditions and third-party risks",authoritative government,trust strip and review controls,low,no ingestion; reinforces gates
+Google PAIR Explainability + Trust,https://pair.withgoogle.com/chapter/explainability-trust,show data basis and confidence at decision point,official research/design,consistent evidence/caveats,low_moderate,no source change
+Google PAIR Mental Models,https://pair.withgoogle.com/guidebook-v2/chapter/mental-models/,state capabilities/limits; progressive detail,official research/design,compact strip plus receipts,low,no source change
+Model Cards paper,https://arxiv.org/abs/1810.03993,"intended use, limits and evaluation context",peer-reviewed primary paper,evidence cards and caveats,low,no external data
+Sleeper Mock Draft,https://support.sleeper.com/en/articles/3982891-how-to-create-a-mock-draft,draftboard continuity from rehearsal to live,official product docs,later workflow consistency,moderate,no ingestion
+nflverse,https://nflverse.nflverse.com/,reproducible tooling and ownership caveats,official project docs,receipt/version discipline,moderate,terms/admission still apply

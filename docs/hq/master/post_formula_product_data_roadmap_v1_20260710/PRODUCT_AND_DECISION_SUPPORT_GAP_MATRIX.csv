@@ -1,0 +1,8 @@
+improvement,surfaces,current_state,unresolved_gap,user_value,classification,roadmap_position
+Decision Trust Strip V1,Rankings; Compare; Trading Lab,facts exist; presentation varies,shared compact contract,very_high,READY_NOW_LOW_RISK,Immediate
+Refresh recovery UX,Refresh; Data Health,status exists,actionable partial-failure guidance,high,READY_NOW_MODERATE_RISK,Lane 2
+Draft accessibility/mobile,Live; Mock Draft,core mature,keyboard/focus/compact-width evidence,high,NEEDS_BOUNDED_DESIGN,Lane 3
+Rookie workspace consolidation,Rookie; Rankings; Draft,fragmented evidence,bounded review-only IA,medium_high,NEEDS_BOUNDED_DESIGN,Lane 4
+Automated trade valuation,Trading Lab,explicitly excluded,authorized value contract,high,BLOCKED,Stop
+Frozen comparator recommendations,Rankings/Compare,review-only tracking,outcomes and authorization,low_now,DEFER_UNTIL_2026_OUTCOMES,Stop
+Generic review queue rebuild,Evidence Hub and queues,already multiple,no unmet need shown,low,DO_NOT_RECREATE,Stop

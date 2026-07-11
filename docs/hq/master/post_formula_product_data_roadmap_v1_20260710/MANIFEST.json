@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "packet": "post_formula_product_data_roadmap_v1_20260710",
+  "verdict": "GREEN_POST_FORMULA_ROADMAP_READY_WITH_SAFE_NEXT_LANE",
+  "starting_remote_hq": "e4693f49fa44dba6e75b488d6a560a88ea715b8d",
+  "remote_advanced": false,
+  "immutable_reference": "docs/hq/model/formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710",
+  "files": [
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/POST_FORMULA_PRODUCT_DATA_ROADMAP_V1_REPORT.md",
+      "sha256": "2cbf810090de0627ceced411202ae7aa992b68f0418cd45acbeba7ef08884d74",
+      "bytes": 2240
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/EXECUTIVE_VERDICT.md",
+      "sha256": "c6181d7557a10b381caea8cde428801a967b2007dac8139a832d8aca632ff5d5",
+      "bytes": 394
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/CURRENT_NWR_SURFACE_MAP.csv",
+      "sha256": "15a8a939b6e64bad23e3a3968fe4cb5deac55676186b3ea9dcec7e101063e7b5",
+      "bytes": 3874
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/NO_RECREATE_FEATURE_AND_RESEARCH_INDEX.csv",
+      "sha256": "f7619980644d3d8113ffb7600d3494ac244a1cd7a0b02b55ca81b89050adc25f",
+      "bytes": 1781
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/DATA_AND_SOURCE_GAP_MATRIX.csv",
+      "sha256": "25953926eb3cabafe1dbd385bb4372e2d84663f20151c55c6f490daf945e0e57",
+      "bytes": 1073
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/PRODUCT_AND_DECISION_SUPPORT_GAP_MATRIX.csv",
+      "sha256": "7019d7d0b845c666ac5c694b674b4811ec43e5ec6e45742f5962053f2bef9e2e",
+      "bytes": 991
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/RELIABILITY_AND_TEST_GAP_MATRIX.csv",
+      "sha256": "3b4b69dc5bc586323a0b56fc6e5de80c709d34d328aeb9e0e58b856c6b34a0ea",
+      "bytes": 852
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/EXTERNAL_RESEARCH_LEDGER.csv",
+      "sha256": "b65721fc50eb0e43054a2ff49dd84c0fa12be625d68137e15b4456f62a7b66a4",
+      "bytes": 1335
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/PRIORITIZED_IMPROVEMENT_BACKLOG.csv",
+      "sha256": "9fd08fdc61f8789f6cc3b434419aa2a937a4cc9f3b8a2611d5e79d0026a27e1d",
+      "bytes": 1142
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/DEPENDENCY_AND_RISK_MAP.md",
+      "sha256": "33e6b32f0d17c6102e390beb2339c3a3ae4cca8a1ee0d78940dc45dd7cc5ac24",
+      "bytes": 539
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/IMMEDIATE_NEXT_LANE_CONTRACT.md",
+      "sha256": "dc3107323ab3925d558f12177fd7c0cfe12c367e701a54f09a852f3d63e1e94d",
+      "bytes": 713
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/NEXT_LANE_READY_TO_PASTE_PROMPT.md",
+      "sha256": "86fc715ee04d7e7041713d7596627af00fc1a7d4800cbaf2a74f424212c5718c",
+      "bytes": 1957
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/NEXT_THREE_LANES.md",
+      "sha256": "cd950d3d8bb433790d23ae84ebf270cb94eba6949ab4a46708ea302d1f05f8fd",
+      "bytes": 563
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/DEFER_AND_STOP_LIST.md",
+      "sha256": "ff97a3026f99c017c94eb44396f985869d8a47677fdeb7c93e3e7a74edbd580e",
+      "bytes": 516
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/SOURCE_USE_AND_PRODUCTION_GATE.md",
+      "sha256": "39cd9bec9a735ee753fcf55b745a8d93c113ff1a39c8019f0b1cb2039426d038",
+      "bytes": 508
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "b02d03c0930c88b9b92adca81e30cfd1d32ec6d6d15258abf30b3adbef9b7e4d",
+      "bytes": 2131
+    },
+    {
+      "path": "docs/hq/master/post_formula_product_data_roadmap_v1_20260710/VALIDATION_RESULTS.md",
+      "sha256": "cacb0b71a6035ada01274da6604b646da6b4ce5bb3ed7a8730eb6d892698865f",
+      "bytes": 1489
+    }
+  ],
+  "controls": {
+    "docs_only": true,
+    "formula_research_restarted": false,
+    "frozen_2026_modified": false,
+    "source_promoted": false,
+    "push_authorized": false
+  }
+}

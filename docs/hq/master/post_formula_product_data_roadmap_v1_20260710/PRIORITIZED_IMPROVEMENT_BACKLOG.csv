@@ -1,0 +1,11 @@
+priority,candidate,user_value_10,confidence_10,effort_10_high_is_hard,data_readiness_10,source_readiness_10,regression_risk_10,production_risk_10,dependency_count_10,testability_10,reversibility_10,priority_score_100,classification,blocker_override
+1,Decision Trust Strip V1,9,9,3,9,9,2,1,2,9,10,92,READY_NOW_LOW_RISK,Immediate
+2,Refresh Recovery UX V1,8,8,4,8,9,3,2,3,9,9,82,READY_NOW_MODERATE_RISK,after trust vocabulary
+3,Draft Accessibility/Compact V1,9,8,5,10,10,3,2,3,8,9,81,NEEDS_BOUNDED_DESIGN,audit first
+4,Rookie Workspace Design V1,7,7,5,7,6,4,3,4,8,8,66,NEEDS_BOUNDED_DESIGN,design only
+5,Evidence Hub Drift Check,5,8,2,10,10,1,1,1,10,10,78,READY_NOW_LOW_RISK,lower user value
+6,Availability Receipt Expansion,8,7,6,5,4,5,4,5,7,6,52,NEEDS_DATA_OR_SOURCE_GATE,receipt-safe sources
+7,Historical Market Recovery,6,5,8,3,2,6,5,7,6,4,31,NEEDS_DATA_OR_SOURCE_GATE,point-in-time gate
+8,Automated Trade Calculator,8,3,9,2,1,8,8,8,5,2,18,BLOCKED,manual boundary
+9,Formula/challenger search,2,1,10,1,1,10,10,9,8,1,0,DEFER_UNTIL_2026_OUTCOMES,paused
+10,Rebuild existing features,1,10,8,10,10,7,6,4,8,7,25,DO_NOT_RECREATE,already substantial

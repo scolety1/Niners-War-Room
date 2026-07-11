@@ -1,0 +1,11 @@
+item,evidence_paths,current_state,classification,roadmap_treatment
+Rank explanations and receipts,app/components/player_detail_panel.py | app/components/player_detail_card.py | src/services/model_v4_player_rank_explainer_service.py,complete core,DO_NOT_RECREATE,reuse and normalize presentation only
+Player Compare context,pages/22_player_compare_v1.py | docs/hq/player_compare_safe_context_ux_upgrade_20260630,complete core,DO_NOT_RECREATE,no second compare engine
+Trading Lab manual planner,pages/23_trading_lab_v1.py | docs/hq/trading_lab/manual_planner_safe_upgrade_20260630,manual/display-only,DO_NOT_RECREATE,no automated valuation
+Board movement audit,full_board_score_movement_audit_service.py | model_v4_movement_audit_service.py | movement_reason_service.py,complete audit services,DO_NOT_RECREATE,reuse immutable snapshots if later surfaced
+Manual review queues,manual_review_intake_20260630 | evidence_review_hub_v1.py,multiple existing flows,DO_NOT_RECREATE,generic unified queue duplicates work
+Data health dashboard,pages/28_settings_data_health_v1.py | data_health_dashboard_service.py,implemented,DO_NOT_RECREATE,reuse facts
+Live/Mock Draft foundations,pages/21_live_draft_room_v1.py | pages/24_mock_draft_v1.py,implemented,DO_NOT_RECREATE,preserve separate state
+NFLVerse/schedule/market context,existing services and HQ packets,display-only/gated,DO_NOT_RECREATE,no hidden sort or recommendations
+Formula and 2026 freeze,docs/hq/model/formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710,canonical immutable,DEFER_UNTIL_2026_OUTCOMES,no rerun or rewrite
+Decision Trust Strip and Evidence Consistency,shared schema not found; component facts exist,not found as shared contract,READY_NOW_LOW_RISK,standardize without changing facts
