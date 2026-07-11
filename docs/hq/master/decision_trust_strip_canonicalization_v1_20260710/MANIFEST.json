@@ -1,0 +1,68 @@
+{
+  "schema_version": "decision_trust_strip_canonicalization_manifest_v1",
+  "packet": "decision_trust_strip_canonicalization_v1_20260710",
+  "verdict": "GREEN_DECISION_TRUST_STRIP_V1_CANONICALIZED_AND_PUSHED_TO_HQ",
+  "starting_live_hq": "3f41919c506175293465b134f1495c042f710168",
+  "source_commit": "c0e1defc299ad5fbb9c25b7878851156d5da3776",
+  "source_preservation": "EXACT_FAST_FORWARD",
+  "files": [
+    {
+      "path": "HQ_ADOPTION_AND_MERGE_REVIEW.md",
+      "bytes": 1899,
+      "sha256": "9023d8c450213ba6bd33848ba7dff6aee37b16114c50562de9cde305a7246e6d",
+      "required": true
+    },
+    {
+      "path": "SOURCE_COMMIT_INVENTORY.csv",
+      "bytes": 3234,
+      "sha256": "6eb7805dde70e74837e9c01d1666b938a227fd90be73c86c968456744c991780",
+      "required": true
+    },
+    {
+      "path": "SEMANTIC_CONSISTENCY_REVIEW.md",
+      "bytes": 1794,
+      "sha256": "dc60698f3ad5831ec6e8465416334bf0672d8e76b025789b7956e0dabcba4f79",
+      "required": true
+    },
+    {
+      "path": "BASELINE_FAILURE_DIFFERENTIAL.md",
+      "bytes": 1001,
+      "sha256": "d39991dcc6081d34ed09ccdfd524926a03c956e8ac8d92df175414da465184c1",
+      "required": true
+    },
+    {
+      "path": "VISUAL_AND_ACCESSIBILITY_REVIEW.md",
+      "bytes": 1203,
+      "sha256": "9a2be6d42d8a70053950f2eb21d8f55708691ff9d23cf830458904a456037eb8",
+      "required": true
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "bytes": 874,
+      "sha256": "c4017a965278f00599fcf0edf0e5995e7c42c4a4e2e209f2db893eba7020ea31",
+      "required": true
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "bytes": 1776,
+      "sha256": "4ed444c193d20b3f6f385bb9e4fb51d775f434d8408a758f812cc6e3fb538f79",
+      "required": true
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 4092,
+      "sha256": "d620781bcd1da5d21ad1414979b0ce432320fa9a019ddf008e817c9bdad49268",
+      "required": true
+    }
+  ],
+  "controls": {
+    "source_scope_passed": true,
+    "passive_adapter_passed": true,
+    "semantic_consistency_passed": true,
+    "baseline_failures_pre_existing": true,
+    "frozen_paths_changed": false,
+    "protected_behavior_changed": false,
+    "normal_push_only": true
+  },
+  "manifest_self_hash_policy": "MANIFEST.json excludes its own recursive hash"
+}

@@ -1,0 +1,25 @@
+path,classification,scope_result,review_note
+app/components/decision_trust_strip.py,shared display component,PASS,Renders supplied passive schema only
+src/services/decision_trust_strip_service.py,passive display adapter,PASS,No I/O lookup join threshold or mutation
+app/pages/20_final_board_v1.py,named page integration,PASS,One visible-board trust render; sort/filter/table logic unchanged
+app/pages/22_player_compare_v1.py,named page integration,PASS,One strip per existing selected row; no comparison score
+app/pages/23_trading_lab_v1.py,named page integration,PASS,One strip per manually selected asset; no value or advice
+tests/test_decision_trust_strip_service.py,focused test,PASS,Schema state and fail-closed contracts
+tests/test_decision_trust_strip_surfaces.py,focused test,PASS,Three-surface and forbidden-dependency checks
+tests/test_decision_trust_strip_render.py,focused test,PASS,Streamlit AppTest render coverage
+tests/fixtures/decision_trust_strip_fixture.py,synthetic render fixture,PASS,Explicitly synthetic eight-state display evidence
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/ACCESSIBILITY_REVIEW.md,documentation artifact,PASS,Accessibility evidence
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/DECISION_TRUST_STRIP_V1_REPORT.md,documentation artifact,PASS,Implementation report
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/EXECUTIVE_VERDICT.md,documentation artifact,PASS,Source verdict
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/FIELD_LEVEL_REUSE_MAP.csv,documentation artifact,PASS,Field reuse evidence
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/FILES_CREATED_OR_CHANGED.csv,documentation artifact,PASS,Source change inventory
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/IDENTITY_AND_SOURCE_SEMANTICS_REVIEW.md,documentation artifact,PASS,Identity/source semantics
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/MANIFEST.json,documentation artifact,PASS,Source packet hashes
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/PROTECTED_AND_FROZEN_PATH_PROOF.md,documentation artifact,PASS,Protected path proof
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/REPRESENTATIVE_RENDER_REVIEW.md,documentation artifact,PASS,Render review
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/ROLLBACK_PLAN.md,documentation artifact,PASS,Reversible removal
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/STATUS_STATE_FIXTURE_MATRIX.csv,documentation artifact,PASS,Eight-state fixtures
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/SURFACE_IMPLEMENTATION_MAP.csv,documentation artifact,PASS,Three-surface mapping
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/TRUST_STRIP_LABEL_GLOSSARY.csv,documentation artifact,PASS,Canonical labels
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/TRUST_STRIP_SCHEMA.md,documentation artifact,PASS,Canonical field order
+docs/hq/master/decision_trust_strip_evidence_consistency_v1_20260710/VALIDATION_RESULTS.md,documentation artifact,PASS,Source validation record
