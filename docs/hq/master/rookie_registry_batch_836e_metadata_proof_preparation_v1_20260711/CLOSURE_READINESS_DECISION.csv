@@ -1,0 +1,3 @@
+queue_id,proof_readiness_status,packet_verdict,proposed_endpoint_record_created,queue_status_after_review,closure_eligible,authority_effect,use_permission_effect,closure_effect,controlling_caveat
+queue_88b3986f5da27f5d0c585b6b,PROOF_PARTIAL_MISSING_EXACT_ELEMENT,BLOCKED_BATCH_836E_METADATA_PROOF_NOT_AVAILABLE,false,BLOCKED,false,NONE,NONE,NONE,Packet source reference is not a canonical endpoint; no activation registration mapping or closure authorized
+queue_d7111a1782f7cdba7c75f78a,PROOF_PARTIAL_MISSING_EXACT_ELEMENT,BLOCKED_BATCH_836E_METADATA_PROOF_NOT_AVAILABLE,false,BLOCKED,false,NONE,NONE,NONE,Packet source reference is not a canonical endpoint; no activation registration mapping or closure authorized
