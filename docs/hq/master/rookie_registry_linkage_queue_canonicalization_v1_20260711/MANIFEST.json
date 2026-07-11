@@ -1,0 +1,84 @@
+{
+    "manifest_version":  "1.0.0",
+    "canonicalization_date":  "2026-07-11",
+    "starting_live_hq_head":  "7bc0523057562b75be6d2d6da890b58526aeaec5",
+    "source_commits":  [
+                           "660b59d4068e87df6fa997a0a0513c0f0c326eb1",
+                           "38043b47ad2e7410cb1a3b9c66546d30f8e34278"
+                       ],
+    "manifest_self_hash_excluded":  true,
+    "text_hash_normalization":  "LF",
+    "file_count":  14,
+    "files":  [
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+                      "bytes":  2069,
+                      "sha256":  "f9efbc060c6eabbee115e77a1d87d6ea5740d8346ce598822e3cdc2ee906377d"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/HQ_ADOPTION_AND_MERGE_REVIEW.md",
+                      "bytes":  1375,
+                      "sha256":  "d5c37c7a1fb0a3075f08d68a2ccb049fcbf4c063d26c6cc6b2fd8f6c5e0f60c4"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/MAPPING_CONTRACT_AND_HASH_REVIEW.md",
+                      "bytes":  1367,
+                      "sha256":  "4f81ded45e2960f226c3f54ae796365b04390d864ba4b6724df34377f7e209d9"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/PRIVACY_LOCATOR_AND_RIGHTS_REVIEW.md",
+                      "bytes":  805,
+                      "sha256":  "ceebc13677c9dfe4df0029d8bf495805e28ff67d95c741ac9c458ee9e025a3ea"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+                      "bytes":  717,
+                      "sha256":  "9d57b43d52f5ca438f7367b2f26759c761b07024649affb649056506f753c440"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/QUEUE_CONTRACT_AND_HASH_REVIEW.md",
+                      "bytes":  862,
+                      "sha256":  "66af9675e2f12eb085b86601f5470548e219729158641bf8a0328dccd68b411b"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/QUEUE_COUNT_AND_SCHEMA_VALIDATION.csv",
+                      "bytes":  1039,
+                      "sha256":  "5c07b30068639934055d673a64ef3388911a02785bc900f61a08d8b2374361e1"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/QUEUE_VOLUME_INTERPRETATION.md",
+                      "bytes":  587,
+                      "sha256":  "73021fcf3248b3bbcdc003f88672cf6fc0e34fd068bec603c0a903233d28892a"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/READ_ONLY_RUNTIME_BOUNDARY_REVIEW.md",
+                      "bytes":  824,
+                      "sha256":  "18f514c59fe53a1b50b56d60a29bd97fd6b694d0be4a04706b8e6d5527ef9d4d"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/SOURCE_COMMIT_INVENTORY.csv",
+                      "bytes":  9039,
+                      "sha256":  "563b0127b9ae7e64ecdfe8505f053b2441cb3dde4b4abdee725279e5b25f5150"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/UNRESOLVED_MAPPING_RECONCILIATION.csv",
+                      "bytes":  1208,
+                      "sha256":  "4b7a54e8da36be3d708b643f06ae8351d4167e0abd8cc85145cf5bc11e816e01"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/VALIDATION_RESULTS.md",
+                      "bytes":  1403,
+                      "sha256":  "067e56f31af402b407c773d26f7663cd58eebbb170290586cc854bde7d702bc9"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/VERIFIED_AND_DEFERRED_LINK_REVIEW.csv",
+                      "bytes":  1898,
+                      "sha256":  "727f6dde6777dca298eac2349478659c56a1c3a088c022ea27b5bc4b1c50d5d1"
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_registry_linkage_queue_canonicalization_v1_20260711/ZERO_PLAYER_AND_EVIDENCE_ROW_PROOF.md",
+                      "bytes":  550,
+                      "sha256":  "cb3fda4eb98631c735813f16a7da6e08ceca6d2d6e1ce45249791fc16325076d"
+                  }
+              ]
+}
