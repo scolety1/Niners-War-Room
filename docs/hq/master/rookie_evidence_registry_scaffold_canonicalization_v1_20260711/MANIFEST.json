@@ -1,0 +1,63 @@
+{
+    "packet":  "rookie_evidence_registry_scaffold_canonicalization_v1_20260711",
+    "schema_version":  "1.0.0",
+    "starting_remote_hq":  "e6d680195f9e4512885ac281c215f2fb2ae4b64c",
+    "source_commit":  "625833361b5753b3a6ae8eafc62a9fd00a232627",
+    "canonicalization_method":  "EXACT_FAST_FORWARD_PLUS_DOCUMENTATION_ONLY_REVIEW_COMMIT",
+    "phase_a_verdict":  "GREEN_ROOKIE_EVIDENCE_REGISTRY_SCAFFOLD_CANONICALIZED_AND_PUSHED_TO_HQ",
+    "text_hash_normalization":  "CRLF_TO_LF_BEFORE_SHA256",
+    "manifest_self_hash_excluded":  true,
+    "source_file_count":  48,
+    "packet_file_count":  10,
+    "validator_checks":  118,
+    "validator_issues":  0,
+    "focused_tests_passed":  38,
+    "regression_tests_passed":  25,
+    "files":  [
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/HQ_ADOPTION_AND_MERGE_REVIEW.md",
+                      "sha256":  "d5e907060253aabf69ac02de2b243ebde15bd0f1fae0db7731c97bce06567045",
+                      "canonical_bytes":  1008
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/SOURCE_COMMIT_INVENTORY.csv",
+                      "sha256":  "aef731612f58820dec2e6e519a0505fcd552a889a84bc79d0c9d58f10377290f",
+                      "canonical_bytes":  14703
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/REGISTRY_SCHEMA_AND_AUTHORITY_REVIEW.md",
+                      "sha256":  "17c7792e0eddf9504ff38190a9eabbed09bb5f031d6e92f18138ebb70f07123b",
+                      "canonical_bytes":  1345
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/READ_ONLY_SERVICE_REVIEW.md",
+                      "sha256":  "92248cd60a2f395f6776684ec595389d7b8f446581cd6b96f2e0d661395260d7",
+                      "canonical_bytes":  1093
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/LOCATOR_AND_PRIVACY_REVIEW.md",
+                      "sha256":  "4dee380d7038d0ffb83ba45dd8ec343e6e85e027984eadbc32276762723ffb92",
+                      "canonical_bytes":  972
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/EMPTY_PLAYER_AND_EVIDENCE_PROOF.md",
+                      "sha256":  "e01c45488fe976cc46b69c30d3667a49398a3ecad6da4ea73c31c3a93c99bb35",
+                      "canonical_bytes":  654
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+                      "sha256":  "d52559779c36e15a33d10e8f6aadbf94c5350e27d1c594846df2a0e24a0178f8",
+                      "canonical_bytes":  712
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/VALIDATION_RESULTS.md",
+                      "sha256":  "ae275b38228d31a465396bec7c001e29641f96ecff540b09ef232733f8a59c19",
+                      "canonical_bytes":  1219
+                  },
+                  {
+                      "path":  "docs/hq/master/rookie_evidence_registry_scaffold_canonicalization_v1_20260711/FILES_CREATED_OR_CHANGED.csv",
+                      "sha256":  "f3e5e241573ef55967d154cc6b9706063f6270fd9d8eb885a04fa4ecf9c16fbe",
+                      "canonical_bytes":  2636
+                  }
+              ]
+}
