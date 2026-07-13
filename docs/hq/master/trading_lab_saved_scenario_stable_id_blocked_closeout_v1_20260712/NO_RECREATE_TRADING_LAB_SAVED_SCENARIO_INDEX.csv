@@ -1,0 +1,11 @@
+rule_id,prohibited_action,reason,reentry_trigger,status
+NR-01,Persist composite player or pick-context tokens,Presentation/source composites are not stable admitted identity,Approved stable asset identity contract,PROHIBITED
+NR-02,Hash or encode composite display tokens,Transformation does not create authority stability or privacy approval,Approved stable asset identity contract,PROHIBITED
+NR-03,Use final-board rank as identity,Rank is presentation state and changes over time,Approved rank-independent opaque identifier,PROHIBITED
+NR-04,Use player name as identity or fallback,Names and display text are mutable and nonunique,Approved no-name-fallback identity contract,PROHIBITED
+NR-05,Persist team position or name snapshots inside identity,These are prohibited source/display facts,Approved opaque identifier and privacy contract,PROHIBITED
+NR-06,Repeat the same stable-ID search without new authority evidence,Prior search produced zero directly available admitted IDs,New identity-authority service or admitted-dataset trigger,PROHIBITED
+NR-07,Begin another persistence implementation before the gate passes,Implementation cannot cure missing canonical identity,All fifteen proofs for every supported asset type,PROHIBITED
+NR-08,Treat indirect matching counts as readiness,Indirect matches are not canonical identity or full coverage,Direct admitted ID availability and authority proof,PROHIBITED
+NR-09,Create a new identity namespace merely to unblock persistence,Self-created identifiers lack independent authority and approval,Separately reviewed identity-authority design,PROHIBITED
+NR-10,Silently omit unsupported assets from future scope,Product-scope narrowing requires explicit HQ approval,Explicit pre-implementation HQ scope decision,PROHIBITED

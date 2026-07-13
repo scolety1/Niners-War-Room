@@ -1,0 +1,5 @@
+asset_type,selectable_asset_count,direct_stable_admitted_identifier_count,coverage,authoritative_namespace,authoritative_origin,current_result,indirect_review_result,canonical_identity_allowed
+rookie_players,54,0,0/54,NONE,NONE,BLOCKED,"41 composite-visible-identity matches; 13 require review",NO
+dropped_veterans,12,0,0/12,NONE,NONE,BLOCKED,"10 indirect matches; 2 unmatched",NO
+pick_context_assets,54,0,0/54,NONE,NONE,BLOCKED,"No admitted standalone stable identifier",NO
+total,120,0,0/120,NONE,NONE,BLOCKED,"Indirect and composite matching does not satisfy the gate",NO

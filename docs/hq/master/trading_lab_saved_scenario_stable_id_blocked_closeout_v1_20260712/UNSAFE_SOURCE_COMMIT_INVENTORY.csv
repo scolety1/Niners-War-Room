@@ -1,0 +1,12 @@
+ordinal,path,change,lines_added,lines_deleted,classification,verified_hq_state,adoption_status
+1,app/pages/23_trading_lab_v1.py,MODIFIED,622,7,Trading Lab saved-scenario page integration,UNCHANGED_FROM_SOURCE_PARENT_BLOB_8d242439a21c08069015c1e7340be9883c85c8a7,REJECTED_NOT_CANONICAL
+2,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/FILES_CREATED_OR_CHANGED.csv,ADDED,12,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+3,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/IMPLEMENTATION_SUMMARY.md,ADDED,46,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+4,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/INDEPENDENT_MERGE_REVIEW.md,ADDED,34,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+5,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/MANIFEST.json,ADDED,30,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+6,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/STORAGE_DECISION.md,ADDED,115,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+7,docs/hq/master/trading_lab_saved_manual_scenario_workspace_v1_20260712/VALIDATION_RESULTS.md,ADDED,77,0,Unsafe source packet documentation,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+8,src/services/trading_lab_scenario_state_service.py,ADDED,920,0,Saved-scenario persistence service,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+9,tests/test_trading_lab_saved_scenario_workspace_render.py,ADDED,187,0,Saved-scenario render test,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+10,tests/test_trading_lab_saved_scenario_workspace_ui.py,ADDED,221,0,Saved-scenario UI test,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL
+11,tests/test_trading_lab_scenario_state_service.py,ADDED,461,0,Saved-scenario service test,ABSENT_FROM_HQ,REJECTED_NOT_CANONICAL

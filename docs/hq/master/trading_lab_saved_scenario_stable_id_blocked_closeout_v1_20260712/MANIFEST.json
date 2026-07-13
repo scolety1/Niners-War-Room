@@ -1,0 +1,112 @@
+{
+  "manifest_version": "1.0.0",
+  "packet": "trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712",
+  "generated_utc": "2026-07-13T05:36:12Z",
+  "verdict": "GREEN_TRADING_LAB_SAVED_SCENARIO_BLOCKED_RESULT_CANONICALIZED_AND_PARKED",
+  "controlling_remote_branch": "origin/work/hq-parallel-control",
+  "expected_starting_live_hq": "00fc89ed95f0b2b06c43d0acd28b4c0181647a30",
+  "actual_starting_live_hq": "00fc89ed95f0b2b06c43d0acd28b4c0181647a30",
+  "remote_advance_commit_count": 0,
+  "unsafe_source_branch": "work/trading-lab-saved-manual-scenario-workspace-v1-20260711",
+  "unsafe_source_commit": "ceb77a8ee2124242cd4f8207095af821cf125af8",
+  "unsafe_source_parent": "00fc89ed95f0b2b06c43d0acd28b4c0181647a30",
+  "blocked_review_branch": "work/trading-lab-saved-scenarios-merge-review-hq-v1-20260712",
+  "blocked_review_commit": "a2b1baee69d597314c760b09a28fe8ec7cc461ce",
+  "stable_id_revision_branch": "work/trading-lab-saved-scenario-stable-id-revision-v1-20260712",
+  "stable_id_revision_result": "BLOCKED_TRADING_LAB_STABLE_ASSET_IDENTIFIER_NOT_AVAILABLE",
+  "source_remote_containment_count": 0,
+  "review_remote_containment_count": 0,
+  "controlling_reentry_status": "TRADING_LAB_SAVED_SCENARIO_WORKSPACE_PAUSED_PENDING_STABLE_ADMITTED_ASSET_IDENTIFIERS",
+  "feature_disposition": "PARKED",
+  "unsafe_implementation_disposition": "REJECTED_NOT_CANONICAL",
+  "production_behavior": "UNCHANGED",
+  "schema_version_rejected": 1,
+  "prohibited_asset_prefixes": ["player:", "pick_context:"],
+  "prohibited_composite_fields": ["final_board_rank", "player_name", "position", "nfl_team"],
+  "stable_identifier_availability": {
+    "rookie_players": "0/54",
+    "dropped_veterans": "0/12",
+    "pick_context_assets": "0/54",
+    "total": "0/120"
+  },
+  "tracked_runtime_storage_file_count": 0,
+  "default_runtime_root_exists_on_validation_host": false,
+  "protected_path_change_count": 0,
+  "starting_hq_frozen_inventory_count": 122,
+  "frozen_artifact_byte_change_count": 0,
+  "documentation_only": true,
+  "implementation_adopted": false,
+  "migration_required": false,
+  "rollback_required": false,
+  "next_active_lane": "Player Compare Compact-Width and Accessibility Hardening V1",
+  "future_parked_candidate": "Trading Lab Stable Asset Identity Authority Design and Readiness V1",
+  "push_policy": "NORMAL_NON_FORCE_ONLY_AFTER_ALL_GATES",
+  "canonical_closeout_commit": "SELF_COMMIT_REPORTED_OUT_OF_BAND",
+  "required_file_count": 13,
+  "manifest_file_count_excluding_self": 12,
+  "manifest_self_hash_excluded": true,
+  "hash_algorithm": "SHA-256",
+  "hash_scope": "Canonical Git-style LF bytes for every packet file except MANIFEST.json",
+  "files": [
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/HQ_BLOCKED_RESULT_ADOPTION.md",
+      "bytes": 3514,
+      "sha256": "b4b9580c729d1d13b802660821237a0adc3342495a39bb279df2f6aa751c3e10"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/UNSAFE_SOURCE_COMMIT_INVENTORY.csv",
+      "bytes": 1902,
+      "sha256": "0b29c63dbde3332f8d8983a4440a0dd083e36b96de4aa37f35786b21f8e93721"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/STABLE_IDENTIFIER_AVAILABILITY_MATRIX.csv",
+      "bytes": 574,
+      "sha256": "103b6fe49beabcd81f4a8740891cf2372c8d490f61533568cd4cc14b0c03be38"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/COMPOSITE_TOKEN_PRIVACY_AND_DURABILITY_FAILURE.md",
+      "bytes": 2118,
+      "sha256": "d619544b345038ef780d20779efcf5bdf2a81be9d63bde38c1647a23f76f23c0"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/UNSAFE_SCHEMA_AND_IMPORT_EXPORT_REVIEW.md",
+      "bytes": 1984,
+      "sha256": "5f58547232d454fa659071658d582ae0c978769390eff0bb74a00f5e108ad942"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/SOURCE_COMMIT_NON_ADOPTION_PROOF.md",
+      "bytes": 2290,
+      "sha256": "fb966ead0a1577d55446d90064d4f51e0e3357cad9a221a6bde1a16e02195229"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/STABLE_ASSET_ID_REENTRY_GATE.md",
+      "bytes": 2428,
+      "sha256": "9a96ae18e6b6a201245d01bf93fbd53e70030f4e2a23a7f694202129e3ff798f"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/NO_RECREATE_TRADING_LAB_SAVED_SCENARIO_INDEX.csv",
+      "bytes": 1765,
+      "sha256": "3106fef7ee34c8ea48ffa566f5f97ef14c15262ce90826d2427f60d1b9d818b8"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/ROADMAP_DISPOSITION.md",
+      "bytes": 1366,
+      "sha256": "682207860a253bf78ae4a57d7df56ab08d37cf92107042ca8a8405e6c6b037cd"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "bytes": 1394,
+      "sha256": "efa07edf9be400deb24c60d5b69e48c70693a3e6704133e3a729686aff936985"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/VALIDATION_RESULTS.md",
+      "bytes": 3247,
+      "sha256": "372da5e5e875d09ec97a083b7998f2d48aab69ed165506db9c2c5f780a893ebd"
+    },
+    {
+      "path": "docs/hq/master/trading_lab_saved_scenario_stable_id_blocked_closeout_v1_20260712/FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 2655,
+      "sha256": "31cd81100642c98697eb0e251fc5f64ac00ee7d548cc42a9fc757556e77c64c2"
+    }
+  ]
+}
