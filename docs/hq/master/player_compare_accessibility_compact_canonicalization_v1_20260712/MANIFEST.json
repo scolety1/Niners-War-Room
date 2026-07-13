@@ -1,0 +1,102 @@
+{
+  "lane": "Player Compare Compact-Width and Accessibility Hardening V1",
+  "verdict": "GREEN_PLAYER_COMPARE_ACCESSIBILITY_COMPACT_V1_CANONICALIZED_AND_PUSHED_TO_HQ",
+  "starting_live_hq": "e949c5647001f84dba29195c589e27d923722ea1",
+  "remote_advance": "none",
+  "source_branch": "work/player-compare-accessibility-compact-v1-20260712",
+  "source_commit": "d8520f2056aedb3870406295e678610769b3c681",
+  "review_branch": "work/player-compare-accessibility-merge-review-hq-v1-20260712",
+  "generated_date": "2026-07-13",
+  "manifest_self_excluded": true,
+  "canonicalization_commit_is_external_git_metadata": true,
+  "required_files": [
+    "HQ_ADOPTION_AND_MERGE_REVIEW.md",
+    "SOURCE_COMMIT_INVENTORY.csv",
+    "ACCESSIBILITY_HELPER_SAFETY_REVIEW.md",
+    "PLAYER_COMPARE_BEHAVIOR_EQUIVALENCE_REVIEW.md",
+    "SEMANTIC_HASH_AND_FIELD_RECONCILIATION.csv",
+    "VIEWPORT_AND_OVERFLOW_MEASUREMENTS.csv",
+    "ACCESSIBILITY_TREE_AND_KEYBOARD_REVIEW.md",
+    "READING_ORDER_REVIEW.md",
+    "DECISION_TRUST_STRIP_NO_CHANGE_REVIEW.md",
+    "RENDERED_EVIDENCE_REVIEW.md",
+    "KNOWN_CAVEAT_DIFFERENTIAL.md",
+    "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+    "VALIDATION_RESULTS.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "MANIFEST.json"
+  ],
+  "file_count_excluding_manifest": 14,
+  "files": [
+    {
+      "path": "ACCESSIBILITY_HELPER_SAFETY_REVIEW.md",
+      "bytes": 1555,
+      "sha256": "f618ee81c6108618194727008ba4c55b4a7891a9ed0b37f51a51dcf70c19447e"
+    },
+    {
+      "path": "ACCESSIBILITY_TREE_AND_KEYBOARD_REVIEW.md",
+      "bytes": 1909,
+      "sha256": "2eb7c28eec69c50cee4c6171df67a276bd4a3c85ae707add36c70cec92632534"
+    },
+    {
+      "path": "DECISION_TRUST_STRIP_NO_CHANGE_REVIEW.md",
+      "bytes": 1185,
+      "sha256": "50024844745290256b6a2609d973ce5268e76ecbe921e56ef7239777951e1207"
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 2546,
+      "sha256": "194901e570559e217eb7ad3df4854c0f6ece2bc364d319e0c9a41e98da196ba1"
+    },
+    {
+      "path": "HQ_ADOPTION_AND_MERGE_REVIEW.md",
+      "bytes": 3457,
+      "sha256": "e61ab4c2c0832214d06f31bdba35be5126790bd9802672376816171ea5e1f527"
+    },
+    {
+      "path": "KNOWN_CAVEAT_DIFFERENTIAL.md",
+      "bytes": 2369,
+      "sha256": "0a9314d1768f88894e4521fd8241afed981b98a93ad2943e009e8f82b3bf899e"
+    },
+    {
+      "path": "PLAYER_COMPARE_BEHAVIOR_EQUIVALENCE_REVIEW.md",
+      "bytes": 3078,
+      "sha256": "fef2b814bd7d341d31035b85dde4dc4cb67d1676a7f07a17f69a1edd4eea17bd"
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+      "bytes": 1504,
+      "sha256": "4d1cee28945a5bcf95579599e48c8cdbfa230ac243f4042ab2fc2254ad6b16d6"
+    },
+    {
+      "path": "READING_ORDER_REVIEW.md",
+      "bytes": 881,
+      "sha256": "ceff1558bb2d4391b942c2e4ec45e940aa5185ab30cfb8b59b42a1496b8eee96"
+    },
+    {
+      "path": "RENDERED_EVIDENCE_REVIEW.md",
+      "bytes": 2272,
+      "sha256": "c12a538ca2ac8bd769f0ed77ca0349e6fa6f98156890cd6c639a7aa7e69486eb"
+    },
+    {
+      "path": "SEMANTIC_HASH_AND_FIELD_RECONCILIATION.csv",
+      "bytes": 1761,
+      "sha256": "0b77324c40e155eb33c0af2c747f9fa5b36fa2a7412e78567a97053d70b39495"
+    },
+    {
+      "path": "SOURCE_COMMIT_INVENTORY.csv",
+      "bytes": 4397,
+      "sha256": "a44fc4064c9aaccb9db88fe6cc93843ec7fc6a4e2b1d216e66964c1ab5131887"
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "bytes": 3155,
+      "sha256": "4f04f1a49dcdf02de0a32db8cc172be64fbbe6cdbc2ce745ff90dfafb357827b"
+    },
+    {
+      "path": "VIEWPORT_AND_OVERFLOW_MEASUREMENTS.csv",
+      "bytes": 2524,
+      "sha256": "651e36647d0530033de830b91f65c19d2a16cd5d0b251fdedf205b1e43da720a"
+    }
+  ]
+}

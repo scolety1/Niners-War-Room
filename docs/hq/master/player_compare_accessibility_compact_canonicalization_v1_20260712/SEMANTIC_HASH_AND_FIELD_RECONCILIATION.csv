@@ -1,0 +1,18 @@
+check,baseline,source,result,proof
+canonical_sha256,97b15a7ebdbe3f079c4743c398a3a9bd1061e0467482f4431f5a4d098fdcb9f3,97b15a7ebdbe3f079c4743c398a3a9bd1061e0467482f4431f5a4d098fdcb9f3,PASS,Independent canonical JSON generation
+record_count,2,2,PASS,compare_records length
+field_count,84,84,PASS,compare_columns length
+selection_order,Jeremiyah Love then Makai Lemon,Jeremiyah Love then Makai Lemon,PASS,selected_player_labels and selection_order
+player_ids,blank then blank,blank then blank,PASS,No identity or name fallback
+final_board_rank,1 then 2,1 then 2,PASS,All record strings equal
+final_board_score_visible,96.0 then 94.5,96.0 then 94.5,PASS,All record strings equal
+dynasty_asset_rank,3 then 5,3 then 5,PASS,All record strings equal
+dynasty_asset_score,74.00 then 69.00,74.00 then 69.00,PASS,All record strings equal
+missingness,All 84 normalized fields equal,All 84 normalized fields equal,PASS,Full record equality
+source_status,pinned_rookie_pool; final_board_candidate_only for both,pinned_rookie_pool; final_board_candidate_only for both,PASS,Full record equality
+identity_status,Blank or existing status preserved,Blank or existing status preserved,PASS,Full record and trust equality
+caveats,Existing candidate caveats and risk notes,Existing candidate caveats and risk notes,PASS,Full record equality
+evidence_states,Five NOT_ENOUGH_INFORMATION then UNAVAILABLE for each player,Five NOT_ENOUGH_INFORMATION then UNAVAILABLE for each player,PASS,Two trust state sequences
+trust_field_order,evidence_source through receipt_details,evidence_source through receipt_details,PASS,Six fields in canonical order
+trust_strip_count,2,2,PASS,Independent per-player contexts
+decision_summary,All fields equal,All fields equal,PASS,Dataclass payload equality
