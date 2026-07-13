@@ -18,6 +18,10 @@ from app.components.draft_day_v1 import (
     render_yellow_hold,
     stop_if_board_blocked,
 )
+from app.components.player_compare_accessibility import (
+    render_player_compare_accessibility_frame,
+    render_selected_player_context,
+)
 from app.components.ui_framework import page_header
 from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.display_only_ngs_context_service import (
@@ -205,7 +209,7 @@ def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
 
 
 def _render_visible_context_summary(compare_frame: pd.DataFrame) -> None:
-    st.subheader("Visible Context Summary")
+    st.markdown("## Visible Context Summary")
     st.caption(
         "Fast visible-context read first. Frozen baseline rank, Dynasty Rank, tiers, "
         "and model values are not changed."
@@ -782,6 +786,8 @@ def _player_key(value: object) -> str:
     return re.sub(r"[^a-z0-9]+", "", text)
 
 
+render_player_compare_accessibility_frame()
+
 bundle = load_frozen_board()
 compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
 
@@ -801,7 +807,6 @@ st.caption(
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 _render_player_compare_policy()
-_render_how_to_use_compare()
 
 players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
 query_players = [
@@ -809,6 +814,7 @@ query_players = [
     for player in st.query_params.get_all("player")
     if player in set(players)
 ]
+st.markdown("## Choose players")
 if len(players) < 2:
     st.warning("Not enough information: player pool has fewer than two players.")
 else:
@@ -816,14 +822,14 @@ else:
     player_a_default = query_players[0] if query_players else ""
     player_b_default = query_players[1] if len(query_players) > 1 else ""
     player_a = selector_cols[0].selectbox(
-        "Player A",
+        "Player A selector",
         players,
         index=_player_index(players, player_a_default),
         key="player_compare_a",
     )
     player_b_options = _non_duplicate_options(players, {player_a})
     player_b = selector_cols[1].selectbox(
-        "Player B",
+        "Player B selector",
         player_b_options,
         index=_player_index(player_b_options, player_b_default),
         key="player_compare_b",
@@ -844,6 +850,10 @@ else:
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
     )
+    render_selected_player_context(player_a, player_b, extra_players)
+    _render_visible_context_summary(compare)
+
+    st.markdown("## Evidence caveats and trust context")
     render_decision_trust_strips(
         [
             build_decision_trust_strip(
@@ -857,8 +867,9 @@ else:
         ],
         heading="Selected-player evidence trust",
     )
-    _render_visible_context_summary(compare)
+    _render_how_to_use_compare()
 
+    st.markdown("## Secondary comparison details")
     detail_tabs = st.tabs(
         [
             "Dynasty / NWR Context",

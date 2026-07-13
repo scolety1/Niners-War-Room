@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "e949c5647001f84dba29195c589e27d923722ea1",
+  "baseline_snapshot_sha256": "97b15a7ebdbe3f079c4743c398a3a9bd1061e0467482f4431f5a4d098fdcb9f3",
+  "post_implementation_snapshot_sha256": "97b15a7ebdbe3f079c4743c398a3a9bd1061e0467482f4431f5a4d098fdcb9f3",
+  "equivalent": true,
+  "comparison_record_count": 2,
+  "comparison_column_count": 84,
+  "compare_columns_pipe": "board_version|built_at|repo_checkpoint|final_board_rank|final_tier|position_rank|player|position|nfl_team|asset_type|availability_status|final_board_score_visible|score_basis_visible|source_order_visible|model_posture_used|candidate_status|posture_note|source_status|guardrail_status|risk_notes|needs_manual_review|display_only_context_fields|rookie_rank_display_only|rookie_tier_display_only|draft_action_display_only|warning_severity_display_only|nfl_draft_capital_display_only|depth_chart_role_display_only|veteran_candidate_value_display_only|veteran_candidate_rank_display_only|veteran_trust_status_display_only|age|cross_asset_candidate_rank|cross_asset_candidate_value|emergency_cross_asset_rank|emergency_cross_asset_value|emergency_overall_context_rank|candidate_value_band|confidence_band|uncertainty_reasons|candidate_vs_frozen_note|candidate_vs_dynasty_note|candidate_action_summary|adp|adp_source_status|available_pool_adp_rank|available_pool_adp_range|current_pick_value_1_03|current_pick_value_1_04|current_pick_value_1_09|current_pick_value_2_04|current_pick_value_2_08|current_pick_value|current_pick_value_reason|outcome_applicable_summary|horizon_2026_band|horizon_2027_band|horizon_next5y_band|manual_review_flag|source_note|candidate_key_caveat|source_group|draftable_status|include_default|exclude_reason|source_label_display_only|asset_type_display|player_id|pdf_overall_rank_or_number|pdf_position_rank|on_clock_decision_value|on_clock_decision_tier|on_clock_confidence|on_clock_reason|on_clock_warning|dynasty_asset_score|dynasty_asset_tier|dynasty_asset_confidence|why_draft|main_risk|human_review_flag|on_clock_decision_rank|dynasty_asset_rank|pool_adp_pick_equivalent",
+  "selected_player_labels": [
+    "Jeremiyah Love",
+    "Makai Lemon"
+  ],
+  "selected_player_ids": [
+    "",
+    ""
+  ],
+  "selection_order": [
+    "Jeremiyah Love",
+    "Makai Lemon"
+  ],
+  "selected_records": [
+    {
+      "player": "Jeremiyah Love",
+      "player_id": "",
+      "position": "RB",
+      "final_board_rank": "1",
+      "final_board_score_visible": "96.0",
+      "cross_asset_candidate_rank": "1",
+      "cross_asset_candidate_value": "62.86",
+      "dynasty_asset_rank": "3",
+      "dynasty_asset_score": "74.00",
+      "source_status": "pinned_rookie_pool; final_board_candidate_only",
+      "adp_source_status": "YELLOW_UNDOCUMENTED_ENDPOINT",
+      "outcome_applicable_summary": "Not enough information",
+      "candidate_status": "RESEARCH_CANDIDATE_ONLY",
+      "guardrail_status": "FINAL_BOARD_CANDIDATE_ONLY; NOT_LATEST_APPROVED; NOT_PRIVATE_VALUE_APPROVED; NOT_RANKINGS_APPROVED; NOT_MOCK_DRAFT_APPROVED; NOT_FINAL_ADVICE"
+    },
+    {
+      "player": "Makai Lemon",
+      "player_id": "",
+      "position": "WR",
+      "final_board_rank": "2",
+      "final_board_score_visible": "94.5",
+      "cross_asset_candidate_rank": "4",
+      "cross_asset_candidate_value": "54.66",
+      "dynasty_asset_rank": "5",
+      "dynasty_asset_score": "69.00",
+      "source_status": "pinned_rookie_pool; final_board_candidate_only",
+      "adp_source_status": "YELLOW_UNDOCUMENTED_ENDPOINT",
+      "outcome_applicable_summary": "Not enough information",
+      "candidate_status": "RESEARCH_CANDIDATE_ONLY",
+      "guardrail_status": "FINAL_BOARD_CANDIDATE_ONLY; NOT_LATEST_APPROVED; NOT_PRIVATE_VALUE_APPROVED; NOT_RANKINGS_APPROVED; NOT_MOCK_DRAFT_APPROVED; NOT_FINAL_ADVICE"
+    }
+  ],
+  "visible_context_summary": {
+    "visible_context_read": "Different positions / roster-fit decision",
+    "evidence_coverage": "Visible fields: board context 2/2; age 2/2; Outcome support 0/2",
+    "context_note": "Cross-position review; compare facts by position and roster need.",
+    "open_review_flag_count": 4
+  },
+  "trust_strip_count": 2,
+  "trust_field_order": [
+    "evidence_source",
+    "as_of_freshness",
+    "identity_join",
+    "missingness_completeness",
+    "material_caveats",
+    "receipt_details"
+  ],
+  "trust_state_sequences": [
+    [
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "UNAVAILABLE"
+    ],
+    [
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "NOT_ENOUGH_INFORMATION",
+      "UNAVAILABLE"
+    ]
+  ],
+  "proof_basis": "The canonical payload was generated twice with the existing frozen-board loader, player-population/default-order selection contract, Player Compare decision-summary service, and Decision Trust Strip service. Git diff confirms those services, source data, identity authority, comparison logic, rank/formula code, and trust-strip component/service were unchanged; only page presentation order/labels and a new presentation helper differ."
+}

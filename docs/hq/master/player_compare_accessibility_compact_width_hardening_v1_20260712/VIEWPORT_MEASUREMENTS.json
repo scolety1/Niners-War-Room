@@ -1,0 +1,595 @@
+{
+  "measured_at": "2026-07-13",
+  "route": "http://127.0.0.1:8513/player-compare",
+  "browser": "Codex in-app browser",
+  "results": [
+    {
+      "clippedText": [],
+      "comparisonOrder": {
+        "primaryBeforeTrust": true,
+        "selectedContextBeforePrimary": true,
+        "trustBeforeSecondary": true
+      },
+      "dataframes": {
+        "allPageContained": true,
+        "hasBoundedInternalScrolling": true,
+        "items": [
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 1762,
+            "pageContained": true,
+            "right": 298,
+            "width": 286
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 281,
+            "width": 252
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 281,
+            "width": 252
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 281,
+            "width": 252
+          },
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 2562,
+            "pageContained": true,
+            "right": 298,
+            "width": 286
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 281,
+            "width": 252
+          }
+        ],
+        "maxInternalScrollWidth": 2562,
+        "visibleCount": 6
+      },
+      "document": {
+        "clientWidth": 320,
+        "horizontalOverflow": false,
+        "scrollWidth": 320
+      },
+      "headingOrder": [
+        {
+          "level": 1,
+          "text": "Player Compare"
+        },
+        {
+          "level": 2,
+          "text": "Choose players"
+        },
+        {
+          "level": 2,
+          "text": "Selected-player context"
+        },
+        {
+          "level": 2,
+          "text": "Visible Context Summary"
+        },
+        {
+          "level": 2,
+          "text": "Evidence caveats and trust context"
+        },
+        {
+          "level": 3,
+          "text": "How to use this comparison"
+        },
+        {
+          "level": 2,
+          "text": "Secondary comparison details"
+        }
+      ],
+      "pageMain": {
+        "clientWidth": 310,
+        "horizontalOverflow": false,
+        "scrollWidth": 310
+      },
+      "primaryControlsVisible": true,
+      "selectedPlayerContextRendered": true,
+      "selectorRects": [
+        {
+          "height": 68,
+          "right": 298,
+          "width": 286,
+          "x": 12,
+          "y": 927
+        },
+        {
+          "height": 68,
+          "right": 298,
+          "width": 286,
+          "x": 12,
+          "y": 1007
+        }
+      ],
+      "selectorStacked": true,
+      "touchTargets": {
+        "disclosures": {
+          "count": 4,
+          "minHeight": 44,
+          "minWidth": 284,
+          "under44Count": 0
+        },
+        "selectors": {
+          "count": 6,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tableTools": {
+          "count": 24,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tabs": {
+          "count": 8,
+          "minHeight": 44,
+          "minWidth": 101,
+          "under44Count": 0
+        }
+      },
+      "viewport": {
+        "height": 700,
+        "width": 320
+      }
+    },
+    {
+      "clippedText": [],
+      "comparisonOrder": {
+        "primaryBeforeTrust": true,
+        "selectedContextBeforePrimary": true,
+        "trustBeforeSecondary": true
+      },
+      "dataframes": {
+        "allPageContained": true,
+        "hasBoundedInternalScrolling": true,
+        "items": [
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 1762,
+            "pageContained": true,
+            "right": 353,
+            "width": 341
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 336,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 336,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 336,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 2562,
+            "pageContained": true,
+            "right": 353,
+            "width": 341
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 336,
+            "width": 307
+          }
+        ],
+        "maxInternalScrollWidth": 2562,
+        "visibleCount": 6
+      },
+      "document": {
+        "clientWidth": 375,
+        "horizontalOverflow": false,
+        "scrollWidth": 375
+      },
+      "headingOrder": [
+        {
+          "level": 1,
+          "text": "Player Compare"
+        },
+        {
+          "level": 2,
+          "text": "Choose players"
+        },
+        {
+          "level": 2,
+          "text": "Selected-player context"
+        },
+        {
+          "level": 2,
+          "text": "Visible Context Summary"
+        },
+        {
+          "level": 2,
+          "text": "Evidence caveats and trust context"
+        },
+        {
+          "level": 3,
+          "text": "How to use this comparison"
+        },
+        {
+          "level": 2,
+          "text": "Secondary comparison details"
+        }
+      ],
+      "pageMain": {
+        "clientWidth": 365,
+        "horizontalOverflow": false,
+        "scrollWidth": 365
+      },
+      "primaryControlsVisible": true,
+      "selectedPlayerContextRendered": true,
+      "selectorRects": [
+        {
+          "height": 68,
+          "right": 353,
+          "width": 341,
+          "x": 12,
+          "y": 839
+        },
+        {
+          "height": 68,
+          "right": 353,
+          "width": 341,
+          "x": 12,
+          "y": 919
+        }
+      ],
+      "selectorStacked": true,
+      "touchTargets": {
+        "disclosures": {
+          "count": 4,
+          "minHeight": 44,
+          "minWidth": 339,
+          "under44Count": 0
+        },
+        "selectors": {
+          "count": 6,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tableTools": {
+          "count": 24,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tabs": {
+          "count": 8,
+          "minHeight": 44,
+          "minWidth": 101,
+          "under44Count": 0
+        }
+      },
+      "viewport": {
+        "height": 812,
+        "width": 375
+      }
+    },
+    {
+      "clippedText": [],
+      "comparisonOrder": {
+        "primaryBeforeTrust": true,
+        "selectedContextBeforePrimary": true,
+        "trustBeforeSecondary": true
+      },
+      "dataframes": {
+        "allPageContained": true,
+        "hasBoundedInternalScrolling": true,
+        "items": [
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 1762,
+            "pageContained": true,
+            "right": 742,
+            "width": 726
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 340,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 340,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 340,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 2562,
+            "pageContained": true,
+            "right": 742,
+            "width": 726
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 340,
+            "width": 307
+          }
+        ],
+        "maxInternalScrollWidth": 2562,
+        "visibleCount": 6
+      },
+      "document": {
+        "clientWidth": 768,
+        "horizontalOverflow": false,
+        "scrollWidth": 768
+      },
+      "headingOrder": [
+        {
+          "level": 1,
+          "text": "Player Compare"
+        },
+        {
+          "level": 2,
+          "text": "Choose players"
+        },
+        {
+          "level": 2,
+          "text": "Selected-player context"
+        },
+        {
+          "level": 2,
+          "text": "Visible Context Summary"
+        },
+        {
+          "level": 2,
+          "text": "Evidence caveats and trust context"
+        },
+        {
+          "level": 3,
+          "text": "How to use this comparison"
+        },
+        {
+          "level": 2,
+          "text": "Secondary comparison details"
+        }
+      ],
+      "pageMain": {
+        "clientWidth": 758,
+        "horizontalOverflow": false,
+        "scrollWidth": 758
+      },
+      "primaryControlsVisible": true,
+      "selectedPlayerContextRendered": true,
+      "selectorRects": [
+        {
+          "height": 68,
+          "right": 742,
+          "width": 726,
+          "x": 16,
+          "y": 680
+        },
+        {
+          "height": 68,
+          "right": 742,
+          "width": 726,
+          "x": 16,
+          "y": 760
+        }
+      ],
+      "selectorStacked": true,
+      "touchTargets": {
+        "disclosures": {
+          "count": 4,
+          "minHeight": 44,
+          "minWidth": 724,
+          "under44Count": 0
+        },
+        "selectors": {
+          "count": 6,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tableTools": {
+          "count": 24,
+          "minHeight": 44,
+          "minWidth": 44,
+          "under44Count": 0
+        },
+        "tabs": {
+          "count": 8,
+          "minHeight": 44,
+          "minWidth": 101,
+          "under44Count": 0
+        }
+      },
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      }
+    },
+    {
+      "clippedText": [],
+      "comparisonOrder": {
+        "primaryBeforeTrust": true,
+        "selectedContextBeforePrimary": true,
+        "trustBeforeSecondary": true
+      },
+      "dataframes": {
+        "allPageContained": true,
+        "hasBoundedInternalScrolling": true,
+        "items": [
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 1762,
+            "pageContained": true,
+            "right": 1350,
+            "width": 1270
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 404,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 404,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 404,
+            "width": 307
+          },
+          {
+            "internalScrollerCount": 4,
+            "maxInternalScrollWidth": 2562,
+            "pageContained": true,
+            "right": 1350,
+            "width": 1270
+          },
+          {
+            "internalScrollerCount": 2,
+            "maxInternalScrollWidth": 316,
+            "pageContained": true,
+            "right": 404,
+            "width": 307
+          }
+        ],
+        "maxInternalScrollWidth": 2562,
+        "visibleCount": 6
+      },
+      "document": {
+        "clientWidth": 1440,
+        "horizontalOverflow": false,
+        "scrollWidth": 1440
+      },
+      "headingOrder": [
+        {
+          "level": 1,
+          "text": "Player Compare"
+        },
+        {
+          "level": 2,
+          "text": "Choose players"
+        },
+        {
+          "level": 2,
+          "text": "Selected-player context"
+        },
+        {
+          "level": 2,
+          "text": "Visible Context Summary"
+        },
+        {
+          "level": 2,
+          "text": "Evidence caveats and trust context"
+        },
+        {
+          "level": 3,
+          "text": "How to use this comparison"
+        },
+        {
+          "level": 2,
+          "text": "Secondary comparison details"
+        }
+      ],
+      "pageMain": {
+        "clientWidth": 1430,
+        "horizontalOverflow": false,
+        "scrollWidth": 1430
+      },
+      "primaryControlsVisible": true,
+      "selectedPlayerContextRendered": true,
+      "selectorRects": [
+        {
+          "height": 68,
+          "right": 707,
+          "width": 627,
+          "x": 80,
+          "y": 616
+        },
+        {
+          "height": 68,
+          "right": 1350,
+          "width": 627,
+          "x": 723,
+          "y": 616
+        }
+      ],
+      "selectorStacked": false,
+      "touchTargets": {
+        "disclosures": {
+          "count": 4,
+          "minHeight": 38,
+          "minWidth": 1268,
+          "under44Count": 4
+        },
+        "selectors": {
+          "count": 6,
+          "minHeight": 16,
+          "minWidth": 16,
+          "under44Count": 6
+        },
+        "tableTools": {
+          "count": 24,
+          "minHeight": 22,
+          "minWidth": 22,
+          "under44Count": 24
+        },
+        "tabs": {
+          "count": 8,
+          "minHeight": 40,
+          "minWidth": 101,
+          "under44Count": 8
+        }
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    }
+  ]
+}

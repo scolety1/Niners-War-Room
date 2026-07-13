@@ -1,0 +1,161 @@
+{
+  "lane": "Player Compare Compact-Width and Accessibility Hardening V1",
+  "verdict": "GREEN_PLAYER_COMPARE_ACCESSIBILITY_COMPACT_V1_READY_FOR_HQ_REVIEW",
+  "verified_starting_hq": "e949c5647001f84dba29195c589e27d923722ea1",
+  "remote_advance": "none",
+  "worktree": "C:\\NWR\\Niners-War-Room-player-compare-accessibility-compact-v1-20260712",
+  "branch": "work/player-compare-accessibility-compact-v1-20260712",
+  "generated_at": "2026-07-13T00:00:00-06:00",
+  "manifest_self_excluded": true,
+  "required_files": [
+    "PLAYER_COMPARE_ACCESSIBILITY_COMPACT_V1_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "CONTROL_AND_REGION_REUSE_MAP.csv",
+    "COMPACT_WIDTH_LAYOUT_CONTRACT.md",
+    "ACCESSIBILITY_CONTROL_AUDIT.csv",
+    "PLAYER_COMPARE_SEMANTIC_EQUIVALENCE_REVIEW.md",
+    "STATE_AND_RENDER_FIXTURE_MATRIX.csv",
+    "KEYBOARD_AND_READING_ORDER_REVIEW.md",
+    "SCREEN_READER_STRUCTURE_REVIEW.md",
+    "DECISION_TRUST_STRIP_NO_CHANGE_PROOF.md",
+    "REPRESENTATIVE_RENDER_REVIEW.md",
+    "ROLLBACK_PLAN.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "file_count": 26,
+  "files": [
+    {
+      "path": "ACCESSIBILITY_CONTROL_AUDIT.csv",
+      "bytes": 3464,
+      "sha256": "84532f5b977bc5f904195a577296a06d859a44d7d253c2d9568947d9a4cb289c"
+    },
+    {
+      "path": "COMPACT_WIDTH_LAYOUT_CONTRACT.md",
+      "bytes": 1928,
+      "sha256": "b9350722a0184c9331f1d16876faaf3dcd788da640229306966548c1f977e99c"
+    },
+    {
+      "path": "CONTROL_AND_REGION_REUSE_MAP.csv",
+      "bytes": 6599,
+      "sha256": "0cfcb2051a7fab2a323c174508cecf4c95a2fddded353104c75756db7645b02a"
+    },
+    {
+      "path": "DECISION_TRUST_STRIP_NO_CHANGE_PROOF.md",
+      "bytes": 1536,
+      "sha256": "3cba5e7daca880e8be24f191af1751bd7ef8e85e0d5257c4bd90b54899fe2dac"
+    },
+    {
+      "path": "EXECUTIVE_VERDICT.md",
+      "bytes": 2625,
+      "sha256": "deb73c5b82eb868903bee0b116b3d2043cbb50e228430e379a45d6314fa38990"
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 5338,
+      "sha256": "5352d07b5faa5f514d57d5815e3e50e6199ce5582de35d65c6e18bbe365e61d2"
+    },
+    {
+      "path": "KEYBOARD_AND_READING_ORDER_REVIEW.md",
+      "bytes": 2325,
+      "sha256": "6a6cf5b57e5cbb5ca4fb96692acdf9513daf1d069f12be6f2fdeda562a17ee14"
+    },
+    {
+      "path": "PLAYER_COMPARE_ACCESSIBILITY_COMPACT_V1_REPORT.md",
+      "bytes": 6514,
+      "sha256": "ae31d73ab4d9420875411cd0d6c1e5e1b44df886152f58e830e4ccf156d4f232"
+    },
+    {
+      "path": "PLAYER_COMPARE_SEMANTIC_EQUIVALENCE_REVIEW.md",
+      "bytes": 2233,
+      "sha256": "2bfa6936438aa8a9979e703561b8638d7fea7f7b0267124b0a07d86b21082e41"
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "bytes": 1519,
+      "sha256": "750067fe02c2fd8521eeea0075b2ae8ecc0fa68b3dc695c0d891514a2a1c1381"
+    },
+    {
+      "path": "rendered_evidence/real_player_compare_1440x1000_two_players.jpg",
+      "bytes": 71186,
+      "sha256": "ca1a11dc3903b165a01e5bd157c6eed1fd36e0fec10f06fd72ffa5e899d8da35"
+    },
+    {
+      "path": "rendered_evidence/real_player_compare_320x700_two_players.jpg",
+      "bytes": 21931,
+      "sha256": "b22c60de6979a4e4d0cd2bda411962c31250fb25b14b5aed76f1b8785edb0b84"
+    },
+    {
+      "path": "rendered_evidence/real_player_compare_375x812_expanded_evidence.jpg",
+      "bytes": 52425,
+      "sha256": "4dba51d0d89779e190c993f16c989b7e7755e49053f2f2b07e285a1d37a0927f"
+    },
+    {
+      "path": "rendered_evidence/real_player_compare_375x812_two_players.jpg",
+      "bytes": 27773,
+      "sha256": "e02b5dcbb883c78050161f716409c34b45495178568d90d7630f9c08e7853b02"
+    },
+    {
+      "path": "rendered_evidence/real_player_compare_768x1024_two_players.jpg",
+      "bytes": 67051,
+      "sha256": "88bb3bb384fae70f7a678521d81856a3186d3510fab9baba30313ea44adc4b29"
+    },
+    {
+      "path": "rendered_evidence/synthetic_large_table_320x700.jpg",
+      "bytes": 40122,
+      "sha256": "6f616cb571a864592c36d8168a04a16df8f3dfa2d843ee18dc89b1ca97cca0e9"
+    },
+    {
+      "path": "rendered_evidence/synthetic_long_label_large_table_320x700.jpg",
+      "bytes": 30324,
+      "sha256": "ec2259909742cd40d22ff24d9e5348da16bc3632a0ddaa89926c9129c9f7cfd9"
+    },
+    {
+      "path": "rendered_evidence/synthetic_missing_gated_states_375x812.jpg",
+      "bytes": 49697,
+      "sha256": "75a9c4cc8fa299e85401cddc679f40116f33787003ffb336a679b4402734cc94"
+    },
+    {
+      "path": "rendered_evidence/synthetic_partial_selection_375x812.jpg",
+      "bytes": 37749,
+      "sha256": "53ed99fe4f96df79b06cf84d29ef4c5972921506b97f8df27d11c4d7a9421b0d"
+    },
+    {
+      "path": "REPRESENTATIVE_RENDER_REVIEW.md",
+      "bytes": 2098,
+      "sha256": "5c5571b2a92222311257c450ac4b666c71dfd4bd744189f25879fd6af6ae807d"
+    },
+    {
+      "path": "ROLLBACK_PLAN.md",
+      "bytes": 1208,
+      "sha256": "b0905d1690d58b7a3e77346a799afa59a071c7ae5a4a93e19a31ae86b11fb845"
+    },
+    {
+      "path": "SCREEN_READER_STRUCTURE_REVIEW.md",
+      "bytes": 1988,
+      "sha256": "c2423aec6e04dbf8ba27767ef0180f19bbe8aa54a79f524db674f8abb48988b9"
+    },
+    {
+      "path": "SEMANTIC_EQUIVALENCE_SNAPSHOT.json",
+      "bytes": 5209,
+      "sha256": "33db0986122de375773fec33cdd563200942a52f9b739e1710749e293d5f7e07"
+    },
+    {
+      "path": "STATE_AND_RENDER_FIXTURE_MATRIX.csv",
+      "bytes": 3221,
+      "sha256": "693044a30f42d96352803572e218d543bea2ffa7cef54dad5400ab4fe4e30b61"
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "bytes": 3442,
+      "sha256": "558d6c7827fa37a6331f540c4a2d13639a0043daf5dcee1bba36944cace8bd4d"
+    },
+    {
+      "path": "VIEWPORT_MEASUREMENTS.json",
+      "bytes": 14198,
+      "sha256": "b9f26c71a18ad69803dca13afaf9a339f3152b6d3e82c7d1e6df1adeb10e9409"
+    }
+  ]
+}
