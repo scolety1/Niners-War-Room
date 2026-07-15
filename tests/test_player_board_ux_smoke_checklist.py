@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/model_v4/PLAYER_BOARD_UX_SMOKE_CHECKLIST_20260605.md"
 QUEUE = ROOT / "docs/model_v4/MODEL_REFINEMENT_QUEUE_20260605.md"
-PLAYER_BOARD_PAGE = ROOT / "app/pages/05_rankings.py"
+PLAYER_BOARD_PAGE = ROOT / "app/pages/20_final_board_v1.py"
 
 
 def test_player_board_ux_smoke_checklist_covers_source_routing_sentinels() -> None:
@@ -72,19 +71,17 @@ def test_player_board_page_contains_ui_labels_referenced_by_checklist() -> None:
     page = PLAYER_BOARD_PAGE.read_text(encoding="utf-8")
 
     for term in [
-        "Player Board",
-        "Score Source File",
-        "Score Column",
-        "Score Lineage",
-        "Market Context (Read-Only)",
+        "Dynasty Rankings",
+        "Dynasty Review",
+        "Market Context",
+        "Data Review",
+        "Search player",
         "Position",
-        "Owner",
-        "Min Model Value",
-        "Show audit-watch warnings only",
-        "Inspect player",
-        "Advanced: raw formula fields",
-        "Audit Watchlist",
-        "TE No-Premium Review",
+        "Player type",
+        "Sort by",
+        "Advanced filters",
+        "Review needed",
+        "Visible board evidence trust",
     ]:
         assert term in page
 

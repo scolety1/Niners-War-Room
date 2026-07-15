@@ -4,17 +4,16 @@ DECISION_PAGE_PATHS = (
     Path("app/pages/02_team.py"),
     Path("app/pages/03_war_board.py"),
     Path("app/pages/04_trade_central.py"),
-    Path("app/pages/05_rankings.py"),
-    Path("app/pages/06_draft_board.py"),
     Path("app/pages/06_league_intel.py"),
 )
 MAIN_MODEL_PAGE_PATHS = (
     Path("app/pages/04_trade_central.py"),
-    Path("app/pages/05_rankings.py"),
-    Path("app/pages/06_draft_board.py"),
     Path("app/pages/07_model_lab.py"),
     Path("app/pages/08_june15_review.py"),
 )
+RANKINGS_ROUTE_WRAPPER = Path("app/pages/05_rankings.py")
+RANKINGS_IMPLEMENTATION = Path("app/pages/20_final_board_v1.py")
+LEGACY_DRAFT_PREP_IMPLEMENTATION = Path("app/pages/06_draft_board.py")
 REQUIRED_REVIEW_ONLY_BANNER = (
     "Review-only surface. This page does not make automatic trade, cut, keep, "
     "or draft recommendations."
@@ -28,6 +27,16 @@ def test_decision_pages_render_one_primary_trust_banner() -> None:
         assert page_text.count("render_page_trust_banner(") == 1, page_path
         assert "render_trust_status(" not in page_text, page_path
         assert "render_model_recalibration_banner(" not in page_text, page_path
+
+    wrapper_text = RANKINGS_ROUTE_WRAPPER.read_text(encoding="utf-8")
+    rankings_text = RANKINGS_IMPLEMENTATION.read_text(encoding="utf-8")
+    draft_prep_text = LEGACY_DRAFT_PREP_IMPLEMENTATION.read_text(encoding="utf-8")
+    assert "from app.main import main" in wrapper_text
+    assert "render_page_trust_banner(" not in wrapper_text
+    assert rankings_text.count("render_decision_trust_strips(") == 1
+    assert "render_page_trust_banner(" not in rankings_text
+    assert "Scouting Only / Legal Pool Pending" in draft_prep_text
+    assert "Draft Prep stays planning-only and does not mutate draft state." in draft_prep_text
 
 
 def test_page_trust_banner_keeps_review_only_details_collapsible() -> None:
@@ -51,6 +60,13 @@ def test_main_model_pages_show_required_review_only_banner() -> None:
             or "REVIEW_ONLY_SURFACE_BANNER" in page_text
             or REQUIRED_REVIEW_ONLY_BANNER in page_text
         ), page_path
+
+    rankings_text = RANKINGS_IMPLEMENTATION.read_text(encoding="utf-8")
+    draft_prep_text = LEGACY_DRAFT_PREP_IMPLEMENTATION.read_text(encoding="utf-8")
+    assert "render_decision_trust_strips(" in rankings_text
+    assert 'heading="Visible board evidence trust"' in rankings_text
+    assert "Scouting prep mode:" in draft_prep_text
+    assert "Final legal draftable pool is not complete" in draft_prep_text
 
 
 def test_war_board_keeps_filters_collapsed_for_small_windows() -> None:

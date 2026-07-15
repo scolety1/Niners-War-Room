@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "packet": "hermetic_ui_contract_baseline_reconciliation_v1_20260715",
+  "verdict": "GREEN_HERMETIC_UI_CONTRACT_BASELINE_RECONCILIATION_READY_FOR_HQ_REVIEW",
+  "starting_hq": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+  "canonical_remote_branch": "origin/work/hq-parallel-control",
+  "remote_advance": false,
+  "successor_branch": "work/ui-contract-baseline-reconciliation-v1-20260715",
+  "worktree": "C:\\NWR\\Niners-War-Room-ui-contract-baseline-reconciliation-v1-20260715",
+  "baseline_focused": {
+    "collected": 9,
+    "passed": 3,
+    "failed": 6,
+    "skipped": 0,
+    "xfailed": 0
+  },
+  "post_repair_focused": {
+    "collected": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 0
+  },
+  "classifications": {
+    "STALE_TEST_EXPECTATION": 4,
+    "FIXTURE_OR_HARNESS_DEFECT": 2,
+    "APPLICATION_REGRESSION": 0,
+    "CONTRACT_AMBIGUITY": 0,
+    "NOT_ENOUGH_INFORMATION": 0
+  },
+  "application_source_changed": false,
+  "security_automation_changed": false,
+  "protected_or_frozen_changed": false,
+  "security_patch_transplanted": false,
+  "push_performed": false,
+  "required_files": [
+    "UI_CONTRACT_BASELINE_RECONCILIATION_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "FOCUSED_FAILURE_REPRODUCTION.csv",
+    "CONTRACT_AUTHORITY_MATRIX.csv",
+    "PHASE_5_DISPLAY_LANGUAGE_REVIEW.md",
+    "PLAYER_BOARD_LABEL_CONTRACT_REVIEW.md",
+    "TRUST_BANNER_CONTRACT_REVIEW.md",
+    "APPLICATION_VS_TEST_REPAIR_DECISION.md",
+    "ACCESSIBILITY_AND_RESPONSIVE_REVIEW.md",
+    "SECURITY_AUTOMATION_NO_CHANGE_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ]
+}
