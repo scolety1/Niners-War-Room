@@ -1,0 +1,12 @@
+family,fixture_entity,behavior,rights_label,result
+"F01_CURRENT_VALUE_BOARD","fictional_player_alpha","sum","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F02_EVIDENCE_AND_FORMULA","fictional_player_beta","difference","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F03_DECISION_REVIEW_STACK","fictional_team_alpha","product","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F04_ROOKIE_PROSPECT_REVIEW","fictional_rookie_alpha","ratio","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F05_HISTORICAL_REPLAY","fictional_replay_alpha","equality","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F06_LICENSED_ROTOWIRE_RAW","fictional_provider_schema_alpha","maximum schema behavior only","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F07_PRIVATE_LEAGUE_PACK","fictional_league_alpha","minimum schema behavior only","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F08_EXTERNAL_PROSPECT_SOURCES","fictional_prospect_alpha","absolute gap schema behavior only","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F09_ABSOLUTE_LOCAL_WORKOUT","fictional_workout_alpha","sum","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F10_DRAFT_HISTORY_AND_TEMPLATE","fictional_draft_alpha","difference","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"
+"F11_CROSS_OUTPUT_AGGREGATES","fictional_aggregate_alpha","product","FICTIONAL_TEST_FIXTURE_NOT_REAL","PASS"

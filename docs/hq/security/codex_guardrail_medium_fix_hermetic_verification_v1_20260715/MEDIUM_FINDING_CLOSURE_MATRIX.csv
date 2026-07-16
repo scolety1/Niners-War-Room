@@ -1,0 +1,3 @@
+finding,severity,root_cause,closure,focused_controls,status
+"csf_357eb1a79de80c711e413696","medium","unstaged-only review followed by broad post-review staging","stage complete candidate before approval; review cached diff; bind write-tree; reject all later drift","01-08;13-18;20","FIXED"
+"csf_64252c7850e1f7649842646d","medium","mutable profile controlled command text and supervisor used expression evaluation","external frozen policy; fixed executable; structured args; confined directory; no expression evaluation","08-12;18-20","FIXED"

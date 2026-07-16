@@ -155,6 +155,17 @@ def test_development_lab_safe_upgrade_words_stay_manual_and_display_only() -> No
     ]
     text = "\n".join(path.read_text(encoding="utf-8").lower() for path in files)
 
+    # These exact sentences are negative safety disclosures, not positive model output.
+    # Require them before removing them from the positive-language scan so wording drift
+    # cannot silently turn this into a broad exception.
+    negative_disclosures = (
+        "not a model score. ngs public thresholds may exclude low-volume players.",
+        "score, recommendation, verdict, boost, hidden sort, or ranking effect.",
+    )
+    for disclosure in negative_disclosures:
+        assert disclosure in text
+        text = text.replace(disclosure, "")
+
     for blocked_phrase in (
         "recommendation",
         "recommendations",

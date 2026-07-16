@@ -5,38 +5,23 @@ param(
     [switch]$Push
 )
 
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
-$Repo = Split-Path -Parent $PSScriptRoot
+$Repo = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 Set-Location $Repo
+. (Join-Path $PSScriptRoot "codex-night-loop-security.ps1")
 
-$profilePath = "docs/codex/PROFILE.json"
-$profile = $null
-if (Test-Path $profilePath) {
-    $profile = Get-Content $profilePath -Raw | ConvertFrom-Json
-    if ($profile.maxChangedFiles) {
-        $MaxChangedFiles = [int]$profile.maxChangedFiles
-    }
-}
-
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$branchPrefix = if ($profile -and $profile.branchPrefix) { $profile.branchPrefix } else { "codex/run" }
-$branch = "$branchPrefix-$timestamp"
-$logDir = ".codex-logs\$timestamp"
-
-Write-Host "Starting Codex loop on branch $branch" -ForegroundColor Cyan
-
-if (!(Test-Path ".git\info\exclude")) {
-    New-Item -ItemType File -Path ".git\info\exclude" -Force | Out-Null
-}
-
-$excludeText = Get-Content ".git\info\exclude" -Raw
-if ($excludeText -notmatch "\.codex-logs/") {
-    Add-Content ".git\info\exclude" "`n.codex-logs/"
-}
+$script:TrustedRoot = $null
+$script:TrustedArtifacts = @()
+$script:FrozenPolicy = $null
+$script:PolicyPath = $null
+$script:PolicySha256 = $null
+$script:TrustedGuardrailPath = $null
+$script:TrustedHandles = @()
+$scriptExitCode = 0
 
 function Get-FirstUncheckedTask {
-    foreach ($line in Get-Content "docs/codex/TASK_QUEUE.md") {
+    foreach ($line in Get-Content -LiteralPath (Join-Path $Repo "docs\codex\TASK_QUEUE.md")) {
         if ($line -match "^\s*-\s+\[ \]\s+(.+)$") {
             return $Matches[1].Trim()
         }
@@ -44,50 +29,37 @@ function Get-FirstUncheckedTask {
     return $null
 }
 
-function Mark-FirstUncheckedTaskComplete {
-    $path = "docs/codex/TASK_QUEUE.md"
-    $updated = $false
-    $newLines = foreach ($line in Get-Content $path) {
-        if (-not $updated -and $line -match "^(\s*-\s+)\[ \](\s+.+)$") {
-            $updated = $true
-            "$($Matches[1])[x]$($Matches[2])"
-        } else {
-            $line
-        }
-    }
-    Set-Content $path $newLines
-}
-
-function Append-Report {
-    param([string]$Task, [string[]]$FilesChanged, [string]$BuildResult, [string]$Risk)
-
-    if (!(Test-Path "docs/codex/NIGHTLY_REPORT.md")) {
-        "# Codex Nightly Report`n" | Set-Content "docs/codex/NIGHTLY_REPORT.md"
-    }
-
-    $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $files = if ($FilesChanged.Count -gt 0) { ($FilesChanged | ForEach-Object { "- $_" }) -join "`n" } else { "- None" }
-
-    Add-Content "docs/codex/NIGHTLY_REPORT.md" @"
-
-## $date
-
-- Task attempted: $Task
-- Build result: $BuildResult
-- Files changed:
-$files
-- Risks or follow-up needed: $Risk
-"@
+function Assert-TrustedEnvelope {
+    Assert-TrustedArtifactSet -Artifacts $script:TrustedArtifacts
+    Assert-FileSha256 -Path $script:PolicyPath -ExpectedSha256 $script:PolicySha256
 }
 
 function Invoke-Guardrails {
     param([string]$Task, [string]$Stage)
+
+    Assert-TrustedEnvelope
     $previousTask = $env:CODEX_SELECTED_TASK
+    $previousErrorActionPreference = $ErrorActionPreference
     $env:CODEX_SELECTED_TASK = $Task
-    powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\codex-guardrails.ps1" -Stage $Stage -MaxChangedFiles $MaxChangedFiles
-    $passed = $LASTEXITCODE -eq 0
-    $env:CODEX_SELECTED_TASK = $previousTask
-    return $passed
+    try {
+        $ErrorActionPreference = "Continue"
+        & ([string]$script:FrozenPolicy.build.executable) `
+            -NoProfile `
+            -NonInteractive `
+            -ExecutionPolicy Bypass `
+            -File $script:TrustedGuardrailPath `
+            -RepoRoot $Repo `
+            -PolicySnapshotPath $script:PolicyPath `
+            -ExpectedPolicySha256 $script:PolicySha256 `
+            -Stage $Stage `
+            -MaxChangedFiles ([int]$script:FrozenPolicy.maxChangedFiles)
+        $exitCode = $LASTEXITCODE
+        return $exitCode -eq 0
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+        $env:CODEX_SELECTED_TASK = $previousTask
+    }
 }
 
 function Invoke-CodexExec {
@@ -95,74 +67,247 @@ function Invoke-CodexExec {
 
     for ($attempt = 1; $attempt -le $MaxCodexAttempts; $attempt++) {
         Write-Host "Codex attempt $attempt of $MaxCodexAttempts" -ForegroundColor DarkCyan
-        $attemptLog = if ($attempt -eq 1) { $LogPath } else { $LogPath -replace "\.log$", "-attempt-$attempt.log" }
-        $Prompt | & codex exec --full-auto - 2>&1 | Tee-Object -FilePath $attemptLog
-        $exitCode = $LASTEXITCODE
+        $attemptLog = if ($attempt -eq 1) {
+            $LogPath
+        }
+        else {
+            $LogPath -replace "\.log$", "-attempt-$attempt.log"
+        }
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            $Prompt | & codex exec --full-auto - 2>&1 | Tee-Object -FilePath $attemptLog
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        Assert-TrustedEnvelope
         if ($exitCode -eq 0) {
             return 0
         }
-
-        $diffText = (git diff) -join "`n"
-        if (![string]::IsNullOrWhiteSpace($diffText)) {
-            Write-Host "Codex exited nonzero after making changes; continuing to build/guardrail checks." -ForegroundColor Yellow
+        if (Test-RepositoryHasChanges -RepoRoot $Repo) {
+            Write-Host "Codex exited nonzero after making changes; continuing to candidate checks." -ForegroundColor Yellow
             return $exitCode
         }
 
         $sleepSeconds = [Math]::Min(300, 30 * $attempt)
-        Write-Host "Codex failed with no repo changes. Waiting $sleepSeconds seconds before retry." -ForegroundColor Yellow
+        Write-Host "Codex failed with no repository changes. Waiting $sleepSeconds seconds before retry." -ForegroundColor Yellow
         Start-Sleep -Seconds $sleepSeconds
     }
-
     return 1
 }
 
 function Invoke-ExternalBuild {
-    if (!(Test-Path $profilePath)) {
+    if (-not [bool]$script:FrozenPolicy.build.enabled) {
         return $true
     }
 
-    $profile = Get-Content $profilePath -Raw | ConvertFrom-Json
-    if ([string]::IsNullOrWhiteSpace($profile.buildCommand)) {
-        return $true
+    Assert-TrustedEnvelope
+    $exitCode = Invoke-ApprovedExecutable `
+        -Executable ([string]$script:FrozenPolicy.build.executable) `
+        -Arguments @($script:FrozenPolicy.build.arguments | ForEach-Object { [string]$_ }) `
+        -WorkingDirectory ([string]$script:FrozenPolicy.build.workingDirectory) `
+        -ApprovedRoot $Repo
+    return $exitCode -eq 0
+}
+
+function Initialize-TrustedEnvelope {
+    param(
+        [Parameter(Mandatory = $true)]$Profile,
+        [Parameter(Mandatory = $true)][string]$ExpectedParent,
+        [Parameter(Mandatory = $true)][string]$ExpectedBranch,
+        [Parameter(Mandatory = $true)][string]$ExpectedRemote,
+        [Parameter(Mandatory = $true)][string]$ExpectedRemoteUrl
+    )
+
+    $approvedLegacyBuildCommand = "powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\codex-static-check.ps1"
+    $buildEnabled = -not [string]::IsNullOrWhiteSpace([string]$Profile.buildCommand)
+    if ($buildEnabled -and
+        -not ([string]$Profile.buildCommand).Equals($approvedLegacyBuildCommand, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "PROFILE.json buildCommand is not the fixed approved static-check command. Repository command text will not be interpreted."
     }
 
-    Push-Location $profile.buildDirectory
-    Invoke-Expression $profile.buildCommand
-    $ok = $LASTEXITCODE -eq 0
-    Pop-Location
-    return $ok
+    $buildWorkingDirectory = Resolve-ApprovedWorkingDirectory `
+        -ApprovedRoot $Repo `
+        -RequestedPath ([string]$Profile.buildDirectory)
+    $powershellCommand = Get-Command powershell.exe -CommandType Application -ErrorAction Stop
+    $powershellExecutable = [IO.Path]::GetFullPath($powershellCommand.Source)
+
+    $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    $script:TrustedRoot = [IO.Path]::GetFullPath((Join-Path $tempRoot (
+        "nwr-codex-night-loop-trusted-" + [guid]::NewGuid().ToString("N")
+    )))
+    New-Item -ItemType Directory -Path $script:TrustedRoot -Force | Out-Null
+
+    $trustedHelper = Join-Path $script:TrustedRoot "codex-night-loop-security.ps1"
+    $script:TrustedGuardrailPath = Join-Path $script:TrustedRoot "codex-guardrails.ps1"
+    $trustedBuild = Join-Path $script:TrustedRoot "codex-static-check.ps1"
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "codex-night-loop-security.ps1") -Destination $trustedHelper
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "codex-guardrails.ps1") -Destination $script:TrustedGuardrailPath
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "codex-static-check.ps1") -Destination $trustedBuild
+
+    $protectedPaths = @(
+        "docs/codex/PROFILE.json",
+        "scripts/codex-night-loop.ps1",
+        "scripts/codex-guardrails.ps1",
+        "scripts/codex-night-loop-security.ps1",
+        "scripts/codex-static-check.ps1",
+        "scripts/bootstrap-hermetic-test-pack.ps1",
+        "scripts/verify-repository.ps1",
+        "scripts/tests/test-codex-night-loop-security.ps1",
+        "scripts/tests/test-hermetic-bootstrap.ps1",
+        "scripts/pytest_no_skips_plugin.py",
+        "tests/hermetic_localdata_manifest.json"
+    )
+    $buildArguments = @(
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy", "Bypass",
+        "-File", $trustedBuild,
+        "-RepoRoot", $Repo
+    )
+
+    $policy = [ordered]@{
+        schemaVersion = 1
+        maxChangedFiles = $MaxChangedFiles
+        allowedPaths = @($Profile.allowedPaths)
+        blockedPaths = @($Profile.blockedPaths)
+        blockedTerms = @($Profile.blockedTerms)
+        protectedPaths = $protectedPaths
+        build = [ordered]@{
+            enabled = $buildEnabled
+            executable = $powershellExecutable
+            arguments = $buildArguments
+            workingDirectory = $buildWorkingDirectory
+        }
+        git = [ordered]@{
+            expectedRepoRoot = $Repo
+            expectedParent = $ExpectedParent
+            expectedBranch = $ExpectedBranch
+            expectedRemote = $ExpectedRemote
+            expectedRemoteUrl = $ExpectedRemoteUrl
+            commitAllowed = $false
+            pushAllowed = $false
+        }
+    }
+
+    if ($policy.allowedPaths.Count -eq 0) {
+        throw "Frozen policy requires at least one allowed path."
+    }
+
+    $script:PolicyPath = Join-Path $script:TrustedRoot "frozen-policy.json"
+    $policy | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:PolicyPath -Encoding UTF8
+    $script:PolicySha256 = Get-FileSha256 -Path $script:PolicyPath
+    $script:FrozenPolicy = Get-Content -LiteralPath $script:PolicyPath -Raw | ConvertFrom-Json
+
+    $trustedArtifacts = @(
+        [pscustomobject]@{ Name = "policy"; Path = $script:PolicyPath; Sha256 = $script:PolicySha256 },
+        [pscustomobject]@{ Name = "guardrail"; Path = $script:TrustedGuardrailPath; Sha256 = Get-FileSha256 -Path $script:TrustedGuardrailPath },
+        [pscustomobject]@{ Name = "security-helper"; Path = $trustedHelper; Sha256 = Get-FileSha256 -Path $trustedHelper },
+        [pscustomobject]@{ Name = "build-script"; Path = $trustedBuild; Sha256 = Get-FileSha256 -Path $trustedBuild }
+    )
+    foreach ($configName in @("config", "config.worktree")) {
+        $configOutput = @(Invoke-GitChecked -RepoRoot $Repo -Arguments @("rev-parse", "--git-path", $configName))
+        if ($configOutput.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace([string]$configOutput[0])) {
+            $configPath = [string]$configOutput[0]
+            if (-not [IO.Path]::IsPathRooted($configPath)) {
+                $configPath = [IO.Path]::GetFullPath((Join-Path $Repo $configPath))
+            }
+            if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+                $trustedArtifacts += [pscustomobject]@{
+                    Name = "git-$configName"
+                    Path = $configPath
+                    Sha256 = Get-FileSha256 -Path $configPath
+                }
+            }
+        }
+    }
+
+    $script:TrustedArtifacts = $trustedArtifacts
+    Assert-TrustedEnvelope
+    $script:TrustedHandles = @(Lock-TrustedArtifactSet -Artifacts $script:TrustedArtifacts)
+    Assert-TrustedEnvelope
 }
 
-$status = (git status --porcelain) -join "`n"
-if (![string]::IsNullOrWhiteSpace($status)) {
-    Write-Host "Repo is not clean. Commit, restore, or stash changes before running the loop." -ForegroundColor Red
-    git status
-    exit 1
+function Remove-TrustedEnvelope {
+    Close-TrustedArtifactSet -Handles $script:TrustedHandles
+    $script:TrustedHandles = @()
+    if ([string]::IsNullOrWhiteSpace($script:TrustedRoot) -or
+        -not (Test-Path -LiteralPath $script:TrustedRoot)) {
+        return
+    }
+
+    $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    $trustedFull = [IO.Path]::GetFullPath($script:TrustedRoot)
+    $safePrefix = "nwr-codex-night-loop-trusted-"
+    $underTemp = $trustedFull.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase)
+    $safeName = [IO.Path]::GetFileName($trustedFull).StartsWith($safePrefix, [StringComparison]::Ordinal)
+    if (-not $underTemp -or -not $safeName) {
+        throw "Refusing to clean up an unverified trusted-envelope path: $trustedFull"
+    }
+    Remove-Item -LiteralPath $trustedFull -Recurse -Force
 }
 
-git checkout main
-if ($LASTEXITCODE -ne 0) { exit 1 }
+try {
+    if ($Push) {
+        throw "Unattended push is disabled. Use the human re-enable checklist after independent review."
+    }
+    if ($Rounds -ne 1) {
+        throw "Approval-only dry-run mode supports exactly one round per invocation."
+    }
+    if ($MaxChangedFiles -le 0 -or $MaxCodexAttempts -le 0) {
+        throw "MaxChangedFiles and MaxCodexAttempts must be positive."
+    }
+    if (Test-RepositoryHasChanges -RepoRoot $Repo) {
+        throw "Repo is not clean. Commit, restore, or stash changes before running the loop."
+    }
 
-$upstream = git rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>$null
-if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($upstream)) {
-    git pull --ff-only
-    if ($LASTEXITCODE -ne 0) { exit 1 }
-}
+    $profilePath = Join-Path $Repo "docs\codex\PROFILE.json"
+    if (-not (Test-Path -LiteralPath $profilePath -PathType Leaf)) {
+        throw "Required Codex profile is missing: $profilePath"
+    }
+    $profile = Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
+    if ($profile.maxChangedFiles) {
+        $MaxChangedFiles = [int]$profile.maxChangedFiles
+    }
 
-git checkout -b $branch
-if ($LASTEXITCODE -ne 0) { exit 1 }
+    $branch = Get-CurrentBranchName -RepoRoot $Repo
+    $parent = Get-CurrentCommit -RepoRoot $Repo
+    $remoteName = "origin"
+    $remoteUrl = @((Invoke-GitChecked -RepoRoot $Repo -Arguments @("remote", "get-url", $remoteName)))[0].ToString().Trim()
 
-mkdir $logDir -Force | Out-Null
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $logDir = ".codex-logs\$timestamp"
+    $excludePath = @((Invoke-GitChecked -RepoRoot $Repo -Arguments @(
+        "rev-parse", "--git-path", "info/exclude"
+    )))[0].ToString().Trim()
+    $excludeParent = Split-Path -Parent $excludePath
+    if (-not (Test-Path -LiteralPath $excludeParent -PathType Container)) {
+        New-Item -ItemType Directory -Path $excludeParent -Force | Out-Null
+    }
+    if (-not (Test-Path -LiteralPath $excludePath -PathType Leaf)) {
+        New-Item -ItemType File -Path $excludePath -Force | Out-Null
+    }
+    $excludeText = Get-Content -LiteralPath $excludePath -Raw
+    if ($excludeText -notmatch "(?m)^\.codex-logs/$") {
+        Add-Content -LiteralPath $excludePath -Value ".codex-logs/"
+    }
 
-for ($i = 1; $i -le $Rounds; $i++) {
-    Write-Host "`n===== ROUND $i of $Rounds =====" -ForegroundColor Cyan
+    Initialize-TrustedEnvelope `
+        -Profile $profile `
+        -ExpectedParent $parent `
+        -ExpectedBranch $branch `
+        -ExpectedRemote $remoteName `
+        -ExpectedRemoteUrl $remoteUrl
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
+    Write-Host "Starting Codex approval-only dry run on branch $branch" -ForegroundColor Cyan
     $task = Get-FirstUncheckedTask
     if ([string]::IsNullOrWhiteSpace($task)) {
-        Append-Report -Task "No unchecked tasks" -FilesChanged @() -BuildResult "Skipped" -Risk "No unchecked tasks were found."
-        break
+        throw "No unchecked task was found."
     }
 
-    Write-Host "Selected task: $task" -ForegroundColor Cyan
     $prompt = @"
 Read docs/codex/RUN_POLICY.md and docs/codex/TASK_QUEUE.md.
 
@@ -173,64 +318,83 @@ Rules:
 1. Inspect relevant files before editing.
 2. Make a small reviewable change.
 3. Do not run build commands.
-4. Do not mark tasks complete.
+4. Do not stage, commit, push, or mark tasks complete.
 5. Do not edit NIGHTLY_REPORT.md.
 6. Obey the project guardrails.
 "@
-
-    $log1 = "$logDir\round-$i-implement.log"
+    $log1 = "$logDir\round-1-implement.log"
     $exit = Invoke-CodexExec -Prompt $prompt -LogPath $log1
-    if ($exit -ne 0 -and [string]::IsNullOrWhiteSpace(((git diff) -join "`n"))) {
-        Append-Report -Task $task -FilesChanged @() -BuildResult "Failed" -Risk "Codex command failed and made no changes."
-        break
+    if ($exit -ne 0 -and -not (Test-RepositoryHasChanges -RepoRoot $Repo)) {
+        throw "Codex command failed and made no changes."
+    }
+    if (-not (Test-RepositoryHasChanges -RepoRoot $Repo)) {
+        throw "Codex made no changes."
     }
 
-    if ([string]::IsNullOrWhiteSpace(((git diff) -join "`n"))) {
-        Append-Report -Task $task -FilesChanged @() -BuildResult "Skipped" -Risk "Codex made no changes."
-        break
+    Stage-CandidateIndex -RepoRoot $Repo
+    if (-not (Invoke-Guardrails -Task $task -Stage "implementation-candidate")) {
+        throw "Implementation candidate guardrail failed."
     }
-
-    if (-not (Invoke-Guardrails -Task $task -Stage "implementation")) { break }
     if (-not (Invoke-ExternalBuild)) {
-        $filesChanged = git diff --name-only
-        Append-Report -Task $task -FilesChanged $filesChanged -BuildResult "Failed" -Risk "External build failed."
-        break
+        throw "External build failed."
     }
 
     $reviewPrompt = @"
-Review the current git diff for only this selected task:
+Review the final candidate in git diff --cached for only this selected task:
 $task
 
 Rules:
-1. Inspect the diff and relevant changed files.
+1. Inspect the staged diff and relevant changed files.
 2. Fix only clear issues caused by this task.
 3. Do not broaden scope.
 4. Do not run build commands.
-5. Do not mark tasks complete.
+5. Do not stage, commit, push, or mark tasks complete.
 6. Do not edit NIGHTLY_REPORT.md.
 "@
-    $log2 = "$logDir\round-$i-review.log"
-    $reviewExit = Invoke-CodexExec -Prompt $reviewPrompt -LogPath $log2
-    if ($reviewExit -ne 0 -and [string]::IsNullOrWhiteSpace(((git diff) -join "`n"))) {
-        Append-Report -Task $task -FilesChanged @() -BuildResult "Failed" -Risk "Codex review command failed and left no changes."
-        break
+    $log2 = "$logDir\round-1-review.log"
+    [void](Invoke-CodexExec -Prompt $reviewPrompt -LogPath $log2)
+    if (-not (Test-RepositoryHasChanges -RepoRoot $Repo)) {
+        throw "Codex review removed the complete candidate."
     }
 
-    if (-not (Invoke-Guardrails -Task $task -Stage "review")) { break }
+    Stage-CandidateIndex -RepoRoot $Repo
+    if (-not (Invoke-Guardrails -Task $task -Stage "review-candidate")) {
+        throw "Review candidate guardrail failed."
+    }
     if (-not (Invoke-ExternalBuild)) {
-        $filesChanged = git diff --name-only
-        Append-Report -Task $task -FilesChanged $filesChanged -BuildResult "Failed" -Risk "Final external build failed."
-        break
+        throw "Final external build failed."
     }
 
-    $filesChangedBeforeDocs = git diff --name-only
-    Mark-FirstUncheckedTaskComplete
-    Append-Report -Task $task -FilesChanged $filesChangedBeforeDocs -BuildResult "Passed" -Risk "Low. External build passed."
-    git add .
-    git commit -m "Codex round $i"
-    if ($Push) { git push -u origin $branch }
+    Stage-CandidateIndex -RepoRoot $Repo
+    if (-not (Invoke-Guardrails -Task $task -Stage "final-index-approval")) {
+        throw "Final-index guardrail failed."
+    }
+    $approval = New-FinalIndexApproval `
+        -RepoRoot $Repo `
+        -ExpectedRepoRoot ([string]$script:FrozenPolicy.git.expectedRepoRoot) `
+        -ExpectedParent ([string]$script:FrozenPolicy.git.expectedParent) `
+        -ExpectedBranch ([string]$script:FrozenPolicy.git.expectedBranch) `
+        -ExpectedRemote ([string]$script:FrozenPolicy.git.expectedRemote) `
+        -ExpectedRemoteUrl ([string]$script:FrozenPolicy.git.expectedRemoteUrl) `
+        -CommitAllowed ([bool]$script:FrozenPolicy.git.commitAllowed) `
+        -PushAllowed ([bool]$script:FrozenPolicy.git.pushAllowed) `
+        -TrustedArtifacts $script:TrustedArtifacts
+
+    Write-Host "APPROVED_DRY_RUN tree=$($approval.ApprovedTree) parent=$($approval.ExpectedParent) branch=$($approval.ExpectedBranch) remote=$($approval.ExpectedRemote)" -ForegroundColor Green
+    Write-Host "Unattended commit and push remain disabled; the final index is left staged for human review." -ForegroundColor Yellow
+}
+catch {
+    Write-Host "Codex loop failed closed: $($_.Exception.Message)" -ForegroundColor Red
+    $scriptExitCode = 1
+}
+finally {
+    try {
+        Remove-TrustedEnvelope
+    }
+    catch {
+        Write-Host "Trusted-envelope cleanup failed: $($_.Exception.Message)" -ForegroundColor Red
+        $scriptExitCode = 1
+    }
 }
 
-Write-Host "`nCodex loop finished." -ForegroundColor Cyan
-Write-Host "Branch: $branch"
-Write-Host "Raw logs: $logDir"
+exit $scriptExitCode

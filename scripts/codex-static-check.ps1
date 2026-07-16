@@ -1,58 +1,18 @@
-$ErrorActionPreference = "Stop"
-
-$repoRoot = Split-Path -Parent $PSScriptRoot
-Set-Location $repoRoot
-
-$pythonCandidates = @()
-if ($env:PYTHON) {
-    $pythonCandidates += $env:PYTHON
-}
-$pythonCandidates += @(
-    "C:\Users\codex-agent\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe",
-    "python",
-    "py"
+[CmdletBinding()]
+param(
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot)
 )
 
-$python = $null
-foreach ($candidate in $pythonCandidates) {
-    try {
-        if ($candidate -eq "py") {
-            & $candidate -3 --version *> $null
-        } else {
-            & $candidate --version *> $null
-        }
-        $python = $candidate
-        break
-    } catch {
-        continue
-    }
+$ErrorActionPreference = "Stop"
+$repo = [IO.Path]::GetFullPath($RepoRoot)
+$gate = Join-Path $repo "scripts\verify-repository.ps1"
+if (-not (Test-Path -LiteralPath $gate -PathType Leaf)) {
+    throw "Hermetic repository verification gate is missing: $gate"
 }
 
-if (-not $python) {
-    throw "No Python runtime found. Set PYTHON or install Python 3.12+."
-}
+& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+    -File $gate -Tier Hermetic -RepoRoot $repo
+$code = $LASTEXITCODE
+if ($code -ne 0) { exit $code }
 
-$tempDb = Join-Path $env:TEMP ("niners-war-room-check-" + [guid]::NewGuid().ToString() + ".sqlite3")
-try {
-    if ($python -eq "py") {
-        & $python -3 scripts/init_db.py --database $tempDb
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & $python -3 -m pytest
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & $python -3 -m ruff check .
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    } else {
-        & $python scripts/init_db.py --database $tempDb
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & $python -m pytest
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & $python -m ruff check .
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    }
-} finally {
-    if (Test-Path $tempDb) {
-        Remove-Item -LiteralPath $tempDb -Force
-    }
-}
-
-Write-Host "Niners War Room static check passed."
+Write-Host "Niners War Room static check passed through the Hermetic tier."

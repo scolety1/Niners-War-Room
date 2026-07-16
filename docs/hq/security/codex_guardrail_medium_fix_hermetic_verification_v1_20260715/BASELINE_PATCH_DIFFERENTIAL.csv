@@ -1,0 +1,10 @@
+surface,current_hq,candidate,classification
+"staged/untracked exploit PoC","guardrail exit 0; prohibited staged/untracked paths omitted before broad final staging","both prohibited forms reject after full staging","PATCH_RESOLVED_FAILURE"
+"mutable profile command PoC","repository command string reached expression-evaluation sink; inert reproduction returned 0","string never interpreted; fixed executable and literal arguments","PATCH_RESOLVED_FAILURE"
+"Hermetic-like Python selection","2229 passed; 1 tracked false-positive language failure","2241 passed; zero failed/skipped/xfailed/xpassed","PATCH_RESOLVED_FAILURE plus HERMETIC_FIXTURE_CLOSED"
+"safe missing-evidence families","no deterministic fictional behavior fixture","11 fictional behavior cases pass","HERMETIC_FIXTURE_CLOSED"
+"private/licensed receipt tier","implicit failures or skips across local evidence","89 files explicitly blocked before collection when pack absent","LOCAL_DATA_EXPLICITLY_BLOCKED"
+"canonical UI contract","9 passed","9 passed","TRACKED_UI_CONTRACT_BASELINE"
+"Ruff app/src/tests/scripts","81 findings","81 findings","IDENTICAL_BASELINE_FAILURE; zero new"
+"Ruff repository-wide","4443 findings","4443 findings","IDENTICAL_BASELINE_FAILURE; zero new"
+"application source","unchanged","unchanged","no patch-introduced application change"

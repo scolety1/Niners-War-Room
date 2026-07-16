@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "packId": "nwr-hermetic-local-export-behavior-fixtures",
+  "version": "1.0.0",
+  "sourceManifest": {
+    "path": "tests/fixtures/hermetic/local_export_pack_v1/fixture-manifest.json",
+    "sha256": "e7fb276b6221347b7092fe0f93309e2ad6ef0665fda9ef2bb5e7c1fe438cf387",
+    "bytes": 412
+  },
+  "sourcePayload": {
+    "path": "tests/fixtures/hermetic/local_export_pack_v1/payload/families.csv",
+    "sha256": "c09a93b3ad64d0a2b00a0976395bf8e0dd4534c6796aad89a8289b8aa3581542",
+    "bytes": 1140
+  },
+  "materializedManifestSha256": "3cc8da45be5ddc2ce2b2c3a719e3ee0ec7bc365e607a97bb3667a9a090a3f842",
+  "materializedReceiptSha256": "6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f",
+  "deterministicIndependentRuns": true,
+  "networkRequired": false,
+  "rights": "FICTIONAL_RIGHTS_CLEAR_TEST_DATA_ONLY"
+}

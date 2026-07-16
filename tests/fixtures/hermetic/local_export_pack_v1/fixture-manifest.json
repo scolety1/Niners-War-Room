@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "packId": "nwr-hermetic-local-export-behavior-fixtures",
+  "version": "1.0.0",
+  "fixtureClass": "FICTIONAL_TEST_FIXTURE_NOT_REAL",
+  "rights": "FICTIONAL_RIGHTS_CLEAR_TEST_DATA_ONLY",
+  "networkRequired": false,
+  "files": [
+    {
+      "path": "payload/families.csv",
+      "sha256": "c09a93b3ad64d0a2b00a0976395bf8e0dd4534c6796aad89a8289b8aa3581542",
+      "bytes": 1140
+    }
+  ]
+}

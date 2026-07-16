@@ -1,0 +1,6 @@
+source,source_identity,current_hq_target,decision
+"canonical HQ parent","6d461f8d8c3261869136289f87f62ef61443a17b","implementation parent","adopted exactly"
+"stale vulnerable parent","e7c1aa evidence; affected blobs byte-compatible","current-HQ automation files","compatibility evidence only"
+"stale candidate","1dd0e28754d25f1ce5d2effcc53ca0d31bb41a6b","none","not cherry-picked"
+"scan evidence","85b6913f-ffcf-437e-bd3a-3597d75eb8c5","two medium findings","read-only root-cause evidence"
+"verification architecture","Option C hybrid","Hermetic plus LocalData tiers","implemented with current-HQ bindings"

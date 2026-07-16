@@ -1,0 +1,2 @@
+tests/fixtures/hermetic/** -text
+tests/hermetic_localdata_manifest.json -text

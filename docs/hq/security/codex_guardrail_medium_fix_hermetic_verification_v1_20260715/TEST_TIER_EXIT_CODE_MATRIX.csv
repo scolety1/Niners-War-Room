@@ -1,0 +1,7 @@
+exit,tier,meaning,observed
+0,"Hermetic or LocalData","all required checks in selected tier passed","Hermetic: observed"
+1,"any","test lint syntax or focused-security failure","negative-control only"
+2,"any","bootstrap manifest provenance schema hash or LocalData contract failure","malformed/version/root controls observed"
+3,"differential","patch-introduced failure or new lint finding","not observed"
+4,"LocalData or Developer","BLOCKED_MISSING_LOCAL_TEST_PACK","observed; expected sole caveat"
+5,"any","repository identity tree branch remote or parent binding failure","binding controls observed"
