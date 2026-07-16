@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "packet": "csv_formula_injection_fix_v1_20260716",
+  "status": "LOCAL_ONLY_FIXED_WITH_LOCALDATA_BLOCK",
+  "baseCommit": "46d0f40eb5f1b00a7a993ed90958d37461aaa1b5",
+  "branch": "work/csv-formula-injection-fix-v1-20260716",
+  "findingClosure": {
+    "csf_202db9b3638e9bdd15b848e9": "FIXED",
+    "csf_d31d2c747a31aba0207d8683": "FIXED"
+  },
+  "focused": {"passed": 92, "failed": 0},
+  "hermetic": {"passed": 2271, "failed": 0, "skipped": 0, "xfailed": 0, "exit": 0},
+  "localData": {
+    "available": false,
+    "collected": 0,
+    "marker": "BLOCKED_MISSING_LOCAL_TEST_PACK",
+    "exit": 4
+  },
+  "pushAllowed": false,
+  "requiredFiles": [
+    "SECURITY_FIX_REPORT.md",
+    "FINDING_CLOSURE.csv",
+    "ENCODING_CONTRACT.md",
+    "SECURITY_REGRESSION_MATRIX.csv",
+    "VALIDATION_RESULTS.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "ROLLBACK_PLAN.md",
+    "MANIFEST.json"
+  ]
+}

@@ -64,6 +64,7 @@ from src.services.future_tools_rd_service import (
     upcoming_draft_questions_checklist,
     upcoming_draft_setup_checklist,
 )
+from src.utils.spreadsheet_safe import spreadsheet_safe_rows
 
 LAB_WARNING = (
     "Development Lab tool. Safe V0 / display-only / manual workflow. Not model input. "
@@ -634,10 +635,10 @@ def render_guardrails() -> None:
     )
 
 
-def csv_download(label: str, rows: list[dict[str, str]], filename: str) -> None:
+def csv_download(label: str, rows: list[dict[str, object]], filename: str) -> None:
     if not rows:
         return
-    data = pd.DataFrame(rows).to_csv(index=False)
+    data = pd.DataFrame(spreadsheet_safe_rows(rows)).to_csv(index=False)
     st.download_button(label, data=data, file_name=filename, mime="text/csv")
 
 

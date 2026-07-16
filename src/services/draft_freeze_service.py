@@ -37,6 +37,7 @@ from src.services.lve_stats_first_preview_service import (
 )
 from src.services.model_recalibration_service import rankings_are_review_only
 from src.services.trust_status_service import trust_status_row
+from src.utils.spreadsheet_safe import spreadsheet_safe_rows
 
 DEFAULT_FREEZE_ROOT = Path("local_exports/draft_freezes")
 
@@ -414,4 +415,4 @@ def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(spreadsheet_safe_rows(rows))

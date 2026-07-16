@@ -1,0 +1,13 @@
+path,change,purpose
+app/components/development_lab.py,modified,apply encoder immediately before pandas CSV serialization
+src/services/draft_freeze_service.py,modified,apply encoder immediately before DictWriter serialization
+src/utils/spreadsheet_safe.py,created,centralized idempotent string-cell encoder
+tests/test_spreadsheet_safe_csv.py,created,unit and two-sink integration regression controls
+docs/hq/security/csv_formula_injection_fix_v1_20260716/SECURITY_FIX_REPORT.md,created,fix outcome and scope
+docs/hq/security/csv_formula_injection_fix_v1_20260716/FINDING_CLOSURE.csv,created,per-finding disposition
+docs/hq/security/csv_formula_injection_fix_v1_20260716/ENCODING_CONTRACT.md,created,exact boundary behavior
+docs/hq/security/csv_formula_injection_fix_v1_20260716/SECURITY_REGRESSION_MATRIX.csv,created,malicious and legitimate controls
+docs/hq/security/csv_formula_injection_fix_v1_20260716/VALIDATION_RESULTS.md,created,gate evidence
+docs/hq/security/csv_formula_injection_fix_v1_20260716/ROLLBACK_PLAN.md,created,reversal procedure
+docs/hq/security/csv_formula_injection_fix_v1_20260716/FILES_CREATED_OR_CHANGED.csv,created,scope inventory
+docs/hq/security/csv_formula_injection_fix_v1_20260716/MANIFEST.json,created,machine-readable packet index

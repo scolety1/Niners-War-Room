@@ -1,0 +1,14 @@
+control,surface,expected,result
+equals prefix,central encoder,apostrophe before original string,PASS
+plus prefix,central encoder,apostrophe before original string,PASS
+minus prefix string,central encoder,apostrophe before original string,PASS
+at prefix,central encoder,apostrophe before original string,PASS
+leading spaces or tabs,both exports,dangerous prefix still encoded,PASS
+already protected value,central encoder,no double encoding,PASS
+ordinary safe string,central encoder,unchanged,PASS
+numeric and null values,central encoder,original Python type retained,PASS
+quoted and multiline content,both exports,CSV structure and content preserved,PASS
+Unicode,both exports,content preserved,PASS
+Development Lab integration,pandas download boundary,dangerous cell encoded,PASS
+Draft Freeze integration,all nine board families,dangerous cell encoded,PASS
+ranking and formula models,repository diff,no changed path,PASS
