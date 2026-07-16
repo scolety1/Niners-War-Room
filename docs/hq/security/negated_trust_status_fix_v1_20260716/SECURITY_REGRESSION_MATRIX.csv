@@ -1,0 +1,16 @@
+control,expected,result
+not current,not VALID_CURRENT and source text visible,PASS
+not valid,not VALID_CURRENT and source text visible,PASS
+not ready,not VALID_CURRENT and source text visible,PASS
+not scored,not VALID_CURRENT and source text visible,PASS
+unmatched,IDENTITY_EXCEPTION and source text visible,PASS
+not available,UNAVAILABLE and source text visible,PASS
+not currently available,UNAVAILABLE and source text visible,PASS
+NOT CURRENT and separator variants,not VALID_CURRENT,PASS
+available but not reviewed,not VALID_CURRENT,PASS
+canonical Available and dynamic Available prefix,VALID_CURRENT,PASS
+canonical GREEN_CURRENT,VALID_CURRENT,PASS
+canonical Matched Exact Ready Scored,VALID_CURRENT,PASS
+canonical stale missing gated unavailable review-only,distinct existing states,PASS
+66-row frozen-board source-to-sink,all crafted values retained in collapsed summary,PASS
+ordering page placement ranking freshness admission,no changed path or logic,PASS

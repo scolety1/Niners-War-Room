@@ -1,0 +1,12 @@
+path,change,purpose
+src/services/decision_trust_strip_service.py,modified,reject lexical negation before word-bounded positive trust classification
+tests/test_decision_trust_strip_negation_security.py,created,malicious positive distinct-state and 66-row source-to-sink controls
+docs/hq/security/negated_trust_status_fix_v1_20260716/SECURITY_FIX_REPORT.md,created,fix outcome scope and authority
+docs/hq/security/negated_trust_status_fix_v1_20260716/SOURCE_TO_SINK_REVALIDATION.md,created,current-HQ dataflow and exploit evidence
+docs/hq/security/negated_trust_status_fix_v1_20260716/FINDING_CLOSURE.csv,created,per-finding disposition
+docs/hq/security/negated_trust_status_fix_v1_20260716/TRUST_CLASSIFICATION_CONTRACT.md,created,ordered classifier contract
+docs/hq/security/negated_trust_status_fix_v1_20260716/SECURITY_REGRESSION_MATRIX.csv,created,required controls
+docs/hq/security/negated_trust_status_fix_v1_20260716/VALIDATION_RESULTS.md,created,test and static evidence
+docs/hq/security/negated_trust_status_fix_v1_20260716/ROLLBACK_PLAN.md,created,reversal procedure
+docs/hq/security/negated_trust_status_fix_v1_20260716/FILES_CREATED_OR_CHANGED.csv,created,scope inventory
+docs/hq/security/negated_trust_status_fix_v1_20260716/MANIFEST.json,created,machine-readable packet index

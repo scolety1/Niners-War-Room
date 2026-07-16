@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
@@ -43,6 +44,18 @@ FIELD_LABELS = {
 
 _BLANKS = {"", "nan", "none", "null", "n/a"}
 _NOT_ENOUGH = {"not enough information", "unknown", "not available from current row"}
+_WORD_PATTERN = re.compile(r"[a-z0-9]+")
+_LEXICAL_NEGATIONS = {"no", "not", "never", "without"}
+_NEGATED_STATUS_WORDS = {"invalid", "uncurrent", "unmatched", "unready", "unscored"}
+_POSITIVE_STATUS_WORDS = {
+    "available",
+    "current",
+    "exact",
+    "green",
+    "matched",
+    "ready",
+    "scored",
+}
 
 
 @dataclass(frozen=True)
@@ -69,39 +82,44 @@ def state_from_existing_status(value: object, *, field: str) -> str:
     """Map existing status language for display; never calculate a new factual status."""
     text = _text(value)
     lower = text.lower()
+    words = tuple(_WORD_PATTERN.findall(lower))
+    word_set = set(words)
     if lower in _BLANKS or lower in _NOT_ENOUGH:
         return NOT_ENOUGH_INFORMATION
-    if field == "identity_join" and any(
-        token in lower
-        for token in ("review", "unresolved", "partial", "ambiguous", "exception", "blocked")
-    ):
+    if field == "identity_join" and word_set & {
+        "ambiguous",
+        "blocked",
+        "exception",
+        "partial",
+        "review",
+        "unmatched",
+        "unresolved",
+    }:
         return IDENTITY_EXCEPTION
-    if any(token in lower for token in ("gated", "not admitted", "blocked use")):
+    if "gated" in word_set or _has_phrase(words, "not admitted", "blocked use"):
         return GATED
-    if "stale" in lower or "last cache" in lower:
+    if "stale" in word_set or _has_phrase(words, "last cache"):
         return STALE
-    if any(token in lower for token in ("unavailable", "not_available", "cannot supply")):
+    if "unavailable" in word_set or _has_phrase(
+        words,
+        "not available",
+        "not currently available",
+        "cannot supply",
+    ):
         return UNAVAILABLE
-    if any(token in lower for token in ("missing", "absent", "not found")):
+    if word_set & {"absent", "missing"} or _has_phrase(words, "not found"):
         return MISSING
-    if field in {"evidence_source", "material_caveats"} and any(
-        token in lower
-        for token in ("caveat", "conflict", "restricted", "review-only", "review only", "warning")
+    if field in {"evidence_source", "material_caveats"} and (
+        word_set & {"caveat", "conflict", "restricted", "warning"}
+        or _has_phrase(words, "review only")
     ):
         return SOURCE_EXCEPTION
-    if any(
-        token in lower
-        for token in (
-            "available",
-            "current",
-            "green",
-            "matched",
-            "exact",
-            "ready",
-            "scored",
-            "full dynasty source",
-            "admitted identifier present",
-        )
+    if word_set & (_LEXICAL_NEGATIONS | _NEGATED_STATUS_WORDS):
+        return NOT_ENOUGH_INFORMATION
+    if word_set & _POSITIVE_STATUS_WORDS or _has_phrase(
+        words,
+        "full dynasty source",
+        "admitted identifier present",
     ):
         return VALID_CURRENT
     return NOT_ENOUGH_INFORMATION
@@ -245,3 +263,8 @@ def _usable_identifier(value: object) -> bool:
 
 def _text(value: object) -> str:
     return str(value or "").strip()
+
+
+def _has_phrase(words: Sequence[str], *phrases: str) -> bool:
+    padded = f" {' '.join(words)} "
+    return any(f" {phrase} " in padded for phrase in phrases)

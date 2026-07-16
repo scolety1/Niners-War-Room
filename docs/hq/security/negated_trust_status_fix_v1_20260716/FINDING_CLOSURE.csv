@@ -1,0 +1,2 @@
+finding_id,candidate_id,ledger_id,occurrence_id,title,prepatch,postpatch,disposition
+csf_ee545411ea698019b8df1208,CAND-review-004-01,DG001,occ_e6c2696a983ab0eed760f0cb,Negated trust-status text is misclassified as valid/current,CONFIRMED four negated values became VALID_CURRENT and source text was hidden,all required negations fail closed and retain source text,FIXED_LOCAL_ONLY
