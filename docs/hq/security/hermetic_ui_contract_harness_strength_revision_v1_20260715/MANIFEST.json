@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "packet": "hermetic_ui_contract_harness_strength_revision_v1_20260715",
+  "verdict": "GREEN_HERMETIC_UI_CONTRACT_HARNESS_STRENGTH_REVISION_READY_FOR_HQ_REVIEW",
+  "verified_hq": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+  "canonical_remote_branch": "origin/work/hq-parallel-control",
+  "source_reconciliation_branch": "work/ui-contract-baseline-reconciliation-v1-20260715",
+  "source_reconciliation_commit": "46e334b8ceedfe5d727bff0e084313b4ca09a5cb",
+  "source_parent": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+  "review_evidence_commit": "e305e6cc15ea8a26ea53827331b4e968a54856db",
+  "successor_branch": "work/ui-contract-harness-strength-revision-v1-20260715",
+  "worktree": "C:\\NWR\\Niners-War-Room-ui-contract-harness-strength-revision-v1-20260715",
+  "local_correction_commit": null,
+  "route_authority": "app.navigation.ALL_NAVIGATION_PAGES via app_page_path",
+  "call_inspection": "Python ast exact-import ast.Call inspection",
+  "negative_controls": {
+    "collected": 16,
+    "passed": 16,
+    "failed": 0,
+    "prior_false_negatives_detected": 3
+  },
+  "original_focused": {
+    "collected": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 0
+  },
+  "owning_and_adjacent": {
+    "collected": 130,
+    "passed": 116,
+    "skipped": 14,
+    "failed": 0,
+    "xfailed": 0
+  },
+  "accessibility_and_presentation": {
+    "passed": 35,
+    "failed": 0
+  },
+  "ruff": {
+    "accepted_source_findings": 80,
+    "revision_findings": 80,
+    "new_findings": 0
+  },
+  "application_source_changed": false,
+  "security_automation_changed": false,
+  "negated_status_finding_changed": false,
+  "protected_or_frozen_changed": false,
+  "security_transplant_executed": false,
+  "push_performed": false,
+  "independent_review": "PASS_WITH_NO_UNRESOLVED_FINDINGS",
+  "required_files": [
+    "HARNESS_STRENGTH_REVISION_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "ROUTE_AND_AST_INSPECTION_DECISION.md",
+    "PLAYER_BOARD_ROUTE_CONTRACT_REVISION.md",
+    "TRUST_BANNER_STRUCTURAL_CALL_REVIEW.md",
+    "TRUST_BANNER_ROUTE_RESOLUTION_REVIEW.md",
+    "ASSERTION_STRENGTH_DIFFERENTIAL.csv",
+    "NEGATIVE_CONTROL_MATRIX.csv",
+    "MUTATION_SENSITIVITY_PROOF.md",
+    "FOCUSED_AND_REGRESSION_RESULTS.md",
+    "NEGATED_STATUS_FINDING_NO_CHANGE_PROOF.md",
+    "SECURITY_AUTOMATION_NO_CHANGE_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ]
+}
