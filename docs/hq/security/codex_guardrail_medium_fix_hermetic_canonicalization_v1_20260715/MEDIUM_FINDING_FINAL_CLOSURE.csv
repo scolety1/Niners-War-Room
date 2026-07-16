@@ -1,0 +1,3 @@
+ledger_row,candidate_id,occurrence_id,finding_id,prepatch_disposition,postpatch_result,confidence
+"DG021","CAND-review-020-02","occ_ab6d2639663c51a5842c430e","csf_64252c7850e1f7649842646d","reportable; survives=yes","FIXED; frozen policy and fixed argv defeat source-to-sink path","high"
+"DG022","CAND-review-020-03","occ_c65931e203e50f752d857365","csf_357eb1a79de80c711e413696","reportable; survives=yes","FIXED; final cached index and exact tree binding defeat set mismatch","high"

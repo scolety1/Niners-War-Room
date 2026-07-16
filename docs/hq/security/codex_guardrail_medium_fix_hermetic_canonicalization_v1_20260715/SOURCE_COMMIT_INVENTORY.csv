@@ -1,0 +1,5 @@
+role,commit,parent,tree,disposition
+"live canonical HQ","6d461f8d8c3261869136289f87f62ef61443a17b","70431d0cfd11ea2f35228453c05e3efcb8a77876","canonical Phase-1 tree","exact base"
+"medium security implementation","008dd0edc6c71c23784b769aefda124c36fac409","6d461f8d8c3261869136289f87f62ef61443a17b","01a8f4b4f6647d61a3c1b398f6eaeccd2ef39713","preserved exact"
+"stale candidate evidence","1dd0e28754d25f1ce5d2effcc53ca0d31bb41a6b","e7c1aa stale parent","cef01318924769c090a8c6f3617417eacdcb3afc","not adopted"
+"canonicalization documentation","this commit","008dd0edc6c71c23784b769aefda124c36fac409","resolve via HEAD tree","documentation only"

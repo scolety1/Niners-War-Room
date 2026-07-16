@@ -1,0 +1,10 @@
+surface,current_hq,candidate,classification
+"original Git-state PoC","exit 0; staged and untracked omitted","both forms reject after full staging","PATCH_RESOLVED_FAILURE"
+"original mutable-profile PoC","guardrail exit 0; profile reload plus Invoke-Expression sink present","profile protected; frozen external policy; no expression sink","PATCH_RESOLVED_FAILURE"
+"strict equivalent application selection","2229 passed; 1 negative-disclosure false positive","2241 passed; zero non-execution results","PATCH_RESOLVED_FAILURE and HERMETIC_FIXTURE_CLOSED"
+"fictional behavior families","absent","11 passed","HERMETIC_FIXTURE_CLOSED"
+"LocalData receipt tests","implicit local dependency","89 files explicit; absent pack blocks before collection","LOCAL_DATA_EXPLICITLY_BLOCKED"
+"canonical UI contract","9 passed","9 passed","TRACKED_UI_CONTRACT_BASELINE"
+"scoped Ruff","81","81","zero new"
+"repository Ruff","4443","4443","zero new"
+"application source diff","none","none","no regression"
