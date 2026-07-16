@@ -1,0 +1,5 @@
+"order","role","commit","parent","adoption","result"
+"0","starting remote HQ","6bcb9c3c36fc560c30151591feaeff9d3960499f","d8520f20d21d408c8e0bd73b65cd436361dc16b6","branch base","PASS"
+"1","UI contract reconciliation","46e334b8ceedfe5d727bff0e084313b4ca09a5cb","6bcb9c3c36fc560c30151591feaeff9d3960499f","fast-forward preserving identity","PASS"
+"2","harness-strength correction","70431d0cfd11ea2f35228453c05e3efcb8a77876","46e334b8ceedfe5d727bff0e084313b4ca09a5cb","fast-forward preserving identity","PASS"
+"3","documentation-only canonicalization","RESOLVE_FROM_BRANCH_TIP_AFTER_COMMIT","70431d0cfd11ea2f35228453c05e3efcb8a77876","single local commit before push","PENDING_AT_PACKET_CREATION"

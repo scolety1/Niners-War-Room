@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "packet": "hermetic_ui_contract_harness_strength_canonicalization_v1_20260715",
+  "review_verdict": "GREEN_UI_HARNESS_STRENGTH_CANONICALIZED_READY_FOR_NORMAL_HQ_PUSH",
+  "phase_verdict_after_successful_remote_readback": "GREEN_UI_HARNESS_STRENGTH_CANONICALIZED_AND_PUSHED_TO_HQ",
+  "starting_remote_hq": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+  "canonical_remote_branch": "work/hq-parallel-control",
+  "review_branch": "work/ui-harness-final-merge-review-v1-20260715",
+  "review_worktree": "C:\\NWR\\Niners-War-Room-ui-harness-final-merge-review-v1-20260715",
+  "reconciliation_commit": "46e334b8ceedfe5d727bff0e084313b4ca09a5cb",
+  "harness_strength_commit": "70431d0cfd11ea2f35228453c05e3efcb8a77876",
+  "rejected_review_commit_adopted": false,
+  "canonicalization_commit": null,
+  "canonicalization_commit_resolution": "review branch tip after the documentation-only commit",
+  "push_status_at_packet_creation": "PENDING_REMOTE_READBACK",
+  "route_authority": "app.navigation.ALL_NAVIGATION_PAGES via app_page_path and app.main",
+  "call_inspection": "Python AST exact-import ast.Call inspection",
+  "original_focused": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 0,
+    "exit_code": 0
+  },
+  "negative_controls": {
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 0,
+    "exit_code": 0
+  },
+  "complete_changed_test_files": {
+    "passed": 32,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "owning_and_adjacent": {
+    "passed": 116,
+    "skipped": 14,
+    "failed": 0,
+    "xfailed": 0,
+    "exit_code": 0
+  },
+  "accessibility_and_presentation": {
+    "passed": 35,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "disposable_mutation_run": {
+    "passed": 16,
+    "deselected": 10,
+    "exit_code": 0
+  },
+  "ruff": {
+    "starting_hq_findings": 81,
+    "candidate_findings": 80,
+    "new_findings": 0,
+    "changed_path_findings": 0
+  },
+  "python_compilation_passed": true,
+  "documentation_validation_passed": true,
+  "application_source_changed": false,
+  "security_automation_changed": false,
+  "protected_or_frozen_changed": false,
+  "new_skips": 0,
+  "new_xfails": 0,
+  "auto_commit_enabled": false,
+  "auto_push_enabled": false,
+  "required_files": [
+    "HQ_ADOPTION_AND_FINAL_REVIEW.md",
+    "SOURCE_COMMIT_CHAIN.csv",
+    "ROUTE_AUTHORITY_REVIEW.md",
+    "AST_CALL_INSPECTION_REVIEW.md",
+    "NEGATIVE_CONTROL_REVALIDATION.csv",
+    "MUTATION_SENSITIVITY_REVIEW.md",
+    "FOCUSED_AND_BROADER_RESULTS.md",
+    "SECURITY_AUTOMATION_NO_CHANGE_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "HERMETIC_GATE_READINESS.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "MANIFEST.json"
+  ]
+}
