@@ -1,0 +1,3 @@
+residual_finding_id,original_finding_id,surface,pre_revision_result,post_revision_result,disposition,evidence
+csf_bc674a372601bcdb8a5e629f,csf_202db9b3638e9bdd15b848e9,Development Lab,25/29 with CR LF NBSP mixed failures,85/85 real-boundary executions,CLOSED_READY_FOR_NEW_DIFF_REVIEW,tests/test_spreadsheet_safe_csv.py
+csf_647e589ef77a6afaae1cc70b,csf_d31d2c747a31aba0207d8683,Draft Freeze,25/29 with CR LF NBSP mixed failures,85/85 real-boundary executions plus 9/9 board families,CLOSED_READY_FOR_NEW_DIFF_REVIEW,tests/test_spreadsheet_safe_csv.py

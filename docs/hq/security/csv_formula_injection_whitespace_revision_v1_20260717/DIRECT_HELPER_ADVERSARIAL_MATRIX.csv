@@ -1,0 +1,82 @@
+case_id,category,marker,prefix_codepoints,input_class,expected,result
+equals_none,unsafe_text,=,NONE,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_space,unsafe_text,=,U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_tab,unsafe_text,=,U+0009,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_cr,unsafe_text,=,U+000D,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_lf,unsafe_text,=,U+000A,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_nbsp,unsafe_text,=,U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_repeated_space,unsafe_text,=,U+0020 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_repeated_tab,unsafe_text,=,U+0009 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_repeated_cr,unsafe_text,=,U+000D x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_repeated_lf,unsafe_text,=,U+000A x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_repeated_nbsp,unsafe_text,=,U+00A0 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_mixed,unsafe_text,=,U+0020 U+0009 U+000D U+000A U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_reverse_mixed,unsafe_text,=,U+00A0 U+000A U+000D U+0009 U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+equals_long_bounded_mixed,unsafe_text,=,mixed sequence x16,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_none,unsafe_text,+,NONE,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_space,unsafe_text,+,U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_tab,unsafe_text,+,U+0009,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_cr,unsafe_text,+,U+000D,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_lf,unsafe_text,+,U+000A,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_nbsp,unsafe_text,+,U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_repeated_space,unsafe_text,+,U+0020 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_repeated_tab,unsafe_text,+,U+0009 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_repeated_cr,unsafe_text,+,U+000D x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_repeated_lf,unsafe_text,+,U+000A x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_repeated_nbsp,unsafe_text,+,U+00A0 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_mixed,unsafe_text,+,U+0020 U+0009 U+000D U+000A U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_reverse_mixed,unsafe_text,+,U+00A0 U+000A U+000D U+0009 U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+plus_long_bounded_mixed,unsafe_text,+,mixed sequence x16,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_none,unsafe_text,-,NONE,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_space,unsafe_text,-,U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_tab,unsafe_text,-,U+0009,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_cr,unsafe_text,-,U+000D,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_lf,unsafe_text,-,U+000A,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_nbsp,unsafe_text,-,U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_repeated_space,unsafe_text,-,U+0020 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_repeated_tab,unsafe_text,-,U+0009 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_repeated_cr,unsafe_text,-,U+000D x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_repeated_lf,unsafe_text,-,U+000A x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_repeated_nbsp,unsafe_text,-,U+00A0 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_mixed,unsafe_text,-,U+0020 U+0009 U+000D U+000A U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_reverse_mixed,unsafe_text,-,U+00A0 U+000A U+000D U+0009 U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+minus_long_bounded_mixed,unsafe_text,-,mixed sequence x16,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_none,unsafe_text,@,NONE,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_space,unsafe_text,@,U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_tab,unsafe_text,@,U+0009,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_cr,unsafe_text,@,U+000D,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_lf,unsafe_text,@,U+000A,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_nbsp,unsafe_text,@,U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_repeated_space,unsafe_text,@,U+0020 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_repeated_tab,unsafe_text,@,U+0009 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_repeated_cr,unsafe_text,@,U+000D x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_repeated_lf,unsafe_text,@,U+000A x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_repeated_nbsp,unsafe_text,@,U+00A0 x3,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_mixed,unsafe_text,@,U+0020 U+0009 U+000D U+000A U+00A0,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_reverse_mixed,unsafe_text,@,U+00A0 U+000A U+000D U+0009 U+0020,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+at_long_bounded_mixed,unsafe_text,@,mixed sequence x16,marker with declared prefix,apostrophe at index zero; suffix exactly original,PASS
+csv_formula_commas,csv_sensitive,=,NONE,formula text containing commas,apostrophe at index zero; suffix exactly original,PASS
+csv_formula_quotes,csv_sensitive,=,NONE,formula text containing double quotes,apostrophe at index zero; suffix exactly original,PASS
+csv_leading_newline,csv_sensitive,=,U+000A,leading newline followed by formula,apostrophe at index zero; suffix exactly original,PASS
+csv_multiline,csv_sensitive,=,NONE,multiline formula text,apostrophe at index zero; suffix exactly original,PASS
+csv_unicode_formula,csv_sensitive,=,U+00A0,Unicode formula content,apostrophe at index zero; suffix exactly original,PASS
+csv_quoted_looking,csv_sensitive,none,NONE,quoted-looking textual content,unchanged safe string,PASS
+safe_empty,safe_text,none,NONE,empty string,unchanged,PASS
+safe_ordinary,safe_text,none,NONE,ordinary safe text,unchanged,PASS
+safe_email,safe_text,internal @,NONE,email address,unchanged,PASS
+safe_url,safe_text,internal =,NONE,URL query,unchanged,PASS
+safe_internal_plus,safe_text,internal +,NONE,internal plus,unchanged,PASS
+safe_internal_minus,safe_text,internal -,NONE,internal minus,unchanged,PASS
+safe_unicode,safe_text,none,NONE,Unicode ordinary text,unchanged,PASS
+safe_numeric_string,safe_text,none,NONE,numeric-looking text 123,unchanged string,PASS
+safe_already_protected_equals,safe_text,=,apostrophe at index zero,already protected equals,unchanged,PASS
+safe_already_protected_at,safe_text,@,apostrophe at index zero,already protected whitespace at-sign formula,unchanged,PASS
+typed_negative_integer,typed,-,n/a,integer -123,identical object and exact int type,PASS
+typed_negative_float,typed,-,n/a,float -123.5,identical object and exact float type,PASS
+typed_positive_integer,typed,none,n/a,integer 123,identical object and exact int type,PASS
+typed_positive_float,typed,none,n/a,float 123.5,identical object and exact float type,PASS
+typed_true,typed,none,n/a,boolean true,identical object and exact bool type,PASS
+typed_false,typed,none,n/a,boolean false,identical object and exact bool type,PASS
+typed_none,typed,none,n/a,None,identical object and exact NoneType,PASS
+typed_date,typed,none,n/a,date,identical object and exact date type,PASS
+typed_datetime,typed,none,n/a,timezone-aware datetime,identical object and exact datetime type,PASS

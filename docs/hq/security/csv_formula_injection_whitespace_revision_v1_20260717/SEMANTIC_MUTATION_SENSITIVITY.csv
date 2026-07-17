@@ -1,0 +1,11 @@
+mutation_id,semantic_change,required_failure_signal,detected,result
+M1_remove_cr,remove CR from closed leading set,CR exact-output control differs,true,PASS
+M2_remove_lf,remove LF from closed leading set,LF exact-output control differs,true,PASS
+M3_remove_nbsp,remove NBSP from closed leading set,NBSP exact-output control differs,true,PASS
+M4_break_mixed_scan,advance over only one whitespace character,mixed sequence remains unprotected,true,PASS
+M5_disable_development_lab,replace Development Lab row encoder with identity,parsed cell remains formula-capable,true,PASS
+M6_disable_draft_freeze,replace Draft Freeze row encoder with identity,parsed cell remains formula-capable,true,PASS
+M7_csv_quoting_only,use pandas quoting without cell protection,quoted parsed cell remains formula-capable,true,PASS
+M8_coerce_numeric_negative,stringify and apostrophe-prefix numeric -123,exact type and value control changes,true,PASS
+M9_prefix_after_whitespace,insert marker after the leading sequence,index-zero marker assertion fails,true,PASS
+M10_remove_idempotence,double-prefix an already protected string,second encoding differs from first,true,PASS

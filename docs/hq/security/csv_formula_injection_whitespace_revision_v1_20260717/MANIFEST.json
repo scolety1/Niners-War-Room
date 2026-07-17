@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "packet": "csv_formula_injection_whitespace_revision_v1_20260717",
+  "generatedAtUtc": "2026-07-17T23:11:11.3206763Z",
+  "status": "LOCAL_ONLY_READY_FOR_HQ_REVIEW",
+  "verdict": "GREEN_CSV_FORMULA_INJECTION_WHITESPACE_REVISION_READY_FOR_HQ_REVIEW",
+  "canonicalRemoteBranch": "origin/work/hq-parallel-control",
+  "baseCommit": "46d0f40eb5f1b00a7a993ed90958d37461aaa1b5",
+  "baseTree": "487797f692ec132ad32c95044fdb810cfc3e33a1",
+  "rejectedCandidateBranch": "work/csv-formula-injection-fix-v1-20260716",
+  "rejectedCandidateCommit": "27ed532b01ddb7fc307a489b0c5bd6332ee70f4f",
+  "successorBranch": "work/csv-formula-whitespace-revision-v1-20260717",
+  "correctionCommit": "recorded externally in the post-commit HQ handoff",
+  "pushed": false,
+  "merged": false,
+  "closedWhitespaceCodePoints": [
+    "U+0020",
+    "U+0009",
+    "U+000D",
+    "U+000A",
+    "U+00A0"
+  ],
+  "validation": {
+    "legacyBoundary": {
+      "passed": 58,
+      "failed": 0
+    },
+    "expandedBoundary": {
+      "passed": 112,
+      "failed": 0
+    },
+    "combinedBoundary": {
+      "passed": 170,
+      "failed": 0
+    },
+    "semanticMutations": {
+      "detected": 10,
+      "total": 10
+    },
+    "focused": {
+      "passed": 334,
+      "failed": 0
+    },
+    "hermetic": {
+      "passed": 2513,
+      "failed": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0,
+      "exit": 0
+    },
+    "uiContract": {
+      "passed": 9,
+      "failed": 0,
+      "exit": 0
+    },
+    "localData": {
+      "status": "BLOCKED_MISSING_LOCAL_TEST_PACK",
+      "collected": 0,
+      "exit": 4
+    },
+    "ruffDifferential": {
+      "candidate": 4443,
+      "successor": 4443,
+      "newFindings": 0
+    }
+  },
+  "manifestHashesItself": false,
+  "fileCount": 19,
+  "files": [
+    {
+      "path": "ALTERNATE_EXPORT_BYPASS_REVIEW.md",
+      "bytes": 1099,
+      "sha256": "a9cbec6f0935b70c40c13239dc6d1c7240bd92403d862dc082db5c7ec649040a"
+    },
+    {
+      "path": "CSV_FORMULA_WHITESPACE_REVISION_REPORT.md",
+      "bytes": 3985,
+      "sha256": "0b5f1dc9f5a1801660c47ce5c536c379c37ade97cfcf3cce338c37e957b083f5"
+    },
+    {
+      "path": "DEVELOPMENT_LAB_EXPORT_REVALIDATION.md",
+      "bytes": 894,
+      "sha256": "1b89337b31fb58823052ecc896384627a5873805acdd88bd6d7d81084cf05626"
+    },
+    {
+      "path": "DIRECT_HELPER_ADVERSARIAL_MATRIX.csv",
+      "bytes": 9324,
+      "sha256": "a4e3595937548f97ea0e2d7398c1be94db8bdc24886f6bab0b2034d1ec372dc7"
+    },
+    {
+      "path": "DRAFT_FREEZE_EXPORT_REVALIDATION.md",
+      "bytes": 916,
+      "sha256": "683eaf77b5bd28bde919a75989c8f1524c661893d97e3015fef126dab16cf27d"
+    },
+    {
+      "path": "ENCODER_ALGORITHM_AND_IDEMPOTENCE.md",
+      "bytes": 1335,
+      "sha256": "99d0ab276e92f97470f3dbd743e53b5d57dc8b672d550bfa28ffb3c4cb598d25"
+    },
+    {
+      "path": "EXECUTIVE_VERDICT.md",
+      "bytes": 1100,
+      "sha256": "9d2774a0ca541ca4b5f83f56e4a264ac48af949248dceac4460b9a6d9aad234e"
+    },
+    {
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "bytes": 2921,
+      "sha256": "94383daaf4dcb8da80834bf3635c6627240d7abe961ae4f4e2e9b76b4e32f737"
+    },
+    {
+      "path": "INDEPENDENT_TARGETED_REVIEW.md",
+      "bytes": 1113,
+      "sha256": "462acc4ea410b9f16f568abdbecfc5da8b443c80496221379f13c8605c992e70"
+    },
+    {
+      "path": "LEADING_WHITESPACE_SECURITY_CONTRACT.md",
+      "bytes": 1276,
+      "sha256": "01e8015a0515241790f72f61956dfbf0ddea0d0f9955e6c59063b1c17417b420"
+    },
+    {
+      "path": "LOCALDATA_AND_HERMETIC_RESULTS.md",
+      "bytes": 926,
+      "sha256": "16a60dbc9e22956b680727aba669b186d7b718f6aa0d39a0381b133d960f1fa2"
+    },
+    {
+      "path": "PRIMARY_WORKTREE_PRESERVATION_PROOF.md",
+      "bytes": 949,
+      "sha256": "019a94e765282c9db38bf9376263ce94743ea1250fc3fd70ce5b99365064bb9a"
+    },
+    {
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "bytes": 930,
+      "sha256": "e7fe4b10e2747d7d979f7399641e3060e024670ac96d1375f7cfe653ca7c5492"
+    },
+    {
+      "path": "RESIDUAL_FINDING_CLOSURE_MATRIX.csv",
+      "bytes": 551,
+      "sha256": "05702462f18a0dbe3c926eaaa1119100bebd3957ae19cc0ecb04c684270107e4"
+    },
+    {
+      "path": "ROLLBACK_PLAN.md",
+      "bytes": 899,
+      "sha256": "59b4d045e7d20439016e21a5c30e27d18da4c66ad97f5f89f5adc2c8062e2063"
+    },
+    {
+      "path": "SEMANTIC_MUTATION_SENSITIVITY.csv",
+      "bytes": 1146,
+      "sha256": "8103ae0809842052add4daa1f8919714c507426da92bf40fdc37dd4d9a5e7d28"
+    },
+    {
+      "path": "TYPE_AND_CSV_PRESERVATION_REVIEW.md",
+      "bytes": 1095,
+      "sha256": "cae278a0917369a7b02169ff5f125a811f1cf8b6150bff7952a7754e69cf97eb"
+    },
+    {
+      "path": "VALIDATION_RESULTS.md",
+      "bytes": 2015,
+      "sha256": "06383ad4c8a888988410ecad9adbff2fd3abee56b9228e68432cbc5b10a1ecad"
+    }
+  ]
+}
