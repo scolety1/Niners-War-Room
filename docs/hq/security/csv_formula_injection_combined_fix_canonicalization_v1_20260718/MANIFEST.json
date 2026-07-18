@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "packet": "csv_formula_injection_combined_fix_canonicalization_v1_20260718",
+  "generatedAtUtc": "2026-07-18T02:10:26.2592415Z",
+  "reviewVerdict": "GREEN_CSV_FORMULA_INJECTION_COMBINED_FIX_CANONICALIZED_LOCAL_ONLY",
+  "phaseVerdictAfterSuccessfulRemoteReadback": "GREEN_CSV_FORMULA_INJECTION_COMBINED_FIX_CANONICALIZED_AND_PUSHED_TO_HQ",
+  "canonicalRemoteBranch": "work/hq-parallel-control",
+  "startingLiveHq": "46d0f40eb5f1b00a7a993ed90958d37461aaa1b5",
+  "startingLiveHqTree": "487797f692ec132ad32c95044fdb810cfc3e33a1",
+  "remoteAdvance": false,
+  "sourceBranch": "work/csv-formula-whitespace-revision-v1-20260717",
+  "reviewBranch": "work/csv-formula-final-hq-adoption-v1-20260718",
+  "reviewWorktree": "C:\\NWR\\Niners-War-Room-csv-formula-final-hq-adoption-v1-20260718",
+  "originalCommit": "27ed532b01ddb7fc307a489b0c5bd6332ee70f4f",
+  "correctionCommit": "65a378949a3df7875fc24458c276b7bdf1537916",
+  "ancestryExact": true,
+  "rejectedReviewPacketAdopted": false,
+  "canonicalizationCommit": null,
+  "canonicalizationCommitResolution": "review branch tip after the documentation-only commit",
+  "pushStatusAtPacketCreation": "PENDING_REMOTE_READBACK",
+  "normalNonForcePushAuthorizedAfterFinalFetch": true,
+  "sealedScan": {
+    "scanId": "7f6059ba-7d41-461a-9c71-1d399149449b",
+    "baseRevision": "46d0f40eb5f1b00a7a993ed90958d37461aaa1b5",
+    "headRevision": "65a378949a3df7875fc24458c276b7bdf1537916",
+    "status": "completed",
+    "sealedAt": "2026-07-18T01:11:56.382Z",
+    "coverage": "complete",
+    "reportableFindings": 0,
+    "indexedArtifactsValidated": 30,
+    "verdict": "GREEN_CSV_FORMULA_INJECTION_COMBINED_FIX_INDEPENDENTLY_VALIDATED_READY_FOR_HQ_ADOPTION",
+    "reportSha256": "1a8b7896497cd7261d6d2cdc805d529edbd9fa8ba3166d07a5dcae34232ad5b6",
+    "manifestSha256": "5e78342e63167ea16da82cd6ee7c2d7e2fd71e88010fd0b3bc990f08d12cfcf6",
+    "coverageSha256": "7fe6aadb6dc669e07b394a38869762c5db69031e9b29beed3ecb94a0794c8708",
+    "findingsSha256": "ea23d237260906252f60378148196abf3afb85ad92a799343ed0e81967d1b5b8"
+  },
+  "findingClosure": {
+    "originalClosed": 2,
+    "residualClosed": 2,
+    "open": 0
+  },
+  "validation": {
+    "developmentLabBoundary": {"passed": 85, "failed": 0},
+    "draftFreezeBoundary": {"passed": 85, "failed": 0},
+    "combinedBoundary": {"passed": 170, "failed": 0},
+    "draftFreezeBoardFamilies": {"passed": 9, "failed": 0},
+    "semanticMutations": {"detected": 10, "total": 10},
+    "directFocused": {"passed": 272, "failed": 0},
+    "owningAdjacent": {"passed": 334, "failed": 0},
+    "uiContract": {"passed": 9, "failed": 0},
+    "hermetic": {
+      "bootstrapPassed": 13,
+      "securityControlsPassed": 20,
+      "pythonPassed": 2513,
+      "failed": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0,
+      "exit": 0
+    },
+    "localData": {
+      "status": "BLOCKED_MISSING_LOCAL_TEST_PACK",
+      "collected": 0,
+      "exit": 4
+    },
+    "ruff": {
+      "startingHqFindings": 4443,
+      "candidateFindings": 4443,
+      "newFindings": 0,
+      "changedFileFindings": 0
+    },
+    "pythonCompilationPassed": true,
+    "documentationValidationPassed": true,
+    "securityAutomationChanged": false,
+    "protectedOrFrozenChanged": false,
+    "primaryPreservationMatches": 5
+  },
+  "combinedSourceChangedPathCount": 31,
+  "canonicalizationCreatedFileCount": 15,
+  "requiredFiles": [
+    "HQ_ADOPTION_AND_FINAL_REVIEW.md",
+    "SOURCE_COMMIT_CHAIN.csv",
+    "SEALED_SECURITY_SCAN_VALIDATION.md",
+    "ORIGINAL_AND_RESIDUAL_FINDING_CLOSURE.csv",
+    "FINAL_ENCODER_CONTRACT.md",
+    "DEVELOPMENT_LAB_FINAL_REVIEW.md",
+    "DRAFT_FREEZE_FINAL_REVIEW.md",
+    "ADVERSARIAL_AND_MUTATION_RESULTS.csv",
+    "HERMETIC_AND_LOCALDATA_RESULTS.md",
+    "PRIMARY_WORKTREE_PRESERVATION_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "nextSafeLane": {
+    "description": "independent review of negated trust-status commit",
+    "commit": "2dbde617fc24bd48a3de59b998102725b7ecc9cc",
+    "reviewedOrModifiedInThisLane": false
+  }
+}

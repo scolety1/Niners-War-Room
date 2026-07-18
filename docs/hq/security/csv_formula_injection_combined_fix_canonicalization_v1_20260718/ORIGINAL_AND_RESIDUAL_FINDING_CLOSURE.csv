@@ -1,0 +1,5 @@
+finding_id,finding_class,surface,base_or_middle_reproduction,head_evidence,final_disposition
+csf_202db9b3638e9bdd15b848e9,original,Development Lab,raw leading-space formula reproduced on base,85/85 real-boundary cases and caller convergence,CLOSED
+csf_d31d2c747a31aba0207d8683,original,Draft Freeze,leading-tab at-sign formula reproduced on base,85/85 real-boundary cases plus 9/9 board families,CLOSED
+csf_bc674a372601bcdb8a5e629f,residual,Development Lab,rejected middle commit passed only 25/29 legacy cases,closed five-code-point matrix and 85/85 head boundary,CLOSED
+csf_647e589ef77a6afaae1cc70b,residual,Draft Freeze,rejected middle commit passed only 25/29 legacy cases,closed five-code-point matrix 85/85 boundary and 9/9 boards,CLOSED

@@ -1,0 +1,15 @@
+gate_or_mutation,surface_or_semantic_change,expected_signal,result,exit_code
+combined_boundary_matrix,both real exporters,170 protected parsed cells,170/170 PASS,0
+development_lab_boundary,Development Lab pandas serializer,85 protected parsed cells,85/85 PASS,0
+draft_freeze_boundary,Draft Freeze DictWriter serializer,85 protected parsed cells,85/85 PASS,0
+draft_freeze_board_families,nine named board families,all converge on corrected writer,9/9 PASS,0
+M1_remove_cr,remove CR from closed leading set,CR exact-output control fails,DETECTED PASS,0
+M2_remove_lf,remove LF from closed leading set,LF exact-output control fails,DETECTED PASS,0
+M3_remove_nbsp,remove NBSP from closed leading set,NBSP exact-output control fails,DETECTED PASS,0
+M4_break_mixed_scan,advance over only one whitespace character,mixed sequence remains formula-capable,DETECTED PASS,0
+M5_disable_development_lab,replace Development Lab encoder with identity,parsed cell remains formula-capable,DETECTED PASS,0
+M6_disable_draft_freeze,replace Draft Freeze encoder with identity,parsed cell remains formula-capable,DETECTED PASS,0
+M7_csv_quoting_only,use pandas quoting without cell protection,quoted parsed cell remains formula-capable,DETECTED PASS,0
+M8_coerce_numeric_negative,stringify and prefix numeric -123,exact type and value control changes,DETECTED PASS,0
+M9_prefix_after_whitespace,insert marker after leading sequence,index-zero marker assertion fails,DETECTED PASS,0
+M10_remove_idempotence,double-prefix already protected string,second encoding differs,DETECTED PASS,0
