@@ -46,7 +46,7 @@ _BLANKS = {"", "nan", "none", "null", "n/a"}
 _NOT_ENOUGH = {"not enough information", "unknown", "not available from current row"}
 _WORD_PATTERN = re.compile(r"[a-z0-9]+")
 _LEXICAL_NEGATIONS = {"no", "not", "never", "without"}
-_NEGATED_STATUS_WORDS = {"invalid", "uncurrent", "unmatched", "unready", "unscored"}
+_NEGATED_STATUS_WORDS = {"failed", "invalid", "uncurrent", "unmatched", "unready", "unscored"}
 _POSITIVE_STATUS_WORDS = {
     "available",
     "current",
@@ -80,6 +80,8 @@ class DecisionTrustStrip:
 
 def state_from_existing_status(value: object, *, field: str) -> str:
     """Map existing status language for display; never calculate a new factual status."""
+    if not isinstance(value, str):
+        return NOT_ENOUGH_INFORMATION
     text = _text(value)
     lower = text.lower()
     words = tuple(_WORD_PATTERN.findall(lower))
@@ -223,7 +225,7 @@ def build_rankings_dataset_trust_strip(
 
 def _field(key: str, value: object) -> TrustStripField:
     text = _text(value) or "Not enough information"
-    state = state_from_existing_status(text, field=key)
+    state = state_from_existing_status(value, field=key)
     if key == "missingness_completeness" and text.lower() in {"complete", "0", "0 missing"}:
         state = VALID_CURRENT
     return TrustStripField(key=key, label=FIELD_LABELS[key], state=state, value=text)
@@ -248,10 +250,10 @@ def _missingness_value(row: Mapping[str, object]) -> str:
     return "Not enough information"
 
 
-def _first(row: Mapping[str, object], keys: Sequence[str]) -> str:
+def _first(row: Mapping[str, object], keys: Sequence[str]) -> object:
     for key in keys:
-        value = _text(row.get(key, ""))
-        if value.lower() not in _BLANKS:
+        value = row.get(key, "")
+        if _text(value).lower() not in _BLANKS:
             return value
     return ""
 

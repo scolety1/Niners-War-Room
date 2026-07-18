@@ -33,10 +33,12 @@ from src.services.decision_trust_strip_service import (
         ("not-current", "as_of_freshness", NOT_ENOUGH_INFORMATION),
         ("not_current", "as_of_freshness", NOT_ENOUGH_INFORMATION),
         ("available but not reviewed", "evidence_source", NOT_ENOUGH_INFORMATION),
+        ({"current": False}, "evidence_source", NOT_ENOUGH_INFORMATION),
+        ("current but failed", "as_of_freshness", NOT_ENOUGH_INFORMATION),
     ),
 )
 def test_negated_statuses_never_become_valid_current(
-    value: str,
+    value: object,
     field: str,
     expected: str,
 ) -> None:
@@ -108,6 +110,12 @@ def test_frozen_board_negations_fail_closed_through_collapsed_summary(
             "warnings": "not valid",
         }
     )
+    rows[1].update(
+        {
+            "source_status": {"current": False},
+            "freshness_status": "current but failed",
+        }
+    )
     frame = pd.DataFrame(rows)
     assert draft_day_app_v1_service.validate_frozen_board(frame) == ()
     monkeypatch.setattr(
@@ -134,4 +142,18 @@ def test_frozen_board_negations_fail_closed_through_collapsed_summary(
         NOT_ENOUGH_INFORMATION,
     )
     for field in strip.fields[:-1]:
+        assert field.value in _summary_part(field)
+
+    contradictory = build_decision_trust_strip(
+        normalized.iloc[1].to_dict(),
+        surface="Synthetic Player Compare fixture",
+        entity_label="Synthetic Player 2",
+        receipt_label="Synthetic disclosure",
+        receipt_available=False,
+    )
+
+    assert contradictory.field("evidence_source").state == NOT_ENOUGH_INFORMATION
+    assert contradictory.field("as_of_freshness").state == NOT_ENOUGH_INFORMATION
+    for key in ("evidence_source", "as_of_freshness"):
+        field = contradictory.field(key)
         assert field.value in _summary_part(field)
