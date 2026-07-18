@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "packetId": "data_health_receipt_safety_current_hq_canonicalization_v1_20260718",
+  "documentationOnly": true,
+  "startingCanonicalHq": {
+    "commit": "9c023e20a6bc491f9149da9be6c88fcd5bc09d0b",
+    "tree": "103b9a8a7868fe26a704ec2abf5151c09846ee3a"
+  },
+  "historicalSource": {
+    "base": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+    "unsafeImplementation": "e94960fa81195e92b332db6beef3229056c7d968",
+    "finalCorrection": "5b866fc2d97f9c0a64584a3fcd2c50bc918b08d3",
+    "rejectedReviewDocumentation": "559985ec2af0433578a98b7d42f098fee3926fc9",
+    "finalNetPatchId": "613801ce56ab6b764a73a9daba3a526935b8ea99"
+  },
+  "currentHqImplementation": {
+    "commit": "fdc57ab19cc619fb95b82dc4159bb32d359d8d67",
+    "parent": "9c023e20a6bc491f9149da9be6c88fcd5bc09d0b",
+    "tree": "d256f4429b124f977dad3a43ce40307733ce9282",
+    "patchId": "4cbca73ca7759adde47228bb259852beae88d7e8",
+    "pathCount": 56
+  },
+  "canonicalizationCommit": null,
+  "canonicalizationCommitResolution": "documentation-only child at final branch tip",
+  "reviewVerdict": "GREEN_DATA_HEALTH_RECEIPT_SAFETY_CURRENT_HQ_CANONICALIZED_LOCAL_ONLY",
+  "unresolvedFindingCount": 0,
+  "pushAuthorized": true,
+  "pushStatus": "AUTHORIZED_PENDING_NORMAL_NON_FORCE_PUSH",
+  "localDataStatus": "BLOCKED_MISSING_LOCAL_TEST_PACK",
+  "localDataExitCode": 4,
+  "securityScanRun": false,
+  "rosterHydrationRun": false,
+  "requiredFiles": [
+    "HQ_ADOPTION_AND_FINAL_REVIEW.md",
+    "HISTORICAL_SOURCE_AND_TRANSPLANT_MAP.csv",
+    "CURRENT_HQ_COMMIT_INVENTORY.csv",
+    "ORIGINAL_RED_FINDING_FINAL_CLOSURE.csv",
+    "SCHEMA_V2_FINAL_REVIEW.md",
+    "CLOSED_FIELD_AND_TYPE_CONTRACT.csv",
+    "PRIVACY_SECRET_AND_PATH_REJECTION_REVIEW.md",
+    "VALIDATE_BEFORE_MUTATE_REVIEW.md",
+    "PAGE_OPEN_NO_MUTATION_PROOF.md",
+    "LATEST_SUCCESS_AND_LAST_KNOWN_GOOD_REVIEW.md",
+    "REFRESH_EXECUTION_AND_GOVERNANCE_NO_CHANGE.md",
+    "CURRENT_HQ_TRUST_AND_SECURITY_NO_CHANGE_PROOF.md",
+    "HERMETIC_AND_LOCALDATA_RESULTS.md",
+    "PRIMARY_WORKTREE_PRESERVATION_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "validation": {
+    "focusedReceiptSafetyPassed": 72,
+    "inheritedRegressionPassed": 87,
+    "hermeticPythonPassed": 2613,
+    "hermeticExitCode": 0,
+    "formulaPathsMatched": 46,
+    "protectedPathsMatched": 9,
+    "primaryHashesMatched": 5,
+    "reviewQuestionsGreen": 18
+  },
+  "nextLane": "Roster Weakness Tracker Admitted-Roster Hydration Design and Readiness V1"
+}

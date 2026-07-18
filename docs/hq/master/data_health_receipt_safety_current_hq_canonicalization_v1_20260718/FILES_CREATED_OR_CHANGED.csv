@@ -1,0 +1,20 @@
+path,change,purpose
+HQ_ADOPTION_AND_FINAL_REVIEW.md,created,Record scope lineage independent review and push gate
+HISTORICAL_SOURCE_AND_TRANSPLANT_MAP.csv,created,Classify every historical final-net path
+CURRENT_HQ_COMMIT_INVENTORY.csv,created,Record source current-HQ and local commit identities
+ORIGINAL_RED_FINDING_FINAL_CLOSURE.csv,created,Close each rejected-review red condition
+SCHEMA_V2_FINAL_REVIEW.md,created,Review final closed schema V2
+CLOSED_FIELD_AND_TYPE_CONTRACT.csv,created,Record exact field type and bound contract
+PRIVACY_SECRET_AND_PATH_REJECTION_REVIEW.md,created,Review privacy and path rejection
+VALIDATE_BEFORE_MUTATE_REVIEW.md,created,Prove candidate validation precedes mutation
+PAGE_OPEN_NO_MUTATION_PROOF.md,created,Prove passive page inspection
+LATEST_SUCCESS_AND_LAST_KNOWN_GOOD_REVIEW.md,created,Review distinct truth relationships
+REFRESH_EXECUTION_AND_GOVERNANCE_NO_CHANGE.md,created,Prove refresh execution and governance unchanged
+CURRENT_HQ_TRUST_AND_SECURITY_NO_CHANGE_PROOF.md,created,Prove current-HQ trust and security unchanged
+HERMETIC_AND_LOCALDATA_RESULTS.md,created,Record validation tier outcomes
+PRIMARY_WORKTREE_PRESERVATION_PROOF.md,created,Record hash-only preservation checks
+PROTECTED_AND_FROZEN_PATH_VALIDATION.md,created,Record protected and frozen path proof
+ROLLBACK_PLAN.md,created,Define non-rewriting rollback
+FILES_CREATED_OR_CHANGED.csv,created,Inventory the documentation-only packet
+VALIDATION_RESULTS.md,created,Record complete validation evidence
+MANIFEST.json,created,Provide machine-readable packet manifest

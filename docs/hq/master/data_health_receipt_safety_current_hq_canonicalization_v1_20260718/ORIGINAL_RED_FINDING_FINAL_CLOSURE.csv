@@ -1,0 +1,9 @@
+finding_id,original_red_condition,final_control,proof,final_status
+R1,Corrupt receipt page open could quarantine or mutate state,Pages call inspection only and inspection has no mutation operations,14 page-open cases plus route smoke and tree snapshots,CLOSED_GREEN
+R2,A 2102591-byte generated candidate could be written,Serialized real candidate is measured and bounded at 2097152 bytes before mutation,Exact-limit one-under one-over and 2102591-byte rejection tests,CLOSED_GREEN
+R3,Secrets provider payloads headers traces or paths could validate,Recursive privacy scan and closed schema reject unsafe strings and keys,Adversarial privacy and path matrix plus staged secret-signature check,CLOSED_GREEN
+R4,String or integer lookalikes could satisfy boolean and integer fields,Exact Python type checks require JSON boolean and exact integer,Invalid type matrix including refreshed string false,CLOSED_GREEN
+R5,Rejected candidates could rotate backup archive or quarantine,Two candidate preflights precede path validation snapshots staging and replacement,Complete tree equality assertions for every rejected class,CLOSED_GREEN
+R6,Interrupted replace could leave partial state or temporary artifacts,Atomic staging with snapshot rollback restores all mutation targets,Injected replace-failure and interrupted-state tests,CLOSED_GREEN
+R7,Unknown or duplicate nested keys could remain authoritative,Exact keys at every object plus recursive duplicate-key parser,Top-level nested and recursive duplicate-key tests,CLOSED_GREEN
+R8,Latest attempt could be confused with success or last-known-good,Closed per-source success and explicit retention linkage,Receipt truth and lifecycle regression suites,CLOSED_GREEN
