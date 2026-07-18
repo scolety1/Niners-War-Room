@@ -216,7 +216,7 @@ def page_header(
         f"""
         <div class="nwr-page-header">
           <div class="nwr-eyebrow">{eyebrow}</div>
-          <div class="nwr-title">{title}</div>
+          <h1 class="nwr-title">{title}</h1>
           <p class="nwr-description">{description}</p>
           {status_html}
         </div>

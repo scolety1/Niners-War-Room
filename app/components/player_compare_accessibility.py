@@ -49,21 +49,10 @@ def selected_player_context_rows(
 
 
 def render_player_compare_accessibility_frame() -> None:
-    """Add semantic heading and page-scoped compact rules for Player Compare only."""
+    """Add page-scoped compact rules; the shared page header owns the semantic heading."""
     st.markdown(
         f"""
         <style>
-        .nwr-player-compare-sr-only {{
-            position: absolute !important;
-            width: 1px !important;
-            height: 1px !important;
-            padding: 0 !important;
-            margin: -1px !important;
-            overflow: hidden !important;
-            clip: rect(0, 0, 0, 0) !important;
-            white-space: nowrap !important;
-            border: 0 !important;
-        }}
         body:has(#nwr-player-compare-page) .block-container,
         body:has(#nwr-player-compare-page) div[data-testid="stDataFrame"],
         body:has(#nwr-player-compare-page) div[data-testid="stTabs"] {{
@@ -123,7 +112,6 @@ def render_player_compare_accessibility_frame() -> None:
         }}
         </style>
         <span id="nwr-player-compare-page" aria-hidden="true"></span>
-        <h1 class="nwr-player-compare-sr-only">Player Compare</h1>
         """,
         unsafe_allow_html=True,
     )

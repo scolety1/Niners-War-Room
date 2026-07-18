@@ -84,8 +84,8 @@ def test_board_health_reports_expected_frozen_and_dynasty_counts(tmp_path: Path)
 
     assert _value(report, "Board", "Frozen baseline board rows") == "66"
     assert _status(report, "Board", "Frozen baseline board rows") == "GREEN"
-    assert _value(report, "Board", "Full Dynasty Rankings rows") == "240"
-    assert _status(report, "Board", "Full Dynasty Rankings rows") == "GREEN"
+    assert _value(report, "Board", "Full Dynasty Rankings rows") == "0"
+    assert _status(report, "Board", "Full Dynasty Rankings rows") == "YELLOW"
 
 
 def test_market_freshness_and_display_only_guardrail_load(tmp_path: Path) -> None:

@@ -46,6 +46,7 @@ def test_evidence_integration_review_route_is_admin_nav_and_read_only() -> None:
     assert route.visible is True
     assert route.title == "Evidence Review"
     assert route.file_path == "pages/33_evidence_integration_review_v1.py"
+    assert 'page_header(\n    "Evidence Review",' in page_text
     assert "Review-only. This page does not feed rankings" in page_text
     assert "What Is Safe Now" in page_text
     assert "What Is Not Allowed Yet" in page_text

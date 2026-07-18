@@ -53,6 +53,30 @@ def test_frozen_board_loader_contract_is_green_in_local_hq_context() -> None:
     assert "source_file" not in bundle.frame.columns
 
 
+def test_optional_rankings_and_outcome_inputs_are_checkout_local(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("NWR_DYNASTY_RANKINGS_ROOT", raising=False)
+
+    candidates = draft_day_service.dynasty_rankings_candidates()
+
+    assert candidates == (
+        (
+            draft_day_service.LOCAL_DYNASTY_RANKINGS_PATH,
+            "approved local dynasty rankings",
+            "",
+        ),
+    )
+    assert draft_day_service.LOCAL_DYNASTY_RANKINGS_PATH.is_relative_to(
+        draft_day_service.REPO_ROOT
+    )
+    assert draft_day_service.OUTCOME_NUMERIC_DISPLAY_PATH.is_relative_to(
+        draft_day_service.REPO_ROOT
+    )
+    assert "CONTROL_REPO_ROOT" not in vars(draft_day_service)
+    assert "CONTROL_DYNASTY_RANKINGS_PATH" not in vars(draft_day_service)
+
+
 def test_tuned_v2_overlay_updates_review_only_candidate_context() -> None:
     candidate = load_cross_asset_candidate_board()
     rows = {

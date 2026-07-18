@@ -94,22 +94,12 @@ LOCAL_DYNASTY_RANKINGS_ROOT = (
     REPO_ROOT / "local_exports" / "model_v4" / "current_value" / "latest"
 )
 LOCAL_DYNASTY_RANKINGS_PATH = LOCAL_DYNASTY_RANKINGS_ROOT / DYNASTY_BOARD_FILE_NAME
-CONTROL_REPO_ROOT = Path(r"C:\NWR\Niners-War-Room")
-CONTROL_DYNASTY_RANKINGS_PATH = (
-    CONTROL_REPO_ROOT
-    / "local_exports"
-    / "model_v4"
-    / "current_value"
-    / "latest"
-    / DYNASTY_BOARD_FILE_NAME
-)
 EXPECTED_DYNASTY_RANKINGS_HASH = (
     "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
 )
 OUTCOME_NUMERIC_DISPLAY_PATH = (
-    Path(r"C:\NWR\Niners-War-Room-outcome")
-    / "app"
-    / "generated"
+    REPO_ROOT
+    / "local_exports"
     / "outcome_probability"
     / OUTCOME_NUMERIC_DISPLAY_FILE_NAME
 )
@@ -1232,17 +1222,6 @@ def dynasty_rankings_candidates() -> tuple[tuple[Path, str, str], ...]:
             )
         )
     candidates.append((LOCAL_DYNASTY_RANKINGS_PATH, "approved local dynasty rankings", ""))
-    if CONTROL_DYNASTY_RANKINGS_PATH != LOCAL_DYNASTY_RANKINGS_PATH:
-        candidates.append(
-            (
-                CONTROL_DYNASTY_RANKINGS_PATH,
-                "approved control-repo dynasty rankings",
-                (
-                    "Using the approved local dynasty rankings artifact from the clean "
-                    "control repo because this lane worktree does not contain local_exports."
-                ),
-            )
-        )
     return tuple(candidates)
 
 
@@ -1264,8 +1243,8 @@ def load_dynasty_rankings() -> DynastyRankingsBundle:
             source_path=None,
             source_label=label,
             errors=(
-                "Approved full dynasty rankings CSV was not found. Expected "
-                f"{LOCAL_DYNASTY_RANKINGS_PATH}.",
+                "Approved full dynasty rankings CSV was not found at the repository-local "
+                f"path local_exports/model_v4/current_value/latest/{DYNASTY_BOARD_FILE_NAME}.",
             ),
             warnings=warnings,
             source_hash=None,

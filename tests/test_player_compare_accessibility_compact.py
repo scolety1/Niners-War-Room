@@ -27,6 +27,7 @@ from src.services.decision_trust_strip_service import (
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "app" / "pages" / "22_player_compare_v1.py"
 HELPER = ROOT / "app" / "components" / "player_compare_accessibility.py"
+UI_FRAMEWORK = ROOT / "app" / "components" / "ui_framework.py"
 
 
 def _text(path: Path) -> str:
@@ -53,8 +54,10 @@ def test_accessible_selector_labels_and_slot_text_are_explicit() -> None:
 def test_semantic_heading_and_region_order_follow_the_accessibility_contract() -> None:
     page = _runtime_page_text()
     helper = _text(HELPER)
+    framework = _text(UI_FRAMEWORK)
 
-    assert '<h1 class="nwr-player-compare-sr-only">Player Compare</h1>' in helper
+    assert '<h1 class="nwr-title">{title}</h1>' in framework
+    assert "nwr-player-compare-sr-only" not in helper
     assert PLAYER_COMPARE_REGION_ORDER == (
         "Player Compare",
         "Choose players",

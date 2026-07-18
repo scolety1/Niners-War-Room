@@ -1,0 +1,23 @@
+capability,v1_disposition,current_user_facing_behavior,authority_or_dependency,release_reason
+Canonical Dynasty Rankings,V1_SUPPORTED_WITH_CAVEAT,Frozen baseline always loads; optional full rankings are repository-local and absence is explicit,Existing admitted board and governed score contract,Supported workflow is truthful without private data
+Player Compare,V1_SUPPORTED_WITH_CAVEAT,Manual selection and comparison with fail-closed evidence states,Stable admitted identity and existing trust contract,Supported with missing-context caveats
+Trading Lab,V1_MANUAL_ONLY,Manual trade entry and existing calculations; no saved scenarios,Existing asset display contract,Persistence requires stable asset IDs and is excluded
+Live Draft,V1_SUPPORTED_WITH_CAVEAT,Explicit local draft-state handling and governed board,Existing frozen board and runtime-state contract,Supported local workflow
+Mock Draft,V1_SUPPORTED_WITH_CAVEAT,Explicit local practice state and existing mock save behavior,Existing mock-draft contract,Supported local workflow
+Refresh Data,V1_MANUAL_ONLY,No refresh on route load; execution requires explicit user action,Schema-2 receipt and admitted refresh adapters,Preserves user control and passive-read invariant
+Settings / Data Health,V1_SUPPORTED_WITH_CAVEAT,Read-only schema-2 receipt and health inspection,Canonical receipt and recovery contracts,Truthful without a receipt or optional data
+Roster Weakness Tracker,V1_MANUAL_ONLY,Manual/display-only with insufficient-information states,Stable identity not yet available for hydration,Automated hydration is parked
+Development Lab exports,V1_REVIEW_ONLY,Review-only surfaces and spreadsheet-safe CSV downloads,Existing review packets and shared CSV encoder,Does not feed authoritative ranking
+Draft Freeze exports,V1_REVIEW_ONLY,Existing freeze exports remain spreadsheet-safe,Frozen export and CSV security contracts,No frozen comparator mutation
+Planning and deadline tools,V1_MANUAL_ONLY,Manual planning using admitted context,Existing page contracts,No automatic external hydration
+Evidence Review,V1_REVIEW_ONLY,Review-only evidence summaries that do not feed rankings,Committed evidence packets,No source promotion
+Automated roster hydration,POST_V1_PARKED,Unavailable; manual roster surface remains visible,Stable admitted roster identity required,Not a supported V1 workflow
+Trading Lab saved scenarios,POST_V1_PARKED,No persistence claim or composite-ID persistence,Stable asset IDs required,Absence is truthful
+Exact rookie evidence hydration,POST_V1_PARKED,Paused and shown review-only or unavailable,Authority plus stable identity required,No partial authoritative evidence
+Route-based advanced metrics,V1_GATED,Gated where provider rights are absent,Provider rights and permission required,No unapproved source use
+Plugin recommendations,POST_V1_PARKED,No plugin-backed recommendation in product,Separate provider adoption authority required,No hidden recommendation
+New formula challengers,POST_V1_PARKED,Current governed formulas remain unchanged,Explicit formula authority required,Scope freeze prohibits research
+Future 2026 outcome tuning,POST_V1_PARKED,Existing display-only outcome context remains unchanged,Outcome authority and later evidence required,No comparator mutation
+Private LocalData validation,V1_UNAVAILABLE,Separate gate reports BLOCKED_MISSING_LOCAL_TEST_PACK exit 4,Private pack receipt required,Absence is accepted and not waived
+Automatic commit and push,V1_GATED,Automation remains disabled,Human re-enable review required,Security disposition only
+Cloud or cross-device durability,V1_UNAVAILABLE,Local-only behavior; no durability claim,New architecture and security authority required,Not V1 scope

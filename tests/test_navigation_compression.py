@@ -117,6 +117,12 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
 
 
 def test_navigation_page_files_exist_and_compile() -> None:
+    main_text = (APP_DIR / "main.py").read_text(encoding="utf-8")
+
+    assert "sys.path.insert(0, str(REPO_ROOT))" in main_text
+    assert main_text.index("sys.path.insert(0, str(REPO_ROOT))") < main_text.index(
+        "from app.components.ui_framework import apply_app_shell"
+    )
     for page in ALL_NAVIGATION_PAGES:
         page_path = app_page_path(APP_DIR, page)
         assert page_path.exists(), page_path

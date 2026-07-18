@@ -43,7 +43,7 @@ def _metric_grid(summary: dict[str, object]) -> None:
 data = load_evidence_integration_review_data()
 
 page_header(
-    "Evidence Integration Review",
+    "Evidence Review",
     eyebrow="Hidden Review Route",
     description=(
         "Summarize committed CFBD, NFL usage, unified universe, market, Outcome, "

@@ -220,6 +220,21 @@ def _board_health() -> pd.DataFrame:
     dynasty = load_dynasty_rankings()
     pinned = pinned_manifest_hash()
     rookie_count = _safe_int(getattr(dynasty, "rookie_count", 0))
+    dynasty_status = (
+        "GREEN"
+        if dynasty.row_count == EXPECTED_DYNASTY_ROW_COUNT
+        else "YELLOW"
+        if dynasty.row_count == 0 and dynasty.source_path is None
+        else "RED"
+    )
+    dynasty_note = (
+        f"Expected {EXPECTED_DYNASTY_ROW_COUNT}; source={dynasty.source_label}."
+        if dynasty.source_path is not None
+        else (
+            f"Optional repository-local full rankings are unavailable; expected "
+            f"{EXPECTED_DYNASTY_ROW_COUNT} rows when supplied."
+        )
+    )
     return _frame(
         [
             _row(
@@ -246,9 +261,9 @@ def _board_health() -> pd.DataFrame:
             _row(
                 "Board",
                 "Full Dynasty Rankings rows",
-                "GREEN" if dynasty.row_count == EXPECTED_DYNASTY_ROW_COUNT else "RED",
+                dynasty_status,
                 str(dynasty.row_count),
-                f"Expected {EXPECTED_DYNASTY_ROW_COUNT}; source={dynasty.source_label}.",
+                dynasty_note,
             ),
             _row(
                 "Board",
