@@ -38,6 +38,10 @@ from src.services.nflverse_refresh_health_service import (
     configured_dataset_ids,
     nflverse_dataset_source_id,
 )
+from src.services.refresh_receipt_store_service import (
+    inspect_refresh_receipt,
+    write_refresh_receipt,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STATUS_ROOT = REPO_ROOT / "local_exports" / "refresh_data"
@@ -620,24 +624,15 @@ def run_data_loader(
 
 
 def write_refresh_status(run: RefreshRunResult, *, status_root: Path = DEFAULT_STATUS_ROOT) -> Path:
-    status_root.mkdir(parents=True, exist_ok=True)
-    latest_path = status_root / "latest_refresh_status.json"
-    archive_path = status_root / f"{run.run_id}_{run.loader_mode.lower()}_status.json"
-    payload = _run_payload(run, latest_path)
-    latest_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    archive_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    return latest_path
+    result = write_refresh_receipt(_run_payload(run), status_root=status_root)
+    return result.latest_path
 
 
 def load_latest_refresh_status(
     *, status_path: Path = DEFAULT_STATUS_PATH
 ) -> dict[str, Any] | None:
-    if not status_path.exists():
-        return None
-    try:
-        return json.loads(status_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    result = inspect_refresh_receipt(status_path=status_path)
+    return result.latest_receipt if result.has_valid_latest else None
 
 
 def refresh_results_table(run: RefreshRunResult) -> list[dict[str, Any]]:
@@ -1557,11 +1552,32 @@ def _overall_status(results: Iterable[RefreshSourceResult]) -> str:
     return "GREEN"
 
 
-def _run_payload(run: RefreshRunResult, latest_path: Path) -> dict[str, Any]:
-    payload = asdict(run)
-    payload["status_path"] = str(latest_path)
-    payload["results"] = [_result_payload(result) for result in run.results]
-    return payload
+def _run_payload(run: RefreshRunResult) -> dict[str, Any]:
+    """Project the rich run result into the receipt store's narrow input contract."""
+    return {
+        "run_id": run.run_id,
+        "started_at_utc": run.started_at_utc,
+        "finished_at_utc": run.finished_at_utc,
+        "loader_mode": run.loader_mode,
+        "overall_status": run.overall_status,
+        "results": [_receipt_result_payload(result) for result in run.results],
+    }
+
+
+def _receipt_result_payload(result: RefreshSourceResult) -> dict[str, Any]:
+    return {
+        "source_id": result.source_id,
+        "source_name": result.source_name,
+        "dataset_id": result.dataset_id,
+        "source_family": result.source_family,
+        "action_type": result.action_type,
+        "status": result.status,
+        "refreshed": result.refreshed,
+        "execution_status": result.execution_status,
+        "headline_status": result.headline_status,
+        "freshness_status": result.freshness_status,
+        "source_as_of_utc": result.last_success_at or None,
+    }
 
 
 def _result_payload(result: RefreshSourceResult) -> dict[str, Any]:

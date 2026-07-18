@@ -1,0 +1,50 @@
+{
+  "manifest_version": 1,
+  "packet": "data_health_guardrail_truth_refresh_receipt_durability_v1_20260712",
+  "verdict": "GREEN_DATA_HEALTH_GUARDRAIL_RECEIPT_DURABILITY_V1_READY_FOR_HQ_REVIEW",
+  "verified_starting_hq": "6bcb9c3c36fc560c30151591feaeff9d3960499f",
+  "remote_advance": false,
+  "branch": "work/data-health-guardrail-truth-receipt-durability-v1-20260712",
+  "receipt_owner": "src/services/data_refresh_orchestrator_service.py",
+  "storage_boundary": "local_exports/refresh_data",
+  "receipt_schema_version": 1,
+  "required_files": [
+    "DATA_HEALTH_GUARDRAIL_RECEIPT_DURABILITY_V1_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "FIELD_AND_LIFECYCLE_REUSE_MAP.csv",
+    "RECEIPT_STORAGE_AND_SCHEMA_DECISION.md",
+    "GUARDRAIL_TRUTH_MATRIX.csv",
+    "REFRESH_RECEIPT_SCHEMA.md",
+    "LAST_KNOWN_GOOD_CONTRACT.md",
+    "RERUN_RELOAD_DURABILITY_REVIEW.md",
+    "STATE_TRANSITION_MATRIX.csv",
+    "REFRESH_RECOVERY_NO_CHANGE_PROOF.md",
+    "DECISION_TRUST_STRIP_NO_CHANGE_PROOF.md",
+    "ACCESSIBILITY_AND_COMPACT_REVIEW.md",
+    "REPRESENTATIVE_RENDER_REVIEW.md",
+    "ROLLBACK_PLAN.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "rendered_evidence": [
+    {
+      "file": "rendered_evidence/synthetic_matrix_refresh_data_1440x1000_viewport.png",
+      "bytes": 125729,
+      "sha256": "10c970432b01d6ca8e1923b59319540855b514dbb26a9bdaa53e22cac2ec2d22"
+    },
+    {
+      "file": "rendered_evidence/synthetic_matrix_refresh_data_375x812_expanded.png",
+      "bytes": 46563,
+      "sha256": "f301b05c00dfec5889ca374a37e3baa857ce1523734fa62ac8fb882f2f3fe3ad"
+    },
+    {
+      "file": "rendered_evidence/synthetic_matrix_settings_data_health_1440x1000.png",
+      "bytes": 62979,
+      "sha256": "6572a6c334ca0475aedd6124cb5f702ac54e0c546623a0ce7030d8f36e4eb150"
+    }
+  ],
+  "push_authorized": false,
+  "roster_hydration_started": false
+}

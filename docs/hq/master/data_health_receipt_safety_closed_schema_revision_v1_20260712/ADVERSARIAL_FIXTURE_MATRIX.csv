@@ -1,0 +1,26 @@
+case,expected_status,zero_mutation_assertion,result
+refreshed_string_yes,rejected_write,full tree bytes hashes mtimes unchanged,pass
+integer_for_boolean,rejected_write,full tree bytes hashes mtimes unchanged,pass
+malformed_timestamp,rejected_write,full tree bytes hashes mtimes unchanged,pass
+unsupported_outcome_enum,rejected_write,full tree bytes hashes mtimes unchanged,pass
+unknown_top_level_key,rejected_write,full tree bytes hashes mtimes unchanged,pass
+unknown_nested_key,rejected_write,full tree bytes hashes mtimes unchanged,pass
+nested_authorization_header,rejected_write,full tree bytes hashes mtimes unchanged,pass
+nested_bearer_token,rejected_write,full tree bytes hashes mtimes unchanged,pass
+api_key_like_field,rejected_write,full tree bytes hashes mtimes unchanged,pass
+cookie_session_field,rejected_write,full tree bytes hashes mtimes unchanged,pass
+absolute_windows_path,rejected_write,full tree bytes hashes mtimes unchanged,pass
+absolute_posix_path,rejected_write,full tree bytes hashes mtimes unchanged,pass
+raw_provider_response_object,rejected_write,full tree bytes hashes mtimes unchanged,pass
+nested_arbitrary_metadata,rejected_write,full tree bytes hashes mtimes unchanged,pass
+duplicate_json_keys,corrupt_read_only,stored bytes hashes mtimes unchanged,pass
+oversized_serialized_candidate,rejected_write,full tree bytes hashes mtimes unchanged,pass
+oversized_nested_list,rejected_write,full tree bytes hashes mtimes unchanged,pass
+excessive_string_length,rejected_write,full tree bytes hashes mtimes unchanged,pass
+missing_required_field,rejected_write,full tree bytes hashes mtimes unchanged,pass
+null_non_nullable_field,rejected_write,full tree bytes hashes mtimes unchanged,pass
+invalid_source_dataset_id_type,rejected_write,full tree bytes hashes mtimes unchanged,pass
+unsupported_schema_version,rejected_write_or_read_only,full tree bytes hashes mtimes unchanged,pass
+corrupt_latest_receipt,corrupt_read_only,latest backup archive quarantine unchanged,pass
+corrupt_backup_receipt,corrupt_read_only,latest backup archive quarantine unchanged,pass
+interrupted_replacement,rolled_back,latest backup archive quarantine and mtimes restored,pass

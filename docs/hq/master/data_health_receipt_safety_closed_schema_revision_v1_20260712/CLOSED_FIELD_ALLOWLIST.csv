@@ -1,0 +1,45 @@
+scope,parent,field,persisted,rule
+top,receipt,schema_version,yes,integer exactly 2
+top,receipt,receipt_id,yes,rr_ plus 24 lowercase hex
+top,receipt,created_at_utc,yes,bounded RFC3339 UTC
+top,receipt,refresh_action_id,yes,opaque ID equal run_id
+top,receipt,run_id,yes,opaque ID
+top,receipt,started_at_utc,yes,bounded RFC3339 UTC
+top,receipt,finished_at_utc,yes,bounded RFC3339 UTC not before start
+top,receipt,loader_mode,yes,closed enum
+top,receipt,overall_status,yes,closed enum
+top,receipt,status_path,yes,fixed logical local path
+top,receipt,outcome_summary,yes,closed object
+top,receipt,lifecycle,yes,closed object
+top,receipt,results,yes,1 to 256 closed flat rows
+top,receipt,integrity,yes,closed object
+nested,outcome_summary,successful_refresh_results,yes,derived integer 0 to 256
+nested,outcome_summary,incomplete_or_non_refresh_results,yes,derived integer 0 to 256
+nested,lifecycle,storage_boundary,yes,fixed local_exports/refresh_data
+nested,lifecycle,latest_attempt_receipt_id,yes,equal receipt_id
+nested,lifecycle,last_known_good_relationship,yes,fixed relationship label
+nested,lifecycle,archive_retention,yes,integer exactly 20
+nested,lifecycle,quarantine_retention,yes,integer exactly 5
+result,results,source_id,yes,identifier 1 to 128
+result,results,source_name,yes,approved display string 1 to 160
+result,results,dataset_id,yes,identifier 0 to 128
+result,results,source_family,yes,identifier 0 to 64
+result,results,action_type,yes,closed enum
+result,results,status,yes,closed enum
+result,results,refreshed,yes,JSON boolean only
+result,results,execution_status,yes,closed enum
+result,results,headline_status,yes,closed enum
+result,results,freshness_status,yes,closed enum
+result,results,retained_data_status,yes,closed enum
+result,results,latest_successful_receipt_id,yes,empty or receipt ID
+result,results,last_known_good_receipt_id,yes,empty or receipt ID
+result,results,identity_exception,yes,closed enum
+result,results,source_exception,yes,closed enum
+result,results,error_category,yes,closed enum derived from state
+result,results,error_summary,yes,fixed approved category text 1 to 192
+result,results,source_as_of_utc,yes,null or already available RFC3339 UTC
+nested,integrity,algorithm,yes,fixed sha256
+nested,integrity,digest,yes,64 lowercase hex
+excluded,orchestrator_result,all_other_fields,no,known rich run fields are never copied
+excluded,any,unknown_keys,no,rejected recursively
+excluded,any,nested_result_content,no,rejected

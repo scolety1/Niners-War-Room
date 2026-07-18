@@ -12,9 +12,6 @@ import pandas as pd
 from src.services.data_refresh_orchestrator_service import (
     DEFAULT_STATUS_PATH as DEFAULT_REFRESH_STATUS_PATH,
 )
-from src.services.data_refresh_orchestrator_service import (
-    load_latest_refresh_status,
-)
 from src.services.display_only_ngs_context_service import (
     NGS_GATE,
     REVIEW_ONLY_WARNING,
@@ -39,6 +36,29 @@ from src.services.market_baseline_service import (
     DISPLAY_ONLY_WARNING,
     load_market_freshness,
     load_market_player_context,
+)
+from src.services.refresh_receipt_store_service import (
+    MISSING,
+    VALID_LATEST,
+    RefreshReceiptLoadResult,
+    inspect_refresh_receipt,
+)
+from src.services.refresh_receipt_store_service import (
+    STALE_RETAINED_DATA as RECEIPT_STALE_RETAINED_DATA,
+)
+from src.services.refresh_recovery_presentation_service import (
+    NOT_ENOUGH_INFORMATION as RECOVERY_NOT_ENOUGH_INFORMATION,
+)
+from src.services.refresh_recovery_presentation_service import (
+    PARTIAL_SUCCESS,
+    REFRESH_FAILED,
+    REFRESH_SUCCESS,
+    SOURCE_GATED,
+    SOURCE_SKIPPED,
+    SOURCE_UNAVAILABLE,
+    STALE_RETAINED_DATA,
+    build_refresh_recovery_presentations,
+    build_run_recovery_summary,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -393,118 +413,174 @@ def _ngs_context_health() -> pd.DataFrame:
 
 
 def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:
-    payload = load_latest_refresh_status(status_path=refresh_status_path)
-    if not payload:
-        return _frame(
-            [
-                _row(
-                    "Refresh Data",
-                    "Last manual Refresh Data run",
-                    "YELLOW",
-                    "not run",
-                    "Use the Refresh Data control to pull configured safe sources.",
-                ),
-                _row(
-                    "Refresh Data",
-                    "DynastyProcess freshness after refresh",
-                    "YELLOW",
-                    NOT_ENOUGH_INFORMATION,
-                    "No Refresh Data status file exists yet.",
-                ),
-            ]
-        )
+    receipt_load = inspect_refresh_receipt(status_path=refresh_status_path)
+    if not receipt_load.has_valid_latest:
+        return _invalid_refresh_receipt_health(receipt_load)
 
-    rows = payload.get("results", [])
-    refreshed = [row for row in rows if row.get("refreshed") is True]
-    skipped = [
-        row
-        for row in rows
-        if str(row.get("status")) in {"SKIPPED", "NOT_CONFIGURED"}
+    payload = receipt_load.latest_receipt or {}
+    rows = [row for row in payload.get("results", []) if isinstance(row, dict)]
+    recovery_rows = [_receipt_recovery_row(row) for row in rows]
+    presentations = build_refresh_recovery_presentations(recovery_rows)
+    paired = list(zip(rows, presentations, strict=False))
+    run_summary = build_run_recovery_summary(
+        recovery_rows,
+        finished_at=str(payload.get("finished_at_utc") or ""),
+    )
+
+    def count_state(state: str) -> int:
+        return sum(item.refresh_state == state for _, item in paired)
+
+    refreshed_count = count_state(REFRESH_SUCCESS)
+    partial_count = count_state(PARTIAL_SUCCESS)
+    stale_count = count_state(STALE_RETAINED_DATA)
+    skipped_count = count_state(SOURCE_SKIPPED)
+    unavailable_count = count_state(SOURCE_UNAVAILABLE)
+    gated_count = count_state(SOURCE_GATED)
+    failed_count = count_state(REFRESH_FAILED)
+    unknown_count = count_state(RECOVERY_NOT_ENOUGH_INFORMATION)
+    lkg_count = sum(bool(str(row.get("last_known_good_receipt_id") or "")) for row in rows)
+    unresolved_retained = sum(
+        row.get("retained_data_status") == RECEIPT_STALE_RETAINED_DATA
+        and not str(row.get("last_known_good_receipt_id") or "")
+        and item.refresh_state != REFRESH_SUCCESS
+        for row, item in paired
+    )
+
+    nflverse_pairs = [
+        (row, item)
+        for row, item in paired
+        if _is_nflverse_dataset_row(row)
     ]
-    blocked = [row for row in rows if str(row.get("status")) == "BLOCKED"]
-    failed = [row for row in rows if str(row.get("status")) == "RED"]
-    nflverse_dataset_rows = [
-        row
-        for row in rows
-        if str(row.get("source_kind")) == "public_structured_nfl_dataset"
-        or str(row.get("source_family") or "") == "nflverse"
-        or str(row.get("source_id", "")).startswith("nflverse_")
-    ]
-    nflverse_failed = [
-        row
-        for row in nflverse_dataset_rows
-        if str(row.get("status")) == "RED"
-        or str(row.get("execution_status") or "") == "failed"
-    ]
-    nflverse_blocked = [
-        row
-        for row in nflverse_dataset_rows
-        if str(row.get("status")) == "BLOCKED"
-        or str(row.get("execution_status") or "") == "blocked_policy"
-    ]
+    nflverse_dataset_rows = [row for row, _ in nflverse_pairs]
+    nflverse_failed = [row for row, item in nflverse_pairs if item.refresh_state == REFRESH_FAILED]
+    nflverse_blocked = [row for row, item in nflverse_pairs if item.refresh_state == SOURCE_GATED]
     nflverse_not_configured = [
-        row
-        for row in nflverse_dataset_rows
-        if str(row.get("status")) == "NOT_CONFIGURED"
-        or str(row.get("execution_status") or "") == "blocked_config"
+        row for row, item in nflverse_pairs if item.refresh_state == SOURCE_UNAVAILABLE
     ]
     nflverse_review = [
         row
-        for row in nflverse_dataset_rows
-        if str(row.get("headline_status") or "")
-        in {"review", "review_only", "stale", "skipped", "unknown"}
+        for row, item in nflverse_pairs
+        if item.refresh_state
+        in {
+            PARTIAL_SUCCESS,
+            STALE_RETAINED_DATA,
+            SOURCE_SKIPPED,
+            RECOVERY_NOT_ENOUGH_INFORMATION,
+        }
     ]
     dynasty = next(
         (
-            row
-            for row in rows
+            (row, item)
+            for row, item in paired
             if row.get("source_id") == "dynastyprocess_market_baseline"
         ),
-        {},
+        None,
     )
-    overall = str(payload.get("overall_status") or "YELLOW")
+    dynasty_state = dynasty[1].refresh_state if dynasty else RECOVERY_NOT_ENOUGH_INFORMATION
+    dynasty_detail = dynasty[1].reason_summary if dynasty else "No source receipt row recorded."
+
     return _frame(
         [
             _row(
                 "Refresh Data",
-                "Last manual Refresh Data run",
-                _health_status_from_refresh(overall),
-                str(payload.get("finished_at_utc") or NOT_ENOUGH_INFORMATION),
-                f"Refresh run id: {payload.get('run_id') or NOT_ENOUGH_INFORMATION}.",
+                "Receipt storage status",
+                "GREEN",
+                VALID_LATEST,
+                "Schema and integrity passed; this does not imply source health.",
             ),
-            _row("Refresh Data", "Sources refreshed", "GREEN", str(len(refreshed))),
+            _row(
+                "Refresh Data",
+                "Last manual Refresh Data run",
+                _health_status_from_recovery(run_summary.refresh_state),
+                (
+                    f"{run_summary.refresh_state} at "
+                    f"{payload.get('finished_at_utc') or NOT_ENOUGH_INFORMATION}"
+                ),
+                (
+                    "Latest attempt receipt: "
+                    f"{payload.get('receipt_id') or NOT_ENOUGH_INFORMATION}; "
+                    f"refresh action: {payload.get('refresh_action_id') or NOT_ENOUGH_INFORMATION}."
+                ),
+            ),
+            _row(
+                "Refresh Data",
+                "Sources refreshed",
+                "GREEN" if refreshed_count else "YELLOW",
+                str(refreshed_count),
+                "Counts only explicit REFRESH_SUCCESS states.",
+            ),
+            _row(
+                "Refresh Data",
+                "Partial-success sources",
+                "YELLOW" if partial_count else "GREEN",
+                str(partial_count),
+            ),
+            _row(
+                "Refresh Data",
+                "Stale retained sources",
+                "YELLOW" if stale_count else "GREEN",
+                str(stale_count),
+            ),
             _row(
                 "Refresh Data",
                 "Sources skipped",
-                "YELLOW" if skipped else "GREEN",
-                str(len(skipped)),
+                "YELLOW" if skipped_count else "GREEN",
+                str(skipped_count),
+            ),
+            _row(
+                "Refresh Data",
+                "Sources unavailable",
+                "YELLOW" if unavailable_count else "GREEN",
+                str(unavailable_count),
+            ),
+            _row(
+                "Refresh Data",
+                "Sources gated",
+                "YELLOW" if gated_count else "GREEN",
+                str(gated_count),
             ),
             _row(
                 "Refresh Data",
                 "Failed sources",
-                "RED" if failed else "GREEN",
-                str(len(failed)),
+                "RED" if failed_count else "GREEN",
+                str(failed_count),
+            ),
+            _row(
+                "Refresh Data",
+                "Not-enough-information sources",
+                "YELLOW" if unknown_count else "GREEN",
+                str(unknown_count),
             ),
             _row(
                 "Refresh Data",
                 "Blocked/not configured sources",
-                "YELLOW" if blocked else "GREEN",
-                str(len(blocked)),
-                "Manual/vendor/key-gated sources remain explicit.",
+                "YELLOW" if gated_count + unavailable_count else "GREEN",
+                str(gated_count + unavailable_count),
+                f"Gated={gated_count}; unavailable/not configured={unavailable_count}.",
             ),
             _row(
                 "Refresh Data",
-                "DynastyProcess freshness after refresh",
-                _health_status_from_refresh(str(dynasty.get("status") or "YELLOW")),
-                str(dynasty.get("status") or NOT_ENOUGH_INFORMATION),
-                str(dynasty.get("user_message") or ""),
+                "Last-known-good retained-data links",
+                "YELLOW" if unresolved_retained else "GREEN",
+                str(lkg_count),
+                (
+                    f"{unresolved_retained} stale retained row(s) lack a validated matching "
+                    "prior receipt relationship."
+                ),
+            ),
+            _row(
+                "Refresh Data",
+                "DynastyProcess latest refresh outcome",
+                _health_status_from_recovery(dynasty_state),
+                dynasty_state,
+                dynasty_detail,
             ),
             _row(
                 "Refresh Data",
                 "NFLVerse dataset health rows",
                 "GREEN" if len(nflverse_dataset_rows) == 25 else "YELLOW",
                 str(len(nflverse_dataset_rows)),
-                "Dataset-level Safe Refresh/Full Safe Refresh rows; packet expects 25.",
+                "Coverage count only; failure, gate, stale, and unknown rows remain separate.",
             ),
             _row(
                 "Refresh Data",
@@ -535,6 +611,60 @@ def _refresh_health(refresh_status_path: Path) -> pd.DataFrame:
                 _nflverse_dataset_detail(nflverse_review),
             ),
         ]
+    )
+
+
+def _invalid_refresh_receipt_health(load: RefreshReceiptLoadResult) -> pd.DataFrame:
+    status = "YELLOW" if load.load_status == MISSING else "RED"
+    rows = [
+        _row(
+            "Refresh Data",
+            "Receipt storage status",
+            status,
+            load.load_status,
+            load.detail,
+        ),
+        _row(
+            "Refresh Data",
+            "Last manual Refresh Data run",
+            status,
+            NOT_ENOUGH_INFORMATION,
+            "The latest receipt is not valid; no current refresh outcome is inferred.",
+        ),
+        _row(
+            "Refresh Data",
+            "DynastyProcess latest refresh outcome",
+            status,
+            NOT_ENOUGH_INFORMATION,
+            "No valid latest source receipt row is available.",
+        ),
+    ]
+    if load.has_valid_backup:
+        backup = load.backup_receipt or {}
+        rows.append(
+            _row(
+                "Refresh Data",
+                "Validated prior receipt (not latest)",
+                "YELLOW",
+                str(backup.get("receipt_id") or NOT_ENOUGH_INFORMATION),
+                "Prior receipt evidence is separate and does not prove retained current data.",
+            )
+        )
+    return _frame(rows)
+
+
+def _receipt_recovery_row(row: dict[str, Any]) -> dict[str, Any]:
+    adapted = dict(row)
+    adapted["user_explanation"] = row.get("error_summary") or ""
+    adapted["last_success_at"] = row.get("source_as_of_utc") or ""
+    return adapted
+
+
+def _is_nflverse_dataset_row(row: dict[str, Any]) -> bool:
+    return (
+        str(row.get("source_kind") or "") == "public_structured_nfl_dataset"
+        or str(row.get("source_family") or "").lower() == "nflverse"
+        or str(row.get("source_id") or "").startswith("nflverse_")
     )
 
 
@@ -806,10 +936,10 @@ def _market_status(status: str) -> str:
     return "YELLOW"
 
 
-def _health_status_from_refresh(status: str) -> str:
-    if status == "GREEN":
+def _health_status_from_recovery(state: str) -> str:
+    if state == REFRESH_SUCCESS:
         return "GREEN"
-    if status == "RED":
+    if state == REFRESH_FAILED:
         return "RED"
     return "YELLOW"
 

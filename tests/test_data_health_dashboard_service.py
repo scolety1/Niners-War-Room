@@ -14,6 +14,37 @@ from src.services.draft_day_runtime_state_service import (
     empty_runtime_state,
     runtime_state_path,
 )
+from src.services.refresh_receipt_store_service import write_refresh_receipt
+
+
+def _write_refresh_status(path: Path, payload: dict[str, object]) -> None:
+    body = {
+        "started_at_utc": "2026-06-24T11:59:00+00:00",
+        "loader_mode": "QUICK_REFRESH",
+        **payload,
+    }
+    body["results"] = [_closed_receipt_row(row) for row in body["results"]]
+    write_refresh_receipt(
+        body,
+        status_root=path.parent,
+        created_at_utc=str(body["finished_at_utc"]),
+    )
+
+
+def _closed_receipt_row(row: dict[str, object]) -> dict[str, object]:
+    source_id = str(row["source_id"])
+    return {
+        "source_id": source_id,
+        "source_name": str(row.get("source_name") or source_id),
+        "dataset_id": str(row.get("dataset_id") or ""),
+        "source_family": "nflverse" if source_id.startswith("nflverse_") else "",
+        "action_type": row["action_type"],
+        "status": row["status"],
+        "refreshed": row["refreshed"],
+        "execution_status": str(row.get("execution_status") or ""),
+        "headline_status": str(row.get("headline_status") or ""),
+        "freshness_status": str(row.get("freshness_status") or ""),
+    }
 
 
 def _value(report, section: str, check: str) -> str:
@@ -149,9 +180,9 @@ def test_data_health_dashboard_reports_display_only_ngs_context(tmp_path: Path) 
 
 def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:
     refresh_status = tmp_path / "latest_refresh_status.json"
-    refresh_status.write_text(
-        json.dumps(
-            {
+    _write_refresh_status(
+        refresh_status,
+        {
                 "run_id": "20260624_120000",
                 "finished_at_utc": "2026-06-24T12:00:00+00:00",
                 "overall_status": "YELLOW",
@@ -159,15 +190,20 @@ def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:
                     {
                         "source_id": "dynastyprocess_market_baseline",
                         "source_name": "DynastyProcess market baseline",
+                        "action_type": "REFRESHED",
                         "status": "GREEN",
                         "refreshed": True,
+                        "freshness_status": "CURRENT",
                         "user_message": "ok",
                     },
-                    {"source_id": "rotowire_vendor_exports", "status": "BLOCKED"},
+                    {
+                        "source_id": "rotowire_vendor_exports",
+                        "action_type": "BLOCKED_MANUAL",
+                        "status": "BLOCKED",
+                        "refreshed": False,
+                    },
                 ],
-            }
-        ),
-        encoding="utf-8",
+        },
     )
 
     report = build_data_health_dashboard(
@@ -177,14 +213,16 @@ def test_data_health_consumes_refresh_status_file(tmp_path: Path) -> None:
 
     assert _value(report, "Refresh Data", "Sources refreshed") == "1"
     assert _value(report, "Refresh Data", "Blocked/not configured sources") == "1"
-    assert _value(report, "Refresh Data", "DynastyProcess freshness after refresh") == "GREEN"
+    assert _value(report, "Refresh Data", "DynastyProcess latest refresh outcome") == (
+        "REFRESH_SUCCESS"
+    )
 
 
 def test_data_health_summarizes_nflverse_dataset_rows(tmp_path: Path) -> None:
     refresh_status = tmp_path / "latest_refresh_status.json"
-    refresh_status.write_text(
-        json.dumps(
-            {
+    _write_refresh_status(
+        refresh_status,
+        {
                 "run_id": "20260630_120000",
                 "finished_at_utc": "2026-06-30T12:00:00+00:00",
                 "overall_status": "YELLOW",
@@ -193,6 +231,7 @@ def test_data_health_summarizes_nflverse_dataset_rows(tmp_path: Path) -> None:
                         "source_id": "nflverse_player_stats_weekly",
                         "source_kind": "public_structured_nfl_dataset",
                         "dataset_id": "player_stats_weekly",
+                        "action_type": "CHECK_ONLY",
                         "status": "GREEN",
                         "configured": True,
                         "refreshed": False,
@@ -201,14 +240,13 @@ def test_data_health_summarizes_nflverse_dataset_rows(tmp_path: Path) -> None:
                         "source_id": "nflverse_ff_rankings",
                         "source_kind": "public_structured_nfl_dataset",
                         "dataset_id": "ff_rankings",
+                        "action_type": "BLOCKED_MANUAL",
                         "status": "BLOCKED",
                         "configured": False,
                         "refreshed": False,
                     },
                 ],
-            }
-        ),
-        encoding="utf-8",
+        },
     )
 
     report = build_data_health_dashboard(
@@ -219,7 +257,9 @@ def test_data_health_summarizes_nflverse_dataset_rows(tmp_path: Path) -> None:
     assert _value(report, "Refresh Data", "NFLVerse dataset health rows") == "2"
     assert _value(report, "Refresh Data", "NFLVerse blocked policy datasets") == "1"
     assert _value(report, "Refresh Data", "NFLVerse NOT_CONFIGURED datasets") == "0"
-    assert _status(report, "Refresh Data", "NFLVerse review/stale/unknown datasets") == "GREEN"
+    assert _status(report, "Refresh Data", "NFLVerse review/stale/unknown datasets") == (
+        "YELLOW"
+    )
 
 
 def test_settings_data_health_route_and_legacy_alias_exist() -> None:

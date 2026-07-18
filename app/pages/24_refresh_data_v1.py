@@ -10,10 +10,13 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.components.refresh_recovery_panel import render_refresh_recovery_panel
+from app.components.durable_refresh_receipt_panel import (
+    render_durable_refresh_receipt_panel,
+)
 from app.components.ui_framework import page_header
 from src.services.data_refresh_orchestrator_service import (
     CHECK_PROTECTED_ARTIFACTS,
+    DEFAULT_STATUS_PATH,
     FULL_SAFE_REFRESH,
     MANUAL_SOURCES_CHECKLIST,
     QUICK_REFRESH,
@@ -26,10 +29,7 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
-from src.services.refresh_recovery_presentation_service import (
-    build_refresh_recovery_presentations,
-    build_run_recovery_summary,
-)
+from src.services.refresh_receipt_store_service import inspect_refresh_receipt
 
 RESULT_COLUMNS = [
     "run_id",
@@ -258,13 +258,6 @@ if last_run:
     st.subheader("Run Summary")
     st.metric("Overall", run.overall_status)
     st.caption(f"{run.loader_mode} finished at {run.finished_at_utc}")
-    recovery_rows = list(last_run["rows"])
-    render_refresh_recovery_panel(
-        (
-            build_run_recovery_summary(recovery_rows, finished_at=run.finished_at_utc),
-            *build_refresh_recovery_presentations(recovery_rows),
-        )
-    )
     st.dataframe(
         pd.DataFrame(last_run["summary"]),
         use_container_width=True,
@@ -291,5 +284,12 @@ if last_run:
         mime="text/csv",
     )
 else:
-    st.info("No safe loader run has been started in this session.")
-    render_refresh_recovery_panel(())
+    st.info(
+        "No safe loader run has been started in this session. The durable local receipt "
+        "below remains available across supported reruns and reloads."
+    )
+
+render_durable_refresh_receipt_panel(
+    inspect_refresh_receipt(status_path=DEFAULT_STATUS_PATH),
+    title="Latest durable refresh receipt",
+)

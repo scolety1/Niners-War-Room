@@ -1,0 +1,39 @@
+field,exact_json_type,nullability,max_length_or_count,allowed_values_or_pattern
+schema_version,integer,never,n/a,2
+receipt_id,string,never,27,rr_[0-9a-f]{24}
+created_at_utc,string,never,32,RFC3339 UTC seconds with optional 1-6 fractional digits
+refresh_action_id,string,never,64,[A-Za-z0-9][A-Za-z0-9_.:-]*
+run_id,string,never,64,[A-Za-z0-9][A-Za-z0-9_.:-]*
+started_at_utc,string,never,32,RFC3339 UTC seconds with optional 1-6 fractional digits
+finished_at_utc,string,never,32,RFC3339 UTC seconds with optional 1-6 fractional digits
+loader_mode,string,never,32,QUICK_REFRESH|FULL_SAFE_REFRESH|CHECK_PROTECTED_ARTIFACTS|MANUAL_SOURCES_CHECKLIST
+overall_status,string,never,6,GREEN|YELLOW|RED
+status_path,string,never,54,local_exports/refresh_data/latest_refresh_status.json
+results,array,never,256 rows,closed flat result objects
+source_id,string,never,128,identifier alphabet
+source_name,string,never,160,trimmed control-free privacy-safe text
+dataset_id,string,never,128,empty or identifier alphabet
+source_family,string,never,64,empty or identifier alphabet
+action_type,string,never,18,REFRESHED|CHECK_ONLY|SKIPPED_BY_POLICY|NOT_CONFIGURED|BLOCKED_MANUAL|FAILED
+status,string,never,14,GREEN|YELLOW|RED|SKIPPED|NOT_CONFIGURED|BLOCKED
+refreshed,boolean,never,n/a,true|false
+execution_status,string,never,15,empty|succeeded|failed|blocked_policy|blocked_config|skipped|success|partial|partial_success
+headline_status,string,never,15,empty|succeeded|failed|blocked_policy|blocked_config|stale|review_only|review|skipped|unknown|partial|partial_success|current|fresh|PARTIAL|PARTIAL_SUCCESS|CURRENT|FRESH|STALE
+freshness_status,string,never,14,empty|current|fresh|stale|pass|review|fail|unknown|not_applicable|CURRENT|FRESH|STALE|PASS|REVIEW|FAIL|UNKNOWN|NOT_APPLICABLE
+retained_data_status,string,never,27,CURRENT_RETAINED_DATA|STALE_RETAINED_DATA|NO_USABLE_RETAINED_DATA|NOT_ENOUGH_INFORMATION
+latest_successful_receipt_id,string,never,27,empty or receipt ID
+last_known_good_receipt_id,string,never,27,empty or receipt ID
+identity_exception,string,never,19,empty|UNRESOLVED_IDENTITY
+source_exception,string,never,25,empty|SOURCE_CONTRACT_EXCEPTION
+error_category,string,never,22,NONE|PARTIAL_SUCCESS|STALE_DATA|SOURCE_SKIPPED|SOURCE_UNAVAILABLE|SOURCE_GATED|REFRESH_FAILED|NOT_ENOUGH_INFORMATION
+error_summary,string,never,192,exact fixed text selected by error_category
+source_as_of_utc,string|null,allowed,32,null or RFC3339 UTC
+successful_refresh_results,integer,never,256,0 through 256 and derived
+incomplete_or_non_refresh_results,integer,never,256,0 through 256 and derived
+storage_boundary,string,never,26,local_exports/refresh_data
+latest_attempt_receipt_id,string,never,27,equal receipt_id
+last_known_good_relationship,string,never,43,per_source_explicit_retention_only
+archive_retention,integer,never,n/a,20
+quarantine_retention,integer,never,n/a,5
+algorithm,string,never,6,sha256
+digest,string,never,64,[0-9a-f]{64}

@@ -10,7 +10,9 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.components.refresh_recovery_panel import render_refresh_recovery_panel
+from app.components.durable_refresh_receipt_panel import (
+    render_durable_refresh_receipt_panel,
+)
 from app.components.ui_framework import page_header
 from src.services.data_health_dashboard_service import (
     HealthDashboardReport,
@@ -19,6 +21,7 @@ from src.services.data_health_dashboard_service import (
 )
 from src.services.data_refresh_orchestrator_service import (
     CHECK_PROTECTED_ARTIFACTS,
+    DEFAULT_STATUS_PATH,
     FULL_SAFE_REFRESH,
     MANUAL_SOURCES_CHECKLIST,
     QUICK_REFRESH,
@@ -30,9 +33,7 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
-from src.services.refresh_recovery_presentation_service import (
-    build_refresh_recovery_presentations,
-)
+from src.services.refresh_receipt_store_service import inspect_refresh_receipt
 
 STATUS_STYLES = {
     "GREEN": ("safe", "Ready"),
@@ -113,10 +114,6 @@ def _render_safe_loader_controls() -> None:
     if loader_run:
         run = loader_run["run"]
         rows = pd.DataFrame(loader_run["rows"])
-        render_refresh_recovery_panel(
-            build_refresh_recovery_presentations(loader_run["rows"]),
-            title="Latest loader recovery guidance",
-        )
         st.dataframe(
             rows.loc[
                 :,
@@ -241,10 +238,9 @@ else:
     st.success("No data-health warnings found by the dashboard checks.")
 
 _render_safe_loader_controls()
-refresh_status_rows = report.refresh_health.to_dict(orient="records")
-render_refresh_recovery_panel(
-    build_refresh_recovery_presentations(refresh_status_rows),
-    title="Current refresh health and recovery guidance",
+render_durable_refresh_receipt_panel(
+    inspect_refresh_receipt(status_path=DEFAULT_STATUS_PATH),
+    title="Current refresh receipt health and recovery guidance",
 )
 _render_warning_summary(report)
 _render_section("App / Version Status", report.app_status, expanded=True)
