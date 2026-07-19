@@ -1,0 +1,9 @@
+status,path,purpose
+A,scripts/nwr_desktop.py,repository launcher entry point
+A,scripts/NWR Desktop Commands.ps1,start stop status logs backup validation and restore wrapper
+A,scripts/Install Niners War Room Shortcut.ps1,identity-safe one-click shortcut installer
+A,scripts/Uninstall Niners War Room Shortcut.ps1,shortcut-only uninstall
+A,src/launcher/__init__.py,launcher package
+A,src/launcher/windows_desktop.py,launcher lifecycle persistence backup browser and diagnostics
+A,tests/test_windows_desktop_launcher.py,synthetic launcher and recovery tests
+A,docs/hq/master/nwr_v1_windows_desktop_launcher_persistence_v1_20260719/,required evidence packet

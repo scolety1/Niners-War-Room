@@ -1,0 +1,7 @@
+# Backup and restore contract
+
+Launcher snapshots include only validated current draft runtime state, Development Lab JSON, saved mock JSON, and valid latest/backup Data Health receipts. Each snapshot is staged, copied byte-for-byte, SHA-256 verified, given a schema-v1 manifest, and atomically renamed. Retention is five valid snapshots; the last valid snapshot is never pruned.
+
+A valid non-empty state gets a pre-launch snapshot. A post-clean-shutdown snapshot is created only when the validated state fingerprint changed. Backup failure is appended to `launcher.log` and immediately shown in a nonfatal Windows warning dialog when current state is valid. A log-write failure cannot suppress that dialog or block launch. Invalid current state blocks startup and automatic backup.
+
+`backup` creates a manual snapshot only while holding the exclusive maintenance lock. `restore-dry-run <id>` verifies the manifest/hashes and reports create/replace/unchanged. `restore <id> --confirm <same-id>` requires the app stopped, holds that lock for the full operation, makes a pre-restore snapshot (including an empty manifest when state is empty), stages and hash-verifies every file, removes supported files absent from the snapshot, validates the exact restored fingerprint, and rolls back on failure. Corrupt backups never restore automatically. Retention pruning is deferred until the chosen restore has completed, so it cannot delete its own source.

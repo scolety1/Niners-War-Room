@@ -1,0 +1,54 @@
+area,test,result,evidence_or_caveat
+installation,interactive user resolution,BLOCKED,no accessible Explorer owner in sandbox
+installation,stable worktree resolution,PASS,accepted ancestor/tree verified
+installation,shortcut creation,PASS,disposable desktop
+installation,shortcut target validation,PASS,pythonw plus committed-path arguments contract
+installation,icon validation,PASS,local shell32 resource
+installation,no-admin design,PASS,per-user shortcut/data and no service
+startup,first launch,PASS,health 200
+startup,warm launch,PASS,health 200
+startup,already-running healthy,PASS,duplicate exit 0 and one listener
+startup,stale lock,PASS,reclaimed only with dead owner and free port
+startup,missing virtual environment,PASS,shared supported runtime fallback
+startup,wrong Python version,PASS,version/dependency preflight rejects
+startup,missing dependency,PASS,Streamlit import preflight rejects
+startup,unrelated occupied port,PASS,fail closed; no kill/reuse
+startup,startup timeout,PASS,accepted bounded wait and cleanup path
+startup,fatal marker,PASS,accepted fatal marker scan
+startup,invalid repository path,PASS,entry/base/tree verification
+browser,Chrome app mode,PASS_COMMAND,isolated command/profile constructed
+browser,Edge app mode,PASS_COMMAND,isolated command/profile constructed
+browser,default browser fallback,PASS_COMMAND,documented explicit-stop caveat
+browser,dedicated profile,PASS,%LOCALAPPDATA% child only
+browser,normal profile unchanged,PASS,no normal-profile argument
+runtime,root route,PASS,real health/root server plus accepted route tests
+runtime,representative routes,PASS,canonical Hermetic route tests
+runtime,/draft-cockpit-root,PASS,accepted route regression retained
+runtime,duplicate launch,PASS,no second server
+runtime,graceful stop,PASS,exit 0; no forced cleanup
+runtime,restart after stop,PASS,healthy
+runtime,unexpected termination,PASS,stale-lock recovery
+runtime,second start,PASS,healthy
+runtime,port cleanup,PASS,no listener
+runtime,process cleanup,PASS,supervisor and child exited
+runtime,browser background cleanup,NOT_RUN_GUI,installation blocked
+persistence,restart retention,PASS,exact hash
+persistence,crash retention,PASS,exact hash
+persistence,worktree replacement retention,PASS,same root/service load
+persistence,pre-launch backup,PASS,hashed manifest
+persistence,post-shutdown backup,PASS,only after change
+persistence,backup validation,PASS,byte hashes
+persistence,restore dry-run,PASS,change report
+persistence,restore,PASS,owning service readback
+persistence,corrupt backup rejection,PASS,no restore
+persistence,conflicting migration stop,PASS,unit contract
+ownership,populated atomic starting lock,PASS,identity and nonce present before acquire returns
+ownership,listener descendant identity,PASS,real cycle status VERIFIED_RUNNING
+ownership,maintenance operation exclusion,PASS,start blocked for complete backup operation
+persistence,oldest snapshot at retention limit,PASS,source retained until restore completes
+persistence,exact restore absent-file removal,PASS,extra supported state removed
+persistence,empty-state restore rollback,PASS,injected post-mutation failure restores empty manifest
+runtime,readiness error visibility,PASS,launcher log plus Windows error surface
+runtime,pre-launch backup warning visibility,PASS,launcher log plus immediate Windows warning dialog
+runtime,backup warning with log failure,PASS,dialog remains visible and launch remains nonfatal
+installation,same-name shortcut collision,PASS,exact managed identity required for overwrite or delete

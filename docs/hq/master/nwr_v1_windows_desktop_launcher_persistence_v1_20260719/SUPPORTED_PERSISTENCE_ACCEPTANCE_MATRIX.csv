@@ -1,0 +1,9 @@
+workflow,persistence_status,state_root,restart,backup,restore,crash,V1_authority,caveat
+Live Draft,PERSISTENT_USER_STATE,C:\NWR_SHARED_DATA\draft_runtime_state\state,retained,launcher snapshot,confirmed restore,last valid atomic bytes retained,draft runtime v2,existing root reused
+Mock Draft,PERSISTENT_USER_STATE,C:\NWR_SHARED_DATA\draft_runtime_state\state,retained,launcher snapshot,confirmed restore,last valid atomic bytes retained,draft runtime v2,active selector itself is session state
+Draft Cockpit,PERSISTENT_USER_STATE,C:\NWR_SHARED_DATA\draft_runtime_state\state,retained,launcher snapshot,confirmed restore,last valid atomic bytes retained,shared draft workflow,reads selected live/mock state
+Draft Analyzer,PERSISTENT_SOURCE_STATE,C:\NWR_SHARED_DATA\draft_runtime_state\state,source retained,launcher snapshot,confirmed restore,source retained,post-draft owner,UI selection resets
+Manual roster/planning,PERSISTENT_USER_STATE,C:\NWR_SHARED_DATA\development_lab_state,retained,launcher snapshot,confirmed restore,atomic owner bytes retained,Development Lab V1,notes only; never model input
+Data Health receipts,BLOCKED_EXISTING_STATE,%LOCALAPPDATA%\NinersWarRoom\data\refresh_data,future valid receipts retained,valid receipt only,confirmed restore,invalid never auto-restored,schema-v2 receipt owner,current legacy receipt corrupt
+Trading Lab,POST_V1_PERSISTENCE_NOT_SUPPORTED,Streamlit session,resets,none,none,resets,V1 parking,no saved scenarios added
+Launcher preferences,PERSISTENT_OPERATIONAL_STATE,%LOCALAPPDATA%\NinersWarRoom\config,retained,not user-state snapshot,n/a,regenerated safely,launcher V1,minimal configuration only
