@@ -1,0 +1,4 @@
+cycle,fixture,primary_route_checks,second_start,primary_exit,second_exit,forced_cleanup,port_released,fatal_markers,browser_errors,result
+1,C:\NWR\mcv1pre,180/180,PASS,0,0,false,true,0,0,PASS
+2,C:\NWR\mcv1pre,34/34,PASS,0,0,false,true,0,0,PASS
+3,C:\NWR\mcv1pre,34/34,PASS,0,0,false,true,0,0,PASS

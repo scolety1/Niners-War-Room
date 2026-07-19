@@ -1,0 +1,5 @@
+viewport,width,height,endpoints_expected,endpoints_passed,h1_failures,page_not_found,dialogs,visible_tracebacks,overflow_failures,result
+phone,375,812,60,60,0,0,0,0,0,PASS
+tablet,768,1024,60,60,0,0,0,0,0,PASS
+desktop,1440,1000,60,60,0,0,0,0,0,PASS
+TOTAL,,,180,180,0,0,0,0,0,PASS

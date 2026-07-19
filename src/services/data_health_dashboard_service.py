@@ -28,6 +28,7 @@ from src.services.draft_day_app_v1_service import (
 )
 from src.services.draft_day_runtime_state_service import (
     DEFAULT_DRAFT_ID,
+    DEFAULT_RUNTIME_ROOT,
     normalize_runtime_state,
     runtime_paths,
     runtime_state_path,
@@ -98,6 +99,16 @@ SOURCE_TRUTH_DIFF_PATTERNS = (
     "final_board",
     "full_player_board_value_review_rows",
 )
+TRACKED_DOCUMENTATION_ROOTS = (("docs", "hq"),)
+GENERIC_DOCUMENTATION_METADATA_NAMES = frozenset(
+    {"manifest.json", "metadata.json", "receipt.json"}
+)
+REPOSITORY_RUNTIME_ROOTS = (
+    ("local_exports",),
+    ("draft_runtime_state",),
+    ("draft_day_runtime",),
+)
+UNKNOWN_RUNTIME_PATH_HINTS = ("runtime", "draft_log")
 
 
 @dataclass(frozen=True)
@@ -804,12 +815,7 @@ def _guardrail_health(repo_root: Path) -> pd.DataFrame:
     forbidden_tracked = [
         path for path in tracked if _contains_any(path, FORBIDDEN_TRACKED_PATTERNS)
     ]
-    runtime_json_tracked = [
-        path
-        for path in tracked
-        if path.lower().endswith(".json")
-        and ("runtime" in path.lower() or "draft_log" in path.lower())
-    ]
+    runtime_json_tracked = [path for path in tracked if is_runtime_state_path(path)]
     source_truth_diff = [
         path for path in diff_names if _contains_any(path, SOURCE_TRUTH_DIFF_PATTERNS)
     ]
@@ -838,6 +844,54 @@ def _guardrail_health(repo_root: Path) -> pd.DataFrame:
             _row("Guardrail", "No model/rank mutation", "GREEN", "yes"),
         ]
     )
+
+
+def is_runtime_state_path(path: str | Path) -> bool:
+    """Classify a tracked JSON path using normalized path ownership.
+
+    The guardrail caller supplies repository-relative paths from ``git ls-files``.
+    Exact tracked documentation roots are allowed to contain generic metadata
+    filenames. Exact ignored runtime roots remain runtime-owned. Unknown paths
+    retain the previous fail-closed runtime/draft-log name heuristic.
+    """
+    parts = _normalized_path_parts(path)
+    if not parts or not parts[-1].endswith(".json"):
+        return False
+    if (
+        _starts_with_owned_root(parts, TRACKED_DOCUMENTATION_ROOTS)
+        and parts[-1] in GENERIC_DOCUMENTATION_METADATA_NAMES
+    ):
+        return False
+    if _starts_with_owned_root(parts, REPOSITORY_RUNTIME_ROOTS):
+        return True
+    if _starts_with_owned_root(parts, (_normalized_path_parts(DEFAULT_RUNTIME_ROOT),)):
+        return True
+    normalized = "/".join(parts)
+    return any(hint in normalized for hint in UNKNOWN_RUNTIME_PATH_HINTS)
+
+
+def _normalized_path_parts(path: str | Path) -> tuple[str, ...]:
+    """Return case-folded lexical path parts with separators and dots normalized."""
+    parts: list[str] = []
+    for raw_part in str(path).replace("\\", "/").split("/"):
+        part = raw_part.casefold()
+        if not part or part == ".":
+            continue
+        if part == "..":
+            if parts and parts[-1] != ".." and not parts[-1].endswith(":"):
+                parts.pop()
+            else:
+                parts.append(part)
+            continue
+        parts.append(part)
+    return tuple(parts)
+
+
+def _starts_with_owned_root(
+    parts: tuple[str, ...],
+    roots: tuple[tuple[str, ...], ...],
+) -> bool:
+    return any(parts[: len(root)] == root for root in roots if root)
 
 
 def _runtime_state_status(mode: str, runtime_root: Path | None) -> dict[str, Any]:

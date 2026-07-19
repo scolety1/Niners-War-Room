@@ -1,0 +1,7 @@
+cycle,phase,bootstrap_sha256,browser_checks,primary_pid,startup_seconds,shutdown_seconds,exit_code,forced_cleanup,port_released,fatal_markers,second_start_pid,second_start_exit,second_start_port_released,result
+1,precommit_candidate,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,34/34,3496,3.577,0.472,0,false,true,none,31672,0,true,PASS
+2,precommit_candidate,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,34/34,36660,1.397,0.484,0,false,true,none,34696,0,true,PASS
+3,precommit_candidate,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,34/34,35360,1.834,0.368,0,false,true,none,15460,0,true,PASS
+1,postcommit_clean,NOT_RUN_HERMETIC_FAIL_FAST,NOT_RUN,,,,,,,,,,,BLOCKED
+2,postcommit_clean,NOT_RUN_HERMETIC_FAIL_FAST,NOT_RUN,,,,,,,,,,,BLOCKED
+3,postcommit_clean,NOT_RUN_HERMETIC_FAIL_FAST,NOT_RUN,,,,,,,,,,,BLOCKED

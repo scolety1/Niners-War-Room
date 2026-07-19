@@ -153,12 +153,19 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
     ),
 )
 
+DEFAULT_ROOT_PAGE = NavigationPageSpec(
+    title="Draft Cockpit Root",
+    file_path="pages/46_draft_cockpit_default_root.py",
+    url_path="",
+    default=True,
+    visible=False,
+)
+
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Draft Cockpit Root",
         file_path="pages/44_draft_cockpit_root.py",
         url_path="draft-cockpit-root",
-        default=True,
         visible=False,
     ),
     NavigationPageSpec(
@@ -411,3 +418,19 @@ ALL_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
 
 def app_page_path(app_dir: Path, spec: NavigationPageSpec) -> Path:
     return app_dir / spec.file_path
+
+
+def registered_route_spec(
+    url_path: str,
+    pages: tuple[NavigationPageSpec, ...] = ALL_NAVIGATION_PAGES,
+) -> NavigationPageSpec:
+    matches = tuple(page for page in pages if page.url_path == url_path)
+    if len(matches) != 1:
+        raise LookupError(f"Expected one registered route for {url_path!r}; found {len(matches)}.")
+    spec = matches[0]
+    if spec.default:
+        raise ValueError(
+            f"Registered route {url_path!r} cannot also be the default root page; "
+            "Streamlit ignores a default page's configured URL path."
+        )
+    return spec

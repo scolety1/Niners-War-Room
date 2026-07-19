@@ -5,10 +5,12 @@ from pathlib import Path
 
 from app.navigation import (
     ALL_NAVIGATION_PAGES,
+    DEFAULT_ROOT_PAGE,
     HIDDEN_ADVANCED_PAGES,
     VISIBLE_NAVIGATION_PAGE_GROUPS,
     VISIBLE_NAVIGATION_PAGES,
     app_page_path,
+    registered_route_spec,
 )
 
 APP_DIR = Path("app")
@@ -123,7 +125,7 @@ def test_navigation_page_files_exist_and_compile() -> None:
     assert main_text.index("sys.path.insert(0, str(REPO_ROOT))") < main_text.index(
         "from app.components.ui_framework import apply_app_shell"
     )
-    for page in ALL_NAVIGATION_PAGES:
+    for page in (DEFAULT_ROOT_PAGE, *ALL_NAVIGATION_PAGES):
         page_path = app_page_path(APP_DIR, page)
         assert page_path.exists(), page_path
         py_compile.compile(str(page_path), doraise=True)
@@ -142,14 +144,19 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
     ]
 
 
-def test_no_special_default_page_keeps_drafting_mode_direct_route_stable() -> None:
+def test_default_root_is_separate_from_every_registered_route() -> None:
     visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
     all_defaults = [page for page in ALL_NAVIGATION_PAGES if page.default]
 
     assert visible_defaults == []
-    assert [(page.title, page.visible) for page in all_defaults] == [
-        ("Draft Cockpit Root", False)
-    ]
+    assert all_defaults == []
+    assert DEFAULT_ROOT_PAGE.default
+    assert DEFAULT_ROOT_PAGE.url_path == ""
+    assert not DEFAULT_ROOT_PAGE.visible
+    assert registered_route_spec("draft-cockpit-root").file_path == (
+        "pages/44_draft_cockpit_root.py"
+    )
+    assert DEFAULT_ROOT_PAGE.file_path == "pages/46_draft_cockpit_default_root.py"
     assert VISIBLE_NAVIGATION_PAGES[0].url_path == "draft-cockpit"
 
 

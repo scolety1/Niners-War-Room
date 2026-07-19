@@ -4,10 +4,13 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from app.navigation import ALL_NAVIGATION_PAGES
 from src.services.data_health_dashboard_service import (
     build_data_health_dashboard,
     compact_status_cards,
+    is_runtime_state_path,
 )
 from src.services.draft_day_runtime_state_service import (
     DEFAULT_DRAFT_ID,
@@ -275,3 +278,104 @@ def test_git_has_no_tracked_shared_data_or_runtime_json() -> None:
     assert "NWR_SHARED_DATA" not in tracked
     assert "draft_runtime_state" not in tracked
     assert "_draft_log.json" not in tracked
+
+
+EXACT_RC_PACKET_MANIFEST = (
+    "docs/hq/master/nwr_v1_rc1_runtime_targeted_revision_v1_20260718/MANIFEST.json"
+)
+
+
+def test_exact_tracked_rc_packet_manifest_is_documentation() -> None:
+    assert is_runtime_state_path(EXACT_RC_PACKET_MANIFEST) is False
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        "docs/hq/master/packet/MANIFEST.json",
+        "docs/hq/master/packet/manifest.json",
+        "docs/hq/evidence/receipt.json",
+    ),
+)
+def test_generic_documentation_metadata_names_are_not_runtime(path: str) -> None:
+    assert is_runtime_state_path(path) is False
+
+
+def test_runtime_specific_documentation_filename_retains_fail_closed_behavior() -> None:
+    assert is_runtime_state_path("docs/hq/evidence/draft_runtime_state.json") is True
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        "local_exports/operations/MANIFEST.json",
+        "local_exports/refresh_data/latest_refresh_status.json",
+        "local_exports/refresh_data/archive/nested/receipt.json",
+        "draft_runtime_state/backups/nested/snapshot.json",
+        "draft_day_runtime/state/live.json",
+        r"C:\NWR_SHARED_DATA\draft_runtime_state\state\live.json",
+    ),
+)
+def test_approved_runtime_owned_json_paths_remain_runtime(path: str) -> None:
+    assert is_runtime_state_path(path) is True
+
+
+def test_lookalike_documentation_root_does_not_receive_exclusion() -> None:
+    assert is_runtime_state_path("docs-hq/runtime_revision/MANIFEST.json") is True
+
+
+def test_lookalike_runtime_root_does_not_receive_runtime_authority() -> None:
+    assert is_runtime_state_path("local_exports_backup/operations/MANIFEST.json") is False
+
+
+@pytest.mark.parametrize(
+    ("posix_path", "windows_path", "expected"),
+    (
+        (
+            "local_exports/refresh_data/receipt.json",
+            r"local_exports\refresh_data\receipt.json",
+            True,
+        ),
+        (
+            "docs/hq/master/packet/MANIFEST.json",
+            r"docs\hq\master\packet\MANIFEST.json",
+            False,
+        ),
+    ),
+)
+def test_windows_and_posix_separators_are_equivalent(
+    posix_path: str,
+    windows_path: str,
+    expected: bool,
+) -> None:
+    assert is_runtime_state_path(posix_path) is expected
+    assert is_runtime_state_path(windows_path) is expected
+
+
+def test_dot_segments_are_normalized_before_root_authority() -> None:
+    entered_runtime_root = "docs/hq/../../local_exports/refresh_data/manifest.json"
+    exited_runtime_root = "local_exports/../docs/hq/master/packet/manifest.json"
+
+    assert is_runtime_state_path(entered_runtime_root) is True
+    assert is_runtime_state_path(exited_runtime_root) is False
+
+
+def test_unresolved_traversal_does_not_receive_documentation_authority() -> None:
+    assert is_runtime_state_path("../../docs/hq/runtime_revision/MANIFEST.json") is True
+
+
+def test_unknown_runtime_named_json_retains_fail_closed_behavior() -> None:
+    assert is_runtime_state_path("scratch/runtime_packet/MANIFEST.json") is True
+    assert is_runtime_state_path("scratch/_draft_log.json") is True
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        "src/config/MANIFEST.json",
+        "tests/fixtures/receipt.json",
+        "src/runtime_notes.txt",
+    ),
+)
+def test_unrelated_ordinary_tracked_files_are_unaffected(path: str) -> None:
+    assert is_runtime_state_path(path) is False

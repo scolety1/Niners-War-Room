@@ -13,6 +13,7 @@ import streamlit as st
 
 from app.components.ui_framework import apply_app_shell
 from app.navigation import (
+    DEFAULT_ROOT_PAGE,
     HIDDEN_ADVANCED_PAGES,
     VISIBLE_NAVIGATION_PAGE_GROUPS,
     app_page_path,
@@ -39,13 +40,21 @@ def main() -> None:
     }
     hidden_pages = [
         st.Page(
-            app_page_path(app_dir, spec),
-            title=spec.title,
-            url_path=spec.url_path,
-            default=spec.default,
-            visibility=spec.visibility,
-        )
-        for spec in HIDDEN_ADVANCED_PAGES
+            app_page_path(app_dir, DEFAULT_ROOT_PAGE),
+            title=DEFAULT_ROOT_PAGE.title,
+            default=True,
+            visibility=DEFAULT_ROOT_PAGE.visibility,
+        ),
+        *[
+            st.Page(
+                app_page_path(app_dir, spec),
+                title=spec.title,
+                url_path=spec.url_path,
+                default=spec.default,
+                visibility=spec.visibility,
+            )
+            for spec in HIDDEN_ADVANCED_PAGES
+        ],
     ]
     navigation = st.navigation(
         {

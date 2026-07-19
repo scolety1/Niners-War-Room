@@ -1,0 +1,7 @@
+prior_gate,prior_result,successor_result,closure_evidence
+Data Health documentation manifest,RED false positive,PASS,normalized docs/hq ownership plus generic metadata basename contract
+Hermetic Python,2626 passed 1 failed,PASS 2648 passed,clean exact candidate tree exit 0
+Hermetic bootstrap,13/13,PASS 13/13,unchanged bootstrap controls
+Hermetic security,20/20,PASS 20/20,unchanged isolated security controls
+Post-commit eligibility,blocked before commit,AUTHORIZED AFTER ONE COMMIT,all pre-commit blockers closed
+Final adoption authorization,blocked,CONDITIONAL GREEN,requires immutable post-commit exact-tree rerun
