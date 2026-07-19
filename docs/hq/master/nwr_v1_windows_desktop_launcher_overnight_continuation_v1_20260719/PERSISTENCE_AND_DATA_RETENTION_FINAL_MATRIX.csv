@@ -1,0 +1,13 @@
+workflow,status,authority,root,restart_crash,backup_restore,privacy_localdata
+Live Draft,PERSISTENT_USER_STATE,draft_day_runtime_v2,C:\NWR_SHARED_DATA\draft_runtime_state\state,atomic owner state retained,eligible and confirmed,private local; no LocalData
+Mock Draft,PERSISTENT_USER_STATE,draft_day_runtime_v2,C:\NWR_SHARED_DATA\draft_runtime_state\state,atomic owner state retained,eligible and confirmed,private local; no LocalData
+Draft Cockpit,PERSISTENT_USER_STATE,shared draft runtime,C:\NWR_SHARED_DATA\draft_runtime_state\state,selected runtime retained,eligible and confirmed,private local
+Draft Analyzer,PERSISTENT_SOURCE_STATE,draft runtime plus session selector,C:\NWR_SHARED_DATA\draft_runtime_state\state,source retained selector resets,source eligible,private local
+Legacy named mock saves,PERSISTENT_USER_STATE,mock_draft_storage schema 1,%LOCALAPPDATA%\NinersWarRoom\data\mock_drafts,retained by external root,eligible and confirmed,private local
+Manual roster planning,PERSISTENT_USER_STATE,development_lab schema 1,C:\NWR_SHARED_DATA\development_lab_state,retained when created,eligible and confirmed,private local
+Data Health receipts,BLOCKED_EXISTING_STATE,accepted receipt schema,%LOCALAPPDATA%\NinersWarRoom\data\refresh_data,future valid state retained,valid receipts only,operational local
+Launcher preferences,PERSISTENT_OPERATIONAL_STATE,launcher,%LOCALAPPDATA%\NinersWarRoom\config,retained,not user-state snapshot,local only
+Locks PIDs,EPHEMERAL_OPERATIONAL_STATE,launcher,%LOCALAPPDATA%\NinersWarRoom\run,reconciled by identity,not backed up,no payload
+Logs,PERSISTENT_OPERATIONAL_STATE,launcher,%LOCALAPPDATA%\NinersWarRoom\logs,retained until manual management,not state restore,no state payload
+Browser profile,LOCALDATA_PRIVATE,Chrome Edge,%LOCALAPPDATA%\NinersWarRoom\browser-profile,isolated retained,not state restore,no normal-profile access
+Trading Lab,POST_V1_PERSISTENCE_NOT_SUPPORTED,Streamlit session,session memory,resets,none,session-only

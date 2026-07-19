@@ -1,0 +1,16 @@
+phase,result,detail
+repository_identity,PASS,remote HQ and tree exact
+prior_task_ingestion,PASS,blocked result and local commit verified
+primary_preservation,PASS,five paths and hashes exact
+source_scope_review,PASS,launcher-only additions plus bounded correction
+persistence_review,PASS,authority and unsupported surfaces labeled
+migration,BLOCKED,legacy accepted receipt validator returns CORRUPT
+backup_restore,PASS_SYNTHETIC,semantic validation containment rollback and retention tested
+process_ownership,PASS_NO_BROWSER,real no-browser cycle VERIFIED_RUNNING and clean stop
+browser_lifecycle,PASS_COMMAND_NOT_GUI,owned-tree correction tested; GUI blocked
+interactive_identity,BLOCKED,Explorer owner unavailable to sandbox identity
+stable_checkout,NOT_CREATED,canonical adoption not approved
+shortcut_installation,NOT_CREATED,wrong-user installation prohibited
+canonical_push,NOT_PUSHED,section-17 blockers remain
+hermetic,PASS,2676 tests and Ruff exit zero
+localdata,BLOCKED_EXPECTED,BLOCKED_MISSING_LOCAL_TEST_PACK exit 4

@@ -1,0 +1,8 @@
+change,path,purpose
+M,src/launcher/windows_desktop.py,bounded backup containment rollback and owned browser cleanup correction
+M,tests/test_windows_desktop_launcher.py,focused correction regressions
+A,docs/hq/master/nwr_v1_windows_desktop_launcher_overnight_continuation_v1_20260719/,22-file cumulative blocked closeout packet
+NONE,primary DynastyProcess CSV paths,preserved user-owned modifications
+NONE,C:\NWR\Niners-War-Room-V1,stable checkout not created
+NONE,Desktop and Start Menu,shortcuts not installed
+NONE,origin/work/hq-parallel-control,not pushed

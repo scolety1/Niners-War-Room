@@ -1,0 +1,7 @@
+# Prior task accomplishment summary
+
+The preceding launcher task ended with `BLOCKED_NWR_DESKTOP_LAUNCHER_EXISTING_PERSISTENCE_NOT_AVAILABLE`. It created branch `work/nwr-v1-desktop-launcher-v1-20260719`, stable review worktree `C:\Users\codex-agent\Documents\Niners War Room\Niners-War-Room-v1-desktop-launcher-v1-20260719`, and implementation commit `f227e0bdb3a6557a7c59437baa969c7c28572b48` from accepted HQ `dc399a8c2ed5d77d9802d98c215a12cbe594d7d7`.
+
+Completed: committed launcher runtime; port/lock/process ownership; per-user roots; junction contract; migration conflict/invalid-state stops; five-snapshot backup and confirmed restore; Chrome/Edge app-mode command; shortcut installer/uninstaller; 22-file evidence packet; synthetic lifecycle and retention tests; Hermetic 2,668-pass gate; LocalData exit-4 result; independent review. Partially completed: browser behavior was command-tested but not GUI-tested. Not attempted: canonical push, stable `C:\NWR\Niners-War-Room-V1` checkout, real migration, real shortcut, Start Menu shortcut, or actual-user launch.
+
+Blocked: the accepted receipt validator returned `CORRUPT` for `C:\NWR\Niners-War-Room\local_exports\refresh_data\latest_refresh_status.json`, and Explorer ownership was not resolvable from `spencepc\CodexSandboxOffline`. No real user state was changed, no shortcut was installed, and no push occurred. The primary worktree's five user-owned CSV modifications were preserved byte-for-byte.
