@@ -1,0 +1,7 @@
+cycle,checkout,tree,bootstrap_hash,attempt,profile,start_pid,start_seconds,shutdown_seconds,exit_code,forced_cleanup,port_released,retained_listener,retained_streamlit_process,fatal_markers,unexpected_connection_reset,result
+1,C:/NWR/fr1,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,1,180_of_180,25052,0.775,0.530,0,false,true,0,0,0,0,PASS
+1,C:/NWR/fr1,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,2,second_start,34900,0.731,0.270,0,false,true,0,0,0,0,PASS
+2,C:/NWR/fr2,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,1,34_of_34,25092,0.744,0.312,0,false,true,0,0,0,0,PASS
+2,C:/NWR/fr2,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,2,second_start,33148,0.744,0.408,0,false,true,0,0,0,0,PASS
+3,C:/NWR/fr3,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,1,34_of_34,29648,0.752,0.472,0,false,true,0,0,0,0,PASS
+3,C:/NWR/fr3,336fb52f3dedfe18da04b54ef54885be6aa06dec,6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f,2,second_start,18380,0.739,0.430,0,false,true,0,0,0,0,PASS

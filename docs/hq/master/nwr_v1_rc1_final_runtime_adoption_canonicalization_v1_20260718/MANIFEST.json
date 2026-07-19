@@ -1,0 +1,87 @@
+{
+  "packet": "nwr_v1_rc1_final_runtime_adoption_canonicalization_v1_20260718",
+  "date": "2026-07-18",
+  "starting_hq": {
+    "commit": "7a3d01a5fdd95f4a71d49ced7ff00b334434aa73",
+    "tree": "b4ab40e584c7c1d39d00f93ee8e5725dc22aafdf",
+    "remote_advanced": false
+  },
+  "candidate": {
+    "rc_commit": "c380956dcab863dd7f921ec237506c08f46990b8",
+    "successor_commit": "51f2e96bd00ca133abb738b7a1082980b1db979a",
+    "successor_tree": "336fb52f3dedfe18da04b54ef54885be6aa06dec",
+    "ancestry_exact": true,
+    "combined_changed_paths": 77,
+    "scope": "RELEASE_REPAIRS_TESTS_AND_RELEASE_EVIDENCE_ONLY"
+  },
+  "canonicalization": {
+    "commit": "SELF_THIS_COMMIT",
+    "documentation_only": true,
+    "files_created": 20,
+    "push_state_when_written": "AUTHORIZED_PENDING_FINAL_FETCH_NORMAL_NON_FORCE_PUSH_AND_READBACK"
+  },
+  "validation": {
+    "route_counts": {
+      "endpoints_including_root": 60,
+      "registered": 59,
+      "visible": 18,
+      "hidden": 41
+    },
+    "endpoint_matrix": "180/180",
+    "runtime_cycles": "3/3",
+    "starts": 6,
+    "clean_shutdowns": 6,
+    "forced_cleanup": 0,
+    "retained_listeners": 0,
+    "retained_streamlit_processes": 0,
+    "fatal_markers": 0,
+    "unexpected_connection_resets": 0,
+    "windows_lifecycle": "BOUNDED_WINDOWS_PROCESS_LIFECYCLE_MITIGATION_VALIDATED_BY_REPEAT_RUNS",
+    "cpython_handle_owner_proven": false,
+    "hermetic": {
+      "bootstrap": "13/13",
+      "security": "20/20",
+      "python_passed": 2648,
+      "exit_code": 0,
+      "skips": 0,
+      "xfails": 0,
+      "xpasses": 0,
+      "bootstrap_hash": "6e7e2ff88de7e1fc8bd620657a619e16d1d183bb117d9c9c631477ab811ad98f"
+    },
+    "localdata": {
+      "status": "BLOCKED_MISSING_LOCAL_TEST_PACK",
+      "exit_code": 4,
+      "counted_as_pass_or_skip": false
+    },
+    "ruff_differential": 0,
+    "security_findings_closed": 5,
+    "automation": "READY_FOR_HUMAN_REENABLE_REVIEW_DISABLED",
+    "protected_frozen": "PASS",
+    "primary_preservation": "PASS_PRE_PUSH_FINAL_POST_PUSH_READBACK_REQUIRED",
+    "unresolved_release_blockers": 0
+  },
+  "verdict_after_successful_push": "YELLOW_NWR_V1_RC1_FINAL_RUNTIME_FIX_PUSHED_WITH_ACCEPTED_CAVEATS",
+  "release_status_after_successful_push": "NWR_V1_RELEASE_CANDIDATE_1_ACCEPTED",
+  "files": [
+    "HQ_FINAL_ADOPTION_AND_ACCEPTANCE.md",
+    "SOURCE_COMMIT_CHAIN.csv",
+    "COMBINED_CANDIDATE_DIFF_REVIEW.csv",
+    "DRAFT_COCKPIT_ROUTE_FINAL_REVIEW.md",
+    "RUNTIME_STATE_CLASSIFIER_FINAL_REVIEW.md",
+    "WINDOWS_PROCESS_LIFECYCLE_FINAL_REVALIDATION.md",
+    "THREE_CYCLE_RELIABILITY_REVIEW.csv",
+    "ROUTE_ENDPOINT_AND_RESPONSIVE_FINAL_ACCEPTANCE.csv",
+    "CORE_WORKFLOW_FINAL_ACCEPTANCE.csv",
+    "SECURITY_DATA_HEALTH_AND_TRUST_REVALIDATION.md",
+    "HERMETIC_AND_LOCALDATA_FINAL_RESULTS.md",
+    "ACCESSIBILITY_FINAL_REVIEW.md",
+    "SCOPE_FREEZE_AND_KNOWN_LIMITATIONS_REVIEW.md",
+    "AUTOMATION_REENABLE_STATUS.md",
+    "PROTECTED_AND_FROZEN_PATH_VALIDATION.md",
+    "PRIMARY_WORKTREE_PRESERVATION_PROOF.md",
+    "ROLLBACK_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ]
+}

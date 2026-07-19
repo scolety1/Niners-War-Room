@@ -1,0 +1,11 @@
+workflow,accepted_v1_behavior,independent_checks,forbidden_change_check,responsive_accessibility,result
+Dynasty Rankings,"route; filters; warning/score disclosures; trust presentation","focused workflow suite; live route at all widths; filters and disclosures inspected","no formula score sort recommendation value source or identity change",PASS,PASS
+Player Compare,"selection; comparison; missing/unavailable states; trust presentation","focused workflow suite; live compact and desktop controls","no comparison formula value recommendation or persistence change",PASS,PASS
+Trading Lab,"manual entry; existing calculation display; unresolved-player handling","focused workflow suite; live manual route and controls","no saved scenarios composite-ID persistence or hidden recommendation",PASS,PASS
+Live Draft,"existing board; state handling; manual controls","focused draft workflow suite; live hidden route matrix","no frozen comparator source ranking or persistence mutation",PASS,PASS
+Mock Draft,"existing mock board and state behavior","focused draft workflow suite; live visible route matrix","no formula source identity or automation change",PASS,PASS
+Draft Analyzer,"existing analyzer rendering and state behavior","focused draft workflow suite; live hidden route matrix","no frozen comparator mutation",PASS,PASS
+Draft Cockpit,"registered visible workflow plus supported hidden root; board and state handling","focused route/draft tests; direct and internal navigation; all required widths","no alias deception recommendation or comparator mutation",PASS,PASS
+Refresh and Data Health,"explicit refresh only; passive read; truthful schema-v2 receipt lifecycle","focused Data Health refresh receipt and passive-read tests; runtime roots absent after page reads","no provider refresh on open; no receipt mutation; no privacy or lifecycle semantic change",PASS,PASS
+Roster surface,"manual and display-only; explicit insufficiency","focused roster and draft workflow tests; live responsive route","no automated hydration claim or name-only identity fallback",PASS,PASS
+CSV exports,"Development Lab and Draft Freeze spreadsheet-safe typed output","300 focused CSV/trust tests plus Hermetic","no typed numeric regression and no formula-boundary regression",PASS,PASS
