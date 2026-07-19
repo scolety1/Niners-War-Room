@@ -275,11 +275,17 @@ def test_empty_state_restore_failure_rolls_back_to_empty(
     for state_file in (synthetic_paths.draft_root / "state").glob("*.json"):
         state_file.unlink()
 
-    monkeypatch.setattr(
-        launcher,
-        "state_fingerprint",
-        lambda _paths: (_ for _ in ()).throw(launcher.LauncherError("injected failure")),
-    )
+    original_fingerprint = launcher.state_fingerprint
+    calls = 0
+
+    def fail_once(paths: launcher.LauncherPaths) -> tuple[tuple[str, str], ...]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise launcher.LauncherError("injected failure")
+        return original_fingerprint(paths)
+
+    monkeypatch.setattr(launcher, "state_fingerprint", fail_once)
     snapshot_id = str(backup["snapshot_id"])
     with pytest.raises(launcher.LauncherError, match="rolled back"):
         launcher.restore_backup(
@@ -363,3 +369,289 @@ def test_backup_log_failure_does_not_suppress_visible_warning(
     assert len(warnings) == 1
     assert "Pre-launch backup warning: disk full" in warnings[0]
     assert "Launcher log could not be written" in warnings[0]
+
+
+def _write_forged_snapshot(
+    paths: launcher.LauncherPaths,
+    *,
+    snapshot_id: str,
+    family: str,
+    relative: str,
+    payload: str,
+) -> Path:
+    snapshot = paths.backup_root / snapshot_id
+    target = snapshot / "payload" / family / relative
+    target.parent.mkdir(parents=True)
+    target.write_text(payload, encoding="utf-8")
+    (snapshot / "MANIFEST.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "snapshot_id": snapshot_id,
+                "files": [
+                    {
+                        "family": family,
+                        "relative_path": relative,
+                        "bytes": target.stat().st_size,
+                        "sha256": launcher.sha256(target),
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return snapshot
+
+
+def test_hash_consistent_unknown_backup_family_is_rejected(
+    synthetic_paths: launcher.LauncherPaths,
+) -> None:
+    snapshot = _write_forged_snapshot(
+        synthetic_paths,
+        snapshot_id="forged_unknown_family",
+        family="credentials",
+        relative="token.json",
+        payload='{"schema_version": 1}',
+    )
+    result = launcher.validate_backup(snapshot)
+    assert result["valid"] is False
+    assert "unsupported backup family" in result["error"]
+
+
+def test_hash_consistent_invalid_owner_schema_is_rejected(
+    synthetic_paths: launcher.LauncherPaths,
+) -> None:
+    snapshot = _write_forged_snapshot(
+        synthetic_paths,
+        snapshot_id="forged_invalid_schema",
+        family="saved_mock_drafts",
+        relative="bad.json",
+        payload='{"schema_version": 999}',
+    )
+    result = launcher.validate_backup(snapshot)
+    assert result["valid"] is False
+    assert "unsupported state backup schema" in result["error"]
+
+
+def test_windows_rooted_relative_backup_path_is_rejected(
+    synthetic_paths: launcher.LauncherPaths,
+) -> None:
+    snapshot = synthetic_paths.backup_root / "rooted_relative"
+    snapshot.mkdir()
+    (snapshot / "MANIFEST.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "snapshot_id": snapshot.name,
+                "files": [
+                    {
+                        "family": "saved_mock_drafts",
+                        "relative_path": "\\outside.json",
+                        "bytes": 0,
+                        "sha256": "0" * 64,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = launcher.validate_backup(snapshot)
+
+    assert result["valid"] is False
+    assert "strictly relative" in result["error"]
+
+
+def test_failed_restore_removes_new_invalid_file_before_rollback(
+    synthetic_paths: launcher.LauncherPaths,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot = _write_forged_snapshot(
+        synthetic_paths,
+        snapshot_id="forced_invalid_restore",
+        family="saved_mock_drafts",
+        relative="introduced.json",
+        payload='{"schema_version": 999}',
+    )
+    monkeypatch.setattr(
+        launcher,
+        "validate_backup",
+        lambda path: {
+            "valid": True,
+            "snapshot_id": path.name,
+            "files": 1 if path == snapshot else 0,
+        },
+    )
+
+    with pytest.raises(launcher.LauncherError, match="rolled back"):
+        launcher.restore_backup(
+            synthetic_paths,
+            snapshot.name,
+            confirmation=snapshot.name,
+        )
+
+    assert not (synthetic_paths.mock_draft_root / "introduced.json").exists()
+    assert launcher.validate_state(synthetic_paths).valid is True
+
+
+def test_registered_browser_cleanup_targets_only_verified_owned_tree(
+    synthetic_paths: launcher.LauncherPaths,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    browser = tmp_path / "chrome.exe"
+    browser.write_bytes(b"synthetic executable marker")
+    pid = 4242
+    registration = launcher._browser_registration(synthetic_paths, pid)
+    launcher._atomic_json(
+        registration,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            "browser_pid": pid,
+            "browser_executable": str(browser.resolve()),
+            "browser_created": 123,
+            "browser_profile": str(synthetic_paths.browser_profile),
+            "repo_root": str(synthetic_paths.repo_root),
+            "expected_browser": str(browser.resolve()),
+        },
+    )
+    commands: list[list[str]] = []
+    monkeypatch.setattr(launcher, "browser_candidates", lambda: iter((browser,)))
+    monkeypatch.setattr(launcher, "_identity_matches", lambda _record, _prefix: True)
+    monkeypatch.setattr(launcher, "_pid_alive", lambda _pid: False)
+    monkeypatch.setattr(
+        launcher.subprocess,
+        "run",
+        lambda command, **_kwargs: (
+            commands.append(command)
+            or launcher.subprocess.CompletedProcess(command, 0, stdout="stopped")
+        ),
+    )
+
+    result = launcher._shutdown_registered_browsers(synthetic_paths)
+
+    assert commands == [["taskkill.exe", "/PID", str(pid), "/T"]]
+    assert result == [
+        {"pid": pid, "status": "STOPPED", "forced_cleanup": False, "initial_exit_code": 0}
+    ]
+    assert not registration.exists()
+
+
+def test_browser_identity_failure_reaps_directly_created_process(
+    synthetic_paths: launcher.LauncherPaths,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeProcess:
+        pid = 5151
+
+        def __init__(self) -> None:
+            self.running = True
+            self.terminated = False
+            self.killed = False
+
+        def poll(self) -> int | None:
+            return None if self.running else 0
+
+        def terminate(self) -> None:
+            self.terminated = True
+
+        def wait(self, *, timeout: float) -> int:
+            if not self.killed:
+                raise launcher.subprocess.TimeoutExpired("browser", timeout)
+            self.running = False
+            return 0
+
+        def kill(self) -> None:
+            self.killed = True
+
+    process = FakeProcess()
+    monkeypatch.setattr(launcher, "_process_identity", lambda _pid: None)
+
+    with pytest.raises(launcher.LauncherError, match="browser process identity"):
+        launcher._register_browser(
+            synthetic_paths,
+            process,  # type: ignore[arg-type]
+            tmp_path / "chrome.exe",
+        )
+
+    assert process.terminated is True
+    assert process.killed is True
+    assert process.running is False
+
+
+def test_browser_registration_write_failure_reaps_direct_process(
+    synthetic_paths: launcher.LauncherPaths,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeProcess:
+        pid = 6161
+
+        def __init__(self) -> None:
+            self.running = True
+            self.terminated = False
+
+        def poll(self) -> int | None:
+            return None if self.running else 0
+
+        def terminate(self) -> None:
+            self.terminated = True
+
+        def wait(self, *, timeout: float) -> int:
+            del timeout
+            self.running = False
+            return 0
+
+        def kill(self) -> None:
+            raise AssertionError("graceful direct-process reap should have succeeded")
+
+    process = FakeProcess()
+    browser = tmp_path / "chrome.exe"
+    monkeypatch.setattr(
+        launcher,
+        "_process_identity",
+        lambda pid: {"pid": pid, "executable": str(browser), "created": 123},
+    )
+    monkeypatch.setattr(
+        launcher,
+        "_atomic_json",
+        lambda *_args: (_ for _ in ()).throw(OSError("registration disk full")),
+    )
+
+    with pytest.raises(OSError, match="registration disk full"):
+        launcher._register_browser(
+            synthetic_paths,
+            process,  # type: ignore[arg-type]
+            browser,
+        )
+
+    assert process.terminated is True
+    assert process.running is False
+
+
+def test_malformed_browser_pid_registration_is_removed_without_targeting(
+    synthetic_paths: launcher.LauncherPaths,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registration = synthetic_paths.run_root / "browser.malformed.json"
+    launcher._atomic_json(
+        registration,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            "browser_pid": "not-an-integer",
+        },
+    )
+    monkeypatch.setattr(
+        launcher.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("malformed registration must never target a process")
+        ),
+    )
+
+    result = launcher._shutdown_registered_browsers(synthetic_paths)
+
+    assert len(result) == 1
+    assert result[0]["status"] == "INVALID_REGISTRATION_REMOVED"
+    assert not registration.exists()

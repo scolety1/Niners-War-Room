@@ -508,25 +508,68 @@ def create_manual_backup(paths: LauncherPaths) -> dict[str, Any]:
         return create_backup(paths, reason="manual")
 
 
+def _bounded_family_target(root: Path, relative: Path) -> Path:
+    if relative.is_absolute() or relative.anchor or relative.drive or relative.root:
+        raise LauncherError("backup path must be strictly relative")
+    if ".." in relative.parts:
+        raise LauncherError("unsafe backup path")
+    family_root = root.resolve()
+    candidate = (family_root / relative).resolve()
+    try:
+        candidate.relative_to(family_root)
+    except ValueError as exc:
+        raise LauncherError("backup path escapes its approved family root") from exc
+    return candidate
+
+
 def validate_backup(snapshot: Path) -> dict[str, Any]:
     try:
         manifest = _json_document(snapshot / "MANIFEST.json")
         if manifest.get("schema_version") != 1 or not isinstance(manifest.get("files"), list):
             raise ValueError("unsupported backup manifest")
+        allowed_families = {
+            "draft_runtime",
+            "development_lab",
+            "saved_mock_drafts",
+            "data_health_receipts",
+        }
+        seen: set[str] = set()
         for row in manifest["files"]:
             family = str(row["family"])
+            if family not in allowed_families:
+                raise ValueError("unsupported backup family")
             relative = Path(str(row["relative_path"]))
-            if relative.is_absolute() or ".." in relative.parts:
-                raise ValueError("unsafe backup path")
-            candidate = snapshot / "payload" / family / relative
+            family_root = snapshot / "payload" / family
+            candidate = _bounded_family_target(family_root, relative)
+            key = os.path.normcase(str(candidate))
+            if key in seen:
+                raise ValueError("duplicate backup path")
+            seen.add(key)
             if not candidate.is_file() or sha256(candidate) != row["sha256"]:
                 raise ValueError("backup hash mismatch")
+            if family == "draft_runtime":
+                if _json_document(candidate).get("schema_version") != "draft_day_runtime_v2":
+                    raise ValueError("unsupported draft backup schema")
+            elif family in {"development_lab", "saved_mock_drafts"}:
+                if _json_document(candidate).get("schema_version") != 1:
+                    raise ValueError("unsupported state backup schema")
+        receipt_rows = [row for row in manifest["files"] if row["family"] == "data_health_receipts"]
+        if receipt_rows:
+            receipt_root = snapshot / "payload" / "data_health_receipts"
+            latest = receipt_root / "latest_refresh_status.json"
+            result = inspect_refresh_receipt(status_path=latest)
+            if not result.has_valid_latest:
+                raise ValueError("Data Health backup failed accepted receipt validation")
+            backup_relative = Path("backups") / "latest_refresh_status.backup.json"
+            if any(Path(str(row["relative_path"])) == backup_relative for row in receipt_rows):
+                if not result.has_valid_backup:
+                    raise ValueError("Data Health receipt backup failed accepted validation")
         return {
             "valid": True,
             "snapshot_id": manifest.get("snapshot_id"),
             "files": len(manifest["files"]),
         }
-    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+    except (LauncherError, OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         return {"valid": False, "error": str(exc)}
 
 
@@ -544,7 +587,7 @@ def restore_plan(paths: LauncherPaths, snapshot_id: str) -> dict[str, Any]:
     }
     changes: list[dict[str, str]] = []
     for row in manifest["files"]:
-        target = roots[row["family"]] / Path(row["relative_path"])
+        target = _bounded_family_target(roots[row["family"]], Path(str(row["relative_path"])))
         status = (
             "UNCHANGED"
             if target.is_file() and sha256(target) == row["sha256"]
@@ -590,11 +633,12 @@ def _restore_backup_locked(paths: LauncherPaths, snapshot_id: str) -> dict[str, 
     desired = {(str(row["family"]), Path(str(row["relative_path"]))) for row in manifest["files"]}
     transaction = paths.run_root / f"restore-{uuid.uuid4().hex}.staging"
     transaction.mkdir(parents=True)
+    attempted_targets: list[Path] = []
     try:
         for row in manifest["files"]:
             relative = Path(str(row["relative_path"]))
-            source = snapshot / "payload" / row["family"] / relative
-            staged = transaction / row["family"] / relative
+            source = _bounded_family_target(snapshot / "payload" / row["family"], relative)
+            staged = _bounded_family_target(transaction / row["family"], relative)
             staged.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, staged)
             if sha256(staged) != row["sha256"]:
@@ -611,8 +655,9 @@ def _restore_backup_locked(paths: LauncherPaths, snapshot_id: str) -> dict[str, 
                 existing.unlink()
         for row in manifest["files"]:
             relative = Path(str(row["relative_path"]))
-            target = roots[row["family"]] / relative
+            target = _bounded_family_target(roots[row["family"]], relative)
             target.parent.mkdir(parents=True, exist_ok=True)
+            attempted_targets.append(target)
             (transaction / row["family"] / relative).replace(target)
         final_validation = validate_state(paths)
         if not final_validation.valid or state_fingerprint(paths) != tuple(
@@ -623,7 +668,11 @@ def _restore_backup_locked(paths: LauncherPaths, snapshot_id: str) -> dict[str, 
         ):
             raise LauncherError("Restored state failed exact application-boundary validation.")
     except BaseException as exc:
-        _restore_snapshot_without_backup(paths, str(pre_restore["snapshot_id"]))
+        _restore_snapshot_without_backup(
+            paths,
+            str(pre_restore["snapshot_id"]),
+            cleanup_targets=attempted_targets,
+        )
         raise LauncherError(f"Restore rolled back after failure: {exc}") from exc
     finally:
         shutil.rmtree(transaction, ignore_errors=True)
@@ -631,7 +680,12 @@ def _restore_backup_locked(paths: LauncherPaths, snapshot_id: str) -> dict[str, 
     return {"snapshot_id": snapshot_id, "restored": True, "changes": plan["changes"]}
 
 
-def _restore_snapshot_without_backup(paths: LauncherPaths, snapshot_id: str) -> None:
+def _restore_snapshot_without_backup(
+    paths: LauncherPaths,
+    snapshot_id: str,
+    *,
+    cleanup_targets: Iterable[Path] = (),
+) -> None:
     """Best-effort internal rollback from a snapshot created in this operation."""
     snapshot = paths.backup_root / Path(snapshot_id).name
     if not validate_backup(snapshot)["valid"]:
@@ -644,6 +698,13 @@ def _restore_snapshot_without_backup(paths: LauncherPaths, snapshot_id: str) -> 
         "data_health_receipts": paths.refresh_root,
     }
     desired = {(str(row["family"]), Path(str(row["relative_path"]))) for row in manifest["files"]}
+    desired_targets = {
+        _bounded_family_target(roots[family], relative) for family, relative in desired
+    }
+    for target in cleanup_targets:
+        resolved = target.resolve()
+        if resolved not in desired_targets and target.is_file():
+            target.unlink()
     current = validate_state(paths)
     if current.valid:
         for existing in current.files:
@@ -652,8 +713,8 @@ def _restore_snapshot_without_backup(paths: LauncherPaths, snapshot_id: str) -> 
                 existing.unlink()
     for row in manifest["files"]:
         relative = Path(str(row["relative_path"]))
-        source = snapshot / "payload" / row["family"] / relative
-        target = roots[row["family"]] / relative
+        source = _bounded_family_target(snapshot / "payload" / row["family"], relative)
+        target = _bounded_family_target(roots[row["family"]], relative)
         target.parent.mkdir(parents=True, exist_ok=True)
         staged = target.with_name(f".{target.name}.rollback-{os.getpid()}")
         shutil.copy2(source, staged)
@@ -661,6 +722,14 @@ def _restore_snapshot_without_backup(paths: LauncherPaths, snapshot_id: str) -> 
             staged.unlink(missing_ok=True)
             raise LauncherError("Internal rollback staging hash mismatch.")
         staged.replace(target)
+    final = validate_state(paths)
+    expected = tuple(
+        sorted(
+            (f"{row['family']}/{row['relative_path']}", row["sha256"]) for row in manifest["files"]
+        )
+    )
+    if not final.valid or state_fingerprint(paths) != expected:
+        raise LauncherError("Internal rollback failed exact state validation.")
 
 
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
@@ -1030,13 +1099,119 @@ def browser_candidates() -> Iterable[Path]:
             yield Path(root) / relative
 
 
+def _browser_registration(paths: LauncherPaths, pid: int) -> Path:
+    return paths.run_root / f"browser.{pid}.json"
+
+
+def _reap_direct_browser_process(process: subprocess.Popen[Any]) -> None:
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=5.0)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5.0)
+    if process.poll() is None:
+        raise LauncherError("Directly created browser process did not stop.")
+
+
+def _register_browser(paths: LauncherPaths, process: subprocess.Popen[Any], browser: Path) -> None:
+    try:
+        identity = _process_identity(process.pid)
+        if identity is None:
+            raise LauncherError("Could not establish launcher browser process identity.")
+        _atomic_json(
+            _browser_registration(paths, process.pid),
+            {
+                "launcher_version": LAUNCHER_VERSION,
+                "browser_pid": process.pid,
+                "browser_executable": identity["executable"],
+                "browser_created": identity["created"],
+                "browser_profile": str(paths.browser_profile),
+                "repo_root": str(paths.repo_root),
+                "expected_browser": str(browser.resolve()),
+            },
+        )
+    except BaseException:
+        _reap_direct_browser_process(process)
+        raise
+
+
+def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    for registration in sorted(paths.run_root.glob("browser.*.json")):
+        try:
+            record = _json_document(registration)
+            pid = int(record.get("browser_pid", 0))
+            if pid <= 0:
+                raise ValueError("invalid browser PID")
+            expected_browser = Path(str(record.get("expected_browser", ""))).resolve()
+            approved_browsers = {candidate.resolve() for candidate in browser_candidates()}
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            registration.unlink(missing_ok=True)
+            results.append({"status": "INVALID_REGISTRATION_REMOVED", "detail": str(exc)})
+            continue
+        owned = bool(
+            record.get("launcher_version") == LAUNCHER_VERSION
+            and Path(str(record.get("browser_profile", ""))).resolve()
+            == paths.browser_profile.resolve()
+            and Path(str(record.get("repo_root", ""))).resolve() == paths.repo_root.resolve()
+            and expected_browser in approved_browsers
+            and Path(str(record.get("browser_executable", ""))).resolve() == expected_browser
+            and _identity_matches(record, "browser")
+        )
+        if not owned:
+            registration.unlink(missing_ok=True)
+            results.append({"pid": pid, "status": "STALE_OR_UNVERIFIED_NOT_TARGETED"})
+            continue
+        result = subprocess.run(
+            ["taskkill.exe", "/PID", str(pid), "/T"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=10,
+            check=False,
+            creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
+        )
+        deadline = time.monotonic() + 5.0
+        while _pid_alive(pid) and time.monotonic() < deadline:
+            time.sleep(0.1)
+        forced = False
+        if _pid_alive(pid):
+            forced = True
+            subprocess.run(
+                ["taskkill.exe", "/F", "/PID", str(pid), "/T"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=10,
+                check=False,
+                creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
+            )
+        if _pid_alive(pid):
+            raise LauncherError(f"Launcher-owned browser tree did not stop: PID {pid}.")
+        registration.unlink(missing_ok=True)
+        results.append(
+            {
+                "pid": pid,
+                "status": "STOPPED",
+                "forced_cleanup": forced,
+                "initial_exit_code": result.returncode,
+            }
+        )
+    return results
+
+
 def open_browser(paths: LauncherPaths) -> subprocess.Popen[Any] | None:
     if os.environ.get("NWR_LAUNCHER_NO_BROWSER") == "1":
         return None
     url = f"http://{HOST}:{PORT}/"
     for browser in browser_candidates():
         if browser.is_file():
-            return subprocess.Popen(
+            process = subprocess.Popen(
                 [
                     str(browser),
                     f"--app={url}",
@@ -1051,6 +1226,8 @@ def open_browser(paths: LauncherPaths) -> subprocess.Popen[Any] | None:
                 stderr=subprocess.DEVNULL,
                 creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
             )
+            _register_browser(paths, process, browser)
+            return process
     os.startfile(url)  # type: ignore[attr-defined]
     return None
 
@@ -1059,6 +1236,11 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
     ensure_directories(paths)
     verify_repository(paths)
     _acquire_lock(paths)
+    try:
+        stale_browser_cleanup = _shutdown_registered_browsers(paths)
+    except BaseException:
+        paths.lock_path.unlink(missing_ok=True)
+        raise
     if port_is_listening(HOST, PORT):
         paths.lock_path.unlink(missing_ok=True)
         raise LauncherError(
@@ -1089,6 +1271,7 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
     original_env = os.environ.copy()
     os.environ.update(runtime_environment(paths))
     process = None
+    browser_cleanup: list[dict[str, Any]] = []
     try:
         process = start_streamlit(
             python,
@@ -1142,6 +1325,7 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
             time.sleep(0.25)
         shutdown = graceful_shutdown(process, timeout_seconds=SHUTDOWN_TIMEOUT_SECONDS)
         released = wait_for_port_release(HOST, PORT, timeout_seconds=5.0)
+        browser_cleanup = _shutdown_registered_browsers(paths)
         markers = fatal_markers_in_logs(stdout_log, stderr_log)
         if released and not shutdown.forced_cleanup and not markers:
             if state_fingerprint(paths) != initial_state_fingerprint:
@@ -1153,6 +1337,8 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
             "fatal_markers": list(markers),
             "backup_warning": backup_warning,
             "migration": asdict(migration),
+            "stale_browser_cleanup": stale_browser_cleanup,
+            "browser_cleanup": browser_cleanup,
         }
     except BaseException as exc:
         if process is not None and process.poll() is None:
@@ -1163,6 +1349,10 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
                 "Startup failure cleanup: "
                 f"{exc}; forced={shutdown.forced_cleanup}; port_released={released}",
             )
+        try:
+            browser_cleanup = _shutdown_registered_browsers(paths)
+        except Exception as browser_exc:
+            _append_launcher_log(paths, f"Browser cleanup failure: {browser_exc}")
         raise
     finally:
         os.environ.clear()
