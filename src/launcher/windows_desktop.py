@@ -28,7 +28,13 @@ from scripts.streamlit_runtime_cycle import (
     wait_for_http,
     wait_for_port_release,
 )
-from src.services.refresh_receipt_store_service import inspect_refresh_receipt
+from src.services.refresh_receipt_store_service import (
+    CORRUPT,
+    MISSING,
+    OVERSIZED,
+    inspect_refresh_receipt,
+    quarantine_invalid_refresh_receipt,
+)
 
 LAUNCHER_VERSION = "nwr_windows_desktop_launcher_v1"
 EXPECTED_APP_COMMIT = "dc399a8c2ed5d77d9802d98c215a12cbe594d7d7"
@@ -38,6 +44,7 @@ PORT = 8520
 BACKUP_RETENTION = 5
 STARTUP_TIMEOUT_SECONDS = 30.0
 SHUTDOWN_TIMEOUT_SECONDS = 15.0
+DATA_HEALTH_RECOVERY_CONFIRMATION = "QUARANTINE_CORRUPT_RECEIPT"
 
 
 class LauncherError(RuntimeError):
@@ -57,6 +64,7 @@ class LauncherPaths:
     run_root: Path
     browser_profile: Path
     config_root: Path
+    recovery_root: Path
 
     @property
     def lock_path(self) -> Path:
@@ -141,6 +149,7 @@ def launcher_paths(repo_root: Path | None = None) -> LauncherPaths:
         run_root=home / "run",
         browser_profile=home / "browser-profile",
         config_root=home / "config",
+        recovery_root=home / "recovery" / "data-health",
     )
 
 
@@ -156,6 +165,7 @@ def ensure_directories(paths: LauncherPaths) -> None:
         paths.run_root,
         paths.browser_profile,
         paths.config_root,
+        paths.recovery_root,
     ):
         path.mkdir(parents=True, exist_ok=True)
 
@@ -163,11 +173,32 @@ def ensure_directories(paths: LauncherPaths) -> None:
 def legacy_refresh_root(paths: LauncherPaths) -> Path | None:
     configured = os.environ.get("NWR_LEGACY_REFRESH_ROOT", "").strip()
     if configured:
-        return Path(configured).resolve()
+        if os.environ.get("NWR_LAUNCHER_TEST_MODE") != "1":
+            raise LauncherError("Legacy refresh root overrides are test-only.")
+        candidate = Path(configured).resolve()
+        try:
+            candidate.relative_to(paths.data_home.parent.resolve())
+        except ValueError as exc:
+            raise LauncherError("Synthetic legacy refresh root escapes the test boundary.") from exc
+        return candidate
+    return canonical_legacy_refresh_root(paths)
+
+
+def canonical_legacy_refresh_root(paths: LauncherPaths) -> Path | None:
     canonical = Path(r"C:\NWR\Niners-War-Room\local_exports\refresh_data")
-    if canonical.exists() and canonical.resolve() != paths.refresh_root.resolve():
-        return canonical.resolve()
-    return None
+    return _canonical_legacy_refresh_root_from(paths, canonical)
+
+
+def _canonical_legacy_refresh_root_from(
+    paths: LauncherPaths, canonical: Path
+) -> Path | None:
+    if not canonical.exists():
+        return None
+    if _path_is_link(canonical):
+        raise LauncherError("The canonical legacy Data Health root is a junction or link.")
+    if canonical.resolve() == paths.refresh_root.resolve():
+        return None
+    return canonical
 
 
 def migrate_legacy_refresh(paths: LauncherPaths) -> MigrationResult:
@@ -176,6 +207,13 @@ def migrate_legacy_refresh(paths: LauncherPaths) -> MigrationResult:
         return MigrationResult("NO_LEGACY_STATE")
     source_latest = source_root / "latest_refresh_status.json"
     if not source_latest.exists():
+        backup_validation = inspect_refresh_receipt(status_path=source_latest)
+        if backup_validation.has_valid_backup:
+            return MigrationResult(
+                "BLOCKED_VALID_LEGACY_BACKUP_REQUIRES_EXPLICIT_RECOVERY",
+                source=source_root,
+                detail="A valid legacy backup exists without a latest receipt.",
+            )
         return MigrationResult("NO_LEGACY_STATE", source=source_root)
     target_latest = paths.refresh_root / "latest_refresh_status.json"
     source_validation = inspect_refresh_receipt(status_path=source_latest)
@@ -258,6 +296,13 @@ def inspect_legacy_migration(paths: LauncherPaths) -> MigrationResult:
         return MigrationResult("NO_LEGACY_STATE")
     source_latest = source_root / "latest_refresh_status.json"
     if not source_latest.exists():
+        backup_validation = inspect_refresh_receipt(status_path=source_latest)
+        if backup_validation.has_valid_backup:
+            return MigrationResult(
+                "BLOCKED_VALID_LEGACY_BACKUP_REQUIRES_EXPLICIT_RECOVERY",
+                source=source_root,
+                detail="A valid legacy backup exists without a latest receipt.",
+            )
         return MigrationResult("NO_LEGACY_STATE", source=source_root)
     source_validation = inspect_refresh_receipt(status_path=source_latest)
     if not source_validation.has_valid_latest:
@@ -403,6 +448,326 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _path_is_link(path: Path) -> bool:
+    is_junction = getattr(os.path, "isjunction", lambda _path: False)
+    return path.is_symlink() or bool(is_junction(path))
+
+
+def _receipt_relative_allowed(relative: Path) -> bool:
+    parts = relative.parts
+    if parts == ("latest_refresh_status.json",):
+        return True
+    if parts == ("backups", "latest_refresh_status.backup.json"):
+        return True
+    if len(parts) == 2 and parts[0] == "quarantine" and parts[1].endswith(".json"):
+        return True
+    return bool(
+        len(parts) == 1
+        and parts[0][:1].isdigit()
+        and parts[0].endswith("_status.json")
+    )
+
+
+def _receipt_owned_files(root: Path, *, require_latest: bool) -> tuple[Path, ...]:
+    if not root.is_dir() or _path_is_link(root):
+        raise LauncherError("The approved Data Health receipt root is unavailable or unsafe.")
+    latest = root / "latest_refresh_status.json"
+    if require_latest and (not latest.is_file() or _path_is_link(latest)):
+        raise LauncherError("The approved latest Data Health receipt is unavailable or unsafe.")
+    candidates = [
+        path
+        for path in root.glob("*_status.json")
+        if path.name == latest.name
+        or (path.name[:1].isdigit() and path.name.endswith("_status.json"))
+    ]
+    backup_dir = root / "backups"
+    quarantine_dir = root / "quarantine"
+    for directory in (backup_dir, quarantine_dir):
+        if directory.exists() and _path_is_link(directory):
+            raise LauncherError("Data Health recovery refuses a linked receipt directory.")
+    backup = backup_dir / "latest_refresh_status.backup.json"
+    if backup.exists():
+        candidates.append(backup)
+    if quarantine_dir.is_dir():
+        candidates.extend(quarantine_dir.glob("*.json"))
+    files: list[Path] = []
+    for path in candidates:
+        if not path.is_file() or _path_is_link(path):
+            raise LauncherError("Data Health recovery refuses a linked or irregular receipt file.")
+        relative = path.relative_to(root)
+        if not _receipt_relative_allowed(relative):
+            raise LauncherError("Data Health recovery found an unsupported receipt-owned path.")
+        files.append(path)
+    unique = {os.path.normcase(str(path.resolve())): path for path in files}
+    if len(unique) != len(files) or len(files) > 27:
+        raise LauncherError("Data Health receipt-owned inventory is duplicated or unbounded.")
+    return tuple(sorted(files))
+
+
+def _tree_regular_files(root: Path) -> tuple[Path, ...]:
+    if not root.is_dir() or _path_is_link(root):
+        raise LauncherError("Recovery payload root is unavailable or linked.")
+    pending = [root]
+    files: list[Path] = []
+    while pending:
+        directory = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                path = Path(entry.path)
+                if _path_is_link(path):
+                    raise LauncherError("Recovery payload contains a link or junction.")
+                if entry.is_dir(follow_symlinks=False):
+                    pending.append(path)
+                elif entry.is_file(follow_symlinks=False):
+                    files.append(path)
+                else:
+                    raise LauncherError("Recovery payload contains an irregular entry.")
+    return tuple(sorted(files))
+
+
+def _recovery_manifest(root: Path, files: Iterable[Path]) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "created_at_utc": utc_timestamp(),
+        "source_root": str(root),
+        "scope": "canonical_refresh_receipt_store",
+        "files": [
+            {
+                "relative_path": path.relative_to(root).as_posix(),
+                "bytes": path.stat().st_size,
+                "sha256": sha256(path),
+            }
+            for path in files
+        ],
+    }
+
+
+def validate_data_health_recovery_backup(backup: Path) -> dict[str, Any]:
+    try:
+        manifest = _json_document(backup / "MANIFEST.json")
+        if manifest.get("schema_version") != 1 or not isinstance(manifest.get("files"), list):
+            raise ValueError("unsupported Data Health recovery manifest")
+        if manifest.get("scope") != "canonical_refresh_receipt_store":
+            raise ValueError("Data Health recovery manifest has an unsupported scope")
+        if not 1 <= len(manifest["files"]) <= 27:
+            raise ValueError("Data Health recovery manifest file count is invalid")
+        payload_root = backup / "payload"
+        actual_files = _tree_regular_files(payload_root)
+        seen: set[str] = set()
+        expected: set[str] = set()
+        for row in manifest["files"]:
+            relative = Path(str(row["relative_path"]))
+            if not _receipt_relative_allowed(relative):
+                raise ValueError("Data Health recovery manifest has an unsupported receipt path")
+            target = _bounded_family_target(payload_root, relative)
+            key = os.path.normcase(str(target))
+            if key in seen:
+                raise ValueError("Data Health recovery manifest contains a duplicate path")
+            seen.add(key)
+            expected.add(key)
+            if not target.is_file() or _path_is_link(target):
+                raise ValueError("Data Health recovery receipt is unsafe or missing")
+            if target.stat().st_size != int(row["bytes"]) or sha256(target) != row["sha256"]:
+                raise ValueError("Data Health recovery byte validation failed")
+        actual = {os.path.normcase(str(path.resolve())) for path in actual_files}
+        if actual != expected:
+            raise ValueError("Data Health recovery payload contains unexpected files")
+        if "latest_refresh_status.json" not in {
+            str(row["relative_path"]) for row in manifest["files"]
+        }:
+            raise ValueError("Data Health recovery payload lacks the latest receipt")
+        return {"valid": True, "files": len(manifest["files"])}
+    except (LauncherError, OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return {"valid": False, "error": str(exc)}
+
+
+def create_data_health_recovery_backup(paths: LauncherPaths, source_root: Path) -> Path:
+    files = _receipt_owned_files(source_root, require_latest=True)
+    recovery_id = f"{utc_timestamp()}__dh_recovery"
+    staging = paths.recovery_root / f".{recovery_id}.staging"
+    final = paths.recovery_root / recovery_id
+    if staging.exists() or final.exists():
+        raise LauncherError(f"Data Health recovery backup already exists: {recovery_id}")
+    staging.mkdir(parents=True)
+    try:
+        manifest = _recovery_manifest(source_root, files)
+        for source in files:
+            target = _bounded_family_target(
+                staging / "payload", source.relative_to(source_root)
+            )
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            if target.stat().st_size != source.stat().st_size or sha256(target) != sha256(source):
+                raise LauncherError("Data Health recovery backup hash mismatch.")
+        _atomic_json(staging / "MANIFEST.json", manifest)
+        staging.replace(final)
+        if not validate_data_health_recovery_backup(final)["valid"]:
+            raise LauncherError("Data Health recovery backup validation failed.")
+
+        # Exercise the exact rollback function against an isolated destination root.
+        proof = paths.recovery_root / ".rollback-proof"
+        proof.mkdir(parents=True)
+        try:
+            restore_data_health_recovery_backup(final, proof)
+            if _receipt_scope_fingerprint(proof) != _receipt_scope_fingerprint(source_root):
+                raise LauncherError("Data Health recovery rollback proof failed.")
+        finally:
+            shutil.rmtree(proof, ignore_errors=True)
+        return final
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        if final.exists() and not validate_data_health_recovery_backup(final)["valid"]:
+            shutil.rmtree(final, ignore_errors=True)
+        raise
+
+
+def _receipt_scope_fingerprint(root: Path) -> tuple[tuple[str, int, str], ...]:
+    return tuple(
+        sorted(
+            (
+                path.relative_to(root).as_posix(),
+                path.stat().st_size,
+                sha256(path),
+            )
+            for path in _receipt_owned_files(root, require_latest=False)
+        )
+    )
+
+
+def restore_data_health_recovery_backup(backup: Path, destination_root: Path) -> Path:
+    validation = validate_data_health_recovery_backup(backup)
+    if not validation["valid"]:
+        raise LauncherError("Cannot restore an invalid Data Health recovery backup.")
+    if destination_root.exists() and _path_is_link(destination_root):
+        raise LauncherError("Data Health rollback destination is unsafe.")
+    destination_root.mkdir(parents=True, exist_ok=True)
+    manifest = _json_document(backup / "MANIFEST.json")
+    desired = {
+        Path(str(row["relative_path"])): (int(row["bytes"]), str(row["sha256"]))
+        for row in manifest["files"]
+    }
+    for current in _receipt_owned_files(destination_root, require_latest=False):
+        if current.relative_to(destination_root) not in desired:
+            current.unlink()
+    for relative, (expected_bytes, expected_hash) in desired.items():
+        source = _bounded_family_target(backup / "payload", relative)
+        target = _bounded_family_target(destination_root, relative)
+        if target.exists() and _path_is_link(target):
+            raise LauncherError("Data Health rollback target is unsafe.")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        staged = target.with_name(
+            f".{target.name}.rollback-{os.getpid()}-{uuid.uuid4().hex[:8]}.tmp"
+        )
+        try:
+            shutil.copy2(source, staged)
+            if staged.stat().st_size != expected_bytes or sha256(staged) != expected_hash:
+                raise LauncherError("Data Health rollback staging validation failed.")
+            staged.replace(target)
+        finally:
+            staged.unlink(missing_ok=True)
+    expected = tuple(
+        sorted((relative.as_posix(), size, digest) for relative, (size, digest) in desired.items())
+    )
+    if _receipt_scope_fingerprint(destination_root) != expected:
+        raise LauncherError("Data Health rollback exact-scope validation failed.")
+    return destination_root / "latest_refresh_status.json"
+
+
+def recover_corrupt_data_health_receipt(
+    paths: LauncherPaths, *, confirmation: str
+) -> dict[str, Any]:
+    source_root = canonical_legacy_refresh_root(paths)
+    if source_root is None:
+        raise LauncherError("No canonical legacy Data Health receipt root is available.")
+    return _recover_corrupt_data_health_receipt_at_root(
+        paths,
+        source_root=source_root,
+        confirmation=confirmation,
+    )
+
+
+def _recover_corrupt_data_health_receipt_at_root(
+    paths: LauncherPaths, *, source_root: Path, confirmation: str
+) -> dict[str, Any]:
+    if confirmation != DATA_HEALTH_RECOVERY_CONFIRMATION:
+        raise LauncherError(
+            "Data Health recovery confirmation must exactly match "
+            f"{DATA_HEALTH_RECOVERY_CONFIRMATION}."
+        )
+    with _maintenance_lock(paths, operation="data_health_recovery"):
+        latest = source_root / "latest_refresh_status.json"
+        before = inspect_refresh_receipt(status_path=latest)
+        if before.load_status not in {CORRUPT, OVERSIZED} or not latest.is_file():
+            raise LauncherError("Only an existing corrupt or oversized latest receipt is eligible.")
+        if before.has_valid_backup:
+            raise LauncherError(
+                "A valid last-known-good backup exists; quarantine-only recovery is blocked "
+                "pending an explicit recovery decision."
+            )
+        if before.backup_status != MISSING:
+            raise LauncherError(
+                "A secondary legacy receipt exists but is not valid; quarantine-only "
+                "recovery requires a separate explicit decision."
+            )
+        valid_archives = []
+        for candidate in _receipt_owned_files(source_root, require_latest=True):
+            if candidate.parent == source_root and candidate != latest:
+                candidate_result = inspect_refresh_receipt(status_path=candidate)
+                if candidate_result.has_valid_latest:
+                    valid_archives.append(candidate.name)
+        if valid_archives:
+            raise LauncherError(
+                "A valid archived receipt exists; quarantine-only recovery is blocked "
+                "pending an explicit recovery decision."
+            )
+        pre_recovery_fingerprint = _receipt_scope_fingerprint(source_root)
+        latest_hash = sha256(latest)
+        latest_bytes = latest.stat().st_size
+        recovery_backup = create_data_health_recovery_backup(paths, source_root)
+        validation = validate_data_health_recovery_backup(recovery_backup)
+        if not validation["valid"]:
+            raise LauncherError("Validated recovery backup is required before quarantine.")
+        quarantine: Path | None = None
+        try:
+            quarantine = quarantine_invalid_refresh_receipt(status_path=latest, confirmed=True)
+            if latest.exists() or not quarantine.is_file():
+                raise LauncherError("Canonical quarantine did not produce the required state.")
+            if quarantine.stat().st_size != latest_bytes or sha256(quarantine) != latest_hash:
+                raise LauncherError(
+                    "Quarantined receipt bytes do not match the preserved original."
+                )
+            after = inspect_refresh_receipt(status_path=latest)
+            if after.load_status != MISSING or after.has_valid_backup:
+                raise LauncherError(
+                    "Data Health post-recovery state is not the expected no-receipt state."
+                )
+        except BaseException as exc:
+            restored = restore_data_health_recovery_backup(recovery_backup, source_root)
+            if (
+                restored.stat().st_size != latest_bytes
+                or sha256(restored) != latest_hash
+                or _receipt_scope_fingerprint(source_root) != pre_recovery_fingerprint
+            ):
+                raise LauncherError("Data Health recovery rollback failed.") from exc
+            raise LauncherError(
+                "Data Health recovery verification failed; exact latest bytes were restored."
+            ) from exc
+        assert quarantine is not None
+        return {
+            "status": "QUARANTINED_NO_VALID_LKG",
+            "receipt_root": str(source_root),
+            "latest_status_before": before.load_status,
+            "latest_status_after": after.load_status,
+            "original_bytes": latest_bytes,
+            "original_sha256": latest_hash,
+            "recovery_backup": str(recovery_backup),
+            "recovery_backup_files": validation["files"],
+            "rollback_proof": True,
+            "quarantine_path": str(quarantine),
+            "source_refresh_executed": False,
+        }
 
 
 def state_fingerprint(paths: LauncherPaths) -> tuple[tuple[str, str], ...]:
@@ -1417,6 +1782,28 @@ def status(paths: LauncherPaths) -> dict[str, Any]:
     }
 
 
+def installation_preflight(paths: LauncherPaths) -> dict[str, Any]:
+    verify_repository(paths)
+    validation = validate_state(paths)
+    migration = inspect_legacy_migration(paths)
+    junctions = junction_status(paths)
+    blockers: list[str] = []
+    if not validation.valid:
+        blockers.append(f"persistent state is {validation.status}")
+    if migration.status.startswith("BLOCKED_"):
+        blockers.append(f"legacy migration is {migration.status}")
+    for name, state in junctions.items():
+        if state in {"WRONG_TARGET", "NON_JUNCTION_PATH"}:
+            blockers.append(f"{name} junction is {state}")
+    return {
+        "ready": not blockers,
+        "state_validation": validation.status,
+        "legacy_migration": asdict(migration),
+        "junctions": junctions,
+        "blockers": blockers,
+    }
+
+
 def show_error(message: str) -> None:
     if os.name == "nt":
         ctypes.windll.user32.MessageBoxW(0, message, "Niners War Room", 0x10)
@@ -1455,11 +1842,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("open-logs")
     sub.add_parser("backup")
     sub.add_parser("validate-data")
+    sub.add_parser("installation-preflight")
     dry = sub.add_parser("restore-dry-run")
     dry.add_argument("snapshot_id")
     restore = sub.add_parser("restore")
     restore.add_argument("snapshot_id")
     restore.add_argument("--confirm", required=True)
+    recovery = sub.add_parser("recover-data-health")
+    recovery.add_argument("--confirm", required=True)
     return parser
 
 
@@ -1482,10 +1872,19 @@ def main(argv: list[str] | None = None) -> int:
             payload = create_manual_backup(paths)
         elif args.command == "validate-data":
             payload = asdict(validate_state(paths))
+        elif args.command == "installation-preflight":
+            payload = installation_preflight(paths)
+            if not payload["ready"]:
+                raise LauncherError(
+                    "Installation preflight blocked: " + "; ".join(payload["blockers"])
+                )
         elif args.command == "restore-dry-run":
             payload = restore_plan(paths, args.snapshot_id)
         elif args.command == "restore":
             payload = restore_backup(paths, args.snapshot_id, confirmation=args.confirm)
+        elif args.command == "recover-data-health":
+            ensure_directories(paths)
+            payload = recover_corrupt_data_health_receipt(paths, confirmation=args.confirm)
         else:
             raise LauncherError(f"Unsupported command: {args.command}")
         print(json.dumps(payload, indent=2, default=str))
