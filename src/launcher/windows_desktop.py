@@ -45,6 +45,11 @@ BACKUP_RETENTION = 5
 STARTUP_TIMEOUT_SECONDS = 30.0
 SHUTDOWN_TIMEOUT_SECONDS = 15.0
 DATA_HEALTH_RECOVERY_CONFIRMATION = "QUARANTINE_CORRUPT_RECEIPT"
+OWNERSHIP_STATES = frozenset(
+    {"RUNNING", "STOP_REQUESTED", "STOPPING", "RECOVERY_REQUIRED", "STOPPED"}
+)
+STOP_POLL_SECONDS = 0.2
+STOP_ESCALATION_SECONDS = 5.0
 
 
 class LauncherError(RuntimeError):
@@ -73,6 +78,14 @@ class LauncherPaths:
     @property
     def stop_request(self) -> Path:
         return self.run_root / "stop.request"
+
+    @property
+    def stop_guard(self) -> Path:
+        return self.run_root / "stop.guard.json"
+
+    @property
+    def last_stop_receipt(self) -> Path:
+        return self.run_root / "last_stop.json"
 
     @property
     def last_backup_result(self) -> Path:
@@ -1205,15 +1218,78 @@ def _read_lock(paths: LauncherPaths) -> dict[str, Any] | None:
         return None
 
 
+def _read_ownership(paths: LauncherPaths) -> dict[str, Any] | None:
+    if not paths.lock_path.exists():
+        return None
+    try:
+        record = _json_document(paths.lock_path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise LauncherError(
+            "Launcher ownership record is corrupt; evidence was preserved and no process "
+            "was targeted."
+        ) from exc
+    required = {"launcher_version", "state", "repo_root", "data_root", "run_id", "port"}
+    if (
+        record.get("launcher_version") != LAUNCHER_VERSION
+        or record.get("state") not in OWNERSHIP_STATES | {"STARTING", "MAINTENANCE"}
+        or any(not record.get(field) for field in required)
+    ):
+        raise LauncherError(
+            "Launcher ownership record is partial or unsupported; evidence was preserved and no "
+            "process was targeted."
+        )
+    return record
+
+
+def _write_ownership(
+    paths: LauncherPaths,
+    record: dict[str, Any],
+    state: str,
+    *,
+    remaining: dict[str, Any] | None = None,
+    cleanup_pending: list[str] | None = None,
+) -> dict[str, Any]:
+    if state not in OWNERSHIP_STATES:
+        raise LauncherError(f"Unsupported launcher ownership state: {state}")
+    updated = {
+        **record,
+        "state": state,
+        "state_updated_at_utc": utc_timestamp(),
+        "remaining_resources": remaining or {},
+        "cleanup_pending": cleanup_pending or [],
+    }
+    _atomic_json(paths.lock_path, updated)
+    return updated
+
+
+def _atomic_text(path: Path, value: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staged = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    staged.write_text(value, encoding="utf-8")
+    staged.replace(path)
+
+
 def _process_identity(pid: int) -> dict[str, Any] | None:
     if pid <= 0:
         return None
     if os.name != "nt":
-        return (
-            {"pid": pid, "executable": str(Path(sys.executable).resolve()), "created": None}
-            if _pid_alive(pid)
-            else None
-        )
+        if not _pid_alive(pid):
+            return None
+        command_line = ""
+        try:
+            command_line = (Path("/proc") / str(pid) / "cmdline").read_bytes().replace(
+                b"\0", b" "
+            ).decode(errors="replace").strip()
+        except OSError:
+            if pid == os.getpid():
+                command_line = subprocess.list2cmdline([sys.executable, *sys.argv])
+        return {
+            "pid": pid,
+            "executable": str(Path(sys.executable).resolve()),
+            "created": None,
+            "command_line": command_line,
+            "parent_pid": os.getppid() if pid == os.getpid() else None,
+        }
     query = 0x1000
     handle = ctypes.windll.kernel32.OpenProcess(query, False, pid)
     if not handle:
@@ -1237,10 +1313,37 @@ def _process_identity(pid: int) -> dict[str, Any] | None:
             ctypes.byref(user),
         ):
             return None
+        class UnicodeString(ctypes.Structure):
+            _fields_ = [
+                ("length", ctypes.c_ushort),
+                ("maximum_length", ctypes.c_ushort),
+                ("buffer", ctypes.c_void_p),
+            ]
+
+        required = ctypes.c_ulong()
+        ctypes.windll.ntdll.NtQueryInformationProcess(
+            handle, 60, None, 0, ctypes.byref(required)
+        )
+        if required.value <= ctypes.sizeof(UnicodeString):
+            return None
+        command_buffer = ctypes.create_string_buffer(required.value)
+        status = ctypes.windll.ntdll.NtQueryInformationProcess(
+            handle,
+            60,
+            command_buffer,
+            required.value,
+            ctypes.byref(required),
+        )
+        if status != 0:
+            return None
+        command = UnicodeString.from_buffer(command_buffer)
+        command_line = ctypes.wstring_at(command.buffer, command.length // 2)
         return {
             "pid": pid,
             "executable": str(Path(buffer.value).resolve()),
             "created": created.value,
+            "command_line": command_line,
+            "parent_pid": _parent_pid(pid),
         }
     finally:
         ctypes.windll.kernel32.CloseHandle(handle)
@@ -1319,15 +1422,246 @@ def _is_descendant(pid: int, ancestor_pid: int) -> bool:
 
 
 def _identity_matches(record: dict[str, Any], prefix: str) -> bool:
-    identity = _process_identity(int(record.get(f"{prefix}_pid", 0)))
+    try:
+        pid = int(record.get(f"{prefix}_pid", 0))
+    except (TypeError, ValueError):
+        return False
+    identity = _process_identity(pid)
     expected_executable = record.get(f"{prefix}_executable")
     expected_created = record.get(f"{prefix}_created")
+    expected_command_line = record.get(f"{prefix}_command_line")
     return bool(
         identity
         and expected_executable
-        and Path(str(identity["executable"])).resolve() == Path(str(expected_executable)).resolve()
+        and expected_command_line
+        and os.path.normcase(str(Path(str(identity["executable"])).resolve()))
+        == os.path.normcase(str(Path(str(expected_executable)).resolve()))
         and identity["created"] == expected_created
+        and identity["command_line"] == expected_command_line
     )
+
+
+def _identity_fields(prefix: str, identity: dict[str, Any]) -> dict[str, Any]:
+    return {
+        f"{prefix}_pid": identity["pid"],
+        f"{prefix}_executable": identity["executable"],
+        f"{prefix}_created": identity["created"],
+        f"{prefix}_command_line": identity["command_line"],
+        f"{prefix}_parent_pid": identity.get("parent_pid"),
+    }
+
+
+def _stored_identity_matches(expected: dict[str, Any]) -> bool:
+    try:
+        pid = int(expected.get("pid", 0))
+    except (TypeError, ValueError):
+        return False
+    actual = _process_identity(pid)
+    return bool(
+        actual
+        and expected.get("executable")
+        and expected.get("command_line")
+        and os.path.normcase(str(Path(str(actual["executable"])).resolve()))
+        == os.path.normcase(str(Path(str(expected["executable"])).resolve()))
+        and actual["created"] == expected.get("created")
+        and actual["command_line"] == expected.get("command_line")
+    )
+
+
+def _process_parent_map() -> dict[int, int]:
+    if os.name != "nt":
+        result = subprocess.run(
+            ["ps", "-eo", "pid=,ppid="],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        parents: dict[int, int] = {}
+        for line in result.stdout.splitlines():
+            fields = line.split()
+            if len(fields) == 2:
+                parents[int(fields[0])] = int(fields[1])
+        return parents
+
+    class ProcessEntry(ctypes.Structure):
+        _fields_ = [
+            ("size", ctypes.c_ulong),
+            ("usage", ctypes.c_ulong),
+            ("pid", ctypes.c_ulong),
+            ("default_heap", ctypes.c_size_t),
+            ("module_id", ctypes.c_ulong),
+            ("threads", ctypes.c_ulong),
+            ("parent_pid", ctypes.c_ulong),
+            ("priority", ctypes.c_long),
+            ("flags", ctypes.c_ulong),
+            ("exe", ctypes.c_wchar * 260),
+        ]
+
+    snapshot = ctypes.windll.kernel32.CreateToolhelp32Snapshot(0x00000002, 0)
+    if snapshot == ctypes.c_void_p(-1).value:
+        return {}
+    parents = {}
+    try:
+        entry = ProcessEntry()
+        entry.size = ctypes.sizeof(entry)
+        present = ctypes.windll.kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
+        while present:
+            parents[int(entry.pid)] = int(entry.parent_pid)
+            present = ctypes.windll.kernel32.Process32NextW(snapshot, ctypes.byref(entry))
+    finally:
+        ctypes.windll.kernel32.CloseHandle(snapshot)
+    return parents
+
+
+def _capture_descendants(root_pids: Iterable[int]) -> list[dict[str, Any]]:
+    roots = {pid for pid in root_pids if pid > 0}
+    parents = _process_parent_map()
+    descendants: set[int] = set()
+    changed = True
+    while changed:
+        changed = False
+        for pid, parent in parents.items():
+            if (
+                pid not in roots
+                and pid not in descendants
+                and (parent in roots or parent in descendants)
+            ):
+                descendants.add(pid)
+                changed = True
+    identities = []
+    for pid in sorted(descendants):
+        identity = _process_identity(pid)
+        if identity is not None:
+            identities.append(identity)
+    return identities
+
+
+def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str, Any]:
+    owned: list[dict[str, Any]] = []
+    conflicts: list[dict[str, Any]] = []
+    absent_registrations: list[str] = []
+    for prefix in ("launcher", "streamlit"):
+        try:
+            pid = int(record.get(f"{prefix}_pid", 0))
+        except (TypeError, ValueError):
+            pid = 0
+        if pid <= 0:
+            if prefix == "launcher" or record.get("state") != "STARTING":
+                conflicts.append({"resource": prefix, "status": "MISSING_IDENTITY"})
+        elif _process_identity(pid) is None:
+            pass
+        elif _identity_matches(record, prefix):
+            owned.append({"resource": prefix, "pid": pid})
+        else:
+            conflicts.append({"resource": prefix, "pid": pid, "status": "IDENTITY_MISMATCH"})
+
+    listeners = _listener_pids()
+    try:
+        listener_pid = int(record.get("listener_pid", 0))
+    except (TypeError, ValueError):
+        listener_pid = 0
+    if listener_pid in listeners:
+        if _identity_matches(record, "listener"):
+            owned.append({"resource": "listener", "pid": listener_pid})
+        else:
+            conflicts.append(
+                {"resource": "listener", "pid": listener_pid, "status": "IDENTITY_MISMATCH"}
+            )
+    for pid in sorted(listeners - ({listener_pid} if listener_pid else set())):
+        conflicts.append({"resource": "listener", "pid": pid, "status": "CHANGED_LISTENER"})
+
+    for identity in record.get("verified_descendants", []):
+        if not isinstance(identity, dict):
+            conflicts.append({"resource": "descendant", "status": "PARTIAL_IDENTITY"})
+            continue
+        pid = int(identity.get("pid", 0))
+        if _process_identity(pid) is None:
+            continue
+        if _stored_identity_matches(identity):
+            owned.append({"resource": "descendant", "pid": pid})
+        else:
+            conflicts.append(
+                {"resource": "descendant", "pid": pid, "status": "IDENTITY_MISMATCH"}
+            )
+
+    for registration in sorted(paths.run_root.glob("browser.*.json")):
+        try:
+            browser = _json_document(registration)
+            pid = int(browser.get("browser_pid", 0))
+            if pid <= 0:
+                raise ValueError("invalid browser PID")
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            conflicts.append(
+                {
+                    "resource": "browser_registration",
+                    "path": str(registration),
+                    "status": "MALFORMED_PRESERVED",
+                }
+            )
+            continue
+        browser_descendants = browser.get("verified_descendants", [])
+        descendant_conflict = False
+        descendant_owned = []
+        for identity in browser_descendants:
+            if not isinstance(identity, dict):
+                descendant_conflict = True
+                continue
+            descendant_pid = int(identity.get("pid", 0))
+            if _process_identity(descendant_pid) is None:
+                continue
+            if _stored_identity_matches(identity):
+                descendant_owned.append(descendant_pid)
+            else:
+                descendant_conflict = True
+                conflicts.append(
+                    {
+                        "resource": "browser_descendant",
+                        "pid": descendant_pid,
+                        "status": "IDENTITY_MISMATCH",
+                    }
+                )
+        if _process_identity(pid) is None:
+            owned.extend(
+                {"resource": "browser_descendant", "pid": descendant_pid}
+                for descendant_pid in descendant_owned
+            )
+            if not descendant_owned and not descendant_conflict:
+                absent_registrations.append(str(registration))
+            continue
+        expected_browser = Path(str(browser.get("expected_browser", ""))).resolve()
+        approved_browsers = {candidate.resolve() for candidate in browser_candidates()}
+        owned_browser = bool(
+            browser.get("launcher_version") == LAUNCHER_VERSION
+            and browser.get("run_id") == record.get("run_id")
+            and Path(str(browser.get("data_root", ""))).resolve() == paths.data_home.resolve()
+            and Path(str(browser.get("browser_profile", ""))).resolve()
+            == paths.browser_profile.resolve()
+            and Path(str(browser.get("repo_root", ""))).resolve() == paths.repo_root.resolve()
+            and expected_browser in approved_browsers
+            and _identity_matches(browser, "browser")
+        )
+        if owned_browser:
+            owned.append({"resource": "browser", "pid": pid, "path": str(registration)})
+            owned.extend(
+                {"resource": "browser_descendant", "pid": descendant_pid}
+                for descendant_pid in descendant_owned
+            )
+        else:
+            conflicts.append(
+                {
+                    "resource": "browser",
+                    "pid": pid,
+                    "path": str(registration),
+                    "status": "UNVERIFIED_PRESERVED",
+                }
+            )
+    return {
+        "owned": owned,
+        "conflicts": conflicts,
+        "absent_registrations": absent_registrations,
+        "port_listeners": sorted(listeners),
+    }
 
 
 def _owned_healthy_instance(paths: LauncherPaths, lock: dict[str, Any]) -> bool:
@@ -1335,6 +1669,8 @@ def _owned_healthy_instance(paths: LauncherPaths, lock: dict[str, Any]) -> bool:
     return bool(
         lock.get("state") == "RUNNING"
         and Path(str(lock.get("repo_root", ""))).resolve() == paths.repo_root.resolve()
+        and Path(str(lock.get("data_root", ""))).resolve() == paths.data_home.resolve()
+        and bool(lock.get("run_id"))
         and lock.get("app_commit") == EXPECTED_APP_COMMIT
         and int(lock.get("port", 0)) == PORT
         and _identity_matches(lock, "launcher")
@@ -1363,12 +1699,12 @@ def _maintenance_lock(paths: LauncherPaths, *, operation: str) -> Iterable[None]
         "launcher_version": LAUNCHER_VERSION,
         "state": "MAINTENANCE",
         "operation": operation,
-        "launcher_pid": os.getpid(),
-        "launcher_executable": identity["executable"],
-        "launcher_created": identity["created"],
+        **_identity_fields("launcher", identity),
         "repo_root": str(paths.repo_root),
+        "data_root": str(paths.data_home),
         "app_commit": EXPECTED_APP_COMMIT,
         "port": PORT,
+        "run_id": nonce,
         "lock_nonce": nonce,
         "started_at_utc": utc_timestamp(),
     }
@@ -1421,13 +1757,13 @@ def _acquire_lock(paths: LauncherPaths) -> None:
         initial = {
             "launcher_version": LAUNCHER_VERSION,
             "state": "STARTING",
-            "launcher_pid": os.getpid(),
-            "launcher_executable": identity["executable"],
-            "launcher_created": identity["created"],
+            **_identity_fields("launcher", identity),
             "repo_root": str(paths.repo_root),
+            "data_root": str(paths.data_home),
             "app_commit": EXPECTED_APP_COMMIT,
             "port": PORT,
-            "lock_nonce": uuid.uuid4().hex,
+            "run_id": (run_id := uuid.uuid4().hex),
+            "lock_nonce": run_id,
             "started_at_utc": utc_timestamp(),
         }
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -1435,18 +1771,23 @@ def _acquire_lock(paths: LauncherPaths) -> None:
             handle.flush()
             os.fsync(handle.fileno())
     except FileExistsError as exc:
-        lock = _read_lock(paths)
-        if lock and _owned_healthy_instance(paths, lock):
+        lock = _read_ownership(paths)
+        if lock is None:
+            raise LauncherError("Launcher ownership disappeared during lock acquisition.") from exc
+        if _owned_healthy_instance(paths, lock):
             open_browser(paths)
             raise SystemExit(0) from exc
-        if lock and _identity_matches(lock, "launcher"):
+        if _identity_matches(lock, "launcher"):
             raise LauncherError(
                 "A verified NWR launcher startup or shutdown is already in progress."
             ) from exc
-        if port_is_listening(HOST, PORT):
+        snapshot = _resource_snapshot(paths, lock)
+        if snapshot["owned"] or snapshot["conflicts"]:
             raise LauncherError(
-                "Port 8520 is occupied and no healthy launcher-owned NWR instance can be verified."
+                "Launcher ownership requires recovery before another Start can proceed."
             ) from exc
+        for registration in snapshot["absent_registrations"]:
+            Path(registration).unlink(missing_ok=True)
         paths.lock_path.unlink(missing_ok=True)
         return _acquire_lock(paths)
 
@@ -1486,15 +1827,20 @@ def _register_browser(paths: LauncherPaths, process: subprocess.Popen[Any], brow
         identity = _process_identity(process.pid)
         if identity is None:
             raise LauncherError("Could not establish launcher browser process identity.")
+        ownership = _read_ownership(paths)
+        if ownership is None:
+            raise LauncherError(
+                "Browser registration requires a durable launcher ownership record."
+            )
         _atomic_json(
             _browser_registration(paths, process.pid),
             {
                 "launcher_version": LAUNCHER_VERSION,
-                "browser_pid": process.pid,
-                "browser_executable": identity["executable"],
-                "browser_created": identity["created"],
+                **_identity_fields("browser", identity),
                 "browser_profile": str(paths.browser_profile),
                 "repo_root": str(paths.repo_root),
+                "data_root": str(paths.data_home),
+                "run_id": ownership["run_id"],
                 "expected_browser": str(browser.resolve()),
             },
         )
@@ -1503,8 +1849,11 @@ def _register_browser(paths: LauncherPaths, process: subprocess.Popen[Any], brow
         raise
 
 
-def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
+def _shutdown_registered_browsers(
+    paths: LauncherPaths, *, allow_force: bool = True
+) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
+    ownership = _read_ownership(paths)
     for registration in sorted(paths.run_root.glob("browser.*.json")):
         try:
             record = _json_document(registration)
@@ -1514,11 +1863,63 @@ def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
             expected_browser = Path(str(record.get("expected_browser", ""))).resolve()
             approved_browsers = {candidate.resolve() for candidate in browser_candidates()}
         except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            results.append(
+                {
+                    "status": "INVALID_REGISTRATION_PRESERVED",
+                    "path": str(registration),
+                    "detail": str(exc),
+                }
+            )
+            continue
+        stored_descendants = record.get("verified_descendants", [])
+        if _process_identity(pid) is None:
+            mismatched = [
+                int(identity.get("pid", 0))
+                for identity in stored_descendants
+                if isinstance(identity, dict)
+                and _process_identity(int(identity.get("pid", 0))) is not None
+                and not _stored_identity_matches(identity)
+            ]
+            remaining = [
+                identity
+                for identity in stored_descendants
+                if isinstance(identity, dict) and _stored_identity_matches(identity)
+            ]
+            if mismatched:
+                results.append(
+                    {
+                        "pid": pid,
+                        "status": "DESCENDANT_IDENTITY_CONFLICT_PRESERVED",
+                        "conflicting_descendants": mismatched,
+                    }
+                )
+                continue
+            if remaining and allow_force:
+                for identity in remaining:
+                    descendant_record = _identity_fields("browser_descendant", identity)
+                    _target_owned_tree(
+                        descendant_record, "browser_descendant", allow_force=True
+                    )
+                remaining = [
+                    identity for identity in remaining if _stored_identity_matches(identity)
+                ]
+            if remaining:
+                results.append(
+                    {
+                        "pid": pid,
+                        "status": "RECOVERY_REQUIRED",
+                        "remaining_descendants": [int(item["pid"]) for item in remaining],
+                    }
+                )
+                continue
             registration.unlink(missing_ok=True)
-            results.append({"status": "INVALID_REGISTRATION_REMOVED", "detail": str(exc)})
+            results.append({"pid": pid, "status": "ALREADY_EXITED"})
             continue
         owned = bool(
-            record.get("launcher_version") == LAUNCHER_VERSION
+            ownership
+            and record.get("launcher_version") == LAUNCHER_VERSION
+            and record.get("run_id") == ownership.get("run_id")
+            and Path(str(record.get("data_root", ""))).resolve() == paths.data_home.resolve()
             and Path(str(record.get("browser_profile", ""))).resolve()
             == paths.browser_profile.resolve()
             and Path(str(record.get("repo_root", ""))).resolve() == paths.repo_root.resolve()
@@ -1527,9 +1928,11 @@ def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
             and _identity_matches(record, "browser")
         )
         if not owned:
-            registration.unlink(missing_ok=True)
-            results.append({"pid": pid, "status": "STALE_OR_UNVERIFIED_NOT_TARGETED"})
+            results.append({"pid": pid, "status": "STALE_OR_UNVERIFIED_PRESERVED"})
             continue
+        descendants = _capture_descendants((pid,))
+        record = {**record, "verified_descendants": descendants}
+        _atomic_json(registration, record)
         result = subprocess.run(
             ["taskkill.exe", "/PID", str(pid), "/T"],
             stdin=subprocess.DEVNULL,
@@ -1544,7 +1947,10 @@ def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
         while _pid_alive(pid) and time.monotonic() < deadline:
             time.sleep(0.1)
         forced = False
-        if _pid_alive(pid):
+        if _pid_alive(pid) and allow_force:
+            if not _identity_matches(record, "browser"):
+                results.append({"pid": pid, "status": "IDENTITY_CHANGED_BEFORE_FORCE"})
+                continue
             forced = True
             subprocess.run(
                 ["taskkill.exe", "/F", "/PID", str(pid), "/T"],
@@ -1556,8 +1962,18 @@ def _shutdown_registered_browsers(paths: LauncherPaths) -> list[dict[str, Any]]:
                 check=False,
                 creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
             )
-        if _pid_alive(pid):
-            raise LauncherError(f"Launcher-owned browser tree did not stop: PID {pid}.")
+        remaining_descendants = [
+            int(identity["pid"]) for identity in descendants if _stored_identity_matches(identity)
+        ]
+        if _pid_alive(pid) or remaining_descendants:
+            results.append(
+                {
+                    "pid": pid,
+                    "status": "RECOVERY_REQUIRED",
+                    "remaining_descendants": remaining_descendants,
+                }
+            )
+            continue
         registration.unlink(missing_ok=True)
         results.append(
             {
@@ -1646,20 +2062,14 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
             stdout_log=stdout_log,
             stderr_log=stderr_log,
         )
-        lock = _read_lock(paths) or {}
+        lock = _read_ownership(paths) or {}
         child_identity = _process_identity(process.pid)
         if child_identity is None:
             raise LauncherError("Could not establish Streamlit process identity.")
-        _atomic_json(
-            paths.lock_path,
-            {
-                **lock,
-                "state": "RUNNING",
-                "streamlit_pid": process.pid,
-                "streamlit_executable": child_identity["executable"],
-                "streamlit_created": child_identity["created"],
-                "python": str(python),
-            },
+        lock = _write_ownership(
+            paths,
+            {**lock, **_identity_fields("streamlit", child_identity), "python": str(python)},
+            "RUNNING",
         )
         wait_for_http(
             f"http://{HOST}:{PORT}/_stcore/health", process, timeout_seconds=STARTUP_TIMEOUT_SECONDS
@@ -1673,14 +2083,15 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
         listener_identity = _process_identity(listener_pid)
         if listener_identity is None:
             raise LauncherError("Could not establish listener process identity.")
-        lock = _read_lock(paths) or {}
+        lock = _read_ownership(paths) or lock
         _atomic_json(
             paths.lock_path,
             {
                 **lock,
-                "listener_pid": listener_pid,
-                "listener_executable": listener_identity["executable"],
-                "listener_created": listener_identity["created"],
+                **_identity_fields("listener", listener_identity),
+                "verified_descendants": _capture_descendants(
+                    (int(lock["launcher_pid"]), process.pid)
+                ),
             },
         )
         browser = open_browser(paths)
@@ -1722,39 +2133,272 @@ def start(paths: LauncherPaths) -> dict[str, Any]:
     finally:
         os.environ.clear()
         os.environ.update(original_env)
-        paths.stop_request.unlink(missing_ok=True)
-        paths.lock_path.unlink(missing_ok=True)
+        try:
+            ownership = _read_ownership(paths)
+            if ownership is not None and int(ownership.get("launcher_pid", 0)) == os.getpid():
+                snapshot = _resource_snapshot(paths, ownership)
+                non_launcher = [
+                    resource
+                    for resource in snapshot["owned"]
+                    if resource.get("resource") != "launcher"
+                ]
+                if non_launcher or snapshot["conflicts"]:
+                    _write_ownership(
+                        paths,
+                        ownership,
+                        "RECOVERY_REQUIRED",
+                        remaining={**snapshot, "owned": non_launcher},
+                        cleanup_pending=["verified_resource_cleanup", "external_finalization"],
+                    )
+                else:
+                    _write_ownership(
+                        paths,
+                        ownership,
+                        "STOPPED",
+                        cleanup_pending=["launcher_exit", "external_finalization"],
+                    )
+        except Exception as finalization_exc:
+            _append_launcher_log(
+                paths, f"Durable shutdown finalization failure: {finalization_exc}"
+            )
+
+
+def _acquire_stop_guard(paths: LauncherPaths) -> str:
+    identity = _process_identity(os.getpid())
+    if identity is None:
+        raise LauncherError("Could not establish Stop command identity.")
+    nonce = uuid.uuid4().hex
+    payload = {
+        "launcher_version": LAUNCHER_VERSION,
+        "stop_nonce": nonce,
+        **_identity_fields("stop", identity),
+    }
+    try:
+        descriptor = os.open(paths.stop_guard, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError as exc:
+        try:
+            existing = _json_document(paths.stop_guard)
+        except Exception as read_exc:
+            raise LauncherError("Another Stop guard is unreadable; it was preserved.") from read_exc
+        if _identity_matches(existing, "stop"):
+            raise LauncherError("Another verified Stop command is already in progress.") from exc
+        if _process_identity(int(existing.get("stop_pid", 0))) is not None:
+            raise LauncherError("Stop guard identity conflict; no process was targeted.") from exc
+        paths.stop_guard.unlink()
+        return _acquire_stop_guard(paths)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, sort_keys=True)
+        handle.flush()
+        os.fsync(handle.fileno())
+    return nonce
+
+
+def _release_stop_guard(paths: LauncherPaths, nonce: str) -> None:
+    try:
+        guard = _json_document(paths.stop_guard)
+    except Exception:
+        return
+    if guard.get("stop_nonce") == nonce:
+        paths.stop_guard.unlink(missing_ok=True)
+
+
+def _target_owned_tree(
+    record: dict[str, Any], prefix: str, *, allow_force: bool
+) -> dict[str, Any]:
+    pid = int(record.get(f"{prefix}_pid", 0))
+    if _process_identity(pid) is None:
+        return {"resource": prefix, "pid": pid, "status": "ALREADY_EXITED"}
+    if not _identity_matches(record, prefix):
+        raise LauncherError(f"{prefix} identity changed; unrelated PID {pid} was not targeted.")
+    command = ["taskkill.exe", "/PID", str(pid), "/T"]
+    result = subprocess.run(
+        command,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=10,
+        check=False,
+        creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
+    )
+    deadline = time.monotonic() + STOP_ESCALATION_SECONDS
+    while _pid_alive(pid) and time.monotonic() < deadline:
+        time.sleep(0.1)
+    forced = False
+    if _pid_alive(pid) and allow_force:
+        if not _identity_matches(record, prefix):
+            raise LauncherError(
+                f"{prefix} identity changed before escalation; PID {pid} was not forced."
+            )
+        forced = True
+        subprocess.run(
+            ["taskkill.exe", "/F", "/PID", str(pid), "/T"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=10,
+            check=False,
+            creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
+        )
+    return {
+        "resource": prefix,
+        "pid": pid,
+        "status": "STOPPED" if not _pid_alive(pid) else "RECOVERY_REQUIRED",
+        "forced_cleanup": forced,
+        "initial_exit_code": result.returncode,
+    }
+
+
+def _stop_snapshot_complete(snapshot: dict[str, Any]) -> bool:
+    return not snapshot["owned"] and not snapshot["conflicts"]
 
 
 def request_stop(paths: LauncherPaths) -> dict[str, Any]:
-    lock = _read_lock(paths)
-    if not lock:
-        if port_is_listening(HOST, PORT):
+    ownership = _read_ownership(paths)
+    if ownership is None:
+        if port_is_listening(HOST, PORT) or any(paths.run_root.glob("browser.*.json")):
             raise LauncherError(
-                "Port 8520 is occupied, but no launcher ownership record exists; "
+                "Launcher-owned resources cannot be proven without an ownership record; "
                 "nothing was killed."
             )
-        return {"status": "NOT_RUNNING"}
+        return {"status": "NOT_RUNNING", "port_released": True}
     if (
-        not _identity_matches(lock, "launcher")
-        or Path(str(lock.get("repo_root", ""))).resolve() != paths.repo_root.resolve()
+        Path(str(ownership.get("repo_root", ""))).resolve() != paths.repo_root.resolve()
+        or Path(str(ownership.get("data_root", ""))).resolve() != paths.data_home.resolve()
+        or int(ownership.get("port", 0)) != PORT
     ):
-        raise LauncherError(
-            "Launcher ownership is stale; refusing to target an unverified process."
+        raise LauncherError("Launcher ownership scope conflicts with this Stop command.")
+
+    nonce = _acquire_stop_guard(paths)
+    ready_to_delete = False
+    final_payload: dict[str, Any] = {}
+    try:
+        ownership = _read_ownership(paths) or ownership
+        if ownership.get("state") != "STOPPED":
+            ownership = _write_ownership(paths, ownership, "STOP_REQUESTED")
+        snapshot = _resource_snapshot(paths, ownership)
+        if snapshot["conflicts"]:
+            _write_ownership(
+                paths,
+                ownership,
+                "RECOVERY_REQUIRED",
+                remaining=snapshot,
+                cleanup_pending=["ownership_conflict_review"],
+            )
+            raise LauncherError(
+                "Ownership conflict blocked Stop; no unrelated process was targeted."
+            )
+
+        roots = [
+            int(ownership.get(name, 0))
+            for name in ("launcher_pid", "streamlit_pid")
+            if int(ownership.get(name, 0)) > 0
+        ]
+        descendants = _capture_descendants(roots)
+        ownership = _write_ownership(
+            paths,
+            {**ownership, "verified_descendants": descendants},
+            "STOPPING",
+            remaining=snapshot,
+            cleanup_pending=["graceful_browser", "graceful_streamlit", "finalization"],
         )
-    paths.stop_request.parent.mkdir(parents=True, exist_ok=True)
-    paths.stop_request.write_text(utc_timestamp() + "\n", encoding="utf-8")
-    deadline = time.monotonic() + SHUTDOWN_TIMEOUT_SECONDS + 7
-    while time.monotonic() < deadline:
-        if not paths.lock_path.exists() and not port_is_listening(HOST, PORT):
-            return {"status": "STOPPED", "port_released": True}
-        time.sleep(0.2)
-    raise LauncherError("Graceful stop timed out; no unrelated process was killed.")
+        browser_results = _shutdown_registered_browsers(paths, allow_force=False)
+        _atomic_text(paths.stop_request, utc_timestamp() + "\n")
+
+        deadline = time.monotonic() + SHUTDOWN_TIMEOUT_SECONDS + 2
+        while time.monotonic() < deadline:
+            ownership = _read_ownership(paths) or ownership
+            snapshot = _resource_snapshot(paths, ownership)
+            if _stop_snapshot_complete(snapshot):
+                break
+            time.sleep(STOP_POLL_SECONDS)
+
+        if not _stop_snapshot_complete(snapshot):
+            ownership = _write_ownership(
+                paths,
+                ownership,
+                "RECOVERY_REQUIRED",
+                remaining=snapshot,
+                cleanup_pending=["bounded_escalation", "finalization"],
+            )
+            browser_results.extend(_shutdown_registered_browsers(paths, allow_force=True))
+            for prefix in ("streamlit", "launcher"):
+                if int(ownership.get(f"{prefix}_pid", 0)) > 0:
+                    _target_owned_tree(ownership, prefix, allow_force=True)
+            deadline = time.monotonic() + STOP_ESCALATION_SECONDS
+            while time.monotonic() < deadline:
+                snapshot = _resource_snapshot(paths, ownership)
+                if _stop_snapshot_complete(snapshot):
+                    break
+                time.sleep(STOP_POLL_SECONDS)
+
+        if not _stop_snapshot_complete(snapshot):
+            _write_ownership(
+                paths,
+                ownership,
+                "RECOVERY_REQUIRED",
+                remaining=snapshot,
+                cleanup_pending=["verified_resource_cleanup", "finalization"],
+            )
+            raise LauncherError(
+                "Stop failed with RECOVERY_REQUIRED; durable ownership and identity evidence "
+                "remain."
+            )
+
+        for registration in snapshot["absent_registrations"]:
+            Path(registration).unlink(missing_ok=True)
+        ownership = _write_ownership(paths, ownership, "STOPPED")
+        final_browser_results = [
+            (
+                {
+                    **result,
+                    "intermediate_status": result["status"],
+                    "status": "STOPPED_AFTER_RECHECK",
+                }
+                if result.get("status") == "RECOVERY_REQUIRED"
+                else result
+            )
+            for result in browser_results
+        ]
+        final_payload = {
+            "status": "STOPPED",
+            "completed_at_utc": utc_timestamp(),
+            "run_id": ownership["run_id"],
+            "port_released": not port_is_listening(HOST, PORT),
+            "browser_cleanup": final_browser_results,
+        }
+        _atomic_json(paths.last_stop_receipt, final_payload)
+        paths.stop_request.unlink(missing_ok=True)
+        ready_to_delete = True
+    finally:
+        _release_stop_guard(paths, nonce)
+
+    if ready_to_delete:
+        try:
+            paths.lock_path.unlink()
+        except OSError as exc:
+            current = _read_ownership(paths) or ownership
+            _write_ownership(
+                paths,
+                current,
+                "STOPPED",
+                cleanup_pending=["ownership_record_deletion"],
+            )
+            raise LauncherError(
+                "Shutdown completed, but ownership deletion failed; STOPPED evidence was retained."
+            ) from exc
+    return final_payload
 
 
 def status(paths: LauncherPaths) -> dict[str, Any]:
     validation = validate_state(paths)
-    lock = _read_lock(paths)
+    ownership_error = ""
+    try:
+        lock = _read_ownership(paths)
+    except LauncherError as exc:
+        lock = None
+        ownership_error = str(exc)
     backup = None
     if paths.last_backup_result.exists():
         try:
@@ -1768,9 +2412,18 @@ def status(paths: LauncherPaths) -> dict[str, Any]:
         "backup_root": str(paths.backup_root),
         "port": PORT,
         "health_status": "HEALTHY" if health_ok() else "STOPPED",
-        "process_ownership": "VERIFIED_RUNNING"
-        if lock and _owned_healthy_instance(paths, lock)
-        else ("LOCK_PRESENT_UNVERIFIED" if lock else "NONE"),
+        "process_ownership": (
+            "VERIFIED_RUNNING"
+            if lock and _owned_healthy_instance(paths, lock)
+            else (
+                str(lock.get("state"))
+                if lock
+                else ("LOCK_PRESENT_UNVERIFIED" if paths.lock_path.exists() else "NONE")
+            )
+        ),
+        "ownership_state": str(lock.get("state")) if lock else None,
+        "ownership_error": ownership_error,
+        "remaining_resources": lock.get("remaining_resources", {}) if lock else {},
         "state_validation": validation.status,
         "state_warnings": list(validation.warnings),
         "most_recent_backup": backup,

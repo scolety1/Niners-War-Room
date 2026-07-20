@@ -161,7 +161,7 @@ def test_stale_lock_with_occupied_port_fails_closed(
     )
     monkeypatch.setattr(launcher, "port_is_listening", lambda _host, _port: True)
     monkeypatch.setattr(launcher, "_pid_alive", lambda _pid: False)
-    with pytest.raises(launcher.LauncherError, match="occupied"):
+    with pytest.raises(launcher.LauncherError, match="partial or unsupported"):
         launcher._acquire_lock(synthetic_paths)
 
 
@@ -779,6 +779,18 @@ def test_registered_browser_cleanup_targets_only_verified_owned_tree(
     browser = tmp_path / "chrome.exe"
     browser.write_bytes(b"synthetic executable marker")
     pid = 4242
+    run_id = "browser-test-run"
+    launcher._atomic_json(
+        synthetic_paths.lock_path,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            "state": "RUNNING",
+            "repo_root": str(synthetic_paths.repo_root),
+            "data_root": str(synthetic_paths.data_home),
+            "run_id": run_id,
+            "port": launcher.PORT,
+        },
+    )
     registration = launcher._browser_registration(synthetic_paths, pid)
     launcher._atomic_json(
         registration,
@@ -787,13 +799,27 @@ def test_registered_browser_cleanup_targets_only_verified_owned_tree(
             "browser_pid": pid,
             "browser_executable": str(browser.resolve()),
             "browser_created": 123,
+            "browser_command_line": "synthetic chrome",
             "browser_profile": str(synthetic_paths.browser_profile),
             "repo_root": str(synthetic_paths.repo_root),
+            "data_root": str(synthetic_paths.data_home),
+            "run_id": run_id,
             "expected_browser": str(browser.resolve()),
         },
     )
     commands: list[list[str]] = []
     monkeypatch.setattr(launcher, "browser_candidates", lambda: iter((browser,)))
+    monkeypatch.setattr(
+        launcher,
+        "_process_identity",
+        lambda actual_pid: {
+            "pid": actual_pid,
+            "executable": str(browser.resolve()),
+            "created": 123,
+            "command_line": "synthetic chrome",
+            "parent_pid": None,
+        },
+    )
     monkeypatch.setattr(launcher, "_identity_matches", lambda _record, _prefix: True)
     monkeypatch.setattr(launcher, "_pid_alive", lambda _pid: False)
     monkeypatch.setattr(
@@ -885,10 +911,27 @@ def test_browser_registration_write_failure_reaps_direct_process(
 
     process = FakeProcess()
     browser = tmp_path / "chrome.exe"
+    launcher._atomic_json(
+        synthetic_paths.lock_path,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            "state": "RUNNING",
+            "repo_root": str(synthetic_paths.repo_root),
+            "data_root": str(synthetic_paths.data_home),
+            "run_id": "registration-write-test",
+            "port": launcher.PORT,
+        },
+    )
     monkeypatch.setattr(
         launcher,
         "_process_identity",
-        lambda pid: {"pid": pid, "executable": str(browser), "created": 123},
+        lambda pid: {
+            "pid": pid,
+            "executable": str(browser),
+            "created": 123,
+            "command_line": "synthetic chrome",
+            "parent_pid": None,
+        },
     )
     monkeypatch.setattr(
         launcher,
@@ -907,7 +950,7 @@ def test_browser_registration_write_failure_reaps_direct_process(
     assert process.running is False
 
 
-def test_malformed_browser_pid_registration_is_removed_without_targeting(
+def test_malformed_browser_pid_registration_is_preserved_without_targeting(
     synthetic_paths: launcher.LauncherPaths,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -930,8 +973,8 @@ def test_malformed_browser_pid_registration_is_removed_without_targeting(
     result = launcher._shutdown_registered_browsers(synthetic_paths)
 
     assert len(result) == 1
-    assert result[0]["status"] == "INVALID_REGISTRATION_REMOVED"
-    assert not registration.exists()
+    assert result[0]["status"] == "INVALID_REGISTRATION_PRESERVED"
+    assert registration.exists()
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")
@@ -944,8 +987,12 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
         / "v1.0"
         / "powershell.exe"
     )
-    known_root = tmp_path / "known-folders"
-    known_root.mkdir()
+    known_root = (
+        repo_root.parent
+        / ".codex-known-folder-tests"
+        / f"launcher-{os.getpid()}-{tmp_path.name}"
+    )
+    known_root.mkdir(parents=True)
     (known_root / ".nwr-disposable-known-folders").write_text(
         "NWR_DISPOSABLE_KNOWN_FOLDER_TEST_V1\n",
         encoding="utf-8",
