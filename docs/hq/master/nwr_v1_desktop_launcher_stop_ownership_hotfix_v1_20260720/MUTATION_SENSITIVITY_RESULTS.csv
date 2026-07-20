@@ -1,0 +1,6 @@
+mutation,result,detecting_control
+ownership deleted before listener absence,DETECTED,delete_before_listener_absence
+ownership deleted before browser absence,DETECTED,delete_before_browser_absence
+STOPPING mapped to NONE,DETECTED,map_stopping_to_none
+PID-only identity accepted,DETECTED,accept_pid_only
+changed listener termination enabled,DETECTED,terminate_changed_listener
