@@ -1,0 +1,7 @@
+order,commit,role,remote_status_at_documentation
+0,dc399a8c2ed5d77d9802d98c215a12cbe594d7d7,accepted V1 HQ,origin HQ start
+1,f227e0bdb3a6557a7c59437baa969c7c28572b48,launcher implementation,local adoption chain
+2,4c6fd44358d03b38565e71afc4c23c8abeb2b92e,prior correction,local adoption chain
+3,67c773b3566d76407d856c92d644e82be06e8d29,historical blocked closeout,local adoption chain
+4,e5df0f29ef7530077cd941702e37b7977c286c8a,final bounded correction,local adoption chain
+5,THIS_COMMIT,documentation-only canonicalization,normal push pending final fetch

@@ -1,0 +1,15 @@
+workflow,v1_authority,durability,owner,current_path,future_stable_path,schema,restart_crash,backup_restore,migration,privacy,localdata
+Live Draft,draft runtime service,durable,application,C:/NWR_SHARED_DATA/draft_runtime_state when present else %LOCALAPPDATA%/NinersWarRoom/data/draft_runtime_state,same,draft_day_v2,atomic last-valid retained,eligible,root reused not copied,private user state,outside Git
+Mock Draft,draft runtime service,durable,application,same as Live Draft,same,draft_day_v2,atomic last-valid retained,eligible,root reused not copied,private user state,outside Git
+Draft Cockpit,draft runtime service,durable source state plus session selectors,application,same as Live Draft,same,draft_day_v2,durable state retained; selectors reset,eligible for durable state,root reused,private user state,outside Git
+Draft Analyzer,Streamlit session,session-only selectors,application memory,none,none,session schema,resets,not eligible,none,private transient,none
+Named mock saves,mock draft storage service,durable,application,%LOCALAPPDATA%/NinersWarRoom/data/mock_drafts,same,service JSON,retained,eligible,junction fail-closed,private user state,outside Git
+Development Lab/manual planning,development lab service,durable when used,application,C:/NWR_SHARED_DATA/development_lab_state when present else %LOCALAPPDATA%/NinersWarRoom/data/development_lab_state,same,service-owned,atomic retained,eligible,root reused,private user state,outside Git
+Data Health receipts,refresh receipt store,durable governed receipt,canonical service,C:/NWR/Niners-War-Room/local_exports/refresh_data legacy then %LOCALAPPDATA%/NinersWarRoom/data/refresh_data,target stable path,canonical closed receipt schema,validator governed,eligible only when valid,explicit fail-closed,operational metadata,LocalData excluded from Git
+Launcher configuration,launcher,durable,launcher,%LOCALAPPDATA%/NinersWarRoom/config,same,launcher JSON,retained,eligible,none,local configuration,outside Git
+Launcher logs,launcher,durable bounded diagnostics,launcher,%LOCALAPPDATA%/NinersWarRoom/logs,same,text logs,retained by policy,not user-state restore,none,diagnostic,outside Git
+Launcher locks/PIDs,launcher,ephemeral,launcher,%LOCALAPPDATA%/NinersWarRoom/run,same,launcher JSON,revalidated after crash,not eligible,none,process metadata,outside Git
+Browser profile,browser,durable isolated profile,launcher,%LOCALAPPDATA%/NinersWarRoom/browser-profile,same,browser-owned,reused,excluded,none,private browser state,outside Git
+Caches,service-specific,rebuildable,application,service-owned LocalData paths,same,service-specific,rebuildable,excluded,none,local cache,outside Git
+Exports,service-specific,durable only by source contract,application,approved LocalData roots,unchanged,service-specific,retained by owner,not blanket-eligible,none,potentially private,no-copy/no-check-in
+Trading Lab,V1 product,session-only,application memory,none,none,session schema,resets,not eligible,none,private transient,POST_V1_PERSISTENCE_NOT_SUPPORTED

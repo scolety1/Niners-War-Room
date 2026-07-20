@@ -1,0 +1,11 @@
+phase,verdict,evidence
+repository_identity,GREEN,accepted HQ and exact ancestry
+launcher_code,GREEN,two independent approvals
+receipt_recovery_code,GREEN,canonical API and exact receipt-store rollback
+real_receipt_action,YELLOW,explicit real-user confirmation pending
+persistence_synthetic,GREEN,Hermetic and focused tests plus live smoke
+backup_restore,GREEN,manifest validation rollback and retention tests
+interactive_install,YELLOW,one-click package ready; real Explorer user unresolved
+stable_checkout,YELLOW,post-push action not yet claimed at documentation time
+LocalData,BLOCKED_REQUIRED,BLOCKED_MISSING_LOCAL_TEST_PACK exit 4
+overall,YELLOW_NWR_V1_DESKTOP_LAUNCHER_CANONICALIZED_WITH_RECOVERY_OR_INSTALL_CAVEATS,real-user recovery/install remain

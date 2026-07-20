@@ -1,0 +1,11 @@
+workflow,status,retention
+Live Draft,supported durable,draft runtime service state survives restart/crash
+Mock Draft,supported durable,draft runtime service state survives restart/crash
+Draft Cockpit,supported durable source state,selectors remain session-only
+Draft Analyzer,session-only,no selector persistence claimed
+Named mock saves,supported durable,service-owned JSON under stable data root
+Development Lab/manual planning,supported when used,service-owned durable root
+Data Health receipts,governed durable,only valid canonical receipts migrate/backup
+Launcher configuration/logs/run metadata,supported by owner,run locks are ephemeral and revalidated
+Browser profile,supported isolated,excluded from backup
+Trading Lab,unsupported persistence,POST_V1_PERSISTENCE_NOT_SUPPORTED

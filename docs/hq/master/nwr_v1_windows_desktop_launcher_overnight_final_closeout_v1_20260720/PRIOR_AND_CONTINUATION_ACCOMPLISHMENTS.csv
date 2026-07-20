@@ -1,0 +1,15 @@
+phase,accomplishment,status
+prior,launcher implementation and per-user state-root design,complete
+prior,start stop status backup restore and uninstall,complete
+prior,duplicate port browser and process ownership controls,complete
+prior,backup hardening and failed-restore rollback,complete
+continuation,independent exact-chain review,complete
+continuation,canonical receipt-only recovery with exact rollback,complete
+continuation,stable exact-HQ installer and uninstaller,complete
+continuation,standalone one-click recovery entrypoint,complete
+continuation,strict Hermetic and focused revalidation,complete
+continuation,live isolated start reuse backup restart and stop,complete
+machine,canonical push,pending final fetch and normal push
+machine,stable standalone checkout,pending successful push
+real_user,receipt recovery,pending explicit confirmation
+real_user,Desktop and Start Menu installation,pending interactive identity

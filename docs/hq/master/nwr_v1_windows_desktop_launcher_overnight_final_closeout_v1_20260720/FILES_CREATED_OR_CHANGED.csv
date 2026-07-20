@@ -1,0 +1,11 @@
+scope,path,status
+correction,scripts/Install Niners War Room Shortcut.ps1,modified
+correction,scripts/NWR Desktop Commands.ps1,modified
+correction,scripts/Recover Niners War Room Data Health Receipt.cmd,created
+correction,scripts/Recover Niners War Room Data Health Receipt.ps1,created
+correction,scripts/Uninstall Niners War Room Shortcut.ps1,modified
+correction,src/launcher/windows_desktop.py,modified
+correction,tests/test_windows_desktop_launcher.py,modified
+documentation,docs/hq/master/nwr_v1_windows_desktop_launcher_finalization_v2_20260719/,created
+documentation,docs/hq/master/nwr_v1_windows_desktop_launcher_final_canonicalization_v1_20260719/,created_23_files
+documentation,docs/hq/master/nwr_v1_windows_desktop_launcher_overnight_final_closeout_v1_20260720/,created_21_files
