@@ -208,7 +208,7 @@ def test_process_exit_between_validation_and_signal_is_not_targeted(
         launcher._target_owned_tree(record, "streamlit", allow_force=True)
 
 
-def test_pid_reuse_is_an_ownership_conflict(
+def test_pid_reuse_is_recorded_without_targeting(
     stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     record = _record(stop_paths)
@@ -216,7 +216,68 @@ def test_pid_reuse_is_an_ownership_conflict(
     monkeypatch.setattr(launcher, "_process_identity", lambda pid: reused if pid == 102 else None)
     monkeypatch.setattr(launcher, "_listener_pids", lambda: set())
     snapshot = launcher._resource_snapshot(stop_paths, record)
-    assert {item["status"] for item in snapshot["conflicts"]} == {"IDENTITY_MISMATCH"}
+    assert snapshot["conflicts"] == []
+    assert snapshot["reused"] == [
+        {"resource": "streamlit", "pid": 102, "status": "PID_REUSED"}
+    ]
+
+
+def test_identity_mismatch_without_creation_time_change_remains_conflicting(
+    stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    record = _record(stop_paths)
+    changed = {
+        **_identity(stop_paths, 102, "unrelated", 1),
+        "created": record["streamlit_created"],
+    }
+    monkeypatch.setattr(
+        launcher, "_process_identity", lambda pid: changed if pid == 102 else None
+    )
+    monkeypatch.setattr(launcher, "_listener_pids", lambda: set())
+
+    snapshot = launcher._resource_snapshot(stop_paths, record)
+
+    assert snapshot["reused"] == []
+    assert snapshot["conflicts"] == [
+        {"resource": "streamlit", "pid": 102, "status": "IDENTITY_MISMATCH"}
+    ]
+
+
+def test_preexisting_process_with_reused_parent_pid_is_not_captured(
+    stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _identity(stop_paths, 101, "launcher", 1)
+    stale = {**_identity(stop_paths, 99, "preexisting", 101), "created": 9_900}
+    root = {**root, "created": 10_100}
+    monkeypatch.setattr(launcher, "_process_parent_map", lambda: {101: 1, 99: 101})
+    monkeypatch.setattr(
+        launcher,
+        "_process_identity",
+        lambda pid: root if pid == 101 else stale if pid == 99 else None,
+    )
+
+    assert launcher._capture_descendants((101,)) == []
+
+
+def test_reused_verified_descendant_pid_is_absent_not_conflicting(
+    stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    record = _record(stop_paths)
+    child = _identity(stop_paths, 202, "owned-child", 101)
+    reused = {**_identity(stop_paths, 202, "unrelated", 1), "created": 999_999}
+    record["verified_descendants"] = [child]
+    monkeypatch.setattr(
+        launcher, "_process_identity", lambda pid: reused if pid == 202 else None
+    )
+    monkeypatch.setattr(launcher, "_listener_pids", lambda: set())
+
+    snapshot = launcher._resource_snapshot(stop_paths, record)
+
+    assert snapshot["owned"] == []
+    assert snapshot["conflicts"] == []
+    assert snapshot["reused"] == [
+        {"resource": "descendant", "pid": 202, "status": "PID_REUSED"}
+    ]
 
 
 def test_changed_listener_is_never_treated_as_owned(
@@ -302,6 +363,71 @@ def test_exited_browser_root_with_verified_descendant_retains_registration(
     snapshot = launcher._resource_snapshot(stop_paths, record)
     assert {item["resource"] for item in snapshot["owned"]} == {"browser_descendant"}
     assert registration.exists()
+
+
+def test_exited_browser_root_ignores_reused_descendant_pid(
+    stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _record(stop_paths)
+    browser = _identity(stop_paths, 201, "chrome", 101)
+    child = _identity(stop_paths, 202, "chrome-child", 201)
+    reused = {**_identity(stop_paths, 202, "unrelated", 1), "created": 999_999}
+    registration = stop_paths.run_root / "browser.201.json"
+    launcher._atomic_json(
+        registration,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            **launcher._identity_fields("browser", browser),
+            "verified_descendants": [child],
+        },
+    )
+    monkeypatch.setattr(
+        launcher, "_process_identity", lambda pid: reused if pid == 202 else None
+    )
+    monkeypatch.setattr(
+        launcher.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("reused descendant PID must not be targeted")
+        ),
+    )
+
+    result = launcher._shutdown_registered_browsers(stop_paths)
+
+    assert result == [{"pid": 201, "status": "ALREADY_EXITED"}]
+    assert not registration.exists()
+
+
+def test_reused_browser_root_pid_is_not_targeted(
+    stop_paths: launcher.LauncherPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _record(stop_paths)
+    browser = _identity(stop_paths, 201, "chrome", 101)
+    reused = {**_identity(stop_paths, 201, "unrelated", 1), "created": 999_999}
+    registration = stop_paths.run_root / "browser.201.json"
+    launcher._atomic_json(
+        registration,
+        {
+            "launcher_version": launcher.LAUNCHER_VERSION,
+            **launcher._identity_fields("browser", browser),
+            "verified_descendants": [],
+        },
+    )
+    monkeypatch.setattr(
+        launcher, "_process_identity", lambda pid: reused if pid == 201 else None
+    )
+    monkeypatch.setattr(
+        launcher.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("reused browser root PID must not be targeted")
+        ),
+    )
+
+    result = launcher._shutdown_registered_browsers(stop_paths)
+
+    assert result == [{"pid": 201, "status": "ALREADY_EXITED"}]
+    assert not registration.exists()
 
 
 def test_ownership_atomic_write_failure_preserves_previous_record(

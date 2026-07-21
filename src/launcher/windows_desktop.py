@@ -1468,6 +1468,42 @@ def _stored_identity_matches(expected: dict[str, Any]) -> bool:
     )
 
 
+def _stored_identity_reuse_proven(expected: dict[str, Any]) -> bool:
+    try:
+        pid = int(expected.get("pid", 0))
+    except (TypeError, ValueError):
+        return False
+    actual = _process_identity(pid)
+    expected_created = expected.get("created")
+    actual_created = actual.get("created") if actual else None
+    return bool(
+        expected_created is not None
+        and actual_created is not None
+        and int(expected_created) != int(actual_created)
+    )
+
+
+def _identity_reuse_proven(record: dict[str, Any], prefix: str) -> bool:
+    return _stored_identity_reuse_proven(
+        {
+            "pid": record.get(f"{prefix}_pid"),
+            "created": record.get(f"{prefix}_created"),
+        }
+    )
+
+
+def _identity_started_at_or_after(
+    identity: dict[str, Any], parent_created: object
+) -> bool:
+    child_created = identity.get("created")
+    if child_created is None or parent_created is None:
+        return True
+    try:
+        return int(child_created) >= int(parent_created)
+    except (TypeError, ValueError):
+        return False
+
+
 def _process_parent_map() -> dict[int, int]:
     if os.name != "nt":
         result = subprocess.run(
@@ -1517,29 +1553,36 @@ def _process_parent_map() -> dict[int, int]:
 def _capture_descendants(root_pids: Iterable[int]) -> list[dict[str, Any]]:
     roots = {pid for pid in root_pids if pid > 0}
     parents = _process_parent_map()
-    descendants: set[int] = set()
+    accepted_created: dict[int, object] = {}
+    for pid in roots:
+        identity = _process_identity(pid)
+        if identity is not None:
+            accepted_created[pid] = identity.get("created")
+    identities: dict[int, dict[str, Any]] = {}
     changed = True
     while changed:
         changed = False
-        for pid, parent in parents.items():
-            if (
-                pid not in roots
-                and pid not in descendants
-                and (parent in roots or parent in descendants)
-            ):
-                descendants.add(pid)
-                changed = True
-    identities = []
-    for pid in sorted(descendants):
-        identity = _process_identity(pid)
-        if identity is not None:
-            identities.append(identity)
-    return identities
+        for pid, parent in sorted(parents.items()):
+            if pid in roots or pid in identities or parent not in accepted_created:
+                continue
+            identity = _process_identity(pid)
+            if identity is None:
+                continue
+            actual_parent = identity.get("parent_pid")
+            if actual_parent is not None and int(actual_parent) != parent:
+                continue
+            if not _identity_started_at_or_after(identity, accepted_created[parent]):
+                continue
+            identities[pid] = identity
+            accepted_created[pid] = identity.get("created")
+            changed = True
+    return [identities[pid] for pid in sorted(identities)]
 
 
 def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str, Any]:
     owned: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
+    reused: list[dict[str, Any]] = []
     absent_registrations: list[str] = []
     for prefix in ("launcher", "streamlit"):
         try:
@@ -1553,6 +1596,8 @@ def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str
             pass
         elif _identity_matches(record, prefix):
             owned.append({"resource": prefix, "pid": pid})
+        elif _identity_reuse_proven(record, prefix):
+            reused.append({"resource": prefix, "pid": pid, "status": "PID_REUSED"})
         else:
             conflicts.append({"resource": prefix, "pid": pid, "status": "IDENTITY_MISMATCH"})
 
@@ -1575,11 +1620,15 @@ def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str
         if not isinstance(identity, dict):
             conflicts.append({"resource": "descendant", "status": "PARTIAL_IDENTITY"})
             continue
+        if not _identity_started_at_or_after(identity, record.get("launcher_created")):
+            continue
         pid = int(identity.get("pid", 0))
         if _process_identity(pid) is None:
             continue
         if _stored_identity_matches(identity):
             owned.append({"resource": "descendant", "pid": pid})
+        elif _stored_identity_reuse_proven(identity):
+            reused.append({"resource": "descendant", "pid": pid, "status": "PID_REUSED"})
         else:
             conflicts.append(
                 {"resource": "descendant", "pid": pid, "status": "IDENTITY_MISMATCH"}
@@ -1607,11 +1656,21 @@ def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str
             if not isinstance(identity, dict):
                 descendant_conflict = True
                 continue
+            if not _identity_started_at_or_after(identity, browser.get("browser_created")):
+                continue
             descendant_pid = int(identity.get("pid", 0))
             if _process_identity(descendant_pid) is None:
                 continue
             if _stored_identity_matches(identity):
                 descendant_owned.append(descendant_pid)
+            elif _stored_identity_reuse_proven(identity):
+                reused.append(
+                    {
+                        "resource": "browser_descendant",
+                        "pid": descendant_pid,
+                        "status": "PID_REUSED",
+                    }
+                )
             else:
                 descendant_conflict = True
                 conflicts.append(
@@ -1621,7 +1680,13 @@ def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str
                         "status": "IDENTITY_MISMATCH",
                     }
                 )
-        if _process_identity(pid) is None:
+        browser_identity = _process_identity(pid)
+        browser_pid_reused = bool(
+            browser_identity is not None and _identity_reuse_proven(browser, "browser")
+        )
+        if browser_pid_reused:
+            reused.append({"resource": "browser", "pid": pid, "status": "PID_REUSED"})
+        if browser_identity is None or browser_pid_reused:
             owned.extend(
                 {"resource": "browser_descendant", "pid": descendant_pid}
                 for descendant_pid in descendant_owned
@@ -1659,6 +1724,7 @@ def _resource_snapshot(paths: LauncherPaths, record: dict[str, Any]) -> dict[str
     return {
         "owned": owned,
         "conflicts": conflicts,
+        "reused": reused,
         "absent_registrations": absent_registrations,
         "port_listeners": sorted(listeners),
     }
@@ -1872,18 +1938,28 @@ def _shutdown_registered_browsers(
             )
             continue
         stored_descendants = record.get("verified_descendants", [])
-        if _process_identity(pid) is None:
+        browser_identity = _process_identity(pid)
+        browser_pid_reused = bool(
+            browser_identity is not None and _identity_reuse_proven(record, "browser")
+        )
+        if browser_identity is None or browser_pid_reused:
+            if any(not isinstance(identity, dict) for identity in stored_descendants):
+                results.append(
+                    {
+                        "pid": pid,
+                        "status": "INVALID_REGISTRATION_PRESERVED",
+                        "detail": "browser descendant identity is partial",
+                    }
+                )
+                continue
             mismatched = [
                 int(identity.get("pid", 0))
                 for identity in stored_descendants
                 if isinstance(identity, dict)
+                and _identity_started_at_or_after(identity, record.get("browser_created"))
                 and _process_identity(int(identity.get("pid", 0))) is not None
                 and not _stored_identity_matches(identity)
-            ]
-            remaining = [
-                identity
-                for identity in stored_descendants
-                if isinstance(identity, dict) and _stored_identity_matches(identity)
+                and not _stored_identity_reuse_proven(identity)
             ]
             if mismatched:
                 results.append(
@@ -1894,6 +1970,13 @@ def _shutdown_registered_browsers(
                     }
                 )
                 continue
+            remaining = [
+                identity
+                for identity in stored_descendants
+                if isinstance(identity, dict)
+                and _identity_started_at_or_after(identity, record.get("browser_created"))
+                and _stored_identity_matches(identity)
+            ]
             if remaining and allow_force:
                 for identity in remaining:
                     descendant_record = _identity_fields("browser_descendant", identity)

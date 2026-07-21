@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "packet": "nwr_desktop_runtime_data_rankings_integrity_canonical_environment_audit_repair_v1_20260721",
+  "containsPrivateData": false,
+  "fileCount": 3,
+  "files": [
+    "RUNTIME_DATA_RANKINGS_AUDIT_AND_REPAIR.md",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ]
+}

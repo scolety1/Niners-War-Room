@@ -90,7 +90,7 @@ if ($testMode) {
     if ($dirty) { throw 'Shortcut removal requires a clean canonical runtime checkout.' }
 }
 
-$pythonwCandidates = @(
+$legacyPythonwCandidates = @(
     (Join-Path $runtimeCheckout '.venv\Scripts\pythonw.exe'),
     'C:\NWR_SHARED_DATA\tool_envs\nwr_streamlit_preview\Scripts\pythonw.exe'
 )
@@ -103,9 +103,11 @@ $startMenuRoot = Join-Path $programs 'Niners War Room'
 $icon = "$env:SystemRoot\System32\shell32.dll,13"
 $shell = New-Object -ComObject WScript.Shell
 
+$startArguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command start'
+$legacyStartArguments = '"' + $desktopCommand + '" start'
 $specs = @(
-    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Targets=$pythonwCandidates; Arguments=('"' + $desktopCommand + '" start'); Description='Niners War Room V1' },
-    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Targets=$pythonwCandidates; Arguments=('"' + $desktopCommand + '" start'); Description='Niners War Room V1' },
+    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; Description='Niners War Room V1' },
+    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; Description='Niners War Room V1' },
     @{ Path=(Join-Path $startMenuRoot 'Stop Niners War Room.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command stop'); Description='Stop Niners War Room V1' },
     @{ Path=(Join-Path $startMenuRoot 'Niners War Room Status.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command status'); Description='Niners War Room V1 status' },
     @{ Path=(Join-Path $startMenuRoot 'Back Up Niners War Room.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command backup'); Description='Back up Niners War Room V1' },
@@ -119,11 +121,20 @@ $ownedExisting = @()
 foreach ($spec in $specs) {
     if (-not (Test-Path -LiteralPath $spec.Path)) { continue }
     $existing = $shell.CreateShortcut($spec.Path)
-    if ($existing.TargetPath -notin $spec.Targets -or
-        $existing.Arguments -ne $spec.Arguments -or
-        $existing.WorkingDirectory -ne $runtimeCheckout -or
-        $existing.Description -ne $spec.Description -or
-        $existing.IconLocation -ne $icon) {
+    $currentOwned = (
+        $existing.TargetPath -in $spec.Targets -and
+        $existing.Arguments -eq $spec.Arguments -and
+        $existing.WorkingDirectory -eq $runtimeCheckout -and
+        $existing.Description -eq $spec.Description -and
+        $existing.IconLocation -eq $icon
+    )
+    $legacyOwned = @($spec.LegacyTargets).Count -gt 0 -and
+        $existing.TargetPath -in @($spec.LegacyTargets) -and
+        $existing.Arguments -eq $spec.LegacyArguments -and
+        $existing.WorkingDirectory -eq $runtimeCheckout -and
+        $existing.Description -eq $spec.Description -and
+        $existing.IconLocation -eq $icon
+    if (-not $currentOwned -and -not $legacyOwned) {
         throw "Refusing to remove a same-named shortcut not owned by this installer: $($spec.Path)"
     }
     $ownedExisting += @{

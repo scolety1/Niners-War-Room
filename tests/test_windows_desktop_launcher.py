@@ -977,6 +977,63 @@ def test_malformed_browser_pid_registration_is_preserved_without_targeting(
     assert registration.exists()
 
 
+def _shortcut_payload(powershell: Path, path: Path) -> dict[str, str]:
+    escaped = str(path).replace("'", "''")
+    inspected = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-Command",
+            (
+                "$shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut('"
+                + escaped
+                + "'); [ordered]@{Target=$shortcut.TargetPath;"
+                "Arguments=$shortcut.Arguments;"
+                "WorkingDirectory=$shortcut.WorkingDirectory} | ConvertTo-Json -Compress"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert inspected.returncode == 0, inspected.stdout + inspected.stderr
+    return json.loads(inspected.stdout)
+
+
+def _rewrite_shortcut_launch(
+    powershell: Path,
+    path: Path,
+    *,
+    target: Path,
+    arguments: str,
+) -> None:
+    escaped_path = str(path).replace("'", "''")
+    escaped_target = str(target).replace("'", "''")
+    escaped_arguments = arguments.replace("'", "''")
+    rewritten = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-Command",
+            (
+                "$shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut('"
+                + escaped_path
+                + "'); $shortcut.TargetPath='"
+                + escaped_target
+                + "'; $shortcut.Arguments='"
+                + escaped_arguments
+                + "'; $shortcut.Save()"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert rewritten.returncode == 0, rewritten.stdout + rewritten.stderr
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")
 def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
@@ -999,6 +1056,13 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
     )
     installer = repo_root / "scripts" / "Install Niners War Room Shortcut.ps1"
     uninstaller = repo_root / "scripts" / "Uninstall Niners War Room Shortcut.ps1"
+    shortcut_env = os.environ.copy()
+    shortcut_env["NWR_REFRESH_DATA_ROOT"] = str(
+        (repo_root / "local_exports" / "refresh_data").resolve()
+    )
+    shortcut_env["NWR_MOCK_DRAFT_ROOT"] = str(
+        (repo_root / "local_exports" / "mock_drafts").resolve()
+    )
 
     installed = subprocess.run(
         [
@@ -1014,14 +1078,28 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
             "-ConfirmInstall",
         ],
         cwd=repo_root,
+        env=shortcut_env,
         capture_output=True,
         text=True,
         timeout=30,
         check=False,
     )
     assert installed.returncode == 0, installed.stdout + installed.stderr
-    assert (known_root / "Desktop" / "Niners War Room.lnk").is_file()
+    desktop_launch = known_root / "Desktop" / "Niners War Room.lnk"
+    start_menu_launch = known_root / "Programs" / "Niners War Room" / "Niners War Room.lnk"
+    assert desktop_launch.is_file()
     assert len(list((known_root / "Programs" / "Niners War Room").glob("*.lnk"))) == 8
+
+    expected_start_arguments = (
+        '-NoProfile -ExecutionPolicy Bypass -File "'
+        + str(repo_root / "scripts" / "NWR Desktop Commands.ps1")
+        + '" -Command start'
+    )
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        payload = _shortcut_payload(powershell, shortcut_path)
+        assert Path(payload["Target"]).resolve() == powershell.resolve()
+        assert payload["Arguments"] == expected_start_arguments
+        assert Path(payload["WorkingDirectory"]).resolve() == repo_root.resolve()
 
     shortcut_paths = sorted(known_root.rglob("*.lnk"))
     original_shortcut_bytes = {path: path.read_bytes() for path in shortcut_paths}
@@ -1039,6 +1117,7 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
             "-ConfirmInstall",
         ],
         cwd=repo_root,
+        env=shortcut_env,
         capture_output=True,
         text=True,
         timeout=30,
@@ -1046,6 +1125,50 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
     )
     assert repaired.returncode == 0, repaired.stdout + repaired.stderr
     assert {path: path.read_bytes() for path in shortcut_paths} == original_shortcut_bytes
+
+    legacy_pythonw = next(
+        path
+        for path in (
+            repo_root / ".venv" / "Scripts" / "pythonw.exe",
+            Path(r"C:\NWR_SHARED_DATA\tool_envs\nwr_streamlit_preview\Scripts\pythonw.exe"),
+        )
+        if path.is_file()
+    )
+    legacy_arguments = f'"{repo_root / "scripts" / "nwr_desktop.py"}" start'
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        _rewrite_shortcut_launch(
+            powershell,
+            shortcut_path,
+            target=legacy_pythonw,
+            arguments=legacy_arguments,
+        )
+
+    migrated = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(installer),
+            "-KnownFolderTestRoot",
+            str(known_root),
+            "-AllowUncommittedTest",
+            "-ConfirmInstall",
+        ],
+        cwd=repo_root,
+        env=shortcut_env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert migrated.returncode == 0, migrated.stdout + migrated.stderr
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        payload = _shortcut_payload(powershell, shortcut_path)
+        assert Path(payload["Target"]).resolve() == powershell.resolve()
+        assert payload["Arguments"] == expected_start_arguments
+        assert Path(payload["WorkingDirectory"]).resolve() == repo_root.resolve()
 
     removed = subprocess.run(
         [
@@ -1060,6 +1183,7 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
             "-AllowUncommittedTest",
         ],
         cwd=repo_root,
+        env=shortcut_env,
         capture_output=True,
         text=True,
         timeout=30,
@@ -1079,13 +1203,19 @@ def test_installer_and_uninstaller_exact_ownership_source_contract() -> None:
         repo_root / "scripts" / "Uninstall Niners War Room Shortcut.ps1"
     ).read_text(encoding="utf-8")
 
-    assert "$existing.IconLocation -ne $icon" in installer
+    assert "$startArguments = '-NoProfile -ExecutionPolicy Bypass -File \"'" in installer
+    assert 'LegacyTargets=$legacyPythonwCandidates' in installer
+    assert "$existing.WorkingDirectory -eq $runtimeCheckout" in installer
+    assert "$check.IconLocation -ne $icon" in installer
     assert "return $Path" in installer
     assert "$hqRef = 'refs/remotes/origin/work/hq-parallel-control'" in uninstaller
     assert "standalone clone with its own .git directory" in uninstaller
     assert "runtime checkout is not at the exact canonical HQ commit" in uninstaller
     assert "Shortcut removal requires a clean canonical runtime checkout" in uninstaller
-    assert "$existing.IconLocation -ne $icon" in uninstaller
+    assert "$startArguments = '-NoProfile -ExecutionPolicy Bypass -File \"'" in uninstaller
+    assert 'LegacyTargets=$legacyPythonwCandidates' in uninstaller
+    assert "$existing.WorkingDirectory -eq $runtimeCheckout" in uninstaller
+    assert "-not $currentOwned -and -not $legacyOwned" in uninstaller
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")

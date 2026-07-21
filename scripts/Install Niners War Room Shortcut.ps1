@@ -105,13 +105,15 @@ if ($dirty -and -not $testMode) {
 }
 
 $pythonCandidates = @(
+    (Join-Path $runtimeCheckout '.venv\Scripts\python.exe'),
+    'C:\NWR_SHARED_DATA\tool_envs\nwr_streamlit_preview\Scripts\python.exe'
+)
+$python = $pythonCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+if (-not $python) { throw 'No supported NWR Python runtime was found.' }
+$legacyPythonwCandidates = @(
     (Join-Path $runtimeCheckout '.venv\Scripts\pythonw.exe'),
     'C:\NWR_SHARED_DATA\tool_envs\nwr_streamlit_preview\Scripts\pythonw.exe'
 )
-$pythonw = $pythonCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-if (-not $pythonw) { throw 'No supported pythonw.exe runtime was found.' }
-$python = $pythonw -replace '(?i)pythonw\.exe$','python.exe'
-if (-not (Test-Path -LiteralPath $python)) { throw 'The matching diagnostic Python runtime is unavailable.' }
 
 if ($testMode) {
     $env:NWR_DATA_HOME = Join-Path $localAppData 'NinersWarRoom'
@@ -136,7 +138,7 @@ Write-Host "  Desktop: $desktop"
 Write-Host "  Start Menu: $startMenuRoot"
 Write-Host "  Stable checkout: $runtimeCheckout"
 Write-Host "  Canonical commit: $headCommit"
-Write-Host "  Python runtime: $pythonw"
+Write-Host "  Python runtime: $python"
 if (-not $testMode) {
     $answer = Read-Host 'Type INSTALL NINERS WAR ROOM to create these shortcuts'
     if ($answer -cne 'INSTALL NINERS WAR ROOM') {
@@ -156,16 +158,37 @@ function Set-OwnedShortcut {
         [string]$Path,
         [string]$Target,
         [string]$Arguments,
-        [string]$Description
+        [string]$Description,
+        [string[]]$LegacyTargets = @(),
+        [string]$LegacyArguments = ''
     )
     if (Test-Path -LiteralPath $Path) {
         $existing = $shell.CreateShortcut($Path)
-        if ($existing.TargetPath -ne $Target -or
-            $existing.Arguments -ne $Arguments -or
-            $existing.WorkingDirectory -ne $runtimeCheckout -or
-            $existing.Description -ne $Description -or
-            $existing.IconLocation -ne $icon) {
+        $currentOwned = (
+            $existing.TargetPath -eq $Target -and
+            $existing.Arguments -eq $Arguments -and
+            $existing.WorkingDirectory -eq $runtimeCheckout -and
+            $existing.Description -eq $Description -and
+            $existing.IconLocation -eq $icon
+        )
+        if ($currentOwned) { return $Path }
+        $legacyOwned = $LegacyTargets.Count -gt 0 -and
+            $existing.TargetPath -in $LegacyTargets -and
+            $existing.Arguments -eq $LegacyArguments -and
+            $existing.WorkingDirectory -eq $runtimeCheckout -and
+            $existing.Description -eq $Description -and
+            $existing.IconLocation -eq $icon
+        if (-not $legacyOwned) {
             throw "A same-named shortcut exists but is not owned by this installer: $Path"
+        }
+        $existing.TargetPath = $Target
+        $existing.Arguments = $Arguments
+        $existing.Save()
+        $check = $shell.CreateShortcut($Path)
+        if ($check.TargetPath -ne $Target -or $check.Arguments -ne $Arguments -or
+            $check.WorkingDirectory -ne $runtimeCheckout -or
+            $check.Description -ne $Description -or $check.IconLocation -ne $icon) {
+            throw "Shortcut migration validation failed: $Path"
         }
         return $Path
     }
@@ -185,9 +208,11 @@ function Set-OwnedShortcut {
     return $Path
 }
 
+$startArguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command start'
+$legacyStartArguments = '"' + $desktopCommand + '" start'
 $specs = @(
-    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Target=$pythonw; Arguments=('"' + $desktopCommand + '" start'); Description='Niners War Room V1' },
-    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Target=$pythonw; Arguments=('"' + $desktopCommand + '" start'); Description='Niners War Room V1' },
+    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments },
+    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments },
     @{ Path=(Join-Path $startMenuRoot 'Stop Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command stop'); Description='Stop Niners War Room V1' },
     @{ Path=(Join-Path $startMenuRoot 'Niners War Room Status.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command status'); Description='Niners War Room V1 status' },
     @{ Path=(Join-Path $startMenuRoot 'Back Up Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command backup'); Description='Back up Niners War Room V1' },
@@ -198,15 +223,35 @@ $specs = @(
 )
 
 $newPaths = @()
+$legacyOwned = @()
 foreach ($spec in $specs) {
     if (Test-Path -LiteralPath $spec.Path) {
         $existing = $shell.CreateShortcut($spec.Path)
-        if ($existing.TargetPath -ne $spec.Target -or
-            $existing.Arguments -ne $spec.Arguments -or
-            $existing.WorkingDirectory -ne $runtimeCheckout -or
-            $existing.Description -ne $spec.Description -or
-            $existing.IconLocation -ne $icon) {
+        $currentOwned = (
+            $existing.TargetPath -eq $spec.Target -and
+            $existing.Arguments -eq $spec.Arguments -and
+            $existing.WorkingDirectory -eq $runtimeCheckout -and
+            $existing.Description -eq $spec.Description -and
+            $existing.IconLocation -eq $icon
+        )
+        $legacyMatch = @($spec.LegacyTargets).Count -gt 0 -and
+            $existing.TargetPath -in @($spec.LegacyTargets) -and
+            $existing.Arguments -eq $spec.LegacyArguments -and
+            $existing.WorkingDirectory -eq $runtimeCheckout -and
+            $existing.Description -eq $spec.Description -and
+            $existing.IconLocation -eq $icon
+        if (-not $currentOwned -and -not $legacyMatch) {
             throw "A same-named shortcut exists but is not owned by this installer: $($spec.Path)"
+        }
+        if ($legacyMatch) {
+            $legacyOwned += @{
+                Path=$spec.Path
+                Target=$existing.TargetPath
+                Arguments=$existing.Arguments
+                WorkingDirectory=$existing.WorkingDirectory
+                Description=$existing.Description
+                IconLocation=$existing.IconLocation
+            }
         }
     } else {
         $newPaths += $spec.Path
@@ -215,11 +260,20 @@ foreach ($spec in $specs) {
 
 try {
     $installed = @($specs | ForEach-Object {
-        Set-OwnedShortcut -Path $_.Path -Target $_.Target -Arguments $_.Arguments -Description $_.Description
+        Set-OwnedShortcut -Path $_.Path -Target $_.Target -Arguments $_.Arguments -Description $_.Description -LegacyTargets @($_.LegacyTargets) -LegacyArguments $_.LegacyArguments
     })
 } catch {
     foreach ($path in $newPaths) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+    }
+    foreach ($owned in $legacyOwned) {
+        $restored = $shell.CreateShortcut($owned.Path)
+        $restored.TargetPath = $owned.Target
+        $restored.Arguments = $owned.Arguments
+        $restored.WorkingDirectory = $owned.WorkingDirectory
+        $restored.Description = $owned.Description
+        $restored.IconLocation = $owned.IconLocation
+        $restored.Save()
     }
     throw
 }
@@ -232,7 +286,8 @@ try {
     start_menu = $startMenuRoot
     runtime_checkout = $runtimeCheckout
     canonical_commit = $headCommit
-    pythonw = $pythonw
+    python = $python
+    migrated_shortcuts = @($legacyOwned | ForEach-Object { $_.Path })
     icon = $icon
     shortcuts = $installed
 } | ConvertTo-Json -Depth 4

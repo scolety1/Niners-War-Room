@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from app.navigation import ALL_NAVIGATION_PAGES
+from src.services import draft_day_app_v1_service as draft_day_app_service
 from src.services.data_health_dashboard_service import (
     build_data_health_dashboard,
     compact_status_cards,
@@ -82,7 +83,15 @@ def _status(report, section: str, check: str) -> str:
     return str(row["status"])
 
 
-def test_board_health_reports_expected_frozen_and_dynasty_counts(tmp_path: Path) -> None:
+def test_board_health_reports_expected_frozen_and_missing_dynasty_counts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        draft_day_app_service,
+        "LOCAL_DYNASTY_RANKINGS_PATH",
+        tmp_path / "missing-full-dynasty-rankings.csv",
+    )
     report = build_data_health_dashboard(runtime_root=tmp_path)
 
     assert _value(report, "Board", "Frozen baseline board rows") == "66"
