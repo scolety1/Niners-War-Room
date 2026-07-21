@@ -150,7 +150,12 @@ New-Item -ItemType Directory -Force -Path $startMenuRoot | Out-Null
 $commandsScript = Join-Path $PSScriptRoot 'NWR Desktop Commands.ps1'
 $installerScript = Join-Path $PSScriptRoot 'Install Niners War Room Shortcut.ps1'
 $uninstallerScript = Join-Path $PSScriptRoot 'Uninstall Niners War Room Shortcut.ps1'
-$icon = "$env:SystemRoot\System32\shell32.dll,13"
+$appIconPath = Join-Path $runtimeCheckout 'assets\branding\nwr_desktop_icon.ico'
+if (-not (Test-Path -LiteralPath $appIconPath -PathType Leaf)) {
+    throw "The repository-owned NWR desktop icon is missing: $appIconPath"
+}
+$appIcon = "$appIconPath,0"
+$commandIcon = "$env:SystemRoot\System32\shell32.dll,13"
 $shell = New-Object -ComObject WScript.Shell
 
 function Set-OwnedShortcut {
@@ -159,8 +164,11 @@ function Set-OwnedShortcut {
         [string]$Target,
         [string]$Arguments,
         [string]$Description,
+        [string]$IconLocation,
+        [bool]$RefreshIcon,
         [string[]]$LegacyTargets = @(),
-        [string]$LegacyArguments = ''
+        [string]$LegacyArguments = '',
+        [string[]]$LegacyIcons = @()
     )
     if (Test-Path -LiteralPath $Path) {
         $existing = $shell.CreateShortcut($Path)
@@ -168,26 +176,40 @@ function Set-OwnedShortcut {
             $existing.TargetPath -eq $Target -and
             $existing.Arguments -eq $Arguments -and
             $existing.WorkingDirectory -eq $runtimeCheckout -and
-            $existing.Description -eq $Description -and
-            $existing.IconLocation -eq $icon
+            $existing.Description -eq $Description
         )
-        if ($currentOwned) { return $Path }
+        if ($currentOwned) {
+            if ($RefreshIcon -and $existing.IconLocation -ne $IconLocation) {
+                $existing.IconLocation = $IconLocation
+                $existing.Save()
+                $check = $shell.CreateShortcut($Path)
+                if ($check.TargetPath -ne $Target -or $check.Arguments -ne $Arguments -or
+                    $check.WorkingDirectory -ne $runtimeCheckout -or
+                    $check.Description -ne $Description -or
+                    $check.IconLocation -ne $IconLocation) {
+                    throw "Shortcut icon refresh validation failed: $Path"
+                }
+            }
+            return $Path
+        }
         $legacyOwned = $LegacyTargets.Count -gt 0 -and
             $existing.TargetPath -in $LegacyTargets -and
             $existing.Arguments -eq $LegacyArguments -and
             $existing.WorkingDirectory -eq $runtimeCheckout -and
             $existing.Description -eq $Description -and
-            $existing.IconLocation -eq $icon
+            $existing.IconLocation -in $LegacyIcons
         if (-not $legacyOwned) {
             throw "A same-named shortcut exists but is not owned by this installer: $Path"
         }
         $existing.TargetPath = $Target
         $existing.Arguments = $Arguments
+        if ($RefreshIcon) { $existing.IconLocation = $IconLocation }
         $existing.Save()
         $check = $shell.CreateShortcut($Path)
         if ($check.TargetPath -ne $Target -or $check.Arguments -ne $Arguments -or
             $check.WorkingDirectory -ne $runtimeCheckout -or
-            $check.Description -ne $Description -or $check.IconLocation -ne $icon) {
+            $check.Description -ne $Description -or
+            ($RefreshIcon -and $check.IconLocation -ne $IconLocation)) {
             throw "Shortcut migration validation failed: $Path"
         }
         return $Path
@@ -197,12 +219,12 @@ function Set-OwnedShortcut {
     $shortcut.Arguments = $Arguments
     $shortcut.WorkingDirectory = $runtimeCheckout
     $shortcut.Description = $Description
-    $shortcut.IconLocation = $icon
+    $shortcut.IconLocation = $IconLocation
     $shortcut.Save()
     $check = $shell.CreateShortcut($Path)
     if ($check.TargetPath -ne $Target -or $check.Arguments -ne $Arguments -or
         $check.WorkingDirectory -ne $runtimeCheckout -or
-        $check.Description -ne $Description -or $check.IconLocation -ne $icon) {
+        $check.Description -ne $Description -or $check.IconLocation -ne $IconLocation) {
         throw "Shortcut target validation failed: $Path"
     }
     return $Path
@@ -211,19 +233,19 @@ function Set-OwnedShortcut {
 $startArguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command start'
 $legacyStartArguments = '"' + $desktopCommand + '" start'
 $specs = @(
-    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments },
-    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments },
-    @{ Path=(Join-Path $startMenuRoot 'Stop Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command stop'); Description='Stop Niners War Room V1' },
-    @{ Path=(Join-Path $startMenuRoot 'Niners War Room Status.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command status'); Description='Niners War Room V1 status' },
-    @{ Path=(Join-Path $startMenuRoot 'Back Up Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command backup'); Description='Back up Niners War Room V1' },
-    @{ Path=(Join-Path $startMenuRoot 'Restore Niners War Room - Dry Run.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command restore-dry-run'); Description='Preview Niners War Room V1 restore' },
-    @{ Path=(Join-Path $startMenuRoot 'Recover Niners War Room Data Health Receipt.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command recover-data-health'); Description='Recover the Niners War Room V1 Data Health receipt' },
-    @{ Path=(Join-Path $startMenuRoot 'Install Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $installerScript + '"'); Description='Install or repair Niners War Room V1 shortcuts' },
-    @{ Path=(Join-Path $startMenuRoot 'Uninstall Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $uninstallerScript + '"'); Description='Remove Niners War Room V1 shortcuts and preserve data' }
+    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; IconLocation=$appIcon; RefreshIcon=$true; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; LegacyIcons=@($commandIcon,$appIcon) },
+    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Target=$powershell; Arguments=$startArguments; Description='Niners War Room V1'; IconLocation=$appIcon; RefreshIcon=$true; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; LegacyIcons=@($commandIcon,$appIcon) },
+    @{ Path=(Join-Path $startMenuRoot 'Stop Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command stop'); Description='Stop Niners War Room V1'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Niners War Room Status.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command status'); Description='Niners War Room V1 status'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Back Up Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command backup'); Description='Back up Niners War Room V1'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Restore Niners War Room - Dry Run.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command restore-dry-run'); Description='Preview Niners War Room V1 restore'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Recover Niners War Room Data Health Receipt.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command recover-data-health'); Description='Recover the Niners War Room V1 Data Health receipt'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Install Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $installerScript + '"'); Description='Install or repair Niners War Room V1 shortcuts'; IconLocation=$commandIcon; RefreshIcon=$false },
+    @{ Path=(Join-Path $startMenuRoot 'Uninstall Niners War Room.lnk'); Target=$powershell; Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $uninstallerScript + '"'); Description='Remove Niners War Room V1 shortcuts and preserve data'; IconLocation=$commandIcon; RefreshIcon=$false }
 )
 
 $newPaths = @()
-$legacyOwned = @()
+$modifiedOwned = @()
 foreach ($spec in $specs) {
     if (Test-Path -LiteralPath $spec.Path) {
         $existing = $shell.CreateShortcut($spec.Path)
@@ -231,20 +253,20 @@ foreach ($spec in $specs) {
             $existing.TargetPath -eq $spec.Target -and
             $existing.Arguments -eq $spec.Arguments -and
             $existing.WorkingDirectory -eq $runtimeCheckout -and
-            $existing.Description -eq $spec.Description -and
-            $existing.IconLocation -eq $icon
+            $existing.Description -eq $spec.Description
         )
         $legacyMatch = @($spec.LegacyTargets).Count -gt 0 -and
             $existing.TargetPath -in @($spec.LegacyTargets) -and
             $existing.Arguments -eq $spec.LegacyArguments -and
             $existing.WorkingDirectory -eq $runtimeCheckout -and
             $existing.Description -eq $spec.Description -and
-            $existing.IconLocation -eq $icon
+            $existing.IconLocation -in @($spec.LegacyIcons)
         if (-not $currentOwned -and -not $legacyMatch) {
             throw "A same-named shortcut exists but is not owned by this installer: $($spec.Path)"
         }
-        if ($legacyMatch) {
-            $legacyOwned += @{
+        if ($legacyMatch -or ($currentOwned -and $spec.RefreshIcon -and
+            $existing.IconLocation -ne $spec.IconLocation)) {
+            $modifiedOwned += @{
                 Path=$spec.Path
                 Target=$existing.TargetPath
                 Arguments=$existing.Arguments
@@ -260,13 +282,13 @@ foreach ($spec in $specs) {
 
 try {
     $installed = @($specs | ForEach-Object {
-        Set-OwnedShortcut -Path $_.Path -Target $_.Target -Arguments $_.Arguments -Description $_.Description -LegacyTargets @($_.LegacyTargets) -LegacyArguments $_.LegacyArguments
+        Set-OwnedShortcut -Path $_.Path -Target $_.Target -Arguments $_.Arguments -Description $_.Description -IconLocation $_.IconLocation -RefreshIcon $_.RefreshIcon -LegacyTargets @($_.LegacyTargets) -LegacyArguments $_.LegacyArguments -LegacyIcons @($_.LegacyIcons)
     })
 } catch {
     foreach ($path in $newPaths) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
     }
-    foreach ($owned in $legacyOwned) {
+    foreach ($owned in $modifiedOwned) {
         $restored = $shell.CreateShortcut($owned.Path)
         $restored.TargetPath = $owned.Target
         $restored.Arguments = $owned.Arguments
@@ -287,7 +309,7 @@ try {
     runtime_checkout = $runtimeCheckout
     canonical_commit = $headCommit
     python = $python
-    migrated_shortcuts = @($legacyOwned | ForEach-Object { $_.Path })
-    icon = $icon
+    migrated_shortcuts = @($modifiedOwned | ForEach-Object { $_.Path })
+    icon = $appIcon
     shortcuts = $installed
 } | ConvertTo-Json -Depth 4

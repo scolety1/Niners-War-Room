@@ -989,7 +989,9 @@ def _shortcut_payload(powershell: Path, path: Path) -> dict[str, str]:
                 + escaped
                 + "'); [ordered]@{Target=$shortcut.TargetPath;"
                 "Arguments=$shortcut.Arguments;"
-                "WorkingDirectory=$shortcut.WorkingDirectory} | ConvertTo-Json -Compress"
+                "WorkingDirectory=$shortcut.WorkingDirectory;"
+                "Description=$shortcut.Description;"
+                "IconLocation=$shortcut.IconLocation} | ConvertTo-Json -Compress"
             ),
         ],
         capture_output=True,
@@ -1034,6 +1036,35 @@ def _rewrite_shortcut_launch(
     assert rewritten.returncode == 0, rewritten.stdout + rewritten.stderr
 
 
+def _rewrite_shortcut_icon(
+    powershell: Path,
+    path: Path,
+    *,
+    icon_location: str,
+) -> None:
+    escaped_path = str(path).replace("'", "''")
+    escaped_icon = icon_location.replace("'", "''")
+    rewritten = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-Command",
+            (
+                "$shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut('"
+                + escaped_path
+                + "'); $shortcut.IconLocation='"
+                + escaped_icon
+                + "'; $shortcut.Save()"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert rewritten.returncode == 0, rewritten.stdout + rewritten.stderr
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")
 def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
@@ -1047,7 +1078,7 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
     known_root = (
         repo_root.parent
         / ".codex-known-folder-tests"
-        / f"launcher-{os.getpid()}-{tmp_path.name}"
+        / f"redirected Desktop José {os.getpid()} {tmp_path.name}"
     )
     known_root.mkdir(parents=True)
     (known_root / ".nwr-disposable-known-folders").write_text(
@@ -1095,11 +1126,21 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
         + str(repo_root / "scripts" / "NWR Desktop Commands.ps1")
         + '" -Command start'
     )
+    expected_app_icon = f"{repo_root / 'assets' / 'branding' / 'nwr_desktop_icon.ico'},0"
+    expected_command_icon = str(
+        Path(os.environ["SystemRoot"]) / "System32" / "shell32.dll"
+    ) + ",13"
     for shortcut_path in (desktop_launch, start_menu_launch):
         payload = _shortcut_payload(powershell, shortcut_path)
         assert Path(payload["Target"]).resolve() == powershell.resolve()
         assert payload["Arguments"] == expected_start_arguments
         assert Path(payload["WorkingDirectory"]).resolve() == repo_root.resolve()
+        assert payload["Description"] == "Niners War Room V1"
+        assert payload["IconLocation"].casefold() == expected_app_icon.casefold()
+
+    stop_shortcut = known_root / "Programs" / "Niners War Room" / "Stop Niners War Room.lnk"
+    stop_payload = _shortcut_payload(powershell, stop_shortcut)
+    assert stop_payload["IconLocation"].casefold() == expected_command_icon.casefold()
 
     shortcut_paths = sorted(known_root.rglob("*.lnk"))
     original_shortcut_bytes = {path: path.read_bytes() for path in shortcut_paths}
@@ -1125,6 +1166,92 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
     )
     assert repaired.returncode == 0, repaired.stdout + repaired.stderr
     assert {path: path.read_bytes() for path in shortcut_paths} == original_shortcut_bytes
+
+    stale_icon = known_root / "stale app icon.ico"
+    stale_icon.write_bytes(b"not-an-icon")
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        _rewrite_shortcut_icon(
+            powershell,
+            shortcut_path,
+            icon_location=f"{stale_icon},0",
+        )
+    _rewrite_shortcut_icon(
+        powershell,
+        stop_shortcut,
+        icon_location=f"{stale_icon},7",
+    )
+    preserved_command_icon = _shortcut_payload(powershell, stop_shortcut)["IconLocation"]
+    refreshed = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(installer),
+            "-KnownFolderTestRoot",
+            str(known_root),
+            "-AllowUncommittedTest",
+            "-ConfirmInstall",
+        ],
+        cwd=repo_root,
+        env=shortcut_env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert refreshed.returncode == 0, refreshed.stdout + refreshed.stderr
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        assert (
+            _shortcut_payload(powershell, shortcut_path)["IconLocation"].casefold()
+            == expected_app_icon.casefold()
+        )
+    assert (
+        _shortcut_payload(powershell, stop_shortcut)["IconLocation"].casefold()
+        == preserved_command_icon.casefold()
+    )
+
+    notepad = Path(os.environ["SystemRoot"]) / "System32" / "notepad.exe"
+    _rewrite_shortcut_launch(
+        powershell,
+        desktop_launch,
+        target=notepad,
+        arguments="",
+    )
+    rejected_wrong_target = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(installer),
+            "-KnownFolderTestRoot",
+            str(known_root),
+            "-AllowUncommittedTest",
+            "-ConfirmInstall",
+        ],
+        cwd=repo_root,
+        env=shortcut_env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert rejected_wrong_target.returncode != 0
+    assert Path(_shortcut_payload(powershell, desktop_launch)["Target"]).resolve() == notepad
+    _rewrite_shortcut_launch(
+        powershell,
+        desktop_launch,
+        target=powershell,
+        arguments=expected_start_arguments,
+    )
+    _rewrite_shortcut_icon(
+        powershell,
+        desktop_launch,
+        icon_location=expected_app_icon,
+    )
 
     legacy_pythonw = next(
         path
@@ -1169,6 +1296,16 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
         assert Path(payload["Target"]).resolve() == powershell.resolve()
         assert payload["Arguments"] == expected_start_arguments
         assert Path(payload["WorkingDirectory"]).resolve() == repo_root.resolve()
+        assert payload["IconLocation"].casefold() == expected_app_icon.casefold()
+
+    preserved_data = known_root / "LocalAppData" / "NinersWarRoom" / "data" / "keep.bin"
+    preserved_backup = (
+        known_root / "LocalAppData" / "NinersWarRoom" / "backups" / "keep" / "payload.bin"
+    )
+    preserved_data.parent.mkdir(parents=True, exist_ok=True)
+    preserved_backup.parent.mkdir(parents=True, exist_ok=True)
+    preserved_data.write_bytes(b"persistent-user-data")
+    preserved_backup.write_bytes(b"persistent-backup")
 
     removed = subprocess.run(
         [
@@ -1192,6 +1329,58 @@ def test_disposable_known_folder_installer_and_uninstaller(tmp_path: Path) -> No
     assert removed.returncode == 0, removed.stdout + removed.stderr
     assert not list((known_root / "Desktop").glob("*.lnk"))
     assert not (known_root / "Programs" / "Niners War Room").exists()
+    assert preserved_data.read_bytes() == b"persistent-user-data"
+    assert preserved_backup.read_bytes() == b"persistent-backup"
+
+    reinstalled = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(installer),
+            "-KnownFolderTestRoot",
+            str(known_root),
+            "-AllowUncommittedTest",
+            "-ConfirmInstall",
+        ],
+        cwd=repo_root,
+        env=shortcut_env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert reinstalled.returncode == 0, reinstalled.stdout + reinstalled.stderr
+    for shortcut_path in (desktop_launch, start_menu_launch):
+        assert (
+            _shortcut_payload(powershell, shortcut_path)["IconLocation"].casefold()
+            == expected_app_icon.casefold()
+        )
+
+    removed_again = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(uninstaller),
+            "-KnownFolderTestRoot",
+            str(known_root),
+            "-AllowUncommittedTest",
+        ],
+        cwd=repo_root,
+        env=shortcut_env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert removed_again.returncode == 0, removed_again.stdout + removed_again.stderr
+    assert preserved_data.read_bytes() == b"persistent-user-data"
+    assert preserved_backup.read_bytes() == b"persistent-backup"
 
 
 def test_installer_and_uninstaller_exact_ownership_source_contract() -> None:
@@ -1206,7 +1395,10 @@ def test_installer_and_uninstaller_exact_ownership_source_contract() -> None:
     assert "$startArguments = '-NoProfile -ExecutionPolicy Bypass -File \"'" in installer
     assert 'LegacyTargets=$legacyPythonwCandidates' in installer
     assert "$existing.WorkingDirectory -eq $runtimeCheckout" in installer
-    assert "$check.IconLocation -ne $icon" in installer
+    assert "$appIconPath,0" in installer
+    assert "$check.IconLocation -ne $IconLocation" in installer
+    assert "The repository-owned NWR desktop icon is missing" in installer
+    assert "RefreshIcon=$false" in installer
     assert "return $Path" in installer
     assert "$hqRef = 'refs/remotes/origin/work/hq-parallel-control'" in uninstaller
     assert "standalone clone with its own .git directory" in uninstaller
@@ -1216,6 +1408,153 @@ def test_installer_and_uninstaller_exact_ownership_source_contract() -> None:
     assert 'LegacyTargets=$legacyPythonwCandidates' in uninstaller
     assert "$existing.WorkingDirectory -eq $runtimeCheckout" in uninstaller
     assert "-not $currentOwned -and -not $legacyOwned" in uninstaller
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")
+def test_disposable_installer_rejects_missing_repository_icon(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    powershell = (
+        Path(os.environ["SystemRoot"])
+        / "System32"
+        / "WindowsPowerShell"
+        / "v1.0"
+        / "powershell.exe"
+    )
+    known_root = (
+        repo_root.parent
+        / ".codex-known-folder-tests"
+        / f"missing icon {os.getpid()} {tmp_path.name}"
+    )
+    known_root.mkdir(parents=True)
+    (known_root / ".nwr-disposable-known-folders").write_text(
+        "NWR_DISPOSABLE_KNOWN_FOLDER_TEST_V1\n",
+        encoding="utf-8",
+    )
+    installer = repo_root / "scripts" / "Install Niners War Room Shortcut.ps1"
+    icon = repo_root / "assets" / "branding" / "nwr_desktop_icon.ico"
+    hidden_icon = icon.with_suffix(".ico.missing-test")
+    shortcut_env = os.environ.copy()
+    shortcut_env["NWR_REFRESH_DATA_ROOT"] = str(
+        (repo_root / "local_exports" / "refresh_data").resolve()
+    )
+    shortcut_env["NWR_MOCK_DRAFT_ROOT"] = str(
+        (repo_root / "local_exports" / "mock_drafts").resolve()
+    )
+    icon.replace(hidden_icon)
+    try:
+        rejected = subprocess.run(
+            [
+                str(powershell),
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(installer),
+                "-KnownFolderTestRoot",
+                str(known_root),
+                "-AllowUncommittedTest",
+                "-ConfirmInstall",
+            ],
+            cwd=repo_root,
+            env=shortcut_env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        assert rejected.returncode != 0
+        assert "repository-owned NWR desktop icon is missing" in (
+            rejected.stdout + rejected.stderr
+        )
+        assert not list(known_root.rglob("*.lnk"))
+    finally:
+        hidden_icon.replace(icon)
+        shutil.rmtree(known_root, ignore_errors=True)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")
+def test_disposable_installer_preserves_unrelated_same_name_shortcut(
+    tmp_path: Path,
+) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    powershell = (
+        Path(os.environ["SystemRoot"])
+        / "System32"
+        / "WindowsPowerShell"
+        / "v1.0"
+        / "powershell.exe"
+    )
+    known_root = (
+        repo_root.parent
+        / ".codex-known-folder-tests"
+        / f"unrelated same name {os.getpid()} {tmp_path.name}"
+    )
+    desktop = known_root / "Desktop"
+    desktop.mkdir(parents=True)
+    (known_root / ".nwr-disposable-known-folders").write_text(
+        "NWR_DISPOSABLE_KNOWN_FOLDER_TEST_V1\n",
+        encoding="utf-8",
+    )
+    unrelated = desktop / "Niners War Room.lnk"
+    notepad = Path(os.environ["SystemRoot"]) / "System32" / "notepad.exe"
+    escaped_shortcut = str(unrelated).replace("'", "''")
+    escaped_target = str(notepad).replace("'", "''")
+    created = subprocess.run(
+        [
+            str(powershell),
+            "-NoProfile",
+            "-Command",
+            (
+                "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('"
+                + escaped_shortcut
+                + "'); $s.TargetPath='"
+                + escaped_target
+                + "'; $s.Description='Unrelated shortcut'; $s.Save()"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert created.returncode == 0, created.stdout + created.stderr
+    original = unrelated.read_bytes()
+    installer = repo_root / "scripts" / "Install Niners War Room Shortcut.ps1"
+    shortcut_env = os.environ.copy()
+    shortcut_env["NWR_REFRESH_DATA_ROOT"] = str(
+        (repo_root / "local_exports" / "refresh_data").resolve()
+    )
+    shortcut_env["NWR_MOCK_DRAFT_ROOT"] = str(
+        (repo_root / "local_exports" / "mock_drafts").resolve()
+    )
+    try:
+        rejected = subprocess.run(
+            [
+                str(powershell),
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(installer),
+                "-KnownFolderTestRoot",
+                str(known_root),
+                "-AllowUncommittedTest",
+                "-ConfirmInstall",
+            ],
+            cwd=repo_root,
+            env=shortcut_env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        assert rejected.returncode != 0
+        assert "same-named shortcut exists but is not owned" in (
+            rejected.stdout + rejected.stderr
+        )
+        assert unrelated.read_bytes() == original
+    finally:
+        shutil.rmtree(known_root, ignore_errors=True)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows shortcut contract")

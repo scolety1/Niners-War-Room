@@ -100,14 +100,15 @@ $commandsScript = Join-Path $PSScriptRoot 'NWR Desktop Commands.ps1'
 $installerScript = Join-Path $PSScriptRoot 'Install Niners War Room Shortcut.ps1'
 $uninstallerScript = Join-Path $PSScriptRoot 'Uninstall Niners War Room Shortcut.ps1'
 $startMenuRoot = Join-Path $programs 'Niners War Room'
-$icon = "$env:SystemRoot\System32\shell32.dll,13"
+$appIcon = "$(Join-Path $runtimeCheckout 'assets\branding\nwr_desktop_icon.ico'),0"
+$commandIcon = "$env:SystemRoot\System32\shell32.dll,13"
 $shell = New-Object -ComObject WScript.Shell
 
 $startArguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command start'
 $legacyStartArguments = '"' + $desktopCommand + '" start'
 $specs = @(
-    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; Description='Niners War Room V1' },
-    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; Description='Niners War Room V1' },
+    @{ Path=(Join-Path $desktop 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; LegacyIcons=@($commandIcon,$appIcon); Description='Niners War Room V1' },
+    @{ Path=(Join-Path $startMenuRoot 'Niners War Room.lnk'); Targets=@($powershell); Arguments=$startArguments; LegacyTargets=$legacyPythonwCandidates; LegacyArguments=$legacyStartArguments; LegacyIcons=@($commandIcon,$appIcon); Description='Niners War Room V1' },
     @{ Path=(Join-Path $startMenuRoot 'Stop Niners War Room.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command stop'); Description='Stop Niners War Room V1' },
     @{ Path=(Join-Path $startMenuRoot 'Niners War Room Status.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command status'); Description='Niners War Room V1 status' },
     @{ Path=(Join-Path $startMenuRoot 'Back Up Niners War Room.lnk'); Targets=@($powershell); Arguments=('-NoProfile -ExecutionPolicy Bypass -File "' + $commandsScript + '" -Command backup'); Description='Back up Niners War Room V1' },
@@ -125,15 +126,14 @@ foreach ($spec in $specs) {
         $existing.TargetPath -in $spec.Targets -and
         $existing.Arguments -eq $spec.Arguments -and
         $existing.WorkingDirectory -eq $runtimeCheckout -and
-        $existing.Description -eq $spec.Description -and
-        $existing.IconLocation -eq $icon
+        $existing.Description -eq $spec.Description
     )
     $legacyOwned = @($spec.LegacyTargets).Count -gt 0 -and
         $existing.TargetPath -in @($spec.LegacyTargets) -and
         $existing.Arguments -eq $spec.LegacyArguments -and
         $existing.WorkingDirectory -eq $runtimeCheckout -and
         $existing.Description -eq $spec.Description -and
-        $existing.IconLocation -eq $icon
+        $existing.IconLocation -in @($spec.LegacyIcons)
     if (-not $currentOwned -and -not $legacyOwned) {
         throw "Refusing to remove a same-named shortcut not owned by this installer: $($spec.Path)"
     }

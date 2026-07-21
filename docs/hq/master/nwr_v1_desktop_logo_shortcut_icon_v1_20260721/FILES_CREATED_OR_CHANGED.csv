@@ -1,0 +1,21 @@
+path,change,scope
+assets/branding/nwr_desktop_icon.png,created,source-exact repository branding asset
+assets/branding/nwr_desktop_icon.ico,created,seven-frame Windows icon
+scripts/Install Niners War Room Shortcut.ps1,modified,primary icon integration and safe refresh
+scripts/Uninstall Niners War Room Shortcut.ps1,modified,exact-owned icon-aware removal
+tests/test_windows_desktop_icon.py,created,PNG ICO and installer path contract
+tests/test_windows_desktop_launcher.py,modified,Windows shortcut icon lifecycle regressions
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/DESKTOP_LOGO_AND_SHORTCUT_REPORT.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/EXECUTIVE_VERDICT.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/SOURCE_IMAGE_AND_ASSET_PROVENANCE.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/ICO_FRAME_VALIDATION.csv,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/SHORTCUT_METADATA_BEFORE_AFTER.csv,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/DESKTOP_AND_START_MENU_INSTALLATION.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/REAL_LAUNCHER_PROOF.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/PRODUCT_DATA_AND_PERSISTENCE_NO_CHANGE.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/PRIMARY_WORKTREE_PRESERVATION_PROOF.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/PROTECTED_AND_FROZEN_PATH_PROOF.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/ROLLBACK_AND_ICON_REMOVAL_PLAN.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/FILES_CREATED_OR_CHANGED.csv,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/VALIDATION_RESULTS.md,created,evidence
+docs/hq/master/nwr_v1_desktop_logo_shortcut_icon_v1_20260721/MANIFEST.json,created,evidence

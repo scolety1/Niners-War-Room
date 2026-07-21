@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "packet": "nwr_v1_desktop_logo_shortcut_icon_v1_20260721",
+  "containsPrivateData": false,
+  "fileCount": 14,
+  "files": [
+    "DESKTOP_LOGO_AND_SHORTCUT_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "SOURCE_IMAGE_AND_ASSET_PROVENANCE.md",
+    "ICO_FRAME_VALIDATION.csv",
+    "SHORTCUT_METADATA_BEFORE_AFTER.csv",
+    "DESKTOP_AND_START_MENU_INSTALLATION.md",
+    "REAL_LAUNCHER_PROOF.md",
+    "PRODUCT_DATA_AND_PERSISTENCE_NO_CHANGE.md",
+    "PRIMARY_WORKTREE_PRESERVATION_PROOF.md",
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+    "ROLLBACK_AND_ICON_REMOVAL_PLAN.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "sourcePngSha256": "f626addd04f7e657c15971208bc92f067ef4dc15bc0b1b79609264093b6f4f2b",
+  "icoSha256": "7a22c4a86e962aa32ab8b15d408c4de8617873519ceaf0ae4e0e01c7ebc10265",
+  "startingCommit": "6d465ed0639d8e216a5fd89372a1ed90c0189055",
+  "startingTree": "d421fc81380e15482c9f9976d985f0344f57c8f4"
+}
