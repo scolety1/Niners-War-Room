@@ -1,0 +1,9 @@
+mutation_id,boundary,isolated_state,result,durable_mutation_count
+normal,all instrumented boundaries,temporary,PASS,0
+session_only,Streamlit in-memory session_state,temporary,PASS,0
+durable_file_write,pathlib.Path.open,temporary,DETECTED,greater_than_0
+receipt_write,refresh_receipt_store_service.write_refresh_receipt,temporary,DETECTED,greater_than_0
+draft_runtime_state_write,draft_day_runtime_state_service.save_runtime_state,temporary,DETECTED,greater_than_0
+refresh_dispatch,data_refresh_orchestrator_service.run_quick_refresh stub,temporary,DETECTED,greater_than_0
+rename_or_delete,pathlib.Path.rename and pathlib.Path.unlink,temporary,DETECTED,greater_than_0
+wrapped_write,test-only wrapper to pathlib.Path.write_bytes,temporary,DETECTED,greater_than_0

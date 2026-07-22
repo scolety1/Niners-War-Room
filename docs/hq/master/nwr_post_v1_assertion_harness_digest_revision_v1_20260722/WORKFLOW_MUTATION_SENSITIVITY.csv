@@ -1,0 +1,9 @@
+mutation_id,workflow,authority_classification,mutated_disposition,mutated_route,result
+normal,all primary workflows,production route authority,unchanged,unchanged,PASS
+manual_to_automated,Trading Lab,COMPLETE_MANUAL_DECISION_AID,Automated decision aid,/trading-lab,DETECTED
+gated_to_live,Refresh Data,GATED_ADMIN,Live,/refresh-data,DETECTED
+review_only_to_production,Evidence Review,REVIEW_ONLY_BY_DESIGN,Production,/evidence-integration-review,DETECTED
+parked_to_available,Future Tools,POST_V1_PARKED,Available,/future-tools,DETECTED
+wrong_route_target,Trading Lab,COMPLETE_MANUAL_DECISION_AID,Manual decision aid,/player-compare,DETECTED
+missing_primary_link,Trading Lab,COMPLETE_MANUAL_DECISION_AID,Manual decision aid,missing,DETECTED
+contradictory_disposition,Trading Lab,COMPLETE_MANUAL_DECISION_AID,Manual decision aid / Automated decision aid,/trading-lab,DETECTED
