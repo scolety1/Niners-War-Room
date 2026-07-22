@@ -1,0 +1,11 @@
+journey,start,end_state,result,evidence
+First visit,/,Start Here,PASS,real route and render harness
+Rankings review,/,240-row canonical board,PASS,exact production loader
+Player comparison,/,read-only comparison,PASS,adoption regression slice
+Trade context,/,manual decision aid,PASS,adoption regression slice
+Live draft,/,explicit local draft controls,PASS,adoption regression slice
+Mock draft,/,separate practice state,PASS,Hermetic journey contracts
+Data Health,/,truthful status review,PASS,adoption regression slice
+Refresh Data,/,gated explicit action,PASS,adoption regression slice
+Compatibility aliases,direct alias,supported destination,PASS,route suite
+All registered routes,various,60 of 60 accepted,PASS,adopted inventory plus Hermetic

@@ -1,0 +1,16 @@
+family,mutation,expected,result,durable_mutation_count
+workflow,manual to automated,fail contract,DETECTED,
+workflow,gated to live,fail contract,DETECTED,
+workflow,review-only to production,fail contract,DETECTED,
+workflow,parked to available,fail contract,DETECTED,
+workflow,wrong route target,fail contract,DETECTED,
+workflow,missing primary link,fail contract,DETECTED,
+workflow,contradictory labels,fail contract,DETECTED,
+page-open,normal render,pass with zero durable writes,PASS,0
+page-open,session-only mutation,pass with zero durable writes,PASS,0
+page-open,durable file write,fail contract,DETECTED,greater_than_0
+page-open,receipt write,fail contract,DETECTED,greater_than_0
+page-open,draft/runtime-state write,fail contract,DETECTED,greater_than_0
+page-open,refresh dispatch,fail contract,DETECTED,greater_than_0
+page-open,rename or delete,fail contract,DETECTED,greater_than_0
+page-open,wrapper-mediated write,fail contract,DETECTED,greater_than_0

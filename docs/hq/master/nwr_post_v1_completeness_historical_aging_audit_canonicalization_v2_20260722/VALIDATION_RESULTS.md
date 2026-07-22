@@ -1,0 +1,24 @@
+# Validation results
+
+- Starting remote HQ and tree: exact.
+- Adopted source chain and parents: exact.
+- Rejected review commit: excluded.
+- Workflow mutations: 7 of 7 detected.
+- Page-open mutations: 6 of 6 detected.
+- Normal Start Here durable mutation count: 0.
+- Focused harness and digest rerun: 32 passed.
+- Route, journey, Data Health, refresh, launcher slice: 265 passed.
+- Full Hermetic: 2,766 passed, exit 0.
+- LocalData: BLOCKED_MISSING_LOCAL_TEST_PACK, exit 4.
+- Python compilation: exit 0.
+- Changed-file Ruff: pass.
+- No-new-Ruff differential: 4,443 baseline and 4,443 adoption.
+- Canonical rankings: 240 rows, pinned hash and top five exact.
+- Historical metrics: reproduced from adopted tracked packet.
+- Age candidate: NO_HISTORICAL_AGE_ADJUSTMENT_CHALLENGER_ADMITTED.
+- Production ranking change: NONE.
+- Persistent/recovery byte inventories: exact and Digest V1 reproducible.
+- Primary five hashes: exact.
+- Protected/frozen changes: zero.
+- Git whitespace checks: pass.
+- Push: pending final normal non-force push after commit validation.
