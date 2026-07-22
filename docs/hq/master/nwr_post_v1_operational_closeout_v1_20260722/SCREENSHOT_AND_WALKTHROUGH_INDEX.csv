@@ -1,0 +1,17 @@
+surface,route,viewport,path,privacy_treatment,result
+Start Here,/,375x812,docs/user/screenshots/nwr_v1_20260722/start_here_compact_375x812.png,neutral full viewport,PASS
+Start Here,/,832x1000,docs/user/screenshots/nwr_v1_20260722/start_here_desktop_832x1000.png,neutral full viewport,PASS
+Dynasty Rankings,/rankings,375x812,docs/user/screenshots/nwr_v1_20260722/dynasty_rankings_compact_375x812.png,canonical public board header,PASS
+Dynasty Rankings,/rankings,832x1000,docs/user/screenshots/nwr_v1_20260722/dynasty_rankings_desktop_832x1000.png,canonical public board header,PASS
+Player Compare,/player-compare,375x380,docs/user/screenshots/nwr_v1_20260722/player_compare_compact_375x380.png,bounded before local path or selected players,PASS
+Player Compare,/player-compare,832x380,docs/user/screenshots/nwr_v1_20260722/player_compare_desktop_832x380.png,bounded before local path or selected players,PASS
+Trading Lab,/trading-lab,375x390,docs/user/screenshots/nwr_v1_20260722/trading_lab_compact_375x390.png,bounded before local path or package state,PASS
+Trading Lab,/trading-lab,832x390,docs/user/screenshots/nwr_v1_20260722/trading_lab_desktop_832x390.png,bounded before local path or package state,PASS
+Draft Cockpit,/draft-cockpit,375x420,docs/user/screenshots/nwr_v1_20260722/draft_cockpit_compact_375x420.png,bounded before private draft state,PASS
+Draft Cockpit,/draft-cockpit,832x420,docs/user/screenshots/nwr_v1_20260722/draft_cockpit_desktop_832x420.png,bounded before private draft state,PASS
+Draft Analyzer,/post-draft-mode,375x400,docs/user/screenshots/nwr_v1_20260722/draft_analyzer_compact_375x400.png,bounded before runtime recap,PASS
+Draft Analyzer,/post-draft-mode,832x400,docs/user/screenshots/nwr_v1_20260722/draft_analyzer_desktop_832x400.png,bounded before runtime recap,PASS
+Data Health,/settings-data-health,375x812,docs/user/screenshots/nwr_v1_20260722/data_health_compact_375x812.png,neutral status overview,PASS
+Data Health,/settings-data-health,832x1000,docs/user/screenshots/nwr_v1_20260722/data_health_desktop_832x1000.png,neutral status overview,PASS
+Refresh Data,/refresh-data,375x812,docs/user/screenshots/nwr_v1_20260722/refresh_data_compact_375x812.png,no credential values or provider calls,PASS
+Refresh Data,/refresh-data,832x1000,docs/user/screenshots/nwr_v1_20260722/refresh_data_desktop_832x1000.png,no credential values or provider calls,PASS

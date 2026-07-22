@@ -1,0 +1,26 @@
+# Validation results
+
+- Adoption push/readback: exact, normal non-force, 0 ahead/behind.
+- Stable checkout update: exact and clean.
+- User guides: 7 of 7 present and required topics covered.
+- Research guides: 3 of 3 present.
+- Screenshots: 16 of 16 present, exact dimensions, privacy reviewed.
+- State validation: VALID_STATE.
+- Manual backup: CREATED, two files.
+- Backup manifest hash/size mismatches: 0.
+- Restore dry-run: true, two UNCHANGED targets.
+- Retention: 5 of 5 maximum valid snapshots.
+- Synthetic destructive restore/rollback tests: 5 passed.
+- Canonical rankings: 240 rows, pinned hash and top five exact.
+- Historical reproduction: tracked metrics exact.
+- Age candidate: NO_HISTORICAL_AGE_ADJUSTMENT_CHALLENGER_ADMITTED.
+- 2026 re-entry: WAITING_FOR_ADMITTED_2026_OUTCOMES.
+- Production ranking change: NONE.
+- Hermetic: 2,766 passed, exit 0.
+- LocalData: BLOCKED_MISSING_LOCAL_TEST_PACK, exit 4.
+- Security regressions: green; no new scan.
+- Launcher: regressions green; sustained runtime and canonical Stop green.
+- Primary and persistent/recovery identities: exact.
+- Protected/frozen unauthorized changes: zero.
+- Git diff checks: pass.
+- Closeout push: normal non-force, verified by final remote readback.

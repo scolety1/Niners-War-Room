@@ -1,0 +1,4 @@
+priority,lane,why_now,entry_gate,do_not_begin_now
+1,Desktop app-browser lifecycle resilience,"Observed browser-root exit exercised fail-closed recovery","Separate authorization; reproduce without changing ownership safety",yes
+2,Historical replay and admitted 2026 outcomes,"Exact Model v4 replay unavailable and 2026 outcomes not admitted","WAITING_FOR_ADMITTED_2026_OUTCOMES trigger fully satisfied",yes
+3,LocalData pack governance and operator diagnostics,"LocalData correctly blocks when its authorized pack is absent","Owner-authorized pack and rights manifest available",yes
