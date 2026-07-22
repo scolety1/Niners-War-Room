@@ -63,12 +63,16 @@ def _assert_supported_route(
     return spec
 
 
-def test_draft_cockpit_root_is_a_supported_hidden_route_and_root_alias() -> None:
+def test_draft_cockpit_root_is_a_supported_hidden_route_separate_from_home() -> None:
     spec = _assert_supported_route(ALL_NAVIGATION_PAGES)
 
     assert not spec.visible
     assert DEFAULT_ROOT_PAGE.file_path != spec.file_path
-    assert _wrapper_owner(app_page_path(APP_DIR, DEFAULT_ROOT_PAGE)).name == OWNER_FILE
+    default_home = app_page_path(APP_DIR, DEFAULT_ROOT_PAGE).read_text(encoding="utf-8")
+    assert DEFAULT_ROOT_PAGE.title == "Niners War Room Home"
+    assert 'page_header(\n    "Niners War Room"' in default_home
+    assert "runpy.run_path" not in default_home
+    assert OWNER_FILE not in default_home
     assert DEFAULT_ROOT_PAGE.default
     assert DEFAULT_ROOT_PAGE.url_path == ""
 

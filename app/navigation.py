@@ -154,7 +154,7 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
 )
 
 DEFAULT_ROOT_PAGE = NavigationPageSpec(
-    title="Draft Cockpit Root",
+    title="Niners War Room Home",
     file_path="pages/46_draft_cockpit_default_root.py",
     url_path="",
     default=True,
