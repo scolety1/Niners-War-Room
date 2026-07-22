@@ -1,0 +1,10 @@
+journey,start,steps,end_state,result,caveat
+First visit,/,Start Here then Data Health then Rankings,Canonical board visible,PASS,None
+Rankings review,/,Open Rankings then inspect board,240 rows loaded,PASS,Dataframe cells canvas-rendered
+Player comparison,/,Open Player Compare and choose players,Read-only comparison,PASS,Requires available identities
+Trade context,/,Open Trading Lab and inspect values,Manual decision aid,PASS,No automatic offer
+Live draft,/,Open Draft Cockpit and use explicit controls,Local draft state,PASS,State-writing by design
+Mock draft,/,Open Mock Drafts and run practice,Separate mock state,PASS,Does not alter live draft
+Data health,/,Open Data Health and review statuses,Truthful review items,PASS,Non-green items are not hidden
+Compatibility URL,direct legacy alias,Open alias,Supported destination,PASS,Hidden from primary navigation
+Stop lifecycle,Desktop launcher,Start status Stop,STOPPED and port free,PASS,Recovery state handled by canonical Stop

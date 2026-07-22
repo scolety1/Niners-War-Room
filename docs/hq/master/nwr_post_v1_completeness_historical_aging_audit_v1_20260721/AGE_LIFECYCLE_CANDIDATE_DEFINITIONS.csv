@@ -1,0 +1,14 @@
+candidate,position,trigger,penalty_or_cap,coverage_policy
+NO_AGE_PYF,ALL,none,none,full baseline
+POSITION_BAND_SMALL,QB,age 34 plus,multiply 0.98,fail closed
+POSITION_BAND_SMALL,RB,age 28 plus,multiply 0.96,fail closed
+POSITION_BAND_SMALL,WR,age 30 plus,multiply 0.97,fail closed
+POSITION_BAND_SMALL,TE,age 31 plus,multiply 0.975,fail closed
+MONOTONIC_MILD_CAPPED,QB,after 33,1 percent yearly cap 0.94,fail closed
+MONOTONIC_MILD_CAPPED,RB,after 26,2 percent yearly cap 0.90,fail closed
+MONOTONIC_MILD_CAPPED,WR,after 28,1.5 percent yearly cap 0.91,fail closed
+MONOTONIC_MILD_CAPPED,TE,after 29,1.25 percent yearly cap 0.925,fail closed
+MONOTONIC_STRONG_CAPPED,QB,after 33,2 percent yearly cap 0.88,fail closed
+MONOTONIC_STRONG_CAPPED,RB,after 26,4 percent yearly cap 0.80,fail closed
+MONOTONIC_STRONG_CAPPED,WR,after 28,3 percent yearly cap 0.82,fail closed
+MONOTONIC_STRONG_CAPPED,TE,after 29,2.5 percent yearly cap 0.85,fail closed

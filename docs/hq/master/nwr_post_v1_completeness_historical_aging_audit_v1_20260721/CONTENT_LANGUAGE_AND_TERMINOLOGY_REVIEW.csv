@@ -1,0 +1,13 @@
+term_or_pattern,surface,finding,classification,action
+Draft Cockpit as root,/,Implied live workflow was app home,RELEASE_FACING_DEFECT,Replaced with Start Here
+Canonical board,/,Clearly identifies accepted rankings,GOOD,Keep
+Read-only,/,Clarifies no board mutation,GOOD,Keep
+Manual decision aid,/,Avoids automatic-action implication,GOOD,Keep
+Live local state,/,Names persistence boundary,GOOD,Keep
+Safe V0,Development Lab,Internal version phrase feels unfinished,BACKLOG,Later copy-only lane
+placeholder,Upcoming Draft Prep,Names manual placeholder field,ACCEPTED_CAVEAT,Clarify later
+frozen baseline,Rankings and draft surfaces,Accurate but internal,ACCEPTED_CAVEAT,Simplify later
+verified PDF overlay,Draft Cockpit,Source-specific internal language,ACCEPTED_CAVEAT,Move behind advanced later
+Candidate Rank,Review surfaces,Authority can be misunderstood,CONTROLLED,Disclosures retained
+Not enough information,Multiple surfaces,Truthful unavailable state,GOOD,Keep
+manual-only,Trading and draft prep,Safety boundary repeated,GOOD_WITH_POLISH_BACKLOG,Consolidate later

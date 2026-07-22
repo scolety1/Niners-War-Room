@@ -1,0 +1,6 @@
+path,commit_group,purpose
+app/navigation.py,website repair,rename default root title
+app/pages/46_draft_cockpit_default_root.py,website repair,read-only Start Here page
+tests/test_draft_cockpit_root_route.py,website repair,preserve alias and separate home
+tests/test_default_home_page.py,website repair,home content and no-mutation contract
+docs/hq/master/nwr_post_v1_completeness_historical_aging_audit_v1_20260721/,audit packet,32 required evidence files

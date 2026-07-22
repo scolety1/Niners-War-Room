@@ -1,0 +1,16 @@
+position,cohort,minimum_age,maximum_age,use
+QB,under 30,,29.999,reference
+QB,30 to 33,30,33.999,descriptive
+QB,34 plus,34,,review-only older band
+RB,under 24,,23.999,reference
+RB,24 to 25,24,25.999,descriptive
+RB,26 to 27,26,27.999,descriptive
+RB,28 plus,28,,review-only older band
+WR,under 24,,23.999,reference
+WR,24 to 26,24,26.999,descriptive
+WR,27 to 29,27,29.999,descriptive
+WR,30 plus,30,,review-only older band
+TE,under 25,,24.999,reference
+TE,25 to 27,25,27.999,descriptive
+TE,28 to 30,28,30.999,descriptive
+TE,31 plus,31,,review-only older band

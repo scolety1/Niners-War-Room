@@ -1,0 +1,11 @@
+priority,surface,item,classification,reason,next_lane
+P2,Development Lab,Replace Safe V0 phrasing,COPY_POLISH,Feels internal but truthful,copy-only
+P2,Upcoming Draft Prep,Clarify placeholder field language,COPY_POLISH,Could imply unfinished work,copy-only
+P2,Draft Cockpit,Move source-specific jargon behind advanced help,UX_POLISH,Dense first view,non-semantic UI
+P2,Trading Lab,Consolidate duplicate manual-only disclosure,UX_POLISH,Repeated warning,copy-only
+P3,All pages,Consider build/version footer,EVALUATE,Useful support context,separate design review
+P3,All pages,Consider known-limitations link,EVALUATE,Could centralize caveats,separate design review
+P1,Historical Model v4,Acquire exact checkpoint receipts,BLOCKED_RESEARCH,Required for exact replay,data authority
+P2,Historical aging,Improve age coverage without favorable row loss,RESEARCH,Three rows missing,review-only
+P2,Historical aging,Study lifecycle interaction by position,RESEARCH,Age alone is unsafe,review-only
+P3,Hidden debug routes,Retirement inventory,POST_V1_PARKED,Live but not primary,separate deprecation review

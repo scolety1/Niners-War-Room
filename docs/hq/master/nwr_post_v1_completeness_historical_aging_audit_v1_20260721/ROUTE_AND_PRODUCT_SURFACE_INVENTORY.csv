@@ -1,0 +1,61 @@
+route_number,url_path,title,visibility,classification,render_result
+1,/,Niners War Room Home,default,COMPLETE_REPAIRED,PASS
+2,draft-cockpit,Draft Cockpit,visible,COMPLETE_MANUAL_STATE,PASS
+3,mock-draft,Mock Drafts,visible,COMPLETE_SEPARATE_MOCK_STATE,PASS
+4,rankings,Dynasty Rankings,visible,COMPLETE_CANONICAL_DATA,PASS
+5,player-compare,Player Compare,visible,COMPLETE_READ_ONLY,PASS
+6,trading-lab,Trading Lab,visible,COMPLETE_MANUAL_DECISION_AID,PASS
+7,post-draft-mode,Draft Analyzer,visible,COMPLETE_WITH_ACCEPTED_CAVEAT,PASS
+8,development-lab,Lab Home,visible,REVIEW_ONLY_BY_DESIGN,PASS
+9,roster-weakness-tracker,Roster Weakness Tracker,visible,REVIEW_ONLY_BY_DESIGN,PASS
+10,future-pick-planning,Future Pick Planning,visible,MANUAL_BY_DESIGN,PASS
+11,upcoming-draft-prep,Upcoming Draft Prep,visible,COMPLETE_WITH_ACCEPTED_CAVEAT,PASS
+12,keeper-deadline-prep,Keeper Deadline Prep,visible,MANUAL_BY_DESIGN,PASS
+13,drop-deadline-prep,Drop Deadline Prep,visible,MANUAL_BY_DESIGN,PASS
+14,trade-deadline-prep,Trade Deadline Prep,visible,MANUAL_BY_DESIGN,PASS
+15,future-tools,Future Tools,visible,POST_V1_PARKED,PASS
+16,refresh-data,Refresh Data,visible,GATED_ADMIN,PASS
+17,evidence-integration-review,Evidence Review,visible,REVIEW_ONLY_BY_DESIGN,PASS
+18,evidence-review-hub,Evidence Review Hub,visible,REVIEW_ONLY_BY_DESIGN,PASS
+19,settings-data-health,Settings / Data Health,visible,COMPLETE_TRUTHFUL_STATUS,PASS
+20,draft-cockpit-root,Draft Cockpit Root,hidden,COMPATIBILITY_LIVE,PASS
+21,drafting-mode,Drafting Mode Compatibility,hidden,COMPATIBILITY_LIVE,PASS
+22,live-draft-room,Draft Cockpit Legacy URL Alias,hidden,COMPATIBILITY_LIVE,PASS
+23,drafting-mode-root,Drafting Mode Root,hidden,COMPATIBILITY_LIVE,PASS
+24,home,Dynasty Rankings Home,hidden,COMPATIBILITY_LIVE,PASS
+25,draft-day-home,Dynasty Rankings URL Alias,hidden,COMPATIBILITY_LIVE,PASS
+26,cheat-sheets,Cheat Sheets,hidden,COMPLETE_WITH_ACCEPTED_CAVEAT,PASS
+27,draft-room,Draft Prep,hidden,COMPLETE_WITH_ACCEPTED_CAVEAT,PASS
+28,draft-prep,Draft Prep Compatibility,hidden,COMPATIBILITY_LIVE,PASS
+29,outcome-columns,Outcome Diagnostics,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+30,decision-board,Decision Board,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+31,nfl-usage-evidence-review,NFL Usage Evidence Review,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+32,unified-universe-review,Unified Universe Review,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+33,settings,Settings Data Health Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+34,post-draft,Post-Draft Mode Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+35,draft-analyzer,Draft Analyzer URL Alias,hidden,COMPATIBILITY_LIVE,PASS
+36,legacy-rankings,Legacy Dynasty Rankings,hidden,POST_V1_PARKED,PASS
+37,legacy-draft-room,Legacy Draft Prep,hidden,POST_V1_PARKED,PASS
+38,legacy-live-draft-room,Legacy Draft Cockpit,hidden,POST_V1_PARKED,PASS
+39,legacy-decision-board,Legacy Decision Board,hidden,POST_V1_PARKED,PASS
+40,legacy-external-asset-reviews,Legacy External Asset Reviews,hidden,POST_V1_PARKED,PASS
+41,legacy-settings,Legacy Settings,hidden,POST_V1_PARKED,PASS
+42,review-workflow,Review Workflow,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+43,command-center,Command Center Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+44,trade-lab,Trade Lab Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+45,model-tuning,Historical Replay Advanced,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+46,import-refresh,Import & Refresh,hidden,GATED_ADMIN,PASS
+47,war-board,War Board,hidden,POST_V1_PARKED,PASS
+48,my-team,My Team,hidden,POST_V1_PARKED,PASS
+49,league-targets,League Targets,hidden,POST_V1_PARKED,PASS
+50,player-board,Player Board Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+51,draft-board,Draft Board Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+52,june-15-review,June 15 Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+53,model-lab,Model Lab,hidden,REVIEW_ONLY_BY_DESIGN,PASS
+54,freeze,Freeze,hidden,GATED_ADMIN,PASS
+55,model-lab-sources,Model Lab Sources,hidden,GATED_ADMIN,PASS
+56,source_overrides,Sources Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+57,rookie-model-debug,Rookie Model Debug,hidden,POST_V1_PARKED,PASS
+58,rookie_model,Rookie Model Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS
+59,historical-replay-debug,Historical Replay Debug,hidden,POST_V1_PARKED,PASS
+60,historical_replay,Historical Replay Legacy Alias,hidden,COMPATIBILITY_LIVE,PASS

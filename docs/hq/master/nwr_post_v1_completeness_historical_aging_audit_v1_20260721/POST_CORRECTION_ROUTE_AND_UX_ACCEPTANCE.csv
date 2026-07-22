@@ -1,0 +1,11 @@
+scope,width,height,h1,overflow,page_not_found,exception,result
+Root,320,700,Niners War Room,no,no,no,PASS
+Root,375,812,Niners War Room,no,no,no,PASS
+Root,768,1024,Niners War Room,no,no,no,PASS
+Root,1440,1000,Niners War Room,no,no,no,PASS
+Rankings,320,700,Dynasty Rankings,no,no,no,PASS_240_ROWS
+Rankings,1440,1000,Dynasty Rankings,no,no,no,PASS_240_ROWS
+Visible routes,all four,all expected,no,no,no,PASS_76_CHECKS
+Hidden and alias routes,1440,registered destinations,no,no,no,PASS_41_CHECKS
+All routes,combined,60 routes,expected,no,no,no,PASS
+Accessibility,root,all four,one H1 and named primary links,no,no,no,PASS

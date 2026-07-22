@@ -1,0 +1,11 @@
+surface,authority,identity_key,ranking_mutation,consistency_result
+Dynasty Rankings,accepted full player board,canonical player_id,none,PASS
+Player Compare,accepted board and source-safe context,canonical player_id,none,PASS
+Trading Lab,accepted manual value context,canonical player_id,none,PASS
+Draft Cockpit,accepted scouting board plus local session identity,canonical player_id,none,PASS
+Mock Drafts,accepted scouting board plus separate mock identity,canonical player_id,none,PASS
+Legacy rankings alias,same ranking owner,canonical player_id,none,PASS
+Player Board alias,same ranking owner,canonical player_id,none,PASS
+Data Health,committed and persistent status receipts,path and artifact identity,none,PASS
+Historical audit,tracked OOF and exact sidecar joins,exact player_id,none,PASS_REVIEW_ONLY
+Current older-player review,normalized accepted board,canonical player_id,none,PASS_REVIEW_ONLY

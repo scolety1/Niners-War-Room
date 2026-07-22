@@ -1,0 +1,11 @@
+artifact_or_family,years_or_rows,identity,authority,allowed_use,blocked_use
+Production proxy backtest,2013-2025,tracked exact IDs,PARTIAL_LOW_MEDIUM,diagnostic baseline,exact Model v4 claim
+OOF predictions,4731 rows 2015-2025,exact player_id,REVIEW_ONLY,walk-forward comparison,production promotion
+Age lifecycle sidecar,5518 rows 2013-2025,exact player_id,REVIEW_ONLY,age cohorts and guardrails,direct scoring
+GAUNTLET_081,4727 valid rows,exact player_id,LOCKED_LEGACY_REFERENCE,context comparator,new promotion
+PYF baseline,4731 rows,exact player_id,CONTROLLING_BASELINE,fixed candidate comparison,production score
+Ridge challenger,4731 rows,exact player_id,REJECTED_REVIEW_ONLY,failed-candidate context,production promotion
+Current 2026 board,240 rows,canonical player_id,PRODUCTION_ACCEPTED,unchanged review list,historical target
+Current market or ADP,not loaded,not applicable,BLOCKED,none,historical evaluation
+Provider payloads,not loaded,not applicable,BLOCKED,none,audit analysis
+Exact Model v4 receipts,incomplete,partial,BLOCKED_EXACT_REPLAY,gap documentation,production replay claim

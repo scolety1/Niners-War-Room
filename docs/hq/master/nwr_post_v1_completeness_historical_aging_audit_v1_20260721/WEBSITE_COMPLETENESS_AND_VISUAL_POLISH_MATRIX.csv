@@ -1,0 +1,11 @@
+surface,viewport_or_scope,before_finding,after_status,accepted_caveat
+Root,all four,State-writing Draft Cockpit was first-run entry,REPAIRED,None
+Dynasty Rankings,320 and 1440,Initial short probe preceded H1 render,PASS after settle,Streamlit async load
+Draft Cockpit,all four,Dense live-state language,PASS,Manual live state by design
+Mock Drafts,all four,Repeated state separation warnings,PASS,Safety disclosures
+Trading Lab,all four,Manual-only disclosure repeated,PASS,No automatic trade submission
+Development Lab,all four,Safe V0 wording feels internal,ACCEPTED_BACKLOG,Review-only
+Upcoming Draft Prep,all four,Placeholder names a manual field,ACCEPTED_BACKLOG,No false success
+Data Health,all four,16 review items visible,PASS,Truthful non-green state
+Hidden compatibility routes,41 routes,Some need longer initial render,PASS via route suite,Not primary navigation
+All registered routes,60 routes,None broken,PASS,No Page Not Found or root overflow
