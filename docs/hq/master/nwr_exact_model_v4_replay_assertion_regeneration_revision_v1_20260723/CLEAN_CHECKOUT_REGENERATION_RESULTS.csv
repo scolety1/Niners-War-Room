@@ -1,0 +1,7 @@
+scenario,left,right,governed_files,mismatches,result
+same_checkout_repeat,empty temp A,empty temp B,28,0,PASS
+independent_clean_checkouts,clean checkout A,clean checkout B,28,0,PASS
+input_order,original,reverse and fixed-seed random,28,0,PASS
+committed_packet,clean regeneration,committed primary packet,28,0,PASS
+mutable_git_state,before metadata probe,after metadata probe,28,0,PASS
+environment_isolation,UTC temp root,America/Denver independent temp root,28,0,PASS

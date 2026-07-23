@@ -1,0 +1,34 @@
+category,mutation,result,production_boundary
+TEMPORAL,future production,DETECTED,validate_temporal_records
+TEMPORAL,future games,DETECTED,validate_temporal_records
+TEMPORAL,current-only ADP,DETECTED,validate_temporal_records
+TEMPORAL,current-board rank,DETECTED,validate_temporal_records
+TEMPORAL,target-season score,DETECTED,validate_temporal_records
+TEMPORAL,source season missing,DETECTED,validate_temporal_records
+TEMPORAL,availability classification missing,DETECTED,validate_temporal_records
+TEMPORAL,contradictory seasons,DETECTED,validate_temporal_records
+EXACTNESS,approximate label promoted exact,DETECTED,derive_full_row_exactness
+EXACTNESS,near-equivalent label promoted exact,DETECTED,derive_full_row_exactness
+EXACTNESS,mandatory component removed,DETECTED,validate_exactness_proofs
+EXACTNESS,provenance removed,DETECTED,validate_exactness_proofs
+EXACTNESS,historical availability removed,DETECTED,validate_exactness_proofs
+EXACTNESS,unsupported classification,DETECTED,validate_exactness_proofs
+IDENTITY,full-name join,DETECTED,exact_player_id_join
+IDENTITY,normalized-name join,DETECTED,exact_player_id_join
+IDENTITY,partial multi-stage name join,DETECTED,exact_player_id_join
+IDENTITY,duplicate player ID,DETECTED,validate_identity_frame
+IDENTITY,blank player ID,DETECTED,validate_identity_frame
+IDENTITY,IDs swapped between same-position rows,DETECTED,exact_player_id_join
+IDENTITY,same display name with changed ID,DETECTED,exact_player_id_join
+FROZEN,score changed,DETECTED,validate_frozen_comparator
+FROZEN,rank changed,DETECTED,validate_frozen_comparator
+FROZEN,player ID changed,DETECTED,validate_frozen_comparator
+FROZEN,row added,DETECTED,validate_frozen_comparator
+FROZEN,row removed,DETECTED,validate_frozen_comparator
+FROZEN,rows reordered,DETECTED,validate_frozen_comparator
+FROZEN,source/as-of changed,DETECTED,validate_frozen_comparator
+ORDERING,rows reversed,DETECTED,canonicalize_frame
+ORDERING,fixed-seed random order,DETECTED,canonicalize_frame
+ORDERING,duplicate primary sort values,DETECTED,add_ranks
+ORDERING,null sort fields,DETECTED,add_ranks
+ORDERING,non-ASCII display metadata,DETECTED,add_ranks

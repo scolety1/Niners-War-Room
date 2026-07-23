@@ -1,0 +1,9 @@
+mutation_id,fixture,mutation,production_function,actual_before,root_cause,required_invariant
+M01,FORMULA_DATA_MART row 0,pyf_prior_nwr_points from target-season label,exactness_mask,SURVIVED,no field-level temporal authority,target/future production fails
+M02,FORMULA_DATA_MART row 0,prior_games from target-season games,exactness_mask,SURVIVED,non-null values trusted without temporal proof,future games fail
+M03,FORMULA_DATA_MART row 0,current-only ADP added,exactness_mask,SURVIVED,current-only fields ignored,current ADP fails
+M04,FORMULA_DATA_MART row 0,current-board rank injected,baseline_rows,SURVIVED,no feature-family denylist,current-board inputs fail
+M05,FORMULA_DATA_MART row 0,blocked component relabeled exact,exactness_mask,SURVIVED,exactness hard-coded instead of proof-derived,label-only promotion fails
+M06,FROZEN_2026 row 0,one governed score changed,load_sources,SURVIVED,existence-only frozen check,governed content mismatch fails
+M07,AGE_SIDECAR paired rows,name-preserving player IDs swapped,age_join and exactness_mask,SURVIVED,joined identity not revalidated,non-ID authority fails
+M08,FORMULA_DATA_MART and AGE_SIDECAR,reverse input rows,exactness_mask,SURVIVED,output preserved uncontrolled iteration order,permutations are byte-identical

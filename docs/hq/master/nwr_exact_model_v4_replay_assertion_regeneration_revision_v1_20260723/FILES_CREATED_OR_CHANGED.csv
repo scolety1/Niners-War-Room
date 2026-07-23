@@ -1,0 +1,6 @@
+path,change,purpose
+.gitattributes,MODIFIED,narrow LF authority for exact-replay artifacts
+scripts/build_exact_model_v4_replay_accuracy_audit_v1.py,MODIFIED,production research assertions and deterministic builder
+tests/test_exact_model_v4_replay_accuracy_audit_v1.py,MODIFIED,mutation and regeneration tests
+docs/hq/master/nwr_exact_model_v4_replay_accuracy_audit_v1_20260723/,REGENERATED,canonical source audit packet
+docs/hq/master/nwr_exact_model_v4_replay_assertion_regeneration_revision_v1_20260723/,CREATED,targeted assertion and regeneration revision packet

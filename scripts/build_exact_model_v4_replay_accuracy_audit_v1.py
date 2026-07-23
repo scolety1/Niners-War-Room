@@ -12,7 +12,6 @@ import csv
 import hashlib
 import importlib.util
 import json
-import platform
 import subprocess
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -22,54 +21,89 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[1]
-PACKET = ROOT / "docs" / "hq" / "master" / "nwr_exact_model_v4_replay_accuracy_audit_v1_20260723"
-PARTIAL_PANEL = (
-    ROOT / "docs/hq/model/historical_model_v4_replay_substrate_v1_20260708/"
+DEFAULT_ROOT = Path(__file__).resolve().parents[1]
+CANONICAL_PACKET_REL = Path(
+    "docs/hq/master/nwr_exact_model_v4_replay_accuracy_audit_v1_20260723"
+)
+PARTIAL_PANEL_REL = Path(
+    "docs/hq/model/historical_model_v4_replay_substrate_v1_20260708/"
     "MODEL_V4_PARTIAL_REPLAY_INPUT_PANEL_REVIEW_ONLY.csv"
 )
-FORMULA_MART = (
-    ROOT / "docs/hq/data_hygiene/formula_data_mart_feature_availability_audit_v1_20260709/"
+FORMULA_MART_REL = Path(
+    "docs/hq/data_hygiene/formula_data_mart_feature_availability_audit_v1_20260709/"
     "FORMULA_DATA_MART_REVIEW_ONLY.csv"
 )
-AGE_SIDECAR = (
-    ROOT / "docs/hq/data_hygiene/age_lifecycle_sidecar_freeze_validation_v1_20260709/"
+AGE_SIDECAR_REL = Path(
+    "docs/hq/data_hygiene/age_lifecycle_sidecar_freeze_validation_v1_20260709/"
     "MODEL_V4_AGE_LIFECYCLE_SIDECAR_REVIEW_ONLY.csv"
 )
-OOF = (
-    ROOT / "docs/hq/model/"
+OOF_REL = Path(
+    "docs/hq/model/"
     "formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710/"
     "OUT_OF_FOLD_PREDICTIONS.csv"
 )
-CURRENT_BOARD = (
-    ROOT / "docs/hq/model/current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708/"
+CURRENT_BOARD_REL = Path(
+    "docs/hq/model/current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708/"
     "rebuilt_full_player_board_value_review_rows.csv"
 )
-PROXY_BUILDER = (
-    ROOT / "docs/hq/model/production_rankings_backtest_v1_20260708/"
+PROXY_BUILDER_REL = Path(
+    "docs/hq/model/production_rankings_backtest_v1_20260708/"
     "build_production_rankings_backtest_v1.py"
 )
-CURRENT_FORMULA_CONTRACT = (
-    ROOT / "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/"
+CURRENT_FORMULA_CONTRACT_REL = Path(
+    "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/"
     "MODEL_V4_ACTIVE_FORMULA_CONTRACT.md"
 )
-CURRENT_FORMULA_REGISTRY = (
-    ROOT / "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/"
+CURRENT_FORMULA_REGISTRY_REL = Path(
+    "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/"
     "MODEL_V4_COMPONENT_REGISTRY.csv"
 )
-FROZEN_2026 = (
-    ROOT / "docs/hq/model/"
+FROZEN_2026_REL = Path(
+    "docs/hq/model/"
     "formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710/"
     "PROSPECTIVE_2026_BASELINE_FREEZE.csv"
 )
 
+ROOT = DEFAULT_ROOT
+PACKET = ROOT / CANONICAL_PACKET_REL
+PARTIAL_PANEL = ROOT / PARTIAL_PANEL_REL
+FORMULA_MART = ROOT / FORMULA_MART_REL
+AGE_SIDECAR = ROOT / AGE_SIDECAR_REL
+OOF = ROOT / OOF_REL
+CURRENT_BOARD = ROOT / CURRENT_BOARD_REL
+PROXY_BUILDER = ROOT / PROXY_BUILDER_REL
+CURRENT_FORMULA_CONTRACT = ROOT / CURRENT_FORMULA_CONTRACT_REL
+CURRENT_FORMULA_REGISTRY = ROOT / CURRENT_FORMULA_REGISTRY_REL
+FROZEN_2026 = ROOT / FROZEN_2026_REL
+
 START_HQ = "ce2c40d9cf462e4d4985a37020ae8c30afe72def"
 START_TREE = "b4647a5cd129e36113628fc88830cca9fff479b2"
+SOURCE_COMMIT = "0929ce6ec058a698efeee10fe5770f56047bab21"
 BOARD_HASH = "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
+FROZEN_2026_HASH = "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
+TRACKED_INPUT_HASHES = {
+    PARTIAL_PANEL_REL: "22c7aa9ecb8567d0ff795809d075f8f8ac91a3dfe56e7a31f8a328ba99c9b99f",
+    FORMULA_MART_REL: "4c63a01cc4d56d0496d56ff13d4dabb4faa0b7a24d8f7510a368ad48d9714151",
+    AGE_SIDECAR_REL: "ea5ec2455c89031b8deb6077847b7c10e4da4a09f604bf1dae0e6250983f883b",
+    OOF_REL: "afa3a87bee6230f2e455c0c01f542b12d17bb737ddb76f1f5af45b607833d390",
+    CURRENT_BOARD_REL: BOARD_HASH,
+    PROXY_BUILDER_REL: "c9676d4ca145b50492066bfef89c3b5b708600fd61adae82349eedf3ea611590",
+    CURRENT_FORMULA_CONTRACT_REL: (
+        "be14b8eed1d00ad25418cc3c76b07c2c95e1a44d9bbb23d3ce5284ec5b825c9d"
+    ),
+    CURRENT_FORMULA_REGISTRY_REL: (
+        "daea46d9295647624b701291838f27a765919cfb7ecf4f82572de345d0ec2c3f"
+    ),
+    FROZEN_2026_REL: FROZEN_2026_HASH,
+}
 SEED = 20260723
 POSITIONS = ("QB", "RB", "WR", "TE")
+POSITION_ORDER = {position: index for index, position in enumerate(POSITIONS)}
 STARTABLE = {"QB": 12, "RB": 24, "WR": 36, "TE": 12}
 EXACT_REQUIRED = (
+    "identity",
+    "outcome",
+    "lagged_production",
     "position_score",
     "lifecycle",
     "confidence",
@@ -77,6 +111,89 @@ EXACT_REQUIRED = (
     "checkpoint",
     "final_score",
     "rank",
+)
+EXACT_CLASSIFICATIONS = {
+    "EXACT_PRIMARY_EVIDENCE",
+    "EXACT_DETERMINISTIC_REGENERATION",
+}
+ALLOWED_CLASSIFICATIONS = EXACT_CLASSIFICATIONS | {
+    "NEAR_EQUIVALENT",
+    "PARTIAL_REPLAY",
+    "APPROXIMATE",
+    "REVIEW_ONLY",
+    "BLOCKED_MISSING_RECEIPT",
+    "BLOCKED_SOURCE_NOT_ADMITTED",
+    "DEPRECATED",
+    "FROZEN_COMPARATOR",
+}
+HISTORICAL_ADMISSIBLE_CLASSIFICATIONS = EXACT_CLASSIFICATIONS | {
+    "NEAR_EQUIVALENT",
+    "PARTIAL_REPLAY",
+    "REVIEW_ONLY",
+}
+EXACT_JOIN_KEYS = ("player_id", "season", "position")
+FEATURE_COLUMNS = (
+    "pyf_prior_nwr_points",
+    "pyf_prior_nwr_ppg",
+    "prior_2yr_weighted_nwr_points",
+    "prior_3yr_weighted_nwr_points",
+    "prior_games",
+    "prior_targets",
+    "prior_carries",
+    "prior_receptions",
+    "prior_rushing_yards",
+    "prior_receiving_yards",
+    "prior_receiving_air_yards",
+    "prior_receiving_yards_after_catch",
+    "prior_rushing_first_downs",
+    "prior_receiving_first_downs",
+    "prior_passing_attempts",
+    "prior_passing_completions",
+    "prior_passing_yards",
+    "prior_passing_td",
+    "prior_interceptions",
+    "prior_passing_first_downs",
+    "prior_offensive_snaps",
+    "prior_offense_pct",
+    "prior_touches",
+    "prior_opportunities",
+)
+FROZEN_2026_COLUMNS = (
+    "freeze_timestamp",
+    "target_season",
+    "feature_season",
+    "candidate_name",
+    "candidate_role",
+    "player_id",
+    "identity_namespace",
+    "canonical_player_key",
+    "player_name",
+    "position",
+    "source_population",
+    "eligible",
+    "score_valid",
+    "exclusion_reason",
+    "raw_score",
+    "within_position_rank",
+    "overall_research_rank",
+    "model_or_formula_version",
+    "coefficient_hash",
+    "input_source_dates",
+    "input_source_hashes",
+    "formula_mart_hash",
+    "sidecar_hashes",
+    "age",
+    "birth_date",
+    "draft_year",
+    "lifecycle_bucket",
+    "history_years_available",
+    "raw_feature_values_json",
+    "imputed_feature_values_json",
+    "missingness_json",
+    "source_status",
+    "review_only",
+    "production_comparator_caveat",
+    "prediction_record_hash",
 )
 
 
@@ -93,12 +210,48 @@ class Metric:
     score_mae: float | None
 
 
+@dataclass(frozen=True)
+class EvidenceProof:
+    component: str
+    classification: str
+    provenance: str
+    schema_proof: str
+    identity_proof: str
+    historical_availability_proof: str
+    mandatory: bool = True
+
+
+def configure_paths(repo_root: Path, output_dir: Path | None = None) -> None:
+    global ROOT, PACKET, PARTIAL_PANEL, FORMULA_MART, AGE_SIDECAR, OOF
+    global CURRENT_BOARD, PROXY_BUILDER, CURRENT_FORMULA_CONTRACT
+    global CURRENT_FORMULA_REGISTRY, FROZEN_2026
+    ROOT = repo_root.resolve()
+    PACKET = output_dir.resolve() if output_dir else ROOT / CANONICAL_PACKET_REL
+    PARTIAL_PANEL = ROOT / PARTIAL_PANEL_REL
+    FORMULA_MART = ROOT / FORMULA_MART_REL
+    AGE_SIDECAR = ROOT / AGE_SIDECAR_REL
+    OOF = ROOT / OOF_REL
+    CURRENT_BOARD = ROOT / CURRENT_BOARD_REL
+    PROXY_BUILDER = ROOT / PROXY_BUILDER_REL
+    CURRENT_FORMULA_CONTRACT = ROOT / CURRENT_FORMULA_CONTRACT_REL
+    CURRENT_FORMULA_REGISTRY = ROOT / CURRENT_FORMULA_REGISTRY_REL
+    FROZEN_2026 = ROOT / FROZEN_2026_REL
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(ROOT).as_posix()
+    except ValueError:
+        try:
+            packet_relative = resolved.relative_to(PACKET)
+        except ValueError as exc:
+            raise RuntimeError(f"path is outside governed roots: {resolved}") from exc
+        return (CANONICAL_PACKET_REL / packet_relative).as_posix()
 
 
 def git(*args: str) -> str:
@@ -115,15 +268,50 @@ def git(*args: str) -> str:
 
 
 def source_commit(path: Path) -> str:
-    return git("log", "-1", "--format=%H", "--", rel(path)) or "NOT_FOUND"
+    return git("log", "-1", "--format=%H", SOURCE_COMMIT, "--", rel(path)) or "NOT_FOUND"
+
+
+def write_canonical_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    path.write_bytes(normalized.encode("utf-8"))
+
+
+def stable_value_key(field: str, value: Any) -> tuple[int, Any]:
+    if value is None:
+        return (4, "")
+    try:
+        if bool(pd.isna(value)):
+            return (4, "")
+    except (TypeError, ValueError):
+        pass
+    text_value = str(value)
+    if text_value == "OVERALL":
+        return (0, -1)
+    if text_value in POSITION_ORDER:
+        return (0, POSITION_ORDER[text_value])
+    if ":" in text_value and text_value.rsplit(":", 1)[-1] in POSITION_ORDER:
+        prefix, position = text_value.rsplit(":", 1)
+        return (0, (prefix, POSITION_ORDER[position]))
+    if text_value.startswith("WITHOUT_") and text_value.removeprefix("WITHOUT_") in POSITION_ORDER:
+        return (0, POSITION_ORDER[text_value.removeprefix("WITHOUT_")])
+    if isinstance(value, (bool, np.bool_)):
+        return (1, int(value))
+    if isinstance(value, (int, float, np.integer, np.floating)):
+        return (1, float(value))
+    return (2, str(value))
 
 
 def write_csv(path: Path, rows: Iterable[dict[str, Any]], fields: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    materialized = list(rows)
+    materialized.sort(
+        key=lambda row: tuple(stable_value_key(field, row.get(field)) for field in fields)
+    )
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
-        for row in rows:
+        for row in materialized:
             writer.writerow({field: clean(row.get(field, "")) for field in fields})
 
 
@@ -140,10 +328,308 @@ def clean(value: Any) -> Any:
 
 
 def write_md(name: str, body: str) -> None:
-    (PACKET / name).write_text(body.rstrip() + "\n", encoding="utf-8")
+    write_canonical_text(PACKET / name, body.rstrip() + "\n")
 
 
-def load_sources() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def canonicalize_frame(frame: pd.DataFrame, keys: tuple[str, ...]) -> pd.DataFrame:
+    missing = [key for key in keys if key not in frame.columns]
+    if missing:
+        raise RuntimeError(f"canonical sort keys missing: {missing}")
+    output = frame.copy()
+    helper_columns: list[str] = []
+    for index, key in enumerate(keys):
+        helper = f"__canonical_sort_{index}"
+        helper_columns.append(helper)
+        if key == "position":
+            output[helper] = output[key].map(POSITION_ORDER).fillna(len(POSITION_ORDER))
+        elif pd.api.types.is_numeric_dtype(output[key]):
+            output[helper] = pd.to_numeric(output[key], errors="coerce").fillna(np.inf)
+        else:
+            output[helper] = output[key].astype("string").fillna("\uffff")
+    output = output.sort_values(helper_columns, kind="stable", na_position="last")
+    return output.drop(columns=helper_columns).reset_index(drop=True)
+
+
+def perturb_frame(frame: pd.DataFrame, mode: str, seed: int) -> pd.DataFrame:
+    if mode == "original":
+        return frame.copy()
+    if mode == "reverse":
+        return frame.iloc[::-1].reset_index(drop=True)
+    if mode == "random":
+        return frame.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+    raise RuntimeError(f"unsupported input-order mode: {mode}")
+
+
+def validate_tracked_input_hashes() -> None:
+    for relative, expected in TRACKED_INPUT_HASHES.items():
+        path = ROOT / relative
+        if not path.is_file():
+            raise RuntimeError(f"required tracked input missing: {relative.as_posix()}")
+        actual = sha256(path)
+        if actual != expected:
+            raise RuntimeError(
+                f"tracked input hash changed: {relative.as_posix()} "
+                f"expected={expected} actual={actual}"
+            )
+
+
+def historical_feature_records(
+    mart: pd.DataFrame,
+    *,
+    feature_columns: tuple[str, ...] = FEATURE_COLUMNS,
+) -> pd.DataFrame:
+    missing = [
+        column
+        for column in ("player_id", "feature_season", "season", *feature_columns)
+        if column not in mart.columns
+    ]
+    if missing:
+        raise RuntimeError(f"historical feature columns missing: {missing}")
+    records: list[dict[str, Any]] = []
+    for row in mart.itertuples(index=False):
+        input_season = int(row.feature_season)
+        target_season = int(row.season)
+        for field_name in feature_columns:
+            records.append(
+                {
+                    "player_id": row.player_id,
+                    "input_season": input_season,
+                    "target_season": target_season,
+                    "as_of_date": f"{target_season}-02-15",
+                    "feature_family": "LAGGED_PRODUCTION",
+                    "source_authority": rel(FORMULA_MART),
+                    "source_season": input_season,
+                    "availability_classification": "EXACT_DETERMINISTIC_REGENERATION",
+                    "field_name": field_name,
+                    "value": getattr(row, field_name),
+                }
+            )
+    return pd.DataFrame.from_records(records)
+
+
+def validate_temporal_records(records: pd.DataFrame) -> None:
+    required = (
+        "player_id",
+        "input_season",
+        "target_season",
+        "as_of_date",
+        "feature_family",
+        "source_authority",
+        "source_season",
+        "availability_classification",
+        "field_name",
+    )
+    missing = [column for column in required if column not in records.columns]
+    if missing:
+        raise RuntimeError(f"temporal metadata missing: {missing}")
+    if records.empty:
+        raise RuntimeError("temporal record set is empty")
+    for column in (
+        "player_id",
+        "as_of_date",
+        "feature_family",
+        "source_authority",
+        "availability_classification",
+        "field_name",
+    ):
+        values = records[column].astype("string")
+        if values.isna().any() or values.str.strip().eq("").any():
+            raise RuntimeError(f"temporal metadata blank: {column}")
+    input_season = pd.to_numeric(records["input_season"], errors="coerce")
+    target_season = pd.to_numeric(records["target_season"], errors="coerce")
+    source_season = pd.to_numeric(records["source_season"], errors="coerce")
+    if input_season.isna().any() or target_season.isna().any() or source_season.isna().any():
+        raise RuntimeError("season metadata must be numeric and complete")
+    if not target_season.eq(input_season + 1).all():
+        raise RuntimeError("contradictory input/target season metadata")
+    if source_season.gt(input_season).any():
+        raise RuntimeError("future or target-season source is inadmissible")
+    as_of = pd.to_datetime(records["as_of_date"], errors="coerce")
+    target_boundary = pd.to_datetime(target_season.astype(int).astype(str) + "-09-01")
+    if as_of.isna().any() or as_of.gt(target_boundary).any():
+        raise RuntimeError("as-of boundary is absent or later than the target decision boundary")
+    classifications = set(records["availability_classification"].astype(str))
+    unsupported = classifications - ALLOWED_CLASSIFICATIONS
+    if unsupported:
+        raise RuntimeError(f"unsupported availability classification: {sorted(unsupported)}")
+    inadmissible = classifications - HISTORICAL_ADMISSIBLE_CLASSIFICATIONS
+    if inadmissible:
+        raise RuntimeError(f"historically inadmissible classification: {sorted(inadmissible)}")
+    denied_fields = records["field_name"].astype(str).str.lower().str.contains(
+        r"(?:^|_)(?:current|current_only|current_board|market_adp|adp|target_score|"
+        r"target_games|label_next|next_nwr|nwr_dynasty_score)(?:$|_)",
+        regex=True,
+    )
+    denied_families = records["feature_family"].astype(str).str.upper().isin(
+        {"CURRENT_ONLY_ADP", "CURRENT_BOARD_RANK", "TARGET_SEASON_SCORE", "FUTURE_PRODUCTION"}
+    )
+    if denied_fields.any() or denied_families.any():
+        raise RuntimeError("current-only, target-season, or future feature is inadmissible")
+
+
+def default_exactness_proofs() -> list[EvidenceProof]:
+    exact_provenance = f"{rel(FORMULA_MART)}#{sha256(FORMULA_MART)}"
+    return [
+        EvidenceProof(
+            "identity",
+            "EXACT_PRIMARY_EVIDENCE",
+            exact_provenance,
+            "FORMULA_MART_SCHEMA_V1",
+            "EXACT_PLAYER_ID",
+            "HISTORICAL_ASOF_PROVEN",
+        ),
+        EvidenceProof(
+            "outcome",
+            "EXACT_PRIMARY_EVIDENCE",
+            exact_provenance,
+            "FORMULA_MART_SCHEMA_V1",
+            "EXACT_PLAYER_ID",
+            "TARGET_LABEL_JOINED_AFTER_FEATURES",
+        ),
+        EvidenceProof(
+            "lagged_production",
+            "EXACT_DETERMINISTIC_REGENERATION",
+            exact_provenance,
+            "FORMULA_MART_SCHEMA_V1",
+            "EXACT_PLAYER_ID",
+            "FEATURE_N_TARGET_N_PLUS_1",
+        ),
+        EvidenceProof("position_score", "BLOCKED_MISSING_RECEIPT", "", "", "", ""),
+        EvidenceProof("lifecycle", "NEAR_EQUIVALENT", rel(AGE_SIDECAR), "", "", ""),
+        EvidenceProof("confidence", "NEAR_EQUIVALENT", rel(FORMULA_MART), "", "", ""),
+        EvidenceProof("discipline_safety", "BLOCKED_MISSING_RECEIPT", "", "", "", ""),
+        EvidenceProof("checkpoint", "BLOCKED_MISSING_RECEIPT", "", "", "", ""),
+        EvidenceProof("final_score", "BLOCKED_MISSING_RECEIPT", "", "", "", ""),
+        EvidenceProof("rank", "BLOCKED_MISSING_RECEIPT", "", "", "", ""),
+    ]
+
+
+def validate_exactness_proofs(proofs: Iterable[EvidenceProof]) -> dict[str, EvidenceProof]:
+    proof_list = list(proofs)
+    components = [proof.component for proof in proof_list]
+    if len(components) != len(set(components)):
+        raise RuntimeError("duplicate exactness component proof")
+    missing = sorted(set(EXACT_REQUIRED) - set(components))
+    extra = sorted(set(components) - set(EXACT_REQUIRED))
+    if missing or extra:
+        raise RuntimeError(
+            f"exactness component completeness failure missing={missing} extra={extra}"
+        )
+    by_component = {proof.component: proof for proof in proof_list}
+    for proof in proof_list:
+        if proof.classification not in ALLOWED_CLASSIFICATIONS:
+            raise RuntimeError(f"unsupported exactness classification: {proof.classification}")
+        if proof.mandatory is not True:
+            raise RuntimeError(f"mandatory component omitted: {proof.component}")
+        if proof.classification in EXACT_CLASSIFICATIONS and not all(
+            (
+                proof.provenance.strip(),
+                proof.schema_proof.strip(),
+                proof.identity_proof.strip(),
+                proof.historical_availability_proof.strip(),
+            )
+        ):
+            raise RuntimeError(f"exact label lacks complete authority proof: {proof.component}")
+    return by_component
+
+
+def derive_full_row_exactness(proofs: Iterable[EvidenceProof]) -> bool:
+    by_component = validate_exactness_proofs(proofs)
+    return all(
+        by_component[component].classification in EXACT_CLASSIFICATIONS
+        for component in EXACT_REQUIRED
+    )
+
+
+def validate_identity_frame(frame: pd.DataFrame, *, name: str) -> None:
+    missing = [column for column in EXACT_JOIN_KEYS if column not in frame.columns]
+    if missing:
+        raise RuntimeError(f"{name} exact identity columns missing: {missing}")
+    player_ids = frame["player_id"].astype("string")
+    if player_ids.isna().any() or player_ids.str.strip().eq("").any():
+        raise RuntimeError(f"{name} contains blank player_id")
+    if frame.duplicated(list(EXACT_JOIN_KEYS)).any():
+        raise RuntimeError(f"{name} contains duplicate exact player identity")
+
+
+def exact_player_id_join(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    *,
+    join_keys: tuple[str, ...] = EXACT_JOIN_KEYS,
+    how: str = "left",
+) -> pd.DataFrame:
+    if tuple(join_keys) != EXACT_JOIN_KEYS:
+        raise RuntimeError("historical joins require exact player_id/season/position authority")
+    validate_identity_frame(left, name="left join input")
+    validate_identity_frame(right, name="right join input")
+    left_identity = set(map(tuple, left[list(EXACT_JOIN_KEYS)].itertuples(index=False, name=None)))
+    right_identity = set(
+        map(tuple, right[list(EXACT_JOIN_KEYS)].itertuples(index=False, name=None))
+    )
+    if left_identity != right_identity:
+        raise RuntimeError("historical exact identity universes differ")
+    if "player_name" in left.columns and "player_name" in right.columns:
+        governed = left[list(EXACT_JOIN_KEYS) + ["player_name"]].merge(
+            right[list(EXACT_JOIN_KEYS) + ["player_name"]],
+            on=list(EXACT_JOIN_KEYS),
+            how="outer",
+            validate="one_to_one",
+            suffixes=("_left", "_right"),
+            indicator=True,
+        )
+        if not governed["_merge"].eq("both").all() or not governed["player_name_left"].fillna(
+            ""
+        ).eq(governed["player_name_right"].fillna("")).all():
+            raise RuntimeError("player_id/name authority mismatch")
+    return left.merge(
+        right,
+        on=list(EXACT_JOIN_KEYS),
+        how=how,
+        validate="one_to_one",
+        suffixes=("", "_right"),
+    )
+
+
+def validate_frozen_comparator(path: Path | None = None) -> pd.DataFrame:
+    path = path or FROZEN_2026
+    if not path.is_file():
+        raise RuntimeError("frozen 2026 comparator missing")
+    actual_hash = sha256(path)
+    if actual_hash != FROZEN_2026_HASH:
+        raise RuntimeError(
+            f"frozen 2026 comparator hash changed expected={FROZEN_2026_HASH} actual={actual_hash}"
+        )
+    frame = pd.read_csv(path, low_memory=False)
+    if tuple(frame.columns) != FROZEN_2026_COLUMNS:
+        raise RuntimeError("frozen 2026 comparator schema changed")
+    if len(frame) != 924:
+        raise RuntimeError("frozen 2026 comparator row count changed")
+    ids = frame["player_id"].astype("string")
+    if ids.isna().any() or ids.str.strip().eq("").any():
+        raise RuntimeError("frozen 2026 comparator player-ID set changed")
+    governed = (
+        "raw_score",
+        "within_position_rank",
+        "overall_research_rank",
+        "freeze_timestamp",
+        "target_season",
+        "feature_season",
+        "input_source_dates",
+        "input_source_hashes",
+        "source_status",
+    )
+    if frame[list(governed)].isna().all(axis=1).any():
+        raise RuntimeError("frozen comparator governed score/rank/source/as-of row is incomplete")
+    return frame
+
+
+def load_sources(
+    *,
+    input_order: str = "original",
+    order_seed: int = SEED,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    validate_tracked_input_hashes()
     for path in (
         PARTIAL_PANEL,
         FORMULA_MART,
@@ -157,8 +643,7 @@ def load_sources() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFra
     ):
         if not path.is_file():
             raise RuntimeError(f"required tracked input missing: {rel(path)}")
-    if sha256(CURRENT_BOARD) != BOARD_HASH:
-        raise RuntimeError("tracked canonical board hash changed")
+    validate_frozen_comparator()
     panel = pd.read_csv(PARTIAL_PANEL, low_memory=False)
     mart = pd.read_csv(FORMULA_MART, low_memory=False)
     age = pd.read_csv(AGE_SIDECAR, low_memory=False)
@@ -169,12 +654,60 @@ def load_sources() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFra
         raise RuntimeError("partial panel identity is not unique")
     if mart["substrate_row_id"].duplicated().any():
         raise RuntimeError("formula mart identity is not unique")
-    if age.duplicated(["player_id", "season", "position"]).any():
-        raise RuntimeError("age sidecar identity is not unique")
     if set(panel["player_id_gsis"]) != set(mart["player_id"]):
         raise RuntimeError("player-id universes differ")
     if bool(mart["production_approved"].fillna(False).astype(bool).any()):
         raise RuntimeError("review-only mart unexpectedly production approved")
+    validate_identity_frame(mart, name="formula mart")
+    validate_identity_frame(age, name="age sidecar")
+    exact_player_id_join(
+        mart[list(EXACT_JOIN_KEYS) + ["player_name"]],
+        age[list(EXACT_JOIN_KEYS) + ["player_name"]],
+    )
+    panel_identity = panel[
+        ["substrate_row_id", "player_id_gsis", "target_season", "position"]
+    ].rename(columns={"player_id_gsis": "player_id", "target_season": "season"})
+    mart_identity = mart[
+        ["substrate_row_id", "player_id", "season", "position"]
+    ]
+    identity_check = panel_identity.merge(
+        mart_identity,
+        on=["substrate_row_id", "player_id", "season", "position"],
+        how="outer",
+        validate="one_to_one",
+        indicator=True,
+    )
+    if not identity_check["_merge"].eq("both").all():
+        raise RuntimeError("panel-to-mart exact player identity mismatch")
+    oof_ids = oof["player_id"].astype("string")
+    if oof_ids.isna().any() or oof_ids.str.strip().eq("").any():
+        raise RuntimeError("OOF contains blank player_id")
+    mart_oof_map = mart.set_index("substrate_row_id")["player_id"]
+    mapped = oof["substrate_row_id"].map(mart_oof_map)
+    overlap = mapped.notna()
+    if not mapped.loc[overlap].astype(str).eq(oof.loc[overlap, "player_id"].astype(str)).all():
+        raise RuntimeError("OOF exact player identity mismatch")
+    validate_temporal_records(historical_feature_records(mart))
+    panel = perturb_frame(panel, input_order, order_seed)
+    mart = perturb_frame(mart, input_order, order_seed + 1)
+    age = perturb_frame(age, input_order, order_seed + 2)
+    oof = perturb_frame(oof, input_order, order_seed + 3)
+    panel = canonicalize_frame(
+        panel,
+        ("target_season", "position", "player_id_gsis", "substrate_row_id"),
+    )
+    mart = canonicalize_frame(
+        mart,
+        ("season", "position", "player_id", "substrate_row_id"),
+    )
+    age = canonicalize_frame(
+        age,
+        ("season", "position", "player_id"),
+    )
+    oof = canonicalize_frame(
+        oof,
+        ("target_season", "position", "candidate_name", "player_id", "substrate_row_id"),
+    )
     return panel, mart, age, oof
 
 
@@ -222,9 +755,15 @@ def add_ranks(
     output = frame.copy()
     output[name] = np.nan
     for (_season, _position), group in output.groupby(["season", "position"], sort=True):
+        tie_breakers = [score, player_name]
+        ascending = [False, True]
+        for candidate in ("player_id", "substrate_row_id"):
+            if candidate in group.columns:
+                tie_breakers.append(candidate)
+                ascending.append(True)
         ranked = group.sort_values(
-            [score, player_name],
-            ascending=[False, True],
+            tie_breakers,
+            ascending=ascending,
             na_position="last",
             kind="stable",
         )
@@ -318,7 +857,8 @@ def bootstrap_ci(frame: pd.DataFrame, pred_rank: str, actual_rank: str) -> tuple
 def baseline_rows(
     proxy: pd.DataFrame, mart: pd.DataFrame, age: pd.DataFrame
 ) -> list[dict[str, Any]]:
-    base = mart.merge(
+    base = exact_player_id_join(
+        mart,
         age[
             [
                 "player_id",
@@ -328,7 +868,6 @@ def baseline_rows(
                 "lifecycle_bucket",
             ]
         ],
-        on=["player_id", "season", "position"],
         how="left",
     )
     for column in (
@@ -470,6 +1009,7 @@ def baseline_rows(
 def age_join(mart: pd.DataFrame, age: pd.DataFrame) -> pd.DataFrame:
     fields = [
         "player_id",
+        "player_name",
         "season",
         "position",
         "age",
@@ -481,10 +1021,24 @@ def age_join(mart: pd.DataFrame, age: pd.DataFrame) -> pd.DataFrame:
         "source_gate_status",
         "leakage_flag",
     ]
-    return mart.merge(age[fields], on=["player_id", "season", "position"], how="left")
+    return exact_player_id_join(mart, age[fields], how="left")
 
 
 def exactness_mask(mart: pd.DataFrame, age: pd.DataFrame) -> pd.DataFrame:
+    proofs = validate_exactness_proofs(default_exactness_proofs())
+    full_exact = derive_full_row_exactness(proofs.values())
+    partial_exact = any(
+        proof.classification in EXACT_CLASSIFICATIONS for proof in proofs.values()
+    ) and not full_exact
+    blocker_names = {
+        "lifecycle": "lifecycle_modifier",
+        "confidence": "confidence_cap",
+    }
+    blockers = [
+        blocker_names.get(component, component)
+        for component in EXACT_REQUIRED
+        if proofs[component].classification not in EXACT_CLASSIFICATIONS
+    ]
     joined = age_join(mart, age)
     joined["age"] = pd.to_numeric(joined["age"], errors="coerce")
     joined["prior_games"] = pd.to_numeric(joined["prior_games"], errors="coerce")
@@ -497,30 +1051,30 @@ def exactness_mask(mart: pd.DataFrame, age: pd.DataFrame) -> pd.DataFrame:
             "position": joined["position"],
             "age": joined["age"],
             "prior_games": joined["prior_games"],
-            "identity_status": "EXACT_PRIMARY_EVIDENCE",
-            "outcome_status": "EXACT_PRIMARY_EVIDENCE",
-            "lagged_production_status": "EXACT_DETERMINISTIC_REGENERATION",
-            "position_score_status": "BLOCKED_MISSING_RECEIPT",
-            "lifecycle_status": "NEAR_EQUIVALENT",
-            "confidence_status": "NEAR_EQUIVALENT",
-            "discipline_safety_status": "BLOCKED_MISSING_RECEIPT",
-            "checkpoint_status": "BLOCKED_MISSING_RECEIPT",
-            "final_score_status": "BLOCKED_MISSING_RECEIPT",
-            "rank_status": "BLOCKED_MISSING_RECEIPT",
+            "identity_status": proofs["identity"].classification,
+            "outcome_status": proofs["outcome"].classification,
+            "lagged_production_status": proofs["lagged_production"].classification,
+            "position_score_status": proofs["position_score"].classification,
+            "lifecycle_status": proofs["lifecycle"].classification,
+            "confidence_status": proofs["confidence"].classification,
+            "discipline_safety_status": proofs["discipline_safety"].classification,
+            "checkpoint_status": proofs["checkpoint"].classification,
+            "final_score_status": proofs["final_score"].classification,
+            "rank_status": proofs["rank"].classification,
             "route_status": "BLOCKED_SOURCE_NOT_ADMITTED",
             "return_scoring_status": "BLOCKED_SOURCE_NOT_ADMITTED",
-            "full_exact_row": False,
-            "exact_component_partial_row": True,
+            "full_exact_row": full_exact,
+            "exact_component_partial_row": partial_exact,
             "proxy_available": True,
-            "exactness_blocker": (
-                "position_score|lifecycle_modifier|confidence_cap|discipline_safety|"
-                "checkpoint|final_score|rank"
-            ),
+            "exactness_blocker": "|".join(blockers),
         }
     )
     if bool(output["full_exact_row"].any()):
         raise RuntimeError("exact subset must fail closed while required receipts are absent")
-    return output
+    return canonicalize_frame(
+        output,
+        ("target_season", "position", "player_id", "substrate_row_id"),
+    )
 
 
 def coverage_rows(mask: pd.DataFrame) -> list[dict[str, Any]]:
@@ -1185,17 +1739,17 @@ def git_history_rows() -> list[dict[str, Any]]:
     for query in queries:
         output = git(
             "log",
-            "--all",
             "--no-textconv",
             "--format=%H|%ad|%s",
             "--date=short",
             f"-S{query}",
+            SOURCE_COMMIT,
         )
-        hits = [line for line in output.splitlines() if line]
+        hits = sorted(line for line in output.splitlines() if line)
         rows.append(
             {
                 "query": query,
-                "technique": "git log --all --no-textconv -S",
+                "technique": f"git log --no-textconv -S anchored to {SOURCE_COMMIT}",
                 "hit_count": len(hits),
                 "first_hits": " || ".join(hits[:5]),
                 "exact_historical_receipt_found": "false",
@@ -1209,7 +1763,7 @@ def git_history_rows() -> list[dict[str, Any]]:
     rows.append(
         {
             "query": "relevant path names",
-            "technique": "git rev-list --all --objects plus path regex",
+            "technique": f"git rev-list {SOURCE_COMMIT} --objects plus path regex",
             "hit_count": "SEE_RECOVERY_INVENTORY",
             "first_hits": "Prior packets, current-only outputs, and partial panels only.",
             "exact_historical_receipt_found": "false",
@@ -1220,10 +1774,11 @@ def git_history_rows() -> list[dict[str, Any]]:
 
 
 def regeneration_rows() -> list[dict[str, Any]]:
-    command = "python scripts/build_exact_model_v4_replay_accuracy_audit_v1.py"
-    environment = (
-        f"Python {platform.python_version()}; pandas {pd.__version__}; numpy {np.__version__}"
+    command = (
+        "python scripts/build_exact_model_v4_replay_accuracy_audit_v1.py "
+        f"--source-commit {SOURCE_COMMIT} --repo-root <REPO_ROOT> --output-dir <OUTPUT_DIR>"
     )
+    environment = "Python >=3.12; locked project pandas/numpy; locale/timezone independent"
     return [
         {
             "family": "historical_player_identity_and_outcomes",
@@ -1298,7 +1853,11 @@ def packet_csvs(
     history = git_history_rows()
     write_csv(PACKET / "GIT_HISTORY_AND_BLOB_RECOVERY_LOG.csv", history, list(history[0]))
     mask = exactness_mask(mart, age)
-    mask.to_csv(PACKET / "COMPONENT_AND_ROW_EXACTNESS_MASK.csv", index=False, lineterminator="\n")
+    write_csv(
+        PACKET / "COMPONENT_AND_ROW_EXACTNESS_MASK.csv",
+        mask.to_dict("records"),
+        list(mask.columns),
+    )
     coverage = coverage_rows(mask)
     write_csv(
         PACKET / "EXACTNESS_COVERAGE_BY_SEASON_POSITION.csv",
@@ -1909,15 +2468,29 @@ restoration. No push occurred.
     )
     write_md(
         "VALIDATION_RESULTS.md",
-        """# Validation results
+        f"""# Validation results
 
-Status: `BUILD_COMPLETE_REPOSITORY_GATE_RESULTS_RECORDED_AFTER_BUILD`.
+Status: `CANONICAL_BUILD_SELF_VALIDATION_PASS`.
 
-The final validation cycle will record replay/schema/determinism/temporal/identity/
-exactness/metric/walk-forward/gate/no-change tests, five existing security
-regressions, passive Data Health checks, Hermetic, LocalData, compilation,
-PowerShell parsing, Ruff, protected/frozen scans, preservation checkpoints, and
-Git whitespace checks.
+The authoritative builder validates all governed tracked-input hashes, exact
+player-ID joins, historical feature metadata, the exactness lattice, the
+924-row frozen comparator, the 240-row current board, and preserved metric and
+challenger conclusions before the packet manifest is sealed.
+
+- Fixed history anchor: `{SOURCE_COMMIT}`.
+- Exact rows: `0 / 5,518`.
+- Exact seasons: `NONE`.
+- Proxy-to-exact differential: `NOT TESTABLE`.
+- Current board: 240 rows / `{BOARD_HASH}`.
+- Frozen comparator: 924 rows / `{FROZEN_2026_HASH}`.
+- Production ranking change: `NONE`.
+- Frozen 2026 change: `NONE`.
+- Challenger disposition: `NO_ACCURACY_CHALLENGER_ADMITTED`.
+
+The independent mutation, clean-checkout, Hermetic, LocalData, security
+regression, Data Health, and preservation gates are recorded in the separately
+committed assertion/regeneration revision packet. This file is generated
+atomically; no post-build correction is permitted.
 """,
     )
 
@@ -1950,7 +2523,51 @@ def write_file_inventory() -> None:
 
 
 def write_manifest() -> None:
-    required = [
+    required = required_packet_files()
+    missing = [name for name in required[:-1] if not (PACKET / name).is_file()]
+    if missing:
+        raise RuntimeError(f"required packet files missing: {missing}")
+    entries = [
+        {
+            "path": name,
+            "bytes": (PACKET / name).stat().st_size,
+            "sha256": sha256(PACKET / name),
+        }
+        for name in required[:-1]
+    ]
+    manifest = {
+        "packet": "nwr_exact_model_v4_replay_accuracy_audit_v1_20260723",
+        "schema_version": 2,
+        "verdict": "YELLOW_NWR_ACCURACY_AUDIT_COMPLETE_PROXY_CONCLUSIONS_REFINED",
+        "challenger_disposition": "NO_ACCURACY_CHALLENGER_ADMITTED",
+        "starting_hq": START_HQ,
+        "starting_tree": START_TREE,
+        "fixed_source_commit": SOURCE_COMMIT,
+        "exact_target_contract": "EXACT_CURRENT_MODEL_V4_HISTORICAL_REPLAY",
+        "exact_rows": 0,
+        "source_panel_rows": 5518,
+        "production_ranking_change": "NONE",
+        "frozen_2026_change": "NONE",
+        "seed": SEED,
+        "canonical_serialization": {
+            "encoding": "UTF-8",
+            "bom": False,
+            "line_endings": "LF",
+            "newline_at_eof": True,
+            "float_precision": 6,
+            "json_keys": "sorted",
+            "manifest_self_hash": "excluded",
+        },
+        "files": entries,
+    }
+    write_canonical_text(
+        PACKET / "MANIFEST.json",
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+    )
+
+
+def required_packet_files() -> list[str]:
+    return [
         "EXACT_MODEL_V4_REPLAY_AND_ACCURACY_REPORT.md",
         "EXECUTIVE_VERDICT.md",
         "EXACT_REPLAY_CONTRACT.md",
@@ -1980,42 +2597,81 @@ def write_manifest() -> None:
         "VALIDATION_RESULTS.md",
         "MANIFEST.json",
     ]
-    missing = [name for name in required[:-1] if not (PACKET / name).is_file()]
-    if missing:
-        raise RuntimeError(f"required packet files missing: {missing}")
-    entries = [
-        {
-            "path": name,
-            "bytes": (PACKET / name).stat().st_size,
-            "sha256": sha256(PACKET / name),
-        }
-        for name in required[:-1]
-    ]
-    manifest = {
-        "packet": "nwr_exact_model_v4_replay_accuracy_audit_v1_20260723",
-        "schema_version": 1,
-        "verdict": "YELLOW_NWR_ACCURACY_AUDIT_COMPLETE_PROXY_CONCLUSIONS_REFINED",
-        "challenger_disposition": "NO_ACCURACY_CHALLENGER_ADMITTED",
-        "starting_hq": START_HQ,
-        "starting_tree": START_TREE,
-        "exact_target_contract": "EXACT_CURRENT_MODEL_V4_HISTORICAL_REPLAY",
-        "exact_rows": 0,
-        "source_panel_rows": 5518,
-        "production_ranking_change": "NONE",
-        "frozen_2026_change": "NONE",
-        "seed": SEED,
-        "files": entries,
+
+
+def validate_research_results(results: dict[str, Any]) -> None:
+    mask = results["mask"]
+    if len(mask) != 5518 or bool(mask["full_exact_row"].any()):
+        raise RuntimeError("exact replay frontier changed")
+    if int(mask["player_id"].nunique()) != 1552:
+        raise RuntimeError("historical player identity count changed")
+    baselines = pd.DataFrame(results["baselines"])
+    overall = baselines.loc[baselines["scope"].eq("OVERALL")].set_index("model")
+    expected = {
+        "ACCEPTED_PRODUCTION_PROXY": (0.674738598, 21.649510692),
+        "PYF": (0.681007814, 21.386009),
+        "MULTI_YEAR_AVERAGE_2YR": (0.695417424, 20.942733),
+        "MULTI_YEAR_AVERAGE_3YR": (0.696731774, 20.902501),
+        "GAUNTLET_081": (0.697014621, 20.887640),
     }
-    (PACKET / "MANIFEST.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    for model, (expected_spearman, expected_mae) in expected.items():
+        row = overall.loc[model]
+        if abs(float(row["spearman"]) - expected_spearman) > 0.000001:
+            raise RuntimeError(f"preserved Spearman changed for {model}")
+        if abs(float(row["rank_mae"]) - expected_mae) > 0.000001:
+            raise RuntimeError(f"preserved rank MAE changed for {model}")
+    summary = results["walk_summary"]
+    if int(summary["total"]) != 4731 or int(summary["coverage"]) != 4727:
+        raise RuntimeError("OOF candidate coverage changed")
+    if abs(float(summary["overall_delta"]) - 0.022824) > 0.000001:
+        raise RuntimeError("GAUNTLET_081 OOF delta changed")
+
+
+def validate_source_anchor(requested: str) -> None:
+    if requested != SOURCE_COMMIT:
+        raise RuntimeError(f"source commit must be fixed at {SOURCE_COMMIT}")
+    resolved = git("rev-parse", f"{requested}^{{commit}}")
+    if resolved != SOURCE_COMMIT:
+        raise RuntimeError("fixed source commit did not resolve exactly")
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
     )
+    if result.returncode != 0:
+        raise RuntimeError("builder checkout does not descend from the fixed source commit")
 
 
-def build() -> None:
+def validate_packet_inventory() -> None:
+    expected = set(required_packet_files())
+    actual = {path.name for path in PACKET.iterdir() if path.is_file()}
+    if actual != expected:
+        raise RuntimeError(
+            f"packet inventory mismatch missing={sorted(expected - actual)} "
+            f"extra={sorted(actual - expected)}"
+        )
+    for path in PACKET.iterdir():
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        if data.startswith(b"\xef\xbb\xbf"):
+            raise RuntimeError(f"UTF-8 BOM prohibited: {path.name}")
+        if b"\r" in data:
+            raise RuntimeError(f"non-LF line ending prohibited: {path.name}")
+        if data and not data.endswith(b"\n"):
+            raise RuntimeError(f"newline at EOF required: {path.name}")
+
+
+def build(*, input_order: str = "original", order_seed: int = SEED) -> None:
     PACKET.mkdir(parents=True, exist_ok=True)
-    panel, mart, age, oof = load_sources()
+    panel, mart, age, oof = load_sources(
+        input_order=input_order,
+        order_seed=order_seed,
+    )
     proxy = make_proxy(panel)
     results = packet_csvs(panel, mart, age, oof, proxy)
+    validate_research_results(results)
     packet_markdown(results)
     write_file_inventory()
     regeneration = regeneration_rows()
@@ -2026,32 +2682,104 @@ def build() -> None:
     )
     write_file_inventory()
     write_manifest()
+    validate_packet_inventory()
 
 
-def refresh_manifest() -> None:
-    if not PACKET.is_dir():
-        raise RuntimeError("packet does not exist")
-    write_file_inventory()
-    write_manifest()
+def compare_packet_dirs(left: Path, right: Path) -> list[dict[str, Any]]:
+    left_files = {
+        path.relative_to(left).as_posix(): path
+        for path in left.rglob("*")
+        if path.is_file()
+    }
+    right_files = {
+        path.relative_to(right).as_posix(): path
+        for path in right.rglob("*")
+        if path.is_file()
+    }
+    rows = []
+    for name in sorted(set(left_files) | set(right_files)):
+        left_path = left_files.get(name)
+        right_path = right_files.get(name)
+        left_hash = sha256(left_path) if left_path else ""
+        right_hash = sha256(right_path) if right_path else ""
+        rows.append(
+            {
+                "path": name,
+                "left_sha256": left_hash,
+                "right_sha256": right_hash,
+                "left_bytes": left_path.stat().st_size if left_path else "",
+                "right_bytes": right_path.stat().st_size if right_path else "",
+                "result": "PASS" if left_hash and left_hash == right_hash else "FAIL",
+            }
+        )
+    return rows
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--refresh-manifest",
-        action="store_true",
-        help="Refresh only file inventory and manifest after validation documentation edits.",
+        "--repo-root",
+        type=Path,
+        default=DEFAULT_ROOT,
+        help="Exact repository checkout containing the fixed tracked inputs.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Empty or canonical output directory; defaults to the tracked packet path.",
+    )
+    parser.add_argument(
+        "--source-commit",
+        default=SOURCE_COMMIT,
+        help="Fixed reachable-history anchor. Any other value fails closed.",
+    )
+    parser.add_argument(
+        "--input-order",
+        choices=("original", "reverse", "random"),
+        default="original",
+        help="Permitted pre-canonicalization input-order perturbation.",
+    )
+    parser.add_argument("--order-seed", type=int, default=SEED)
+    parser.add_argument(
+        "--verify-against",
+        type=Path,
+        help="After generation, require byte-identical output to this packet directory.",
+    )
+    parser.add_argument(
+        "--comparison-report",
+        type=Path,
+        help="Optional noncanonical file-by-file comparison CSV.",
     )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    if args.refresh_manifest:
-        refresh_manifest()
-    else:
-        build()
-    print(f"built {rel(PACKET)}")
+    configure_paths(args.repo_root, args.output_dir)
+    validate_source_anchor(args.source_commit)
+    build(input_order=args.input_order, order_seed=args.order_seed)
+    if args.verify_against:
+        rows = compare_packet_dirs(PACKET, args.verify_against.resolve())
+        if args.comparison_report:
+            write_csv(
+                args.comparison_report.resolve(),
+                rows,
+                [
+                    "path",
+                    "left_sha256",
+                    "right_sha256",
+                    "left_bytes",
+                    "right_bytes",
+                    "result",
+                ],
+            )
+        failures = [row for row in rows if row["result"] != "PASS"]
+        if failures:
+            raise RuntimeError(
+                f"packet verification failed for {[row['path'] for row in failures]}"
+            )
+        print(f"verified {len(rows)} governed files byte-identical")
+    print(f"built {PACKET}")
     return 0
 
 
