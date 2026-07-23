@@ -1,0 +1,5 @@
+candidate,name,definition,inputs,parameters,pre_registered,status
+CANDIDATE_0,CURRENT_BASELINE_ACCEPTED_PRODUCTION_PROXY,"Exact accepted partial proxy builder, unchanged.",docs/hq/model/historical_model_v4_replay_substrate_v1_20260708/MODEL_V4_PARTIAL_REPLAY_INPUT_PANEL_REVIEW_ONLY.csv,fixed current proxy registry,true,BASELINE
+CANDIDATE_1,HQ2_THREE_YEAR_STABILITY_LOW_GAMES_GUARD_V1,UNAVAILABLE; exact governed definition not found in tracked history.,BLOCKED,NOT_INVENTED,true_by_request_but_definition_missing,BLOCKED_MISSING_RECEIPT
+CANDIDATE_2,GAUNTLET_081_DECLINE_SMALL_LATE_GUARD_THREE,prior_3yr_weighted_nwr_points * 0.98 only when age_32_plus or late_career_10_plus; otherwise unchanged,tracked three-year points plus exact-asof age/lifecycle metadata,guard multiplier=0.98 fixed,true_existing_formula_gauntlet,EVALUATED_REVIEW_ONLY
+CANDIDATE_3,NONE,No new candidate registered because exact Model v4 residuals are unavailable.,NONE,NONE,false,NOT_EVALUATED_NO_INVENTION

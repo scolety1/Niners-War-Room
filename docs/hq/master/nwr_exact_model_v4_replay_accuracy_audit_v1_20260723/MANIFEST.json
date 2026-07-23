@@ -1,0 +1,151 @@
+{
+  "challenger_disposition": "NO_ACCURACY_CHALLENGER_ADMITTED",
+  "exact_rows": 0,
+  "exact_target_contract": "EXACT_CURRENT_MODEL_V4_HISTORICAL_REPLAY",
+  "files": [
+    {
+      "bytes": 2489,
+      "path": "EXACT_MODEL_V4_REPLAY_AND_ACCURACY_REPORT.md",
+      "sha256": "417f42ea788c6f239c9c4d6b2e462e8826351cbda1b25df294c026fbd8df9b3f"
+    },
+    {
+      "bytes": 508,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "3335cd12a6f3d616549d10c35d3e6740a2434c1a07c6796acf1dcbda87cfc192"
+    },
+    {
+      "bytes": 2471,
+      "path": "EXACT_REPLAY_CONTRACT.md",
+      "sha256": "46060925dac2f598722f98da1f6104d3fc646f5dbc4504acabd94b03b88f7f0b"
+    },
+    {
+      "bytes": 3805,
+      "path": "HISTORICAL_EVIDENCE_AUTHORITY_MATRIX.csv",
+      "sha256": "40c363448e335018136265b0b31408e4a7430015a58489385ae27a2ba87bfba7"
+    },
+    {
+      "bytes": 13619,
+      "path": "RECEIPT_RECOVERY_INVENTORY.csv",
+      "sha256": "5d7482a2d339aac9a5de3f815e1b0a58ea1ea40dc07de7278c77ad63d5989f62"
+    },
+    {
+      "bytes": 4434,
+      "path": "GIT_HISTORY_AND_BLOB_RECOVERY_LOG.csv",
+      "sha256": "273d58d661066908816adb9b7ba0ba0b028ecdb0d5dee615ba7e75c491d88879"
+    },
+    {
+      "bytes": 2321,
+      "path": "DETERMINISTIC_REGENERATION_MANIFEST.csv",
+      "sha256": "bf39fb3573f92e2b05b8e0c1e21a46b80778e1679aafe1c942fdda92b29470e7"
+    },
+    {
+      "bytes": 2513950,
+      "path": "COMPONENT_AND_ROW_EXACTNESS_MASK.csv",
+      "sha256": "83fe784ffd416a4979e1977f259f9fd1a3e0288395ec7a1189806baeb8711cf4"
+    },
+    {
+      "bytes": 5229,
+      "path": "EXACTNESS_COVERAGE_BY_SEASON_POSITION.csv",
+      "sha256": "86fdf1911db198512d8a7c6f284809799fb28b03b5a069a2ef091bb414dbfe2b"
+    },
+    {
+      "bytes": 508,
+      "path": "PROXY_TO_EXACT_DIFFERENTIAL.csv",
+      "sha256": "57a1a125cc6b572e65ed1f14f6007b53a4adb12f84e2834c9cb283600403a73d"
+    },
+    {
+      "bytes": 1210,
+      "path": "LEAKAGE_SAFE_PANEL_MANIFEST.csv",
+      "sha256": "2725390896947be8a299e9e6c51f9ccb4fe1f9c8cbe56aa7af244f6158d003c1"
+    },
+    {
+      "bytes": 8242,
+      "path": "BASELINE_ACCURACY_RESULTS.csv",
+      "sha256": "ac7b9889e61879da0c7dfb7e85b852c508fc38c179ebb8312b89ad2a34a4ebc7"
+    },
+    {
+      "bytes": 17619,
+      "path": "ERROR_ATTRIBUTION_BY_POSITION_AGE_USAGE.csv",
+      "sha256": "58637be154256b41d05185ece194babf024cee50f3ce20c11f2273724fb8236e"
+    },
+    {
+      "bytes": 1995,
+      "path": "MECHANICAL_RESIDUAL_CASE_STUDIES.md",
+      "sha256": "8931a9ff1422b2a578c99a7db836338d1be9520dc4d21995fb435a78a8556984"
+    },
+    {
+      "bytes": 982,
+      "path": "CHALLENGER_DEFINITIONS.csv",
+      "sha256": "cafb2dc36aaba0b43b964abc0060e09e5c29948613b26ed7eb1c29348bb91f1c"
+    },
+    {
+      "bytes": 8783,
+      "path": "WALK_FORWARD_RESULTS.csv",
+      "sha256": "7b51ea48f367cd910ddfc403d8ff910640ab9f3c20b27cf92e2659f860e75e26"
+    },
+    {
+      "bytes": 9125,
+      "path": "CHALLENGER_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "3e6c7556d2abb70a81040d9c5ab7408f2c27f2917adb520af7dac3fe50c3eaca"
+    },
+    {
+      "bytes": 374,
+      "path": "CURRENT_BOARD_REVIEW_ONLY_SIMULATION.csv",
+      "sha256": "65c5da5684b6460cecf2182d87b532fad679e5213b428eb1463b0b699fd8deee"
+    },
+    {
+      "bytes": 1456,
+      "path": "EXACT_REPLAY_BLOCKERS_AND_RECOVERY_PLAN.csv",
+      "sha256": "2bdc99a32d613c0f65ff6e154f663c534354ef9778d42efe7a1eb51d35f8fd3f"
+    },
+    {
+      "bytes": 578,
+      "path": "NEXT_THREE_ACCURACY_LANES.md",
+      "sha256": "74b371ee201ae6076862c159a205e5d8495080315cc42e59c27d78dce544a9e0"
+    },
+    {
+      "bytes": 565,
+      "path": "PRODUCTION_RANKING_NO_CHANGE_PROOF.md",
+      "sha256": "1ffd87ba9a02746bdd6ec090c79e137393675b13e63efb767fc920d9de3b8097"
+    },
+    {
+      "bytes": 776,
+      "path": "SECURITY_DATA_HEALTH_AND_RUNTIME_NO_CHANGE.md",
+      "sha256": "98041fefcb7a44b78094c00c1f98f658756a197472941b47204292fc3194ba47"
+    },
+    {
+      "bytes": 965,
+      "path": "PRIMARY_AND_PERSISTENT_STATE_PRESERVATION.md",
+      "sha256": "67ca237d50d6fc64c66b2f6d4f7063a7c06462b1cf79330303e4d2dd2e3e8a5c"
+    },
+    {
+      "bytes": 979,
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "b6cbfef80201271941cc9794f0e7830d9f56c83060dd67109ba50d991260fac7"
+    },
+    {
+      "bytes": 454,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "3844d9fbb366d1630d6ac49658a91450741914564c5e0452d7c9689b0f3aebb2"
+    },
+    {
+      "bytes": 4013,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "a73ce47832aadbbcdd921d957461fc60cc05456ffd3f4e97ae21eb8e9d643f74"
+    },
+    {
+      "bytes": 3132,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "b86a4f02f21e057974d2d18d2c17acea5f4ccff42fc01d525800c46cbe3756e8"
+    }
+  ],
+  "frozen_2026_change": "NONE",
+  "packet": "nwr_exact_model_v4_replay_accuracy_audit_v1_20260723",
+  "production_ranking_change": "NONE",
+  "schema_version": 1,
+  "seed": 20260723,
+  "source_panel_rows": 5518,
+  "starting_hq": "ce2c40d9cf462e4d4985a37020ae8c30afe72def",
+  "starting_tree": "b4647a5cd129e36113628fc88830cca9fff479b2",
+  "verdict": "YELLOW_NWR_ACCURACY_AUDIT_COMPLETE_PROXY_CONCLUSIONS_REFINED"
+}

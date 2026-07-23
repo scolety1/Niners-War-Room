@@ -1,0 +1,6 @@
+scope,exact_rows,proxy_rows,overlap_rows,score_difference_mean,rank_difference_mean,spearman_agreement,top_n_overlap,severe_rank_reversals,missing_row_difference,false_positive_difference,false_negative_difference,conclusion
+OVERALL,0,5518,0,,,,,,5518,,,NOT_TESTABLE_ZERO_EXACT_OVERLAP
+QB,0,754,0,,,,,,754,,,NOT_TESTABLE_ZERO_EXACT_OVERLAP
+RB,0,1429,0,,,,,,1429,,,NOT_TESTABLE_ZERO_EXACT_OVERLAP
+WR,0,2124,0,,,,,,2124,,,NOT_TESTABLE_ZERO_EXACT_OVERLAP
+TE,0,1211,0,,,,,,1211,,,NOT_TESTABLE_ZERO_EXACT_OVERLAP

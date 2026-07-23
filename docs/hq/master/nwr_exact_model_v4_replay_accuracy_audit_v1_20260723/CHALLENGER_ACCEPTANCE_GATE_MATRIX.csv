@@ -1,0 +1,81 @@
+candidate,gate,result,evidence,mandatory
+CANDIDATE_0,ZERO_LEAKAGE,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,EXACT_DOCUMENTED_INPUTS,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,ADEQUATE_COVERAGE,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,ADEQUATE_SAMPLE_SIZES,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,MATERIAL_OVERALL_RANKING_IMPROVEMENT,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,IMPROVEMENT_SURVIVES_UNCERTAINTY,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_MATERIAL_POOLED_SCORE_REGRESSION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_SEVERE_POSITION_REGRESSION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_REPEATED_POSITION_REGRESSION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_TOP_TIER_FALSE_POSITIVE_REGRESSION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_PRODUCTIVE_VETERAN_FALSE_NEGATIVE_REGRESSION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_LOW_GAMES_INSTABILITY,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_ONE_SEASON_DEPENDENCY,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_ONE_POSITION_DEPENDENCY,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_COVERAGE_LOSS_WITHOUT_FAIL_CLOSED_PATH,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,MONOTONIC_AND_INTERPRETABLE,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,CURRENT_240_RANKINGS_UNCHANGED,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,FROZEN_2026_COMPARATOR_UNCHANGED,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,NO_PRODUCTION_INTEGRATION,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_0,INDEPENDENT_REPRODUCTION_SUCCEEDS,NOT_APPLICABLE_BASELINE,Comparator only.,true
+CANDIDATE_1,ZERO_LEAKAGE,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,EXACT_DOCUMENTED_INPUTS,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,ADEQUATE_COVERAGE,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,ADEQUATE_SAMPLE_SIZES,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,MATERIAL_OVERALL_RANKING_IMPROVEMENT,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,IMPROVEMENT_SURVIVES_UNCERTAINTY,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_MATERIAL_POOLED_SCORE_REGRESSION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_SEVERE_POSITION_REGRESSION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_REPEATED_POSITION_REGRESSION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_TOP_TIER_FALSE_POSITIVE_REGRESSION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_PRODUCTIVE_VETERAN_FALSE_NEGATIVE_REGRESSION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_LOW_GAMES_INSTABILITY,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_ONE_SEASON_DEPENDENCY,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_ONE_POSITION_DEPENDENCY,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_COVERAGE_LOSS_WITHOUT_FAIL_CLOSED_PATH,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,MONOTONIC_AND_INTERPRETABLE,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,CURRENT_240_RANKINGS_UNCHANGED,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,FROZEN_2026_COMPARATOR_UNCHANGED,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,NO_PRODUCTION_INTEGRATION,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_1,INDEPENDENT_REPRODUCTION_SUCCEEDS,FAIL,Exact governed definition and checkpoint inputs not found; no reinterpretation.,true
+CANDIDATE_2,ZERO_LEAKAGE,FAIL,Formula-gauntlet candidate selection used full history through 2025.,true
+CANDIDATE_2,EXACT_DOCUMENTED_INPUTS,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,ADEQUATE_COVERAGE,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,ADEQUATE_SAMPLE_SIZES,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,MATERIAL_OVERALL_RANKING_IMPROVEMENT,PASS,OOF Spearman delta 0.022824.,true
+CANDIDATE_2,IMPROVEMENT_SURVIVES_UNCERTAINTY,FAIL,No nested temporal selection record; OOF is diagnostic only.,true
+CANDIDATE_2,NO_MATERIAL_POOLED_SCORE_REGRESSION,FAIL,Raw score calibration differs; mandatory pooled-score gate not established.,true
+CANDIDATE_2,NO_SEVERE_POSITION_REGRESSION,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,NO_REPEATED_POSITION_REGRESSION,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,NO_TOP_TIER_FALSE_POSITIVE_REGRESSION,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,NO_PRODUCTIVE_VETERAN_FALSE_NEGATIVE_REGRESSION,FAIL,Unconditional late-career multiplier creates veteran downside without an admitted stability/return guard.,true
+CANDIDATE_2,NO_LOW_GAMES_INSTABILITY,FAIL,Prior governed gauntlet slice recorded +3 low-games false positives.,true
+CANDIDATE_2,NO_ONE_SEASON_DEPENDENCY,PASS,Positive target-season deltas 10/11.,true
+CANDIDATE_2,NO_ONE_POSITION_DEPENDENCY,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,NO_COVERAGE_LOSS_WITHOUT_FAIL_CLOSED_PATH,FAIL,Valid predictions 4727/4731; four rows lost.,true
+CANDIDATE_2,MONOTONIC_AND_INTERPRETABLE,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,CURRENT_240_RANKINGS_UNCHANGED,PASS,Tracked board remains 263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4; no simulation run.,true
+CANDIDATE_2,FROZEN_2026_COMPARATOR_UNCHANGED,PASS,Frozen input SHA-256 b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179.,true
+CANDIDATE_2,NO_PRODUCTION_INTEGRATION,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_2,INDEPENDENT_REPRODUCTION_SUCCEEDS,PASS,Tracked OOF evidence and detached audit.,true
+CANDIDATE_3,ZERO_LEAKAGE,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,EXACT_DOCUMENTED_INPUTS,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,ADEQUATE_COVERAGE,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,ADEQUATE_SAMPLE_SIZES,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,MATERIAL_OVERALL_RANKING_IMPROVEMENT,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,IMPROVEMENT_SURVIVES_UNCERTAINTY,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_MATERIAL_POOLED_SCORE_REGRESSION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_SEVERE_POSITION_REGRESSION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_REPEATED_POSITION_REGRESSION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_TOP_TIER_FALSE_POSITIVE_REGRESSION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_PRODUCTIVE_VETERAN_FALSE_NEGATIVE_REGRESSION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_LOW_GAMES_INSTABILITY,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_ONE_SEASON_DEPENDENCY,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_ONE_POSITION_DEPENDENCY,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_COVERAGE_LOSS_WITHOUT_FAIL_CLOSED_PATH,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,MONOTONIC_AND_INTERPRETABLE,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,CURRENT_240_RANKINGS_UNCHANGED,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,FROZEN_2026_COMPARATOR_UNCHANGED,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,NO_PRODUCTION_INTEGRATION,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
+CANDIDATE_3,INDEPENDENT_REPRODUCTION_SUCCEEDS,NOT_EVALUATED,No new candidate pre-registered from unavailable exact residuals.,true
