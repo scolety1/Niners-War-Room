@@ -1,0 +1,6 @@
+candidate,status,decisive_evidence,production_effect,final_disposition
+CANDIDATE_0,COMPARATOR_ONLY,accepted production proxy baseline,NONE,NOT_A_CHALLENGER
+CANDIDATE_1,BLOCKED,exact governed definition and checkpoint inputs absent,NONE,BLOCKED_MISSING_RECEIPT
+CANDIDATE_2,NOT_ADMITTED,uncertainty coverage low-games pooled-score veteran and leakage gates fail,NONE,REVIEW_ONLY
+CANDIDATE_3,NOT_CREATED,no exact residual basis for preregistration,NONE,NOT_EVALUATED
+FINAL,NO_ACCURACY_CHALLENGER_ADMITTED,no candidate satisfies every mandatory gate,NONE,NO_ACCURACY_CHALLENGER_ADMITTED

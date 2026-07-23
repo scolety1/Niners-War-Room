@@ -1,0 +1,7 @@
+priority,evidence_family,status,coverage,deterministic_regeneration,required_next_control,prohibited_workaround
+1,exact checkpoint final-score and rank receipts,BLOCKED_MISSING_RECEIPT,2013-2025 all positions,NO,recover immutable originals with as-of manifests,do not substitute proxy scores
+2,position components lifecycle confidence discipline-safety inputs,BLOCKED_SOURCE_NOT_ADMITTED,conditional 2013-2025,CONDITIONAL,admit immutable historical component sources and transforms,do not use current-only ADP or retrospective values
+3,stable inactivity return identity and outcome receipts,BLOCKED_SOURCE_NOT_ADMITTED,older and low-games cohorts,CONDITIONAL,admit time-bounded player-ID-keyed receipts,do not infer from current roster or join by name
+0,accepted production proxy,PARTIAL_REPLAY,5518 rows and 13 seasons,YES,retain truthful proxy classification,do not relabel exact
+0,PYF 2-year and 3-year baselines,EXACT_DETERMINISTIC_REGENERATION,5518 rows and 13 seasons,YES,retain as governed baseline evidence,do not claim current Model v4 exact replay
+0,GAUNTLET_081,REVIEW_ONLY,5518 rows and 13 seasons,YES,retain diagnostic-only status,do not admit after full-history selection

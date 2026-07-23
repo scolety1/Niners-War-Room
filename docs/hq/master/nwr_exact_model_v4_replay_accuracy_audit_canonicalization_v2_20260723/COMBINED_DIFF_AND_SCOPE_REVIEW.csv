@@ -1,0 +1,6 @@
+commit,files_changed,insertions,deletions,allowed_scope,production_paths_changed,review
+bfb1a489741250d7fa63c9b134fd007dbbfa841d,2,2163,0,research builder and focused tests,0,PASS
+0929ce6ec058a698efeee10fe5770f56047bab21,28,6401,0,generated source audit packet,0,PASS
+5fb7339e45c3536b9d4ec9bfce1b2afc302a41d3,43,7444,6047,narrow attributes plus research builder tests source packet and revision packet,0,PASS
+CANONICALIZATION_V2,23,documentation_only,documentation_only,new canonicalization packet,0,PASS
+COMBINED_ADOPTION,77,not_additive,not_additive,bounded research tooling tests and documentation,0,PASS
