@@ -1,0 +1,5 @@
+candidate,definition_status,evidence,validation_design,rows,pooled_precision,baseline_precision,spearman,low_games_delta,result,admission
+Candidate 0: current accepted baseline,ACCEPTED_CURRENT_BASELINE,exact current board; zero exact historical rows,not rerun; exact historical comparison inadmissible,0,,,,,BASELINE_RETAINED,CURRENT_PRODUCTION_UNCHANGED
+Candidate 1: HQ2_THREE_YEAR_STABILITY_LOW_GAMES_GUARD_V1,RECOVERED_EXACT,deterministic review-only V3 proxy panel,fixed preregistered formula; target-season folds 2013-2025; lagged inputs only,4764,0.637500,0.553846,0.699073,12,REVIEW_ONLY_SIGNAL_WITH_LOW_GAMES_REGRESSION,NOT_ADMITTED_NO_EXACT_MODEL_V4_OVERLAP
+Candidate 2: GAUNTLET_081,EXISTING_GOVERNED_DEFINITION,no new exact Model v4 evidence,not run,0,,,,,NOT_AUTHORIZED,NOT_ADMITTED
+Candidate 3,PROHIBITED,no exact-model residual evidence,not run,0,,,,,PROHIBITED,NOT_ADMITTED

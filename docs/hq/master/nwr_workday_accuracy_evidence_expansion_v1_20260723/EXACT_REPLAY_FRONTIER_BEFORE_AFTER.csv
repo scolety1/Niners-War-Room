@@ -1,0 +1,11 @@
+measure,before,after,change,status
+historical_rows,5518,5518,0,UNCHANGED
+exact_primary_rows,0,0,0,BLOCKED_MISSING_RECEIPT
+exact_deterministic_regeneration_rows,0,0,0,BLOCKED_INCOMPLETE_CHAIN
+near_equivalent_rows,5518,5518,0,REVIEW_ONLY_OVERLAPPING_LAYER
+partial_rows,5518,5518,0,PARTIAL_REPLAY
+blocked_rows,5518,5518,0,ALL_ROWS_HAVE_MANDATORY_BLOCKER
+exact_seasons,none,none,0,BLOCKED
+exact_positions,none,none,0,BLOCKED
+exact_checkpoint/final_score/final_rank_rows,0/0/0,0/0/0,0,BLOCKED
+exact_age/games/lifecycle_cohorts,none,none,0,BLOCKED

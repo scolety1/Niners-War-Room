@@ -1,0 +1,7 @@
+family,missing_authority,human_or_external_action,prohibited_substitute,permanent_if_unavailable
+checkpoint/final scores,immutable historical bytes plus complete as-of manifest,"originating workstation, backup catalog, artifact retention",current board or proxy score,YES
+exact ranks,"full score population, tie keys, assigned ranks, output hash",original ranking export archive,rank recomputed from near-equivalent score,YES
+position components,historical per-row inputs/outputs and component versions,original component receipt archive,Formula Data Mart percentile proxy,YES
+lifecycle/confidence/discipline/safety,"historical applied inputs, caps, outputs, warnings, hashes",original phase outputs and source manifests,neutral 1.0 or review-only regeneration,YES
+route/return/inactivity/outcome state,approved point-in-time source snapshots and identity/as-of manifest,approved external archive with permission,current provider payload or name join,YES
+Shadow Model v2 metrics,immutable output bytes and generating contract,originating experiment/artifact archive,recreated metric from memory,YES

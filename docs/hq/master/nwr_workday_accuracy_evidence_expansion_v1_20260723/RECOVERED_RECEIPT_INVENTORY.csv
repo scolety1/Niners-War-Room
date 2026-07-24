@@ -1,0 +1,11 @@
+family,artifact,rows,seasons,positions,identity_namespace,classification,admission,blocker
+historical_checkpoint_scores,none authenticated,0,none,none,UNKNOWN,BLOCKED_MISSING_RECEIPT,REJECTED,Immutable checkpoint score bytes and as-of manifests absent.
+historical_final_model_v4_scores,none authenticated,0,none,none,UNKNOWN,BLOCKED_MISSING_RECEIPT,REJECTED,Final Model v4 score receipts absent.
+historical_exact_rank_assignments,none authenticated,0,none,none,UNKNOWN,BLOCKED_MISSING_RECEIPT,REJECTED,Exact rank receipts absent; algorithm definition alone is insufficient.
+historical_position_components,historical component review panels,42933,2013-2025 partial,"QB,RB,WR,TE partial",GSIS/player_id where available,PARTIAL_REPLAY,REVIEW_ONLY,Not exact governed position-component receipts.
+historical_lifecycle,age/lifecycle review panel,5518,2013-2025,"QB,RB,WR,TE",player_id,NEAR_EQUIVALENT,REVIEW_ONLY,Historical lifecycle receipts and role inputs absent.
+historical_confidence,confidence-cap regeneration pilot,5518,2013-2025,"QB,RB,WR,TE",player_id,NEAR_EQUIVALENT,REVIEW_ONLY,Review-safe reconstructed caps are not primary receipts.
+historical_discipline_safety,definition source only,0,none,"QB,TE definitions",not applicable,BLOCKED_MISSING_RECEIPT,DEFINITION_ONLY,Historical inputs and applied multipliers absent.
+hq2_candidate_definition,C:\NWR\Niners-War-Room-hq2-candidate-formula-shadow-integration-v1-20260708\docs\hq\model\hq2_review_only_shadow_component_v1_20260708\HQ2_REVIEW_ONLY_SHADOW_COMPONENT_V1_PANEL.csv,4764,2013-2025,"RB,WR,TE",GSIS player_id,REVIEW_ONLY,EXACT_DEFINITION_NOT_MODEL_V4_RECEIPT,Candidate proxy evidence cannot expand exact Model v4 frontier.
+current_board,C:/NWR/Niners-War-Room/local_exports/model_v4/current_value/latest/full_player_board_value_review_rows.csv,240,current 2026 only,"QB,RB,WR,TE,current prospects/picks",current canonical key/player_id,EXACT_PRIMARY_RECEIPT,CURRENT_ONLY_PRESERVATION,Cannot establish historical as-of state.
+prospective_2026_comparator,docs/hq/model/formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710/PROSPECTIVE_2026_BASELINE_FREEZE.csv,924,prospective 2026,"QB,RB,WR,TE",player_id,FROZEN_COMPARATOR,COMPARATOR_ONLY,Not historical replay evidence.

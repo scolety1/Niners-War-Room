@@ -1,0 +1,12 @@
+stage,required_rows,exact_primary_rows,exact_regeneration_rows,near_equivalent_rows,blocked_rows,admission,blocker
+identity_outcome,5518,0,5518,0,0,EXACT_COMPONENT_ONLY,
+lagged_production,5518,0,5518,0,0,EXACT_COMPONENT_ONLY,
+multi_year_production,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+position_specific_components,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+lifecycle,5518,0,0,5518,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+confidence,5518,0,0,5518,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+discipline_safety,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+checkpoint_scores,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+final_scores,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+final_ranks,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.
+source_asof_manifest,5518,0,0,0,5518,BLOCKED,Missing immutable historical receipt or complete exact as-of input authority.

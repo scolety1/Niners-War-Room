@@ -1,0 +1,141 @@
+{
+  "canonical_start_commit": "4e8fc06900024aa00a67689f99fc734c6d513254",
+  "canonical_start_tree": "0840bdda644299e6630933f85bb9a4c38c6ae5ed",
+  "exact_rows_after": 0,
+  "exact_rows_before": 0,
+  "files": [
+    {
+      "bytes": 2041,
+      "path": "WORKDAY_ACCURACY_EVIDENCE_EXPANSION_REPORT.md",
+      "sha256": "1db264adc2a2a561c29d9e645b8c6f0592d09dd625778e3a0f382091af2e4ab2"
+    },
+    {
+      "bytes": 580,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "4780c27908821ba64194a2eaf08e4680bbc25cce4900a59dcc3c34f74b5da5e5"
+    },
+    {
+      "bytes": 794,
+      "path": "SEARCH_SCOPE_AND_STOPPING_RULES.md",
+      "sha256": "8fb4e266a7411e0b51d0bea3801128c7fad2f73590e3935e11b0208f975dbb2c"
+    },
+    {
+      "bytes": 2623,
+      "path": "GIT_HISTORY_AND_BLOB_SEARCH_LOG.csv",
+      "sha256": "f87ba0ab17d3413ce223efb62da5d21cc43bce8412ad042de73dfed2229b43d3"
+    },
+    {
+      "bytes": 1255,
+      "path": "LOCAL_NWR_ARTIFACT_SEARCH_LOG.csv",
+      "sha256": "9b3948877bf04a83eac42795896d41c0c073aa5cc122eab4982868fad7b47c3b"
+    },
+    {
+      "bytes": 2263,
+      "path": "RECOVERED_RECEIPT_INVENTORY.csv",
+      "sha256": "3e995905409dbc0eae429ef083ced2657319ec2ceb738178cd8a5cd5adbd3550"
+    },
+    {
+      "bytes": 2596,
+      "path": "RECEIPT_AUTHENTICATION_AND_PROVENANCE.csv",
+      "sha256": "2a615fe33ce97eb174327c189ac54a44b9ccb44dba6777919e767f8bd2692d80"
+    },
+    {
+      "bytes": 5346,
+      "path": "AS_OF_MANIFEST_COMPLETENESS.csv",
+      "sha256": "cf762c95b4c532c13b5a600cfe53c823d90e06a34a0121bf3a12e3edc6bdcd30"
+    },
+    {
+      "bytes": 1304,
+      "path": "CHECKPOINT_FINAL_SCORE_AND_RANK_CHAIN.csv",
+      "sha256": "4b6dbd5fb78b0a5909f2488b84b4883fc27a9c02547ebdcfea3db51312172b80"
+    },
+    {
+      "bytes": 3005194,
+      "path": "COMPONENT_LIFECYCLE_CONFIDENCE_SAFETY_FRONTIER.csv",
+      "sha256": "4ffc8aca9699fd98b69908df16f3af6b15d7a73383837f369809fe556423acc2"
+    },
+    {
+      "bytes": 542,
+      "path": "EXACT_REPLAY_FRONTIER_BEFORE_AFTER.csv",
+      "sha256": "7317a1d227c62501f608b7997cf34f35d6661c641f8ca02c8bf5f458872abbc6"
+    },
+    {
+      "bytes": 298,
+      "path": "EXACT_SUBSET_PROXY_DIFFERENTIAL.csv",
+      "sha256": "cf227a6c9c00f578b9aaab842f86e011109cead013344b45c3a3173be991be36"
+    },
+    {
+      "bytes": 3215,
+      "path": "RECOVERED_GOVERNED_DEFINITIONS.csv",
+      "sha256": "b4f22a0309070875be10c70c474de7bb53c8d4bdd5f545bc92d137a49525f67c"
+    },
+    {
+      "bytes": 890,
+      "path": "CHALLENGER_DEFINITIONS_AND_RESULTS.csv",
+      "sha256": "270b2d5d88d2d8abbcbed8fe763278304e7d21585042b46549036d69a71e3faa"
+    },
+    {
+      "bytes": 1777,
+      "path": "CHALLENGER_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "1c05b8c1ff634b76403f79682272cc43f264d257ac8530de5c7f8e6b744f87da"
+    },
+    {
+      "bytes": 4480,
+      "path": "HUMAN_AND_EXTERNAL_RECOVERY_PACKAGE.md",
+      "sha256": "04e059146c0d9ea1ccd1c05ee51fedf844574aecba295acc34982ae21774b22d"
+    },
+    {
+      "bytes": 1099,
+      "path": "UNRECOVERED_FAMILIES_AND_PERMANENT_BLOCKERS.csv",
+      "sha256": "4d8bb6945a355503c2f1f888438004673fa7ab5859b64753ee38b0df2e074573"
+    },
+    {
+      "bytes": 880,
+      "path": "NEXT_THREE_ACCURACY_LANES.md",
+      "sha256": "c4df18542e9da0664939c2b79c2cc1f46180692a394659e81165dd7e00af4a96"
+    },
+    {
+      "bytes": 413,
+      "path": "PRODUCTION_RANKING_AND_FROZEN_NO_CHANGE.md",
+      "sha256": "f73615c75b487c1a4c13aa9907faad71a3af675573bae5efa49cbd8e99d07895"
+    },
+    {
+      "bytes": 663,
+      "path": "SECURITY_DATA_HEALTH_AND_RUNTIME_NO_CHANGE.md",
+      "sha256": "69804b1cf6732c6d16267500d99e3445ab24bc87406121a9046f0eac3ab79064"
+    },
+    {
+      "bytes": 1225,
+      "path": "PRIMARY_AND_PERSISTENT_STATE_PRESERVATION.md",
+      "sha256": "ffb9eefbe52c34445cabd9e4b74aeaf79a01cee5fbdf24c4b7a29e9d059bc263"
+    },
+    {
+      "bytes": 485,
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "56b261caceba4545367fe76f68d888c523678b99cfa58605e9c7d0b2436821c0"
+    },
+    {
+      "bytes": 477,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "e6703177e8a9050df73d78240cd0b8b4ea72e760c5581e35df994d89ff873b7e"
+    },
+    {
+      "bytes": 3859,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "24cc70f884f5c9b69083066a78aad6cfdb65290fa371dd2823b1cbcaa3a5362e"
+    },
+    {
+      "bytes": 2765,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "29fe0c2968a0c65ac9e3f040dfe83f1d11a84b239ed19cc7e370437284c8c7f4"
+    }
+  ],
+  "final_challenger_disposition": "NO_ACCURACY_CHALLENGER_ADMITTED",
+  "frozen_2026_change": "NONE",
+  "generated_date": "2026-07-23",
+  "model_contract": "model_v4_wr_qb_v2_old_pocket_qb_guardrail",
+  "production_ranking_change": "NONE",
+  "proxy_to_exact": "PROXY_TO_EXACT_NOT_TESTABLE",
+  "schema_version": "nwr_workday_accuracy_evidence_expansion_manifest_v1",
+  "verdict": "YELLOW_NWR_RECEIPT_RECOVERY_EXHAUSTED_WITH_ACTIONABLE_HUMAN_LEADS"
+}
