@@ -30,6 +30,12 @@ from src.services.draft_day_runtime_state_service import (
     DEFAULT_DRAFT_ID,
     runtime_state_path,
 )
+from src.services.dynastyprocess_generation_service import (
+    GenerationResolutionError,
+    GenerationSnapshot,
+    expected_safe_root,
+    resolve_current_generation,
+)
 from src.services.lve_refresh_service import run_sleeper_refresh
 from src.services.nflverse_refresh_health_service import (
     NFLVERSE_DATASET_SPECS,
@@ -393,9 +399,15 @@ def build_refresh_registry(
             safe_to_pull=dynasty_script.exists(),
             protected_artifact=False,
             writes_raw_cache=True,
-            raw_cache_location=str(status_root / "dynastyprocess_market_baseline"),
+            raw_cache_location=str(expected_safe_root(repo_root)),
             writes_tracked_artifact=False,
-            expected_artifacts=("dp_freshness_report.csv", "dp_market_baseline_context.csv"),
+            expected_artifacts=(
+                "dp_freshness_report.csv",
+                "dp_market_baseline_context.csv",
+                "dp_nwr_join_coverage.csv",
+                "dp_pick_value_context.csv",
+                "dp_playerid_crosswalk_audit.csv",
+            ),
             freshness_policy="Fresh if upstream scrape date is recent enough for display.",
             model_use_allowed=False,
             model_use_warning=(
@@ -709,18 +721,39 @@ def _refresh_dynastyprocess(
 ) -> RefreshSourceResult:
     source_start_time = _utc_now()
     started = perf_counter()
-    artifact_dir = context.status_root / "dynastyprocess_market_baseline" / "latest"
+    artifact_root = expected_safe_root(context.repo_root)
     command = [
         context.python_executable,
         entry.command_or_function,
-        "--output-dir",
-        str(artifact_dir),
+        "--safe-root",
+        str(artifact_root),
         "--snapshot-label",
         context.run_id,
     ]
     command_result = context.command_runner(command, context.repo_root, 120)
-    found = _existing_paths(artifact_dir / name for name in entry.expected_artifacts)
-    if command_result.returncode != 0:
+    snapshot: GenerationSnapshot | None = None
+    resolution_error = ""
+    try:
+        snapshot = resolve_current_generation(
+            artifact_root,
+            repo_root=context.repo_root,
+        )
+    except (FileNotFoundError, GenerationResolutionError) as exc:
+        resolution_error = str(exc)
+    found = (
+        tuple(str(snapshot.files[name]) for name in entry.expected_artifacts)
+        if snapshot is not None
+        else ()
+    )
+    if command_result.returncode != 0 or snapshot is None:
+        explanation = (
+            _tail(command_result.stderr) or "DynastyProcess refresh failed."
+            if command_result.returncode != 0
+            else (
+                "DynastyProcess refresh returned success without a valid current "
+                f"generation: {resolution_error or 'generation resolution failed'}"
+            )
+        )
         return _result(
             entry,
             context,
@@ -730,7 +763,7 @@ def _refresh_dynastyprocess(
             refreshed=False,
             freshness="refresh failed",
             found_artifacts=found,
-            explanation=_tail(command_result.stderr) or "DynastyProcess refresh failed.",
+            explanation=explanation,
             artifact="",
             start_time=source_start_time,
             exit_code=command_result.returncode,
@@ -743,13 +776,33 @@ def _refresh_dynastyprocess(
         action_type=REFRESHED,
         status="GREEN",
         refreshed=True,
-        freshness=_artifact_freshness(artifact_dir / "dp_freshness_report.csv"),
-        found_artifacts=found or (str(artifact_dir),),
+        freshness=_generation_artifact_freshness(
+            snapshot,
+            "dp_freshness_report.csv",
+        ),
+        found_artifacts=found,
         explanation=_tail(command_result.stdout) or "DynastyProcess refresh completed.",
-        artifact=str(artifact_dir),
+        artifact=str(artifact_root),
         start_time=source_start_time,
         exit_code=command_result.returncode,
         runner_path=entry.command_or_function,
+    )
+
+
+def _generation_artifact_freshness(
+    snapshot: GenerationSnapshot,
+    file_name: str,
+) -> str:
+    inventory = {
+        str(item["file_name"]): item
+        for item in snapshot.manifest.get("inventory", [])
+        if isinstance(item, dict) and "file_name" in item
+    }
+    item = inventory[file_name]
+    created = str(snapshot.manifest.get("created_at_utc", "unknown"))
+    return (
+        f"generation={snapshot.generation_id}; created {created}; "
+        f"sha256={item['sha256']}"
     )
 
 

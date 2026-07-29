@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import re
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
+from src.services.dynastyprocess_generation_service import (
+    GenerationSnapshot,
+    resolve_current_generation,
+)
 from src.services.market_baseline_registry import validate_market_baseline_registry
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ARTIFACT_DIR = (
     REPO_ROOT
-    / "docs"
-    / "hq"
-    / "parallel_lanes"
-    / "dynastyprocess_market_baseline_20260622"
+    / "local_exports"
+    / "refresh_data"
+    / "dynastyprocess_market_baseline"
 )
 
 PLAYER_CONTEXT_FILENAMES = (
@@ -102,8 +106,8 @@ def load_market_pick_context(
 def load_market_freshness(
     artifact_dir: str | Path = DEFAULT_ARTIFACT_DIR,
 ) -> dict[str, str]:
-    path = Path(artifact_dir) / FRESHNESS_FILENAME
-    frame = _read_csv(path)
+    snapshot = _resolve_generation(artifact_dir)
+    frame = _read_csv_bytes(snapshot.payloads[FRESHNESS_FILENAME])
     _require_columns(frame, FRESHNESS_REQUIRED_COLUMNS, "freshness report")
     if frame.empty:
         return {
@@ -197,11 +201,12 @@ def assert_market_data_is_display_only(
     artifact_dir: str | Path = DEFAULT_ARTIFACT_DIR,
 ) -> None:
     issues = validate_market_baseline_registry()
-    for loader_name, loader in (
-        ("player market context", load_market_player_context),
-        ("pick market context", load_market_pick_context),
+    snapshot = _resolve_generation(artifact_dir)
+    for loader_name, names in (
+        ("player market context", PLAYER_CONTEXT_FILENAMES),
+        ("pick market context", PICK_CONTEXT_FILENAMES),
     ):
-        frame = loader(artifact_dir)
+        frame = _load_first_existing_csv_from_snapshot(snapshot, names)
         try:
             _assert_no_forbidden_columns(frame)
         except ValueError as exc:
@@ -211,17 +216,41 @@ def assert_market_data_is_display_only(
 
 
 def _load_first_existing_csv(artifact_dir: str | Path, names: tuple[str, ...]) -> pd.DataFrame:
-    root = Path(artifact_dir)
+    snapshot = _resolve_generation(artifact_dir)
+    return _load_first_existing_csv_from_snapshot(snapshot, names)
+
+
+def _load_first_existing_csv_from_snapshot(
+    snapshot: GenerationSnapshot,
+    names: tuple[str, ...],
+) -> pd.DataFrame:
     for name in names:
-        path = root / name
-        if path.exists():
-            return _read_csv(path)
+        body = snapshot.payloads.get(name)
+        if body is not None:
+            return _read_csv_bytes(body)
     expected = ", ".join(names)
-    raise FileNotFoundError(f"No market baseline artifact found in {root}: {expected}")
+    raise FileNotFoundError(
+        f"No market baseline artifact found in generation "
+        f"{snapshot.generation_id}: {expected}"
+    )
 
 
-def _read_csv(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path, dtype=str, keep_default_na=False)
+def _resolve_generation(artifact_dir: str | Path) -> GenerationSnapshot:
+    root = Path(artifact_dir)
+    if (
+        root.name != "dynastyprocess_market_baseline"
+        or root.parent.name != "refresh_data"
+        or root.parent.parent.name != "local_exports"
+    ):
+        raise ValueError(
+            "Market baseline readers require the canonical versioned-generation root."
+        )
+    repo_root = root.parents[2]
+    return resolve_current_generation(root, repo_root=repo_root)
+
+
+def _read_csv_bytes(body: bytes) -> pd.DataFrame:
+    return pd.read_csv(BytesIO(body), dtype=str, keep_default_na=False)
 
 
 def _require_columns(frame: pd.DataFrame, required: set[str], label: str) -> None:

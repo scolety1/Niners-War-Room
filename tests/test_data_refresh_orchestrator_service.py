@@ -28,6 +28,11 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
+from src.services.dynastyprocess_generation_service import (
+    OUTPUT_FILE_NAMES,
+    expected_safe_root,
+    publish_generation,
+)
 from src.services.nflverse_refresh_health_service import CANONICAL_DATASET_IDS
 
 
@@ -67,6 +72,95 @@ def _fake_refreshed(entry, context) -> RefreshSourceResult:
 
 def _runner(command: list[str], cwd: Path, timeout: int) -> CommandResult:
     return CommandResult(0, "ok", "")
+
+
+def test_dynastyprocess_handler_uses_transactional_root_and_resolves_five_files(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    scripts = repo / "scripts"
+    scripts.mkdir(parents=True)
+    (scripts / "refresh_dynastyprocess_market_baseline_v1.py").write_text(
+        "# synthetic runner\n",
+        encoding="utf-8",
+    )
+    safe_root = expected_safe_root(repo)
+
+    def transactional_runner(
+        command: list[str],
+        cwd: Path,
+        timeout: int,
+    ) -> CommandResult:
+        del timeout
+        assert cwd == repo
+        assert "--safe-root" in command
+        root_index = command.index("--safe-root") + 1
+        assert Path(command[root_index]) == safe_root
+        assert "--output-dir" not in command
+        publish_generation(
+            {
+                name: f"file,marker\n{name},synthetic\n".encode()
+                for name in OUTPUT_FILE_NAMES
+            },
+            safe_root=safe_root,
+            repo_root=repo,
+            run_id="orchestrator-test",
+            generation_id="orchestrator-test-generation",
+        )
+        return CommandResult(0, "transactional refresh completed", "")
+
+    run = run_data_loader(
+        loader_mode=QUICK_REFRESH,
+        repo_root=repo,
+        status_root=tmp_path / "status",
+        source_ids=["dynastyprocess_market_baseline"],
+        settings=_settings(),
+        command_runner=transactional_runner,
+        write_status=False,
+    )
+    result = next(
+        row
+        for row in run.results
+        if row.source_id == "dynastyprocess_market_baseline"
+    )
+
+    assert result.action_type == REFRESHED
+    assert result.artifact_updated == str(safe_root)
+    assert len(result.found_artifacts) == 5
+    assert "generation=orchestrator-test-generation" in result.freshness
+
+
+def test_dynastyprocess_handler_fails_closed_without_valid_generation(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    scripts = repo / "scripts"
+    scripts.mkdir(parents=True)
+    (scripts / "refresh_dynastyprocess_market_baseline_v1.py").write_text(
+        "# synthetic runner\n",
+        encoding="utf-8",
+    )
+
+    run = run_data_loader(
+        loader_mode=QUICK_REFRESH,
+        repo_root=repo,
+        status_root=tmp_path / "status",
+        source_ids=["dynastyprocess_market_baseline"],
+        settings=_settings(),
+        command_runner=lambda *_args: CommandResult(0, "claimed success", ""),
+        write_status=False,
+    )
+    result = next(
+        row
+        for row in run.results
+        if row.source_id == "dynastyprocess_market_baseline"
+    )
+
+    assert result.action_type == FAILED
+    assert result.status == "RED"
+    assert result.refreshed is False
+    assert result.found_artifacts == ()
+    assert "without a valid current generation" in result.user_explanation
 
 
 def test_nflverse_registry_uses_25_canonical_dataset_rows() -> None:

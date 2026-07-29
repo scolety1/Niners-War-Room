@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import subprocess
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from scripts.build_dynastyprocess_market_baseline_v1 import (
-    DEFAULT_OUTPUT_DIR,
     DISPLAY_ONLY_WARNING,
 )
 from src.connectors.dynastyprocess_connector import (
@@ -19,6 +19,12 @@ from src.connectors.dynastyprocess_connector import (
     evaluate_freshness,
     parse_upstream_cron_metadata,
     validate_schema,
+)
+from src.services.dynastyprocess_generation_service import (
+    OUTPUT_FILE_NAMES,
+    expected_safe_root,
+    publish_generation,
+    resolve_current_generation,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -118,11 +124,68 @@ def test_dynastyprocess_fetch_failure_with_cache_is_yellow() -> None:
     assert freshness.freshness_status == "YELLOW_FETCH_FAILED_USING_LAST_CACHE"
 
 
-@pytest.mark.skipif(
-    not (DEFAULT_OUTPUT_DIR / "dp_market_baseline_context.csv").exists(),
-    reason="DynastyProcess derived artifacts have not been built",
-)
-def test_dynastyprocess_derived_csvs_load() -> None:
+@pytest.fixture
+def connector_generation(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    root = expected_safe_root(repo)
+    freshness_fields = {
+        "nwr_fetch_timestamp": "2026-07-29T00:00:00+00:00",
+        "upstream_scrape_date": "2026-07-25",
+        "upstream_latest_commit_sha": "synthetic",
+        "upstream_latest_commit_timestamp": "2026-07-25T00:00:00+00:00",
+        "upstream_workflow_name": "synthetic",
+        "upstream_expected_cron": "synthetic",
+        "local_cache_path": "synthetic",
+        "derived_artifact_path": "synthetic",
+        "freshness_status": "GREEN_CURRENT",
+        "market_baseline_stale_warning": "",
+    }
+    frames = {
+        "dp_market_baseline_context.csv": pd.DataFrame(
+            [
+                {
+                    "player": "Synthetic Player",
+                    "pos": "WR",
+                    "nwr_name": "Synthetic Player",
+                    "dp_display_only_warning": DISPLAY_ONLY_WARNING,
+                    **freshness_fields,
+                }
+            ]
+        ),
+        "dp_pick_value_context.csv": pd.DataFrame(
+            [{"pick_label": "2026 1.01", **freshness_fields}]
+        ),
+        "dp_playerid_crosswalk_audit.csv": pd.DataFrame(
+            [{"player": "Synthetic Player", **freshness_fields}]
+        ),
+        "dp_nwr_join_coverage.csv": pd.DataFrame(
+            [
+                {
+                    "source_name": "combined_nwr_universe",
+                    "dp_matched_rows": 1,
+                    "dp_match_rate": 1.0,
+                    **freshness_fields,
+                }
+            ]
+        ),
+        "dp_freshness_report.csv": pd.DataFrame([freshness_fields]),
+    }
+    assert set(frames) == set(OUTPUT_FILE_NAMES)
+    publish_generation(
+        {
+            name: frame.to_csv(index=False).encode()
+            for name, frame in frames.items()
+        },
+        safe_root=root,
+        repo_root=repo,
+        run_id="connector-test",
+        generation_id="connector-test-generation",
+    )
+    return resolve_current_generation(root, repo_root=repo)
+
+
+def test_dynastyprocess_derived_csvs_load(connector_generation) -> None:
     expected = [
         "dp_market_baseline_context.csv",
         "dp_pick_value_context.csv",
@@ -131,27 +194,23 @@ def test_dynastyprocess_derived_csvs_load() -> None:
         "dp_freshness_report.csv",
     ]
     for file_name in expected:
-        frame = pd.read_csv(DEFAULT_OUTPUT_DIR / file_name)
+        frame = pd.read_csv(BytesIO(connector_generation.payloads[file_name]))
         assert not frame.empty, file_name
 
 
-@pytest.mark.skipif(
-    not (DEFAULT_OUTPUT_DIR / "dp_nwr_join_coverage.csv").exists(),
-    reason="DynastyProcess coverage artifact has not been built",
-)
-def test_dynastyprocess_join_coverage_has_matches() -> None:
-    coverage = pd.read_csv(DEFAULT_OUTPUT_DIR / "dp_nwr_join_coverage.csv")
+def test_dynastyprocess_join_coverage_has_matches(connector_generation) -> None:
+    coverage = pd.read_csv(
+        BytesIO(connector_generation.payloads["dp_nwr_join_coverage.csv"])
+    )
     combined = coverage.loc[coverage["source_name"].eq("combined_nwr_universe")].iloc[0]
     assert combined["dp_matched_rows"] > 0
     assert combined["dp_match_rate"] > 0
 
 
-@pytest.mark.skipif(
-    not (DEFAULT_OUTPUT_DIR / "dp_market_baseline_context.csv").exists(),
-    reason="DynastyProcess market artifact has not been built",
-)
-def test_dynastyprocess_fields_are_display_only() -> None:
-    market = pd.read_csv(DEFAULT_OUTPUT_DIR / "dp_market_baseline_context.csv")
+def test_dynastyprocess_fields_are_display_only(connector_generation) -> None:
+    market = pd.read_csv(
+        BytesIO(connector_generation.payloads["dp_market_baseline_context.csv"])
+    )
     assert market["dp_display_only_warning"].eq(DISPLAY_ONLY_WARNING).all()
     forbidden = {
         "hidden_sort",
@@ -162,12 +221,12 @@ def test_dynastyprocess_fields_are_display_only() -> None:
     assert forbidden.isdisjoint(set(market.columns))
 
 
-@pytest.mark.skipif(
-    not (DEFAULT_OUTPUT_DIR / "dp_market_baseline_context.csv").exists(),
-    reason="DynastyProcess market artifact has not been built",
-)
-def test_dynastyprocess_derived_context_includes_freshness_fields() -> None:
-    market = pd.read_csv(DEFAULT_OUTPUT_DIR / "dp_market_baseline_context.csv")
+def test_dynastyprocess_derived_context_includes_freshness_fields(
+    connector_generation,
+) -> None:
+    market = pd.read_csv(
+        BytesIO(connector_generation.payloads["dp_market_baseline_context.csv"])
+    )
     expected = {
         "nwr_fetch_timestamp",
         "upstream_scrape_date",

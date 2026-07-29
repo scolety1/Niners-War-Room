@@ -14,6 +14,7 @@ import re
 import sys
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -32,14 +33,21 @@ from src.connectors.dynastyprocess_connector import (
     read_snapshot_metadata,
     validate_schema,
 )
-
-DEFAULT_OUTPUT_DIR = (
-    REPO_ROOT
-    / "docs"
-    / "hq"
-    / "parallel_lanes"
-    / "dynastyprocess_market_baseline_20260622"
+from src.services.dynastyprocess_generation_service import (
+    FaultInjector,
+    make_generation_id,
+    publish_generation,
 )
+
+DEFAULT_SAFE_ROOT = (
+    REPO_ROOT
+    / "local_exports"
+    / "refresh_data"
+    / "dynastyprocess_market_baseline"
+)
+# Compatibility name for callers that only inspect the default location.  The
+# directory is a generation root, never a flat set of mutable CSV files.
+DEFAULT_OUTPUT_DIR = DEFAULT_SAFE_ROOT
 FULL_DYNASTY_PATH = (
     REPO_ROOT
     / "local_exports"
@@ -566,10 +574,20 @@ def build_crosswalk_audit(joined: pd.DataFrame) -> pd.DataFrame:
 
 def write_outputs(
     snapshot_dir: Path,
-    output_dir: Path,
+    safe_root: Path,
     freshness: FreshnessMetadata,
+    *,
+    run_id: str | None = None,
+    generation_id: str | None = None,
+    fault_injector: FaultInjector | None = None,
+    repo_root: Path | None = None,
 ) -> dict[str, Path]:
-    output_dir.mkdir(parents=True, exist_ok=True)
+    effective_repo_root = repo_root or REPO_ROOT
+    effective_run_id = run_id or datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+    effective_generation_id = generation_id or make_generation_id(effective_run_id)
+    generation_dir = (
+        safe_root / "generations" / effective_generation_id
+    )
     nwr, counts = load_nwr_universe()
     dp_players = load_dp_players(snapshot_dir)
     joined = join_dp_to_nwr(dp_players, nwr)
@@ -593,38 +611,60 @@ def write_outputs(
         )
     ].copy()
     paths = {
-        "market": output_dir / "dp_market_baseline_context.csv",
-        "picks": output_dir / "dp_pick_value_context.csv",
-        "crosswalk": output_dir / "dp_playerid_crosswalk_audit.csv",
-        "coverage": output_dir / "dp_nwr_join_coverage.csv",
-        "freshness": output_dir / "dp_freshness_report.csv",
+        "market": generation_dir / "dp_market_baseline_context.csv",
+        "picks": generation_dir / "dp_pick_value_context.csv",
+        "crosswalk": generation_dir / "dp_playerid_crosswalk_audit.csv",
+        "coverage": generation_dir / "dp_nwr_join_coverage.csv",
+        "freshness": generation_dir / "dp_freshness_report.csv",
     }
-    _with_freshness(matched_context, freshness, paths["market"]).to_csv(
-        paths["market"],
-        index=False,
-    )
-    _with_freshness(build_pick_context(snapshot_dir), freshness, paths["picks"]).to_csv(
-        paths["picks"],
-        index=False,
-    )
-    _with_freshness(build_crosswalk_audit(joined), freshness, paths["crosswalk"]).to_csv(
-        paths["crosswalk"],
-        index=False,
-    )
-    _with_freshness(build_coverage(nwr, joined, counts), freshness, paths["coverage"]).to_csv(
-        paths["coverage"],
-        index=False,
-    )
+    frames = {
+        "dp_market_baseline_context.csv": _with_freshness(
+            matched_context,
+            freshness,
+            paths["market"],
+        ),
+        "dp_pick_value_context.csv": _with_freshness(
+            build_pick_context(snapshot_dir),
+            freshness,
+            paths["picks"],
+        ),
+        "dp_playerid_crosswalk_audit.csv": _with_freshness(
+            build_crosswalk_audit(joined),
+            freshness,
+            paths["crosswalk"],
+        ),
+        "dp_nwr_join_coverage.csv": _with_freshness(
+            build_coverage(nwr, joined, counts),
+            freshness,
+            paths["coverage"],
+        ),
+    }
     report = asdict(freshness)
     report["market_baseline_stale_warning"] = freshness.freshness_warning
-    pd.DataFrame([report]).to_csv(paths["freshness"], index=False)
-    return paths
+    frames["dp_freshness_report.csv"] = pd.DataFrame([report])
+    payloads = {
+        name: frame.to_csv(index=False).encode("utf-8")
+        for name, frame in frames.items()
+    }
+    result = publish_generation(
+        payloads,
+        safe_root=safe_root,
+        repo_root=effective_repo_root,
+        run_id=effective_run_id,
+        generation_id=effective_generation_id,
+        fault_injector=fault_injector,
+    )
+    published_by_name = result.files
+    return {
+        key: published_by_name[path.name]
+        for key, path in paths.items()
+    }
 
 
 def run(
     *,
     cache_root: Path = DEFAULT_CACHE_ROOT,
-    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    safe_root: Path = DEFAULT_SAFE_ROOT,
     snapshot_label: str | None = None,
     snapshot_dir: Path | None = None,
 ) -> tuple[Path, dict[str, Path], FreshnessMetadata]:
@@ -645,12 +685,13 @@ def run(
     freshness = evaluate_freshness(
         snapshot,
         previous_snapshot=previous_snapshot,
-        derived_artifact_path=output_dir,
+        derived_artifact_path=safe_root,
     )
     paths = write_outputs(
         snapshot_dir=snapshot_dir,
-        output_dir=output_dir,
+        safe_root=safe_root,
         freshness=freshness,
+        run_id=snapshot_label,
     )
     return snapshot_dir, paths, freshness
 
@@ -658,7 +699,7 @@ def run(
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--safe-root", type=Path, required=True)
     parser.add_argument("--snapshot-label", default=None)
     parser.add_argument("--snapshot-dir", type=Path, default=None)
     return parser.parse_args(argv)
@@ -668,7 +709,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     args = parse_args(argv)
     snapshot_dir, paths, freshness = run(
         cache_root=args.cache_root,
-        output_dir=args.output_dir,
+        safe_root=args.safe_root,
         snapshot_label=args.snapshot_label,
         snapshot_dir=args.snapshot_dir,
     )

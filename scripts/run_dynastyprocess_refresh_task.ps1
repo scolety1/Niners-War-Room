@@ -1,9 +1,14 @@
+param(
+    [string] $SafeRoot = "C:\NWR\Niners-War-Room\local_exports\refresh_data\dynastyprocess_market_baseline"
+)
+
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = "C:\NWR\Niners-War-Room"
 $PythonExe = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 $RefreshScript = Join-Path $RepoRoot "scripts\refresh_dynastyprocess_market_baseline_v1.py"
-$FreshnessReport = Join-Path $RepoRoot "docs\hq\parallel_lanes\dynastyprocess_market_baseline_20260622\dp_freshness_report.csv"
+$ExpectedSafeRoot = Join-Path $RepoRoot "local_exports\refresh_data\dynastyprocess_market_baseline"
+$CurrentPointer = Join-Path $ExpectedSafeRoot "current_generation.json"
 $LogRoot = "C:\NWR_SHARED_DATA\market_sources\dynastyprocess\logs"
 
 New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
@@ -17,19 +22,40 @@ function Write-CompactStatus {
         [string] $ExitCode
     )
 
-    if (Test-Path -LiteralPath $FreshnessReport) {
-        $Freshness = Import-Csv -LiteralPath $FreshnessReport | Select-Object -First 1
-        $Status = $Freshness.freshness_status
-        $ScrapeDate = $Freshness.upstream_scrape_date
-        $Commit = $Freshness.upstream_latest_commit_sha
-        $CachePath = $Freshness.local_cache_path
-        Write-Host "exit_code=$ExitCode freshness_status=$Status scrape_date=$ScrapeDate commit=$Commit cache_path=$CachePath"
+    $PointerStatus = if (Test-Path -LiteralPath $CurrentPointer -PathType Leaf) {
+        "PRESENT"
+    } else {
+        "MISSING"
     }
-    else {
-        Write-Host "exit_code=$ExitCode freshness_status=UNKNOWN scrape_date=UNKNOWN commit=UNKNOWN cache_path=UNKNOWN"
-    }
+    Write-Host "exit_code=$ExitCode current_pointer=$PointerStatus safe_root=$ExpectedSafeRoot"
     Write-Host "stdout_log=$StdoutLog"
     Write-Host "stderr_log=$StderrLog"
+}
+
+function Assert-SafeRoot {
+    $CanonicalExpected = [System.IO.Path]::GetFullPath($ExpectedSafeRoot)
+    $CanonicalRequested = [System.IO.Path]::GetFullPath($SafeRoot)
+    if ($SafeRoot.StartsWith("\\?\", [System.StringComparison]::Ordinal) -or
+        $SafeRoot.StartsWith("\\.\", [System.StringComparison]::Ordinal)) {
+        throw "Device-path aliases are prohibited for SafeRoot."
+    }
+    if (-not [System.String]::Equals(
+        $CanonicalRequested,
+        $CanonicalExpected,
+        [System.StringComparison]::Ordinal
+    )) {
+        throw "SafeRoot must exactly match $CanonicalExpected"
+    }
+    $Current = Get-Item -LiteralPath $RepoRoot -Force
+    while ($null -ne $Current) {
+        if (($Current.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "SafeRoot ancestor is a reparse point: $($Current.FullName)"
+        }
+        if ($Current.FullName -eq [System.IO.Path]::GetPathRoot($Current.FullName)) {
+            break
+        }
+        $Current = $Current.Parent
+    }
 }
 
 try {
@@ -42,10 +68,11 @@ try {
     if (-not (Test-Path -LiteralPath $RefreshScript)) {
         throw "Refresh script not found: $RefreshScript"
     }
+    Assert-SafeRoot
 
     Push-Location $RepoRoot
     try {
-        & $PythonExe $RefreshScript 1> $StdoutLog 2> $StderrLog
+        & $PythonExe $RefreshScript --safe-root $SafeRoot 1> $StdoutLog 2> $StderrLog
         $ExitCode = $LASTEXITCODE
     }
     finally {

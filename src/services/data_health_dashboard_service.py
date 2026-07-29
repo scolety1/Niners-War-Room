@@ -337,17 +337,19 @@ def _market_health() -> pd.DataFrame:
                     str(_age_fallback_count(market)),
                     "Count from available market context age-source columns if present.",
                 ),
-                _row(
-                    "Market",
-                    "Display-only guardrail",
-                    "GREEN",
-                    "active",
-                    DISPLAY_ONLY_WARNING,
-                ),
             ]
         )
     except (FileNotFoundError, ValueError) as exc:
         rows.append(_row("Market", "Market player rows", "YELLOW", "missing", str(exc)))
+    rows.append(
+        _row(
+            "Market",
+            "Display-only guardrail",
+            "GREEN",
+            "active",
+            DISPLAY_ONLY_WARNING,
+        )
+    )
     return _frame(rows)
 
 

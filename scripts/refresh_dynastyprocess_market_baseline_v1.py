@@ -5,17 +5,15 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import sys
 from collections.abc import Iterable
-from dataclasses import asdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.build_dynastyprocess_market_baseline_v1 import DEFAULT_OUTPUT_DIR, write_outputs
+from scripts.build_dynastyprocess_market_baseline_v1 import write_outputs
 from src.connectors.dynastyprocess_connector import (
     DEFAULT_CACHE_ROOT,
     DEFAULT_FILE_NAMES,
@@ -30,7 +28,7 @@ from src.connectors.dynastyprocess_connector import (
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--safe-root", type=Path, required=True)
     parser.add_argument("--snapshot-label", default=None)
     return parser.parse_args(argv)
 
@@ -57,17 +55,9 @@ def main(argv: Iterable[str] | None = None) -> int:
             freshness = evaluate_freshness(
                 None,
                 fetch_failed=True,
-                derived_artifact_path=args.output_dir,
+                derived_artifact_path=args.safe_root,
             )
-            args.output_dir.mkdir(parents=True, exist_ok=True)
-            with (args.output_dir / "dp_freshness_report.csv").open(
-                "w",
-                encoding="utf-8",
-                newline="",
-            ) as handle:
-                writer = csv.DictWriter(handle, fieldnames=list(asdict(freshness)))
-                writer.writeheader()
-                writer.writerow(asdict(freshness))
+            del freshness
             print(f"RED_NO_VALID_CACHE: {exc}")
             return 2
         print(f"YELLOW_FETCH_FAILED_USING_LAST_CACHE: {exc}")
@@ -76,12 +66,13 @@ def main(argv: Iterable[str] | None = None) -> int:
         snapshot,
         previous_snapshot=previous_snapshot,
         fetch_failed=fetch_failed,
-        derived_artifact_path=args.output_dir,
+        derived_artifact_path=args.safe_root,
     )
     paths = write_outputs(
         snapshot_dir=Path(snapshot.snapshot_dir),
-        output_dir=args.output_dir,
+        safe_root=args.safe_root,
         freshness=freshness,
+        run_id=args.snapshot_label,
     )
     print(f"DynastyProcess raw cache: {snapshot.snapshot_dir}")
     print(f"freshness_status: {freshness.freshness_status}")
