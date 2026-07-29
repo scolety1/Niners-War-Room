@@ -1,0 +1,12 @@
+path,change
+src/services/outcome_v3_calibration_service.py,CREATED
+src/services/outcome_v3_display_service.py,CREATED
+scripts/build_nwr_outcome_columns_v3_rc1.py,CREATED
+scripts/check_nwr_outcome_v3_preservation.py,CREATED
+tests/test_outcome_v3_calibration_service.py,CREATED
+tests/test_outcome_v3_display_service.py,CREATED
+tests/test_outcome_v3_ui_contract.py,CREATED
+app/pages/20_final_board_v1.py,MODIFIED_OUTCOME_ONLY
+app/pages/22_player_compare_v1.py,MODIFIED_OUTCOME_ONLY
+docs/user/NWR_V1_USER_MANUAL.md,MODIFIED_OUTCOME_ONLY
+docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/,CREATED_RELEASE_PACKET

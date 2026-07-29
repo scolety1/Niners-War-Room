@@ -12,11 +12,20 @@ Market, Outcome, NFLVerse, confidence, injury, and evidence fields are context;
 they do not silently replace the rank or model value. Use search, position,
 team, player type, preset, and advanced filters to narrow what you see.
 
+The Outcome Context preset includes the display-only Outcome Columns V3 lens.
+For the 2026 board it shows 2026, 2027, 2028, Within 3 Years, and Within 5
+Years for the selected position and threshold. Wrong-position rows are `N/A`;
+blocked or insufficient applicable evidence is `Not enough information`.
+
 ## Player Compare
 
 Choose two to four players to compare visible, read-only context. Missing
 evidence is shown as a hold or Not enough information. Comparing players does
 not change a rank, tier, formula, source, or draft state.
+
+The Outcome / Horizon tab expands the V3 lens across every applicable
+position threshold and adds Two Qualifying Seasons Within 3 Years. All joins
+use the exact player ID; the comparison never falls back to player names.
 
 ## Trading Lab
 

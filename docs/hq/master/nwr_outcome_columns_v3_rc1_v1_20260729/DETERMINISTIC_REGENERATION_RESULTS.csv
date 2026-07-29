@@ -1,0 +1,7 @@
+gate,result,evidence
+fixed_source_commit,PASS,dc5ff68c172f7a5a49755934d122ee1f99d87670
+stable_source_hashes,PASS,all tracked/external input receipts pinned
+utf8_lf_stable_order_fixed_precision,PASS,authoritative writer contract
+no_wall_clock_or_absolute_worktree_output,PASS,fixed build date 2026-07-29; stable paths only
+non_self_referential_manifest,PASS,MANIFEST.json excluded from its artifact ledger
+independent_clean_root_rebuild,PASS,34/34 regenerated text artifacts matched committed raw blobs; 4/4 screenshots retained; --verify-existing PASS

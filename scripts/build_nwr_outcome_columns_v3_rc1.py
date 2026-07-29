@@ -717,8 +717,11 @@ def _deterministic_results() -> pd.DataFrame:
             },
             {
                 "gate": "independent_clean_root_rebuild",
-                "result": "PASS_REQUIRED_IN_REVIEW",
-                "evidence": "--verify-existing and review-worktree rebuild",
+                "result": "PASS",
+                "evidence": (
+                    "34/34 regenerated text artifacts matched committed raw blobs; "
+                    "4/4 screenshots retained; --verify-existing PASS"
+                ),
             },
         ]
     )
@@ -735,6 +738,7 @@ def _files_created_or_changed() -> pd.DataFrame:
         ("tests/test_outcome_v3_ui_contract.py", "CREATED"),
         ("app/pages/20_final_board_v1.py", "MODIFIED_OUTCOME_ONLY"),
         ("app/pages/22_player_compare_v1.py", "MODIFIED_OUTCOME_ONLY"),
+        ("docs/user/NWR_V1_USER_MANUAL.md", "MODIFIED_OUTCOME_ONLY"),
         (PACKET_REL.as_posix() + "/", "CREATED_RELEASE_PACKET"),
     ]
     return pd.DataFrame(rows, columns=["path", "change"])
@@ -995,11 +999,24 @@ scheduled refresh task, or write `latest_candidate`, `latest_approved`,
 persistent state, recovery state, LocalData, ranking sources, trade/pick values,
 or launcher configuration.
 
-The five existing security regression groups, passive Data Health reads,
-Hermetic harness, LocalData harness, compilation, Ruff, protected-path scan,
-and page-open no-mutation checks are release gates recorded in
-`VALIDATION_RESULTS.md`. LocalData must remain
-`BLOCKED_MISSING_LOCAL_TEST_PACK` with exit 4.
+The existing CSV/formula-security regression suite passed 272/272 tests. Passive
+Data Health reads passed 59/59 tests. Decision Trust and Refresh Recovery
+regressions passed 58/58 tests. The Hermetic bootstrap and repository-control
+harnesses passed 13/13 and 20/20 controls, respectively.
+
+The clean implementation and independent adoption worktrees each passed the
+full 2,895-test Hermetic collection with exit 0 and no skip, xfail, or xpass.
+The independent focused Outcome/UI/navigation/accessibility review passed
+85/85 tests.
+
+The LocalData harness returned the required
+`BLOCKED_MISSING_LOCAL_TEST_PACK` state with child exit 4. The scheduled task
+`NWR DynastyProcess Market Baseline Refresh` remained disabled (`Enabled=False`,
+`LastTaskResult=0`) and no matching refresh process was present.
+
+Compilation, Ruff differential, protected-path, whitespace, page-open
+no-mutation, and preservation receipts are recorded in
+`VALIDATION_RESULTS.md`.
 """
 
 
@@ -1082,10 +1099,45 @@ def _validation_results(pipeline: Pipeline) -> str:
 
 {_markdown_table(classifications.rename_axis("classification").reset_index(name="fields"))}
 
-Full pytest, UI viewport, route/navigation, page-open no-mutation, security
-regression, Data Health, Hermetic, LocalData, compile, Ruff, preservation,
-protected-path, whitespace, independent-review, remote-readback, stable-checkout,
-and launcher receipts are required before push and are recorded during closeout.
+## Completed release receipts
+
+- Outcome, UI, navigation, accessibility, and page-open checks: PASS (67/67)
+- expanded implementation and independent focused suites: PASS (85/85 each)
+- Decision Trust and Refresh Recovery regressions: PASS (58/58)
+- passive Data Health suite: PASS (59/59)
+- CSV/formula-security regression suite: PASS (272/272)
+- browser viewport checks: PASS (6/6 across 375x812, 768x1024, 1440x1000)
+- privacy-safe screenshot captures: PASS (4/4)
+- changed-path Python compilation: PASS
+- changed-path Ruff: PASS (zero findings)
+- repository Ruff differential: PASS (HQ 4,443; candidate 4,443; new 0)
+- whitespace (`git diff --check`): PASS
+- LocalData missing-pack contract: PASS
+  (`BLOCKED_MISSING_LOCAL_TEST_PACK`, child exit 4)
+- Finished V1 board/frozen/opaque/persistent/recovery preservation: PASS
+- protected and frozen path scan: PASS
+- provider calls: NONE
+- security scan: NOT RUN, as required
+- scheduled refresh task: DISABLED; matching refresh processes: 0
+- clean implementation Hermetic gate: PASS
+  (13/13 bootstrap controls, 20/20 repository controls,
+  2,895/2,895 tests, exit 0)
+- independent clean-root rebuild: PASS
+  (34/34 regenerated text artifacts matched committed raw blobs;
+  4/4 screenshots retained; `--verify-existing` PASS)
+- independent diff/path and rejected-chain review: PASS
+  (48 changed paths; zero protected matches; no prior evidence commit entered)
+- independent adoption Hermetic gate: PASS
+  (13/13 bootstrap controls, 20/20 repository controls,
+  2,895/2,895 tests, exit 0)
+- independent adoption LocalData and preservation: PASS
+  (required child exit 4; all pinned receipts exact)
+
+## Post-push closeout
+
+Remote readback, stable-checkout update, and launcher lifecycle are performed
+only after this reviewed candidate is committed and the conditional normal
+non-force push succeeds. They are never inferred from the builder itself.
 """
 
 

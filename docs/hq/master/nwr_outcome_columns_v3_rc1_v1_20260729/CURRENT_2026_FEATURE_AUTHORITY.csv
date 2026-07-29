@@ -1,0 +1,241 @@
+nwr_player_id,gsis_id,player_name,position,feature_season,pyf_prior_rank_position_feature_season,pyf_prior_nwr_points,prior_games,missing_input_state,missing_reason,identity_authority,name_join_used
+9493,00-0039075,Puka Nacua,WR,2025,1.0000000000,259.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9488,00-0038543,Jaxon Smith-Njigba,WR,2025,2.0000000000,255.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9509,00-0038542,Bijan Robinson,RB,2025,3.0000000000,313.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6813,00-0036223,Jonathan Taylor,RB,2025,2.0000000000,318.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9221,00-0039139,Jahmyr Gibbs,RB,2025,4.0000000000,289.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7564,00-0036900,Ja'Marr Chase,WR,2025,5.0000000000,202.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7547,00-0036963,Amon-Ra St. Brown,WR,2025,3.0000000000,214.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8130,00-0037744,Trey McBride,TE,2025,1.0000000000,193.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9226,00-0039040,De'Von Achane,RB,2025,7.0000000000,263.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8137,00-0037247,George Pickens,WR,2025,4.0000000000,210.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8138,00-0037248,James Cook,RB,2025,5.0000000000,277.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9997,00-0039064,Zay Flowers,WR,2025,7.0000000000,169.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5859,00-0035676,A.J. Brown,WR,2025,14.0000000000,147.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8144,00-0037239,Chris Olave,WR,2025,6.0000000000,172.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8150,00-0037840,Kyren Williams,RB,2025,8.0000000000,238.7667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7569,00-0036554,Nico Collins,WR,2025,8.0000000000,161.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7553,00-0036970,Kyle Pitts,TE,2025,2.0000000000,133.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4034,00-0033280,Christian McCaffrey,RB,2025,1.0000000000,329.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8112,00-0037238,Drake London,WR,2025,19.0000000000,139.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6786,00-0036358,CeeDee Lamb,WR,2025,22.0000000000,137.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4984,00-0034857,Josh Allen,QB,2025,1.0000000000,321.5667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6794,00-0036322,Justin Jefferson,WR,2025,27.0000000000,132.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11564,00-0039851,Drake Maye,QB,2025,2.0000000000,313.0667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9224,00-0038597,Chase Brown,RB,2025,9.0000000000,219.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7525,00-0036912,DeVonta Smith,WR,2025,24.0000000000,134.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8148,00-0037240,Jameson Williams,WR,2025,9.0000000000,160.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8142,00-0037664,Alec Pierce,WR,2025,18.0000000000,140.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7523,00-0036971,Trevor Lawrence,QB,2025,3.0000000000,298.2667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5045,00-0034348,Courtland Sutton,WR,2025,11.0000000000,152.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12526,00-0040124,Tetairoa McMillan,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+8155,00-0038120,Breece Hall,RB,2025,18.0000000000,190.6333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5850,00-0035700,Josh Jacobs,RB,2025,14.0000000000,200.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7526,00-0036613,Jaylen Waddle,WR,2025,21.0000000000,137.6667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+10232,00-0038559,Michael Wilson,WR,2025,13.0000000000,149.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6801,00-0036410,Tee Higgins,WR,2025,15.0000000000,147.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5846,00-0035640,DK Metcalf,WR,2025,29.0000000000,129.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7588,00-0036997,Javonte Williams,RB,2025,11.0000000000,213.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4866,00-0034844,Saquon Barkley,RB,2025,13.0000000000,202.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6790,00-0036275,D'Andre Swift,RB,2025,12.0000000000,206.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8126,00-0038117,Wan'Dale Robinson,WR,2025,23.0000000000,135.6667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7543,00-0036973,Travis Etienne,RB,2025,10.0000000000,217.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12514,00-0040129,Emeka Egbuka,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+8228,00-0037228,Jaylen Warren,RB,2025,17.0000000000,194.3333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9487,00-0038606,Parker Washington,WR,2025,17.0000000000,142.1667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11604,00-0039338,Brock Bowers,TE,2025,9.0000000000,112.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12527,00-0040122,Ashton Jeanty,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+2133,00-0031381,Davante Adams,WR,2025,10.0000000000,155.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11620,00-0039919,Rome Odunze,WR,2025,42.0000000000,104.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6904,00-0036389,Jalen Hurts,QB,2025,8.0000000000,265.3667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6797,00-0036355,Justin Herbert,QB,2025,9.0000000000,262.8333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11560,00-0039918,Caleb Williams,QB,2025,5.0000000000,277.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5927,00-0035659,Terry McLaurin,WR,2025,55.0000000000,83.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6819,00-0036252,Michael Pittman,WR,2025,30.0000000000,127.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5872,00-0035719,Deebo Samuel,WR,2025,26.0000000000,133.6667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11635,00-0039915,Ladd McConkey,WR,2025,34.0000000000,117.6667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7021,00-0036139,Rico Dowdle,RB,2025,15.0000000000,197.2667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8167,00-0038124,Christian Watson,WR,2025,46.0000000000,96.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11632,00-0039337,Malik Nabers,WR,2025,112.0000000000,39.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12518,00-0040128,Tyler Warren,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12506,00-0040663,Harold Fannin,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+2449,00-0031588,Stefon Diggs,WR,2025,20.0000000000,137.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11563,00-0039732,Bo Nix,QB,2025,7.0000000000,268.4333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8146,00-0037740,Garrett Wilson,WR,2025,73.0000000000,62.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5947,00-0034960,Jakobi Meyers,WR,2025,38.0000000000,113.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+3198,00-0032764,Derrick Henry,RB,2025,6.0000000000,269.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9756,00-0038994,Jordan Addison,WR,2025,48.0000000000,96.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4046,00-0033873,Patrick Mahomes,QB,2025,11.0000000000,250.9667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9754,00-0038544,Quentin Johnston,WR,2025,35.0000000000,116.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11627,00-0039868,Troy Franklin,WR,2025,37.0000000000,114.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+3294,00-0033077,Dak Prescott,QB,2025,6.0000000000,270.0333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6783,00-0036407,Jerry Jeudy,WR,2025,57.0000000000,80.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8134,00-0037261,Khalil Shakir,WR,2025,43.0000000000,102.7333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8151,00-0038134,Kenneth Walker,RB,2025,21.0000000000,175.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+3214,00-0033090,Hunter Henry,TE,2025,4.0000000000,121.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11628,00-0039849,Marvin Harrison,WR,2025,50.0000000000,90.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5967,00-0035261,Tony Pollard,RB,2025,22.0000000000,169.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5001,00-0034383,Dalton Schultz,TE,2025,11.0000000000,105.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4981,00-0034837,Calvin Ridley,WR,2025,121.0000000000,35.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+10229,00-0039067,Rashee Rice,WR,2025,45.0000000000,97.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7567,00-0036919,Kenneth Gainwell,RB,2025,20.0000000000,177.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9500,00-0038997,Josh Downs,WR,2025,53.0000000000,89.0667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11631,00-0039893,Brian Thomas,WR,2025,44.0000000000,98.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12512,00-0040784,Quinshon Judkins,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+6803,00-0036261,Brandon Aiyuk,WR,2025,,,,insufficient,missing admitted 2025 regular-season feature row,exact_nwr_player_id_to_exact_gsis_id,False
+12519,00-0040735,Luther Burden,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+8110,00-0038041,Jake Ferguson,TE,2025,13.0000000000,104.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11638,00-0039916,Ricky Pearsall,WR,2025,72.0000000000,63.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4037,00-0033921,Chris Godwin,WR,2025,86.0000000000,54.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6149,00-0035535,Darius Slayton,WR,2025,67.0000000000,70.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4983,00-0034827,DJ Moore,WR,2025,32.0000000000,121.9667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+421,00-0026498,Matthew Stafford,QB,2025,4.0000000000,287.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8121,00-0037816,Romeo Doubs,WR,2025,33.0000000000,117.9333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8676,00-0037545,Rashid Shaheed,WR,2025,28.0000000000,129.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7049,00-0036259,Jauan Jennings,WR,2025,36.0000000000,115.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12540,00-0040705,Chimere Dike,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+10213,00-0038563,Tre Tucker,WR,2025,41.0000000000,110.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4018,00-0033897,Joe Mixon,RB,2025,,,,insufficient,missing admitted 2025 regular-season feature row,exact_nwr_player_id_to_exact_gsis_id,False
+11624,00-0039894,Xavier Worthy,WR,2025,62.0000000000,76.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9753,00-0039165,Zach Charbonnet,RB,2025,24.0000000000,159.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8125,00-0037837,Calvin Austin,WR,2025,79.0000000000,58.5667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12529,00-0040734,TreVeyon Henderson,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+3163,00-0033106,Jared Goff,QB,2025,10.0000000000,251.8333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11625,00-0039890,Adonai Mitchell,WR,2025,80.0000000000,58.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9501,00-0038621,DeMario Douglas,WR,2025,69.0000000000,66.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9504,00-0038608,Kayshon Boutte,WR,2025,52.0000000000,89.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11655,00-0039384,Tyrone Tracy,RB,2025,28.0000000000,144.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12499,00-0040170,Elic Ayomanor,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+11584,00-0039361,Bucky Irving,RB,2025,35.0000000000,117.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+10222,00-0039146,Jayden Reed,WR,2025,130.0000000000,31.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11637,00-0039901,Keon Coleman,WR,2025,68.0000000000,68.0667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11626,00-0039342,Xavier Legette,WR,2025,84.0000000000,55.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7611,00-0036875,Rhamondre Stevenson,RB,2025,26.0000000000,149.1333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9502,00-0038977,Tank Dell,WR,2025,,,,insufficient,missing admitted 2025 regular-season feature row,exact_nwr_player_id_to_exact_gsis_id,False
+11610,00-0039880,Malik Washington,WR,2025,40.0000000000,110.9333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9486,00-0038393,Dontayvion Wicks,WR,2025,92.0000000000,50.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11646,00-0039491,Jalen Coker,WR,2025,76.0000000000,61.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7594,00-0036555,Chuba Hubbard,RB,2025,37.0000000000,114.1667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12517,00-0040126,Colston Loveland,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+11618,00-0039855,Jalen McMillan,WR,2025,149.0000000000,21.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12484,00-0040130,Jayden Higgins,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+5892,00-0035685,David Montgomery,RB,2025,27.0000000000,148.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12489,00-0040730,RJ Harvey,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+10226,00-0038619,Andrei Iosivas,WR,2025,74.0000000000,62.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+1479,00-0030279,Keenan Allen,WR,2025,39.0000000000,113.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12493,00-0040189,Oronde Gadsden,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12474,00-0040583,Woody Marks,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+8136,00-0037256,Rachaad White,RB,2025,38.0000000000,113.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12501,00-0040667,Matthew Golden,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12530,00-0040718,Travis Hunter,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+2216,00-0031408,Mike Evans,WR,2025,83.0000000000,58.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4892,00-0034855,Baker Mayfield,QB,2025,12.0000000000,247.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4950,00-0034775,Christian Kirk,WR,2025,129.0000000000,32.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11834,00-0039424,Devaughn Vele,WR,2025,103.0000000000,44.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12507,00-0040666,Omarion Hampton,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+9508,00-0039032,Tyjae Spears,RB,2025,57.0000000000,73.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12541,00-0040581,Dont'e Thornton,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12492,00-0040134,Pat Bryant,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+9494,00-0038976,Marvin Mims,WR,2025,49.0000000000,95.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12508,00-0040691,Jaxson Dart,QB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4177,00-0033555,Mack Hollins,WR,2025,65.0000000000,75.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+10859,00-0039065,Sam LaPorta,TE,2025,26.0000000000,70.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12481,00-0040715,Cam Skattebo,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+6804,00-0036264,Jordan Love,QB,2025,15.0000000000,206.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4881,00-0034796,Lamar Jackson,QB,2025,18.0000000000,195.8667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+10236,00-0038933,Dalton Kincaid,TE,2025,16.0000000000,88.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4454,00-0033307,Kendrick Bourne,WR,2025,70.0000000000,65.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12503,00-0040782,Isaiah Bond,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+9758,00-0039163,C.J. Stroud,QB,2025,21.0000000000,183.2667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8111,00-0038129,Cade Otton,TE,2025,25.0000000000,71.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+1466,00-0030506,Travis Kelce,TE,2025,3.0000000000,126.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4217,00-0033288,George Kittle,TE,2025,11.0000000000,105.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4039,00-0033908,Cooper Kupp,WR,2025,60.0000000000,77.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9484,00-0038996,Tucker Kraft,TE,2025,19.0000000000,82.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11647,00-0039391,Kimani Vidal,RB,2025,36.0000000000,115.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5844,00-0035229,T.J. Hockenson,TE,2025,28.0000000000,64.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6943,00-0036196,Gabe Davis,WR,2025,158.0000000000,20.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7600,00-0036894,Pat Freiermuth,TE,2025,24.0000000000,73.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12509,00-0040727,Tre' Harris,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+9480,00-0038935,Brenton Strange,TE,2025,22.0000000000,77.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12522,00-0040676,Cam Ward,QB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12497,00-0040648,Tory Horton,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+6806,00-0036158,J.K. Dobbins,RB,2025,39.0000000000,112.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7596,00-0036980,Elijah Moore,WR,2025,156.0000000000,20.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12534,00-0040236,Kyle Monangai,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+6865,00-0036244,Colby Parkinson,TE,2025,20.0000000000,81.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11650,00-0039355,Luke McCaffrey,WR,2025,75.0000000000,62.3333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8132,00-0037263,Tyler Allgeier,RB,2025,41.0000000000,108.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8210,00-0037809,Chig Okonkwo,TE,2025,23.0000000000,73.6000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8205,00-0037197,Isiah Pacheco,RB,2025,56.0000000000,77.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11603,00-0039793,AJ Barner,TE,2025,14.0000000000,95.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7607,00-0036924,Michael Carter,RB,2025,55.0000000000,77.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6130,00-0035250,Devin Singletary,RB,2025,43.0000000000,103.6333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12498,00-0040736,Mason Taylor,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+8408,00-0037525,Jordan Mason,RB,2025,34.0000000000,123.1000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6826,00-0036290,Cole Kmet,TE,2025,33.0000000000,51.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12536,00-0040138,Jaylin Noel,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4943,00-0034869,Sam Darnold,QB,2025,14.0000000000,213.2333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12533,00-0040242,Jacory Croskey-Merritt,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+5870,00-0035710,Daniel Jones,QB,2025,17.0000000000,199.1667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11566,00-0039910,Jayden Daniels,QB,2025,33.0000000000,105.8667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5012,00-0034753,Mark Andrews,TE,2025,17.0000000000,83.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12502,00-0040584,Gunnar Helm,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4033,00-0033885,David Njoku,TE,2025,35.0000000000,49.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4199,00-0033293,Aaron Jones,RB,2025,44.0000000000,100.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8183,00-0037834,Brock Purdy,QB,2025,24.0000000000,157.3333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12469,00-0040162,Dylan Sampson,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+10219,00-0038611,Chris Rodriguez,RB,2025,48.0000000000,90.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12535,00-0040669,Isaac TeSlaa,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4035,00-0033906,Alvin Kamara,RB,2025,53.0000000000,78.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8131,00-0037838,Isaiah Likely,TE,2025,46.0000000000,38.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+96,00-0023459,Aaron Rodgers,QB,2025,20.0000000000,188.9333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11589,00-0039921,Trey Benson,RB,2025,92.0000000000,24.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11586,00-0039738,Blake Corum,RB,2025,32.0000000000,131.4667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11565,00-0039923,J.J. McCarthy,QB,2025,30.0000000000,117.9000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4066,00-0033881,Evan Engram,TE,2025,30.0000000000,58.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5995,00-0034975,Justice Hill,RB,2025,68.0000000000,48.4667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+7591,00-0036945,Justin Fields,QB,2025,27.0000000000,135.8667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11435,00-0038797,Emanuel Wilson,RB,2025,46.0000000000,96.4667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+6770,00-0036442,Joe Burrow,QB,2025,32.0000000000,112.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8154,00-0037746,Brian Robinson,RB,2025,59.0000000000,71.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11571,00-0039798,Isaiah Davis,RB,2025,61.0000000000,65.3667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12482,00-0040009,Savion Williams,WR,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12521,00-0040739,Elijah Arroyo,TE,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+11575,00-0039875,Ray Davis,RB,2025,49.0000000000,88.3333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12524,00-0040668,Shedeur Sanders,QB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+12476,00-0040202,Devin Neal,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+7528,00-0036893,Najee Harris,RB,2025,111.0000000000,10.2000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12495,00-0040198,Ollie Gordon,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+11559,00-0039917,Michael Penix,QB,2025,34.0000000000,105.4667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4098,00-0033923,Kareem Hunt,RB,2025,30.0000000000,136.0000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+5849,00-0035228,Kyler Murray,QB,2025,38.0000000000,72.1667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12455,00-0040078,Brashard Smith,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4137,00-0033553,James Conner,RB,2025,91.0000000000,25.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+8122,00-0037157,Zonovan Knight,RB,2025,52.0000000000,83.2333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9757,00-0038551,Kendre Miller,RB,2025,71.0000000000,43.4000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12490,00-0040719,Bhayshul Tuten,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+9506,00-0038951,Sean Tucker,RB,2025,45.0000000000,96.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11199,00-0038705,Emari Demercado,RB,2025,65.0000000000,52.3667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11439,00-0038794,Jaleel McLaughlin,RB,2025,85.0000000000,30.3333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9511,00-0038454,Keaton Mitchell,RB,2025,60.0000000000,71.3000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12544,00-0040238,LeQuint Allen,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+4219,00-0033955,Jeremy McNichols,RB,2025,64.0000000000,56.8667000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+4988,00-0034791,Nick Chubb,RB,2025,54.0000000000,78.5000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11576,00-0039794,Braelon Allen,RB,2025,99.0000000000,17.6333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+9225,00-0038555,Tank Bigsby,RB,2025,62.0000000000,61.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+2505,00-0031610,Darren Waller,TE,2025,29.0000000000,60.7000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+11583,00-0039344,Jonathon Brooks,RB,2025,,,,insufficient,missing admitted 2025 regular-season feature row,exact_nwr_player_id_to_exact_gsis_id,False
+11581,00-0039811,MarShawn Lloyd,RB,2025,,,,insufficient,missing admitted 2025 regular-season feature row,exact_nwr_player_id_to_exact_gsis_id,False
+12457,00-0040586,Jaydon Blue,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+10235,00-0039021,Roschon Johnson,RB,2025,134.0000000000,2.8333000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+1339,00-0030061,Zach Ertz,TE,2025,21.0000000000,78.8000000000,,complete,,exact_nwr_player_id_to_exact_gsis_id,False
+12504,00-0040142,Kaleb Johnson,RB,2025,,,,insufficient,rookie or prospect lacks admitted 2025 NFL feature evidence,exact_nwr_player_id_to_exact_gsis_id,False
+11533,,Brandon Aubrey,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+8259,,Cameron Dicker,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+2747,,Jason Myers,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+5189,,Eddy Pineiro,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+11539,,Jake Bates,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+1945,,Chris Boswell,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+4227,,Harrison Butker,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False
+17,,Matt Prater,K,2025,,,,insufficient,position is outside governed QB/RB/WR/TE Outcome families,exact_nwr_player_id_to_exact_gsis_id,False

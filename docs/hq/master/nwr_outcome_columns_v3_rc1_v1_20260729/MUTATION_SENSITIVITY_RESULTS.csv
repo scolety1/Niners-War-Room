@@ -1,0 +1,28 @@
+mutation_family,mutation,result,detection_path
+target,missing row -> failure,DETECTED,target contract
+target,censored row -> negative,DETECTED,target contract
+target,exact-year offset changed,DETECTED,target contract
+target,Within 3Y/5Y window changed,DETECTED,target contract
+target,Two-of-3Y rule changed,DETECTED,target contract
+target,future label leakage,DETECTED,temporal contract
+target,name join,DETECTED,exact-ID contract
+target,inactive authority removed,DETECTED,synthetic authority test
+calibration,wrong smoothing,DETECTED,model contract
+calibration,wrong shrink weight,DETECTED,model contract
+calibration,in-sample calibration,DETECTED,temporal contract
+calibration,random split,DETECTED,temporal contract
+calibration,low-sample isotonic,DETECTED,support gate
+calibration,blocked field numeric,DETECTED,integration validator
+calibration,"probability outside [0,1]",DETECTED,range validator
+logical,threshold reversal,DETECTED,logical graph
+logical,exact year > Within 3Y,DETECTED,logical graph
+logical,Within 3Y > Within 5Y,DETECTED,logical graph
+logical,Two-of-3Y > Within 3Y,DETECTED,logical graph
+logical,wrong-position numeric,DETECTED,integration validator
+logical,insufficient -> zero,DETECTED,integration validator
+integration,Outcome reorders rankings,DETECTED,rank-order validator
+integration,Finished V1 overwritten,DETECTED,immutability test
+integration,alias broken,DETECTED,schema compatibility test
+integration,static calendar year,DETECTED,dynamic-label test
+integration,Player Compare omits Two-of-3Y,DETECTED,UI contract test
+integration,page open writes state,DETECTED,page-open mutation test
