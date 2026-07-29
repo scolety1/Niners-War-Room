@@ -1,0 +1,14 @@
+case_id,mutation,commit_window,expected,observed,result
+R001,safe root swapped to junction,after initial validation,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R002,generations parent swapped,after generation validation,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R003,pointer parent swapped,after pointer validation,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R004,staging parent replaced by junction,after initial validation,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R005,governed ancestor replaced,before generation rename,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R006,governed ancestor replaced,before pointer commit,pointer unchanged,swap blocked or identity mismatch; old current,PASS
+R007,pointer destination replaced by junction,after pointer validation,pointer unchanged,handle-bound replacement fails closed; old current,PASS
+R008,volume identity changed,same textual path,pointer unchanged,identity mismatch; old current,PASS
+R009,directory file ID changed,same textual path,pointer unchanged,identity mismatch; old current,PASS
+R010,alternate-case alias,before publication,pointer unchanged,canonical spelling rejection,PASS
+R011,short-name alias,before publication,pointer unchanged,canonical spelling rejection,PASS
+R012,mount-point or junction alias,before publication,pointer unchanged,reparse and final-path rejection,PASS
+R013,device or extended path alias,before publication,pointer unchanged,device-prefix rejection,PASS

@@ -1,0 +1,25 @@
+case_id,phase,fault_event,expected_authority,observed,result
+F001,pre_pointer,before_staging_creation,old_generation,old pointer and complete old generation,PASS
+F002,pre_pointer,after_staging_creation,old_generation,old pointer and complete old generation,PASS
+F003,pre_pointer,after_file_write:dp_freshness_report.csv,old_generation,old pointer and no mixed current set,PASS
+F004,pre_pointer,after_file_write:dp_market_baseline_context.csv,old_generation,old pointer and no mixed current set,PASS
+F005,pre_pointer,after_file_write:dp_nwr_join_coverage.csv,old_generation,old pointer and no mixed current set,PASS
+F006,pre_pointer,after_file_write:dp_pick_value_context.csv,old_generation,old pointer and no mixed current set,PASS
+F007,pre_pointer,after_file_write:dp_playerid_crosswalk_audit.csv,old_generation,old pointer and no mixed current set,PASS
+F008,pre_pointer,during_file_flush:dp_freshness_report.csv,old_generation,old pointer and no mixed current set,PASS
+F009,pre_pointer,during_file_flush:dp_market_baseline_context.csv,old_generation,old pointer and no mixed current set,PASS
+F010,pre_pointer,during_file_flush:dp_nwr_join_coverage.csv,old_generation,old pointer and no mixed current set,PASS
+F011,pre_pointer,during_file_flush:dp_pick_value_context.csv,old_generation,old pointer and no mixed current set,PASS
+F012,pre_pointer,during_file_flush:dp_playerid_crosswalk_audit.csv,old_generation,old pointer and no mixed current set,PASS
+F013,pre_pointer,before_generation_manifest_creation,old_generation,old pointer and complete old generation,PASS
+F014,pre_pointer,during_generation_manifest_write,old_generation,old pointer and complete old generation,PASS
+F015,pre_pointer,after_generation_manifest_write,old_generation,old pointer and complete old generation,PASS
+F016,pre_pointer,before_generation_rename,old_generation,old pointer and complete old generation,PASS
+F017,pre_pointer,during_generation_rename,old_generation,old pointer and complete old generation,PASS
+F018,pre_pointer,after_generation_rename_before_pointer_write,old_generation,old pointer; orphan immutable generation permitted,PASS
+F019,pre_pointer,during_pointer_temporary_file_write,old_generation,old pointer and complete old generation,PASS
+F020,pre_pointer,during_pointer_flush,old_generation,old pointer and complete old generation,PASS
+F021,pre_pointer,during_atomic_pointer_replacement,old_generation,old pointer and complete old generation,PASS
+F022,post_pointer,after_pointer_replacement,new_generation,new pointer resolves one complete generation,PASS
+F023,cleanup,during_old_generation_cleanup,new_generation,publication valid; cleanup pending,PASS
+F024,cleanup,during_stale_staging_cleanup,new_generation,publication valid; cleanup pending,PASS
