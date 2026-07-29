@@ -729,6 +729,7 @@ def _files_created_or_changed() -> pd.DataFrame:
         ("src/services/outcome_v3_calibration_service.py", "CREATED"),
         ("src/services/outcome_v3_display_service.py", "CREATED"),
         ("scripts/build_nwr_outcome_columns_v3_rc1.py", "CREATED"),
+        ("scripts/check_nwr_outcome_v3_preservation.py", "CREATED"),
         ("tests/test_outcome_v3_calibration_service.py", "CREATED"),
         ("tests/test_outcome_v3_display_service.py", "CREATED"),
         ("tests/test_outcome_v3_ui_contract.py", "CREATED"),

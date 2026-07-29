@@ -44,6 +44,10 @@ from src.services.injury_availability_context_service import (
     build_nflverse_availability_panel_rows,
     nflverse_availability_status_rows,
 )
+from src.services.outcome_v3_display_service import (
+    load_outcome_v3_display,
+    player_compare_outcome_v3_rows,
+)
 from src.services.player_compare_decision_service import (
     MARKET_DISPLAY_ONLY_NOTE,
     build_player_compare_decision_summary,
@@ -90,7 +94,7 @@ def _render_position_aware_outcome_compare(
     prop_frame: pd.DataFrame,
     prop_path: Path,
 ) -> None:
-    st.subheader("Outcome Context")
+    st.subheader("Outcome V1 / V2 Compatibility Context")
     st.caption(
         "Outcome probabilities are display-only. By default each player shows only the "
         "approved heads for that player's position."
@@ -142,6 +146,56 @@ def _render_position_aware_outcome_compare(
         + ", ".join(f"{head} (Display-Only)" for head in sorted(visible_heads))
     )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def _render_outcome_v3_compare(compare_frame: pd.DataFrame) -> None:
+    st.subheader("Outcome Columns V3")
+    artifact = load_outcome_v3_display()
+    st.info(
+        "NWR_OUTCOME_COLUMNS_V3_RC1 shows calibrated dynasty-horizon context only. "
+        "It does not score, rank, recommend, or reorder players."
+    )
+    if not artifact.loaded:
+        render_yellow_hold(
+            "Outcome V3 is unavailable; applicable values remain Not enough information."
+        )
+        for error in artifact.errors:
+            st.error(error)
+        return
+    rows = player_compare_outcome_v3_rows(compare_frame, artifact.frame)
+    if rows.empty:
+        st.info(OUTCOME_NOT_ENOUGH_INFORMATION)
+        return
+    horizon_labels = rows["Horizon"].drop_duplicates().astype(str).tolist()
+    horizon_text = ", ".join(horizon_labels)
+    if len(horizon_labels) > 1:
+        horizon_text = f"{', '.join(horizon_labels[:-1])}, and {horizon_labels[-1]}"
+    st.caption(
+        f"Expanded horizons: {horizon_text}. "
+        "Exact player_id joins only."
+    )
+    columns = [
+        "Player",
+        "Pos",
+        "Threshold",
+        "Horizon",
+        "Probability",
+        "Calibration status",
+        "Evidence",
+        "Historical sample",
+        "Confidence",
+        "Missing-state explanation",
+    ]
+    st.dataframe(
+        rows.loc[:, columns],
+        use_container_width=True,
+        hide_index=True,
+        key="player_compare_outcome_v3_expanded",
+    )
+    st.caption(
+        f"Release: {artifact.release_identifier} | Artifact rows: {artifact.row_count} | "
+        f"SHA-256: {artifact.source_hash}"
+    )
 
 
 def _render_horizon_candidate_compare(compare_frame: pd.DataFrame) -> None:
@@ -904,15 +958,17 @@ else:
         "decision_board": "decision_flags_context.csv",
     }
     with detail_tabs[3]:
+        _render_outcome_v3_compare(compare)
         outcome_frame, outcome_path = load_lane_prop_file(
             "outcome_columns",
             "outcome_player_context.csv",
         )
-        if outcome_path is None or outcome_frame.empty:
-            render_yellow_hold("Outcome props are missing.")
-        else:
-            _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
-            _render_horizon_candidate_compare(compare)
+        with st.expander("Legacy Outcome compatibility context", expanded=False):
+            if outcome_path is None or outcome_frame.empty:
+                render_yellow_hold("Outcome props are missing.")
+            else:
+                _render_position_aware_outcome_compare(compare, outcome_frame, outcome_path)
+                _render_horizon_candidate_compare(compare)
 
     with detail_tabs[7]:
         st.caption(

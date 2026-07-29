@@ -54,6 +54,13 @@ from src.services.nflverse_refresh_health_service import (
     full_safe_refresh_dataset_ids,
     safe_refresh_dataset_ids,
 )
+from src.services.outcome_v3_calibration_service import (
+    POSITION_THRESHOLDS as OUTCOME_V3_POSITION_THRESHOLDS,
+)
+from src.services.outcome_v3_display_service import (
+    load_outcome_v3_display,
+    rankings_outcome_v3_rows,
+)
 
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
@@ -861,6 +868,86 @@ def _render_outcome_lens_status(unified: pd.DataFrame) -> None:
             st.error(error)
 
 
+def _render_outcome_v3_compact_lens(frame: pd.DataFrame) -> None:
+    st.subheader("Outcome Columns V3")
+    artifact = load_outcome_v3_display()
+    st.info(
+        "NWR_OUTCOME_COLUMNS_V3_RC1 is a display-only dynasty-horizon lens. "
+        "It never changes Finished V1 rank, scores, trade/pick values, or sort."
+    )
+    if not artifact.loaded:
+        st.warning(
+            "Outcome V3 is unavailable. Applicable values remain Not enough information."
+        )
+        for error in artifact.errors:
+            st.error(error)
+        return
+
+    present_positions = set(
+        frame.get("position", pd.Series(dtype=str)).astype(str).str.upper()
+    )
+    position_options = [
+        position
+        for position in OUTCOME_V3_POSITION_THRESHOLDS
+        if position in present_positions
+    ]
+    if not position_options:
+        st.info("No governed QB/RB/WR/TE players are visible in the current filter.")
+        return
+    controls = st.columns(2)
+    selected_position = controls[0].selectbox(
+        "Outcome V3 position",
+        position_options,
+        key="rankings_outcome_v3_position",
+        help="Select the governed position family shown in the compact lens.",
+    )
+    selected_threshold = controls[1].selectbox(
+        "Outcome V3 threshold",
+        OUTCOME_V3_POSITION_THRESHOLDS[selected_position],
+        format_func=lambda value: f"{selected_position} T{value}",
+        key="rankings_outcome_v3_threshold",
+        help="T6 is a top-six finish; broader thresholds include more finish outcomes.",
+    )
+    rows = rankings_outcome_v3_rows(
+        frame,
+        artifact.frame,
+        position=selected_position,
+        threshold=int(selected_threshold),
+    )
+    horizon_labels = rows["Horizon"].drop_duplicates().astype(str).tolist()
+    horizon_text = ", ".join(horizon_labels)
+    if len(horizon_labels) > 1:
+        horizon_text = f"{', '.join(horizon_labels[:-1])}, and {horizon_labels[-1]}"
+    st.caption(
+        f"Visible horizons: {horizon_text}. "
+        "Wrong-position is N/A; blocked or insufficient applicable evidence is "
+        "Not enough information."
+    )
+    columns = [
+        "Finished V1 Rank",
+        "Player",
+        "Pos",
+        "Threshold",
+        "Horizon",
+        "Probability",
+        "Calibration status",
+        "Evidence",
+        "Historical sample",
+        "Confidence",
+        "Missing-state explanation",
+    ]
+    st.dataframe(
+        rows.loc[:, columns],
+        use_container_width=True,
+        hide_index=True,
+        key="rankings_outcome_v3_compact_lens",
+    )
+    st.caption(
+        f"Release: {artifact.release_identifier} | Exact player_id joins | "
+        f"Artifact rows: {artifact.row_count} | SHA-256: {artifact.source_hash}"
+    )
+
+
 def _render_statistic_analysis_status() -> None:
     st.info(
         "Statistic Analysis is a read-only score explanation view. It exposes approved "
@@ -1095,6 +1182,7 @@ if show_market_baseline:
     )
 if preset == VIEW_PRESET_OUTCOME_CONTEXT:
     _render_outcome_lens_status(unified_board)
+    _render_outcome_v3_compact_lens(filtered_board)
 if preset == VIEW_PRESET_STATISTIC_ANALYSIS:
     _render_statistic_analysis_status()
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
