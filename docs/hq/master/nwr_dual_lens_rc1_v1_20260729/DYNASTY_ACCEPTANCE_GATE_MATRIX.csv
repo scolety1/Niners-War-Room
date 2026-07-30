@@ -1,0 +1,14 @@
+gate_id,gate,mandatory,status,evidence,blocker_or_caveat
+D-G01,Zero future leakage and chronological nested selection,True,PASS,Horizon-h training requires anchor+(h-1) < origin; future absence remains unknown.,
+D-G02,Exact player identity,True,PASS,All horizon joins use exact player_id+season; no name join.,
+D-G03,Adequate comparable multi-year coverage,True,FAIL,complete three-horizon coverage=0.591829.,"Missing future player-seasons are censored unknown, never coerced to zero."
+D-G04,Material multi-year improvement,True,PASS,"season-bootstrap delta=0.060787 CI=[0.039394,0.084588].",
+D-G05,Retention and above-replacement calibration,True,FAIL,H3 Brier=0.132281; ECE=0.056104.,Selected D1 does not directly incorporate the separately calibrated retention model.
+D-G06,Productive-veteran safety,True,FAIL,guarded_rows=157; age penalty capped at 5% for productive veterans.,
+D-G07,Improved veteran overvaluation without universal age penalty,True,FAIL,"D3 uses position-specific nested inflections, a 20% maximum future-only penalty, and no youth bonus.",Pass requires D3 to be selected as the strongest bounded research candidate.
+D-G08,Low-games safety,True,FAIL,rows=176; positive future contribution is capped at 75% of positive H1.,
+D-G09,Position and season stability,True,PASS,min_position_delta=0.018902; seasons_below_-0.05=0.,
+D-G10,Explicit rookie governance,True,PASS,True-rookie OOF support is zero and the canonical current board has zero rookie-flagged rows; draft-capital evidence remains review-only positive-evidence only.,
+D-G11,Interpretable bounded behavior,True,PASS,Exactly three horizons; fixed discount schedules; position-specific capped inflections; explicit veteran and low-games guards.,
+D-G12,Production source authority,True,FAIL,"Mart, age, and draft-capital evidence are review-only and not production-approved.",Controlling source authority blocks production admission regardless of metrics.
+D-G13,Deterministic reproduction and immutable baselines,True,PASS,"Fixed hashes, fixed seed, stable ordering/precision, no production writes.",

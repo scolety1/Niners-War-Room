@@ -1,0 +1,265 @@
+{
+  "dynasty_admitted": false,
+  "dynasty_candidate": "D1_DISCOUNTED_MULTI_HORIZON_VOR",
+  "files": [
+    {
+      "bytes": 11680,
+      "path": "CMC_AJ_BROWN_JONATHAN_TAYLOR_REVIEW.md",
+      "sha256": "74edb7babf4cd70a49a0eedaea67e567b253b294f2a91900e5e26f3f60e10cac"
+    },
+    {
+      "bytes": 4161,
+      "path": "CORE_APP_REFRESH_AUDIT.csv",
+      "sha256": "385f9a236e303edce64d8bd004414da76e0dbc2aea407e34c823c35d7aa91428"
+    },
+    {
+      "bytes": 384530,
+      "path": "CURRENT_2026_DUAL_LENS_SHADOW_BOARD.csv",
+      "sha256": "999ac35f08bbfca8a5a80457291bbb6761b44daebf1db233e0f6fa1ff1af3b4a"
+    },
+    {
+      "bytes": 16432,
+      "path": "CURRENT_MODEL_AUTHORITY_INVENTORY.csv",
+      "sha256": "ce1bbfe883af1494f64fc382b6b36d01b2a4eb553d204f47386716e350e79413"
+    },
+    {
+      "bytes": 705,
+      "path": "DATA_HEALTH_MODEL_STATUS.md",
+      "sha256": "c96a44839f189b3f5a41fedf657353c4e89ac874d78656e484e5a503e7317696"
+    },
+    {
+      "bytes": 199,
+      "path": "DETERMINISTIC_REGENERATION_RESULTS.csv",
+      "sha256": "834acd89361537627d28c29d05c1b344a3cabdb062e8aaa541ba404fb2ba5c82"
+    },
+    {
+      "bytes": 524,
+      "path": "DRAFT_TOOLS_REFRESH.md",
+      "sha256": "2a0537289e80a6051a11fbd15c631f06378fbc68b1e8fd36d777df3d2a5d6c72"
+    },
+    {
+      "bytes": 3780,
+      "path": "DUAL_LENS_RC1_REPORT.md",
+      "sha256": "9f3dbae19c01c042182c45f22d8c77564dd9a700637f247bc72e64e6992e2dcd"
+    },
+    {
+      "bytes": 2078,
+      "path": "DYNASTY_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "24ae937a85df7c30ca692edaf21075d0bd4137880bf6bcc1871c6e8116e3cc8c"
+    },
+    {
+      "bytes": 945,
+      "path": "DYNASTY_TARGET_CONTRACT.md",
+      "sha256": "e73c2636e1c69f0529abb5adb36e74df6b18c914614ae388ce2b44e047ef4d24"
+    },
+    {
+      "bytes": 10006,
+      "path": "DYNASTY_WALK_FORWARD_RESULTS.csv",
+      "sha256": "cd33ba9477213f574f5fe9bb53d2bab1661aa65263d0240fd9a9865d6783f4c2"
+    },
+    {
+      "bytes": 1030,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "62f496a1dc0a4900688a3a5fdd492888e3297b5aac2a6c37b371c6e8ea15c276"
+    },
+    {
+      "bytes": 4659,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "0d00dac3dcd6e822eff9ebb3f84a6f49e378fed75699d064aa5137d894452f50"
+    },
+    {
+      "bytes": 1305,
+      "path": "FINISHED_V1_AND_OUTCOME_V3_BASELINE.md",
+      "sha256": "264c788160bac7c152cdbfb0fa119330586ffa301d57c17a092da5cb64220e8f"
+    },
+    {
+      "bytes": 3301,
+      "path": "FORMULA_CANDIDATE_DEFINITIONS.csv",
+      "sha256": "b1fc6d521ab5e9c14fbf00f2620fd7c78f4a3398bc6b18680111c80f8d3e3105"
+    },
+    {
+      "bytes": 5226,
+      "path": "LARGEST_WIN_NOW_DYNASTY_GAPS.csv",
+      "sha256": "9082576f6ffae96448db63c9dfa462795d95f00aaad5dcc6055330a9d0e80f94"
+    },
+    {
+      "bytes": 2421,
+      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "sha256": "43b9e428483a90a7f8881855667becfc3d80d8cdbdf532ea1254822b1945503f"
+    },
+    {
+      "bytes": 654,
+      "path": "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md",
+      "sha256": "5a0bea30f342e5b253490056568b1da11ae39bf364f077341ead7123efc003e5"
+    },
+    {
+      "bytes": 574,
+      "path": "PLAYER_COMPARE_REFRESH.md",
+      "sha256": "684629a403ac729b8c546a95b25c214d714ec706ddb656a4aa0eae78f8820da3"
+    },
+    {
+      "bytes": 5654,
+      "path": "POSITION_AGE_GAMES_COHORT_RESULTS.csv",
+      "sha256": "55536dd11f0e3652dc6b5de17a2395821c4183b9141aab84fe1a4654cbc5e88e"
+    },
+    {
+      "bytes": 675,
+      "path": "PRODUCTION_BASELINES_NO_CHANGE.md",
+      "sha256": "709e5afd31d566d179766bace461a5d56bbd786a1a9f770e058295c6cf656191"
+    },
+    {
+      "bytes": 1090,
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "f00f863b85e9d98d83f1358a73a5b822cfb0dd0f118c37d5674438e044550780"
+    },
+    {
+      "bytes": 2852,
+      "path": "RETENTION_AVAILABILITY_RESULTS.csv",
+      "sha256": "03f48f0e6ab2e726529f9134303742ee7c72a57e1aef81817dd668e8a7b3bb4d"
+    },
+    {
+      "bytes": 569,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "ce8da567e4a6b0aa902a9e8c0500db753a4585a61eea43c29e08e344549f2aa1"
+    },
+    {
+      "bytes": 2925,
+      "path": "ROOKIE_EVIDENCE_AUTHORITY.csv",
+      "sha256": "254edcddbcededa074ed45ecb9cd472c9d8cd97ae9e411e96c9f4872a7ac5e56"
+    },
+    {
+      "bytes": 2518,
+      "path": "ROOKIE_VETERAN_EVALUATION.csv",
+      "sha256": "e29b5e0c219961e96e86092e4b9a4096b38a0fb20065b55d69f9a1693678a7c3"
+    },
+    {
+      "bytes": 340,
+      "path": "ROSTER_PLANNING_REFRESH.md",
+      "sha256": "42f87ba8aaa362e448b76600ab13940d0a80c9e5ff01100952aea85881a8a6a0"
+    },
+    {
+      "bytes": 2527,
+      "path": "SOURCE_HASH_LEDGER.csv",
+      "sha256": "ae43b9b98a7836a19a2ab1a3daa7ce16b08d005548882ecbbb3e49bf99b83268"
+    },
+    {
+      "bytes": 633,
+      "path": "TEAM_WINDOW_CONTRACT.md",
+      "sha256": "d424dad2a377b0941d824f06d0f004b4551c2de2c3a099ed4ecefdd5c17d0379"
+    },
+    {
+      "bytes": 1616,
+      "path": "TEAM_WINDOW_SENSITIVITY.csv",
+      "sha256": "1bdda60be42318693068b3f89a40ecb73e0aa194b42fc5d90a52d064704b1a85"
+    },
+    {
+      "bytes": 122992,
+      "path": "TEMPORAL_SELECTION_TRACE.csv",
+      "sha256": "a31d8521614dced7e783ca2276bb22d98d624460cd17278d8b65e0d828fe6893"
+    },
+    {
+      "bytes": 779,
+      "path": "TRADING_LAB_REFRESH.md",
+      "sha256": "6610a7d57bfb07f9777fd023edfeba0f500f78d33f05888b7fa086d37121ce2e"
+    },
+    {
+      "bytes": 874,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "d5becde29f34cdb3321e6df01f3651218739bf262e29d9dc2263af0745a0f0cc"
+    },
+    {
+      "bytes": 7841,
+      "path": "VIEWPORT_AND_ACCESSIBILITY_RESULTS.csv",
+      "sha256": "9102e1d2d279f091a2c6ef9ac25029ee6a570d2d9181eb69b876a6084b91e1d9"
+    },
+    {
+      "bytes": 1718,
+      "path": "WIN_NOW_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "900e1ed3c1167d16abc3b276eb87ce70eb577ad5dac9d6634a45d7dffb56b107"
+    },
+    {
+      "bytes": 838,
+      "path": "WIN_NOW_TARGET_CONTRACT.md",
+      "sha256": "2f215d8480eb312de86038c08101a3293d677b57f940791b59f3def96f09a4a8"
+    },
+    {
+      "bytes": 12573,
+      "path": "WIN_NOW_WALK_FORWARD_RESULTS.csv",
+      "sha256": "495d5038c353956203ec5ba8301e783a2ddf49d858dfc8b0a756f5f4313cd583"
+    }
+  ],
+  "production_integration": false,
+  "release_identifier": "NWR_DUAL_LENS_RC1_RESEARCH_ONLY_NOT_ADMITTED",
+  "seed": 20260729,
+  "self_referential": false,
+  "source_hashes": {
+    "CURRENT_FEATURES_REVIEW_ONLY": {
+      "bytes": 226513,
+      "scope": "fixed_external_review_only_source",
+      "sha256": "bdff4e6c0c51b64a3f867c6ed11f72cda088046e1ffd194c32fb55f49357d1e0"
+    },
+    "config/nwr_scoring_rules_nwr_1qb_nonppr_fd_v1.json": {
+      "bytes": 1259,
+      "scope": "tracked_fixed_source",
+      "sha256": "03986944a57f0f73c78a8f56413b53749b3e384a10788ff7ab262d21e0b1eab2"
+    },
+    "docs/hq/data_hygiene/age_lifecycle_sidecar_freeze_validation_v1_20260709/MODEL_V4_AGE_LIFECYCLE_SIDECAR_REVIEW_ONLY.csv": {
+      "bytes": 7664998,
+      "scope": "tracked_fixed_source",
+      "sha256": "ea5ec2455c89031b8deb6077847b7c10e4da4a09f604bf1dae0e6250983f883b"
+    },
+    "docs/hq/data_hygiene/formula_data_mart_feature_availability_audit_v1_20260709/FORMULA_DATA_MART_REVIEW_ONLY.csv": {
+      "bytes": 8922955,
+      "scope": "tracked_fixed_source",
+      "sha256": "4c63a01cc4d56d0496d56ff13d4dabb4faa0b7a24d8f7510a368ad48d9714151"
+    },
+    "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/CURRENT_2026_OUTCOME_V3_SHADOW_BOARD.csv": {
+      "bytes": 255410,
+      "scope": "tracked_fixed_source",
+      "sha256": "256c4deb8c0199d29143fc117a43496dc6847dd0e7b3724549a372cb1b6df577"
+    },
+    "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/OUTCOME_V3_SCHEMA.csv": {
+      "bytes": 30506,
+      "scope": "tracked_fixed_source",
+      "sha256": "7001e319eb0aafc2a3eb9d4de8a2fd421b19fabd552bc16a1a5df69b48ab2cff"
+    },
+    "docs/hq/model/current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708/rebuilt_full_player_board_value_review_rows.csv": {
+      "bytes": 490219,
+      "scope": "tracked_fixed_source",
+      "sha256": "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
+    },
+    "docs/hq/model/formula_temporal_validation_framework_prospective_2026_challenger_freeze_v1_20260710/PROSPECTIVE_2026_BASELINE_FREEZE.csv": {
+      "bytes": 1148885,
+      "scope": "tracked_fixed_source",
+      "sha256": "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
+    },
+    "docs/hq/model/historical_model_v4_replay_substrate_v1_20260708/MODEL_V4_PARTIAL_REPLAY_INPUT_PANEL_REVIEW_ONLY.csv": {
+      "bytes": 5717062,
+      "scope": "tracked_fixed_source",
+      "sha256": "22c7aa9ecb8567d0ff795809d075f8f8ac91a3dfe56e7a31f8a328ba99c9b99f"
+    },
+    "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/MODEL_V4_ACTIVE_FORMULA_CONTRACT.md": {
+      "bytes": 7382,
+      "scope": "tracked_fixed_source",
+      "sha256": "be14b8eed1d00ad25418cc3c76b07c2c95e1a44d9bbb23d3ce5284ec5b825c9d"
+    },
+    "docs/hq/model/model_v4_formula_documentation_cleanup_v1_20260708/MODEL_V4_COMPONENT_REGISTRY.csv": {
+      "bytes": 13962,
+      "scope": "tracked_fixed_source",
+      "sha256": "daea46d9295647624b701291838f27a765919cfb7ecf4f82572de345d0ec2c3f"
+    },
+    "docs/hq/model/production_rankings_backtest_v1_20260708/build_production_rankings_backtest_v1.py": {
+      "bytes": 48077,
+      "scope": "tracked_fixed_source",
+      "sha256": "c9676d4ca145b50492066bfef89c3b5b708600fd61adae82349eedf3ea611590"
+    },
+    "docs/hq/model/rookie_draft_capital_data_mart_join_component_test_v1_20260709/ROOKIE_DRAFT_CAPITAL_REVIEW_ONLY_SIDECAR.csv": {
+      "bytes": 3690762,
+      "scope": "tracked_fixed_source",
+      "sha256": "d088e2723ebb1edfaf7c9bc8020e5405d144bd142d8ee75e6fb8b59a6aef2c48"
+    }
+  },
+  "verdict": "GREEN_NWR_FINISHED_V1_RETAINS_AUTHORITY_DUAL_LENS_NOT_ADMITTED",
+  "win_now_admitted": false,
+  "win_now_candidate": "W3_SHORT_HORIZON_CALIBRATED_BLEND"
+}

@@ -1,0 +1,2 @@
+check,root_a,root_b,files_compared,mismatches,status,evidence
+builder canonical output,IMPLEMENTATION_WORKTREE,PENDING_INDEPENDENT_REVIEW_WORKTREE,0,,PENDING,Run validator after clean-root adoption.

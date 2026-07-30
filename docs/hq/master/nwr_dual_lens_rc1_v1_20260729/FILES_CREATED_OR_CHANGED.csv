@@ -1,0 +1,41 @@
+path,change,classification,production_effect
+scripts/build_nwr_dual_lens_rc1_v1_20260729.py,created,deterministic review-only research builder,none
+tests/test_nwr_dual_lens_rc1_research.py,created,research contract regression tests,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/CMC_AJ_BROWN_JONATHAN_TAYLOR_REVIEW.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/CORE_APP_REFRESH_AUDIT.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/CURRENT_2026_DUAL_LENS_SHADOW_BOARD.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/CURRENT_MODEL_AUTHORITY_INVENTORY.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DATA_HEALTH_MODEL_STATUS.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DETERMINISTIC_REGENERATION_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DRAFT_TOOLS_REFRESH.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DUAL_LENS_RC1_REPORT.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DYNASTY_ACCEPTANCE_GATE_MATRIX.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DYNASTY_TARGET_CONTRACT.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/DYNASTY_WALK_FORWARD_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/EXECUTIVE_VERDICT.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/FILES_CREATED_OR_CHANGED.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/FINISHED_V1_AND_OUTCOME_V3_BASELINE.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/FORMULA_CANDIDATE_DEFINITIONS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/LARGEST_WIN_NOW_DYNASTY_GAPS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/MANIFEST.json,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/MUTATION_SENSITIVITY_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/PLAYER_COMPARE_REFRESH.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/POSITION_AGE_GAMES_COHORT_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/PRODUCTION_BASELINES_NO_CHANGE.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/PROTECTED_AND_FROZEN_PATH_PROOF.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/RETENTION_AVAILABILITY_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/ROLLBACK_PLAN.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/ROOKIE_EVIDENCE_AUTHORITY.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/ROOKIE_VETERAN_EVALUATION.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/ROSTER_PLANNING_REFRESH.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/SOURCE_HASH_LEDGER.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/TEAM_WINDOW_CONTRACT.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/TEAM_WINDOW_SENSITIVITY.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/TEMPORAL_SELECTION_TRACE.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/TRADING_LAB_REFRESH.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/VALIDATION_RESULTS.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/VIEWPORT_AND_ACCESSIBILITY_RESULTS.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/WIN_NOW_ACCEPTANCE_GATE_MATRIX.csv,created,deterministic research evidence,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/WIN_NOW_TARGET_CONTRACT.md,created,research documentation,none
+docs/hq/master/nwr_dual_lens_rc1_v1_20260729/WIN_NOW_WALK_FORWARD_RESULTS.csv,created,deterministic research evidence,none

@@ -1,0 +1,20 @@
+mutation_id,mutation,expected,observed,result,detector,exercised_path
+M01,future leakage,DETECTED,DETECTED,PASS,strict training predicate anchor+horizon_offset < origin,real_model_and_shadow_board
+M02,random split,DETECTED,DETECTED,PASS,split contract allow-list,contract_or_immutable_path
+M03,name join,DETECTED,DETECTED,PASS,exact identity key contract,real_model_and_shadow_board
+M04,current ADP admitted as formula input,DETECTED,DETECTED,PASS,feature allow-list and banned-current-context test,real_model_and_shadow_board
+M05,universal age penalty,DETECTED,DETECTED,PASS,position-specific inflection schema,real_model_and_shadow_board
+M06,missing retention/availability/veteran/low-games guards,DETECTED,DETECTED,PASS,candidate contract required-guard set,real_model_and_shadow_board
+M07,unsupported rookie marked complete,DETECTED,DETECTED,PASS,current shadow-board rookie null fence,real_model_and_shadow_board
+M08,Outcome V3 used in-sample,DETECTED,DETECTED,PASS,formula feature registry excludes Outcome columns,real_model_and_shadow_board
+M09,hidden Team Window weights,DETECTED,DETECTED,PASS,detached board output schema,real_model_and_shadow_board
+M10,raw-rank Team Window blending,DETECTED,DETECTED,PASS,Team Window accepts normalized lens scores only,real_model_and_shadow_board
+M11,opaque trade winner,DETECTED,DETECTED,PASS,Trading Lab no-winner output contract,contract_or_immutable_path
+M12,swapped lens values,DETECTED,DETECTED,PASS,formula-id-to-score-column binding,real_model_and_shadow_board
+M13,hidden fallback into missing lens score,DETECTED,DETECTED,PASS,unsupported current row scores must remain null,real_model_and_shadow_board
+M14,incorrect draft lens routing,DETECTED,DETECTED,PASS,future draft lens enum/routing equality detector,contract_or_immutable_path
+M15,Finished V1 overwrite,DETECTED,DETECTED,PASS,pinned SHA-256 assertion,contract_or_immutable_path
+M16,Outcome V3 change,DETECTED,DETECTED,PASS,Outcome V3 board and 79-row schema hash assertion,contract_or_immutable_path
+M17,page-open write,DETECTED,DETECTED,PASS,no app file changed; research builder output root allow-list,contract_or_immutable_path
+M18,V2-2 formula chain revived,DETECTED,DETECTED,PASS,candidate registry fixed to W0-W3/D0-D3,contract_or_immutable_path
+M19,scheduled refresh task re-enabled,DETECTED,DETECTED,PASS,external scheduled-task state gate; verified separately as disabled,contract_or_immutable_path

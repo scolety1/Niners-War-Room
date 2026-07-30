@@ -1,0 +1,13 @@
+gate_id,gate,mandatory,status,evidence,blocker_or_caveat
+W-G01,Zero future leakage and chronological nested selection,True,PASS,N-to-N+1 source gates pass; every fitted target requires anchor+horizon < origin.,
+W-G02,Exact player identity,True,PASS,"5,518 unique season-position-player_id rows; no name join.",
+W-G03,Adequate historical and current experienced-player coverage,True,PASS,OOF coverage=1.000000; current unsupported rows remain null-fenced.,
+W-G04,Material next-year improvement or non-inferiority with better availability,True,FAIL,"season-bootstrap delta=0.043686 CI=[0.027834,0.058516]; availability_calibration_pass=False.",Strict gate requires material improvement with non-negative uncertainty bound.
+W-G05,Uncertainty survival,True,PASS,delta lower 95% bound=0.027834; floor=-0.005.,
+W-G06,Position and season safety,True,PASS,min_position_delta=0.014398; seasons_below_-0.05=0.,
+W-G07,Top-tier safety,True,PASS,candidate_top24_precision=0.421296; W0=0.393519.,
+W-G08,Availability calibration,True,FAIL,MAE=0.216980; ECE=0.067894.,
+W-G09,Low-games safety,True,PASS,rows=641; coverage=1.000000.,
+W-G10,Explicit rookie governance,True,PASS,True-rookie OOF support is zero and the canonical current board has zero rows flagged as rookies. Any future rookie is null-fenced until governed evidence exists; no rookie precision is invented.,
+W-G11,Production source authority,True,FAIL,"All 5,518 mart rows are review_only; training_allowed=False and production_approved=False.",Controlling source authority blocks production admission regardless of metrics.
+W-G12,Deterministic reproduction and immutable baselines,True,PASS,"Fixed hashes, fixed seed, stable ordering/precision, no production writes.",
