@@ -1,0 +1,5 @@
+feature_family,feature_count,rows_present,exact_identity_rows,drafted_rookie_rows,all_rookie_rows,coverage_of_exact,coverage_of_drafted,coverage_of_all_rookies,missing_preserved
+terminal_counting_stats,11,1044,1103,1112,2862,0.946510,0.938849,0.364780,True
+derived_college_production,6,1044,1103,1112,2862,0.946510,0.938849,0.364780,True
+player_usage,5,885,1103,1112,2862,0.802357,0.795863,0.309224,True
+player_ppa,6,885,1103,1112,2862,0.802357,0.795863,0.309224,True

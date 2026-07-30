@@ -1,5 +1,21 @@
 {
-  "cfbd_live_requests": 0,
+  "cfbd_data_requests": 60,
+  "cfbd_extension": {
+    "admission_id": "NWR_CFBD_COLLEGE_EVIDENCE_ADMISSION_V1",
+    "catalog_relative_path": "config/nwr_cfbd_college_evidence_snapshot_v1.json",
+    "college_feature_rows": 1044,
+    "exact_identity_rows": 1103,
+    "feature_value_decision": "ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL",
+    "model_reentry": "NOT_AUTHORIZED",
+    "packet_relative_path": "docs/hq/master/nwr_cfbd_college_evidence_admission_v1_20260730",
+    "provider_calls": 62,
+    "raw_payloads_committed": false,
+    "snapshot_aggregate_sha256": "370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a",
+    "snapshot_id": "20260730T171639Z-370ce01696c3",
+    "source_admission": "CFBD_OFFICIAL_REST_V2_FAMILIES_ADMITTED_WITH_RECORDED_LIMITS",
+    "unresolved_identity_rows": 1759
+  },
+  "cfbd_live_requests": 62,
   "client_source": {
     "admission_status": "ADMITTED_PRIMARY_SOURCE",
     "aggregate_sha256": "bc78a8520ceb54e00fc164363285b47bf98971bb8c027d7dde74c0d2a5f1d81e",
