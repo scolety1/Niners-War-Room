@@ -1,0 +1,58 @@
+{
+  "input_pack_version": "MODEL_V4_2026_COMPATIBLE_INPUT_PACK_V1",
+  "board_version": "NWR_MODEL_V4_2026_ROOKIE_BOARD_REVIEW_V1",
+  "draft_class_year": 2026,
+  "nflverse": {
+    "draft_picks_root": "C:\\NWR_SHARED_DATA\\source_snapshots\\nflverse\\draft_picks\\20260730T072407Z-24ff3f7171ed",
+    "draft_picks_aggregate_sha256": "24ff3f7171ed79ffe53683680846fb8f50fd453ce9e9184c44affe52e9c970ed",
+    "combine_root": "C:\\NWR_SHARED_DATA\\source_snapshots\\nflverse\\combine\\20260730T072407Z-5e6847b155d8",
+    "combine_aggregate_sha256": "5e6847b155d87a27954204d6b6e6192f6264c0e04556fbfbe20983954ddcee65",
+    "players_root": "C:\\NWR_SHARED_DATA\\source_snapshots\\nflverse\\players\\20260730T072407Z-42af9666ac84",
+    "players_aggregate_sha256": "42af9666ac84e6fc7700010719775538c993fb4a8067bd4cb54fda760ebacde5"
+  },
+  "cfbd": {
+    "reviewed_branch": "work/nwr-cfbd-college-evidence-adoption-v1-20260730",
+    "reviewed_head": "fd55bddf1cff551fdf2716115dc27c8aa4658a14",
+    "implementation_head": "28ebb3565635ed06890f370cd270c2f79ec00a65",
+    "snapshot_root": "C:\\NWR_SHARED_DATA\\source_snapshots\\cfbd\\rest_v2\\20260730T171639Z-370ce01696c3",
+    "aggregate_sha256": "370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a",
+    "allowed_families": [
+      "draft_picks",
+      "player_season_stats"
+    ],
+    "forbidden_scoring_families": [
+      "player_ppa",
+      "player_usage"
+    ]
+  },
+  "identity": {
+    "exact_crosswalk": "docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/EXACT_IDENTITY_CROSSWALK.csv",
+    "unresolved_inventory": "docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/UNRESOLVED_IDENTITY_INVENTORY.csv",
+    "expected_drafted_rows": 80,
+    "expected_exact_rows": 73,
+    "expected_blocked_rows": 7
+  },
+  "analyzers": {
+    "sprint_12_13_version": "model_v4_sprint_12_13_review_0.1.1",
+    "sprint_14e_version": "model_v4_sprint_14e_rookie_draft_review_0.1.0"
+  },
+  "formula_freeze": {
+    "production": 0.3,
+    "market_share": 0.2,
+    "draft_capital": 0.25,
+    "athletic_prior": 0.12,
+    "recruiting_prior": 0.05,
+    "age_lifecycle": 0.08
+  },
+  "format_factors": {
+    "RB": 1.0,
+    "WR": 1.0,
+    "TE": 0.82,
+    "QB": 0.62
+  },
+  "protected_sha256": {
+    "finished_v1": "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4",
+    "outcome_v3": "e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20",
+    "frozen_comparator": "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
+  }
+}
