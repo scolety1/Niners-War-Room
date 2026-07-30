@@ -31,6 +31,7 @@
   "oversized_raw_git_payloads": "PASS ZERO NEW RAW PAYLOADS; LARGEST NEW GOVERNED ARTIFACT UNDER 5 MB",
   "cfbd_status": "BLOCKED_MISSING_OWNER_CONTROLLED_CFBD_KEY",
   "remote_pre_review": "UNCHANGED_AT_STARTING_HQ",
-  "independent_review": "PASS NO CORRECTION CYCLE REQUIRED",
+  "independent_review": "PASS ONE BOUNDED DOCUMENTATION CORRECTION CYCLE",
+  "partial_admission_status": "NFLVERSE_ADMITTED_CFBD_NOT_ADMITTED",
   "skip_xfail_xpass": "ZERO"
 }

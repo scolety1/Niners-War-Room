@@ -44,6 +44,7 @@ FROZEN_HASH = "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
 PERSISTENT_DIGEST = "88d1a981d514e6519e328efa639e80e51c4ae0379f046e3e3ee55acef1f82987"
 RECOVERY_DIGEST = "1fbd0b5097b240ed43a21be111926480ed4a97f558f033b8fea68e5c42604835"
 VERDICT = "YELLOW_NWR_NFLVERSE_ADMITTED_CFBD_BLOCKED"
+PARTIAL_ADMISSION_STATUS = "NFLVERSE_ADMITTED_CFBD_NOT_ADMITTED"
 CORE = set(foundation.CORE_POSITIONS)
 
 REQUIRED_FILES = (
@@ -1591,6 +1592,8 @@ def write_packet(*, root: Path, packet: Path, pipeline: Pipeline) -> None:
 
 `{VERDICT}`
 
+Partial source-admission status: `{PARTIAL_ADMISSION_STATUS}`.
+
 All requested official nflverse source families were captured in immutable external
 snapshots and admitted with their discovered coverage limits. CFBD remains
 `{cfbd.MISSING_KEY_STATUS}` and made zero calls. This packet is research-only:
@@ -1714,6 +1717,8 @@ scheduled task. External snapshots may be retained as immutable audit evidence.
 
 `{VERDICT}`
 
+Partial source-admission status: `{PARTIAL_ADMISSION_STATUS}`.
+
 Admitted nflverse datasets: {_comma(admitted)}. Source snapshots cover 2012-2025
 for the core NFL panels, with identity/draft/combine master files and explicit
 coverage limits. Rookie foundation: {len(pipeline.rookie):,} rows across
@@ -1744,6 +1749,7 @@ foundations only; they do not authorize a rookie ranking or formula search.
         "schema_version": 1,
         "foundation_id": "NWR_NEW_EVIDENCE_FOUNDATION_V1",
         "verdict": VERDICT,
+        "partial_admission_status": PARTIAL_ADMISSION_STATUS,
         "build_date": "2026-07-30",
         "canonical_source_commit": CANONICAL_COMMIT,
         "canonical_source_tree": CANONICAL_TREE,

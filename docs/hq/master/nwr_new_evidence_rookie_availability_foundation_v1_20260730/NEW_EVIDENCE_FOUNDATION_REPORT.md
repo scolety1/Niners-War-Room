@@ -4,6 +4,8 @@
 
 `YELLOW_NWR_NFLVERSE_ADMITTED_CFBD_BLOCKED`
 
+Partial source-admission status: `NFLVERSE_ADMITTED_CFBD_NOT_ADMITTED`.
+
 Admitted nflverse datasets: combine, depth_charts, draft_picks, injuries, participation, player_stats_seasonal, player_stats_weekly, players, seasonal_rosters, snap_counts, weekly_rosters. Source snapshots cover 2012-2025
 for the core NFL panels, with identity/draft/combine master files and explicit
 coverage limits. Rookie foundation: 2,862 rows across

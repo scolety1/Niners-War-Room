@@ -41,9 +41,9 @@
       "sha256": "a92f9769d9c55f97c80f6d799e2c23f0e8593eda86bc63eab5f7296f9e1a677b"
     },
     {
-      "bytes": 367,
+      "bytes": 440,
       "path": "EXECUTIVE_VERDICT.md",
-      "sha256": "97686fbdd3d559ef096b57d04d2c9b9e929357a8a6cd36c7127cc9946357b926"
+      "sha256": "df11db4aba7b5784f2dc2f5ca1be3fe4bfad4a570ca77bfdc607798aeebc1856"
     },
     {
       "bytes": 5239,
@@ -71,9 +71,9 @@
       "sha256": "1ae653148a6b411193bad10e34b540c7014c82d6e96bf035537259fa152011f4"
     },
     {
-      "bytes": 1327,
+      "bytes": 1400,
       "path": "NEW_EVIDENCE_FOUNDATION_REPORT.md",
-      "sha256": "f7da20e728990fa06b5ec4ff8c7f9023385e47815b7da76d4404161f14e47a79"
+      "sha256": "42af09e2b8176f2606292ac181d98876875bf15d0a129c49be90f6f376672dc4"
     },
     {
       "bytes": 3731,
@@ -188,6 +188,7 @@
   "nflreadpy_source_archive_sha256": "bc78a8520ceb54e00fc164363285b47bf98971bb8c027d7dde74c0d2a5f1d81e",
   "nflreadpy_version": "0.1.5",
   "nflverse_requests": 112,
+  "partial_admission_status": "NFLVERSE_ADMITTED_CFBD_NOT_ADMITTED",
   "production_changes": {
     "finished_v1": "NONE",
     "frozen_comparator": "NONE",
@@ -214,10 +215,11 @@
     "implementation_determinism": "PASS",
     "implementation_determinism_details": "35/35 governed artifacts reproduced without drift",
     "incremental_value": "PASS CHRONOLOGICAL_WALK_FORWARD",
-    "independent_review": "PASS NO CORRECTION CYCLE REQUIRED",
+    "independent_review": "PASS ONE BOUNDED DOCUMENTATION CORRECTION CYCLE",
     "localdata": "BLOCKED_MISSING_LOCAL_TEST_PACK EXIT 4 IN IMPLEMENTATION AND REVIEW",
     "mutations": "28/28 PASS IN IMPLEMENTATION AND REVIEW",
     "oversized_raw_git_payloads": "PASS ZERO NEW RAW PAYLOADS; LARGEST NEW GOVERNED ARTIFACT UNDER 5 MB",
+    "partial_admission_status": "NFLVERSE_ADMITTED_CFBD_NOT_ADMITTED",
     "powershell_parse": "NOT_APPLICABLE_NO_CHANGED_PS1",
     "preservation": "PASS BOARD FROZEN OPAQUE 5/5 PERSISTENT RECOVERY",
     "protected_scan": "PASS ZERO MATCHES",
