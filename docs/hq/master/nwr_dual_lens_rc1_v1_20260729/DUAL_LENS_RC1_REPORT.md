@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Primary verdict: `GREEN_NWR_FINISHED_V1_RETAINS_AUTHORITY_DUAL_LENS_NOT_ADMITTED`.
+Primary verdict: `YELLOW_NWR_DUAL_LENS_RESEARCH_REVISED_FORMULAS_NOT_ADMITTED`.
 
 - Strongest bounded Win Now formula: `W3_SHORT_HORIZON_CALIBRATED_BLEND`.
 - Strongest bounded Dynasty formula: `D1_DISCOUNTED_MULTI_HORIZON_VOR`.
@@ -40,13 +40,13 @@ Position evidence is mixed:
 
 ## Formula comparison
 
-Win Now reference: Spearman 0.649216, rank MAE 79.566616, nDCG 0.973073, coverage 100.00%, severe errors 57.
-Win Now research candidate: Spearman 0.693439, rank MAE 69.591628, nDCG 0.975311, coverage 100.00%, severe errors 55.
+Win Now reference: Spearman 0.649216, rank MAE 79.566616, nDCG 0.958630, coverage 100.00%, severe errors 57.
+Win Now research candidate: Spearman 0.693439, rank MAE 69.591628, nDCG 0.961443, coverage 100.00%, severe errors 55.
 Season-clustered bootstrap delta: 0.043686,
 95% CI [0.027834, 0.058516].
 
-Dynasty reference: Spearman 0.659459, rank MAE 46.254194, nDCG 0.978578, coverage 59.18%, severe errors 21.
-Dynasty research candidate: Spearman 0.720216, rank MAE 40.072258, nDCG 0.980155, coverage 59.18%, severe errors 15.
+Dynasty reference: Spearman 0.659459, rank MAE 46.254194, nDCG 0.967983, coverage 59.18%, severe errors 21.
+Dynasty research candidate: Spearman 0.720216, rank MAE 40.072258, nDCG 0.970708, coverage 59.18%, severe errors 15.
 Season-clustered bootstrap delta: 0.060787,
 95% CI [0.039394,
 0.084588].
@@ -77,3 +77,15 @@ Lab, Rankings, draft tools, roster/planning, Data Health, and Refresh Data remai
 unchanged. The audit specifies a future dual-lens contract, but no partial
 product, fallback score, hidden weight, trade winner, or draft toggle was
 installed.
+
+
+## Targeted revision supersession
+
+This governed regeneration supersedes the original static mutation and metric
+evidence. All 20 mutations now execute actual research or render-contract
+paths. Availability expectation and binary event probability are semantically
+separate. Primary nDCG is `UNWEIGHTED_MEAN_OF_TARGET_SEASON_NDCG`. Cohort evidence is
+complete rather than display-truncated. Formula dispositions remain
+`WIN_NOW_FORMULA_NOT_ADMITTED` and
+`DYNASTY_FORMULA_NOT_ADMITTED`; production integration remains
+`NONE`.

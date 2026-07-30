@@ -1,14 +1,17 @@
 # Win Now target contract
 
-Decision anchor is the start of target season `t`. Inputs are completed season
-`t-1` facts only. The primary target is NWR-scored target-season points minus
-the position replacement score (QB12, RB30, WR40, TE12), with replacement
-forecast only from the last three completed seasons. W2 separately predicts
-conditional PPG and target games/season-length availability, calibrates only on
-earlier out-of-fold origins, and multiplies them before subtracting
-replacement. Evaluation uses 2017–2025 rolling origins, exact IDs, Spearman,
-rank MAE, nDCG, top-12/24/60 precision/recall, severe errors, availability
-Brier/MAE/log loss/ECE, position, season, low-games, and cohort results.
+The decision anchor is the start of target season `t`; model inputs are facts
+available by completed season `t-1`. The primary target is target-season NWR
+points minus position replacement. W2 predicts conditional production and a
+continuous `EXPECTED_GAMES_FRACTION`; their product yields expected production.
 
-No random split, current ADP, target-season context, Outcome probability,
+The separate binary output `P(GAMES_PLAYED >= 8)` is fit chronologically to an
+exact binary target. It is never substituted for expected games fraction.
+Continuous availability is evaluated with MAE, RMSE, residual, and calibration
+slope/intercept. Only the binary output receives Brier, binary log loss, ECE,
+event-count, slope, and intercept evaluation.
+
+Candidate selection uses the unweighted mean of nDCG calculated independently
+within each chronological target season. Pooled nDCG is diagnostic only. No
+random split, current ADP, target-season/future context, Outcome V3 feature,
 name join, or unsupported rookie fallback is allowed.

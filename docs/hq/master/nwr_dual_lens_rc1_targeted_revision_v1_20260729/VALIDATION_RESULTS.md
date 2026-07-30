@@ -18,12 +18,10 @@
 | provider, security-scan, and production-mutation boundaries | source and changed-path inspection | none | zero provider calls; no new security scan; zero production/UI/data mutations | PASS | Finished V1 and Outcome V3 remain canonical. |
 | second and final bounded correction cycle | independent review of targeted validation correction | one authorized final cycle; no further corrections | targeted cycle used; independent review fully green | PASS | Scope limited to real-path mutations, availability semantics, cohort completeness, season-aware nDCG, and inventory. |
 
-Required interpretation:
-
-- Hermetic must exit 0.
-- LocalData must return `BLOCKED_MISSING_LOCAL_TEST_PACK` with exit 4.
-- No provider is called and no new security scan is run.
-- No new skip/xfail/xpass is allowed.
-- The scheduled task must remain disabled.
-- Production integration is absent, so dual-lens viewport controls are
-  correctly `NOT_APPLICABLE_PRODUCTION_UI_NOT_INTEGRATED`, not falsely passed.
+The targeted builder itself requires all 20 executed mutations to fail closed,
+all 240 current rows to appear exactly once in the mechanically assigned
+experience cohort, separate continuous and binary availability semantics,
+season-aware primary nDCG, and unchanged pinned production hashes. Hermetic
+must exit 0; LocalData must remain `BLOCKED_MISSING_LOCAL_TEST_PACK` with exit
+4. No provider call, security scan, scheduled-task execution, production
+integration, skip, xfail, or xpass is authorized.

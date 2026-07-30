@@ -4,29 +4,29 @@
   "dynasty_formula_disposition": "DYNASTY_FORMULA_NOT_ADMITTED",
   "files": [
     {
-      "bytes": 11255,
-      "path": "CMC_AJ_BROWN_JONATHAN_TAYLOR_REVIEW.md",
-      "sha256": "efa138718ee88b724568a37ff924f65af28770e3a4b6779883bf5cd96e2ac7e3"
+      "bytes": 8631,
+      "path": "AVAILABILITY_CALIBRATION_RESULTS.csv",
+      "sha256": "4d7aab36538ecd957f34f5f12823f16a57ad2b40bb2d610bb6d3a407d79c533c"
+    },
+    {
+      "bytes": 594,
+      "path": "AVAILABILITY_SEMANTIC_CONTRACT.md",
+      "sha256": "6dd9e0af8330f6a501cdbe29d75e94b6060dfe6129e3a79ee7c8d7919b654d0e"
+    },
+    {
+      "bytes": 24584,
+      "path": "COHORT_COMPLETENESS_RESULTS.csv",
+      "sha256": "99125cc2e995e5666ea0ff12ed27b70bcf45e3c3d3aa438fd5ac5f88790cbf1b"
     },
     {
       "bytes": 4161,
-      "path": "CORE_APP_REFRESH_AUDIT.csv",
+      "path": "CORE_APP_AUDIT_REVALIDATION.csv",
       "sha256": "385f9a236e303edce64d8bd004414da76e0dbc2aea407e34c823c35d7aa91428"
     },
     {
       "bytes": 397335,
-      "path": "CURRENT_2026_DUAL_LENS_SHADOW_BOARD.csv",
+      "path": "CORRECTED_DUAL_LENS_SHADOW_BOARD.csv",
       "sha256": "c960bc4e60f092c538ef32cb01cee569f32b2cf9806c373966127b298e53991c"
-    },
-    {
-      "bytes": 16432,
-      "path": "CURRENT_MODEL_AUTHORITY_INVENTORY.csv",
-      "sha256": "ce1bbfe883af1494f64fc382b6b36d01b2a4eb553d204f47386716e350e79413"
-    },
-    {
-      "bytes": 705,
-      "path": "DATA_HEALTH_MODEL_STATUS.md",
-      "sha256": "c96a44839f189b3f5a41fedf657353c4e89ac874d78656e484e5a503e7317696"
     },
     {
       "bytes": 456,
@@ -34,34 +34,19 @@
       "sha256": "41c8eb581b740ef4d79a9b0d95491c3268c12ece200d74cfb7939667733ab2ea"
     },
     {
-      "bytes": 524,
-      "path": "DRAFT_TOOLS_REFRESH.md",
-      "sha256": "2a0537289e80a6051a11fbd15c631f06378fbc68b1e8fd36d777df3d2a5d6c72"
-    },
-    {
-      "bytes": 4249,
-      "path": "DUAL_LENS_RC1_REPORT.md",
-      "sha256": "4f286afae3ecccbe2e26d0133b9e87a18156d458e1c50400715d01671e8d70aa"
+      "bytes": 833,
+      "path": "DUAL_LENS_TARGETED_REVISION_REPORT.md",
+      "sha256": "102618727dea5bb2fc1180a82733f14218f76052de1e7e3f4e8623119afa788e"
     },
     {
       "bytes": 2078,
-      "path": "DYNASTY_ACCEPTANCE_GATE_MATRIX.csv",
+      "path": "DYNASTY_GATE_REVALIDATION.csv",
       "sha256": "24ae937a85df7c30ca692edaf21075d0bd4137880bf6bcc1871c6e8116e3cc8c"
     },
     {
-      "bytes": 945,
-      "path": "DYNASTY_TARGET_CONTRACT.md",
-      "sha256": "e73c2636e1c69f0529abb5adb36e74df6b18c914614ae388ce2b44e047ef4d24"
-    },
-    {
-      "bytes": 17219,
-      "path": "DYNASTY_WALK_FORWARD_RESULTS.csv",
-      "sha256": "e9bb8e4ae90ab7b6e698e34a2ead288ecf06afd832fbfc3d411298b522f461aa"
-    },
-    {
-      "bytes": 1027,
+      "bytes": 620,
       "path": "EXECUTIVE_VERDICT.md",
-      "sha256": "b4284093accc59516f4263a2f789b9a1bbf3af252f5b447ec02a15297311e0be"
+      "sha256": "a97dd160421bfd9ce080a4fd924916b9b30aad04be3bb3549d600bce0f56db36"
     },
     {
       "bytes": 15908,
@@ -69,129 +54,69 @@
       "sha256": "b5b87a563e398a703efa576a97698f8d06d77e0a1ee80dcc07f34c0b33730995"
     },
     {
-      "bytes": 1305,
-      "path": "FINISHED_V1_AND_OUTCOME_V3_BASELINE.md",
-      "sha256": "edbe40ba27bbf3d0ba4dfae779d45ef33e0796ae4dc6e7af7fb57e1d48625245"
-    },
-    {
-      "bytes": 3472,
-      "path": "FORMULA_CANDIDATE_DEFINITIONS.csv",
-      "sha256": "6e9cd8e2b524a9f448d86205b85edadb20c5ee966247c9a1577de40ce7939a7b"
-    },
-    {
-      "bytes": 5226,
-      "path": "LARGEST_WIN_NOW_DYNASTY_GAPS.csv",
-      "sha256": "9082576f6ffae96448db63c9dfa462795d95f00aaad5dcc6055330a9d0e80f94"
-    },
-    {
       "bytes": 7437,
-      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "path": "MUTATION_RESULTS_BEFORE_AFTER.csv",
       "sha256": "780cccd9ba97936ccde691a8dd69e586251bff7ca663311c2a485246a2a84a9e"
     },
     {
-      "bytes": 654,
+      "bytes": 479,
       "path": "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md",
-      "sha256": "e07a8be7764514cafa80becab5a3193b2473ba495854d35429b6fd0c39999311"
+      "sha256": "97618f0dc07e6a577698e330b722b384e739b5ecf26ba4f9dbf3b8d75798d779"
     },
     {
-      "bytes": 574,
-      "path": "PLAYER_COMPARE_REFRESH.md",
-      "sha256": "684629a403ac729b8c546a95b25c214d714ec706ddb656a4aa0eae78f8820da3"
+      "bytes": 1950,
+      "path": "ORIGINAL_AUDIT_FINDINGS.md",
+      "sha256": "930de7529529eb3c4772a1ecd1374e34e7d2620df9e4342ce904c4ffcdc9c808"
     },
     {
-      "bytes": 5654,
-      "path": "POSITION_AGE_GAMES_COHORT_RESULTS.csv",
-      "sha256": "55536dd11f0e3652dc6b5de17a2395821c4183b9141aab84fe1a4654cbc5e88e"
-    },
-    {
-      "bytes": 675,
+      "bytes": 536,
       "path": "PRODUCTION_BASELINES_NO_CHANGE.md",
-      "sha256": "31c8c011142fe0e20c01a094aaf0357751474ca67f6def2c08f6550386181bd4"
+      "sha256": "cefc410573339ab611462898978238a4fc74169f2f36fc5000a8404f589ed173"
     },
     {
-      "bytes": 1090,
+      "bytes": 844,
       "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
-      "sha256": "c83577b7c02441f0f77617160d0f8b93a9891604ae1fbb9197ed5d68ea07b327"
+      "sha256": "eeeb4161fa2bd04d2592eb5301aba4152fe3132c6db3f13f2ee3133d32e07191"
     },
     {
-      "bytes": 10893,
-      "path": "RETENTION_AVAILABILITY_RESULTS.csv",
-      "sha256": "828ceed8c01c96c0ba8b8a450b7d3d49fa2059d318443f369334eb9abea7d94c"
+      "bytes": 529,
+      "path": "REAL_PATH_MUTATION_CONTRACT.md",
+      "sha256": "a0f397884b18bdc5c8f0b2eb32ef4d70c086b27a0d5bf2ad66d0b5c6bfed4fb7"
     },
     {
-      "bytes": 569,
+      "bytes": 316,
       "path": "ROLLBACK_PLAN.md",
-      "sha256": "ce8da567e4a6b0aa902a9e8c0500db753a4585a61eea43c29e08e344549f2aa1"
+      "sha256": "9829c2245b55f688ea0471bf415944309aff409a6cbcee68629022974b50162d"
     },
     {
-      "bytes": 2925,
-      "path": "ROOKIE_EVIDENCE_AUTHORITY.csv",
-      "sha256": "254edcddbcededa074ed45ecb9cd472c9d8cd97ae9e411e96c9f4872a7ac5e56"
+      "bytes": 56551,
+      "path": "ROOKIE_SECOND_YEAR_REVALIDATION.csv",
+      "sha256": "264cd09a9cb82587a7ee7933d8a5e40d7d066d77947094e4f6d944477ddcc511"
     },
     {
-      "bytes": 2518,
-      "path": "ROOKIE_VETERAN_EVALUATION.csv",
-      "sha256": "e29b5e0c219961e96e86092e4b9a4096b38a0fb20065b55d69f9a1693678a7c3"
-    },
-    {
-      "bytes": 340,
-      "path": "ROSTER_PLANNING_REFRESH.md",
-      "sha256": "42f87ba8aaa362e448b76600ab13940d0a80c9e5ff01100952aea85881a8a6a0"
-    },
-    {
-      "bytes": 2527,
-      "path": "SOURCE_HASH_LEDGER.csv",
-      "sha256": "70ecc724e590f1483ff2d3b12053d3a775a520a97ed6918ce9664276620cd3b8"
-    },
-    {
-      "bytes": 633,
-      "path": "TEAM_WINDOW_CONTRACT.md",
-      "sha256": "d424dad2a377b0941d824f06d0f004b4551c2de2c3a099ed4ecefdd5c17d0379"
+      "bytes": 38076,
+      "path": "SEASON_AWARE_NDCG_RESULTS.csv",
+      "sha256": "556d3b09b5c07176fa3d09bc8b8b92d592d013818faa318198872e8f554a8b6f"
     },
     {
       "bytes": 1616,
-      "path": "TEAM_WINDOW_SENSITIVITY.csv",
+      "path": "TEAM_WINDOW_REVALIDATION.csv",
       "sha256": "1bdda60be42318693068b3f89a40ecb73e0aa194b42fc5d90a52d064704b1a85"
     },
     {
-      "bytes": 134984,
-      "path": "TEMPORAL_SELECTION_TRACE.csv",
-      "sha256": "234d670a6342ea30271701c170521f30ffcd7a4dd8f4c2a8ad00a4fc589fc32b"
-    },
-    {
-      "bytes": 779,
-      "path": "TRADING_LAB_REFRESH.md",
-      "sha256": "6610a7d57bfb07f9777fd023edfeba0f500f78d33f05888b7fa086d37121ce2e"
-    },
-    {
-      "bytes": 4187,
+      "bytes": 4282,
       "path": "VALIDATION_RESULTS.md",
-      "sha256": "7091ab4ad3aacb5a29c501d2abcf2ff50102fd9b9d842b46c84860b63d83e63d"
-    },
-    {
-      "bytes": 7841,
-      "path": "VIEWPORT_AND_ACCESSIBILITY_RESULTS.csv",
-      "sha256": "9102e1d2d279f091a2c6ef9ac25029ee6a570d2d9181eb69b876a6084b91e1d9"
+      "sha256": "cd6db442923a25a3a72c0da19c719040fa5ed183afa68ddd55d423ec0687c0c5"
     },
     {
       "bytes": 1918,
-      "path": "WIN_NOW_ACCEPTANCE_GATE_MATRIX.csv",
+      "path": "WIN_NOW_GATE_REVALIDATION.csv",
       "sha256": "fc846a4b47d420ccab25024a7496d82dac9c2e74542fe48da39819bf9737d083"
-    },
-    {
-      "bytes": 981,
-      "path": "WIN_NOW_TARGET_CONTRACT.md",
-      "sha256": "b27e91a80363a1a6228cce98adfe5d70c30eaf32471848fa59715ee490bc0230"
-    },
-    {
-      "bytes": 21442,
-      "path": "WIN_NOW_WALK_FORWARD_RESULTS.csv",
-      "sha256": "0cc425133b60990c3750b0cf0e265dfa071f2226fb7c20c3a1c3bcbcca7dd1f0"
     }
   ],
   "primary_ndcg_aggregate": "UNWEIGHTED_MEAN_OF_TARGET_SEASON_NDCG",
   "production_integration": false,
-  "release_identifier": "NWR_DUAL_LENS_RC1_RESEARCH_ONLY_TARGETED_REVISION",
+  "release_identifier": "NWR_DUAL_LENS_RC1_TARGETED_REVISION_RESEARCH_ONLY",
   "seed": 20260729,
   "self_referential": false,
   "source_hashes": {
