@@ -28,9 +28,9 @@
       "sha256": "c96a44839f189b3f5a41fedf657353c4e89ac874d78656e484e5a503e7317696"
     },
     {
-      "bytes": 199,
+      "bytes": 428,
       "path": "DETERMINISTIC_REGENERATION_RESULTS.csv",
-      "sha256": "834acd89361537627d28c29d05c1b344a3cabdb062e8aaa541ba404fb2ba5c82"
+      "sha256": "ffc19b4f49842cb3b06a219173e6f0c578837e16debd7fc9f02427780d13b317"
     },
     {
       "bytes": 524,
@@ -90,7 +90,7 @@
     {
       "bytes": 654,
       "path": "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md",
-      "sha256": "5a0bea30f342e5b253490056568b1da11ae39bf364f077341ead7123efc003e5"
+      "sha256": "e07a8be7764514cafa80becab5a3193b2473ba495854d35429b6fd0c39999311"
     },
     {
       "bytes": 574,
@@ -163,9 +163,9 @@
       "sha256": "6610a7d57bfb07f9777fd023edfeba0f500f78d33f05888b7fa086d37121ce2e"
     },
     {
-      "bytes": 874,
+      "bytes": 4697,
       "path": "VALIDATION_RESULTS.md",
-      "sha256": "d5becde29f34cdb3321e6df01f3651218739bf262e29d9dc2263af0745a0f0cc"
+      "sha256": "736761c080da01902457c74934b96f952b42f7bce7ac5cb8b18b617375aa9d18"
     },
     {
       "bytes": 7841,

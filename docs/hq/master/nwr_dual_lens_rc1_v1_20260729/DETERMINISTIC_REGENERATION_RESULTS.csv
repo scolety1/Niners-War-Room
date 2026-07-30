@@ -1,2 +1,3 @@
 check,root_a,root_b,files_compared,mismatches,status,evidence
-builder canonical output,IMPLEMENTATION_WORKTREE,PENDING_INDEPENDENT_REVIEW_WORKTREE,0,,PENDING,Run validator after clean-root adoption.
+post-correction independent clean-root full regeneration,IMPLEMENTATION_CLEAN_ROOT,INDEPENDENT_REVIEW_CLEAN_ROOT,38,0,PASS,"Same filenames, byte counts, and SHA-256 hashes for all generated files."
+cross-runtime deterministic serialization,BUNDLED_PYTHON_RUNTIME,PROJECT_VENV_RUNTIME,38,0,PASS,Sub-precision solver noise is canonicalized; every output byte matched.
