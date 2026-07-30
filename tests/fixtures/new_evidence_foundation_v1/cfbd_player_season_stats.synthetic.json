@@ -1,0 +1,13 @@
+{
+  "fixture_class": "SYNTHETIC_NOT_PROVIDER_DATA",
+  "endpoint": "/player/season/stats",
+  "rows": [
+    {
+      "playerId": "synthetic-college-player-1",
+      "season": 2024,
+      "category": "receiving",
+      "statType": "YDS",
+      "stat": 900
+    }
+  ]
+}
