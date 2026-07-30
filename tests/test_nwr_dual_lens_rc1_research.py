@@ -67,6 +67,35 @@ def test_fixed_baselines_and_outcome_v3_are_byte_identical() -> None:
     assert len(pd.read_csv(ROOT / module.BOARD_REL)) == 240
     assert len(pd.read_csv(ROOT / module.FROZEN_REL)) == 924
     assert len(pd.read_csv(ROOT / module.OUTCOME_SCHEMA_REL)) == 79
+    outcome_root = ROOT / module.OUTCOME_SCHEMA_REL.parent
+    outcome_manifest = json.loads(
+        (outcome_root / "MANIFEST.json").read_text(encoding="utf-8")
+    )
+    outcome_entries = {
+        row["path"]: row for row in outcome_manifest["artifacts"]
+    }
+    for relative in (module.OUTCOME_BOARD_REL, module.OUTCOME_SCHEMA_REL):
+        entry = outcome_entries[relative.name]
+        assert entry["sha256"] == module.EXPECTED_HASHES[relative]
+        assert entry["bytes"] == (ROOT / relative).stat().st_size
+    integration = outcome_root / "OUTCOME_V3_INTEGRATION_PACK.csv"
+    integration_entry = outcome_entries[integration.name]
+    assert _sha256(integration) == integration_entry["sha256"]
+    assert integration.stat().st_size == integration_entry["bytes"]
+    attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    assert (
+        "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/** text eol=lf"
+        in attributes.splitlines()
+    )
+
+
+def test_deterministic_float_serialization_ignores_sub_precision_runtime_noise() -> None:
+    module = _load_builder()
+    assert module.canonical_hash({"value": 0.12345678901231}) == module.canonical_hash(
+        {"value": 0.12345678901232}
+    )
+    assert module.stable_markdown_float(0.9987731370189845) == "0.998773137"
+    assert module.stable_markdown_float(-0.0) == "0.0"
 
 
 def test_shadow_board_is_detached_transparent_and_null_fenced() -> None:

@@ -3,9 +3,9 @@
   "dynasty_candidate": "D1_DISCOUNTED_MULTI_HORIZON_VOR",
   "files": [
     {
-      "bytes": 11680,
+      "bytes": 10807,
       "path": "CMC_AJ_BROWN_JONATHAN_TAYLOR_REVIEW.md",
-      "sha256": "74edb7babf4cd70a49a0eedaea67e567b253b294f2a91900e5e26f3f60e10cac"
+      "sha256": "feb99556ed4736de1c040ea3a8cfa697f6a66128d46a31f1ae97216d554a647c"
     },
     {
       "bytes": 4161,
@@ -38,9 +38,9 @@
       "sha256": "2a0537289e80a6051a11fbd15c631f06378fbc68b1e8fd36d777df3d2a5d6c72"
     },
     {
-      "bytes": 3780,
+      "bytes": 3725,
       "path": "DUAL_LENS_RC1_REPORT.md",
-      "sha256": "9f3dbae19c01c042182c45f22d8c77564dd9a700637f247bc72e64e6992e2dcd"
+      "sha256": "ecc5e1f6a34f36d77e974b32ced0684b6878477572a96041426cf726954eb9ce"
     },
     {
       "bytes": 2078,
@@ -70,7 +70,7 @@
     {
       "bytes": 1305,
       "path": "FINISHED_V1_AND_OUTCOME_V3_BASELINE.md",
-      "sha256": "264c788160bac7c152cdbfb0fa119330586ffa301d57c17a092da5cb64220e8f"
+      "sha256": "edbe40ba27bbf3d0ba4dfae779d45ef33e0796ae4dc6e7af7fb57e1d48625245"
     },
     {
       "bytes": 3301,
@@ -105,12 +105,12 @@
     {
       "bytes": 675,
       "path": "PRODUCTION_BASELINES_NO_CHANGE.md",
-      "sha256": "709e5afd31d566d179766bace461a5d56bbd786a1a9f770e058295c6cf656191"
+      "sha256": "31c8c011142fe0e20c01a094aaf0357751474ca67f6def2c08f6550386181bd4"
     },
     {
       "bytes": 1090,
       "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
-      "sha256": "f00f863b85e9d98d83f1358a73a5b822cfb0dd0f118c37d5674438e044550780"
+      "sha256": "c83577b7c02441f0f77617160d0f8b93a9891604ae1fbb9197ed5d68ea07b327"
     },
     {
       "bytes": 2852,
@@ -140,7 +140,7 @@
     {
       "bytes": 2527,
       "path": "SOURCE_HASH_LEDGER.csv",
-      "sha256": "ae43b9b98a7836a19a2ab1a3daa7ce16b08d005548882ecbbb3e49bf99b83268"
+      "sha256": "70ecc724e590f1483ff2d3b12053d3a775a520a97ed6918ce9664276620cd3b8"
     },
     {
       "bytes": 633,
@@ -155,7 +155,7 @@
     {
       "bytes": 122992,
       "path": "TEMPORAL_SELECTION_TRACE.csv",
-      "sha256": "a31d8521614dced7e783ca2276bb22d98d624460cd17278d8b65e0d828fe6893"
+      "sha256": "98f226207b504923ee0c7508e3e3313d0f8473cba24a5fd110267dbd038615ea"
     },
     {
       "bytes": 779,
@@ -214,14 +214,14 @@
       "sha256": "4c63a01cc4d56d0496d56ff13d4dabb4faa0b7a24d8f7510a368ad48d9714151"
     },
     "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/CURRENT_2026_OUTCOME_V3_SHADOW_BOARD.csv": {
-      "bytes": 255410,
+      "bytes": 255169,
       "scope": "tracked_fixed_source",
-      "sha256": "256c4deb8c0199d29143fc117a43496dc6847dd0e7b3724549a372cb1b6df577"
+      "sha256": "279cd23942e5f5ebd94543c44ffaf03d76a018e6e9bc9ce4e74f9bebd1fb891d"
     },
     "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/OUTCOME_V3_SCHEMA.csv": {
-      "bytes": 30506,
+      "bytes": 30426,
       "scope": "tracked_fixed_source",
-      "sha256": "7001e319eb0aafc2a3eb9d4de8a2fd421b19fabd552bc16a1a5df69b48ab2cff"
+      "sha256": "62349c007d553870866d1c585ed5e3f906c579d456ce025df6967d9c8fd09f89"
     },
     "docs/hq/model/current_board_deterministic_rebuild_with_recovery_inputs_v1_20260708/rebuilt_full_player_board_value_review_rows.csv": {
       "bytes": 490219,

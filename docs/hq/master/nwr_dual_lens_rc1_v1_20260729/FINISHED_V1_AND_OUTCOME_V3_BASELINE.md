@@ -10,7 +10,7 @@
 - Frozen comparator SHA-256: `b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179`.
 - Outcome identifier: `NWR_OUTCOME_COLUMNS_V3_RC1`.
 - Outcome governed fields: 72; aliases: 7; schema rows: 79.
-- Outcome current-board SHA-256: `256c4deb8c0199d29143fc117a43496dc6847dd0e7b3724549a372cb1b6df577`.
+- Outcome current-board SHA-256: `279cd23942e5f5ebd94543c44ffaf03d76a018e6e9bc9ce4e74f9bebd1fb891d`.
 - Outcome ranking effect: none.
 
 ## Current model authority

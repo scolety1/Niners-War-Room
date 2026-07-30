@@ -89,10 +89,10 @@ EXPECTED_HASHES = {
     BOARD_REL: "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4",
     FROZEN_REL: "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179",
     OUTCOME_BOARD_REL: (
-        "256c4deb8c0199d29143fc117a43496dc6847dd0e7b3724549a372cb1b6df577"
+        "279cd23942e5f5ebd94543c44ffaf03d76a018e6e9bc9ce4e74f9bebd1fb891d"
     ),
     OUTCOME_SCHEMA_REL: (
-        "7001e319eb0aafc2a3eb9d4de8a2fd421b19fabd552bc16a1a5df69b48ab2cff"
+        "62349c007d553870866d1c585ed5e3f906c579d456ce025df6967d9c8fd09f89"
     ),
     SCORING_REL: "03986944a57f0f73c78a8f56413b53749b3e384a10788ff7ab262d21e0b1eab2",
     FORMULA_CONTRACT_REL: (
@@ -238,8 +238,11 @@ def canonical_hash(value: Any) -> str:
             return [safe(child) for child in item]
         if isinstance(item, np.generic):
             return safe(item.item())
-        if isinstance(item, float) and not math.isfinite(item):
-            return None
+        if isinstance(item, float):
+            if not math.isfinite(item):
+                return None
+            rounded = round(item, 12)
+            return 0.0 if rounded == 0 else rounded
         if isinstance(item, Path):
             return item.as_posix()
         return item
@@ -3582,7 +3585,9 @@ def mutation_results(board: pd.DataFrame) -> pd.DataFrame:
         "M16",
         "Outcome V3 change",
         EXPECTED_HASHES[OUTCOME_BOARD_REL]
-        == "256c4deb8c0199d29143fc117a43496dc6847dd0e7b3724549a372cb1b6df577",
+        == "279cd23942e5f5ebd94543c44ffaf03d76a018e6e9bc9ce4e74f9bebd1fb891d"
+        and EXPECTED_HASHES[OUTCOME_SCHEMA_REL]
+        == "62349c007d553870866d1c585ed5e3f906c579d456ce025df6967d9c8fd09f89",
         "Outcome V3 board and 79-row schema hash assertion",
     )
     add(
@@ -3626,6 +3631,9 @@ def mutation_results(board: pd.DataFrame) -> pd.DataFrame:
 
 def markdown_table(frame: pd.DataFrame, columns: Sequence[str]) -> str:
     selected = frame.loc[:, columns].copy()
+    for column in selected.columns:
+        if pd.api.types.is_float_dtype(selected[column]):
+            selected[column] = selected[column].map(stable_markdown_float)
     selected = selected.fillna("")
     header = "| " + " | ".join(columns) + " |"
     separator = "| " + " | ".join("---" for _ in columns) + " |"
@@ -3637,6 +3645,15 @@ def markdown_table(frame: pd.DataFrame, columns: Sequence[str]) -> str:
             + " |"
         )
     return "\n".join([header, separator, *rows])
+
+
+def stable_markdown_float(value: Any) -> str:
+    if pd.isna(value):
+        return ""
+    rendered = f"{float(value):.9f}".rstrip("0").rstrip(".")
+    if rendered in {"", "-0"}:
+        rendered = "0"
+    return rendered if "." in rendered else f"{rendered}.0"
 
 
 def metric_summary(results: pd.DataFrame, candidate: str) -> str:
