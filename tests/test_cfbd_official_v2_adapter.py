@@ -27,8 +27,13 @@ def test_only_authorized_rest_v2_paths_are_constructed() -> None:
     assert cfbd.build_url("/player/usage", {"year": 2024}).endswith(
         "/player/usage?year=2024"
     )
+    assert cfbd.build_url("/stats/player/season", {"year": 2024}).endswith(
+        "/stats/player/season?year=2024"
+    )
     with pytest.raises(cfbd.CfbdContractError):
         cfbd.build_url("/graphql", {})
+    with pytest.raises(cfbd.CfbdContractError):
+        cfbd.build_url("/player/season/stats", {"year": 2024})
 
 
 def test_request_limit_fails_before_transport() -> None:
@@ -44,10 +49,22 @@ def test_request_limit_fails_before_transport() -> None:
             path="/player/search",
             params={},
             transport=transport,
-            calls_made=800,
+            calls_made=160,
             environ={"CFBD_BEARER_TOKEN": "synthetic"},
         )
     assert called is False
+
+
+def test_request_plan_stops_before_governed_limits() -> None:
+    cfbd.validate_request_plan(planned_calls=62, remaining_calls=1000)
+    with pytest.raises(cfbd.CfbdRequestLimitError):
+        cfbd.validate_request_plan(planned_calls=161, remaining_calls=1000)
+    with pytest.raises(cfbd.CfbdRequestLimitError):
+        cfbd.validate_request_plan(
+            planned_calls=81,
+            remaining_calls=100,
+            lane_limit=160,
+        )
 
 
 def test_synthetic_fixture_contains_no_credential_material() -> None:

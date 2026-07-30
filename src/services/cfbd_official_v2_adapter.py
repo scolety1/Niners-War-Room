@@ -15,18 +15,21 @@ from typing import Any
 from urllib.parse import urlencode
 
 CFBD_BASE_URL = "https://api.collegefootballdata.com"
-TOKEN_ENV_NAMES = ("CFBD_BEARER_TOKEN", "BEARER_TOKEN")
+TOKEN_ENV_NAMES = ("CFBD_BEARER_TOKEN",)
 MISSING_KEY_STATUS = "BLOCKED_MISSING_OWNER_CONTROLLED_CFBD_KEY"
-MAX_LANE_REQUESTS = 800
+MAX_LANE_REQUESTS = 160
 
 ALLOWED_ENDPOINTS = {
-    "/player/search",
-    "/player/season/stats",
-    "/player/season",
-    "/player/usage",
-    "/recruiting/players",
+    "/info",
+    "/info/usage",
     "/draft/picks",
+    "/player/search",
+    "/player/season/overview",
+    "/player/usage",
+    "/stats/player/season",
+    "/recruiting/players",
     "/ppa/players/season",
+    "/roster",
 }
 
 
@@ -40,6 +43,10 @@ class CfbdMissingOwnerKeyError(CfbdContractError):
 
 class CfbdRequestLimitError(CfbdContractError):
     """Raised before a request would exceed the governed call budget."""
+
+
+class CfbdSchemaDriftError(CfbdContractError):
+    """Raised when the current official v2 schema no longer matches the contract."""
 
 
 @dataclass(frozen=True)
@@ -93,6 +100,23 @@ def build_url(path: str, params: Mapping[str, Any] | None = None) -> str:
     return f"{CFBD_BASE_URL}{path}" + (f"?{query}" if query else "")
 
 
+def validate_request_plan(
+    *,
+    planned_calls: int,
+    remaining_calls: int,
+    lane_limit: int = MAX_LANE_REQUESTS,
+) -> None:
+    """Stop before either the lane cap or 80% of the remaining account allowance."""
+
+    if planned_calls < 0 or remaining_calls < 0 or lane_limit < 0:
+        raise CfbdRequestLimitError("CFBD request plan contains a negative value")
+    allowance_stop = int(remaining_calls * 0.8)
+    if planned_calls > lane_limit:
+        raise CfbdRequestLimitError("CFBD lane request limit would be exceeded")
+    if planned_calls > allowance_stop:
+        raise CfbdRequestLimitError("CFBD 80-percent remaining-allowance stop reached")
+
+
 def redacted_request_receipt(
     path: str,
     params: Mapping[str, Any] | None = None,
@@ -127,9 +151,10 @@ def request_json(
     if calls_made >= MAX_LANE_REQUESTS:
         raise CfbdRequestLimitError("CFBD lane request limit would be exceeded")
     if remaining_before is not None:
-        stop_at = max(0, int(remaining_before * 0.8))
-        if calls_made >= stop_at:
-            raise CfbdRequestLimitError("CFBD 80-percent remaining-allowance stop reached")
+        validate_request_plan(
+            planned_calls=calls_made + 1,
+            remaining_calls=remaining_before,
+        )
     if monthly_limit is not None and monthly_limit <= 0:
         raise CfbdRequestLimitError("CFBD monthly limit is unavailable")
 

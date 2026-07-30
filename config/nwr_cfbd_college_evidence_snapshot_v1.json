@@ -1,0 +1,13 @@
+{
+  "admission_id": "NWR_CFBD_COLLEGE_EVIDENCE_ADMISSION_V1",
+  "aggregate_sha256": "370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a",
+  "data_calls": 60,
+  "foundation_id": "NWR_NEW_EVIDENCE_FOUNDATION_V1",
+  "manifest_relative_path": "cfbd/rest_v2/20260730T171639Z-370ce01696c3/COMPLETION_MANIFEST.json",
+  "provider_calls": 62,
+  "raw_payloads_committed": false,
+  "retrieved_at_utc": "2026-07-30T17:16:39Z",
+  "schema_version": 1,
+  "snapshot_id": "20260730T171639Z-370ce01696c3",
+  "source_snapshot_root_contract": "SOURCE_SNAPSHOT_ROOT"
+}

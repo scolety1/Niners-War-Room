@@ -1,0 +1,6 @@
+comparison,challenger,baseline,rows,folds,delta_spearman,delta_brier,delta_rank_mae,improved_metrics,decision,reason
+PRE_DRAFT_COUNTING_STATS,C1,C0,594,10,-0.027278,-0.002631,-0.117845,0,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,fewer than two governed out-of-sample metrics improved
+PRE_DRAFT_USAGE_PPA,C2,C1,594,10,-0.024538,-0.005727,-0.037037,0,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,fewer than two governed out-of-sample metrics improved
+PRE_DRAFT_ALL_CFBD,C2,C0,594,10,-0.051816,-0.008358,-0.154882,0,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,fewer than two governed out-of-sample metrics improved
+EARLY_CAREER_ALL_CFBD,E1,E0,594,10,-0.039718,-0.009430,-0.112795,0,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,fewer than two governed out-of-sample metrics improved
+MULTI_YEAR_SURVIVAL_ALL_CFBD,S1,S0,615,9,-0.023844,-0.001912,-0.156097,0,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,fewer than two governed out-of-sample metrics improved

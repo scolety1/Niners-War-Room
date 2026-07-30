@@ -1,0 +1,166 @@
+{
+  "admission_id": "NWR_CFBD_COLLEGE_EVIDENCE_ADMISSION_V1",
+  "artifacts": [
+    {
+      "bytes": 505,
+      "path": "CFBD_API_AUTHORITY_AND_USAGE.md",
+      "sha256": "4d02308d4d3a6c40524dc0801bfe909c02983119a5815e3e93c12cb9ad70eab7"
+    },
+    {
+      "bytes": 1111,
+      "path": "CFBD_COLLEGE_EVIDENCE_ADMISSION_REPORT.md",
+      "sha256": "d0adc35cdf231f5de7107b30e4e182c4a2f708a11b1ca1f5e2a80afa170eed5b"
+    },
+    {
+      "bytes": 497972,
+      "path": "CFBD_COLLEGE_EVIDENCE_FOUNDATION.csv",
+      "sha256": "3007e3010c9bf547f2ecbceef35003e7951e171984e1664a565db65a3fadf7ee"
+    },
+    {
+      "bytes": 265815,
+      "path": "CFBD_EXACT_IDENTITY_CROSSWALK.csv",
+      "sha256": "a5c0161ad55c0e5c6afc062de4d7a7a6fe157deb720a391e25b56bbf1eeb8469"
+    },
+    {
+      "bytes": 468,
+      "path": "CFBD_FEATURE_COVERAGE.csv",
+      "sha256": "8e5fcdd6f028bb04a24865dced08fdf952aa76ecadaf3d607a3dac6d8d95befc"
+    },
+    {
+      "bytes": 17479,
+      "path": "CFBD_FEATURE_MISSING_EXACT_IDENTITY.csv",
+      "sha256": "dcdcce57094818c223fabd7ad3a16ddb487afb553ad7cc8c633476e0c39acbfc"
+    },
+    {
+      "bytes": 2408,
+      "path": "CFBD_IDENTITY_COVERAGE.csv",
+      "sha256": "dc5f8b2829845be84b47ad855121ae033c28f7ee4db4884e0e43f6b84233fd8a"
+    },
+    {
+      "bytes": 110,
+      "path": "CFBD_REVIEW_ONLY_IDENTITY_CANDIDATES.csv",
+      "sha256": "63bffb071d9ae4dee660e817efb3eba187b4cd5bc3fb491cb04f5d07e6307b73"
+    },
+    {
+      "bytes": 741,
+      "path": "CFBD_SCHEMA_VALIDATION.csv",
+      "sha256": "f74316ed5c02bd4be14d528b3cf9d3911d5643af7214a2ca9dd8ecfd8a42f9cc"
+    },
+    {
+      "bytes": 1321,
+      "path": "CFBD_SOURCE_INVENTORY.csv",
+      "sha256": "6b1adda3849704837c5f5d6157dfa918239e829079139e50517f8b1c68f2bbbb"
+    },
+    {
+      "bytes": 23753,
+      "path": "CFBD_SOURCE_SNAPSHOT_MANIFEST.csv",
+      "sha256": "4f6d832832bd86462aa1c68fa4431872ff85fd8d5e101c3d683a027383c3206f"
+    },
+    {
+      "bytes": 181369,
+      "path": "CFBD_UNRESOLVED_IDENTITY_INVENTORY.csv",
+      "sha256": "665bf36465a42e6c38828d8f3d8dbc5cfb73e9277f795653b9f0d42fab3f2bdc"
+    },
+    {
+      "bytes": 4663,
+      "path": "EARLY_CAREER_INCREMENTAL_VALUE_RESULTS.csv",
+      "sha256": "1f9385de8e1a78787fa24836e717fce75dc2a5d8cfe57dba1b843f0ea5400693"
+    },
+    {
+      "bytes": 516,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "fd32fa19ac5622b65067df9bc834221f0cd14bbdcdb82e4038d468414ec5c4d4"
+    },
+    {
+      "bytes": 3912,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "b7f81ce34360813a446f45bab2027c099121874a1ba5c82be46a09b647ae7258"
+    },
+    {
+      "bytes": 849,
+      "path": "FINISHED_V1_OUTCOME_V3_AND_STATE_NO_CHANGE.md",
+      "sha256": "98492ec76efefbc2ead769fab91b0e2f6160ab3dbb8f5d219d6aa95053961ba6"
+    },
+    {
+      "bytes": 916,
+      "path": "INCREMENTAL_VALUE_DECISIONS.csv",
+      "sha256": "0e69400cb2323e537fdaf8711fc0935570f525ecdcfdb3e7c044945f38b72f4d"
+    },
+    {
+      "bytes": 918,
+      "path": "MODEL_REENTRY_CONTRACT.md",
+      "sha256": "eef28282d8b4caa2af8610cc028990824274d3f97899febe5e1d8d08473cc1f7"
+    },
+    {
+      "bytes": 4383,
+      "path": "MULTI_YEAR_SURVIVAL_INCREMENTAL_VALUE_RESULTS.csv",
+      "sha256": "0215d8068982cc3aa304a2649886cfb6dd8033afc4cdb779cd83a3a59e79f789"
+    },
+    {
+      "bytes": 1839,
+      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "sha256": "1ae653148a6b411193bad10e34b540c7014c82d6e96bf035537259fa152011f4"
+    },
+    {
+      "bytes": 6942,
+      "path": "PRE_DRAFT_INCREMENTAL_VALUE_RESULTS.csv",
+      "sha256": "da7de638c0f998c954b0afa3e9b780eeff3301c18a45e63f54a0d3b9bab631ff"
+    },
+    {
+      "bytes": 335,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "f38ffd6574da65203f486f8831e7c6a96b3ceb271e7a4b76a066f3007a09cc27"
+    },
+    {
+      "bytes": 661,
+      "path": "SOURCE_ACCESS_TERMS_AND_LICENSE.md",
+      "sha256": "67219b123c5dd89ca9603fd149b1d8d1e3cc66a593ee896e9ea23b7baf62239f"
+    },
+    {
+      "bytes": 2085,
+      "path": "SOURCE_AND_FEATURE_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "f38542e579c27a13fc20b0f66d34945b68d033eed65993475d3a83b6767c54fd"
+    },
+    {
+      "bytes": 985,
+      "path": "TEMPORAL_AVAILABILITY_AND_LEAKAGE_CONTRACT.md",
+      "sha256": "eeb172509bc412993e650fbbcd16b4f3b16caff7f1c114aba1a4f8f292a04b4b"
+    },
+    {
+      "bytes": 624,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "a2967a9d57e2327c45b030cc30266ec8aad329d8d7f3b83a849f19d47855fb97"
+    }
+  ],
+  "build_date": "2026-07-30",
+  "builder_contract": {
+    "absolute_worktree_paths_emitted": false,
+    "encoding": "UTF-8 without BOM",
+    "float_precision": 6,
+    "line_endings": "LF",
+    "manifest_self_reference": false,
+    "stable_sorting": true,
+    "wall_clock_used": false
+  },
+  "canonical_source_commit": "2eb3532600cfc0665cc9869ba95a783b2aa0d549",
+  "canonical_source_tree": "e3e913ab1f6fbf5d59b56e2a4df9391f18ab8f58",
+  "foundation_id": "NWR_NEW_EVIDENCE_FOUNDATION_V1",
+  "production_changes": {
+    "finished_v1": "NONE",
+    "formula": "NONE",
+    "outcome_v3": "NONE",
+    "ui": "NONE"
+  },
+  "provider_calls": 62,
+  "row_counts": {
+    "college_features": 1044,
+    "exact_identity": 1103,
+    "mutation_cases": 28,
+    "review_identity": 0,
+    "unresolved_identity": 1759
+  },
+  "schema_version": 1,
+  "snapshot_aggregate_sha256": "370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a",
+  "snapshot_id": "20260730T171639Z-370ce01696c3",
+  "verdict": "GREEN_CFBD_SOURCES_ADMITTED_RESEARCH_ONLY_MODEL_REENTRY_CLOSED"
+}
