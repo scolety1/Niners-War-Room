@@ -13,3 +13,6 @@ docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/** text eol=lf
 docs/hq/master/nwr_dual_lens_rc1_v1_20260729/** text eol=lf
 scripts/build_nwr_dual_lens_rc1_v1_20260729.py text eol=lf
 tests/test_nwr_dual_lens_rc1_research.py text eol=lf
+docs/hq/master/nwr_dual_lens_rc1_targeted_revision_v1_20260729/** text eol=lf
+scripts/build_nwr_dual_lens_rc1_targeted_revision_v1_20260729.py text eol=lf
+tests/test_nwr_dual_lens_rc1_targeted_revision.py text eol=lf

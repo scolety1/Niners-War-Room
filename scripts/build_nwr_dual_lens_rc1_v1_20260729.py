@@ -1442,21 +1442,32 @@ def apply_d3_profile(
     profile: str,
     *,
     ppg_threshold: float,
+    cutoff_overrides: dict[str, float] | None = None,
+    productive_veteran_protection: bool = True,
+    low_games_protection: bool = True,
 ) -> pd.Series:
     position = str(frame["position"].iloc[0]) if not frame.empty else ""
-    cutoff = AGE_PROFILES[profile][position]
+    cutoff = (
+        cutoff_overrides[position]
+        if cutoff_overrides is not None
+        else AGE_PROFILES[profile][position]
+    )
     age = pd.to_numeric(frame["age"], errors="coerce")
     games = pd.to_numeric(frame["prior_games"], errors="coerce")
     ppg = pd.to_numeric(frame["pyf_prior_nwr_ppg"], errors="coerce")
     excess = (age - cutoff).clip(lower=0.0).fillna(0.0)
     penalty = (excess * 0.04).clip(upper=0.20)
     productive_veteran = age.ge(cutoff) & games.ge(8) & ppg.ge(ppg_threshold)
-    penalty = penalty.where(~productive_veteran, penalty.clip(upper=0.05))
+    if productive_veteran_protection:
+        penalty = penalty.where(~productive_veteran, penalty.clip(upper=0.05))
     future = frame["d_future_retained_contribution"].copy()
     adjusted = future.where(future.le(0), future * (1.0 - penalty))
     low_games = games.lt(6)
     low_games_cap = frame["d_h1_pred"].clip(lower=0.0) * 0.75
-    adjusted = adjusted.where(~(low_games & adjusted.gt(low_games_cap)), low_games_cap)
+    if low_games_protection:
+        adjusted = adjusted.where(
+            ~(low_games & adjusted.gt(low_games_cap)), low_games_cap
+        )
     return frame["d_h1_pred"] + adjusted
 
 
@@ -3463,169 +3474,11 @@ def viewport_results(app_rows: pd.DataFrame) -> pd.DataFrame:
 
 
 def mutation_results(board: pd.DataFrame) -> pd.DataFrame:
-    mutations: list[tuple[str, str, bool, str]] = []
-
-    def add(identifier: str, mutation: str, detected: bool, detector: str) -> None:
-        mutations.append((identifier, mutation, detected, detector))
-
-    add(
-        "M01",
-        "future leakage",
-        not (2026 + 0 < 2026),
-        "strict training predicate anchor+horizon_offset < origin",
-    )
-    add(
-        "M02",
-        "random split",
-        "random" != "chronological_walk_forward",
-        "split contract allow-list",
-    )
-    add(
-        "M03",
-        "name join",
-        "player_name" != "player_id",
-        "exact identity key contract",
-    )
-    add(
-        "M04",
-        "current ADP admitted as formula input",
-        "current_adp" not in set(COMMON_FEATURES),
-        "feature allow-list and banned-current-context test",
-    )
-    add(
-        "M05",
-        "universal age penalty",
-        all(isinstance(profile, dict) for profile in AGE_PROFILES.values()),
-        "position-specific inflection schema",
-    )
-    required_guards = {"retention", "availability", "productive_veteran", "low_games"}
-    add(
-        "M06",
-        "missing retention/availability/veteran/low-games guards",
-        required_guards
-        == {"retention", "availability", "productive_veteran", "low_games"},
-        "candidate contract required-guard set",
-    )
-    rookie = board.loc[board["is_rookie"].fillna(False)]
-    add(
-        "M07",
-        "unsupported rookie marked complete",
-        rookie.empty
-        or rookie["evidence_state"].astype(str).str.startswith(
-            "NOT_ENOUGH_INFORMATION"
-        ).all(),
-        "current shadow-board rookie null fence",
-    )
-    add(
-        "M08",
-        "Outcome V3 used in-sample",
-        not any("OUTCOME" in feature.upper() for feature in COMMON_FEATURES),
-        "formula feature registry excludes Outcome columns",
-    )
-    required_weight_columns = {
-        "contending_win_now_weight",
-        "contending_dynasty_weight",
-        "balanced_win_now_weight",
-        "balanced_dynasty_weight",
-        "rebuilding_win_now_weight",
-        "rebuilding_dynasty_weight",
-    }
-    add(
-        "M09",
-        "hidden Team Window weights",
-        required_weight_columns.issubset(board.columns),
-        "detached board output schema",
-    )
-    add(
-        "M10",
-        "raw-rank Team Window blending",
-        "normalized_score" in "win_now_normalized_score",
-        "Team Window accepts normalized lens scores only",
-    )
-    add(
-        "M11",
-        "opaque trade winner",
-        "winner" not in {"manual_context_status", "human_review_required"},
-        "Trading Lab no-winner output contract",
-    )
-    swapped_detected = (
-        board["win_now_formula_id"].nunique() == 1
-        and board["dynasty_formula_id"].nunique() == 1
-        and board["win_now_formula_id"].iloc[0]
-        != board["dynasty_formula_id"].iloc[0]
-    )
-    add(
-        "M12",
-        "swapped lens values",
-        swapped_detected,
-        "formula-id-to-score-column binding",
-    )
-    unsupported = board.loc[~board["source_ready"].fillna(False)]
-    add(
-        "M13",
-        "hidden fallback into missing lens score",
-        unsupported["win_now_score"].isna().all()
-        and unsupported["dynasty_value_score"].isna().all(),
-        "unsupported current row scores must remain null",
-    )
-    add(
-        "M14",
-        "incorrect draft lens routing",
-        {"WIN_NOW", "DYNASTY", "TEAM_WINDOW"} != {"DYNASTY"},
-        "future draft lens enum/routing equality detector",
-    )
-    add(
-        "M15",
-        "Finished V1 overwrite",
-        EXPECTED_HASHES[BOARD_REL]
-        == "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4",
-        "pinned SHA-256 assertion",
-    )
-    add(
-        "M16",
-        "Outcome V3 change",
-        EXPECTED_HASHES[OUTCOME_BOARD_REL]
-        == "279cd23942e5f5ebd94543c44ffaf03d76a018e6e9bc9ce4e74f9bebd1fb891d"
-        and EXPECTED_HASHES[OUTCOME_SCHEMA_REL]
-        == "62349c007d553870866d1c585ed5e3f906c579d456ce025df6967d9c8fd09f89",
-        "Outcome V3 board and 79-row schema hash assertion",
-    )
-    add(
-        "M17",
-        "page-open write",
-        True,
-        "no app file changed; research builder output root allow-list",
-    )
-    add(
-        "M18",
-        "V2-2 formula chain revived",
-        all("V2_2" not in value for value in formula_definitions()["candidate_id"]),
-        "candidate registry fixed to W0-W3/D0-D3",
-    )
-    add(
-        "M19",
-        "scheduled refresh task re-enabled",
-        True,
-        "external scheduled-task state gate; verified separately as disabled",
-    )
-    return pd.DataFrame(
-        [
-            {
-                "mutation_id": identifier,
-                "mutation": mutation,
-                "expected": "DETECTED",
-                "observed": "DETECTED" if detected else "NOT_DETECTED",
-                "result": "PASS" if detected else "FAIL",
-                "detector": detector,
-                "exercised_path": (
-                    "real_model_and_shadow_board"
-                    if identifier
-                    in {"M01", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M12", "M13"}
-                    else "contract_or_immutable_path"
-                ),
-            }
-            for identifier, mutation, detected, detector in mutations
-        ]
+    del board
+    raise RuntimeError(
+        "Static mutation placeholders were removed by the targeted revision. "
+        "Run scripts/build_nwr_dual_lens_rc1_targeted_revision_v1_20260729.py "
+        "to execute the governed real-path mutation harness."
     )
 
 
@@ -3808,19 +3661,19 @@ def special_review_markdown(board: pd.DataFrame) -> str:
         "",
         "## Second-year players",
         "",
-        markdown_table(second_year.head(40), columns)
+        markdown_table(second_year, columns)
         if not second_year.empty
         else "No second-year rows with governed experience metadata.",
         "",
-        f"Second-year rows shown: {min(40, len(second_year))} of {len(second_year)}.",
+        f"Second-year rows shown: {len(second_year)} of {len(second_year)}.",
         "",
         "## Low-games veterans",
         "",
-        markdown_table(low_games.head(40), columns)
+        markdown_table(low_games, columns)
         if not low_games.empty
         else "No low-games veteran rows.",
         "",
-        f"Low-games rows shown: {min(40, len(low_games))} of {len(low_games)}. "
+        f"Low-games rows shown: {len(low_games)} of {len(low_games)}. "
         "Low games is not labeled as injury return.",
     ]
     return "\n".join(sections)

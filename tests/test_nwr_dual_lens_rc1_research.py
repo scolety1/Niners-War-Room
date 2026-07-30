@@ -102,7 +102,7 @@ def test_shadow_board_is_detached_transparent_and_null_fenced() -> None:
     board = pd.read_csv(PACKET / "CURRENT_2026_DUAL_LENS_SHADOW_BOARD.csv")
     assert len(board) == 240
     assert board["release_identifier_dual_lens"].eq(
-        "NWR_DUAL_LENS_RC1_RESEARCH_ONLY_NOT_ADMITTED"
+        "NWR_DUAL_LENS_RC1_TARGETED_REVISION_RESEARCH_ONLY_NOT_ADMITTED"
     ).all()
     assert board["rank_scope"].eq(
         "SCORED_REVIEW_ONLY_SUBSET_NOT_240_PLAYER_PRODUCTION_RANK"
@@ -204,9 +204,11 @@ def test_both_formula_lanes_fail_closed_and_no_ui_is_installed() -> None:
 
 def test_mutations_are_detected_and_outcome_is_not_a_formula_input() -> None:
     results = pd.read_csv(PACKET / "MUTATION_SENSITIVITY_RESULTS.csv")
-    assert len(results) == 19
+    assert len(results) == 20
     assert results["observed"].eq("DETECTED").all()
     assert results["result"].eq("PASS").all()
+    assert results["actual_failure"].ne("NO_FAILURE").all()
+    assert results["production_function_or_path_exercised"].str.len().gt(10).all()
     module = _load_builder()
     assert not any("OUTCOME" in feature.upper() for feature in module.COMMON_FEATURES)
     assert "player_name" not in module.COMMON_FEATURES
@@ -232,6 +234,10 @@ def test_manifest_is_non_self_referential_and_complete() -> None:
 
 def test_builder_has_local_research_only_write_contract() -> None:
     source = BUILDER.read_text(encoding="utf-8")
+    targeted = (
+        ROOT
+        / "scripts/build_nwr_dual_lens_rc1_targeted_revision_v1_20260729.py"
+    ).read_text(encoding="utf-8")
     assert "requests" not in source
     assert "http://" not in source
     assert "https://" not in source
@@ -239,3 +245,7 @@ def test_builder_has_local_research_only_write_contract() -> None:
     assert "shutil.rmtree(output)" in source
     assert "inside-repository output must be the governed dual-lens packet path" in source
     assert "production_integration" in source
+    assert "requests" not in targeted
+    assert "http://" not in targeted
+    assert "https://" not in targeted
+    assert "real_path_mutation_results" in targeted
