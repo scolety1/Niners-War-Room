@@ -1,0 +1,74 @@
+player_id,player_name,component_contribution_sum,component_weight_available,weighted_mean_before_guardrail,raw_score_after_guardrail,guardrail_states,confidence_cap,expected_final_score,actual_final_score,format_factor,expected_uncapped_format_score,actual_sprint14e_format_score,sprint14e_evidence_state,reconciled
+LOV121782,Jeremiyah Love,76.5262,0.83,92.2002,92.2002,none,0.88,81.1362,81.1362,1.0,67.343,67.343,executed_sprint14e,True
+TYS405541,Jordyn Tyson,72.3163,0.83,87.1281,87.1281,none,0.88,76.6727,76.6727,1.0,63.6383,63.6383,executed_sprint14e,True
+LEM694125,Makai Lemon,69.352,0.83,83.5566,83.5565,none,0.88,73.5297,73.5297,1.0,61.0297,61.0297,executed_sprint14e,True
+COL293648,Jonah Coleman,64.5646,0.83,77.7887,77.7887,model_edge_weirdness:day_three_exceptional_profile,0.88,68.4541,68.4541,1.0,56.8169,56.8169,executed_sprint14e,True
+BEL597603,Skyler Bell,64.0238,0.83,77.1371,77.137,model_edge_weirdness:day_three_exceptional_profile,0.88,67.8806,67.8806,1.0,56.3409,56.3409,executed_sprint14e,True
+BOS677861,Denzel Boston,62.4641,0.83,75.258,75.258,none,0.88,66.227,66.227,1.0,54.9684,54.9684,executed_sprint14e,True
+JOH224817,Emmett Johnson,61.7345,0.83,74.3789,74.3789,model_edge_weirdness:day_three_exceptional_profile,0.88,65.4534,65.4534,1.0,54.3263,54.3263,executed_sprint14e,True
+TAT143045,Carnell Tate,61.2171,0.83,73.7555,73.7555,none,0.88,64.9048,64.9048,1.0,53.871,53.871,executed_sprint14e,True
+BEL267684,Chris Bell,61.0738,0.83,73.5829,73.583,none,0.88,64.753,64.753,1.0,53.745,53.745,executed_sprint14e,True
+COO816508,Omar Cooper Jr.,60.8572,0.83,73.3219,73.322,none,0.88,64.5234,64.5234,1.0,53.5544,53.5544,executed_sprint14e,True
+BRA531428,Zachariah Branch,57.5467,0.83,69.3334,69.3333,none,0.88,61.0133,61.0133,1.0,50.641,50.641,executed_sprint14e,True
+BER218265,Germie Bernard,57.0938,0.83,68.7877,68.7877,none,0.88,60.5332,60.5332,1.0,50.2426,50.2426,executed_sprint14e,True
+HUR541377,Ted Hurst,60.4538,0.83,72.8359,72.8358,none,0.84,61.1821,61.1821,1.0,50.7811,50.0,watchlist_data_incomplete,True
+CON046719,KC Concepcion,69.1469,0.83,83.3095,83.3094,none,0.84,69.9799,69.9799,1.0,58.0833,50.0,watchlist_data_incomplete,True
+FIE775129,Malachi Fields,55.3968,0.83,66.7431,66.7432,none,0.88,58.734,58.734,1.0,48.7492,48.7492,executed_sprint14e,True
+BRA836631,Chris Brazzell II,56.1132,0.83,67.6063,67.6064,none,0.84,56.7894,56.7894,1.0,47.1352,47.1352,executed_sprint14e,True
+WIL143106,Antonio Williams,52.7731,0.83,63.582,63.582,none,0.88,55.9522,55.9522,1.0,46.4403,46.4403,executed_sprint14e,True
+DOU210628,Caleb Douglas,51.1042,0.83,61.5713,61.5712,none,0.88,54.1827,54.1827,1.0,44.9716,44.9716,executed_sprint14e,True
+PRI206342,Jadarian Price,50.9718,0.83,61.4118,61.4117,none,0.88,54.0423,54.0423,1.0,44.8551,44.8551,executed_sprint14e,True
+SAD482340,Kenyon Sadiq,67.9282,0.95,71.5034,62.0,no_premium_te_cap_warning:first_round_te_no_premium_cap,0.88,54.56,54.56,0.82,42.5022,42.5022,executed_sprint14e,True
+MCG547540,Seth McGowan,49.6456,0.83,59.814,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+WAS797326,Mike Washington Jr.,58.1762,0.83,70.0918,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+COL362413,Kevin Coleman Jr.,53.4182,0.83,64.3593,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+ALL532376,Kaytron Allen,55.8029,0.83,67.2324,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+SAR527100,Elijah Sarratt,58.1492,0.83,70.0593,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+CLA041524,Demond Claiborne,53.3924,0.83,64.3282,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+THO495568,Brenen Thompson,56.9351,0.83,68.5965,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+RAN022436,Adam Randall,55.9086,0.83,67.3598,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,51.04,51.04,1.0,42.3632,42.3632,executed_sprint14e,True
+DAN490797,CJ Daniels,47.7737,0.83,57.5587,57.5587,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,50.6517,50.6517,1.0,42.0409,42.0409,executed_sprint14e,True
+MEN516487,Fernando Mendoza,76.7425,0.83,92.4608,92.4608,none,0.88,81.3655,81.3655,0.62,41.8707,41.8707,executed_sprint14e,True
+LAN311008,Ja'Kobi Lane,47.0439,0.83,56.6794,56.6793,none,0.88,49.8778,49.8778,1.0,41.3986,41.3986,executed_sprint14e,True
+CAM108646,Josh Cameron,46.2195,0.83,55.6861,55.6863,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,49.0039,49.0039,1.0,40.6732,40.6732,executed_sprint14e,True
+THO417520,Zavion Thomas,46.1387,0.83,55.5888,55.5888,none,0.88,48.9181,48.9181,1.0,40.602,40.602,executed_sprint14e,True
+BON235618,Lewis Bond,51.6122,0.83,62.1834,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,48.72,48.72,1.0,40.4376,40.4376,executed_sprint14e,True
+ALL092954,Cyrus Allen,48.3213,0.83,58.2184,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,48.72,48.72,1.0,40.4376,40.4376,executed_sprint14e,True
+LAN016345,Bryce Lance,58.9163,0.83,70.9835,58.0,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,48.72,48.72,1.0,40.4376,40.4376,executed_sprint14e,True
+WIL189259,CJ Williams,48.0441,0.83,57.8845,57.8845,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,48.623,48.623,1.0,40.3571,40.3571,executed_sprint14e,True
+BLA097235,Kaelon Black,47.9781,0.83,57.8049,57.8049,none,0.84,48.5561,48.5561,1.0,40.3016,40.3016,executed_sprint14e,True
+SMI038569,Anthony Smith,46.5576,0.83,56.0935,56.0935,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,47.1185,47.1185,1.0,39.1084,39.1084,executed_sprint14e,True
+KOZ404039,Tanner Koziol,72.9464,0.95,76.7857,56.0,model_edge_weirdness:day_three_exceptional_profile|no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+ROU550040,Sam Roush,69.44,0.95,73.0947,56.0,no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+KLA269938,Max Klare,68.5177,0.95,72.1239,56.0,no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+JOL735174,Justin Joly,67.2327,0.95,70.7713,56.0,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+CUE040912,Josh Cuevas,55.4416,0.95,58.3596,56.0,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+STO806346,Eli Stowers,75.3977,0.95,79.366,56.0,no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+RAR148318,Eli Raridon,54.7895,0.95,57.6732,56.0,no_premium_te_cap_warning:non_first_round_te_cap,0.88,49.28,49.28,0.82,38.3891,38.3891,executed_sprint14e,True
+VIR271235,Reggie Virgil,44.9851,0.83,54.1989,54.199,none,0.84,45.5272,45.5272,1.0,37.7876,37.7876,executed_sprint14e,True
+KLE258860,Marlin Klein,52.2641,0.95,55.0148,55.0147,no_premium_te_cap_warning:non_first_round_te_cap,0.88,48.4129,48.4129,0.82,37.7136,37.7136,executed_sprint14e,True
+BEN687044,Dallen Bentley,51.3533,0.95,54.0561,54.0562,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.88,47.5695,47.5695,0.82,37.0566,37.0566,executed_sprint14e,True
+END438361,Jack Endries,51.0271,0.95,53.7127,53.7128,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.88,47.2673,47.2673,0.82,36.8212,36.8212,executed_sprint14e,True
+HEN199637,Emmanuel Henderson Jr.,43.8081,0.83,52.7808,52.781,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,44.336,44.336,1.0,36.7989,36.7989,executed_sprint14e,True
+LAW090280,Kendrick Law,43.5764,0.83,52.5017,52.5015,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,44.1013,44.1013,1.0,36.6041,36.6041,executed_sprint14e,True
+BRO268113,Barion Brown,41.3478,0.83,49.8166,49.8165,draft_capital_anchor_warning:day_three_skepticism_cap,0.88,43.8385,43.8385,1.0,36.386,36.386,executed_sprint14e,True
+HIB564972,Matthew Hibner,48.2336,0.95,50.7722,50.7722,no_premium_te_cap_warning:non_first_round_te_cap,0.88,44.6795,44.6795,0.82,34.8053,34.8053,executed_sprint14e,True
+SHA375359,Bauer Sharp,47.6898,0.95,50.1998,50.1997,no_premium_te_cap_warning:non_first_round_te_cap,0.88,44.1757,44.1757,0.82,34.4129,34.4129,executed_sprint14e,True
+KAN023071,Jaren Kanak,46.9915,0.95,49.4647,49.4648,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.88,43.529,43.529,0.82,33.9091,33.9091,executed_sprint14e,True
+BOE586077,Nate Boerkircher,46.7047,0.95,49.1628,49.163,no_premium_te_cap_warning:non_first_round_te_cap,0.88,43.2634,43.2634,0.82,33.7022,33.7022,executed_sprint14e,True
+TRA291459,Seydou Traore,47.5682,0.83,57.3111,56.0,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.84,47.04,47.04,0.82,32.0154,32.0154,executed_sprint14e,True
+NOW373761,Riley Nowakowski,42.7608,0.95,45.0114,45.0113,no_premium_te_cap_warning:non_first_round_te_cap,0.88,39.6099,39.6099,0.82,30.8561,30.8561,executed_sprint14e,True
+BEN601117,Malik Benson,35.0644,0.83,42.2463,42.2463,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,35.4869,35.4869,1.0,29.4541,29.4541,executed_sprint14e,True
+MIL303300,Jam Miller,34.0495,0.83,41.0235,41.0235,draft_capital_anchor_warning:day_three_skepticism_cap,0.84,34.4597,34.4597,1.0,28.6016,28.6016,executed_sprint14e,True
+RYA022232,Carsen Ryan,40.7268,0.83,49.0684,49.0683,draft_capital_anchor_warning:day_three_skepticism_cap|no_premium_te_cap_warning:non_first_round_te_cap,0.84,41.2174,41.2174,0.82,28.0526,28.0526,executed_sprint14e,True
+SIM639376,Ty Simpson,72.7126,0.83,87.6055,58.0,source_shape_warning:one_qb_qb_scarcity_cap,0.88,51.04,51.04,0.62,26.2652,26.2652,executed_sprint14e,True
+GRE361852,Taylen Green,61.3255,0.83,73.8861,58.0,model_edge_weirdness:day_three_exceptional_profile|source_shape_warning:one_qb_qb_scarcity_cap,0.88,51.04,51.04,0.62,26.2652,26.2652,executed_sprint14e,True
+ALL015451,Drew Allar,55.7109,0.83,67.1216,58.0,source_shape_warning:one_qb_qb_scarcity_cap,0.88,51.04,51.04,0.62,26.2652,26.2652,executed_sprint14e,True
+KLU066027,Cade Klubnik,62.5001,0.83,75.3013,58.0,draft_capital_anchor_warning:day_three_skepticism_cap|source_shape_warning:one_qb_qb_scarcity_cap,0.88,51.04,51.04,0.62,26.2652,26.2652,executed_sprint14e,True
+PAY546690,Cole Payton,60.297,0.83,72.647,58.0,model_edge_weirdness:day_three_exceptional_profile|source_shape_warning:one_qb_qb_scarcity_cap,0.84,48.72,48.72,0.62,25.0713,25.0713,executed_sprint14e,True
+KAL252591,Athan Kaliakmanis,53.011,0.83,63.8687,58.0,draft_capital_anchor_warning:day_three_skepticism_cap|source_shape_warning:one_qb_qb_scarcity_cap,0.84,48.72,48.72,0.62,25.0713,25.0713,executed_sprint14e,True
+WET055619,Kaden Wetjen,28.2624,0.83,34.0511,34.0511,none,0.88,29.965,29.965,1.0,24.8709,24.8709,executed_sprint14e,True
+MOR767384,Behren Morton,45.1792,0.83,54.4328,54.4327,draft_capital_anchor_warning:day_three_skepticism_cap|source_shape_warning:one_qb_qb_scarcity_cap,0.88,47.9008,47.9008,0.62,24.6498,24.6498,executed_sprint14e,True
+KAC282861,Will Kacmarek,34.9908,0.83,42.1576,42.1575,no_premium_te_cap_warning:non_first_round_te_cap,0.84,35.4123,35.4123,0.82,24.1016,24.1016,executed_sprint14e,True
+NUS440041,Garrett Nussmeier,42.1579,0.83,50.7927,50.7927,draft_capital_anchor_warning:day_three_skepticism_cap|source_shape_warning:one_qb_qb_scarcity_cap,0.88,44.6976,44.6976,0.62,23.0014,23.0014,executed_sprint14e,True
+BRE060106,Max Bredeson,18.5525,0.83,22.3524,22.3524,no_premium_te_cap_warning:non_first_round_te_cap,0.84,18.776,18.776,0.82,12.7789,12.7789,executed_sprint14e,True

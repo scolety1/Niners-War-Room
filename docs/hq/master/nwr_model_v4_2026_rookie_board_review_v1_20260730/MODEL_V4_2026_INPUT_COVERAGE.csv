@@ -1,0 +1,5 @@
+position,drafted_rows,exact_identity_rows,blocked_identity_rows,scored_rows,unscored_rows,production_rows,market_share_rows,draft_capital_rows,athletic_rows,recruiting_rows,age_rows
+QB,10,9,1,9,1,9,9,9,0,0,9
+RB,12,11,1,11,1,11,11,11,0,0,11
+TE,22,20,2,20,2,20,20,20,16,0,20
+WR,36,33,3,33,3,33,33,33,0,0,33

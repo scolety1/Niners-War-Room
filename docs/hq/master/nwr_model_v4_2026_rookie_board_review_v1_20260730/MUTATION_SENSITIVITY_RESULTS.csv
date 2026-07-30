@@ -1,0 +1,21 @@
+mutation_number,mutation,owning_path,result,failure
+1,join_player_by_name_only,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,non-exact identity entered analyzer matrix
+2,swap_same_position_rookies,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,identity metadata swap or name-only join
+3,duplicate_gsis_id,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,blank or duplicate GSIS ID in prospect matrix
+4,blank_gsis_id,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,blank or duplicate GSIS ID in prospect matrix
+5,resolve_blocked_without_authority,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,admitted prospect matrix must have 73 rows
+6,include_ashton_jeanty,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,admitted prospect matrix must have 73 rows
+7,include_synthetic_v1_fixture,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,admitted prospect matrix must have 73 rows
+8,convert_missing_combine_to_zero,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,missing combine was converted to zero
+9,convert_missing_recruiting_to_zero,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,missing recruiting was converted to zero
+10,substitute_ppa_for_production_share,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,forbidden feature entered prospect matrix
+11,alter_production_weight,prospect_value_component_rows.csv,PASS_REJECTED,executed component weights drift
+12,alter_draft_capital_weight,prospect_value_component_rows.csv,PASS_REJECTED,executed component weights drift
+13,remove_confidence_cap,MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv,PASS_REJECTED,confidence reconciliation failed
+14,remove_day_three_guardrail,MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv,PASS_REJECTED,complete board differs from governed regeneration
+15,remove_one_qb_qb_cap,MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv,PASS_REJECTED,complete board differs from governed regeneration
+16,use_future_nfl_production,admitted_prospect_current_feature_matrix.csv,PASS_REJECTED,forbidden feature entered prospect matrix
+17,rank_blocked_row,MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv,PASS_REJECTED,blocked identity received score or rank
+18,label_review_rank_as_dynasty_rank,MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv,PASS_REJECTED,review-only score/rank/board label drift
+19,write_output_into_finished_v1,output path gate,PASS_REJECTED,protected production/output path rejected
+20,alter_outcome_v3,output path gate,PASS_REJECTED,protected production/output path rejected

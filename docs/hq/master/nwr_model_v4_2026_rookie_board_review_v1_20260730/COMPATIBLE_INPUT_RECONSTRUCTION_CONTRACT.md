@@ -1,0 +1,3 @@
+# Compatible Input Reconstruction Contract
+
+No exact governed 2026 input matrices were recovered in the bounded search. The compatible pack uses immutable admitted nflverse draft, player, and combine snapshots plus the independently reviewed CFBD snapshot. Identity is exact GSIS; CFBD attaches only by unique draft year/round/overall. Names are diagnostic only. College seasons must precede the 2026 draft. PPA, usage as a component, recruiting substitutes, current ADP, market ranks, future NFL production, and missing-to-zero conversion are forbidden. Missing fields flow through the existing confidence/missingness contract.

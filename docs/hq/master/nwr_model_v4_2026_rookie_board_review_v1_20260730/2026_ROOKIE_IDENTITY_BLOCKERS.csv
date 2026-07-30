@@ -1,0 +1,8 @@
+player_name,position,nfl_team,college,draft_round,overall_pick,identity_status,blocking_reason
+Colbie Young,WR,CIN,Georgia,4,140,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+Nicholas Singleton,RB,TEN,Penn St.,5,165,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+Joe Royer,TE,CLE,Cincinnati,5,170,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+Deion Burks,WR,IND,Oklahoma,7,254,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+De'Zhaun Stribling,WR,SFO,Mississippi,2,33,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+Carson Beck,QB,ARI,Miami (FL),3,65,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.
+Oscar Delp,TE,NOR,Georgia,3,73,BLOCKED_UNRESOLVED_IDENTITY,Canonical nflverse draft row has no exact GSIS player_id.

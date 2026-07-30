@@ -1,0 +1,9 @@
+formula_field,source,source_fields,units,consumer
+draft round/overall,nflverse draft_picks,round|pick,exact units,draft_capital
+NFL identity/team/college,nflverse draft_picks,gsis_id|team|college,exact,row metadata
+age lifecycle,nflverse players,birth_date,decimal years at selection,age_lifecycle
+athletic raw context,nflverse combine,wt|forty|vertical|broad_jump|cone,raw only; no invented percentile,existing workout_profile
+college production,reviewed CFBD,player season counting stats,career/latest exact counting units,production
+college market share,reviewed CFBD,player/team stat denominator,0-1 ratio,market_share
+recruiting,none governed,missing,"missing, never zero",recruiting_prior
+confidence,existing Model V4 service,coverage/warnings/receipts,0-1 cap,confidence cap
