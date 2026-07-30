@@ -15,12 +15,12 @@ from app.components.draft_day_v1 import (
     render_lane_status_table,
     render_source_of_truth_badge,
     render_yellow_hold,
-    stop_if_board_blocked,
 )
 from app.components.ui_framework import page_header
 from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.draft_day_app_v1_service import (
     display_lane_prop_frame,
+    load_dynasty_rankings,
     load_frozen_board,
     load_lane_prop_file,
 )
@@ -40,6 +40,7 @@ from src.services.draft_day_trade_lab_service import (
     review_trade_package,
     source_context_counts,
     trade_item_rows,
+    validate_trade_player_universe,
 )
 from src.services.trading_lab_nflverse_context_service import (
     display_nflverse_context_rows,
@@ -83,7 +84,8 @@ PLANNER_COLUMNS = (
     "last_updated",
 )
 
-bundle = load_frozen_board()
+frozen_bundle = load_frozen_board()
+dynasty_bundle = load_dynasty_rankings()
 trade_frame, trade_path = load_lane_prop_file("trading_lab", "trade_helper_context.csv")
 pick_frame, pick_path = load_lane_prop_file("trading_lab", "pick_context.csv")
 tier_frame, tier_path = load_lane_prop_file("trading_lab", "trade_tier_values.csv")
@@ -93,13 +95,17 @@ page_header(
     "Trading Lab",
     eyebrow="Draft-Day App V1",
     description=(
-        "Manual trade planning workspace using frozen-board rank, tier, pick-window, and "
-        "risk-note context only. No package value, offer generation, simulation, private value, "
-        "or final trade advice runs here."
+        "Manual trade planning workspace using the complete 240-player production universe. "
+        "Dynasty Rank and roster context remain factual labels; frozen draft/pick context stays "
+        "separate. No package value, offer generation, simulation, private value, or final trade "
+        "advice runs here."
     ),
     status_items=(
         ("Manual review only", "review"),
-        ("Frozen board source", "safe"),
+        (
+            f"Current player rows: {dynasty_bundle.row_count}",
+            "safe" if dynasty_bundle.loaded else "blocked",
+        ),
         ("No trade model added", "safe"),
     ),
 )
@@ -107,33 +113,69 @@ st.caption(
     "Deep tool: manual trade review. Display-only context is not a trade model, rank input, "
     "or source of truth. No trade calculator or automatic offer generator runs here."
 )
-render_source_of_truth_badge(bundle)
-stop_if_board_blocked(bundle)
+player_universe_errors = (
+    validate_trade_player_universe(dynasty_bundle.frame)
+    if dynasty_bundle.loaded
+    else ()
+)
+if dynasty_bundle.loaded and not player_universe_errors:
+    st.info(
+        "Current player universe: Full Dynasty Rankings | GREEN | "
+        f"{dynasty_bundle.row_count} rows | {dynasty_bundle.source_label} | "
+        f"SHA-256 {dynasty_bundle.source_hash}."
+    )
+else:
+    st.error(
+        "Trading Lab requires the approved hash-validated 240-player production universe. "
+        "The frozen draft-board checkpoint will not be substituted as the player selector."
+    )
+    for warning in dynasty_bundle.warnings:
+        st.warning(warning)
+    for error in dynasty_bundle.errors:
+        st.error(error)
+    for error in player_universe_errors:
+        st.error(error)
+    st.stop()
+
+for warning in dynasty_bundle.warnings:
+    st.warning(warning)
+render_source_of_truth_badge(frozen_bundle)
+st.caption(
+    "Frozen Final Draft Board V1 is draft/pick context only and does not supply selectable "
+    "Trading Lab players."
+)
 
 if SESSION_KEY not in st.session_state:
     st.session_state[SESSION_KEY] = empty_trade_state()
 st.session_state[SESSION_KEY] = copy_trade_state(st.session_state[SESSION_KEY])
 
-lookup = build_trade_item_lookup(bundle.frame, trade_frame, pick_frame)
+lookup = build_trade_item_lookup(
+    dynasty_bundle.frame,
+    trade_frame,
+    pick_frame,
+    require_complete_player_universe=True,
+)
 player_select = player_options(lookup)
 pick_select = pick_context_options(lookup)
-counts = source_context_counts(bundle.frame, trade_frame, pick_frame, tier_frame)
+counts = source_context_counts(dynasty_bundle.frame, trade_frame, pick_frame, tier_frame)
 nflverse_context = load_trading_lab_nflverse_context_index()
 
 if trade_path is None or trade_frame.empty:
-    render_yellow_hold("Trading Lab helper context is missing; review is board-context only.")
+    render_yellow_hold(
+        "Trading Lab helper context is missing; review is current-player context only."
+    )
 
 
 def _render_source_metrics(counts: dict[str, int]) -> None:
     cols = st.columns(4)
-    cols[0].metric("Frozen baseline rows", counts["frozen_board_rows"])
+    cols[0].metric("Current player rows", counts["player_universe_rows"])
     cols[1].metric("Trade helper rows", counts["trade_helper_rows"])
     cols[2].metric("Pick context rows", counts["pick_context_rows"])
     cols[3].metric("Tier context rows", counts["tier_context_rows"])
     st.caption(
-        "Source badge: Frozen Final Draft Board V1 plus approved lane props. Row counts are "
-        "visible. Context is display-only/manual planning and cannot override "
-        "`final_board_rank`, create hidden sort fields, or produce package values."
+        "Selectable players come from the hash-validated Full Dynasty Rankings source. Frozen "
+        "board and approved lane props remain separate display-only context and cannot override "
+        "`nwr_rank`, `final_board_rank`, create hidden sort fields, or produce package values."
     )
 
 
