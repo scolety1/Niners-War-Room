@@ -1,0 +1,5 @@
+surface,viewport,route_open,traceback,players,veteran,rookie,picks,dynasty_rank,root_overflow,recommendation,result
+/trading-lab AppTest,execution path,YES,NONE,240,Patrick Mahomes,Ashton Jeanty,YES,YES,N/A,NONE,PASS
+/trading-lab,375x812,YES,NONE,240,covered by selector execution,covered by selector execution,YES,YES,NONE,NONE,PASS
+/trading-lab,768x1024,YES,NONE,240,covered by selector execution,covered by selector execution,YES,YES,NONE,NONE,PASS
+/trading-lab,1440x1000,YES,NONE,240,Patrick Mahomes selected,Ashton Jeanty selected,YES,YES,NONE,NONE,PASS

@@ -1,0 +1,16 @@
+mutation_id,mutation,execution_path,observed_kill,result
+1,substitute frozen 66-player frame,validator/lookup/AppTest,count error; no Add player control,PASS
+2,truncate complete universe to 66,validator/lookup/AppTest,count error; no Add player control,PASS
+3,use player name as identity,validator/lookup/AppTest,missing player_id; no selector,PASS
+4,duplicate a player ID,validator/lookup/AppTest,duplicate identity; no selector,PASS
+5,blank a player ID,validator/lookup/AppTest,blank identity; no selector,PASS
+6,remove an established veteran,validator/lookup/AppTest,239-row authority rejected,PASS
+7,relabel Dynasty Rank as final-board rank,validator/lookup/AppTest,missing nwr_rank; no selector,PASS
+8,convert unknown ownership to free agent,validator/lookup/AppTest,FREE AGENT rejected,PASS
+9,substitute prohibited 368-row artifact,validator/lookup/AppTest,368 rows rejected,PASS
+10,silently fall back after Finished V1 hash failure,loader/AppTest,hash error; no frozen fallback,PASS
+11,mix pick IDs into player IDs,lookup identity path,player:/pick_context: namespaces remain disjoint,PASS
+12,hide the source warning,temporary source mutant/AppTest,mutant killed; expected info disclosure absent,PASS
+13,add an opaque trade winner,validator/lookup/AppTest,opaque_trade_result field rejected,PASS
+14,use Outcome V3 for hidden sorting,validator/lookup/AppTest,outcome_v3_hidden_sort field rejected,PASS
+15,write persistent state on page open,temporary source mutant/AppTest,mutant killed by artifact-tree snapshot,PASS

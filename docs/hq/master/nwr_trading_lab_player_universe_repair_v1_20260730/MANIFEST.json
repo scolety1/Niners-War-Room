@@ -1,0 +1,76 @@
+{
+  "canonical_base": "2eb3532600cfc0665cc9869ba95a783b2aa0d549",
+  "file_count_including_manifest": 17,
+  "files": {
+    "EXECUTIVE_VERDICT.md": {
+      "bytes": 288,
+      "sha256": "821baf377fdcd7654b967ef0c3c95d5523763f47f86fc771410b72e1e2a90aa6"
+    },
+    "FAIL_CLOSED_RESULTS.csv": {
+      "bytes": 608,
+      "sha256": "30a57724668922e7ea747373f0a85f7e766ca454ef8ac2d8b7af40c20df3f07b"
+    },
+    "FILES_CREATED_OR_CHANGED.csv": {
+      "bytes": 2231,
+      "sha256": "c85c2db096dae711bf9616f1f34f2dd242f69bcfa4b9143ae2c1f0165ccfd0d4"
+    },
+    "FINISHED_V1_AND_OUTCOME_V3_NO_CHANGE.md": {
+      "bytes": 607,
+      "sha256": "124fb272260ed12a1f285d90f307dc353e4a54c59e51ac240130fbe29abc7b19"
+    },
+    "MUTATION_SENSITIVITY_RESULTS.csv": {
+      "bytes": 1524,
+      "sha256": "2b4e287082a724b06282897b57907c395c066654d2d734835cd8f92f82954fdf"
+    },
+    "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md": {
+      "bytes": 639,
+      "sha256": "83ff7fca8314c7cc475ef5eb27103f3e7e2614675be6d7fe2b944ec69f497d7e"
+    },
+    "PLAYER_PICK_SOURCE_SEPARATION.md": {
+      "bytes": 681,
+      "sha256": "643bc1a7666f65989e8e32ffd8467ca8c33d6a26ee65babe9ca2fc56f91d0517"
+    },
+    "PLAYER_SOURCE_AUTHORITY.md": {
+      "bytes": 755,
+      "sha256": "0e96dc1503b59ccc097f98b4faa17bb61b273dac1267ab2e12f20a76f69ecdd9"
+    },
+    "PLAYER_UNIVERSE_PARITY.csv": {
+      "bytes": 597,
+      "sha256": "ee3a00b1ff6396b00d45796f90329c5942376e0c7e5329b80fb8a86887d4109d"
+    },
+    "PROTECTED_AND_FROZEN_PATH_PROOF.md": {
+      "bytes": 802,
+      "sha256": "3bdce71e2c1b8b3852da261d344c1004dc9f02f7a90f97f86d84e706b40dd00a"
+    },
+    "READ_ONLY_AUDIT_FINDINGS.md": {
+      "bytes": 822,
+      "sha256": "a65a7e0f88832d1416dfda96f9238befd9fd43f331d310eecf88bbda60db7e22"
+    },
+    "ROLLBACK_PLAN.md": {
+      "bytes": 669,
+      "sha256": "82707c173f38b315d26445201901ddd4a985fcc3778ce2d7e5cf34d8b9a2f231"
+    },
+    "ROUTE_AND_RENDER_RESULTS.csv": {
+      "bytes": 559,
+      "sha256": "6c189cadb4cad610673163f48f530c9a23bb3d78184e3dfc2e052c43169757f2"
+    },
+    "TRADE_ITEM_FIELD_CONTRACT.csv": {
+      "bytes": 577,
+      "sha256": "7bde5f9f47f3f8d0b02b9d6550f148aa0a31e278ef30ab8f9b44d92a872c363f"
+    },
+    "TRADING_LAB_PLAYER_UNIVERSE_REPAIR_REPORT.md": {
+      "bytes": 1504,
+      "sha256": "ef4f50070060aaa9f48b4302389721132cb4d03868c0bb63876da84b0c0e4cc5"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 1491,
+      "sha256": "1aa5bcc8d39503dfabc0d45bfba45475f0d88e8821a18c813ca0c16de6308f7f"
+    }
+  },
+  "generated_date": "2026-07-30",
+  "generator": "generate_nwr_trading_lab_packet_019fb43f.py",
+  "implementation_commit": "500c69b44fec3382bd669c0a5b3fa603e9b1c6e8",
+  "implementation_tree": "94af5c2ea002eef79f5cbb6acb244d9d85453902",
+  "packet_id": "nwr_trading_lab_player_universe_repair_v1_20260730",
+  "schema_version": 1
+}

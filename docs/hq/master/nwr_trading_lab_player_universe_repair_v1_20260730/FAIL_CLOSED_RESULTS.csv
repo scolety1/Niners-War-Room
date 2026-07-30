@@ -1,0 +1,8 @@
+failure,owning_path,expected_behavior,result
+row count not 240,validator + lookup + route,selector unavailable,PASS
+Finished V1 hash mismatch,loader + route,visible error; no fallback,PASS
+missing required field,validator + lookup + route,selector unavailable,PASS
+blank or duplicate player_id,validator + lookup + route,selector unavailable,PASS
+unapproved ownership,validator + lookup + route,selector unavailable,PASS
+recommendation or hidden-sort field,validator + lookup + route,selector unavailable,PASS
+unavailable Finished V1 authority,loader + route,visible error; frozen board not substituted,PASS

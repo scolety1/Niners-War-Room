@@ -1,0 +1,9 @@
+field,required,contract,display_behavior
+player_id,YES,nonblank and unique,internal identity; never player name
+player_name,YES,nonblank,visible player label
+position,YES,column required,visible factual context
+nwr_rank,YES,unique positive integer when present,Dynasty Rank or rank unavailable
+pool_status,YES,MY TEAM or OTHER TEAM,ownership context only
+player key,DERIVED,player:id:<player_id>,not exposed as recommendation
+pick key,DERIVED,pick_context:<identity>,separate display-only context
+recommendation or hidden-sort field,PROHIBITED,field name rejected,not rendered
