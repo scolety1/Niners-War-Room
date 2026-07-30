@@ -15,7 +15,7 @@
 - Optional Draft Board surface: NOT_INTEGRATED_ARTIFACT_ONLY
 - Finished V1 / Outcome V3 / Trading Lab / active pack: NONE
 - Opaque/persistent/recovery checkpoint: PASS
-- Hermetic: PENDING_INDEPENDENT_SHORT_PATH_RERUN
+- Hermetic: PASS 2968/2968 EXIT 0; 13/13 BOOTSTRAP; 20/20 CONTROLS
 - LocalData: BLOCKED_MISSING_LOCAL_TEST_PACK EXIT 4
 - Scheduled task: DISABLED FAIL-CLOSED BY ABSENCE / NAMED TASK NOT REGISTERED
 - Provider calls: 0

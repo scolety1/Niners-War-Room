@@ -694,7 +694,7 @@ stats and exact team denominators reconstruct only existing production/share
 definitions. No formula weight changed.
 """
     (packet / "MODEL_V4_2026_ROOKIE_BOARD_REPORT.md").write_text(
-        report, encoding="utf-8"
+        report, encoding="utf-8", newline="\n"
     )
     (packet / "EXECUTIVE_VERDICT.md").write_text(
         f"# Executive Verdict\n\n`{VERDICT}`\n\n"
@@ -705,6 +705,7 @@ definitions. No formula weight changed.
         "scheduled task is unregistered rather than reporting the requested named "
         "disabled state.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "ANALYZER_AUTHORITY_AND_VERSION.md").write_text(
         "# Analyzer Authority And Version\n\n"
@@ -715,6 +716,7 @@ definitions. No formula weight changed.
         "- Formula weights and format factors: unchanged.\n"
         "- Execution: existing public builder functions with explicit isolated paths.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "COMPATIBLE_INPUT_RECONSTRUCTION_CONTRACT.md").write_text(
         "# Compatible Input Reconstruction Contract\n\n"
@@ -727,6 +729,7 @@ definitions. No formula weight changed.
         "production, and missing-to-zero conversion are forbidden. Missing fields flow "
         "through the existing confidence/missingness contract.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "OPTIONAL_DRAFT_BOARD_SURFACE_RESULTS.md").write_text(
         "# Optional Draft Board Surface Results\n\n"
@@ -735,6 +738,7 @@ definitions. No formula weight changed.
         "skipped because it would broaden this restoration lane. Live Draft, Mock "
         "Draft, Finished V1, and Trading Lab are unchanged.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "FINISHED_V1_OUTCOME_V3_TRADING_LAB_NO_CHANGE.md").write_text(
         "# Finished V1, Outcome V3, And Trading Lab No Change\n\n"
@@ -746,6 +750,7 @@ definitions. No formula weight changed.
         "change `NONE`.\n"
         "- Trading Lab: change `NONE`.\n- Active-pack data: change `NONE`.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md").write_text(
         "# Opaque And Persistent State Preservation\n\n"
@@ -755,6 +760,7 @@ definitions. No formula weight changed.
         "recovery state 7 files / 172,878 bytes / digest "
         "`1fbd0b5097b240ed43a21be111926480ed4a97f558f033b8fea68e5c42604835`.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "PROTECTED_AND_FROZEN_PATH_PROOF.md").write_text(
         "# Protected And Frozen Path Proof\n\n"
@@ -764,6 +770,7 @@ definitions. No formula weight changed.
         "comparator, active-pack, and Trading Lab destinations. Mutations 19 and 20 "
         "prove rejection through that gate. No CFBD raw payload or secret is tracked.\n",
         encoding="utf-8",
+        newline="\n",
     )
     (packet / "ROLLBACK_PLAN.md").write_text(
         "# Rollback Plan\n\n"
@@ -773,6 +780,7 @@ definitions. No formula weight changed.
         "Finished V1, Outcome V3, Trading Lab, active-pack data, and frozen comparator "
         "were never write targets.\n",
         encoding="utf-8",
+        newline="\n",
     )
     blocker_lines = [
         f"- {row.player_name} ({row.position}, pick {int(row.overall_pick)}): "
@@ -808,6 +816,7 @@ definitions. No formula weight changed.
 {chr(10).join(blocker_lines)}
 """,
         encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -843,7 +852,7 @@ def _write_inventory(repo: Path, packet: Path) -> None:
             continue
         status = line[:2].strip() or "??"
         path = line[3:].replace("\\", "/")
-        by_path[path] = {"git_status": status, "path": path}
+        by_path.setdefault(path, {"git_status": status, "path": path})
     for name in REQUIRED:
         relative = (PACKET_REL / name).as_posix()
         if relative not in by_path:
@@ -872,7 +881,9 @@ def _write_manifest(packet: Path, receipt: dict[str, Any]) -> None:
         "files": files,
     }
     (packet / "MANIFEST.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
 
 

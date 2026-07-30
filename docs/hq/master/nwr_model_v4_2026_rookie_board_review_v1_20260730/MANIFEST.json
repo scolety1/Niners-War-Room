@@ -10,12 +10,12 @@
       "sha256": "2cc0ae23669feb6126f58a07c67a2e0816e330ad1aca0e145e476fc696dc96d8"
     },
     "ANALYZER_AUTHORITY_AND_VERSION.md": {
-      "bytes": 390,
-      "sha256": "963c4e32b98a69c48270cd28b9eba2185d8bcb2df2d243234ca7a946cade67fb"
+      "bytes": 382,
+      "sha256": "6f2e92329c716bbf93f44bbb9f28a1a538de6e987f72aea486373195850bee5f"
     },
     "COMPATIBLE_INPUT_RECONSTRUCTION_CONTRACT.md": {
-      "bytes": 632,
-      "sha256": "8ed5521426d08ba18c34b214abcf061fb0b9d52d49f3704e47264708394c4325"
+      "bytes": 629,
+      "sha256": "51b1dc26e8d92c34164eb04b6b4cfe6a7506aa34f242a22c827ab0c57b443048"
     },
     "DETERMINISTIC_REGENERATION_RESULTS.csv": {
       "bytes": 1856,
@@ -30,16 +30,16 @@
       "sha256": "56e8a3049f5297703b48273af1a30efb33b88327cc93109d7f6f45ce046a1112"
     },
     "EXECUTIVE_VERDICT.md": {
-      "bytes": 481,
-      "sha256": "e97603567dace109174f2ec581714112f8926808d6d82035e45068ac9e03eef1"
+      "bytes": 476,
+      "sha256": "9e2fdaeb0a4e238950ee35341007f66950b3bc83123b60b57bc812c0d256d9c6"
     },
     "FILES_CREATED_OR_CHANGED.csv": {
-      "bytes": 3131,
-      "sha256": "cc2159154c157712c5292f450a1e368032a7a415282caba23070d94770a8ca65"
+      "bytes": 3119,
+      "sha256": "31052dac0b575155385d418c4c5a1074f40a1eae583eb91107ab71b47b15cc24"
     },
     "FINISHED_V1_OUTCOME_V3_TRADING_LAB_NO_CHANGE.md": {
-      "bytes": 359,
-      "sha256": "a5dc7fbe9073feb0c345c5bc31720b36214cff6815bba00784aea2a4b6ce4968"
+      "bytes": 353,
+      "sha256": "e5458b72da89449bb92c8e721be8a2735c54ba4b6899047ba02c5563c81e11bc"
     },
     "FORMULA_RECONCILIATION_RESULTS.csv": {
       "bytes": 12156,
@@ -70,8 +70,8 @@
       "sha256": "7403b3d0dc7aeba08b5d3a6f1e12f780b9e6139bd21f049e6cf15e1e157b8e28"
     },
     "MODEL_V4_2026_ROOKIE_BOARD_REPORT.md": {
-      "bytes": 4023,
-      "sha256": "96f991f4c1751d0942c1802568f658a01c690b62c3270cae5aacbad26309fe23"
+      "bytes": 3943,
+      "sha256": "a4a9d8b773f11419c263cc8399c8f8dbdf616d295de5a4bead1fbb31db268abd"
     },
     "MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv": {
       "bytes": 61635,
@@ -86,28 +86,28 @@
       "sha256": "50630955f863a067a09b1940d25cbafc24bb851e959b1129008a8277a52eb1b1"
     },
     "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md": {
-      "bytes": 401,
-      "sha256": "9a48a19f150795b6e175efd6dbbf2a52e147cce9d52ad00d8ff49a402e10afe8"
+      "bytes": 398,
+      "sha256": "49883c8e5a684283a45edcfc91b0ce3971feb5472180406952c4d74739051c15"
     },
     "OPTIONAL_DRAFT_BOARD_SURFACE_RESULTS.md": {
-      "bytes": 275,
-      "sha256": "6889a939db55ee8380f0cf7f16006a56f65aefcc9ef80feac6b64d11dedb8a9d"
+      "bytes": 270,
+      "sha256": "a56c727996ad3b8bb89feaf177887b58dde838866a6666a2c3c4a0555c4bf032"
     },
     "PROTECTED_AND_FROZEN_PATH_PROOF.md": {
-      "bytes": 413,
-      "sha256": "879a5e25b660581920d2b15af853884573f22e8e0b61dfd116ad49124bd89b5e"
+      "bytes": 410,
+      "sha256": "77d0cb0930f4d6716bf28a1b2263a04304c487bea8bbdf763973d299e3e5fc1e"
     },
     "ROLLBACK_PLAN.md": {
-      "bytes": 350,
-      "sha256": "6bf9be3584ca82512ab37bd3bbf3126d3d37cbb781d7cb11b6521393a5a144a4"
+      "bytes": 347,
+      "sha256": "1c89d1c309fb7c4b3ee751487acf2b1877d04f751b055df8bef539f961db92f5"
     },
     "TOP_FLOOR_UPSIDE_RISK_PROFILES.csv": {
       "bytes": 10172,
       "sha256": "11a423358d5916b2d91d848aa1716842c3d6442be9d0079cef05892ef5c20e52"
     },
     "VALIDATION_RESULTS.md": {
-      "bytes": 1633,
-      "sha256": "af5dfe2af0a8c7eea560c2acedd3c859e27619192be1ec07e4f34ee2c1a90499"
+      "bytes": 1619,
+      "sha256": "8c75aae2a8c87cbd4be8ffefc912c4f7b865bc359f9e0e42ae44b8c2d4e9628d"
     }
   },
   "formula_changes": "NONE",
