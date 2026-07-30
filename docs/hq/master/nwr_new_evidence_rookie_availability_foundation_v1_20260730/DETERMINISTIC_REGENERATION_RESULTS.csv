@@ -1,0 +1,4 @@
+check,status,details
+implementation_root_rebuild,PASS,35/35 governed artifacts reproduced without drift
+independent_review_root_rebuild,PASS,35/35 governed artifacts independently reproduced without drift
+byte_identical_governed_outputs,PASS 35/35 ACROSS TWO CLEAN ROOTS,zero hash differences across the complete packet

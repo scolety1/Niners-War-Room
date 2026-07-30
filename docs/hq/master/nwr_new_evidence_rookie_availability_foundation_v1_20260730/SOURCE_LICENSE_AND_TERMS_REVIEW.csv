@@ -1,0 +1,12 @@
+dataset,license_spdx,license_url,terms_note,review_result
+combine,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+depth_charts,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+draft_picks,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+injuries,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+participation,CC-BY-SA-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit FTN Data via nflverse; share adaptations under CC-BY-SA-4.0.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+player_stats_seasonal,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+player_stats_weekly,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+players,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+seasonal_rosters,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+snap_counts,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION
+weekly_rosters,CC-BY-4.0,https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md,Credit nflverse; preserve source attribution.,TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION

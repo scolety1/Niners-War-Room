@@ -1,0 +1,9 @@
+source_family,candidate,baseline,delta_spearman,delta_brier,delta_rank_mae,coverage,decision,reason
+draft_capital,R1,R0,0.487412,0.01559,0.993597,0.772465,ADMIT_SOURCE_AND_FEATURE,improved at least two governed out-of-sample metrics
+draft_age,R2,R1,0.005207,-4.9e-05,-0.244397,0.772465,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,did not improve at least two governed metrics without coverage harm
+combine,R3,R2,0.004604,-0.000203,-0.16222,0.772465,ADMIT_SOURCE_FEATURE_NOT_INCREMENTAL,did not improve at least two governed metrics without coverage harm
+cfbd_college_recruiting_usage,R4,R3,,,,0.000000,NOT_ENOUGH_INFORMATION,BLOCKED_MISSING_OWNER_CONTROLLED_CFBD_KEY
+early_nfl_opportunity,R5,R3,0.11859,0.005505,0.970117,0.772465,ADMIT_SOURCE_AND_FEATURE,improved at least two governed out-of-sample metrics
+age_position,A1,A0,0.00037,0.00022,-1.447815,0.842438,ADMIT_SOURCE_AND_FEATURE,improved at least two governed out-of-sample metrics
+injury_practice,A2,A1,0.005042,0.001474,0.173115,0.842438,ADMIT_SOURCE_AND_FEATURE,improved at least two governed out-of-sample metrics
+snaps_participation_depth,A3,A2,0.009966,0.003464,0.550236,0.842438,ADMIT_SOURCE_AND_FEATURE,improved at least two governed out-of-sample metrics

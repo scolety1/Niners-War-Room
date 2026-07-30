@@ -1,0 +1,242 @@
+{
+  "artifacts": [
+    {
+      "bytes": 3622569,
+      "path": "AVAILABILITY_AND_INJURY_FOUNDATION.csv",
+      "sha256": "b9256feff72c8fa478b2b29ad3bdcd8eb67c846fa9bc7d9f8c04c8c95d5373d1"
+    },
+    {
+      "bytes": 9165,
+      "path": "AVAILABILITY_INCREMENTAL_VALUE_RESULTS.csv",
+      "sha256": "182ea0280959d53e4a3b4fa38528ce9cfcb2f996d4468d139a4fcb19acd93382"
+    },
+    {
+      "bytes": 4694,
+      "path": "AVAILABILITY_PANEL_COVERAGE.csv",
+      "sha256": "e4f9cd724493466c4c0b755d28cb0be228725167cec4561baf214f1b7fc55c67"
+    },
+    {
+      "bytes": 573,
+      "path": "CFBD_KEY_OR_TIER_BLOCKERS.md",
+      "sha256": "3f42bc679613ff5356cd163c3d42d746403766c7e9fe6b882bf3aa205477aec8"
+    },
+    {
+      "bytes": 2006,
+      "path": "CFBD_SOURCE_INVENTORY.csv",
+      "sha256": "bf200221259a1a5a776d664f6cbb53389c6bfa61f5d4b8478fa84350c94cb006"
+    },
+    {
+      "bytes": 320,
+      "path": "DETERMINISTIC_REGENERATION_RESULTS.csv",
+      "sha256": "674dace6d7da9cfe54b13c36d2e5b093b1490c57f64ba5b9a9a4e6f347346918"
+    },
+    {
+      "bytes": 2334154,
+      "path": "EARLY_CAREER_OPPORTUNITY_FOUNDATION.csv",
+      "sha256": "ea1a42e69b834f4dc976c78cb126587a5226cf350c2f1c720ba665f319da45a4"
+    },
+    {
+      "bytes": 4219851,
+      "path": "EXACT_IDENTITY_CROSSWALK.csv",
+      "sha256": "a92f9769d9c55f97c80f6d799e2c23f0e8593eda86bc63eab5f7296f9e1a677b"
+    },
+    {
+      "bytes": 367,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "97686fbdd3d559ef096b57d04d2c9b9e929357a8a6cd36c7127cc9946357b926"
+    },
+    {
+      "bytes": 5239,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "5ebda42eca3802fb60e67fac4b7076e3064a4c213b5aad6b8313789d40466752"
+    },
+    {
+      "bytes": 532,
+      "path": "FINISHED_V1_AND_OUTCOME_V3_NO_CHANGE.md",
+      "sha256": "c41037cc4f7e283b2111194567b933401124b6ade095a8b83a70bc34cb9581fe"
+    },
+    {
+      "bytes": 1215,
+      "path": "INCREMENTAL_VALUE_CANDIDATES.csv",
+      "sha256": "52bddd2be29910ec7c217e69d900600c72f42a77bf0c599e71d8f45572d9088e"
+    },
+    {
+      "bytes": 961,
+      "path": "MODEL_REENTRY_CONTRACT.md",
+      "sha256": "6b5bfe067623b1544eaca892de0b7b043cbec420f5be0a37950e57f62adbc520"
+    },
+    {
+      "bytes": 1839,
+      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "sha256": "1ae653148a6b411193bad10e34b540c7014c82d6e96bf035537259fa152011f4"
+    },
+    {
+      "bytes": 1327,
+      "path": "NEW_EVIDENCE_FOUNDATION_REPORT.md",
+      "sha256": "f7da20e728990fa06b5ec4ff8c7f9023385e47815b7da76d4404161f14e47a79"
+    },
+    {
+      "bytes": 3731,
+      "path": "NFLVERSE_SOURCE_INVENTORY.csv",
+      "sha256": "b3c0174d964f4e73cc010307816a26b6b845474364d626a7cacf9bb935633d49"
+    },
+    {
+      "bytes": 537,
+      "path": "OLD_DUAL_LENS_RESEARCH_CLOSEOUT.md",
+      "sha256": "d1804ea93c6236a9c2ee0ce85b17387f1e2715f43cde79f699c48ef64fa16620"
+    },
+    {
+      "bytes": 450,
+      "path": "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md",
+      "sha256": "39698de161bdaf1c280542943fc135698412bf56f870756d6aac26bd53301c2e"
+    },
+    {
+      "bytes": 357,
+      "path": "PLAYER_IDENTITY_AUTHORITY.md",
+      "sha256": "ab4afeacfb7414d99b28cc709b13a0a02c05aefb2aaf270e5663818893c20992"
+    },
+    {
+      "bytes": 387,
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "15833640c708a02bfe9f2047853a727b5d544ee0465bbb27d568a12aeb800a33"
+    },
+    {
+      "bytes": 166,
+      "path": "REVIEW_ONLY_IDENTITY_CANDIDATES.csv",
+      "sha256": "2184f41dcef2143ee18b7164b37a130fe0d30548bfd82e28785fb15d814d1bee"
+    },
+    {
+      "bytes": 423,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "c613c69863d16efef996df0d322fb239f2a82d0be2b84a8351488facbc87cdf8"
+    },
+    {
+      "bytes": 1204705,
+      "path": "ROOKIE_EVIDENCE_FOUNDATION.csv",
+      "sha256": "f0ffd83f37627d053fe2143112f18e6b389adb6de6aac1757dd516ac6d41cf8a"
+    },
+    {
+      "bytes": 10856,
+      "path": "ROOKIE_INCREMENTAL_VALUE_RESULTS.csv",
+      "sha256": "2230a613bc806c5fa588b0084d1ff5ee84e641169b664484ab32150db8bc1e76"
+    },
+    {
+      "bytes": 10476,
+      "path": "ROOKIE_PANEL_COVERAGE.csv",
+      "sha256": "c125e54c68d780fc55100f21abb05be324495ccea89d6d345179ab837fb38723"
+    },
+    {
+      "bytes": 599,
+      "path": "SECURITY_DATA_HEALTH_AND_RUNTIME_NO_CHANGE.md",
+      "sha256": "b940fda9b8cee7cb9e97b31369e58c8bc2c0ada88e17b200489a902c911135a9"
+    },
+    {
+      "bytes": 658,
+      "path": "SOURCE_ACCESS_AND_TERMS_CONTRACT.md",
+      "sha256": "c88455f3339f1c941a8e342d570f54cf7c2a03f88d7552bd6bb4cd5f4dc0e330"
+    },
+    {
+      "bytes": 2747,
+      "path": "SOURCE_AND_FEATURE_ACCEPTANCE_GATE_MATRIX.csv",
+      "sha256": "8e43550cdc77e9f0cd7e01b1f157427360989977b3ba471da14466c5e6a6fe48"
+    },
+    {
+      "bytes": 2059,
+      "path": "SOURCE_LICENSE_AND_TERMS_REVIEW.csv",
+      "sha256": "23745d738ca63782d43997df962b956aba842a186bcd80a7a65cd52d95edca5f"
+    },
+    {
+      "bytes": 2276,
+      "path": "SOURCE_SCHEMA_VALIDATION.csv",
+      "sha256": "82a3cf1245605e97d463e22421a7a53f759c3ea559065c2ac422e3dc91a56c46"
+    },
+    {
+      "bytes": 50720,
+      "path": "SOURCE_SNAPSHOT_MANIFEST.csv",
+      "sha256": "a525631675816f38079f08287c402c781c3ca22db6d2897bb96478692811152f"
+    },
+    {
+      "bytes": 859,
+      "path": "TEMPORAL_AVAILABILITY_CONTRACT.md",
+      "sha256": "ff1f0772691c8e58e4ddac2af069c403c191ee2f5320efe7098a7e9becac0f14"
+    },
+    {
+      "bytes": 229492,
+      "path": "UNRESOLVED_IDENTITY_INVENTORY.csv",
+      "sha256": "52c89fb334b4540da07119dcc9cd6d3d8a4acec61b3084f21ba83769fb1f5464"
+    },
+    {
+      "bytes": 1097,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "5ccfe1da3026cb854a777e6278eb2595849a984a8c4f6d73520536fa268b18ed"
+    }
+  ],
+  "build_date": "2026-07-30",
+  "builder_contract": {
+    "absolute_worktree_paths_emitted": false,
+    "encoding": "UTF-8 without BOM",
+    "float_precision": 6,
+    "line_endings": "LF",
+    "manifest_self_reference": false,
+    "stable_sorting": true,
+    "wall_clock_used": false
+  },
+  "canonical_source_commit": "0c5a121e62d7a93dcb13b42d926a03c637ea7e99",
+  "canonical_source_tree": "54ddc45f15b352cbdbd4f0c91adc8170ee20863e",
+  "cfbd_requests": 0,
+  "foundation_id": "NWR_NEW_EVIDENCE_FOUNDATION_V1",
+  "nflreadpy_source_archive_sha256": "bc78a8520ceb54e00fc164363285b47bf98971bb8c027d7dde74c0d2a5f1d81e",
+  "nflreadpy_version": "0.1.5",
+  "nflverse_requests": 112,
+  "production_changes": {
+    "finished_v1": "NONE",
+    "frozen_comparator": "NONE",
+    "outcome_v3": "NONE"
+  },
+  "row_counts": {
+    "availability": 12243,
+    "early_career": 6577,
+    "exact_identity": 43133,
+    "review_identity": 0,
+    "rookie": 2862,
+    "unresolved_identity": 3789
+  },
+  "schema_version": 1,
+  "validation_receipt": {
+    "byte_identical": "PASS 35/35 ACROSS TWO CLEAN ROOTS",
+    "byte_identical_details": "zero hash differences across the complete packet",
+    "cfbd_status": "BLOCKED_MISSING_OWNER_CONTROLLED_CFBD_KEY",
+    "data_health": "63/63 PASS IN IMPLEMENTATION AND REVIEW",
+    "focused_tests": "39/39 PASS IN IMPLEMENTATION AND REVIEW",
+    "git_whitespace": "PASS",
+    "hermetic": "PASS 2934/2934 IN IMPLEMENTATION AND REVIEW; 13/13 BOOTSTRAP; 20/20 CONTROLS",
+    "identity_temporal_panels": "PASS FAIL_CLOSED",
+    "implementation_determinism": "PASS",
+    "implementation_determinism_details": "35/35 governed artifacts reproduced without drift",
+    "incremental_value": "PASS CHRONOLOGICAL_WALK_FORWARD",
+    "independent_review": "PASS NO CORRECTION CYCLE REQUIRED",
+    "localdata": "BLOCKED_MISSING_LOCAL_TEST_PACK EXIT 4 IN IMPLEMENTATION AND REVIEW",
+    "mutations": "28/28 PASS IN IMPLEMENTATION AND REVIEW",
+    "oversized_raw_git_payloads": "PASS ZERO NEW RAW PAYLOADS; LARGEST NEW GOVERNED ARTIFACT UNDER 5 MB",
+    "powershell_parse": "NOT_APPLICABLE_NO_CHANGED_PS1",
+    "preservation": "PASS BOARD FROZEN OPAQUE 5/5 PERSISTENT RECOVERY",
+    "protected_scan": "PASS ZERO MATCHES",
+    "provider_calls": "NFLVERSE 112; CFBD 0; NO UNAUTHORIZED CALLS",
+    "python_compile": "PASS ALL CHANGED PYTHON",
+    "remote_pre_review": "UNCHANGED_AT_STARTING_HQ",
+    "review_determinism": "PASS",
+    "review_determinism_details": "35/35 governed artifacts independently reproduced without drift",
+    "ruff": "PASS ZERO CHANGED_FILE_FINDINGS",
+    "ruff_differential": "PASS HQ 4443 CANDIDATE 4443 NEW 0",
+    "scheduled_task": "DISABLED ENABLED_FALSE; ZERO MATCHING REFRESH PROCESSES",
+    "schema_terms_license": "PASS ALL ADMITTED SNAPSHOTS",
+    "schema_version": 1,
+    "secret_scan": "PASS NO OWNER CREDENTIAL PRESENT OR STORED",
+    "security_regressions": "PASS REQUIRED FINDING REGRESSIONS; NO SECURITY SCAN RUN",
+    "skip_xfail_xpass": "ZERO",
+    "source_admission": "PASS OFFICIAL_NFLVERSE_ONLY",
+    "status": "PASS_ALL_AUTHORIZED_GATES",
+    "verdict": "YELLOW_NWR_NFLVERSE_ADMITTED_CFBD_BLOCKED"
+  },
+  "verdict": "YELLOW_NWR_NFLVERSE_ADMITTED_CFBD_BLOCKED"
+}
