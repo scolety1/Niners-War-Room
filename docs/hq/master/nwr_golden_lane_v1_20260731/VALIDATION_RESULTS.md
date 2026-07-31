@@ -1,5 +1,14 @@
 # Validation Results
 
+## Autopilot controller upgrade
+
+- Execution mode: `BOUNDED_CONTINUOUS_AUTOPILOT`.
+- Phase isolation, independent adoption, one correction cycle, conditional normal push, stable-only synchronization, and protected-state checks remain mandatory.
+- Automatic-advance and hard-stop registries are machine-readable and fail closed.
+- Phase 1A unresolved source decisions remain visible as six fail-closed controls; `owner_decisions_required` is zero because Phase 1B neither admits nor uses them.
+- The exact next prompt phase identity and SHA-256 are validated before dispatch.
+- Operational checkout and scheduled refresh mutation remain prohibited.
+
 ## Phase 1A gate
 
 - Canonical parent and remote equality: PASS at `79b62c3993cf1d00c6dc068199826abb6d9954e3` / tree `8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd`.

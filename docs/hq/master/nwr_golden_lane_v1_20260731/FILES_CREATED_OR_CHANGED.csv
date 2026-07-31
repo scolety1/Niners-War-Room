@@ -25,3 +25,14 @@ docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE_PROMPT.md,MODIFY
 docs/hq/master/nwr_golden_lane_v1_20260731/PHASE_GATE_MATRIX.csv,MODIFY,documentation
 docs/hq/master/nwr_golden_lane_v1_20260731/SOURCE_AUTHORITY_REGISTRY.csv,MODIFY,documentation
 docs/hq/master/nwr_golden_lane_v1_20260731/VALIDATION_RESULTS.md,MODIFY,documentation
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_AUTOPILOT_POLICY.md,ADD,autopilot_policy
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_AUTOPILOT_STATE.json,ADD,autopilot_state
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_HARD_STOP_REGISTRY.csv,ADD,autopilot_policy
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_AUTOPILOT_RUNBOOK.md,ADD,autopilot_runbook
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_AUTOPILOT_RESUME_PROMPT.md,ADD,autopilot_resume
+docs/hq/master/nwr_golden_lane_v1_20260731/NWR_GOLDEN_LANE_MASTER_PLAN.md,MODIFY,autopilot_contract
+docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE.md,MODIFY,autopilot_dispatch
+docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE_PROMPT.md,MODIFY,autopilot_dispatch
+docs/hq/master/nwr_golden_lane_v1_20260731/ROLLBACK_AND_RECOVERY.md,MODIFY,autopilot_recovery
+scripts/validate_golden_lane_autopilot.py,ADD,autopilot_validation
+tests/test_golden_lane_autopilot.py,ADD,autopilot_validation

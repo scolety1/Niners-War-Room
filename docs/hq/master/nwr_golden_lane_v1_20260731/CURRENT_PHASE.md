@@ -8,4 +8,4 @@
 - Passed gates: 2 of 10.
 - Completion: 20%.
 
-Only the bounded Phase 1B Data Hygiene work order in NEXT_AUTHORIZED_LANE_PROMPT.md is authorized next. Phase 2 and later work must not begin concurrently.
+Only the bounded Phase 1B Data Hygiene work order in NEXT_AUTHORIZED_LANE_PROMPT.md is authorized next. Phase 2 and later work must not begin concurrently. The controller may dispatch Phase 1B automatically under `BOUNDED_CONTINUOUS_AUTOPILOT`; the six unresolved Phase 1A source controls remain fail-closed and do not require an owner decision unless an active phase needs those sources.

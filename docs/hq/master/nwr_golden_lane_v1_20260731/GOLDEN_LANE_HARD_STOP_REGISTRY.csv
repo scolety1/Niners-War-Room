@@ -1,0 +1,10 @@
+stop_id,category,condition,active,owner_decision_id,required_action
+HS_PROVIDER,provider_financial,Payment trial contract enterprise access billing or API-tier action required,NO,,Stop and request one owner decision
+HS_CREDENTIAL,credentials,Credential creation rotation exposure permission or insecure secret write required,NO,,Stop and request one owner decision
+HS_RIGHTS,source_rights,Required source has unclear retention modeling derivative or post-subscription rights,NO,,Keep source ineligible and stop if the active phase needs it
+HS_MODEL,production_model_authority,Production formula weights calibration architecture or ranking-default decision required,NO,,Stop and request one owner decision
+HS_OPERATIONS,operations,Refresh enablement unattended behavior force push history rewrite deletion migration or owner-state mutation required,NO,,Stop without performing the action
+HS_QUALITY,quality_safety,Red verdict leakage secret exposure identity fabrication failed review repeated remote advance preservation or Hermetic regression,NO,,Stop and preserve completed phases
+HS_CORRECTION,correction_limit,More than one bounded correction cycle is required,NO,,Stop and request one owner decision
+HS_SCOPE,scope,Action falls outside the current Golden Lane phase,NO,,Stop and record the exact scope conflict
+
