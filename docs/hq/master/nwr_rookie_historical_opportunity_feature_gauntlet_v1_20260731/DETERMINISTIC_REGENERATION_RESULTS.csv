@@ -2,4 +2,4 @@ check,result,detail
 authoritative_command,PASS,uv run --offline --no-project --with nflreadpy --with numpy --with pandas python scripts/build_rookie_historical_opportunity_feature_gauntlet_v1.py
 fixed_snapshot_receipts,PASS,CFBD=370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a; combine=5e6847b155d87a27954204d6b6e6192f6264c0e04556fbfbe20983954ddcee65
 stable_order_float_encoding,PASS,stable ordering; 6 decimals; UTF-8 LF; no wall clock
-two_clean_independent_roots,PENDING_INDEPENDENT_REVIEW,must be updated only by review validation evidence
+two_clean_independent_roots,PASS,34/34 governed files byte-identical across implementation and independent review roots

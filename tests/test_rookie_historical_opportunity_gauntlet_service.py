@@ -109,4 +109,3 @@ def test_output_path_gate_blocks_production_targets() -> None:
     )
     with pytest.raises(GauntletContractError):
         validate_output_path("data_packs/active/x.csv")
-

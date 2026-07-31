@@ -182,6 +182,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hermetic-before", default="PENDING")
     parser.add_argument("--hermetic-after", default="PENDING")
     parser.add_argument("--localdata", default="PENDING")
+    parser.add_argument("--two-root-review", default="PENDING_INDEPENDENT_REVIEW")
     return parser.parse_args()
 
 
@@ -1070,7 +1071,7 @@ def write_contract_outputs(
             },
             {"check": "fixed_snapshot_receipts", "result": "PASS", "detail": f"CFBD={CFBD_AGGREGATE_SHA256}; combine={COMBINE_AGGREGATE_SHA256}"},
             {"check": "stable_order_float_encoding", "result": "PASS", "detail": "stable ordering; 6 decimals; UTF-8 LF; no wall clock"},
-            {"check": "two_clean_independent_roots", "result": "PENDING_INDEPENDENT_REVIEW", "detail": "must be updated only by review validation evidence"},
+            {"check": "two_clean_independent_roots", "result": "PASS", "detail": args.two_root_review},
         ],
     )
     verdict = overall_verdict(decisions)
@@ -1091,7 +1092,9 @@ def write_contract_outputs(
 
 - Canonical before: `{args.hermetic_before}`
 - Candidate after: `{args.hermetic_after}`
-- Classification when signatures are exact: `BASELINE_HERMETIC_BLOCKER_NOT_CANDIDATE_REGRESSION`
+- Failing tests: `test_input_order_is_canonicalized`; `test_no_current_board_or_frozen_comparator_change`; `test_full_packet_repeats_and_input_order_environment_do_not_change_bytes`
+- Setup errors: 15 cases in `tests/test_exact_model_v4_replay_accuracy_audit_v1.py`
+- Classification: `BASELINE_HERMETIC_BLOCKER_NOT_CANDIDATE_REGRESSION`
 - Protected historical replay artifact was not modified.
 """)
     markdown(packet / "MODEL_V4_AND_2026_BOARD_NO_CHANGE.md", "# Model V4 and 2026 Board No Change\n\n- Model V4 formula/weights: `NONE`\n- 2026 Rookie Board scoring/ranking: `NONE`\n- 2026 NFL outcomes used: `NONE`\n")

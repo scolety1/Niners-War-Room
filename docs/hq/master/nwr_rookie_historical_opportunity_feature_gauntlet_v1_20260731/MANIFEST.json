@@ -1,0 +1,197 @@
+{
+  "artifacts": [
+    {
+      "bytes": 445,
+      "path": "BASELINE_DEFINITIONS.csv",
+      "sha256": "b168fb2c70f4cd267ef447da19c7d80761404f66d42be12fbcbbd397e432d968"
+    },
+    {
+      "bytes": 18747,
+      "path": "BOOTSTRAP_AND_STABILITY_RESULTS.csv",
+      "sha256": "a1db58f4673956552b531fd0eed0d69dd3ac4388d58d41383e346bd47f7dd2f5"
+    },
+    {
+      "bytes": 574,
+      "path": "DETERMINISTIC_REGENERATION_RESULTS.csv",
+      "sha256": "2a0e5192ab5c7a1d304ed0722061c14f6a0077d48b8cc9d6c67b3af0cabd6280"
+    },
+    {
+      "bytes": 171,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "6de1d1f83ffeecd25dae6793e40885e79e1bfc681c5e8133483eb02f40fe6642"
+    },
+    {
+      "bytes": 282,
+      "path": "EXTERNAL_RESEARCH_HANDOFF_RECEIPT.md",
+      "sha256": "b6e77c4eee4a55993cb98b02fbc083a7e700edc8314a8fbd229404fcd01f2b50"
+    },
+    {
+      "bytes": 1373,
+      "path": "FEATURE_FAMILY_DEFINITIONS.csv",
+      "sha256": "d01d749af4e1500157af47bb8c5787b1d01f0469503b42be7601093135082526"
+    },
+    {
+      "bytes": 3287,
+      "path": "FEATURE_FAMILY_FEASIBILITY_GATES.csv",
+      "sha256": "4a7052c04e4a76d25416864720a03cc7c962c6eedf8e7fdb1937c721311b890a"
+    },
+    {
+      "bytes": 3048,
+      "path": "FEATURE_PROMOTION_DECISIONS.csv",
+      "sha256": "cf3960dd86511f01213566c8b072f67aac94236a4cb174c63f81e93b77b2a7c0"
+    },
+    {
+      "bytes": 6173,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "9c884d58320fd2cdff4ad3d6e7fdc5fca931da4622df043b84960bcc404e2d15"
+    },
+    {
+      "bytes": 431,
+      "path": "FINISHED_V1_OUTCOME_V3_TRADING_LAB_NO_CHANGE.md",
+      "sha256": "96baf6eb0022370764dd8372a192856df88b13644c30587ad29aeae9ccaf1b54"
+    },
+    {
+      "bytes": 292,
+      "path": "IDENTITY_COHORT_FLOW.csv",
+      "sha256": "b6d34fe2ee12cb381c5b3f7e672004e04696d41e981ee74bcc57a6306691edea"
+    },
+    {
+      "bytes": 675,
+      "path": "KNOWN_HERMETIC_BASELINE_COMPARISON.md",
+      "sha256": "6b334b146d320b30ef3532897e9b2ede3c1ecc7ef7719cc4ac9dc56a454d5913"
+    },
+    {
+      "bytes": 149,
+      "path": "MODEL_V4_AND_2026_BOARD_NO_CHANGE.md",
+      "sha256": "051a92d2ccba894d9eff5f9d73e882ab75107ff348f57db73db87a328ee4f81c"
+    },
+    {
+      "bytes": 2534,
+      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "sha256": "1960a421441e230dab75d6e61f985436cda4025d0aca15e95f3726d33fe7ea3d"
+    },
+    {
+      "bytes": 556,
+      "path": "NWR_ROOKIE_OUTCOME_CONTRACT.md",
+      "sha256": "5cb3ce06a6a0205004e3dd7ae7bb23d35364147c6876d91ab9f91db614e76f62"
+    },
+    {
+      "bytes": 213,
+      "path": "OPAQUE_AND_PERSISTENT_STATE_PRESERVATION.md",
+      "sha256": "a4395de6a155a369cf38454da4752712826555cb327f380e63b397b52111ffc9"
+    },
+    {
+      "bytes": 87153,
+      "path": "POSITION_CLASS_COHORT_RESULTS.csv",
+      "sha256": "a1dd1d3957977f7616abc101ca0b25d31f2f820f84ca1283ec2725a31433106f"
+    },
+    {
+      "bytes": 400,
+      "path": "PROTECTED_AND_FROZEN_PATH_PROOF.md",
+      "sha256": "1f21616f3796d4b30b8af3fcbebdc463bc0c08f25766101ca8f913a65d8cff99"
+    },
+    {
+      "bytes": 217,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "42f1b0888d34fe6bac5c10241c13d5c23e2275bb113a5704fddf89a5162429dd"
+    },
+    {
+      "bytes": 1366,
+      "path": "ROOKIE_FEATURE_GAUNTLET_REPORT.md",
+      "sha256": "eef07ae32a67497db659750980d56d1651de955aafec7ad65a317d4fb427ef92"
+    },
+    {
+      "bytes": 91481,
+      "path": "SAME_ROW_COMPARISONS.csv",
+      "sha256": "101b78bbaf12e97d6592fc5b08c205083539597034fbe6ab38ffcfbdabc86955"
+    },
+    {
+      "bytes": 769,
+      "path": "SOURCE_AND_TERMS_AUTHORITY.csv",
+      "sha256": "61f5a29b938f449182999a242bdceaed5191d33b8f0484d4cff26f0cc6fd1607"
+    },
+    {
+      "bytes": 6838,
+      "path": "SOURCE_COVERAGE_BY_SEASON_POSITION.csv",
+      "sha256": "87636af71e853d7512adb0e7ab974fb19156bd54d5b23b06ee132304b1e74020"
+    },
+    {
+      "bytes": 45676,
+      "path": "T01_QB_RUSHING_RESULTS.csv",
+      "sha256": "cdf193752906801c61526fdffb0de5d507de645071bbbddb6b45ac0fe9a3a281"
+    },
+    {
+      "bytes": 90848,
+      "path": "T02_RB_RECEIVING_RESULTS.csv",
+      "sha256": "8a49ce0f9a4a8e142e2cf3e626759064badd26e635e340f5c8c1ba29e787e4ff"
+    },
+    {
+      "bytes": 90735,
+      "path": "T03_WR_PASS_USAGE_RESULTS.csv",
+      "sha256": "2342e41d3d56ca07f2e6c88148c5e42815c4c89a2501b2ae6701bb26d24e9eff"
+    },
+    {
+      "bytes": 42740,
+      "path": "T04_TE_RECEIVING_RESULTS.csv",
+      "sha256": "db54667851d71fb09923300f5f4aba90ad8e9b43f5c6aa9f3f2fbf99d7e7b8d6"
+    },
+    {
+      "bytes": 425,
+      "path": "T05_FIRST_DOWN_RESULTS.csv",
+      "sha256": "d75aa20714389c7299c3bacaa17f4c8768812904710c7e9fde032744f2bc1d0f"
+    },
+    {
+      "bytes": 197345,
+      "path": "T06_AGE_TRAJECTORY_RESULTS.csv",
+      "sha256": "1b5791757afa98d3d57d5a94a916cbc7a850005d65b3fe402cb4554f568447a2"
+    },
+    {
+      "bytes": 401,
+      "path": "T07_QB_SACK_RESULTS.csv",
+      "sha256": "6b81612e50b7a97c1eb3fbbda367e6b313e2d327d6ba3547bdbe32c301e477cc"
+    },
+    {
+      "bytes": 426,
+      "path": "T09_WR_VERTICAL_RESULTS.csv",
+      "sha256": "323596e2296c15829ac7a3e0b9aaee6488109518c75788c9765085f4c4c1c70b"
+    },
+    {
+      "bytes": 547,
+      "path": "TEMPORAL_AVAILABILITY_CONTRACT.md",
+      "sha256": "526b33f5b393c3801661ce62829c9c4476a8b0a409598fbbc3414d6a451bf1d9"
+    },
+    {
+      "bytes": 1100,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "bda52d8129336262d80a70b9ce4d3c9653326e964e9993948d1cfb401f58bdd7"
+    }
+  ],
+  "as_of_date": "2026-07-31",
+  "builder_contract": {
+    "absolute_worktree_paths_emitted": false,
+    "encoding": "UTF-8 without BOM",
+    "float_precision": 6,
+    "line_endings": "LF",
+    "manifest_self_reference": false,
+    "provider_calls": 0,
+    "stable_ordering": true,
+    "wall_clock_used": false
+  },
+  "canonical_hq": "18792a8bbf3f39c03086163c1f5d672b1e2ba5a6",
+  "canonical_tree": "b91e9b41c192494fbed2facd85bd64b1a1a8d18d",
+  "exact_identity_rows": 1115,
+  "packet": "nwr_rookie_historical_opportunity_feature_gauntlet_v1_20260731",
+  "protected_hashes": {
+    "finished_v1": "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4",
+    "frozen_comparator": "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179",
+    "outcome_v3": "e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20"
+  },
+  "release_classification": "RESEARCH_ONLY_NOT_CANONICAL_NOT_PRODUCTION",
+  "research_rows": 1115,
+  "schema_version": 1,
+  "source_receipts": {
+    "cfbd": "370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a",
+    "combine": "5e6847b155d87a27954204d6b6e6192f6264c0e04556fbfbe20983954ddcee65",
+    "external_handoff": "3f433c95038fe142af07af2973664736b7529f61129dd27ca67061c6076d4f2a"
+  }
+}

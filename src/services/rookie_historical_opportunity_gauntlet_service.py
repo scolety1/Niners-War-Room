@@ -322,4 +322,3 @@ def validate_output_path(relative_path: str | Path) -> None:
 
 def preservation_hashes(paths: Mapping[str, str | Path]) -> dict[str, str]:
     return {name: sha256_file(path) for name, path in sorted(paths.items())}
-
