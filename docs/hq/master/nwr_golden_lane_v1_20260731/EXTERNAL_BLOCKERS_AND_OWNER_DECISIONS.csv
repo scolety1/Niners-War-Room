@@ -1,0 +1,4 @@
+decision_id,phase,status,owner_decision_required,condition,action
+OWNER_001,5,NOT_CURRENTLY_REQUIRED,NO,Phase 3 has not proven a specific decision-relevant open-data gap,Do not seek or purchase provider data
+OWNER_002,6,NOT_CURRENTLY_REQUIRED,NO,Market source rights and retention contracts have not been audited,Do not begin market modeling
+OWNER_003,8,NOT_CURRENTLY_REQUIRED,NO,Golden Release acceptance is not active,No release approval requested

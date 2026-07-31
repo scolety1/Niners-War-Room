@@ -1,0 +1,12 @@
+lane_id,closed_lane,status,reopen_rule
+CLOSED_01,Exact Model V4 replay archaeology,CLOSED,Only genuinely new external authority
+CLOSED_02,V2-2,CLOSED,Do not repeat
+CLOSED_03,Dual-Lens W3/D1,CLOSED,Do not repeat
+CLOSED_04,Broad rookie-feature search,CLOSED,Only genuinely new external authority
+CLOSED_05,CFBD rookie feature additions,CLOSED,Only genuinely new external authority
+CLOSED_06,Local combine/recruiting recovery,CLOSED,Only genuinely new external authority
+CLOSED_07,Rookie opportunity-feature gauntlet,CLOSED,Only genuinely new external authority
+CLOSED_08,Current ADP as historical football input,CLOSED,Prohibited as historical football input
+CLOSED_09,Name-based identity resolution,CLOSED,Exact governed identity required
+CLOSED_10,Hidden injury forecasting,CLOSED,Only transparent admitted availability work is allowed
+CLOSED_11,Automated trade recommendations and unauthorized provider scraping,CLOSED,Manual descriptive behavior and permissioned sources only

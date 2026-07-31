@@ -1,0 +1,11 @@
+gate,phase,title,status,pass_count,total_count,evidence,next_action
+PHASE_0,0,Unified Board Closeout,PASS,1,1,Common scale rejected and existing authorities retained,Advance to Phase 1A
+PHASE_1A,1A,Existing Source Rights and Identity Audit,ACTIVE,0,1,Not yet executed,Run the generated Phase 1A work order
+PHASE_1B,1B,Canonical Baseline Health,PENDING,0,1,Known fresh-checkout Outcome V3 byte mismatch remains bounded,Execute only after Phase 1A closeout
+PHASE_2,2,NWR Outcome and Baseline Contract,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_4,4,Formula Decision,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_5,5,Optional Paid Role or Data Pilot,PENDING_CONDITIONAL,0,1,No proven decision-relevant open-data gap,Do not activate without Phase 3 evidence and owner approval
+PHASE_6,6,Separate Market-Retention Program,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_7,7,Product Completion,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_8,8,Golden Release Acceptance,PENDING,0,1,Not yet executed,Await preceding gates
