@@ -1,0 +1,9 @@
+family,feature,required_fields,available_fields,semantic_status,fallback_valid_hypothesis
+T01,QB_TOTAL_RUSH_YDS_PER_PASS_ATT,designed rushes|scrambles|non-sack/non-kneel yards|pass attempts,total rushing yards|pass attempts,LOWER_FIDELITY_TOTAL_RUSHING_NOT_DESIGNED_OR_SCRAMBLE,partial_only
+T02,RB_REC_PER_TEAM_PA,receptions|team pass attempts,receiving REC|team passing ATT,EXACT_RECEPTIONS_NOT_TARGETS,yes_lower_fidelity
+T03,WR_REC/YDS_PER_TEAM_PA plus provider pass usage,targets preferred|receptions|yards|team PA|usage,REC|YDS|team ATT|CFBD pass usage,NO_TARGET_CLAIM,yes_lower_fidelity
+T04,TE_REC/YDS_PER_TEAM_PA plus passing-down usage,targets preferred|receptions|yards|team PA|passing-down usage,REC|YDS|team ATT|CFBD passingDowns,NO_TARGET_CLAIM,yes_lower_fidelity
+T05,first-down production,exact player first downs|team first downs|eligible opportunities,provider usage.firstDown only,BLOCKED_NO_PRODUCTION_ATTRIBUTION,no
+T06,AGE_ADJUSTED_PRODUCTION_TRAJECTORY,exact DOB/governed age|multi-season rates|frozen age date,nflverse DOB/draft age|CFBD seasons|Aug-1 reference,MATCH,yes
+T07,sacks/(attempts+sacks),QB sacks suffered|pass attempts,pass ATT; defensive SACKS only,BLOCKED_NO_QB_SACKS_SUFFERED,no
+T09,WR vertical residual,vertical|official/pro-day provenance|exact identity,vertical|PFR/CFB identity; no provenance,BLOCKED_OFFICIAL_PRO_DAY_NOT_DISTINCT,no

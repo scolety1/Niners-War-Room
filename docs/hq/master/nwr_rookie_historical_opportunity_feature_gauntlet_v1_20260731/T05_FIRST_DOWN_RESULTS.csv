@@ -1,0 +1,2 @@
+feature_family,fidelity,position,target,outer_test_class,train_classes,baseline,rows,exact_identity_rows,feature_observed_rows,blocker,temporal_status,same_row_status
+T05,FEATURE_FAMILY_BLOCKED_SEMANTIC_MISMATCH,QB|RB|WR|TE,NOT_MODELED,,,,0,0,0,CFBD snapshot has provider usage firstDown but no exact player first-down production attribution; yards are not substituted.,NOT_MODELED_BLOCKED_AT_FEASIBILITY_GATE,NOT_APPLICABLE

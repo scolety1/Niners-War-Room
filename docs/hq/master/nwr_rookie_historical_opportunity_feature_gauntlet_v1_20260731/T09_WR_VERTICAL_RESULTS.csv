@@ -1,0 +1,2 @@
+feature_family,fidelity,position,target,outer_test_class,train_classes,baseline,rows,exact_identity_rows,feature_observed_rows,blocker,temporal_status,same_row_status
+T09,FEATURE_FAMILY_BLOCKED_SEMANTIC_MISMATCH,WR,NOT_MODELED,,,,0,0,0,"nflverse combine schema has vertical but no official-combine/pro-day provenance field, so the required distinction cannot be proven.",NOT_MODELED_BLOCKED_AT_FEASIBILITY_GATE,NOT_APPLICABLE

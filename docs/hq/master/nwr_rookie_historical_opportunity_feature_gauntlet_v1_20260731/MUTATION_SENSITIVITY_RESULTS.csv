@@ -1,0 +1,21 @@
+mutation_id,mutation,result,owning_gate,evidence
+1,random player split,PASS_DETECTED,chronological_fold_gate,mutation blocked: random player split
+2,future-class normalization,PASS_DETECTED,chronological_fold_gate,mutation blocked: future-class normalization
+3,use 2026 outcome,PASS_DETECTED,chronological_fold_gate,mutation blocked: use 2026 outcome
+4,use name-only identity,PASS_DETECTED,identity_cohort_gate,mutation blocked: use name-only identity
+5,silently drop unresolved players,PASS_DETECTED,identity_cohort_gate,mutation blocked: silently drop unresolved players
+6,combine drafted and UDFA cohorts without a flag,PASS_DETECTED,identity_cohort_gate,mutation blocked: combine drafted and UDFA cohorts without a flag
+7,label receptions as targets,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: label receptions as targets
+8,label sacks as pressures,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: label sacks as pressures
+9,infer first down from yards alone,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: infer first down from yards alone
+10,use post-draft ADP,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: use post-draft ADP
+11,use current camp/preseason information,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: use current camp/preseason information
+12,convert missing values to zero,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: convert missing values to zero
+13,combine pro-day and official-combine results,PASS_DETECTED,feature_semantic_source_gate,mutation blocked: combine pro-day and official-combine results
+14,compare candidate on different rows without same-row baseline,PASS_DETECTED,same_row_evaluation_gate,mutation blocked: compare candidate on different rows without same-row baseline
+15,select feature form using outer-test results,PASS_DETECTED,chronological_fold_gate,mutation blocked: select feature form using outer-test results
+16,change Model V4 weights,PASS_DETECTED,protected_output_preservation_gate,mutation blocked: change Model V4 weights
+17,rescore the 2026 class,PASS_DETECTED,protected_output_preservation_gate,mutation blocked: rescore the 2026 class
+18,alter Finished V1,PASS_DETECTED,protected_output_preservation_gate,mutation blocked: alter Finished V1
+19,alter Outcome V3,PASS_DETECTED,protected_output_preservation_gate,mutation blocked: alter Outcome V3
+20,alter Trading Lab or active-pack data,PASS_DETECTED,protected_output_preservation_gate,mutation blocked: alter Trading Lab or active-pack data

@@ -1,0 +1,6 @@
+source,version,use,provider_call,raw_payload_in_git
+CFBD official REST v2 immutable snapshot,370ce01696c305f64792e45e1f8671cfb788b8419b257040206a6f14e5c2770a,"RESEARCH_ONLY_SOURCE: draft identity, season stats, usage, PPA feasibility",NONE,false
+nflverse draft_picks,draft_picks/20260730T072407Z-24ff3f7171ed,exact GSIS identity and continuous overall pick,NONE,false
+nflverse players,players/20260730T072407Z-42af9666ac84,exact biography/DOB and UDFA cohort inventory,NONE,false
+nflverse player_stats_weekly,player_stats_weekly/20260730T072407Z-fe7ff02872e4,NWR-scored Y1/Y2/Y3 outcomes and replacement context,NONE,false
+nflverse combine,5e6847b155d87a27954204d6b6e6192f6264c0e04556fbfbe20983954ddcee65,T09 feasibility only; blocked provenance distinction,NONE,false

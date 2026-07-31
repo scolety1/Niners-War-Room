@@ -1,0 +1,5 @@
+baseline,definition,status
+B0,position/class historical prior,computed as intercept during focused diagnostics
+B1,continuous overall NFL draft pick,controlling comparator
+B2,continuous overall pick plus exact/governed age,controlling comparator
+B3,"accepted review-only historical rookie proxy: fixed Model V4 production, market-share, and draft-capital components with available-weight renormalization",PARTIAL_REPLAY_NOT_EXACT_MODEL_V4_REPLAY
