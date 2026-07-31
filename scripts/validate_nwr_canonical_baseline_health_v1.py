@@ -22,6 +22,8 @@ OUTCOME_RELATIVE = Path(
 )
 OUTCOME_BYTES = 4_511_262
 OUTCOME_SHA256 = "e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20"
+OUTCOME_KNOWN_CRLF_BYTES = 4_528_543
+OUTCOME_KNOWN_CRLF_SHA256 = "a8b468c13a68c8c2feecaf55440982615099019cde8c1963e48068eed01a87cb"
 PROVIDER_IDS = (
     "cbs_id", "cfbref_id", "espn_id", "fantasy_data_id", "fantasypros_id",
     "fleaflicker_id", "gsis_id", "ktc_id", "mfl_id", "nfl_id", "pff_id",
@@ -45,6 +47,56 @@ def validate_file_receipt(path: Path, expected_bytes: int, expected_sha256: str,
         raise AssertionError(f"changed byte size: {label}")
     if sha256_file(path) != expected_sha256:
         raise AssertionError(f"changed hash: {label}")
+
+
+def restore_known_crlf(
+    path: Path,
+    *,
+    expected_bytes: int,
+    expected_sha256: str,
+    known_crlf_bytes: int,
+    known_crlf_sha256: str,
+) -> str:
+    """Restore only a byte-exact known CRLF checkout to governed LF bytes."""
+    if path.is_symlink() or not path.is_file():
+        raise AssertionError("Outcome V3 restoration target is missing or unsafe")
+    current_bytes = path.stat().st_size
+    current_sha256 = sha256_file(path)
+    if current_bytes == expected_bytes and current_sha256 == expected_sha256:
+        return "ALREADY_AUTHORITATIVE"
+    if current_bytes != known_crlf_bytes or current_sha256 != known_crlf_sha256:
+        raise AssertionError("Outcome V3 restoration refused unknown bytes")
+    restored = path.read_bytes().replace(b"\r\n", b"\n")
+    if len(restored) != expected_bytes or hashlib.sha256(restored).hexdigest() != expected_sha256:
+        raise AssertionError("Outcome V3 restoration did not reproduce authority")
+    temporary = path.with_name(path.name + ".phase1b-lf.tmp")
+    if temporary.exists():
+        raise AssertionError("Outcome V3 restoration temporary path already exists")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(restored)
+        temporary.replace(path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    validate_file_receipt(path, expected_bytes, expected_sha256, "Outcome V3 restored checkout")
+    return "RESTORED_KNOWN_CRLF_TO_AUTHORITATIVE_LF"
+
+
+def restore_outcome_checkout(repo_root: Path) -> str:
+    root = repo_root.resolve()
+    path = (root / OUTCOME_RELATIVE).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise AssertionError("Outcome V3 restoration target escapes repository") from exc
+    return restore_known_crlf(
+        path,
+        expected_bytes=OUTCOME_BYTES,
+        expected_sha256=OUTCOME_SHA256,
+        known_crlf_bytes=OUTCOME_KNOWN_CRLF_BYTES,
+        known_crlf_sha256=OUTCOME_KNOWN_CRLF_SHA256,
+    )
 
 
 def validate_registry_policy(record: dict[str, str]) -> None:
@@ -343,7 +395,10 @@ def main() -> int:
     parser.add_argument("--bundle-root", type=Path, default=BUNDLE_DEFAULT)
     parser.add_argument("--derived-output", type=Path)
     parser.add_argument("--json-output", type=Path)
+    parser.add_argument("--restore-outcome-checkout", action="store_true")
     args = parser.parse_args()
+    if args.restore_outcome_checkout:
+        print(restore_outcome_checkout(args.repo_root))
     result = validate(args.repo_root, args.bundle_root, args.derived_output)
     body = json.dumps(result, sort_keys=True, separators=(",", ":"))
     if args.json_output:

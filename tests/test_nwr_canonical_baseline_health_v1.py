@@ -84,3 +84,35 @@ def test_rights_eligibility_temporal_and_line_endings_fail_closed(tmp_path: Path
     outcome.write_bytes(canonical.replace(b"\n", b"\r\n"))
     with pytest.raises(AssertionError, match="changed byte size"):
         MODULE.validate_file_receipt(outcome, len(canonical), hashlib.sha256(canonical).hexdigest(), "Outcome")
+
+
+def test_known_crlf_restoration_is_exact_and_rejects_unknown_bytes(tmp_path: Path) -> None:
+    path = tmp_path / "outcome.csv"
+    canonical = b"a,b\n1,2\n"
+    crlf = canonical.replace(b"\n", b"\r\n")
+    path.write_bytes(crlf)
+    status = MODULE.restore_known_crlf(
+        path,
+        expected_bytes=len(canonical),
+        expected_sha256=hashlib.sha256(canonical).hexdigest(),
+        known_crlf_bytes=len(crlf),
+        known_crlf_sha256=hashlib.sha256(crlf).hexdigest(),
+    )
+    assert status == "RESTORED_KNOWN_CRLF_TO_AUTHORITATIVE_LF"
+    assert path.read_bytes() == canonical
+    assert MODULE.restore_known_crlf(
+        path,
+        expected_bytes=len(canonical),
+        expected_sha256=hashlib.sha256(canonical).hexdigest(),
+        known_crlf_bytes=len(crlf),
+        known_crlf_sha256=hashlib.sha256(crlf).hexdigest(),
+    ) == "ALREADY_AUTHORITATIVE"
+    path.write_bytes(b"unknown")
+    with pytest.raises(AssertionError, match="refused unknown bytes"):
+        MODULE.restore_known_crlf(
+            path,
+            expected_bytes=len(canonical),
+            expected_sha256=hashlib.sha256(canonical).hexdigest(),
+            known_crlf_bytes=len(crlf),
+            known_crlf_sha256=hashlib.sha256(crlf).hexdigest(),
+        )

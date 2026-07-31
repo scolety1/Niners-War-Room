@@ -21,4 +21,7 @@ quarantines are non-production baseline exceptions, not model admission.
 
 Outcome V3 is restored deterministically in fresh Windows worktrees by the
 scoped `text eol=lf` rule in `.gitattributes`; its governed semantic rows and
-authoritative SHA-256 remain unchanged.
+authoritative SHA-256 remain unchanged. Existing worktrees created from the
+pre-repair parent use the validator's bounded `--restore-outcome-checkout`
+mode, which refuses every input except the authoritative hash or the single
+known CRLF mismatch hash.

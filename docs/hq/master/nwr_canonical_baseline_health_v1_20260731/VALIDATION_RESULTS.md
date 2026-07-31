@@ -17,10 +17,13 @@
 - Outcome V3 fresh-checkout repair: PASS at authoritative SHA-256
   `e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20`.
 - Model/source admission: NONE; six open source controls remain fail-closed.
-- Focused validator tests: PASS, 5/5.
+- Focused validator tests: PASS, 6/6, including exact existing-worktree
+  restoration and unknown-byte refusal.
 - Applicable Hermetic, passive Data Health, receipt-truth, negation-security,
   controller, and Phase 1B regression slice: PASS, 91/91 (required unsandboxed
   rerun because the sandbox token cannot authenticate governed Windows paths).
 - Security controls: PASS, 20/20.
+- Independent review correction cycle: 1/1 used to add exact restoration for
+  existing worktrees created from the pre-attribute parent; unknown bytes fail closed.
 - Independent adoption, applicable regression, two-root deterministic output,
   remote reread, conditional push, and stable synchronization are required at closeout.

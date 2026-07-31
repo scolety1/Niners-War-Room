@@ -5,11 +5,12 @@
 - Canonical baseline health: PASS, 14/14 immutable snapshots pinned and validated.
 - Weekly duplicated schema: deterministic derived repair receipt; raw unchanged.
 - Seasonal mixed schema and every identity/rights/temporal defect: quarantined fail-closed.
-- Outcome V3 fresh-checkout bytes: authoritative LF representation restored exactly.
+- Outcome V3 fresh-checkout bytes: authoritative LF representation restored exactly; existing-parent worktrees have a known-hash-only restoration path.
 - Model/source admission: NONE; owner decisions required to advance: 0.
 - Gate arithmetic: PASS, Phase 0 + Phase 1A + Phase 1B = 3/10 = 30%.
 - Exactly one next lane: PASS, bounded Phase 2 contract work.
 - Applicable regression slice: PASS, 91/91; security controls: PASS, 20/20.
+- Independent review correction: 1/1 used for the existing-parent checkout edge case; no correction remains.
 
 ## Autopilot controller upgrade
 
