@@ -32,4 +32,3 @@ implementation and review worktrees, preserve scheduler and protected state,
 state push rules, and describe phase pass/null/failure closeout. The UTF-8 file
 bytes are hashed with SHA-256 and recorded as `next_prompt_sha256`. Dispatch must
 re-read the file and verify both hash and phase identity immediately before worktree creation.
-

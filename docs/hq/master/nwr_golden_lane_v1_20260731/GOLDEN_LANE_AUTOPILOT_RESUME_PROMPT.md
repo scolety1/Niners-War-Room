@@ -10,4 +10,3 @@ single prompt identified by `next_phase` and `next_prompt_sha256` without asking
 for a routine phase handoff. If state is `HARD_STOP`, request only the recorded
 owner decision. Preserve prior canonical phases and never force-push, update the
 operational checkout, or change the scheduled refresh task.
-

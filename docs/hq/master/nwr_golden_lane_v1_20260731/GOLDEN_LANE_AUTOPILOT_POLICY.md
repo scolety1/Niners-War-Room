@@ -59,4 +59,3 @@ Any active condition in `GOLDEN_LANE_HARD_STOP_REGISTRY.csv` stops dispatch.
 Completed earlier phases remain canonical. The controller records exactly one
 owner decision, updates status and state, and replaces the resume prompt with a
 concise decision packet. It must not create speculative alternatives.
-
