@@ -1,41 +1,21 @@
 # Validation Results
 
-## Canonical and scope
+## Phase 1A gate
 
-- Live HQ/tree canonicalization: PASS.
-- Advances since expected HQ: none.
-- Phase 0 result located and classified without rerunning research: PASS.
-- Exactly one next phase authorized: PASS.
-- Documentation-only changed-file scope: PASS.
-- Closed-work registry: PASS, 11 entries.
-- Phase-gate arithmetic: PASS, 1 of 10 equals 10%.
-- Owner decisions currently required: none.
+- Canonical parent and remote equality: PASS at `79b62c3993cf1d00c6dc068199826abb6d9954e3` / tree `8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd`.
+- Required families classified: PASS, 11/11.
+- Exact local snapshot inventory: PASS, 14 files with paths, rows, bytes, and SHA-256.
+- Rights/identity/temporal unknowns: explicit and failed closed; no source admitted.
+- Negative mutation harness: PASS, 8/8 rejected.
+- Gate arithmetic: PASS, Phase 0 and Phase 1A = 2/10 = 20%.
+- Exactly one next lane: PASS, bounded Phase 1B Data Hygiene.
 
-## Preservation before packet commit
+## Regression and preservation
 
-- Finished V1 board hash: PASS.
-- Model V4 rookie authority and governed digest: PASS.
-- Stable authoritative Outcome V3 hash: PASS.
-- Frozen comparator: PASS.
-- Opaque artifacts: PASS, 5/5.
-- Persistent state: PASS, 14 files and governed digest match.
-- Recovery state: PASS, 7 files and governed digest match.
-- Trading Lab, active pack, source code, model outputs, rankings, UI, launcher, and operational checkout: unchanged.
-- Scheduled refresh: unchanged and disabled.
-- Provider/rookie/ranking builder process check: none running.
-
-## Baseline hygiene boundary
-
-The fresh-worktree Outcome V3 line-ending hash mismatch is reproduced and recorded as the known Phase 1B Data Hygiene subject. Stable retains exact authoritative bytes. No repair was attempted in Phase 0.
-
-## Final validation
-
-- Manifest and packet arithmetic: PASS before independent review; 17 hashed non-self entries, 18 required files, 18 inventory rows, 11 closed lanes, and 10 phase gates.
-- Hermetic bootstrap controls: PASS, 13/13.
-- Focused security controls: PASS, 20/20.
-- Candidate Python collection: 2964 passed and 4 Outcome V3 display failures.
-- Clean detached canonical comparison: the same a8b468c13a68c8c2feecaf55440982615099019cde8c1963e48068eed01a87cb checkout hash and the same four focused failures reproduce before this packet. Classification: KNOWN_PHASE_1B_BASELINE_EXCEPTION; no new Golden Lane regression.
-- Stable authoritative baseline: exact e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20 bytes remain present and previously pass the 2968-test Hermetic collection.
-- LocalData: PASS_FAIL_CLOSED, marker BLOCKED_MISSING_LOCAL_TEST_PACK and native exit 4.
-- Passive Data Health regression slice: PASS, 59/59.
-- Independent review, deterministic two-copy comparison, final remote re-read, conditional push, and stable synchronization are recorded in the final task response.
+- Documentation-only allowed-path diff: PASS.
+- Security controls: PASS, 20/20.
+- Passive Data Health, Hermetic fixture-family, and negation-security slice: PASS, 98/98.
+- Hermetic/LocalData: Phase 0 baseline remains 13/13 and missing LocalData exits 4 fail-closed. A current full disposable-checkout rerun timed out after 300 seconds without reporting a failed assertion; security test 20 independently passed the Hermetic integration control. No runtime file changed.
+- Finished V1, Rookie Review, Outcome V3, frozen comparator, Trading Lab, active-pack, opaque, persistent, recovery, code, model, rankings, formulas, UI, and generated data packs: unchanged.
+- Named scheduled task: disabled and unchanged. No launcher or provider refresh was started.
+- Independent review, deterministic adoption comparison, final remote reread, push, and stable synchronization are recorded in the final closeout.

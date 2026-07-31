@@ -1,94 +1,32 @@
-# NWR GOLDEN LANE PHASE 1A WORK ORDER
-## Existing Source, Rights, and Identity Audit
+# NWR GOLDEN LANE PHASE 1B WORK ORDER
+## Canonical Baseline Health and Data Hygiene
 
 ### Setup
 
-Work only on the live canonical branch work/hq-parallel-control through a new isolated worktree and task branch. Fetch and prune first. Resolve and report the actual live HQ/tree; the prior canonical source was 18792a8bbf3f39c03086163c1f5d672b1e2ba5a6 / b91e9b41c192494fbed2facd85bd64b1a1a8d18d, followed only by the Golden Lane documentation packet if it was pushed.
-
-Stable: C:\NWR\Niners-War-Room-V1.
-Operational: C:\NWR\Niners-War-Room.
-Do not update operational. Do not start the launcher. Leave the NWR DynastyProcess Market Baseline Refresh task unchanged.
-
-Read AGENTS.md and docs/hq/master/nwr_golden_lane_v1_20260731 completely. Verify canonical, stable, operational, preservation, scheduler, and process state before auditing.
+Fetch and prune once, resolve the live `work/hq-parallel-control` HQ/tree, and create a new isolated task worktree. Read `AGENTS.md`, the entire Golden Lane packet, and `docs/hq/master/nwr_existing_source_rights_identity_audit_v1_20260731/`. Stable is `C:\NWR\Niners-War-Room-V1`; operational is `C:\NWR\Niners-War-Room`. Do not update operational or start the launcher. Leave `NWR DynastyProcess Market Baseline Refresh` unchanged.
 
 ### Exact mission
 
-Execute only Golden Lane Phase 1A. Inventory the NWR-owned local snapshots for:
+Execute only Phase 1B. Establish canonical baseline health for the exact 14 audited snapshot files and resolve or formally quarantine hygiene defects without acquiring or refreshing any provider. Reconcile the known fresh-checkout Outcome V3 line-ending byte mismatch using a line-ending-safe, deterministic repository representation that preserves the authoritative semantic rows and governed stable bytes until replacement acceptance passes.
 
-1. nflverse player and team stats;
-2. weekly player stats;
-3. play-by-play;
-4. players and IDs;
-5. rosters;
-6. schedules;
-7. snap counts;
-8. injuries;
-9. depth charts;
-10. participation;
-11. FTN public subset.
+Validate file existence, size, SHA-256, schema, row count, exact composite grain, duplicate semantics, identity namespace, missingness, quarantined columns, temporal availability, revision receipts, and safe-path containment. Produce a machine-readable baseline registry and deterministic validator. Fail closed for missing, moved, changed, ambiguous, rights-unknown, temporally unsafe, or unauthorized sources.
 
-For every source family, record exact local snapshot paths, upstream source, terms/rights evidence, seasons, row grain, identity fields, revision/correction behavior, historical as-of authority, missingness, and model eligibility. Distinguish verified facts, inferred properties, absent evidence, and owner decisions.
+### Required bounded decisions
 
-Do not acquire or refresh any provider. Do not treat the audit as model admission. No network is authorized except the initial Git remote fetch and a final conditional Git push. Rights claims require local evidence; when evidence is absent, record UNKNOWN_REQUIRES_OWNER_OR_SOURCE_CONFIRMATION.
+- Do not convert Phase 1A audit classifications into model admission.
+- Preserve all six open owner/source decisions; Phase 1B may record controls but may not invent rights.
+- Repair the duplicated `player_stats_weekly` schema only in a new derived hygiene artifact with a receipt; never overwrite the source snapshot.
+- Validate dataset-specific composite keys rather than the prior generic duplicate heuristic for schedules, team stats, depth charts, participation, and FTN charting.
+- Define exact GSIS/PFR/provider crosswalk collision behavior; ambiguous identities must remain blocked.
+- Define point-in-time cutoffs for post-game, report-time, season-end, and pre-game-only use. Current corrected bundles cannot be backdated.
+- Keep Finished V1, Rookie Review, Outcome V3, frozen comparator, Trading Lab, active-pack, opaque, persistent, recovery, and production behavior unchanged.
 
-### Allowed paths
+### Allowed mutations
 
-- docs/hq/master/nwr_existing_source_rights_identity_audit_v1_20260731/
-- docs/hq/master/nwr_golden_lane_v1_20260731/
+Only Phase 1B documentation, a bounded deterministic hygiene validator and its tests/fixtures, and explicitly approved derived hygiene receipts are allowed. No model, formula, ranking, product, UI, active-pack, user-state, provider acquisition, scheduler, or operational mutation. Do not modify the 14 governed raw snapshots.
 
-Read-only inspection is allowed elsewhere in the repository, stable checkout, operational checkout, and approved persistent/recovery roots. Do not read opaque artifact contents; verify them by hash only.
+### Validation and closeout
 
-### Prohibited paths and actions
+Run missing source, unsafe path, changed hash, schema drift, invalid grain, ambiguous identity, missing rights, future leakage, corrupted Outcome V3 line endings, and unauthorized eligibility mutations against temporary copies. Require two-root deterministic output; documentation/code/data scope inventory; Hermetic, LocalData fail-closed, security, and passive Data Health regression; full preservation hashes; scheduler/process no-change; and an independent adoption review from the exact canonical parent.
 
-- No src/, tests/, scripts/, application, model, ranking, formula, UI, or generated data-pack changes.
-- No local_exports, active-pack, Trading Lab, opaque, persistent, recovery, or user-state writes.
-- No provider acquisition, scraping, subscription, purchase, API collection, or scheduler execution.
-- No Phase 1B hash repair, broad replay archaeology, feature testing, target design, formula research, market modeling, or product integration.
-- Do not repeat any CLOSED_WORK_REGISTRY.csv lane.
-- Never force-push.
-
-### Required targets and source authority
-
-Finished V1 remains production authority. Model V4 rookie review remains separate review-only authority with 73 scored and 7 blocked. The rookie-veteran common scale is formally rejected. Outcome V3 and the frozen comparator remain unchanged. Audit findings may classify future model eligibility but cannot admit a source into a model.
-
-Create a Phase 1A packet with a source-family inventory, exact snapshot inventory, rights/terms evidence matrix, season/grain/identity matrix, revision and historical-as-of assessment, missingness summary, model-eligibility decision table, conflicts/unknowns, preservation proof, validation results, file inventory, and manifest.
-
-Update the Golden Lane ledger mechanically:
-
-- Phase 1A PASS only if every named family has an explicit evidence-backed classification, including UNKNOWN where necessary.
-- On PASS, make Phase 1B the sole next authorized lane and replace NEXT_AUTHORIZED_LANE_PROMPT.md with a complete bounded Data Hygiene work order.
-- On failure, generate only a bounded Phase 1A correction prompt.
-- Recalculate completion from passed gates divided by ten.
-
-### Validation and mutations
-
-Require exact canonical state; mechanically generated changed-file inventory; deterministic packet hashes; registry and phase-gate consistency; documentation-only diff; no model/code/data/UI mutation; Finished V1, Rookie Board, Outcome V3, Trading Lab, active-pack, frozen comparator, opaque, persistent, and recovery preservation; scheduled-task no-change; existing security controls; passive Data Health reads; no Hermetic regression; and LocalData fail-closed behavior.
-
-Perform real-path negative mutations against a temporary copy or test harness for missing source, unsafe path, changed snapshot hash, ambiguous identity, missing rights evidence, invalid grain, future leakage, and unauthorized eligibility. Mutations must not touch governed source artifacts or user state.
-
-### Commits and independent review
-
-Use documentation-only commits such as:
-
-1. docs: audit existing NWR source authority
-2. docs: close Golden Lane Phase 1A
-
-Create a separate adoption worktree/branch from the exact same canonical parent. Independently review the packet, registry completeness, evidence claims, deterministic hashes, mutations, preservation, and next-work-order correctness. Permit at most one bounded documentation correction.
-
-### Conditional push
-
-Push only after a green Phase 1A gate, clean independent review, exact remote re-read, fast-forward proof, clean secret/security checks, and preservation confirmation. Push the reviewed documentation commits to work/hq-parallel-control without force. Then fast-forward stable with line-ending-safe checkout behavior. Never update operational.
-
-### Authorized verdicts
-
-Use exactly one:
-
-- GREEN_NWR_GOLDEN_LANE_PHASE_1A_COMPLETE_AND_PHASE_1B_READY
-- GREEN_NWR_GOLDEN_LANE_PHASE_1A_READY_FOR_HQ_REVIEW
-- YELLOW_NWR_GOLDEN_LANE_PHASE_1A_NEEDS_TARGETED_REVISION
-- BLOCKED_NWR_GOLDEN_LANE_PHASE_1A_SOURCE_RIGHTS_OR_IDENTITY_AUTHORITY
-- RED_NWR_GOLDEN_LANE_PHASE_1A_DATA_SECURITY_OR_PRESERVATION_REGRESSION
-
-### Required final response
-
-Report verdict; starting and final canonical HQ/tree; Phase 1A gate result; source-family counts by eligibility and evidence status; rights and identity blockers; completed and blocked Golden Lane gates; mechanical completion percentage; next authorized lane; next prompt path; owner decisions; commits; independent review; push; stable status; operational no-change; production changes NONE; preservation; deterministic result; Hermetic/LocalData/security/Data Health results; and exact instructions for beginning the next task.
+Phase 1B passes only if the baseline registry is deterministic, all raw snapshots remain immutable, the Outcome V3 checkout mismatch is safely resolved or explicitly blocked with no false green, and every identified defect is repaired in a derived artifact or quarantined fail-closed. On PASS make Phase 2 the sole next authorized lane and recalculate passed gates divided by ten. On failure issue only a bounded Phase 1B correction prompt. Never force-push; conditionally push only after clean independent review, final remote reread, fast-forward proof, security checks, and preservation confirmation, then fast-forward stable with line-ending-safe checkout behavior. Never update operational.

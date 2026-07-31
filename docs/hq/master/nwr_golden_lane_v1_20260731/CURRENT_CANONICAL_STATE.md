@@ -1,11 +1,11 @@
 # Current Canonical State
 
-Canonicalization was performed after fetching and pruning origin on 2026-07-31.
+Canonicalization was re-performed after fetching and pruning origin on 2026-07-31 for Phase 1A.
 
 - Live branch: work/hq-parallel-control
-- Live HQ: 18792a8bbf3f39c03086163c1f5d672b1e2ba5a6
-- Live tree: b91e9b41c192494fbed2facd85bd64b1a1a8d18d
-- Advances since the previously expected HQ: none
+- Live HQ before Phase 1A: 79b62c3993cf1d00c6dc068199826abb6d9954e3
+- Live tree before Phase 1A: 8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd
+- Advances since the previously expected HQ: exactly the two Golden Lane documentation commits 8c74b2c and 79b62c3
 - Stable checkout before this packet: clean at the exact live HQ and tree
 - Operational checkout: clean on work/nfl-usage-target-backtest-v0 at dc5ff68c172f7a5a49755934d122ee1f99d87670; not updated
 

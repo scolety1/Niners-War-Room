@@ -1,4 +1,10 @@
 decision_id,phase,status,owner_decision_required,condition,action
+P1A_OWNER_001,1A,OPEN,YES,team_stats lacks a dataset-specific local rights row,Confirm license coverage before any admission
+P1A_OWNER_002,1A,OPEN,YES,play-by-play lacks dataset-specific local rights evidence,Provide locally preserved authoritative terms evidence
+P1A_OWNER_003,1A,OPEN,YES,ff_playerids rights and crosswalk collision policy are unresolved,Confirm rights and exact collision policy
+P1A_OWNER_004,1A,OPEN,YES,schedules rights and pre-game as-of authority are absent,Confirm rights and require dated pre-game snapshots
+P1A_OWNER_005,1A,OPEN,YES,participation share-alike boundary is not mapped,Approve attribution and adaptation handling before derivative use
+P1A_OWNER_006,1A,OPEN,YES,FTN charting rights identity and availability authority are absent,Obtain source confirmation before any use
 OWNER_001,5,NOT_CURRENTLY_REQUIRED,NO,Phase 3 has not proven a specific decision-relevant open-data gap,Do not seek or purchase provider data
 OWNER_002,6,NOT_CURRENTLY_REQUIRED,NO,Market source rights and retention contracts have not been audited,Do not begin market modeling
 OWNER_003,8,NOT_CURRENTLY_REQUIRED,NO,Golden Release acceptance is not active,No release approval requested
