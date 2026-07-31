@@ -1,0 +1,9 @@
+{
+  "schema_version": "NWR_OUTCOME_V3_LINE_ENDING_RECEIPT_V1",
+  "path": "docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/OUTCOME_V3_INTEGRATION_PACK.csv",
+  "authoritative_bytes": 4511262,
+  "authoritative_sha256": "e3b44047d36bd62d9573295db64d96f214922a20f0083cf49105f104970b3d20",
+  "prior_fresh_checkout_sha256": "a8b468c13a68c8c2feecaf55440982615099019cde8c1963e48068eed01a87cb",
+  "repair": "SCOPED_GIT_ATTRIBUTE_TEXT_EOL_LF",
+  "semantic_rows_changed": false
+}

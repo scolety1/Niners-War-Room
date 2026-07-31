@@ -1,0 +1,11 @@
+quarantine_id,dataset,condition,rows_or_values,disposition
+Q01,player_stats_seasonal,Mixed unrelated seasonal and weekly horizontal schemas,42419,Entire dataset excluded
+Q02,player_stats_weekly,Missing player_id in derived representation,88,Rows blocked from identity or model use
+Q03,ff_playerids,Blank GSIS identity,4484,Rows cannot establish GSIS mapping
+Q04,ff_playerids,Provider crosswalk collision values,See CROSSWALK_COLLISION_RECEIPT.json,Every collided provider value blocked
+Q05,rosters,Missing GSIS identity,5,Rows blocked from player joins
+Q06,weekly_rosters,Missing GSIS identity,36,Rows blocked from player joins
+Q07,depth_charts,Exact duplicate NFL rows,207,Dataset not admitted; duplicates retained only in immutable raw
+Q08,depth_charts,Missing ESPN player_name,445,Rows blocked from player joins
+Q09,ftn_charting,No player identity,95347,Play-only data not joinable to players
+Q10,multiple,Unknown or partial rights,6 controls,Not admitted until owner/source evidence exists

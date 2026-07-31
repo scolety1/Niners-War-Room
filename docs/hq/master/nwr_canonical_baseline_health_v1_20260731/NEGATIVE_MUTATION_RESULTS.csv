@@ -1,0 +1,11 @@
+mutation,expected,actual,result
+missing source,REJECT,REJECT,PASS
+unsafe path,REJECT,REJECT,PASS
+changed hash or byte count,REJECT,REJECT,PASS
+schema drift,REJECT,REJECT,PASS
+invalid composite grain,REJECT,REJECT,PASS
+ambiguous provider identity,REJECT,REJECT,PASS
+missing rights with requested eligibility,REJECT,REJECT,PASS
+future leakage,REJECT,REJECT,PASS
+corrupted Outcome V3 line endings,REJECT,REJECT,PASS
+unauthorized eligibility,REJECT,REJECT,PASS

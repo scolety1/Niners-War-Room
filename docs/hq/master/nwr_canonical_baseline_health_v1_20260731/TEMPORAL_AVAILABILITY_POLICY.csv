@@ -1,0 +1,8 @@
+policy_id,available_cutoff,allowed_use,blocked_use
+POST_GAME_ONLY,After applicable game completion,Descriptive post-game facts,Pre-game or earlier-week backdating
+REPORT_TIME_ONLY,At recorded report timestamp,Factual report state,Inferring health from absence or using later revisions early
+SEASON_END_ONLY,After documented season-end publication,Season-end research,Same-week historical features
+COMPLETED_SEASON_ONLY,After completed season,Season aggregate research,In-season or prior-cutoff exposure
+PRE_GAME_SNAPSHOT_REQUIRED,Only from a separately dated pre-game snapshot,Recorded pre-game fields,Final result score line or corrected bundle backdating
+CURRENT_ONLY,At bundle retrieval time,Identity administration,Historical current-team/status inference
+RETRIEVAL_ONLY,At date_pulled,Retrieval audit,Claiming event-time availability

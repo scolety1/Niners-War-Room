@@ -1,0 +1,12 @@
+{
+  "schema_version": "NWR_PLAYER_STATS_WEEKLY_HYGIENE_SCHEMA_V1",
+  "source": "player_stats_weekly.csv",
+  "source_columns": 291,
+  "derived_columns": 146,
+  "duplicate_block_start_zero_based": 146,
+  "duplicate_block_columns": 145,
+  "operation": "KEEP_COLUMNS_0_THROUGH_145_DROP_EXACT_DUPLICATE_COLUMNS_146_THROUGH_290",
+  "derived_header_sha256": "592b1ad37325d813cdf294bf002ade24523300b69f955c6abeec156a40c9640e",
+  "model_eligible": false,
+  "blocked_rows_missing_player_id": 88
+}

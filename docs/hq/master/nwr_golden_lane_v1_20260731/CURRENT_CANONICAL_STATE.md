@@ -28,3 +28,15 @@ Golden Lane disposition: PHASE_0_GREEN_COMMON_SCALE_REJECTED_EXISTING_AUTHORITIE
 The fresh Golden Lane worktree exposes the known checkout-only Outcome V3 line-ending hash a8b468c13a68c8c2feecaf55440982615099019cde8c1963e48068eed01a87cb. Stable retains the exact authoritative bytes. Phase 1B, not Phase 0, owns resolution under a Data Hygiene contract.
 
 The NWR DynastyProcess Market Baseline Refresh scheduled task is disabled. No provider-refresh, rookie-builder, or ranking-builder process was running. Launcher state was not changed.
+
+## Phase 1B starting state
+
+Phase 1B began after the bounded-autopilot controller was independently adopted
+and canonicalized at `99eff4f3a91b9428ed5958c72dbf281cf6c4de05`. Its starting
+tree was `a74c3eb5616a5f2b083496b139c7c5b9f3b17629`; remote divergence was
+0 ahead / 0 behind and stable was clean at the same HQ. Operational remained
+clean on `work/nfl-usage-target-backtest-v0` and was not updated.
+
+The exact 14 Phase 1A source hashes remain immutable. Phase 1B added only
+fail-closed hygiene contracts, validator/tests, and a scoped LF checkout rule
+that restores the already governed Outcome V3 blob bytes in fresh worktrees.

@@ -1,0 +1,14 @@
+{
+  "schema_version": "NWR_PLAYER_STATS_WEEKLY_HYGIENE_RECEIPT_V1",
+  "source_sha256": "4a923f10cccbd5cc90300813793afa73e40429742a3a41c378104aefbb338794",
+  "source_rows": 76804,
+  "source_columns": 291,
+  "all_duplicate_blocks_equal": true,
+  "derived_rows": 76804,
+  "derived_columns": 146,
+  "derived_bytes_utf8_lf_csv": 34914253,
+  "derived_sha256_utf8_lf_csv": "103f267575843c84fe6d3be6d4cbe6352ee619cf4266321ccd01f85b2bd71581",
+  "raw_source_modified": false,
+  "model_eligible": false,
+  "quarantined_missing_identity_rows": 88
+}

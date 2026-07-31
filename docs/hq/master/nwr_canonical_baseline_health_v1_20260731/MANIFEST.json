@@ -1,0 +1,22 @@
+{
+  "schema_version": "NWR_CANONICAL_BASELINE_HEALTH_MANIFEST_V1",
+  "packet": "docs/hq/master/nwr_canonical_baseline_health_v1_20260731",
+  "required_file_count": 14,
+  "manifest_excludes_self": true,
+  "hash_representation": "UTF8_LF_CANONICAL_BYTES",
+  "files": {
+    "BASELINE_REGISTRY.csv": {"bytes":5028,"sha256":"3132a7773ade01b0d3fb7f99866e8061e4584d5e519be9f5812bcf640349c64a"},
+    "CROSSWALK_COLLISION_RECEIPT.json": {"bytes":1860,"sha256":"61d9140067b5b3dfd58318cea5174de06542c5bcce605cc879967a564e806c5e"},
+    "FILES_CREATED_OR_CHANGED.csv": {"bytes":2265,"sha256":"d2f43025584673ff5a51330bb9a4b3c5e2dc6aea0771c9e0d872b56ea3a80113"},
+    "GRAIN_VALIDATION_RESULTS.csv": {"bytes":925,"sha256":"241210c70927c402a97a907b67345c9be07496c63cbb95df46f0728a9ac86505"},
+    "NEGATIVE_MUTATION_RESULTS.csv": {"bytes":457,"sha256":"bf0c710052a73cc8797fe231e6060c3bb0d8dd983122b9a0a0489c88bbc835b7"},
+    "OUTCOME_V3_LINE_ENDING_RECEIPT.json": {"bytes":474,"sha256":"26147a9ef08a9461aa3ddaf08cf3e9bcf7a8080fa191f5aa37c15d1b93d2b144"},
+    "PLAYER_STATS_WEEKLY_DERIVED_SCHEMA.json": {"bytes":487,"sha256":"e1088f8cafbc059e2fe669709a85a6b24276bddf2759ff7ebf26b8e51195f997"},
+    "PLAYER_STATS_WEEKLY_HYGIENE_RECEIPT.json": {"bytes":537,"sha256":"6e3ae7e1c7b88e0d2aca8b30bda16b0f8986acb22b7670122f6c7ac69c673151"},
+    "PRESERVATION_PROOF.md": {"bytes":1204,"sha256":"d4172364a17fcb2825dbd6db75dc43f172e7e07b540cf3d5764ccc80788f25db"},
+    "QUARANTINE_REGISTRY.csv": {"bytes":994,"sha256":"a3f13e739163fa70d9c2add1d49b9150808d122fcae74e2788cfff75cfaece4f"},
+    "README.md": {"bytes":1272,"sha256":"fdea1c02bc2d78d22c99c5bd45b67a6b348ff88f9ba2abc54d02a01ca162fbbd"},
+    "TEMPORAL_AVAILABILITY_POLICY.csv": {"bytes":839,"sha256":"56d8d9ded8f35bddc31f37dc8824815137de5b0c3289f25ee66f50ca73efb701"},
+    "VALIDATION_RESULTS.md": {"bytes":1675,"sha256":"0ac7b3589b5538860572a219bfe0a085ec3b323e46a4bf30469d667221d91269"}
+  }
+}

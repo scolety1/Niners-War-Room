@@ -1,8 +1,8 @@
 gate,phase,title,status,pass_count,total_count,evidence,next_action
 PHASE_0,0,Unified Board Closeout,PASS,1,1,Common scale rejected and existing authorities retained,Advance to Phase 1A
 PHASE_1A,1A,Existing Source Rights and Identity Audit,PASS,1,1,11 of 11 families explicitly classified with unknowns failed closed,Advance to Phase 1B
-PHASE_1B,1B,Canonical Baseline Health,ACTIVE,0,1,Known fresh-checkout Outcome V3 byte mismatch plus audited registry hygiene items,Run the bounded Phase 1B work order
-PHASE_2,2,NWR Outcome and Baseline Contract,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_1B,1B,Canonical Baseline Health,PASS,1,1,14 snapshots pinned; weekly derived repair; defects quarantined; Outcome V3 LF checkout exact,Advance to Phase 2
+PHASE_2,2,NWR Outcome and Baseline Contract,ACTIVE,0,1,Phase 1B baseline registry is healthy and fail-closed,Run the bounded Phase 2 contract work order
 PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,PENDING,0,1,Not yet executed,Await preceding gates
 PHASE_4,4,Formula Decision,PENDING,0,1,Not yet executed,Await preceding gates
 PHASE_5,5,Optional Paid Role or Data Pilot,PENDING_CONDITIONAL,0,1,No proven decision-relevant open-data gap,Do not activate without Phase 3 evidence and owner approval
