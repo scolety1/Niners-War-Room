@@ -1,0 +1,37 @@
+{
+  "schema_version": "NWR_GOLDEN_LANE_STATUS_V1",
+  "canonical_branch": "work/hq-parallel-control",
+  "canonical_hq_at_canonicalization": "18792a8bbf3f39c03086163c1f5d672b1e2ba5a6",
+  "canonical_tree_at_canonicalization": "b91e9b41c192494fbed2facd85bd64b1a1a8d18d",
+  "active_phase": "PHASE_1A_EXISTING_SOURCE_RIGHTS_AND_IDENTITY_AUDIT",
+  "completed_phases": [
+    "PHASE_0_GREEN_COMMON_SCALE_REJECTED_EXISTING_AUTHORITIES_RETAINED"
+  ],
+  "blocked_phases": [],
+  "closed_lanes": [
+    "exact_model_v4_replay_archaeology",
+    "v2_2",
+    "dual_lens_w3_d1",
+    "broad_rookie_feature_search",
+    "cfbd_rookie_feature_additions",
+    "local_combine_recruiting_recovery",
+    "rookie_opportunity_feature_gauntlet",
+    "current_adp_as_historical_football_input",
+    "name_based_identity_resolution",
+    "hidden_injury_forecasting",
+    "automated_trade_recommendations_and_unauthorized_provider_scraping"
+  ],
+  "next_authorized_lane": "PHASE_1A_EXISTING_SOURCE_RIGHTS_AND_IDENTITY_AUDIT",
+  "prohibited_concurrent_lanes": [
+    "PHASE_1B_OR_LATER",
+    "MODEL_OR_FORMULA_RESEARCH",
+    "PROVIDER_ACQUISITION",
+    "MARKET_MODELING",
+    "PRODUCT_OR_UI_INTEGRATION"
+  ],
+  "owner_decisions_required": [],
+  "phase_gates_passed": 1,
+  "phase_gates_total": 10,
+  "final_completion_percentage": 10,
+  "last_updated_commit": "8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd"
+}
