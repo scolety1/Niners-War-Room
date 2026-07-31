@@ -1,0 +1,8 @@
+decision_id,family_id,status,unknown_or_conflict,owner_or_source_action,default_until_resolved
+P1A_OWNER_001,SF01,OPEN,team_stats dataset-specific license row absent,Confirm same-bundle CC-BY-4.0 coverage,NOT_ADMITTED
+P1A_OWNER_002,SF03,OPEN,play_by_play dataset-specific rights evidence absent,Supply locally preserved authoritative license/terms evidence,NOT_ADMITTED
+P1A_OWNER_003,SF04,OPEN,ff_playerids dataset-specific rights and 3203 generic duplicate flags unresolved,Confirm rights and approve exact crosswalk collision policy,IDENTITY_ONLY_BLOCK_AMBIGUITY
+P1A_OWNER_004,SF06,OPEN,schedules dataset-specific rights and pre-game snapshot authority absent,Confirm rights and require dated pre-game snapshots,NOT_ADMITTED
+P1A_OWNER_005,SF10,OPEN,CC-BY-SA adaptation boundary not yet mapped to future outputs,Approve attribution/share-alike handling before derivative use,NOT_ADMITTED
+P1A_OWNER_006,SF11,OPEN,FTN charting rights player identity semantics and historical availability absent,Obtain owner/source confirmation without acquisition,NOT_ADMITTED
+

@@ -1,0 +1,13 @@
+family_id,seasons,verified_or_inferred_grain,identity_fields,classification
+SF01,2024-2025,"player-team-season summary (INFERRED from summary_level and keys); team-week-game for team_stats",player_id or team,PARTIAL
+SF02,2024-2025,player-team-game-week,player_id,VERIFIED
+SF03,2024-2025,play,game_id plus play_id and role-specific player IDs,VERIFIED
+SF04,"players 1974-2025; ff_playerids 1970-2026 metadata",player identity,gsis_id plus provider IDs,PARTIAL_CROSSWALK_DUPLICATES
+SF05,2024-2025,"season roster row; player-team-week roster row",gsis_id plus provider IDs,VERIFIED_WITH_DUPLICATE_FLAGS
+SF06,2024-2025,game,game_id and team keys,VERIFIED
+SF07,2024-2025,player-game-week,pfr_player_id,VERIFIED_WITH_CROSSWALK_REQUIREMENT
+SF08,2024-2025,player-team-week-report-state,gsis_id,VERIFIED
+SF09,2024,player-team-week-depth-slot,gsis_id plus espn_id,VERIFIED_WITH_COVERAGE_LIMIT
+SF10,Not encoded in columns; source metadata says not enough information,play participation,nflverse_game_id plus play_id plus GSIS lists,PARTIAL
+SF11,2024-2025,charted play,ftn_game_id plus ftn_play_id plus nflverse IDs; no player ID,VERIFIED_GRAIN_IDENTITY_INSUFFICIENT_FOR_PLAYER_JOIN
+

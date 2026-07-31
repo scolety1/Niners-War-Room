@@ -1,0 +1,13 @@
+family_id,status,local_evidence,classification,required_action
+SF01,PARTIAL_VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,player stats explicit CC-BY-4.0; team stats same-bundle license is inferred,Confirm team_stats dataset-specific coverage before admission
+SF02,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,CC-BY-4.0 attribution required,Preserve attribution
+SF03,UNKNOWN,No dataset-specific local rights row located,UNKNOWN_REQUIRES_OWNER_OR_SOURCE_CONFIRMATION,Obtain local source/license evidence without acquisition
+SF04,PARTIAL_VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,players CC-BY-4.0; ff_playerids lacks dataset-specific local evidence,Confirm ff_playerids rights
+SF05,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,CC-BY-4.0 attribution required,Preserve attribution
+SF06,UNKNOWN,No dataset-specific local rights row located,UNKNOWN_REQUIRES_OWNER_OR_SOURCE_CONFIRMATION,Obtain local source/license evidence without acquisition
+SF07,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,CC-BY-4.0 attribution required,Preserve attribution and PFR lineage
+SF08,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,CC-BY-4.0 attribution required,Preserve attribution
+SF09,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_LICENSE_AND_TERMS_REVIEW.csv,CC-BY-4.0 attribution required,Preserve attribution
+SF10,VERIFIED,docs/hq/master/nwr_new_evidence_rookie_availability_foundation_v1_20260730/SOURCE_ACCESS_AND_TERMS_CONTRACT.md,CC-BY-SA-4.0 credit FTN Data via nflverse and share adaptations alike,Carry attribution and share-alike obligation
+SF11,UNKNOWN,No dataset-specific local rights row located,UNKNOWN_REQUIRES_OWNER_OR_SOURCE_CONFIRMATION,Owner/source confirmation required before any use
+

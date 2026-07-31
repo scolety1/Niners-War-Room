@@ -1,0 +1,10 @@
+mutation,expected,actual,result
+missing source,REJECT,REJECT,PASS
+unsafe path,REJECT,REJECT,PASS
+changed snapshot hash,REJECT,REJECT,PASS
+ambiguous identity,REJECT,REJECT,PASS
+missing rights evidence,REJECT,REJECT,PASS
+invalid grain,REJECT,REJECT,PASS
+future leakage,REJECT,REJECT,PASS
+unauthorized eligibility,REJECT,REJECT,PASS
+

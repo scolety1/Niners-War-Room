@@ -1,0 +1,14 @@
+{
+  "schema": "NWR_PHASE_1A_NEGATIVE_MUTATIONS_V1",
+  "mutations": [
+    {"id":"M01","condition":"missing_source","source_exists":false,"expected":"REJECT"},
+    {"id":"M02","condition":"unsafe_path","path":"..\\active-pack\\forbidden.csv","expected":"REJECT"},
+    {"id":"M03","condition":"changed_snapshot_hash","expected_hash":"aaaa","actual_hash":"bbbb","expected":"REJECT"},
+    {"id":"M04","condition":"ambiguous_identity","candidate_count":2,"expected":"REJECT"},
+    {"id":"M05","condition":"missing_rights_evidence","rights":"UNKNOWN_REQUIRES_OWNER_OR_SOURCE_CONFIRMATION","requested_eligibility":"MODEL","expected":"REJECT"},
+    {"id":"M06","condition":"invalid_grain","declared_key_unique":false,"expected":"REJECT"},
+    {"id":"M07","condition":"future_leakage","available_at":"2025-12-31","cutoff":"2025-09-01","expected":"REJECT"},
+    {"id":"M08","condition":"unauthorized_eligibility","audit_admits_model":true,"expected":"REJECT"}
+  ]
+}
+

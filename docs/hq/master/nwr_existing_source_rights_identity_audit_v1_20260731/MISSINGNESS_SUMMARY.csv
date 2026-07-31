@@ -1,0 +1,13 @@
+family_id,observed_limit,required_missingness_semantics
+SF01,Quarantined derived/efficiency and fantasy fields; 2024-2025 only,Missing is unknown and team/player aggregates are not interchangeable
+SF02,Generic metadata flags duplicated concatenated schema and 38402 duplicate-key signals,Resolve schema/row uniqueness in Phase 1B; missing row is not zero usage
+SF03,Role IDs are sparse by play type and 24 EPA/result-derived fields quarantined,Null role field is not player non-participation
+SF04,ff_playerids has 3203 generic duplicate-key flags and mutable current attributes,No name-only resolution; ambiguous crosswalk blocks row
+SF05,2 seasonal and 16 weekly generic duplicate flags; headshot quarantined,Missing roster row is not inactive or off-roster
+SF06,526 generic duplicate flags because metadata validator used an inapplicable player key,Validate game_id uniqueness in Phase 1B; unavailable schedule state is unknown
+SF07,144 generic duplicate flags and PFR-to-GSIS coverage varies,Missing snap row is not zero snaps or no-role
+SF08,2 generic duplicate flags,No injury row is not evidence of health
+SF09,2024 only; 550879 generic duplicate flags reflect repeated formation/slot rows,Missing row is not no-role; validate exact composite grain
+SF10,No season/week/player scalar columns; route is play-level context,Do not assign route scalar to every player; missing is unknown
+SF11,No player identity; 95303 generic duplicate flags under inapplicable key,Do not aggregate to player; missing/false require semantic proof
+

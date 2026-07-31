@@ -1,0 +1,13 @@
+family_id,phase_1a_decision,reason,next_possible_gate
+SF01,NOT_ADMITTED_CANDIDATE_AFTER_HYGIENE,Rights partly verified but temporal and schema controls incomplete,Phase 1B then Phase 2
+SF02,NOT_ADMITTED_CANDIDATE_AFTER_HYGIENE,Rights and stable ID present; duplicated schema/uniqueness needs repair,Phase 1B then Phase 2
+SF03,NOT_ADMITTED_BLOCKED,Dataset-specific rights and historical correction receipts absent,Owner confirmation plus Phase 1B
+SF04,IDENTITY_ONLY_NOT_ADMITTED,Exact governed ID required; mixed crosswalk rights and ambiguities remain,Phase 1B identity contract
+SF05,NOT_ADMITTED_CANDIDATE_AFTER_HYGIENE,Status is factual context and duplicates/missingness must be hardened,Phase 1B then Phase 2
+SF06,NOT_ADMITTED_BLOCKED,Rights and pre-game as-of authority absent,Owner confirmation plus Phase 1B
+SF07,NOT_ADMITTED_CANDIDATE_AFTER_HYGIENE,PFR-to-GSIS identity bridge and missingness require hardening,Phase 1B then Phase 2
+SF08,FACTUAL_CONTEXT_ONLY_NOT_ADMITTED,No predictive diagnosis; report-time and missingness constraints,Phase 1B then later availability gate
+SF09,NOT_ADMITTED_CANDIDATE_AFTER_HYGIENE,2024-only scoped coverage and composite grain need validation,Phase 1B then Phase 2
+SF10,NOT_ADMITTED_BLOCKED,Share-alike obligations plus season-end temporal and player-grain limitation,Phase 1B only for hygiene
+SF11,NOT_ADMITTED_BLOCKED,Dataset-specific rights no player identity and historical availability absent,Owner confirmation plus Phase 1B
+

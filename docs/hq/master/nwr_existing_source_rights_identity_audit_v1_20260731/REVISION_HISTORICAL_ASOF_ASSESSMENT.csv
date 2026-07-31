@@ -1,0 +1,13 @@
+family_id,revision_behavior,historical_asof_authority,leakage_rule
+SF01,Rolling release can correct prior rows; local hash is immutable,Season totals only after completed season unless dated publication evidence exists,Never backdate corrected/current bundle
+SF02,Rolling release can correct prior rows; local hash is immutable,Week facts only after applicable game; exact original-publication time unknown,Never expose week before game completion
+SF03,Rolling release can correct deleted/corrected plays; local hash is immutable,Post-game only; exact correction history absent,Never treat current corrected PBP as original as-of without receipt
+SF04,Players table contains mutable current fields; ff_playerids can revise mappings,Stable IDs and historical draft facts only; team/status/current fields not historical,Do not time-travel current identity attributes
+SF05,Rolling roster corrections; local hash is immutable,Use recorded season/week only and preserve status semantics,Absence is not off-roster or inactive
+SF06,Final scores lines and QB fields can be revised,Pre-game use requires a dated pre-game snapshot not present,Block result/market/final fields from historical features
+SF07,PFR-origin corrections and crosswalk changes possible,Post-game only with recorded join authority,Missing join is unknown not zero
+SF08,Reports revise during a week and date_modified exists,Only report state known by its applicable timestamp,Absence is not healthy
+SF09,Depth order revises and scoped bundle covers 2024 only,Only recorded season/week; publication timestamp not preserved,Do not use later depth state for earlier cutoff
+SF10,Rolling release; local file immutable,Local evidence says historical participation is season-end publication,Block same-week historical use
+SF11,Rolling release; date_pulled records retrieval,Event availability and correction history unknown,Block historical model use pending source confirmation
+
