@@ -118,6 +118,21 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         file_path="pages/28_settings_data_health_v1.py",
         url_path="settings-data-health",
     ),
+    NavigationPageSpec(
+        title="Personal Board",
+        file_path="pages/49_personal_board_v1.py",
+        url_path="personal-board",
+    ),
+    NavigationPageSpec(
+        title="Decision Journal",
+        file_path="pages/50_decision_journal_v1.py",
+        url_path="decision-journal",
+    ),
+    NavigationPageSpec(
+        title="Saved Scenarios",
+        file_path="pages/51_saved_scenarios_v1.py",
+        url_path="saved-scenarios",
+    ),
 )
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
@@ -159,6 +174,14 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]]
             VISIBLE_NAVIGATION_PAGES[17],
             VISIBLE_NAVIGATION_PAGES[18],
             VISIBLE_NAVIGATION_PAGES[19],
+        ),
+    ),
+    (
+        "Personal Workspace",
+        (
+            VISIBLE_NAVIGATION_PAGES[20],
+            VISIBLE_NAVIGATION_PAGES[21],
+            VISIBLE_NAVIGATION_PAGES[22],
         ),
     ),
 )

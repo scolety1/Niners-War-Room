@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 import pandas as pd
 import streamlit as st
@@ -40,6 +41,7 @@ from src.services.draft_day_app_v1_service import (
     load_lane_prop_file,
     load_outcome_v2_current_player_display,
 )
+from src.services.governed_asset_registry_service import load_governed_asset_registry
 from src.services.injury_availability_context_service import (
     build_nflverse_availability_panel_rows,
     nflverse_availability_status_rows,
@@ -47,6 +49,12 @@ from src.services.injury_availability_context_service import (
 from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
     player_compare_outcome_v3_rows,
+)
+from src.services.personal_workspace_service import (
+    WorkspaceValidationError,
+    load_store,
+    save_personal_entry,
+    save_scenario,
 )
 from src.services.player_compare_decision_service import (
     MARKET_DISPLAY_ONLY_NOTE,
@@ -65,11 +73,7 @@ HORIZON_CANDIDATE_PATH = (
     / "outcome_horizon_candidate.csv"
 )
 INJURY_PER_GAME_AUDIT_PATH = (
-    REPO_ROOT
-    / "docs"
-    / "hq"
-    / "draft_day_v2"
-    / "injury_per_game_risk_audit_20260623.csv"
+    REPO_ROOT / "docs" / "hq" / "draft_day_v2" / "injury_per_game_risk_audit_20260623.csv"
 )
 
 
@@ -170,10 +174,7 @@ def _render_outcome_v3_compare(compare_frame: pd.DataFrame) -> None:
     horizon_text = ", ".join(horizon_labels)
     if len(horizon_labels) > 1:
         horizon_text = f"{', '.join(horizon_labels[:-1])}, and {horizon_labels[-1]}"
-    st.caption(
-        f"Expanded horizons: {horizon_text}. "
-        "Exact player_id joins only."
-    )
+    st.caption(f"Expanded horizons: {horizon_text}. Exact player_id joins only.")
     columns = [
         "Player",
         "Pos",
@@ -487,8 +488,10 @@ def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
         "Tuned V2 review-only candidate metrics. They do not replace Final Board Rank, "
         "Dynasty Rank, or the frozen baseline checkpoint."
     )
-    candidate_display = compare_frame.loc[:, available_compare_columns].copy().fillna(
-        OUTCOME_NOT_ENOUGH_INFORMATION
+    candidate_display = (
+        compare_frame.loc[:, available_compare_columns]
+        .copy()
+        .fillna(OUTCOME_NOT_ENOUGH_INFORMATION)
     )
     st.dataframe(
         candidate_display.rename(
@@ -526,11 +529,11 @@ def _render_market_context(compare_frame: pd.DataFrame) -> None:
     if len(columns) <= 2:
         st.warning(OUTCOME_NOT_ENOUGH_INFORMATION)
         return
-    st.caption(
-        MARKET_DISPLAY_ONLY_NOTE
-    )
+    st.caption(MARKET_DISPLAY_ONLY_NOTE)
     st.dataframe(
-        compare_frame.loc[:, columns].fillna(OUTCOME_NOT_ENOUGH_INFORMATION).rename(
+        compare_frame.loc[:, columns]
+        .fillna(OUTCOME_NOT_ENOUGH_INFORMATION)
+        .rename(
             columns={
                 "player": "Player",
                 "position": "Pos",
@@ -564,7 +567,9 @@ def _render_age_risk_context(compare_frame: pd.DataFrame) -> None:
         "Age/injury/risk fields are shown only where the current approved data supports them."
     )
     st.dataframe(
-        compare_frame.loc[:, columns].fillna(OUTCOME_NOT_ENOUGH_INFORMATION).rename(
+        compare_frame.loc[:, columns]
+        .fillna(OUTCOME_NOT_ENOUGH_INFORMATION)
+        .rename(
             columns={
                 "player": "Player",
                 "position": "Pos",
@@ -863,11 +868,7 @@ stop_if_board_blocked(bundle)
 _render_player_compare_policy()
 
 players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
-query_players = [
-    player
-    for player in st.query_params.get_all("player")
-    if player in set(players)
-]
+query_players = [player for player in st.query_params.get_all("player") if player in set(players)]
 st.markdown("## Choose players")
 if len(players) < 2:
     st.warning("Not enough information: player pool has fewer than two players.")
@@ -898,8 +899,8 @@ else:
     )
     selected = [player_a, player_b, *extra_players]
     compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
-    compare["_selection_order"] = compare["player"].astype(str).map(
-        {player: index for index, player in enumerate(selected)}
+    compare["_selection_order"] = (
+        compare["player"].astype(str).map({player: index for index, player in enumerate(selected)})
     )
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
@@ -1003,3 +1004,96 @@ else:
                     use_container_width=True,
                     hide_index=True,
                 )
+
+    st.markdown("## Personal Workspace")
+    governed = load_governed_asset_registry(repo_root=REPO_ROOT)
+    governed_by_id = {row["asset_id"]: row for row in governed.rows}
+    exact_ids = [
+        f"current:{player_id}"
+        for player_id in compare.get("player_id", pd.Series(dtype=str)).astype(str)
+        if player_id and f"current:{player_id}" in governed_by_id
+    ]
+    overlays = {row["asset_id"]: row for row in load_store("personal_board").records}
+    if exact_ids:
+        st.dataframe(
+            pd.DataFrame(
+                {
+                    "Asset": governed_by_id[key]["asset_name"],
+                    "Source": governed_by_id[key]["source_label"],
+                    "Source Rank": governed_by_id[key]["rank_value"],
+                    "My Tier": overlays.get(key, {}).get("my_tier", ""),
+                    "My Rank": overlays.get(key, {}).get("my_rank", ""),
+                    "My Tags": ", ".join(overlays.get(key, {}).get("tags", [])),
+                    "Notes": "Yes" if overlays.get(key, {}).get("notes") else "",
+                }
+                for key in exact_ids
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        action_columns = st.columns(2)
+        action_asset = action_columns[0].selectbox(
+            "Personal action asset",
+            exact_ids,
+            format_func=lambda key: governed_by_id[key]["asset_name"],
+        )
+        personal_action = action_columns[1].selectbox(
+            "Explicit personal action", ("Add to watchlist", "Mark as target")
+        )
+        if st.button("Apply personal action"):
+            overlay = dict(overlays.get(action_asset, {}))
+            overlay.update(
+                {
+                    "asset_id": action_asset,
+                    "asset_type": "Current Player",
+                    "source_authority_version": governed.source_hashes.get(
+                        "Finished V1", "governed-context"
+                    ),
+                    "team_window": overlay.get("team_window", "Custom/Unspecified"),
+                    "watchlist": personal_action == "Add to watchlist"
+                    or bool(overlay.get("watchlist")),
+                    "target": personal_action == "Mark as target" or bool(overlay.get("target")),
+                }
+            )
+            try:
+                save_personal_entry(
+                    overlay,
+                    asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+                )
+                st.success("Personal overlay updated; canonical ranks were not changed.")
+            except WorkspaceValidationError as exc:
+                st.error(f"Personal action blocked: {exc}")
+
+        with st.form("save-player-compare-scenario"):
+            scenario_title = st.text_input("Comparison scenario title")
+            scenario_notes = st.text_area("Comparison notes", max_chars=20_000)
+            save_compare = st.form_submit_button("Save comparison scenario")
+        if save_compare:
+            visible_fields = [
+                column
+                for column in ("player_id", "player", "position", "nfl_team", "nwr_rank")
+                if column in compare.columns
+            ]
+            try:
+                save_scenario(
+                    {
+                        "scenario_id": f"compare-{uuid4()}",
+                        "scenario_type": "player_compare",
+                        "title": scenario_title or "Saved Player Compare",
+                        "assets": exact_ids,
+                        "source_versions": governed.source_hashes,
+                        "payload": {
+                            "visible_comparison_fields": compare[visible_fields].to_dict("records"),
+                            "notes": scenario_notes,
+                        },
+                    },
+                    asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+                )
+                st.success("Comparison scenario saved locally without a verdict.")
+            except WorkspaceValidationError as exc:
+                st.error(f"Scenario blocked: {exc}")
+    else:
+        st.warning("Exact governed IDs are unavailable; personal actions remain blocked.")
+    workspace_links = st.columns(2)
+    workspace_links[0].link_button("Open Personal Board", "/personal-board")
+    workspace_links[1].link_button("Create decision receipt", "/decision-journal")

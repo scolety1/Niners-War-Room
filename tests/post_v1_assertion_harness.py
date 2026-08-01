@@ -100,6 +100,9 @@ class _Column:
     def link_button(self, label: str, page: str, **_kwargs: object) -> None:
         self._recorder._record("link", label, target=page, container=self._container)
 
+    def metric(self, label: str, value: object, **_kwargs: object) -> None:
+        self._recorder._record("metric", f"{label}: {value}", container=self._container)
+
 
 class _StreamlitRecorder(ModuleType):
     def __init__(self) -> None:
@@ -377,7 +380,7 @@ def validate_start_here_contract(
         "Niners War Room",
     )
     assert len(rendered.workflows) == 4, "Start Here must render four primary workflow tiles"
-    assert len(rendered.links) == 8, "Start Here must render eight unique workflow links"
+    assert len(rendered.links) == 11, "Start Here must render eleven unique workflow links"
     targets = tuple(link.target for link in rendered.links)
     assert len(targets) == len(set(targets)), "Start Here contains duplicate route targets"
     for link in rendered.links:

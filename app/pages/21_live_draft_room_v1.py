@@ -101,6 +101,14 @@ def _render_live_secondary_context(*, board_frame, pick_frame, state) -> None:
         "/settings-data-health",
         use_container_width=True,
     )
+    workspace_cols = st.columns(3)
+    workspace_cols[0].link_button("Personal Board", "/personal-board", use_container_width=True)
+    workspace_cols[1].link_button(
+        "Journal draft choice", "/decision-journal", use_container_width=True
+    )
+    workspace_cols[2].link_button(
+        "Save draft scenario", "/saved-scenarios", use_container_width=True
+    )
 
     with st.expander("Draft Cockpit rail", expanded=False):
         rail_cols = st.columns(3)
@@ -145,6 +153,7 @@ def _render_live_secondary_context(*, board_frame, pick_frame, state) -> None:
         key="live_draft_room",
         title="NFLVerse player context / display-only",
     )
+
 
 bundle = load_frozen_board()
 live_board_frame = (

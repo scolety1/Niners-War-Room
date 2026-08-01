@@ -38,6 +38,9 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Evidence Review",
         "Evidence Review Hub",
         "Settings / Data Health",
+        "Personal Board",
+        "Decision Journal",
+        "Saved Scenarios",
     ]
 
 
@@ -71,6 +74,7 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
             "Evidence Review Hub",
             "Settings / Data Health",
         ],
+        "Personal Workspace": ["Personal Board", "Decision Journal", "Saved Scenarios"],
     }
 
 
@@ -143,11 +147,14 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
 
     assert titles.index("Draft Cockpit") < titles.index("Mock Drafts")
     assert titles.index("Lab Home") < titles.index("Refresh Data")
-    assert titles[-4:] == [
+    assert titles[-7:] == [
         "Refresh Data",
         "Evidence Review",
         "Evidence Review Hub",
         "Settings / Data Health",
+        "Personal Board",
+        "Decision Journal",
+        "Saved Scenarios",
     ]
 
 
@@ -194,6 +201,9 @@ def test_required_direct_routes_remain_registered() -> None:
         "trade-deadline-prep",
         "draft-prep",
         "settings-data-health",
+        "personal-board",
+        "decision-journal",
+        "saved-scenarios",
         "refresh-data",
         "evidence-integration-review",
         "evidence-review-hub",
@@ -237,6 +247,9 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "evidence-integration-review",
         "evidence-review-hub",
         "settings-data-health",
+        "personal-board",
+        "decision-journal",
+        "saved-scenarios",
     }
     assert {
         "cheat-sheets",

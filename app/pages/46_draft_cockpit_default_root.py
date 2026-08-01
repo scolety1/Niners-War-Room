@@ -13,6 +13,11 @@ from app.components.ui_framework import (  # noqa: E402
     render_workflow_tiles,
     section_label,
 )
+from src.services.personal_workspace_service import (  # noqa: E402
+    load_store,
+    summarize_workspace,
+    workspace_root,
+)
 
 page_header(
     "Niners War Room",
@@ -97,3 +102,42 @@ workflow.link_button(
 catalog, rookies = st.columns(2)
 catalog.link_button("Search Asset Explorer", "/asset-explorer", use_container_width=True)
 rookies.link_button("Open 2026 Rookie Board", "/rookie-board", use_container_width=True)
+
+section_label("My workspace")
+workspace = summarize_workspace()
+summary_columns = st.columns(4)
+summary_columns[0].metric("Watchlist", workspace["watchlist"])
+summary_columns[1].metric("Targets", workspace["targets"])
+summary_columns[2].metric("Open decisions", workspace["open_decisions"])
+summary_columns[3].metric("Saved scenarios", workspace["saved_scenarios"])
+secondary_summary = st.columns(3)
+secondary_summary[0].metric("Avoid / DND", workspace["avoid"])
+secondary_summary[1].metric("Follow-ups due", workspace["followups_due"])
+backup_root = workspace_root() / "backups"
+latest_backups = (
+    sorted(backup_root.glob("workspace-*"), reverse=True) if backup_root.exists() else []
+)
+secondary_summary[2].metric("Workspace backups", len(latest_backups))
+recent_decisions = sorted(
+    load_store("decision_journal").records,
+    key=lambda row: str(row.get("created_at_utc", "")),
+    reverse=True,
+)[:3]
+if recent_decisions:
+    st.caption(
+        "Recent decisions: "
+        + " · ".join(
+            f"{row.get('decision_type', 'decision')} ({row.get('status', 'Unknown')})"
+            for row in recent_decisions
+        )
+    )
+else:
+    st.caption("No decision receipts yet. Create one when you want a prospective record.")
+st.caption(
+    f"Backup status: {'available' if latest_backups else 'none yet'} · "
+    f"Local workspace: {workspace_root()}"
+)
+personal_board, journal, scenarios = st.columns(3)
+personal_board.link_button("Open Personal Board", "/personal-board", use_container_width=True)
+journal.link_button("Open Decision Journal", "/decision-journal", use_container_width=True)
+scenarios.link_button("Open Saved Scenarios", "/saved-scenarios", use_container_width=True)

@@ -3,6 +3,7 @@ from __future__ import annotations
 # ruff: noqa: E402
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 import pandas as pd
 import streamlit as st
@@ -41,6 +42,12 @@ from src.services.draft_day_trade_lab_service import (
     source_context_counts,
     trade_item_rows,
     validate_trade_player_universe,
+)
+from src.services.governed_asset_registry_service import load_governed_asset_registry
+from src.services.personal_workspace_service import (
+    WorkspaceValidationError,
+    load_store,
+    save_scenario,
 )
 from src.services.trading_lab_nflverse_context_service import (
     display_nflverse_context_rows,
@@ -114,9 +121,7 @@ st.caption(
     "or source of truth. No trade calculator or automatic offer generator runs here."
 )
 player_universe_errors = (
-    validate_trade_player_universe(dynasty_bundle.frame)
-    if dynasty_bundle.loaded
-    else ()
+    validate_trade_player_universe(dynasty_bundle.frame) if dynasty_bundle.loaded else ()
 )
 if dynasty_bundle.loaded and not player_universe_errors:
     st.info(
@@ -276,9 +281,9 @@ def _render_summary(lookup: dict[str, dict[str, object]]) -> None:
     st.caption(f"Rank/tier context: {review.rank_context}")
     st.info(review.explanation)
     st.dataframe(
-        display_package_summary(
-            package_summary_rows(st.session_state[SESSION_KEY], lookup)
-        ).astype(str),
+        display_package_summary(package_summary_rows(st.session_state[SESSION_KEY], lookup)).astype(
+            str
+        ),
         width="stretch",
         hide_index=True,
         key="trading_lab_package_summary",
@@ -345,9 +350,7 @@ def _render_nflverse_context_panel(lookup: dict[str, dict[str, object]]) -> None
         )
         st.markdown("**Approved player context details**")
         if details.empty:
-            st.info(
-                "No approved player-context details are available for the selected assets."
-            )
+            st.info("No approved player-context details are available for the selected assets.")
         else:
             st.dataframe(details, width="stretch", hide_index=True)
 
@@ -749,3 +752,84 @@ with trade_away_tab:
 with trade_for_tab:
     _render_trade_for_pick_planner()
 _render_diagnostics()
+
+st.subheader("Personal Workspace")
+selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
+governed = load_governed_asset_registry(repo_root=REPO_ROOT)
+governed_by_id = {row["asset_id"]: row for row in governed.rows}
+personal = {row["asset_id"]: row for row in load_store("personal_board").records}
+exact_ids = []
+for row in selected_rows.to_dict("records"):
+    player_id = str(row.get("nwr_player_id", "")).strip()
+    asset_id = f"current:{player_id}"
+    if player_id != NOT_ENOUGH_INFORMATION and asset_id in governed_by_id:
+        exact_ids.append(asset_id)
+exact_ids = list(dict.fromkeys(exact_ids))
+if exact_ids:
+    st.dataframe(
+        pd.DataFrame(
+            {
+                "Asset": governed_by_id[key]["asset_name"],
+                "Source": governed_by_id[key]["source_label"],
+                "Source Rank": governed_by_id[key]["rank_value"],
+                "My Tier": personal.get(key, {}).get("my_tier", ""),
+                "My Rank": personal.get(key, {}).get("my_rank", ""),
+                "My Tags": ", ".join(personal.get(key, {}).get("tags", [])),
+                "Notes": "Yes" if personal.get(key, {}).get("notes") else "",
+            }
+            for key in exact_ids
+        ),
+        hide_index=True,
+        width="stretch",
+    )
+else:
+    st.info("Add exact governed current-player assets to see Personal Board context.")
+
+with st.form("save-trading-lab-scenario"):
+    scenario_title = st.text_input("Trade scenario title")
+    scenario_notes = st.text_area("Your scenario notes", max_chars=20_000)
+    team_window = st.selectbox(
+        "Your team-window context",
+        ("Contending", "Balanced", "Rebuilding", "Custom/Unspecified"),
+    )
+    save_trade_scenario = st.form_submit_button("Save manual trade scenario")
+if save_trade_scenario:
+    snapshot_rows = selected_rows[
+        [
+            column
+            for column in (
+                "side",
+                "asset_type",
+                "nwr_player_id",
+                "player",
+                "rank_source",
+                "dynasty_rank",
+                "final_board_rank",
+                "data_status",
+            )
+            if column in selected_rows.columns
+        ]
+    ].to_dict("records")
+    try:
+        save_scenario(
+            {
+                "scenario_id": f"trade-{uuid4()}",
+                "scenario_type": "trading_lab",
+                "title": scenario_title or "Saved Trading Lab scenario",
+                "assets": exact_ids,
+                "source_versions": governed.source_hashes,
+                "payload": {
+                    "selected_sides": snapshot_rows,
+                    "notes": scenario_notes,
+                    "team_window": team_window,
+                    "unresolved_pick_context_visible": len(selected_rows) - len(exact_ids),
+                },
+            },
+            asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+        )
+        st.success("Manual scenario saved locally. No trade verdict was generated.")
+    except WorkspaceValidationError as exc:
+        st.error(f"Scenario blocked: {exc}")
+trade_workspace_links = st.columns(2)
+trade_workspace_links[0].link_button("Open saved scenarios", "/saved-scenarios")
+trade_workspace_links[1].link_button("Journal this scenario", "/decision-journal")

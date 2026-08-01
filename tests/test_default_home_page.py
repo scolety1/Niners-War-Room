@@ -67,6 +67,9 @@ def test_default_home_renders_the_authoritative_workflow_contract() -> None:
         "/review-workflow",
         "/asset-explorer",
         "/rookie-board",
+        "/personal-board",
+        "/decision-journal",
+        "/saved-scenarios",
     }
 
 
