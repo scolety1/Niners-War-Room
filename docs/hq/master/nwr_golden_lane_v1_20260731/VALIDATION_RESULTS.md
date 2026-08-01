@@ -10,7 +10,7 @@
 - Gate arithmetic: 8/10 = 80%.
 - Exactly one next lane: Phase 7 Product Completion.
 - Deterministic validation: PASS; focused and applicable regressions: PASS, 111/111; Ruff, compile, and Git whitespace checks: PASS.
-- Independent adoption review remains required before canonical push.
+- Independent adoption review: PASS in a fresh worktree from the exact canonical parent; implementation and adoption trees matched byte-for-byte, deterministic validators passed, 111/111 regressions passed, and Ruff passed.
 
 ## Phase 3 gate
 

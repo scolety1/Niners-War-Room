@@ -8,4 +8,4 @@
 - Focused tests: PASS, 24/24.
 - Applicable regression slice: PASS, 111/111.
 - Ruff: PASS.
-- Independent adoption review: required before canonical push.
+- Independent adoption review: PASS in a fresh worktree from the exact canonical parent; implementation and adoption trees matched byte-for-byte, deterministic validators passed, 111/111 regressions passed, and Ruff passed.
