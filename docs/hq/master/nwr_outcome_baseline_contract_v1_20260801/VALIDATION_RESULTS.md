@@ -13,4 +13,4 @@
 - Applicable regression slice: PASS, 70/70.
 - Static validation: PASS.
 - Protected authorities and production state: unchanged.
-- Independent adoption review: required before canonical push.
+- Independent adoption review: PASS in a fresh worktree from the exact canonical parent; adopted tree matched the implementation tree byte-for-byte, validators and the persistence harness passed, regression slice passed 70/70, and static checks passed.

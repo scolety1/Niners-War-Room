@@ -11,7 +11,7 @@
 - Model/source admission: NONE; production mutation: NONE; owner decisions required to advance: 0.
 - Gate arithmetic: PASS, Phase 0 + Phase 1A + Phase 1B + Phase 2 = 4/10 = 40%.
 - Exactly one next lane: PASS, bounded Phase 3 gauntlet work.
-- Independent adoption review remains required before canonical push.
+- Independent adoption review: PASS in a fresh worktree from the exact canonical parent; the adopted implementation tree matched byte-for-byte and repeated validator, two-root persistence, 70-test regression, and static checks all passed.
 
 ## Phase 1B gate
 
