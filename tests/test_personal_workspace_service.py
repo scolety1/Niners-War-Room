@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from src.services.personal_workspace_service import (
+    DECISION_TYPES,
     WorkspaceLockError,
     WorkspaceValidationError,
     archive_decision,
@@ -269,6 +270,36 @@ def test_workspace_summary_is_read_only(tmp_path: Path) -> None:
         "targets": 1,
         "avoid": 0,
         "open_decisions": 1,
+        "followups_due": 0,
         "saved_scenarios": 1,
     }
     assert before == {path: path.read_bytes() for path in tmp_path.rglob("*.json")}
+
+
+@pytest.mark.parametrize("decision_type", sorted(DECISION_TYPES))
+def test_all_supported_decision_types_round_trip(tmp_path: Path, decision_type: str) -> None:
+    value = decision(f"decision-{decision_type.replace(' ', '-')}")
+    value["decision_type"] = decision_type
+    create_decision(value, asset_registry=REGISTRY, root=tmp_path)
+    assert (
+        load_store("decision_journal", root=tmp_path).records[0]["decision_type"] == decision_type
+    )
+
+
+@pytest.mark.parametrize("key", ("trade_profit", "market_gain", "correct_decision"))
+def test_fabricated_outcome_fields_are_rejected(tmp_path: Path, key: str) -> None:
+    value = decision()
+    value[key] = "fabricated"
+    with pytest.raises(WorkspaceValidationError, match="recommendation"):
+        create_decision(value, asset_registry=REGISTRY, root=tmp_path)
+
+
+def test_backup_retention_keeps_twenty_verified_workspace_snapshots(tmp_path: Path) -> None:
+    for minute in range(22):
+        create_workspace_backup(
+            root=tmp_path,
+            now_utc=f"2026-08-01T12:{minute:02d}:00+00:00",
+        )
+    backups = sorted((tmp_path / "backups").glob("workspace-*"))
+    assert len(backups) == 20
+    assert all(preview_workspace_restore(path).valid for path in backups)

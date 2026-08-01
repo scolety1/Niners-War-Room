@@ -15,6 +15,7 @@ from typing import Any
 from uuid import uuid4
 
 SCHEMA_VERSION = 1
+BACKUP_RETENTION_COUNT = 20
 WORKSPACE_ENV_VAR = "NWR_PERSONAL_WORKSPACE_ROOT"
 DEFAULT_WORKSPACE_ROOT = Path(r"C:\NWR_SHARED_DATA\nwr_personal_workspace_v1")
 STORE_NAMES = ("personal_board", "decision_journal", "saved_scenarios", "preferences")
@@ -61,7 +62,30 @@ PROHIBITED_RECOMMENDATION_KEYS = {
     "unfair",
     "automatic_counteroffer",
     "combined_score",
+    "correct_decision",
+    "expected_return",
+    "market_gain",
+    "trade_profit",
     "verdict",
+}
+PROHIBITED_CANONICAL_OVERLAY_KEYS = {
+    "dynasty_rank",
+    "final_review_score",
+    "nwr_dynasty_score",
+    "nwr_rank",
+    "outcome_probability",
+    "rank_value",
+    "rookie_review_rank",
+    "score_value",
+    "source_rank",
+}
+PROTECTED_WORKSPACE_PATH_PARTS = {
+    "active_pack",
+    "data_packs",
+    "docs",
+    "local_exports",
+    "opaque",
+    "recovery",
 }
 
 
@@ -124,9 +148,22 @@ class WorkspaceMigrationResult:
 
 def workspace_root(root: str | Path | None = None) -> Path:
     if root is not None:
-        return Path(root)
+        resolved = Path(root)
+        _validate_workspace_location(resolved)
+        return resolved
     configured = os.getenv(WORKSPACE_ENV_VAR)
-    return Path(configured) if configured else DEFAULT_WORKSPACE_ROOT
+    resolved = Path(configured) if configured else DEFAULT_WORKSPACE_ROOT
+    _validate_workspace_location(resolved)
+    return resolved
+
+
+def scenario_source_status(
+    scenario: Mapping[str, Any], current_source_versions: Mapping[str, str]
+) -> str:
+    saved = scenario.get("source_versions")
+    if not isinstance(saved, Mapping):
+        return "STALE_SOURCE_VERSION"
+    return "CURRENT" if dict(saved) == dict(current_source_versions) else "STALE_SOURCE_VERSION"
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -286,6 +323,43 @@ def archive_decision(
     return update_decision(decision_id, {"status": "Archived", "archived": True}, root=root)
 
 
+def delete_personal_entry(
+    asset_id: str, *, confirmed: bool, root: str | Path | None = None
+) -> WorkspaceWriteResult:
+    if not confirmed:
+        return WorkspaceWriteResult("BLOCKED_CONFIRMATION_REQUIRED", "personal_board", asset_id)
+    store = load_store("personal_board", root=root)
+    if store.status == "CORRUPT":
+        raise WorkspaceCorruptionError(store.message)
+    records = [row for row in store.records if str(row.get("asset_id")) != asset_id]
+    if len(records) == len(store.records):
+        raise WorkspaceValidationError("Unknown Personal Board asset ID.")
+    backup = _write_records("personal_board", records, root=root)
+    return WorkspaceWriteResult("DELETED", "personal_board", asset_id, backup)
+
+
+def delete_decision(
+    decision_id: str, *, confirmed: bool, root: str | Path | None = None
+) -> WorkspaceWriteResult:
+    if not confirmed:
+        return WorkspaceWriteResult(
+            "BLOCKED_CONFIRMATION_REQUIRED", "decision_journal", decision_id
+        )
+    store = load_store("decision_journal", root=root)
+    if store.status != "LOADED":
+        raise WorkspaceValidationError("Decision Journal is unavailable.")
+    target = next(
+        (row for row in store.records if str(row.get("decision_id")) == decision_id), None
+    )
+    if target is None:
+        raise WorkspaceValidationError("Unknown decision ID.")
+    if target.get("status") != "Archived":
+        raise WorkspaceValidationError("Archive the decision before permanent deletion.")
+    records = [row for row in store.records if str(row.get("decision_id")) != decision_id]
+    backup = _write_records("decision_journal", records, root=root)
+    return WorkspaceWriteResult("DELETED", "decision_journal", decision_id, backup)
+
+
 def save_scenario(
     scenario: Mapping[str, Any],
     *,
@@ -313,6 +387,8 @@ def create_workspace_backup(
     base = workspace_root(root)
     timestamp = (now_utc or _timestamp()).replace(":", "").replace("-", "")
     target = base / "backups" / f"workspace-{timestamp}"
+    if target.exists():
+        target = target.with_name(f"{target.name}-{uuid4().hex}")
     stores = base / "stores"
     target.mkdir(parents=True, exist_ok=False)
     inventory: list[dict[str, Any]] = []
@@ -323,9 +399,15 @@ def create_workspace_backup(
         inventory.append(
             {"path": path.name, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}
         )
-    manifest = {"schema_version": 1, "created_at_utc": now_utc or _timestamp(), "files": inventory}
+    manifest = {
+        "schema_version": 1,
+        "created_at_utc": now_utc or _timestamp(),
+        "retention_count": BACKUP_RETENTION_COUNT,
+        "files": inventory,
+    }
     manifest_body = canonical_json_bytes(manifest)
     (target / "manifest.json").write_bytes(manifest_body)
+    _enforce_backup_retention(base / "backups")
     return WorkspaceBackupResult(
         "CREATED", target, len(inventory), hashlib.sha256(manifest_body).hexdigest()
     )
@@ -364,23 +446,24 @@ def restore_workspace(
     if not confirmed:
         return WorkspaceBackupResult("BLOCKED_CONFIRMATION_REQUIRED", None, preview.file_count)
     base = workspace_root(root)
-    safety = create_workspace_backup(root=base)
-    stores = base / "stores"
-    staged = base / f".restore-{uuid4().hex}"
-    staged.mkdir(parents=True)
-    try:
-        for source in sorted(Path(path).glob("*.json")):
-            if source.name == "manifest.json":
-                continue
-            shutil.copy2(source, staged / source.name)
-        stores.mkdir(parents=True, exist_ok=True)
-        for source in sorted(staged.glob("*.json")):
-            os.replace(source, stores / source.name)
-    except Exception:
-        _restore_backup_direct(safety.path, base)
-        raise
-    finally:
-        shutil.rmtree(staged, ignore_errors=True)
+    with _exclusive_lock(base):
+        safety = create_workspace_backup(root=base)
+        stores = base / "stores"
+        staged = base / f".restore-{uuid4().hex}"
+        staged.mkdir(parents=True)
+        try:
+            for source in sorted(Path(path).glob("*.json")):
+                if source.name == "manifest.json":
+                    continue
+                shutil.copy2(source, staged / source.name)
+            stores.mkdir(parents=True, exist_ok=True)
+            for source in sorted(staged.glob("*.json")):
+                os.replace(source, stores / source.name)
+        except Exception:
+            _restore_backup_direct(safety.path, base)
+            raise
+        finally:
+            shutil.rmtree(staged, ignore_errors=True)
     return WorkspaceBackupResult("RESTORED", safety.path, preview.file_count)
 
 
@@ -406,41 +489,95 @@ def migrate_workspace(
             None,
             "Future schema is not writable.",
         )
-    backup = create_workspace_backup(root=base)
-    if backup.path is None or not preview_workspace_restore(backup.path).valid:
-        return WorkspaceMigrationResult(
-            "BLOCKED_BACKUP",
-            current,
-            SCHEMA_VERSION,
-            backup.path,
-            None,
-            "Verified backup required.",
-        )
+    previous_version = version_path.read_bytes() if version_path.exists() else None
     try:
-        if fail_after_backup:
-            raise RuntimeError("injected migration failure")
-        base.mkdir(parents=True, exist_ok=True)
-        _atomic_write(version_path, canonical_json_bytes({"schema_version": SCHEMA_VERSION}))
-        receipt = (
-            base / "migration_receipts" / f"v{current}-to-v{SCHEMA_VERSION}-{uuid4().hex}.json"
+        with _exclusive_lock(base):
+            for store_name in STORE_NAMES:
+                loaded = load_store(store_name, root=base)
+                if loaded.status == "CORRUPT":
+                    return WorkspaceMigrationResult(
+                        "BLOCKED_CORRUPT",
+                        current,
+                        SCHEMA_VERSION,
+                        None,
+                        None,
+                        f"{store_name}: {loaded.message}",
+                    )
+            disk_root = _nearest_existing_parent(base)
+            if shutil.disk_usage(disk_root).free < 1_048_576:
+                return WorkspaceMigrationResult(
+                    "BLOCKED_DISK_SPACE",
+                    current,
+                    SCHEMA_VERSION,
+                    None,
+                    None,
+                    "At least 1 MiB of free space is required.",
+                )
+            inventory_sha256 = _workspace_inventory_digest(base)
+            backup = create_workspace_backup(root=base)
+            if backup.path is None or not preview_workspace_restore(backup.path).valid:
+                return WorkspaceMigrationResult(
+                    "BLOCKED_BACKUP",
+                    current,
+                    SCHEMA_VERSION,
+                    backup.path,
+                    None,
+                    "Verified backup required.",
+                )
+            if fail_after_backup:
+                raise RuntimeError("injected migration failure")
+            base.mkdir(parents=True, exist_ok=True)
+            _atomic_write(version_path, canonical_json_bytes({"schema_version": SCHEMA_VERSION}))
+            receipt = (
+                base / "migration_receipts" / f"v{current}-to-v{SCHEMA_VERSION}-{uuid4().hex}.json"
+            )
+            receipt.parent.mkdir(parents=True, exist_ok=True)
+            _atomic_write(
+                receipt,
+                canonical_json_bytes(
+                    {
+                        "from_version": current,
+                        "to_version": SCHEMA_VERSION,
+                        "pre_migration_inventory_sha256": inventory_sha256,
+                        "backup": str(backup.path),
+                        "backup_manifest_sha256": backup.manifest_sha256,
+                        "status": "COMPLETED",
+                    }
+                ),
+            )
+    except WorkspaceLockError as exc:
+        return WorkspaceMigrationResult(
+            "BLOCKED_LOCK", current, SCHEMA_VERSION, None, None, str(exc)
         )
-        receipt.parent.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:
+        if previous_version is None:
+            version_path.unlink(missing_ok=True)
+        else:
+            _atomic_write(version_path, previous_version)
+        failure_receipt = (
+            base.parent
+            / f"{base.name}-migration-failures"
+            / f"v{current}-to-v{SCHEMA_VERSION}-{uuid4().hex}.json"
+        )
         _atomic_write(
-            receipt,
+            failure_receipt,
             canonical_json_bytes(
                 {
                     "from_version": current,
                     "to_version": SCHEMA_VERSION,
-                    "backup": str(backup.path),
-                    "status": "COMPLETED",
+                    "backup": str(backup.path) if "backup" in locals() else "",
+                    "status": "ROLLED_BACK",
+                    "error": str(exc),
                 }
             ),
         )
-    except Exception as exc:
-        if version_path.exists():
-            version_path.unlink()
         return WorkspaceMigrationResult(
-            "ROLLED_BACK", current, SCHEMA_VERSION, backup.path, None, str(exc)
+            "ROLLED_BACK",
+            current,
+            SCHEMA_VERSION,
+            backup.path if "backup" in locals() else None,
+            failure_receipt,
+            str(exc),
         )
     return WorkspaceMigrationResult(
         "MIGRATED", current, SCHEMA_VERSION, backup.path, receipt, "Additive migration completed."
@@ -458,6 +595,12 @@ def summarize_workspace(*, root: str | Path | None = None) -> dict[str, int]:
         "avoid": sum(bool(row.get("avoid")) for row in personal),
         "open_decisions": sum(
             row.get("status") not in {"Archived", "Cancelled"} for row in decisions
+        ),
+        "followups_due": sum(
+            bool(row.get("follow_up_date"))
+            and str(row.get("follow_up_date")) <= datetime.now(UTC).date().isoformat()
+            and row.get("status") not in {"Archived", "Cancelled"}
+            for row in decisions
         ),
         "saved_scenarios": len(scenarios),
     }
@@ -479,6 +622,7 @@ def _validate_personal_entry(
     if asset_registry[asset_id] != asset_type:
         raise WorkspaceValidationError("Asset source type mismatch.")
     _reject_sensitive(entry)
+    _reject_canonical_overlay_fields(entry)
     known = {
         "asset_id",
         "asset_type",
@@ -522,6 +666,7 @@ def _validate_decision(
     if required - set(decision):
         raise WorkspaceValidationError("Decision receipt is missing required fields.")
     _reject_sensitive(decision)
+    _reject_recommendations(decision)
     if (
         decision["decision_type"] not in DECISION_TYPES
         or decision["status"] not in DECISION_STATUSES
@@ -536,6 +681,14 @@ def _validate_decision(
     if not isinstance(snapshot, Mapping):
         raise WorkspaceValidationError("Decision-time source snapshot is required.")
     _reject_recommendations(snapshot)
+    if set(map(str, snapshot)) != set(map(str, assets)):
+        raise WorkspaceValidationError("Decision snapshot must cover the exact asset IDs.")
+    for asset in assets:
+        item = snapshot[str(asset)]
+        if not isinstance(item, Mapping):
+            raise WorkspaceValidationError("Decision snapshot rows must be objects.")
+        if item.get("asset_type") != asset_registry[str(asset)]:
+            raise WorkspaceValidationError("Decision snapshot source type mismatch.")
     return _copy_record(decision)
 
 
@@ -689,6 +842,54 @@ def _reject_recommendations(value: Any) -> None:
             _reject_recommendations(nested)
 
 
+def _reject_canonical_overlay_fields(value: Any) -> None:
+    if not isinstance(value, Mapping):
+        return
+    for key, nested in value.items():
+        if str(key).casefold() in PROHIBITED_CANONICAL_OVERLAY_KEYS:
+            raise WorkspaceValidationError(
+                "Canonical source fields cannot be written into the personal overlay."
+            )
+        if isinstance(nested, Mapping):
+            _reject_canonical_overlay_fields(nested)
+
+
+def _workspace_inventory_digest(base: Path) -> str:
+    inventory = []
+    for path in sorted((base / "stores").glob("*.json")) if (base / "stores").exists() else ():
+        body = path.read_bytes()
+        inventory.append(
+            {
+                "path": path.name,
+                "bytes": len(body),
+                "sha256": hashlib.sha256(body).hexdigest(),
+            }
+        )
+    return hashlib.sha256(canonical_json_bytes(inventory)).hexdigest()
+
+
+def _nearest_existing_parent(path: Path) -> Path:
+    candidate = path
+    while not candidate.exists() and candidate != candidate.parent:
+        candidate = candidate.parent
+    return candidate
+
+
+def _enforce_backup_retention(backups_root: Path) -> None:
+    resolved_root = backups_root.resolve()
+    candidates = sorted(
+        (
+            path
+            for path in backups_root.glob("workspace-*")
+            if path.is_dir() and path.resolve().parent == resolved_root
+        ),
+        key=lambda path: path.name,
+        reverse=True,
+    )
+    for expired in candidates[BACKUP_RETENTION_COUNT:]:
+        shutil.rmtree(expired)
+
+
 def _record_id(name: str, row: Mapping[str, Any]) -> str:
     key = {
         "personal_board": "asset_id",
@@ -702,6 +903,14 @@ def _record_id(name: str, row: Mapping[str, Any]) -> str:
 def _validate_store_name(name: str) -> None:
     if name not in STORE_NAMES:
         raise WorkspaceValidationError("Unknown workspace store.")
+
+
+def _validate_workspace_location(path: Path) -> None:
+    parts = {part.casefold() for part in path.parts}
+    if parts & PROTECTED_WORKSPACE_PATH_PARTS:
+        raise WorkspaceValidationError(
+            "Personal Workspace storage cannot be placed inside protected source paths."
+        )
 
 
 def _copy_record(value: Mapping[str, Any]) -> dict[str, Any]:

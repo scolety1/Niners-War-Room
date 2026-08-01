@@ -51,6 +51,12 @@ try {
     exit 1
 }
 
+Write-Host "Creating verified Personal Workspace pre-launch backup..."
+& $python scripts\backup_personal_workspace.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Personal Workspace pre-launch backup failed. App launch is blocked."
+}
+
 Write-Host "Starting Streamlit. Leave this window open during the draft."
 Write-Host "Open: $url"
 & $python -m streamlit run app/main.py `
