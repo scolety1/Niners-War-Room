@@ -1,0 +1,5 @@
+asset_type,count,source_label,authority_status,comparison_scope,recommendation_behavior
+Current Player,240,Finished V1,Production,Finished V1 current players only,NONE
+Rookie Review,73,Model V4 2026 Rookie Review,Review-Only,2026 Rookie Review only,NONE
+Blocked Rookie,7,Model V4 2026 Rookie Review,Blocked - Visible,Identity review only,NONE
+Draft Pick,50,Frozen 2026 Draft Context,Context-Only,Draft order context only,NONE

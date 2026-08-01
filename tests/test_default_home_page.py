@@ -65,6 +65,8 @@ def test_default_home_renders_the_authoritative_workflow_contract() -> None:
         "/draft-cockpit",
         "/settings-data-health",
         "/review-workflow",
+        "/asset-explorer",
+        "/rookie-board",
     }
 
 
@@ -190,8 +192,8 @@ def test_page_open_durable_mutations_are_detected(
         },
     )
 
-    assert any(
-        item.boundary.startswith(expected_boundary) for item in result.mutations
-    ), result.mutations
+    assert any(item.boundary.startswith(expected_boundary) for item in result.mutations), (
+        result.mutations
+    )
     with pytest.raises(AssertionError):
         _assert_zero_durable_mutations(result)

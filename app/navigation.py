@@ -34,6 +34,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="rankings",
     ),
     NavigationPageSpec(
+        title="Asset Explorer",
+        file_path="pages/47_asset_explorer_v1.py",
+        url_path="asset-explorer",
+    ),
+    NavigationPageSpec(
         title="Player Compare",
         file_path="pages/22_player_compare_v1.py",
         url_path="player-compare",
@@ -42,6 +47,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Trading Lab",
         file_path="pages/23_trading_lab_v1.py",
         url_path="trading-lab",
+    ),
+    NavigationPageSpec(
+        title="Rookie Board",
+        file_path="pages/48_rookie_board_review_v1.py",
+        url_path="rookie-board",
     ),
     NavigationPageSpec(
         title="Draft Analyzer",
@@ -110,15 +120,13 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
 )
 
-VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
-    tuple[str, tuple[NavigationPageSpec, ...]], ...
-] = (
+VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
     (
         "Draft",
         (
             VISIBLE_NAVIGATION_PAGES[0],
             VISIBLE_NAVIGATION_PAGES[1],
-            VISIBLE_NAVIGATION_PAGES[5],
+            VISIBLE_NAVIGATION_PAGES[7],
         ),
     ),
     (
@@ -127,28 +135,30 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[
             VISIBLE_NAVIGATION_PAGES[2],
             VISIBLE_NAVIGATION_PAGES[3],
             VISIBLE_NAVIGATION_PAGES[4],
+            VISIBLE_NAVIGATION_PAGES[5],
+            VISIBLE_NAVIGATION_PAGES[6],
         ),
     ),
     (
         "Development Lab",
         (
-            VISIBLE_NAVIGATION_PAGES[6],
-            VISIBLE_NAVIGATION_PAGES[7],
             VISIBLE_NAVIGATION_PAGES[8],
             VISIBLE_NAVIGATION_PAGES[9],
             VISIBLE_NAVIGATION_PAGES[10],
             VISIBLE_NAVIGATION_PAGES[11],
             VISIBLE_NAVIGATION_PAGES[12],
             VISIBLE_NAVIGATION_PAGES[13],
+            VISIBLE_NAVIGATION_PAGES[14],
+            VISIBLE_NAVIGATION_PAGES[15],
         ),
     ),
     (
         "Admin",
         (
-            VISIBLE_NAVIGATION_PAGES[14],
-            VISIBLE_NAVIGATION_PAGES[15],
             VISIBLE_NAVIGATION_PAGES[16],
             VISIBLE_NAVIGATION_PAGES[17],
+            VISIBLE_NAVIGATION_PAGES[18],
+            VISIBLE_NAVIGATION_PAGES[19],
         ),
     ),
 )

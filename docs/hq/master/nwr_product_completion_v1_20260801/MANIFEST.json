@@ -1,0 +1,37 @@
+{
+  "files": {
+    "AUTHORITY_CONTRACT.csv": {
+      "bytes": 426,
+      "sha256": "90a94c4e282053654a1cac2d6740382ecfd5c99e964e44c444b56657443b420c"
+    },
+    "FILES_CREATED_OR_CHANGED.csv": {
+      "bytes": 928,
+      "sha256": "a8e8095d1061e2844b42777ec9b448b48f8171b8798546f88f10173d60021867"
+    },
+    "PRESERVATION_PROOF.md": {
+      "bytes": 572,
+      "sha256": "5e414c0dac9b2513c66cdcef8d6f1afaca38b35b3564d00c177678e87fb33ce9"
+    },
+    "PRODUCT_COMPLETION_MATRIX.csv": {
+      "bytes": 1531,
+      "sha256": "69aee0078370c6bd0400981547f0f1a0835fed62886340d8be21b20981fd1ba9"
+    },
+    "README.md": {
+      "bytes": 940,
+      "sha256": "69aaa816376ea8a43c405cf43c7f9b04f53dd85a553ac4ceb52888a7d9e757c7"
+    },
+    "ROUTE_CHANGE_INVENTORY.csv": {
+      "bytes": 294,
+      "sha256": "d6e6a7ac166ec3f75b6c29858f671e097ec9adb5974c4338908bbbb02668dc16"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 790,
+      "sha256": "0737fa4d53f81b079d14af588f11dc9f115472788085c143c380229ac97622dc"
+    }
+  },
+  "hash_representation": "UTF8_LF_CANONICAL_BYTES",
+  "manifest_excludes_self": true,
+  "packet": "docs/hq/master/nwr_product_completion_v1_20260801",
+  "required_file_count": 8,
+  "schema_version": "NWR_PHASE_7_PRODUCT_COMPLETION_MANIFEST_V1"
+}

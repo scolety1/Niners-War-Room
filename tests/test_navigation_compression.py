@@ -21,8 +21,10 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Draft Cockpit",
         "Mock Drafts",
         "Dynasty Rankings",
+        "Asset Explorer",
         "Player Compare",
         "Trading Lab",
+        "Rookie Board",
         "Draft Analyzer",
         "Lab Home",
         "Roster Weakness Tracker",
@@ -41,13 +43,18 @@ def test_visible_navigation_is_decision_focused() -> None:
 
 def test_visible_navigation_uses_locked_group_structure() -> None:
     grouped_titles = {
-        section: [page.title for page in pages]
-        for section, pages in VISIBLE_NAVIGATION_PAGE_GROUPS
+        section: [page.title for page in pages] for section, pages in VISIBLE_NAVIGATION_PAGE_GROUPS
     }
 
     assert grouped_titles == {
         "Draft": ["Draft Cockpit", "Mock Drafts", "Draft Analyzer"],
-        "Research": ["Dynasty Rankings", "Player Compare", "Trading Lab"],
+        "Research": [
+            "Dynasty Rankings",
+            "Asset Explorer",
+            "Player Compare",
+            "Trading Lab",
+            "Rookie Board",
+        ],
         "Development Lab": [
             "Lab Home",
             "Roster Weakness Tracker",
@@ -82,9 +89,9 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
         "Draft Prep",
         "Draft Prep Compatibility",
         "Outcome Diagnostics",
-            "Decision Board",
-            "NFL Usage Evidence Review",
-            "Legacy Dynasty Rankings",
+        "Decision Board",
+        "NFL Usage Evidence Review",
+        "Legacy Dynasty Rankings",
         "Legacy Draft Prep",
         "Legacy Draft Cockpit",
         "Legacy Decision Board",
@@ -95,10 +102,10 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
         "Command Center Legacy Alias",
         "Trade Lab Legacy Alias",
         "Historical Replay Advanced",
-            "Unified Universe Review",
-            "Settings Data Health Legacy Alias",
-            "Post-Draft Mode Legacy Alias",
-            "Draft Analyzer URL Alias",
+        "Unified Universe Review",
+        "Settings Data Health Legacy Alias",
+        "Post-Draft Mode Legacy Alias",
+        "Draft Analyzer URL Alias",
         "War Board",
         "My Team",
         "League Targets",
@@ -167,6 +174,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "drafting-mode",
         "future-tools",
         "rankings",
+        "asset-explorer",
         "cheat-sheets",
         "draft-cockpit",
         "draft-cockpit-root",
@@ -174,6 +182,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "mock-draft",
         "player-compare",
         "trading-lab",
+        "rookie-board",
         "post-draft-mode",
         "draft-analyzer",
         "development-lab",
@@ -211,8 +220,10 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "draft-cockpit",
         "mock-draft",
         "rankings",
+        "asset-explorer",
         "player-compare",
         "trading-lab",
+        "rookie-board",
         "post-draft-mode",
         "development-lab",
         "roster-weakness-tracker",

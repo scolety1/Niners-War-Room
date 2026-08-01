@@ -7,5 +7,5 @@ PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,PASS,1,1,Five preregiste
 PHASE_4,4,Formula Decision,PASS,1,1,Truthful null accepted and Finished V1 retained,Close formula research
 PHASE_5,5,Optional Paid Role or Data Pilot,PASS,1,1,NOT_REQUIRED_NO_PROVEN_GAP with no provider work executed,Advance without optional lane
 PHASE_6,6,Separate Market-Retention Program,PASS,1,1,NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY with market kept separate,Advance without market lane
-PHASE_7,7,Product Completion,ACTIVE,0,1,Formula provider and market prerequisites safely closed,Run contracted product completion
-PHASE_8,8,Golden Release Acceptance,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_7,7,Product Completion,PASS,1,1,Source-separated Asset Explorer and Review-Only Rookie Board completed with applicable regressions,Advance to Phase 8 acceptance
+PHASE_8,8,Golden Release Acceptance,ACTIVE,0,1,Phase 7 contracted product slice passed,Run full dynamic release acceptance

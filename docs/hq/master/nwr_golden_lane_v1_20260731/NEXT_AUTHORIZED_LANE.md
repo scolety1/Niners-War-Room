@@ -1,7 +1,7 @@
 # Next Authorized Lane
 
-Phase 7 - Product Completion, contracted authorities only.
+Phase 8 - Golden Release Acceptance.
 
-The formula path is closed with a truthful null; optional provider and market lanes are not required. Phase 7 may now audit and complete high-value product surfaces using existing governed, source-separated authorities. It may not invent a common scale, change a model or production rank, call providers, scrape, introduce opaque recommendations, or mutate user state without the governed persistence and rollback contract.
+Phase 7 passed with a bounded source-separated product slice. Phase 8 must dynamically inventory and test the canonical application, validate workflows, persistence and recovery, mutation resistance, protected-state preservation, release evidence, and final machine state. It may correct release-blocking defects within the existing authority contract but may not add speculative product features or change any model, rank, provider, market, scheduler, or user-state authority.
 
-The Phase 7 closeout must generate exactly one Phase 8 Golden Release acceptance work order.
+When every applicable gate passes, close Golden Lane with `next_authorized_lane = NONE` and `NO_FURTHER_NWR_LANE_AUTHORIZED_GOLDEN_RELEASE_COMPLETE`.

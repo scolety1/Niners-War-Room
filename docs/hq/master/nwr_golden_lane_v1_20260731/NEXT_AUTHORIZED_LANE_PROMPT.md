@@ -1,39 +1,23 @@
-# NWR Golden Lane Phase 7 Work Order
+# NWR Golden Lane Phase 8 Work Order
 
-## Product Completion - Contracted Authorities Only
+## Golden Release Acceptance
 
-Start from the exact newest canonical `work/hq-parallel-control` head in a fresh implementation worktree. Read the complete Golden Lane and Phase 0 through Phase 4 packets plus the supplied Weekend Product Upgrade backlog. Confirm Phase 4 retained Finished V1, Phase 5 and Phase 6 are closed as not required, owner decisions are zero, hard stops are empty, stable is clean and exact, operational is untouched, no conflicting process is running, and the named refresh task is disabled.
+Start from the exact newest canonical `work/hq-parallel-control` head in a fresh worktree. Verify the Phase 7 packet and prompt hash, no owner decision, no hard stop, no overlap, a clean exact stable checkout, untouched operational checkout, disabled named refresh task, and no conflicting owned process.
 
-## Mission and priority order
+## Dynamic application acceptance
 
-Audit the current application before adding features, then complete the highest-value safe product slices that fit the existing architecture and authority:
+Derive the route inventory from canonical navigation code. Exercise every registered route at 375 x 812, 768 x 1024, and 1440 x 1000 where the environment permits. Check route success, Page Not Found, visible traceback, uncaught exception, console error, root horizontal overflow, meaningful H1, named controls, keyboard operation, duplicate primary action or trust banner, broken links, truthful authority badges, and page-open mutation.
 
-1. Command Center and consistent navigation: production/review authority, Data Health, quick actions, backup/recovery state, saved/draft state, guidance, and safe global search.
-2. Asset Explorer: one typed searchable registry for Finished V1 players, 73 scored Rookie Review assets, seven visible blocked rookies, and draft picks, always with separate source/status labels and no unified value.
-3. Player Compare and Trading Lab: source-separated evidence, missingness and warnings, governed asset union, manual descriptive roster/outcome/pick context, and no automatic recommendation or exact equivalence.
-4. Rookie Board: all 80 drafted prospects, 73 scored and seven visibly blocked, with ranks, tiers, components, confidence, warnings, limitations, and explicit Review-Only labeling.
-5. Local personal overlay and prospective decision receipts only when persistence, backup, migration, rollback, and page-open no-write controls are fully governed.
-6. Draft Board, Draft Cockpit, Live Draft, Mock Draft, Draft Analyzer, roster/planning, Data Health, onboarding, help, empty/blocked/error states, accessibility, mobile overflow, stale copy, and hidden-route clarity.
+Exercise supported workflows for startup/shutdown, Start Here, Rankings, Outcome V3, Rookie Review, Asset Explorer, Player Compare, Trading Lab, Draft Board and Cockpit, Live Draft, Mock Draft, Draft Analyzer, roster/planning, Data Health, Refresh Data, backup, restore dry-run, failed-restore rollback, saved scenarios, and restart/resume. Apply only supported and canonically applicable checks; record unavailable or unsupported paths truthfully.
 
-Prefer coherent audited P0/P1 slices over speculative breadth. Reuse existing services and design language. Keep table-first UI, concise copy, explicit H1s, named controls, and visible authority badges.
+Verify persistence save/close/restart/resume, backup retention, restore dry-run, failed-restore rollback, no canonical overwrite, and no data loss using isolated or governed test state. Run real-path product and source-authority mutations, ranking no-change checks, page-open write mutations, identity checks, persistence and backup mutations, launcher lifecycle checks, security regressions, and Data Health.
 
-## Authority and recommendation contract
+## Evidence and closeout
 
-- Finished V1 remains the production current-player football authority.
-- Outcome V3 remains within its governed horizon/context scope.
-- Model V4 2026 Rookie Review remains review-only: 73 scored and seven blocked visible.
-- Picks remain distinctly typed; no fabricated common value.
-- Rookie-versus-veteran comparisons are side-by-side and explicitly non-comparable on raw score scales.
-- Trading Lab remains `MANUAL_DESCRIPTIVE_ONLY` and may never emit accept, reject, winner, loser, fair, unfair, exact equality, automatic counteroffer, or a hidden combined score.
-- Personal overlays never overwrite canonical ranks and must be reversible, local, versioned, backed up, and visibly selected.
-- Do not fabricate market profit/loss, roster authority, recommendations, identity, confidence, missing values, or history.
+Produce a dynamic route matrix, screenshot or deterministic visual evidence atlas where available, concise demo script, supported-capability matrix, known limitations, quick-start, rollback guide, and final validation record. A truthful not-applicable result is valid when the capability is not supported or cannot be exercised without crossing authority.
 
-## Closed and prohibited work
+Require a clean stable checkout, remote 0 ahead / 0 behind, safely stopped launcher, no owned process, released ports, preserved user data, disabled or absent fail-closed scheduled refresh, and no retained test process. Use independent adoption, at most one bounded correction, normal non-force push, remote readback, and stable-only synchronization. Never update the operational checkout.
 
-Do not reopen common-scale, formula, Outcome recalibration, Model V4 weight, provider, market, replay, or source-acquisition work. No provider call, scraping, credential, payment, scheduler change, active-pack mutation, generated-data overwrite, destructive migration, or operational-checkout update. Do not change production formulas or default ranks.
+Do not introduce speculative features, provider calls, scraping, purchases, credentials, scheduler changes, model/rank/formula changes, common scales, hidden recommendations, or destructive state migration.
 
-## Acceptance and closeout
-
-Inventory registered and visible routes dynamically. Add focused tests for every changed service, workflow, persistence boundary, authority label, recommendation guardrail, page-open mutation control, and responsive/accessibility contract. Run applicable full regressions, Ruff, compile/build, deterministic packet validation, real-path negative mutations, persistence/recovery checks, and browser smoke checks at 375x812, 768x1024, and 1440x1000 where the environment permits.
-
-Use a fresh independent adoption worktree, at most one bounded correction, a normal non-force push, remote readback, and stable-only synchronization. Record every completed and formally deferred backlog slice truthfully. Generate exactly the Phase 8 Golden Release acceptance prompt; do not declare Golden Release during Phase 7.
+When every applicable gate passes, set `next_authorized_lane` to `NONE`, write `NO_FURTHER_NWR_LANE_AUTHORIZED_GOLDEN_RELEASE_COMPLETE`, and return `GREEN_NWR_GOLDEN_RELEASE_COMPLETE`. Otherwise preserve completed work and stop only under a canonical hard-stop or pause contract.

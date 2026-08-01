@@ -1,0 +1,4 @@
+route,title,visibility,change,authority
+/,Niners War Room Home,default,Two governed quick links added,Read-only navigation
+/asset-explorer,Asset Explorer,visible,New source-separated searchable registry,Read-only
+/rookie-board,Rookie Board,visible,New 80-prospect Review-Only board,Review-Only

@@ -1,0 +1,13 @@
+path,action,purpose
+src/services/governed_asset_registry_service.py,ADD,Hash-pinned source-separated asset registry
+app/pages/47_asset_explorer_v1.py,ADD,Searchable typed Asset Explorer
+app/pages/48_rookie_board_review_v1.py,ADD,Review-Only 2026 Rookie Board
+app/navigation.py,MODIFY,Expose new governed routes
+app/pages/46_draft_cockpit_default_root.py,MODIFY,Add governed quick links
+tests/test_governed_asset_registry_service.py,ADD,Registry and authority guardrails
+tests/test_navigation_compression.py,MODIFY,New route contract
+tests/test_default_home_page.py,MODIFY,Updated Start Here link contract
+tests/post_v1_assertion_harness.py,MODIFY,Updated unique-link acceptance count
+docs/hq/master/nwr_product_completion_v1_20260801/**,ADD,Phase 7 evidence packet
+scripts/validate_nwr_phase7_product_completion_v1.py,ADD,Deterministic Phase 7 validator
+tests/test_nwr_phase7_product_completion_v1.py,ADD,Phase 7 closeout tests

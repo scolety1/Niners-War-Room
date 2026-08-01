@@ -93,3 +93,7 @@ workflow.link_button(
     "/review-workflow",
     use_container_width=True,
 )
+
+catalog, rookies = st.columns(2)
+catalog.link_button("Search Asset Explorer", "/asset-explorer", use_container_width=True)
+rookies.link_button("Open 2026 Rookie Board", "/rookie-board", use_container_width=True)

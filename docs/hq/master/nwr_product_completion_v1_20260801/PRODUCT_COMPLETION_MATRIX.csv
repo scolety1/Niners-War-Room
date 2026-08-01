@@ -1,0 +1,11 @@
+priority,surface,disposition,evidence,remaining_scope
+A,Command Center and navigation,COMPLETE_BOUNDED_SLICE,Start Here exposes authority guidance Data Health and two new governed destinations,Global command palette deferred as nonessential
+B,Asset Explorer,COMPLETE,370 typed governed assets with source and comparison scope,No common scale authorized
+C,Player Compare,VALIDATED_EXISTING,Source-separated read-only comparison regressions pass,No automatic recommendation authorized
+D,Trading Lab,VALIDATED_EXISTING,MANUAL_DESCRIPTIVE_ONLY regression passes,No accept reject winner loser fair unfair or exact equality
+E,Rookie Board,COMPLETE,All 80 prospects represented as 73 scored plus seven visible blocked,Review-Only authority retained
+F,Personal Board overlay,FORMALLY_DEFERRED,No safe persistence migration was needed for the coherent P0 slice,Requires dedicated persistence backup migration and rollback gate
+G,Draft tools,VALIDATED_EXISTING,Draft Cockpit Live Draft Mock Draft and Analyzer regressions pass,Further cosmetic breadth deferred to acceptance findings
+H,Roster and strategy,VALIDATED_EXISTING,Existing local source-labeled planning surfaces remain bounded,Automated roster hydration remains parked
+I,Decision Journal,FORMALLY_DEFERRED,No prospective receipt persistence added in this bounded slice,Requires dedicated reversible persistence contract
+J,Whole-app completion,COMPLETE_BOUNDED_SLICE,Navigation default home accessibility and Data Health regressions pass,Phase 8 owns dynamic full-route acceptance

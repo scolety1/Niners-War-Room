@@ -240,8 +240,9 @@ def render_start_here(
         "__package__": None,
     }
     namespace.update(execution_globals or {})
-    with patch.dict(sys.modules, {"streamlit": recorder}), patch.object(
-        ui_framework, "st", recorder
+    with (
+        patch.dict(sys.modules, {"streamlit": recorder}),
+        patch.object(ui_framework, "st", recorder),
     ):
         exec(compile(source, str(page_path), "exec"), namespace)
     return _rendered_snapshot(page_path, recorder.events)
@@ -376,7 +377,7 @@ def validate_start_here_contract(
         "Niners War Room",
     )
     assert len(rendered.workflows) == 4, "Start Here must render four primary workflow tiles"
-    assert len(rendered.links) == 6, "Start Here must render six unique workflow links"
+    assert len(rendered.links) == 8, "Start Here must render eight unique workflow links"
     targets = tuple(link.target for link in rendered.links)
     assert len(targets) == len(set(targets)), "Start Here contains duplicate route targets"
     for link in rendered.links:
@@ -645,11 +646,7 @@ def tree_inventory(root: Path) -> TreeInventory:
     if not root.exists():
         return TreeInventory((), ())
     directories = tuple(
-        sorted(
-            path.relative_to(root).as_posix()
-            for path in root.rglob("*")
-            if path.is_dir()
-        )
+        sorted(path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_dir())
     )
     files = tuple(
         FileInventoryRecord(
