@@ -20,6 +20,7 @@ ROOKIE_FILE_SHA = "06853164a41cd9715accfc3c4f3e54d0cc915be6c55ebab040de6fc0abd96
 FROZEN_SHA = "b3270d9782cf53de745e966c318dd61aa7f482db17da7c4ceb51ef8baa8e1179"
 PERSISTENT_DIGEST = "88d1a981d514e6519e328efa639e80e51c4ae0379f046e3e3ee55acef1f82987"
 RECOVERY_DIGEST = "1fbd0b5097b240ed43a21be111926480ed4a97f558f033b8fea68e5c42604835"
+FINAL_VERDICT = "GREEN_NWR_PERSONAL_WORKSPACE_V1_CANONICALIZED_AND_PUSHED"
 REQUIRED = (
     "PERSONAL_WORKSPACE_REPORT.md",
     "EXECUTIVE_VERDICT.md",
@@ -84,7 +85,7 @@ def main() -> int:
         """
 # Executive verdict
 
-`GREEN_NWR_PERSONAL_WORKSPACE_V1_IMPLEMENTED_VALIDATED_AND_READY_FOR_ADOPTION`
+`GREEN_NWR_PERSONAL_WORKSPACE_V1_CANONICALIZED_AND_PUSHED`
 
 Personal Board, Decision Journal, and Saved Scenarios are implemented as a local,
 source-separated overlay with governed persistence, migration, backup, restore,
@@ -684,7 +685,7 @@ state are unchanged.
         "generated_at_utc": "2026-08-01T22:00:00Z",
         "starting_hq": START_HQ,
         "starting_tree": START_TREE,
-        "verdict": "GREEN_NWR_PERSONAL_WORKSPACE_V1_IMPLEMENTED_VALIDATED_AND_READY_FOR_ADOPTION",
+        "verdict": FINAL_VERDICT,
         "registered_routes": route_evidence["registered_routes"],
         "route_viewport_checks": len(route_rows),
         "browser_error_count": route_evidence["browser_error_count"],

@@ -32,9 +32,9 @@
       "sha256": "28698ccd4e14f5689f3e74b8b83974ba23f375bf59064dd1c8247932e65e40c6"
     },
     {
-      "bytes": 456,
+      "bytes": 436,
       "path": "EXECUTIVE_VERDICT.md",
-      "sha256": "df6a849796d1ec1c4d8e73fda1937b8f25b2016fd4a7d10354d677f7f5d38dd0"
+      "sha256": "150d17c95708661987bd45178c522118cb365235d0d7a89e2108722dc86a19c1"
     },
     {
       "bytes": 5271,
@@ -219,5 +219,5 @@
   "schema_version": 1,
   "starting_hq": "e0377a06cdc560819ccb049dd58b75faaa106ea6",
   "starting_tree": "a2a4cc18db18546e57c4f972397e81fb4907487f",
-  "verdict": "GREEN_NWR_PERSONAL_WORKSPACE_V1_IMPLEMENTED_VALIDATED_AND_READY_FOR_ADOPTION"
+  "verdict": "GREEN_NWR_PERSONAL_WORKSPACE_V1_CANONICALIZED_AND_PUSHED"
 }
