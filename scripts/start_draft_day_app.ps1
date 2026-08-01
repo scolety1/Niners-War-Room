@@ -52,7 +52,7 @@ try {
 }
 
 Write-Host "Creating verified Personal Workspace pre-launch backup..."
-& $python scripts\backup_personal_workspace.py
+& $python -m scripts.backup_personal_workspace
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Personal Workspace pre-launch backup failed. App launch is blocked."
 }
