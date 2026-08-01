@@ -25,7 +25,7 @@
     "P1A_OWNER_005",
     "P1A_OWNER_006"
   ],
-  "correction_cycles_used": 0,
+  "correction_cycles_used": 1,
   "maximum_correction_cycles_per_phase": 1,
   "hard_stop_ids": [],
   "implementation_worktree": null,

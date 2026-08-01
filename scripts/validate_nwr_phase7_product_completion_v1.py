@@ -14,8 +14,10 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.navigation import VISIBLE_NAVIGATION_PAGES
-from src.services.governed_asset_registry_service import load_governed_asset_registry
+from app.navigation import VISIBLE_NAVIGATION_PAGES  # noqa: E402
+from src.services.governed_asset_registry_service import (  # noqa: E402
+    load_governed_asset_registry,
+)
 
 PACKET_RELATIVE = Path("docs/hq/master/nwr_product_completion_v1_20260801")
 GOLDEN_RELATIVE = Path("docs/hq/master/nwr_golden_lane_v1_20260731")

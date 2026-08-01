@@ -8,6 +8,7 @@
 - Focused tests: PASS, 39/39; applicable product regression: PASS, 200/200.
 - Rankings, Player Compare, Trading Lab, draft, Data Health, navigation, and page-open mutation contracts: PASS.
 - Ruff format/check: PASS.
+- Independent-review correction: 1/1 used for explicit validator bootstrap import annotations; no behavioral output changed.
 - Model, rank, source, provider, scheduler, persistent state, and user-state mutation: NONE.
 - Gate arithmetic: PASS, 9/10 = 90%.
 - Exactly one next lane: PASS, Phase 8 Golden Release Acceptance.

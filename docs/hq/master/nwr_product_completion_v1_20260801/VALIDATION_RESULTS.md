@@ -6,6 +6,7 @@
 - Focused Phase 7 tests: PASS, 39/39.
 - Applicable product regression: PASS, 200/200, including Rankings, Player Compare, Trading Lab, Draft Cockpit, Live Draft, Mock Draft, Data Health, page-open mutation safety, navigation, and Start Here.
 - Ruff format/check on changed Python: PASS.
+- Independent-review correction: 1/1 used for explicit validator bootstrap import annotations; no behavioral output changed.
 - Recommendation behavior: unchanged; Trading Lab remains `MANUAL_DESCRIPTIVE_ONLY`.
 - Production model/rank mutation: NONE.
 - Persistent/user-state mutation: NONE.
