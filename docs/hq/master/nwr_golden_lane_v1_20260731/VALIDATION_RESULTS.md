@@ -10,7 +10,7 @@
 - Focused and applicable regressions: PASS, 106/106; Ruff, compile, and Git whitespace checks: PASS.
 - Gate arithmetic: PASS, 5/10 = 50%.
 - Exactly one next lane: PASS, Phase 4 null-result closure.
-- Independent adoption review remains required before canonical push.
+- Independent adoption review: PASS in a fresh worktree from the exact canonical parent; implementation and adopted trees matched byte-for-byte, deterministic regeneration returned the same null result, 106/106 regressions passed, and Ruff passed.
 
 ## Phase 2 gate
 
