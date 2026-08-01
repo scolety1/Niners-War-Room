@@ -88,3 +88,17 @@ Data Health contracts passed their applicable regressions. Personal overlay and
 Decision Journal persistence were truthfully deferred rather than introduced
 without a dedicated backup, migration, and rollback gate. Phase 8 Golden
 Release Acceptance is the only next authorized lane.
+
+## Phase 8 Golden Release Acceptance
+
+Phase 8 began from canonical HQ `2448c5c8858a66a97a4caa56fe29ed0de3a8f7f8`
+and tree `2232add63e820d91c80ec859036cfbf8600cabeb`. The dynamic inventory
+resolved 61 registered routes. Browser acceptance completed all 183 required
+route/viewport combinations at 375x812, 768x1024, and 1440x1000 with no Page
+Not Found, visible traceback, uncaught exception, root overflow, or console
+error. Delayed headings were rechecked and all passed.
+
+Persistence, recovery, launcher, security, Data Health, page-open mutation, and
+protected-state regressions passed. The acceptance server was stopped, its port
+was released, the operational checkout was untouched, and production user state
+was preserved. Golden Lane is complete at 10/10 with no further authorized lane.

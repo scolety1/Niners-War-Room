@@ -1,0 +1,89 @@
+{
+  "files": {
+    "CAPABILITY_AND_LIMITATIONS.md": {
+      "bytes": 617,
+      "sha256": "129ae040d16e014af24d3132c152b8356c0ef0a0a0f93a94ea894af73b9f6970"
+    },
+    "DEMO_AND_QUICK_START.md": {
+      "bytes": 737,
+      "sha256": "af4fc016cf40bfd8c619d2429584726b18274c8959a8582032fa5d6e7de0a904"
+    },
+    "FINAL_MACHINE_STATE.md": {
+      "bytes": 391,
+      "sha256": "9f7d3bfd5a6b41735cb81624208e0556082f8d5fa20c2831f34d7e96f01e7554"
+    },
+    "PERSISTENCE_AND_RECOVERY.md": {
+      "bytes": 471,
+      "sha256": "f90753e8608caf08262d91f4fb656bdc324cac5cd80527f165cb5688f9ffcbd6"
+    },
+    "README.md": {
+      "bytes": 785,
+      "sha256": "0ae6b6e3fe6ee1da25511a403ca61784574c17a0e3df1dd3e303c55147f713c8"
+    },
+    "ROLLBACK_GUIDE.md": {
+      "bytes": 453,
+      "sha256": "e08270b306d8edd9e627f669af24c44e8249da99de5bcbfe6ceb886b93c0aea6"
+    },
+    "ROUTE_INVENTORY.md": {
+      "bytes": 1339,
+      "sha256": "0206df80c2f3d9bc911d62ef4061460537f3e11dc31552f866c36e950ec9d3ea"
+    },
+    "SCREENSHOT_ATLAS.md": {
+      "bytes": 343,
+      "sha256": "dceadc245a5d223e19208ebeda5c8fe85bb153202fce6c85875ae9015f298502"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 642,
+      "sha256": "535442401e1117db05e5b6786440820d65e80fbf2a75a76b130b408aa7c523c1"
+    },
+    "VIEWPORT_ACCEPTANCE.csv": {
+      "bytes": 222,
+      "sha256": "5be81e9a16dd84863eae2fe71ca9357659e0c62efec2a7cf84f09318386a5686"
+    },
+    "WORKFLOW_ACCEPTANCE.csv": {
+      "bytes": 937,
+      "sha256": "7eb14ae0e25a46360891cf68fed9116eae047352d573fe6d2d2c673328329947"
+    },
+    "screenshots/asset-explorer-desktop-1440x1000.png": {
+      "bytes": 88635,
+      "sha256": "31d80a839c8de36cb1c566d4e7a949ebeec7c2bd6d6b1fad8c397e1b5288a5f3"
+    },
+    "screenshots/asset-explorer-mobile-375x812.png": {
+      "bytes": 22573,
+      "sha256": "a9b5d6c7e3a56a66cdc1881906c530e2584e694fbfc063928952b75d06ebec9d"
+    },
+    "screenshots/asset-explorer-tablet-768x1024.png": {
+      "bytes": 85858,
+      "sha256": "0aee10bd30e2be181230452dc65b2a0f55cc5793ac0736de1192f628521e2c4b"
+    },
+    "screenshots/rookie-board-desktop-1440x1000.png": {
+      "bytes": 104128,
+      "sha256": "253702f71954d3faed11399f59bfc5167ec9f9cc611727d5af175a2a71a5f7f4"
+    },
+    "screenshots/rookie-board-mobile-375x812.png": {
+      "bytes": 41545,
+      "sha256": "8c94eab2ec009075ab13f2436c45b913e8382b95247df67476f8b169c358b685"
+    },
+    "screenshots/rookie-board-tablet-768x1024.png": {
+      "bytes": 98243,
+      "sha256": "0ebdf080051c7cb85e94ae9d550a3176e31c5ed1de531156e20cb03e3e3cbc24"
+    },
+    "screenshots/start-here-desktop-1440x1000.png": {
+      "bytes": 81404,
+      "sha256": "ca44180b5dc23599cefa28ef8523e18243cd010a97cc71d58f7d193bdd83052f"
+    },
+    "screenshots/start-here-mobile-375x812.png": {
+      "bytes": 32508,
+      "sha256": "84f63346ede8051fccc4560816e9316d0d4bdd9bafea4bd386b597fd5f1e4ad8"
+    },
+    "screenshots/start-here-tablet-768x1024.png": {
+      "bytes": 91753,
+      "sha256": "39c562e5edd9685f22c77783f08ef94d3719a5438618f883aa260100b71d9607"
+    }
+  },
+  "hash_representation": "UTF8_LF_CANONICAL_BYTES",
+  "manifest_excludes_self": true,
+  "packet": "docs/hq/master/nwr_golden_release_acceptance_v1_20260801",
+  "required_file_count": 21,
+  "schema_version": "NWR_GOLDEN_RELEASE_ACCEPTANCE_MANIFEST_V1"
+}

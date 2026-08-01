@@ -103,3 +103,15 @@ docs/hq/master/nwr_golden_lane_v1_20260731/PHASE_GATE_MATRIX.csv,MODIFY,phase_7_
 docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE.md,MODIFY,phase_8_dispatch
 docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE_PROMPT.md,MODIFY,phase_8_dispatch
 docs/hq/master/nwr_golden_lane_v1_20260731/VALIDATION_RESULTS.md,MODIFY,phase_7_closeout
+docs/hq/master/nwr_golden_release_acceptance_v1_20260801/**,ADD,phase_8_evidence
+scripts/validate_nwr_phase8_golden_release_v1.py,ADD,phase_8_validator
+tests/test_nwr_phase8_golden_release_v1.py,ADD,phase_8_tests
+scripts/validate_golden_lane_autopilot.py,MODIFY,terminal_state_validation
+docs/hq/master/nwr_golden_lane_v1_20260731/CURRENT_CANONICAL_STATE.md,MODIFY,phase_8_closeout
+docs/hq/master/nwr_golden_lane_v1_20260731/CURRENT_PHASE.md,MODIFY,terminal_state
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_STATUS.json,MODIFY,terminal_state
+docs/hq/master/nwr_golden_lane_v1_20260731/GOLDEN_LANE_AUTOPILOT_STATE.json,MODIFY,terminal_state
+docs/hq/master/nwr_golden_lane_v1_20260731/PHASE_GATE_MATRIX.csv,MODIFY,phase_8_closeout
+docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE.md,MODIFY,terminal_state
+docs/hq/master/nwr_golden_lane_v1_20260731/NEXT_AUTHORIZED_LANE_PROMPT.md,MODIFY,terminal_state
+docs/hq/master/nwr_golden_lane_v1_20260731/VALIDATION_RESULTS.md,MODIFY,phase_8_closeout

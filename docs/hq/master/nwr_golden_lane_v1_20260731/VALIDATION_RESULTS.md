@@ -1,5 +1,18 @@
 # Validation Results
 
+## Phase 8 Golden Release Acceptance
+
+- Dynamic registered routes: 61; browser route/viewport checks: PASS, 183/183.
+- Required viewports: PASS at 375x812, 768x1024, and 1440x1000.
+- Page Not Found, traceback, uncaught exception, root overflow, console error: 0.
+- Delayed heading follow-up: PASS, 27/27.
+- Screenshot atlas: PASS, nine full-page captures.
+- Persistence/recovery/launcher/security/Data Health suite: PASS, 295/295.
+- Acceptance server shutdown and port release: PASS.
+- Operational checkout, scheduler, production model/rank, and user state: unchanged.
+- Gate arithmetic: PASS, 10/10 = 100%.
+- Next authorized lane: `NONE`.
+
 ## Phase 7 product completion
 
 - Contracted slice: PASS; Asset Explorer and Review-Only Rookie Board added and discoverable.

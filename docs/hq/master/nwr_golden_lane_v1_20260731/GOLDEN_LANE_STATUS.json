@@ -4,7 +4,7 @@
   "canonical_branch": "work/hq-parallel-control",
   "canonical_hq_at_phase_1a_start": "79b62c3993cf1d00c6dc068199826abb6d9954e3",
   "canonical_tree_at_phase_1a_start": "8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd",
-  "active_phase": "PHASE_8_GOLDEN_RELEASE_ACCEPTANCE",
+  "active_phase": "GOLDEN_RELEASE_COMPLETE",
   "completed_phases": [
     "PHASE_0_GREEN_COMMON_SCALE_REJECTED_EXISTING_AUTHORITIES_RETAINED",
     "PHASE_1A_EXISTING_SOURCE_RIGHTS_AND_IDENTITY_AUDIT_PASS",
@@ -14,17 +14,18 @@
     "PHASE_4_FORMULA_DECISION_TRUTHFUL_NULL_PASS",
     "PHASE_5_NOT_REQUIRED_NO_PROVEN_GAP_PASS",
     "PHASE_6_NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY_PASS",
-    "PHASE_7_PRODUCT_COMPLETION_CONTRACTED_ONLY_PASS"
+    "PHASE_7_PRODUCT_COMPLETION_CONTRACTED_ONLY_PASS",
+    "PHASE_8_GOLDEN_RELEASE_ACCEPTANCE_PASS"
   ],
   "blocked_phases": [],
-  "next_authorized_lane": "PHASE_8_GOLDEN_RELEASE_ACCEPTANCE",
+  "next_authorized_lane": "NONE",
   "prohibited_concurrent_lanes": ["FORMULA_OR_RANKING_CHANGE", "PROVIDER_ACQUISITION", "MARKET_MODELING", "NEW_PRODUCT_FEATURE_WORK"],
   "owner_decisions_required": 0,
   "open_fail_closed_controls": ["P1A_OWNER_001", "P1A_OWNER_002", "P1A_OWNER_003", "P1A_OWNER_004", "P1A_OWNER_005", "P1A_OWNER_006"],
-  "autopilot_dispatch_status": "READY",
+  "autopilot_dispatch_status": "COMPLETE",
   "hard_stop_ids": [],
-  "phase_gates_passed": 9,
+  "phase_gates_passed": 10,
   "phase_gates_total": 10,
-  "final_completion_percentage": 90,
-  "last_updated_commit": "ff240a4683025cd88b47dee05eb02d963a4230f9"
+  "final_completion_percentage": 100,
+  "last_updated_commit": "2448c5c8858a66a97a4caa56fe29ed0de3a8f7f8"
 }

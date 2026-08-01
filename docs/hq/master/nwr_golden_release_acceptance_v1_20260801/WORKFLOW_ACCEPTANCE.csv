@@ -1,0 +1,12 @@
+workflow,result,evidence
+Startup and shutdown,PASS,Isolated Streamlit server started on 8765 then verified stopped and port released
+Start Here and navigation,PASS,Rendered browser matrix and navigation contracts
+Rankings and Outcome,PASS,Product regression and governed authority checks
+Rookie Review and Rookie Board,PASS,80 visible as 73 scored plus seven blocked
+Asset Explorer and Player Compare,PASS,Source-separated read-only contracts
+Trading Lab,PASS,MANUAL_DESCRIPTIVE_ONLY with prohibited recommendation outputs absent
+Draft workflows,PASS,Draft Cockpit Live Draft Mock Draft Analyzer and state tests
+Roster and planning,PASS,Existing source-labeled local surfaces rendered
+Data Health and Refresh Data,PASS,Read-only open and receipt truth tests
+Backup restore and restart,PASS,Launcher receipt state and rollback tests in isolated roots
+Saved scenarios and persistence,PASS,Draft mock and development state round-trip tests

@@ -10,7 +10,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 PACKET_RELATIVE = Path("docs/hq/master/nwr_golden_lane_v1_20260731")
 REQUIRED_FILES = {
     "GOLDEN_LANE_AUTOPILOT_POLICY.md",
@@ -91,30 +90,51 @@ def validate(packet: Path) -> list[str]:
         errors.append("open fail-closed controls differ between status and state")
     if set(state.get("automatic_execution_allowlist", [])) != ALLOWLIST:
         errors.append("automatic execution allowlist differs from canonical policy")
-    if state.get("next_phase") not in ALLOWLIST:
+    terminal = state.get("next_phase") == "NONE"
+    if not terminal and state.get("next_phase") not in ALLOWLIST:
         errors.append("next phase is not automatically allowlisted")
+    if terminal and (
+        state.get("active_phase") != "GOLDEN_RELEASE_COMPLETE"
+        or status.get("active_phase") != "GOLDEN_RELEASE_COMPLETE"
+    ):
+        errors.append("terminal lane requires GOLDEN_RELEASE_COMPLETE")
     if state.get("maximum_correction_cycles_per_phase") != 1:
         errors.append("bounded correction limit must equal one")
     if state.get("correction_cycles_used", 0) > 1:
         errors.append("bounded correction limit exceeded")
-    for flag in ("operational_checkout_update_allowed", "scheduled_refresh_change_allowed", "force_push_allowed"):
+    for flag in (
+        "operational_checkout_update_allowed",
+        "scheduled_refresh_change_allowed",
+        "force_push_allowed",
+    ):
         if state.get(flag) is not False:
             errors.append(f"{flag} must be false")
 
-    active_stops = sorted(row.get("stop_id", "") for row in hard_stops if row.get("active", "").upper() == "YES")
+    active_stops = sorted(
+        row.get("stop_id", "") for row in hard_stops if row.get("active", "").upper() == "YES"
+    )
     if active_stops != sorted(state.get("hard_stop_ids", [])):
         errors.append("hard-stop registry and autopilot state differ")
     if active_stops and state.get("dispatch_status") != "HARD_STOP":
         errors.append("active hard stop requires HARD_STOP dispatch status")
-    if not active_stops and state.get("dispatch_status") != "READY":
+    if not active_stops and not terminal and state.get("dispatch_status") != "READY":
         errors.append("dispatch status must be READY when no hard stop is active")
+    if terminal and state.get("dispatch_status") != "COMPLETE":
+        errors.append("terminal lane requires COMPLETE dispatch status")
 
     prompt = packet / "NEXT_AUTHORIZED_LANE_PROMPT.md"
     if state.get("next_prompt_sha256") != sha256(prompt):
         errors.append("next prompt SHA-256 does not match autopilot state")
-    phase_words = state.get("next_phase", "").replace("PHASE_", "").split("_")[:2]
     prompt_upper = prompt.read_text(encoding="utf-8").upper()
-    if not phase_words or not all(word in prompt_upper for word in phase_words):
+    phase_words = state.get("next_phase", "").replace("PHASE_", "").split("_")[:2]
+    if (
+        terminal
+        and prompt_upper.strip() != "NO_FURTHER_NWR_LANE_AUTHORIZED_GOLDEN_RELEASE_COMPLETE"
+    ):
+        errors.append("terminal prompt is not exact")
+    elif not terminal and (
+        not phase_words or not all(word in prompt_upper for word in phase_words)
+    ):
         errors.append("next prompt does not identify the configured next phase")
 
     passed = sum(1 for row in gates if row.get("status") == "PASS")
@@ -127,7 +147,9 @@ def validate(packet: Path) -> list[str]:
         errors.append("mechanical completion percentage is incorrect")
 
     manifest_files = manifest.get("files", {})
-    packet_files = {path.name for path in packet.iterdir() if path.is_file() and path.name != "MANIFEST.json"}
+    packet_files = {
+        path.name for path in packet.iterdir() if path.is_file() and path.name != "MANIFEST.json"
+    }
     if set(manifest_files) != packet_files:
         errors.append("manifest file set does not match packet")
     if manifest.get("required_file_count") != len(packet_files) + 1:
@@ -136,7 +158,9 @@ def validate(packet: Path) -> list[str]:
         path = packet / name
         if not path.is_file():
             continue
-        if receipt.get("bytes") != len(canonical_bytes(path)) or receipt.get("sha256") != sha256(path):
+        if receipt.get("bytes") != len(canonical_bytes(path)) or receipt.get("sha256") != sha256(
+            path
+        ):
             errors.append(f"manifest receipt mismatch: {name}")
 
     return errors
@@ -149,7 +173,12 @@ def main() -> int:
     args = parser.parse_args()
     packet = args.repo_root.resolve() / PACKET_RELATIVE
     errors = validate(packet)
-    result = {"mode": "BOUNDED_CONTINUOUS_AUTOPILOT", "packet": str(packet), "valid": not errors, "errors": errors}
+    result = {
+        "mode": "BOUNDED_CONTINUOUS_AUTOPILOT",
+        "packet": str(packet),
+        "valid": not errors,
+        "errors": errors,
+    }
     if args.json:
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     elif errors:
