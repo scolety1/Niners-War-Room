@@ -64,3 +64,12 @@ Mart across 39 applicable position and separate target-horizon cells. No family
 cleared every chronological, support, bootstrap, Holm, replacement-precision,
 productive-veteran, and low-games gate. The result is the accepted truthful null
 `NULL_NO_FAMILY_PASSED`; no model or ranking authority changed.
+
+## Phase 4 formula decision
+
+Phase 4 began from canonical HQ `2f8b5959a516b4fbe027c230c20afc7acb8f2549`
+and tree `eda03d87903f290969b4ee1ce8066cbace9aeed6`. It accepted the Phase 3
+truthful null, retained Finished V1, and closed all five families for formula and
+ranking use. Phase 5 is not required because no data gap was proven; Phase 6 is
+not required because no retained market authority is admitted. Neither optional
+lane was executed. Product completion is the next applicable gate.

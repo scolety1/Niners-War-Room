@@ -1,0 +1,8 @@
+mutation_id,mutation,expected,result
+M01,mark one Phase 3 family passed,reject,REJECTED_PHASE3_EVIDENCE_MISMATCH
+M02,change Finished V1 authority,reject,REJECTED_RETAINED_AUTHORITY_CONTRACT
+M03,add formula weight or architecture,reject,REJECTED_NULL_CLOSURE_SCOPE
+M04,admit provider or market source,reject,REJECTED_SOURCE_SCOPE
+M05,request production ranking change,reject,REJECTED_OWNER_HARD_STOP
+M06,execute Phase 5 or Phase 6 work,reject,REJECTED_NOT_REQUIRED_DISPOSITION
+

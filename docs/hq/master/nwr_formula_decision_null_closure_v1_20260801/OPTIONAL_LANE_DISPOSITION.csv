@@ -1,0 +1,4 @@
+phase,disposition,evidence,work_executed,owner_decision_required,reopen_rule
+PHASE_5,NOT_REQUIRED_NO_PROVEN_GAP,Phase 3 promoted zero families and established no decision-relevant open-data gap,NO,NO,Specific evidence-backed gap plus owner approval
+PHASE_6,NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY,No retained historical market authority is admitted and Phase 7 requires no market model,NO,NO,Separate source-rights and retention authority
+

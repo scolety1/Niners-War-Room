@@ -1,0 +1,41 @@
+{
+  "files": {
+    "FEATURE_FAMILY_DISPOSITION.csv": {
+      "bytes": 708,
+      "sha256": "b8e32c1d00b677c95c849ab7e6e99d3205976f81de94b1a60c60541e8af5694a"
+    },
+    "FILES_CREATED_OR_CHANGED.csv": {
+      "bytes": 235,
+      "sha256": "5a39d7ff015f2eebe9abfb400f36c5969aba7a5880a88c3d740fa4684a8850ff"
+    },
+    "FORMULA_DECISION.csv": {
+      "bytes": 226,
+      "sha256": "14a63cf594bb533b0961b045901c6a88ea18d8b303747ac230fcf1a06611eee0"
+    },
+    "NEGATIVE_MUTATION_RESULTS.csv": {
+      "bytes": 477,
+      "sha256": "6f100fa176500269a21965eb0559b0cb0ddd00a864a47c38169aa8fc0e58269d"
+    },
+    "OPTIONAL_LANE_DISPOSITION.csv": {
+      "bytes": 442,
+      "sha256": "c77d74cc51e56f0ed40e9fe30c116b40a87b34bbd2d0812949ef296b22383899"
+    },
+    "PRESERVATION_PROOF.md": {
+      "bytes": 416,
+      "sha256": "df4b5076c927b9eb61909b290ad5dcf15eb8ef8124f36ed49a7d1268e17d1b0b"
+    },
+    "README.md": {
+      "bytes": 784,
+      "sha256": "1b21bb45bfb78b8a4a5e479613d155650b1dca550c07a910f295509990fdc009"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 471,
+      "sha256": "193b84f3b9804d29568ef52e0eaca0bab675447d675340fde61c604cbd6caa62"
+    }
+  },
+  "hash_representation": "UTF8_LF_CANONICAL_BYTES",
+  "manifest_excludes_self": true,
+  "packet": "docs/hq/master/nwr_formula_decision_null_closure_v1_20260801",
+  "required_file_count": 9,
+  "schema_version": "NWR_PHASE_4_NULL_CLOSURE_MANIFEST_V1"
+}

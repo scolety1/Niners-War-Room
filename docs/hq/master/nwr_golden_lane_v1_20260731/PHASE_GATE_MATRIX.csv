@@ -4,8 +4,8 @@ PHASE_1A,1A,Existing Source Rights and Identity Audit,PASS,1,1,11 of 11 families
 PHASE_1B,1B,Canonical Baseline Health,PASS,1,1,14 snapshots pinned; weekly derived repair; defects quarantined; Outcome V3 LF checkout exact,Advance to Phase 2
 PHASE_2,2,NWR Outcome and Baseline Contract,PASS,1,1,Separate targets and deterministic review-only baseline contracts validated,Advance to Phase 3
 PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,PASS,1,1,Five preregistered families tested with truthful null result,Advance to Phase 4 null closure
-PHASE_4,4,Formula Decision,ACTIVE,0,1,No Phase 3 family passed every gate,Record the bounded null decision
-PHASE_5,5,Optional Paid Role or Data Pilot,PENDING_CONDITIONAL,0,1,No proven decision-relevant open-data gap,Do not activate without Phase 3 evidence and owner approval
-PHASE_6,6,Separate Market-Retention Program,PENDING,0,1,Not yet executed,Await preceding gates
-PHASE_7,7,Product Completion,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_4,4,Formula Decision,PASS,1,1,Truthful null accepted and Finished V1 retained,Close formula research
+PHASE_5,5,Optional Paid Role or Data Pilot,PASS,1,1,NOT_REQUIRED_NO_PROVEN_GAP with no provider work executed,Advance without optional lane
+PHASE_6,6,Separate Market-Retention Program,PASS,1,1,NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY with market kept separate,Advance without market lane
+PHASE_7,7,Product Completion,ACTIVE,0,1,Formula provider and market prerequisites safely closed,Run contracted product completion
 PHASE_8,8,Golden Release Acceptance,PENDING,0,1,Not yet executed,Await preceding gates

@@ -1,5 +1,17 @@
 # Validation Results
 
+## Phase 4, Phase 5, and Phase 6 dispositions
+
+- Phase 3 evidence reread: `NULL_NO_FAMILY_PASSED`, zero passing families.
+- Formula decision: PASS, truthful null accepted; Finished V1 retained.
+- Optional Phase 5: PASS as `NOT_REQUIRED_NO_PROVEN_GAP`; no provider work executed.
+- Separate Phase 6: PASS as `NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY`; no market work executed.
+- Model, rank, source, product, persistence, provider, scheduler, and user-state mutation: NONE.
+- Gate arithmetic: 8/10 = 80%.
+- Exactly one next lane: Phase 7 Product Completion.
+- Deterministic validation: PASS; focused and applicable regressions: PASS, 111/111; Ruff, compile, and Git whitespace checks: PASS.
+- Independent adoption review remains required before canonical push.
+
 ## Phase 3 gate
 
 - Exact 5,518-row Formula Data Mart and admitted lifecycle sidecar: PASS.

@@ -1,7 +1,7 @@
 # Next Authorized Lane
 
-Phase 4 - Formula Decision, null-result closure only.
+Phase 7 - Product Completion, contracted authorities only.
 
-Phase 3 returned `NULL_NO_FAMILY_PASSED`. Phase 4 may therefore record the truthful null, retain Finished V1 and all existing governed authorities, close the bounded formula-research path, and determine that optional Phase 5 and separate Phase 6 are not required when their prerequisites remain absent. It may not select, tune, or integrate a replacement formula.
+The formula path is closed with a truthful null; optional provider and market lanes are not required. Phase 7 may now audit and complete high-value product surfaces using existing governed, source-separated authorities. It may not invent a common scale, change a model or production rank, call providers, scrape, introduce opaque recommendations, or mutate user state without the governed persistence and rollback contract.
 
-After independent adoption and canonicalization, Phase 7 may become the next applicable lane if all product-entry preconditions pass.
+The Phase 7 closeout must generate exactly one Phase 8 Golden Release acceptance work order.

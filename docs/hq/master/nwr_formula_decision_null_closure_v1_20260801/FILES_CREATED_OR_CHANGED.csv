@@ -1,0 +1,5 @@
+path,change_type,scope
+docs/hq/master/nwr_formula_decision_null_closure_v1_20260801/**,ADD,phase_4_packet
+scripts/validate_nwr_phase4_null_closure_v1.py,ADD,phase_4_validator
+tests/test_nwr_phase4_null_closure_v1.py,ADD,phase_4_tests
+
