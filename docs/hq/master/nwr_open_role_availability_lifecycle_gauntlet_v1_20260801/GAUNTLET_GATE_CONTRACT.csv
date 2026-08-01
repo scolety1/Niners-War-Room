@@ -1,0 +1,13 @@
+gate_id,threshold,scope,fail_behavior
+G01_SAME_ROW,identical nonmissing rows for challenger and PYF,each result row,FAIL
+G02_SUPPORT,rows>=100 and positives>=20 and negatives>=20 and test_seasons>=5,each position and horizon,INSUFFICIENT_SUPPORT
+G03_COVERAGE,eligible coverage>=0.80,each position and horizon,FAIL
+G04_MEDIAN_FOLD_UPLIFT,median season Spearman delta>=0.010,each position and horizon,FAIL
+G05_BOOTSTRAP_LOWER,season-block 95% lower mean delta>0,each position and horizon,FAIL
+G06_SEASON_WINS,positive-delta season share>=0.60,each position and horizon,FAIL
+G07_WORST_FOLD,worst season delta>=-0.10,each position and horizon,FAIL
+G08_REPLACEMENT_PRECISION,mean replacement-hit precision delta>=0,each position and horizon,FAIL
+G09_PRODUCTIVE_VETERAN,mean positive within-season percentile demotion<=0.10,each family,FAIL
+G10_LOW_GAMES,mean positive within-season percentile demotion<=0.10,each family,FAIL
+G11_MULTIPLE_COMPARISON,Holm-adjusted family bootstrap p<=0.05,all five families,FAIL
+G12_ALL_CELLS,every applicable position and horizon passes G01 through G08,family,FAIL

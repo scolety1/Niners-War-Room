@@ -54,3 +54,13 @@ ties, support thresholds, and fail-closed missingness. Its 94-row synthetic
 persistence fixture produced four deterministic review-only baseline rows with
 SHA-256 `c71bff8b924bd1e02f0c65fabe51d368c595d1effa0702c7ddf7ce833dcd0979`
 in two disposable roots. Production and user state were not touched.
+
+## Phase 3 gauntlet result
+
+Phase 3 began from canonical HQ `e92e5d17d83cfd4af23591e6632dbe6229310f14`
+and tree `4543f190e07e001567aaa969e1c848bb9c9a6c81`. It evaluated five
+preregistered review-only feature families on the exact 5,518-row Formula Data
+Mart across 39 applicable position and separate target-horizon cells. No family
+cleared every chronological, support, bootstrap, Holm, replacement-precision,
+productive-veteran, and low-games gate. The result is the accepted truthful null
+`NULL_NO_FAMILY_PASSED`; no model or ranking authority changed.

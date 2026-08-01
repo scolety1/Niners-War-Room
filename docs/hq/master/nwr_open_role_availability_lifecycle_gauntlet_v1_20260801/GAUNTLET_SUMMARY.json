@@ -1,0 +1,11 @@
+{
+  "bootstrap_repetitions": 2000,
+  "families_passed": [],
+  "families_tested": 5,
+  "formula_data_mart_rows": 5518,
+  "overall_verdict": "NULL_NO_FAMILY_PASSED",
+  "production_changes": 0,
+  "provider_calls": 0,
+  "schema_version": "NWR_PHASE_3_GAUNTLET_SUMMARY_V1",
+  "target_components_tested": 3
+}

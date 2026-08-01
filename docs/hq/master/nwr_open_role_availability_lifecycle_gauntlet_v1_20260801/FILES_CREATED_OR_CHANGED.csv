@@ -1,0 +1,5 @@
+path,change_type,scope
+docs/hq/master/nwr_open_role_availability_lifecycle_gauntlet_v1_20260801/**,ADD,phase_3_packet
+scripts/run_nwr_phase3_gauntlet_v1.py,ADD,phase_3_evaluator
+tests/test_nwr_phase3_gauntlet_v1.py,ADD,phase_3_tests
+

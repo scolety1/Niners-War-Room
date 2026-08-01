@@ -1,0 +1,10 @@
+mutation_id,mutation,expected,result
+M01,target-season points inserted as feature,reject leakage,REJECTED_BY_DENYLIST_CONTRACT
+M02,current market or ADP column added,reject source,REJECTED_BY_DENYLIST_CONTRACT
+M03,missing feature filled with zero,reject missingness coercion,REJECTED_BY_NONMISSING_SAME_ROW_CONTRACT
+M04,name-only lifecycle join,reject identity,REJECTED_BY_EXACT_KEY_CONTRACT
+M05,anchor 2025 used for horizon two,reject right censoring,REJECTED_BY_HORIZON_CLOSURE
+M06,random row split,reject temporal design,REJECTED_BY_EXPANDING_FOLD_CONTRACT
+M07,sixth unregistered feature family,reject search expansion,REJECTED_BY_EXACT_REGISTRY
+M08,production or ranking output requested,reject mutation,REJECTED_BY_REVIEW_ONLY_CONTRACT
+

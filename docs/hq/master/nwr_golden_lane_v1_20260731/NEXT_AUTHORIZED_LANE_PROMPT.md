@@ -1,23 +1,19 @@
-# NWR Golden Lane Phase 3 Work Order
+# NWR Golden Lane Phase 4 Work Order
 
-## Open Role, Availability, and Lifecycle Gauntlet
+## Formula Decision - Truthful Null Closure
 
-Start only from the exact canonical `work/hq-parallel-control` head after fetching and pruning origin. Use fresh implementation and independent-adoption worktrees. Read the complete Golden Lane, Phase 1A, Phase 1B, and Phase 2 packets before mutation. Confirm the stable checkout is clean and exact, the operational checkout is identified but untouched, no conflicting launcher or provider process is running, and the named refresh task remains disabled.
+Start from the exact newest canonical `work/hq-parallel-control` head in a fresh implementation worktree. Read and validate the complete Golden Lane and Phase 3 gauntlet packets. Confirm the Phase 3 generated evidence deterministically reports `NULL_NO_FAMILY_PASSED`, no family is marked `PASS_REVIEW_ONLY`, no owner decision is active, and protected authorities and state remain unchanged.
 
 ## Mission
 
-Preregister and execute a review-only gauntlet using only the exact governed Formula Data Mart, admitted lifecycle sidecar, Position-Year Factors, Phase 2 replacement references, prior games/opportunity fields, low-games indicators, age, and lifecycle strata. Keep Win Now, two-year Dynasty, and three-year Dynasty targets separate. Use expanding, nested, horizon-aware chronological folds; minimum-support controls; deterministic ties; and an explicit multiple-comparison rule. Treat availability as factual context, never an injury penalty or an ungoverned proxy.
+Formally close the bounded formula-research path with a truthful null result. Retain Finished V1, Outcome V3, Model V4 Rookie Review, the existing review-only replacement references, and all source-separated authority. Record that none of the five Phase 3 feature families is authorized for formula or ranking use.
 
-The lane must truthfully determine whether any tested role, availability, or lifecycle signal earns review-only promotion. A null result is valid and must not be optimized away.
-
-## Closed lanes
-
-Do not perform replay archaeology, V2-2 or Dual Lens revival, rookie feature searches, CFBD or recruiting acquisition, rookie opportunity research, common-scale work, broad formula search, Outcome V3 recalibration, market/ADP work, or product/UI integration. Do not call providers or change scheduler state.
+Because Phase 3 proved no specific decision-relevant open-data gap, record optional Phase 5 as `NOT_REQUIRED_NO_PROVEN_GAP`; do not contact, trial, purchase, or evaluate a provider. Because no admitted retained historical market authority exists and product completion does not require a market model, record Phase 6 as `NOT_REQUIRED_NO_ADMITTED_MARKET_AUTHORITY`; keep market retention separate and deferred. These are gate dispositions, not execution of Phase 5 or Phase 6.
 
 ## Allowed mutations
 
-Only governed documentation, deterministic analysis code, immutable fixtures, validators, and tests for this Phase 3 gauntlet. Do not change formulas, rankings, model outputs, application behavior, generated data packs, provider adapters, active-pack pointers, production persistence, or user state.
+Governed closeout documentation, deterministic validators, tests, the closed-work registry, gate/status records, and the next Phase 7 product-completion work order. Do not change formula code, formula weights, rankings, model outputs, source admission, application behavior, generated packs, active-pack pointers, persistence, user state, provider adapters, or scheduler state.
 
 ## Acceptance
 
-Require deterministic reruns, negative controls, a second disposable-root comparison, protected-authority preservation, and independent adoption review. Advance only with a documented PASS or truthful null result. Any production-choice question becomes an owner decision at Phase 4. Allow at most one bounded correction cycle. Use a normal push only after re-reading the remote; synchronize only the stable checkout; leave the operational checkout untouched.
+Require deterministic regeneration, negative controls, protected-authority preservation, applicable regressions, a fresh independent adoption worktree, normal non-force push, remote readback, and stable-only synchronization. If any Phase 3 family is found to pass, stop for the production-model owner decision rather than continuing. Otherwise authorize exactly Phase 7 under its contracted product authority and continue automatically.

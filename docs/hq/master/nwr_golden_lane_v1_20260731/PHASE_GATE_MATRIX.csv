@@ -3,8 +3,8 @@ PHASE_0,0,Unified Board Closeout,PASS,1,1,Common scale rejected and existing aut
 PHASE_1A,1A,Existing Source Rights and Identity Audit,PASS,1,1,11 of 11 families explicitly classified with unknowns failed closed,Advance to Phase 1B
 PHASE_1B,1B,Canonical Baseline Health,PASS,1,1,14 snapshots pinned; weekly derived repair; defects quarantined; Outcome V3 LF checkout exact,Advance to Phase 2
 PHASE_2,2,NWR Outcome and Baseline Contract,PASS,1,1,Separate targets and deterministic review-only baseline contracts validated,Advance to Phase 3
-PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,ACTIVE,0,1,Phase 2 outcome and baseline contract is deterministic and fail-closed,Run the bounded Phase 3 gauntlet work order
-PHASE_4,4,Formula Decision,PENDING,0,1,Not yet executed,Await preceding gates
+PHASE_3,3,Open Role Availability and Lifecycle Gauntlet,PASS,1,1,Five preregistered families tested with truthful null result,Advance to Phase 4 null closure
+PHASE_4,4,Formula Decision,ACTIVE,0,1,No Phase 3 family passed every gate,Record the bounded null decision
 PHASE_5,5,Optional Paid Role or Data Pilot,PENDING_CONDITIONAL,0,1,No proven decision-relevant open-data gap,Do not activate without Phase 3 evidence and owner approval
 PHASE_6,6,Separate Market-Retention Program,PENDING,0,1,Not yet executed,Await preceding gates
 PHASE_7,7,Product Completion,PENDING,0,1,Not yet executed,Await preceding gates

@@ -1,0 +1,5 @@
+target_component,horizon,maximum_anchor_season,label_available_rule,status
+WIN_NOW_POINTS_T0,0,2025,March 1 of t+1,SEPARATE_CONTROLLING_TARGET
+TWO_YEAR_POINTS_T1,1,2024,March 1 of t+2,SEPARATE_CONTROLLING_TARGET
+THREE_YEAR_POINTS_T2,2,2023,March 1 of t+3,SEPARATE_CONTROLLING_TARGET
+

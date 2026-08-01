@@ -1,7 +1,7 @@
 # Next Authorized Lane
 
-Phase 3 - Open Role, Availability, and Lifecycle Gauntlet.
+Phase 4 - Formula Decision, null-result closure only.
 
-This is a bounded preregistered evidence lane. It may test only governed Formula Data Mart fields, the admitted lifecycle authority, prior games/opportunity fields, Position-Year Factors, and the Phase 2 review-only replacement baselines against the separate Phase 2 football targets. It may not admit a Phase 1A-blocked source or market data, change formulas or rankings, recalibrate Outcome V3, mutate production defaults or state, or begin product/UI work.
+Phase 3 returned `NULL_NO_FAMILY_PASSED`. Phase 4 may therefore record the truthful null, retain Finished V1 and all existing governed authorities, close the bounded formula-research path, and determine that optional Phase 5 and separate Phase 6 are not required when their prerequisites remain absent. It may not select, tune, or integrate a replacement formula.
 
-The bounded-continuous controller must verify the prompt SHA-256 and phase identity recorded in `GOLDEN_LANE_AUTOPILOT_STATE.json`. When all automatic-advance gates pass, it may create a fresh Phase 3 implementation worktree and start this work order without an owner handoff.
+After independent adoption and canonicalization, Phase 7 may become the next applicable lane if all product-entry preconditions pass.

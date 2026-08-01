@@ -1,0 +1,7 @@
+family_id,positions,signal_definition,allowed_source,role,forbidden_interpretation
+PRODUCTION_PERSISTENCE_2Y,QB|RB|WR|TE,prior_2yr_weighted_nwr_points,Formula Data Mart,review-only challenger,production formula or rank
+ROLE_OPPORTUNITY_VOLUME,RB|WR|TE,prior_opportunities,Formula Data Mart,review-only challenger,route participation or future role guarantee
+ROLE_TRAJECTORY_DELTA,QB|RB|WR|TE,pyf_prior_nwr_points minus prior_2yr_weighted_nwr_points,Formula Data Mart,review-only challenger,unrestricted trend tuning
+RB_HIGH_LEVERAGE_RUSHING,RB,prior_rushing_first_downs,Formula Data Mart,review-only challenger,goal-line role or touchdown projection
+QB_RUSHING_OPPORTUNITY,QB,0.1 times prior_rushing_yards plus 0.4 times prior_rushing_first_downs,Formula Data Mart plus governed scoring config,review-only challenger,sack behavior or passing replacement
+

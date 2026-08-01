@@ -1,5 +1,17 @@
 # Validation Results
 
+## Phase 3 gate
+
+- Exact 5,518-row Formula Data Mart and admitted lifecycle sidecar: PASS.
+- Five preregistered families, three separate target horizons, and 39 applicable cells: PASS.
+- Expanding chronological folds, target closure, same-row PYF comparisons, Phase 2 replacement references, 2,000-repetition season bootstrap, Holm correction, and guardrails: PASS.
+- Truthful result: `NULL_NO_FAMILY_PASSED`; no feature family promoted.
+- Model/source admission, production mutation, provider calls, and recommendations: NONE.
+- Focused and applicable regressions: PASS, 106/106; Ruff, compile, and Git whitespace checks: PASS.
+- Gate arithmetic: PASS, 5/10 = 50%.
+- Exactly one next lane: PASS, Phase 4 null-result closure.
+- Independent adoption review remains required before canonical push.
+
 ## Phase 2 gate
 
 - Outcome and baseline contract validator: PASS, 69 governed contract rows.

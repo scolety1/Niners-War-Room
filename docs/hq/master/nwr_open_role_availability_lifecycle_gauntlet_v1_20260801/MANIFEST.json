@@ -1,0 +1,61 @@
+{
+  "files": {
+    "FAMILY_DECISIONS.csv": {
+      "bytes": 461,
+      "sha256": "33542818504497eb78afd39d619677a397e32c43d562ad9e3ca090c8bab0984d"
+    },
+    "FILES_CREATED_OR_CHANGED.csv": {
+      "bytes": 234,
+      "sha256": "e4fdf51a2ce5a2085d7a19c893db0984422abcfe7cbe71e6115673a18bc48645"
+    },
+    "GAUNTLET_GATE_CONTRACT.csv": {
+      "bytes": 1093,
+      "sha256": "d7b0bf2525e2c8d8df5fb6593d0ef86153170691d20b8d52ad6e95506bb182e8"
+    },
+    "GAUNTLET_RESULTS.csv": {
+      "bytes": 5511,
+      "sha256": "dc2a788a91c13d61430c1326fa709dc2c7571c879d6a1e76bae021039c0760ec"
+    },
+    "GAUNTLET_SUMMARY.json": {
+      "bytes": 303,
+      "sha256": "3e8b81b6024d28b868cc6727d17e2c5c63d97e7974cec20de556f76b81f5f265"
+    },
+    "GUARDRAIL_RESULTS.csv": {
+      "bytes": 755,
+      "sha256": "136a4843b043b4e16d39ecc47cfa8cf8afe3120ade2932fa1f11df42c9147f23"
+    },
+    "NEGATIVE_MUTATION_RESULTS.csv": {
+      "bytes": 742,
+      "sha256": "343e9352acedc886c972ef06e5e154cd14c8d5996ec24934553da197e98fd6cf"
+    },
+    "PREDECLARED_FEATURE_FAMILIES.csv": {
+      "bytes": 855,
+      "sha256": "3f2e076e702789f7e05be209e048566d0d64b3e0bf06d6fe253aec8b7c42ffd0"
+    },
+    "PRESERVATION_PROOF.md": {
+      "bytes": 740,
+      "sha256": "9440486ce0658c41ec0a761d7aecdf536aa98b1d32ea0597e2dbbcb59a4670b1"
+    },
+    "README.md": {
+      "bytes": 1259,
+      "sha256": "d9ba9780226391deb0c71c06fde659e372bc4465b4f14c38351094ee45cb5e76"
+    },
+    "SOURCE_TRACE.md": {
+      "bytes": 1011,
+      "sha256": "e4601586c9a0cad34c05e5d723c2b10b86b29aa86486ae02fabe5246a01c137f"
+    },
+    "TARGET_HORIZON_REGISTRY.csv": {
+      "bytes": 284,
+      "sha256": "09b3deb224707d3fb10f3edbf00363744e578a7ec7d4a0332af9c881c3b2d58c"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 1216,
+      "sha256": "1ceb166c8a540e712993d0543747156c957e65f87739a790d21c3eaa3ac7a8de"
+    }
+  },
+  "hash_representation": "UTF8_LF_CANONICAL_BYTES",
+  "manifest_excludes_self": true,
+  "packet": "docs/hq/master/nwr_open_role_availability_lifecycle_gauntlet_v1_20260801",
+  "required_file_count": 14,
+  "schema_version": "NWR_PHASE_3_GAUNTLET_MANIFEST_V1"
+}
