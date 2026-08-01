@@ -1,0 +1,7 @@
+field,required,rule
+scenario_id,YES,Stable exact ID
+scenario_type,YES,One of four governed types
+title,YES,User-visible title
+assets,YES,Exact admitted IDs only
+source_versions,YES,Preserved and stale-checked
+payload,YES,Manual inputs; recommendation and secret keys rejected

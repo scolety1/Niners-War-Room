@@ -1,0 +1,5 @@
+test,result,evidence
+fresh additive migration,PASS,MIGRATED with verified backup and receipt
+future schema,PASS,blocked without write
+corrupt source store,PASS,blocked without write
+injected failure after backup,PASS,ROLLED_BACK and prior schema absent

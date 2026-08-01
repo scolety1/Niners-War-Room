@@ -1,0 +1,9 @@
+field,required,mutable,purpose
+decision_id,YES,NO,Exact receipt identity
+decision_type,YES,NO,Prospective action category
+assets,YES,NO,Exact governed asset IDs
+source_snapshot,YES,NO,Decision-time source evidence
+rationale,YES,YES,User-entered reasoning
+status,YES,YES,Draft/considered/decided/external completion/archive state
+follow_up_date,NO,YES,Prospective review date
+retrospective_notes,NO,YES,Later factual/user context

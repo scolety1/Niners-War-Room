@@ -1,0 +1,13 @@
+workflow,result,notes
+Personal Board create/edit/undo/export/import/archive/delete,PASS,Explicit user action; no canonical/source overwrite
+Decision Journal create/update/archive/delete,PASS,Explicit user action; no canonical/source overwrite
+Trading Lab scenario save,PASS,Explicit user action; no canonical/source overwrite
+Player Compare scenario save,PASS,Explicit user action; no canonical/source overwrite
+Draft scenario save,PASS,Explicit user action; no canonical/source overwrite
+Asset Explorer scenario save,PASS,Explicit user action; no canonical/source overwrite
+Command Center summaries and quick actions,PASS,Explicit user action; no canonical/source overwrite
+Asset Explorer personal filters,PASS,Explicit user action; no canonical/source overwrite
+Rookie Board source-separated personal overlay,PASS,Explicit user action; no canonical/source overwrite
+Live Draft personal workspace links,PASS,Explicit user action; no canonical/source overwrite
+backup / dry-run / restore / restart,PASS,Explicit user action; no canonical/source overwrite
+recommendation behavior,PASS_MANUAL_DESCRIPTIVE_ONLY,Explicit user action; no canonical/source overwrite

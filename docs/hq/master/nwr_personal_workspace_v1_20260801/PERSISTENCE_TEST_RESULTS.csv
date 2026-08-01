@@ -1,0 +1,8 @@
+test,result,evidence
+focused implementation suite,PASS,113 passed
+atomic deterministic Unicode round trip,PASS,checksum envelope and restart readback
+concurrent writer lock,PASS,fails closed
+page-open write,PASS,no workspace root created across browser matrix
+all four asset families,PASS,current/scored rookie/blocked rookie/pick
+all decision types,PASS,parameterized round trip
+all scenario types,PASS,restart round trip

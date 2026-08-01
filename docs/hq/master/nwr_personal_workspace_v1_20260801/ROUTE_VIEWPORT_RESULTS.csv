@@ -1,0 +1,196 @@
+route,viewport,result,h1,controls,page_not_found,traceback,overflow,unnamed_controls,keyboard_blocked
+draft-cockpit,375x812,PASS,Draft Cockpit,42,False,False,0,0,0
+mock-draft,375x812,PASS,Mock Drafts,109,False,False,0,0,0
+rankings,375x812,PASS,Dynasty Rankings,69,False,False,0,0,0
+asset-explorer,375x812,PASS,Asset Explorer,39,False,False,0,0,0
+player-compare,375x812,PASS,Player Compare,39,False,False,0,0,0
+trading-lab,375x812,PASS,Trading Lab,75,False,False,0,0,0
+rookie-board,375x812,PASS,2026 Rookie Board,34,False,False,0,0,0
+post-draft-mode,375x812,PASS,Draft Analyzer,56,False,False,0,0,0
+development-lab,375x812,PASS,Lab Home,117,False,False,0,0,0
+roster-weakness-tracker,375x812,PASS,Roster Weakness Tracker,49,False,False,0,0,0
+future-pick-planning,375x812,PASS,Future Pick Planning,54,False,False,0,0,0
+upcoming-draft-prep,375x812,PASS,Upcoming Draft Prep,81,False,False,0,0,0
+keeper-deadline-prep,375x812,PASS,Keeper Deadline Prep,55,False,False,0,0,0
+drop-deadline-prep,375x812,PASS,Drop Deadline Prep,55,False,False,0,0,0
+trade-deadline-prep,375x812,PASS,Trade Deadline Prep,57,False,False,0,0,0
+future-tools,375x812,PASS,Future Tools,36,False,False,0,0,0
+refresh-data,375x812,PASS,Refresh Data,49,False,False,0,0,0
+evidence-integration-review,375x812,PASS,Evidence Review,67,False,False,0,0,0
+evidence-review-hub,375x812,PASS,Evidence Review Hub,51,False,False,0,0,0
+settings-data-health,375x812,PASS,Settings / Data Health,94,False,False,0,0,0
+personal-board,375x812,PASS,Personal Board,44,False,False,0,0,0
+decision-journal,375x812,PASS,Decision Journal,36,False,False,0,0,0
+saved-scenarios,375x812,PASS,Saved Scenarios,38,False,False,0,0,0
+draft-cockpit-root,375x812,PASS,Draft Cockpit,42,False,False,0,0,0
+drafting-mode,375x812,PASS,Drafting Mode moved into Draft Cockpit,31,False,False,0,0,0
+live-draft-room,375x812,PASS,Draft Cockpit,42,False,False,0,0,0
+drafting-mode-root,375x812,PASS,Draft Cockpit,127,False,False,0,0,0
+home,375x812,PASS,Dynasty Rankings,69,False,False,0,0,0
+draft-day-home,375x812,PASS,Dynasty Rankings,69,False,False,0,0,0
+cheat-sheets,375x812,PASS,Cheat Sheets,70,False,False,0,0,0
+draft-room,375x812,PASS,Draft Prep,39,False,False,0,0,0
+draft-prep,375x812,PASS,Draft Prep Compatibility,31,False,False,0,0,0
+outcome-columns,375x812,PASS,Outcome Columns,36,False,False,0,0,0
+decision-board,375x812,PASS,Decision Board,51,False,False,0,0,0
+nfl-usage-evidence-review,375x812,PASS,NFL Usage Evidence Review,32,False,False,0,0,0
+unified-universe-review,375x812,PASS,Unified Universe Review,64,False,False,0,0,0
+settings,375x812,PASS,Settings / Data Health,94,False,False,0,0,0
+post-draft,375x812,PASS,Draft Analyzer,56,False,False,0,0,0
+draft-analyzer,375x812,PASS,Draft Analyzer,56,False,False,0,0,0
+legacy-rankings,375x812,PASS,Dynasty Rankings,72,False,False,0,0,0
+legacy-draft-room,375x812,PASS,Draft Prep,21,False,False,0,0,0
+legacy-live-draft-room,375x812,PASS,Draft Cockpit,28,False,False,0,0,0
+legacy-decision-board,375x812,PASS,Decision Board,21,False,False,0,0,0
+legacy-external-asset-reviews,375x812,PASS,External Asset Reviews,28,False,False,0,0,0
+legacy-settings,375x812,PASS,Settings,82,False,False,0,0,0
+review-workflow,375x812,PASS,Review Workflow,29,False,False,0,0,0
+command-center,375x812,PASS,Review Workflow,29,False,False,0,0,0
+trade-lab,375x812,PASS,External Asset Reviews,28,False,False,0,0,0
+model-tuning,375x812,PASS,Model Tuning,28,False,False,0,0,0
+import-refresh,375x812,PASS,Import & Refresh,84,False,False,0,0,0
+war-board,375x812,PASS,War Board,82,False,False,0,0,0
+my-team,375x812,PASS,My Team,78,False,False,0,0,0
+league-targets,375x812,PASS,League Targets,51,False,False,0,0,0
+player-board,375x812,PASS,Dynasty Rankings,69,False,False,0,0,0
+draft-board,375x812,PASS,Draft Prep,21,False,False,0,0,0
+june-15-review,375x812,PASS,Decision Board,21,False,False,0,0,0
+model-lab,375x812,PASS,Model Lab,76,False,False,0,0,0
+freeze,375x812,PASS,Freeze,52,False,False,0,0,0
+model-lab-sources,375x812,PASS,Settings,84,False,False,0,0,0
+source_overrides,375x812,PASS,Settings,86,False,False,0,0,0
+rookie-model-debug,375x812,PASS,Rookie Board,32,False,False,0,0,0
+rookie_model,375x812,PASS,Rookie Board,32,False,False,0,0,0
+historical-replay-debug,375x812,PASS,Historical Rookie Replay,27,False,False,0,0,0
+historical_replay,375x812,PASS,Historical Rookie Replay,27,False,False,0,0,0
+draft-cockpit,768x1024,PASS,Draft Cockpit,80,False,False,0,0,0
+mock-draft,768x1024,PASS,Mock Drafts,81,False,False,0,0,0
+rankings,768x1024,PASS,Dynasty Rankings,39,False,False,0,0,0
+asset-explorer,768x1024,PASS,Asset Explorer,20,False,False,0,0,0
+player-compare,768x1024,PASS,Player Compare,22,False,False,0,0,0
+trading-lab,768x1024,PASS,Trading Lab,51,False,False,0,0,0
+rookie-board,768x1024,PASS,2026 Rookie Board,15,False,False,0,0,0
+post-draft-mode,768x1024,PASS,Draft Analyzer,32,False,False,0,0,0
+development-lab,768x1024,PASS,Lab Home,98,False,False,0,0,0
+roster-weakness-tracker,768x1024,PASS,Roster Weakness Tracker,30,False,False,0,0,0
+future-pick-planning,768x1024,PASS,Future Pick Planning,35,False,False,0,0,0
+upcoming-draft-prep,768x1024,PASS,Upcoming Draft Prep,64,False,False,0,0,0
+keeper-deadline-prep,768x1024,PASS,Keeper Deadline Prep,36,False,False,0,0,0
+drop-deadline-prep,768x1024,PASS,Drop Deadline Prep,36,False,False,0,0,0
+trade-deadline-prep,768x1024,PASS,Trade Deadline Prep,38,False,False,0,0,0
+future-tools,768x1024,PASS,Future Tools,17,False,False,0,0,0
+refresh-data,768x1024,PASS,Refresh Data,30,False,False,0,0,0
+evidence-integration-review,768x1024,PASS,Evidence Review,48,False,False,0,0,0
+evidence-review-hub,768x1024,PASS,Evidence Review Hub,32,False,False,0,0,0
+settings-data-health,768x1024,PASS,Settings / Data Health,75,False,False,0,0,0
+personal-board,768x1024,PASS,Personal Board,43,False,False,0,0,0
+decision-journal,768x1024,PASS,Decision Journal,29,False,False,0,0,0
+saved-scenarios,768x1024,PASS,Saved Scenarios,21,False,False,0,0,0
+draft-cockpit-root,768x1024,PASS,Draft Cockpit,49,False,False,0,0,0
+drafting-mode,768x1024,PASS,Drafting Mode moved into Draft Cockpit,12,False,False,0,0,0
+live-draft-room,768x1024,PASS,Draft Cockpit,42,False,False,0,0,0
+drafting-mode-root,768x1024,PASS,Draft Cockpit,108,False,False,0,0,0
+home,768x1024,PASS,Dynasty Rankings,39,False,False,0,0,0
+draft-day-home,768x1024,PASS,Dynasty Rankings,39,False,False,0,0,0
+cheat-sheets,768x1024,PASS,Cheat Sheets,45,False,False,0,0,0
+draft-room,768x1024,PASS,Draft Prep,20,False,False,0,0,0
+draft-prep,768x1024,PASS,Draft Prep Compatibility,12,False,False,0,0,0
+outcome-columns,768x1024,PASS,Outcome Columns,17,False,False,0,0,0
+decision-board,768x1024,PASS,Decision Board,32,False,False,0,0,0
+nfl-usage-evidence-review,768x1024,PASS,NFL Usage Evidence Review,13,False,False,0,0,0
+unified-universe-review,768x1024,PASS,Unified Universe Review,43,False,False,0,0,0
+settings,768x1024,PASS,Settings / Data Health,75,False,False,0,0,0
+post-draft,768x1024,PASS,Draft Analyzer,32,False,False,0,0,0
+draft-analyzer,768x1024,PASS,Draft Analyzer,32,False,False,0,0,0
+legacy-rankings,768x1024,PASS,Dynasty Rankings,52,False,False,0,0,0
+legacy-draft-room,768x1024,PASS,Draft Prep,14,False,False,0,0,0
+legacy-live-draft-room,768x1024,PASS,Draft Cockpit,21,False,False,0,0,0
+legacy-decision-board,768x1024,PASS,Decision Board,14,False,False,0,0,0
+legacy-external-asset-reviews,768x1024,PASS,External Asset Reviews,20,False,False,0,0,0
+legacy-settings,768x1024,PASS,Settings,75,False,False,0,0,0
+review-workflow,768x1024,PASS,Review Workflow,22,False,False,0,0,0
+command-center,768x1024,PASS,Review Workflow,22,False,False,0,0,0
+trade-lab,768x1024,PASS,External Asset Reviews,20,False,False,0,0,0
+model-tuning,768x1024,PASS,Model Tuning,9,False,False,0,0,0
+import-refresh,768x1024,PASS,Import & Refresh,77,False,False,0,0,0
+war-board,768x1024,PASS,War Board,72,False,False,0,0,0
+my-team,768x1024,PASS,My Team,71,False,False,0,0,0
+league-targets,768x1024,PASS,League Targets,44,False,False,0,0,0
+player-board,768x1024,PASS,Dynasty Rankings,39,False,False,0,0,0
+draft-board,768x1024,PASS,Draft Prep,14,False,False,0,0,0
+june-15-review,768x1024,PASS,Decision Board,14,False,False,0,0,0
+model-lab,768x1024,PASS,Model Lab,70,False,False,0,0,0
+freeze,768x1024,PASS,Freeze,20,False,False,0,0,0
+model-lab-sources,768x1024,PASS,Settings,195,False,False,0,0,0
+source_overrides,768x1024,PASS,Settings,49,False,False,0,0,0
+rookie-model-debug,768x1024,PASS,Rookie Board,26,False,False,0,0,0
+rookie_model,768x1024,PASS,Rookie Board,26,False,False,0,0,0
+historical-replay-debug,768x1024,PASS,Historical Rookie Replay,20,False,False,0,0,0
+historical_replay,768x1024,PASS,Historical Rookie Replay,20,False,False,0,0,0
+draft-cockpit,1440x1000,PASS,Draft Cockpit,48,False,False,0,0,0
+mock-draft,1440x1000,PASS,Mock Drafts,69,False,False,0,0,0
+rankings,1440x1000,PASS,Dynasty Rankings,38,False,False,0,0,0
+asset-explorer,1440x1000,PASS,Asset Explorer,19,False,False,0,0,0
+player-compare,1440x1000,PASS,Player Compare,21,False,False,0,0,0
+trading-lab,1440x1000,PASS,Trading Lab,50,False,False,0,0,0
+rookie-board,1440x1000,PASS,2026 Rookie Board,14,False,False,0,0,0
+post-draft-mode,1440x1000,PASS,Draft Analyzer,31,False,False,0,0,0
+development-lab,1440x1000,PASS,Lab Home,97,False,False,0,0,0
+roster-weakness-tracker,1440x1000,PASS,Roster Weakness Tracker,29,False,False,0,0,0
+future-pick-planning,1440x1000,PASS,Future Pick Planning,34,False,False,0,0,0
+upcoming-draft-prep,1440x1000,PASS,Upcoming Draft Prep,63,False,False,0,0,0
+keeper-deadline-prep,1440x1000,PASS,Keeper Deadline Prep,35,False,False,0,0,0
+drop-deadline-prep,1440x1000,PASS,Drop Deadline Prep,35,False,False,0,0,0
+trade-deadline-prep,1440x1000,PASS,Trade Deadline Prep,37,False,False,0,0,0
+future-tools,1440x1000,PASS,Future Tools,16,False,False,0,0,0
+refresh-data,1440x1000,PASS,Refresh Data,29,False,False,0,0,0
+evidence-integration-review,1440x1000,PASS,Evidence Review,47,False,False,0,0,0
+evidence-review-hub,1440x1000,PASS,Evidence Review Hub,31,False,False,0,0,0
+settings-data-health,1440x1000,PASS,Settings / Data Health,74,False,False,0,0,0
+personal-board,1440x1000,PASS,Personal Board,29,False,False,0,0,0
+decision-journal,1440x1000,PASS,Decision Journal,12,False,False,0,0,0
+saved-scenarios,1440x1000,PASS,Saved Scenarios,20,False,False,0,0,0
+draft-cockpit-root,1440x1000,PASS,Draft Cockpit,36,False,False,0,0,0
+drafting-mode,1440x1000,PASS,Drafting Mode moved into Draft Cockpit,11,False,False,0,0,0
+live-draft-room,1440x1000,PASS,Draft Cockpit,47,False,False,0,0,0
+drafting-mode-root,1440x1000,PASS,Draft Cockpit,107,False,False,0,0,0
+home,1440x1000,PASS,Dynasty Rankings,38,False,False,0,0,0
+draft-day-home,1440x1000,PASS,Dynasty Rankings,38,False,False,0,0,0
+cheat-sheets,1440x1000,PASS,Cheat Sheets,44,False,False,0,0,0
+draft-room,1440x1000,PASS,Draft Prep,19,False,False,0,0,0
+draft-prep,1440x1000,PASS,Draft Prep Compatibility,11,False,False,0,0,0
+outcome-columns,1440x1000,PASS,Outcome Columns,16,False,False,0,0,0
+decision-board,1440x1000,PASS,Decision Board,22,False,False,0,0,0
+nfl-usage-evidence-review,1440x1000,PASS,NFL Usage Evidence Review,12,False,False,0,0,0
+unified-universe-review,1440x1000,PASS,Unified Universe Review,42,False,False,0,0,0
+settings,1440x1000,PASS,Settings / Data Health,74,False,False,0,0,0
+post-draft,1440x1000,PASS,Draft Analyzer,31,False,False,0,0,0
+draft-analyzer,1440x1000,PASS,Draft Analyzer,14,False,False,0,0,0
+legacy-rankings,1440x1000,PASS,Dynasty Rankings,50,False,False,0,0,0
+legacy-draft-room,1440x1000,PASS,Draft Prep,12,False,False,0,0,0
+legacy-live-draft-room,1440x1000,PASS,Draft Cockpit,19,False,False,0,0,0
+legacy-decision-board,1440x1000,PASS,Decision Board,12,False,False,0,0,0
+legacy-external-asset-reviews,1440x1000,PASS,External Asset Reviews,18,False,False,0,0,0
+legacy-settings,1440x1000,PASS,Settings,83,False,False,0,0,0
+review-workflow,1440x1000,PASS,Review Workflow,20,False,False,0,0,0
+command-center,1440x1000,PASS,Review Workflow,20,False,False,0,0,0
+trade-lab,1440x1000,PASS,External Asset Reviews,18,False,False,0,0,0
+model-tuning,1440x1000,PASS,Model Tuning,8,False,False,0,0,0
+import-refresh,1440x1000,PASS,Import & Refresh,75,False,False,0,0,0
+war-board,1440x1000,PASS,War Board,70,False,False,0,0,0
+my-team,1440x1000,PASS,My Team,69,False,False,0,0,0
+league-targets,1440x1000,PASS,League Targets,42,False,False,0,0,0
+player-board,1440x1000,PASS,Dynasty Rankings,38,False,False,0,0,0
+draft-board,1440x1000,PASS,Draft Prep,12,False,False,0,0,0
+june-15-review,1440x1000,PASS,Decision Board,12,False,False,0,0,0
+model-lab,1440x1000,PASS,Model Lab,68,False,False,0,0,0
+freeze,1440x1000,PASS,Freeze,18,False,False,0,0,0
+model-lab-sources,1440x1000,PASS,Settings,193,False,False,0,0,0
+source_overrides,1440x1000,PASS,Settings,75,False,False,0,0,0
+rookie-model-debug,1440x1000,PASS,Rookie Board,24,False,False,0,0,0
+rookie_model,1440x1000,PASS,Rookie Board,24,False,False,0,0,0
+historical-replay-debug,1440x1000,PASS,Historical Rookie Replay,18,False,False,0,0,0
+historical_replay,1440x1000,PASS,Historical Rookie Replay,18,False,False,0,0,0
+/,375x812,PASS,Niners War Room,42,False,False,0,0,0
+/,768x1024,PASS,Niners War Room,23,False,False,0,0,0
+/,1440x1000,PASS,Niners War Room,22,False,False,0,0,0

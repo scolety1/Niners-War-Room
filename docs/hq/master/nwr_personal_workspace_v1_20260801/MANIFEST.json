@@ -1,0 +1,223 @@
+{
+  "browser_error_count": 0,
+  "files": [
+    {
+      "bytes": 432,
+      "path": "ACTIVE_PACK_AND_SOURCE_DATA_NO_CHANGE.md",
+      "sha256": "d6e5031dc8365e5c25be8d15ca6fdedb04b2aed652c9092593c772aab3d58c67"
+    },
+    {
+      "bytes": 499,
+      "path": "BACKUP_RESTORE_CONTRACT.md",
+      "sha256": "bbc782c38933d039323f36a31f0a421ffbef9cdac9bd6ad5ba9140a776812175"
+    },
+    {
+      "bytes": 332,
+      "path": "BACKUP_RESTORE_RESULTS.csv",
+      "sha256": "4f4c89db339d3791cb9b74bdcf1488c8bdbb09235c7816e5fd6486bdc4117cc7"
+    },
+    {
+      "bytes": 593,
+      "path": "DECISION_JOURNAL_CONTRACT.md",
+      "sha256": "3c23195a0d6ca405bb56a870aa30202a747f715610eb9a382c3bc13f4855b35e"
+    },
+    {
+      "bytes": 429,
+      "path": "DECISION_RECEIPT_FIELD_CONTRACT.csv",
+      "sha256": "a3f281432c98399a716f5ae20fb240ed1ae27b8b485ed0448a53974c6b564aae"
+    },
+    {
+      "bytes": 987,
+      "path": "DEMO_SCRIPT.md",
+      "sha256": "28698ccd4e14f5689f3e74b8b83974ba23f375bf59064dd1c8247932e65e40c6"
+    },
+    {
+      "bytes": 456,
+      "path": "EXECUTIVE_VERDICT.md",
+      "sha256": "df6a849796d1ec1c4d8e73fda1937b8f25b2016fd4a7d10354d677f7f5d38dd0"
+    },
+    {
+      "bytes": 5271,
+      "path": "FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "6906cff84c19f8f7df82a8b654fca8446a442f96e54b363c953b749713aae56c"
+    },
+    {
+      "bytes": 798,
+      "path": "FINISHED_V1_OUTCOME_V3_ROOKIE_BOARD_NO_CHANGE.md",
+      "sha256": "3916b75fe95f2661b00997d552b3990417d93bc8db6f10c9973fdae76105bdd7"
+    },
+    {
+      "bytes": 480,
+      "path": "MIGRATION_CONTRACT.md",
+      "sha256": "278cd070d27560cf7031d07f970d3359a6b352b39f21d842dafbeb272fce3672"
+    },
+    {
+      "bytes": 253,
+      "path": "MIGRATION_TEST_RESULTS.csv",
+      "sha256": "e853843257ae276b1968381f5895e779b91289c1a80c73caf0b394b301181406"
+    },
+    {
+      "bytes": 1173,
+      "path": "MUTATION_SENSITIVITY_RESULTS.csv",
+      "sha256": "a8adbcaac7af471107ee603ac6314f206aae00180dcaf8361bff4ee3c8255e5c"
+    },
+    {
+      "bytes": 509,
+      "path": "OPAQUE_PERSISTENT_AND_RECOVERY_PRESERVATION.md",
+      "sha256": "438f94ae6537c2eaf538d6a94329afedfe7c2bdad3499f89852150e798094824"
+    },
+    {
+      "bytes": 721,
+      "path": "PERSISTENCE_SCHEMA.md",
+      "sha256": "a4980e42a52e57c66338512785a7eb376bd8b5c904c38537e11fcbdaa69e85a2"
+    },
+    {
+      "bytes": 423,
+      "path": "PERSISTENCE_TEST_RESULTS.csv",
+      "sha256": "38d871632e96a1468e7058d9dfe93522c76c844d68fab1279a9f908d88e28f50"
+    },
+    {
+      "bytes": 337,
+      "path": "PERSONAL_BOARD_ASSET_COVERAGE.csv",
+      "sha256": "fd4b4ef8a790db46527116c38ade40323f153d565bb0ee07f4d670d757f6e9b3"
+    },
+    {
+      "bytes": 700,
+      "path": "PERSONAL_BOARD_CONTRACT.md",
+      "sha256": "ce4340eb2563a5d2b1625fbcf5ddcfb6780cf5cda9acc652458683d0faae43b8"
+    },
+    {
+      "bytes": 756,
+      "path": "PERSONAL_WORKSPACE_REPORT.md",
+      "sha256": "e7c298fd5a656fd92f8eb3cb85e72e512803ba3e27ea4a987abe2b96e9bc8754"
+    },
+    {
+      "bytes": 595,
+      "path": "POST_GOLDEN_RELEASE_EXTENSION_AUTHORITY.md",
+      "sha256": "c724cd47640eebf28c1c3187ce844e98710a378be35f2ffcef024560c03752f3"
+    },
+    {
+      "bytes": 593,
+      "path": "ROLLBACK_PLAN.md",
+      "sha256": "4be8a9303975b7fffcc4e150257e9de390a22b4563ee4db19b75b9d8ca7cb0b8"
+    },
+    {
+      "bytes": 13181,
+      "path": "ROUTE_VIEWPORT_RESULTS.csv",
+      "sha256": "9e6b7353bdd8475d8ee371cdd0fce66ea3cdae8d2d3d6a521a5cfbe6afebd1d5"
+    },
+    {
+      "bytes": 276,
+      "path": "SAVED_SCENARIO_FIELD_CONTRACT.csv",
+      "sha256": "e7151bf0509ca3a94a1a9abcf8a7c03e68581dc3f217778e48bda6c151ca222b"
+    },
+    {
+      "bytes": 450,
+      "path": "SAVED_SCENARIOS_CONTRACT.md",
+      "sha256": "e1b8415b3ef7bf30c3fdb98619c469c8b51b5444463e4a9868a80035e99aa082"
+    },
+    {
+      "bytes": 1197,
+      "path": "SCREENSHOT_ATLAS.md",
+      "sha256": "d1ee2acefef7e4d7772564dd66a0ed4f21233aaf27e0d7acc683b7212ece534c"
+    },
+    {
+      "bytes": 38209,
+      "path": "screenshots/decision-journal-desktop-1440x1000.png",
+      "sha256": "b0fe034a17b101e7b2e749cbed4e68e160543418a6d8e803cbbb2093692268d9"
+    },
+    {
+      "bytes": 23283,
+      "path": "screenshots/decision-journal-mobile-375x812.png",
+      "sha256": "9d6301d4fd443f50d9fa41faa3239672a9bcee22c0c5326188d65920f20bebc9"
+    },
+    {
+      "bytes": 37576,
+      "path": "screenshots/decision-journal-tablet-768x1024.png",
+      "sha256": "79cb7a56ccbc3a189fe7122b8aaf43aae003c753003e12d13d28ca257d03d5b0"
+    },
+    {
+      "bytes": 47261,
+      "path": "screenshots/personal-board-desktop-1440x1000.png",
+      "sha256": "35cd89631f3fcb897f08aca35ea6fb51e7769aa4a076bd27b1ec4ed57c7d9279"
+    },
+    {
+      "bytes": 22547,
+      "path": "screenshots/personal-board-mobile-375x812.png",
+      "sha256": "d47663e00aa98b23d7af88e39db1c4270c782f19145ab0ee1bc04682271d9810"
+    },
+    {
+      "bytes": 49129,
+      "path": "screenshots/personal-board-tablet-768x1024.png",
+      "sha256": "955deea3a54f98430db5e8948fbb68aae1960b21b2517194b8b5173647a387a0"
+    },
+    {
+      "bytes": 38381,
+      "path": "screenshots/saved-scenarios-desktop-1440x1000.png",
+      "sha256": "393210b13ef8a9e3914193b87d98f198ad8e49d2a4d7e82b10e755d162bb293a"
+    },
+    {
+      "bytes": 25305,
+      "path": "screenshots/saved-scenarios-mobile-375x812.png",
+      "sha256": "01c06db5d686faa948ab2eb29a09dfcd6b59c94506be3e481fd7d8610c4246c1"
+    },
+    {
+      "bytes": 37435,
+      "path": "screenshots/saved-scenarios-tablet-768x1024.png",
+      "sha256": "38823604697da27626d274588ce6ea10f5b857ef4bea478f169541434e513c08"
+    },
+    {
+      "bytes": 712,
+      "path": "USER_QUICK_START.md",
+      "sha256": "731854522ed78c15c5424447125c749bb83f0e08bf5820272f7b0c6e32a88365"
+    },
+    {
+      "bytes": 1526,
+      "path": "VALIDATION_RESULTS.md",
+      "sha256": "18578b509c669cc7ce74b7217fadf1a7c0e83ab417c4aa7458355fd8efc418eb"
+    },
+    {
+      "bytes": 1160,
+      "path": "WORKFLOW_ACCEPTANCE_RESULTS.csv",
+      "sha256": "e6a09f4ecd65fc3d4bc3fe5ac1e6341ce88e2a755fd248b7ed38d8c3166262a0"
+    }
+  ],
+  "generated_at_utc": "2026-08-01T22:00:00Z",
+  "packet": "NWR_PERSONAL_WORKSPACE_V1_20260801",
+  "registered_routes": 64,
+  "required_artifacts": [
+    "PERSONAL_WORKSPACE_REPORT.md",
+    "EXECUTIVE_VERDICT.md",
+    "POST_GOLDEN_RELEASE_EXTENSION_AUTHORITY.md",
+    "PERSONAL_BOARD_CONTRACT.md",
+    "DECISION_JOURNAL_CONTRACT.md",
+    "SAVED_SCENARIOS_CONTRACT.md",
+    "PERSISTENCE_SCHEMA.md",
+    "MIGRATION_CONTRACT.md",
+    "BACKUP_RESTORE_CONTRACT.md",
+    "PERSONAL_BOARD_ASSET_COVERAGE.csv",
+    "DECISION_RECEIPT_FIELD_CONTRACT.csv",
+    "SAVED_SCENARIO_FIELD_CONTRACT.csv",
+    "MIGRATION_TEST_RESULTS.csv",
+    "PERSISTENCE_TEST_RESULTS.csv",
+    "BACKUP_RESTORE_RESULTS.csv",
+    "ROUTE_VIEWPORT_RESULTS.csv",
+    "WORKFLOW_ACCEPTANCE_RESULTS.csv",
+    "MUTATION_SENSITIVITY_RESULTS.csv",
+    "FINISHED_V1_OUTCOME_V3_ROOKIE_BOARD_NO_CHANGE.md",
+    "ACTIVE_PACK_AND_SOURCE_DATA_NO_CHANGE.md",
+    "OPAQUE_PERSISTENT_AND_RECOVERY_PRESERVATION.md",
+    "ROLLBACK_PLAN.md",
+    "USER_QUICK_START.md",
+    "DEMO_SCRIPT.md",
+    "SCREENSHOT_ATLAS.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "VALIDATION_RESULTS.md",
+    "MANIFEST.json"
+  ],
+  "route_viewport_checks": 195,
+  "schema_version": 1,
+  "starting_hq": "e0377a06cdc560819ccb049dd58b75faaa106ea6",
+  "starting_tree": "a2a4cc18db18546e57c4f972397e81fb4907487f",
+  "verdict": "GREEN_NWR_PERSONAL_WORKSPACE_V1_IMPLEMENTED_VALIDATED_AND_READY_FOR_ADOPTION"
+}

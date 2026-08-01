@@ -1,0 +1,5 @@
+asset_type,count,source,authority,personal_overlay
+Current Player,240,Finished V1,Production,SUPPORTED
+Rookie Review,73,Model V4 2026 Rookie Review,Review-Only,SUPPORTED
+Blocked Rookie,7,Model V4 2026 Rookie Review,Blocked - Visible,SUPPORTED_NO_SOURCE_RANK
+Draft Pick,50,Frozen 2026 Draft Context,Context-Only,SUPPORTED_NO_COMMON_VALUE

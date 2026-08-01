@@ -1,0 +1,26 @@
+mutation_id,mutation,result
+1,personal rank cannot become Finished V1 rank,PASS
+2,personal tier cannot write rookie source,PASS
+3,old receipt snapshot cannot be rewritten,PASS
+4,name join is not asset identity,PASS
+5,unknown asset cannot be converted,PASS
+6,player and pick source types cannot be swapped,PASS
+7,blocked rookie cannot receive source rank,PASS
+8,page open cannot write workspace,PASS
+9,partial JSON store is rejected,PASS
+10,corrupted checksum is not accepted,PASS
+11,failed migration cannot continue,PASS
+12,migration cannot skip verified backup,PASS
+13,corrupt backup cannot restore,PASS
+14,restore cannot target canonical source path,PASS
+15,decision cannot delete without confirmation,PASS
+16,automatic trade winner is rejected,PASS
+17,accept/reject recommendation is rejected,PASS
+18,credentials cannot enter journal,PASS
+19,future optional fields cannot be dropped,PASS
+20,duplicate journal ID is rejected,PASS
+21,duplicate personal asset ID is rejected,PASS
+22,source version mismatch remains visible,PASS
+23,personal sort cannot change canonical rank,PASS
+24,active pack cannot be workspace root,PASS
+25,opaque baseline cannot be workspace root,PASS

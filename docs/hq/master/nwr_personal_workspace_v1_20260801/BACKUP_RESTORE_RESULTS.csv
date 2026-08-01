@@ -1,0 +1,7 @@
+test,result,evidence
+workspace backup,PASS,manifest with per-file SHA-256
+restore dry-run,PASS,schema and checksums verified
+confirmed restore,PASS,pre-restore summary recovered
+corrupt restore,PASS,BLOCKED_CORRUPT
+failed restore rollback,PASS,safety backup contract exercised by tests
+retention,PASS,20 verified snapshots retained
