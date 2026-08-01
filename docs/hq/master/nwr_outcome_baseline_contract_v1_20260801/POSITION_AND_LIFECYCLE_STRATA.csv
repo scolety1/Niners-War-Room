@@ -1,0 +1,17 @@
+stratum_family,stratum_id,definition,missing_behavior,allowed_use
+position,QB,exact governed QB position,exclude position-specific scoring if conflicting,evaluation and coverage
+position,RB,exact governed RB position,exclude position-specific scoring if conflicting,evaluation and coverage
+position,WR,exact governed WR position,exclude position-specific scoring if conflicting,evaluation and coverage
+position,TE,exact governed TE position,exclude position-specific scoring if conflicting,evaluation and coverage
+age,under_23,admitted age below 23,retain unknown_age when unavailable,review-only subgroup
+age,age_23_to_25,admitted age 23 through 25 inclusive,retain unknown_age when unavailable,review-only subgroup
+age,age_26_to_28,admitted age 26 through 28 inclusive,retain unknown_age when unavailable,review-only subgroup
+age,age_29_to_31,admitted age 29 through 31 inclusive,retain unknown_age when unavailable,review-only subgroup
+age,age_32_plus,admitted age 32 or greater,retain unknown_age when unavailable,review-only subgroup
+age,unknown_age,missing or inadmissible exact-ID age evidence,never impute age,coverage only
+lifecycle,early_career_1_to_3,admitted experience years 1 through 3,retain unknown_lifecycle when unavailable,review-only subgroup
+lifecycle,prime_window_4_to_6,admitted experience years 4 through 6,retain unknown_lifecycle when unavailable,review-only subgroup
+lifecycle,veteran_7_to_9,admitted experience years 7 through 9,retain unknown_lifecycle when unavailable,review-only subgroup
+lifecycle,late_career_10_plus,admitted experience years 10 or greater,retain unknown_lifecycle when unavailable,review-only subgroup
+lifecycle,unknown_lifecycle,missing or inadmissible draft-year evidence,never impute lifecycle,coverage only
+

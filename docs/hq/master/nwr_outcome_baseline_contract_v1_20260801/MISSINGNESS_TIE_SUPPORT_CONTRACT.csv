@@ -1,0 +1,14 @@
+contract_area,condition,required_behavior,forbidden_behavior
+missingness,missing player-season outcome,UNKNOWN_MISSING_PLAYER_SEASON,coerce to miss or zero
+missingness,right-censored horizon,UNKNOWN_RIGHT_CENSORED,count as negative
+missingness,retired or inactive without admitted terminal authority,UNKNOWN_TERMINAL_STATE,infer negative from absence
+missingness,identity unresolved or collided,BLOCKED_IDENTITY_VISIBLE,name-only join or silent exclusion
+missingness,unsupported position,EXCLUDED_UNSUPPORTED_POSITION_VISIBLE,map to another position
+missingness,missing age or lifecycle,UNKNOWN_STRATUM_VISIBLE,impute cohort
+ties,equal NWR points,competition rank with shared minimum rank,arbitrary ID tie break for semantic rank
+ties,equal replacement boundary points,all tied rows AT_REPLACEMENT,label any equal row above replacement
+ties,equal evaluation metric,report TIE and retain all tied candidates,hidden secondary winner
+support,field evaluation,"rows>=100; positives>=20; negatives>=20; distinct anchor seasons>=5",publish supported claim below gate
+support,replacement position-season,eligible rows>=review replacement rank,MISSING_BASELINE_REFERENCE,select last row from undersized pool
+support,empty or one-class calibration,INSUFFICIENT_SUPPORT,use fabricated prior or zero fill
+

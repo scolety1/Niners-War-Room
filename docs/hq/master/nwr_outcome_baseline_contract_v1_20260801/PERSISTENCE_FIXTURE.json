@@ -1,0 +1,14 @@
+{
+  "schema_version": "NWR_PHASE_2_SYNTHETIC_BASELINE_FIXTURE_V1",
+  "synthetic_only": true,
+  "season": 2025,
+  "start_points": 300.0,
+  "step_points": 1.0,
+  "positions": {
+    "QB": 12,
+    "RB": 30,
+    "TE": 12,
+    "WR": 40
+  }
+}
+

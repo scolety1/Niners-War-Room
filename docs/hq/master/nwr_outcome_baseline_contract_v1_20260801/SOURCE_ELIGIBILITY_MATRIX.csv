@@ -1,0 +1,15 @@
+source_or_authority,contract_use,status,allowed_fields,blocked_behavior
+Finished V1,current-player production context,ADMITTED_EXISTING,canonical rank and score within recorded 240-player authority,no mutation or training-label substitution
+Outcome V3,historical target and governed probability context,ADMITTED_WITHIN_EXISTING_SCOPE,exact position-specific fields and target windows,no recalibration hidden sort or unsupported horizon
+Model V4 2026 Rookie Review,review-only rookie context,REVIEW_ONLY,73 scored and 7 blocked identities,no production blend common scale or weight change
+nwr_scoring_rules_nwr_1qb_nonppr_fd_v1,scoring and lineup definition,ADMITTED_CONTRACT_AUTHORITY,exact JSON fields,no alternate scoring or postseason inference
+age lifecycle sidecar,position and lifecycle audit strata,REVIEW_ONLY_ADMITTED_ROWS_ONLY,exact GSIS rows passing leakage and identity flags,no missing-age imputation
+Phase 1B weekly derived receipt,hygiene proof only,NOT_MODEL_ADMITTED,schema and immutability receipt,no feature admission
+team_stats,none,BLOCKED_FAIL_CLOSED,,rights control remains open
+play_by_play,none,BLOCKED_FAIL_CLOSED,,rights and temporal controls remain open
+ff_playerids,identity administration only,BLOCKED_FOR_MODEL_USE,unique noncollided provider-to-GSIS rows,no collided mapping or name fallback
+schedules,none,BLOCKED_FAIL_CLOSED,,rights and pregame as-of controls remain open
+participation,none,BLOCKED_FAIL_CLOSED,,share-alike and temporal controls remain open
+FTN charting,none,BLOCKED_FAIL_CLOSED,,rights identity and temporal controls remain open
+market or ADP,none,NOT_ADMITTED,,no football target feature or historical backfill
+

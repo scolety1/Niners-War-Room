@@ -1,0 +1,6 @@
+fold_rule_id,decision_cutoff,training_rows,validation_rows,test_rows,required_order,leakage_rule
+FOLD_EXPANDING,March 1 of test anchor t,all rows whose label_available_date is on or before decision_cutoff,latest fully available anchor before t when validation is required,anchor t,train_label_available_date<=decision_cutoff and validation_anchor<test_anchor,no random or in-sample split
+FOLD_NESTED_CALIBRATION,March 1 of test anchor t,prior chronological out-of-fold predictions whose labels are available by cutoff,prior available anchors only,anchor t,calibration_label_available_date<=decision_cutoff,no test row or later correction in calibration
+FOLD_HORIZON_AWARE,March 1 of test anchor t,only closed target windows by cutoff,closed windows only,anchor t,window_end<decision_cutoff,right-censored negatives never enter training
+FOLD_MIN_HISTORY,March 1 of test anchor t,at least five distinct anchor seasons,optional,anchor t,min_train_seasons=5,otherwise INSUFFICIENT_SUPPORT
+

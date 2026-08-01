@@ -1,64 +1,23 @@
-# NWR GOLDEN LANE PHASE 2 WORK ORDER
-## NWR Outcome and Baseline Contract
+# NWR Golden Lane Phase 3 Work Order
 
-### Setup
+## Open Role, Availability, and Lifecycle Gauntlet
 
-Fetch and prune once, resolve live `work/hq-parallel-control`, and create a fresh
-isolated implementation worktree. Read the complete Golden Lane packet and
-`docs/hq/master/nwr_canonical_baseline_health_v1_20260731/`. Stable is
-`C:\NWR\Niners-War-Room-V1`; operational is `C:\NWR\Niners-War-Room`. Do not
-update operational or start the launcher. Leave `NWR DynastyProcess Market
-Baseline Refresh` disabled and unchanged.
+Start only from the exact canonical `work/hq-parallel-control` head after fetching and pruning origin. Use fresh implementation and independent-adoption worktrees. Read the complete Golden Lane, Phase 1A, Phase 1B, and Phase 2 packets before mutation. Confirm the stable checkout is clean and exact, the operational checkout is identified but untouched, no conflicting launcher or provider process is running, and the named refresh task remains disabled.
 
-This prompt is automatically dispatchable under `BOUNDED_CONTINUOUS_AUTOPILOT`
-only after its phase identity and SHA-256 match
-`GOLDEN_LANE_AUTOPILOT_STATE.json` and every automatic-advance gate passes.
+## Mission
 
-### Exact mission
+Preregister and execute a review-only gauntlet using only the exact governed Formula Data Mart, admitted lifecycle sidecar, Position-Year Factors, Phase 2 replacement references, prior games/opportunity fields, low-games indicators, age, and lifecycle strata. Keep Win Now, two-year Dynasty, and three-year Dynasty targets separate. Use expanding, nested, horizon-aware chronological folds; minimum-support controls; deterministic ties; and an explicit multiple-comparison rule. Treat availability as factual context, never an injury penalty or an ungoverned proxy.
 
-Execute only Phase 2. Canonicalize the NWR outcome and replacement-baseline
-contract without changing a production formula. Define the exact scored
-population, eligibility and exclusion rules, targets, replacement references,
-position and lifecycle strata, observation dates, label windows, chronological
-folds, tie handling, minimum support, missingness, and production-persistence
-tests. Distinguish football value, availability, evidence confidence, and
-market retention.
+The lane must truthfully determine whether any tested role, availability, or lifecycle signal earns review-only promotion. A null result is valid and must not be optimized away.
 
-Use Outcome V3 and existing governed Finished V1/Rookie Review authorities only
-within their recorded scope. A Phase 1A-blocked or Phase 1B-quarantined source
-remains ineligible. The weekly derived receipt is a hygiene proof, not model
-admission. Current corrected bundles may not be backdated.
+## Closed lanes
 
-### Required contracts
+Do not perform replay archaeology, V2-2 or Dual Lens revival, rookie feature searches, CFBD or recruiting acquisition, rookie opportunity research, common-scale work, broad formula search, Outcome V3 recalibration, market/ADP work, or product/UI integration. Do not call providers or change scheduler state.
 
-- Freeze target and replacement definitions before any Phase 3 feature test.
-- Use chronological, leakage-safe folds with all observations available by each cutoff.
-- Define production-persistence tests that prove baselines can be rebuilt and
-  re-read without mutating production or user state.
-- Define truthful null-result and insufficient-support behavior.
-- Keep rookie and veteran authorities separate unless an existing canonical
-  contract explicitly supports a common scale.
-- Preserve all six fail-closed source controls and every Phase 1B quarantine.
+## Allowed mutations
 
-### Allowed mutations
+Only governed documentation, deterministic analysis code, immutable fixtures, validators, and tests for this Phase 3 gauntlet. Do not change formulas, rankings, model outputs, application behavior, generated data packs, provider adapters, active-pack pointers, production persistence, or user state.
 
-Only Phase 2 documentation, deterministic contract validators, and bounded
-tests/fixtures are allowed. No formula weights, calibration, ranking, product,
-UI, provider, scheduler, active-pack, opaque, persistent, recovery, credential,
-or operational mutation is permitted.
+## Acceptance
 
-### Validation and closeout
-
-Require deterministic two-root output, negative tests for leakage, invalid
-eligibility, target drift, insufficient support, nonchronological folds,
-ambiguous ties, missing baselines, and production-state writes; focused and
-applicable regression tests; full preservation hashes; unchanged scheduler and
-process state; and a fresh independent adoption review from the exact canonical
-parent.
-
-On PASS make Phase 3 the sole next authorized lane and recalculate passed gates
-divided by ten. On a truthful contract-level null, close Phase 2 only if all
-required definitions are still complete and fail-closed. On failure allow at
-most one bounded correction cycle. Never force-push; push only after final
-remote reread and fast-forward proof, then synchronize stable. Never update
-operational. Continue automatically only when every policy gate passes.
+Require deterministic reruns, negative controls, a second disposable-root comparison, protected-authority preservation, and independent adoption review. Advance only with a documented PASS or truthful null result. Any production-choice question becomes an owner decision at Phase 4. Allow at most one bounded correction cycle. Use a normal push only after re-reading the remote; synchronize only the stable checkout; leave the operational checkout untouched.

@@ -2,8 +2,8 @@ target,current_authority,status,production_use,next_gate
 Finished V1 current-player football authority,NWR_FINISHED_VERSION_1_RETAINED,ADMITTED_240_PLAYERS,YES,Remain authoritative unless explicitly superseded
 2026 rookie authority,NWR_MODEL_V4_2026_ROOKIE_BOARD_REVIEW_V1,REVIEW_ONLY_73_SCORED_7_BLOCKED,NO_PRODUCTION_BLEND,Preserve visible blockers
 Rookie-veteran common scale,NONE,FORMALLY_REJECTED_PHASE_0,NO,Existing authorities remain separate
-Win Now football value,FINISHED_V1_BOUNDED_CURRENT_AUTHORITY,TARGET_CONTRACT_PENDING,EXISTING_ONLY,Phase 2 then Phase 4
-Two-year Dynasty football value,NONE,TARGET_CONTRACT_PENDING,NO,Phase 2 then Phase 4
-Three-year Dynasty football value,NONE,TARGET_CONTRACT_PENDING,NO,Phase 2 then Phase 4
-Availability,Factual context only,CALIBRATED_OUTPUT_NOT_ADMITTED,CONTEXT_ONLY,Phases 2 through 4
+Win Now football value,FINISHED_V1_BOUNDED_CURRENT_AUTHORITY,PHASE_2_TARGET_CONTRACT_ADMITTED,EXISTING_ONLY,Phase 3 then Phase 4
+Two-year Dynasty football value,NONE,PHASE_2_TARGET_CONTRACT_ADMITTED,NO,Phase 3 then Phase 4
+Three-year Dynasty football value,NONE,PHASE_2_TARGET_CONTRACT_ADMITTED,NO,Phase 3 then Phase 4
+Availability,Factual context only,PHASE_2_CONTEXT_CONTRACT_ADMITTED,CONTEXT_ONLY,Phase 3 then Phase 4
 Market retention,NONE_SEPARATE_PROGRAM,NOT_ADMITTED,NO,Phase 6

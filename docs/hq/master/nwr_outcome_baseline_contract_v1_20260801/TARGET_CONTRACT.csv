@@ -1,0 +1,11 @@
+target_id,concept,position_scope,anchor_t,event_offsets,label_definition,label_available_date,allowed_output,production_status
+WIN_NOW_POINTS,Win Now football production,QB|RB|WR|TE,t,0,final regular-season NWR scoring points in season t,March 1 of t+1,position-specific continuous outcome,CONTRACT_ONLY
+WIN_NOW_FINISH,Win Now football finish,QB|RB|WR|TE,t,0,competition position rank by WIN_NOW_POINTS in season t,March 1 of t+1,position-specific ordinal outcome,CONTRACT_ONLY
+TWO_YEAR_VECTOR,Two-year football value,QB|RB|WR|TE,t,0|1,ordered pair of WIN_NOW_POINTS and WIN_NOW_FINISH for t and t+1,March 1 of t+2,source-separated two-season vector with no scalar blend,CONTRACT_ONLY
+THREE_YEAR_VECTOR,Three-year football value,QB|RB|WR|TE,t,0|1|2,ordered triple of WIN_NOW_POINTS and WIN_NOW_FINISH for t through t+2,March 1 of t+3,source-separated three-season vector with no scalar blend,CONTRACT_ONLY
+WITHIN_3Y_HIT,Existing Outcome V3 context,QB|RB|WR|TE,t,0|1|2,at least one governed position-threshold hit in t through t+2,March 1 of t+3,existing Outcome V3 probability only,EXISTING_GOVERNED
+TWO_OF_3Y_HIT,Existing Outcome V3 context,QB|RB|WR|TE,t,0|1|2,at least two governed position-threshold hits in t through t+2,March 1 of t+3,existing Outcome V3 probability only,EXISTING_GOVERNED
+AVAILABILITY_CONTEXT,Availability,QB|RB|WR|TE,t,0,factual observed availability kept separate from football outcome,source-specific recorded time,descriptive context only,NOT_A_FOOTBALL_TARGET
+EVIDENCE_CONFIDENCE,Evidence confidence,QB|RB|WR|TE,t,,coverage and source confidence only,decision cutoff,warning or stratum only,NOT_A_FOOTBALL_TARGET
+MARKET_RETENTION,Market retention,NONE,t,,no admitted target in Phase 2,N/A,separate future program only,NOT_ADMITTED
+

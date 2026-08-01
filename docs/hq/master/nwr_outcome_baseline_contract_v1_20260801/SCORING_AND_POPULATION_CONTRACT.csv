@@ -1,0 +1,14 @@
+contract_id,field,required_value,authority,missing_or_invalid_behavior
+P2_SCORE_001,scoring_version_id,nwr_1qb_nonppr_fd_v1,config/nwr_scoring_rules_nwr_1qb_nonppr_fd_v1.json,REJECT
+P2_SCORE_002,scoring_canonical_sha256,59e7a65f61fd95cd83e82ba0fb631e4977faf120d7692f3aa3ebc690000af3a7,canonical UTF8 LF bytes,REJECT
+P2_SCORE_003,league_teams,10,scoring config,REJECT
+P2_SCORE_004,superflex,false,scoring config,REJECT
+P2_SCORE_005,ppr,false,scoring config,REJECT
+P2_SCORE_006,te_premium,false,scoring config,REJECT
+P2_POP_001,row_grain,gsis_player_id|anchor_season|position,Outcome V3 governed historical panel,REJECT_DUPLICATE_OR_BLANK
+P2_POP_002,supported_positions,QB|RB|WR|TE,Outcome V3 governed fields,EXCLUDE_VISIBLE_REASON
+P2_POP_003,feature_offset,anchor_season_minus_1,Outcome V3 target contract,REJECT_LEAKAGE
+P2_POP_004,identity_authority,exact_gsis_player_id,Phase 1B collision contract,REJECT_NAME_ONLY_OR_COLLIDED
+P2_POP_005,calendar_scope,regular_season_only,scoring config,REJECT_UNDECLARED_POSTSEASON
+P2_POP_006,minimum_games_for_ppg,8,scoring config,PPG_NOT_ELIGIBLE_IF_BELOW
+

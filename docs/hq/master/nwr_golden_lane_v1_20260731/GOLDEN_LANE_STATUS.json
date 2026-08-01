@@ -4,21 +4,22 @@
   "canonical_branch": "work/hq-parallel-control",
   "canonical_hq_at_phase_1a_start": "79b62c3993cf1d00c6dc068199826abb6d9954e3",
   "canonical_tree_at_phase_1a_start": "8c74b2c5cc497f1d1e827620e264f2b7d47e2cfd",
-  "active_phase": "PHASE_2_NWR_OUTCOME_AND_BASELINE_CONTRACT",
+  "active_phase": "PHASE_3_OPEN_ROLE_AVAILABILITY_AND_LIFECYCLE_GAUNTLET",
   "completed_phases": [
     "PHASE_0_GREEN_COMMON_SCALE_REJECTED_EXISTING_AUTHORITIES_RETAINED",
     "PHASE_1A_EXISTING_SOURCE_RIGHTS_AND_IDENTITY_AUDIT_PASS",
-    "PHASE_1B_CANONICAL_BASELINE_HEALTH_PASS"
+    "PHASE_1B_CANONICAL_BASELINE_HEALTH_PASS",
+    "PHASE_2_NWR_OUTCOME_AND_BASELINE_CONTRACT_PASS"
   ],
   "blocked_phases": [],
-  "next_authorized_lane": "PHASE_2_NWR_OUTCOME_AND_BASELINE_CONTRACT",
-  "prohibited_concurrent_lanes": ["PHASE_3_OR_LATER", "MODEL_OR_FORMULA_RESEARCH", "PROVIDER_ACQUISITION", "MARKET_MODELING", "PRODUCT_OR_UI_INTEGRATION"],
+  "next_authorized_lane": "PHASE_3_OPEN_ROLE_AVAILABILITY_AND_LIFECYCLE_GAUNTLET",
+  "prohibited_concurrent_lanes": ["PHASE_4_OR_LATER", "FORMULA_DECISION", "PROVIDER_ACQUISITION", "MARKET_MODELING", "PRODUCT_OR_UI_INTEGRATION"],
   "owner_decisions_required": 0,
   "open_fail_closed_controls": ["P1A_OWNER_001", "P1A_OWNER_002", "P1A_OWNER_003", "P1A_OWNER_004", "P1A_OWNER_005", "P1A_OWNER_006"],
   "autopilot_dispatch_status": "READY",
   "hard_stop_ids": [],
-  "phase_gates_passed": 3,
+  "phase_gates_passed": 4,
   "phase_gates_total": 10,
-  "final_completion_percentage": 30,
-  "last_updated_commit": "99eff4f3a91b9428ed5958c72dbf281cf6c4de05"
+  "final_completion_percentage": 40,
+  "last_updated_commit": "12e8871e14ec2d520fd0a3cf3b4664174e1b29ab"
 }

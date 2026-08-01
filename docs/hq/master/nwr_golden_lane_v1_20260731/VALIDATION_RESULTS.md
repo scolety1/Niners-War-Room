@@ -1,5 +1,18 @@
 # Validation Results
 
+## Phase 2 gate
+
+- Outcome and baseline contract validator: PASS, 69 governed contract rows.
+- Synthetic production-persistence fixture: PASS, 94 input rows and 4 deterministic review-only positional baselines.
+- Two-disposable-root comparison: PASS, identical canonical output SHA-256 `c71bff8b924bd1e02f0c65fabe51d368c595d1effa0702c7ddf7ce833dcd0979`.
+- Missingness, source eligibility, temporal leakage, support, and protected-root negative controls: PASS.
+- Applicable regression slice: PASS, 70/70.
+- Static validation: PASS.
+- Model/source admission: NONE; production mutation: NONE; owner decisions required to advance: 0.
+- Gate arithmetic: PASS, Phase 0 + Phase 1A + Phase 1B + Phase 2 = 4/10 = 40%.
+- Exactly one next lane: PASS, bounded Phase 3 gauntlet work.
+- Independent adoption review remains required before canonical push.
+
 ## Phase 1B gate
 
 - Canonical baseline health: PASS, 14/14 immutable snapshots pinned and validated.

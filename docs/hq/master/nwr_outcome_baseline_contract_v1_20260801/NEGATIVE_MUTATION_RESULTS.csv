@@ -1,0 +1,14 @@
+mutation,expected,actual,result
+future label available after cutoff,REJECT,REJECT,PASS
+invalid or blank exact identity,REJECT,REJECT,PASS
+blocked source requested for model use,REJECT,REJECT,PASS
+unsupported position,REJECT,REJECT,PASS
+target definition drift,REJECT,REJECT,PASS
+insufficient field support,REJECT,REJECT,PASS
+undersized replacement pool,REJECT,REJECT,PASS
+nonchronological fold,REJECT,REJECT,PASS
+ambiguous semantic tie break,REJECT,REJECT,PASS
+missing replacement reference,REJECT,REJECT,PASS
+production or user-state output root,REJECT,REJECT,PASS
+page or validator production-state write,REJECT,REJECT,PASS
+

@@ -1,0 +1,6 @@
+position,required_starter_rank,review_replacement_rank,lineup_assumption,annual_reference,comparison_rule,tie_rule,status
+QB,10,12,10 teams x 1QB with shallow-league fringe starter,points at position rank 12 from a complete eligible position-season,player points minus reference points,all equal boundary scores are AT_REPLACEMENT,REVIEW_ONLY_COMPARATOR
+RB,20,30,10 teams x 2RB plus flex pressure,points at position rank 30 from a complete eligible position-season,player points minus reference points,all equal boundary scores are AT_REPLACEMENT,REVIEW_ONLY_COMPARATOR
+WR,30,40,10 teams x 3WR plus flex pressure,points at position rank 40 from a complete eligible position-season,player points minus reference points,all equal boundary scores are AT_REPLACEMENT,REVIEW_ONLY_COMPARATOR
+TE,10,12,10 teams x 1TE with no TE premium,points at position rank 12 from a complete eligible position-season,player points minus reference points,all equal boundary scores are AT_REPLACEMENT,REVIEW_ONLY_COMPARATOR
+

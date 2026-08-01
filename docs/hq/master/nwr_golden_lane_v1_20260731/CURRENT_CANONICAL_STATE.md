@@ -40,3 +40,17 @@ clean on `work/nfl-usage-target-backtest-v0` and was not updated.
 The exact 14 Phase 1A source hashes remain immutable. Phase 1B added only
 fail-closed hygiene contracts, validator/tests, and a scoped LF checkout rule
 that restores the already governed Outcome V3 blob bytes in fresh worktrees.
+
+## Phase 2 contract result
+
+Phase 2 began from canonical HQ `12e8871e14ec2d520fd0a3cf3b4664174e1b29ab`
+and tree `7e28ba7d145089c523be2a2a89db6d292c07ab11`, with zero remote
+divergence and a clean stable checkout. It admitted no new data or model output.
+
+The lane froze the exact scoring and eligible population, separate Win Now,
+two-year, and three-year target contracts, review-only positional replacement
+references, lifecycle strata, horizon-aware chronological folds, deterministic
+ties, support thresholds, and fail-closed missingness. Its 94-row synthetic
+persistence fixture produced four deterministic review-only baseline rows with
+SHA-256 `c71bff8b924bd1e02f0c65fabe51d368c595d1effa0702c7ddf7ce833dcd0979`
+in two disposable roots. Production and user state were not touched.
