@@ -10,6 +10,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from app.components.post_release_status import render_save_status  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
 from src.services.outcome_v3_display_service import load_outcome_v3_display  # noqa: E402
@@ -21,6 +22,14 @@ from src.services.personal_workspace_service import (  # noqa: E402
     create_decision,
     delete_decision,
     load_store,
+    mark_decision_reviewed,
+    reschedule_decision_followup,
+    update_decision,
+)
+from src.services.post_release_usability_service import (  # noqa: E402
+    build_followup_dashboard,
+    initial_save_status,
+    perform_workspace_write,
 )
 
 registry = load_governed_asset_registry(repo_root=ROOT)
@@ -43,6 +52,97 @@ page_header(
         ("No fabricated result", "review"),
     ),
 )
+render_save_status(initial_save_status(journal.status, journal.updated_at_utc))
+
+section_label("Follow-up dashboard")
+dashboard = build_followup_dashboard(journal.records)
+followup_metrics = st.columns(6)
+for column, label, value in zip(
+    followup_metrics,
+    ("Due today", "Overdue", "Upcoming", "Recent", "Archived", "Missing date"),
+    (
+        len(dashboard.due_today),
+        len(dashboard.overdue),
+        len(dashboard.upcoming),
+        len(dashboard.recent),
+        len(dashboard.archived),
+        len(dashboard.missing_date),
+    ),
+    strict=True,
+):
+    column.metric(label, value)
+
+all_decisions = list(journal.records)
+if all_decisions:
+    with st.form("decision-followup-action"):
+        action_id = st.selectbox(
+            "Decision receipt",
+            [row["decision_id"] for row in all_decisions],
+        )
+        action = st.selectbox(
+            "Follow-up action",
+            ("Mark reviewed", "Reschedule", "Archive", "Open receipt", "Create retrospective note"),
+        )
+        new_follow_up = st.date_input("New follow-up date", value=None)
+        retrospective = st.text_area("Retrospective note", max_chars=20_000)
+        confirm_action = st.checkbox("Confirm archive when Archive is selected")
+        run_action = st.form_submit_button("Apply follow-up action")
+    if run_action:
+        selected_receipt = next(row for row in all_decisions if row["decision_id"] == action_id)
+        if action == "Open receipt":
+            st.json(selected_receipt)
+        else:
+
+            def _write_followup_action():
+                if action == "Mark reviewed":
+                    return mark_decision_reviewed(action_id)
+                if action == "Reschedule":
+                    if new_follow_up is None:
+                        raise WorkspaceValidationError("Choose a new follow-up date.")
+                    return reschedule_decision_followup(action_id, new_follow_up.isoformat())
+                if action == "Archive":
+                    return archive_decision(action_id, confirmed=confirm_action)
+                if not retrospective.strip():
+                    raise WorkspaceValidationError("Enter a retrospective note.")
+                return update_decision(action_id, {"retrospective_notes": retrospective})
+
+            followup_status = perform_workspace_write(
+                _write_followup_action,
+                observer=render_save_status,
+            )
+            if followup_status.state == "Saved":
+                st.caption("Follow-up receipt updated without an outcome judgment.")
+
+dashboard_tabs = st.tabs(("Due today", "Overdue", "Upcoming", "Missing date", "Recent", "Archived"))
+for tab, subset in zip(
+    dashboard_tabs,
+    (
+        dashboard.due_today,
+        dashboard.overdue,
+        dashboard.upcoming,
+        dashboard.missing_date,
+        dashboard.recent,
+        dashboard.archived,
+    ),
+    strict=True,
+):
+    with tab:
+        st.dataframe(
+            pd.DataFrame(
+                {
+                    "Decision ID": row.get("decision_id"),
+                    "Type": row.get("decision_type"),
+                    "Status": row.get("status"),
+                    "Assets": ", ".join(row.get("assets", [])),
+                    "Team Window": row.get("team_window"),
+                    "Follow-up": row.get("follow_up_date"),
+                    "Last reviewed": row.get("last_reviewed_at_utc"),
+                }
+                for row in subset
+            ),
+            hide_index=True,
+            use_container_width=True,
+        )
 
 section_label("Create a decision receipt")
 with st.form("decision-journal-create"):
@@ -104,25 +204,29 @@ if submitted:
     }
     personal_snapshot = {key: personal.get(key, {}) for key in selected}
     try:
-        result = create_decision(
-            {
-                "decision_id": f"decision-{uuid4()}",
-                "decision_type": decision_type,
-                "status": status,
-                "assets": selected,
-                "source_snapshot": snapshot,
-                "personal_snapshot": personal_snapshot,
-                "rationale": rationale,
-                "expected_outcome": expected,
-                "confidence": confidence,
-                "team_window": team_window,
-                "occurred_at": occurred.isoformat() if occurred else "",
-                "follow_up_date": follow_up.isoformat() if follow_up else "",
-                "retrospective_notes": "",
-            },
-            asset_registry=asset_types,
+        write_status = perform_workspace_write(
+            lambda: create_decision(
+                {
+                    "decision_id": f"decision-{uuid4()}",
+                    "decision_type": decision_type,
+                    "status": status,
+                    "assets": selected,
+                    "source_snapshot": snapshot,
+                    "personal_snapshot": personal_snapshot,
+                    "rationale": rationale,
+                    "expected_outcome": expected,
+                    "confidence": confidence,
+                    "team_window": team_window,
+                    "occurred_at": occurred.isoformat() if occurred else "",
+                    "follow_up_date": follow_up.isoformat() if follow_up else "",
+                    "retrospective_notes": "",
+                },
+                asset_registry=asset_types,
+            ),
+            observer=render_save_status,
         )
-        st.success(f"Decision receipt saved locally: {result.record_id}")
+        if write_status.state == "Saved":
+            st.caption(f"Receipt ID: {write_status.result.record_id}")
     except WorkspaceValidationError as exc:
         st.error(f"Receipt blocked: {exc}")
 

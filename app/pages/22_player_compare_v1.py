@@ -23,6 +23,7 @@ from app.components.player_compare_accessibility import (
     render_player_compare_accessibility_frame,
     render_selected_player_context,
 )
+from app.components.post_release_status import render_save_status, render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.display_only_ngs_context_service import (
@@ -61,6 +62,11 @@ from src.services.player_compare_decision_service import (
     build_player_compare_decision_summary,
     build_player_compare_nflverse_context,
     decision_summary_rows,
+)
+from src.services.post_release_usability_service import (
+    freshness_for_sources,
+    initial_save_status,
+    perform_workspace_write,
 )
 
 OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
@@ -859,6 +865,7 @@ page_header(
     ),
     status_items=(("Frozen board comparison", "review"), ("Missing props show hold", "review")),
 )
+render_source_freshness(freshness_for_sources(("Finished V1", "Outcome V3")))
 st.caption(
     "Deep tool: visible-context aid only. Comparison output does not mutate ranks, tiers, "
     "model values, or source-truth files."
@@ -1013,7 +1020,10 @@ else:
         for player_id in compare.get("player_id", pd.Series(dtype=str)).astype(str)
         if player_id and f"current:{player_id}" in governed_by_id
     ]
-    overlays = {row["asset_id"]: row for row in load_store("personal_board").records}
+    personal_store = load_store("personal_board")
+    scenario_store = load_store("saved_scenarios")
+    overlays = {row["asset_id"]: row for row in personal_store.records}
+    render_save_status(initial_save_status(scenario_store.status, scenario_store.updated_at_utc))
     if exact_ids:
         st.dataframe(
             pd.DataFrame(
@@ -1056,11 +1066,17 @@ else:
                 }
             )
             try:
-                save_personal_entry(
-                    overlay,
-                    asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+                write_status = perform_workspace_write(
+                    lambda: save_personal_entry(
+                        overlay,
+                        asset_registry={
+                            key: row["asset_type"] for key, row in governed_by_id.items()
+                        },
+                    ),
+                    observer=render_save_status,
                 )
-                st.success("Personal overlay updated; canonical ranks were not changed.")
+                if write_status.state == "Save failed":
+                    st.error("The personal action was not persisted; retry explicitly.")
             except WorkspaceValidationError as exc:
                 st.error(f"Personal action blocked: {exc}")
 
@@ -1075,21 +1091,29 @@ else:
                 if column in compare.columns
             ]
             try:
-                save_scenario(
-                    {
-                        "scenario_id": f"compare-{uuid4()}",
-                        "scenario_type": "player_compare",
-                        "title": scenario_title or "Saved Player Compare",
-                        "assets": exact_ids,
-                        "source_versions": governed.source_hashes,
-                        "payload": {
-                            "visible_comparison_fields": compare[visible_fields].to_dict("records"),
-                            "notes": scenario_notes,
+                write_status = perform_workspace_write(
+                    lambda: save_scenario(
+                        {
+                            "scenario_id": f"compare-{uuid4()}",
+                            "scenario_type": "player_compare",
+                            "title": scenario_title or "Saved Player Compare",
+                            "assets": exact_ids,
+                            "source_versions": governed.source_hashes,
+                            "payload": {
+                                "visible_comparison_fields": compare[visible_fields].to_dict(
+                                    "records"
+                                ),
+                                "notes": scenario_notes,
+                            },
                         },
-                    },
-                    asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+                        asset_registry={
+                            key: row["asset_type"] for key, row in governed_by_id.items()
+                        },
+                    ),
+                    observer=render_save_status,
                 )
-                st.success("Comparison scenario saved locally without a verdict.")
+                if write_status.state == "Save failed":
+                    st.error("The comparison remains in the current session but was not saved.")
             except WorkspaceValidationError as exc:
                 st.error(f"Scenario blocked: {exc}")
     else:

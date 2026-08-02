@@ -9,9 +9,11 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.post_release_status import render_source_freshness  # noqa: E402
 from app.components.ui_framework import page_header  # noqa: E402
 from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
 from src.services.personal_workspace_service import load_store  # noqa: E402
+from src.services.post_release_usability_service import freshness_for_sources  # noqa: E402
 
 registry = load_governed_asset_registry(repo_root=REPO_ROOT)
 page_header(
@@ -23,6 +25,7 @@ page_header(
     ),
     status_items=(("Review-Only", "review"), ("73 scored", "safe"), ("7 blocked", "blocked")),
 )
+render_source_freshness(freshness_for_sources(("Model V4 2026 Rookie Review",)))
 rookies = pd.DataFrame(
     row for row in registry.rows if row["asset_type"] in {"Rookie Review", "Blocked Rookie"}
 )

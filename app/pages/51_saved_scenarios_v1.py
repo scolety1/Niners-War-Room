@@ -11,6 +11,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from app.components.post_release_status import render_save_status  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
 from src.services.personal_workspace_service import (  # noqa: E402
@@ -21,6 +22,10 @@ from src.services.personal_workspace_service import (  # noqa: E402
     restore_workspace,
     save_scenario,
     scenario_source_status,
+)
+from src.services.post_release_usability_service import (  # noqa: E402
+    initial_save_status,
+    perform_workspace_write,
 )
 
 registry = load_governed_asset_registry(repo_root=ROOT)
@@ -41,6 +46,7 @@ page_header(
         ("Local backup", "review"),
     ),
 )
+render_save_status(initial_save_status(saved.status, saved.updated_at_utc))
 
 section_label("Save a scenario")
 with st.form("saved-scenario-create"):
@@ -64,18 +70,22 @@ if submitted:
     try:
         payload = json.loads(filter_json)
         payload.update({"notes": notes, "team_window": team_window})
-        result = save_scenario(
-            {
-                "scenario_id": f"scenario-{uuid4()}",
-                "scenario_type": kind,
-                "title": title,
-                "assets": selected,
-                "source_versions": registry.source_hashes,
-                "payload": payload,
-            },
-            asset_registry=asset_types,
+        write_status = perform_workspace_write(
+            lambda: save_scenario(
+                {
+                    "scenario_id": f"scenario-{uuid4()}",
+                    "scenario_type": kind,
+                    "title": title,
+                    "assets": selected,
+                    "source_versions": registry.source_hashes,
+                    "payload": payload,
+                },
+                asset_registry=asset_types,
+            ),
+            observer=render_save_status,
         )
-        st.success(f"Scenario saved locally: {result.record_id}")
+        if write_status.state == "Saved":
+            st.caption(f"Scenario ID: {write_status.result.record_id}")
     except (json.JSONDecodeError, WorkspaceValidationError) as exc:
         st.error(f"Scenario blocked: {exc}")
 

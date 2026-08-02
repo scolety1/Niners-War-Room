@@ -13,6 +13,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.durable_refresh_receipt_panel import (
     render_durable_refresh_receipt_panel,
 )
+from app.components.post_release_status import render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.data_health_dashboard_service import (
     HealthDashboardReport,
@@ -33,6 +34,7 @@ from src.services.data_refresh_orchestrator_service import (
     run_quick_refresh,
     validate_refresh_result_schema,
 )
+from src.services.post_release_usability_service import governed_source_freshness
 from src.services.refresh_receipt_store_service import inspect_refresh_receipt
 
 STATUS_STYLES = {
@@ -213,6 +215,7 @@ page_header(
         ("Market display-only", "safe"),
     ),
 )
+render_source_freshness(governed_source_freshness())
 
 st.caption(
     "What this means: GREEN is usable, YELLOW means review the caveat before acting, "
@@ -231,9 +234,7 @@ for index, card in enumerate(cards):
 
 if not report.warnings.empty:
     warning_count = len(report.warnings)
-    st.warning(
-        f"{warning_count} data-health item(s) need review. Open the warning summary below."
-    )
+    st.warning(f"{warning_count} data-health item(s) need review. Open the warning summary below.")
 else:
     st.success("No data-health warnings found by the dashboard checks.")
 

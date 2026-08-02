@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # ruff: noqa: E402
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -17,6 +18,7 @@ from app.components.draft_day_v1 import (
     render_source_of_truth_badge,
     render_yellow_hold,
 )
+from app.components.post_release_status import render_save_status, render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.draft_day_app_v1_service import (
@@ -48,6 +50,15 @@ from src.services.personal_workspace_service import (
     WorkspaceValidationError,
     load_store,
     save_scenario,
+)
+from src.services.post_release_usability_service import (
+    governed_source_freshness,
+    initial_save_status,
+    perform_workspace_write,
+)
+from src.services.trade_brief_export_service import (
+    TradeBriefValidationError,
+    build_trade_brief,
 )
 from src.services.trading_lab_nflverse_context_service import (
     display_nflverse_context_rows,
@@ -116,6 +127,7 @@ page_header(
         ("No trade model added", "safe"),
     ),
 )
+render_source_freshness(governed_source_freshness())
 st.caption(
     "Deep tool: manual trade review. Display-only context is not a trade model, rank input, "
     "or source of truth. No trade calculator or automatic offer generator runs here."
@@ -757,7 +769,10 @@ st.subheader("Personal Workspace")
 selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
 governed = load_governed_asset_registry(repo_root=REPO_ROOT)
 governed_by_id = {row["asset_id"]: row for row in governed.rows}
-personal = {row["asset_id"]: row for row in load_store("personal_board").records}
+personal_store = load_store("personal_board")
+scenario_store = load_store("saved_scenarios")
+personal = {row["asset_id"]: row for row in personal_store.records}
+render_save_status(initial_save_status(scenario_store.status, scenario_store.updated_at_utc))
 exact_ids = []
 for row in selected_rows.to_dict("records"):
     player_id = str(row.get("nwr_player_id", "")).strip()
@@ -811,25 +826,86 @@ if save_trade_scenario:
         ]
     ].to_dict("records")
     try:
-        save_scenario(
-            {
-                "scenario_id": f"trade-{uuid4()}",
-                "scenario_type": "trading_lab",
-                "title": scenario_title or "Saved Trading Lab scenario",
-                "assets": exact_ids,
-                "source_versions": governed.source_hashes,
-                "payload": {
-                    "selected_sides": snapshot_rows,
-                    "notes": scenario_notes,
-                    "team_window": team_window,
-                    "unresolved_pick_context_visible": len(selected_rows) - len(exact_ids),
+        write_status = perform_workspace_write(
+            lambda: save_scenario(
+                {
+                    "scenario_id": f"trade-{uuid4()}",
+                    "scenario_type": "trading_lab",
+                    "title": scenario_title or "Saved Trading Lab scenario",
+                    "assets": exact_ids,
+                    "source_versions": governed.source_hashes,
+                    "payload": {
+                        "selected_sides": snapshot_rows,
+                        "notes": scenario_notes,
+                        "team_window": team_window,
+                        "unresolved_pick_context_visible": len(selected_rows) - len(exact_ids),
+                    },
                 },
-            },
-            asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+                asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
+            ),
+            observer=render_save_status,
         )
-        st.success("Manual scenario saved locally. No trade verdict was generated.")
+        if write_status.state == "Save failed":
+            st.error("The scenario was not saved. The current builder state remains available.")
     except WorkspaceValidationError as exc:
         st.error(f"Scenario blocked: {exc}")
+
+st.subheader("Shareable source-labeled trade brief")
+st.caption(
+    "Choose governed assets directly. Current-player and rookie ranks stay source-separated; "
+    "blocked rookies and picks receive no numeric value."
+)
+brief_options = sorted(governed_by_id, key=lambda key: governed_by_id[key]["asset_name"])
+with st.form("trade-brief-export"):
+    brief_title = st.text_input("Brief title", value=scenario_title or "Manual trade brief")
+    brief_side_a = st.multiselect(
+        "Side A assets",
+        brief_options,
+        format_func=lambda key: (
+            f"{governed_by_id[key]['asset_name']} · {governed_by_id[key]['source_label']}"
+        ),
+    )
+    brief_side_b = st.multiselect(
+        "Side B assets",
+        brief_options,
+        format_func=lambda key: (
+            f"{governed_by_id[key]['asset_name']} · {governed_by_id[key]['source_label']}"
+        ),
+    )
+    brief_rationale = st.text_area("User rationale for the brief", max_chars=20_000)
+    include_personal = st.checkbox("Include my tiers, tags, and notes")
+    build_brief = st.form_submit_button("Build descriptive trade brief")
+if build_brief:
+    try:
+        brief = build_trade_brief(
+            {
+                "title": brief_title,
+                "created_at_utc": datetime.now(UTC).isoformat(),
+                "side_a": brief_side_a,
+                "side_b": brief_side_b,
+                "team_window": team_window,
+                "rationale": brief_rationale,
+            },
+            assets=governed_by_id,
+            personal=personal,
+            include_personal=include_personal,
+        )
+        st.download_button(
+            "Download printable Markdown brief",
+            data=brief.markdown,
+            file_name="nwr-manual-trade-brief.md",
+            mime="text/markdown",
+        )
+        st.download_button(
+            "Download structured JSON brief",
+            data=brief.structured_json,
+            file_name="nwr-manual-trade-brief.json",
+            mime="application/json",
+        )
+        if brief.missing_data:
+            st.warning(f"Missing data remains visible: {len(brief.missing_data)} item(s).")
+    except TradeBriefValidationError as exc:
+        st.error(f"Brief blocked: {exc}")
 trade_workspace_links = st.columns(2)
 trade_workspace_links[0].link_button("Open saved scenarios", "/saved-scenarios")
 trade_workspace_links[1].link_button("Journal this scenario", "/decision-journal")

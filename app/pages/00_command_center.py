@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.cache_keys import path_fingerprint
 from app.components.data_pack_selector import render_data_pack_selector
+from app.components.post_release_status import render_source_freshness
 from app.components.trust_status import render_page_trust_banner
 from app.components.ui_framework import (
     WorkflowTile,
@@ -19,6 +20,11 @@ from app.components.ui_framework import (
 from src.config.settings import get_settings
 from src.services.data_pack_health_service import build_data_pack_health_report
 from src.services.final_calibration_gate_service import build_final_calibration_gate
+from src.services.personal_workspace_service import load_store
+from src.services.post_release_usability_service import (
+    build_followup_dashboard,
+    governed_source_freshness,
+)
 from src.services.ranking_readiness_service import ranking_readiness_from_calibration
 
 FINAL_REVIEW_BRIEF = Path("docs/model_v4/MODEL_V4_6_FINAL_HUMAN_REVIEW_BRIEF.md")
@@ -51,6 +57,26 @@ page_header(
         (f"Active pack: {Path(active_data_pack).name}", "safe"),
     ),
 )
+render_source_freshness(governed_source_freshness())
+
+section_label("Decision Follow-ups")
+_journal = load_store("decision_journal")
+_followups = build_followup_dashboard(_journal.records)
+_followup_columns = st.columns(5)
+for _column, _label, _value in zip(
+    _followup_columns,
+    ("Due today", "Overdue", "Upcoming", "Recent", "Missing date"),
+    (
+        len(_followups.due_today),
+        len(_followups.overdue),
+        len(_followups.upcoming),
+        len(_followups.recent),
+        len(_followups.missing_date),
+    ),
+    strict=True,
+):
+    _column.metric(_label, _value)
+st.link_button("Review follow-ups and receipts", "/decision-journal")
 
 render_page_trust_banner(
     health,

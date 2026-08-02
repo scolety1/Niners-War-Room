@@ -11,6 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.decision_trust_strip import render_decision_trust_strips
+from app.components.post_release_status import render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.decision_trust_strip_service import build_rankings_dataset_trust_strip
 from src.services.draft_day_app_v1_service import (
@@ -61,6 +62,7 @@ from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
     rankings_outcome_v3_rows,
 )
+from src.services.post_release_usability_service import freshness_for_sources
 
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
@@ -1105,6 +1107,7 @@ page_header(
         ),
     ),
 )
+render_source_freshness(freshness_for_sources(("Finished V1", "Outcome V3")))
 st.caption(
     "Deep tool: full dynasty source board. Market and Outcome context are display-only and "
     "never replace Dynasty Rank, Final Board Rank, tiers, or model values."

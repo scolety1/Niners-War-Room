@@ -9,11 +9,13 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.post_release_status import render_source_freshness  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import (  # noqa: E402
     load_governed_asset_registry,
 )
 from src.services.personal_workspace_service import load_store  # noqa: E402
+from src.services.post_release_usability_service import governed_source_freshness  # noqa: E402
 
 
 @st.cache_data
@@ -35,6 +37,7 @@ page_header(
         ("No recommendation", "safe"),
     ),
 )
+render_source_freshness(governed_source_freshness())
 
 if registry.errors:
     for error in registry.errors:

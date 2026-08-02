@@ -9,6 +9,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from app.components.post_release_status import render_save_status  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import (  # noqa: E402
     load_governed_asset_registry,
@@ -20,6 +21,10 @@ from src.services.personal_workspace_service import (  # noqa: E402
     import_personal_board,
     load_store,
     save_personal_entry,
+)
+from src.services.post_release_usability_service import (  # noqa: E402
+    initial_save_status,
+    perform_workspace_write,
 )
 
 registry = load_governed_asset_registry(repo_root=ROOT)
@@ -41,6 +46,7 @@ page_header(
         ("Canonical read-only", "review"),
     ),
 )
+render_save_status(initial_save_status(saved.status, saved.updated_at_utc))
 
 if registry.errors:
     for error in registry.errors:
@@ -118,8 +124,14 @@ if submitted:
             "asset_id": asset_id,
             "previous": dict(prior) if prior else None,
         }
-        save_personal_entry(entry, asset_registry=asset_types)
-        st.success("Personal Board entry saved locally. Canonical ranks were not changed.")
+        save_status = perform_workspace_write(
+            lambda: save_personal_entry(entry, asset_registry=asset_types),
+            observer=render_save_status,
+        )
+        if save_status.state == "Save failed":
+            st.error(
+                "The Personal Board write did not complete. Your form values remain available."
+            )
     except WorkspaceValidationError as exc:
         st.error(f"Save blocked: {exc}")
 

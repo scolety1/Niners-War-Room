@@ -17,6 +17,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.draft_workflow import render_draft_workflow
+from app.components.post_release_status import render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_expanded_draftable_player_pool,
@@ -34,6 +35,7 @@ from src.services.drafting_mode_cockpit_service import (
     recent_trade_rows,
     tier_count_rows,
 )
+from src.services.post_release_usability_service import freshness_for_sources
 
 SOURCE_CAPTION = (
     "Draft Cockpit live runtime session. This state is local/manual draft execution data, "
@@ -176,6 +178,7 @@ page_header(
         ("Persistent local draft state", "safe"),
     ),
 )
+render_source_freshness(freshness_for_sources(("Frozen 2026 Draft Context", "Finished V1")))
 st.caption("Primary draft cockpit: live pick-by-pick execution and command-center context.")
 stop_if_board_blocked(bundle)
 

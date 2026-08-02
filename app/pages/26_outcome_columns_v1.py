@@ -15,12 +15,14 @@ from app.components.draft_day_v1 import (
     render_yellow_hold,
     stop_if_board_blocked,
 )
+from app.components.post_release_status import render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_frozen_board,
     load_lane_prop_file,
     outcome_prop_match_counts,
 )
+from src.services.post_release_usability_service import freshness_for_sources
 
 bundle = load_frozen_board()
 
@@ -33,6 +35,7 @@ page_header(
     ),
     status_items=(("Display-only", "review"), ("No hidden sort", "safe")),
 )
+render_source_freshness(freshness_for_sources(("Outcome V3", "Finished V1")))
 render_source_of_truth_badge(bundle)
 stop_if_board_blocked(bundle)
 

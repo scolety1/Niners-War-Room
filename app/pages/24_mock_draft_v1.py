@@ -16,6 +16,7 @@ from app.components.draft_day_v1 import (
     stop_if_board_blocked,
 )
 from app.components.draft_workflow import render_draft_workflow
+from app.components.post_release_status import render_source_freshness
 from app.components.ui_framework import page_header
 from src.services.draft_day_app_v1_service import (
     load_expanded_draftable_player_pool,
@@ -42,6 +43,7 @@ from src.services.mock_draft_room_service import (
     selected_mock_draft_session,
     session_options,
 )
+from src.services.post_release_usability_service import freshness_for_sources
 
 ACTIVE_MOCK_SESSION_KEY = "mock_draft_room_active_session_id"
 
@@ -113,6 +115,7 @@ page_header(
         ("No automatic recommendations", "safe"),
     ),
 )
+render_source_freshness(freshness_for_sources(("Frozen 2026 Draft Context", "Finished V1")))
 st.markdown(
     '<a href="/draft-cockpit" target="_self">Back to Draft Cockpit</a>',
     unsafe_allow_html=True,

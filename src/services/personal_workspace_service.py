@@ -301,6 +301,7 @@ def update_decision(
         "expected_outcome",
         "confidence",
         "archived",
+        "last_reviewed_at_utc",
     }
     unknown = set(updates) - allowed
     if unknown:
@@ -321,6 +322,33 @@ def archive_decision(
             "BLOCKED_CONFIRMATION_REQUIRED", "decision_journal", decision_id
         )
     return update_decision(decision_id, {"status": "Archived", "archived": True}, root=root)
+
+
+def mark_decision_reviewed(
+    decision_id: str, *, root: str | Path | None = None, now_utc: str | None = None
+) -> WorkspaceWriteResult:
+    """Record a neutral review timestamp without changing the decision outcome or status."""
+
+    timestamp = now_utc or _timestamp()
+    return update_decision(
+        decision_id,
+        {"last_reviewed_at_utc": timestamp},
+        root=root,
+        now_utc=timestamp,
+    )
+
+
+def reschedule_decision_followup(
+    decision_id: str,
+    follow_up_date: str,
+    *,
+    root: str | Path | None = None,
+) -> WorkspaceWriteResult:
+    try:
+        datetime.fromisoformat(follow_up_date).date()
+    except (TypeError, ValueError) as exc:
+        raise WorkspaceValidationError("Follow-up date must be ISO-8601.") from exc
+    return update_decision(decision_id, {"follow_up_date": follow_up_date}, root=root)
 
 
 def delete_personal_entry(
