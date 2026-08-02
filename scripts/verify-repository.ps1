@@ -188,6 +188,9 @@ function Invoke-LocalDataTier {
     $manifestPath = Join-Path $requested ([string]$Contract.pack.manifestFile)
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
         Write-Host "BLOCKED_MISSING_LOCAL_TEST_PACK"
+        Write-Host "Required governed manifest: local_exports/$([string]$Contract.pack.manifestFile)"
+        Write-Host "Required pack: $([string]$Contract.pack.packId) version $([string]$Contract.pack.version)"
+        Write-Host "Owner action: install the authorized pack at the governed local path; no search, copy, or reconstruction was attempted."
         return $ExitMissingLocalPack
     }
     try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json }
