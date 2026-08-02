@@ -1,0 +1,104 @@
+{
+  "files": {
+    "ACTIVE_PACK_AND_SOURCE_DATA_NO_CHANGE.md": {
+      "bytes": 186,
+      "sha256": "02471bb3484928b725942cb3c6d5744fd7d022588ef13b6a869368ee3de928bd"
+    },
+    "DATA_FRESHNESS_UX_CONTRACT.md": {
+      "bytes": 305,
+      "sha256": "2dfd256e01cfcf6f629ee770086147e086fa4e21afec505f5f4860de8ef264d7"
+    },
+    "DECISION_FOLLOWUP_DASHBOARD.md": {
+      "bytes": 290,
+      "sha256": "3199ff4bdec0336871c495e95dcb7f8459c515e5e312659921fda371d25380f4"
+    },
+    "DISPOSABLE_WORKTREE_CLEANUP_RECEIPT.md": {
+      "bytes": 441,
+      "sha256": "f2d7e8fb3902c0c1c0481f1fef8e9b9624c95bcf67e7b6ed9bdcb9cbf143a47a"
+    },
+    "EXECUTIVE_VERDICT.md": {
+      "bytes": 217,
+      "sha256": "17be509c106471129905f6d3e599c6d21729d356af27073d22ef6ed719962ea5"
+    },
+    "FILES_CREATED_OR_CHANGED.csv": {
+      "bytes": 3026,
+      "sha256": "a124bbdc22868dd3bf58b8340ec8862a8ad8d69fb7da427bd24813d41c3162e3"
+    },
+    "FINISHED_V1_OUTCOME_V3_ROOKIE_BOARD_NO_CHANGE.md": {
+      "bytes": 190,
+      "sha256": "4ee3f44180e735e42eb5d1dfa8d4e1f7e2806eba2f6723ffb93d1d4d49fc7332"
+    },
+    "FULL_SUITE_BASELINE_COMPARISON.md": {
+      "bytes": 594,
+      "sha256": "f728dbcec140596521d4a883d2922ecab25c7a2fc6de2646410f253306fd6b28"
+    },
+    "FULL_SUITE_FAILURE_CLASSIFICATION.csv": {
+      "bytes": 221289,
+      "sha256": "87c08f3ee7b19fb0c784733bcf9124d2be461cd147b887999e58265aefbd1a57"
+    },
+    "LOCALDATA_PACK_CONTRACT.md": {
+      "bytes": 291,
+      "sha256": "6c26b4f5dd497cad623f8cba9e9172359c28ffee386fca1486f044bd89de01a2"
+    },
+    "LOCALDATA_RECOVERY_REPORT.md": {
+      "bytes": 271,
+      "sha256": "68949838acd95aa63f08203cae89570bf2c33c9841140102574370986cb9e868"
+    },
+    "MUTATION_SENSITIVITY_RESULTS.csv": {
+      "bytes": 2990,
+      "sha256": "06b3bedc9ae97c973f4323130997d69fa665cc630d2bec7c5dcf17d9aa18003b"
+    },
+    "OPAQUE_PERSISTENT_RECOVERY_PRESERVATION.md": {
+      "bytes": 861,
+      "sha256": "d45b10b6ff95ecf85ce51516b6a1487ea73816f9a32cf043fbc0799ecdc92a48"
+    },
+    "PERFORMANCE_RESULTS.csv": {
+      "bytes": 679,
+      "sha256": "ef4cb1f49fda185d27a982e8d80d20946e4bc8d602854f4c470a36251ec4a4ce"
+    },
+    "POST_RELEASE_HARDENING_REPORT.md": {
+      "bytes": 803,
+      "sha256": "f31fb559cb4bfcf0204b5578d759c78f6073cf608a4cdb0b554351995b5e8f52"
+    },
+    "ROLLBACK_PLAN.md": {
+      "bytes": 289,
+      "sha256": "810c281c41722bec122706b2eb9fe29e522789ee93ae74089d3980d7e241aa07"
+    },
+    "ROUTE_VIEWPORT_RESULTS.csv": {
+      "bytes": 17484,
+      "sha256": "f7d63e0545a801dc2c6e7d59347df21cf642f8e225d89df9d0a062b40707e3a1"
+    },
+    "TRADE_BRIEF_EXPORT_CONTRACT.md": {
+      "bytes": 301,
+      "sha256": "330b9409119c9ff8dcb710e94211ecf2319603621f203c25c1e5a75213faebf6"
+    },
+    "TRADE_BRIEF_EXPORT_TESTS.csv": {
+      "bytes": 182,
+      "sha256": "aef8fb3a655995f6282ced94729fc0e8b0ccf0f887113bba056982e5ff4ddf94"
+    },
+    "USABILITY_FRICTION_AUDIT.csv": {
+      "bytes": 383,
+      "sha256": "c629847310e2f13548991fc5b5838028dcb2edd7003507887b5a5f51cf03beb8"
+    },
+    "USER_QUICK_START_UPDATE.md": {
+      "bytes": 321,
+      "sha256": "794e26c342e7d857c350af5caec2a589db4de59c23e7d359feb6f2238957cccb"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 260,
+      "sha256": "edbafd03999d2b937f9893a766575f4df74a9ee9500548051a3468929e62d159"
+    },
+    "WORKFLOW_ACCEPTANCE_RESULTS.csv": {
+      "bytes": 984,
+      "sha256": "87d85fba954d643e14a440aff7daabefa689de5ec1cab712610edade62863a7e"
+    },
+    "WORKSPACE_SAVE_STATUS_CONTRACT.md": {
+      "bytes": 265,
+      "sha256": "b6fd8acd323378c318cd020745e2bbe143de61f7b600720b31aef0953c7b28f3"
+    }
+  },
+  "manifest_excludes_self": true,
+  "packet_date": "2026-08-01",
+  "schema_version": "NWR_POST_RELEASE_HARDENING_V1",
+  "verdict": "GREEN_NWR_POST_RELEASE_HARDENING_V1_READY_FOR_HQ_REVIEW"
+}

@@ -11,3 +11,4 @@ scripts/build_workday_accuracy_evidence_expansion_v1.py text eol=lf
 tests/test_workday_accuracy_evidence_expansion_v1.py text eol=lf
 docs/hq/master/nwr_model_v4_2026_rookie_board_review_v1_20260730/** text eol=lf
 docs/hq/master/nwr_outcome_columns_v3_rc1_v1_20260729/** text eol=lf
+docs/hq/master/nwr_post_release_hardening_v1_20260801/** text eol=lf

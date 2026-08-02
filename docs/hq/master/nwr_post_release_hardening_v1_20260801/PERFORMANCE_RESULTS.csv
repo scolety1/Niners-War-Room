@@ -1,0 +1,12 @@
+measurement,before,after,result
+canonical full suite seconds,595.79,573.93,RECORDED
+unsafe mutable-state cache,none,none,PRESERVED
+375x812 route average ms (65 routes),776,755,RECORDED
+375x812 route p95 ms (65 routes),1060,975,RECORDED
+375x812 route maximum ms (65 routes),5115,2408,RECORDED_NO_THRESHOLD_CLAIM
+768x1024 route average ms (65 routes),798,719,RECORDED
+768x1024 route p95 ms (65 routes),888,922,RECORDED
+768x1024 route maximum ms (65 routes),6126,4823,RECORDED_NO_THRESHOLD_CLAIM
+1440x1000 route average ms (65 routes),792,759,RECORDED
+1440x1000 route p95 ms (65 routes),1063,989,RECORDED
+1440x1000 route maximum ms (65 routes),3934,4643,RECORDED_NO_THRESHOLD_CLAIM

@@ -1,0 +1,196 @@
+route,title,file,viewport,static_contract,browser_observed,result
+/,Niners War Room Home,pages/46_draft_cockpit_default_root.py,375x812,PASS,YES,PASS
+/,Niners War Room Home,pages/46_draft_cockpit_default_root.py,768x1024,PASS,YES,PASS
+/,Niners War Room Home,pages/46_draft_cockpit_default_root.py,1440x1000,PASS,YES,PASS
+/draft-cockpit,Draft Cockpit,pages/21_live_draft_room_v1.py,375x812,PASS,YES,PASS
+/draft-cockpit,Draft Cockpit,pages/21_live_draft_room_v1.py,768x1024,PASS,YES,PASS
+/draft-cockpit,Draft Cockpit,pages/21_live_draft_room_v1.py,1440x1000,PASS,YES,PASS
+/mock-draft,Mock Drafts,pages/24_mock_draft_v1.py,375x812,PASS,YES,PASS
+/mock-draft,Mock Drafts,pages/24_mock_draft_v1.py,768x1024,PASS,YES,PASS
+/mock-draft,Mock Drafts,pages/24_mock_draft_v1.py,1440x1000,PASS,YES,PASS
+/rankings,Dynasty Rankings,pages/20_final_board_v1.py,375x812,PASS,YES,PASS
+/rankings,Dynasty Rankings,pages/20_final_board_v1.py,768x1024,PASS,YES,PASS
+/rankings,Dynasty Rankings,pages/20_final_board_v1.py,1440x1000,PASS,YES,PASS
+/asset-explorer,Asset Explorer,pages/47_asset_explorer_v1.py,375x812,PASS,YES,PASS
+/asset-explorer,Asset Explorer,pages/47_asset_explorer_v1.py,768x1024,PASS,YES,PASS
+/asset-explorer,Asset Explorer,pages/47_asset_explorer_v1.py,1440x1000,PASS,YES,PASS
+/player-compare,Player Compare,pages/22_player_compare_v1.py,375x812,PASS,YES,PASS
+/player-compare,Player Compare,pages/22_player_compare_v1.py,768x1024,PASS,YES,PASS
+/player-compare,Player Compare,pages/22_player_compare_v1.py,1440x1000,PASS,YES,PASS
+/trading-lab,Trading Lab,pages/23_trading_lab_v1.py,375x812,PASS,YES,PASS
+/trading-lab,Trading Lab,pages/23_trading_lab_v1.py,768x1024,PASS,YES,PASS
+/trading-lab,Trading Lab,pages/23_trading_lab_v1.py,1440x1000,PASS,YES,PASS
+/rookie-board,Rookie Board,pages/48_rookie_board_review_v1.py,375x812,PASS,YES,PASS
+/rookie-board,Rookie Board,pages/48_rookie_board_review_v1.py,768x1024,PASS,YES,PASS
+/rookie-board,Rookie Board,pages/48_rookie_board_review_v1.py,1440x1000,PASS,YES,PASS
+/post-draft-mode,Draft Analyzer,pages/29_post_draft_mode_v2.py,375x812,PASS,YES,PASS
+/post-draft-mode,Draft Analyzer,pages/29_post_draft_mode_v2.py,768x1024,PASS,YES,PASS
+/post-draft-mode,Draft Analyzer,pages/29_post_draft_mode_v2.py,1440x1000,PASS,YES,PASS
+/development-lab,Lab Home,pages/35_development_lab_v1.py,375x812,PASS,YES,PASS
+/development-lab,Lab Home,pages/35_development_lab_v1.py,768x1024,PASS,YES,PASS
+/development-lab,Lab Home,pages/35_development_lab_v1.py,1440x1000,PASS,YES,PASS
+/roster-weakness-tracker,Roster Weakness Tracker,pages/36_roster_weakness_tracker_v1.py,375x812,PASS,YES,PASS
+/roster-weakness-tracker,Roster Weakness Tracker,pages/36_roster_weakness_tracker_v1.py,768x1024,PASS,YES,PASS
+/roster-weakness-tracker,Roster Weakness Tracker,pages/36_roster_weakness_tracker_v1.py,1440x1000,PASS,YES,PASS
+/future-pick-planning,Future Pick Planning,pages/37_future_pick_planning_v1.py,375x812,PASS,YES,PASS
+/future-pick-planning,Future Pick Planning,pages/37_future_pick_planning_v1.py,768x1024,PASS,YES,PASS
+/future-pick-planning,Future Pick Planning,pages/37_future_pick_planning_v1.py,1440x1000,PASS,YES,PASS
+/upcoming-draft-prep,Upcoming Draft Prep,pages/41_upcoming_draft_prep_v1.py,375x812,PASS,YES,PASS
+/upcoming-draft-prep,Upcoming Draft Prep,pages/41_upcoming_draft_prep_v1.py,768x1024,PASS,YES,PASS
+/upcoming-draft-prep,Upcoming Draft Prep,pages/41_upcoming_draft_prep_v1.py,1440x1000,PASS,YES,PASS
+/keeper-deadline-prep,Keeper Deadline Prep,pages/38_keeper_deadline_prep_v1.py,375x812,PASS,YES,PASS
+/keeper-deadline-prep,Keeper Deadline Prep,pages/38_keeper_deadline_prep_v1.py,768x1024,PASS,YES,PASS
+/keeper-deadline-prep,Keeper Deadline Prep,pages/38_keeper_deadline_prep_v1.py,1440x1000,PASS,YES,PASS
+/drop-deadline-prep,Drop Deadline Prep,pages/39_drop_deadline_prep_v1.py,375x812,PASS,YES,PASS
+/drop-deadline-prep,Drop Deadline Prep,pages/39_drop_deadline_prep_v1.py,768x1024,PASS,YES,PASS
+/drop-deadline-prep,Drop Deadline Prep,pages/39_drop_deadline_prep_v1.py,1440x1000,PASS,YES,PASS
+/trade-deadline-prep,Trade Deadline Prep,pages/40_trade_deadline_prep_v1.py,375x812,PASS,YES,PASS
+/trade-deadline-prep,Trade Deadline Prep,pages/40_trade_deadline_prep_v1.py,768x1024,PASS,YES,PASS
+/trade-deadline-prep,Trade Deadline Prep,pages/40_trade_deadline_prep_v1.py,1440x1000,PASS,YES,PASS
+/future-tools,Future Tools,pages/34_future_tools_v1.py,375x812,PASS,YES,PASS
+/future-tools,Future Tools,pages/34_future_tools_v1.py,768x1024,PASS,YES,PASS
+/future-tools,Future Tools,pages/34_future_tools_v1.py,1440x1000,PASS,YES,PASS
+/refresh-data,Refresh Data,pages/24_refresh_data_v1.py,375x812,PASS,YES,PASS
+/refresh-data,Refresh Data,pages/24_refresh_data_v1.py,768x1024,PASS,YES,PASS
+/refresh-data,Refresh Data,pages/24_refresh_data_v1.py,1440x1000,PASS,YES,PASS
+/evidence-integration-review,Evidence Review,pages/33_evidence_integration_review_v1.py,375x812,PASS,YES,PASS
+/evidence-integration-review,Evidence Review,pages/33_evidence_integration_review_v1.py,768x1024,PASS,YES,PASS
+/evidence-integration-review,Evidence Review,pages/33_evidence_integration_review_v1.py,1440x1000,PASS,YES,PASS
+/evidence-review-hub,Evidence Review Hub,pages/45_evidence_review_hub_v1.py,375x812,PASS,YES,PASS
+/evidence-review-hub,Evidence Review Hub,pages/45_evidence_review_hub_v1.py,768x1024,PASS,YES,PASS
+/evidence-review-hub,Evidence Review Hub,pages/45_evidence_review_hub_v1.py,1440x1000,PASS,YES,PASS
+/settings-data-health,Settings / Data Health,pages/28_settings_data_health_v1.py,375x812,PASS,YES,PASS
+/settings-data-health,Settings / Data Health,pages/28_settings_data_health_v1.py,768x1024,PASS,YES,PASS
+/settings-data-health,Settings / Data Health,pages/28_settings_data_health_v1.py,1440x1000,PASS,YES,PASS
+/personal-board,Personal Board,pages/49_personal_board_v1.py,375x812,PASS,YES,PASS
+/personal-board,Personal Board,pages/49_personal_board_v1.py,768x1024,PASS,YES,PASS
+/personal-board,Personal Board,pages/49_personal_board_v1.py,1440x1000,PASS,YES,PASS
+/decision-journal,Decision Journal,pages/50_decision_journal_v1.py,375x812,PASS,YES,PASS
+/decision-journal,Decision Journal,pages/50_decision_journal_v1.py,768x1024,PASS,YES,PASS
+/decision-journal,Decision Journal,pages/50_decision_journal_v1.py,1440x1000,PASS,YES,PASS
+/saved-scenarios,Saved Scenarios,pages/51_saved_scenarios_v1.py,375x812,PASS,YES,PASS
+/saved-scenarios,Saved Scenarios,pages/51_saved_scenarios_v1.py,768x1024,PASS,YES,PASS
+/saved-scenarios,Saved Scenarios,pages/51_saved_scenarios_v1.py,1440x1000,PASS,YES,PASS
+/draft-cockpit-root,Draft Cockpit Root,pages/44_draft_cockpit_root.py,375x812,PASS,YES,PASS
+/draft-cockpit-root,Draft Cockpit Root,pages/44_draft_cockpit_root.py,768x1024,PASS,YES,PASS
+/draft-cockpit-root,Draft Cockpit Root,pages/44_draft_cockpit_root.py,1440x1000,PASS,YES,PASS
+/drafting-mode,Drafting Mode Compatibility,pages/19_drafting_mode_v2.py,375x812,PASS,YES,PASS
+/drafting-mode,Drafting Mode Compatibility,pages/19_drafting_mode_v2.py,768x1024,PASS,YES,PASS
+/drafting-mode,Drafting Mode Compatibility,pages/19_drafting_mode_v2.py,1440x1000,PASS,YES,PASS
+/live-draft-room,Draft Cockpit Legacy URL Alias,pages/43_live_draft_room_url_alias.py,375x812,PASS,YES,PASS
+/live-draft-room,Draft Cockpit Legacy URL Alias,pages/43_live_draft_room_url_alias.py,768x1024,PASS,YES,PASS
+/live-draft-room,Draft Cockpit Legacy URL Alias,pages/43_live_draft_room_url_alias.py,1440x1000,PASS,YES,PASS
+/drafting-mode-root,Drafting Mode Root,pages/32_drafting_mode_root_v1.py,375x812,PASS,YES,PASS
+/drafting-mode-root,Drafting Mode Root,pages/32_drafting_mode_root_v1.py,768x1024,PASS,YES,PASS
+/drafting-mode-root,Drafting Mode Root,pages/32_drafting_mode_root_v1.py,1440x1000,PASS,YES,PASS
+/home,Dynasty Rankings Home,pages/20_final_board_v1.py,375x812,PASS,YES,PASS
+/home,Dynasty Rankings Home,pages/20_final_board_v1.py,768x1024,PASS,YES,PASS
+/home,Dynasty Rankings Home,pages/20_final_board_v1.py,1440x1000,PASS,YES,PASS
+/draft-day-home,Dynasty Rankings URL Alias,pages/20_final_board_v1.py,375x812,PASS,YES,PASS
+/draft-day-home,Dynasty Rankings URL Alias,pages/20_final_board_v1.py,768x1024,PASS,YES,PASS
+/draft-day-home,Dynasty Rankings URL Alias,pages/20_final_board_v1.py,1440x1000,PASS,YES,PASS
+/cheat-sheets,Cheat Sheets,pages/18_cheat_sheets_v2.py,375x812,PASS,YES,PASS
+/cheat-sheets,Cheat Sheets,pages/18_cheat_sheets_v2.py,768x1024,PASS,YES,PASS
+/cheat-sheets,Cheat Sheets,pages/18_cheat_sheets_v2.py,1440x1000,PASS,YES,PASS
+/draft-room,Draft Prep,pages/25_draft_prep_v1.py,375x812,PASS,YES,PASS
+/draft-room,Draft Prep,pages/25_draft_prep_v1.py,768x1024,PASS,YES,PASS
+/draft-room,Draft Prep,pages/25_draft_prep_v1.py,1440x1000,PASS,YES,PASS
+/draft-prep,Draft Prep Compatibility,pages/42_draft_prep_compat_v1.py,375x812,PASS,YES,PASS
+/draft-prep,Draft Prep Compatibility,pages/42_draft_prep_compat_v1.py,768x1024,PASS,YES,PASS
+/draft-prep,Draft Prep Compatibility,pages/42_draft_prep_compat_v1.py,1440x1000,PASS,YES,PASS
+/outcome-columns,Outcome Diagnostics,pages/26_outcome_columns_v1.py,375x812,PASS,YES,PASS
+/outcome-columns,Outcome Diagnostics,pages/26_outcome_columns_v1.py,768x1024,PASS,YES,PASS
+/outcome-columns,Outcome Diagnostics,pages/26_outcome_columns_v1.py,1440x1000,PASS,YES,PASS
+/decision-board,Decision Board,pages/27_decision_board_v1.py,375x812,PASS,YES,PASS
+/decision-board,Decision Board,pages/27_decision_board_v1.py,768x1024,PASS,YES,PASS
+/decision-board,Decision Board,pages/27_decision_board_v1.py,1440x1000,PASS,YES,PASS
+/nfl-usage-evidence-review,NFL Usage Evidence Review,pages/32_nfl_usage_evidence_review.py,375x812,PASS,YES,PASS
+/nfl-usage-evidence-review,NFL Usage Evidence Review,pages/32_nfl_usage_evidence_review.py,768x1024,PASS,YES,PASS
+/nfl-usage-evidence-review,NFL Usage Evidence Review,pages/32_nfl_usage_evidence_review.py,1440x1000,PASS,YES,PASS
+/unified-universe-review,Unified Universe Review,pages/31_unified_universe_review_v1.py,375x812,PASS,YES,PASS
+/unified-universe-review,Unified Universe Review,pages/31_unified_universe_review_v1.py,768x1024,PASS,YES,PASS
+/unified-universe-review,Unified Universe Review,pages/31_unified_universe_review_v1.py,1440x1000,PASS,YES,PASS
+/settings,Settings Data Health Legacy Alias,pages/30_settings_data_health_alias.py,375x812,PASS,YES,PASS
+/settings,Settings Data Health Legacy Alias,pages/30_settings_data_health_alias.py,768x1024,PASS,YES,PASS
+/settings,Settings Data Health Legacy Alias,pages/30_settings_data_health_alias.py,1440x1000,PASS,YES,PASS
+/post-draft,Post-Draft Mode Legacy Alias,pages/29_post_draft_mode_v2.py,375x812,PASS,YES,PASS
+/post-draft,Post-Draft Mode Legacy Alias,pages/29_post_draft_mode_v2.py,768x1024,PASS,YES,PASS
+/post-draft,Post-Draft Mode Legacy Alias,pages/29_post_draft_mode_v2.py,1440x1000,PASS,YES,PASS
+/draft-analyzer,Draft Analyzer URL Alias,pages/29_post_draft_mode_v2.py,375x812,PASS,YES,PASS
+/draft-analyzer,Draft Analyzer URL Alias,pages/29_post_draft_mode_v2.py,768x1024,PASS,YES,PASS
+/draft-analyzer,Draft Analyzer URL Alias,pages/29_post_draft_mode_v2.py,1440x1000,PASS,YES,PASS
+/legacy-rankings,Legacy Dynasty Rankings,legacy_pages/05_rankings_legacy.py,375x812,PASS,YES,PASS
+/legacy-rankings,Legacy Dynasty Rankings,legacy_pages/05_rankings_legacy.py,768x1024,PASS,YES,PASS
+/legacy-rankings,Legacy Dynasty Rankings,legacy_pages/05_rankings_legacy.py,1440x1000,PASS,YES,PASS
+/legacy-draft-room,Legacy Draft Prep,pages/06_draft_board.py,375x812,PASS,YES,PASS
+/legacy-draft-room,Legacy Draft Prep,pages/06_draft_board.py,768x1024,PASS,YES,PASS
+/legacy-draft-room,Legacy Draft Prep,pages/06_draft_board.py,1440x1000,PASS,YES,PASS
+/legacy-live-draft-room,Legacy Draft Cockpit,pages/07_live_draft_room.py,375x812,PASS,YES,PASS
+/legacy-live-draft-room,Legacy Draft Cockpit,pages/07_live_draft_room.py,768x1024,PASS,YES,PASS
+/legacy-live-draft-room,Legacy Draft Cockpit,pages/07_live_draft_room.py,1440x1000,PASS,YES,PASS
+/legacy-decision-board,Legacy Decision Board,pages/08_june15_review.py,375x812,PASS,YES,PASS
+/legacy-decision-board,Legacy Decision Board,pages/08_june15_review.py,768x1024,PASS,YES,PASS
+/legacy-decision-board,Legacy Decision Board,pages/08_june15_review.py,1440x1000,PASS,YES,PASS
+/legacy-external-asset-reviews,Legacy External Asset Reviews,pages/04_trade_central.py,375x812,PASS,YES,PASS
+/legacy-external-asset-reviews,Legacy External Asset Reviews,pages/04_trade_central.py,768x1024,PASS,YES,PASS
+/legacy-external-asset-reviews,Legacy External Asset Reviews,pages/04_trade_central.py,1440x1000,PASS,YES,PASS
+/legacy-settings,Legacy Settings,pages/07_source_overrides.py,375x812,PASS,YES,PASS
+/legacy-settings,Legacy Settings,pages/07_source_overrides.py,768x1024,PASS,YES,PASS
+/legacy-settings,Legacy Settings,pages/07_source_overrides.py,1440x1000,PASS,YES,PASS
+/review-workflow,Review Workflow,pages/00_command_center.py,375x812,PASS,YES,PASS
+/review-workflow,Review Workflow,pages/00_command_center.py,768x1024,PASS,YES,PASS
+/review-workflow,Review Workflow,pages/00_command_center.py,1440x1000,PASS,YES,PASS
+/command-center,Command Center Legacy Alias,pages/00_command_center.py,375x812,PASS,YES,PASS
+/command-center,Command Center Legacy Alias,pages/00_command_center.py,768x1024,PASS,YES,PASS
+/command-center,Command Center Legacy Alias,pages/00_command_center.py,1440x1000,PASS,YES,PASS
+/trade-lab,Trade Lab Legacy Alias,pages/04_trade_central.py,375x812,PASS,YES,PASS
+/trade-lab,Trade Lab Legacy Alias,pages/04_trade_central.py,768x1024,PASS,YES,PASS
+/trade-lab,Trade Lab Legacy Alias,pages/04_trade_central.py,1440x1000,PASS,YES,PASS
+/model-tuning,Historical Replay Advanced,pages/09_model_tuning.py,375x812,PASS,YES,PASS
+/model-tuning,Historical Replay Advanced,pages/09_model_tuning.py,768x1024,PASS,YES,PASS
+/model-tuning,Historical Replay Advanced,pages/09_model_tuning.py,1440x1000,PASS,YES,PASS
+/import-refresh,Import & Refresh,pages/01_import_review.py,375x812,PASS,YES,PASS
+/import-refresh,Import & Refresh,pages/01_import_review.py,768x1024,PASS,YES,PASS
+/import-refresh,Import & Refresh,pages/01_import_review.py,1440x1000,PASS,YES,PASS
+/war-board,War Board,pages/03_war_board.py,375x812,PASS,YES,PASS
+/war-board,War Board,pages/03_war_board.py,768x1024,PASS,YES,PASS
+/war-board,War Board,pages/03_war_board.py,1440x1000,PASS,YES,PASS
+/my-team,My Team,pages/02_team.py,375x812,PASS,YES,PASS
+/my-team,My Team,pages/02_team.py,768x1024,PASS,YES,PASS
+/my-team,My Team,pages/02_team.py,1440x1000,PASS,YES,PASS
+/league-targets,League Targets,pages/06_league_intel.py,375x812,PASS,YES,PASS
+/league-targets,League Targets,pages/06_league_intel.py,768x1024,PASS,YES,PASS
+/league-targets,League Targets,pages/06_league_intel.py,1440x1000,PASS,YES,PASS
+/player-board,Player Board Legacy Alias,pages/20_final_board_v1.py,375x812,PASS,YES,PASS
+/player-board,Player Board Legacy Alias,pages/20_final_board_v1.py,768x1024,PASS,YES,PASS
+/player-board,Player Board Legacy Alias,pages/20_final_board_v1.py,1440x1000,PASS,YES,PASS
+/draft-board,Draft Board Legacy Alias,pages/06_draft_board.py,375x812,PASS,YES,PASS
+/draft-board,Draft Board Legacy Alias,pages/06_draft_board.py,768x1024,PASS,YES,PASS
+/draft-board,Draft Board Legacy Alias,pages/06_draft_board.py,1440x1000,PASS,YES,PASS
+/june-15-review,June 15 Legacy Alias,pages/08_june15_review.py,375x812,PASS,YES,PASS
+/june-15-review,June 15 Legacy Alias,pages/08_june15_review.py,768x1024,PASS,YES,PASS
+/june-15-review,June 15 Legacy Alias,pages/08_june15_review.py,1440x1000,PASS,YES,PASS
+/model-lab,Model Lab,pages/07_model_lab.py,375x812,PASS,YES,PASS
+/model-lab,Model Lab,pages/07_model_lab.py,768x1024,PASS,YES,PASS
+/model-lab,Model Lab,pages/07_model_lab.py,1440x1000,PASS,YES,PASS
+/freeze,Freeze,pages/09_draft_freeze.py,375x812,PASS,YES,PASS
+/freeze,Freeze,pages/09_draft_freeze.py,768x1024,PASS,YES,PASS
+/freeze,Freeze,pages/09_draft_freeze.py,1440x1000,PASS,YES,PASS
+/model-lab-sources,Model Lab Sources,pages/07_source_overrides.py,375x812,PASS,YES,PASS
+/model-lab-sources,Model Lab Sources,pages/07_source_overrides.py,768x1024,PASS,YES,PASS
+/model-lab-sources,Model Lab Sources,pages/07_source_overrides.py,1440x1000,PASS,YES,PASS
+/source_overrides,Sources Legacy Alias,pages/07_source_overrides.py,375x812,PASS,YES,PASS
+/source_overrides,Sources Legacy Alias,pages/07_source_overrides.py,768x1024,PASS,YES,PASS
+/source_overrides,Sources Legacy Alias,pages/07_source_overrides.py,1440x1000,PASS,YES,PASS
+/rookie-model-debug,Rookie Model Debug,pages/08_rookie_model.py,375x812,PASS,YES,PASS
+/rookie-model-debug,Rookie Model Debug,pages/08_rookie_model.py,768x1024,PASS,YES,PASS
+/rookie-model-debug,Rookie Model Debug,pages/08_rookie_model.py,1440x1000,PASS,YES,PASS
+/rookie_model,Rookie Model Legacy Alias,pages/08_rookie_model.py,375x812,PASS,YES,PASS
+/rookie_model,Rookie Model Legacy Alias,pages/08_rookie_model.py,768x1024,PASS,YES,PASS
+/rookie_model,Rookie Model Legacy Alias,pages/08_rookie_model.py,1440x1000,PASS,YES,PASS
+/historical-replay-debug,Historical Replay Debug,pages/10_historical_replay.py,375x812,PASS,YES,PASS
+/historical-replay-debug,Historical Replay Debug,pages/10_historical_replay.py,768x1024,PASS,YES,PASS
+/historical-replay-debug,Historical Replay Debug,pages/10_historical_replay.py,1440x1000,PASS,YES,PASS
+/historical_replay,Historical Replay Legacy Alias,pages/10_historical_replay.py,375x812,PASS,YES,PASS
+/historical_replay,Historical Replay Legacy Alias,pages/10_historical_replay.py,768x1024,PASS,YES,PASS
+/historical_replay,Historical Replay Legacy Alias,pages/10_historical_replay.py,1440x1000,PASS,YES,PASS

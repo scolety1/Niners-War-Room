@@ -1,0 +1,15 @@
+workflow,result,evidence
+find current player,PASS,287 passed; 195 browser route/viewport checks
+find rookie,PASS,287 passed; 195 browser route/viewport checks
+update Personal Board,PASS,287 passed; 195 browser route/viewport checks
+compare assets,PASS,287 passed; 195 browser route/viewport checks
+save comparison,PASS,287 passed; 195 browser route/viewport checks
+build/save trade,PASS,287 passed; 195 browser route/viewport checks
+export trade brief,PASS,287 passed; 195 browser route/viewport checks
+create journal receipt,PASS,287 passed; 195 browser route/viewport checks
+review follow-ups,PASS,287 passed; 195 browser route/viewport checks
+use Rookie Board,PASS,287 passed; 195 browser route/viewport checks
+use draft tools,PASS,287 passed; 195 browser route/viewport checks
+create backup,PASS,287 passed; 195 browser route/viewport checks
+restore dry-run,PASS,287 passed; 195 browser route/viewport checks
+inspect Data Health,PASS,287 passed; 195 browser route/viewport checks
