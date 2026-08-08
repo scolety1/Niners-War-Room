@@ -15,9 +15,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.components.decision_trust_strip import render_decision_trust_strips
 from app.components.draft_day_v1 import (
     render_final_board_table,
-    render_source_of_truth_badge,
     render_yellow_hold,
-    stop_if_board_blocked,
 )
 from app.components.player_compare_accessibility import (
     render_player_compare_accessibility_frame,
@@ -37,10 +35,9 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_APPLICABLE,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     display_lane_prop_frame,
-    load_expanded_draftable_player_pool,
-    load_frozen_board,
     load_lane_prop_file,
     load_outcome_v2_current_player_display,
+    resolve_dynasty_rankings_path,
 )
 from src.services.governed_asset_registry_service import load_governed_asset_registry
 from src.services.injury_availability_context_service import (
@@ -62,6 +59,12 @@ from src.services.player_compare_decision_service import (
     build_player_compare_decision_summary,
     build_player_compare_nflverse_context,
     decision_summary_rows,
+)
+from src.services.player_compare_universe_service import (
+    CURRENT_PLAYER,
+    NO_COMMON_SCALE_NOTE,
+    build_player_compare_universe,
+    governed_source_identity,
 )
 from src.services.post_release_usability_service import (
     freshness_for_sources,
@@ -115,7 +118,7 @@ def _render_position_aware_outcome_compare(
         key="player_compare_show_all_outcomes",
         help="Wrong-position Outcome heads show N/A in this advanced view.",
     )
-    st.caption(f"Outcome source: {prop_path}")
+    st.caption(governed_source_identity("Outcome compatibility source", prop_path))
 
     base_columns = [column for column in ("player", "position") if column in compare_frame.columns]
     if len(base_columns) < 2:
@@ -169,8 +172,8 @@ def _render_outcome_v3_compare(compare_frame: pd.DataFrame) -> None:
         render_yellow_hold(
             "Outcome V3 is unavailable; applicable values remain Not enough information."
         )
-        for error in artifact.errors:
-            st.error(error)
+        if artifact.errors:
+            st.error("Governed Outcome V3 source failed validation; see internal diagnostics.")
         return
     rows = player_compare_outcome_v3_rows(compare_frame, artifact.frame)
     if rows.empty:
@@ -464,6 +467,68 @@ def _non_duplicate_options(players: list[str], selected: set[str]) -> list[str]:
     return [player for player in players if player not in selected]
 
 
+def _render_compare_source_status(counts: dict[str, int], source_hashes: dict[str, str]) -> None:
+    current_hash = source_hashes.get("Finished V1", "Not enough information")
+    st.info(
+        "Governed Player Compare registry | "
+        f"Finished V1 current players: {counts.get('Current Player', 0)} | "
+        f"Scored rookie-review players: {counts.get('Rookie Review', 0)} | "
+        f"Blocked rookies visible: {counts.get('Blocked Rookie', 0)} | "
+        f"Finished V1 SHA-256: {current_hash}."
+    )
+    st.caption(NO_COMMON_SCALE_NOTE)
+
+
+def _render_source_separated_evidence(compare_frame: pd.DataFrame) -> None:
+    columns = [
+        "player",
+        "position",
+        "nfl_team",
+        "compare_asset_type",
+        "compare_source_label",
+        "compare_authority_status",
+        "source_rank_label",
+        "source_rank_value",
+        "source_score_label",
+        "source_score_value",
+        "source_tier",
+        "source_confidence",
+        "blocking_reason",
+        "comparison_scope",
+    ]
+    available = [column for column in columns if column in compare_frame.columns]
+    display = compare_frame.loc[:, available].copy().fillna("")
+    display = display.rename(
+        columns={
+            "player": "Player",
+            "position": "Pos",
+            "nfl_team": "NFL Team",
+            "compare_asset_type": "Asset Type",
+            "compare_source_label": "Governed Source",
+            "compare_authority_status": "Authority",
+            "source_rank_label": "Source Rank Label",
+            "source_rank_value": "Source Rank",
+            "source_score_label": "Source Score Label",
+            "source_score_value": "Source Score",
+            "source_tier": "Source Tier",
+            "source_confidence": "Evidence Confidence",
+            "blocking_reason": "Blocking / Missing Evidence",
+            "comparison_scope": "Comparison Boundary",
+        }
+    )
+    st.markdown("## Source-separated evidence")
+    st.dataframe(display, use_container_width=True, hide_index=True)
+    if compare_frame.get("compare_source_key", pd.Series(dtype=str)).nunique() > 1:
+        st.warning(NO_COMMON_SCALE_NOTE)
+    elif compare_frame.get("compare_asset_type", pd.Series(dtype=str)).eq(
+        "Blocked Rookie"
+    ).any():
+        st.warning(
+            "Blocked rookie evidence remains visible but unranked and unscored. "
+            "The blocking reason is not inferred or bypassed."
+        )
+
+
 def _render_dynasty_context(compare_frame: pd.DataFrame) -> None:
     render_final_board_table(compare_frame, key="player_compare_board")
 
@@ -746,7 +811,9 @@ def _render_nflverse_player_context(compare_frame: pd.DataFrame) -> None:
     cols[1].metric("Safe display rows", str(context.safe_display_rows))
     cols[2].metric("Identity review rows", str(context.identity_review_rows))
     cols[3].metric("Schedule rows", str(context.schedule_available_rows))
-    st.caption(f"Source/as-of: {context.artifact_path}")
+    st.caption(
+        governed_source_identity("NFLVerse player context display source", context.artifact_path)
+    )
     st.caption(
         "Missing data remains Not enough information. Missing injury is not healthy; "
         "missing depth is not no-role; missing snaps is not zero; missing draft capital "
@@ -853,66 +920,110 @@ def _player_key(value: object) -> str:
 
 render_player_compare_accessibility_frame()
 
-bundle = load_frozen_board()
-compare_pool = load_expanded_draftable_player_pool(bundle.frame) if bundle.loaded else bundle.frame
+current_board_path, _current_board_label, _current_board_warnings = (
+    resolve_dynasty_rankings_path()
+)
+governed = load_governed_asset_registry(
+    repo_root=REPO_ROOT,
+    current_board_path=current_board_path,
+)
+compare_universe = build_player_compare_universe(governed)
+compare_pool = compare_universe.frame
 
 page_header(
     "Player Compare",
     eyebrow="Draft-Day App V1",
     description=(
-        "Compare 2 to 4 players using the active draftable pool, frozen baseline checkpoint, "
-        "and verified PDF free-agent overlay."
+        "Compare 2 to 4 governed current players or 2026 rookie-review players while "
+        "keeping their source ranks, scores, and evidence boundaries separate."
     ),
-    status_items=(("Frozen board comparison", "review"), ("Missing props show hold", "review")),
+    status_items=(("Governed registry", "safe"), ("No common scale", "review")),
 )
 render_source_freshness(freshness_for_sources(("Finished V1", "Outcome V3")))
 st.caption(
     "Deep tool: visible-context aid only. Comparison output does not mutate ranks, tiers, "
     "model values, or source-truth files."
 )
-render_source_of_truth_badge(bundle)
-stop_if_board_blocked(bundle)
+_render_compare_source_status(compare_universe.counts, governed.source_hashes)
+if compare_universe.errors:
+    st.error(
+        "Player Compare cannot load the complete governed player universe. "
+        "No fallback or fabricated players were substituted."
+    )
+    for error in compare_universe.errors:
+        st.error(error)
+    st.stop()
 _render_player_compare_policy()
 
-players = compare_pool["player"].astype(str).tolist() if "player" in compare_pool.columns else []
-query_players = [player for player in st.query_params.get_all("player") if player in set(players)]
+asset_ids = (
+    compare_pool["asset_id"].astype(str).tolist() if "asset_id" in compare_pool.columns else []
+)
+labels_by_id = (
+    compare_pool.set_index("asset_id")["compare_select_label"].astype(str).to_dict()
+    if asset_ids
+    else {}
+)
+selector_labels = [labels_by_id[asset_id] for asset_id in asset_ids]
+ids_by_label = {label: asset_id for asset_id, label in labels_by_id.items()}
+names_by_id = (
+    compare_pool.set_index("asset_id")["player"].astype(str).to_dict() if asset_ids else {}
+)
+ids_by_name = {name: asset_id for asset_id, name in names_by_id.items()}
+query_assets = []
+for query_value in st.query_params.get_all("player"):
+    if query_value in labels_by_id:
+        query_assets.append(labels_by_id[query_value])
+    elif query_value in ids_by_name:
+        query_assets.append(labels_by_id[ids_by_name[query_value]])
 st.markdown("## Choose players")
-if len(players) < 2:
+if len(selector_labels) < 2:
     st.warning("Not enough information: player pool has fewer than two players.")
 else:
     selector_cols = st.columns(2)
-    player_a_default = query_players[0] if query_players else ""
-    player_b_default = query_players[1] if len(query_players) > 1 else ""
-    player_a = selector_cols[0].selectbox(
+    player_a_default = query_assets[0] if query_assets else ""
+    player_b_default = query_assets[1] if len(query_assets) > 1 else ""
+    player_a_label = selector_cols[0].selectbox(
         "Player A selector",
-        players,
-        index=_player_index(players, player_a_default),
+        selector_labels,
+        index=_player_index(selector_labels, player_a_default),
         key="player_compare_a",
     )
-    player_b_options = _non_duplicate_options(players, {player_a})
-    player_b = selector_cols[1].selectbox(
+    player_b_options = _non_duplicate_options(selector_labels, {player_a_label})
+    player_b_label = selector_cols[1].selectbox(
         "Player B selector",
         player_b_options,
         index=_player_index(player_b_options, player_b_default),
         key="player_compare_b",
     )
-    extra_options = _non_duplicate_options(players, {player_a, player_b})
-    extra_players = st.multiselect(
+    extra_options = _non_duplicate_options(
+        selector_labels,
+        {player_a_label, player_b_label},
+    )
+    extra_player_labels = st.multiselect(
         "Optional extra players",
         extra_options,
-        default=[player for player in query_players[2:4] if player in extra_options],
+        default=[player for player in query_assets[2:4] if player in extra_options],
         max_selections=2,
         help="Use this only when you want a 3- or 4-player decision check.",
     )
-    selected = [player_a, player_b, *extra_players]
-    compare = compare_pool.loc[compare_pool["player"].astype(str).isin(selected)].copy()
+    player_a_id = ids_by_label[player_a_label]
+    player_b_id = ids_by_label[player_b_label]
+    extra_player_ids = [ids_by_label[label] for label in extra_player_labels]
+    selected = [player_a_id, player_b_id, *extra_player_ids]
+    compare = compare_pool.loc[compare_pool["asset_id"].astype(str).isin(selected)].copy()
     compare["_selection_order"] = (
-        compare["player"].astype(str).map({player: index for index, player in enumerate(selected)})
+        compare["asset_id"].astype(str).map(
+            {asset_id: index for index, asset_id in enumerate(selected)}
+        )
     )
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
     )
+    player_a = names_by_id[player_a_id]
+    player_b = names_by_id[player_b_id]
+    extra_players = [names_by_id[asset_id] for asset_id in extra_player_ids]
     render_selected_player_context(player_a, player_b, extra_players)
+    _render_source_separated_evidence(compare)
     _render_visible_context_summary(compare)
 
     st.markdown("## Evidence caveats and trust context")
@@ -989,9 +1100,12 @@ else:
                     render_yellow_hold(f"{lane} props are missing.")
                     continue
                 if prop_frame.empty:
-                    render_yellow_hold(f"{lane} props are missing: {prop_path}.")
+                    render_yellow_hold(
+                        f"{governed_source_identity(f'{lane} governed props', prop_path)} "
+                        "is unavailable."
+                    )
                     continue
-                st.caption(f"{lane} props: {prop_path}")
+                st.caption(governed_source_identity(f"{lane} governed props", prop_path))
                 join_columns = [
                     column
                     for column in ("player", "position", "final_board_rank")
@@ -1013,12 +1127,12 @@ else:
                 )
 
     st.markdown("## Personal Workspace")
-    governed = load_governed_asset_registry(repo_root=REPO_ROOT)
     governed_by_id = {row["asset_id"]: row for row in governed.rows}
     exact_ids = [
-        f"current:{player_id}"
-        for player_id in compare.get("player_id", pd.Series(dtype=str)).astype(str)
-        if player_id and f"current:{player_id}" in governed_by_id
+        str(row["asset_id"])
+        for row in compare.to_dict("records")
+        if row.get("compare_asset_type") == CURRENT_PLAYER
+        and str(row.get("asset_id")) in governed_by_id
     ]
     personal_store = load_store("personal_board")
     scenario_store = load_store("saved_scenarios")

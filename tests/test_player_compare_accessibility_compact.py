@@ -236,14 +236,15 @@ def test_trust_strip_semantics_and_per_player_construction_are_preserved() -> No
     assert 'heading="Selected-player evidence trust"' in page
 
 
-def test_selection_population_order_and_duplicate_exclusion_source_contract_is_unchanged() -> None:
+def test_selection_population_uses_governed_ids_and_preserves_duplicate_exclusion() -> None:
     page = _runtime_page_text()
 
-    assert 'compare_pool["player"].astype(str).tolist()' in page
-    assert "_non_duplicate_options(players, {player_a})" in page
-    assert "_non_duplicate_options(players, {player_a, player_b})" in page
-    assert "selected = [player_a, player_b, *extra_players]" in page
-    assert 'compare_pool["player"].astype(str).isin(selected)' in page
+    assert 'compare_pool["asset_id"].astype(str).tolist()' in page
+    assert "_non_duplicate_options(selector_labels, {player_a_label})" in page
+    assert "{player_a_label, player_b_label}" in page
+    assert "player_a_id = ids_by_label[player_a_label]" in page
+    assert "selected = [player_a_id, player_b_id, *extra_player_ids]" in page
+    assert 'compare_pool["asset_id"].astype(str).isin(selected)' in page
     assert "compare.sort_values(\"_selection_order\", kind=\"stable\")" in page
 
 

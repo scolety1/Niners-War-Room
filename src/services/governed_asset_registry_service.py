@@ -160,7 +160,11 @@ def load_governed_asset_registry(
     expected_current_hash: str = CURRENT_BOARD_SHA256,
 ) -> GovernedAssetRegistry:
     root = Path(repo_root)
-    current_path = Path(current_board_path) if current_board_path else root / CURRENT_BOARD_RELATIVE
+    current_path = (
+        Path(current_board_path)
+        if current_board_path is not None
+        else root / CURRENT_BOARD_RELATIVE
+    )
     rookie_path = root / ROOKIE_BOARD_RELATIVE
     blocked_path = root / BLOCKED_ROOKIES_RELATIVE
     picks_path = root / PICKS_RELATIVE
@@ -169,7 +173,7 @@ def load_governed_asset_registry(
 
     current: list[dict[str, str]] = []
     if not current_path.is_file():
-        errors.append(f"Finished V1 board missing: {current_path}")
+        errors.append("Finished V1 board missing: governed current-player source unavailable")
     else:
         hashes["Finished V1"] = file_sha256(current_path)
         current = _rows(current_path)

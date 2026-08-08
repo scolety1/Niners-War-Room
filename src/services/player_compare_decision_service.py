@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 NOT_ENOUGH_INFORMATION = "Not enough information"
+NO_COMMON_SCALE_READ = "No common scale — source-separated review only"
 MARKET_DISPLAY_ONLY_NOTE = (
     "Market context is display-only and does not determine the compare readout, "
     "rankings, trade value, or draft decision."
@@ -607,6 +608,8 @@ def _dedupe_dict_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
 
 
 def _visible_context_read(rows: list[dict[str, Any]], *, same_position: bool) -> str:
+    if _mixed_governed_sources(rows):
+        return NO_COMMON_SCALE_READ
     if not same_position:
         return "Different positions / roster-fit decision"
     ranks = [_visible_rank_value(row) for row in rows]
@@ -632,6 +635,8 @@ def _evidence_coverage(rows: list[dict[str, Any]]) -> str:
 
 
 def _context_note(rows: list[dict[str, Any]], *, same_position: bool) -> str:
+    if _mixed_governed_sources(rows):
+        return "Display/review only; source ranks and scores are not converted or compared."
     if len(rows) > 2:
         return "Review context only; no final ranking is produced."
     if same_position:
@@ -640,10 +645,19 @@ def _context_note(rows: list[dict[str, Any]], *, same_position: bool) -> str:
 
 
 def _context_bullets(rows: list[dict[str, Any]], *, same_position: bool) -> list[str]:
-    bullets = [
-        "Player Compare shows visible context only.",
-        "Read-only board ranks may be shown below but do not create a recommendation.",
-    ]
+    bullets = ["Player Compare shows visible context only."]
+    if _mixed_governed_sources(rows):
+        bullets.extend(
+            [
+                "No common scale: veteran and rookie ranks and scores remain source-separated.",
+                "Mixed-source evidence is display/review only and creates no recommendation.",
+            ]
+        )
+    else:
+        bullets.append(
+            "Read-only board ranks and source ranks may be shown below but do not create "
+            "a recommendation."
+        )
     if same_position:
         bullets.append("Same-position rows can be reviewed side by side without a hidden ladder.")
     else:
@@ -669,7 +683,12 @@ def _open_review_flags(rows: list[dict[str, Any]]) -> list[str]:
 
 
 def _visible_rank_value(row: dict[str, Any]) -> float | None:
-    for key in ("dynasty_asset_rank", "cross_asset_candidate_rank", "final_board_rank"):
+    for key in (
+        "source_rank_value",
+        "dynasty_asset_rank",
+        "cross_asset_candidate_rank",
+        "final_board_rank",
+    ):
         value = _float_or_none(row.get(key))
         if value is not None:
             return value
@@ -677,6 +696,12 @@ def _visible_rank_value(row: dict[str, Any]) -> float | None:
 
 
 def _rank_signal(row: dict[str, Any]) -> str:
+    source_rank = _field(row, "source_rank_value")
+    if source_rank != NOT_ENOUGH_INFORMATION:
+        label = _field(row, "source_rank_label")
+        if label == NOT_ENOUGH_INFORMATION:
+            label = "Governed Source Rank"
+        return f"{label} (Read-Only): {source_rank}"
     for label, key in (
         ("NWR/Dynasty Candidate Rank (Read-Only)", "dynasty_asset_rank"),
         ("Tuned Candidate Rank (Read-Only)", "cross_asset_candidate_rank"),
@@ -686,6 +711,15 @@ def _rank_signal(row: dict[str, Any]) -> str:
         if value != NOT_ENOUGH_INFORMATION:
             return f"{label}: {value}"
     return NOT_ENOUGH_INFORMATION
+
+
+def _mixed_governed_sources(rows: list[dict[str, Any]]) -> bool:
+    sources = {
+        _field(row, "compare_source_key")
+        for row in rows
+        if _field(row, "compare_source_key") != NOT_ENOUGH_INFORMATION
+    }
+    return len(sources) > 1
 
 
 def _tier_signal(row: dict[str, Any]) -> str:
