@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# ruff: noqa: E402
+# ruff: noqa: E402, E501
 import sys
 from pathlib import Path
 
@@ -36,11 +36,74 @@ from src.services.drafting_mode_cockpit_service import (
     tier_count_rows,
 )
 from src.services.post_release_usability_service import freshness_for_sources
+from src.services.redraft_engine_v1_service import (
+    active_profile,
+    generate_rankings,
+    load_draft_board,
+    load_projection_snapshot,
+    projection_snapshot_path,
+    redraft_store_root,
+)
 
 SOURCE_CAPTION = (
     "Draft Cockpit live runtime session. This state is local/manual draft execution data, "
     "not official source truth and not model input."
 )
+
+
+def _render_redraft_draft_context() -> None:
+    store = redraft_store_root(REPO_ROOT)
+    profile = active_profile(store)
+    with st.expander("Redraft - current-season profile context", expanded=False):
+        if profile is None:
+            st.info("No active redraft profile. Configure one on the Redraft page.")
+            st.markdown("[Open Redraft](/redraft)")
+            return
+        snapshot = load_projection_snapshot(
+            projection_snapshot_path(store, profile.season),
+            season=profile.season,
+            require_manifest=True,
+        )
+        ranking = generate_rankings(profile, snapshot)
+        st.caption(
+            f"REDRAFT V1 - REVIEW | Active profile: {profile.league_name}. "
+            "This context is separate from the dynasty draft workflow below."
+        )
+        if not ranking.ready:
+            st.warning(
+                "Redraft context is blocked until governed current-season projections validate."
+            )
+            for error in ranking.errors:
+                st.caption(error)
+            return
+        drafted = {
+            str(value) for value in load_draft_board(store, profile.profile_id).get("drafted", [])
+        }
+        rows = [
+            {
+                "Redraft Rank": row.overall_rank,
+                "Player": row.player_name,
+                "Pos Rank": f"{row.position}{row.position_rank}",
+                "Tier": row.tier,
+                "Projected Points": row.projected_points,
+                "Replacement Gap": row.replacement_adjusted_value,
+                "Confidence": row.confidence,
+            }
+            for row in ranking.rows
+            if row.player_id not in drafted
+        ]
+        if rows:
+            top = rows[0]
+            st.info(
+                f"Top remaining by redraft rank: {top['Player']} ({top['Pos Rank']}) · "
+                f"Tier {top['Tier']} · replacement gap {top['Replacement Gap']}."
+            )
+            st.dataframe(rows[:20], use_container_width=True, hide_index=True)
+        st.caption(
+            "Descriptive context only: top remaining, tier, and replacement gap. "
+            "No automatic best-pick authority."
+        )
+        st.markdown("[Open profile-specific Redraft Draft Board](/redraft)")
 
 
 def _render_live_draft_command_center(
@@ -149,6 +212,8 @@ def _render_live_secondary_context(*, board_frame, pick_frame, state) -> None:
             "No trade valuation, model input, rank changes, or hidden market sort occurs here."
         )
         st.caption("Reload safety uses local runtime status; missing state is not a silent reset.")
+
+    _render_redraft_draft_context()
 
     render_nflverse_player_context_expander(
         board_frame,

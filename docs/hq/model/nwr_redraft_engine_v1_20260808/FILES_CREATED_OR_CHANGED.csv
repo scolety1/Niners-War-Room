@@ -1,0 +1,11 @@
+path,change,authority_effect
+src/services/redraft_engine_v1_service.py,created,additive redraft only
+app/pages/52_redraft_v1.py,created,review-only redraft route
+app/navigation.py,modified,adds Redraft navigation
+app/pages/22_player_compare_v1.py,modified,explicit redraft context
+app/pages/21_live_draft_room_v1.py,modified,read-only redraft context
+tests/test_redraft_engine_v1_service.py,created,tests only
+tests/test_redraft_page_v1.py,created,page-open and static integration tests only
+tests/test_navigation_compression.py,modified,navigation expectation only
+scripts/build_nwr_redraft_engine_v1.py,created,research/docs generator
+docs/hq/model/nwr_redraft_engine_v1_20260808,created,review evidence packet

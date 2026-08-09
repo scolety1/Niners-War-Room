@@ -1,0 +1,6 @@
+model,seasons,player_seasons,mean_spearman,mean_top50_hit_rate,mean_pairwise_accuracy,mean_replacement_mae,mean_lineup_start_value,selection_status,rank_mean_spearman,rank_mean_top50_hit_rate,rank_mean_pairwise_accuracy,rank_mean_replacement_mae,rank_mean_lineup_start_value,unweighted_metric_rank_mean
+R0_RAW_PROJECTED_POINTS,13,5518,0.6429,0.4969,0.7339,99.379,55.9529,CANDIDATE,5.0,5.0,5.0,5.0,5.0,5.0
+R1_POSITIONAL_REPLACEMENT,13,5518,0.6535,0.5046,0.7408,58.9981,59.0867,CANDIDATE,4.0,4.0,4.0,4.0,4.0,4.0
+R2_FLEX_AWARE_REPLACEMENT,13,5518,0.6949,0.5246,0.7592,37.9553,61.1348,EMPIRICAL_WINNER,1.0,1.0,1.0,1.0,2.0,1.2
+R3_REPLACEMENT_AVAILABILITY_UNCERTAINTY,13,5518,0.6949,0.5246,0.7592,37.9568,61.1348,CANDIDATE,1.0,1.0,1.0,2.0,2.0,1.4
+R4_LINEUP_DEMAND_ADJUSTED,13,5518,0.6797,0.5138,0.7527,44.951,61.3621,CANDIDATE,3.0,3.0,3.0,3.0,1.0,2.6

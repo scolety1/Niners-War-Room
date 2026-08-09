@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "executed_at_utc": "2026-08-09T05:01:00Z",
+  "source_fingerprint": "eafc43177ba32e43af415adab57de7658ec7fcf8a917bdc497912b62d77dfdf7",
+  "source_files": [
+    "app/navigation.py",
+    "app/pages/21_live_draft_room_v1.py",
+    "app/pages/22_player_compare_v1.py",
+    "app/pages/52_redraft_v1.py",
+    "scripts/build_nwr_redraft_engine_v1.py",
+    "src/services/redraft_engine_v1_service.py",
+    "tests/test_navigation_compression.py",
+    "tests/test_redraft_engine_v1_service.py",
+    "tests/test_redraft_page_v1.py"
+  ],
+  "focused_tests": {
+    "command": "python -m pytest tests/test_redraft_engine_v1_service.py tests/test_redraft_page_v1.py tests/test_navigation_compression.py tests/test_draft_cockpit_root_route.py tests/test_player_compare_accessibility_compact.py -q",
+    "passed": 65,
+    "failed": 0,
+    "elapsed_seconds": 1.25
+  },
+  "full_suite_context": {
+    "source_match": false,
+    "passed": 3204,
+    "failed": 312,
+    "skipped": 71,
+    "elapsed_seconds": 514.85,
+    "notes": "Run before the final governance-receipt hardening; failures were dominated by missing ignored local_exports fixtures and dirty-app guard tests. Not used to pass a gate."
+  },
+  "preservation_checks": {
+    "stable_head_matches_expected_hq": true,
+    "stable_tree_matches_expected_hq": true,
+    "stable_worktree_clean": true,
+    "operational_worktree_clean": true,
+    "scheduled_refresh_disabled": true,
+    "protected_dynasty_authorities_unchanged": true,
+    "user_state_untouched": true
+  },
+  "browser_runtime": "Codex in-app Browser against disposable Streamlit server on 127.0.0.1:8532",
+  "browser_cold_start_note": "One initial Streamlit direct-route Page Not Found fallback was observed after server start; the warmed source-matched matrix below passed and the transient console entry was retained.",
+  "browser_rows": [
+    {"route": "/redraft", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified."},
+    {"route": "/player-compare", "viewport": "375x812", "result": "PASS_SOURCE_BLOCKED", "notes": "One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows."},
+    {"route": "/draft-cockpit", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked."},
+    {"route": "/rankings", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/unified-universe-review", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/rookie-board", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/trading-lab", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/personal-board", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/settings-data-health", "viewport": "375x812", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/redraft", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified."},
+    {"route": "/player-compare", "viewport": "768x1024", "result": "PASS_SOURCE_BLOCKED", "notes": "One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows."},
+    {"route": "/draft-cockpit", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked."},
+    {"route": "/rankings", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/unified-universe-review", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/rookie-board", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/trading-lab", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/personal-board", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/settings-data-health", "viewport": "768x1024", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/redraft", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified."},
+    {"route": "/player-compare", "viewport": "1440x1000", "result": "PASS_SOURCE_BLOCKED", "notes": "One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows."},
+    {"route": "/draft-cockpit", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked."},
+    {"route": "/rankings", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/unified-universe-review", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/rookie-board", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/trading-lab", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/personal-board", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."},
+    {"route": "/settings-data-health", "viewport": "1440x1000", "result": "PASS", "notes": "One semantic h1; no root overflow or traceback."}
+  ]
+}
