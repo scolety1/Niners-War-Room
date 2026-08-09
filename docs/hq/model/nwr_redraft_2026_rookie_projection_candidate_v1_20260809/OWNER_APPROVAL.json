@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "authority": "NWR Owner",
+  "approval_timestamp": "2026-08-09T01:52:00-06:00",
+  "approval_scope": "REDRAFT_2026_ROOKIE_PROJECTIONS",
+  "source_as_of": "2026-07-30",
+  "approved_candidate_sha256": "c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc",
+  "approved_combined_review_sha256": "218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f",
+  "approved_veteran_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+  "approved_use": [
+    "NWR Redraft V1 current-season rookie ranking",
+    "NWR Redraft V1 scoring",
+    "NWR Redraft V1 replacement-level calculation",
+    "NWR Redraft V1 tier calculation",
+    "NWR Redraft V1 Player Compare calculation",
+    "NWR Redraft V1 Draft Cockpit calculation",
+    "NWR Redraft V1 cheat-sheet calculation",
+    "Deterministic Redraft-only merge with the separately approved 530-veteran projection frame"
+  ],
+  "prohibited_use": [
+    "dynasty ranking changes",
+    "K/DST projections",
+    "Trading Lab automation",
+    "scheduled refresh",
+    "proprietary-source use",
+    "provider/API calls",
+    "use outside the Redraft engine",
+    "changes to approved veteran projection values"
+  ],
+  "approval_source": "Explicit owner message in the NWR Redraft 2026 rookie projection task"
+}

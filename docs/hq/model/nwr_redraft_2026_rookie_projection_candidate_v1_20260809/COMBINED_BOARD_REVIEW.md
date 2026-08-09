@@ -1,7 +1,8 @@
-# Combined board review
+# Governed combined board review
 
-The review-only combined frame contains 530 approved veterans plus 78 rookie
-candidates. Every one of the 17,490 veteran cells is exactly equal to the approved veteran input.
+The governed combined frame contains 530 approved veterans plus 78 owner-approved rookie
+projections. Every one of the 17,490 veteran cells is exactly equal to the approved veteran input,
+and the combined CSV preserves the complete veteran CSV as its exact byte prefix.
 
 All four built-in presets generated READY rankings across all 608 players:
 
@@ -14,5 +15,5 @@ All five profile sensitivity checks pass: Superflex raises QB value, TE premium 
 3WR lowers WR replacement, 12-team depth lowers QB replacement versus 10-team depth, and an extra
 FLEX lowers WR replacement. Each preset contains 78 rookies, no duplicate IDs, and no K/DST rows.
 
-These rankings are research-only. They do not admit the rookie source or make the product ready for
-real-draft use. Exact-SHA owner approval and independent fresh-HQ review remain required.
+The governed combined snapshot is installed and product-validated. Canonical Git adoption and the
+final real-draft-readiness verdict remain conditional on an independent fresh-HQ review.

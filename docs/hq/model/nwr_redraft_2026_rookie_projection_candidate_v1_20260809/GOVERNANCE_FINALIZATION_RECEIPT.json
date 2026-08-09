@@ -1,0 +1,21 @@
+{
+  "approved_combined_review_sha256": "218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f",
+  "approved_rookie_candidate_sha256": "c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc",
+  "approved_veteran_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+  "changed_cells": 156,
+  "changed_columns": [
+    "source_status",
+    "evidence_status"
+  ],
+  "combined_rows": 608,
+  "governed_combined_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+  "governed_rookie_sha256": "e1636eb729441aed91187cf8170c05279090213ef0c2426269a63d95ec59c4d7",
+  "k_dst_rows": 0,
+  "other_changed_cells": 0,
+  "owner_approval_sha256": "a53ca8355f8c1d9a1ee4e1a17e6415f64390cead03c8f171bd52fb6ab6128fc7",
+  "rookie_rows": 78,
+  "schema_version": 1,
+  "status": "DETERMINISTIC_OWNER_AUTHORIZED_ROOKIE_GOVERNANCE_FINALIZATION",
+  "veteran_bytes_preserved_as_combined_prefix": true,
+  "veteran_rows": 530
+}

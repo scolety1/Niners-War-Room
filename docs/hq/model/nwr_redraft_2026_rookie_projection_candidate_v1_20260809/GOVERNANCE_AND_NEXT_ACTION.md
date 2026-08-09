@@ -1,17 +1,18 @@
 # Governance boundary and next action
 
-This packet is a separately governed Redraft-only candidate. It does not alter or supersede any
+This packet is a separately governed Redraft-only admission. It does not alter or supersede any
 dynasty authority. It does not authorize dynasty rankings, Unified Preview inputs, Trading Lab
 automation, scheduled refresh, K/DST projections, provider/API calls, or use outside Redraft V1.
 
 The approved veteran input SHA-256 is `6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63`. Its 530 rows were appended without value
 changes.
 
-Required next steps:
+Completed:
 
-1. NWR Owner reviews and approves the exact rookie candidate SHA-256 `c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc`.
-2. Only after that approval, mark an exact copy governed and build governed combined preset
-   rankings.
-3. Run the four preset rankings, profile sensitivity checks, focused tests, and browser checks.
-4. Obtain an independent fresh-HQ review of the governed combined board.
-5. Keep real-draft readiness blocked unless every combined-board gate passes.
+1. Owner exact-SHA approval was recorded at `2026-08-09T01:52:00-06:00`.
+2. The rookie layer and 608-row combined snapshot were governed deterministically.
+3. The combined snapshot was installed in the controlled canonical local store.
+4. Four preset rankings, profile sensitivity, focused tests, and browser checks passed.
+
+Remaining gate: obtain an independent fresh-HQ adoption review of the exact governed combined
+snapshot. Only a green review authorizes normal non-force canonical push and stable fast-forward.

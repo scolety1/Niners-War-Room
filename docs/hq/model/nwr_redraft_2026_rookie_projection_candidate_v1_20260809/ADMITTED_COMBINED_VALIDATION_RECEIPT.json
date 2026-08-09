@@ -1,0 +1,47 @@
+{
+  "all_profiles_ready": true,
+  "approved_veteran_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+  "blocked_snapshot_rows": 0,
+  "combined_rows": 608,
+  "k_dst_rows": 0,
+  "player_compare_blocked_position_conflict": {
+    "Blocking / Missing Evidence": "No exact stable player_id match in the active profile ranking.",
+    "Player": "Max Bredeson",
+    "Pos": "RB",
+    "Redraft Status": "NOT_ENOUGH_INFORMATION"
+  },
+  "player_compare_governed_rookie": {
+    "Confidence": "LOW",
+    "League Profile": "12-team 1QB Half-PPR",
+    "Overall Redraft Rank": 157,
+    "Player": "Fernando Mendoza",
+    "Pos": "QB",
+    "Position Rank": "QB25",
+    "Projected Season Points": 166.42,
+    "Redraft Status": "REDRAFT V1 - REVIEW",
+    "Replacement-Adjusted Value": 0.0,
+    "Scoring Difference": "0.5 PPR",
+    "Tier": 14
+  },
+  "profile_rows": {
+    "10_TEAM_1QB_STANDARD": 608,
+    "12_TEAM_1QB_HALF_PPR": 608,
+    "12_TEAM_PPR": 608,
+    "12_TEAM_SUPERFLEX_PPR": 608
+  },
+  "projection_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+  "ranking_sha256": {
+    "10_TEAM_1QB_STANDARD": "6bffe4206f983d2e9045b5488d934b88f8f90169437fd6fa1d9ac3394075e811",
+    "12_TEAM_1QB_HALF_PPR": "ff795dc51a0f884719f10ee2bd906412982e38c248205cbb504531f894635f05",
+    "12_TEAM_PPR": "5dad721b35d61e350c94d6cd4772698a2bfabd1ce777bd8214bc3e05fb61ef60",
+    "12_TEAM_SUPERFLEX_PPR": "148d8f4e624b3053844aa01f8ae5fa77e3ae47222e17e10ac42357519a52951b"
+  },
+  "rookie_rows": 78,
+  "schema_version": 1,
+  "settings_checks_passed": 5,
+  "settings_checks_total": 5,
+  "status": "ADMITTED_COMBINED_PRODUCTION_VALIDATED",
+  "veteran_bytes_preserved_as_installed_prefix": true,
+  "veteran_rows": 530,
+  "veteran_values_exact": true
+}

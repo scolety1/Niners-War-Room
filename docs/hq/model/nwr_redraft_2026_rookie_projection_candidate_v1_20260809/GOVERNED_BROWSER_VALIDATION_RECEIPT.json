@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "status": "GOVERNED_COMBINED_BROWSER_VALIDATED",
+  "app_source_fingerprint": "48364f0daa31de12d8797be3706dcb372b1a629537aa29c74b1a6f4dc9f83c7a",
+  "governed_combined_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+  "matrix": {
+    "routes": 9,
+    "viewports": [
+      "375x812",
+      "768x1024",
+      "1440x1000"
+    ],
+    "expected_cells": 27,
+    "passed_cells": 27,
+    "one_semantic_h1_each": true,
+    "root_overflow_cells": 0,
+    "traceback_cells": 0
+  },
+  "interactive_checks": {
+    "standard_profile_ranked_rows": 608,
+    "standard_profile_blocked_rows": 0,
+    "superflex_profile_ranked_rows": 608,
+    "superflex_profile_blocked_rows": 0,
+    "fernando_mendoza_exact_selection_redraft_context": "PASS",
+    "max_bredeson_position_conflict_fail_closed": "PASS_NOT_ENOUGH_INFORMATION",
+    "draft_cockpit_active_profile_redraft_rail": "PASS",
+    "draft_cockpit_top_remaining": "Christian McCaffrey (RB1), Tier 1, replacement gap 231.2",
+    "draft_cockpit_manual_only_language": "PASS",
+    "browser_console_errors_or_warnings": 0,
+    "server_tracebacks": 0
+  },
+  "state_cleanup": {
+    "temporary_profiles_created": 2,
+    "temporary_profiles_deleted": 2,
+    "remaining_profiles": 0,
+    "active_profile_receipt_present": false,
+    "installed_projection_sha256_unchanged_after_browser": true
+  },
+  "preservation": {
+    "dynasty_authority_changed": false,
+    "trading_lab_automation_enabled": false,
+    "scheduled_refresh_enabled": false,
+    "k_dst_rows": 0
+  }
+}

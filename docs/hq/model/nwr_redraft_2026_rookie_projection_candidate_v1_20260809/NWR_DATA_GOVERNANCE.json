@@ -1,0 +1,72 @@
+{
+  "admission_scope": "REDRAFT_2026_VETERAN_AND_ROOKIE_PROJECTIONS",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "approved_at_utc": "2026-08-09T01:52:00-06:00",
+  "approved_by": "NWR Owner",
+  "approved_candidate_sha256": "c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc",
+  "approved_combined_review_sha256": "218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f",
+  "approved_veteran_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+  "approver_identity": "NWR Owner",
+  "authority": "NWR_DATA_GOVERNANCE",
+  "component_sources_as_of": {
+    "rookies": "2026-07-30",
+    "veterans": "2026-08-08"
+  },
+  "engine_contract_scope": "REDRAFT_2026_PROJECTIONS",
+  "finalization_contract": {
+    "changed_cells": 156,
+    "changed_columns": [
+      "source_status",
+      "evidence_status"
+    ],
+    "combined_governed_output_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+    "combined_review_input_sha256": "218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f",
+    "other_changed_cells": 0,
+    "rookie_input_sha256": "c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc",
+    "rookie_output_sha256": "e1636eb729441aed91187cf8170c05279090213ef0c2426269a63d95ec59c4d7",
+    "rookie_row_count": 78,
+    "veteran_bytes_preserved_as_combined_prefix": true,
+    "veteran_input_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63"
+  },
+  "governed_rookie_sha256": "e1636eb729441aed91187cf8170c05279090213ef0c2426269a63d95ec59c4d7",
+  "limitations": [
+    "Rookie projections are LOW-confidence position-plus-draft-round cohort medians.",
+    "No structured 2026 depth chart was available; none was invented.",
+    "Max Bredeson and Riley Nowakowski remain blocked for position conflicts.",
+    "K and DST remain blocked.",
+    "No dynasty, Trading Lab automation, scheduled refresh, provider/API, or proprietary-source use."
+  ],
+  "permitted_uses": [
+    "NWR Redraft V1 current-season rookie ranking",
+    "NWR Redraft V1 scoring",
+    "NWR Redraft V1 replacement-level calculation",
+    "NWR Redraft V1 tier calculation",
+    "NWR Redraft V1 Player Compare calculation",
+    "NWR Redraft V1 Draft Cockpit calculation",
+    "NWR Redraft V1 cheat-sheet calculation",
+    "Deterministic Redraft-only merge with the separately approved 530-veteran projection frame"
+  ],
+  "player_counts": {
+    "rookies": 78,
+    "total": 608,
+    "veterans": 530
+  },
+  "prohibited_uses": [
+    "dynasty ranking changes",
+    "K/DST projections",
+    "Trading Lab automation",
+    "scheduled refresh",
+    "proprietary-source use",
+    "provider/API calls",
+    "use outside the Redraft engine",
+    "changes to approved veteran projection values"
+  ],
+  "schema_version": 1,
+  "season": 2026,
+  "source_as_of": "2026-07-30",
+  "source_authority": "Separately governed NWR veteran and rookie Redraft projection layers",
+  "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V1",
+  "source_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+  "valid_from": "2026-08-09",
+  "valid_until": "2026-08-29"
+}
