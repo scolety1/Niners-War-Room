@@ -509,7 +509,11 @@ def _source_fingerprint(repo_root: Path) -> str:
     for relative in VALIDATION_SOURCE_FILES:
         digest.update(relative.encode("utf-8"))
         digest.update(b"\0")
-        digest.update((repo_root / relative).read_bytes())
+        # Git may materialize tracked text with CRLF on Windows. Validation evidence is
+        # bound to source content, so canonicalize that checkout-only representation
+        # before hashing. This keeps one receipt valid for the same Git blobs on every
+        # supported checkout without weakening source matching.
+        digest.update((repo_root / relative).read_bytes().replace(b"\r\n", b"\n"))
         digest.update(b"\0")
     return digest.hexdigest()
 
