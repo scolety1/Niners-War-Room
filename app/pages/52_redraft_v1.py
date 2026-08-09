@@ -56,7 +56,8 @@ def _render_redraft_accessibility_frame() -> None:
         <span id="nwr-redraft-page" aria-hidden="true"></span>
         <style>
         body:has(#nwr-redraft-page) div[data-testid="stMetric"] label p,
-        body:has(#nwr-redraft-page) div[data-testid="stMetricValue"] p {
+        body:has(#nwr-redraft-page) div[data-testid="stMetricValue"] p,
+        body:has(#nwr-redraft-page) div[data-testid="stAlert"] p {
             color: var(--nwr-ink) !important;
         }
         </style>

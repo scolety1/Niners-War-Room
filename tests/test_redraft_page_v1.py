@@ -42,6 +42,7 @@ def test_redraft_page_exposes_required_review_only_surfaces() -> None:
     assert "Projection SHA256" in text
     assert "Stable identity uniqueness" in text
     assert "nwr-redraft-page" in text
+    assert 'div[data-testid="stAlert"] p' in text
     assert "Undo last pick" in text
     assert 'columns + ["Rookie", "Evidence", "Source"]' in text
 
