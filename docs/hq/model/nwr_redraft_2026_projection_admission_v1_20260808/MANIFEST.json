@@ -1,12 +1,7 @@
 {
-  "candidate_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
-  "extra_files": [
-    "CANDIDATE_PROJECTION_SNAPSHOT.csv",
-    "BLOCKED_PLAYER_ROWS.csv",
-    "CURRENT_RANKING_SANITY.csv",
-    "PROJECTION_SCHEMA.csv"
-  ],
-  "generated_at_utc": "2026-08-09T05:51:46+00:00",
+  "approved_candidate_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
+  "generated_at_utc": "2026-08-09T06:16:06Z",
+  "governed_projection_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
   "packet": "nwr_redraft_2026_projection_admission_v1_20260808",
   "required_files": [
     "EXECUTIVE_VERDICT.md",
@@ -32,6 +27,19 @@
     "NEXT_ACTION.md",
     "MANIFEST.json"
   ],
-  "schema_version": 1,
-  "verdict": "GREEN_NWR_REDRAFT_2026_ENGINE_READY_FOR_OWNER_GOVERNANCE_APPROVAL"
+  "supporting_files": [
+    "ADMITTED_RANKING_SUMMARY.json",
+    "BLOCKED_PLAYER_ROWS.csv",
+    "CANDIDATE_PROJECTION_SNAPSHOT.csv",
+    "CURRENT_RANKING_SANITY.csv",
+    "GOVERNANCE_FINALIZATION_RECEIPT.json",
+    "GOVERNED_PROJECTION_SNAPSHOT.csv",
+    "OWNER_APPROVAL.json",
+    "PROFILE_RANKINGS_10_TEAM_1QB_STANDARD.csv",
+    "PROFILE_RANKINGS_12_TEAM_PPR.csv",
+    "PROJECTION_SCHEMA.csv"
+  ],
+  "schema_version": 2,
+  "status": "OWNER_APPROVED_ADMITTED_PRODUCTION_VALIDATED",
+  "verdict": "GREEN_NWR_REDRAFT_2026_PROJECTIONS_VALIDATED_READY_FOR_HQ_REVIEW"
 }

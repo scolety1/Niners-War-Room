@@ -22,6 +22,7 @@ position  model_mae  spearman
       WR    32.5122    0.7644
 ```
 
-Limitations are material: no 2026 workload, coaching, scheme, or injury projection; no rookie
-workload; no K/DST; and no role-growth/decline forecast. Those limitations require owner judgment
-before admission.
+Limitations are material: no explicit 2026 workload, coaching, scheme, or injury adjustment; no
+rookie workload; no K/DST; and no role-growth/decline forecast. The NWR Owner accepted those
+limitations for the exact SHA-bound veteran-only Redraft scope on 2026-08-08. They remain disclosed
+and do not authorize use outside Redraft V1.

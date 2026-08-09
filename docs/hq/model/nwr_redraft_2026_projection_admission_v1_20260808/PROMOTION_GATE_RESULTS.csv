@@ -1,16 +1,16 @@
 gate,name,status,evidence
-G1,source authority,READY_FOR_OWNER_APPROVAL,CC-BY inputs admitted; derived forecast needs owner approval
-G2,no leakage,PASS,"Strict t-1 forecast; no future rows, ranks, or proprietary data"
-G3,scoring correctness,PASS_RESEARCH_ONLY,All four presets generated from granular components
-G4,replacement correctness,PASS_RESEARCH_ONLY,Engine profile depth checks and replacement generation passed
-G5,settings sensitivity,PASS_RESEARCH_ONLY,See SETTINGS_SANITY_RESULTS.csv
-G6,historical validation,PASS,2016-2025 temporal backtest; beats position median each season
-G7,positional stability,PASS_RESEARCH_ONLY,No duplicate IDs; useful 2024-25 rank correlations
-G8,rookie handling,PASS_FAIL_CLOSED,All 224 current rookies blocked; no workload fabricated
-G9,uncertainty,PASS,Position/year absolute-error p80 bounds
-G10,profile isolation,PASS_EXISTING_TESTS,Existing profile CRUD/isolation tests retained
-G11,dynasty preservation,PASS,No dynasty data or state changed
-G12,product truthfulness,PASS_BLOCKED_STATE,Candidate not installed; live UI remains fail-closed
-G13,current projection freshness,PASS_CANDIDATE,Generated 2026-08-08 from registry retrieved 2026-07-30
-G14,current projection depth,PASS_CANDIDATE,"{'QB': 74, 'RB': 128, 'TE': 121, 'WR': 207}"
-G15,current identity coverage,PASS,"910 EXACT, 0 unresolved"
+G1,source authority,PASS,"NWR Owner approved exact candidate SHA for veteran-only Redraft scope; final receipt is SHA-bound"
+G2,no leakage,PASS,"Strict t-1 forecast; no future rows, ranks, proprietary data, provider calls, or APIs"
+G3,scoring correctness,PASS,"All four built-in profiles generated 530 rows from granular governed components"
+G4,replacement correctness,PASS,"Replacement generation and positional depth checks passed for every built-in profile"
+G5,settings sensitivity,PASS,"Five of five checks passed; see SETTINGS_SANITY_RESULTS.csv"
+G6,historical validation,PASS,"2016-2025 temporal backtest beats the position-median baseline each season"
+G7,positional stability,PASS,"No duplicate identities or zero-projection top-100 rows; useful 2024-25 rank correlations"
+G8,rookie handling,PASS_FAIL_CLOSED,"All 2026 rookies without separately governed workload remain excluded and blocked"
+G9,uncertainty,PASS,"Position/year absolute-error p80 bounds retained in the governed snapshot"
+G10,profile isolation,PASS,"CRUD/activate/switch browser flow and service tests passed; disposable profiles removed"
+G11,dynasty preservation,PASS,"No dynasty rank, authority, active pack, user state, or scheduled task was changed"
+G12,product truthfulness,PASS,"Redraft labels remain explicit; browser has no traceback, 404, overflow, or blocking console errors"
+G13,current projection freshness,PASS,"source_as_of 2026-08-08; validated on 2026-08-09; within the 30-day contract"
+G14,current projection depth,PASS,"530 veterans: QB 74, RB 128, WR 207, TE 121; all supported profiles ready"
+G15,current identity coverage,PASS,"910 exact GSIS identities audited; 0 unresolved; admitted snapshot has no fuzzy joins"
