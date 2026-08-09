@@ -1,0 +1,8 @@
+check,status,detail
+restart active profile,PASS,Active Half-PPR profile persisted
+restart ordered draft,PASS,120 picks resumed at pick 121 round 11
+latest exact backup,PASS,Primary and backup carry identical latest ordered state
+corrupt primary with valid backup,PASS,Recovered visibly from backup
+corrupt primary without backup,PASS,Bounded profile error; page does not traceback
+backup restore dry-run,PASS,Tree SHA-256 327224f8fcda3239e281f0020de6d31ddd7cd6667aeee54e130a53500c6855ce
+unrelated state unchanged,PASS,Other profiles and Dynasty untouched

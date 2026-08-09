@@ -372,10 +372,24 @@ def list_profiles(root: str | Path, *, include_archived: bool = False) -> tuple[
         return ()
     profiles: list[LeagueProfile] = []
     for path in sorted(profiles_dir.glob("*.json")):
-        profile = _profile_from_document(json.loads(path.read_text(encoding="utf-8")))
+        try:
+            profile = _profile_from_document(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError):
+            continue
         if include_archived or not profile.archived:
             profiles.append(profile)
     return tuple(sorted(profiles, key=lambda item: (item.league_name.casefold(), item.profile_id)))
+
+
+def profile_store_errors(root: str | Path) -> tuple[str, ...]:
+    profiles_dir = Path(root) / "profiles"
+    errors: list[str] = []
+    for path in sorted(profiles_dir.glob("*.json")):
+        try:
+            _profile_from_document(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError, KeyError):
+            errors.append(f"{path.name}: unreadable or invalid profile state")
+    return tuple(errors)
 
 
 def load_profile(root: str | Path, profile_id: str) -> LeagueProfile:
@@ -445,6 +459,13 @@ def archive_profile(root: str | Path, profile_id: str) -> LeagueProfile:
     return archived
 
 
+def restore_profile(root: str | Path, profile_id: str) -> LeagueProfile:
+    profile = load_profile(root, profile_id)
+    if not profile.archived:
+        raise RedraftValidationError("Only an archived redraft profile can be restored.")
+    return save_profile(root, replace(profile, archived=False))
+
+
 def delete_profile(root: str | Path, profile_id: str, *, confirmed: bool) -> None:
     if not confirmed:
         raise RedraftValidationError("Permanent profile deletion requires confirmation.")
@@ -454,6 +475,7 @@ def delete_profile(root: str | Path, profile_id: str, *, confirmed: bool) -> Non
     path.unlink()
     board = Path(root) / "draft_boards" / f"{profile_id}.json"
     board.unlink(missing_ok=True)
+    board.with_suffix(".backup.json").unlink(missing_ok=True)
     if active_profile_id(root) == profile_id:
         _atomic_json(Path(root) / "active_profile.json", {"profile_id": None})
 
@@ -1176,6 +1198,22 @@ def player_compare_rows(
     return output
 
 
+def redraft_compare_pool_rows(result: RankingResult) -> list[dict[str, str]]:
+    """Build the exact-ID selector universe for Redraft Player Compare."""
+    return [
+        {
+            "asset_id": row.player_id,
+            "player_id": row.player_id,
+            "player": row.player_name,
+            "position": row.position,
+            "compare_select_label": (
+                f"{row.player_name} | {row.position} | {row.team or 'FA'} | Redraft"
+            ),
+        }
+        for row in result.rows
+    ]
+
+
 def _profile_scoring_summary(profile: LeagueProfile) -> str:
     parts = [f"{profile.scoring.reception:g} PPR"]
     if profile.scoring.te_premium:
@@ -1189,13 +1227,33 @@ def load_draft_board(root: str | Path, profile_id: str) -> dict[str, Any]:
     path = Path(root) / "draft_boards" / f"{profile_id}.json"
     if not path.is_file():
         return {"schema_version": SCHEMA_VERSION, "profile_id": profile_id, "drafted": []}
-    document = json.loads(path.read_text(encoding="utf-8"))
-    if document.get("schema_version") != SCHEMA_VERSION or document.get("profile_id") != profile_id:
-        raise RedraftValidationError("Redraft draft-board state does not match the profile.")
-    drafted = document.get("drafted", [])
-    if not isinstance(drafted, list) or len(drafted) != len(set(map(str, drafted))):
-        raise RedraftValidationError("Redraft draft-board drafted-player state is invalid.")
-    return document
+    backup_path = path.with_suffix(".backup.json")
+
+    def _validated_document(candidate: Path) -> dict[str, Any]:
+        document = json.loads(candidate.read_text(encoding="utf-8"))
+        if (
+            document.get("schema_version") != SCHEMA_VERSION
+            or document.get("profile_id") != profile_id
+        ):
+            raise RedraftValidationError("Redraft draft-board state does not match the profile.")
+        drafted = document.get("drafted", [])
+        if not isinstance(drafted, list) or len(drafted) != len(set(map(str, drafted))):
+            raise RedraftValidationError("Redraft draft-board drafted-player state is invalid.")
+        return document
+
+    try:
+        return _validated_document(path)
+    except (OSError, json.JSONDecodeError, RedraftValidationError) as primary_error:
+        if backup_path.is_file():
+            try:
+                recovered = _validated_document(backup_path)
+            except (OSError, json.JSONDecodeError, RedraftValidationError):
+                pass
+            else:
+                return {**recovered, "recovered_from_backup": True}
+        raise RedraftPersistenceError(
+            "Draft-board state is unreadable and no valid profile backup is available."
+        ) from primary_error
 
 
 def mark_player_drafted(
@@ -1207,18 +1265,40 @@ def mark_player_drafted(
 ) -> dict[str, Any]:
     load_profile(root, profile_id)
     state = load_draft_board(root, profile_id)
-    drafted_ids = {str(value) for value in state.get("drafted", [])}
+    drafted_ids = [str(value) for value in state.get("drafted", [])]
     if drafted:
-        drafted_ids.add(str(player_id))
+        if str(player_id) not in drafted_ids:
+            drafted_ids.append(str(player_id))
     else:
-        drafted_ids.discard(str(player_id))
+        drafted_ids = [value for value in drafted_ids if value != str(player_id)]
     updated = {
         "schema_version": SCHEMA_VERSION,
         "profile_id": profile_id,
-        "drafted": sorted(drafted_ids),
+        "drafted": drafted_ids,
         "updated_at_utc": utc_now(),
     }
-    _atomic_json(Path(root) / "draft_boards" / f"{profile_id}.json", updated)
+    path = Path(root) / "draft_boards" / f"{profile_id}.json"
+    _atomic_json(path, updated)
+    _atomic_json(path.with_suffix(".backup.json"), updated)
+    return updated
+
+
+def undo_last_draft_pick(root: str | Path, profile_id: str) -> dict[str, Any]:
+    load_profile(root, profile_id)
+    state = load_draft_board(root, profile_id)
+    drafted_ids = [str(value) for value in state.get("drafted", [])]
+    if not drafted_ids:
+        raise RedraftValidationError("No drafted player is available to undo.")
+    drafted_ids.pop()
+    updated = {
+        "schema_version": SCHEMA_VERSION,
+        "profile_id": profile_id,
+        "drafted": drafted_ids,
+        "updated_at_utc": utc_now(),
+    }
+    path = Path(root) / "draft_boards" / f"{profile_id}.json"
+    _atomic_json(path, updated)
+    _atomic_json(path.with_suffix(".backup.json"), updated)
     return updated
 
 

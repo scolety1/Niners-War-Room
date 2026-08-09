@@ -1,0 +1,7 @@
+check,status,detail
+edit A leaves B unchanged,PASS,Exact dataclass equality
+draft boards isolated,PASS,Distinct ordered states
+archive and restore,PASS,Draft state preserved
+delete confirmation cancellation,PASS,Unconfirmed delete rejected
+malformed profile isolation,PASS,Healthy profiles render and error is named
+Redraft versus Dynasty,PASS,No Dynasty state writes

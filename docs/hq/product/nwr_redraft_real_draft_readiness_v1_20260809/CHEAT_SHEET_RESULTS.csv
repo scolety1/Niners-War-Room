@@ -1,0 +1,4 @@
+profiles,formats,exports,status,detail
+4,Overall/QB/RB/WR/TE/Tiers,24,PASS,UTF-8 readable and rank-consistent
+4,CSV provenance,24,PASS,League/scoring/season/teams/projection SHA/rookie/evidence/source included
+4,filename safety,24,PASS,Sanitized profile plus profile-id prefix; no local paths

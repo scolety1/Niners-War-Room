@@ -1,0 +1,7 @@
+context,profiles,cases,status
+standard,1,veteran-veteran; rookie-veteran; rookie-rookie,PASS
+PPR,1,veteran-veteran; rookie-veteran; rookie-rookie,PASS
+Superflex,1,veteran-veteran; rookie-veteran; rookie-rookie,PASS
+blocked conflicts,3,Max Bredeson and Riley Nowakowski selectable but fail-closed,PASS
+selector identity,3,608 exact rankable IDs plus 2 governed blocked IDs,PASS
+Dynasty context,1,Remains separately fail-closed when local Dynasty universe is absent,PASS

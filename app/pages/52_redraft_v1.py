@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 # ruff: noqa: E402, E501
 import sys
 import tempfile
@@ -33,16 +35,34 @@ from src.services.redraft_engine_v1_service import (
     load_draft_board,
     load_projection_snapshot,
     mark_player_drafted,
+    profile_store_errors,
     projection_snapshot_path,
     redraft_store_root,
+    restore_profile,
     save_profile,
     set_active_profile,
+    undo_last_draft_pick,
 )
 
 
 def _profile_label(profile: LeagueProfile) -> str:
     format_label = "Superflex" if profile.roster.superflex else "1QB"
     return f"{profile.league_name} · {profile.team_count} teams · {format_label}"
+
+
+def _render_redraft_accessibility_frame() -> None:
+    st.markdown(
+        """
+        <span id="nwr-redraft-page" aria-hidden="true"></span>
+        <style>
+        body:has(#nwr-redraft-page) div[data-testid="stMetric"] label p,
+        body:has(#nwr-redraft-page) div[data-testid="stMetricValue"] p {
+            color: var(--nwr-ink) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _parse_roster_limits(value: str) -> dict[str, int]:
@@ -100,6 +120,26 @@ def _render_profile_creator(store: Path) -> None:
             st.error(str(exc))
         else:
             st.success(f"Created and activated {created.league_name}.")
+            st.rerun()
+
+
+def _render_archived_profiles(store: Path) -> None:
+    archived = tuple(
+        profile for profile in list_profiles(store, include_archived=True) if profile.archived
+    )
+    if not archived:
+        return
+    by_id = {profile.profile_id: profile for profile in archived}
+    with st.expander(f"Archived profiles ({len(archived)})", expanded=False):
+        selected_id = st.selectbox(
+            "Archived league profile",
+            tuple(by_id),
+            format_func=lambda profile_id: _profile_label(by_id[profile_id]),
+        )
+        st.caption("Restoring preserves this profile's separate draft-board state.")
+        if st.button("Restore archived profile", use_container_width=True):
+            restore_profile(store, selected_id)
+            st.success(f"Restored {by_id[selected_id].league_name}.")
             st.rerun()
 
 
@@ -429,11 +469,23 @@ def _render_draft_board(store: Path, profile: LeagueProfile, frame: pd.DataFrame
     if frame.empty:
         st.info("Draft board is blocked until rankings exist.")
         return
-    state = load_draft_board(store, profile.profile_id)
+    try:
+        state = load_draft_board(store, profile.profile_id)
+    except RedraftPersistenceError as exc:
+        st.error(str(exc))
+        st.caption(
+            "Other Redraft profiles and Dynasty state remain unchanged. Restore a known-good "
+            "backup before continuing this draft."
+        )
+        return
+    if state.get("recovered_from_backup"):
+        st.warning("Recovered this draft board from its last exact local backup.")
     drafted_ids = {str(value) for value in state.get("drafted", [])}
     available = frame.loc[~frame["player_id"].astype(str).isin(drafted_ids)].copy()
     metrics = st.columns(4)
-    metrics[0].metric("Current pick", "Manual")
+    pick_number = len(state.get("drafted", [])) + 1
+    round_number = ((pick_number - 1) // profile.team_count) + 1
+    metrics[0].metric("Current pick", f"{pick_number} · Round {round_number}")
     metrics[1].metric("Drafted", len(drafted_ids))
     metrics[2].metric("Available", len(available))
     metrics[3].metric("Profile", profile.league_name)
@@ -453,11 +505,16 @@ def _render_draft_board(store: Path, profile: LeagueProfile, frame: pd.DataFrame
         tuple(player_options),
         format_func=lambda player_id: player_options[player_id],
     )
-    action_cols = st.columns(2)
+    action_cols = st.columns(3)
     if action_cols[0].button("Mark drafted", use_container_width=True):
         mark_player_drafted(store, profile.profile_id, selected_id, drafted=True)
         st.rerun()
-    if action_cols[1].button("Return to available", use_container_width=True):
+    if action_cols[1].button(
+        "Undo last pick", disabled=not state.get("drafted"), use_container_width=True
+    ):
+        undo_last_draft_pick(store, profile.profile_id)
+        st.rerun()
+    if action_cols[2].button("Return selected to available", use_container_width=True):
         mark_player_drafted(store, profile.profile_id, selected_id, drafted=False)
         st.rerun()
     board = frame.copy()
@@ -472,7 +529,7 @@ def _render_draft_board(store: Path, profile: LeagueProfile, frame: pd.DataFrame
     )
 
 
-def _render_cheat_sheet(profile: LeagueProfile, frame: pd.DataFrame) -> None:
+def _render_cheat_sheet(profile: LeagueProfile, frame: pd.DataFrame, ranking) -> None:
     if frame.empty:
         st.info("Cheat sheets are blocked until rankings exist.")
         return
@@ -498,10 +555,19 @@ def _render_cheat_sheet(profile: LeagueProfile, frame: pd.DataFrame) -> None:
         "Replacement Value",
     ]
     st.dataframe(sheet[columns], use_container_width=True, hide_index=True)
+    export = sheet[columns + ["Rookie", "Evidence", "Source"]].copy()
+    export.insert(0, "Projection SHA256", ranking.projection_sha256)
+    export.insert(0, "Scoring", f"{profile.scoring.reception:g} PPR; {profile.scoring.te_premium:g} TE premium")
+    export.insert(0, "Teams", profile.team_count)
+    export.insert(0, "Season", profile.season)
+    export.insert(0, "League Profile", profile.league_name)
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", profile.league_name).strip("._") or "redraft"
     st.download_button(
         "Download cheat sheet CSV",
-        sheet[columns].to_csv(index=False).encode("utf-8"),
-        file_name=f"{profile.league_name}_{profile.season}_{sheet_type}.csv".replace(" ", "_"),
+        export.to_csv(index=False).encode("utf-8"),
+        file_name=(
+            f"{safe_name}_{profile.profile_id[:8]}_{profile.season}_{sheet_type}.csv"
+        ),
         mime="text/csv",
     )
 
@@ -509,6 +575,8 @@ def _render_cheat_sheet(profile: LeagueProfile, frame: pd.DataFrame) -> None:
 store = redraft_store_root(REPO_ROOT)
 profiles = list_profiles(store)
 active_id = active_profile_id(store)
+
+_render_redraft_accessibility_frame()
 
 page_header(
     "Redraft",
@@ -525,6 +593,9 @@ st.warning(
 )
 
 _render_profile_creator(store)
+_render_archived_profiles(store)
+for profile_error in profile_store_errors(store):
+    st.error(f"Profile state needs recovery: {profile_error}")
 if not profiles:
     st.info("No redraft profiles exist yet. Create one from a preset to begin.")
     st.stop()
@@ -591,12 +662,12 @@ with tabs[3]:
 with tabs[4]:
     _render_draft_board(store, profile, frame)
 with tabs[5]:
-    _render_cheat_sheet(profile, frame)
+    _render_cheat_sheet(profile, frame, ranking)
 with tabs[6]:
     status_cols = st.columns(4)
     status_cols[0].metric("Readiness", health.status)
     status_cols[1].metric("Ranked", health.ranked_players)
-    status_cols[2].metric("Blocked", health.blocked_players)
+    status_cols[2].metric("Snapshot blocks", health.blocked_players)
     status_cols[3].metric("Last generated", health.last_generated_timestamp or "Never")
     st.dataframe(
         pd.DataFrame(
@@ -611,6 +682,15 @@ with tabs[6]:
                     "Check": "Replacement calculation",
                     "Ready": health.replacement_calculation_valid,
                 },
+                {
+                    "Check": "Stable identity uniqueness",
+                    "Ready": bool(len(frame) and frame["player_id"].is_unique),
+                },
+                {
+                    "Check": "Projection freshness",
+                    "Ready": bool(snapshot.source_as_of),
+                    "Detail": snapshot.source_as_of or "Not enough information",
+                },
             )
         ),
         use_container_width=True,
@@ -618,6 +698,10 @@ with tabs[6]:
     )
     for message in health.messages:
         st.caption(message)
+    st.info(
+        "Governed scope: all 608 approved rows are rankable. Two position-conflict rookie "
+        "candidates remain excluded and blocked. K/DST are unsupported; no projections are invented."
+    )
     if ranking.blocked_rows:
         with st.expander("Blocked / missing players", expanded=True):
             st.dataframe(

@@ -12,6 +12,7 @@ from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
     ProjectionPlayer,
+    RedraftPersistenceError,
     RedraftValidationError,
     RosterSettings,
     ScoringSettings,
@@ -30,10 +31,14 @@ from src.services.redraft_engine_v1_service import (
     load_projection_snapshot,
     mark_player_drafted,
     player_compare_rows,
+    profile_store_errors,
     projection_snapshot_path,
+    redraft_compare_pool_rows,
+    restore_profile,
     save_profile,
     score_projection,
     set_active_profile,
+    undo_last_draft_pick,
 )
 
 
@@ -319,6 +324,16 @@ def test_profile_create_edit_duplicate_archive_delete_and_active_isolation(tmp_p
     assert {profile.profile_id for profile in list_profiles(tmp_path)} == {second.profile_id}
 
 
+def test_malformed_profile_is_reported_without_hiding_healthy_profiles(tmp_path: Path) -> None:
+    healthy = create_profile(tmp_path, builtin_presets()[0], league_name="Healthy")
+    malformed = tmp_path / "profiles" / "broken.json"
+    malformed.write_text('{"profile_id":', encoding="utf-8")
+    assert [profile.profile_id for profile in list_profiles(tmp_path)] == [healthy.profile_id]
+    assert profile_store_errors(tmp_path) == (
+        "broken.json: unreadable or invalid profile state",
+    )
+
+
 def test_projection_install_is_separate_and_hash_verified(tmp_path: Path) -> None:
     source = tmp_path / "incoming.csv"
     approval = tmp_path / "approval.json"
@@ -470,6 +485,48 @@ def test_profile_specific_draft_boards_are_isolated(tmp_path: Path) -> None:
     assert load_draft_board(tmp_path, first.profile_id)["drafted"] == []
 
 
+def test_archived_profile_can_be_restored_with_its_draft_state(tmp_path: Path) -> None:
+    profile = create_profile(tmp_path, builtin_presets()[0], league_name="Archive Restore")
+    mark_player_drafted(tmp_path, profile.profile_id, "wr-1", drafted=True)
+    archive_profile(tmp_path, profile.profile_id)
+    restored = restore_profile(tmp_path, profile.profile_id)
+    assert restored.archived is False
+    assert load_draft_board(tmp_path, profile.profile_id)["drafted"] == ["wr-1"]
+    with pytest.raises(RedraftValidationError):
+        restore_profile(tmp_path, profile.profile_id)
+
+
+def test_draft_board_preserves_pick_order_and_recovers_latest_backup(tmp_path: Path) -> None:
+    profile = create_profile(tmp_path, builtin_presets()[0], league_name="Recovery")
+    mark_player_drafted(tmp_path, profile.profile_id, "wr-2", drafted=True)
+    mark_player_drafted(tmp_path, profile.profile_id, "wr-1", drafted=True)
+    board_path = tmp_path / "draft_boards" / f"{profile.profile_id}.json"
+    assert load_draft_board(tmp_path, profile.profile_id)["drafted"] == ["wr-2", "wr-1"]
+    board_path.write_text('{"drafted": [', encoding="utf-8")
+    recovered = load_draft_board(tmp_path, profile.profile_id)
+    assert recovered["drafted"] == ["wr-2", "wr-1"]
+    assert recovered["recovered_from_backup"] is True
+
+
+def test_undo_last_pick_persists_exact_new_latest_state(tmp_path: Path) -> None:
+    profile = create_profile(tmp_path, builtin_presets()[0], league_name="Undo")
+    mark_player_drafted(tmp_path, profile.profile_id, "wr-2", drafted=True)
+    mark_player_drafted(tmp_path, profile.profile_id, "wr-1", drafted=True)
+    assert undo_last_draft_pick(tmp_path, profile.profile_id)["drafted"] == ["wr-2"]
+    board_path = tmp_path / "draft_boards" / f"{profile.profile_id}.json"
+    board_path.write_text("truncated", encoding="utf-8")
+    assert load_draft_board(tmp_path, profile.profile_id)["drafted"] == ["wr-2"]
+
+
+def test_draft_board_corruption_without_backup_is_bounded(tmp_path: Path) -> None:
+    profile = create_profile(tmp_path, builtin_presets()[0], league_name="Bounded Failure")
+    board_path = tmp_path / "draft_boards" / f"{profile.profile_id}.json"
+    board_path.parent.mkdir(parents=True)
+    board_path.write_text('{"drafted": [', encoding="utf-8")
+    with pytest.raises(RedraftPersistenceError, match="no valid profile backup"):
+        load_draft_board(tmp_path, profile.profile_id)
+
+
 def test_player_compare_is_explicitly_redraft_and_profile_specific(snapshot) -> None:
     profile = _profile(name="Work League", reception=1.0)
     result = generate_rankings(profile, snapshot)
@@ -489,6 +546,21 @@ def test_player_compare_is_explicitly_redraft_and_profile_specific(snapshot) -> 
     )
     assert wrong_id_same_name[0]["Redraft Status"] == "NOT_ENOUGH_INFORMATION"
     assert "exact stable player_id" in wrong_id_same_name[0]["Blocking / Missing Evidence"]
+    blocked_conflict = player_compare_rows(
+        result,
+        [{"player_id": "00-0041081", "player": "Max Bredeson", "position": "RB"}],
+    )
+    assert blocked_conflict[0]["Redraft Status"] == "NOT_ENOUGH_INFORMATION"
+
+
+def test_redraft_compare_pool_exposes_every_ranked_exact_id(snapshot) -> None:
+    result = generate_rankings(_profile(), snapshot)
+    pool = redraft_compare_pool_rows(result)
+    assert len(pool) == len(result.rows)
+    assert {row["player_id"] for row in pool} == {row.player_id for row in result.rows}
+    assert {row["Redraft Status"] for row in player_compare_rows(result, pool)} == {
+        "REDRAFT V1 - REVIEW"
+    }
 
 
 def test_profile_roster_limits_are_normalized_on_save(tmp_path: Path) -> None:

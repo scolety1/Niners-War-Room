@@ -1,0 +1,9 @@
+id,severity,issue,fix,tests,status
+RDR-001,HIGH,Redraft Player Compare used incompatible Dynasty IDs,Dedicated 608 exact-ID pool plus 2 blocked governed records and Redraft-independent gate,unit/source/browser,PASS
+RDR-002,MEDIUM,Corrupt draft JSON crashed Redraft page,Exact latest backup recovery plus bounded error,unit/browser,PASS
+RDR-003,MEDIUM,Archived profiles were stranded,Restore service and UI preserving draft state,unit/source,PASS
+RDR-004,MEDIUM,Draft picks were sorted and chronology lost,Ordered persistence plus explicit undo-last and derived pick/round,unit/browser,PASS
+RDR-005,MEDIUM,Malformed profile JSON crashed listing,Skip/report malformed file while healthy profiles remain usable,unit,PASS
+RDR-006,LOW,Cheat CSV lacked league/projection provenance,Added deterministic metadata columns and safe collision-resistant name,source/browser,PASS
+RDR-007,LOW,Data Health omitted intentional blocks/freshness/identity,Added truthful checks and governed limitation copy,source/browser,PASS
+RDR-008,MEDIUM,Redraft metric text had near-white-on-white contrast,Scoped explicit ink color,computed-style browser,PASS

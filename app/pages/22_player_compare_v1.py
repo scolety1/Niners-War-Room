@@ -77,6 +77,7 @@ from src.services.redraft_engine_v1_service import (
     load_projection_snapshot,
     player_compare_rows,
     projection_snapshot_path,
+    redraft_compare_pool_rows,
     redraft_store_root,
 )
 from src.services.unified_research_preview_service import (
@@ -92,6 +93,14 @@ HORIZON_CANDIDATE_PATH = (
     / "parallel_lanes"
     / "overnight_8h_emergency_20260622"
     / "outcome_horizon_candidate.csv"
+)
+REDRAFT_BLOCKED_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "hq"
+    / "model"
+    / "nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    / "BLOCKED_2026_ROOKIES.csv"
 )
 INJURY_PER_GAME_AUDIT_PATH = (
     REPO_ROOT / "docs" / "hq" / "draft_day_v2" / "injury_per_game_risk_audit_20260623.csv"
@@ -579,6 +588,47 @@ def _render_redraft_context(compare_frame: pd.DataFrame) -> None:
     )
 
 
+def _active_redraft_compare_pool() -> pd.DataFrame | None:
+    store = redraft_store_root(REPO_ROOT)
+    profile = active_profile(store)
+    if profile is None:
+        st.warning("No active redraft league profile. Configure one on the Redraft page.")
+        st.markdown("[Open Redraft](/redraft)")
+        return None
+    snapshot = load_projection_snapshot(
+        projection_snapshot_path(store, profile.season),
+        season=profile.season,
+        require_manifest=True,
+    )
+    ranking = generate_rankings(profile, snapshot)
+    if not ranking.ready:
+        st.warning(
+            "Redraft comparison is blocked until governed current-season projections validate."
+        )
+        for error in ranking.errors:
+            st.caption(error)
+        return None
+    pool = pd.DataFrame(redraft_compare_pool_rows(ranking))
+    if REDRAFT_BLOCKED_PATH.is_file():
+        blocked = pd.read_csv(REDRAFT_BLOCKED_PATH, dtype=str).fillna("")
+        blocked_pool = pd.DataFrame(
+            {
+                "asset_id": blocked["player_id"],
+                "player_id": blocked["player_id"],
+                "player": blocked["current_name"],
+                "position": blocked["current_position"],
+                "compare_select_label": (
+                    blocked["current_name"]
+                    + " | "
+                    + blocked["current_position"]
+                    + " | BLOCKED — position conflict"
+                ),
+            }
+        )
+        pool = pd.concat((pool, blocked_pool), ignore_index=True)
+    return pool
+
+
 def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
     compare_columns = [
         "cross_asset_candidate_rank",
@@ -989,14 +1039,6 @@ st.caption(
     "model values, or source-truth files."
 )
 _render_compare_source_status(compare_universe.counts, governed.source_hashes)
-if compare_universe.errors:
-    st.error(
-        "Player Compare cannot load the complete governed player universe. "
-        "No fallback or fabricated players were substituted."
-    )
-    for error in compare_universe.errors:
-        st.error(error)
-    st.stop()
 _render_player_compare_policy()
 comparison_context = st.radio(
     "Comparison context",
@@ -1004,6 +1046,19 @@ comparison_context = st.radio(
     horizontal=True,
     help="The selected context is explicit; redraft never replaces dynasty authority.",
 )
+if compare_universe.errors and comparison_context == "DYNASTY - LONG TERM":
+    st.error(
+        "Player Compare cannot load the complete governed Dynasty player universe. "
+        "No fallback or fabricated players were substituted."
+    )
+    for error in compare_universe.errors:
+        st.error(error)
+    st.stop()
+if comparison_context == "REDRAFT - CURRENT SEASON":
+    redraft_pool = _active_redraft_compare_pool()
+    if redraft_pool is None:
+        st.stop()
+    compare_pool = redraft_pool
 
 asset_ids = (
     compare_pool["asset_id"].astype(str).tolist() if "asset_id" in compare_pool.columns else []
@@ -1073,9 +1128,10 @@ else:
     player_b = names_by_id[player_b_id]
     extra_players = [names_by_id[asset_id] for asset_id in extra_player_ids]
     render_selected_player_context(player_a, player_b, extra_players)
-    _render_source_separated_evidence(compare)
     if comparison_context == "REDRAFT - CURRENT SEASON":
         _render_redraft_context(compare)
+        st.stop()
+    _render_source_separated_evidence(compare)
     st.markdown("## Unified Research Context")
     st.warning(
         "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "

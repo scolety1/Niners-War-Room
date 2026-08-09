@@ -38,6 +38,12 @@ def test_redraft_page_exposes_required_review_only_surfaces() -> None:
     assert "Confirm permanent delete" in text
     assert "Install approved projection snapshot" in text
     assert "Independent approval receipt" in text
+    assert "Restore archived profile" in text
+    assert "Projection SHA256" in text
+    assert "Stable identity uniqueness" in text
+    assert "nwr-redraft-page" in text
+    assert "Undo last pick" in text
+    assert 'columns + ["Rookie", "Evidence", "Source"]' in text
 
 
 def test_compare_and_cockpit_use_explicit_redraft_context_without_replacing_dynasty() -> None:
@@ -46,6 +52,9 @@ def test_compare_and_cockpit_use_explicit_redraft_context_without_replacing_dyna
     assert "DYNASTY - LONG TERM" in compare
     assert "REDRAFT - CURRENT SEASON" in compare
     assert "Dynasty comparison remains available and unchanged" in compare
+    assert "redraft_compare_pool_rows" in compare
+    assert "BLOCKED_2026_ROOKIES.csv" in compare
+    assert 'compare_universe.errors and comparison_context == "DYNASTY - LONG TERM"' in compare
     assert "Top remaining by redraft rank" in cockpit
     assert "No automatic best-pick authority" in cockpit
     assert "separate from the dynasty draft workflow" in cockpit

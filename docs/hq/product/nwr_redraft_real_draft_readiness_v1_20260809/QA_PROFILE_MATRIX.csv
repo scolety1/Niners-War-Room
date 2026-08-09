@@ -1,0 +1,7 @@
+profile,teams,scoring,qb,wr,flex,superflex,bench,status
+QA ONLY — A 10-team standard,10,standard,1,2,1,0,6,PASS
+QA ONLY — B 12-team Half-PPR multi-flex,12,half-PPR,1,3,2,0,7,PASS
+QA ONLY — C 12-team PPR,12,PPR,1,2,1,0,6,PASS
+QA ONLY — D 12-team PPR Superflex,12,PPR,1,2,1,1,6,PASS
+QA ONLY — E 14-team deep 3WR multi-flex,14,PPR,1,3,3,0,12,PASS
+QA ONLY — F TE-premium sensitivity,12,PPR plus 0.75 TE premium,1,2,1,0,6,PASS
