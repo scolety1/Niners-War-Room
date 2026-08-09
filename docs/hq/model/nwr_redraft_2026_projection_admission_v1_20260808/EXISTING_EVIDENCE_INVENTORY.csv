@@ -1,0 +1,9 @@
+candidate,classification,reason
+No local direct 2026 projection snapshot,BLOCKED_SOURCE,No file found
+nflverse players 2026 registry,PROJECTION_COMPONENT_ONLY,Exact GSIS identity/current status/team
+nflverse seasonal stats 2012-2025,RESEARCH_ONLY,Historical forecast input and temporal validation
+nflverse depth charts through 2025,STALE,No governed 2026 depth snapshot
+nflverse injuries through 2025,STALE,No governed 2026 availability snapshot
+CFBD 2026 draft/college data,PROJECTION_COMPONENT_ONLY,Rookie identity/context; no governed NFL workload
+Scheduled ingest 2026-07-21,BLOCKED_SOURCE,Raw snapshot explicitly not approved
+Dynasty and rookie rankings,BLOCKED_SOURCE,Prohibited as redraft projection input
