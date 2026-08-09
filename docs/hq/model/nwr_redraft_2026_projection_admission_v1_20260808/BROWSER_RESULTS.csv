@@ -1,4 +1,14 @@
-viewport,scope,status,reason
-375x812,Redraft and dynasty surfaces,SKIPPED_NOT_ADMITTED,No production snapshot/receipt; browser adoption gate not authorized
-768x1024,Redraft and dynasty surfaces,SKIPPED_NOT_ADMITTED,No production snapshot/receipt; browser adoption gate not authorized
-1440x1000,Redraft and dynasty surfaces,SKIPPED_NOT_ADMITTED,No production snapshot/receipt; browser adoption gate not authorized
+viewport,scope,status,evidence
+375x812,Redraft Rankings,PASS,"530 ranked; one H1; zero root overflow; no traceback or Page Not Found"
+768x1024,Redraft League Profile and tabs,PASS,"Rankings, tiers, position rankings, draft board, cheat sheet, and Data Health loaded without page-open mutation"
+1440x1000,Redraft Rankings,PASS,"530 ranked; one H1; zero root overflow; table visibly rendered"
+768x1024,Profile CRUD,PASS,"Create, edit, duplicate, activate, archive, confirmed delete, and cleanup completed"
+768x1024,Profile sensitivity,PASS,"12-team Superflex PPR active context loaded 530 governed rows and reflected Superflex scoring/roster settings"
+768x1024,Player Compare Redraft context,PASS,"Active profile shown; Redraft rank/points/replacement context loaded; dynasty rank/value explicitly unchanged"
+768x1024,Draft Cockpit Redraft context,PASS,"Active profile shown; top remaining, tier, and replacement gap rendered; no pick mutation"
+768x1024,Dynasty Rankings regression,PASS_WITH_EXISTING_SEMANTICS,"Route loaded without traceback, Page Not Found, console error, or overflow"
+768x1024,Unified Research Preview regression,PASS,"Route loaded with one H1 and zero root overflow"
+768x1024,Rookie Review regression,PASS,"Route loaded with one H1 and zero root overflow"
+768x1024,Trading Lab regression,PASS,"Route loaded with one H1 and zero root overflow"
+768x1024,Personal Workspace regression,PASS,"Route loaded with one H1 and zero root overflow"
+all,Console and cleanup,PASS,"Zero warning/error console entries; disposable profiles deleted; validation server stopped"

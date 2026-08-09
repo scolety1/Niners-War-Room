@@ -1,9 +1,10 @@
 {
-  "admission_scope": "REDRAFT_2026_PROJECTIONS",
-  "approval_status": "READY_FOR_OWNER_GOVERNANCE_APPROVAL",
-  "approved_at_utc": null,
-  "approved_by": null,
-  "approver_identity": "OWNER_REQUIRED",
+  "admission_scope": "REDRAFT_2026_VETERAN_PROJECTIONS",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "approved_at_utc": "2026-08-08T23:53:00-06:00",
+  "approved_by": "NWR Owner",
+  "approved_candidate_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
+  "approver_identity": "NWR Owner",
   "authority": "NWR_DATA_GOVERNANCE",
   "coverage": {
     "blocked_rows": 380,
@@ -11,17 +12,36 @@
     "current_registry_rows": 910,
     "unresolved_identity_rows": 0
   },
-  "generated_at": "2026-08-09T05:51:46+00:00",
+  "engine_contract_scope": "REDRAFT_2026_PROJECTIONS",
+  "finalization_contract": {
+    "changed_cells": 1060,
+    "changed_columns": [
+      "source_status",
+      "evidence_status"
+    ],
+    "evidence_status_transform": "MODEL_VALIDATED_REVIEW_ONLY -> ADMITTED_CURRENT_SEASON",
+    "input_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
+    "other_changed_cells": 0,
+    "output_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+    "row_count": 530,
+    "source_status_transform": "GOVERNANCE_PENDING -> GOVERNED"
+  },
+  "generated_at": "2026-08-09T05:53:00Z",
   "identity_contract": "EXACT GSIS ID only; no fuzzy joins or aliases used",
   "limitations": [
-    "Central forecast persists the prior-season stat line; it does not predict role growth, decline, or team-context effects.",
-    "All 2026 rookies are blocked because no governed current workload evidence exists.",
-    "Veterans without a 2025 stat line are blocked.",
-    "K and DST are absent because no governed projected_points_override exists."
+    "Veteran-only prior-season persistence forecast.",
+    "All rookies remain blocked pending separate governed workload admission.",
+    "K and DST remain blocked.",
+    "No dynasty, scheduled refresh, provider/API, or proprietary-source use."
   ],
   "permitted_uses": [
-    "Owner governance review",
-    "Research-only scoring, replacement, and settings-sensitivity validation"
+    "NWR Redraft V1 current-season veteran ranking",
+    "NWR Redraft V1 scoring",
+    "NWR Redraft V1 replacement-level calculation",
+    "NWR Redraft V1 tier calculation",
+    "NWR Redraft V1 Player Compare calculation",
+    "NWR Redraft V1 Draft Cockpit calculation",
+    "NWR Redraft V1 cheat-sheet calculation"
   ],
   "player_counts": {
     "QB": 74,
@@ -31,17 +51,20 @@
     "total": 530
   },
   "prohibited_uses": [
-    "Production Redraft installation before owner approval",
-    "Representation as proprietary consensus or expert rankings",
-    "Dynasty ranking conversion",
-    "Silent rookie workload imputation"
+    "dynasty ranking changes",
+    "rookie projection invention",
+    "K/DST projections",
+    "proprietary-source use",
+    "scheduled refresh",
+    "provider/API calls",
+    "use outside the Redraft engine"
   ],
   "schema_version": 1,
   "season": 2026,
   "source_as_of": "2026-08-08",
   "source_authority": "NWR-derived model from admitted nflverse CC-BY-4.0 inputs",
   "source_id": "NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1",
-  "source_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
+  "source_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
   "valid_from": "2026-08-08",
   "valid_until": "2026-09-07"
 }
