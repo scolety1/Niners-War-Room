@@ -1,0 +1,17 @@
+profile,check,observed,status
+10_TEAM_1QB_STANDARD,ranking_ready,True,PASS
+10_TEAM_1QB_STANDARD,duplicate_player_ids,0,PASS
+10_TEAM_1QB_STANDARD,rookie_rows_ranked,78,PASS
+10_TEAM_1QB_STANDARD,k_dst_rows_ranked,0,PASS
+12_TEAM_1QB_HALF_PPR,ranking_ready,True,PASS
+12_TEAM_1QB_HALF_PPR,duplicate_player_ids,0,PASS
+12_TEAM_1QB_HALF_PPR,rookie_rows_ranked,78,PASS
+12_TEAM_1QB_HALF_PPR,k_dst_rows_ranked,0,PASS
+12_TEAM_PPR,ranking_ready,True,PASS
+12_TEAM_PPR,duplicate_player_ids,0,PASS
+12_TEAM_PPR,rookie_rows_ranked,78,PASS
+12_TEAM_PPR,k_dst_rows_ranked,0,PASS
+12_TEAM_SUPERFLEX_PPR,ranking_ready,True,PASS
+12_TEAM_SUPERFLEX_PPR,duplicate_player_ids,0,PASS
+12_TEAM_SUPERFLEX_PPR,rookie_rows_ranked,78,PASS
+12_TEAM_SUPERFLEX_PPR,k_dst_rows_ranked,0,PASS

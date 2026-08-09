@@ -1,0 +1,6 @@
+check,status,evidence
+approved_veteran_row_count,PASS,source=530 combined_prefix=530
+approved_veteran_column_order,PASS,columns=33
+approved_veteran_player_id_order,PASS,ids=530
+approved_veteran_all_cell_values,PASS,cells=17490
+approved_veteran_source_status,PASS,all 530 remain GOVERNED

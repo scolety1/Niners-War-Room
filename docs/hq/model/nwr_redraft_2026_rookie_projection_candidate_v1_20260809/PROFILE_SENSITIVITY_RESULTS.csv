@@ -1,0 +1,6 @@
+check,observed,expected,status
+QB materially rises in Superflex,59.0,> 0 median overall-rank rise,PASS
+TE premium changes TE value,41.0,> 0 median overall-rank rise,PASS
+3WR increases WR scarcity,5.6,>= 0 projected-point replacement drop,PASS
+12 teams lowers QB replacement level vs 10 teams,42.12,>= 0 projected points,PASS
+Extra FLEX lowers FLEX-position replacement,5.6,>= 0 projected points,PASS

@@ -1,0 +1,21 @@
+{
+  "all_promotion_gates_passed": true,
+  "approved_veteran_cell_values_preserved": true,
+  "builder": "scripts/build_redraft_2026_rookie_projection_candidate.py",
+  "candidate_serialization_deterministic_rerun": true,
+  "dynasty_rank_inputs_used": false,
+  "four_builtin_preset_rankings_ready": true,
+  "future_or_target_class_rows_used_in_training": 0,
+  "gate_count": 8,
+  "generated_at_utc": "2026-08-09T07:33:47.729654+00:00",
+  "historical_classes": "2012-2025",
+  "k_dst_projected": false,
+  "model_id": "NWR_REDRAFT_2026_ROOKIE_POSITION_ROUND_MEDIAN_V1",
+  "profile_sensitivity_checks_passed": true,
+  "provider_or_api_calls": false,
+  "scheduled_refresh_changed": false,
+  "trading_lab_changed": false,
+  "unified_preview_inputs_used": false,
+  "walk_forward_classes": "2016-2025",
+  "web_scraping": false
+}

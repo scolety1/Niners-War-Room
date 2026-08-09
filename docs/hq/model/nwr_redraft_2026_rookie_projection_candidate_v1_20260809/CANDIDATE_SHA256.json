@@ -1,0 +1,16 @@
+{
+  "approved_veteran_input_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
+  "approved_veteran_rows": 530,
+  "approved_veteran_values_unchanged": true,
+  "blocked_rookie_rows": 2,
+  "combined_review_candidate_deterministic_rerun": true,
+  "combined_review_candidate_sha256": "29e81531d57dad7a7ba4baf15ee83ea0b7b1b6104cf2df8a86c4873e870c255e",
+  "combined_review_rows": 608,
+  "governance_status": "OWNER_EXACT_SHA_APPROVAL_REQUIRED",
+  "installed": false,
+  "model_id": "NWR_REDRAFT_2026_ROOKIE_POSITION_ROUND_MEDIAN_V1",
+  "rookie_candidate_deterministic_rerun": true,
+  "rookie_candidate_sha256": "fbc0d1378a738e3f8935360f37c96f7aee9138c42161ab50f4a0e5003e8e2f11",
+  "rookie_rows": 78,
+  "source_as_of": "2026-07-30"
+}

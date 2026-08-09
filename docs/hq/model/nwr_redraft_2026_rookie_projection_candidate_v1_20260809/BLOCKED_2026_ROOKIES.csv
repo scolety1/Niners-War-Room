@@ -1,0 +1,3 @@
+season,draft_pick,draft_round,draft_name,draft_position,player_id,current_name,current_position,current_team,current_status,identity_method,identity_conflict,projection_status,block_reason
+2026,159,5,Max Bredeson,TE,00-0041081,Max Bredeson,RB,MIN,ACT,EXACT_PFR_ID_BRIDGE,False,BLOCKED,draft position conflicts with current factual registry position
+2026,169,5,Riley Nowakowski,TE,00-0041398,Riley Nowakowski,FB,PIT,ACT,EXACT_PFR_ID_BRIDGE,False,BLOCKED,draft position conflicts with current factual registry position
