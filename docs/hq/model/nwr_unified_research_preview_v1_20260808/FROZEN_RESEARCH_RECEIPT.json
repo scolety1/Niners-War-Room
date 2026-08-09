@@ -1,0 +1,34 @@
+{
+  "authority": "RESEARCH_ONLY_NOT_PRODUCTION",
+  "calibration_state": "G3_FAILED_NO_FRESH_UNTOUCHED_MATURE_5Y_COHORT",
+  "coefficient_changes": 0,
+  "controlling_verdict": "BLOCKED_NWR_UNIFIED_DYNASTY_NO_UNTOUCHED_MATURE_ROOKIE_COHORT",
+  "foundation_commit": "61b8ffd091de46b7d8cc46d322b8c19e70450298",
+  "fresh_evidence_commit": "4d137c63b264db1e07f4a46812ea7779cb2d18ae",
+  "manual_reorders": 0,
+  "model_refits": 0,
+  "selected_research_learner": "M5_BOUNDED_QUADRATIC",
+  "source_files": {
+    "current_rookie_frame.csv": {
+      "commit": "61b8ffd091de46b7d8cc46d322b8c19e70450298",
+      "path": "docs/hq/model/nwr_unified_dynasty_training_panel_and_current_frame_v1_20260808/CURRENT_ROOKIE_FEATURE_FRAME.csv",
+      "sha256": "6a0f6dc58416b2a87ac4454ab8b8e6ddfc8b070ff534f756e990e7633c136afd"
+    },
+    "current_veteran_frame.csv": {
+      "commit": "61b8ffd091de46b7d8cc46d322b8c19e70450298",
+      "path": "docs/hq/model/nwr_unified_dynasty_training_panel_and_current_frame_v1_20260808/CURRENT_VETERAN_FEATURE_FRAME.csv",
+      "sha256": "cbff65ec9e8397709724b3fbfea474c72c5fd5fe0835d4a533c334ebbd0a0d9e"
+    },
+    "eligible_predictions.csv": {
+      "commit": "61b8ffd091de46b7d8cc46d322b8c19e70450298",
+      "path": "docs/hq/model/nwr_unified_dynasty_training_panel_and_current_frame_v1_20260808/CURRENT_ELIGIBLE_PREDICTIONS_RESEARCH_ONLY.csv",
+      "sha256": "0b45e61b3b565d1ffae0ed81e930b1788edfb47cc7cda0bc95fe4f01706c3420"
+    },
+    "fresh_cohort_manifest.json": {
+      "commit": "4d137c63b264db1e07f4a46812ea7779cb2d18ae",
+      "path": "docs/hq/model/nwr_unified_dynasty_fresh_rookie_calibration_validation_v1_20260808/MANIFEST.json",
+      "sha256": "3b6b290dcc89b405d2188beb2e7854a8a0b4793f6425dec3a1ca2f2dc8ee66c2"
+    }
+  },
+  "target_architecture": "MULTI_HORIZON_VECTOR_5Y"
+}

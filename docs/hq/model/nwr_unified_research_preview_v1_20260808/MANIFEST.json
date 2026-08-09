@@ -1,0 +1,39 @@
+{
+  "authority": "RESEARCH_ONLY_NOT_PRODUCTION",
+  "blocked_assets": 16,
+  "blocked_kickers": 8,
+  "blocked_outside_support_veterans": 1,
+  "blocked_rookies": 7,
+  "coefficient_changes": 0,
+  "controlling_verdict": "BLOCKED_NWR_UNIFIED_DYNASTY_NO_UNTOUCHED_MATURE_ROOKIE_COHORT",
+  "dynastyprocess_files_opened": 0,
+  "eligible_rookies": 73,
+  "eligible_veterans": 231,
+  "foundation_commit": "61b8ffd091de46b7d8cc46d322b8c19e70450298",
+  "fresh_evidence_commit": "4d137c63b264db1e07f4a46812ea7779cb2d18ae",
+  "manual_reorders": 0,
+  "model_refits": 0,
+  "output_hashes": {
+    "AUTHORITY_PRESERVATION.md": "07da2f4c3fe3fffd9636c349c1e0175791eca04b7c95d6b88793c960dacc08b3",
+    "EXECUTIVE_VERDICT.md": "6ad3ec757dcae6f66fa49084cb8b8c28ea4b5cb0fda39a059edf42eadc39ad37",
+    "FROZEN_RESEARCH_RECEIPT.json": "dead68e48dd7aa91788889aa177ecc81e5a2e56bdf4779f547e57090b6f38b48",
+    "PRODUCT_INTEGRATION_RESULT.md": "127d2c089ddd4144409c696d6504bd759a06e9366f9772c38c0ee80f6a762f74",
+    "README.md": "9db672c9b3deb6bed9d4b420d23ae3715466e1dbbd377a1486dd3c0cc6d18de0",
+    "ROOKIE_VETERAN_NEIGHBORHOODS.csv": "5ff806c997d385fcc85911b419fad53a9bf6af4f1f8c9da6b7cdc6a6bf7bcb82",
+    "TOP_25_RESEARCH_PREVIEW.csv": "d2448a9dd8654b0922d75239131495464908ffea969efe0a3ad3a3fcb9befc7d",
+    "UNIFIED_DYNASTY_RESEARCH_PREVIEW.csv": "8ab1bf7e1d33736d7609c7f8373cc7031dc24afed026278b8754a659a4af5dc0",
+    "VALIDATION_RESULTS.md": "82e8f085409a17a6af1fbe6792a36ad8ded97e73d73deb16c7331a1e2f8a498c"
+  },
+  "preview_rows": 320,
+  "production_common_rank_admitted": false,
+  "provider_calls": 0,
+  "ranked_rows": 304,
+  "rookie_neighborhoods": 73,
+  "schema_version": 1,
+  "source_hashes": {
+    "current_rookie_frame.csv": "6a0f6dc58416b2a87ac4454ab8b8e6ddfc8b070ff534f756e990e7633c136afd",
+    "current_veteran_frame.csv": "cbff65ec9e8397709724b3fbfea474c72c5fd5fe0835d4a533c334ebbd0a0d9e",
+    "eligible_predictions.csv": "0b45e61b3b565d1ffae0ed81e930b1788edfb47cc7cda0bc95fe4f01706c3420",
+    "fresh_cohort_manifest.json": "3b6b290dcc89b405d2188beb2e7854a8a0b4793f6425dec3a1ca2f2dc8ee66c2"
+  }
+}

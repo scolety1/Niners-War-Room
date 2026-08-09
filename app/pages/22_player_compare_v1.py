@@ -71,6 +71,10 @@ from src.services.post_release_usability_service import (
     initial_save_status,
     perform_workspace_write,
 )
+from src.services.unified_research_preview_service import (
+    load_unified_research_preview,
+    research_context_for_assets,
+)
 
 OUTCOME_PROP_LABELS = tuple(label for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS)
 HORIZON_CANDIDATE_PATH = (
@@ -520,9 +524,7 @@ def _render_source_separated_evidence(compare_frame: pd.DataFrame) -> None:
     st.dataframe(display, use_container_width=True, hide_index=True)
     if compare_frame.get("compare_source_key", pd.Series(dtype=str)).nunique() > 1:
         st.warning(NO_COMMON_SCALE_NOTE)
-    elif compare_frame.get("compare_asset_type", pd.Series(dtype=str)).eq(
-        "Blocked Rookie"
-    ).any():
+    elif compare_frame.get("compare_asset_type", pd.Series(dtype=str)).eq("Blocked Rookie").any():
         st.warning(
             "Blocked rookie evidence remains visible but unranked and unscored. "
             "The blocking reason is not inferred or bypassed."
@@ -920,9 +922,7 @@ def _player_key(value: object) -> str:
 
 render_player_compare_accessibility_frame()
 
-current_board_path, _current_board_label, _current_board_warnings = (
-    resolve_dynasty_rankings_path()
-)
+current_board_path, _current_board_label, _current_board_warnings = resolve_dynasty_rankings_path()
 governed = load_governed_asset_registry(
     repo_root=REPO_ROOT,
     current_board_path=current_board_path,
@@ -1012,9 +1012,9 @@ else:
     selected = [player_a_id, player_b_id, *extra_player_ids]
     compare = compare_pool.loc[compare_pool["asset_id"].astype(str).isin(selected)].copy()
     compare["_selection_order"] = (
-        compare["asset_id"].astype(str).map(
-            {asset_id: index for index, asset_id in enumerate(selected)}
-        )
+        compare["asset_id"]
+        .astype(str)
+        .map({asset_id: index for index, asset_id in enumerate(selected)})
     )
     compare = compare.sort_values("_selection_order", kind="stable").drop(
         columns=["_selection_order"]
@@ -1024,6 +1024,78 @@ else:
     extra_players = [names_by_id[asset_id] for asset_id in extra_player_ids]
     render_selected_player_context(player_a, player_b, extra_players)
     _render_source_separated_evidence(compare)
+    st.markdown("## Unified Research Context")
+    st.warning(
+        "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "
+        "there is no fresh mature 5Y rookie cohort. Decision support only. "
+        "No common production scale is created."
+    )
+    try:
+        unified_research_preview = load_unified_research_preview()
+        research_context = research_context_for_assets(
+            unified_research_preview, compare["asset_id"].astype(str).tolist()
+        )
+    except (OSError, ValueError) as exc:
+        st.info(f"Unified research context is unavailable: {exc}")
+    else:
+        if research_context.empty:
+            st.info("No frozen Unified Research Context exists for the selected assets.")
+        else:
+            st.dataframe(
+                research_context[
+                    [
+                        "player",
+                        "position",
+                        "asset_type",
+                        "research_rank",
+                        "research_tier",
+                        "outlook_3y",
+                        "outlook_5y",
+                        "ceiling_signal",
+                        "downside_signal",
+                        "confidence",
+                        "evidence_coverage",
+                        "status",
+                        "blocking_reason",
+                    ]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+            st.caption(
+                "This frozen common research framework does not override the source-separated "
+                "production and rookie-review evidence above."
+            )
+            selected_rookie_ids = set(
+                research_context.loc[
+                    research_context["asset_type"].eq("ROOKIE"), "governed_player_id"
+                ].astype(str)
+            )
+            rookie_neighborhoods = unified_research_preview.neighborhoods
+            rookie_neighborhoods = rookie_neighborhoods.loc[
+                rookie_neighborhoods["rookie_governed_id"].astype(str).isin(selected_rookie_ids)
+            ]
+            if not rookie_neighborhoods.empty:
+                st.caption(
+                    "Nearby veterans above and below are frozen research-order context, not "
+                    "production comparables."
+                )
+                st.dataframe(
+                    rookie_neighborhoods[
+                        [
+                            "rookie",
+                            "position",
+                            "research_rank",
+                            "research_tier",
+                            "veterans_above",
+                            "veterans_below",
+                            "confidence",
+                            "evidence_coverage",
+                        ]
+                    ],
+                    use_container_width=True,
+                    hide_index=True,
+                )
     _render_visible_context_summary(compare)
 
     st.markdown("## Evidence caveats and trust context")

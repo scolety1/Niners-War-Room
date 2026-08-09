@@ -63,6 +63,7 @@ from src.services.outcome_v3_display_service import (
     rankings_outcome_v3_rows,
 )
 from src.services.post_release_usability_service import freshness_for_sources
+from src.services.unified_research_preview_service import load_unified_research_preview
 
 SORT_COLUMNS = {
     "Dynasty Rank": "nwr_rank",
@@ -122,15 +123,9 @@ VIEW_PRESET_HELP = {
     ),
 }
 NFLVERSE_REFRESH_HEALTH_ROOT = (
-    REPO_ROOT
-    / "docs"
-    / "hq"
-    / "data_sources"
-    / "nflverse_dataset_level_refresh_health_20260630"
+    REPO_ROOT / "docs" / "hq" / "data_sources" / "nflverse_dataset_level_refresh_health_20260630"
 )
-NFLVERSE_REFRESH_HEALTH_REGISTRY = (
-    NFLVERSE_REFRESH_HEALTH_ROOT / "nflverse_dataset_registry_v1.csv"
-)
+NFLVERSE_REFRESH_HEALTH_REGISTRY = NFLVERSE_REFRESH_HEALTH_ROOT / "nflverse_dataset_registry_v1.csv"
 NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT = (
     NFLVERSE_REFRESH_HEALTH_ROOT / "NFLVERSE_REFRESH_HEALTH_SAFETY_REPORT_20260630.md"
 )
@@ -379,9 +374,9 @@ def _apply_player_filters(
         and "outcome_availability_display_only" in filtered
     ):
         filtered = filtered.loc[
-            filtered["outcome_availability_display_only"].astype(str).eq(
-                OUTCOME_NOT_ENOUGH_INFORMATION
-            )
+            filtered["outcome_availability_display_only"]
+            .astype(str)
+            .eq(OUTCOME_NOT_ENOUGH_INFORMATION)
         ].copy()
     if selected_tier != "All" and "candidate_value_band" in filtered.columns:
         filtered = filtered.loc[
@@ -392,8 +387,11 @@ def _apply_player_filters(
             filtered["confidence_band"].astype(str) == selected_confidence
         ].copy()
     if review_filter != "All" and "manual_review_flag" in filtered.columns:
-        review_mask = filtered["manual_review_flag"].astype(str).str.lower().isin(
-            {"yes", "true", "1", "human_decision_only"}
+        review_mask = (
+            filtered["manual_review_flag"]
+            .astype(str)
+            .str.lower()
+            .isin({"yes", "true", "1", "human_decision_only"})
         )
         if review_filter == "Needs review":
             filtered = filtered.loc[review_mask].copy()
@@ -520,10 +518,7 @@ def _outcome_head_caption(
         }
     )
     labels_by_target.update(
-        {
-            target: label
-            for _source, target, label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS
-        }
+        {target: label for _source, target, label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS}
     )
     labels = [labels_by_target[target] for target in targets if target in labels_by_target]
     return ", ".join(labels) if labels else "Hidden"
@@ -682,8 +677,7 @@ def _nflverse_refresh_health_status() -> dict[str, object]:
     blocked = [
         row["dataset_id"]
         for row in registry
-        if row.get("default_mode") == "blocked"
-        or row.get("policy_status") == "blocked_policy"
+        if row.get("default_mode") == "blocked" or row.get("policy_status") == "blocked_policy"
     ]
     if "ff_rankings" not in blocked:
         blocked.append("ff_rankings")
@@ -776,9 +770,7 @@ def _render_dataset_refresh_status_panel(unified: pd.DataFrame) -> None:
                 "NFLVerse draft capital rows": counts["draft_available"],
                 "blocked_datasets": ", ".join(status["blocked_datasets"])
                 or OUTCOME_NOT_ENOUGH_INFORMATION,
-                "available_dataset_display_fields": ", ".join(
-                    status["available_display_fields"]
-                )
+                "available_dataset_display_fields": ", ".join(status["available_display_fields"])
                 or OUTCOME_NOT_ENOUGH_INFORMATION,
                 "unavailable_dataset_display_fields": ", ".join(
                     status["unavailable_display_fields"]
@@ -878,20 +870,14 @@ def _render_outcome_v3_compact_lens(frame: pd.DataFrame) -> None:
         "It never changes Finished V1 rank, scores, trade/pick values, or sort."
     )
     if not artifact.loaded:
-        st.warning(
-            "Outcome V3 is unavailable. Applicable values remain Not enough information."
-        )
+        st.warning("Outcome V3 is unavailable. Applicable values remain Not enough information.")
         for error in artifact.errors:
             st.error(error)
         return
 
-    present_positions = set(
-        frame.get("position", pd.Series(dtype=str)).astype(str).str.upper()
-    )
+    present_positions = set(frame.get("position", pd.Series(dtype=str)).astype(str).str.upper())
     position_options = [
-        position
-        for position in OUTCOME_V3_POSITION_THRESHOLDS
-        if position in present_positions
+        position for position in OUTCOME_V3_POSITION_THRESHOLDS if position in present_positions
     ]
     if not position_options:
         st.info("No governed QB/RB/WR/TE players are visible in the current filter.")
@@ -981,8 +967,7 @@ def _render_statistic_analysis_status() -> None:
                     "Unsupported contribution/count fields display Not enough information."
                 ),
                 "doc": (
-                    "docs/hq/rankings/statistic_analysis_v0_20260630/"
-                    "statistic_analysis_design.md"
+                    "docs/hq/rankings/statistic_analysis_v0_20260630/statistic_analysis_design.md"
                 ),
             }
         )
@@ -1107,6 +1092,115 @@ page_header(
         ),
     ),
 )
+ranking_authority_view = st.radio(
+    "Ranking authority view",
+    (
+        "Finished V1 — Production",
+        "Unified Dynasty Preview — Research Only",
+        "Rookie Review — Review Only",
+    ),
+    index=0,
+    horizontal=True,
+    key="dynasty_ranking_authority_view",
+)
+if ranking_authority_view == "Unified Dynasty Preview — Research Only":
+    st.warning(
+        "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "
+        "there is no fresh mature 5Y rookie cohort. Decision support only; this view does "
+        "not replace Finished V1 or admit a production rookie-veteran ranking."
+    )
+    try:
+        research_preview = load_unified_research_preview()
+    except (OSError, ValueError) as exc:
+        st.error(f"Frozen Unified Dynasty Preview is unavailable: {exc}")
+        st.stop()
+    preview = research_preview.board.copy()
+    preview_controls = st.columns((2, 1, 1, 1))
+    preview_query = preview_controls[0].text_input("Search", key="unified_preview_search")
+    preview_positions = preview_controls[1].multiselect(
+        "Position", sorted(preview["position"].dropna().unique()), key="unified_preview_position"
+    )
+    preview_types = preview_controls[2].multiselect(
+        "Asset Type", ("VETERAN", "ROOKIE"), key="unified_preview_asset_type"
+    )
+    include_blocked = preview_controls[3].checkbox(
+        "Include blocked", value=True, key="unified_preview_include_blocked"
+    )
+    if preview_query.strip():
+        preview = preview.loc[
+            preview["player"]
+            .fillna("")
+            .str.contains(preview_query.strip(), case=False, regex=False)
+        ]
+    if preview_positions:
+        preview = preview.loc[preview["position"].isin(preview_positions)]
+    if preview_types:
+        preview = preview.loc[preview["asset_type"].isin(preview_types)]
+    if not include_blocked:
+        preview = preview.loc[preview["research_rank"].notna()]
+    preview["_rank_sort"] = pd.to_numeric(preview["research_rank"], errors="coerce").fillna(9999)
+    preview = preview.sort_values(["_rank_sort", "player"], kind="stable")
+    st.caption(
+        "Frozen exact order: 231 eligible veterans + 73 eligible rookies; 16 blocked assets "
+        "remain visible and unranked. No refit, tuning, or manual reorder was performed."
+    )
+    st.dataframe(
+        preview[
+            [
+                "research_rank",
+                "player",
+                "position",
+                "asset_type",
+                "research_tier",
+                "outlook_3y",
+                "outlook_5y",
+                "ceiling_signal",
+                "downside_signal",
+                "confidence",
+                "evidence_coverage",
+                "existing_finished_v1_rank",
+                "existing_rookie_review_rank",
+                "status",
+                "blocking_reason",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+        key="unified_dynasty_research_preview_table",
+    )
+    st.markdown("### Rookie veteran neighborhoods — Research Only")
+    rookie_neighborhoods = research_preview.neighborhoods.copy()
+    rookie_choice = st.selectbox(
+        "Eligible rookie",
+        rookie_neighborhoods["rookie"].astype(str).tolist(),
+        key="unified_preview_rookie_neighborhood",
+    )
+    neighborhood = rookie_neighborhoods.loc[
+        rookie_neighborhoods["rookie"].astype(str).eq(rookie_choice)
+    ].iloc[0]
+    st.caption(
+        f"{neighborhood['rookie']} ({neighborhood['position']}) — research rank "
+        f"{int(neighborhood['research_rank'])}, {neighborhood['research_tier']}. "
+        f"Veterans above: {neighborhood['veterans_above'] or 'none'}. "
+        f"Veterans below: {neighborhood['veterans_below'] or 'none'}."
+    )
+    st.caption(
+        f"Uncertainty context: confidence {float(neighborhood['confidence']):.3f}; "
+        f"evidence coverage {float(neighborhood['evidence_coverage']):.3f}. Frozen ordering; "
+        "not production-admitted."
+    )
+    st.caption(
+        "Research ranks are comparable only inside this frozen research preview. They are not "
+        "trade values, recommendations, fair values, or production ranks."
+    )
+    st.stop()
+if ranking_authority_view == "Rookie Review — Review Only":
+    st.info(
+        "Rookie Review remains a separate review-only authority. Its cohort ranks and scores "
+        "are not comparable with Finished V1 production values."
+    )
+    st.page_link("pages/48_rookie_board_v1.py", label="Open Rookie Board — Review Only")
+    st.stop()
 render_source_freshness(freshness_for_sources(("Finished V1", "Outcome V3")))
 st.caption(
     "Deep tool: full dynasty source board. Market and Outcome context are display-only and "

@@ -68,6 +68,10 @@ from src.services.trading_lab_nflverse_context_service import (
     nflverse_manual_row_context_rows,
     nflverse_missing_evidence_rows,
 )
+from src.services.unified_research_preview_service import (
+    load_unified_research_preview,
+    research_context_for_assets,
+)
 
 SESSION_KEY = "draft_day_v1_trading_lab_builder"
 TRADE_AWAY_PLANNER_KEY = "draft_day_v1_trade_away_planner_rows"
@@ -799,6 +803,39 @@ if exact_ids:
     )
 else:
     st.info("Add exact governed current-player assets to see Personal Board context.")
+
+with st.expander("Unified Research Context — Research Only", expanded=False):
+    st.warning(
+        "Optional display context only — not a trade verdict, recommendation, or production "
+        "authority. Trading Lab remains MANUAL_DESCRIPTIVE_ONLY. Calibration is "
+        "not fully validated and there is no fresh mature 5Y rookie cohort."
+    )
+    try:
+        trade_research = research_context_for_assets(load_unified_research_preview(), exact_ids)
+    except (OSError, ValueError) as exc:
+        st.info(f"Unified research context is unavailable: {exc}")
+    else:
+        if trade_research.empty:
+            st.info("Add an eligible current player to view frozen research context.")
+        else:
+            st.dataframe(
+                trade_research[
+                    [
+                        "player",
+                        "position",
+                        "research_rank",
+                        "research_tier",
+                        "outlook_3y",
+                        "outlook_5y",
+                        "ceiling_signal",
+                        "downside_signal",
+                        "confidence",
+                        "status",
+                    ]
+                ],
+                hide_index=True,
+                width="stretch",
+            )
 
 with st.form("save-trading-lab-scenario"):
     scenario_title = st.text_input("Trade scenario title")
