@@ -1,0 +1,16 @@
+gate,name,status,evidence
+G1,source authority,READY_FOR_OWNER_APPROVAL,CC-BY inputs admitted; derived forecast needs owner approval
+G2,no leakage,PASS,"Strict t-1 forecast; no future rows, ranks, or proprietary data"
+G3,scoring correctness,PASS_RESEARCH_ONLY,All four presets generated from granular components
+G4,replacement correctness,PASS_RESEARCH_ONLY,Engine profile depth checks and replacement generation passed
+G5,settings sensitivity,PASS_RESEARCH_ONLY,See SETTINGS_SANITY_RESULTS.csv
+G6,historical validation,PASS,2016-2025 temporal backtest; beats position median each season
+G7,positional stability,PASS_RESEARCH_ONLY,No duplicate IDs; useful 2024-25 rank correlations
+G8,rookie handling,PASS_FAIL_CLOSED,All 224 current rookies blocked; no workload fabricated
+G9,uncertainty,PASS,Position/year absolute-error p80 bounds
+G10,profile isolation,PASS_EXISTING_TESTS,Existing profile CRUD/isolation tests retained
+G11,dynasty preservation,PASS,No dynasty data or state changed
+G12,product truthfulness,PASS_BLOCKED_STATE,Candidate not installed; live UI remains fail-closed
+G13,current projection freshness,PASS_CANDIDATE,Generated 2026-08-08 from registry retrieved 2026-07-30
+G14,current projection depth,PASS_CANDIDATE,"{'QB': 74, 'RB': 128, 'TE': 121, 'WR': 207}"
+G15,current identity coverage,PASS,"910 EXACT, 0 unresolved"

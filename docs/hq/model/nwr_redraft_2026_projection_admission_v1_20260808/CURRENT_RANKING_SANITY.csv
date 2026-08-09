@@ -1,0 +1,10 @@
+check,observed,status
+Default top 100 duplicate IDs,0,PASS
+Superflex top 100 duplicate IDs,0,PASS
+Default top 100 zero projections,0,PASS
+Superflex top 100 zero projections,0,PASS
+Default top 100 rookie rows,0,PASS_FAIL_CLOSED
+Default top 100 K/DST rows,0,PASS
+Default top 25 QB count,8,REVIEW_OBSERVATION
+Superflex top 25 QB count,11,REVIEW_OBSERVATION
+Current status outside ACT/RES,0,PASS

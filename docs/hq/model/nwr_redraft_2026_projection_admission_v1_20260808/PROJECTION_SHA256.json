@@ -1,0 +1,19 @@
+{
+  "byte_identical_regeneration_verified": true,
+  "candidate_path": "docs\\hq\\model\\nwr_redraft_2026_projection_admission_v1_20260808\\CANDIDATE_PROJECTION_SNAPSHOT.csv",
+  "candidate_projection": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
+  "sources": {
+    "players": {
+      "path": "C:\\NWR_SHARED_DATA\\source_snapshots\\nflverse\\players\\20260730T072407Z-42af9666ac84\\raw\\players.parquet",
+      "retrieved_at_utc": "2026-07-30T07:24:07Z",
+      "sha256": "b10b2d1759c77c02c8c87ab23924a060a59c05e1d89dfc5f9f7ddaba1a2b175c",
+      "snapshot_aggregate_sha256": "42af9666ac84e6fc7700010719775538c993fb4a8067bd4cb54fda760ebacde5"
+    },
+    "seasonal_stats": {
+      "path": "C:\\NWR_SHARED_DATA\\source_snapshots\\nflverse\\player_stats_seasonal\\20260730T072407Z-a5b2304f0132\\raw\\player_stats_seasonal_2025.parquet",
+      "retrieved_at_utc": "2026-07-30T07:24:07Z",
+      "sha256": "ff2daebd760c2479d42d2f6982b84bb8746cd1106f8f38022a059a75e2ae97f2",
+      "snapshot_aggregate_sha256": "a5b2304f0132512a705f4565d683c619ffadfdd29085e8b0b5ba2110142b08aa"
+    }
+  }
+}

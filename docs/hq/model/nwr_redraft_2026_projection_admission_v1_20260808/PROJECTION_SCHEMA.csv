@@ -1,0 +1,34 @@
+column,contract,meaning
+player_id,required,Exact governed stable identity
+player_name,required,Display name
+position,required,QB/RB/WR/TE/K/DST
+team,required operationally,Current team
+season,required,Must equal active profile season
+source_status,required,Only GOVERNED is admitted
+evidence_status,required,AVAILABLE or ADMITTED_CURRENT_SEASON
+source_as_of,required operationally,ISO date within 30 days
+rookie,optional,Confidence/review flag
+games,optional numeric,Scored or confidence component
+passing_yards,optional numeric,Scored or confidence component
+passing_tds,optional numeric,Scored or confidence component
+interceptions,optional numeric,Scored or confidence component
+rushing_yards,optional numeric,Scored or confidence component
+rushing_tds,optional numeric,Scored or confidence component
+receiving_yards,optional numeric,Scored or confidence component
+receptions,optional numeric,Scored or confidence component
+receiving_tds,optional numeric,Scored or confidence component
+passing_first_downs,optional numeric,Scored or confidence component
+rushing_first_downs,optional numeric,Scored or confidence component
+receiving_first_downs,optional numeric,Scored or confidence component
+return_yards,optional numeric,Scored or confidence component
+return_tds,optional numeric,Scored or confidence component
+fumbles_lost,optional numeric,Scored or confidence component
+passing_300_games,optional numeric,Scored or confidence component
+rushing_100_games,optional numeric,Scored or confidence component
+receiving_100_games,optional numeric,Scored or confidence component
+projected_points_override,optional numeric,Scored or confidence component
+projection_low,optional numeric,Scored or confidence component
+projection_high,optional numeric,Scored or confidence component
+availability_probability,optional numeric,Scored or confidence component
+attempts/completions/carries/targets,provenance only,Not scored by Redraft V1
+K/DST,conditional,Requires governed projected_points_override
