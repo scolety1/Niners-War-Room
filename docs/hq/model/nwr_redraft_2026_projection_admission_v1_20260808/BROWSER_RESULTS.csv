@@ -12,3 +12,4 @@ viewport,scope,status,evidence
 768x1024,Trading Lab regression,PASS,"Route loaded with one H1 and zero root overflow"
 768x1024,Personal Workspace regression,PASS,"Route loaded with one H1 and zero root overflow"
 all,Console and cleanup,PASS,"Zero warning/error console entries; disposable profiles deleted; validation server stopped"
+stable,Post-adoption stable,PASS,"Dynasty landing page retained; governed Redraft route loaded; Standard and Superflex switched with 530 ranks; zero console errors; disposable profiles removed; server stopped"

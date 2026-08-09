@@ -17,10 +17,13 @@
   context, Draft Cockpit Redraft context, and five dynasty regression routes passed
 - Browser diagnostics: zero console warnings/errors, zero root overflow, no traceback or Page Not
   Found; no draft pick was assigned and disposable profile state was removed
-- Focused owner-finalization tests: 3 passed
-- Admitted-validator callable test: 1 passed
-- Prior Redraft model/engine/page focused tests: 24 passed
+- Independent focused suite: 73 passed
 - Repository-wide suite: the prior bounded run produced no final result after timing out at 304
   seconds; the focused admission and product gates are the authoritative bounded verification here
 - Scheduler: `NWR DynastyProcess Market Baseline Refresh` remains disabled
-- Independent fresh-HQ adoption: required next; HQ/stable not yet changed by this packet commit
+- Independent fresh-HQ adoption: PASS; no remaining High or Medium defect
+- Stable governed install: PASS; manifest binds the governed snapshot and owner receipt
+- Stable presets: four of four ready with 530 veteran rows each; settings checks 5/5
+- Stable browser: Dynasty default retained; Redraft route, Standard/Superflex activation and
+  switching, 530-row rankings, and disposable-profile cleanup passed with zero console errors
+- HQ/stable promotion: normal non-force HQ push followed by clean stable fast-forward

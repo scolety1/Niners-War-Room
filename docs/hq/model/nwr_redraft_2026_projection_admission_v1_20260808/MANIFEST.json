@@ -1,6 +1,6 @@
 {
   "approved_candidate_sha256": "94306d2934f6eb3ee6d1f4c2ee41428c84f8479fbea68c736ebd16c3c7780837",
-  "generated_at_utc": "2026-08-09T06:16:06Z",
+  "generated_at_utc": "2026-08-09T06:49:00Z",
   "governed_projection_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
   "packet": "nwr_redraft_2026_projection_admission_v1_20260808",
   "required_files": [
@@ -40,6 +40,6 @@
     "PROJECTION_SCHEMA.csv"
   ],
   "schema_version": 2,
-  "status": "OWNER_APPROVED_ADMITTED_PRODUCTION_VALIDATED",
-  "verdict": "GREEN_NWR_REDRAFT_2026_PROJECTIONS_VALIDATED_READY_FOR_HQ_REVIEW"
+  "status": "OWNER_APPROVED_ADMITTED_PRODUCTION_CANONICALIZED",
+  "verdict": "GREEN_NWR_REDRAFT_2026_PROJECTIONS_ADMITTED_ENGINE_CANONICALIZED"
 }
