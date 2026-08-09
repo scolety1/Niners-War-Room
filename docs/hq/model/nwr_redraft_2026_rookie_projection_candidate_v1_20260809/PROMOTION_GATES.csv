@@ -1,9 +1,10 @@
 gate,status,evidence
 historical_exact_identity_coverage_gte_98pct,PASS,coverage=0.9946
 walk_forward_training_precedes_target,PASS,every prediction has training_max_season < target season
-selected_model_beats_position_median_overall,PASS,mean season lift=12.1840
-selected_model_beats_position_median_each_position,PASS,QB=24.0691; RB=11.2553; TE=5.8369; WR=11.2029
+selected_model_beats_position_median_overall,PASS,mean season lift=12.1861
+selected_model_beats_position_median_each_position,PASS,QB=24.0820; RB=11.2553; TE=5.8369; WR=11.2029
 current_identity_and_role_gate,PASS,eligible=78 blocked=2
 projection_numeric_nonnegative,PASS,all granular projection values are finite and nonnegative
+projection_score_and_bounds_coherent,PASS,half-PPR central scores are nonnegative and contained by low/high bounds
 rookie_layer_not_governed_or_installed,PASS,candidate remains review-only pending exact SHA owner approval
 k_dst_blocked,PASS,candidate positions limited to QB/RB/WR/TE

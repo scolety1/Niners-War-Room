@@ -408,6 +408,20 @@ def promotion_gates(
         ),
         "all granular projection values are finite and nonnegative",
     )
+    projected_points = candidate.projections.apply(score_half_ppr, axis=1)
+    coherent_bounds = (
+        projected_points.ge(0)
+        & candidate.projections["projection_low"].le(projected_points)
+        & candidate.projections["projection_high"].ge(projected_points)
+        & candidate.projections["projection_low"].le(
+            candidate.projections["projection_high"]
+        )
+    )
+    add(
+        "projection_score_and_bounds_coherent",
+        bool(coherent_bounds.all()),
+        "half-PPR central scores are nonnegative and contained by low/high bounds",
+    )
     add(
         "rookie_layer_not_governed_or_installed",
         candidate.projections["source_status"].eq("GOVERNANCE_PENDING").all(),
@@ -488,6 +502,18 @@ def _median_stats(frame: pd.DataFrame) -> dict[str, float]:
         row["return_tds"] = 0.0
     if row["attempts"] + row["carries"] + row["targets"] + row["return_yards"] <= 0:
         row["fumbles_lost"] = 0.0
+    # Component medians can also combine low positive production with a higher median turnover
+    # count and yield a negative central season score. Preserve the median turnover mix while
+    # scaling it only as far as the deterministic half-PPR line can support.
+    penalty_free = dict(row)
+    penalty_free["interceptions"] = 0.0
+    penalty_free["fumbles_lost"] = 0.0
+    turnover_budget = max(0.0, score_half_ppr(penalty_free) / 2.0)
+    turnovers = row["interceptions"] + row["fumbles_lost"]
+    if turnovers > turnover_budget and turnovers > 0:
+        scale = turnover_budget / turnovers
+        row["interceptions"] = round(row["interceptions"] * scale, 4)
+        row["fumbles_lost"] = round(row["fumbles_lost"] * scale, 4)
     return row
 
 

@@ -9,6 +9,6 @@ rows. Historical exact identity coverage is
 or authorized for real-draft use until the NWR Owner approves its exact SHA and an independent
 combined-board review passes.
 
-Rookie candidate SHA-256: `fbc0d1378a738e3f8935360f37c96f7aee9138c42161ab50f4a0e5003e8e2f11`
+Rookie candidate SHA-256: `c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc`
 
-Combined 530-veteran + 78-rookie review candidate SHA-256: `29e81531d57dad7a7ba4baf15ee83ea0b7b1b6104cf2df8a86c4873e870c255e`
+Combined 530-veteran + 78-rookie review candidate SHA-256: `218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f`

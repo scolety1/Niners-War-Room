@@ -7,6 +7,8 @@ rookie-year stat component among earlier drafted players at the same position
 and draft round. A position-only fallback is allowed only when fewer than eight
 earlier same-round rows exist. All drafted players with exact identity remain in
 historical outcomes; absence of a REG stat row is explicitly zero.
+Component constraints preserve valid opportunity relationships and prevent a
+component-wise turnover median from making the central half-PPR line negative.
 
 The 2016-2025 validation is strict walk-forward by draft class. The target class
 and every future
@@ -14,7 +16,7 @@ class are absent from training. The baseline is a position-only component median
 
 | Position | Rows | Model MAE | Baseline MAE | Lift | Spearman |
 |---|---:|---:|---:|---:|---:|
-| QB | 119 | 41.6453 | 65.7144 | 24.0691 | 0.5466 |
+| QB | 119 | 41.6324 | 65.7144 | 24.0820 | 0.5534 |
 | RB | 215 | 42.5874 | 53.8427 | 11.2553 | 0.5457 |
 | TE | 141 | 25.8482 | 31.6851 | 5.8369 | 0.5115 |
 | WR | 321 | 33.1495 | 44.3524 | 11.2029 | 0.5812 |

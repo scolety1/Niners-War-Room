@@ -226,7 +226,8 @@ def build_packet(
             "k_dst_projected": False,
         },
     )
-    (output_directory / "FRESHNESS_AND_ROLE_EVIDENCE.md").write_text(
+    _write_text(
+        output_directory / "FRESHNESS_AND_ROLE_EVIDENCE.md",
         """# Freshness and current role evidence
 
 The public nflverse draft, player registry, and historical stat snapshots were retrieved at
@@ -238,9 +239,9 @@ does not invent one. Current factual use is limited to exact GSIS identity, regi
 latest team, 2026 rookie classification, and ACT/RES status. Draft position/current-position
 conflicts are blocked.
 """,
-        encoding="utf-8",
     )
-    (output_directory / "COMBINED_BOARD_REVIEW.md").write_text(
+    _write_text(
+        output_directory / "COMBINED_BOARD_REVIEW.md",
         f"""# Combined board review
 
 The review-only combined frame contains 530 approved veterans plus {len(rookie_candidate)} rookie
@@ -260,7 +261,6 @@ FLEX lowers WR replacement. Each preset contains 78 rookies, no duplicate IDs, a
 These rankings are research-only. They do not admit the rookie source or make the product ready for
 real-draft use. Exact-SHA owner approval and independent fresh-HQ review remain required.
 """,
-        encoding="utf-8",
     )
     _write_documents(
         output_directory,
@@ -598,6 +598,13 @@ def _source_evidence(
     stats_directory: Path,
     veteran_path: Path,
 ) -> pd.DataFrame:
+    draft_source = _snapshot_receipts(draft_path.parent.parent, [draft_path])
+    player_source = _snapshot_receipts(players_path.parent.parent, [players_path])
+    stat_paths = [
+        stats_directory / f"player_stats_seasonal_{season}.parquet"
+        for season in HISTORICAL_SEASONS
+    ]
+    stats_source = _snapshot_receipts(stats_directory.parent, stat_paths)
     rows = [
         {
             "purpose": "historical and 2026 draft-day facts",
@@ -609,6 +616,7 @@ def _source_evidence(
             ),
             "excluded_fields": "all career outcome columns in draft_picks",
             "source_status": "PUBLIC_LOCAL_SNAPSHOT",
+            **draft_source,
         },
         {
             "purpose": "exact identity and current factual team/status/position",
@@ -620,6 +628,7 @@ def _source_evidence(
             ),
             "excluded_fields": "all ranking or projection fields (none present)",
             "source_status": "PUBLIC_LOCAL_SNAPSHOT",
+            **player_source,
         },
         {
             "purpose": "immutable approved 530-veteran merge input",
@@ -628,6 +637,7 @@ def _source_evidence(
             "admitted_fields": "entire exact approved projection frame",
             "excluded_fields": "none",
             "source_status": "OWNER_GOVERNED",
+            **_empty_snapshot_receipts(),
         },
     ]
     for season in HISTORICAL_SEASONS:
@@ -640,9 +650,64 @@ def _source_evidence(
                 "admitted_fields": "identity plus granular QB/RB/WR/TE scoring components",
                 "excluded_fields": "future seasons; non-REG rows; non-model columns",
                 "source_status": "PUBLIC_LOCAL_SNAPSHOT",
+                **stats_source,
             }
         )
     return pd.DataFrame(rows)
+
+
+def _snapshot_receipts(
+    snapshot_directory: Path, required_assets: list[Path]
+) -> dict[str, object]:
+    completion_path = snapshot_directory / "COMPLETION_MANIFEST.json"
+    license_path = snapshot_directory / "LICENSE_TERMS_RECEIPT.json"
+    completion = json.loads(completion_path.read_text(encoding="utf-8"))
+    license_receipt = json.loads(license_path.read_text(encoding="utf-8"))
+    if not bool(completion.get("complete")) or not bool(completion.get("immutable")):
+        raise ValueError(f"Source snapshot is not complete and immutable: {snapshot_directory}")
+    if completion.get("admission_status") != "ADMITTED_PRIMARY_SOURCE":
+        raise ValueError(f"Source snapshot is not admitted: {snapshot_directory}")
+    if license_receipt.get("review_result") != "TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION":
+        raise ValueError(f"Source license terms are not admitted: {snapshot_directory}")
+    if completion.get("license_spdx") != license_receipt.get("license_spdx"):
+        raise ValueError(f"Source license receipts disagree: {snapshot_directory}")
+    manifest_assets = {
+        str(asset.get("relative_path", "")).replace("\\", "/"): asset
+        for asset in completion.get("assets", [])
+    }
+    for asset_path in required_assets:
+        relative_path = asset_path.relative_to(snapshot_directory).as_posix()
+        asset_receipt = manifest_assets.get(relative_path)
+        if not asset_receipt:
+            raise ValueError(f"Source asset is absent from its manifest: {asset_path}")
+        observed_sha = sha256(asset_path)
+        if asset_receipt.get("sha256") != observed_sha:
+            raise ValueError(f"Source asset hash does not match its manifest: {asset_path}")
+    return {
+        "snapshot_id": completion.get("snapshot_id", ""),
+        "retrieved_at_utc": completion.get("retrieved_at_utc", ""),
+        "completion_manifest_path": str(completion_path),
+        "completion_manifest_sha256": sha256(completion_path),
+        "license_spdx": license_receipt.get("license_spdx", ""),
+        "license_url": license_receipt.get("license_url", ""),
+        "license_review_result": license_receipt.get("review_result", ""),
+        "license_receipt_path": str(license_path),
+        "license_receipt_sha256": sha256(license_path),
+    }
+
+
+def _empty_snapshot_receipts() -> dict[str, str]:
+    return {
+        "snapshot_id": "",
+        "retrieved_at_utc": "",
+        "completion_manifest_path": "",
+        "completion_manifest_sha256": "",
+        "license_spdx": "",
+        "license_url": "",
+        "license_review_result": "",
+        "license_receipt_path": "",
+        "license_receipt_sha256": "",
+    }
 
 
 def _write_documents(
@@ -668,6 +733,8 @@ def _write_documents(
         "and draft round. A position-only fallback is allowed only when fewer than eight",
         "earlier same-round rows exist. All drafted players with exact identity remain in",
         "historical outcomes; absence of a REG stat row is explicitly zero.",
+        "Component constraints preserve valid opportunity relationships and prevent a",
+        "component-wise turnover median from making the central half-PPR line negative.",
         "",
         "The 2016-2025 validation is strict walk-forward by draft class. The target class",
         "and every future",
@@ -695,7 +762,7 @@ def _write_documents(
             "absolute-error p80. This is intentionally simple and auditable.",
         ]
     )
-    (output / "MODEL_REPORT.md").write_text("\n".join(model_lines) + "\n", encoding="utf-8")
+    _write_text(output / "MODEL_REPORT.md", "\n".join(model_lines) + "\n")
 
     verdict = f"""# Executive verdict
 
@@ -712,7 +779,7 @@ Rookie candidate SHA-256: `{rookie_sha}`
 
 Combined 530-veteran + {rookie_rows}-rookie review candidate SHA-256: `{combined_sha}`
 """
-    (output / "EXECUTIVE_VERDICT.md").write_text(verdict, encoding="utf-8")
+    _write_text(output / "EXECUTIVE_VERDICT.md", verdict)
 
     governance = f"""# Governance boundary and next action
 
@@ -732,7 +799,7 @@ Required next steps:
 4. Obtain an independent fresh-HQ review of the governed combined board.
 5. Keep real-draft readiness blocked unless every combined-board gate passes.
 """
-    (output / "GOVERNANCE_AND_NEXT_ACTION.md").write_text(governance, encoding="utf-8")
+    _write_text(output / "GOVERNANCE_AND_NEXT_ACTION.md", governance)
 
     preservation = """# Preservation receipt
 
@@ -745,7 +812,7 @@ Required next steps:
 - Provider/API calls or scraping performed: no.
 - Rookie candidate installed: no.
 """
-    (output / "PRESERVATION_RECEIPT.md").write_text(preservation, encoding="utf-8")
+    _write_text(output / "PRESERVATION_RECEIPT.md", preservation)
 
 
 def sha256(path: Path) -> str:
@@ -757,7 +824,11 @@ def sha256(path: Path) -> str:
 
 
 def _write_json(path: Path, value: object) -> None:
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _write_text(path, json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def _write_text(path: Path, value: str) -> None:
+    path.write_text(value, encoding="utf-8", newline="\n")
 
 
 def main() -> None:

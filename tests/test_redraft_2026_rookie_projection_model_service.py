@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
 import pandas as pd
 
 from src.services.redraft_2026_rookie_projection_model_service import (
@@ -8,6 +11,7 @@ from src.services.redraft_2026_rookie_projection_model_service import (
     attach_exact_identities,
     build_current_rookie_candidate,
     normalize_name,
+    score_half_ppr,
     temporal_backtest,
     uncertainty_from_predictions,
 )
@@ -147,3 +151,43 @@ def test_uncertainty_and_aggregate_are_position_specific() -> None:
     assert set(uncertainty) == {"RB"}
     assert uncertainty["RB"] >= 0
     assert aggregate.iloc[0]["position"] == "RB"
+
+
+def test_committed_rookie_packet_manifest_matches_exact_bytes() -> None:
+    packet = Path(
+        "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    )
+    manifest = pd.read_csv(packet / "MANIFEST.csv")
+    observed = {
+        row.file: hashlib.sha256((packet / row.file).read_bytes()).hexdigest()
+        for row in manifest.itertuples()
+    }
+    expected = dict(zip(manifest["file"], manifest["sha256"], strict=True))
+    assert observed == expected
+
+
+def test_public_rookie_sources_pin_admitted_license_and_snapshot_receipts() -> None:
+    packet = Path(
+        "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    )
+    sources = pd.read_csv(packet / "SOURCE_EVIDENCE.csv").fillna("")
+    public = sources[sources["source_status"].eq("PUBLIC_LOCAL_SNAPSHOT")]
+    assert public["snapshot_id"].ne("").all()
+    assert public["retrieved_at_utc"].eq("2026-07-30T07:24:07Z").all()
+    assert public["completion_manifest_sha256"].str.fullmatch(r"[0-9a-f]{64}").all()
+    assert public["license_spdx"].eq("CC-BY-4.0").all()
+    assert public["license_review_result"].eq(
+        "TERMS_ACCEPTED_FOR_RESEARCH_WITH_ATTRIBUTION"
+    ).all()
+    assert public["license_receipt_sha256"].str.fullmatch(r"[0-9a-f]{64}").all()
+
+
+def test_committed_rookie_scores_are_nonnegative_and_inside_bounds() -> None:
+    packet = Path(
+        "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    )
+    candidates = pd.read_csv(packet / "ROOKIE_PROJECTION_CANDIDATE.csv")
+    central = candidates.apply(score_half_ppr, axis=1)
+    assert central.ge(0).all()
+    assert candidates["projection_low"].le(central).all()
+    assert candidates["projection_high"].ge(central).all()

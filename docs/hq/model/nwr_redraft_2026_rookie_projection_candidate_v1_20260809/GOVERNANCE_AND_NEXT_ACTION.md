@@ -9,7 +9,7 @@ changes.
 
 Required next steps:
 
-1. NWR Owner reviews and approves the exact rookie candidate SHA-256 `fbc0d1378a738e3f8935360f37c96f7aee9138c42161ab50f4a0e5003e8e2f11`.
+1. NWR Owner reviews and approves the exact rookie candidate SHA-256 `c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc`.
 2. Only after that approval, mark an exact copy governed and build governed combined preset
    rankings.
 3. Run the four preset rankings, profile sensitivity checks, focused tests, and browser checks.
