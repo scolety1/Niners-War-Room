@@ -1,0 +1,28 @@
+route,viewport,result,notes
+/redraft,375x812,PASS,One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified.
+/player-compare,375x812,PASS_SOURCE_BLOCKED,One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows.
+/draft-cockpit,375x812,PASS,One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked.
+/rankings,375x812,PASS,One semantic h1; no root overflow or traceback.
+/unified-universe-review,375x812,PASS,One semantic h1; no root overflow or traceback.
+/rookie-board,375x812,PASS,One semantic h1; no root overflow or traceback.
+/trading-lab,375x812,PASS,One semantic h1; no root overflow or traceback.
+/personal-board,375x812,PASS,One semantic h1; no root overflow or traceback.
+/settings-data-health,375x812,PASS,One semantic h1; no root overflow or traceback.
+/redraft,768x1024,PASS,One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified.
+/player-compare,768x1024,PASS_SOURCE_BLOCKED,One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows.
+/draft-cockpit,768x1024,PASS,One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked.
+/rankings,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/unified-universe-review,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/rookie-board,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/trading-lab,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/personal-board,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/settings-data-health,768x1024,PASS,One semantic h1; no root overflow or traceback.
+/redraft,1440x1000,PASS,One semantic h1; no root overflow or traceback after warm-up; independent approval receipt intake and blocked rankings verified.
+/player-compare,1440x1000,PASS_SOURCE_BLOCKED,One semantic h1; no root overflow or traceback; clean worktree lacked Finished V1 local rows.
+/draft-cockpit,1440x1000,PASS,One semantic h1; no root overflow or traceback; additive redraft rail remained source-blocked.
+/rankings,1440x1000,PASS,One semantic h1; no root overflow or traceback.
+/unified-universe-review,1440x1000,PASS,One semantic h1; no root overflow or traceback.
+/rookie-board,1440x1000,PASS,One semantic h1; no root overflow or traceback.
+/trading-lab,1440x1000,PASS,One semantic h1; no root overflow or traceback.
+/personal-board,1440x1000,PASS,One semantic h1; no root overflow or traceback.
+/settings-data-health,1440x1000,PASS,One semantic h1; no root overflow or traceback.

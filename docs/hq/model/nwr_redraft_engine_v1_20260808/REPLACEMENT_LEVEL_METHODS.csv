@@ -1,0 +1,4 @@
+method,status,description
+starter_cutoff,CHALLENGER,Last required/flex starter baseline.
+expected_available,SELECTED,Best unrostered player after starters and bounded bench simulation.
+midpoint_starter_replacement,CHALLENGER,Unweighted midpoint opportunity-cost baseline.

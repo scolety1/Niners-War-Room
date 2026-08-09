@@ -1,0 +1,9 @@
+source,classification,notes
+Finished V1 player universe,REDRAFT_PRODUCTION_USABLE,Identity/universe only; dynasty rank prohibited.
+Formula Data Mart,REDRAFT_RESEARCH_ONLY,Leakage-safe lagged historical evaluation.
+active-pack win_now_value,REDRAFT_RESEARCH_ONLY,Not points and not profile-sensitive.
+Outcome V3,REDRAFT_RESEARCH_ONLY,Display-only dynasty-horizon context.
+2025 public production,REDRAFT_RESEARCH_ONLY,"Prior outcome, not a 2026 projection."
+governed granular 2026 projections,MISSING,Critical live-ranking blocker.
+Rookie Review long-term rank,BLOCKED,Prohibited as redraft input.
+ADP,NOT_ENOUGH_INFORMATION,Optional context only; no admitted snapshot.

@@ -1,0 +1,7 @@
+test,metric,baseline,changed,delta,expected_direction,result
+1QB_TO_SUPERFLEX,QB10 replacement-adjusted value delta,85.8,163.8,78.0,positive_material,PASS
+NON_PPR_TO_PPR,RB2 vs RB1 projected-points gap delta,24.96,63.29,38.33,positive,PASS
+2WR_TO_3WR,WR replacement points delta,158.5,148.0,-10.5,negative,PASS
+10_TO_14_TEAMS,WR replacement points delta,148.0,106.0,-42.0,negative,PASS
+TE_PREMIUM,TE1 projected points delta,284.42,357.92,73.5,positive,PASS
+EXTRA_FLEX,WR replacement points delta,148.0,137.5,-10.5,non_positive,PASS

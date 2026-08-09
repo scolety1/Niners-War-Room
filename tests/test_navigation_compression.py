@@ -41,6 +41,7 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Personal Board",
         "Decision Journal",
         "Saved Scenarios",
+        "Redraft",
     ]
 
 
@@ -50,7 +51,7 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Draft": ["Draft Cockpit", "Mock Drafts", "Draft Analyzer"],
+        "Draft": ["Draft Cockpit", "Mock Drafts", "Draft Analyzer", "Redraft"],
         "Research": [
             "Dynasty Rankings",
             "Asset Explorer",
@@ -147,7 +148,7 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
 
     assert titles.index("Draft Cockpit") < titles.index("Mock Drafts")
     assert titles.index("Lab Home") < titles.index("Refresh Data")
-    assert titles[-7:] == [
+    assert titles[-8:] == [
         "Refresh Data",
         "Evidence Review",
         "Evidence Review Hub",
@@ -155,6 +156,7 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
         "Personal Board",
         "Decision Journal",
         "Saved Scenarios",
+        "Redraft",
     ]
 
 
@@ -204,6 +206,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "personal-board",
         "decision-journal",
         "saved-scenarios",
+        "redraft",
         "refresh-data",
         "evidence-integration-review",
         "evidence-review-hub",
@@ -250,6 +253,7 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "personal-board",
         "decision-journal",
         "saved-scenarios",
+        "redraft",
     }
     assert {
         "cheat-sheets",

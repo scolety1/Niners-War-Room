@@ -1,0 +1,118 @@
+{
+  "authority": "REDRAFT V1 - REVIEW",
+  "files": [
+    {
+      "bytes": 2689,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/BROWSER_RESULTS.csv",
+      "sha256": "59002484670091c5a846e799dca890e82ac473ffc0e8841d7e7e4653780b9600"
+    },
+    {
+      "bytes": 418,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/DYNASTY_PRESERVATION.md",
+      "sha256": "d241a80a18c4525d0c8cbb0398b53de72d8458488d590f1fd06f334b69aa2830"
+    },
+    {
+      "bytes": 734,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/EXECUTIVE_VERDICT.md",
+      "sha256": "0cd50409d685da90861ab0ea15fbb77501b19a17e6ce753f7f43431774c3059d"
+    },
+    {
+      "bytes": 1547,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/EXTERNAL_RESEARCH.md",
+      "sha256": "813deaa9b9ceeeb4902aef0fe60d1d6e82c99385b6a8862889ae56ccb207ce1d"
+    },
+    {
+      "bytes": 713,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/FILES_CREATED_OR_CHANGED.csv",
+      "sha256": "d3598fd7ad81630c8dd741255428c9edd0562f6fa2866268eb4f0d5a490e810b"
+    },
+    {
+      "bytes": 661,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/HISTORICAL_BACKTEST_FRAME.md",
+      "sha256": "6b73fee3c5470c74aeb8b73848866cc931558a65fedf974f276147f856c07ca3"
+    },
+    {
+      "bytes": 1406,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/INDEPENDENT_ADOPTION_REVIEW.md",
+      "sha256": "53dc18b4aaeae6c0fbdd0cd9b1422159a8226c3be6a0f76e731c0702053e1ab1"
+    },
+    {
+      "bytes": 820,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/LEAGUE_PROFILE_CONTRACT.md",
+      "sha256": "d134421e24b89c027e871d4b5339482ba2949ea6cd834a8f700278cd31d23dec"
+    },
+    {
+      "bytes": 845,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/MODEL_GAUNTLET_RESULTS.csv",
+      "sha256": "4eda285e7e1a6604b834157e3d261b9a493d3991282f7b8a4170fdba9f3df372"
+    },
+    {
+      "bytes": 351,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/NEXT_ACTION.md",
+      "sha256": "95e116cd4e979fcaec44658dc6f507db8d11c84dd451d4ce04fd3c8301a56241"
+    },
+    {
+      "bytes": 1065,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/POSITION_RESULTS.csv",
+      "sha256": "e200e640dd58f654346dc12c5361f3da9302f5db98a660b208920dff6a9ae551"
+    },
+    {
+      "bytes": 582,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/PRODUCT_INTEGRATION.md",
+      "sha256": "20817e694ebaa5f881406fba2964986ea7c4be18ceb7938243d53d653436d7e2"
+    },
+    {
+      "bytes": 1139,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/PROMOTION_GATE_RESULTS.csv",
+      "sha256": "fa09ead41b9919d75cecc43142be0f276063044f8a926d56b4b0f45d834b9bca"
+    },
+    {
+      "bytes": 538,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/REDRAFT_PROBLEM_DEFINITION.md",
+      "sha256": "5705fb853ccddfd8c572cc31b1aa3f8372d2e7cadfeacadc65b666e68632dc4f"
+    },
+    {
+      "bytes": 1048,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/REDRAFT_RANKING_CONTRACT.md",
+      "sha256": "7f2d19c1870cc2cc37fa710eb951130775e98c7d6d5abdac19920b3693d51226"
+    },
+    {
+      "bytes": 272,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/REPLACEMENT_LEVEL_METHODS.csv",
+      "sha256": "9e53c345cde267f896614bd2977804d22320af9c0ea8581818b95abda1cdbeec"
+    },
+    {
+      "bytes": 501,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/ROOKIE_REDRAFT_HANDLING.md",
+      "sha256": "8e02966c8e3d28c3a73b1335f94d7729f2620262c520724bd7e000542db6d17e"
+    },
+    {
+      "bytes": 532,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/SETTINGS_SENSITIVITY.csv",
+      "sha256": "ee0ec7bb5ac3e0482307e9b456287bc322a9233847a8e6b594f97581aa5fb113"
+    },
+    {
+      "bytes": 668,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/SOURCE_ELIGIBILITY.csv",
+      "sha256": "81fc708c4940c985606dc3e3b7dd8920c7cd1a4762b919dec47a84625f45b6c3"
+    },
+    {
+      "bytes": 6096,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/VALIDATION_EXECUTION_RECEIPT.json",
+      "sha256": "8eb115cc594054d0568f43a91e8e11018707f57315fde221d70a93ece56d051c"
+    },
+    {
+      "bytes": 1637,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/VALIDATION_RESULTS.md",
+      "sha256": "3465d9b2ba6b23167d54d509d97ebfa9770bc0c1f4b266cdbcec23743da4efc5"
+    },
+    {
+      "bytes": 1294,
+      "path": "docs/hq/model/nwr_redraft_engine_v1_20260808/WIN_NOW_AUDIT.md",
+      "sha256": "52d2a2e1951313d1900e76c0a40a9a964eb2c6af7fefd0f43d880816000a6d6e"
+    }
+  ],
+  "manifest_self_hash": "excluded",
+  "schema_version": 1,
+  "verdict": "BLOCKED_NWR_REDRAFT_ENGINE_V1_MISSING_CURRENT_SEASON_EVIDENCE"
+}

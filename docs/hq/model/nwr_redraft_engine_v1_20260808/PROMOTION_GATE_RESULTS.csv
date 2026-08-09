@@ -1,0 +1,13 @@
+gate,name,result,evidence
+G1,source authority,FAIL,"No separately approved, SHA-bound granular 2026 projection snapshot discovered."
+G2,no leakage,PASS,Derived from regenerated 13-season lagged N-to-N+1 gauntlet rows.
+G3,scoring correctness,PASS,Derived from source-matched focused execution receipt.
+G4,replacement correctness,PASS,Derived from source-matched focused execution receipt.
+G5,settings sensitivity,PASS,Derived from all six SETTINGS_SENSITIVITY.csv direction checks.
+G6,historical backtest,PASS_LIMITED,Leakage-safe frozen NWR profile only; no PPR target labels.
+G7,positional stability,PASS_REVIEW_ONLY,Position metrics reported; no production promotion.
+G8,rookie handling,PASS,Derived from source-matched focused admission tests.
+G9,uncertainty,PASS,Derived from source-matched focused uncertainty tests.
+G10,league-profile isolation,PASS,Derived from source-matched focused execution receipt.
+G11,dynasty preservation,PASS_REVIEW_ONLY,Derived from recorded stable/operational/scheduler preservation checks.
+G12,product truthfulness,PASS_REVIEW_ONLY,Derived from 27 responsive route checks plus focused fail-closed tests.

@@ -71,6 +71,14 @@ from src.services.post_release_usability_service import (
     initial_save_status,
     perform_workspace_write,
 )
+from src.services.redraft_engine_v1_service import (
+    active_profile,
+    generate_rankings,
+    load_projection_snapshot,
+    player_compare_rows,
+    projection_snapshot_path,
+    redraft_store_root,
+)
 from src.services.unified_research_preview_service import (
     load_unified_research_preview,
     research_context_for_assets,
@@ -535,6 +543,42 @@ def _render_dynasty_context(compare_frame: pd.DataFrame) -> None:
     render_final_board_table(compare_frame, key="player_compare_board")
 
 
+def _render_redraft_context(compare_frame: pd.DataFrame) -> None:
+    st.markdown("## Redraft - Current Season")
+    store = redraft_store_root(REPO_ROOT)
+    profile = active_profile(store)
+    if profile is None:
+        st.warning("No active redraft league profile. Configure one on the Redraft page.")
+        st.markdown("[Open Redraft](/redraft)")
+        return
+    snapshot = load_projection_snapshot(
+        projection_snapshot_path(store, profile.season),
+        season=profile.season,
+        require_manifest=True,
+    )
+    ranking = generate_rankings(profile, snapshot)
+    if not ranking.ready:
+        st.warning(
+            "Redraft comparison is blocked until governed granular current-season "
+            "projections validate. Dynasty comparison remains available and unchanged."
+        )
+        for error in ranking.errors:
+            st.caption(error)
+        return
+    st.info(
+        f"REDRAFT V1 - REVIEW | Active profile: {profile.league_name} | Current-season value only."
+    )
+    st.dataframe(
+        pd.DataFrame(player_compare_rows(ranking, compare_frame.to_dict("records"))),
+        use_container_width=True,
+        hide_index=True,
+    )
+    st.caption(
+        "Redraft rank, projected points, and replacement value use the active league's "
+        "scoring and roster demand. They do not alter dynasty rank or value."
+    )
+
+
 def _render_candidate_context(compare_frame: pd.DataFrame) -> None:
     compare_columns = [
         "cross_asset_candidate_rank",
@@ -954,6 +998,12 @@ if compare_universe.errors:
         st.error(error)
     st.stop()
 _render_player_compare_policy()
+comparison_context = st.radio(
+    "Comparison context",
+    ("DYNASTY - LONG TERM", "REDRAFT - CURRENT SEASON"),
+    horizontal=True,
+    help="The selected context is explicit; redraft never replaces dynasty authority.",
+)
 
 asset_ids = (
     compare_pool["asset_id"].astype(str).tolist() if "asset_id" in compare_pool.columns else []
@@ -1024,6 +1074,8 @@ else:
     extra_players = [names_by_id[asset_id] for asset_id in extra_player_ids]
     render_selected_player_context(player_a, player_b, extra_players)
     _render_source_separated_evidence(compare)
+    if comparison_context == "REDRAFT - CURRENT SEASON":
+        _render_redraft_context(compare)
     st.markdown("## Unified Research Context")
     st.warning(
         "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "

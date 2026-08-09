@@ -133,6 +133,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         file_path="pages/51_saved_scenarios_v1.py",
         url_path="saved-scenarios",
     ),
+    NavigationPageSpec(
+        title="Redraft",
+        file_path="pages/52_redraft_v1.py",
+        url_path="redraft",
+    ),
 )
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
@@ -142,6 +147,7 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]]
             VISIBLE_NAVIGATION_PAGES[0],
             VISIBLE_NAVIGATION_PAGES[1],
             VISIBLE_NAVIGATION_PAGES[7],
+            VISIBLE_NAVIGATION_PAGES[23],
         ),
     ),
     (
