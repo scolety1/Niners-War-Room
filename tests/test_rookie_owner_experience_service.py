@@ -38,10 +38,11 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
 
 def test_rookie_page_puts_warnings_last_and_uses_owner_language() -> None:
     page = (
-        Path(__file__).resolve().parents[1]
-        / "app/pages/48_rookie_board_review_v1.py"
+        Path(__file__).resolve().parents[1] / "app/pages/48_rookie_board_review_v1.py"
     ).read_text(encoding="utf-8")
     assert "Why is this rookie here?" in page
     assert "Rookie draft range" in page
-    assert page.index('"Warnings",') > page.index('"Confidence",')
+    assert "Rookie Tier" in page
+    assert "Warnings and advanced model details" in page
+    assert page.index("Warnings and advanced model details") > page.index('"Confidence",')
     assert "first_round_board_context_review" not in page

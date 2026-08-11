@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from uuid import uuid4
@@ -11,6 +10,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from app.components.owner_mode import decision_cards, owner_intro  # noqa: E402
 from app.components.post_release_status import render_save_status  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
@@ -46,6 +46,18 @@ page_header(
         ("Local backup", "review"),
     ),
 )
+owner_intro(
+    "Pressure-test a move before it becomes a decision.",
+    "Save alternate versions, name the team window, and compare what each option is "
+    "trying to accomplish.",
+)
+decision_cards(
+    (
+        ("Contender swap", "Exchange future value for points or lineup certainty."),
+        ("Rebuild pivot", "Exchange fragile or aging value for a longer runway."),
+        ("Player fork", "Keep two plausible choices separate until the evidence changes."),
+    )
+)
 render_save_status(initial_save_status(saved.status, saved.updated_at_utc))
 
 section_label("Create a what-if scenario")
@@ -60,16 +72,15 @@ with st.form("saved-scenario-create"):
         sorted(assets),
         format_func=lambda key: f"{assets[key]['asset_name']} · {assets[key]['asset_type']}",
     )
-    notes = st.text_area("Your notes", max_chars=20_000)
+    notes = st.text_area("What would make this scenario work?", max_chars=20_000)
     team_window = st.selectbox(
         "Team-window context", ("Contending", "Balanced", "Rebuilding", "Custom/Unspecified")
     )
-    filter_json = st.text_area("Optional filters / queue JSON", value="{}")
     submitted = st.form_submit_button("Save scenario", type="primary")
 
 if submitted:
     try:
-        payload = json.loads(filter_json)
+        payload = {}
         kind_key = {
             "Trade idea": "trading_lab",
             "Player choice": "player_compare",
@@ -93,7 +104,28 @@ if submitted:
         )
         if write_status.state == "Saved":
             st.caption(f"Scenario ID: {write_status.result.record_id}")
-    except (json.JSONDecodeError, WorkspaceValidationError) as exc:
+            current_count = sum(assets[key]["asset_type"] == "Current Player" for key in selected)
+            future_count = len(selected) - current_count
+            if team_window == "Contending":
+                effect = (
+                    f"Composition check: {current_count} current players and {future_count} "
+                    "rookie/pick assets. Test whether the move adds lineup certainty without "
+                    "overpaying in future value."
+                )
+            elif team_window == "Rebuilding":
+                effect = (
+                    f"Composition check: {current_count} current players and {future_count} "
+                    "rookie/pick assets. Test whether the move lengthens the asset window and "
+                    "reduces fragile value."
+                )
+            else:
+                effect = (
+                    f"Composition check: {current_count} current players and {future_count} "
+                    "rookie/pick assets. Compare the exact sides in Analyze Trade before using "
+                    "this scenario as a recommendation."
+                )
+            st.info(effect)
+    except WorkspaceValidationError as exc:
         st.error(f"Scenario blocked: {exc}")
 
 section_label("Saved what-if scenarios")
@@ -102,7 +134,9 @@ st.dataframe(
         {
             "Title": row.get("title"),
             "Type": row.get("scenario_type"),
-            "Assets": ", ".join(row.get("assets", [])),
+            "Assets": ", ".join(
+                assets.get(key, {}).get("asset_name", key) for key in row.get("assets", [])
+            ),
             "Created": row.get("created_at_utc"),
             "Modified": row.get("modified_at_utc"),
             "Source Versions": len(row.get("source_versions", {})),
@@ -118,7 +152,7 @@ st.dataframe(
     use_container_width=True,
 )
 
-with st.expander("Backup and restore dry-run"):
+with st.expander("Advanced workspace backup and restore"):
     if st.button("Create workspace backup"):
         backup = create_workspace_backup()
         st.success(f"Backup created: {backup.path} ({backup.file_count} stores)")

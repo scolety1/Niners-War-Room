@@ -25,6 +25,7 @@ def load_owner_rookie_board(path: str | Path = ROOKIE_BOARD_PATH) -> pd.DataFram
     output["Pos"] = output["position"]
     output["NFL Team"] = output["nfl_team"].replace("", "—")
     output["Rookie draft range"] = output.apply(_draft_range, axis=1)
+    output["Rookie Tier"] = output["overall_review_rank"].map(_rookie_tier)
     output["NFL Draft Capital"] = output.apply(_draft_capital, axis=1)
     output["Board Score"] = output["sprint14e_format_score"].replace("", "—")
     output["Review Score"] = output["final_review_score"].replace("", "—")
@@ -73,6 +74,23 @@ def _draft_range(row: pd.Series) -> str:
     if rank <= 50:
         return "Later-round target"
     return "Watchlist / deep target"
+
+
+def _rookie_tier(value: object) -> str:
+    rank = _integer(value)
+    if rank is None:
+        return "Unranked — evidence gate"
+    if rank <= 4:
+        return "Tier 1 · Cornerstone range"
+    if rank <= 10:
+        return "Tier 2 · First-round target"
+    if rank <= 20:
+        return "Tier 3 · Second-round target"
+    if rank <= 30:
+        return "Tier 4 · Third-round target"
+    if rank <= 50:
+        return "Tier 5 · Later-round swing"
+    return "Tier 6 · Watchlist"
 
 
 def _draft_capital(row: pd.Series) -> str:

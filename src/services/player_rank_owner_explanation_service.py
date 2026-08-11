@@ -50,9 +50,7 @@ def owner_rank_explanation(
             f"with an admitted score of {score}."
         )
     fields = [
-        value
-        for value in _text(row.get("candidate_evidence_fields_used")).split("|")
-        if value
+        value for value in _text(row.get("candidate_evidence_fields_used")).split("|") if value
     ]
     evidence_rows: list[dict[str, str]] = []
     for field in fields:
@@ -70,9 +68,9 @@ def owner_rank_explanation(
             {
                 "Evidence": "Admitted adjustment",
                 "Receipt value": adjustment,
-                "Effect": "HELPED" if _number(adjustment) > 0 else (
-                    "HURT" if _number(adjustment) < 0 else "NEUTRAL"
-                ),
+                "Effect": "HELPED"
+                if _number(adjustment) > 0
+                else ("HURT" if _number(adjustment) < 0 else "NEUTRAL"),
             }
         )
     reasons = _text(row.get("candidate_reason_codes"))
@@ -84,10 +82,38 @@ def owner_rank_explanation(
                 "Effect": "CONTEXT",
             }
         )
-    caveat = owner_caveat_summary(
-        _text(row.get("warning_flags")) or _text(row.get("data_needed"))
-    )
+    caveat = owner_caveat_summary(_text(row.get("warning_flags")) or _text(row.get("data_needed")))
     return summary, pd.DataFrame(evidence_rows), caveat
+
+
+def owner_rank_reason_bullets(row: dict[str, Any], *, limit: int = 5) -> tuple[str, ...]:
+    """Translate admitted score receipts into a short owner explanation."""
+
+    bullets: list[str] = []
+    adjustment = _number(row.get("candidate_adjustment"))
+    if adjustment:
+        direction = "helps" if adjustment > 0 else "holds back"
+        bullets.append(
+            f"The admitted adjustment {direction} this player's board position ({adjustment:+.2f})."
+        )
+    fields = [
+        value for value in _text(row.get("candidate_evidence_fields_used")).split("|") if value
+    ]
+    for field in fields:
+        value = _text(row.get(field))
+        label = FIELD_LABELS.get(field, field.replace("_", " ").title())
+        effect = _effect(field, value).lower()
+        bullets.append(f"{label} is {effect}" + (f" ({value})." if value else "."))
+    reasons = [
+        value.replace("_", " ").strip().capitalize()
+        for value in _text(row.get("candidate_reason_codes")).split("|")
+        if value
+    ]
+    bullets.extend(f"Gate context: {reason}." for reason in reasons)
+    caveat = owner_caveat_summary(_text(row.get("warning_flags")) or _text(row.get("data_needed")))
+    if caveat:
+        bullets.append(f"Watch-out: {caveat}")
+    return tuple(dict.fromkeys(bullets))[:limit]
 
 
 def _effect(field: str, value: str) -> str:

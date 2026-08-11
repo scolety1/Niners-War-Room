@@ -19,6 +19,7 @@ from app.components.draft_day_v1 import (
     render_source_of_truth_badge,
     render_yellow_hold,
 )
+from app.components.owner_mode import owner_intro
 from app.components.post_release_status import render_save_status, render_source_freshness
 from app.components.ui_framework import page_header
 from src.config.settings import get_settings
@@ -150,6 +151,11 @@ page_header(
         ("Exact governed assets", "safe"),
     ),
 )
+owner_intro(
+    "Build the exact deal, then read the football case.",
+    "NWR separates roster fit, team window, market context, and evidence limits before "
+    "giving an advisory lean.",
+)
 render_source_freshness(governed_source_freshness())
 st.info(
     "NWR may prefer a side and recommend accept, reject, or counter. The owner remains the "
@@ -230,6 +236,7 @@ def _load_roster_ownership_audit(
         governed_asset_ids=frozenset(governed_asset_ids),
         owner_team_name="Niners",
     )
+
 
 if trade_path is None or trade_frame.empty:
     render_yellow_hold(
@@ -989,9 +996,7 @@ def _render_trade_decision(team_window: str, roster_audit) -> None:
         st.markdown(f"### {decision.recommendation} — {decision.confidence} confidence")
         st.write(f"**NWR currently prefers: {decision.preferred_side}**")
         st.write(decision.summary)
-        st.caption(
-            f"Analyzing for: {team_window.upper()} · {decision.authority} · Advisory only"
-        )
+        st.caption(f"Analyzing for: {team_window.upper()} · {decision.authority} · Advisory only")
         st.markdown("#### Why")
         for reason in decision.reasons:
             st.write(f"- {reason}")
@@ -1046,9 +1051,7 @@ def _render_trade_decision(team_window: str, roster_audit) -> None:
             st.code(COUNTER_BLOCKED)
     else:
         st.success(f"Counterparty resolved: {ownership.counterparty_team_name}")
-        composition = build_roster_composition(
-            roster_audit, ownership.counterparty_team_id
-        )
+        composition = build_roster_composition(roster_audit, ownership.counterparty_team_id)
         st.caption(
             f"Opponent roster: {composition.player_count} players · "
             f"{composition.pick_count} governed picks · "
@@ -1115,9 +1118,7 @@ def _render_trade_decision(team_window: str, roster_audit) -> None:
     with st.expander("Compare Contending, Balanced, and Rebuilding views"):
         for view in evaluate_team_windows(state, lookup):
             context = next(row for row in view.dimensions if row.code == "D8")
-            st.markdown(
-                f"**{view.team_window}: {view.recommendation} · {view.confidence}**"
-            )
+            st.markdown(f"**{view.team_window}: {view.recommendation} · {view.confidence}**")
             st.write(context.explanation)
             st.caption(" · ".join(context.evidence))
     loaded = st.session_state.get(LOADED_COUNTER_KEY, {})
@@ -1169,9 +1170,7 @@ saved_team_windows = [
     if str(row.get("team_window")) in {"Contending", "Balanced", "Rebuilding"}
 ]
 default_team_window = (
-    max(set(saved_team_windows), key=saved_team_windows.count)
-    if saved_team_windows
-    else "Balanced"
+    max(set(saved_team_windows), key=saved_team_windows.count) if saved_team_windows else "Balanced"
 )
 if TEAM_WINDOW_KEY not in st.session_state:
     st.session_state[TEAM_WINDOW_KEY] = default_team_window

@@ -30,17 +30,27 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
     NavigationPageSpec(
         title="Rankings",
-        file_path="pages/20_final_board_v1.py",
+        file_path="pages/54_owner_rankings_v2.py",
         url_path="rankings",
     ),
     NavigationPageSpec(
-        title="Asset Explorer",
+        title="Market Analysis",
+        file_path="pages/55_market_analysis_v2.py",
+        url_path="market-analysis",
+    ),
+    NavigationPageSpec(
+        title="Why NWR Ranks Them",
+        file_path="pages/56_why_nwr_ranks_them_v2.py",
+        url_path="why-nwr-ranks",
+    ),
+    NavigationPageSpec(
+        title="All Dynasty Assets",
         file_path="pages/47_asset_explorer_v1.py",
         url_path="asset-explorer",
     ),
     NavigationPageSpec(
         title="Compare",
-        file_path="pages/22_player_compare_v1.py",
+        file_path="pages/57_owner_compare_v2.py",
         url_path="player-compare",
     ),
     NavigationPageSpec(
@@ -140,13 +150,23 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
     NavigationPageSpec(
         title="Player Detail",
-        file_path="pages/53_player_detail_v1.py",
+        file_path="pages/58_owner_player_detail_v2.py",
         url_path="player-detail",
     ),
     NavigationPageSpec(
         title="Dynasty Outcomes",
         file_path="pages/26_outcome_columns_v1.py",
         url_path="outcome-columns",
+    ),
+    NavigationPageSpec(
+        title="Rankings Data",
+        file_path="pages/20_final_board_v1.py",
+        url_path="rankings-data",
+    ),
+    NavigationPageSpec(
+        title="Compare Data",
+        file_path="pages/22_player_compare_v1.py",
+        url_path="compare-data",
     ),
 )
 
@@ -157,23 +177,29 @@ def _visible_page(url_path: str) -> NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
     (
-        "Players & Rankings",
+        "Owner Mode",
+        (_visible_page("owner-home"),),
+    ),
+    (
+        "Evaluate Players",
         (
-            _visible_page("owner-home"),
             _visible_page("rankings"),
+            _visible_page("market-analysis"),
+            _visible_page("why-nwr-ranks"),
             _visible_page("rookie-board"),
             _visible_page("player-detail"),
             _visible_page("player-compare"),
+            _visible_page("outcome-columns"),
             _visible_page("asset-explorer"),
-            _visible_page("personal-board"),
         ),
     ),
     (
-        "Trades & Scenarios",
+        "Make Decisions",
         (
             _visible_page("trading-lab"),
             _visible_page("saved-scenarios"),
             _visible_page("decision-journal"),
+            _visible_page("personal-board"),
         ),
     ),
     (
@@ -186,9 +212,8 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]]
         ),
     ),
     (
-        "NWR Analysis",
+        "Team Planning",
         (
-            _visible_page("outcome-columns"),
             _visible_page("roster-weakness-tracker"),
             _visible_page("future-pick-planning"),
             _visible_page("keeper-deadline-prep"),
@@ -197,8 +222,10 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]]
         ),
     ),
     (
-        "Advanced / Research",
+        "Advanced / Data",
         (
+            _visible_page("rankings-data"),
+            _visible_page("compare-data"),
             _visible_page("development-lab"),
             _visible_page("future-tools"),
             _visible_page("evidence-integration-review"),
@@ -225,7 +252,7 @@ DEFAULT_ROOT_PAGE = NavigationPageSpec(
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
         title="Redraft Legacy Route",
-        file_path="pages/52_redraft_v1.py",
+        file_path="pages/59_redraft_launcher.py",
         url_path="redraft",
         visible=False,
     ),
@@ -255,13 +282,13 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
     NavigationPageSpec(
         title="Dynasty Rankings Home",
-        file_path="pages/20_final_board_v1.py",
+        file_path="pages/54_owner_rankings_v2.py",
         url_path="home",
         visible=False,
     ),
     NavigationPageSpec(
         title="Dynasty Rankings URL Alias",
-        file_path="pages/20_final_board_v1.py",
+        file_path="pages/54_owner_rankings_v2.py",
         url_path="draft-day-home",
         visible=False,
     ),
@@ -405,7 +432,7 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
     ),
     NavigationPageSpec(
         title="Player Board Legacy Alias",
-        file_path="pages/20_final_board_v1.py",
+        file_path="pages/54_owner_rankings_v2.py",
         url_path="player-board",
         visible=False,
     ),

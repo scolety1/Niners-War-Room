@@ -128,6 +128,41 @@ def apply_app_shell() -> None:
             font-size: 0.88rem;
             line-height: 1.45;
         }
+        .nwr-owner-hero {
+            background: linear-gradient(135deg, #151b23 0%, #27313d 100%);
+            border-left: 5px solid var(--nwr-accent);
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 1.1rem 1.25rem;
+            margin: 0.25rem 0 1rem 0;
+        }
+        .nwr-owner-hero h2 { color: #ffffff; margin: 0 0 0.35rem 0; }
+        .nwr-owner-hero p { color: #e6e9ed; margin: 0; max-width: 70rem; }
+        .nwr-decision-card {
+            border: 1px solid var(--nwr-line);
+            border-top: 4px solid var(--nwr-accent);
+            border-radius: 9px;
+            background: var(--nwr-panel);
+            padding: 0.85rem 0.95rem;
+            min-height: 8.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .nwr-decision-card h3 { font-size: 1rem; margin: 0 0 0.3rem 0; }
+        .nwr-decision-card p { color: var(--nwr-muted); font-size: 0.88rem; margin: 0; }
+        .nwr-range-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; }
+        .nwr-range-cell {
+            border: 1px solid var(--nwr-line); border-radius: 8px;
+            background: var(--nwr-panel); padding: 0.75rem;
+        }
+        .nwr-range-cell.expected {
+            border-color: var(--nwr-accent);
+            box-shadow: inset 0 3px 0 var(--nwr-accent);
+        }
+        .nwr-range-cell strong { display: block; margin-bottom: 0.25rem; }
+        .nwr-range-cell span { color: var(--nwr-muted); font-size: 0.88rem; }
+        .nwr-market-buy { color: var(--nwr-safe); font-weight: 750; }
+        .nwr-market-sell { color: var(--nwr-blocked); font-weight: 750; }
+        .nwr-market-even { color: var(--nwr-muted); font-weight: 750; }
         .nwr-section-label {
             color: var(--nwr-muted);
             font-size: 0.8rem;
@@ -145,8 +180,12 @@ def apply_app_shell() -> None:
         }
         div[data-testid="stMetric"] label,
         div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+            color: var(--nwr-ink) !important;
             overflow-wrap: anywhere;
             white-space: normal;
+        }
+        div[data-testid="stMetric"] [data-testid="stMetricLabel"] p {
+            color: var(--nwr-muted) !important;
         }
         div[data-testid="stDataFrame"] {
             max-width: 100%;
@@ -194,6 +233,7 @@ def apply_app_shell() -> None:
                 flex: 1 1 100% !important;
                 width: 100% !important;
             }
+            .nwr-range-grid { grid-template-columns: 1fr; }
         }
         </style>
         """,

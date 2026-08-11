@@ -10,6 +10,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from app.components.owner_mode import owner_intro  # noqa: E402
 from app.components.post_release_status import render_save_status  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
@@ -51,6 +52,11 @@ page_header(
         ("Immutable source snapshot", "safe"),
         ("No fabricated result", "review"),
     ),
+)
+owner_intro(
+    "Record what you believed before hindsight changes the story.",
+    "Capture the call, confidence, team window, and expected outcome; schedule the "
+    "moment you want to review it.",
 )
 render_save_status(initial_save_status(journal.status, journal.updated_at_utc))
 

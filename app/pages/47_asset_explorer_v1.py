@@ -10,6 +10,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.owner_mode import owner_intro  # noqa: E402
 from app.components.post_release_status import render_source_freshness  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 from src.services.draft_day_app_v1_service import (  # noqa: E402
@@ -56,8 +57,8 @@ _evidence = compose_owner_asset_evidence(
     outcome_frame=load_outcome_v3_display().frame,
 )
 page_header(
-    "Asset Explorer",
-    eyebrow="Browse every governed dynasty asset",
+    "All Dynasty Assets",
+    eyebrow="Owner Mode · Coverage and research gaps",
     description=(
         "Use this when Rankings does not cover the asset you need. Search veterans, "
         "rookies, blocked prospects, and picks in one catalog while keeping each "
@@ -68,6 +69,11 @@ page_header(
         ("No common scale", "review"),
         ("No recommendation", "safe"),
     ),
+)
+owner_intro(
+    "Know what NWR covers—and what still needs work.",
+    "Browse ranked players, rookies, future picks, personal flags, research coverage, "
+    "and missing-evidence states together.",
 )
 render_source_freshness(governed_source_freshness())
 
@@ -82,9 +88,7 @@ if registry.errors:
 count_items = list(registry.counts.items())
 for start in range(0, len(count_items), 4):
     batch = count_items[start : start + 4]
-    for column, (asset_type, count) in zip(
-        st.columns(len(batch)), batch, strict=True
-    ):
+    for column, (asset_type, count) in zip(st.columns(len(batch)), batch, strict=True):
         column.metric(asset_type, count)
 
 frame = pd.DataFrame(_evidence.rows)
@@ -121,11 +125,16 @@ frame["Notes"] = frame["asset_id"].map(
 )
 frame["Major Caveat"] = frame["raw_caveat_codes"].map(owner_caveat_summary)
 frame["Blocking Context"] = frame["blocking_reason"].map(owner_caveat_summary)
+frame["Research Readiness"] = frame["research_status_owner"].replace("", "No research row")
 section_label("Find an asset")
-controls = st.columns((2, 2, 1))
+controls = st.columns((2, 2, 1, 2))
 query = controls[0].text_input("Search name, team, or ID", placeholder="e.g. Puka, ARI, or 1.03")
 types = controls[1].multiselect("Asset type", list(registry.counts), default=list(registry.counts))
 blocked_only = controls[2].checkbox("Blocked only")
+coverage_filter = controls[3].selectbox(
+    "Coverage",
+    ("All", "Ranked", "Research covered", "Missing research", "Blocked / pending"),
+)
 personal_filters = st.columns(3)
 watchlist_only = personal_filters[0].checkbox("Watchlist only")
 target_only = personal_filters[1].checkbox("Target only")
@@ -146,6 +155,17 @@ if query.strip():
     filtered = filtered[mask]
 if blocked_only:
     filtered = filtered[filtered["asset_type"].eq("Blocked Rookie")]
+if coverage_filter == "Ranked":
+    filtered = filtered[filtered["rank_value"].astype(str).str.strip().ne("")]
+elif coverage_filter == "Research covered":
+    filtered = filtered[filtered["Unified Research Rank"].notna()]
+elif coverage_filter == "Missing research":
+    filtered = filtered[filtered["Unified Research Rank"].isna()]
+elif coverage_filter == "Blocked / pending":
+    filtered = filtered[
+        filtered["blocking_reason"].astype(str).str.strip().ne("")
+        | filtered["asset_type"].eq("Blocked Rookie")
+    ]
 if watchlist_only:
     filtered = filtered[filtered["Watchlist"]]
 if target_only:
@@ -178,23 +198,19 @@ display_columns = [
     "asset_type",
     "position",
     "team",
-    "age",
-    "source_label",
-    "authority_status",
     "rank_label",
     "rank_value",
     "position_rank",
     "tier",
-    "score_label",
-    "score_value",
-    "nwr_dynasty_score",
     "confidence",
-    "market_dp_value",
     "market_dp_rank",
     "market_status",
     "Major Caveat",
     "Blocking Context",
-    "comparison_scope",
+    "Research Readiness",
+    "Unified Research Rank",
+    "Unified Research Tier",
+    "Unified Research Status",
     "My Tier",
     "My Rank",
     "My Tags",
@@ -204,9 +220,6 @@ display_columns = [
     "Notes",
 ]
 if show_research_rank:
-    display_columns.extend(
-        ["Unified Research Rank", "Unified Research Tier", "Unified Research Status"]
-    )
     st.warning(
         "Research Only — Not Production Authority. Calibration is not fully validated; no "
         "fresh mature 5Y rookie cohort exists. Decision support only."
@@ -216,6 +229,25 @@ st.dataframe(
     use_container_width=True,
     hide_index=True,
 )
+with st.expander("Advanced source and score columns", expanded=False):
+    st.dataframe(
+        filtered[
+            [
+                "asset_name",
+                "asset_id",
+                "source_label",
+                "authority_status",
+                "score_label",
+                "score_value",
+                "nwr_dynasty_score",
+                "market_dp_value",
+                "comparison_scope",
+                "Unified Research Status",
+            ]
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
 if not filtered.empty:
     detail_asset = st.selectbox(
         "Open asset detail",

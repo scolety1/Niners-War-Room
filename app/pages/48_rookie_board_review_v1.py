@@ -9,6 +9,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.owner_mode import owner_intro  # noqa: E402
 from app.components.post_release_status import render_source_freshness  # noqa: E402
 from app.components.ui_framework import page_header  # noqa: E402
 from src.services.personal_workspace_service import load_store  # noqa: E402
@@ -31,6 +32,10 @@ page_header(
         ("Review context", "review"),
     ),
 )
+owner_intro(
+    "A rookie draft board you can use on the clock.",
+    "Start with tier and draft range. Open the component receipts only when two rookies are close.",
+)
 render_source_freshness(freshness_for_sources(("Model V4 2026 Rookie Review",)))
 
 rookies = load_owner_rookie_board()
@@ -46,9 +51,7 @@ def _asset_id(row: pd.Series) -> str:
 
 
 rookies["asset_id"] = rookies.apply(_asset_id, axis=1)
-rookies["My Tier"] = rookies["asset_id"].map(
-    lambda key: personal.get(key, {}).get("my_tier", "")
-)
+rookies["My Tier"] = rookies["asset_id"].map(lambda key: personal.get(key, {}).get("my_tier", ""))
 rookies["Watchlist"] = rookies["asset_id"].map(
     lambda key: bool(personal.get(key, {}).get("watchlist"))
 )
@@ -73,22 +76,15 @@ display_columns = [
     "Player",
     "Pos",
     "NFL Team",
+    "Rookie Tier",
     "Rookie draft range",
     "NFL Draft Capital",
-    "college",
     "Board Score",
-    "Review Score",
     "Why this rank",
-    "production_component",
-    "market_share_component",
-    "age_at_draft",
-    "athletic_component",
-    "Authority",
     "My Tier",
     "Watchlist",
     "Confidence",
     "Blocked / pending reason",
-    "Warnings",
 ]
 st.dataframe(filtered[display_columns], hide_index=True, use_container_width=True)
 st.caption(
@@ -101,9 +97,9 @@ selected_name = st.selectbox("Rookie", filtered["player_name"].tolist())
 detail = rookies.loc[rookies["player_name"].eq(selected_name)].iloc[0].to_dict()
 summary = st.columns(4)
 summary[0].metric("Rookie rank", detail["Rank"])
-summary[1].metric("Draft range", detail["Rookie draft range"])
-summary[2].metric("Board Score", detail["Board Score"])
-summary[3].metric("Review Score", detail["Review Score"])
+summary[1].metric("Tier", detail["Rookie Tier"])
+summary[2].metric("Draft range", detail["Rookie draft range"])
+summary[3].metric("Board Score", detail["Board Score"])
 st.write(detail["Why this rank"])
 if detail["Blocked / pending reason"]:
     st.info(detail["Blocked / pending reason"])
@@ -122,6 +118,8 @@ with st.expander("Warnings and advanced model details", expanded=False):
             "board_formula_version": detail.get("board_formula_version", ""),
             "raw_tier": detail.get("tier", ""),
             "raw_warning_codes": detail.get("warning_codes", ""),
+            "review_score": detail.get("Review Score", ""),
+            "authority": detail.get("Authority", ""),
         }
     )
 

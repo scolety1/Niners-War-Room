@@ -21,7 +21,9 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Draft",
         "Mock Drafts",
         "Rankings",
-        "Asset Explorer",
+        "Market Analysis",
+        "Why NWR Ranks Them",
+        "All Dynasty Assets",
         "Compare",
         "Analyze Trade",
         "Rookie Review",
@@ -44,6 +46,8 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Home",
         "Player Detail",
         "Dynasty Outcomes",
+        "Rankings Data",
+        "Compare Data",
     ]
 
 
@@ -53,26 +57,34 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Players & Rankings": [
-            "Home",
+        "Owner Mode": ["Home"],
+        "Evaluate Players": [
             "Rankings",
+            "Market Analysis",
+            "Why NWR Ranks Them",
             "Rookie Review",
             "Player Detail",
             "Compare",
-            "Asset Explorer",
+            "Dynasty Outcomes",
+            "All Dynasty Assets",
+        ],
+        "Make Decisions": [
+            "Analyze Trade",
+            "Scenario Playground",
+            "Decision Tracker",
             "My Board",
         ],
-        "Trades & Scenarios": ["Analyze Trade", "Scenario Playground", "Decision Tracker"],
         "Draft Tools": ["Draft", "Mock Drafts", "Draft Analyzer", "Upcoming Draft Prep"],
-        "NWR Analysis": [
-            "Dynasty Outcomes",
+        "Team Planning": [
             "Roster Weakness Tracker",
             "Future Pick Planning",
             "Keeper Deadline Prep",
             "Drop Deadline Prep",
             "Trade Deadline Prep",
         ],
-        "Advanced / Research": [
+        "Advanced / Data": [
+            "Rankings Data",
+            "Compare Data",
             "Research Tools",
             "Future Tools",
             "Evidence Review",
@@ -151,7 +163,13 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
 
     assert titles.index("Draft") < titles.index("Mock Drafts")
     assert titles.index("Research Tools") < titles.index("Refresh Data")
-    assert titles[-3:] == ["Home", "Player Detail", "Dynasty Outcomes"]
+    assert titles[-5:] == [
+        "Home",
+        "Player Detail",
+        "Dynasty Outcomes",
+        "Rankings Data",
+        "Compare Data",
+    ]
 
 
 def test_default_root_is_separate_from_every_registered_route() -> None:
@@ -208,6 +226,10 @@ def test_required_direct_routes_remain_registered() -> None:
         "unified-universe-review",
         "owner-home",
         "player-detail",
+        "market-analysis",
+        "why-nwr-ranks",
+        "rankings-data",
+        "compare-data",
     }:
         assert route in route_map
 
@@ -219,7 +241,7 @@ def test_rankings_compatibility_route_uses_app_shell() -> None:
     assert "from app.main import main" in rankings_compat
     assert "main()" in rankings_compat
     assert "runpy.run_path" not in rankings_compat
-    assert route_map["player-board"].file_path == "pages/20_final_board_v1.py"
+    assert route_map["player-board"].file_path == "pages/54_owner_rankings_v2.py"
 
 
 def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
@@ -230,6 +252,10 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "draft-cockpit",
         "mock-draft",
         "rankings",
+        "market-analysis",
+        "why-nwr-ranks",
+        "rankings-data",
+        "compare-data",
         "asset-explorer",
         "player-compare",
         "trading-lab",
