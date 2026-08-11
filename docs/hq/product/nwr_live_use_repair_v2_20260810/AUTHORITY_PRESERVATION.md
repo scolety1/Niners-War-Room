@@ -12,4 +12,4 @@ No controlled model or source value changed.
 | Market player context | `ad27e8d98c47b3f5075794f3c5c3a0086feadb8752ad586f710f803b8be070a9` | VALUES UNCHANGED |
 | Market pick context | `563968a876d998062322d1d5dcbfae0254244b721fc639c106b09d282d63dbc0` | VALUES UNCHANGED |
 
-Trading Lab stays `MANUAL_DESCRIPTIVE_ONLY`. The scheduled DynastyProcess refresh remains disabled. The operational checkout and real owner data were not mutated. All persistence/browser acceptance used a disposable test root.
+Trading Lab stays `MANUAL_DESCRIPTIVE_ONLY`. The scheduled DynastyProcess refresh remains disabled, and the operational checkout was not mutated. No pre-existing owner workspace record existed or changed. The final stable replay briefly created one test-only scenario file in the otherwise empty default personal-workspace directory because that store uses `NWR_PERSONAL_WORKSPACE_ROOT`; the exact file was removed immediately and the store was absent at the final gate. Candidate, browser, and adoption persistence used disposable test roots.

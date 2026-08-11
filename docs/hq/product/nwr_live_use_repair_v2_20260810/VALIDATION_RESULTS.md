@@ -9,6 +9,11 @@
 - Formatting, lint, compile, diff check, preservation, and fresh adoption: PASS.
 - First canonical push receipt: `974f163dbad8c323b7ade25d5fe8983f82a8df22..bd3a54f03baf83904cab78fed55c1c8cf68e0580`, normal fast-forward to `origin/work/hq-parallel-control`.
 - Canonical product tree: `5fdad44d772748433318e43a224be4481c51d583`.
+- Stable focused replay: 110 passed in 8.82 seconds.
+- Stable owner workflow replay: PASS exact four assets, no Brock Purdy, useful interpretation, save/reload/reopen, export preparation, and removal propagation; zero errors or exceptions.
+- Stable launcher: healthy after launch from the canonical code, then stopped through verified ownership; port released and ownership state cleared.
+- Existing Streamlit `use_container_width` deprecation messages remain console-only and did not affect rendered acceptance.
+- Cleanup receipt: the stable replay's only saved-scenario file was removed; no pre-existing owner record existed, and the personal scenario store was absent at the final gate.
 
 Focused implementation commit: `10c9d0e6c8c9fd06f5a7b8507c2556a226ee15df`.
 Fresh adoption documentation commit: `bd3a54f03baf83904cab78fed55c1c8cf68e0580`.
