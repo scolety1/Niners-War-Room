@@ -1,0 +1,13 @@
+viewport,surface,heading_visible,exception_count,root_overflow,visual_result
+1440x1000,Rankings,true,0,false,PASS
+1440x1000,Trading Lab,true,0,false,PASS
+1440x1000,Player Detail,true,0,false,PASS
+1440x1000,Player Compare,true,0,false,PASS
+768x1024,Rankings,true,0,false,PASS
+768x1024,Trading Lab,true,0,false,PASS
+768x1024,Player Detail,true,0,false,PASS
+768x1024,Player Compare,true,0,false,PASS
+375x812,Rankings,true,0,false,PASS
+375x812,Trading Lab,true,0,false,PASS_STACKED_CARDS
+375x812,Player Detail,true,0,false,PASS
+375x812,Player Compare,true,0,false,PASS

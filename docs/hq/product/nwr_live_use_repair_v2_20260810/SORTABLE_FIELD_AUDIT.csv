@@ -1,0 +1,14 @@
+field,raw_contract,display_contract,missing_policy,unit_result,browser_result
+Dynasty Rank,numeric,integer,missing_last,PASS,PASS_ASC_DESC
+NWR Dynasty Score,numeric,4_decimals,missing_last,PASS,PASS_ASC_DESC
+Age,numeric,1_decimal,missing_last,PASS,PASS_ASC_DESC
+Position Rank,numeric_suffix,position_prefix_plus_integer,missing_last,PASS,SERVER_SORT_AUDITED
+DP Value,numeric,integer,missing_last,PASS,PASS_ASC_DESC
+DP Rank,numeric,1_decimal,missing_last,PASS,PASS_ASC_DESC
+DP ECR,numeric,1_decimal,missing_last,PASS,PASS_ASC_DESC
+DP Age,numeric,1_decimal,missing_last,PASS,PASS_ASC_DESC
+Market Gap,signed_numeric,1_decimal,missing_last,PASS,PASS_ASC_DESC
+Outcome probabilities,numeric_percent,percent_format,missing_last,PASS,NUMBER_COLUMN_AUDITED
+Candidate Rank,numeric,integer,missing_last,PASS,SHARED_HELPER_AUDITED
+Candidate Value,numeric,decimal,missing_last,PASS,SHARED_HELPER_AUDITED
+Redraft numeric columns,unchanged_numeric,existing_number_format,missing_last,NO_SHARED_REGRESSION,NOT_ON_DYNASTY_ROUTE

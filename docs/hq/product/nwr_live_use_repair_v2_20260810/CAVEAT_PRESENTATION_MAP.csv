@@ -1,0 +1,11 @@
+raw_code,owner_text
+licensed_route_metrics_not_available,Route-level metrics are unavailable.
+missing_lifecycle_or_role_shape_evidence,Role/lifecycle evidence is incomplete.
+missing_or_review_route_target_snap_evidence,"Route, target, or snap evidence is incomplete."
+missing_stats_first_component_evidence,Some production-component evidence is unavailable.
+rb_dynasty_age_curve_after_27_active,RB age-related decline adjustment is active.
+rb_age_window_caution_active,The running back is in an age-window that deserves caution.
+te_upper_band_guard_v2_te_exception_gate_not_met,The tight-end upper-band exception was not supported.
+te_no_premium_age_curve_after_30_active,TE age-related decline adjustment is active.
+one_qb_replacement_level_qb_cap,1QB replacement depth limits QB scarcity value.
+RESEARCH_ONLY_NOT_ADMITTED,Research-only; not admitted to Finished V1.
