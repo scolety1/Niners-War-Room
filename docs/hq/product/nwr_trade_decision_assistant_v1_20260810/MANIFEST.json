@@ -1,0 +1,29 @@
+{
+  "packet": "nwr_trade_decision_assistant_v1_20260810",
+  "authority": "ADVISORY_DECISION_SUPPORT",
+  "verdict": "YELLOW_NWR_TRADE_DECISION_ASSISTANT_NEEDS_TARGETED_REVISION",
+  "owner_case_recommendation": "COUNTER",
+  "owner_case_confidence": "MEDIUM",
+  "roster_state": "PARTIAL_ROSTER_STATE",
+  "counteroffer_state": "BLOCKED_COUNTEROFFERS_NO_ROSTER_OWNERSHIP",
+  "market_as_of": "2026-07-17",
+  "files": [
+    "EXECUTIVE_VERDICT.md",
+    "DECISION_SUPPORT_AUTHORITY.md",
+    "EVIDENCE_HIERARCHY.md",
+    "DECISION_DIMENSIONS.md",
+    "SYNTHESIS_RULES.md",
+    "CONFIDENCE_CONTRACT.md",
+    "COUNTEROFFER_CONTRACT.md",
+    "TEAM_WINDOW_BEHAVIOR.md",
+    "OWNER_TRADE_CASE.md",
+    "DIVERSE_TRADE_CASES.csv",
+    "NEGATION_TESTS.md",
+    "BROWSER_RESULTS.csv",
+    "PRESERVATION.md",
+    "VALIDATION_RESULTS.md",
+    "FILES_CREATED_OR_CHANGED.csv",
+    "NEXT_ACTION.md",
+    "MANIFEST.json"
+  ]
+}

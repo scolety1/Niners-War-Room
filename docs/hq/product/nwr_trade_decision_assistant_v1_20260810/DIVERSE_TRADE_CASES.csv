@@ -1,0 +1,14 @@
+case_id,case,expected_contract,verified
+T1,Clear top-asset advantage,Declared rank-band advantage drives preference,YES
+T2,Depth package vs premium asset,Mixed evidence returns COUNTER or TOO_CLOSE without sum,YES
+T3,Rookie-heavy trade,Rookie evidence stays outside Finished V1 scale,YES
+T4,Future-pick-heavy trade,Round then year with no player-equivalent value,YES
+T5,Aging veterans vs youth,Lifecycle and youth evidence drive D3/D8,YES
+T6,QB-heavy in 1QB,Replacement-limited QB scarcity is discounted,YES
+T7,Contending vs Rebuilding,Only D8 changes and base ranks remain identical,YES
+T8,Blocked prospects,INSUFFICIENT_EVIDENCE and LOW confidence,YES
+T9,Close production trade,TOO_CLOSE with no clear side,YES
+T10,Structurally mixed trade,COUNTER; base engine emits no inferred counters,YES
+R1,Resolved opponent roster,Full opportunity map and exact owned counters,YES
+R2,Split opponent ownership,BLOCKED_COUNTEROFFERS_NO_ROSTER_OWNERSHIP,YES
+

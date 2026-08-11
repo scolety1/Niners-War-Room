@@ -1,0 +1,5 @@
+viewport,instruction,recommendation_visible,confidence_visible,why_visible,uncertainty_visible,what_changes_visible,ownership_state_visible,market_staleness_visible,horizontal_overflow,result
+375x812,Use NWR to decide what to do,YES,YES,YES,YES,YES,YES,YES,NO,PASS
+768x1024,Use NWR to decide what to do,YES,YES,YES,YES,YES,YES,YES,NO,PASS
+1440x1000,Use NWR to decide what to do,YES,YES,YES,YES,YES,YES,YES,NO,PASS
+

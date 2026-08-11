@@ -12,6 +12,7 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from app.components.cache_keys import path_fingerprint
 from app.components.decision_trust_strip import render_decision_trust_strips
 from app.components.draft_day_v1 import (
     render_lane_status_table,
@@ -20,6 +21,7 @@ from app.components.draft_day_v1 import (
 )
 from app.components.post_release_status import render_save_status, render_source_freshness
 from app.components.ui_framework import page_header
+from src.config.settings import get_settings
 from src.services.decision_trust_strip_service import build_decision_trust_strip
 from src.services.draft_day_app_v1_service import (
     display_lane_prop_frame,
@@ -50,6 +52,7 @@ from src.services.outcome_v3_display_service import load_outcome_v3_display
 from src.services.owner_asset_evidence_service import compose_owner_asset_evidence
 from src.services.personal_workspace_service import (
     WorkspaceValidationError,
+    create_decision,
     load_store,
     save_scenario,
 )
@@ -61,6 +64,19 @@ from src.services.post_release_usability_service import (
 from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
     build_trade_brief,
+)
+from src.services.trade_decision_assistant_service import (
+    evaluate_team_windows,
+    evaluate_trade_decision,
+)
+from src.services.trade_roster_negotiation_service import (
+    COUNTER_BLOCKED,
+    audit_roster_ownership,
+    build_market_negotiation_context,
+    build_opponent_opportunity_map,
+    build_roster_composition,
+    generate_roster_aware_counters,
+    resolve_trade_ownership,
 )
 from src.services.trading_lab_nflverse_context_service import (
     display_nflverse_context_rows,
@@ -79,6 +95,9 @@ SESSION_VERSION_KEY = "draft_day_v1_trading_lab_builder_version"
 SESSION_VERSION = 2
 GIVE_WIDGET_KEY = "trading_lab_current_you_give"
 RECEIVE_WIDGET_KEY = "trading_lab_current_you_receive"
+TEAM_WINDOW_KEY = "trading_lab_decision_team_window"
+ORIGINAL_TRADE_KEY = "trading_lab_decision_original_trade"
+LOADED_COUNTER_KEY = "trading_lab_decision_loaded_counter"
 TRADE_AWAY_PLANNER_KEY = "draft_day_v1_trade_away_planner_rows"
 TRADE_FOR_PLANNER_KEY = "draft_day_v1_trade_for_planner_rows"
 TRADE_AWAY_CHECKLIST_KEY = "draft_day_v1_trade_away_checklist"
@@ -122,17 +141,18 @@ page_header(
     "Analyze Trade",
     eyebrow="Draft-Day App V1",
     description=(
-        "Build the two sides, understand what each side offers, then save or export the exact "
-        "current trade."
+        "Build the exact sides, get transparent advisory decision support, and negotiate only "
+        "from governed ownership evidence."
     ),
     status_items=(
-        ("Manual descriptive analysis", "review"),
+        ("Advisory decision support", "review"),
         ("Exact governed assets", "safe"),
     ),
 )
 render_source_freshness(governed_source_freshness())
 st.info(
-    "NWR compares the evidence on each side but does not automatically accept or reject trades."
+    "NWR may prefer a side and recommend accept, reject, or counter. The owner remains the "
+    "decision authority; NWR never executes a trade or creates a hidden package score."
 )
 player_universe_errors = (
     validate_trade_player_universe(dynasty_bundle.frame) if dynasty_bundle.loaded else ()
@@ -196,6 +216,14 @@ lookup = build_registry_trade_item_lookup(owner_evidence.rows)
 counts = source_context_counts(dynasty_bundle.frame, trade_frame, pick_frame, tier_frame)
 nflverse_context = load_trading_lab_nflverse_context_index()
 
+
+@st.cache_data(show_spinner=False)
+def _load_roster_ownership_audit(
+    active_data_pack: str,
+    _fingerprint: tuple[str, int, int, int],
+):
+    return audit_roster_ownership(active_data_pack, owner_team_name="Niners")
+
 if trade_path is None or trade_frame.empty:
     render_yellow_hold(
         "Trading Lab helper context is missing; review is current-player context only."
@@ -227,6 +255,8 @@ def _clear_trade_builder() -> None:
     st.session_state[SESSION_KEY] = clear_trade_state()
     st.session_state[GIVE_WIDGET_KEY] = []
     st.session_state[RECEIVE_WIDGET_KEY] = []
+    st.session_state.pop(ORIGINAL_TRADE_KEY, None)
+    st.session_state.pop(LOADED_COUNTER_KEY, None)
 
 
 def _render_builder(lookup: dict[str, dict[str, object]]) -> None:
@@ -776,6 +806,309 @@ def _download_text(label: str, text: str, filename: str) -> None:
     st.download_button(label, data=text, file_name=filename, mime="text/markdown")
 
 
+def _display_total(value: int | None) -> str:
+    return f"{value:,}" if value is not None else "—"
+
+
+def _render_market_negotiation(market) -> None:
+    st.markdown("### Market negotiation context")
+    st.warning(market.label)
+    columns = st.columns(3)
+    columns[0].metric("You give · covered DP total", _display_total(market.give.displayed_total))
+    columns[1].metric(
+        "You receive · covered DP total",
+        _display_total(market.receive.displayed_total),
+    )
+    columns[2].metric(
+        "Covered market delta",
+        _display_total(market.displayed_delta_receive_minus_give),
+    )
+    st.caption(market.warning)
+    st.caption(
+        "Included — give: "
+        + (", ".join(market.give.included_assets) or "none")
+        + " · receive: "
+        + (", ".join(market.receive.included_assets) or "none")
+    )
+    excluded = (*market.give.excluded_assets, *market.receive.excluded_assets)
+    if excluded:
+        st.caption("Excluded from displayed DP totals: " + ", ".join(excluded))
+
+
+def _receipt_snapshot(asset_ids: list[str]) -> dict[str, dict[str, object]]:
+    return {
+        asset_id: {
+            "asset_type": governed_by_id[asset_id]["asset_type"],
+            "source_label": governed_by_id[asset_id].get("source_label", ""),
+            "authority_status": governed_by_id[asset_id].get("authority_status", ""),
+            "visible_rank": governed_by_id[asset_id].get("rank_value", ""),
+            "visible_score": governed_by_id[asset_id].get("score_value", ""),
+            "source_version": governed.source_hashes,
+        }
+        for asset_id in asset_ids
+    }
+
+
+def _render_decision_receipt(
+    decision,
+    state,
+    selected_counter: str,
+) -> None:
+    with st.expander("Save advisory decision receipt", expanded=False):
+        final_owner_decision = st.selectbox(
+            "Your final decision",
+            ("Undecided", "Accept", "Reject", "Counter", "Wait / get more evidence"),
+            key="trading_lab_owner_final_decision",
+        )
+        notes = st.text_area(
+            "Owner notes",
+            max_chars=20_000,
+            key="trading_lab_decision_receipt_notes",
+        )
+        if st.button("Save Decision Receipt", key="trading_lab_save_decision_receipt"):
+            ids = trade_asset_ids_by_side(state, lookup)
+            asset_ids = [*ids["give"], *ids["get"]]
+            if not ids["give"] or not ids["get"]:
+                st.error("Both exact trade sides are required before saving a receipt.")
+                return
+            advisory = {
+                "authority": decision.authority,
+                "recommendation": decision.recommendation,
+                "preferred_side": decision.preferred_side,
+                "confidence": decision.confidence,
+                "reasons": list(decision.reasons),
+                "main_uncertainty": decision.main_uncertainty,
+                "what_would_change": list(decision.what_would_change),
+                "team_window": decision.team_window,
+            }
+            try:
+                write_status = perform_workspace_write(
+                    lambda: create_decision(
+                        {
+                            "decision_id": f"decision-{uuid4()}",
+                            "decision_type": "trade considered",
+                            "status": "Considered",
+                            "assets": asset_ids,
+                            "source_snapshot": _receipt_snapshot(asset_ids),
+                            "rationale": notes or decision.summary,
+                            "team_window": decision.team_window,
+                            "trade_sides": {
+                                "you_give": ids["give"],
+                                "you_receive": ids["get"],
+                            },
+                            "advisory_decision_support": advisory,
+                            "counter_considered": selected_counter,
+                            "owner_final_decision": final_owner_decision,
+                            "owner_authority_note": (
+                                "NWR output is advisory; the owner remains decision authority."
+                            ),
+                        },
+                        asset_registry={
+                            key: row["asset_type"] for key, row in governed_by_id.items()
+                        },
+                    ),
+                    observer=render_save_status,
+                )
+                if write_status.state == "Saved":
+                    st.caption(f"Receipt ID: {write_status.result.record_id}")
+            except WorkspaceValidationError as exc:
+                st.error(f"Receipt blocked: {exc}")
+
+
+def _load_counter(counter) -> None:
+    if ORIGINAL_TRADE_KEY not in st.session_state:
+        st.session_state[ORIGINAL_TRADE_KEY] = copy_trade_state(st.session_state[SESSION_KEY])
+    next_state = replace_trade_state(list(counter.give), list(counter.receive))
+    st.session_state[SESSION_KEY] = next_state
+    st.session_state[GIVE_WIDGET_KEY] = list(next_state["give"])
+    st.session_state[RECEIVE_WIDGET_KEY] = list(next_state["get"])
+    st.session_state[LOADED_COUNTER_KEY] = {
+        "counter_id": counter.counter_id,
+        "title": counter.title,
+        "changes": list(counter.changes),
+    }
+
+
+def _render_original_vs_counter(current_decision) -> None:
+    original_state = st.session_state.get(ORIGINAL_TRADE_KEY)
+    counter = st.session_state.get(LOADED_COUNTER_KEY)
+    if not isinstance(original_state, dict) or not isinstance(counter, dict):
+        return
+    original_decision = evaluate_trade_decision(
+        copy_trade_state(original_state), lookup, team_window=current_decision.team_window
+    )
+    before = {row.code: row for row in original_decision.dimensions}
+    direction = {
+        "SIDE_A_CLEAR": -2,
+        "SIDE_A_LEAN": -1,
+        "EVEN": 0,
+        "UNKNOWN": 0,
+        "SIDE_B_LEAN": 1,
+        "SIDE_B_CLEAR": 2,
+    }
+    improved = [
+        row.label
+        for row in current_decision.dimensions
+        if direction[row.outcome] > direction[before[row.code].outcome]
+    ]
+    with st.container(border=True):
+        st.markdown("### Original vs loaded counter")
+        st.write(f"Loaded: **{counter.get('title', 'Counter')}**")
+        for change in counter.get("changes", []):
+            st.write(f"- {change}")
+        columns = st.columns(2)
+        columns[0].metric(
+            "Original",
+            f"{original_decision.recommendation} · {original_decision.confidence}",
+        )
+        columns[1].metric(
+            "Loaded counter",
+            f"{current_decision.recommendation} · {current_decision.confidence}",
+        )
+        st.write("Improved dimensions: " + (", ".join(improved) or "none"))
+
+
+def _render_trade_decision(team_window: str, roster_audit) -> None:
+    state = copy_trade_state(st.session_state[SESSION_KEY])
+    rows = trade_item_rows(state, lookup)
+    if rows.empty or not state["give"] or not state["get"]:
+        return
+    decision = evaluate_trade_decision(state, lookup, team_window=team_window)
+    ownership = resolve_trade_ownership(state, lookup, roster_audit)
+    market = build_market_negotiation_context(state, lookup)
+
+    st.markdown("## Trade Decision")
+    with st.container(border=True):
+        st.markdown(f"### {decision.recommendation} — {decision.confidence} confidence")
+        st.write(f"**NWR currently prefers: {decision.preferred_side}**")
+        st.write(decision.summary)
+        st.caption(
+            f"Analyzing for: {team_window.upper()} · {decision.authority} · Advisory only"
+        )
+        st.markdown("#### Why")
+        for reason in decision.reasons:
+            st.write(f"- {reason}")
+        st.markdown("#### Biggest uncertainty")
+        st.write(decision.main_uncertainty)
+        st.markdown("#### What would change the recommendation?")
+        for change in decision.what_would_change:
+            st.write(f"- {change}")
+
+    _render_original_vs_counter(decision)
+    st.markdown("## Roster-aware negotiation")
+    st.caption(
+        f"{ownership.classification} · Owner: {ownership.owner_team_name} "
+        f"({ownership.owner_roster_asset_count} rostered players) · "
+        f"Roster snapshot: {ownership.snapshot_date}"
+    )
+    if ownership.status == COUNTER_BLOCKED:
+        st.error(COUNTER_BLOCKED)
+        st.write(
+            "Specific counters are withheld because the offer does not resolve to one "
+            "governed opponent roster and all future-asset ownership is not proven."
+        )
+        if ownership.candidate_counterparty_teams:
+            st.write(
+                "Incoming player ownership points to: "
+                + ", ".join(ownership.candidate_counterparty_teams)
+            )
+        for conflict in ownership.conflicts:
+            st.write(f"- {conflict}")
+        checks = pd.DataFrame(
+            {
+                "Side": row.side,
+                "Asset": row.asset_name,
+                "Resolved team": row.resolved_team or "Not resolved",
+                "Ownership": row.status,
+            }
+            for row in ownership.checks
+        )
+        st.dataframe(checks, hide_index=True, width="stretch")
+        st.info(
+            "No generic fallback is shown. Update or admit exact current roster and "
+            "2027/2028 pick ownership before NWR names a counter target."
+        )
+    else:
+        st.success(f"Counterparty resolved: {ownership.counterparty_team_name}")
+        composition = build_roster_composition(
+            roster_audit, ownership.counterparty_team_id
+        )
+        st.caption(
+            f"Opponent roster: {composition.player_count} players · "
+            f"{composition.pick_count} governed picks · "
+            + ", ".join(f"{position} {count}" for position, count in composition.position_counts)
+        )
+        opportunities = build_opponent_opportunity_map(
+            roster_audit, ownership, lookup, team_window=team_window
+        )
+        if opportunities:
+            st.markdown("### NWR vs market opportunities")
+            st.dataframe(
+                pd.DataFrame(
+                    {
+                        "Asset": row.asset_name,
+                        "Pos": row.position,
+                        "NWR": row.nwr_band,
+                        "Market": row.market_band,
+                        "Gap": row.gap_interpretation,
+                        "Team fit": row.team_fit,
+                    }
+                    for row in opportunities
+                ),
+                hide_index=True,
+                width="stretch",
+            )
+        counters = generate_roster_aware_counters(
+            state, lookup, roster_audit, ownership, team_window=team_window
+        )
+        st.markdown("### Suggested counters")
+        for index, counter in enumerate(counters, start=1):
+            counter_state = replace_trade_state(list(counter.give), list(counter.receive))
+            counter_decision = evaluate_trade_decision(
+                counter_state, lookup, team_window=team_window
+            )
+            with st.container(border=True):
+                st.markdown(f"#### Counter {index} — {counter.title}")
+                columns = st.columns(2)
+                columns[0].markdown("**You give**")
+                for key in counter.give:
+                    columns[0].write(f"- {lookup[key].get('player')}")
+                columns[1].markdown("**You receive**")
+                for key in counter.receive:
+                    columns[1].write(f"- {lookup[key].get('player')}")
+                st.write(
+                    f"**NWR recommendation:** {counter_decision.recommendation} · "
+                    f"**Confidence:** {counter_decision.confidence}"
+                )
+                st.markdown("**Why this improves your position**")
+                for reason in counter.why_this_helps_me:
+                    st.write(f"- {reason}")
+                st.markdown("**Why they might consider it**")
+                for reason in counter.why_they_might_consider:
+                    st.write(f"- {reason}")
+                st.write(f"**NWR vs market:** {counter.nwr_vs_market_opportunity}")
+                st.write(f"**Main risk:** {counter.main_risk}")
+                if st.button(
+                    "Load this counter",
+                    key=f"trading_lab_load_counter_{counter.counter_id}_{index}",
+                ):
+                    _load_counter(counter)
+                    st.rerun()
+
+    _render_market_negotiation(market)
+    with st.expander("Compare Contending, Balanced, and Rebuilding views"):
+        for view in evaluate_team_windows(state, lookup):
+            context = next(row for row in view.dimensions if row.code == "D8")
+            st.markdown(
+                f"**{view.team_window}: {view.recommendation} · {view.confidence}**"
+            )
+            st.write(context.explanation)
+            st.caption(" · ".join(context.evidence))
+    loaded = st.session_state.get(LOADED_COUNTER_KEY, {})
+    selected_counter = str(loaded.get("title", "")) if isinstance(loaded, dict) else ""
+    _render_decision_receipt(decision, state, selected_counter)
+
+
 personal_store = load_store("personal_board")
 scenario_store = load_store("saved_scenarios")
 personal = {row["asset_id"]: row for row in personal_store.records}
@@ -805,10 +1138,41 @@ if saved_trade_scenarios:
         st.session_state[SESSION_KEY] = restored
         st.session_state[GIVE_WIDGET_KEY] = restored["give"]
         st.session_state[RECEIVE_WIDGET_KEY] = restored["get"]
+        restored_window = str(reopened.get("payload", {}).get("team_window", ""))
+        if restored_window in {"Contending", "Balanced", "Rebuilding"}:
+            st.session_state[TEAM_WINDOW_KEY] = restored_window
+        st.session_state.pop(ORIGINAL_TRADE_KEY, None)
+        st.session_state.pop(LOADED_COUNTER_KEY, None)
 _render_builder(lookup)
 selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
 trade_ids = trade_asset_ids_by_side(st.session_state[SESSION_KEY], lookup)
 exact_ids = [*trade_ids["give"], *trade_ids["get"]]
+saved_team_windows = [
+    str(row.get("team_window"))
+    for row in personal_store.records
+    if str(row.get("team_window")) in {"Contending", "Balanced", "Rebuilding"}
+]
+default_team_window = (
+    max(set(saved_team_windows), key=saved_team_windows.count)
+    if saved_team_windows
+    else "Balanced"
+)
+if TEAM_WINDOW_KEY not in st.session_state:
+    st.session_state[TEAM_WINDOW_KEY] = default_team_window
+team_window = st.selectbox(
+    "Analyze this trade for",
+    ("Contending", "Balanced", "Rebuilding"),
+    key=TEAM_WINDOW_KEY,
+    help=(
+        "This changes only the explicit team-window dimension. Finished V1 ranks and all "
+        "source values remain unchanged."
+    ),
+)
+active_data_pack = get_settings().active_data_pack
+roster_audit = _load_roster_ownership_audit(
+    str(active_data_pack), path_fingerprint(active_data_pack)
+)
+_render_trade_decision(team_window, roster_audit)
 _render_trade_at_a_glance(lookup, personal)
 if not selected_rows.empty:
     _render_trade_interpretation(lookup)
@@ -816,10 +1180,7 @@ if not selected_rows.empty:
 with st.form("save-trading-lab-scenario"):
     scenario_title = st.text_input("Trade scenario title")
     scenario_notes = st.text_area("Your scenario notes", max_chars=20_000)
-    team_window = st.selectbox(
-        "Your team-window context",
-        ("Contending", "Balanced", "Rebuilding", "Custom/Unspecified"),
-    )
+    st.caption(f"Team-window context: {team_window}")
     save_trade_scenario = st.form_submit_button("Save Current Trade")
 if save_trade_scenario and (not trade_ids["give"] or not trade_ids["get"]):
     st.error("Add at least one asset to each side before saving.")
