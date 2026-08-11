@@ -17,12 +17,13 @@ from src.services.draft_day_app_v1_service import (
     resolve_dynasty_rankings_path,
 )
 from src.services.governed_asset_registry_service import load_governed_asset_registry
-from src.services.market_baseline_service import join_market_to_players, load_market_freshness
 from src.services.outcome_v3_calibration_service import POSITION_THRESHOLDS
 from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
     rankings_outcome_v3_rows,
 )
+from src.services.owner_asset_evidence_service import compose_owner_asset_evidence
+from src.services.owner_caveat_presentation_service import owner_caveat_summary
 from src.services.personal_workspace_service import load_store
 from src.services.player_detail_card_service import build_player_detail_card_payload
 from src.services.unified_research_preview_service import load_unified_research_preview
@@ -38,11 +39,17 @@ def _sources():
     dynasty = load_dynasty_rankings()
     research = load_unified_research_preview()
     outcome = load_outcome_v3_display()
-    return registry, dynasty, research, outcome
+    evidence = compose_owner_asset_evidence(
+        registry.rows,
+        dynasty_frame=dynasty.frame,
+        research_frame=research.board,
+        outcome_frame=outcome.frame,
+    )
+    return registry, dynasty, research, outcome, evidence
 
 
-registry, dynasty, research, outcome = _sources()
-rows_by_id = {row["asset_id"]: row for row in registry.rows}
+registry, dynasty, research, outcome, evidence = _sources()
+rows_by_id = evidence.by_id
 asset_ids = sorted(rows_by_id, key=lambda key: (rows_by_id[key]["asset_name"], key))
 requested = str(st.query_params.get("asset", "")).strip()
 default_index = asset_ids.index(requested) if requested in rows_by_id else 0
@@ -70,12 +77,13 @@ st.query_params["asset"] = asset_id
 asset = rows_by_id[asset_id]
 
 st.subheader(asset["asset_name"])
-identity = st.columns(5)
+identity = st.columns(6)
 identity[0].metric("Asset type", asset["asset_type"])
 identity[1].metric("Position", asset["position"] or "—")
 identity[2].metric("Team", asset["team"] or "—")
 identity[3].metric(asset["rank_label"], asset["rank_value"] or "Unranked")
-identity[4].metric("Authority", asset["authority_status"])
+identity[4].metric("Position rank", asset.get("position_rank") or "—")
+identity[5].metric("Authority", asset["authority_status"])
 
 current_row: dict[str, object] | None = None
 if asset_id.startswith("current:") and dynasty.loaded:
@@ -149,30 +157,25 @@ else:
 
 st.markdown("## Market")
 if current_row:
-    try:
-        market_row = join_market_to_players(pd.DataFrame([current_row])).iloc[0]
-        freshness = load_market_freshness()
-        if str(market_row.get("dp_market_rank_1qb", "")).strip():
-            st.dataframe(
-                pd.DataFrame(
-                    [
-                        {
-                            "DP 1QB market rank": market_row.get("dp_market_rank_1qb", ""),
-                            "DP 1QB display value": market_row.get("dp_value_1qb", ""),
-                            "Join": market_row.get("market_join_confidence", ""),
-                            "Evidence date": freshness.get("upstream_scrape_date", ""),
-                            "Artifact status": freshness.get("freshness_status", ""),
-                        }
-                    ]
-                ),
-                hide_index=True,
-                use_container_width=True,
-            )
-            st.caption("External display-only context; never a model input, rank, or trade value.")
-        else:
-            st.caption("Market data unavailable for this asset.")
-    except (OSError, ValueError) as exc:
-        st.caption(f"Market data unavailable. Advanced detail: {exc}")
+    if asset.get("market_dp_value") or asset.get("market_dp_rank"):
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "DP 1QB market rank": asset.get("market_dp_rank", ""),
+                        "DP 1QB display value": asset.get("market_dp_value", ""),
+                        "Join": asset.get("market_join", ""),
+                        "Evidence date": asset.get("market_evidence_date", ""),
+                        "Status": asset.get("market_status", ""),
+                    }
+                ]
+            ),
+            hide_index=True,
+            use_container_width=True,
+        )
+        st.caption("External display-only context; never a model input, rank, or trade value.")
+    else:
+        st.caption("Market data unavailable for this asset.")
 else:
     st.caption("Market evidence is not admitted for this asset type.")
 
@@ -226,7 +229,14 @@ st.dataframe(
 st.link_button("Edit personal context in My Board", "/personal-board")
 
 st.markdown("## Caveats")
-st.write(asset["blocking_reason"] or asset["warnings"] or asset["comparison_scope"])
+st.write(
+    owner_caveat_summary(
+        asset.get("raw_caveat_codes")
+        or asset["blocking_reason"]
+        or asset["warnings"]
+        or asset["comparison_scope"]
+    )
+)
 with st.expander("Advanced Data Details", expanded=False):
     st.write(
         {
@@ -237,5 +247,6 @@ with st.expander("Advanced Data Details", expanded=False):
             "registry_source_hashes": registry.source_hashes,
             "outcome_v3_hash": outcome.source_hash if outcome.loaded else "unavailable",
             "outcome_v3_release": outcome.release_identifier,
+            "raw_caveat_codes": asset.get("raw_caveat_codes", ""),
         }
     )

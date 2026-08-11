@@ -12,9 +12,19 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.post_release_status import render_source_freshness  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
-from src.services.draft_day_app_v1_service import resolve_dynasty_rankings_path  # noqa: E402
+from src.services.draft_day_app_v1_service import (  # noqa: E402
+    load_dynasty_rankings,
+    resolve_dynasty_rankings_path,
+)
 from src.services.governed_asset_registry_service import (  # noqa: E402
     load_governed_asset_registry,
+)
+from src.services.outcome_v3_display_service import load_outcome_v3_display  # noqa: E402
+from src.services.owner_asset_evidence_service import (  # noqa: E402
+    compose_owner_asset_evidence,
+)
+from src.services.owner_caveat_presentation_service import (  # noqa: E402
+    owner_caveat_summary,
 )
 from src.services.personal_workspace_service import load_store  # noqa: E402
 from src.services.post_release_usability_service import governed_source_freshness  # noqa: E402
@@ -38,6 +48,13 @@ def _load_research_preview():
 
 
 registry = _load_registry()
+_research = _load_research_preview()
+_evidence = compose_owner_asset_evidence(
+    registry.rows,
+    dynasty_frame=load_dynasty_rankings().frame,
+    research_frame=_research.board,
+    outcome_frame=load_outcome_v3_display().frame,
+)
 page_header(
     "Asset Explorer",
     eyebrow="Source-separated registry",
@@ -65,8 +82,8 @@ metrics = st.columns(4)
 for column, asset_type in zip(metrics, registry.counts, strict=True):
     column.metric(asset_type, registry.counts[asset_type])
 
-frame = pd.DataFrame(registry.rows)
-rows_by_id = {row["asset_id"]: row for row in registry.rows}
+frame = pd.DataFrame(_evidence.rows)
+rows_by_id = _evidence.by_id
 try:
     research_preview = _load_research_preview()
     research_columns = research_preview.board[
@@ -97,6 +114,8 @@ frame["Avoid"] = frame["asset_id"].map(lambda key: bool(personal.get(key, {}).ge
 frame["Notes"] = frame["asset_id"].map(
     lambda key: "Yes" if personal.get(key, {}).get("notes") else ""
 )
+frame["Major Caveat"] = frame["raw_caveat_codes"].map(owner_caveat_summary)
+frame["Blocking Context"] = frame["blocking_reason"].map(owner_caveat_summary)
 section_label("Find an asset")
 controls = st.columns((2, 2, 1))
 query = controls[0].text_input("Search name, team, or ID", placeholder="e.g. Puka, ARI, or 1.03")
@@ -154,16 +173,22 @@ display_columns = [
     "asset_type",
     "position",
     "team",
+    "age",
     "source_label",
     "authority_status",
     "rank_label",
     "rank_value",
+    "position_rank",
     "tier",
     "score_label",
     "score_value",
+    "nwr_dynasty_score",
     "confidence",
-    "warnings",
-    "blocking_reason",
+    "market_dp_value",
+    "market_dp_rank",
+    "market_status",
+    "Major Caveat",
+    "Blocking Context",
     "comparison_scope",
     "My Tier",
     "My Rank",

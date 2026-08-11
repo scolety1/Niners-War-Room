@@ -26,26 +26,28 @@ from src.services.draft_day_app_v1_service import (
     load_dynasty_rankings,
     load_frozen_board,
     load_lane_prop_file,
+    resolve_dynasty_rankings_path,
 )
 from src.services.draft_day_trade_lab_service import (
     NOT_ENOUGH_INFORMATION,
-    add_trade_item,
     build_registry_trade_item_lookup,
+    build_trade_narrative,
     clear_trade_state,
     copy_trade_state,
-    display_package_summary,
-    display_trade_item_rows,
+    cross_side_duplicates,
     empty_trade_state,
-    package_summary_rows,
-    pick_context_options,
-    player_options,
-    remove_trade_item,
-    review_trade_package,
+    replace_trade_state,
     source_context_counts,
+    trade_asset_ids_by_side,
     trade_item_rows,
     validate_trade_player_universe,
 )
-from src.services.governed_asset_registry_service import load_governed_asset_registry
+from src.services.governed_asset_registry_service import (
+    finished_v1_coverage_counts,
+    load_governed_asset_registry,
+)
+from src.services.outcome_v3_display_service import load_outcome_v3_display
+from src.services.owner_asset_evidence_service import compose_owner_asset_evidence
 from src.services.personal_workspace_service import (
     WorkspaceValidationError,
     load_store,
@@ -70,10 +72,13 @@ from src.services.trading_lab_nflverse_context_service import (
 )
 from src.services.unified_research_preview_service import (
     load_unified_research_preview,
-    research_context_for_assets,
 )
 
 SESSION_KEY = "draft_day_v1_trading_lab_builder"
+SESSION_VERSION_KEY = "draft_day_v1_trading_lab_builder_version"
+SESSION_VERSION = 2
+GIVE_WIDGET_KEY = "trading_lab_current_you_give"
+RECEIVE_WIDGET_KEY = "trading_lab_current_you_receive"
 TRADE_AWAY_PLANNER_KEY = "draft_day_v1_trade_away_planner_rows"
 TRADE_FOR_PLANNER_KEY = "draft_day_v1_trade_for_planner_rows"
 TRADE_AWAY_CHECKLIST_KEY = "draft_day_v1_trade_away_checklist"
@@ -114,36 +119,29 @@ tier_frame, tier_path = load_lane_prop_file("trading_lab", "trade_tier_values.cs
 mock_pick_frame, mock_pick_path = load_lane_prop_file("mock_draft", "mock_pick_context.csv")
 
 page_header(
-    "Trading Lab",
+    "Analyze Trade",
     eyebrow="Draft-Day App V1",
     description=(
-        "Manual trade planning workspace using the governed veteran, rookie, blocked-prospect, "
-        "2026-pick, and future-pick registry. Rank, roster, and pick evidence stays factual and "
-        "source-separated. No package value, offer generation, simulation, private value, or "
-        "final trade advice runs here."
+        "Build the two sides, understand what each side offers, then save or export the exact "
+        "current trade."
     ),
     status_items=(
-        ("Manual review only", "review"),
-        (
-            f"Production current-player source: {dynasty_bundle.row_count}",
-            "safe" if dynasty_bundle.loaded else "blocked",
-        ),
-        ("No trade model added", "safe"),
+        ("Manual descriptive analysis", "review"),
+        ("Exact governed assets", "safe"),
     ),
 )
 render_source_freshness(governed_source_freshness())
-st.caption(
-    "Deep tool: manual trade review. Display-only context is not a trade model, rank input, "
-    "or source of truth. No trade calculator or automatic offer generator runs here."
+st.info(
+    "NWR compares the evidence on each side but does not automatically accept or reject trades."
 )
 player_universe_errors = (
     validate_trade_player_universe(dynasty_bundle.frame) if dynasty_bundle.loaded else ()
 )
 if dynasty_bundle.loaded and not player_universe_errors:
-    st.info(
-        "Current player universe: Full Dynasty Rankings | GREEN | "
-        f"{dynasty_bundle.row_count} rows | {dynasty_bundle.source_label} | "
-        f"SHA-256 {dynasty_bundle.source_hash}."
+    _coverage = finished_v1_coverage_counts(dynasty_bundle.frame)
+    st.caption(
+        f"{_coverage['ranked_skill_players']} production-ranked players · "
+        f"{_coverage['unranked_kickers']} structural kickers outside ranking coverage"
     )
 else:
     st.error(
@@ -160,25 +158,41 @@ else:
 
 for warning in dynasty_bundle.warnings:
     st.warning(warning)
-render_source_of_truth_badge(frozen_bundle)
-st.caption(
-    "Frozen Final Draft Board V1 is draft/pick context only and does not supply selectable "
-    "Trading Lab players."
-)
 
-if SESSION_KEY not in st.session_state:
+if st.session_state.get(SESSION_VERSION_KEY) != SESSION_VERSION:
+    st.session_state[SESSION_KEY] = empty_trade_state()
+    st.session_state[SESSION_VERSION_KEY] = SESSION_VERSION
+    st.session_state.pop(GIVE_WIDGET_KEY, None)
+    st.session_state.pop(RECEIVE_WIDGET_KEY, None)
+elif SESSION_KEY not in st.session_state:
     st.session_state[SESSION_KEY] = empty_trade_state()
 st.session_state[SESSION_KEY] = copy_trade_state(st.session_state[SESSION_KEY])
 
-governed = load_governed_asset_registry(repo_root=REPO_ROOT)
-governed_by_id = {row["asset_id"]: row for row in governed.rows}
+current_board_path, _current_label, _current_warnings = resolve_dynasty_rankings_path()
+governed = load_governed_asset_registry(
+    repo_root=REPO_ROOT,
+    current_board_path=current_board_path,
+    expected_current_hash=dynasty_bundle.source_hash or "",
+)
 if governed.errors:
     for registry_error in governed.errors:
         st.error(f"Governed asset registry: {registry_error}")
     st.stop()
-lookup = build_registry_trade_item_lookup(governed.rows)
-player_select = player_options(lookup)
-pick_select = pick_context_options(lookup)
+try:
+    _research_bundle = load_unified_research_preview()
+    _research_frame = _research_bundle.board
+except (OSError, ValueError):
+    _research_bundle = None
+    _research_frame = pd.DataFrame()
+_outcome_bundle = load_outcome_v3_display()
+owner_evidence = compose_owner_asset_evidence(
+    governed.rows,
+    dynasty_frame=dynasty_bundle.frame,
+    research_frame=_research_frame,
+    outcome_frame=_outcome_bundle.frame,
+)
+governed_by_id = owner_evidence.by_id
+lookup = build_registry_trade_item_lookup(owner_evidence.rows)
 counts = source_context_counts(dynasty_bundle.frame, trade_frame, pick_frame, tier_frame)
 nflverse_context = load_trading_lab_nflverse_context_index()
 
@@ -201,148 +215,153 @@ def _render_source_metrics(counts: dict[str, int]) -> None:
     )
 
 
-def _render_builder(player_select: dict[str, str], pick_select: dict[str, str]) -> None:
-    st.subheader("Trade Builder")
-    st.caption(
-        "Build both sides manually. The review label is a completeness check, not a verdict, "
-        "grade, price, or recommendation."
-    )
-    give_col, get_col = st.columns(2)
-    _render_side_controls("NWR gives", "give", give_col, player_select, pick_select)
-    _render_side_controls("NWR gets", "get", get_col, player_select, pick_select)
-    clear_col, _spacer = st.columns([1, 3])
-    if clear_col.button("Clear Trade", key="trading_lab_clear_trade", width="stretch"):
-        st.session_state[SESSION_KEY] = clear_trade_state()
-        st.rerun()
-
-
-def _render_side_controls(
-    title: str,
-    side: str,
-    container,
-    player_select: dict[str, str],
-    pick_select: dict[str, str],
-) -> None:
-    with container:
-        st.markdown(f"**{title}**")
-        if player_select:
-            player_label = st.selectbox(
-                "Add veteran or rookie/prospect",
-                list(player_select),
-                key=f"trading_lab_{side}_player",
-            )
-            if st.button(
-                "Add Player",
-                key=f"trading_lab_{side}_add_player",
-                width="stretch",
-            ):
-                st.session_state[SESSION_KEY] = add_trade_item(
-                    st.session_state[SESSION_KEY],
-                    side,  # type: ignore[arg-type]
-                    player_select[player_label],
-                )
-                st.rerun()
-        else:
-            st.warning(NOT_ENOUGH_INFORMATION)
-
-        if pick_select:
-            pick_label = st.selectbox(
-                "Add 2026 or future pick",
-                list(pick_select),
-                key=f"trading_lab_{side}_pick",
-            )
-            if st.button(
-                "Add Pick Context",
-                key=f"trading_lab_{side}_add_pick",
-                width="stretch",
-            ):
-                st.session_state[SESSION_KEY] = add_trade_item(
-                    st.session_state[SESSION_KEY],
-                    side,  # type: ignore[arg-type]
-                    pick_select[pick_label],
-                )
-                st.rerun()
-        else:
-            st.caption(f"Pick/context add: {NOT_ENOUGH_INFORMATION}")
-
-        side_keys = st.session_state[SESSION_KEY][side]
-        remove_options = _remove_options(side_keys, lookup)
-        if remove_options:
-            remove_label = st.selectbox(
-                "Remove item",
-                list(remove_options),
-                key=f"trading_lab_{side}_remove_select",
-            )
-            if st.button(
-                "Remove Item",
-                key=f"trading_lab_{side}_remove",
-                width="stretch",
-            ):
-                st.session_state[SESSION_KEY] = remove_trade_item(
-                    st.session_state[SESSION_KEY],
-                    side,  # type: ignore[arg-type]
-                    remove_options[remove_label],
-                )
-                st.rerun()
-        else:
-            st.caption("No items on this side yet.")
-
-
-def _render_summary(lookup: dict[str, dict[str, object]]) -> None:
-    st.subheader("Manual Package Context")
-    review = review_trade_package(st.session_state[SESSION_KEY], lookup)
-    cols = st.columns(3)
-    cols[0].metric("Manual context status", review.status)
-    cols[1].metric("Missing evidence", review.missing_context_display)
-    cols[2].metric("Human review", "Required")
-    st.caption(f"Rank/tier context: {review.rank_context}")
-    st.info(review.explanation)
-    st.dataframe(
-        display_package_summary(package_summary_rows(st.session_state[SESSION_KEY], lookup)).astype(
-            str
-        ),
-        width="stretch",
-        hide_index=True,
-        key="trading_lab_package_summary",
+def _asset_option_label(item_key: str) -> str:
+    row = lookup[item_key]
+    return (
+        f"{row.get('player')} · {row.get('registry_asset_type')} · "
+        f"{str(row.get('data_status', '')).split(';', maxsplit=1)[0]}"
     )
 
 
-def _render_selected_items(lookup: dict[str, dict[str, object]]) -> None:
-    st.subheader("Selected Package Items")
-    rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
-    if rows.empty:
-        st.warning(NOT_ENOUGH_INFORMATION)
-        return
-    st.dataframe(
-        display_trade_item_rows(rows).astype(str),
-        width="stretch",
-        hide_index=True,
-        key="trading_lab_selected_items",
+def _clear_trade_builder() -> None:
+    st.session_state[SESSION_KEY] = clear_trade_state()
+    st.session_state[GIVE_WIDGET_KEY] = []
+    st.session_state[RECEIVE_WIDGET_KEY] = []
+
+
+def _render_builder(lookup: dict[str, dict[str, object]]) -> None:
+    st.markdown("## Build the trade")
+    options = sorted(lookup, key=lambda key: (str(lookup[key].get("player")), key))
+    analyzed = copy_trade_state(st.session_state[SESSION_KEY])
+    give_defaults = (
+        {}
+        if GIVE_WIDGET_KEY in st.session_state
+        else {"default": [key for key in analyzed["give"] if key in lookup]}
     )
-    render_decision_trust_strips(
-        [
-            build_decision_trust_strip(
-                row,
-                surface="Trading Lab",
-                entity_label=str(row.get("label") or row.get("player") or "Selected asset"),
-                receipt_label="Existing selected-item and NFLVerse detail disclosures",
-                receipt_available=(
-                    bool(str(row.get("nwr_player_id") or "").strip())
-                    and str(row.get("nwr_player_id")) != NOT_ENOUGH_INFORMATION
+    receive_defaults = (
+        {}
+        if RECEIVE_WIDGET_KEY in st.session_state
+        else {"default": [key for key in analyzed["get"] if key in lookup]}
+    )
+    with st.form("current-trade-builder"):
+        give_col, receive_col = st.columns(2)
+        give = give_col.multiselect(
+            "You give",
+            options,
+            format_func=_asset_option_label,
+            key=GIVE_WIDGET_KEY,
+            placeholder="Search and add players or picks",
+            **give_defaults,
+        )
+        receive = receive_col.multiselect(
+            "You receive",
+            options,
+            format_func=_asset_option_label,
+            key=RECEIVE_WIDGET_KEY,
+            placeholder="Search and add players or picks",
+            **receive_defaults,
+        )
+        analyze = st.form_submit_button("Analyze Trade", type="primary")
+    if analyze:
+        duplicates = cross_side_duplicates(give, receive)
+        if duplicates:
+            names = ", ".join(str(lookup[key].get("player")) for key in duplicates)
+            st.error(f"An asset cannot appear on both sides: {names}.")
+        else:
+            st.session_state[SESSION_KEY] = replace_trade_state(give, receive)
+            st.rerun()
+    st.button(
+        "Clear Trade",
+        key="trading_lab_clear_trade",
+        on_click=_clear_trade_builder,
+    )
+
+
+def _render_asset_card(row: dict[str, object], personal: dict[str, dict[str, object]]) -> None:
+    asset_id = str(row.get("asset_id", ""))
+    with st.container(border=True):
+        st.markdown(f"**{row.get('player')}** · {row.get('registry_asset_type')}")
+        details: list[str] = []
+        if str(row.get("dynasty_rank", "")).strip():
+            details.append(f"Dynasty Rank {row.get('dynasty_rank')}")
+            if str(row.get("position_rank", "")).strip():
+                details.append(str(row.get("position_rank")))
+            if str(row.get("final_tier", "")).strip():
+                details.append(str(row.get("final_tier")))
+            if str(row.get("age", "")).strip():
+                details.append(f"Age {row.get('age')}")
+        elif str(row.get("final_board_rank", "")).strip():
+            details.append(f"Rookie Review Rank {row.get('final_board_rank')}")
+            if str(row.get("research_rank", "")).strip():
+                details.append(f"Research Rank {row.get('research_rank')}")
+            details.append(str(row.get("research_status") or "Review-only evidence"))
+        elif str(row.get("asset_type")) == "Pick context":
+            details.append(str(row.get("pick_window_note") or "Governed pick context"))
+        st.write(" · ".join(details) if details else "Source-separated context only")
+        if row.get("market_dp_value") or row.get("market_dp_rank"):
+            st.caption(
+                f"Market: DP Value {row.get('market_dp_value') or '—'} · "
+                f"DP Rank {row.get('market_dp_rank') or '—'} · {row.get('market_status')}"
+            )
+        for signal in tuple(row.get("outcome_signals", ()))[:2]:
+            st.caption(f"Outcome: {signal}")
+        caveats = tuple(row.get("owner_caveats", ()))
+        if caveats:
+            major_caveat = next(
+                (
+                    caveat
+                    for caveat in caveats
+                    if "age-related" in caveat.casefold() or "age-window" in caveat.casefold()
                 ),
+                caveats[0],
             )
-            for row in rows.to_dict("records")
-        ],
-        heading="Selected-asset evidence trust",
-    )
+            st.caption(f"Caveat: {major_caveat}")
+        overlay = personal.get(asset_id, {})
+        owner_bits = [
+            str(overlay.get("my_tier") or ""),
+            ", ".join(overlay.get("tags", [])),
+            str(overlay.get("notes") or ""),
+        ]
+        owner_bits = [value for value in owner_bits if value]
+        if owner_bits:
+            st.caption("Personal: " + " · ".join(owner_bits))
+
+
+def _render_trade_at_a_glance(
+    lookup: dict[str, dict[str, object]],
+    personal: dict[str, dict[str, object]],
+) -> None:
+    rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
+    st.markdown("## Trade at a glance")
+    if rows.empty:
+        st.info("Choose the assets on both sides, then select Analyze Trade.")
+        return
+    give_col, receive_col = st.columns(2)
+    for container, side in ((give_col, "You give"), (receive_col, "You receive")):
+        with container:
+            st.markdown(f"### {side}")
+            side_rows = rows.loc[rows["side"].eq(side)].to_dict("records")
+            if not side_rows:
+                st.warning("No assets selected.")
+            for row in side_rows:
+                _render_asset_card(row, personal)
+
+
+def _render_trade_interpretation(lookup: dict[str, dict[str, object]]) -> None:
+    narrative = build_trade_narrative(st.session_state[SESSION_KEY], lookup)
+    st.markdown("## How the sides differ")
+    if narrative.differences:
+        for difference in narrative.differences:
+            st.write(f"- {difference}")
+    else:
+        st.caption("Add at least one asset to each side.")
+    st.markdown("## Bottom line")
+    for sentence in narrative.bottom_line:
+        st.write(sentence)
 
 
 def _render_nflverse_context_panel(lookup: dict[str, dict[str, object]]) -> None:
-    with st.expander("NFLVerse player context / display-only", expanded=True):
-        st.caption(
-            "Display-only context | Manual review only | No valuation calculated | "
-            "No automatic recommendation. Missing values display as: Not enough information."
-        )
+    with st.expander("NFLVerse player context", expanded=False):
         metric_cols = st.columns(3)
         metric_cols[0].metric("Player context artifact rows", nflverse_context.artifact_row_count)
         metric_cols[1].metric("Safe display rows", nflverse_context.safe_row_count)
@@ -384,7 +403,9 @@ def _render_nflverse_context_panel(lookup: dict[str, dict[str, object]]) -> None
 
 
 def _render_diagnostics() -> None:
-    with st.expander("Source diagnostics", expanded=False):
+    with st.expander("Source diagnostics (Advanced)", expanded=False):
+        _render_source_metrics(counts)
+        render_source_of_truth_badge(frozen_bundle)
         render_lane_status_table()
         if trade_path and not trade_frame.empty:
             st.caption(f"Display-only trade helper context: {trade_path}")
@@ -755,38 +776,10 @@ def _download_text(label: str, text: str, filename: str) -> None:
     st.download_button(label, data=text, file_name=filename, mime="text/markdown")
 
 
-_render_source_metrics(counts)
-builder_tab, trade_away_tab, trade_for_tab = st.tabs(
-    ["Package Builder", "Trade Away Pick Planner", "Trade For Pick Planner"]
-)
-with builder_tab:
-    _render_builder(player_select, pick_select)
-    _render_summary(lookup)
-    _render_selected_items(lookup)
-    _render_nflverse_context_panel(lookup)
-with trade_away_tab:
-    _render_trade_away_pick_planner()
-with trade_for_tab:
-    _render_trade_for_pick_planner()
-_render_diagnostics()
-
-st.subheader("Personal Workspace")
-selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
 personal_store = load_store("personal_board")
 scenario_store = load_store("saved_scenarios")
 personal = {row["asset_id"]: row for row in personal_store.records}
 render_save_status(initial_save_status(scenario_store.status, scenario_store.updated_at_utc))
-exact_ids = []
-for row in selected_rows.to_dict("records"):
-    registry_asset_id = str(row.get("asset_id", "")).strip()
-    if registry_asset_id in governed_by_id:
-        exact_ids.append(registry_asset_id)
-        continue
-    player_id = str(row.get("nwr_player_id", "")).strip()
-    asset_id = f"current:{player_id}"
-    if player_id != NOT_ENOUGH_INFORMATION and asset_id in governed_by_id:
-        exact_ids.append(asset_id)
-exact_ids = list(dict.fromkeys(exact_ids))
 
 saved_trade_scenarios = [
     row for row in scenario_store.records if row.get("scenario_type") == "trading_lab"
@@ -796,8 +789,9 @@ if saved_trade_scenarios:
         f"{row.get('title', 'Saved trade')} · {row.get('updated_at_utc', '')}": row
         for row in saved_trade_scenarios
     }
-    reopen_label = st.selectbox("Reopen saved trade", list(scenario_by_label))
-    if st.button("Reopen scenario", key="trading_lab_reopen_scenario"):
+    reopen_col, action_col = st.columns([3, 1])
+    reopen_label = reopen_col.selectbox("Reopen saved trade", list(scenario_by_label))
+    if action_col.button("Reopen", key="trading_lab_reopen_scenario"):
         reopened = scenario_by_label[reopen_label]
         restored = empty_trade_state()
         for item in reopened.get("payload", {}).get("selected_sides", []):
@@ -805,62 +799,19 @@ if saved_trade_scenarios:
             item_key = f"registry:{asset_id}"
             if item_key not in lookup:
                 continue
-            side = "give" if item.get("side") == "NWR gives" else "get"
+            side = "give" if item.get("side") in {"You give", "NWR gives"} else "get"
             restored[side].append(item_key)
+        restored = copy_trade_state(restored)
         st.session_state[SESSION_KEY] = restored
-        st.rerun()
-if exact_ids:
-    st.dataframe(
-        pd.DataFrame(
-            {
-                "Asset": governed_by_id[key]["asset_name"],
-                "Source": governed_by_id[key]["source_label"],
-                "Source Rank": governed_by_id[key]["rank_value"],
-                "My Tier": personal.get(key, {}).get("my_tier", ""),
-                "My Rank": personal.get(key, {}).get("my_rank", ""),
-                "My Tags": ", ".join(personal.get(key, {}).get("tags", [])),
-                "Notes": "Yes" if personal.get(key, {}).get("notes") else "",
-            }
-            for key in exact_ids
-        ),
-        hide_index=True,
-        width="stretch",
-    )
-else:
-    st.info("Add exact governed current-player assets to see Personal Board context.")
-
-with st.expander("Unified Research Context — Research Only", expanded=False):
-    st.warning(
-        "Optional display context only — not a trade verdict, recommendation, or production "
-        "authority. Trading Lab remains MANUAL_DESCRIPTIVE_ONLY. Calibration is "
-        "not fully validated and there is no fresh mature 5Y rookie cohort."
-    )
-    try:
-        trade_research = research_context_for_assets(load_unified_research_preview(), exact_ids)
-    except (OSError, ValueError) as exc:
-        st.info(f"Unified research context is unavailable: {exc}")
-    else:
-        if trade_research.empty:
-            st.info("Add an eligible current player to view frozen research context.")
-        else:
-            st.dataframe(
-                trade_research[
-                    [
-                        "player",
-                        "position",
-                        "research_rank",
-                        "research_tier",
-                        "outlook_3y",
-                        "outlook_5y",
-                        "ceiling_signal",
-                        "downside_signal",
-                        "confidence",
-                        "status",
-                    ]
-                ],
-                hide_index=True,
-                width="stretch",
-            )
+        st.session_state[GIVE_WIDGET_KEY] = restored["give"]
+        st.session_state[RECEIVE_WIDGET_KEY] = restored["get"]
+_render_builder(lookup)
+selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
+trade_ids = trade_asset_ids_by_side(st.session_state[SESSION_KEY], lookup)
+exact_ids = [*trade_ids["give"], *trade_ids["get"]]
+_render_trade_at_a_glance(lookup, personal)
+if not selected_rows.empty:
+    _render_trade_interpretation(lookup)
 
 with st.form("save-trading-lab-scenario"):
     scenario_title = st.text_input("Trade scenario title")
@@ -869,8 +820,10 @@ with st.form("save-trading-lab-scenario"):
         "Your team-window context",
         ("Contending", "Balanced", "Rebuilding", "Custom/Unspecified"),
     )
-    save_trade_scenario = st.form_submit_button("Save manual trade scenario")
-if save_trade_scenario:
+    save_trade_scenario = st.form_submit_button("Save Current Trade")
+if save_trade_scenario and (not trade_ids["give"] or not trade_ids["get"]):
+    st.error("Add at least one asset to each side before saving.")
+elif save_trade_scenario:
     snapshot_rows = selected_rows[
         [
             column
@@ -882,6 +835,7 @@ if save_trade_scenario:
                 "player",
                 "rank_source",
                 "dynasty_rank",
+                "position_rank",
                 "final_board_rank",
                 "data_status",
             )
@@ -901,7 +855,7 @@ if save_trade_scenario:
                         "selected_sides": snapshot_rows,
                         "notes": scenario_notes,
                         "team_window": team_window,
-                        "unresolved_pick_context_visible": len(selected_rows) - len(exact_ids),
+                        "unresolved_pick_context_visible": 0,
                     },
                 },
                 asset_registry={key: row["asset_type"] for key, row in governed_by_id.items()},
@@ -909,43 +863,27 @@ if save_trade_scenario:
             observer=render_save_status,
         )
         if write_status.state == "Save failed":
-            st.error("The scenario was not saved. The current builder state remains available.")
+            st.error("The scenario was not saved. The current trade remains available.")
     except WorkspaceValidationError as exc:
         st.error(f"Scenario blocked: {exc}")
 
-st.subheader("Shareable source-labeled trade brief")
-st.caption(
-    "Choose governed assets directly. Current-player and rookie ranks stay source-separated; "
-    "blocked rookies and picks receive no numeric value."
-)
-brief_options = sorted(governed_by_id, key=lambda key: governed_by_id[key]["asset_name"])
+st.markdown("## Export Current Trade")
+st.caption("Markdown and JSON use the exact analyzed assets and sides shown above.")
 with st.form("trade-brief-export"):
-    brief_title = st.text_input("Brief title", value=scenario_title or "Manual trade brief")
-    brief_side_a = st.multiselect(
-        "Side A assets",
-        brief_options,
-        format_func=lambda key: (
-            f"{governed_by_id[key]['asset_name']} · {governed_by_id[key]['source_label']}"
-        ),
-    )
-    brief_side_b = st.multiselect(
-        "Side B assets",
-        brief_options,
-        format_func=lambda key: (
-            f"{governed_by_id[key]['asset_name']} · {governed_by_id[key]['source_label']}"
-        ),
-    )
-    brief_rationale = st.text_area("User rationale for the brief", max_chars=20_000)
+    brief_title = st.text_input("Brief title", value=scenario_title or "Trade brief")
+    brief_rationale = st.text_area("Your rationale (optional)", max_chars=20_000)
     include_personal = st.checkbox("Include my tiers, tags, and notes")
-    build_brief = st.form_submit_button("Build descriptive trade brief")
-if build_brief:
+    build_brief = st.form_submit_button("Prepare Current Trade Exports")
+if build_brief and (not trade_ids["give"] or not trade_ids["get"]):
+    st.error("Add at least one asset to each side before exporting.")
+elif build_brief:
     try:
         brief = build_trade_brief(
             {
                 "title": brief_title,
                 "created_at_utc": datetime.now(UTC).isoformat(),
-                "side_a": brief_side_a,
-                "side_b": brief_side_b,
+                "side_a": trade_ids["give"],
+                "side_b": trade_ids["get"],
                 "team_window": team_window,
                 "rationale": brief_rationale,
             },
@@ -954,21 +892,54 @@ if build_brief:
             include_personal=include_personal,
         )
         st.download_button(
-            "Download printable Markdown brief",
+            "Download Current Trade · Markdown",
             data=brief.markdown,
-            file_name="nwr-manual-trade-brief.md",
+            file_name="nwr-current-trade.md",
             mime="text/markdown",
         )
         st.download_button(
-            "Download structured JSON brief",
+            "Download Current Trade · JSON",
             data=brief.structured_json,
-            file_name="nwr-manual-trade-brief.json",
+            file_name="nwr-current-trade.json",
             mime="application/json",
         )
         if brief.missing_data:
             st.warning(f"Missing data remains visible: {len(brief.missing_data)} item(s).")
     except TradeBriefValidationError as exc:
         st.error(f"Brief blocked: {exc}")
+
+with st.expander("Advanced Data Details", expanded=False):
+    st.caption("Raw receipt codes and technical source details are kept here.")
+    if not selected_rows.empty:
+        advanced_columns = [
+            column
+            for column in ("side", "asset_id", "player", "raw_caveat_codes", "data_status")
+            if column in selected_rows.columns
+        ]
+        st.dataframe(selected_rows[advanced_columns], hide_index=True, width="stretch")
+        render_decision_trust_strips(
+            [
+                build_decision_trust_strip(
+                    row,
+                    surface="Trading Lab",
+                    entity_label=str(row.get("player") or "Selected asset"),
+                    receipt_label="Governed selected-asset evidence",
+                    receipt_available=bool(str(row.get("asset_id") or "").strip()),
+                )
+                for row in selected_rows.to_dict("records")
+            ],
+            heading="Selected-asset evidence trust",
+        )
+
+_render_nflverse_context_panel(lookup)
+_render_diagnostics()
+
+planner_tabs = st.tabs(["Trade Away Pick Planner", "Trade For Pick Planner"])
+with planner_tabs[0]:
+    _render_trade_away_pick_planner()
+with planner_tabs[1]:
+    _render_trade_for_pick_planner()
+
 trade_workspace_links = st.columns(2)
 trade_workspace_links[0].link_button("Open saved scenarios", "/saved-scenarios")
 trade_workspace_links[1].link_button("Journal this scenario", "/decision-journal")

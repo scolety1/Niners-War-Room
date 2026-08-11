@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -35,7 +37,11 @@ class PlayerCompareUniverse:
         return not self.errors and self.counts == EXPECTED_COMPARE_COUNTS
 
 
-def build_player_compare_universe(registry: GovernedAssetRegistry) -> PlayerCompareUniverse:
+def build_player_compare_universe(
+    registry: GovernedAssetRegistry,
+    *,
+    evidence_rows: Sequence[Mapping[str, Any]] | None = None,
+) -> PlayerCompareUniverse:
     """Build compare rows from governed asset IDs without identity inference or scale blending."""
 
     counts = {asset_type: registry.counts.get(asset_type, 0) for asset_type in COMPARE_ASSET_TYPES}
@@ -47,7 +53,8 @@ def build_player_compare_universe(registry: GovernedAssetRegistry) -> PlayerComp
                 f"found {counts[asset_type]}."
             )
 
-    rows = [_compare_row(row) for row in registry.rows if row["asset_type"] in COMPARE_ASSET_TYPES]
+    source_rows = evidence_rows if evidence_rows is not None else registry.rows
+    rows = [_compare_row(row) for row in source_rows if row["asset_type"] in COMPARE_ASSET_TYPES]
     if len({row["asset_id"] for row in rows}) != len(rows):
         errors.append("Player Compare governed asset IDs are not unique.")
     if len({row["compare_select_label"] for row in rows}) != len(rows):
@@ -82,20 +89,24 @@ def governed_source_identity(label: str, artifact_path: str | Path | None = None
     return f"{source} ({basename})"
 
 
-def _compare_row(asset: dict[str, str]) -> dict[str, str]:
+def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
     asset_type = asset["asset_type"]
     asset_id = asset["asset_id"]
     player_id = ""
     if asset_type in {CURRENT_PLAYER, ROOKIE_REVIEW}:
         player_id = asset_id.split(":", maxsplit=1)[1]
     source_rank_value = asset["rank_value"]
+    canonical_complete = all(
+        str(asset.get(field, "")).strip()
+        for field in ("dynasty_rank", "position_rank", "nwr_dynasty_score")
+    )
     return {
         "asset_id": asset_id,
         "player_id": player_id,
         "player": asset["asset_name"],
         "position": asset["position"],
         "nfl_team": asset["team"],
-        "age": "",
+        "age": asset.get("age", ""),
         "compare_asset_type": asset_type,
         "compare_source_key": asset["source_label"],
         "compare_source_label": asset["source_label"],
@@ -110,10 +121,22 @@ def _compare_row(asset: dict[str, str]) -> dict[str, str]:
         "blocking_reason": asset["blocking_reason"],
         "comparison_scope": asset["comparison_scope"],
         "source_coverage": asset["source_label"],
+        "source_status": f"Available: {asset['source_label']}",
+        "freshness_status": asset.get("market_status", ""),
+        "identity_status": asset.get("identity_status", ""),
+        "missing_evidence": "Complete" if canonical_complete else "Optional evidence unavailable",
+        "warning_flags": " ".join(asset.get("owner_caveats", ())),
         "dynasty_asset_rank": source_rank_value if asset_type == CURRENT_PLAYER else "",
+        "nwr_rank": asset.get(
+            "dynasty_rank", source_rank_value if asset_type == CURRENT_PLAYER else ""
+        ),
+        "position_rank": asset.get("position_rank", ""),
+        "nwr_position_rank": asset.get("position_rank", ""),
+        "nwr_dynasty_score": asset.get("nwr_dynasty_score", asset.get("score_value", "")),
+        "market_dp_value": asset.get("market_dp_value", ""),
+        "market_dp_rank": asset.get("market_dp_rank", ""),
+        "market_status": asset.get("market_status", ""),
         "candidate_value_band": asset["tier"] if asset_type == ROOKIE_REVIEW else "",
         "risk_notes": asset["blocking_reason"] or asset["warnings"],
-        "compare_select_label": (
-            f"{asset['asset_name']} — {asset_type} · {asset['source_label']}"
-        ),
+        "compare_select_label": (f"{asset['asset_name']} — {asset_type} · {asset['source_label']}"),
     }

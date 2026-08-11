@@ -67,11 +67,11 @@ def test_rankings_full_view_position_filter_defaults_to_fantasy_positions() -> N
 def test_rankings_full_view_sort_options_do_not_foreground_draft_board_rank() -> None:
     text = _page_text()
 
-    assert 'if view_mode == FULL_DYNASTY_VIEW:' in text
+    assert "if view_mode == FULL_DYNASTY_VIEW:" in text
     assert 'return ["Dynasty Rank", "NWR Dynasty Score", "Position Rank", "Age", "Player"]' in text
-    assert 'sort_default = _default_sort_label(view_mode)' in text
-    assert 'index=sort_options.index(sort_default)' in text
-    assert '_default_ascending_for_sort(sort_by)' in text
+    assert "sort_default = _default_sort_label(view_mode)" in text
+    assert "index=sort_options.index(sort_default)" in text
+    assert "_default_ascending_for_sort(sort_by)" in text
     assert '"Candidate Rank (Review-Only)"' in text
     assert 'if sort_by == "Position Rank" and view_mode != FULL_DYNASTY_VIEW:' in text
 
@@ -91,9 +91,10 @@ def test_rankings_identity_columns_are_pinned_and_sized() -> None:
     assert rank_config["help"] == "Dynasty Rank"
     assert player_config["label"] == "Player"
     assert RANKINGS_TABLE_COLUMN_CONFIG["NWR Dynasty Score"]["label"] == "NWR Score"
-    assert "missing scores are blank and sort last" in RANKINGS_TABLE_COLUMN_CONFIG[
-        "NWR Dynasty Score"
-    ]["help"]
+    assert (
+        "missing scores are blank and sort last"
+        in RANKINGS_TABLE_COLUMN_CONFIG["NWR Dynasty Score"]["help"]
+    )
 
 
 def test_rankings_full_view_source_filter_keeps_frozen_board_optional() -> None:
@@ -276,8 +277,7 @@ def test_rankings_default_preset_is_dynasty_review_clean_board() -> None:
 
     assert 'VIEW_PRESET_DYNASTY_REVIEW = "Dynasty Review"' in text
     assert (
-        'st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)'
-        in text
+        'st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)' in text
     )
     assert "preset = VIEW_PRESET_DYNASTY_REVIEW" in text
     assert "injury-review detail columns stay hidden by default" in text
@@ -609,8 +609,8 @@ def test_statistic_analysis_missing_components_are_not_zero_or_false() -> None:
     )
 
     assert "Contribution %" in display.columns
-    assert display.loc[0, "Contribution %"] == "Not enough information"
-    assert display.loc[0, "Missing Component Count"] == "Not enough information"
-    assert display.loc[0, "Capped Component Count"] == "Not enough information"
+    assert pd.isna(display.loc[0, "Contribution %"])
+    assert pd.isna(display.loc[0, "Missing Component Count"])
+    assert pd.isna(display.loc[0, "Capped Component Count"])
     assert "Market Flag" not in display.columns
     assert "Outcome" not in display.columns

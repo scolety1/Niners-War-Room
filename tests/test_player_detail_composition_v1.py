@@ -15,9 +15,9 @@ def test_player_detail_composes_existing_governed_sources_without_writes() -> No
         "load_dynasty_rankings",
         "load_unified_research_preview",
         "load_outcome_v3_display",
-        "join_market_to_players",
+        "compose_owner_asset_evidence",
         "build_player_detail_card_payload",
-        "load_store(\"personal_board\")",
+        'load_store("personal_board")',
         "Advanced Data Details",
         "Exact weighted contribution percentages are not admitted",
     ):

@@ -67,9 +67,7 @@ def test_optional_rankings_and_outcome_inputs_are_checkout_local(
             "",
         ),
     )
-    assert draft_day_service.LOCAL_DYNASTY_RANKINGS_PATH.is_relative_to(
-        draft_day_service.REPO_ROOT
-    )
+    assert draft_day_service.LOCAL_DYNASTY_RANKINGS_PATH.is_relative_to(draft_day_service.REPO_ROOT)
     assert draft_day_service.OUTCOME_NUMERIC_DISPLAY_PATH.is_relative_to(
         draft_day_service.REPO_ROOT
     )
@@ -425,7 +423,10 @@ def test_position_aware_outcome_targets_follow_player_position() -> None:
         )
     )
     assert tuple(
-        column for column in wr_targets if column in {
+        column
+        for column in wr_targets
+        if column
+        in {
             "wr_t12_display_only",
             "wr_t24_display_only",
             "wr_t36_display_only",
@@ -489,8 +490,8 @@ def test_position_aware_display_hides_wrong_position_columns_by_mode() -> None:
     assert "WR T12" in position_display.columns
     assert "WR T36" in position_display.columns
     assert "RB T12" not in position_display.columns
-    assert all_display.loc[0, "RB T12"] == OUTCOME_NOT_APPLICABLE
-    assert all_display.loc[0, "QB T12"] == OUTCOME_NOT_APPLICABLE
+    assert pd.isna(all_display.loc[0, "RB T12"])
+    assert pd.isna(all_display.loc[0, "QB T12"])
     assert "WR T12" not in hidden_display.columns
     assert "Outcome" not in hidden_display.columns
 
@@ -514,11 +515,11 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
                 "candidate_value_band": "Priority candidate",
                 "nwr_dynasty_score": "88.8",
                 "trust_status": "Scored",
-                    "confidence_band": "Medium",
-                    "available_pool_adp_range": "90s",
-                    "candidate_key_caveat": "",
-                    "outcome_availability_display_only": "",
-                    "wr_t12_display_only": "",
+                "confidence_band": "Medium",
+                "available_pool_adp_range": "90s",
+                "candidate_key_caveat": "",
+                "outcome_availability_display_only": "",
+                "wr_t12_display_only": "",
                 "wr_t24_display_only": "74%",
                 "wr_t36_display_only": "88%",
                 "rb_t12_display_only": "N/A",
@@ -550,7 +551,7 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
         "Caveat",
     ]
     assert display.loc[0, "NFL Team"] == OUTCOME_NOT_ENOUGH_INFORMATION
-    assert display.loc[0, "Age"] == OUTCOME_NOT_ENOUGH_INFORMATION
+    assert pd.isna(display.loc[0, "Age"])
     assert display.loc[0, "Caveat"] == OUTCOME_NOT_ENOUGH_INFORMATION
     for blocked in (
         "Final Board Rank",
@@ -601,10 +602,13 @@ def test_outcome_column_mode_resolves_columns_for_selected_positions() -> None:
     assert "outcome_v2_wr_t6_this_year_display_only" in columns
     assert "outcome_v2_te_t12_within_5y_display_only" in columns
     assert "outcome_v2_rb_t24_within_5y_display_only" not in columns
-    assert outcome_columns_for_display(
-        outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
-        selected_positions=["WR"],
-    ) == ()
+    assert (
+        outcome_columns_for_display(
+            outcome_mode=OUTCOME_DISPLAY_MODE_HIDE,
+            selected_positions=["WR"],
+        )
+        == ()
+    )
 
 
 def test_outcome_display_context_uses_not_enough_information_for_missing_values() -> None:
@@ -711,7 +715,7 @@ def test_outcome_v2_display_artifact_loads_by_player_id_and_keeps_missing_text(
     assert "Availability Caveat" in outcome_lens_display.columns
     assert "Last Active" in outcome_lens_display.columns
     assert "Missing Reason" in outcome_lens_display.columns
-    assert outcome_lens_display.loc[0, "WR T12 2026"] == "43.4%"
+    assert outcome_lens_display.loc[0, "WR T12 2026"] == 43.4
 
 
 def _outcome_v2_artifact_row(
@@ -750,8 +754,7 @@ def _outcome_v2_artifact_row(
         "data_coverage_status": "partial_2025_feature_source_approval",
         "availability_context_status": "partial_availability_context_missing_games",
         "caveat_summary": (
-            "Display-only; games missing; no row is Not enough information, "
-            "not clean health."
+            "Display-only; games missing; no row is Not enough information, not clean health."
         ),
         "injury_context_available": "true",
         "most_recent_injury_context_season": "2025",

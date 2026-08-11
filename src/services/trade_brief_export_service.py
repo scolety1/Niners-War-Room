@@ -8,6 +8,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from src.services.owner_caveat_presentation_service import owner_caveats
+
 DISCLAIMER = "Manual descriptive analysis — no automatic recommendation"
 EXPORT_SCHEMA = "NWR_TRADE_BRIEF_V1"
 _PROHIBITED = re.compile(
@@ -95,7 +97,27 @@ def _brief_asset(asset_id: str, item: Mapping[str, Any], missing: list[str]) -> 
         "authority": str(item.get("authority_status") or "Not documented"),
         "position": str(item.get("position") or "Not documented"),
         "team": str(item.get("team") or "Not documented"),
-        "warnings": str(item.get("warnings") or item.get("blocking_reason") or ""),
+        "age": str(item.get("age") or ""),
+        "position_rank": str(item.get("position_rank") or ""),
+        "nwr_dynasty_score": str(item.get("nwr_dynasty_score") or ""),
+        "value_band": str(item.get("value_band") or item.get("tier") or ""),
+        "confidence": str(item.get("confidence") or ""),
+        "market": {
+            "dp_value": str(item.get("market_dp_value") or ""),
+            "dp_rank": str(item.get("market_dp_rank") or ""),
+            "status": str(item.get("market_status") or ""),
+            "evidence_date": str(item.get("market_evidence_date") or ""),
+        },
+        "research": {
+            "rank": str(item.get("research_rank") or ""),
+            "tier": str(item.get("research_tier") or ""),
+            "status": str(item.get("research_status") or ""),
+        },
+        "outcome_signals": list(item.get("outcome_signals") or ()),
+        "warnings": list(
+            item.get("owner_caveats")
+            or owner_caveats(item.get("warnings") or item.get("blocking_reason") or "")
+        ),
     }
     if not blocked_or_pick and item.get("rank_value") not in (None, ""):
         row["rank"] = {
@@ -120,7 +142,7 @@ def _markdown(value: Mapping[str, Any]) -> str:
         f"Team window: {value['team_window']}",
         "",
     ]
-    for title, side_key in (("Side A", "side_a"), ("Side B", "side_b")):
+    for title, side_key in (("You give", "side_a"), ("You receive", "side_b")):
         lines.extend((f"## {title}", ""))
         rows = value[side_key]
         if not rows:
@@ -136,8 +158,24 @@ def _markdown(value: Mapping[str, Any]) -> str:
                 lines.append(f"  - {rank['label']}: {rank['value']}")
             else:
                 lines.append("  - Source rank: Not provided for this asset type")
-            if row.get("warnings"):
-                lines.append(f"  - Evidence warning: {row['warnings']}")
+            if row.get("position_rank"):
+                lines.append(f"  - Position rank: {row['position_rank']}")
+            if row.get("age"):
+                lines.append(f"  - Age: {row['age']}")
+            if row.get("nwr_dynasty_score"):
+                lines.append(f"  - NWR Dynasty Score: {row['nwr_dynasty_score']}")
+            market = row.get("market", {})
+            if market.get("dp_value") or market.get("dp_rank"):
+                lines.append(
+                    "  - Market context: "
+                    f"DP Value {market.get('dp_value') or 'not available'}; "
+                    f"DP Rank {market.get('dp_rank') or 'not available'}; "
+                    f"{market.get('status') or 'display-only'}"
+                )
+            for signal in row.get("outcome_signals", ()):
+                lines.append(f"  - Outcome context: {signal}")
+            for warning in row.get("warnings", ()):
+                lines.append(f"  - Evidence warning: {warning}")
             if row.get("personal"):
                 overlay = row["personal"]
                 lines.append(f"  - Personal tier: {overlay.get('tier') or 'Not documented'}")

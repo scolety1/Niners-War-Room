@@ -9,9 +9,7 @@ from src.services.player_detail_card_service import PlayerDetailCardPayload
 def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
     st.markdown(f"### {payload.player}")
     _render_header(payload)
-    st.caption(
-        "Roster/team tags are display-only context and do not affect private score."
-    )
+    st.caption("Roster/team tags are display-only context and do not affect private score.")
 
     st.markdown("**Why this row appears here**")
     st.write(payload.why_text)
@@ -77,25 +75,25 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
             st.write("Draft Cockpit context is not available from current source rows.")
         st.info("Draft state is session/local mock state and does not mutate source data.")
 
-    st.markdown("**Trust, warnings, and data needed**")
-    st.write(f"Trust: {payload.trust_status}")
-    st.write(f"Warnings: {payload.warning_summary}")
-    if payload.warning_messages:
-        for warning in payload.warning_messages[:8]:
-            st.write(f"- {warning}")
-    else:
-        st.write("No active warning is flagged for this row.")
-    if payload.data_needed:
-        st.markdown("Data needed:")
-        for item in payload.data_needed[:8]:
-            st.write(f"- {item}")
-    else:
-        st.write("No missing evidence is flagged for this row.")
+    with st.expander("Advanced evidence trust details", expanded=False):
+        st.write(f"Trust: {payload.trust_status}")
+        st.write(f"Warnings: {payload.warning_summary}")
+        if payload.warning_messages:
+            for warning in payload.warning_messages[:8]:
+                st.write(f"- {warning}")
+        else:
+            st.write("No active warning is flagged for this row.")
+        if payload.data_needed:
+            st.markdown("Data needed:")
+            for item in payload.data_needed[:8]:
+                st.write(f"- {item}")
+        else:
+            st.write("No missing evidence is flagged for this row.")
 
-    if payload.legacy_comparison_score:
-        st.markdown("**Legacy / context disclosure**")
-        st.caption(payload.legacy_note)
-        st.write(f"Legacy active-pack score: {payload.legacy_comparison_score}")
+        if payload.legacy_comparison_score:
+            st.markdown("**Legacy / context disclosure**")
+            st.caption(payload.legacy_note)
+            st.write(f"Legacy active-pack score: {payload.legacy_comparison_score}")
 
     with st.expander("Advanced source receipts", expanded=False):
         if payload.receipts:
@@ -115,11 +113,12 @@ def render_player_detail_card(payload: PlayerDetailCardPayload) -> None:
 
 
 def _render_header(payload: PlayerDetailCardPayload) -> None:
-    header_cols = st.columns(4)
+    header_cols = st.columns(5)
     header_cols[0].metric("Rank", payload.nwr_rank)
-    header_cols[1].metric("Pos", payload.position)
-    header_cols[2].metric("Age", payload.age)
-    header_cols[3].metric("Team", payload.team)
+    header_cols[1].metric("Position Rank", payload.position_rank)
+    header_cols[2].metric("Pos", payload.position)
+    header_cols[3].metric("Age", payload.age)
+    header_cols[4].metric("Team", payload.team)
     badges = [
         payload.roster_status,
         payload.trust_status,

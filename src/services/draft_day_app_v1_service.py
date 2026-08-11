@@ -29,12 +29,7 @@ LOCAL_FROZEN_BOARD_ROOT = Path(
     r"C:\NWR_SHARED_DATA\draft_day_exports\nwr_final_draft_board_v1_frozen_20260622"
 )
 LOCAL_FROZEN_BOARD_PATH = LOCAL_FROZEN_BOARD_ROOT / BOARD_FILE_NAME
-REPO_SAFE_FROZEN_BOARD_ROOT = (
-    REPO_ROOT
-    / "docs"
-    / "draft_day_exports"
-    / "final_board_v1_20260622"
-)
+REPO_SAFE_FROZEN_BOARD_ROOT = REPO_ROOT / "docs" / "draft_day_exports" / "final_board_v1_20260622"
 REPO_SAFE_FROZEN_BOARD_PATH = REPO_SAFE_FROZEN_BOARD_ROOT / BOARD_FILE_NAME
 CROSS_ASSET_CANDIDATE_PATH = (
     REPO_ROOT
@@ -90,18 +85,11 @@ REPO_SAFE_APP_PROP_ROOT = REPO_SAFE_FROZEN_BOARD_ROOT / "app_props"
 APP_PROP_ROOT = LOCAL_APP_PROP_ROOT
 EXPECTED_ROW_COUNT = 66
 EXPECTED_DYNASTY_ROW_COUNT = 240
-LOCAL_DYNASTY_RANKINGS_ROOT = (
-    REPO_ROOT / "local_exports" / "model_v4" / "current_value" / "latest"
-)
+LOCAL_DYNASTY_RANKINGS_ROOT = REPO_ROOT / "local_exports" / "model_v4" / "current_value" / "latest"
 LOCAL_DYNASTY_RANKINGS_PATH = LOCAL_DYNASTY_RANKINGS_ROOT / DYNASTY_BOARD_FILE_NAME
-EXPECTED_DYNASTY_RANKINGS_HASH = (
-    "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
-)
+EXPECTED_DYNASTY_RANKINGS_HASH = "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
 OUTCOME_NUMERIC_DISPLAY_PATH = (
-    REPO_ROOT
-    / "local_exports"
-    / "outcome_probability"
-    / OUTCOME_NUMERIC_DISPLAY_FILE_NAME
+    REPO_ROOT / "local_exports" / "outcome_probability" / OUTCOME_NUMERIC_DISPLAY_FILE_NAME
 )
 EXPECTED_OUTCOME_NUMERIC_DISPLAY_HASH = (
     "1fb63fec25f7893ed09004830c7eb4e5ed32c6622c08876849fb61a2e4826cb0"
@@ -115,11 +103,7 @@ OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH = (
     / "outcome_v2_current_player_display_with_injury_context.csv"
 )
 NFLVERSE_PLAYER_CONTEXT_DISPLAY_ROOT = (
-    REPO_ROOT
-    / "docs"
-    / "hq"
-    / "data_sources"
-    / "nflverse_player_context_display_20260630"
+    REPO_ROOT / "docs" / "hq" / "data_sources" / "nflverse_player_context_display_20260630"
 )
 NFLVERSE_PLAYER_CONTEXT_DISPLAY_PATH = (
     NFLVERSE_PLAYER_CONTEXT_DISPLAY_ROOT / "nflverse_player_context_display_artifact.csv"
@@ -134,9 +118,7 @@ PINNED_SNAPSHOT_MANIFEST = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\pinned_live_snapshots"
     r"\20260620_controlled_sim_v1\pinned_snapshot_manifest.json"
 )
-EXPECTED_PINNED_MANIFEST_HASH = (
-    "5780156F09FBDA61FB906715C7341DB1B6D320C8D8EFA588070F19C4C50F45CE"
-)
+EXPECTED_PINNED_MANIFEST_HASH = "5780156F09FBDA61FB906715C7341DB1B6D320C8D8EFA588070F19C4C50F45CE"
 ROSTER_AGE_CONTEXT_PATH = Path(
     r"C:\NWR_SHARED_DATA\lane_exchange\stats_context\player_roster_display_context"
     r"\20260621_011500_timing_metadata_v1\player_roster_display_context.csv"
@@ -488,10 +470,7 @@ OUTCOME_DISPLAY_FIELD_POSITIONS = {
     for _source, target, label in APPROVED_OUTCOME_DISPLAY_FIELDS
 }
 OUTCOME_DISPLAY_FIELD_POSITIONS.update(
-    {
-        target: position
-        for _source, target, _label, position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
-    }
+    {target: position for _source, target, _label, position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS}
 )
 
 
@@ -702,8 +681,7 @@ def _apply_on_clock_decision_layer(frame: pd.DataFrame) -> pd.DataFrame:
         values.append(_on_clock_decision_value(row))
     decision["_on_clock_decision_value_sort"] = values
     decision["on_clock_decision_value"] = [
-        f"{value:.2f}" if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION
-        for value in values
+        f"{value:.2f}" if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION for value in values
     ]
     decision["on_clock_decision_tier"] = [
         _on_clock_decision_tier(value) if value is not None else OUTCOME_NOT_ENOUGH_INFORMATION
@@ -1023,8 +1001,7 @@ def _pdf_free_agent_row(row: dict[str, object]) -> dict[str, object]:
         "uncertainty_reasons": _pdf_uncertainty_reasons(row, candidate_value),
         "candidate_key_caveat": caveat,
         "candidate_vs_frozen_note": (
-            "PDF Free Agent / Review-Only; not on frozen board; does not replace "
-            "Final Board Rank."
+            "PDF Free Agent / Review-Only; not on frozen board; does not replace Final Board Rank."
         ),
         "candidate_vs_dynasty_note": _pdf_dynasty_note(row),
         "candidate_action_summary": caveat,
@@ -1279,8 +1256,7 @@ def validate_dynasty_rankings(frame: pd.DataFrame) -> tuple[str, ...]:
     errors: list[str] = []
     if frame.shape[0] != EXPECTED_DYNASTY_ROW_COUNT:
         errors.append(
-            f"Expected {EXPECTED_DYNASTY_ROW_COUNT} dynasty ranking rows; found "
-            f"{frame.shape[0]}."
+            f"Expected {EXPECTED_DYNASTY_ROW_COUNT} dynasty ranking rows; found {frame.shape[0]}."
         )
     required = ("nwr_rank", "player_name", "position", "nwr_dynasty_score", "is_rookie")
     missing = [column for column in required if column not in frame.columns]
@@ -1418,9 +1394,7 @@ def validate_nflverse_player_context_display(
     missing_artifact = [column for column in required_artifact if column not in frame.columns]
     if missing_artifact:
         errors.append(
-            "Missing NFLVerse player context artifact fields: "
-            + ", ".join(missing_artifact)
-            + "."
+            "Missing NFLVerse player context artifact fields: " + ", ".join(missing_artifact) + "."
         )
     required_schema = (
         "column_name",
@@ -1437,9 +1411,7 @@ def validate_nflverse_player_context_display(
     missing_schema = [column for column in required_schema if column not in schema.columns]
     if missing_schema:
         errors.append(
-            "Missing NFLVerse player context schema fields: "
-            + ", ".join(missing_schema)
-            + "."
+            "Missing NFLVerse player context schema fields: " + ", ".join(missing_schema) + "."
         )
     if errors:
         return tuple(errors)
@@ -1492,9 +1464,7 @@ def validate_nflverse_player_context_display(
                 unsafe_schema.append(f"{field}.{flag}: {row.get(flag)}")
     if unsafe_schema:
         errors.append(
-            "NFLVerse player context schema has unsafe fields: "
-            + "; ".join(unsafe_schema)
-            + "."
+            "NFLVerse player context schema has unsafe fields: " + "; ".join(unsafe_schema) + "."
         )
 
     artifact_flags = {
@@ -1529,9 +1499,7 @@ def load_cross_asset_candidate_board() -> pd.DataFrame:
     hidden_like = hidden_sort_columns(frame.columns)
     if hidden_like:
         return pd.DataFrame()
-    return _overlay_tuned_v2_candidate_rows(
-        _overlay_historical_tuned_candidate_rows(frame)
-    )
+    return _overlay_tuned_v2_candidate_rows(_overlay_historical_tuned_candidate_rows(frame))
 
 
 def _overlay_historical_tuned_candidate_rows(base_frame: pd.DataFrame) -> pd.DataFrame:
@@ -1690,9 +1658,7 @@ def _apply_tuned_v2_candidate_row(
         "Tuned V2 Candidate / Review-Only pick-window label. ADP/range is "
         "display-only and does not drive internal value."
     )
-    frame.at[index, "source_note"] = _candidate_display_value(
-        tuned_row.get("source_note")
-    )
+    frame.at[index, "source_note"] = _candidate_display_value(tuned_row.get("source_note"))
 
 
 def _tuned_v2_value_band(value: object) -> str:
@@ -1799,11 +1765,7 @@ def _candidate_display_value(value: object) -> str:
 def _candidate_key_caveat(row: dict[str, object]) -> str:
     manual = str(row.get("manual_review_flag", "")).strip().lower()
     confidence = str(row.get("confidence_band", "")).strip()
-    reasons = [
-        reason
-        for reason in str(row.get("uncertainty_reasons", "")).split("; ")
-        if reason
-    ]
+    reasons = [reason for reason in str(row.get("uncertainty_reasons", "")).split("; ") if reason]
     important = [
         reason
         for reason in reasons
@@ -1846,9 +1808,7 @@ def validate_outcome_numeric_display(frame: pd.DataFrame) -> tuple[str, ...]:
             f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
         )
     blocked_heads = [
-        column
-        for column in frame.columns
-        if "top_6" in column.lower() or "top6" in column.lower()
+        column for column in frame.columns if "top_6" in column.lower() or "top6" in column.lower()
     ]
     if blocked_heads:
         errors.append(f"Blocked unapproved Outcome heads are present: {', '.join(blocked_heads)}.")
@@ -1888,9 +1848,7 @@ def validate_outcome_v2_current_player_display(frame: pd.DataFrame) -> tuple[str
             f"Hidden/private sort-like columns are not allowed: {', '.join(hidden_like)}."
         )
     blocked_columns = [
-        column
-        for column in ("RB T6 Within 5Y", "RB T12 Within 5Y")
-        if column in frame.columns
+        column for column in ("RB T6 Within 5Y", "RB T12 Within 5Y") if column in frame.columns
     ]
     if blocked_columns:
         errors.append(f"Blocked Outcome V2 fields are present: {', '.join(blocked_columns)}.")
@@ -1984,12 +1942,10 @@ def integrate_outcome_v2_display_context(frame: pd.DataFrame) -> pd.DataFrame:
         outcome_v2_status_label,
         axis=1,
     )
-    merged["outcome_v2_availability_context_status"] = merged[
-        "availability_context_status"
-    ].map(outcome_v2_text_display)
-    merged["outcome_v2_caveat_display_only"] = merged["caveat_summary"].map(
+    merged["outcome_v2_availability_context_status"] = merged["availability_context_status"].map(
         outcome_v2_text_display
     )
+    merged["outcome_v2_caveat_display_only"] = merged["caveat_summary"].map(outcome_v2_text_display)
     for source, target, _label in OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS:
         merged[target] = merged[source].map(outcome_v2_text_display)
     for source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
@@ -2086,15 +2042,13 @@ def integrate_nflverse_player_context_display(frame: pd.DataFrame) -> pd.DataFra
         ("contract_context", "nflverse_contract_context_display_only"),
         ("data_coverage_status", "nflverse_data_coverage_status_display_only"),
     ):
-        merged.loc[safe_mask, target] = merged.loc[safe_mask, source].map(
-            outcome_v2_text_display
-        )
-    merged.loc[safe_mask, "nflverse_last_active_display_only"] = merged.loc[
-        safe_mask
-    ].apply(_nflverse_last_active_display, axis=1)
-    merged.loc[safe_mask, "nflverse_draft_capital_display_only"] = merged.loc[
-        safe_mask
-    ].apply(_nflverse_draft_capital_display, axis=1)
+        merged.loc[safe_mask, target] = merged.loc[safe_mask, source].map(outcome_v2_text_display)
+    merged.loc[safe_mask, "nflverse_last_active_display_only"] = merged.loc[safe_mask].apply(
+        _nflverse_last_active_display, axis=1
+    )
+    merged.loc[safe_mask, "nflverse_draft_capital_display_only"] = merged.loc[safe_mask].apply(
+        _nflverse_draft_capital_display, axis=1
+    )
     merged = _apply_nflverse_age_fallback(merged, safe_mask)
     return merged.drop(columns=context_columns, errors="ignore")
 
@@ -2182,17 +2136,12 @@ def outcome_availability_label(value: object) -> str:
 
 
 def outcome_display_targets(*, include_injury_context: bool = False) -> tuple[str, ...]:
-    injury_columns = (
-        OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
-    )
+    injury_columns = OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
     return (
         *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
         *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
         *injury_columns,
-        *(
-            target
-            for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS
-        ),
+        *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
     )
 
 
@@ -2207,9 +2156,7 @@ def outcome_targets_for_positions(
         for target, position in OUTCOME_DISPLAY_FIELD_POSITIONS.items()
         if position in normalized
     )
-    injury_columns = (
-        OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
-    )
+    injury_columns = OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()
     return (*OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS, *injury_columns, *position_targets)
 
 
@@ -2282,9 +2229,7 @@ def outcome_v2_display_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
     limited_recent_sample = 0
     if "injury_context_limited_recent_sample_display_only" in frame.columns:
         limited = frame["injury_context_limited_recent_sample_display_only"].astype(str)
-        limited_recent_sample = int(
-            limited.str.startswith("true").sum()
-        )
+        limited_recent_sample = int(limited.str.startswith("true").sum())
     return {
         "rows": rows,
         "available": available,
@@ -2372,9 +2317,7 @@ def build_unified_player_board(
         board_row = board_by_id.get(player_id, {}) or board_by_identity.get(identity_key, {})
         merged = dict(row)
         merged["source_coverage"] = (
-            "Full Dynasty source + Frozen Baseline"
-            if board_row
-            else "Full Dynasty source"
+            "Full Dynasty source + Frozen Baseline" if board_row else "Full Dynasty source"
         )
         merged["asset_type_display"] = asset_type_display(row, board_row)
         for column in (
@@ -2399,9 +2342,7 @@ def build_unified_player_board(
             )
         ].copy()
         board_only_rows = integrate_outcome_v2_display_context(
-            integrate_outcome_display_context(
-                _board_only_rows_for_unified_player_board(board_only)
-            )
+            integrate_outcome_display_context(_board_only_rows_for_unified_player_board(board_only))
         )
         rows.extend(board_only_rows.to_dict("records"))
 
@@ -2448,15 +2389,11 @@ def enrich_unified_player_board_with_market_baseline(frame: pd.DataFrame) -> pd.
         dp_age = age_display_value(row.get("dp_age"))
         if nwr_age != OUTCOME_NOT_ENOUGH_INFORMATION:
             output.at[index, "age"] = nwr_age
-            if str(row.get("age_source_display", "")).strip() != (
-                "NFLVerse rosters.birth_date"
-            ):
+            if str(row.get("age_source_display", "")).strip() != ("NFLVerse rosters.birth_date"):
                 output.at[index, "age_source_display"] = "NWR approved source"
         elif dp_age != OUTCOME_NOT_ENOUGH_INFORMATION:
             output.at[index, "age"] = dp_age
-            output.at[index, "age_source_display"] = (
-                "Market Baseline / Display-Only fallback"
-            )
+            output.at[index, "age_source_display"] = "Market Baseline / Display-Only fallback"
             output.at[index, "market_age_fallback_used"] = True
         else:
             output.at[index, "age"] = OUTCOME_NOT_ENOUGH_INFORMATION
@@ -2470,13 +2407,9 @@ def market_baseline_age_coverage(frame: pd.DataFrame) -> dict[str, int]:
 
     before = 0
     if "age" in frame.columns:
-        before = int(
-            frame["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum()
-        )
+        before = int(frame["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum())
     enriched = enrich_unified_player_board_with_market_baseline(frame)
-    after = int(
-        enriched["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum()
-    )
+    after = int(enriched["age"].map(age_display_value).ne(OUTCOME_NOT_ENOUGH_INFORMATION).sum())
     fallback = int(enriched.get("market_age_fallback_used", pd.Series(dtype=bool)).sum())
     return {"before": before, "after": after, "market_fallback": fallback}
 
@@ -2518,8 +2451,8 @@ def sort_unified_player_board_for_view(frame: pd.DataFrame, view_mode: str) -> p
         sorted_frame.get("final_board_rank", pd.Series(dtype=str)),
         errors="coerce",
     )
-    sorted_frame["_has_dynasty_rank_sort"] = sorted_frame["_dynasty_sort"].notna().map(
-        {True: 0, False: 1}
+    sorted_frame["_has_dynasty_rank_sort"] = (
+        sorted_frame["_dynasty_sort"].notna().map({True: 0, False: 1})
     )
 
     if view_mode == ROOKIES_DRAFT_BOARD_VIEW:
@@ -2549,6 +2482,17 @@ NUMERIC_RANKINGS_SORT_COLUMNS = {
     "cross_asset_candidate_rank",
     "age",
     "nwr_dynasty_score",
+    "dp_value_1qb",
+    "dp_market_rank_1qb",
+    "dp_ecr_pos",
+    "dp_age",
+    "market_gap",
+    "cross_asset_candidate_value",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "score_contribution_percent_display",
+    *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+    *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
 }
 
 
@@ -2571,10 +2515,10 @@ def sort_rankings_frame_by_column(
         values = sorted_frame[column]
         if column == "nwr_position_rank":
             values = values.astype(str).str.extract(r"(\d+)", expand=False)
+        elif column in PERCENT_RANKINGS_DISPLAY_COLUMNS:
+            values = values.astype(str).str.strip().str.removesuffix("%")
         sorted_frame["_ui_sort"] = pd.to_numeric(values, errors="coerce")
-        sorted_frame["_ui_sort_missing"] = sorted_frame["_ui_sort"].isna().map(
-            {True: 1, False: 0}
-        )
+        sorted_frame["_ui_sort_missing"] = sorted_frame["_ui_sort"].isna().map({True: 1, False: 0})
         by = ["_ui_sort_missing", "_ui_sort"]
         sort_ascending = [True, ascending]
         if "player_name" in sorted_frame.columns:
@@ -2663,7 +2607,10 @@ def display_unified_player_board_frame(
             display[column] = display[column].map(not_enough_information_display_value)
     for column in NUMERIC_RANKINGS_DISPLAY_COLUMNS:
         if column in display.columns:
-            display[column] = pd.to_numeric(display[column], errors="coerce")
+            values = display[column]
+            if column in PERCENT_RANKINGS_DISPLAY_COLUMNS:
+                values = values.astype(str).str.strip().str.removesuffix("%")
+            display[column] = pd.to_numeric(values, errors="coerce")
     for column in display.columns:
         if column not in NUMERIC_RANKINGS_DISPLAY_COLUMNS:
             display[column] = display[column].fillna("").astype(str)
@@ -2705,11 +2652,7 @@ def _display_columns_with_outcome_v2(
 ) -> tuple[str, ...]:
     v2_columns = (
         *OUTCOME_V2_CONTEXT_DISPLAY_COLUMNS,
-        *(
-            OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS
-            if include_injury_context
-            else ()
-        ),
+        *(OUTCOME_V2_INJURY_CONTEXT_DISPLAY_COLUMNS if include_injury_context else ()),
         *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
     )
     insert_after = "te_t12_display_only"
@@ -2757,8 +2700,33 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
 
 NUMERIC_RANKINGS_DISPLAY_COLUMNS = (
     "nwr_rank",
+    "final_board_rank",
+    "cross_asset_candidate_rank",
+    "cross_asset_candidate_value",
+    "age",
     "nwr_dynasty_score",
     "base_nwr_dynasty_score",
+    "dp_value_1qb",
+    "dp_market_rank_1qb",
+    "dp_ecr_pos",
+    "dp_age",
+    "market_gap",
+    "available_pool_adp_range",
+    "current_pick_value",
+    "missing_score_component_count_display",
+    "capped_score_component_count_display",
+    "score_contribution_percent_display",
+    "injury_context_last_materially_active_season_display_only",
+    "injury_context_seasons_since_material_activity_display_only",
+    *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+    *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+)
+
+PERCENT_RANKINGS_DISPLAY_COLUMNS = frozenset(
+    {
+        *(target for _source, target, _label in APPROVED_OUTCOME_DISPLAY_FIELDS),
+        *(target for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS),
+    }
 )
 
 
@@ -2830,11 +2798,7 @@ def _rows_by_player_identity(
 def _player_id_set(frame: pd.DataFrame) -> set[str]:
     if "player_id" not in frame.columns:
         return set()
-    return {
-        str(player_id).strip()
-        for player_id in frame["player_id"]
-        if str(player_id).strip()
-    }
+    return {str(player_id).strip() for player_id in frame["player_id"] if str(player_id).strip()}
 
 
 def _player_identity_keys(frame: pd.DataFrame, *, name_column: str) -> set[tuple[str, str]]:
@@ -2879,9 +2843,7 @@ def normalize_dynasty_rankings_frame(frame: pd.DataFrame) -> pd.DataFrame:
         name_column="player_name",
     )
     if "nwr_rank" in normalized.columns:
-        normalized["_rank_sort_visible"] = pd.to_numeric(
-            normalized["nwr_rank"], errors="coerce"
-        )
+        normalized["_rank_sort_visible"] = pd.to_numeric(normalized["nwr_rank"], errors="coerce")
         normalized = normalized.sort_values(
             by=["_rank_sort_visible", "player_name"],
             ascending=[True, True],
@@ -3209,15 +3171,9 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "injury_context_available_display_only": "Injury Ctx",
     "injury_context_availability_caveat_display_only": "Availability Caveat",
     "injury_context_limited_recent_sample_display_only": "Limited Sample",
-    "injury_context_last_materially_active_season_display_only": (
-        "Last Active"
-    ),
-    "injury_context_seasons_since_material_activity_display_only": (
-        "Inactive Yrs"
-    ),
-    "injury_context_not_enough_information_reason_display_only": (
-        "Missing Reason"
-    ),
+    "injury_context_last_materially_active_season_display_only": ("Last Active"),
+    "injury_context_seasons_since_material_activity_display_only": ("Inactive Yrs"),
+    "injury_context_not_enough_information_reason_display_only": ("Missing Reason"),
     "outcome_v2_qb_t6_this_year_display_only": "QB T6 2026",
     "outcome_v2_qb_t12_this_year_display_only": "QB T12 2026",
     "outcome_v2_rb_t6_this_year_display_only": "RB T6 2026",
@@ -3280,6 +3236,8 @@ RANKINGS_IDENTITY_COLUMN_CONFIG = {
         "label": "Rank",
         "width": 72,
         "pinned": True,
+        "type": "number",
+        "format": "%d",
         "help": "Dynasty Rank",
     },
     "Player": {
@@ -3301,6 +3259,8 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Age": {
         "label": "Age",
         "width": 58,
+        "type": "number",
+        "format": "%.1f",
         "help": "Approved display age when available. Missing age is not treated as zero.",
     },
     "NWR Dynasty Score": {
@@ -3354,17 +3314,37 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Market Gap": {
         "label": "Market Gap",
         "width": 92,
+        "type": "number",
+        "format": "%.1f",
         "help": "NWR-vs-market display-only gap. Not used for model value or rank.",
     },
     "DP Value": {
         "label": "DP Value",
         "width": 92,
+        "type": "number",
+        "format": "%d",
         "help": "DynastyProcess display-only 1QB market value.",
     },
     "DP Rank": {
         "label": "DP Rank",
         "width": 82,
+        "type": "number",
+        "format": "%.1f",
         "help": "DynastyProcess display-only 1QB market rank.",
+    },
+    "DP ECR": {
+        "label": "DP ECR",
+        "width": 82,
+        "type": "number",
+        "format": "%.1f",
+        "help": "DynastyProcess display-only position ECR.",
+    },
+    "DP Age": {
+        "label": "DP Age",
+        "width": 72,
+        "type": "number",
+        "format": "%.1f",
+        "help": "DynastyProcess display-only age context.",
     },
     "Age Src": {
         "label": "Age Src",
@@ -3427,21 +3407,29 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Candidate Rank": {
         "label": "Cand Rank",
         "width": 92,
+        "type": "number",
+        "format": "%d",
         "help": "Review-only candidate rank. It does not replace Dynasty Rank.",
     },
     "Candidate Value": {
         "label": "Cand Value",
         "width": 96,
+        "type": "number",
+        "format": "%.2f",
         "help": "Review-only candidate value. It is not player value or trade value.",
     },
     "Pool ADP": {
         "label": "Pool ADP",
         "width": 92,
+        "type": "number",
+        "format": "%.1f",
         "help": "Display-only timing context; not model input or hidden sort.",
     },
     "Pick Value": {
         "label": "Pick Value",
         "width": 90,
+        "type": "number",
+        "format": "%.1f",
         "help": "Display-only pick context; not trade or pick valuation.",
     },
     "Score Status": {
@@ -3503,6 +3491,8 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Missing Component Count": {
         "label": "Missing Cmp",
         "width": 104,
+        "type": "number",
+        "format": "%d",
         "help": (
             "Shown only when safely supported by current scoring artifacts. Missing means "
             "not enough information, not zero or bad."
@@ -3511,6 +3501,8 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Capped Component Count": {
         "label": "Capped Cmp",
         "width": 104,
+        "type": "number",
+        "format": "%d",
         "help": (
             "Shown only when safely supported by current scoring artifacts. Missing means "
             "not enough information, not false or clean."
@@ -3519,6 +3511,8 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     "Contribution %": {
         "label": "Contribution %",
         "width": 116,
+        "type": "number",
+        "format": "%.1f%%",
         "help": (
             "Shown only when safely decomposable from current scoring artifacts. Does not "
             "imply independent player value."
@@ -3710,9 +3704,7 @@ def draft_day_status_rows(bundle: FrozenBoardBundle) -> list[dict[str, str]]:
         },
         {
             "check": "Pinned manifest hash",
-            "status": "GREEN"
-            if pinned_hash == EXPECTED_PINNED_MANIFEST_HASH
-            else "YELLOW-HOLD",
+            "status": "GREEN" if pinned_hash == EXPECTED_PINNED_MANIFEST_HASH else "YELLOW-HOLD",
             "detail": pinned_hash or "missing",
         },
         {

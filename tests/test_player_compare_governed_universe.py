@@ -224,7 +224,8 @@ def test_user_facing_source_identity_never_returns_an_absolute_path() -> None:
 def test_page_wires_governed_registry_and_removes_visible_path_interpolation() -> None:
     page = PAGE.read_text(encoding="utf-8")
 
-    assert "build_player_compare_universe(governed)" in page
+    assert "build_player_compare_universe(" in page
+    assert "evidence_rows=_owner_evidence.rows" in page
     assert 'compare_pool["asset_id"]' in page
     assert "NO_COMMON_SCALE_NOTE" in page
     assert "render_source_of_truth_badge" not in page

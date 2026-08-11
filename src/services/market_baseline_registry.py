@@ -44,6 +44,9 @@ PAGE_USAGE: dict[str, MarketBaselinePageUsage] = {
         fields_allowed=(
             "market_baseline_label",
             "dp_value_1qb",
+            "dp_market_rank_1qb",
+            "dp_ecr_pos",
+            "dp_age",
             "pick_label",
             "market_sanity_label",
             "freshness_status",
@@ -143,9 +146,7 @@ def validate_market_baseline_registry() -> list[str]:
             issues.append(f"{page}: sort_allowed must remain false")
         if "rank" in " ".join(usage.fields_allowed).lower():
             allowed_rank_fields = {"dp_market_rank_1qb"}
-            rank_fields = {
-                field for field in usage.fields_allowed if "rank" in field.lower()
-            }
+            rank_fields = {field for field in usage.fields_allowed if "rank" in field.lower()}
             if not rank_fields.issubset(allowed_rank_fields):
                 issues.append(f"{page}: rank-like field not allowed: {sorted(rank_fields)}")
     return issues

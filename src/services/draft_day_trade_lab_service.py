@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -26,9 +27,12 @@ DISPLAY_ITEM_COLUMNS = (
     "player",
     "position",
     "nfl_team",
+    "age",
     "roster_context",
     "rank_source",
     "dynasty_rank",
+    "position_rank",
+    "nwr_dynasty_score",
     "final_board_rank",
     "final_tier",
     "tier_movement_note",
@@ -36,6 +40,15 @@ DISPLAY_ITEM_COLUMNS = (
     "pick_window_note",
     "risk_manual_review_notes",
     "data_status",
+    "market_dp_value",
+    "market_dp_rank",
+    "market_status",
+    "research_rank",
+    "research_tier",
+    "research_status",
+    "outcome_signals",
+    "owner_caveats",
+    "raw_caveat_codes",
 )
 
 REGISTRY_PREFIX = "registry:"
@@ -62,6 +75,12 @@ class TradeReview:
     explanation: str
 
 
+@dataclass(frozen=True)
+class TradeNarrative:
+    differences: tuple[str, ...]
+    bottom_line: tuple[str, ...]
+
+
 class TradePlayerUniverseError(ValueError):
     """Raised when Trading Lab is given a non-canonical player universe."""
 
@@ -74,6 +93,7 @@ def normalize_trade_state(state: Any) -> TradeState:
     if not isinstance(state, dict):
         return empty_trade_state()
     normalized: TradeState = {"give": [], "get": []}
+    globally_seen: set[str] = set()
     for side in ("give", "get"):
         values = state.get(side, [])
         if not isinstance(values, list):
@@ -81,9 +101,10 @@ def normalize_trade_state(state: Any) -> TradeState:
         seen: set[str] = set()
         for value in values:
             key = str(value or "").strip()
-            if key and key not in seen:
+            if key and key not in seen and key not in globally_seen:
                 normalized[side].append(key)
                 seen.add(key)
+                globally_seen.add(key)
     return normalized
 
 
@@ -94,7 +115,8 @@ def copy_trade_state(state: TradeState) -> TradeState:
 def add_trade_item(state: TradeState, side: Side, item_key: str) -> TradeState:
     normalized = copy_trade_state(state)
     key = str(item_key or "").strip()
-    if key and key not in normalized[side]:
+    other: Side = "get" if side == "give" else "give"
+    if key and key not in normalized[side] and key not in normalized[other]:
         normalized[side].append(key)
     return normalized
 
@@ -107,6 +129,16 @@ def remove_trade_item(state: TradeState, side: Side, item_key: str) -> TradeStat
 
 def clear_trade_state() -> TradeState:
     return empty_trade_state()
+
+
+def replace_trade_state(give: list[str], get: list[str]) -> TradeState:
+    """Replace the analyzed trade atomically from the two visible owner selectors."""
+
+    return normalize_trade_state({"give": list(give), "get": list(get)})
+
+
+def cross_side_duplicates(give: list[str], get: list[str]) -> tuple[str, ...]:
+    return tuple(sorted(set(give) & set(get)))
 
 
 def build_trade_item_lookup(
@@ -220,11 +252,16 @@ def build_registry_trade_item_lookup(
             "player": row.get("asset_name", asset_id),
             "position": row.get("position", ""),
             "nfl_team": row.get("team", ""),
+            "age": row.get("age", ""),
             "roster_context": NOT_ENOUGH_INFORMATION,
             "rank_source": row.get("source_label", ""),
-            "dynasty_rank": rank_value if registry_type == "Current Player" else "",
+            "dynasty_rank": row.get("dynasty_rank", rank_value)
+            if registry_type == "Current Player"
+            else "",
+            "position_rank": row.get("position_rank", ""),
+            "nwr_dynasty_score": row.get("nwr_dynasty_score", row.get("score_value", "")),
             "final_board_rank": rank_value if registry_type == "Rookie Review" else "",
-            "final_tier": row.get("tier", ""),
+            "final_tier": row.get("value_band") or row.get("tier", ""),
             "tier_movement_note": NOT_ENOUGH_INFORMATION,
             "position_scarcity_note": NOT_ENOUGH_INFORMATION,
             "pick_window_note": (
@@ -234,6 +271,15 @@ def build_registry_trade_item_lookup(
             "data_status": (
                 f"{row.get('authority_status', '')}; {row.get('comparison_scope', '')}"
             ),
+            "market_dp_value": row.get("market_dp_value", ""),
+            "market_dp_rank": row.get("market_dp_rank", ""),
+            "market_status": row.get("market_status", ""),
+            "research_rank": row.get("research_rank", ""),
+            "research_tier": row.get("research_tier", ""),
+            "research_status": row.get("research_status_owner") or row.get("research_status", ""),
+            "outcome_signals": tuple(row.get("outcome_signals", ())),
+            "owner_caveats": tuple(row.get("owner_caveats", ())),
+            "raw_caveat_codes": row.get("raw_caveat_codes", row.get("warnings", "")),
         }
     return lookup
 
@@ -259,8 +305,7 @@ def validate_trade_player_universe(player_frame: pd.DataFrame) -> tuple[str, ...
     missing = [column for column in required if column not in player_frame.columns]
     if missing:
         errors.append(
-            "Trading Lab player authority is missing required fields: "
-            f"{', '.join(missing)}."
+            f"Trading Lab player authority is missing required fields: {', '.join(missing)}."
         )
         return tuple(errors)
 
@@ -284,8 +329,7 @@ def validate_trade_player_universe(player_frame: pd.DataFrame) -> tuple[str, ...
     duplicate_ids = sorted(player_ids[player_ids.ne("") & player_ids.duplicated()].unique())
     if duplicate_ids:
         errors.append(
-            "Trading Lab player authority has duplicate player IDs: "
-            f"{', '.join(duplicate_ids)}."
+            f"Trading Lab player authority has duplicate player IDs: {', '.join(duplicate_ids)}."
         )
 
     blank_names = int(player_frame["player_name"].astype(str).str.strip().eq("").sum())
@@ -312,9 +356,7 @@ def validate_trade_player_universe(player_frame: pd.DataFrame) -> tuple[str, ...
         )
 
     pool_statuses = player_frame["pool_status"].astype(str).str.strip().str.upper()
-    invalid_pool_statuses = sorted(
-        set(pool_statuses) - set(APPROVED_POOL_STATUSES)
-    )
+    invalid_pool_statuses = sorted(set(pool_statuses) - set(APPROVED_POOL_STATUSES))
     if invalid_pool_statuses:
         errors.append(
             "Trading Lab player authority has unapproved ownership states: "
@@ -347,12 +389,29 @@ def trade_item_rows(
     normalized = normalize_trade_state(state)
     for side in ("give", "get"):
         for key in normalized[side]:
-            item = dict(lookup.get(key, _missing_item(key)))
-            item["side"] = "NWR gives" if side == "give" else "NWR gets"
+            if key not in lookup:
+                continue
+            item = dict(lookup[key])
+            item["side"] = "You give" if side == "give" else "You receive"
             rows.append(item)
     if not rows:
         return pd.DataFrame(columns=DISPLAY_ITEM_COLUMNS)
     return pd.DataFrame(rows)
+
+
+def trade_asset_ids_by_side(
+    state: TradeState,
+    lookup: dict[str, dict[str, object]],
+) -> dict[str, list[str]]:
+    normalized = normalize_trade_state(state)
+    return {
+        side: [
+            str(lookup[key].get("asset_id", "")).strip()
+            for key in normalized[side]
+            if key in lookup and str(lookup[key].get("asset_id", "")).strip()
+        ]
+        for side in ("give", "get")
+    }
 
 
 def display_trade_item_rows(frame: pd.DataFrame) -> pd.DataFrame:
@@ -381,8 +440,8 @@ def review_trade_package(
     lookup: dict[str, dict[str, object]],
 ) -> TradeReview:
     summary = package_summary_rows(state, lookup)
-    give = summary.loc[summary["side"] == "NWR gives"].iloc[0]
-    get = summary.loc[summary["side"] == "NWR gets"].iloc[0]
+    give = summary.loc[summary["side"] == "You give"].iloc[0]
+    get = summary.loc[summary["side"] == "You receive"].iloc[0]
     if int(give["asset_count"]) == 0 or int(get["asset_count"]) == 0:
         return TradeReview(
             status="One side empty",
@@ -417,6 +476,228 @@ def review_trade_package(
             "side total, side average, gap, or recommendation is calculated."
         ),
     )
+
+
+def build_trade_narrative(
+    state: TradeState,
+    lookup: dict[str, dict[str, object]],
+) -> TradeNarrative:
+    """Describe admitted evidence without calculating a package value or winner."""
+
+    rows = trade_item_rows(state, lookup)
+    if rows.empty:
+        return TradeNarrative((), ("Add assets to both sides to analyze the trade.",))
+    give = rows.loc[rows["side"].eq("You give")].to_dict("records")
+    receive = rows.loc[rows["side"].eq("You receive")].to_dict("records")
+    if not give or not receive:
+        return TradeNarrative(
+            ("One side is empty, so the evidence cannot be compared yet.",),
+            ("Add at least one asset to each side.",),
+        )
+
+    differences: list[str] = []
+    give_best = _best_production_asset(give)
+    receive_best = _best_production_asset(receive)
+    if give_best and receive_best:
+        better = give_best if give_best[1] < receive_best[1] else receive_best
+        side = "You give" if better is give_best else "You receive"
+        differences.append(
+            f"Production standing — {side} has the highest production-ranked asset: "
+            f"{better[0]} (Dynasty Rank {better[1]})."
+        )
+    elif give_best or receive_best:
+        best = give_best or receive_best
+        side = "You give" if give_best else "You receive"
+        differences.append(
+            f"Production standing — {side} contains the only production-ranked asset: "
+            f"{best[0]} (Dynasty Rank {best[1]})."
+        )
+
+    _append_count_difference(
+        differences,
+        give,
+        receive,
+        predicate=lambda row: _float(row.get("dynasty_rank")) is not None,
+        label="established production evidence",
+    )
+    _append_count_difference(
+        differences,
+        give,
+        receive,
+        predicate=lambda row: (
+            str(row.get("registry_asset_type")) in {"Rookie Review", "Blocked Rookie"}
+        ),
+        label="rookie upside / uncertainty",
+    )
+    _append_count_difference(
+        differences,
+        give,
+        receive,
+        predicate=lambda row: str(row.get("asset_type")) == "Pick context",
+        label="pick flexibility",
+    )
+    _append_youth_difference(differences, give, receive)
+    _append_lifecycle_caveats(differences, give, receive)
+    _append_position_composition(differences, give, receive)
+    _append_market_context(differences, give, receive)
+
+    classification = _trade_classification(give, receive)
+    sentences = [classification]
+    sentences.append(_side_sentence("The strongest production-ranked outgoing asset", give))
+    sentences.append(_side_sentence("The strongest production-ranked incoming asset", receive))
+    rookie_only = [
+        row
+        for row in (*give, *receive)
+        if str(row.get("registry_asset_type")) in {"Rookie Review", "Blocked Rookie"}
+        and _float(row.get("dynasty_rank")) is None
+    ]
+    if rookie_only:
+        names = ", ".join(str(row.get("player")) for row in rookie_only)
+        sentences.append(
+            f"{names} carries rookie/research evidence without a Finished V1 production rank."
+        )
+    caveat_rows = [
+        (str(row.get("player")), tuple(row.get("owner_caveats", ())))
+        for row in (*give, *receive)
+        if tuple(row.get("owner_caveats", ()))
+    ]
+    if caveat_rows:
+        lifecycle = _lifecycle_details((*give, *receive))
+        if lifecycle:
+            sentences.append(f"Major career-window caveats: {'; '.join(lifecycle[:3])}.")
+        else:
+            name, caveats = caveat_rows[0]
+            sentences.append(f"Major lifecycle/evidence caveat: {name} — {caveats[0]}")
+    sentences.append(
+        "The available evidence supports descriptive review only; it does not establish "
+        "package superiority."
+    )
+    return TradeNarrative(tuple(differences), tuple(sentence for sentence in sentences if sentence))
+
+
+def _best_production_asset(rows: list[dict[str, object]]) -> tuple[str, int] | None:
+    ranked = [
+        (str(row.get("player") or row.get("label")), int(rank))
+        for row in rows
+        if (rank := _float(row.get("dynasty_rank"))) is not None
+    ]
+    return min(ranked, key=lambda item: item[1]) if ranked else None
+
+
+def _append_count_difference(
+    output: list[str],
+    give: list[dict[str, object]],
+    receive: list[dict[str, object]],
+    *,
+    predicate,
+    label: str,
+) -> None:
+    give_count = sum(bool(predicate(row)) for row in give)
+    receive_count = sum(bool(predicate(row)) for row in receive)
+    if give_count == receive_count:
+        return
+    side = "You give" if give_count > receive_count else "You receive"
+    count = max(give_count, receive_count)
+    output.append(f"Side stronger on: {label} — {side} ({count} asset{'s' if count != 1 else ''}).")
+
+
+def _append_youth_difference(
+    output: list[str], give: list[dict[str, object]], receive: list[dict[str, object]]
+) -> None:
+    give_young = sum((_float(row.get("age")) or 99) <= 25 for row in give)
+    receive_young = sum((_float(row.get("age")) or 99) <= 25 for row in receive)
+    if give_young != receive_young:
+        side = "You give" if give_young > receive_young else "You receive"
+        output.append(f"Side stronger on: youth / career-window — {side}.")
+
+
+def _append_position_composition(
+    output: list[str], give: list[dict[str, object]], receive: list[dict[str, object]]
+) -> None:
+    def positions(rows: list[dict[str, object]]) -> str:
+        values = [str(row.get("position")) for row in rows if str(row.get("position"))]
+        return ", ".join(dict.fromkeys(values)) or "no position listed"
+
+    output.append(
+        f"Positional composition — You give: {positions(give)}; You receive: {positions(receive)}."
+    )
+
+
+def _append_lifecycle_caveats(
+    output: list[str], give: list[dict[str, object]], receive: list[dict[str, object]]
+) -> None:
+    for side, rows in (("You give", give), ("You receive", receive)):
+        details = _lifecycle_details(rows)
+        if details:
+            output.append(f"Career-window context — {side}: {'; '.join(details[:3])}.")
+
+
+def _lifecycle_details(rows: Sequence[dict[str, object]]) -> list[str]:
+    details: list[str] = []
+    for row in rows:
+        caveats = tuple(row.get("owner_caveats", ()))
+        caveat = next(
+            (value for value in caveats if "age-related" in value.casefold()),
+            next((value for value in caveats if "age-window" in value.casefold()), ""),
+        )
+        if caveat:
+            details.append(f"{row.get('player')} — {caveat.rstrip('.')}")
+    return details
+
+
+def _append_market_context(
+    output: list[str], give: list[dict[str, object]], receive: list[dict[str, object]]
+) -> None:
+    candidates = []
+    for side, rows in (("You give", give), ("You receive", receive)):
+        for row in rows:
+            if (value := _float(row.get("market_dp_value"))) is not None:
+                candidates.append((value, side, str(row.get("player")), row.get("market_status")))
+    if not candidates:
+        return
+    value, side, player, status = max(candidates, key=lambda item: item[0])
+    output.append(
+        f"Individual market context — {side} has the highest displayed DP Value: "
+        f"{player} ({int(value)}; {status or 'display-only evidence'}). "
+        "No side total is calculated."
+    )
+
+
+def _trade_classification(give: list[dict[str, object]], receive: list[dict[str, object]]) -> str:
+    give_rookie = any(
+        str(row.get("registry_asset_type")) in {"Rookie Review", "Blocked Rookie"} for row in give
+    )
+    receive_rookie = any(
+        str(row.get("registry_asset_type")) in {"Rookie Review", "Blocked Rookie"}
+        for row in receive
+    )
+    give_pick = any(str(row.get("asset_type")) == "Pick context" for row in give)
+    receive_pick = any(str(row.get("asset_type")) == "Pick context" for row in receive)
+    if give_rookie and not receive_rookie:
+        return "This is a youth/upside-for-established-production trade."
+    if receive_rookie and not give_rookie:
+        return "This is an established-production-for-youth/upside trade."
+    if give_pick != receive_pick:
+        return "This trade exchanges current-player evidence for pick flexibility."
+    return "This is a source-separated player-for-player trade."
+
+
+def _side_sentence(label: str, rows: list[dict[str, object]]) -> str:
+    best = _best_production_asset(rows)
+    if best is None:
+        return f"{label} is unavailable because this side has no Finished V1 production rank."
+    matching = next(row for row in rows if str(row.get("player")) == best[0])
+    position_rank = str(matching.get("position_rank") or "").strip()
+    suffix = f" · {position_rank}" if position_rank else ""
+    return f"{label} is {best[0]} (Dynasty Rank {best[1]}{suffix})."
+
+
+def _float(value: object) -> float | None:
+    try:
+        text = str(value if value is not None else "").strip()
+        return float(text) if text else None
+    except (TypeError, ValueError):
+        return None
 
 
 def parse_trade_asset_text(text: str) -> list[dict[str, Any]]:
@@ -456,11 +737,7 @@ def player_label(row: pd.Series | dict[str, object]) -> str:
     get = row.get
     dynasty_rank = _text(get("nwr_rank", ""))
     if _player_name(row) and "player_name" in row:
-        rank_label = (
-            f"Dynasty #{dynasty_rank}"
-            if dynasty_rank
-            else "Dynasty rank unavailable"
-        )
+        rank_label = f"Dynasty #{dynasty_rank}" if dynasty_rank else "Dynasty rank unavailable"
     else:
         rank_label = f"#{_text(get('final_board_rank', ''))}"
     return (
@@ -485,16 +762,12 @@ def _side_summary(
     keys: list[str],
     lookup: dict[str, dict[str, object]],
 ) -> dict[str, object]:
-    items = [lookup.get(key, _missing_item(key)) for key in keys]
+    items = [lookup[key] for key in keys if key in lookup]
     players = [item for item in items if str(item.get("asset_type")) == "Player"]
     pick_contexts = [item for item in items if str(item.get("asset_type")) == "Pick context"]
-    ranks = [
-        float(rank)
-        for item in players
-        if (rank := _primary_rank(item)) is not None
-    ]
+    ranks = [float(rank) for item in players if (rank := _primary_rank(item)) is not None]
     return {
-        "side": "NWR gives" if side == "give" else "NWR gets",
+        "side": "You give" if side == "give" else "You receive",
         "asset_count": len(items),
         "player_count": len(players),
         "pick_context_count": len(pick_contexts),
@@ -593,11 +866,7 @@ def _primary_rank(row: pd.Series | dict[str, object]) -> float | None:
 
 def _roster_context(row: pd.Series | dict[str, object]) -> str:
     get = row.get
-    return _note(
-        get("pool_status", "")
-        or get("roster_team_name", "")
-        or get("roster_status", "")
-    )
+    return _note(get("pool_status", "") or get("roster_team_name", "") or get("roster_status", ""))
 
 
 def _text(value: object) -> str:
@@ -631,9 +900,12 @@ def _display_labels() -> dict[str, str]:
         "player": "Player",
         "position": "Pos",
         "nfl_team": "NFL Team",
+        "age": "Age",
         "roster_context": "Roster Context",
         "rank_source": "Rank Source",
         "dynasty_rank": "Dynasty Rank",
+        "position_rank": "Position Rank",
+        "nwr_dynasty_score": "NWR Dynasty Score",
         "final_board_rank": "Final Board Rank",
         "final_tier": "Final Tier",
         "tier_movement_note": "Tier Movement",
@@ -641,4 +913,12 @@ def _display_labels() -> dict[str, str]:
         "pick_window_note": "Pick Context",
         "risk_manual_review_notes": "Risk / Manual Review",
         "data_status": "Data Status",
+        "market_dp_value": "DP Value",
+        "market_dp_rank": "DP Rank",
+        "market_status": "Market Evidence",
+        "research_rank": "Research Rank",
+        "research_tier": "Research Tier",
+        "research_status": "Research Status",
+        "outcome_signals": "Outcome Context",
+        "owner_caveats": "Major Caveat",
     }

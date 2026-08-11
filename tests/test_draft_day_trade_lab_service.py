@@ -220,9 +220,7 @@ def test_dynasty_schema_exposes_complete_player_universe() -> None:
         ),
         (
             "blank_player_id",
-            lambda frame: frame.assign(
-                player_id=["", *frame.iloc[1:]["player_id"].tolist()]
-            ),
+            lambda frame: frame.assign(player_id=["", *frame.iloc[1:]["player_id"].tolist()]),
             "blank player IDs",
         ),
         (
@@ -252,9 +250,7 @@ def test_dynasty_schema_exposes_complete_player_universe() -> None:
         ),
         (
             "outcome_v3_hidden_sort",
-            lambda frame: frame.assign(
-                outcome_v3_hidden_sort=list(range(240, 0, -1))
-            ),
+            lambda frame: frame.assign(outcome_v3_hidden_sort=list(range(240, 0, -1))),
             "prohibited recommendation or hidden-sort fields: outcome_v3_hidden_sort",
         ),
     ),
@@ -323,14 +319,14 @@ def test_trading_lab_page_wires_selector_to_dynasty_bundle_without_frozen_fallba
     ).read_text(encoding="utf-8")
 
     assert "dynasty_bundle = load_dynasty_rankings()" in page
-    assert "lookup = build_trade_item_lookup(" in page
-    assert "    dynasty_bundle.frame," in page
+    assert "compose_owner_asset_evidence(" in page
+    assert "lookup = build_registry_trade_item_lookup(owner_evidence.rows)" in page
+    assert "dynasty_frame=dynasty_bundle.frame" in page
     assert "source_context_counts(dynasty_bundle.frame" in page
-    assert "require_complete_player_universe=True" in page
     assert "validate_trade_player_universe(dynasty_bundle.frame)" in page
     assert "build_trade_item_lookup(bundle.frame" not in page
     assert "The frozen draft-board checkpoint will not be substituted" in page
-    assert "complete 240-player production universe" in page
+    assert "production-ranked players" in page
 
 
 def test_trading_lab_route_renders_complete_universe_rookie_veteran_and_picks(
@@ -346,27 +342,21 @@ def test_trading_lab_route_renders_complete_universe_rookie_veteran_and_picks(
     assert not at.exception
     assert not at.error
     assert after == before
-    player_selectors = [item for item in at.selectbox if item.label == "Add player"]
-    pick_selectors = [item for item in at.selectbox if item.label == "Add pick/context"]
-    assert len(player_selectors) == 2
-    assert all(len(item.options) == 240 for item in player_selectors)
-    assert all(len(set(item.options)) == 240 for item in player_selectors)
+    trade_selectors = [item for item in at.multiselect if item.label in {"You give", "You receive"}]
+    assert len(trade_selectors) == 2
+    assert all(len(item.options) == 379 for item in trade_selectors)
+    assert all(len(set(item.options)) == 379 for item in trade_selectors)
     assert all(
-        any("Ashton Jeanty" in option for option in item.options)
-        for item in player_selectors
+        any("Ashton Jeanty" in option for option in item.options) for item in trade_selectors
     )
     assert all(
-        any("Patrick Mahomes" in option for option in item.options)
-        for item in player_selectors
+        any("Patrick Mahomes" in option for option in item.options) for item in trade_selectors
     )
-    assert pick_selectors and all(item.options for item in pick_selectors)
-    source_notices = [item.value for item in at.info if "Current player universe:" in item.value]
+    source_notices = [
+        item.value for item in at.caption if "production-ranked players" in item.value
+    ]
     assert len(source_notices) == 1
-    assert "Full Dynasty Rankings | GREEN | 240 rows" in source_notices[0]
-    assert any(
-        "Frozen Final Draft Board V1 is draft/pick context only" in item.value
-        for item in at.caption
-    )
+    assert "240 production-ranked players" in source_notices[0]
     assert not any(
         phrase in item.value.casefold()
         for item in (*at.success, *at.info, *at.warning, *at.error)
@@ -387,18 +377,14 @@ def test_trading_lab_route_renders_complete_universe_rookie_veteran_and_picks(
             ]
         ),
         lambda frame: frame.drop(columns=["player_id"]),
-        lambda frame: frame.assign(
-            player_id=["", *frame.iloc[1:]["player_id"].tolist()]
-        ),
+        lambda frame: frame.assign(player_id=["", *frame.iloc[1:]["player_id"].tolist()]),
         lambda frame: frame.iloc[1:].reset_index(drop=True),
         lambda frame: frame.rename(columns={"nwr_rank": "final_board_rank"}),
         lambda frame: frame.assign(
             pool_status=["FREE AGENT", *frame.iloc[1:]["pool_status"].tolist()]
         ),
         lambda frame: frame.assign(opaque_trade_result="NWR gets"),
-        lambda frame: frame.assign(
-            outcome_v3_hidden_sort=list(range(240, 0, -1))
-        ),
+        lambda frame: frame.assign(outcome_v3_hidden_sort=list(range(240, 0, -1))),
     ),
 )
 def test_trading_lab_route_fails_closed_for_mutated_player_authority(
@@ -413,8 +399,7 @@ def test_trading_lab_route_fails_closed_for_mutated_player_authority(
 
     assert not at.exception
     assert any(
-        "requires the approved hash-validated 240-player production universe"
-        in item.value
+        "requires the approved hash-validated 240-player production universe" in item.value
         for item in at.error
     )
     assert not any(item.label == "Add player" for item in at.selectbox)
@@ -447,7 +432,7 @@ def test_trade_summary_uses_visible_context_and_not_enough_information() -> None
     summary = package_summary_rows(state, lookup)
     review = review_trade_package(state, lookup)
 
-    assert set(summary["side"]) == {"NWR gives", "NWR gets"}
+    assert set(summary["side"]) == {"You give", "You receive"}
     assert review.status == "Context ready for manual review"
     assert review.missing_context_display == "Manual review required"
     assert review.rank_context == "Player-rank labels present"

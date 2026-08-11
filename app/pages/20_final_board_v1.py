@@ -26,6 +26,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
     RANKINGS_TABLE_COLUMN_CONFIG,
     ROOKIES_DRAFT_BOARD_VIEW,
+    UNIFIED_PLAYER_BOARD_DISPLAY_LABELS,
     UNIFIED_REVIEW_VIEW,
     DynastyRankingsBundle,
     FrozenBoardBundle,
@@ -159,6 +160,14 @@ def _rankings_identity_column_config() -> dict[str, object]:
             )
         else:
             configs[column] = st.column_config.TextColumn(**common)
+    for _source, _target, label in APPROVED_OUTCOME_DISPLAY_FIELDS:
+        configs[label] = st.column_config.NumberColumn(label, format="%.0f%%")
+    for _source, target, _label, _position in APPROVED_OUTCOME_V2_DISPLAY_FIELDS:
+        display_label = UNIFIED_PLAYER_BOARD_DISPLAY_LABELS.get(target)
+        if display_label:
+            configs[str(display_label)] = st.column_config.NumberColumn(
+                str(display_label), format="%.0f%%"
+            )
     return configs
 
 
@@ -204,9 +213,32 @@ def _show_statistic_analysis_for_preset(preset: str) -> bool:
 
 
 def _reset_rankings_filters() -> None:
+    dynamic_prefixes = (
+        "dynasty_rankings_source_filter_",
+        "dynasty_rankings_sort_by_",
+        "dynasty_rankings_ascending_",
+    )
     for key in list(st.session_state):
-        if key.startswith("dynasty_rankings_") and key != "dynasty_ranking_authority_view":
+        if key.startswith(dynamic_prefixes) or key in {
+            "dynasty_rankings_age_range",
+            "dynasty_rankings_age_filter",
+        }:
             del st.session_state[key]
+    st.session_state.update(
+        {
+            "dynasty_rankings_view_preset": VIEW_PRESET_DYNASTY_REVIEW,
+            "dynasty_rankings_view_preset_inline": VIEW_PRESET_DYNASTY_REVIEW,
+            "dynasty_rankings_search": "",
+            "dynasty_rankings_positions": ["QB", "RB", "WR", "TE"],
+            "dynasty_rankings_team": "All",
+            "dynasty_rankings_outcome_filter": "All",
+            "dynasty_rankings_candidate_band": "All",
+            "dynasty_rankings_confidence": "All",
+            "dynasty_rankings_manual_review": "All",
+            "dynasty_rankings_market_sanity_filter": "All",
+            "dynasty_rankings_market_match_filter": "All",
+        }
+    )
 
 
 def _default_ascending_for_sort(sort_by: str) -> bool:
@@ -226,9 +258,11 @@ def _apply_player_filters(
     view_mode = _view_mode_for_preset(preset)
     filtered = _view_base_frame(frame, view_mode)
     st.caption(VIEW_PRESET_HELP[preset])
-    if st.button("Reset Filters", key="dynasty_rankings_reset_filters"):
-        _reset_rankings_filters()
-        st.rerun()
+    st.button(
+        "Reset Filters",
+        key="dynasty_rankings_reset_filters",
+        on_click=_reset_rankings_filters,
+    )
     filter_row_one = st.columns([1.5, 1.5, 1.2, 1.0])
     selected_preset = filter_row_one[0].selectbox(
         "View preset",
@@ -1156,9 +1190,7 @@ if not owner_registry.errors:
         ),
         key="dynasty_rankings_governed_asset_search",
     )
-    st.markdown(
-        f"[Open Player Detail](/player-detail?asset={quote(owner_asset_id, safe='')})"
-    )
+    st.markdown(f"[Open Player Detail](/player-detail?asset={quote(owner_asset_id, safe='')})")
 if ranking_authority_view == "Unified Dynasty Preview — Research Only":
     st.warning(
         "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "
@@ -1281,8 +1313,7 @@ with st.expander("Advanced Data Details", expanded=False):
                 source_label=str(dynasty_bundle.source_path or "approved dynasty source"),
                 source_hash=dynasty_bundle.source_hash or "",
                 freshness_status=(
-                    _rankings_freshness.get("freshness_status")
-                    or OUTCOME_NOT_ENOUGH_INFORMATION
+                    _rankings_freshness.get("freshness_status") or OUTCOME_NOT_ENOUGH_INFORMATION
                 ),
                 identity_review_rows=int(nflverse_context_counts.get("review", 0)),
                 missing_rows=_source_count(unified_board, "Frozen Baseline only"),

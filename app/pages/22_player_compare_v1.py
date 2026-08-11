@@ -35,6 +35,7 @@ from src.services.draft_day_app_v1_service import (
     OUTCOME_NOT_APPLICABLE,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     display_lane_prop_frame,
+    load_dynasty_rankings,
     load_lane_prop_file,
     load_outcome_v2_current_player_display,
     resolve_dynasty_rankings_path,
@@ -47,6 +48,11 @@ from src.services.injury_availability_context_service import (
 from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
     player_compare_outcome_v3_rows,
+)
+from src.services.owner_asset_evidence_service import compose_owner_asset_evidence
+from src.services.owner_caveat_presentation_service import (
+    owner_caveat_summary,
+    owner_evidence_status,
 )
 from src.services.personal_workspace_service import (
     WorkspaceValidationError,
@@ -489,13 +495,11 @@ def _non_duplicate_options(players: list[str], selected: set[str]) -> list[str]:
 
 
 def _render_compare_source_status(counts: dict[str, int], source_hashes: dict[str, str]) -> None:
-    current_hash = source_hashes.get("Finished V1", "Not enough information")
     st.info(
         "Governed Player Compare registry | "
         f"Finished V1 current players: {counts.get('Current Player', 0)} | "
         f"Scored rookie-review players: {counts.get('Rookie Review', 0)} | "
-        f"Blocked rookies visible: {counts.get('Blocked Rookie', 0)} | "
-        f"Finished V1 SHA-256: {current_hash}."
+        f"Blocked rookies visible: {counts.get('Blocked Rookie', 0)}."
     )
     st.caption(NO_COMMON_SCALE_NOTE)
 
@@ -510,6 +514,8 @@ def _render_source_separated_evidence(compare_frame: pd.DataFrame) -> None:
         "compare_authority_status",
         "source_rank_label",
         "source_rank_value",
+        "position_rank",
+        "age",
         "source_score_label",
         "source_score_value",
         "source_tier",
@@ -529,6 +535,8 @@ def _render_source_separated_evidence(compare_frame: pd.DataFrame) -> None:
             "compare_authority_status": "Authority",
             "source_rank_label": "Source Rank Label",
             "source_rank_value": "Source Rank",
+            "position_rank": "Position Rank",
+            "age": "Age",
             "source_score_label": "Source Score Label",
             "source_score_value": "Source Score",
             "source_tier": "Source Tier",
@@ -687,6 +695,9 @@ def _render_market_context(compare_frame: pd.DataFrame) -> None:
     market_columns = [
         "player",
         "position",
+        "market_dp_value",
+        "market_dp_rank",
+        "market_status",
         "adp",
         "startup_adp_display",
         "available_pool_adp_rank",
@@ -704,6 +715,9 @@ def _render_market_context(compare_frame: pd.DataFrame) -> None:
             columns={
                 "player": "Player",
                 "position": "Pos",
+                "market_dp_value": "DP Value",
+                "market_dp_rank": "DP Rank",
+                "market_status": "Market Evidence",
                 "adp": "ADP (Display-Only)",
                 "startup_adp_display": "Startup ADP (Display-Only)",
                 "available_pool_adp_rank": "Available-Pool ADP Rank (Display-Only)",
@@ -1021,7 +1035,22 @@ governed = load_governed_asset_registry(
     repo_root=REPO_ROOT,
     current_board_path=current_board_path,
 )
-compare_universe = build_player_compare_universe(governed)
+_dynasty_evidence = load_dynasty_rankings()
+try:
+    _research_evidence = load_unified_research_preview().board
+except (OSError, ValueError):
+    _research_evidence = pd.DataFrame()
+_outcome_evidence = load_outcome_v3_display()
+_owner_evidence = compose_owner_asset_evidence(
+    governed.rows,
+    dynasty_frame=_dynasty_evidence.frame,
+    research_frame=_research_evidence,
+    outcome_frame=_outcome_evidence.frame,
+)
+compare_universe = build_player_compare_universe(
+    governed,
+    evidence_rows=_owner_evidence.rows,
+)
 compare_pool = compare_universe.frame
 
 page_header(
@@ -1149,8 +1178,15 @@ else:
         if research_context.empty:
             st.info("No frozen Unified Research Context exists for the selected assets.")
         else:
+            owner_research_context = research_context.copy()
+            owner_research_context["status"] = owner_research_context["status"].map(
+                owner_evidence_status
+            )
+            owner_research_context["blocking_reason"] = owner_research_context[
+                "blocking_reason"
+            ].map(lambda value: owner_caveat_summary(value) if str(value or "").strip() else "")
             st.dataframe(
-                research_context[
+                owner_research_context[
                     [
                         "player",
                         "position",

@@ -83,8 +83,8 @@ def _current_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
             "tier": "",
             "score_label": "NWR Dynasty Score",
             "score_value": row["nwr_dynasty_score"],
-            "confidence": row["confidence_status"],
-            "warnings": row["warning_flags"],
+            "confidence": row.get("confidence_status", ""),
+            "warnings": row.get("warning_flags", ""),
             "blocking_reason": "",
             "comparison_scope": "Comparable only with other Finished V1 current players",
         }

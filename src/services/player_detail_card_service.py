@@ -16,9 +16,7 @@ MISSING = "-"
 RANKINGS_CONTEXT = "rankings"
 DRAFT_PREP_CONTEXT = "draft_prep"
 LIVE_DRAFT_ROOM_CONTEXT = "live_draft_room"
-OUTCOME_IN_DEVELOPMENT_NOTE = (
-    "Outcome model is in development. No probabilities are released yet."
-)
+OUTCOME_IN_DEVELOPMENT_NOTE = "Outcome model is in development. No probabilities are released yet."
 DISPLAY_ONLY_NOTE = (
     "Market and league ranks are display-only context and are never used in private "
     "NWR value, rank, tier, trust, risk, or outcome fields."
@@ -57,9 +55,7 @@ WARNING_EXPLANATIONS = {
     "rb_extreme_age_cliff_active": "RB late-career age cliff is active.",
     "wr_dynasty_age_curve_after_30_active": "WR dynasty age curve is active after age 30.",
     "wr_mid_30s_age_cliff_active": "WR mid-30s age cliff is active.",
-    "te_no_premium_age_curve_after_30_active": (
-        "No-premium TE age curve is active after age 30."
-    ),
+    "te_no_premium_age_curve_after_30_active": ("No-premium TE age curve is active after age 30."),
     "te_age_33_plus_cliff_active": "TE 33-plus age cliff is active.",
     "missing_lifecycle_or_role_shape_evidence": "Missing lifecycle or role-shape evidence.",
     "missing_efficiency_context_evidence": "Missing efficiency context.",
@@ -102,6 +98,7 @@ class PlayerDetailCardPayload:
     source_type: str = MISSING
     nwr_score: str = MISSING
     nwr_rank: str = MISSING
+    position_rank: str = MISSING
     trust_status: str = "Trust unknown"
     warning_summary: str = "No active warning."
     warning_messages: tuple[str, ...] = ()
@@ -151,6 +148,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
     age = _clean(row.get("age"))
     team = _clean(row.get("nfl_team") or row.get("team"))
     nwr_rank = _clean(row.get("nwr_rank"))
+    position_rank = _clean(row.get("nwr_position_rank") or row.get("position_rank"))
     score = _score_text(_first(row, "private_score", "nwr_dynasty_score"))
     market_rank = _clean(_first(row, "market_rank", "dynasty_startup_adp"))
     league_rank = _clean(row.get("league_rank"))
@@ -202,6 +200,7 @@ def _build_rankings_payload(row: Mapping[str, Any]) -> PlayerDetailCardPayload:
         source_type=source_type,
         nwr_score=score,
         nwr_rank=nwr_rank,
+        position_rank=position_rank,
         trust_status=trust,
         warning_summary=_warning_summary(warnings),
         warning_messages=tuple(_human_warning(flag) for flag in warnings),
@@ -446,9 +445,7 @@ def _build_live_draft_room_payload(row: Mapping[str, Any]) -> PlayerDetailCardPa
         allowed_use=_clean(row.get("allowed_use")),
         blocked_use=_clean(row.get("blocked_use")),
         context_tags=tuple(
-            tag
-            for tag in (legal_pool_status, drafted_status, source_type)
-            if tag != MISSING
+            tag for tag in (legal_pool_status, drafted_status, source_type) if tag != MISSING
         ),
         why_text=why_text,
         outcome_model_statuses=_outcome_model_statuses(row),
