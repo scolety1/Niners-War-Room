@@ -19,6 +19,8 @@ from src.services.draft_day_trade_lab_service import (
 ROOT = Path(__file__).resolve().parents[1]
 PAGE_PATH = ROOT / "app" / "pages" / "23_trading_lab_v1.py"
 SERVICE_PATH = ROOT / "src" / "services" / "draft_day_trade_lab_service.py"
+DECISION_SERVICE_PATH = ROOT / "src" / "services" / "trade_decision_assistant_service.py"
+ROSTER_SERVICE_PATH = ROOT / "src" / "services" / "trade_roster_negotiation_service.py"
 DOC_ROOT = ROOT / "docs" / "hq" / "trading_lab" / "manual_planner_safe_upgrade_20260630"
 
 
@@ -94,11 +96,10 @@ def _pick_context() -> pd.DataFrame:
     )
 
 
-def test_page_exposes_manual_planning_workspace_without_market_panel() -> None:
-    text = _read(PAGE_PATH)
+def test_page_preserves_manual_planners_beside_bounded_decision_support() -> None:
+    text = f"{_read(PAGE_PATH)}\n{_read(ROSTER_SERVICE_PATH)}"
 
     required = [
-        "Manual trade planning workspace",
         "Manual planning only. No trade valuation, market valuation, pick valuation, model",
         "Trade Away Pick Planner",
         "Trade For Pick Planner",
@@ -106,10 +107,13 @@ def test_page_exposes_manual_planning_workspace_without_market_panel() -> None:
         "Editable manual checklist",
         "Download manual trade-away memo",
         "Download manual trade-for memo",
-        "NFLVerse player context / display-only",
+        "NFLVerse player context",
         "Display-only context | Manual review only | No valuation calculated",
         "Manual row NFLVerse context / display-only",
         "Not enough information",
+        "decision.authority",
+        "Market negotiation context",
+        "BLOCKED_COUNTEROFFERS_NO_ROSTER_OWNERSHIP",
     ]
     for term in required:
         assert term in text
@@ -153,8 +157,10 @@ def test_service_review_is_context_completeness_not_verdict_or_pricing() -> None
 def test_pick_only_package_stays_not_enough_information_without_pick_pricing() -> None:
     lookup = build_trade_item_lookup(_board(), _trade_context(), _pick_context())
     pick = next(iter(pick_context_options(lookup).values()))
+    other_pick = f"{pick}:other"
+    lookup[other_pick] = {**lookup[pick], "item_key": other_pick, "label": "Other pick"}
     state = add_trade_item(empty_trade_state(), "give", pick)
-    state = add_trade_item(state, "get", pick)
+    state = add_trade_item(state, "get", other_pick)
 
     review = review_trade_package(state, lookup)
 
@@ -163,7 +169,7 @@ def test_pick_only_package_stays_not_enough_information_without_pick_pricing() -
     assert "no numeric pick context is inferred" in review.explanation.lower()
 
 
-def test_service_does_not_import_market_or_mutate_source_truth() -> None:
+def test_descriptive_service_does_not_import_market_authority_or_mutate_source_truth() -> None:
     text = _read(SERVICE_PATH)
 
     forbidden = [
@@ -171,7 +177,6 @@ def test_service_does_not_import_market_or_mutate_source_truth() -> None:
         "get_pick_market_value",
         "join_market_to_players",
         "load_market_freshness",
-        "dp_value",
         "final_board_rank =",
         "sort_values",
     ]
@@ -192,40 +197,29 @@ def test_docs_required_for_safe_upgrade_exist() -> None:
         assert (DOC_ROOT / filename).exists(), filename
 
 
-def test_no_recommendation_adjacent_strings_in_active_page_or_service() -> None:
-    combined = f"{_read(PAGE_PATH)}\n{_read(SERVICE_PATH)}".lower()
+def test_advisory_page_avoids_guarantees_and_hidden_package_score_language() -> None:
+    combined = "\n".join(
+        _read(path)
+        for path in (PAGE_PATH, SERVICE_PATH, DECISION_SERVICE_PATH, ROSTER_SERVICE_PATH)
+    ).lower()
     allowed_negative_assertions = [
         "trade valuation",
         "market valuation",
         "pick valuation",
-        "trade calculator",
     ]
     forbidden = [
-        "looks favorable",
-        "risky",
-        "fair value",
-        "value gap",
-        "winner",
-        "win this trade",
-        "lose this trade",
-        "least you can pay",
-        "least i can pay",
-        "minimum offer",
-        "overpay",
-        "underpay",
-        "pick value",
-        "market says",
-        "adp value",
-        "dynastyprocess value",
-        "ktc value",
-        "trade score",
-        "score gap",
-        "visible score gap",
+        "guaranteed win",
+        "will definitely work",
+        "autonomously execute",
+        "hidden package score =",
+        "rookie review rank + finished v1 rank",
     ]
     for term in forbidden:
         assert term not in combined
     for term in allowed_negative_assertions:
         assert term in combined
+    assert "owner remains decision authority" in combined
+    assert "this is not an nwr package value" in combined
 
 
 def test_missing_context_uses_explicit_not_enough_information() -> None:

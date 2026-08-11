@@ -73,5 +73,7 @@ def test_product_surfaces_preserve_authority_and_defaults() -> None:
     assert '"Show Unified Research Rank (Research Only)"' in explorer
     assert "value=False" in explorer
     assert "current_board_path=current_board_path" in explorer
-    assert "Trading Lab remains MANUAL_DESCRIPTIVE_ONLY" in trading
-    assert trading.index("trade_item_rows(") < trading.index("load_unified_research_preview()")
+    assert "decision.authority" in trading
+    assert "decision authority" in trading.lower()
+    assert "research_frame=_research_frame" in trading
+    assert "compose_owner_asset_evidence(" in trading
