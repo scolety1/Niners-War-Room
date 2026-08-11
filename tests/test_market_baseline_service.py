@@ -9,6 +9,7 @@ from src.services.dynastyprocess_generation_service import (
     OUTPUT_FILE_NAMES,
     expected_safe_root,
     publish_generation,
+    resolve_current_generation,
 )
 from src.services.market_baseline_registry import (
     DISPLAY_LABEL,
@@ -24,6 +25,7 @@ from src.services.market_baseline_service import (
     load_market_pick_context,
     load_market_player_context,
     summarize_market_gap,
+    runtime_artifact_dir,
 )
 
 
@@ -272,3 +274,37 @@ def test_market_gap_summary_uses_display_language() -> None:
         }
     )
     assert summary.startswith("NWR much higher")
+
+
+def test_default_reader_uses_authenticated_launcher_runtime_root(
+    market_generation: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    refresh_root = market_generation.parent
+    monkeypatch.setenv("NWR_REFRESH_DATA_ROOT", str(refresh_root))
+
+    assert runtime_artifact_dir() == market_generation
+
+    from src.services import market_baseline_service as service
+
+    frame = service.load_market_player_context()
+    assert frame.shape[0] == 2
+
+
+def test_default_reader_supports_complete_legacy_latest_bundle(
+    market_generation: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    legacy_refresh_root = market_generation.parents[2] / "legacy" / "refresh_data"
+    legacy_root = legacy_refresh_root / "dynastyprocess_market_baseline"
+    latest = legacy_root / "latest"
+    latest.mkdir(parents=True)
+    snapshot = resolve_current_generation(market_generation, repo_root=market_generation.parents[2])
+    for name, body in snapshot.payloads.items():
+        (latest / name).write_bytes(body)
+    monkeypatch.setenv("NWR_REFRESH_DATA_ROOT", str(legacy_refresh_root))
+
+    from src.services import market_baseline_service as service
+
+    frame = service.load_market_player_context()
+    assert frame.shape[0] == 2

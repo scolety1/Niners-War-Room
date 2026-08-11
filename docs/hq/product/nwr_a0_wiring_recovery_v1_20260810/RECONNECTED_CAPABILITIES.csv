@@ -1,0 +1,9 @@
+capability,recovered_rows_or_assets,status,evidence
+Finished V1 ranked cohort,232,WORKING,"default Rankings rows shown = 232"
+Structural unranked kickers,8,WORKING,"separate owner-facing status; registry discoverable"
+Market player joins,232,WORKING_STALE,"exact/approved ID and name-position join; evidence date 2026-07-17"
+Score explanation receipts,232,WORKING_PARTIAL,"score confidence adjustment gate evidence risk and data-needed fields"
+Outcome V3 numeric cells,2528,WORKING_PARTIAL,"2528/4848 applicable governed cells"
+Governed asset registry,379,WORKING,"240 current + 73 rookie + 7 blocked + 50 2026 picks + 9 future picks"
+Trading Lab package workflow,3,WORKING,"veteran + rookie + 2027 pick saved reopened exported"
+Player Detail,379,WORKING_SOURCE_DEPENDENT,"all governed assets searchable; sections appear when applicable"

@@ -572,8 +572,9 @@ def test_statistic_analysis_preset_is_read_only_without_invented_components() ->
     doc = SCORE_FEASIBILITY.read_text(encoding="utf-8")
 
     assert "Statistic Analysis" in text
-    assert "_render_statistic_analysis_status()" in text
-    assert "component weights or per-component" in text
+    assert "_render_statistic_analysis_status(filtered_board)" in text
+    assert "Exact weighted component contributions are not admitted" in text
+    assert "Unsupported contribution fields are omitted" in text
     assert "show_statistic_analysis=show_statistic_analysis" in text
     assert "show_market_baseline = False" in Path(
         "src/services/draft_day_app_v1_service.py"

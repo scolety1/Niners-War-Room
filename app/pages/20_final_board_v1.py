@@ -3,6 +3,7 @@ from __future__ import annotations
 # ruff: noqa: E402
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
@@ -20,8 +21,6 @@ from src.services.draft_day_app_v1_service import (
     BLOCKED_OUTCOME_V2_FIELDS,
     FULL_DYNASTY_VIEW,
     OUTCOME_DISPLAY_MODE_HIDE,
-    OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE,
-    OUTCOME_DISPLAY_MODES,
     OUTCOME_NOT_ENOUGH_INFORMATION,
     OUTCOME_V2_CURRENT_PLAYER_DISPLAY_PATH,
     OUTCOME_V2_INJURY_CONTEXT_DISPLAY_FIELDS,
@@ -49,6 +48,10 @@ from src.services.draft_day_app_v1_service import (
     outcome_v2_display_coverage_counts,
     sort_rankings_frame_by_column,
     sort_unified_player_board_for_view,
+)
+from src.services.governed_asset_registry_service import (
+    finished_v1_coverage_counts,
+    load_governed_asset_registry,
 )
 from src.services.nflverse_refresh_health_service import (
     dataset_registry_rows,
@@ -186,8 +189,6 @@ def _view_mode_for_preset(preset: str) -> str:
 
 
 def _outcome_mode_for_preset(preset: str) -> str:
-    if preset in {VIEW_PRESET_OUTCOME_CONTEXT, VIEW_PRESET_DATA_REVIEW}:
-        return OUTCOME_DISPLAY_MODE_POSITION_APPLICABLE
     return OUTCOME_DISPLAY_MODE_HIDE
 
 
@@ -199,7 +200,13 @@ def _show_market_for_preset(preset: str) -> bool:
 
 
 def _show_statistic_analysis_for_preset(preset: str) -> bool:
-    return preset == VIEW_PRESET_STATISTIC_ANALYSIS
+    return False
+
+
+def _reset_rankings_filters() -> None:
+    for key in list(st.session_state):
+        if key.startswith("dynasty_rankings_") and key != "dynasty_ranking_authority_view":
+            del st.session_state[key]
 
 
 def _default_ascending_for_sort(sort_by: str) -> bool:
@@ -219,6 +226,9 @@ def _apply_player_filters(
     view_mode = _view_mode_for_preset(preset)
     filtered = _view_base_frame(frame, view_mode)
     st.caption(VIEW_PRESET_HELP[preset])
+    if st.button("Reset Filters", key="dynasty_rankings_reset_filters"):
+        _reset_rankings_filters()
+        st.rerun()
     filter_row_one = st.columns([1.5, 1.5, 1.2, 1.0])
     selected_preset = filter_row_one[0].selectbox(
         "View preset",
@@ -317,15 +327,8 @@ def _apply_player_filters(
             ["All", "Needs review", "No review flag"],
             key="dynasty_rankings_manual_review",
         )
-        outcome_mode = advanced_row_two[1].selectbox(
-            "Outcome columns",
-            OUTCOME_DISPLAY_MODES,
-            index=OUTCOME_DISPLAY_MODES.index(outcome_mode),
-            key="dynasty_rankings_outcome_columns",
-            help=(
-                "Outcome columns are display-only. Position-applicable mode hides "
-                "other-position heads; all-outcome mode shows wrong-position heads as N/A."
-            ),
+        advanced_row_two[1].caption(
+            "Outcome V3 is shown only in the canonical Outcome Context lens."
         )
         market_sanity_filter = advanced_row_two[2].selectbox(
             "Market sanity",
@@ -936,17 +939,57 @@ def _render_outcome_v3_compact_lens(frame: pd.DataFrame) -> None:
     )
 
 
-def _render_statistic_analysis_status() -> None:
+def _render_statistic_analysis_status(frame: pd.DataFrame) -> None:
+    ranked = frame.loc[
+        frame.get("nwr_rank", pd.Series(index=frame.index, dtype=str))
+        .astype(str)
+        .str.strip()
+        .astype(bool)
+    ].copy()
+    receipt_fields = (
+        "player_name",
+        "position",
+        "nwr_rank",
+        "nwr_dynasty_score",
+        "confidence_cap",
+        "confidence_status",
+        "candidate_adjustment",
+        "candidate_reason_codes",
+        "candidate_evidence_fields_used",
+        "candidate_confidence_trust_impact",
+        "risk_level",
+        "warning_flags",
+        "data_needed",
+    )
+    available = [column for column in receipt_fields if column in ranked.columns]
     st.info(
-        "Statistic Analysis is a read-only score explanation view. It exposes approved "
-        "NWR Dynasty Score metadata, confidence, and evidence-field names where safely "
-        "available, but it does not include approved component weights or per-component "
-        "contribution rows."
+        f"Score receipts are populated for {len(ranked)} ranked Finished V1 players. They show "
+        "the admitted score, confidence cap, adjustment reason, evidence fields, risk, and "
+        "missing-data caveats. Exact weighted component contributions are not admitted."
     )
-    st.caption(
-        "No score component, market, Outcome V2, injury, CFBD, NFL usage, vendor, Gmail, "
-        "or proxy evidence is used to explain or calculate score contribution here."
-    )
+    if available:
+        st.dataframe(
+            ranked.loc[:, available].rename(
+                columns={
+                    "player_name": "Player",
+                    "position": "Pos",
+                    "nwr_rank": "Rank",
+                    "nwr_dynasty_score": "Score",
+                    "confidence_cap": "Confidence Cap",
+                    "confidence_status": "Confidence",
+                    "candidate_adjustment": "Admitted Adjustment",
+                    "candidate_reason_codes": "Why / Gate Reasons",
+                    "candidate_evidence_fields_used": "Evidence Fields Used",
+                    "candidate_confidence_trust_impact": "Confidence Impact",
+                    "risk_level": "Risk",
+                    "warning_flags": "Warnings",
+                    "data_needed": "Data Needed",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+            key="rankings_statistical_receipts",
+        )
     with st.expander("Score Breakdown feasibility", expanded=False):
         st.write(
             {
@@ -963,9 +1006,7 @@ def _render_statistic_analysis_status() -> None:
                     "weighted contribution amounts, percent contribution, and component "
                     "receipt rows"
                 ),
-                "main_table_behavior": (
-                    "Unsupported contribution/count fields display Not enough information."
-                ),
+                "main_table_behavior": "Unsupported contribution fields are omitted.",
                 "doc": (
                     "docs/hq/rankings/statistic_analysis_v0_20260630/statistic_analysis_design.md"
                 ),
@@ -1057,32 +1098,29 @@ outcome_counts = outcome_display_coverage_counts(unified_board)
 outcome_v2_counts = outcome_v2_display_coverage_counts(unified_board)
 nflverse_context_counts = nflverse_player_context_display_counts(unified_board)
 frozen_outcome_counts = frozen_board_outcome_support_counts(bundle.frame)
+finished_v1_counts = finished_v1_coverage_counts(dynasty_bundle.frame)
 
 page_header(
     "Dynasty Rankings",
     eyebrow="Draft-Day App V1",
     description=(
-        "Full dynasty rankings first, with frozen-baseline and Outcome context kept display-only."
+        "Search and filter the 232 production-ranked QB/RB/WR/TE players. Eight structural "
+        "kicker assets remain discoverable elsewhere and are not presented as ranked."
     ),
     status_items=(
         (
-            f"Full dynasty rows: {dynasty_bundle.row_count}",
+            f"{finished_v1_counts['ranked_skill_players']} production-ranked QB/RB/WR/TE players",
             "safe" if dynasty_bundle.loaded else "review",
         ),
         (
-            f"Veterans: {dynasty_bundle.veteran_count} | rookies/prospects: "
-            f"{dynasty_bundle.rookie_count}",
-            "safe" if dynasty_bundle.loaded else "review",
+            f"{finished_v1_counts['unranked_kickers']} structural kicker assets · "
+            "outside ranking coverage",
+            "review",
         ),
         (f"Frozen baseline rows: {bundle.row_count}", "safe" if bundle.loaded else "blocked"),
         (
             "Outcome support: "
             f"{frozen_outcome_counts['supported']}/{frozen_outcome_counts['rows']}",
-            "review",
-        ),
-        (
-            "Outcome V2 display rows: "
-            f"{outcome_v2_counts['available']}/{outcome_v2_counts['rows']}",
             "review",
         ),
         (
@@ -1103,6 +1141,24 @@ ranking_authority_view = st.radio(
     horizontal=True,
     key="dynasty_ranking_authority_view",
 )
+owner_registry = load_governed_asset_registry(
+    repo_root=REPO_ROOT,
+    current_board_path=dynasty_bundle.source_path,
+)
+if not owner_registry.errors:
+    owner_assets = {row["asset_id"]: row for row in owner_registry.rows}
+    owner_asset_id = st.selectbox(
+        "Find any governed asset",
+        sorted(owner_assets, key=lambda key: owner_assets[key]["asset_name"]),
+        format_func=lambda key: (
+            f"{owner_assets[key]['asset_name']} · {owner_assets[key]['asset_type']} · "
+            f"{owner_assets[key]['authority_status']}"
+        ),
+        key="dynasty_rankings_governed_asset_search",
+    )
+    st.markdown(
+        f"[Open Player Detail](/player-detail?asset={quote(owner_asset_id, safe='')})"
+    )
 if ranking_authority_view == "Unified Dynasty Preview — Research Only":
     st.warning(
         "RESEARCH ONLY — NOT PRODUCTION AUTHORITY. Calibration is not fully validated and "
@@ -1217,25 +1273,26 @@ if not dynasty_bundle.loaded:
     )
 
 _rankings_freshness = market_baseline_freshness_status()
-render_decision_trust_strips(
-    [
-        build_rankings_dataset_trust_strip(
-            source_available=dynasty_bundle.loaded,
-            source_label=str(dynasty_bundle.source_path or "approved dynasty source"),
-            source_hash=dynasty_bundle.source_hash or "",
-            freshness_status=(
-                _rankings_freshness.get("freshness_status") or OUTCOME_NOT_ENOUGH_INFORMATION
-            ),
-            identity_review_rows=int(nflverse_context_counts.get("review", 0)),
-            missing_rows=_source_count(unified_board, "Frozen Baseline only"),
-            warnings=(*dynasty_bundle.warnings, *bundle.warnings),
-        )
-    ],
-    heading="Visible board evidence trust",
-)
-
-_render_market_baseline_status(raw_unified_board)
-_render_dataset_refresh_status_panel(unified_board)
+with st.expander("Advanced Data Details", expanded=False):
+    render_decision_trust_strips(
+        [
+            build_rankings_dataset_trust_strip(
+                source_available=dynasty_bundle.loaded,
+                source_label=str(dynasty_bundle.source_path or "approved dynasty source"),
+                source_hash=dynasty_bundle.source_hash or "",
+                freshness_status=(
+                    _rankings_freshness.get("freshness_status")
+                    or OUTCOME_NOT_ENOUGH_INFORMATION
+                ),
+                identity_review_rows=int(nflverse_context_counts.get("review", 0)),
+                missing_rows=_source_count(unified_board, "Frozen Baseline only"),
+                warnings=(*dynasty_bundle.warnings, *bundle.warnings),
+            )
+        ],
+        heading="Board evidence trust",
+    )
+    _render_market_baseline_status(raw_unified_board)
+    _render_dataset_refresh_status_panel(unified_board)
 preset = st.session_state.get("dynasty_rankings_view_preset", VIEW_PRESET_DYNASTY_REVIEW)
 if preset not in VIEW_PRESETS:
     preset = VIEW_PRESET_DYNASTY_REVIEW
@@ -1278,10 +1335,9 @@ if show_market_baseline:
         "and Market Sanity Flag."
     )
 if preset == VIEW_PRESET_OUTCOME_CONTEXT:
-    _render_outcome_lens_status(unified_board)
     _render_outcome_v3_compact_lens(filtered_board)
 if preset == VIEW_PRESET_STATISTIC_ANALYSIS:
-    _render_statistic_analysis_status()
+    _render_statistic_analysis_status(filtered_board)
 _render_tier_board_cheat_sheet(filtered_board, view_mode)
 st.dataframe(
     display_unified_player_board_frame(

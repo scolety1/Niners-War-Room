@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 import streamlit as st
 
@@ -13,6 +14,8 @@ from app.components.ui_framework import (  # noqa: E402
     render_workflow_tiles,
     section_label,
 )
+from src.services.draft_day_app_v1_service import resolve_dynasty_rankings_path  # noqa: E402
+from src.services.governed_asset_registry_service import load_governed_asset_registry  # noqa: E402
 from src.services.personal_workspace_service import (  # noqa: E402
     load_store,
     summarize_workspace,
@@ -39,7 +42,7 @@ render_workflow_tiles(
         WorkflowTile(
             "Dynasty Rankings",
             "Canonical board",
-            "Scan the accepted 240-player board, tiers, confidence, and evidence warnings.",
+            "Scan all 232 production-ranked QB/RB/WR/TE players, tiers, and evidence warnings.",
             "/rankings",
             "Open Rankings",
         ),
@@ -66,6 +69,24 @@ render_workflow_tiles(
         ),
     )
 )
+
+section_label("Search")
+_current_path, _source_label, _warnings = resolve_dynasty_rankings_path()
+_registry = load_governed_asset_registry(
+    repo_root=Path(__file__).resolve().parents[2],
+    current_board_path=_current_path,
+)
+_assets = sorted(_registry.rows, key=lambda row: (row["asset_name"], row["asset_id"]))
+_asset_id = st.selectbox(
+    "Find a veteran, rookie, blocked prospect, or future pick",
+    [row["asset_id"] for row in _assets],
+    format_func=lambda key: next(
+        f"{row['asset_name']} · {row['asset_type']} · {row['authority_status']}"
+        for row in _assets
+        if row["asset_id"] == key
+    ),
+)
+st.markdown(f"[Open Player Detail](/player-detail?asset={quote(_asset_id, safe='')})")
 
 st.info(
     "Recommended first visit: confirm Data Health, then open Dynasty Rankings. "

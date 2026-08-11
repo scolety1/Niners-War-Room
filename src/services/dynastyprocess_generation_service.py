@@ -161,7 +161,12 @@ def _same_exact_path(left: str | Path, right: str | Path) -> bool:
     return _path_text(Path(left)) == _path_text(Path(right))
 
 
-def _validate_requested_safe_root(safe_root: Path, repo_root: Path) -> Path:
+def _validate_requested_safe_root(
+    safe_root: Path,
+    repo_root: Path,
+    *,
+    expected_root: Path | None = None,
+) -> Path:
     raw = os.fspath(safe_root)
     lowered = raw.casefold()
     if any(lowered.startswith(prefix) for prefix in _DEVICE_PREFIXES):
@@ -171,7 +176,9 @@ def _validate_requested_safe_root(safe_root: Path, repo_root: Path) -> Path:
         raise GenerationResolutionError("The safe refresh root must be absolute.")
     if ".." in candidate.parts or "." in candidate.parts:
         raise GenerationResolutionError("Traversal aliases are rejected.")
-    expected = expected_safe_root(Path(repo_root))
+    expected = expected_root or expected_safe_root(Path(repo_root))
+    if not Path(expected).is_absolute():
+        raise GenerationResolutionError("The trusted refresh root must be absolute.")
     if not _same_exact_path(candidate, expected):
         raise GenerationResolutionError(
             f"Safe root must use the canonical path spelling: {expected}"
@@ -465,8 +472,14 @@ def _authenticate_layout(
     *,
     create: bool,
     include_staging: bool,
+    expected_root: Path | None = None,
+    required_children: tuple[str, ...] | None = None,
 ) -> _AuthenticatedLayout:
-    root = _validate_requested_safe_root(safe_root, repo_root)
+    root = _validate_requested_safe_root(
+        safe_root,
+        repo_root,
+        expected_root=expected_root,
+    )
     repo = Path(_path_text(repo_root))
     if not repo.is_dir():
         raise GenerationResolutionError(f"Repository root is missing: {repo}")
@@ -496,8 +509,8 @@ def _authenticate_layout(
                 )
             handles.append(handle)
 
-        child_names = ["generations"]
-        if include_staging:
+        child_names = list(required_children or ("generations",))
+        if include_staging and ".staging" not in child_names:
             child_names.insert(0, ".staging")
         for name in child_names:
             child = root / name
@@ -688,15 +701,78 @@ def resolve_current_generation(
     safe_root: Path,
     *,
     repo_root: Path,
+    trusted_runtime_root: Path | None = None,
 ) -> GenerationSnapshot:
-    root = _validate_requested_safe_root(safe_root, repo_root)
+    root = _validate_requested_safe_root(
+        safe_root,
+        repo_root,
+        expected_root=trusted_runtime_root,
+    )
     with _authenticate_layout(
         root,
         repo_root,
         create=False,
         include_staging=False,
+        expected_root=trusted_runtime_root,
     ) as layout:
         return _resolve_with_layout(root, layout)
+
+
+def resolve_legacy_latest_snapshot(
+    safe_root: Path,
+    *,
+    repo_root: Path,
+    trusted_runtime_root: Path,
+) -> GenerationSnapshot:
+    """Read the complete pre-generation ``latest`` bundle through the same path guards.
+
+    This compatibility reader exists only for display consumers while launcher-owned data is
+    migrated to transactional generations. It never publishes, mutates, or treats the bundle as
+    current merely because the directory is named ``latest``.
+    """
+
+    root = _validate_requested_safe_root(
+        safe_root,
+        repo_root,
+        expected_root=trusted_runtime_root,
+    )
+    with _authenticate_layout(
+        root,
+        repo_root,
+        create=False,
+        include_staging=False,
+        expected_root=trusted_runtime_root,
+        required_children=("latest",),
+    ) as layout:
+        payloads: dict[str, bytes] = {}
+        files: dict[str, Path] = {}
+        hashes: dict[str, str] = {}
+        for name in OUTPUT_FILE_NAMES:
+            path = root / "latest" / name
+            body = _read_file_no_reparse(path)
+            payloads[name] = body
+            files[name] = path
+            hashes[name] = hashlib.sha256(body).hexdigest()
+        layout.revalidate()
+        generation_id = f"legacy-latest-{hashes['dp_freshness_report.csv'][:12]}"
+        return GenerationSnapshot(
+            generation_id=generation_id,
+            pointer=MappingProxyType(
+                {
+                    "schema_version": "nwr-legacy-latest-compat-v1",
+                    "publication_state": "LEGACY_DISPLAY_ONLY",
+                    "generation_id": generation_id,
+                }
+            ),
+            manifest=MappingProxyType(
+                {
+                    "schema_version": "nwr-legacy-latest-compat-v1",
+                    "files": hashes,
+                }
+            ),
+            files=MappingProxyType(files),
+            payloads=MappingProxyType(payloads),
+        )
 
 
 def _durable_write(

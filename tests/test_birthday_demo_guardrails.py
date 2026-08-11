@@ -99,7 +99,7 @@ def test_rankings_and_draft_cockpit_are_primary_nav_items() -> None:
     visible_defaults = [page for page in VISIBLE_NAVIGATION_PAGES if page.default]
 
     assert VISIBLE_NAVIGATION_PAGES[0].url_path == "draft-cockpit"
-    assert visible_rankings.title == "Dynasty Rankings"
+    assert visible_rankings.title == "Rankings"
     assert visible_rankings.visible is True
     assert visible_defaults == []
 

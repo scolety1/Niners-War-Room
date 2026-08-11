@@ -1,0 +1,21 @@
+viewport,route,result,traceback,page_not_found,console_errors,root_overflow_px
+375x812,Home,PASS,false,false,0,0
+375x812,Rankings,PASS,false,false,0,0
+375x812,Analyze Trade,PASS,false,false,0,0
+375x812,Player Detail,PASS,false,false,0,0
+375x812,Draft,PASS,false,false,0,0
+375x812,Redraft,PASS,false,false,0,0
+768x1024,Home,PASS,false,false,0,0
+768x1024,Rankings,PASS,false,false,0,0
+768x1024,Analyze Trade,PASS,false,false,0,0
+768x1024,Compare,PASS,false,false,0,0
+768x1024,Player Detail,PASS,false,false,0,0
+768x1024,Draft,PASS,false,false,0,0
+768x1024,Redraft,PASS,false,false,0,0
+1440x1000,Home,PASS,false,false,0,0
+1440x1000,Rankings,PASS,false,false,0,0
+1440x1000,Analyze Trade,PASS,false,false,0,0
+1440x1000,Compare,PASS,false,false,0,0
+1440x1000,Player Detail,PASS,false,false,0,0
+1440x1000,Draft,PASS,false,false,0,0
+1440x1000,Redraft,PASS,false,false,0,0

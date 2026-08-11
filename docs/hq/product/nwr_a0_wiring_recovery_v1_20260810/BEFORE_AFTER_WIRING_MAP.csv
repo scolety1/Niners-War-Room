@@ -1,0 +1,10 @@
+capability,before_path,before_state,after_path,after_state,authority_effect
+Market,"repo junction -> generation-only reader",DISCONNECTED,"launcher physical root -> authenticated generation or complete legacy-latest snapshot",WORKING_STALE_DISPLAY_ONLY,None
+Rankings,"240 structural rows described as full ranking",MISLEADING,"Finished V1 -> 232 ranked skill players + 8 unranked kickers",WORKING,None
+Statistical Analysis,"empty contribution adapter -> 882 placeholders",DISCONNECTED,"Finished V1 score/confidence/gate/evidence receipts -> populated receipt table",WORKING_PARTIAL,None
+Outcomes,"V1 + V2 + V3 normal consumer",OBSOLETE_CONSUMER,"Outcome V3 compact applicable lens",CANONICAL_CONSUMER,None
+Asset Registry,"page-specific universes",FRAGMENTED,"governed registry -> 379 source-separated assets",WORKING,None
+Trading Lab,"240 current players + separate pick context",INCOMPLETE,"governed registry adapter -> veteran + rookie + blocked + 2026/future picks",WORKING,None
+Future Picks,"no 2027+ governed assets",TRUE_GAP,"tracked round-only 2027-2029 context -> registry",WORKING_CONTEXT_ONLY,None
+Player Detail,"separate cards and page fragments",TRUE_GAP,"registry + Finished V1 + research + V3 + market + receipts + personal",WORKING_COMPOSITION,None
+Navigation,"24 flat owner/development destinations",FRAGMENTED,"Primary + Secondary + Advanced/Data groups",WORKING,None

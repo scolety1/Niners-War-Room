@@ -19,6 +19,7 @@ PICK_CONTEXT_PREFIX = "pick_context:"
 
 DISPLAY_ITEM_COLUMNS = (
     "side",
+    "asset_id",
     "asset_type",
     "label",
     "nwr_player_id",
@@ -36,6 +37,8 @@ DISPLAY_ITEM_COLUMNS = (
     "risk_manual_review_notes",
     "data_status",
 )
+
+REGISTRY_PREFIX = "registry:"
 
 DISPLAY_SUMMARY_COLUMNS = (
     "side",
@@ -182,6 +185,55 @@ def build_trade_item_lookup(
             "pick_window_note": pick_note,
             "risk_manual_review_notes": _note(row.get("caveat")),
             "data_status": "Display-only context; no standalone numeric pick context",
+        }
+    return lookup
+
+
+def build_registry_trade_item_lookup(
+    registry_rows: list[dict[str, str]] | tuple[dict[str, str], ...],
+) -> dict[str, dict[str, object]]:
+    """Adapt the governed owner registry to the existing manual package builder."""
+
+    lookup: dict[str, dict[str, object]] = {}
+    for row in registry_rows:
+        asset_id = _text(row.get("asset_id"))
+        if not asset_id:
+            continue
+        registry_type = _text(row.get("asset_type"))
+        is_pick = registry_type in {"Draft Pick", "Future Pick"}
+        key = f"{REGISTRY_PREFIX}{asset_id}"
+        rank_value = _text(row.get("rank_value"))
+        lookup[key] = {
+            "item_key": key,
+            "asset_id": asset_id,
+            "asset_type": "Pick context" if is_pick else "Player",
+            "registry_asset_type": registry_type,
+            "label": (
+                f"{row.get('asset_name', asset_id)} · {registry_type} · "
+                f"{row.get('authority_status', '')}"
+            ),
+            "nwr_player_id": (
+                asset_id.removeprefix("current:")
+                if asset_id.startswith("current:")
+                else NOT_ENOUGH_INFORMATION
+            ),
+            "player": row.get("asset_name", asset_id),
+            "position": row.get("position", ""),
+            "nfl_team": row.get("team", ""),
+            "roster_context": NOT_ENOUGH_INFORMATION,
+            "rank_source": row.get("source_label", ""),
+            "dynasty_rank": rank_value if registry_type == "Current Player" else "",
+            "final_board_rank": rank_value if registry_type == "Rookie Review" else "",
+            "final_tier": row.get("tier", ""),
+            "tier_movement_note": NOT_ENOUGH_INFORMATION,
+            "position_scarcity_note": NOT_ENOUGH_INFORMATION,
+            "pick_window_note": (
+                row.get("comparison_scope", "") if is_pick else NOT_ENOUGH_INFORMATION
+            ),
+            "risk_manual_review_notes": row.get("warnings", "") or NOT_ENOUGH_INFORMATION,
+            "data_status": (
+                f"{row.get('authority_status', '')}; {row.get('comparison_scope', '')}"
+            ),
         }
     return lookup
 

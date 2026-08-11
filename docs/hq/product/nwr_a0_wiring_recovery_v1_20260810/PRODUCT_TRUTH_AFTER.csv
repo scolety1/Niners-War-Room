@@ -1,0 +1,10 @@
+surface,state,coverage,owner_truth
+Rankings,WORKING,232/232 ranked skill players,"8 kickers remain structural/unranked"
+Market,WORKING_STALE,232/240 structural rows,"2026-07-17 display-only evidence; not current"
+Statistical Analysis,WORKING_PARTIAL,232 populated ranked receipts,"0 exact weighted contribution rows; unsupported fields omitted"
+Outcomes,WORKING_PARTIAL,2528/4848 numeric cells,"V3 canonical; missing remains missing"
+Asset Registry,WORKING,379 assets,"source-separated; no common scale"
+Trading Lab,WORKING,3/3 acceptance asset types,"veteran + rookie + future pick; manual descriptive only"
+Player Detail,WORKING,379 searchable assets,"section coverage depends on admitted source"
+Future Picks,WORKING_CONTEXT_ONLY,9 assets,"2027-2029 rounds 1-3; unknown slot; no player equivalence"
+Navigation,WORKING,7 primary destinations,"secondary and advanced capabilities retained"

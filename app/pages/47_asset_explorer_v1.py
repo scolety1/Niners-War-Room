@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
@@ -65,6 +66,7 @@ for column, asset_type in zip(metrics, registry.counts, strict=True):
     column.metric(asset_type, registry.counts[asset_type])
 
 frame = pd.DataFrame(registry.rows)
+rows_by_id = {row["asset_id"]: row for row in registry.rows}
 try:
     research_preview = _load_research_preview()
     research_columns = research_preview.board[
@@ -184,6 +186,13 @@ st.dataframe(
     use_container_width=True,
     hide_index=True,
 )
+if not filtered.empty:
+    detail_asset = st.selectbox(
+        "Open asset detail",
+        filtered["asset_id"].astype(str).tolist(),
+        format_func=lambda key: rows_by_id[key]["asset_name"],
+    )
+    st.markdown(f"[Open Player Detail](/player-detail?asset={quote(detail_asset, safe='')})")
 
 with st.expander("Authority and safe-use guide"):
     st.markdown(

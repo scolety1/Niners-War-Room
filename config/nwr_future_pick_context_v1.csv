@@ -1,0 +1,10 @@
+asset_id,asset_name,year,round,slot,uncertainty,draft_context_tier,evidence_source,evidence_status,comparison_scope
+pick:2027:1st,2027 1st,2027,1,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2027:2nd,2027 2nd,2027,2,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2027:3rd,2027 3rd,2027,3,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2028:1st,2028 1st,2028,1,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2028:2nd,2028 2nd,2028,2,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2028:3rd,2028 3rd,2028,3,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2029:1st,2029 1st,2029,1,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2029:2nd,2029 2nd,2029,2,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence
+pick:2029:3rd,2029 3rd,2029,3,Unknown,High,Round-only future pick,Governed NWR future-pick structure,Context-Only,Future-pick context only; no player-value equivalence

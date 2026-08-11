@@ -7,6 +7,8 @@ import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
+import pandas as pd
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_BOARD_RELATIVE = Path(
     "local_exports/model_v4/current_value/latest/full_player_board_value_review_rows.csv"
@@ -17,6 +19,7 @@ BLOCKED_ROOKIES_RELATIVE = ROOKIE_PACKET_RELATIVE / "2026_ROOKIE_IDENTITY_BLOCKE
 PICKS_RELATIVE = Path(
     "docs/draft_day_exports/final_board_v1_20260622/app_props/mock_draft/mock_pick_context.csv"
 )
+FUTURE_PICKS_RELATIVE = Path("config/nwr_future_pick_context_v1.csv")
 
 CURRENT_BOARD_SHA256 = "263cc8aa050c4670bf5ed22701d7b04801d143480c5630b98e00dd08d2968ce4"
 ROOKIE_BOARD_SHA256 = "06853164a41cd9715accfc3c4f3e54d0cc915be6c55ebab040de6fc0abd96c2f"
@@ -38,6 +41,18 @@ class GovernedAssetRegistry:
     errors: tuple[str, ...]
     counts: dict[str, int]
     source_hashes: dict[str, str]
+
+
+def finished_v1_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
+    positions = frame.get("position", pd.Series(index=frame.index, dtype=str)).astype(str)
+    ranks = frame.get("nwr_rank", pd.Series(index=frame.index, dtype=str)).astype(str).str.strip()
+    skill = positions.isin(("QB", "RB", "WR", "TE"))
+    kickers = positions.eq("K")
+    return {
+        "structural_assets": int(frame.shape[0]),
+        "ranked_skill_players": int((skill & ranks.ne("")).sum()),
+        "unranked_kickers": int((kickers & ranks.eq("")).sum()),
+    }
 
 
 def file_sha256(path: Path) -> str:
@@ -62,7 +77,7 @@ def _current_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
             "position": row["position"],
             "team": row["nfl_team"],
             "source_label": "Finished V1",
-            "authority_status": "Production",
+            "authority_status": "Production" if row["nwr_rank"] else "Structural / Unranked",
             "rank_label": "NWR Dynasty Rank",
             "rank_value": row["nwr_rank"],
             "tier": "",
@@ -149,6 +164,30 @@ def _pick_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     ]
 
 
+def _future_pick_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [
+        {
+            "asset_id": row["asset_id"],
+            "asset_type": "Future Pick",
+            "asset_name": row["asset_name"],
+            "position": "PICK",
+            "team": "Owner not encoded",
+            "source_label": row["evidence_source"],
+            "authority_status": row["evidence_status"],
+            "rank_label": "No common rank",
+            "rank_value": "",
+            "tier": row["draft_context_tier"],
+            "score_label": "No common value",
+            "score_value": "",
+            "confidence": row["uncertainty"],
+            "warnings": f"slot_{row['slot'].lower()}; player_equivalence_unavailable",
+            "blocking_reason": "",
+            "comparison_scope": row["comparison_scope"],
+        }
+        for row in rows
+    ]
+
+
 def _slug(value: str) -> str:
     return "-".join(value.lower().replace("'", "").split())
 
@@ -168,6 +207,7 @@ def load_governed_asset_registry(
     rookie_path = root / ROOKIE_BOARD_RELATIVE
     blocked_path = root / BLOCKED_ROOKIES_RELATIVE
     picks_path = root / PICKS_RELATIVE
+    future_picks_path = root / FUTURE_PICKS_RELATIVE
     errors: list[str] = []
     hashes: dict[str, str] = {}
 
@@ -188,6 +228,8 @@ def load_governed_asset_registry(
     rookie = [row for row in rookie_authority if row["final_review_score"]]
     blocked = _rows(blocked_path)
     picks = _rows(picks_path)
+    future_picks = _rows(future_picks_path)
+    hashes["Future Pick Context"] = file_sha256(future_picks_path)
     if (
         hashes["Rookie Review"] != ROOKIE_BOARD_SHA256
         or len(rookie_authority) != 80
@@ -200,17 +242,26 @@ def load_governed_asset_registry(
         errors.append("blocked-rookie identity set mismatch")
     if len(picks) != 50 or len({row["pick_label"] for row in picks}) != 50:
         errors.append("draft context must contain 50 unique picks")
+    if len(future_picks) != 9 or len({row["asset_id"] for row in future_picks}) != 9:
+        errors.append("future-pick context must contain nine unique 2027-2029 round assets")
 
     rows = (
         *_current_assets(current),
         *_rookie_assets(rookie),
         *_blocked_assets(blocked),
         *_pick_assets(picks),
+        *_future_pick_assets(future_picks),
     )
     if len({row["asset_id"] for row in rows}) != len(rows):
         errors.append("governed asset IDs are not unique")
     counts = {
         asset_type: sum(row["asset_type"] == asset_type for row in rows)
-        for asset_type in ("Current Player", "Rookie Review", "Blocked Rookie", "Draft Pick")
+        for asset_type in (
+            "Current Player",
+            "Rookie Review",
+            "Blocked Rookie",
+            "Draft Pick",
+            "Future Pick",
+        )
     }
     return GovernedAssetRegistry(tuple(rows), tuple(errors), counts, hashes)

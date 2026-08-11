@@ -1,0 +1,17 @@
+{
+  "schema_version": "nwr-a0-wiring-recovery-manifest-v1",
+  "packet": "nwr_a0_wiring_recovery_v1_20260810",
+  "verdict": "GREEN_NWR_A0_WIRING_RECOVERY_READY_FOR_HQ_REVIEW",
+  "starting_hq": "fef4c3db6107db36107b9c84b655f1a555f4a8ec",
+  "starting_tree": "ea20a3e67b5943b23f079ad8b62a30b8d1c13d0f",
+  "authority_changes": false,
+  "scheduler_enabled": false,
+  "required_files": 20,
+  "browser_viewports": ["375x812", "768x1024", "1440x1000"],
+  "market_matches": 232,
+  "ranked_skill_players": 232,
+  "unranked_kickers": 8,
+  "governed_assets": 379,
+  "outcome_v3_numeric_coverage": "2528/4848",
+  "push_status": "NOT_PUSHED_PENDING_HQ_REVIEW"
+}

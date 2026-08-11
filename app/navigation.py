@@ -19,7 +19,7 @@ class NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
     NavigationPageSpec(
-        title="Draft Cockpit",
+        title="Draft",
         file_path="pages/21_live_draft_room_v1.py",
         url_path="draft-cockpit",
     ),
@@ -29,7 +29,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="mock-draft",
     ),
     NavigationPageSpec(
-        title="Dynasty Rankings",
+        title="Rankings",
         file_path="pages/20_final_board_v1.py",
         url_path="rankings",
     ),
@@ -39,17 +39,17 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="asset-explorer",
     ),
     NavigationPageSpec(
-        title="Player Compare",
+        title="Compare",
         file_path="pages/22_player_compare_v1.py",
         url_path="player-compare",
     ),
     NavigationPageSpec(
-        title="Trading Lab",
+        title="Analyze Trade",
         file_path="pages/23_trading_lab_v1.py",
         url_path="trading-lab",
     ),
     NavigationPageSpec(
-        title="Rookie Board",
+        title="Rookie Review",
         file_path="pages/48_rookie_board_review_v1.py",
         url_path="rookie-board",
     ),
@@ -119,7 +119,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="settings-data-health",
     ),
     NavigationPageSpec(
-        title="Personal Board",
+        title="My Board",
         file_path="pages/49_personal_board_v1.py",
         url_path="personal-board",
     ),
@@ -138,56 +138,63 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         file_path="pages/52_redraft_v1.py",
         url_path="redraft",
     ),
+    NavigationPageSpec(
+        title="Home",
+        file_path="pages/46_draft_cockpit_default_root.py",
+        url_path="owner-home",
+    ),
+    NavigationPageSpec(
+        title="Player Detail",
+        file_path="pages/53_player_detail_v1.py",
+        url_path="player-detail",
+    ),
 )
+
+
+def _visible_page(url_path: str) -> NavigationPageSpec:
+    return next(page for page in VISIBLE_NAVIGATION_PAGES if page.url_path == url_path)
+
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
     (
-        "Draft",
+        "Primary",
         (
-            VISIBLE_NAVIGATION_PAGES[0],
-            VISIBLE_NAVIGATION_PAGES[1],
-            VISIBLE_NAVIGATION_PAGES[7],
-            VISIBLE_NAVIGATION_PAGES[23],
+            _visible_page("owner-home"),
+            _visible_page("rankings"),
+            _visible_page("trading-lab"),
+            _visible_page("player-compare"),
+            _visible_page("draft-cockpit"),
+            _visible_page("redraft"),
+            _visible_page("personal-board"),
         ),
     ),
     (
-        "Research",
+        "Secondary",
         (
-            VISIBLE_NAVIGATION_PAGES[2],
-            VISIBLE_NAVIGATION_PAGES[3],
-            VISIBLE_NAVIGATION_PAGES[4],
-            VISIBLE_NAVIGATION_PAGES[5],
-            VISIBLE_NAVIGATION_PAGES[6],
+            _visible_page("rookie-board"),
+            _visible_page("asset-explorer"),
+            _visible_page("player-detail"),
+            _visible_page("saved-scenarios"),
+            _visible_page("decision-journal"),
         ),
     ),
     (
-        "Development Lab",
+        "Advanced / Data",
         (
-            VISIBLE_NAVIGATION_PAGES[8],
-            VISIBLE_NAVIGATION_PAGES[9],
-            VISIBLE_NAVIGATION_PAGES[10],
-            VISIBLE_NAVIGATION_PAGES[11],
-            VISIBLE_NAVIGATION_PAGES[12],
-            VISIBLE_NAVIGATION_PAGES[13],
-            VISIBLE_NAVIGATION_PAGES[14],
-            VISIBLE_NAVIGATION_PAGES[15],
-        ),
-    ),
-    (
-        "Admin",
-        (
-            VISIBLE_NAVIGATION_PAGES[16],
-            VISIBLE_NAVIGATION_PAGES[17],
-            VISIBLE_NAVIGATION_PAGES[18],
-            VISIBLE_NAVIGATION_PAGES[19],
-        ),
-    ),
-    (
-        "Personal Workspace",
-        (
-            VISIBLE_NAVIGATION_PAGES[20],
-            VISIBLE_NAVIGATION_PAGES[21],
-            VISIBLE_NAVIGATION_PAGES[22],
+            _visible_page("settings-data-health"),
+            _visible_page("mock-draft"),
+            _visible_page("post-draft-mode"),
+            _visible_page("development-lab"),
+            _visible_page("roster-weakness-tracker"),
+            _visible_page("future-pick-planning"),
+            _visible_page("upcoming-draft-prep"),
+            _visible_page("keeper-deadline-prep"),
+            _visible_page("drop-deadline-prep"),
+            _visible_page("trade-deadline-prep"),
+            _visible_page("future-tools"),
+            _visible_page("refresh-data"),
+            _visible_page("evidence-integration-review"),
+            _visible_page("evidence-review-hub"),
         ),
     ),
 )

@@ -6,8 +6,10 @@ from pathlib import Path
 from src.services.governed_asset_registry_service import (
     EXPECTED_BLOCKED,
     file_sha256,
+    finished_v1_coverage_counts,
     load_governed_asset_registry,
 )
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,9 +59,10 @@ def test_registry_contains_all_governed_asset_types(tmp_path: Path) -> None:
         "Rookie Review": 73,
         "Blocked Rookie": 7,
         "Draft Pick": 50,
+        "Future Pick": 9,
     }
-    assert len(registry.rows) == 370
-    assert len({row["asset_id"] for row in registry.rows}) == 370
+    assert len(registry.rows) == 379
+    assert len({row["asset_id"] for row in registry.rows}) == 379
 
 
 def test_registry_keeps_sources_and_scales_separate(tmp_path: Path) -> None:
@@ -72,6 +75,7 @@ def test_registry_keeps_sources_and_scales_separate(tmp_path: Path) -> None:
     current_row = next(row for row in registry.rows if row["asset_type"] == "Current Player")
     rookie = next(row for row in registry.rows if row["asset_type"] == "Rookie Review")
     pick = next(row for row in registry.rows if row["asset_type"] == "Draft Pick")
+    future = next(row for row in registry.rows if row["asset_type"] == "Future Pick")
 
     assert current_row["source_label"] == "Finished V1"
     assert current_row["authority_status"] == "Production"
@@ -79,6 +83,9 @@ def test_registry_keeps_sources_and_scales_separate(tmp_path: Path) -> None:
     assert "only within the 2026 Rookie Review" in rookie["comparison_scope"]
     assert pick["score_label"] == "No common value"
     assert "no player-value equivalence" in pick["comparison_scope"]
+    assert future["asset_id"] == "pick:2027:1st"
+    assert future["rank_value"] == ""
+    assert future["authority_status"] == "Context-Only"
     assert all("recommendation" not in row for row in registry.rows)
 
 
@@ -117,6 +124,23 @@ def test_missing_current_board_does_not_fabricate_players(tmp_path: Path) -> Non
     assert registry.counts["Current Player"] == 0
     assert registry.counts["Rookie Review"] == 73
     assert registry.errors[0].startswith("Finished V1 board missing:")
+
+
+def test_finished_v1_coverage_separates_ranked_skill_players_and_kickers() -> None:
+    frame = pd.DataFrame(
+        [
+            *(
+                {"position": ("QB", "RB", "WR", "TE")[index % 4], "nwr_rank": str(index + 1)}
+                for index in range(232)
+            ),
+            *({"position": "K", "nwr_rank": ""} for _ in range(8)),
+        ]
+    )
+    assert finished_v1_coverage_counts(frame) == {
+        "structural_assets": 240,
+        "ranked_skill_players": 232,
+        "unranked_kickers": 8,
+    }
 
 
 def test_asset_explorer_and_rookie_board_are_read_only_labeled_pages() -> None:

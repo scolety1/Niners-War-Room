@@ -1,0 +1,14 @@
+path,change,purpose
+app/navigation.py,modified,owner-first navigation groups and Player Detail route
+app/pages/20_final_board_v1.py,modified,232/8 truth reset filters V3-only normal consumer populated score receipts
+app/pages/23_trading_lab_v1.py,modified,governed selectors future picks scenario reopen and governed persistence
+app/pages/46_draft_cockpit_default_root.py,modified,owner Home search and corrected 232 ranking description
+app/pages/47_asset_explorer_v1.py,modified,Player Detail handoff
+app/pages/53_player_detail_v1.py,created,unified governed Player Detail composition
+config/nwr_future_pick_context_v1.csv,created,governed 2027-2029 round-only pick contract
+src/services/draft_day_trade_lab_service.py,modified,governed registry adapter
+src/services/dynastyprocess_generation_service.py,modified,authenticated launcher-root and legacy-latest read compatibility
+src/services/governed_asset_registry_service.py,modified,future picks structural kicker state and Finished V1 coverage helper
+src/services/market_baseline_service.py,modified,launcher physical root stale normalization and compatibility resolution
+tests/,modified_or_created,regression coverage for repaired connections and product contracts
+docs/hq/product/nwr_a0_wiring_recovery_v1_20260810/,created,implementation and validation packet

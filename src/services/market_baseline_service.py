@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import re
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -8,8 +10,10 @@ from typing import Any
 import pandas as pd
 
 from src.services.dynastyprocess_generation_service import (
+    GenerationResolutionError,
     GenerationSnapshot,
     resolve_current_generation,
+    resolve_legacy_latest_snapshot,
 )
 from src.services.market_baseline_registry import validate_market_baseline_registry
 
@@ -20,6 +24,21 @@ DEFAULT_ARTIFACT_DIR = (
     / "refresh_data"
     / "dynastyprocess_market_baseline"
 )
+
+
+def runtime_artifact_dir() -> Path:
+    """Return the launcher-owned physical market root without following a repo junction."""
+
+    configured = os.environ.get("NWR_REFRESH_DATA_ROOT", "").strip()
+    refresh_root = (
+        Path(configured)
+        if configured
+        else Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        / "NinersWarRoom"
+        / "data"
+        / "refresh_data"
+    )
+    return refresh_root / "dynastyprocess_market_baseline"
 
 PLAYER_CONTEXT_FILENAMES = (
     "dp_player_market_context.csv",
@@ -121,6 +140,21 @@ def load_market_freshness(
     if status and status not in FRESH_STATUSES:
         row["freshness_status"] = "RED_NO_VALID_CACHE"
         row["market_baseline_stale_warning"] = f"Unknown freshness status: {status}"
+    scrape_date = row.get("upstream_scrape_date", "")
+    if scrape_date and row.get("freshness_status", "") in {
+        "GREEN_CURRENT",
+        "GREEN_SAME_WEEK_NO_CHANGE",
+    }:
+        try:
+            age_days = (datetime.now(UTC).date() - datetime.fromisoformat(scrape_date).date()).days
+        except ValueError:
+            age_days = 0
+        if age_days > 7:
+            row["freshness_status"] = "YELLOW_STALE"
+            row["market_baseline_stale_warning"] = (
+                f"Market evidence is {age_days} days old (upstream date {scrape_date}); "
+                "display-only context remains available but is not current."
+            )
     return row
 
 
@@ -237,6 +271,21 @@ def _load_first_existing_csv_from_snapshot(
 
 def _resolve_generation(artifact_dir: str | Path) -> GenerationSnapshot:
     root = Path(artifact_dir)
+    if root == DEFAULT_ARTIFACT_DIR:
+        runtime_root = runtime_artifact_dir()
+        if runtime_root.is_dir():
+            try:
+                return resolve_current_generation(
+                    runtime_root,
+                    repo_root=REPO_ROOT,
+                    trusted_runtime_root=runtime_root,
+                )
+            except GenerationResolutionError:
+                return resolve_legacy_latest_snapshot(
+                    runtime_root,
+                    repo_root=REPO_ROOT,
+                    trusted_runtime_root=runtime_root,
+                )
     if (
         root.name != "dynastyprocess_market_baseline"
         or root.parent.name != "refresh_data"

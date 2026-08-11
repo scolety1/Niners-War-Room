@@ -30,7 +30,7 @@ from src.services.draft_day_app_v1_service import (
 from src.services.draft_day_trade_lab_service import (
     NOT_ENOUGH_INFORMATION,
     add_trade_item,
-    build_trade_item_lookup,
+    build_registry_trade_item_lookup,
     clear_trade_state,
     copy_trade_state,
     display_package_summary,
@@ -117,15 +117,15 @@ page_header(
     "Trading Lab",
     eyebrow="Draft-Day App V1",
     description=(
-        "Manual trade planning workspace using the complete 240-player production universe. "
-        "Dynasty Rank and roster context remain factual labels; frozen draft/pick context stays "
-        "separate. No package value, offer generation, simulation, private value, or final trade "
-        "advice runs here."
+        "Manual trade planning workspace using the governed veteran, rookie, blocked-prospect, "
+        "2026-pick, and future-pick registry. Rank, roster, and pick evidence stays factual and "
+        "source-separated. No package value, offer generation, simulation, private value, or "
+        "final trade advice runs here."
     ),
     status_items=(
         ("Manual review only", "review"),
         (
-            f"Current player rows: {dynasty_bundle.row_count}",
+            f"Production current-player source: {dynasty_bundle.row_count}",
             "safe" if dynasty_bundle.loaded else "blocked",
         ),
         ("No trade model added", "safe"),
@@ -170,12 +170,13 @@ if SESSION_KEY not in st.session_state:
     st.session_state[SESSION_KEY] = empty_trade_state()
 st.session_state[SESSION_KEY] = copy_trade_state(st.session_state[SESSION_KEY])
 
-lookup = build_trade_item_lookup(
-    dynasty_bundle.frame,
-    trade_frame,
-    pick_frame,
-    require_complete_player_universe=True,
-)
+governed = load_governed_asset_registry(repo_root=REPO_ROOT)
+governed_by_id = {row["asset_id"]: row for row in governed.rows}
+if governed.errors:
+    for registry_error in governed.errors:
+        st.error(f"Governed asset registry: {registry_error}")
+    st.stop()
+lookup = build_registry_trade_item_lookup(governed.rows)
 player_select = player_options(lookup)
 pick_select = pick_context_options(lookup)
 counts = source_context_counts(dynasty_bundle.frame, trade_frame, pick_frame, tier_frame)
@@ -189,13 +190,13 @@ if trade_path is None or trade_frame.empty:
 
 def _render_source_metrics(counts: dict[str, int]) -> None:
     cols = st.columns(4)
-    cols[0].metric("Current player rows", counts["player_universe_rows"])
+    cols[0].metric("Governed selector assets", len(governed.rows))
     cols[1].metric("Trade helper rows", counts["trade_helper_rows"])
-    cols[2].metric("Pick context rows", counts["pick_context_rows"])
+    cols[2].metric("Legacy pick helper rows", counts["pick_context_rows"])
     cols[3].metric("Tier context rows", counts["tier_context_rows"])
     st.caption(
-        "Selectable players come from the hash-validated Full Dynasty Rankings source. Frozen "
-        "board and approved lane props remain separate display-only context and cannot override "
+        "Selectors come from the governed registry. Finished V1, Rookie Review, blocked assets, "
+        "2026 picks, and future picks keep separate authority labels and cannot override "
         "`nwr_rank`, `final_board_rank`, create hidden sort fields, or produce package values."
     )
 
@@ -226,7 +227,7 @@ def _render_side_controls(
         st.markdown(f"**{title}**")
         if player_select:
             player_label = st.selectbox(
-                "Add player",
+                "Add veteran or rookie/prospect",
                 list(player_select),
                 key=f"trading_lab_{side}_player",
             )
@@ -246,7 +247,7 @@ def _render_side_controls(
 
         if pick_select:
             pick_label = st.selectbox(
-                "Add pick/context",
+                "Add 2026 or future pick",
                 list(pick_select),
                 key=f"trading_lab_{side}_pick",
             )
@@ -771,19 +772,43 @@ _render_diagnostics()
 
 st.subheader("Personal Workspace")
 selected_rows = trade_item_rows(st.session_state[SESSION_KEY], lookup)
-governed = load_governed_asset_registry(repo_root=REPO_ROOT)
-governed_by_id = {row["asset_id"]: row for row in governed.rows}
 personal_store = load_store("personal_board")
 scenario_store = load_store("saved_scenarios")
 personal = {row["asset_id"]: row for row in personal_store.records}
 render_save_status(initial_save_status(scenario_store.status, scenario_store.updated_at_utc))
 exact_ids = []
 for row in selected_rows.to_dict("records"):
+    registry_asset_id = str(row.get("asset_id", "")).strip()
+    if registry_asset_id in governed_by_id:
+        exact_ids.append(registry_asset_id)
+        continue
     player_id = str(row.get("nwr_player_id", "")).strip()
     asset_id = f"current:{player_id}"
     if player_id != NOT_ENOUGH_INFORMATION and asset_id in governed_by_id:
         exact_ids.append(asset_id)
 exact_ids = list(dict.fromkeys(exact_ids))
+
+saved_trade_scenarios = [
+    row for row in scenario_store.records if row.get("scenario_type") == "trading_lab"
+]
+if saved_trade_scenarios:
+    scenario_by_label = {
+        f"{row.get('title', 'Saved trade')} · {row.get('updated_at_utc', '')}": row
+        for row in saved_trade_scenarios
+    }
+    reopen_label = st.selectbox("Reopen saved trade", list(scenario_by_label))
+    if st.button("Reopen scenario", key="trading_lab_reopen_scenario"):
+        reopened = scenario_by_label[reopen_label]
+        restored = empty_trade_state()
+        for item in reopened.get("payload", {}).get("selected_sides", []):
+            asset_id = str(item.get("asset_id", "")).strip()
+            item_key = f"registry:{asset_id}"
+            if item_key not in lookup:
+                continue
+            side = "give" if item.get("side") == "NWR gives" else "get"
+            restored[side].append(item_key)
+        st.session_state[SESSION_KEY] = restored
+        st.rerun()
 if exact_ids:
     st.dataframe(
         pd.DataFrame(
@@ -852,6 +877,7 @@ if save_trade_scenario:
             for column in (
                 "side",
                 "asset_type",
+                "asset_id",
                 "nwr_player_id",
                 "player",
                 "rank_source",

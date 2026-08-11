@@ -43,9 +43,9 @@ def test_rankings_v3_lens_is_compact_named_and_sort_independent() -> None:
     assert "_sort_player_board(" not in function
     assert (
         "if preset == VIEW_PRESET_OUTCOME_CONTEXT:\n"
-        "    _render_outcome_lens_status(unified_board)\n"
         "    _render_outcome_v3_compact_lens(filtered_board)"
     ) in page
+    assert "_render_outcome_lens_status(unified_board)" not in page
 
 
 def test_player_compare_v3_is_expanded_and_keeps_legacy_compatibility() -> None:

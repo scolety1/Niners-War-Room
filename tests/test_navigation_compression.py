@@ -18,13 +18,13 @@ APP_DIR = Path("app")
 
 def test_visible_navigation_is_decision_focused() -> None:
     assert [page.title for page in VISIBLE_NAVIGATION_PAGES] == [
-        "Draft Cockpit",
+        "Draft",
         "Mock Drafts",
-        "Dynasty Rankings",
+        "Rankings",
         "Asset Explorer",
-        "Player Compare",
-        "Trading Lab",
-        "Rookie Board",
+        "Compare",
+        "Analyze Trade",
+        "Rookie Review",
         "Draft Analyzer",
         "Lab Home",
         "Roster Weakness Tracker",
@@ -38,10 +38,12 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Evidence Review",
         "Evidence Review Hub",
         "Settings / Data Health",
-        "Personal Board",
+        "My Board",
         "Decision Journal",
         "Saved Scenarios",
         "Redraft",
+        "Home",
+        "Player Detail",
     ]
 
 
@@ -51,15 +53,12 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Draft": ["Draft Cockpit", "Mock Drafts", "Draft Analyzer", "Redraft"],
-        "Research": [
-            "Dynasty Rankings",
-            "Asset Explorer",
-            "Player Compare",
-            "Trading Lab",
-            "Rookie Board",
-        ],
-        "Development Lab": [
+        "Primary": ["Home", "Rankings", "Analyze Trade", "Compare", "Draft", "Redraft", "My Board"],
+        "Secondary": ["Rookie Review", "Asset Explorer", "Player Detail", "Saved Scenarios", "Decision Journal"],
+        "Advanced / Data": [
+            "Settings / Data Health",
+            "Mock Drafts",
+            "Draft Analyzer",
             "Lab Home",
             "Roster Weakness Tracker",
             "Future Pick Planning",
@@ -68,14 +67,10 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
             "Drop Deadline Prep",
             "Trade Deadline Prep",
             "Future Tools",
-        ],
-        "Admin": [
             "Refresh Data",
             "Evidence Review",
             "Evidence Review Hub",
-            "Settings / Data Health",
         ],
-        "Personal Workspace": ["Personal Board", "Decision Journal", "Saved Scenarios"],
     }
 
 
@@ -146,18 +141,9 @@ def test_navigation_page_files_exist_and_compile() -> None:
 def test_refresh_data_nav_precedes_mock_draft() -> None:
     titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
 
-    assert titles.index("Draft Cockpit") < titles.index("Mock Drafts")
+    assert titles.index("Draft") < titles.index("Mock Drafts")
     assert titles.index("Lab Home") < titles.index("Refresh Data")
-    assert titles[-8:] == [
-        "Refresh Data",
-        "Evidence Review",
-        "Evidence Review Hub",
-        "Settings / Data Health",
-        "Personal Board",
-        "Decision Journal",
-        "Saved Scenarios",
-        "Redraft",
-    ]
+    assert titles[-2:] == ["Home", "Player Detail"]
 
 
 def test_default_root_is_separate_from_every_registered_route() -> None:
@@ -173,7 +159,7 @@ def test_default_root_is_separate_from_every_registered_route() -> None:
         "pages/44_draft_cockpit_root.py"
     )
     assert DEFAULT_ROOT_PAGE.file_path == "pages/46_draft_cockpit_default_root.py"
-    assert VISIBLE_NAVIGATION_PAGES[0].url_path == "draft-cockpit"
+    assert VISIBLE_NAVIGATION_PAGE_GROUPS[0][1][0].url_path == "owner-home"
 
 
 def test_required_direct_routes_remain_registered() -> None:
@@ -211,6 +197,8 @@ def test_required_direct_routes_remain_registered() -> None:
         "evidence-integration-review",
         "evidence-review-hub",
         "unified-universe-review",
+        "owner-home",
+        "player-detail",
     }:
         assert route in route_map
 
@@ -254,6 +242,8 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "decision-journal",
         "saved-scenarios",
         "redraft",
+        "owner-home",
+        "player-detail",
     }
     assert {
         "cheat-sheets",
@@ -336,8 +326,8 @@ def test_draft_day_v1_rankings_page_uses_one_player_board_with_view_modes() -> N
     legacy_player_board = (APP_DIR / "legacy_pages" / "05_rankings_legacy.py").read_text()
 
     assert '"Dynasty Rankings"' in final_board
-    assert "Full dynasty rankings first" in final_board
-    assert "Outcome columns are display-only" in final_board
+    assert "232 production-ranked QB/RB/WR/TE players" in final_board
+    assert "Outcome V3 is shown only in the canonical Outcome Context lens" in final_board
     assert "UNIFIED_REVIEW_VIEW" in final_board
     assert "FULL_DYNASTY_VIEW" in final_board
     assert "ROOKIES_DRAFT_BOARD_VIEW" in final_board
