@@ -130,7 +130,7 @@ def test_visible_navigation_uses_draft_prep_label() -> None:
 
     assert 'title="Draft Prep"' in text
     assert 'url_path="draft-room"' in text
-    assert 'title="Draft Cockpit"' in text
+    assert 'title="Draft"' in text
     assert 'url_path="draft-cockpit"' in text
     assert 'url_path="live-draft-room"' in text
 

@@ -63,7 +63,7 @@ def test_phase5_filter_controls_use_clean_language() -> None:
     for label in (
         '"Dynasty Review"',
         '"Market Context"',
-        '"Data Review"',
+        '"Ranking Context"',
         '"Advanced filters"',
         '"Review needed"',
     ):
@@ -94,7 +94,7 @@ def test_main_score_tables_expose_score_disclosure_fields() -> None:
 
     for required in (
         "build_rankings_dataset_trust_strip(",
-        'heading="Visible board evidence trust"',
+        'heading="Board evidence trust"',
         "source_path, source_column",
         "model_version, score_type, score_as_of_date, confidence_cap",
     ):

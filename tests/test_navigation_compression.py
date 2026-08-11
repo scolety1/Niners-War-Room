@@ -26,7 +26,7 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Analyze Trade",
         "Rookie Review",
         "Draft Analyzer",
-        "Lab Home",
+        "Research Tools",
         "Roster Weakness Tracker",
         "Future Pick Planning",
         "Upcoming Draft Prep",
@@ -39,11 +39,11 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Evidence Review Hub",
         "Settings / Data Health",
         "My Board",
-        "Decision Journal",
-        "Saved Scenarios",
-        "Redraft",
+        "Decision Tracker",
+        "Scenario Playground",
         "Home",
         "Player Detail",
+        "Dynasty Outcomes",
     ]
 
 
@@ -53,24 +53,32 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Primary": ["Home", "Rankings", "Analyze Trade", "Compare", "Draft", "Redraft", "My Board"],
-        "Secondary": ["Rookie Review", "Asset Explorer", "Player Detail", "Saved Scenarios", "Decision Journal"],
-        "Advanced / Data": [
-            "Settings / Data Health",
-            "Mock Drafts",
-            "Draft Analyzer",
-            "Lab Home",
+        "Players & Rankings": [
+            "Home",
+            "Rankings",
+            "Rookie Review",
+            "Player Detail",
+            "Compare",
+            "Asset Explorer",
+            "My Board",
+        ],
+        "Trades & Scenarios": ["Analyze Trade", "Scenario Playground", "Decision Tracker"],
+        "Draft Tools": ["Draft", "Mock Drafts", "Draft Analyzer", "Upcoming Draft Prep"],
+        "NWR Analysis": [
+            "Dynasty Outcomes",
             "Roster Weakness Tracker",
             "Future Pick Planning",
-            "Upcoming Draft Prep",
             "Keeper Deadline Prep",
             "Drop Deadline Prep",
             "Trade Deadline Prep",
+        ],
+        "Advanced / Research": [
+            "Research Tools",
             "Future Tools",
-            "Refresh Data",
             "Evidence Review",
             "Evidence Review Hub",
         ],
+        "Settings": ["Settings / Data Health", "Refresh Data"],
     }
 
 
@@ -88,7 +96,7 @@ def test_developer_plumbing_pages_are_hidden_from_navigation() -> None:
         "Cheat Sheets",
         "Draft Prep",
         "Draft Prep Compatibility",
-        "Outcome Diagnostics",
+        "Redraft Legacy Route",
         "Decision Board",
         "NFL Usage Evidence Review",
         "Legacy Dynasty Rankings",
@@ -142,8 +150,8 @@ def test_refresh_data_nav_precedes_mock_draft() -> None:
     titles = [page.title for page in VISIBLE_NAVIGATION_PAGES]
 
     assert titles.index("Draft") < titles.index("Mock Drafts")
-    assert titles.index("Lab Home") < titles.index("Refresh Data")
-    assert titles[-2:] == ["Home", "Player Detail"]
+    assert titles.index("Research Tools") < titles.index("Refresh Data")
+    assert titles[-3:] == ["Home", "Player Detail", "Dynasty Outcomes"]
 
 
 def test_default_root_is_separate_from_every_registered_route() -> None:
@@ -192,6 +200,7 @@ def test_required_direct_routes_remain_registered() -> None:
         "personal-board",
         "decision-journal",
         "saved-scenarios",
+        "outcome-columns",
         "redraft",
         "refresh-data",
         "evidence-integration-review",
@@ -241,7 +250,7 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "personal-board",
         "decision-journal",
         "saved-scenarios",
-        "redraft",
+        "outcome-columns",
         "owner-home",
         "player-detail",
     }
@@ -251,6 +260,7 @@ def test_secondary_tools_are_demoted_but_direct_routes_stay_live() -> None:
         "live-draft-room",
         "drafting-mode",
         "unified-universe-review",
+        "redraft",
     }.issubset(hidden_routes)
 
 

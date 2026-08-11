@@ -57,10 +57,11 @@ _evidence = compose_owner_asset_evidence(
 )
 page_header(
     "Asset Explorer",
-    eyebrow="Source-separated registry",
+    eyebrow="Browse every governed dynasty asset",
     description=(
-        "Search current players, 2026 rookie-review assets, visibly blocked rookies, "
-        "and draft picks without blending their ranks or scores."
+        "Use this when Rankings does not cover the asset you need. Search veterans, "
+        "rookies, blocked prospects, and picks in one catalog while keeping each "
+        "source's authority and scale separate."
     ),
     status_items=(
         ("Read-only", "safe"),
@@ -78,9 +79,13 @@ if registry.errors:
         "no fallback values are created."
     )
 
-metrics = st.columns(4)
-for column, asset_type in zip(metrics, registry.counts, strict=True):
-    column.metric(asset_type, registry.counts[asset_type])
+count_items = list(registry.counts.items())
+for start in range(0, len(count_items), 4):
+    batch = count_items[start : start + 4]
+    for column, (asset_type, count) in zip(
+        st.columns(len(batch)), batch, strict=True
+    ):
+        column.metric(asset_type, count)
 
 frame = pd.DataFrame(_evidence.rows)
 rows_by_id = _evidence.by_id

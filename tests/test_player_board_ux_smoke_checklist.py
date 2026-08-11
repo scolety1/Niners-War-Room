@@ -25,14 +25,14 @@ CURRENT_PLAYER_BOARD_LABELS = frozenset(
         "Dynasty Rankings",
         "Dynasty Review",
         "Market Context",
-        "Data Review",
+        "Ranking Context",
         "Search player",
         "Position",
         "Player type",
         "Sort by",
         "Advanced filters",
         "Review needed",
-        "Visible board evidence trust",
+        "Board evidence trust",
     }
 )
 

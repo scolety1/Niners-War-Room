@@ -70,6 +70,14 @@ class OutcomeV3DisplayBundle:
     errors: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class OutcomeCoverageAudit:
+    numeric: int
+    applicable: int
+    percent: float
+    classifications: tuple[tuple[str, int], ...]
+
+
 def load_outcome_v3_display(
     *,
     integration_path: str | Path = INTEGRATION_PACK_PATH,
@@ -231,6 +239,113 @@ def player_compare_outcome_v3_rows(
                     )
                 )
     return pd.DataFrame(rows)
+
+
+def outcome_v3_player_matrix(
+    board: pd.DataFrame,
+    outcome_frame: pd.DataFrame,
+    *,
+    position: str,
+) -> tuple[pd.DataFrame, OutcomeCoverageAudit, pd.DataFrame]:
+    """Pivot governed V3 values to one player per row with quiet missing markers."""
+
+    normalized_position = str(position).upper()
+    if normalized_position not in POSITION_THRESHOLDS:
+        raise ValueError(f"unsupported Outcome V3 position: {position}")
+    required = {"player_id", "player_name", "position"}
+    if missing := sorted(required - set(board.columns)):
+        raise AssertionError(f"Outcome V3 matrix board missing columns: {missing}")
+    players = board.loc[
+        board["position"].astype(str).str.upper().eq(normalized_position)
+    ].copy()
+    lookup = _outcome_lookup(outcome_frame)
+    matrix_rows: list[dict[str, str]] = []
+    detail_rows: list[dict[str, str]] = []
+    numeric = 0
+    applicable = 0
+    classifications: dict[str, int] = {}
+    for player in players.to_dict("records"):
+        player_id = _text(player.get("player_id"))
+        player_name = _text(player.get("player_name"))
+        output: dict[str, str] = {
+            "NWR Rank": _text(player.get("nwr_rank")) or NOT_ENOUGH_INFORMATION,
+            "Player": player_name,
+            "Pos": normalized_position,
+        }
+        for horizon in HORIZONS:
+            for threshold in POSITION_THRESHOLDS[normalized_position]:
+                source = lookup.get(
+                    (player_id, normalized_position, int(threshold), horizon)
+                )
+                label = f"{_compact_horizon_label(horizon)} T{threshold}"
+                applicable += 1
+                probability = _text((source or {}).get("probability_display"))
+                evidence = _text((source or {}).get("evidence_state"))
+                if probability and probability not in {
+                    NOT_ENOUGH_INFORMATION,
+                    NOT_APPLICABLE,
+                }:
+                    output[label] = probability
+                    numeric += 1
+                    classification = "numeric evidence"
+                else:
+                    output[label] = "—"
+                    classification = _missing_classification(source, player_id)
+                    classifications[classification] = (
+                        classifications.get(classification, 0) + 1
+                    )
+                detail_rows.append(
+                    {
+                        "Player": player_name,
+                        "Pos": normalized_position,
+                        "Outcome": label,
+                        "Value": output[label],
+                        "Classification": classification,
+                        "Why unavailable": (
+                            "Available"
+                            if classification == "numeric evidence"
+                            else _text((source or {}).get("missing_reason"))
+                            or _text((source or {}).get("reason_code"))
+                            or "No governed Outcome V3 row for the exact player ID"
+                        ),
+                        "Evidence": evidence or NOT_ENOUGH_INFORMATION,
+                    }
+                )
+        matrix_rows.append(output)
+    audit = OutcomeCoverageAudit(
+        numeric=numeric,
+        applicable=applicable,
+        percent=round((numeric / applicable * 100) if applicable else 0.0, 1),
+        classifications=tuple(sorted(classifications.items())),
+    )
+    return pd.DataFrame(matrix_rows), audit, pd.DataFrame(detail_rows)
+
+
+def _compact_horizon_label(horizon: str) -> str:
+    return {
+        "THIS_YEAR": "2026",
+        "NEXT_YEAR": "2027",
+        "T_PLUS_2": "2028",
+        "WITHIN_3Y": "Within 3Y",
+        "WITHIN_5Y": "Within 5Y",
+        "TWO_OF_NEXT_3Y": "2 of 3Y",
+    }.get(horizon, horizon.replace("_", " ").title())
+
+
+def _missing_classification(source: dict[str, Any] | None, player_id: str) -> str:
+    if source is None or not player_id:
+        return "loader/join issue"
+    evidence = _text(source.get("evidence_state")).casefold()
+    reasons = " ".join(
+        (_text(source.get("missing_reason")), _text(source.get("reason_code")))
+    ).casefold()
+    if "stale" in reasons or "legacy" in reasons:
+        return "stale/legacy artifact issue"
+    if "blocked" in evidence or "blocked" in reasons:
+        return "intentionally blocked"
+    if "unsupported" in evidence or "unsupported" in reasons:
+        return "model unsupported"
+    return "true evidence gap"
 
 
 def _outcome_lookup(

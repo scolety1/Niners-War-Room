@@ -34,11 +34,11 @@ asset_types = {key: row["asset_type"] for key, row in assets.items()}
 saved = load_store("saved_scenarios")
 
 page_header(
-    "Saved Scenarios",
-    eyebrow="Local workspace context",
+    "Scenario Playground",
+    eyebrow="Save and compare hypothetical moves",
     description=(
-        "Save manual trade, compare, draft, and Asset Explorer context "
-        "without a verdict or canonical mutation."
+        "Explore 'what if' trades, player comparisons, acquisitions, and alternate "
+        "roster ideas. Save multiple versions without changing rankings or your real roster."
     ),
     status_items=(
         ("Restart-safe", "safe"),
@@ -48,10 +48,11 @@ page_header(
 )
 render_save_status(initial_save_status(saved.status, saved.updated_at_utc))
 
-section_label("Save a scenario")
+section_label("Create a what-if scenario")
 with st.form("saved-scenario-create"):
     kind = st.selectbox(
-        "Scenario type", ("trading_lab", "player_compare", "draft", "asset_explorer")
+        "Scenario type",
+        ("Trade idea", "Player choice", "Draft idea", "Asset research"),
     )
     title = st.text_input("Scenario title")
     selected = st.multiselect(
@@ -69,12 +70,18 @@ with st.form("saved-scenario-create"):
 if submitted:
     try:
         payload = json.loads(filter_json)
+        kind_key = {
+            "Trade idea": "trading_lab",
+            "Player choice": "player_compare",
+            "Draft idea": "draft",
+            "Asset research": "asset_explorer",
+        }[kind]
         payload.update({"notes": notes, "team_window": team_window})
         write_status = perform_workspace_write(
             lambda: save_scenario(
                 {
                     "scenario_id": f"scenario-{uuid4()}",
-                    "scenario_type": kind,
+                    "scenario_type": kind_key,
                     "title": title,
                     "assets": selected,
                     "source_versions": registry.source_hashes,
@@ -89,7 +96,7 @@ if submitted:
     except (json.JSONDecodeError, WorkspaceValidationError) as exc:
         st.error(f"Scenario blocked: {exc}")
 
-section_label("Saved scenarios")
+section_label("Saved what-if scenarios")
 st.dataframe(
     pd.DataFrame(
         {

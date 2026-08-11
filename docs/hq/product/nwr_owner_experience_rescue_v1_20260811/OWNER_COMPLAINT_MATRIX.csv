@@ -1,0 +1,15 @@
+complaint,priority,disposition,owner_result,remaining_limitation
+Asset Explorer crash,P0,FIXED,"379 governed assets browse without the strict-zip crash; purpose is explicit",None
+Trade decision assistant,P0,FIXED,"Advisory recommendation and team-window reasons remain available",No automatic execution or package value
+Roster-aware counteroffers,P0,FIXED,"Current Sleeper ownership resolves Niners team 7 and The Mighty Canucks team 3; three constructible counters",24 unmapped roster identities remain composition-only
+Outcome consumption,P1,FIXED,"One player per row with all position-applicable thresholds and six horizons",True evidence/model gaps remain neutral dashes
+Statistical Analysis,P1,FIXED,"Selected-player evidence receipts explain why NWR is high/middle/cautious",Exact weighted contributions remain unavailable when receipts do not carry them
+Rookie Review,P1,FIXED,"Fantasy draft ranges; rank-versus-score explanation; components; owner block reasons",Stribling's newer exact identity awaits a governed Rookie Review rebuild
+Player Compare,P1,FIXED,"Immediate short/medium/long preference plus governed floor/expected/ceiling bands",No cross-position numeric synthesis is invented
+Market gap,P1,FIXED,"Potential buy/aligned/potential sell-caution interpretation",Market is stale as of 2026-07-17
+Player Detail,P1,FIXED,"All-horizon Outcomes; market meaning; why-ranked evidence",Research remains non-production
+Scenarios and journal,P2,FIXED,"Scenario Playground and Decision Tracker explain their owner jobs",No automatic roster simulation or learning
+Navigation,P2,FIXED,"Task groups replace Primary/Secondary; Lab moves to Advanced / Research",Deep draft tools intentionally unchanged
+Redraft separation,P3,FIXED,"Separate Redraft entry point and launcher share the existing engine and isolated state",Desktop installer shortcut not added
+Redraft accuracy,P3,AUDITED,"Champion retained; Sutton is currently 41–52 overall across built-in profiles and LOW confidence",No lawful efficiency challenger yet
+Draft Room / Mock Draft,DEFERRED,DEFERRED,"Backlog recorded for tomorrow",Explicit hard defer

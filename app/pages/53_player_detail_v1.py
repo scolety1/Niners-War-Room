@@ -20,12 +20,13 @@ from src.services.governed_asset_registry_service import load_governed_asset_reg
 from src.services.outcome_v3_calibration_service import POSITION_THRESHOLDS
 from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
-    rankings_outcome_v3_rows,
+    outcome_v3_player_matrix,
 )
 from src.services.owner_asset_evidence_service import compose_owner_asset_evidence
 from src.services.owner_caveat_presentation_service import owner_caveat_summary
 from src.services.personal_workspace_service import load_store
 from src.services.player_detail_card_service import build_player_detail_card_payload
+from src.services.player_rank_owner_explanation_service import owner_rank_explanation
 from src.services.unified_research_preview_service import load_unified_research_preview
 
 
@@ -140,30 +141,38 @@ else:
 st.markdown("## Outcomes · V3 canonical lens")
 if current_row and outcome.loaded and str(current_row.get("position")) in POSITION_THRESHOLDS:
     position = str(current_row["position"])
-    threshold = st.selectbox(
-        "Applicable finish threshold",
-        POSITION_THRESHOLDS[position],
-        format_func=lambda value: f"{position} T{value}",
-    )
-    outcome_rows = rankings_outcome_v3_rows(
-        pd.DataFrame([current_row]),
-        outcome.frame,
-        position=position,
-        threshold=int(threshold),
+    outcome_rows, outcome_audit, outcome_details = outcome_v3_player_matrix(
+        pd.DataFrame([current_row]), outcome.frame, position=position
     )
     st.dataframe(outcome_rows, hide_index=True, use_container_width=True)
+    st.caption(
+        f"Governed coverage for this player: {outcome_audit.numeric} of "
+        f"{outcome_audit.applicable} applicable outcomes ({outcome_audit.percent:.1f}%)."
+    )
+    with st.expander("Why an Outcome value is unavailable", expanded=False):
+        st.dataframe(
+            outcome_details.loc[outcome_details["Value"].eq("—")],
+            hide_index=True,
+            use_container_width=True,
+        )
 else:
     st.caption("Outcome V3 is unavailable or not applicable for this asset; no value is inferred.")
 
 st.markdown("## Market")
 if current_row:
     if asset.get("market_dp_value") or asset.get("market_dp_rank"):
+        market_interpretation = {
+            "NWR much higher": "NWR higher than market — potential buy",
+            "NWR much lower": "Market higher than NWR — potential sell / caution",
+            "Aligned": "NWR and market aligned",
+        }.get(str(asset.get("market_sanity_label", "")), "Market context available")
         st.dataframe(
             pd.DataFrame(
                 [
                     {
                         "DP 1QB market rank": asset.get("market_dp_rank", ""),
                         "DP 1QB display value": asset.get("market_dp_value", ""),
+                        "What it means": market_interpretation,
                         "Join": asset.get("market_join", ""),
                         "Evidence date": asset.get("market_evidence_date", ""),
                         "Status": asset.get("market_status", ""),
@@ -181,25 +190,13 @@ else:
 
 st.markdown("## Components / why approximately")
 if current_row:
-    component_fields = {
-        "NWR score": "nwr_dynasty_score",
-        "Confidence cap": "confidence_cap",
-        "Confidence": "confidence_status",
-        "Admitted adjustment": "candidate_adjustment",
-        "Reason / gate codes": "candidate_reason_codes",
-        "Evidence fields used": "candidate_evidence_fields_used",
-        "Confidence impact": "candidate_confidence_trust_impact",
-        "Risk": "risk_level",
-        "Data needed": "data_needed",
-    }
-    st.dataframe(
-        pd.DataFrame(
-            {"Evidence": label, "Value": current_row.get(column, "") or "—"}
-            for label, column in component_fields.items()
-        ),
-        hide_index=True,
-        use_container_width=True,
+    why_summary, why_rows, why_caveat = owner_rank_explanation(
+        current_row, total_ranked=len(dynasty.frame)
     )
+    st.write(why_summary)
+    st.dataframe(why_rows, hide_index=True, use_container_width=True)
+    if why_caveat:
+        st.caption(why_caveat)
     st.caption("Exact weighted contribution percentages are not admitted and are omitted.")
 else:
     st.caption("No Finished V1 score receipts apply to this asset.")

@@ -12,9 +12,34 @@ from src.services.outcome_v3_calibration_service import (
 )
 from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
+    outcome_v3_player_matrix,
     player_compare_outcome_v3_rows,
     rankings_outcome_v3_rows,
 )
+
+
+def test_owner_matrix_is_one_qb_per_row_with_all_applicable_thresholds() -> None:
+    bundle = load_outcome_v3_display()
+    board = (
+        bundle.frame[["player_id", "player_name", "position", "finished_v1_rank"]]
+        .drop_duplicates("player_id")
+        .rename(columns={"finished_v1_rank": "nwr_rank"})
+    )
+
+    matrix, coverage, details = outcome_v3_player_matrix(
+        board, bundle.frame, position="QB"
+    )
+
+    assert matrix["Player"].is_unique
+    assert {"2026 T6", "2026 T12", "Within 5Y T6", "2 of 3Y T12"} <= set(
+        matrix.columns
+    )
+    assert coverage.applicable == len(matrix) * 2 * 6
+    assert coverage.numeric + sum(count for _, count in coverage.classifications) == (
+        coverage.applicable
+    )
+    assert len(details) == coverage.applicable
+    assert "—" in set(matrix.drop(columns=["NWR Rank", "Player", "Pos"]).stack())
 
 
 def test_committed_outcome_v3_release_loads_with_manifest_and_schema_checks() -> None:

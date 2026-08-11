@@ -545,7 +545,7 @@ def test_full_dynasty_player_board_default_display_is_product_clean() -> None:
         "Age",
         "NWR Dynasty Score",
         "Position Rank",
-        "Value Band",
+        "Ranking Context",
         "Trust",
         "Confidence",
         "Caveat",

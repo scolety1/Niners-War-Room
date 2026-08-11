@@ -466,6 +466,57 @@ def _render_tiers(frame: pd.DataFrame) -> None:
         )
 
 
+def _render_player_compare(frame: pd.DataFrame) -> None:
+    if len(frame) < 2:
+        st.info("At least two admitted redraft ranking rows are required for a comparison.")
+        return
+    st.caption(
+        "Current-season comparison only. Dynasty rank, dynasty value, and rookie authority "
+        "do not affect this view."
+    )
+    player_rows = frame.sort_values(["Rank", "Player"], kind="stable").reset_index(drop=True)
+    options = tuple(player_rows["player_id"].astype(str))
+    labels = player_rows.set_index(player_rows["player_id"].astype(str))["Player"].to_dict()
+    selectors = st.columns(2)
+    left_id = selectors[0].selectbox(
+        "Player A",
+        options,
+        format_func=lambda player_id: labels[player_id],
+        key="redraft_compare_left",
+    )
+    right_options = tuple(player_id for player_id in options if player_id != left_id)
+    right_id = selectors[1].selectbox(
+        "Player B",
+        right_options,
+        format_func=lambda player_id: labels[player_id],
+        key="redraft_compare_right",
+    )
+    comparison = player_rows.loc[
+        player_rows["player_id"].astype(str).isin((left_id, right_id)),
+        [
+            "Player",
+            "Team",
+            "Pos Rank",
+            "Rank",
+            "Projected Points",
+            "Replacement Value",
+            "Replacement Points",
+            "Tier",
+            "Confidence",
+            "Evidence",
+            "Source",
+        ],
+    ].copy()
+    comparison["Season scope"] = "Current season"
+    st.dataframe(comparison, use_container_width=True, hide_index=True)
+    preferred = comparison.sort_values(["Rank", "Projected Points"], ascending=[True, False]).iloc[0]
+    st.info(
+        f"Redraft lean: {preferred['Player']} ranks higher for this league profile. "
+        "Use projected points, replacement value, tier, and confidence together; this is "
+        "advisory and does not execute a roster move."
+    )
+
+
 def _render_draft_board(store: Path, profile: LeagueProfile, frame: pd.DataFrame) -> None:
     if frame.empty:
         st.info("Draft board is blocked until rankings exist.")
@@ -637,6 +688,7 @@ tabs = st.tabs(
         "Rankings",
         "Tiers",
         "Position Rankings",
+        "Player Compare",
         "Draft Board",
         "Cheat Sheet",
         "Data Health",
@@ -661,10 +713,12 @@ with tabs[3]:
             hide_index=True,
         )
 with tabs[4]:
-    _render_draft_board(store, profile, frame)
+    _render_player_compare(frame)
 with tabs[5]:
-    _render_cheat_sheet(profile, frame, ranking)
+    _render_draft_board(store, profile, frame)
 with tabs[6]:
+    _render_cheat_sheet(profile, frame, ranking)
+with tabs[7]:
     status_cols = st.columns(4)
     status_cols[0].metric("Readiness", health.status)
     status_cols[1].metric("Ranked", health.ranked_players)

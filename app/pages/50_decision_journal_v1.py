@@ -40,11 +40,11 @@ journal = load_store("decision_journal")
 outcome = load_outcome_v3_display()
 
 page_header(
-    "Decision Journal",
-    eyebrow="Prospective local receipts",
+    "Decision Tracker",
+    eyebrow="Track moves and learn from the outcome",
     description=(
-        "Record what the app showed and what you decided. "
-        "NWR never performs the external transaction."
+        "Record trades, draft choices, and add/drop decisions alongside NWR's advice and "
+        "your final choice, then revisit the result later. NWR never performs the move."
     ),
     status_items=(
         ("Local-only", "safe"),

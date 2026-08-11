@@ -71,7 +71,7 @@ from src.services.trade_decision_assistant_service import (
 )
 from src.services.trade_roster_negotiation_service import (
     COUNTER_BLOCKED,
-    audit_roster_ownership,
+    audit_best_available_roster_ownership,
     build_market_negotiation_context,
     build_opponent_opportunity_map,
     build_roster_composition,
@@ -103,8 +103,9 @@ TRADE_FOR_PLANNER_KEY = "draft_day_v1_trade_for_planner_rows"
 TRADE_AWAY_CHECKLIST_KEY = "draft_day_v1_trade_away_checklist"
 TRADE_FOR_CHECKLIST_KEY = "draft_day_v1_trade_for_checklist"
 MANUAL_PLANNER_WARNING = (
-    "Manual planning only. No trade valuation, market valuation, pick valuation, model "
-    "score, or automatic recommendation is calculated."
+    "Manual planning only. No trade valuation, market valuation, or pick valuation is "
+    "calculated. No package value or model score is calculated. Any NWR recommendation is "
+    "advisory and never executes or submits a trade."
 )
 WORKFLOW_STATUS_OPTIONS = (
     "Idea",
@@ -221,8 +222,14 @@ nflverse_context = load_trading_lab_nflverse_context_index()
 def _load_roster_ownership_audit(
     active_data_pack: str,
     _fingerprint: tuple[str, int, int, int],
+    governed_asset_ids: tuple[str, ...],
 ):
-    return audit_roster_ownership(active_data_pack, owner_team_name="Niners")
+    return audit_best_available_roster_ownership(
+        active_data_pack,
+        repo_root=REPO_ROOT,
+        governed_asset_ids=frozenset(governed_asset_ids),
+        owner_team_name="Niners",
+    )
 
 if trade_path is None or trade_frame.empty:
     render_yellow_hold(
@@ -996,13 +1003,20 @@ def _render_trade_decision(team_window: str, roster_audit) -> None:
 
     _render_original_vs_counter(decision)
     st.markdown("## Roster-aware negotiation")
+    ownership_label = {
+        "CURRENT_ROSTER_STATE": "Current roster ownership verified",
+        "PARTIAL_ROSTER_STATE": "Roster ownership is incomplete",
+        "ROSTER_STATE_UNAVAILABLE": "Roster ownership is unavailable",
+    }.get(ownership.classification, "Roster ownership reviewed")
     st.caption(
-        f"{ownership.classification} · Owner: {ownership.owner_team_name} "
+        f"{ownership_label} · Owner: {ownership.owner_team_name} "
         f"({ownership.owner_roster_asset_count} rostered players) · "
         f"Roster snapshot: {ownership.snapshot_date}"
     )
+    for warning in roster_audit.warnings:
+        st.warning(warning)
     if ownership.status == COUNTER_BLOCKED:
-        st.error(COUNTER_BLOCKED)
+        st.error("Named counteroffers are not available for this trade yet.")
         st.write(
             "Specific counters are withheld because the offer does not resolve to one "
             "governed opponent roster and all future-asset ownership is not proven."
@@ -1028,6 +1042,8 @@ def _render_trade_decision(team_window: str, roster_audit) -> None:
             "No generic fallback is shown. Update or admit exact current roster and "
             "2027/2028 pick ownership before NWR names a counter target."
         )
+        with st.expander("Advanced ownership status", expanded=False):
+            st.code(COUNTER_BLOCKED)
     else:
         st.success(f"Counterparty resolved: {ownership.counterparty_team_name}")
         composition = build_roster_composition(
@@ -1170,7 +1186,9 @@ team_window = st.selectbox(
 )
 active_data_pack = get_settings().active_data_pack
 roster_audit = _load_roster_ownership_audit(
-    str(active_data_pack), path_fingerprint(active_data_pack)
+    str(active_data_pack),
+    path_fingerprint(active_data_pack),
+    tuple(row["asset_id"] for row in governed.rows),
 )
 _render_trade_decision(team_window, roster_audit)
 _render_trade_at_a_glance(lookup, personal)

@@ -7,6 +7,8 @@ allowed only after every asset on both sides has exact, same-snapshot ownership.
 
 from __future__ import annotations
 
+import csv
+import os
 import re
 from collections import Counter
 from collections.abc import Mapping
@@ -17,6 +19,7 @@ from src.data.validators import validate_data_pack
 from src.services.draft_day_trade_lab_service import TradeState, trade_item_rows
 
 ROSTER_STATE = "PARTIAL_ROSTER_STATE"
+CURRENT_ROSTER_STATE = "CURRENT_ROSTER_STATE"
 COUNTER_BLOCKED = "BLOCKED_COUNTEROFFERS_NO_ROSTER_OWNERSHIP"
 COUNTERPARTY_RESOLVED = "COUNTERPARTY_RESOLVED"
 MARKET_LABEL = "Market negotiation context — stale as of 2026-07-17"
@@ -224,6 +227,198 @@ def audit_roster_ownership(
     )
 
 
+def resolve_latest_sleeper_snapshot(
+    repo_root: str | Path,
+    *,
+    league_id: str = "1344772855908290560",
+) -> Path | None:
+    """Return the newest complete local Sleeper export, never a remote runtime source."""
+
+    roots: list[Path] = []
+    configured = os.environ.get("NWR_SLEEPER_ROSTER_SNAPSHOT_ROOT")
+    if configured:
+        roots.append(Path(configured))
+    roots.append(Path(repo_root) / "local_exports" / "sleeper")
+    candidates: list[Path] = []
+    required = {
+        "sleeper_rosters.csv",
+        "sleeper_future_picks.csv",
+        "sleeper_teams.csv",
+        "sleeper_metadata.csv",
+    }
+    for root in roots:
+        if root.is_dir() and required <= {path.name for path in root.iterdir() if path.is_file()}:
+            candidates.append(root)
+        if root.is_dir():
+            candidates.extend(
+                path
+                for path in root.glob(f"{league_id}_*")
+                if path.is_dir()
+                and required <= {child.name for child in path.iterdir() if child.is_file()}
+            )
+    return max(candidates, key=lambda path: path.name) if candidates else None
+
+
+def audit_best_available_roster_ownership(
+    data_pack_path: str | Path,
+    *,
+    repo_root: str | Path,
+    governed_asset_ids: set[str] | frozenset[str],
+    owner_team_name: str = "Niners",
+) -> RosterOwnershipAudit:
+    """Prefer the current local Sleeper snapshot and fail back to the admitted pack."""
+
+    snapshot = resolve_latest_sleeper_snapshot(repo_root)
+    if snapshot is None:
+        return audit_roster_ownership(data_pack_path, owner_team_name=owner_team_name)
+    return audit_sleeper_roster_ownership(
+        snapshot,
+        repo_root=repo_root,
+        governed_asset_ids=governed_asset_ids,
+        owner_team_name=owner_team_name,
+    )
+
+
+def audit_sleeper_roster_ownership(
+    snapshot_path: str | Path,
+    *,
+    repo_root: str | Path,
+    governed_asset_ids: set[str] | frozenset[str],
+    owner_team_name: str = "Niners",
+) -> RosterOwnershipAudit:
+    """Load one complete read-only Sleeper export with exact governed identity bridges."""
+
+    snapshot = Path(snapshot_path)
+    roster_rows = _csv_rows(snapshot / "sleeper_rosters.csv")
+    pick_rows = _csv_rows(snapshot / "sleeper_future_picks.csv")
+    metadata_rows = _csv_rows(snapshot / "sleeper_metadata.csv")
+    approved_rookie_ids = _approved_rookie_sleeper_ids(Path(repo_root))
+    normalized_owner = owner_team_name.strip().casefold()
+    owner_rows = [
+        row
+        for row in roster_rows
+        if row.get("team_name", "").strip().casefold() == normalized_owner
+    ]
+    owner_team_id = owner_rows[0].get("team_id", "") if owner_rows else ""
+    assets: list[OwnedAsset] = []
+    unresolved_identity_count = 0
+    for row in roster_rows:
+        sleeper_id = row.get("player_id", "").strip()
+        current_id = f"current:{sleeper_id}"
+        rookie_id = approved_rookie_ids.get(sleeper_id, "")
+        if current_id in governed_asset_ids:
+            asset_id = current_id
+        elif rookie_id and rookie_id in governed_asset_ids:
+            asset_id = rookie_id
+        else:
+            asset_id = f"sleeper-unmapped:{sleeper_id}"
+            unresolved_identity_count += 1
+        assets.append(
+            OwnedAsset(
+                asset_id=asset_id,
+                asset_name=row.get("player_name", "").strip(),
+                asset_kind="player",
+                team_id=row.get("team_id", "").strip(),
+                team_name=row.get("team_name", "").strip(),
+                position=row.get("position", "").strip(),
+            )
+        )
+    picks = tuple(
+        OwnedAsset(
+            asset_id=(
+                f"pick:{row.get('pick_year', '').strip()}:"
+                f"{row.get('round', '').strip()}:{row.get('original_team_id', '').strip()}"
+            ),
+            asset_name=row.get("pick_label", "").strip(),
+            asset_kind="pick",
+            team_id=row.get("current_team_id", "").strip(),
+            team_name=row.get("current_team_name", "").strip(),
+            pick_year=_integer(row.get("pick_year")),
+            pick_round=_integer(row.get("round")),
+            original_team_name=row.get("original_team_name", "").strip(),
+        )
+        for row in pick_rows
+        if row.get("pick_year") and row.get("round")
+    )
+    league_ids = {
+        row.get("league_id", "").strip()
+        for row in metadata_rows
+        if row.get("league_id", "").strip()
+    }
+    snapshot_dates = {
+        row.get("snapshot_date", "").strip()
+        for row in metadata_rows
+        if row.get("snapshot_date", "").strip()
+    }
+    critical_warnings: list[str] = []
+    if not owner_rows:
+        critical_warnings.append(
+            f"Owner team {owner_team_name!r} is absent from current roster facts."
+        )
+    if len(league_ids) != 1:
+        critical_warnings.append(
+            "Current roster snapshot does not resolve exactly one league ID."
+        )
+    years = {asset.pick_year for asset in picks if asset.pick_year is not None}
+    if not ({2027, 2028} <= years):
+        critical_warnings.append(
+            "Current snapshot does not prove both 2027 and 2028 pick ownership."
+        )
+    warnings = list(critical_warnings)
+    if unresolved_identity_count:
+        warnings.append(
+            f"{unresolved_identity_count} roster players remain outside governed NWR selectors; "
+            "they can inform roster composition but cannot be named in counters."
+        )
+    counts = Counter(asset.team_name for asset in assets)
+    return RosterOwnershipAudit(
+        classification=CURRENT_ROSTER_STATE if not critical_warnings else ROSTER_STATE,
+        source_path=str(snapshot),
+        snapshot_date=next(iter(snapshot_dates), snapshot.name.rsplit("_", 1)[-1]),
+        league_id=next(iter(league_ids), ""),
+        owner_team_id=owner_team_id,
+        owner_team_name=owner_team_name,
+        player_assets=tuple(assets),
+        pick_assets=picks,
+        team_asset_counts=tuple(sorted(counts.items())),
+        warnings=tuple(warnings),
+    )
+
+
+def _approved_rookie_sleeper_ids(repo_root: Path) -> dict[str, str]:
+    path = repo_root / (
+        "docs/hq/data_sources/nflverse_approved_identity_nwr_binding_v1_20260630/"
+        "approved_identity_nwr_binding_matrix.csv"
+    )
+    if not path.is_file():
+        return {}
+    approved: dict[str, str] = {}
+    for row in _csv_rows(path):
+        safe = (
+            row.get("approved_by_human", "").casefold() == "true"
+            and row.get("binding_status") == "BOUND_REVIEW_ONLY"
+            and row.get("ambiguity_flag", "").casefold() == "false"
+            and row.get("same_name_collision_flag", "").casefold() == "false"
+            and row.get("position_mismatch_flag", "").casefold() == "false"
+            and row.get("team_mismatch_flag", "").casefold() == "false"
+        )
+        sleeper_id = row.get("candidate_nwr_player_id", "").strip()
+        rookie_id = row.get("approved_nflverse_id", "").strip()
+        if safe and sleeper_id and rookie_id:
+            approved[sleeper_id] = f"rookie:{rookie_id}"
+    return approved
+
+
+def _csv_rows(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        raise ValueError(f"Required roster snapshot file is missing: {path.name}")
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return [
+            {str(key): str(value or "") for key, value in row.items()}
+            for row in csv.DictReader(handle)
+        ]
+
+
 def resolve_trade_ownership(
     state: TradeState,
     lookup: Mapping[str, Mapping[str, object]],
@@ -250,16 +445,19 @@ def resolve_trade_ownership(
         owned: OwnedAsset | None = None
         evidence = ""
         status = "UNRESOLVED"
-        if str(row.get("registry_asset_type") or "") == "Current Player":
+        if str(row.get("registry_asset_type") or "") in {
+            "Current Player",
+            "Rookie Review",
+        }:
             owned = players.get(asset_id)
             if owned:
                 status = "RESOLVED"
                 evidence = (
-                    f"fact_rosters.csv maps {name} ({asset_id}) to "
+                    f"The current local roster snapshot maps {name} ({asset_id}) to "
                     f"{owned.team_name} ({owned.team_id})."
                 )
             else:
-                evidence = f"No exact current-player ownership row exists for {asset_id}."
+                evidence = f"No exact governed ownership row exists for {asset_id}."
         elif str(row.get("asset_type") or "") == "Pick context":
             parsed = _parse_pick(name)
             candidates = picks_by_class.get(parsed, []) if parsed else []
@@ -622,24 +820,46 @@ def _counter_is_constructible(
         return False
     if set(give) & set(receive):
         return False
-    owner_ids = {
-        asset.asset_id
-        for asset in (*audit.player_assets, *audit.pick_assets)
-        if asset.team_id == audit.owner_team_id
-    }
-    opponent_ids = {
-        asset.asset_id
-        for asset in (*audit.player_assets, *audit.pick_assets)
-        if asset.team_id == resolution.counterparty_team_id
-    }
-    give_ids = {str(lookup[key].get("asset_id") or "") for key in give if key in lookup}
-    receive_ids = {str(lookup[key].get("asset_id") or "") for key in receive if key in lookup}
     return (
-        len(give_ids) == len(give)
-        and len(receive_ids) == len(receive)
-        and give_ids <= owner_ids
-        and receive_ids <= opponent_ids
+        all(
+            _lookup_asset_owned_by_team(lookup[key], audit.owner_team_id, audit)
+            for key in give
+            if key in lookup
+        )
+        and all(
+            _lookup_asset_owned_by_team(
+                lookup[key], resolution.counterparty_team_id, audit
+            )
+            for key in receive
+            if key in lookup
+        )
+        and all(key in lookup for key in (*give, *receive))
     )
+
+
+def _lookup_asset_owned_by_team(
+    row: Mapping[str, object], team_id: str, audit: RosterOwnershipAudit
+) -> bool:
+    asset_id = str(row.get("asset_id") or "")
+    if any(
+        asset.asset_id == asset_id and asset.team_id == team_id
+        for asset in audit.player_assets
+    ):
+        return True
+    if str(row.get("asset_type") or "") != "Pick context":
+        return False
+    parsed = _parse_pick(str(row.get("player") or row.get("label") or ""))
+    if parsed is None:
+        return False
+    year, round_number = parsed
+    candidates = [
+        asset
+        for asset in audit.pick_assets
+        if asset.team_id == team_id
+        and asset.pick_year == year
+        and asset.pick_round == round_number
+    ]
+    return len(candidates) == 1
 
 
 def _best_ranked_key(

@@ -8,16 +8,20 @@ from src.services.personal_workspace_service import create_decision, load_store
 from src.services.trade_roster_negotiation_service import (
     COUNTER_BLOCKED,
     COUNTERPARTY_RESOLVED,
+    CURRENT_ROSTER_STATE,
     MARKET_DATE,
     ROSTER_STATE,
     OwnedAsset,
     RosterOwnershipAudit,
+    audit_sleeper_roster_ownership,
     build_market_negotiation_context,
     build_opponent_opportunity_map,
     build_roster_composition,
     generate_roster_aware_counters,
     resolve_trade_ownership,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _row(
@@ -114,6 +118,52 @@ def test_actual_owner_trade_fails_closed_on_split_teams_and_missing_assets() -> 
     assert generate_roster_aware_counters(
         state, lookup, audit, resolved, team_window="Balanced"
     ) == ()
+
+
+def test_current_sleeper_snapshot_resolves_rookie_bridge_and_future_picks(
+    tmp_path: Path,
+) -> None:
+    snapshot = tmp_path / "1344772855908290560_20260811_120000"
+    snapshot.mkdir()
+    (snapshot / "sleeper_rosters.csv").write_text(
+        "snapshot_date,season,team_id,team_name,owner_name,player_id,player_name,position,nfl_team,roster_status,league_rank,source\n"
+        "2026-pre-draft,2026,7,Niners,Owner,12519,Luther Burden,WR,CHI,rostered,,sleeper_api\n"
+        "2026-pre-draft,2026,7,Niners,Owner,13311,Chris Bell,WR,MIA,rostered,,sleeper_api\n"
+        "2026-pre-draft,2026,3,The Mighty Canucks,Other,4217,George Kittle,TE,SF,"
+        "rostered,,sleeper_api\n",
+        encoding="utf-8",
+    )
+    (snapshot / "sleeper_future_picks.csv").write_text(
+        "snapshot_date,season,pick_year,round,slot,pick_label,overall_pick,"
+        "original_team_id,original_team_name,current_team_id,current_team_name,"
+        "current_owner_name,certainty,source\n"
+        "2026-pre-draft,2026,2027,1,,2027 round 1 (Niners original),,7,Niners,7,"
+        "Niners,Owner,sleeper_current_owner,sleeper_api_traded_picks\n"
+        "2026-pre-draft,2026,2028,2,,2028 round 2 (Canucks original),,3,"
+        "The Mighty Canucks,3,The Mighty Canucks,Other,sleeper_current_owner,"
+        "sleeper_api_traded_picks\n",
+        encoding="utf-8",
+    )
+    (snapshot / "sleeper_metadata.csv").write_text(
+        "snapshot_date,league_id,file_name,source_name,source_type,review_status,notes\n"
+        "2026-pre-draft,1344772855908290560,sleeper_rosters.csv,Sleeper API,"
+        "read_only_api_snapshot,needs_review,fixture\n",
+        encoding="utf-8",
+    )
+
+    audit = audit_sleeper_roster_ownership(
+        snapshot,
+        repo_root=ROOT,
+        governed_asset_ids=frozenset(
+            {"current:12519", "rookie:BEL267684", "current:4217"}
+        ),
+    )
+
+    assert audit.classification == CURRENT_ROSTER_STATE
+    assert audit.owner_team_id == "7"
+    ownership = {asset.asset_id: asset.team_name for asset in audit.player_assets}
+    assert ownership["rookie:BEL267684"] == "Niners"
+    assert {asset.pick_year for asset in audit.pick_assets} == {2027, 2028}
 
 
 def test_market_negotiation_totals_are_same_snapshot_partial_and_not_nwr_value() -> None:

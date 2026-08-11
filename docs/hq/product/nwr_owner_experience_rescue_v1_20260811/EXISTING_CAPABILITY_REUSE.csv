@@ -1,0 +1,9 @@
+capability,reused_implementation,rescue_action
+Trade decision support,"candidate commits f4615e8 and 4223ab6",Adopted then repaired ownership sourcing and UI language
+League ownership,src/services/sleeper_import_service.py,"Reconnected current configured league; expanded governed pick ownership through 2028"
+Rookie identity,"human-approved identity binding matrix",Bound Sleeper 13311 to rookie:BEL267684 only through the approved exact row
+Outcome V3,"frozen integration pack",Pivoted consumption only; probabilities unchanged
+Finished V1 receipts,"candidate evidence fields and adjustments",Translated into why-ranked explanations
+Unified Research Preview,"research rank/tier/outlook/ceiling/downside",Used as labeled medium/long and uncertainty context
+Redraft engine,"redraft_engine_v1_service.py",Added separate shell and comparison without duplicating model or persistence
+Personal workspace,"existing scenario and journal stores",Relabeled and clarified; persistence contract preserved

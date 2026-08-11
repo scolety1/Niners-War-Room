@@ -1,0 +1,6 @@
+bug,cause,fix,validation
+Asset Explorer strict zip,"Five registry categories were zipped against four metric columns with strict=True","Render category metrics in batches of at most four","Functional test plus mobile/desktop browser render"
+Stale trade ownership,"Trading Lab used an older incomplete ownership export","Select latest valid Sleeper snapshot and audit exact ownership","Current league snapshot resolves named players and picks"
+Future pick incompleteness,"Exporter emitted only endpoint rows rather than full current ownership","Materialize full 2026–2028 year/round/original-team ownership and overlay trades","150 pick rows; 50 per season"
+Rookie Sleeper join,"Chris Bell's Sleeper ID was outside Finished V1 selectors","Use only the human-approved exact rookie identity bridge","rookie:BEL267684 resolves to Niners"
+Outcome repetition,"Long-form rows forced repeated player/horizon selection","Deterministic position matrix pivot","Josh Allen appears once in QB matrix"

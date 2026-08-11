@@ -66,6 +66,7 @@ from src.services.player_compare_decision_service import (
     build_player_compare_nflverse_context,
     decision_summary_rows,
 )
+from src.services.player_compare_owner_summary_service import build_owner_compare_summary
 from src.services.player_compare_universe_service import (
     CURRENT_PLAYER,
     NO_COMMON_SCALE_NOTE,
@@ -353,6 +354,22 @@ def _render_visible_context_summary(compare_frame: pd.DataFrame) -> None:
             use_container_width=True,
             hide_index=True,
         )
+
+
+def _render_owner_decision_summary(compare_frame: pd.DataFrame) -> None:
+    st.markdown("## Who does NWR prefer?")
+    summary = build_owner_compare_summary(compare_frame.to_dict("records"))
+    columns = st.columns(3)
+    for column, lean in zip(columns, summary.leans, strict=True):
+        column.metric(lean.horizon, lean.preferred)
+        column.caption(lean.authority)
+        column.write(lean.reason)
+    st.markdown("### Floor · NWR Expected · Ceiling")
+    st.dataframe(pd.DataFrame(summary.ranges), hide_index=True, use_container_width=True)
+    st.caption(
+        "These are governed research bands/signals, not arbitrary numeric ranges. Dynasty "
+        "production ranks, Rookie Review, Outcome V3, and Unified Research remain separate."
+    )
 
 
 def _render_how_to_use_compare() -> None:
@@ -1069,12 +1086,8 @@ st.caption(
 )
 _render_compare_source_status(compare_universe.counts, governed.source_hashes)
 _render_player_compare_policy()
-comparison_context = st.radio(
-    "Comparison context",
-    ("DYNASTY - LONG TERM", "REDRAFT - CURRENT SEASON"),
-    horizontal=True,
-    help="The selected context is explicit; redraft never replaces dynasty authority.",
-)
+comparison_context = "DYNASTY - LONG TERM"
+st.caption("DYNASTY · LONG TERM. Redraft comparisons live in the separate Redraft app.")
 if compare_universe.errors and comparison_context == "DYNASTY - LONG TERM":
     st.error(
         "Player Compare cannot load the complete governed Dynasty player universe. "
@@ -1160,6 +1173,7 @@ else:
     if comparison_context == "REDRAFT - CURRENT SEASON":
         _render_redraft_context(compare)
         st.stop()
+    _render_owner_decision_summary(compare)
     _render_source_separated_evidence(compare)
     st.markdown("## Unified Research Context")
     st.warning(

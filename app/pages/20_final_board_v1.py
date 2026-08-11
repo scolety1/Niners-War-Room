@@ -66,6 +66,7 @@ from src.services.outcome_v3_display_service import (
     load_outcome_v3_display,
     rankings_outcome_v3_rows,
 )
+from src.services.player_rank_owner_explanation_service import owner_rank_explanation
 from src.services.post_release_usability_service import freshness_for_sources
 from src.services.unified_research_preview_service import load_unified_research_preview
 
@@ -76,7 +77,7 @@ SORT_COLUMNS = {
     "Position Rank": "nwr_position_rank",
     "Age": "age",
     "Player": "player_name",
-    "Candidate Rank (Review-Only)": "cross_asset_candidate_rank",
+    "Research Context Rank": "cross_asset_candidate_rank",
 }
 BASE_POSITION_FILTERS = ("QB", "RB", "WR", "TE")
 MARKET_SANITY_FILTERS = (
@@ -90,9 +91,9 @@ MARKET_MATCH_FILTERS = ("All", "Has market match", "No market match")
 VIEW_PRESET_DYNASTY_REVIEW = "Dynasty Review"
 VIEW_PRESET_MARKET_CONTEXT = "Market Context"
 VIEW_PRESET_OUTCOME_CONTEXT = "Outcome Context"
-VIEW_PRESET_DATA_REVIEW = "Data Review"
-VIEW_PRESET_STATISTIC_ANALYSIS = "Statistic Analysis"
-VIEW_PRESET_DRAFT_RANKINGS = "Draft Rankings"
+VIEW_PRESET_DATA_REVIEW = "Ranking Context"
+VIEW_PRESET_STATISTIC_ANALYSIS = "Why NWR Ranks Them"
+VIEW_PRESET_DRAFT_RANKINGS = "Dynasty Draft Board"
 VIEW_PRESETS = (
     VIEW_PRESET_DYNASTY_REVIEW,
     VIEW_PRESET_MARKET_CONTEXT,
@@ -586,7 +587,7 @@ def _sort_options_for_view(view_mode: str) -> list[str]:
         "Position Rank",
         "Age",
         "Player",
-        "Candidate Rank (Review-Only)",
+        "Research Context Rank",
     ]
 
 
@@ -997,10 +998,29 @@ def _render_statistic_analysis_status(frame: pd.DataFrame) -> None:
     )
     available = [column for column in receipt_fields if column in ranked.columns]
     st.info(
-        f"Score receipts are populated for {len(ranked)} ranked Finished V1 players. They show "
-        "the admitted score, confidence cap, adjustment reason, evidence fields, risk, and "
-        "missing-data caveats. Exact weighted component contributions are not admitted."
+        f"Choose any of the {len(ranked)} ranked Finished V1 players to answer: "
+        "Why is NWR high or low on this player? Exact weighted contributions are shown only "
+        "when the governed receipt carries them."
     )
+    if not ranked.empty:
+        ranked_names = ranked.sort_values(
+            "nwr_rank",
+            key=lambda values: pd.to_numeric(values, errors="coerce"),
+        )["player_name"].astype(str).tolist()
+        selected_name = st.selectbox(
+            "Explain player",
+            ranked_names,
+            key="rankings_statistical_analysis_player",
+        )
+        selected_row = ranked.loc[ranked["player_name"].astype(str).eq(selected_name)].iloc[0]
+        summary, evidence, caveat = owner_rank_explanation(
+            selected_row.to_dict(), total_ranked=len(ranked)
+        )
+        st.markdown(f"### {selected_name}: why this rank")
+        st.write(summary)
+        st.dataframe(evidence, use_container_width=True, hide_index=True)
+        if caveat:
+            st.warning(caveat)
     if available:
         st.dataframe(
             ranked.loc[:, available].rename(
@@ -1345,7 +1365,7 @@ st.caption(
     "not drive sort."
 )
 st.caption(
-    "Candidate Rank / Candidate Value, when present, are review-only cross-asset context "
+    "Research Context Rank / Score, when present, are review-only cross-asset context "
     "and do not replace Dynasty Rank or Final Board Rank."
 )
 st.caption(

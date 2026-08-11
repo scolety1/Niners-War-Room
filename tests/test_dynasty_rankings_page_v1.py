@@ -72,7 +72,7 @@ def test_rankings_full_view_sort_options_do_not_foreground_draft_board_rank() ->
     assert "sort_default = _default_sort_label(view_mode)" in text
     assert "index=sort_options.index(sort_default)" in text
     assert "_default_ascending_for_sort(sort_by)" in text
-    assert '"Candidate Rank (Review-Only)"' in text
+    assert '"Research Context Rank"' in text
     assert 'if sort_by == "Position Rank" and view_mode != FULL_DYNASTY_VIEW:' in text
 
 
@@ -244,9 +244,9 @@ def test_rankings_presets_and_advanced_filters_clean_top_controls() -> None:
         "Dynasty Review",
         "Market Context",
         "Outcome Context",
-        "Data Review",
-        "Statistic Analysis",
-        "Draft Rankings",
+        "Ranking Context",
+        "Why NWR Ranks Them",
+        "Dynasty Draft Board",
     ):
         assert preset in text
     assert "Player Compare Prep" not in text
@@ -571,9 +571,9 @@ def test_statistic_analysis_preset_is_read_only_without_invented_components() ->
     text = _page_text()
     doc = SCORE_FEASIBILITY.read_text(encoding="utf-8")
 
-    assert "Statistic Analysis" in text
+    assert "Why NWR Ranks Them" in text
     assert "_render_statistic_analysis_status(filtered_board)" in text
-    assert "Exact weighted component contributions are not admitted" in text
+    assert "Exact weighted contributions are shown only" in text
     assert "Unsupported contribution fields are omitted" in text
     assert "show_statistic_analysis=show_statistic_analysis" in text
     assert "show_market_baseline = False" in Path(

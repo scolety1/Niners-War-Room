@@ -59,7 +59,7 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="post-draft-mode",
     ),
     NavigationPageSpec(
-        title="Lab Home",
+        title="Research Tools",
         file_path="pages/35_development_lab_v1.py",
         url_path="development-lab",
     ),
@@ -124,19 +124,14 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="personal-board",
     ),
     NavigationPageSpec(
-        title="Decision Journal",
+        title="Decision Tracker",
         file_path="pages/50_decision_journal_v1.py",
         url_path="decision-journal",
     ),
     NavigationPageSpec(
-        title="Saved Scenarios",
+        title="Scenario Playground",
         file_path="pages/51_saved_scenarios_v1.py",
         url_path="saved-scenarios",
-    ),
-    NavigationPageSpec(
-        title="Redraft",
-        file_path="pages/52_redraft_v1.py",
-        url_path="redraft",
     ),
     NavigationPageSpec(
         title="Home",
@@ -148,6 +143,11 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         file_path="pages/53_player_detail_v1.py",
         url_path="player-detail",
     ),
+    NavigationPageSpec(
+        title="Dynasty Outcomes",
+        file_path="pages/26_outcome_columns_v1.py",
+        url_path="outcome-columns",
+    ),
 )
 
 
@@ -157,44 +157,59 @@ def _visible_page(url_path: str) -> NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
     (
-        "Primary",
+        "Players & Rankings",
         (
             _visible_page("owner-home"),
             _visible_page("rankings"),
-            _visible_page("trading-lab"),
+            _visible_page("rookie-board"),
+            _visible_page("player-detail"),
             _visible_page("player-compare"),
-            _visible_page("draft-cockpit"),
-            _visible_page("redraft"),
+            _visible_page("asset-explorer"),
             _visible_page("personal-board"),
         ),
     ),
     (
-        "Secondary",
+        "Trades & Scenarios",
         (
-            _visible_page("rookie-board"),
-            _visible_page("asset-explorer"),
-            _visible_page("player-detail"),
+            _visible_page("trading-lab"),
             _visible_page("saved-scenarios"),
             _visible_page("decision-journal"),
         ),
     ),
     (
-        "Advanced / Data",
+        "Draft Tools",
         (
-            _visible_page("settings-data-health"),
+            _visible_page("draft-cockpit"),
             _visible_page("mock-draft"),
             _visible_page("post-draft-mode"),
-            _visible_page("development-lab"),
+            _visible_page("upcoming-draft-prep"),
+        ),
+    ),
+    (
+        "NWR Analysis",
+        (
+            _visible_page("outcome-columns"),
             _visible_page("roster-weakness-tracker"),
             _visible_page("future-pick-planning"),
-            _visible_page("upcoming-draft-prep"),
             _visible_page("keeper-deadline-prep"),
             _visible_page("drop-deadline-prep"),
             _visible_page("trade-deadline-prep"),
+        ),
+    ),
+    (
+        "Advanced / Research",
+        (
+            _visible_page("development-lab"),
             _visible_page("future-tools"),
-            _visible_page("refresh-data"),
             _visible_page("evidence-integration-review"),
             _visible_page("evidence-review-hub"),
+        ),
+    ),
+    (
+        "Settings",
+        (
+            _visible_page("settings-data-health"),
+            _visible_page("refresh-data"),
         ),
     ),
 )
@@ -208,6 +223,12 @@ DEFAULT_ROOT_PAGE = NavigationPageSpec(
 )
 
 HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
+    NavigationPageSpec(
+        title="Redraft Legacy Route",
+        file_path="pages/52_redraft_v1.py",
+        url_path="redraft",
+        visible=False,
+    ),
     NavigationPageSpec(
         title="Draft Cockpit Root",
         file_path="pages/44_draft_cockpit_root.py",
@@ -260,12 +281,6 @@ HIDDEN_ADVANCED_PAGES: tuple[NavigationPageSpec, ...] = (
         title="Draft Prep Compatibility",
         file_path="pages/42_draft_prep_compat_v1.py",
         url_path="draft-prep",
-        visible=False,
-    ),
-    NavigationPageSpec(
-        title="Outcome Diagnostics",
-        file_path="pages/26_outcome_columns_v1.py",
-        url_path="outcome-columns",
         visible=False,
     ),
     NavigationPageSpec(

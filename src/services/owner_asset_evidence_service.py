@@ -112,6 +112,7 @@ def compose_owner_asset_evidence(
                 "market_dp_ecr": _first_present(current.get("dp_ecr_pos")),
                 "market_dp_age": _first_present(current.get("dp_age")),
                 "market_join": _first_present(current.get("market_join_confidence")),
+                "market_sanity_label": _first_present(current.get("market_sanity_label")),
                 "market_status": _market_status(current, market_freshness),
                 "market_evidence_date": _first_present(
                     market_freshness.get("upstream_scrape_date")
@@ -123,6 +124,8 @@ def compose_owner_asset_evidence(
                 "research_confidence": _first_present(research.get("confidence")),
                 "research_outlook_3y": _first_present(research.get("outlook_3y")),
                 "research_outlook_5y": _first_present(research.get("outlook_5y")),
+                "research_ceiling_signal": _first_present(research.get("ceiling_signal")),
+                "research_downside_signal": _first_present(research.get("downside_signal")),
                 "outcome_signals": _outcome_signals(asset_id, row, outcome),
             }
         )

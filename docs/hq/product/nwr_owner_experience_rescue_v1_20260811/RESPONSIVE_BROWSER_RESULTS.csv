@@ -1,0 +1,6 @@
+viewport,app,routes,result,root_overflow,traceback_or_page_error,owner_signal
+375x812,Dynasty,"Asset Explorer; Dynasty Outcomes; Player Compare",PASS,false,false,"Catalog purpose; one-row outcomes; decision summary"
+768x1024,Dynasty,"Rankings; Rookie Review; Player Detail",PASS,false,false,"Canonical board; rookie explanations; Outcome V3 detail"
+1440x1000,Dynasty,"Trading Lab; Scenario Playground; Decision Tracker; Player Compare; Asset Explorer",PASS,false,false,"Decision tools and task purposes render"
+1440x1000,Redraft,"Redraft root; Player Compare tab",PASS,false,false,"Current-season-only comparison and redraft lean"
+375x812,Redraft,"Player Compare tab",PASS,false,false,"No root overflow; current-season separation remains visible"

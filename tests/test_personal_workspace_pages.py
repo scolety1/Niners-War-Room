@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
     ("page", "heading"),
     (
         ("49_personal_board_v1.py", "Personal Board"),
-        ("50_decision_journal_v1.py", "Decision Journal"),
-        ("51_saved_scenarios_v1.py", "Saved Scenarios"),
+        ("50_decision_journal_v1.py", "Decision Tracker"),
+        ("51_saved_scenarios_v1.py", "Scenario Playground"),
     ),
 )
 def test_workspace_page_open_is_read_only_and_has_one_h1(

@@ -235,6 +235,7 @@ MARKET_BASELINE_DISPLAY_COLUMNS = (
     "dp_age",
     "market_gap",
     "market_sanity_label",
+    "market_interpretation",
     "age_source_display",
     "market_baseline_label",
 )
@@ -2399,7 +2400,23 @@ def enrich_unified_player_board_with_market_baseline(frame: pd.DataFrame) -> pd.
             output.at[index, "age"] = OUTCOME_NOT_ENOUGH_INFORMATION
             output.at[index, "age_source_display"] = OUTCOME_NOT_ENOUGH_INFORMATION
 
+    output["market_interpretation"] = output.get(
+        "market_sanity_label", pd.Series(index=output.index, dtype=str)
+    ).map(owner_market_interpretation)
     return output
+
+
+def owner_market_interpretation(label: object) -> str:
+    """Translate rank-gap bands into owner language without creating a trade value."""
+
+    normalized = str(label or "").strip().casefold()
+    if normalized == "nwr much higher":
+        return "NWR higher than market — potential buy"
+    if normalized == "nwr much lower":
+        return "Market higher than NWR — potential sell / caution"
+    if normalized == "aligned":
+        return "NWR and market aligned"
+    return "Market comparison unavailable"
 
 
 def market_baseline_age_coverage(frame: pd.DataFrame) -> dict[str, int]:
@@ -2680,6 +2697,7 @@ MISSING_INFORMATION_DISPLAY_COLUMNS = (
     "dp_ecr_pos",
     "dp_age",
     "market_gap",
+    "market_interpretation",
     "age_source_display",
     "score_status",
     "score_type",
@@ -3127,9 +3145,9 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "nflverse_contract_context_display_only": "Contract",
     "nflverse_data_coverage_status_display_only": "NV Coverage",
     "nwr_rank": "Dynasty Rank",
-    "cross_asset_candidate_rank": "Candidate Rank",
-    "cross_asset_candidate_value": "Candidate Value",
-    "candidate_value_band": "Value Band",
+    "cross_asset_candidate_rank": "Research Context Rank",
+    "cross_asset_candidate_value": "Research Context Score",
+    "candidate_value_band": "Ranking Context",
     "confidence_band": "Confidence",
     "available_pool_adp_range": "Pool ADP",
     "current_pick_value": "Pick Value",
@@ -3214,6 +3232,7 @@ UNIFIED_PLAYER_BOARD_DISPLAY_LABELS = {
     "dp_age": "DP Age",
     "market_gap": "Market Gap",
     "market_sanity_label": "Market Flag",
+    "market_interpretation": "What It Means",
     "age_source_display": "Age Src",
     "market_baseline_label": "Market Label",
     "score_status": "Score Status",
@@ -3288,10 +3307,10 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
     },
     "Trust": {"label": "Trust", "width": 82, "help": "Data trust/status label."},
     "Confidence": {"label": "Conf", "width": 76, "help": "Confidence band for review."},
-    "Value Band": {
-        "label": "Value Band",
+    "Ranking Context": {
+        "label": "Ranking Context",
         "width": 92,
-        "help": "Review-only value band. It does not replace Dynasty Rank or tiers.",
+        "help": "Review-only ranking context. It does not replace Dynasty Rank or tiers.",
     },
     "Caveat": {
         "label": "Caveat",
@@ -3304,6 +3323,14 @@ RANKINGS_TABLE_COLUMN_CONFIG = {
         "help": (
             "DynastyProcess market sanity context, display-only. It is not model input, "
             "trade value, source truth, or a hidden sort driver."
+        ),
+    },
+    "What It Means": {
+        "label": "What It Means",
+        "width": 210,
+        "help": (
+            "Plain-language interpretation of the display-only NWR/market rank band. "
+            "Potential buy/sell language is a review prompt, not a trade recommendation."
         ),
     },
     "Market Label": {

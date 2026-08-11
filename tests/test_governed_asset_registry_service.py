@@ -3,13 +3,14 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+import pandas as pd
+
 from src.services.governed_asset_registry_service import (
     EXPECTED_BLOCKED,
     file_sha256,
     finished_v1_coverage_counts,
     load_governed_asset_registry,
 )
-import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -148,11 +149,14 @@ def test_asset_explorer_and_rookie_board_are_read_only_labeled_pages() -> None:
     rookie = (ROOT / "app/pages/48_rookie_board_review_v1.py").read_text(encoding="utf-8")
 
     assert '"Asset Explorer"' in explorer
-    assert '"Source-separated registry"' in explorer
+    assert "range(0, len(count_items), 4)" in explorer
+    assert "st.columns(len(batch))" in explorer
+    assert "zip(metrics, registry.counts, strict=True)" not in explorer
+    assert '"Browse every governed dynasty asset"' in explorer
     assert "No common scale" in explorer
     assert "No recommendation" in explorer
     assert "st.button(" not in explorer
-    assert '"2026 Rookie Board"' in rookie
-    assert "All 80 drafted prospects" in rookie
-    assert "Review-Only" in rookie
+    assert '"2026 Rookie Review"' in rookie
+    assert "all 80 drafted prospects" in rookie
+    assert "Why this rank" in rookie
     assert "st.button(" not in rookie

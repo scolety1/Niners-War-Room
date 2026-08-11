@@ -23,7 +23,7 @@ from src.config.constants import APP_NAME
 
 def main() -> None:
     app_dir = Path(__file__).resolve().parent
-    st.set_page_config(page_title=APP_NAME, layout="wide")
+    st.set_page_config(page_title=f"{APP_NAME} — Dynasty", layout="wide")
     apply_app_shell()
     visible_page_groups = {
         section: [

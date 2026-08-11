@@ -200,46 +200,72 @@ def _future_pick_rows(
     team_rows: list[dict[str, object]],
     traded_picks: list[dict[str, Any]],
 ) -> list[dict[str, object]]:
-    if active_draft is None:
-        return []
-
-    season = int(str(active_draft.get("season") or league.get("season")))
-    rounds = int((active_draft.get("settings") or {}).get("rounds") or 5)
-    draft_slots = _draft_slots(active_draft, rosters_by_id)
+    season = int(str((active_draft or {}).get("season") or league.get("season")))
+    rounds = int(
+        ((active_draft or {}).get("settings") or {}).get("rounds")
+        or (league.get("settings") or {}).get("draft_rounds")
+        or 5
+    )
+    draft_slots = (
+        _draft_slots(active_draft, rosters_by_id)
+        if active_draft is not None
+        else {roster_id: roster_id for roster_id in sorted(rosters_by_id)}
+    )
     team_by_roster_id = {int(row["roster_id"]): row for row in team_rows}
     current_owner_by_pick = {
         (int(pick["season"]), int(pick["round"]), int(pick["roster_id"])): int(pick["owner_id"])
         for pick in traded_picks
-        if str(pick.get("season")) == str(season)
+        if pick.get("season") and pick.get("round") and pick.get("roster_id")
     }
+    latest_traded_year = max(
+        (year for year, _round, _roster in current_owner_by_pick),
+        default=season,
+    )
+    years = range(season, max(season + 2, latest_traded_year) + 1)
 
     rows: list[dict[str, object]] = []
-    for round_number in range(1, rounds + 1):
-        for original_roster_id, slot in sorted(draft_slots.items(), key=lambda item: item[1]):
-            current_roster_id = current_owner_by_pick.get(
-                (season, round_number, original_roster_id), original_roster_id
-            )
-            original_team = team_by_roster_id.get(original_roster_id, {})
-            current_team = team_by_roster_id.get(current_roster_id, {})
-            overall_pick = (round_number - 1) * len(draft_slots) + slot
-            rows.append(
-                {
-                    "snapshot_date": _snapshot_date(league),
-                    "season": season,
-                    "pick_year": season,
-                    "round": round_number,
-                    "slot": slot,
-                    "pick_label": f"{season} {round_number}.{slot:02d}",
-                    "overall_pick": overall_pick,
-                    "original_team_id": original_roster_id,
-                    "original_team_name": original_team.get("team_name", original_roster_id),
-                    "current_team_id": current_roster_id,
-                    "current_team_name": current_team.get("team_name", current_roster_id),
-                    "current_owner_name": current_team.get("display_name", ""),
-                    "certainty": "sleeper_current_owner",
-                    "source": "sleeper_api_traded_picks",
-                }
-            )
+    for pick_year in years:
+        for round_number in range(1, rounds + 1):
+            for original_roster_id, slot in sorted(
+                draft_slots.items(), key=lambda item: item[1]
+            ):
+                current_roster_id = current_owner_by_pick.get(
+                    (pick_year, round_number, original_roster_id), original_roster_id
+                )
+                original_team = team_by_roster_id.get(original_roster_id, {})
+                current_team = team_by_roster_id.get(current_roster_id, {})
+                current_year = pick_year == season
+                rows.append(
+                    {
+                        "snapshot_date": _snapshot_date(league),
+                        "season": season,
+                        "pick_year": pick_year,
+                        "round": round_number,
+                        "slot": slot if current_year else "",
+                        "pick_label": (
+                            f"{pick_year} {round_number}.{slot:02d}"
+                            if current_year
+                            else f"{pick_year} round {round_number} "
+                            f"({original_team.get('team_name', original_roster_id)} original)"
+                        ),
+                        "overall_pick": (
+                            (round_number - 1) * len(draft_slots) + slot
+                            if current_year
+                            else ""
+                        ),
+                        "original_team_id": original_roster_id,
+                        "original_team_name": original_team.get(
+                            "team_name", original_roster_id
+                        ),
+                        "current_team_id": current_roster_id,
+                        "current_team_name": current_team.get(
+                            "team_name", current_roster_id
+                        ),
+                        "current_owner_name": current_team.get("display_name", ""),
+                        "certainty": "sleeper_current_owner",
+                        "source": "sleeper_api_traded_picks",
+                    }
+                )
     return rows
 
 
