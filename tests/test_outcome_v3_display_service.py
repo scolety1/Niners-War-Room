@@ -42,6 +42,49 @@ def test_owner_matrix_is_one_qb_per_row_with_all_applicable_thresholds() -> None
     assert "—" in set(matrix.drop(columns=["NWR Rank", "Player", "Pos"]).stack())
 
 
+def test_owner_matrix_classifies_missing_states_honestly() -> None:
+    board = pd.DataFrame(
+        [
+            {"player_id": "", "player_name": "Identity Gap", "position": "WR"},
+            {"player_id": "missing", "player_name": "Missing Row", "position": "WR"},
+            {"player_id": "blocked", "player_name": "Blocked", "position": "WR"},
+            {"player_id": "unsupported", "player_name": "Unsupported", "position": "WR"},
+            {"player_id": "stale", "player_name": "Stale", "position": "WR"},
+        ]
+    )
+    outcomes = pd.DataFrame(
+        [
+            {
+                "player_id": player_id,
+                "field_id": "WR_T12",
+                "position": "WR",
+                "threshold": "12",
+                "horizon": "THIS_YEAR",
+                "probability_display": "",
+                "evidence_state": evidence,
+                "missing_reason": reason,
+                "reason_code": "",
+            }
+            for player_id, evidence, reason in (
+                ("blocked", "blocked_or_unsupported", "blocked by evidence gate"),
+                ("unsupported", "blocked_or_unsupported", "unsupported position case"),
+                ("stale", "insufficient_current_evidence", "stale legacy artifact"),
+            )
+        ]
+    )
+
+    _matrix, coverage, _details = outcome_v3_player_matrix(
+        board, outcomes, position="WR"
+    )
+
+    classifications = dict(coverage.classifications)
+    assert classifications["identity issue"] > 0
+    assert classifications["wiring / missing governed row"] > 0
+    assert classifications["intentionally blocked"] > 0
+    assert classifications["unsupported"] > 0
+    assert classifications["wiring / stale artifact"] > 0
+
+
 def test_committed_outcome_v3_release_loads_with_manifest_and_schema_checks() -> None:
     bundle = load_outcome_v3_display()
 

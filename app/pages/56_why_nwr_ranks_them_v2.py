@@ -15,7 +15,10 @@ from app.components.owner_mode import (  # noqa: E402
     owner_intro,
 )
 from app.components.ui_framework import page_header  # noqa: E402
-from src.services.owner_mode_view_service import market_decision_label, owner_range  # noqa: E402
+from src.services.owner_mode_view_service import (  # noqa: E402
+    market_decision_label,
+    owner_range_contract,
+)
 from src.services.player_rank_owner_explanation_service import (  # noqa: E402
     owner_rank_explanation,
     owner_rank_reason_bullets,
@@ -65,15 +68,42 @@ if bullets:
 else:
     st.info("The rank is admitted, but a more detailed component receipt is not available.")
 
-st.markdown("### Floor / Expected / Ceiling")
-floor_expected_ceiling(
-    owner_range(asset),
-    note="Research context only. These labels do not change the Finished V1 rank or score.",
+st.markdown("### What helps and what holds them back")
+effect_columns = st.columns(3)
+effect_groups = (
+    ("HELPS", "Helps", effect_columns[0]),
+    ("HURTS", "Holds them back", effect_columns[1]),
+    ("MISSING", "Missing or limited", effect_columns[2]),
 )
+for effect, label, column in effect_groups:
+    column.markdown(f"**{label}**")
+    matching = receipts.loc[receipts["Effect"].eq(effect)] if not receipts.empty else receipts
+    if matching.empty:
+        column.caption("No admitted signal in this category.")
+    else:
+        for receipt in matching.head(4).to_dict("records"):
+            column.markdown(f"- {receipt['Evidence']}: {receipt['Receipt value']}")
+
+neutral = receipts.loc[receipts["Effect"].eq("NEUTRAL")] if not receipts.empty else receipts
+if not neutral.empty:
+    with st.expander("Neutral context", expanded=False):
+        for receipt in neutral.to_dict("records"):
+            st.markdown(f"- {receipt['Evidence']}: {receipt['Receipt value']}")
+
+st.markdown("### Floor / NWR Expected / Ceiling")
+range_contract = owner_range_contract(asset)
+floor_expected_ceiling(
+    range_contract,
+    note=f"{range_contract['Authority']}. These labels never change the Finished V1 rank.",
+)
+with st.expander("How this range is built", expanded=False):
+    st.write(range_contract["Method"])
 
 st.markdown("### NWR versus market")
 label, gap = market_decision_label(asset.get("dynasty_rank"), asset.get("market_dp_rank"))
 market_readout(label, gap=gap, status=asset.get("market_status", ""))
+if asset.get("market_evidence_date"):
+    st.caption(f"Market evidence date: {asset['market_evidence_date']}")
 
 with st.expander("Show admitted receipts", expanded=False):
     st.dataframe(receipts, hide_index=True, use_container_width=True)

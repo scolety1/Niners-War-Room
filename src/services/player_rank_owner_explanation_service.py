@@ -68,18 +68,21 @@ def owner_rank_explanation(
             {
                 "Evidence": "Admitted adjustment",
                 "Receipt value": adjustment,
-                "Effect": "HELPED"
+                "Effect": "HELPS"
                 if _number(adjustment) > 0
-                else ("HURT" if _number(adjustment) < 0 else "NEUTRAL"),
+                else ("HURTS" if _number(adjustment) < 0 else "NEUTRAL"),
             }
         )
     reasons = _text(row.get("candidate_reason_codes"))
     if reasons:
+        reason_labels = tuple(
+            _reason_label(reason) for reason in reasons.split("|") if reason
+        )
         evidence_rows.append(
             {
                 "Evidence": "Why / gate reasons",
-                "Receipt value": reasons.replace("|", "; ").replace("_", " "),
-                "Effect": "CONTEXT",
+                "Receipt value": "; ".join(reason_labels),
+                "Effect": _reason_effect(reasons),
             }
         )
     caveat = owner_caveat_summary(_text(row.get("warning_flags")) or _text(row.get("data_needed")))
@@ -102,28 +105,109 @@ def owner_rank_reason_bullets(row: dict[str, Any], *, limit: int = 5) -> tuple[s
     for field in fields:
         value = _text(row.get(field))
         label = FIELD_LABELS.get(field, field.replace("_", " ").title())
-        effect = _effect(field, value).lower()
-        bullets.append(f"{label} is {effect}" + (f" ({value})." if value else "."))
+        effect = _effect(field, value)
+        if effect == "HELPS":
+            bullets.append(f"Helps: {label}" + (f" ({value})." if value else "."))
+        elif effect == "HURTS":
+            bullets.append(f"Holds them back: {label}" + (f" ({value})." if value else "."))
+        elif effect == "MISSING":
+            detail = (
+                owner_caveat_summary(value)
+                if value
+                else f"{label} raw value is not carried by the admitted receipt"
+            )
+            bullets.append(f"Missing or limited: {detail}.")
+        else:
+            bullets.append(
+                f"Neutral context: {label}" + (f" ({value})." if value else ".")
+            )
     reasons = [
-        value.replace("_", " ").strip().capitalize()
+        _reason_label(value)
         for value in _text(row.get("candidate_reason_codes")).split("|")
         if value
     ]
-    bullets.extend(f"Gate context: {reason}." for reason in reasons)
-    caveat = owner_caveat_summary(_text(row.get("warning_flags")) or _text(row.get("data_needed")))
-    if caveat:
-        bullets.append(f"Watch-out: {caveat}")
-    return tuple(dict.fromkeys(bullets))[:limit]
+    for reason in reasons:
+        effect = _reason_effect(reason)
+        prefix = {
+            "HELPS": "Helps",
+            "HURTS": "Holds them back",
+            "MISSING": "Missing or limited",
+        }.get(effect, "Gate context")
+        bullets.append(f"{prefix}: {reason}.")
+    raw_caveat = _text(row.get("warning_flags")) or _text(row.get("data_needed"))
+    if raw_caveat:
+        bullets.append(f"Watch-out: {owner_caveat_summary(raw_caveat)}")
+    priorities = {
+        "Helps:": 0,
+        "The admitted adjustment helps": 0,
+        "Holds them back:": 1,
+        "The admitted adjustment holds back": 1,
+        "Neutral context:": 2,
+        "Gate context:": 2,
+        "Missing or limited:": 3,
+        "Watch-out:": 3,
+    }
+    unique = tuple(dict.fromkeys(bullets))
+    ordered = sorted(
+        enumerate(unique),
+        key=lambda item: (
+            next(
+                (priority for prefix, priority in priorities.items() if item[1].startswith(prefix)),
+                4,
+            ),
+            item[0],
+        ),
+    )
+    return tuple(value for _index, value in ordered[:limit])
 
 
 def _effect(field: str, value: str) -> str:
-    if field == "positive_vorp_points":
-        return "HELPED"
-    if field in {"confidence_cap", "role_fragility_status", "warning_flags"}:
-        return "RISK / CAP"
-    if field in {"nwr_dynasty_score", "production_nwr_score"}:
-        return "BASE"
-    return "USED"
+    number = _number(value)
+    if field == "warning_flags" or not value:
+        return "MISSING"
+    if field in {
+        "positive_vorp_points",
+        "position_specific_review_score",
+        "review_scoring_points",
+        "imported_first_down_points",
+    }:
+        return "HELPS" if number > 0 else ("HURTS" if number < 0 else "NEUTRAL")
+    if field in {"discipline_multiplier", "lifecycle_modifier_review"}:
+        return "HELPS" if number > 1 else ("HURTS" if 0 < number < 1 else "NEUTRAL")
+    if field in {"confidence_cap", "available_component_weight"}:
+        return "HURTS" if 0 < number < 1 else "NEUTRAL"
+    if field == "role_fragility_status":
+        normalized = value.casefold()
+        return (
+            "HURTS"
+            if any(term in normalized for term in ("fragile", "caution", "risk"))
+            else "NEUTRAL"
+        )
+    return "NEUTRAL"
+
+
+def _reason_effect(value: str) -> str:
+    normalized = value.casefold().replace("_", " ").replace("-", " ")
+    if any(
+        term in normalized
+        for term in ("no extra lift", "no lift", "neutral", "already supported")
+    ):
+        return "NEUTRAL"
+    if any(term in normalized for term in ("missing", "unavailable", "insufficient")):
+        return "MISSING"
+    if any(term in normalized for term in ("penalty", "blocked", "fragile", "decline")):
+        return "HURTS"
+    if any(term in normalized for term in ("supported", "elite", "positive", "priority")):
+        return "HELPS"
+    return "NEUTRAL"
+
+
+def _reason_label(value: str) -> str:
+    words = value.replace("_", " ").strip().split()
+    acronyms = {"qb", "rb", "wr", "te", "nwr", "vorp", "adp"}
+    formatted = [word.upper() if word.casefold() in acronyms else word for word in words]
+    text = " ".join(formatted)
+    return text[:1].upper() + text[1:] if text else ""
 
 
 def _number(value: object) -> float:

@@ -104,6 +104,7 @@ def compose_owner_asset_evidence(
                     current.get("confidence_status"),
                     row.get("confidence"),
                 ),
+                "risk": _first_present(current.get("risk_level")),
                 "identity_status": EXACT_IDENTITY if asset_id else NOT_AVAILABLE,
                 "raw_caveat_codes": raw_caveats,
                 "owner_caveats": owner_caveats(raw_caveats),

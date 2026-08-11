@@ -100,7 +100,7 @@ def test_page_preserves_manual_planners_beside_bounded_decision_support() -> Non
     text = f"{_read(PAGE_PATH)}\n{_read(ROSTER_SERVICE_PATH)}"
 
     required = [
-        "Manual planning only. No trade valuation, market valuation, pick valuation, model",
+        "Manual planning only. No trade valuation, market valuation, or pick valuation is",
         "Trade Away Pick Planner",
         "Trade For Pick Planner",
         "Structured manual planner rows",

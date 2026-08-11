@@ -39,7 +39,7 @@ def test_future_tools_page_is_ideas_only() -> None:
     assert "render_future_tool_gate_badges" in text
     assert "render_roadmap_warning" in text
     assert "Graduated Planning Tools" in text
-    assert "Team Planning" in text
+    assert "Trades & Team" in text
     assert "Draft Tools" in text
     assert "Research Tools" in text
     assert "render_roster_weakness_tracker" not in text

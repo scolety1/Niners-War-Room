@@ -6,6 +6,12 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from src.services.owner_mode_view_service import (
+    market_decision_label,
+    owner_range_contract,
+    owner_risk,
+)
+
 
 @dataclass(frozen=True)
 class CompareLean:
@@ -19,11 +25,12 @@ class CompareLean:
 class OwnerCompareSummary:
     leans: tuple[CompareLean, ...]
     ranges: tuple[dict[str, str], ...]
+    notes: tuple[dict[str, object], ...]
 
 
 def build_owner_compare_summary(rows: list[dict[str, Any]]) -> OwnerCompareSummary:
     if len(rows) < 2:
-        return OwnerCompareSummary((), ())
+        return OwnerCompareSummary((), (), ())
     leans = (
         _short_term_lean(rows),
         _research_lean(rows, "Medium term", "research_outlook_3y"),
@@ -32,20 +39,18 @@ def build_owner_compare_summary(rows: list[dict[str, Any]]) -> OwnerCompareSumma
     ranges = tuple(
         {
             "Player": _text(row.get("player")) or "Unknown player",
-            "Floor": _text(row.get("research_downside_signal")) or "Not admitted",
-            "NWR Expected": (
-                _text(row.get("research_tier"))
-                or _text(row.get("source_tier"))
-                or "Not admitted"
-            ),
-            "Ceiling": _text(row.get("research_ceiling_signal")) or "Not admitted",
+            "Floor": owner_range_contract(row)["Floor"],
+            "NWR Expected": owner_range_contract(row)["NWR Expected"],
+            "Ceiling": owner_range_contract(row)["Ceiling"],
             "Age / window": _age_window(row),
-            "Risk / uncertainty": _risk(row),
-            "Range authority": "Unified Research Preview — research only",
+            "Risk / uncertainty": owner_risk(row),
+            "Range authority": owner_range_contract(row)["Authority"],
+            "Range method": owner_range_contract(row)["Method"],
         }
         for row in rows
     )
-    return OwnerCompareSummary(leans=leans, ranges=ranges)
+    notes = tuple(_player_notes(row) for row in rows)
+    return OwnerCompareSummary(leans=leans, ranges=ranges, notes=notes)
 
 
 def _short_term_lean(rows: list[dict[str, Any]]) -> CompareLean:
@@ -96,7 +101,7 @@ def _research_lean(
     ranked: list[tuple[int, str, str]] = []
     for row in rows:
         try:
-            rank = int(_text(row.get("research_rank")))
+            rank = int(float(_text(row.get("research_rank"))))
         except ValueError:
             continue
         ranked.append(
@@ -111,12 +116,13 @@ def _research_lean(
         )
     ranked.sort()
     best = ranked[0]
+    outlook = _research_score(best[2])
     return CompareLean(
         horizon,
         best[1],
         "Unified Research Preview — research only",
         "Higher frozen research neighborhood "
-        f"(rank {best[0]}); outlook: {best[2] or 'unavailable'}.",
+        f"(rank {best[0]}); research outlook score: {outlook}.",
     )
 
 
@@ -126,16 +132,48 @@ def _age_window(row: dict[str, Any]) -> str:
     return f"Age {age} · {position} lifecycle context" if age else "Age/window unavailable"
 
 
-def _risk(row: dict[str, Any]) -> str:
-    warning = _text(row.get("warning_flags")) or _text(row.get("risk_notes"))
-    confidence = _text(row.get("research_confidence")) or _text(
-        row.get("source_confidence")
-    )
-    if warning:
-        return warning
-    return f"Research confidence: {confidence}" if confidence else "Not enough information"
+def _player_notes(row: dict[str, Any]) -> dict[str, object]:
+    player = _text(row.get("player")) or "Unknown player"
+    advantages: list[str] = []
+    risks: list[str] = []
+    if rank := _text(row.get("nwr_rank")):
+        advantages.append(f"Finished V1 rank: #{rank}.")
+    if position_rank := _text(row.get("position_rank")):
+        advantages.append(f"Position rank: {position_rank}.")
+    ceiling = owner_range_contract(row)["Ceiling"]
+    if ceiling != "Not enough information":
+        advantages.append(f"Research ceiling context: {ceiling}.")
+    signals = row.get("outcome_signals", ())
+    if isinstance(signals, str):
+        signals = (signals,)
+    if signals:
+        advantages.append(f"Governed outcome context: {signals[0]}.")
+    else:
+        risks.append("No comparable governed Outcome V3 signal is available.")
+    market, _gap = market_decision_label(row.get("nwr_rank"), row.get("market_dp_rank"))
+    if market in {"Potential Buy", "NWR Higher"}:
+        advantages.append(f"Market opportunity context: {market}.")
+    elif market in {"Market Higher", "Potential Sell / Caution"}:
+        risks.append(f"Market disagreement: {market}.")
+    risk = owner_risk(row)
+    if risk != "No major risk flag":
+        risks.append(risk)
+    if not risks:
+        risks.append("No major admitted risk flag; review confidence and range method.")
+    return {
+        "Player": player,
+        "Advantages": tuple(dict.fromkeys(advantages))[:4],
+        "Risks": tuple(dict.fromkeys(risks))[:4],
+    }
 
 
 def _text(value: object) -> str:
     text = str(value if value is not None else "").strip()
     return "" if text.casefold() in {"", "nan", "none", "null", "<na>"} else text
+
+
+def _research_score(value: object) -> str:
+    try:
+        return f"{float(_text(value)):.1f} research-index points"
+    except ValueError:
+        return "unavailable"

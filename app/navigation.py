@@ -89,12 +89,12 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="upcoming-draft-prep",
     ),
     NavigationPageSpec(
-        title="Keeper Deadline Prep",
+        title="Keeper Prep",
         file_path="pages/38_keeper_deadline_prep_v1.py",
         url_path="keeper-deadline-prep",
     ),
     NavigationPageSpec(
-        title="Drop Deadline Prep",
+        title="Drop Prep",
         file_path="pages/39_drop_deadline_prep_v1.py",
         url_path="drop-deadline-prep",
     ),
@@ -177,29 +177,28 @@ def _visible_page(url_path: str) -> NavigationPageSpec:
 
 VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]], ...] = (
     (
-        "Owner Mode",
-        (_visible_page("owner-home"),),
-    ),
-    (
-        "Evaluate Players",
+        "Rankings & Players",
         (
+            _visible_page("owner-home"),
             _visible_page("rankings"),
-            _visible_page("market-analysis"),
-            _visible_page("why-nwr-ranks"),
-            _visible_page("rookie-board"),
             _visible_page("player-detail"),
             _visible_page("player-compare"),
-            _visible_page("outcome-columns"),
+            _visible_page("rookie-board"),
             _visible_page("asset-explorer"),
+            _visible_page("personal-board"),
         ),
     ),
     (
-        "Make Decisions",
+        "Trades & Team",
         (
             _visible_page("trading-lab"),
             _visible_page("saved-scenarios"),
             _visible_page("decision-journal"),
-            _visible_page("personal-board"),
+            _visible_page("roster-weakness-tracker"),
+            _visible_page("future-pick-planning"),
+            _visible_page("keeper-deadline-prep"),
+            _visible_page("drop-deadline-prep"),
+            _visible_page("trade-deadline-prep"),
         ),
     ),
     (
@@ -212,32 +211,28 @@ VISIBLE_NAVIGATION_PAGE_GROUPS: tuple[tuple[str, tuple[NavigationPageSpec, ...]]
         ),
     ),
     (
-        "Team Planning",
+        "NWR Analysis",
         (
-            _visible_page("roster-weakness-tracker"),
-            _visible_page("future-pick-planning"),
-            _visible_page("keeper-deadline-prep"),
-            _visible_page("drop-deadline-prep"),
-            _visible_page("trade-deadline-prep"),
+            _visible_page("market-analysis"),
+            _visible_page("why-nwr-ranks"),
+            _visible_page("outcome-columns"),
         ),
     ),
     (
-        "Advanced / Data",
+        "Advanced/Data",
         (
             _visible_page("rankings-data"),
             _visible_page("compare-data"),
             _visible_page("development-lab"),
-            _visible_page("future-tools"),
             _visible_page("evidence-integration-review"),
             _visible_page("evidence-review-hub"),
-        ),
-    ),
-    (
-        "Settings",
-        (
             _visible_page("settings-data-health"),
             _visible_page("refresh-data"),
         ),
+    ),
+    (
+        "Advanced/Roadmap",
+        (_visible_page("future-tools"),),
     ),
 )
 

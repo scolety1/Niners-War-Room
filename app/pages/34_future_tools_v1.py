@@ -23,7 +23,7 @@ page_header(
     eyebrow="Advanced / Roadmap",
     description=(
         "Ideas-only parking lot for tools that are not active yet. Owner planning tools live "
-        "in Team Planning or Draft Tools instead."
+        "in Trades & Team or Draft Tools instead."
     ),
     status_items=(
         ("Roadmap only", "review"),
@@ -47,8 +47,8 @@ render_guardrails()
 
 section_label("Graduated Planning Tools")
 st.markdown(
-    "Roster Planner, Future Pick Planner, Keeper Deadline Prep, "
-    "Drop Deadline Prep, and Trade Deadline Prep live in **Team Planning**. "
+    "Roster Planner, Future Pick Planner, Keeper Prep, "
+    "Drop Prep, and Trade Deadline Prep live in **Trades & Team**. "
     "Upcoming Draft Prep lives in **Draft Tools**. Technical research and gate detail "
     "remains in [Research Tools](/development-lab)."
 )

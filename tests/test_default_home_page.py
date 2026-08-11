@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import ast
 from collections.abc import Callable
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -15,29 +15,18 @@ from fixtures.start_here_durable_mutations import (
 )
 from post_v1_assertion_harness import (
     DurableRenderResult,
-    load_workflow_authority,
     render_start_here,
     render_start_here_with_durable_monitor,
-    validate_start_here_contract,
 )
 
+from app.navigation import DEFAULT_ROOT_PAGE
 
-def _replace_once(source: str, old: str, new: str) -> str:
-    assert source.count(old) == 1, f"mutation anchor count changed for {old!r}"
-    return source.replace(old, new, 1)
+ROOT = Path(__file__).resolve().parents[1]
+HOME = ROOT / "app/pages/46_draft_cockpit_default_root.py"
 
 
-def _workflow_mutation(*, title: str, status: str, route: str) -> Callable[[str], str]:
-    def mutate(source: str) -> str:
-        source = _replace_once(source, '            "Trading Lab",', f'            "{title}",')
-        source = _replace_once(
-            source,
-            '            "Manual decision aid",',
-            f'            "{status}",',
-        )
-        return _replace_once(source, '            "/trading-lab",', f'            "{route}",')
-
-    return mutate
+def _source() -> str:
+    return HOME.read_text(encoding="utf-8")
 
 
 def _assert_zero_durable_mutations(result: DurableRenderResult) -> None:
@@ -46,87 +35,95 @@ def _assert_zero_durable_mutations(result: DurableRenderResult) -> None:
     assert result.before == result.after
 
 
-def test_default_home_renders_the_authoritative_workflow_contract() -> None:
+def test_default_home_is_the_owner_decision_entrypoint() -> None:
+    source = _source()
+
+    assert DEFAULT_ROOT_PAGE.default
+    assert DEFAULT_ROOT_PAGE.file_path == "pages/46_draft_cockpit_default_root.py"
+    assert 'page_header(\n    "Niners War Room"' in source
+    assert 'eyebrow="Owner Mode"' in source
+    assert "What do you need to decide?" in source
+    assert "Start with the football decision" in source
+    assert source.count("page_header(") == 1
+    assert "st.title(" not in source
+
+
+def test_home_exposes_the_normal_owner_jobs_and_workspaces() -> None:
+    source = _source()
+
+    for label, route in (
+        ("Open Player Detail", "/player-detail"),
+        ("Compare Players", "/player-compare"),
+        ("Analyze Trade", "/trading-lab"),
+        ("Review Market", "/market-analysis"),
+        ("My Board", "/personal-board"),
+        ("Decision Tracker", "/decision-journal"),
+        ("Scenario Playground", "/saved-scenarios"),
+        ("Review 2026 Rookies", "/rookie-board"),
+    ):
+        assert label in source
+        assert route in source
+
+
+def test_home_keeps_redraft_separate_and_advanced_operations_collapsed() -> None:
+    source = _source()
+
+    assert "Open separate Redraft app" in source
+    assert "http://127.0.0.1:8512" in source
+    assert "never reorders the Dynasty board" in source
+    assert 'st.expander("Advanced / app operations", expanded=False)' in source
+    assert "Lab Home" not in source
+    assert "Primary" not in source
+    assert "Secondary" not in source
+
+
+def test_home_page_open_code_has_no_durable_mutation_calls() -> None:
+    tree = ast.parse(_source())
+    called_names = {
+        node.func.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    called_attributes = {
+        node.func.attr
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    prohibited = {
+        "perform_workspace_write",
+        "save_scenario",
+        "create_decision",
+        "update_decision",
+        "archive_decision",
+        "delete_decision",
+        "write_text",
+        "write_bytes",
+        "unlink",
+        "rename",
+        "replace",
+    }
+
+    assert prohibited.isdisjoint(called_names | called_attributes)
+    assert "load_owner_data" in called_names
+    assert "load_store" in called_names
+
+
+def test_home_renders_the_owner_jobs_through_the_production_route() -> None:
     rendered = render_start_here()
 
-    validate_start_here_contract(rendered, authority=load_workflow_authority())
-
+    assert rendered.route == "/"
+    assert rendered.page_path.resolve() == HOME.resolve()
     assert tuple(level for level, _text in rendered.headings).count("h1") == 1
-    assert {workflow.title for workflow in rendered.workflows} == {
-        "Dynasty Rankings",
-        "Player Compare",
-        "Trading Lab",
-        "Draft Cockpit",
-    }
-    assert {link.target for link in rendered.links} == {
-        "/rankings",
+    assert {
+        "/player-detail",
         "/player-compare",
         "/trading-lab",
-        "/draft-cockpit",
-        "/settings-data-health",
-        "/review-workflow",
-        "/asset-explorer",
-        "/rookie-board",
+        "/market-analysis",
         "/personal-board",
         "/decision-journal",
         "/saved-scenarios",
-    }
-
-
-@pytest.mark.parametrize(
-    "mutation",
-    (
-        _workflow_mutation(
-            title="Trading Lab",
-            status="Automated decision aid",
-            route="/trading-lab",
-        ),
-        _workflow_mutation(title="Refresh Data", status="Live", route="/refresh-data"),
-        _workflow_mutation(
-            title="Evidence Review",
-            status="Production",
-            route="/evidence-integration-review",
-        ),
-        _workflow_mutation(title="Future Tools", status="Available", route="/future-tools"),
-        lambda source: _replace_once(
-            source,
-            '            "/trading-lab",',
-            '            "/player-compare",',
-        ),
-        lambda source: _replace_once(
-            source,
-            '            "Manual decision aid",',
-            '            "Manual decision aid / Automated decision aid",',
-        ),
-    ),
-    ids=(
-        "manual_to_automated",
-        "gated_to_live",
-        "review_only_to_production",
-        "parked_to_available",
-        "wrong_route_target",
-        "contradictory_disposition",
-    ),
-)
-def test_rendered_workflow_disposition_mutations_are_detected(
-    mutation: Callable[[str], str],
-) -> None:
-    rendered = render_start_here(source_transform=mutation)
-
-    with pytest.raises(AssertionError):
-        validate_start_here_contract(rendered, authority=load_workflow_authority())
-
-
-def test_missing_primary_link_mutation_is_detected() -> None:
-    rendered = render_start_here()
-    workflows = tuple(
-        replace(workflow, links=()) if workflow.title == "Trading Lab" else workflow
-        for workflow in rendered.workflows
-    )
-    mutated = replace(rendered, workflows=workflows)
-
-    with pytest.raises(AssertionError, match="exactly one primary link"):
-        validate_start_here_contract(mutated, authority=load_workflow_authority())
+        "/rookie-board",
+    } <= {link.target for link in rendered.links}
 
 
 def test_page_open_has_zero_durable_mutations(
@@ -135,10 +132,9 @@ def test_page_open_has_zero_durable_mutations(
 ) -> None:
     result = render_start_here_with_durable_monitor(
         monkeypatch,
-        tmp_path / "isolated-start-here-state",
+        tmp_path / "isolated-owner-home-state",
     )
 
-    validate_start_here_contract(result.rendered, authority=load_workflow_authority())
     _assert_zero_durable_mutations(result)
 
 
@@ -150,7 +146,7 @@ def test_page_open_permits_session_only_render_state(
         monkeypatch,
         tmp_path / "isolated-session-only-state",
         source_transform=lambda source: (
-            source + '\nst.session_state["start_here_test_only"] = "in-memory"\n'
+            source + '\nst.session_state["owner_home_test_only"] = "in-memory"\n'
         ),
     )
 
@@ -182,16 +178,16 @@ def test_page_open_durable_mutations_are_detected(
     mutation: Callable[[Path], None],
     expected_boundary: str,
 ) -> None:
-    isolated_root = tmp_path / "isolated-mutated-start-here-state"
+    isolated_root = tmp_path / "isolated-mutated-owner-home-state"
     result = render_start_here_with_durable_monitor(
         monkeypatch,
         isolated_root,
         source_transform=lambda source: (
-            source + "\nSTART_HERE_DURABLE_MUTATION(START_HERE_DURABLE_ROOT)\n"
+            source + "\nOWNER_HOME_DURABLE_MUTATION(OWNER_HOME_DURABLE_ROOT)\n"
         ),
         execution_globals={
-            "START_HERE_DURABLE_MUTATION": mutation,
-            "START_HERE_DURABLE_ROOT": isolated_root,
+            "OWNER_HOME_DURABLE_MUTATION": mutation,
+            "OWNER_HOME_DURABLE_ROOT": isolated_root,
         },
     )
 

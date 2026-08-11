@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections import Counter
 from pathlib import Path
 from uuid import uuid4
 
@@ -32,6 +33,34 @@ registry = load_governed_asset_registry(repo_root=ROOT)
 assets = {row["asset_id"]: row for row in registry.rows}
 asset_types = {key: row["asset_type"] for key, row in assets.items()}
 saved = load_store("saved_scenarios")
+
+
+def _scenario_implications(row: dict[str, object]) -> dict[str, str]:
+    selected_assets = [assets[key] for key in row.get("assets", []) if key in assets]
+    current = sum(asset["asset_type"] == "Current Player" for asset in selected_assets)
+    future = sum(
+        asset["asset_type"] in {"Rookie Review", "Blocked Rookie", "Draft Pick", "Future Pick"}
+        for asset in selected_assets
+    )
+    positions = Counter(
+        str(asset.get("position") or "Unknown")
+        for asset in selected_assets
+        if asset.get("position") != "PICK"
+    )
+    team_window = str(row.get("payload", {}).get("team_window") or "Unspecified")
+    return {
+        "Short-term": (
+            f"{current} current-player asset(s); check governed Outcomes and availability."
+        ),
+        "Long-term": (
+            f"{future} rookie/pick asset(s); research uncertainty remains separate."
+        ),
+        "Team-window fit": f"{team_window} hypothesis; no automatic fit verdict.",
+        "Positional effects": (
+            ", ".join(f"{position} {count}" for position, count in sorted(positions.items()))
+            or "No player position selected"
+        ),
+    }
 
 page_header(
     "Scenario Playground",
@@ -145,6 +174,7 @@ st.dataframe(
                 if scenario_source_status(row, registry.source_hashes) == "CURRENT"
                 else "Stale or changed - review"
             ),
+            **_scenario_implications(row),
         }
         for row in saved.records
     ),

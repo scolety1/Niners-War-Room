@@ -631,7 +631,7 @@ active_id = active_profile_id(store)
 _render_redraft_accessibility_frame()
 
 page_header(
-    "Redraft",
+    "Niners War Room - Redraft",
     eyebrow=REDRAFT_AUTHORITY_LABEL,
     description=(
         "League-specific current-season scoring, replacement value, tiers, comparisons, "

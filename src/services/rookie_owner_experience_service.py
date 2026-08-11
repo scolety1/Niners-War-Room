@@ -7,6 +7,8 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.owner_caveat_presentation_service import owner_caveat_summary
+from src.services.owner_mode_view_service import owner_range_contract, translate_research_tier
+from src.services.unified_research_preview_service import load_unified_research_preview
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ROOKIE_BOARD_PATH = REPO_ROOT / (
@@ -21,6 +23,7 @@ def load_owner_rookie_board(path: str | Path = ROOKIE_BOARD_PATH) -> pd.DataFram
         raise ValueError(f"Rookie Review must contain 80 drafted prospects; found {len(source)}")
     output = source.copy()
     output["Rank"] = output["overall_review_rank"].replace("", "—")
+    output["Rookie Rank"] = output["overall_review_rank"].replace("", "-")
     output["Player"] = output["player_name"]
     output["Pos"] = output["position"]
     output["NFL Team"] = output["nfl_team"].replace("", "—")
@@ -29,11 +32,47 @@ def load_owner_rookie_board(path: str | Path = ROOKIE_BOARD_PATH) -> pd.DataFram
     output["NFL Draft Capital"] = output.apply(_draft_capital, axis=1)
     output["Board Score"] = output["sprint14e_format_score"].replace("", "—")
     output["Review Score"] = output["final_review_score"].replace("", "—")
+    output["NWR Rookie Score"] = output["sprint14e_format_score"].replace("", "-")
     output["Why this rank"] = output.apply(_rank_explanation, axis=1)
     output["Authority"] = output.apply(_authority, axis=1)
     output["Blocked / pending reason"] = output.apply(_blocked_reason, axis=1)
     output["Warnings"] = output["warning_codes"].map(owner_caveat_summary)
     output["Confidence"] = output["evidence_confidence"].map(_confidence)
+    output["Age"] = output["age_at_draft"].replace("", "-")
+    output["College Production"] = output["production_component"].map(_component_context)
+    output["Athletic Context"] = output["athletic_component"].map(_component_context)
+    research = load_unified_research_preview().board
+    research_by_asset = {
+        str(row.get("source_asset_id") or ""): row for row in research.to_dict("records")
+    }
+    research_rows = []
+    for row in output.to_dict("records"):
+        player_id = str(row.get("player_id") or "").strip()
+        source_asset_id = (
+            f"rookie:{player_id}"
+            if player_id
+            else f"blocked-rookie:{_slug(row.get('player_name'))}"
+        )
+        context = research_by_asset.get(source_asset_id, {})
+        contract = owner_range_contract(
+            {
+                "asset_type": "Rookie Review",
+                "research_downside_signal": context.get("downside_signal"),
+                "research_tier": context.get("research_tier"),
+                "research_ceiling_signal": context.get("ceiling_signal"),
+            }
+        )
+        research_rows.append(
+            {
+                "Unified Research": translate_research_tier(context.get("research_tier")),
+                "Floor": contract["Floor"],
+                "NWR Expected": contract["NWR Expected"],
+                "Ceiling": contract["Ceiling"],
+                "Research confidence": _probability(context.get("confidence")),
+                "Research status": str(context.get("status") or "Not enough information"),
+            }
+        )
+    output = pd.concat([output.reset_index(drop=True), pd.DataFrame(research_rows)], axis=1)
     return output
 
 
@@ -107,13 +146,26 @@ def _rank_explanation(row: pd.Series) -> str:
     board_score = str(row.get("sprint14e_format_score") or "").strip()
     review_score = str(row.get("final_review_score") or "").strip()
     missing = str(row.get("missing_components") or "").strip()
+    confidence_cap = str(row.get("confidence_cap") or "").strip()
+    evidence_confidence = _confidence(row.get("evidence_confidence"))
     position = str(row.get("position") or "").strip()
     explanation = (
         f"Rank is ordered by the {position} league-format/evidence-adjusted Board Score "
         f"({board_score}), not the broader Review Score ({review_score})."
     )
+    drivers = _component_drivers(row)
+    if drivers:
+        explanation += f" Admitted component context: {drivers}."
+    if confidence_cap:
+        explanation += (
+            f" Evidence status is {evidence_confidence}; confidence cap is {confidence_cap}."
+        )
     if missing:
-        explanation += " Missing evidence also invokes the governed confidence/evidence gate."
+        explanation += (
+            " Missing components ("
+            + missing.replace("|", ", ").replace("_", " ")
+            + ") also invoke the governed confidence/evidence gate."
+        )
     explanation += " NFL draft capital is one component, not an automatic rank override."
     return explanation
 
@@ -159,6 +211,47 @@ def _component_effect(value: str) -> str:
     if number < 40:
         return "HURT"
     return "NEUTRAL"
+
+
+def _component_context(value: object) -> str:
+    try:
+        return f"{float(str(value)):.1f} / 100 normalized"
+    except ValueError:
+        return "Not enough information"
+
+
+def _component_drivers(row: pd.Series) -> str:
+    labels = (
+        ("production", "production_component"),
+        ("market share", "market_share_component"),
+        ("NFL draft capital", "draft_capital_component"),
+        ("athletic evidence", "athletic_component"),
+        ("recruiting evidence", "recruiting_component"),
+        ("age/lifecycle", "age_component"),
+    )
+    values: list[tuple[float, str]] = []
+    for label, field in labels:
+        try:
+            values.append((float(str(row.get(field) or "")), label))
+        except ValueError:
+            continue
+    if not values:
+        return ""
+    values.sort(reverse=True)
+    strongest = ", ".join(f"{label} {value:.1f}" for value, label in values[:2])
+    weakest_value, weakest_label = values[-1]
+    return f"strongest {strongest}; lowest available {weakest_label} {weakest_value:.1f}"
+
+
+def _probability(value: object) -> str:
+    try:
+        return f"{float(str(value)) * 100:.1f}%"
+    except ValueError:
+        return "Not enough information"
+
+
+def _slug(value: object) -> str:
+    return "-".join(str(value or "").lower().replace("'", "").split())
 
 
 def _integer(value: object) -> int | None:

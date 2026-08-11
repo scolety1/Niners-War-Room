@@ -15,12 +15,17 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
     carnell = by_name["Carnell Tate"]
     assert carnell["Rank"] == "8"
     assert "NFL draft capital is one component" in carnell["Why this rank"]
+    assert "Admitted component context" in carnell["Why this rank"]
+    assert carnell["Unified Research"] == "Research neighborhood 1"
+    assert carnell["NWR Expected"] == "Research neighborhood 1"
     assert carnell["Blocked / pending reason"] == ""
 
     kc = by_name["KC Concepcion"]
     assert float(kc["Review Score"]) > float(kc["Board Score"])
     assert "Board Score" in kc["Why this rank"]
     assert "Review Score" in kc["Why this rank"]
+    assert "confidence cap is 0.84" in kc["Why this rank"]
+    assert "Missing components" in kc["Why this rank"]
 
     stribling = by_name["De'Zhaun Stribling"]
     assert stribling["Rank"] == "—"
@@ -43,6 +48,10 @@ def test_rookie_page_puts_warnings_last_and_uses_owner_language() -> None:
     assert "Why is this rookie here?" in page
     assert "Rookie draft range" in page
     assert "Rookie Tier" in page
+    assert "NWR Rookie Score" in page
+    assert "College Production" in page
+    assert "Unified Research" in page
+    assert '"Warnings / pending",' in page
     assert "Warnings and advanced model details" in page
     assert page.index("Warnings and advanced model details") > page.index('"Confidence",')
     assert "first_round_board_context_review" not in page

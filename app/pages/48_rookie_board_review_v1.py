@@ -70,23 +70,33 @@ if not show_unscored:
     filtered = filtered.loc[filtered["overall_review_rank"].str.strip().ne("")]
 filtered["_rank"] = pd.to_numeric(filtered["overall_review_rank"], errors="coerce").fillna(9999)
 filtered = filtered.sort_values(["_rank", "overall_pick", "player_name"])
+filtered["Warnings / pending"] = filtered.apply(
+    lambda row: row["Blocked / pending reason"] or row["Warnings"] or "No admitted warning",
+    axis=1,
+)
 
 display_columns = [
-    "Rank",
+    "Rookie Rank",
     "Player",
     "Pos",
     "NFL Team",
-    "Rookie Tier",
-    "Rookie draft range",
     "NFL Draft Capital",
-    "Board Score",
-    "Why this rank",
+    "NWR Rookie Score",
+    "Rookie Tier",
+    "College Production",
+    "Age",
+    "Athletic Context",
+    "Unified Research",
+    "Floor",
+    "NWR Expected",
+    "Ceiling",
     "My Tier",
     "Watchlist",
     "Confidence",
-    "Blocked / pending reason",
+    "Why this rank",
+    "Warnings / pending",
 ]
-st.dataframe(filtered[display_columns], hide_index=True, use_container_width=True)
+st.dataframe(filtered[display_columns], hide_index=True, width="stretch")
 st.caption(
     "Board Score controls order after league-format and evidence gates. Review Score is a "
     "broader model diagnostic, so a higher Review Score can legitimately rank lower."
@@ -95,15 +105,24 @@ st.caption(
 st.markdown("## Why is this rookie here?")
 selected_name = st.selectbox("Rookie", filtered["player_name"].tolist())
 detail = rookies.loc[rookies["player_name"].eq(selected_name)].iloc[0].to_dict()
-summary = st.columns(4)
+summary = st.columns(5)
 summary[0].metric("Rookie rank", detail["Rank"])
 summary[1].metric("Tier", detail["Rookie Tier"])
 summary[2].metric("Draft range", detail["Rookie draft range"])
-summary[3].metric("Board Score", detail["Board Score"])
+summary[3].metric("NWR Rookie Score", detail["Board Score"])
+summary[4].metric("Confidence", detail["Confidence"])
 st.write(detail["Why this rank"])
 if detail["Blocked / pending reason"]:
     st.info(detail["Blocked / pending reason"])
-st.dataframe(rookie_component_rows(detail), hide_index=True, use_container_width=True)
+range_columns = st.columns(3)
+range_columns[0].metric("Floor", detail["Floor"])
+range_columns[1].metric("NWR Expected", detail["NWR Expected"])
+range_columns[2].metric("Ceiling", detail["Ceiling"])
+st.caption(
+    "Rookie ranges use frozen Unified Research neighborhoods and intentionally wider "
+    "rookie uncertainty; they are not Finished V1 veteran ranges."
+)
+st.dataframe(rookie_component_rows(detail), hide_index=True, width="stretch")
 st.caption(
     "HELPED / NEUTRAL / HURT reflects the admitted normalized component relative to the "
     "model midpoint. Missing components stay unavailable; no contribution percentage is invented."

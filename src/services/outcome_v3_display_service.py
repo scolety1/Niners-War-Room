@@ -333,19 +333,25 @@ def _compact_horizon_label(horizon: str) -> str:
 
 
 def _missing_classification(source: dict[str, Any] | None, player_id: str) -> str:
-    if source is None or not player_id:
-        return "loader/join issue"
+    if not player_id:
+        return "identity issue"
+    if source is None:
+        return "wiring / missing governed row"
     evidence = _text(source.get("evidence_state")).casefold()
     reasons = " ".join(
         (_text(source.get("missing_reason")), _text(source.get("reason_code")))
     ).casefold()
     if "stale" in reasons or "legacy" in reasons:
-        return "stale/legacy artifact issue"
-    if "blocked" in evidence or "blocked" in reasons:
+        return "wiring / stale artifact"
+    if "unsupported" in reasons:
+        return "unsupported"
+    if "blocked" in reasons:
         return "intentionally blocked"
-    if "unsupported" in evidence or "unsupported" in reasons:
-        return "model unsupported"
-    return "true evidence gap"
+    if "unsupported" in evidence:
+        return "unsupported"
+    if "blocked" in evidence:
+        return "intentionally blocked"
+    return "insufficient evidence"
 
 
 def _outcome_lookup(

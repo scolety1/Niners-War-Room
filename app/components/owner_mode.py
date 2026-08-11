@@ -30,9 +30,16 @@ def decision_cards(cards: Iterable[tuple[str, str]]) -> None:
 
 def floor_expected_ceiling(values: Mapping[str, object], *, note: str = "") -> None:
     cells = []
-    for label in ("Floor", "Expected", "Ceiling"):
-        value = _text(values.get(label)) or "Not enough information"
-        css = " expected" if label == "Expected" else ""
+    for label, key in (
+        ("Floor", "Floor"),
+        ("NWR Expected", "NWR Expected"),
+        ("Ceiling", "Ceiling"),
+    ):
+        value = _text(values.get(key))
+        if key == "NWR Expected" and not value:
+            value = _text(values.get("Expected"))
+        value = value or "Not enough information"
+        css = " expected" if label == "NWR Expected" else ""
         cells.append(
             f'<div class="nwr-range-cell{css}"><strong>{label}</strong>'
             f"<span>{escape(value)}</span></div>"
@@ -49,10 +56,12 @@ def market_readout(label: str, *, gap: str = "", status: str = "") -> None:
     normalized = label.casefold()
     css = (
         "nwr-market-buy"
-        if "buy" in normalized or "higher" in normalized
+        if "buy" in normalized or normalized.startswith("nwr higher")
         else (
             "nwr-market-sell"
-            if "sell" in normalized or "caution" in normalized
+            if "sell" in normalized
+            or "caution" in normalized
+            or normalized.startswith("market higher")
             else "nwr-market-even"
         )
     )

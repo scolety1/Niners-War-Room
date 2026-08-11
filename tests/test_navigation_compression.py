@@ -32,8 +32,8 @@ def test_visible_navigation_is_decision_focused() -> None:
         "Roster Planner",
         "Future Pick Planner",
         "Upcoming Draft Prep",
-        "Keeper Deadline Prep",
-        "Drop Deadline Prep",
+        "Keeper Prep",
+        "Drop Prep",
         "Trade Deadline Prep",
         "Future Tools",
         "Refresh Data",
@@ -57,40 +57,37 @@ def test_visible_navigation_uses_locked_group_structure() -> None:
     }
 
     assert grouped_titles == {
-        "Owner Mode": ["Home"],
-        "Evaluate Players": [
+        "Rankings & Players": [
+            "Home",
             "Rankings",
-            "Market Analysis",
-            "Why NWR Ranks Them",
-            "Rookie Review",
             "Player Detail",
             "Compare",
-            "Dynasty Outcomes",
+            "Rookie Review",
             "All Dynasty Assets",
+            "My Board",
         ],
-        "Make Decisions": [
+        "Trades & Team": [
             "Analyze Trade",
             "Scenario Playground",
             "Decision Tracker",
-            "My Board",
-        ],
-        "Draft Tools": ["Draft", "Mock Drafts", "Draft Analyzer", "Upcoming Draft Prep"],
-        "Team Planning": [
             "Roster Planner",
             "Future Pick Planner",
-            "Keeper Deadline Prep",
-            "Drop Deadline Prep",
+            "Keeper Prep",
+            "Drop Prep",
             "Trade Deadline Prep",
         ],
-        "Advanced / Data": [
+        "Draft Tools": ["Draft", "Mock Drafts", "Draft Analyzer", "Upcoming Draft Prep"],
+        "NWR Analysis": ["Market Analysis", "Why NWR Ranks Them", "Dynasty Outcomes"],
+        "Advanced/Data": [
             "Rankings Data",
             "Compare Data",
             "Research Tools",
-            "Future Tools",
             "Evidence Review",
             "Evidence Review Hub",
+            "Settings / Data Health",
+            "Refresh Data",
         ],
-        "Settings": ["Settings / Data Health", "Refresh Data"],
+        "Advanced/Roadmap": ["Future Tools"],
     }
 
 

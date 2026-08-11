@@ -21,7 +21,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any
 from unittest.mock import patch
 
@@ -159,6 +159,20 @@ class _StreamlitRecorder(ModuleType):
     def link_button(self, label: str, page: str, **_kwargs: object) -> None:
         self._record("link", label, target=page)
 
+    def selectbox(
+        self,
+        label: str,
+        options: Sequence[object],
+        **_kwargs: object,
+    ) -> object:
+        self._record("selectbox", label)
+        assert options, f"selectbox {label!r} has no options"
+        return options[0]
+
+    def expander(self, label: str, **_kwargs: object) -> _Column:
+        self._record("expander", label)
+        return _Column(self, f"expander-{self._column_group}")
+
 
 @dataclass(frozen=True)
 class _HTMLItem:
@@ -234,6 +248,35 @@ def render_start_here(
         source = source_transform(source)
 
     recorder = _StreamlitRecorder()
+    owner_data = ModuleType("app.components.owner_data")
+    owner_data.load_owner_data = lambda _repo_root: SimpleNamespace(
+        evidence=SimpleNamespace(
+            rows=(
+                {
+                    "asset_id": "current:1",
+                    "asset_type": "Current Player",
+                    "asset_name": "Alpha Receiver",
+                    "dynasty_rank": "1",
+                },
+                {
+                    "asset_id": "rookie:2",
+                    "asset_type": "Rookie Review",
+                    "asset_name": "Beta Rookie",
+                    "dynasty_rank": "",
+                },
+            )
+        )
+    )
+    workspace_service = ModuleType("src.services.personal_workspace_service")
+    workspace_service.load_store = lambda _store_name: SimpleNamespace(records=())
+    workspace_service.summarize_workspace = lambda: {
+        "watchlist": 0,
+        "targets": 0,
+        "avoid": 0,
+        "open_decisions": 0,
+        "saved_scenarios": 0,
+    }
+    import app.components.owner_mode as owner_mode
     import app.components.ui_framework as ui_framework
 
     namespace: dict[str, object] = {
@@ -244,7 +287,15 @@ def render_start_here(
     }
     namespace.update(execution_globals or {})
     with (
-        patch.dict(sys.modules, {"streamlit": recorder}),
+        patch.dict(
+            sys.modules,
+            {
+                "streamlit": recorder,
+                "app.components.owner_data": owner_data,
+                "src.services.personal_workspace_service": workspace_service,
+            },
+        ),
+        patch.object(owner_mode, "st", recorder),
         patch.object(ui_framework, "st", recorder),
     ):
         exec(compile(source, str(page_path), "exec"), namespace)
