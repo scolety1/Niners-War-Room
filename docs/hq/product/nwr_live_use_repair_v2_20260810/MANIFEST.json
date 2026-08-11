@@ -1,7 +1,7 @@
 {
   "schema_version": "nwr-live-use-repair-v2-manifest-v1",
   "packet": "nwr_live_use_repair_v2_20260810",
-  "verdict": "GREEN_NWR_LIVE_USE_REPAIR_V2_READY_FOR_HQ_REVIEW",
+  "verdict": "GREEN_NWR_LIVE_USE_REPAIR_V2_CANONICALIZED_AND_PUSHED",
   "starting_hq": "974f163dbad8c323b7ade25d5fe8983f82a8df22",
   "starting_tree": "fa37f8fae309ec7327f8d68059b00246a81aa4ad",
   "authority_changes": false,
@@ -19,7 +19,8 @@
     "reason": "legacy clean-worktree assertions and isolated-worktree local_exports assumptions dominate"
   },
   "repair_commits": ["10c9d0e6c8c9fd06f5a7b8507c2556a226ee15df"],
-  "final_hq": "PENDING_ADOPTION",
-  "final_tree": "PENDING_ADOPTION",
-  "push_status": "PENDING_ADOPTION"
+  "canonical_product_head": "bd3a54f03baf83904cab78fed55c1c8cf68e0580",
+  "canonical_product_tree": "5fdad44d772748433318e43a224be4481c51d583",
+  "push_status": "PUSHED_NORMAL_FAST_FORWARD",
+  "finalization_receipt": "CONTAINING_COMMIT"
 }
