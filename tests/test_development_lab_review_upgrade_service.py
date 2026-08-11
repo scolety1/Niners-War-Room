@@ -86,10 +86,10 @@ def test_next_lane_panel_is_ideas_only() -> None:
     )
 
 
-def test_lab_home_page_wires_new_review_cockpit_sections() -> None:
+def test_research_tools_page_wires_review_cockpit_sections() -> None:
     text = Path("app/pages/35_development_lab_v1.py").read_text(encoding="utf-8")
 
-    assert "Lab Home / Status Board" in text
+    assert "Research Status Board" in text
     assert "Dataset Browser" in text
     assert "Candidate Review Panel" in text
     assert "Guardrail Ledger" in text

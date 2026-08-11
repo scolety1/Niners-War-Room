@@ -8,26 +8,24 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.development_lab import (  # noqa: E402
-    render_guardrails,
+    render_planning_advanced_details,
     render_upcoming_draft_prep,
 )
-from app.components.ui_framework import page_header, section_label  # noqa: E402
+from app.components.ui_framework import page_header  # noqa: E402
 
 page_header(
     "Upcoming Draft Prep",
-    eyebrow="Development Lab / Safe V0",
+    eyebrow="Draft Tools",
     description=(
-        "Manual planning workspace for the next draft: setup checks, roster need notes, pick "
-        "inventory, watchlist placeholders, mock scenarios, open questions, and data readiness."
+        "Build your draft plan in order: confirm the setup, identify roster needs, inventory "
+        "your picks, create a watchlist, and rehearse the scenarios that could reach you."
     ),
     status_items=(
-        ("Manual planning", "review"),
-        ("Display-only", "safe"),
-        ("Manual context", "safe"),
+        ("Guided seven-step plan", "safe"),
+        ("Saved locally", "safe"),
+        ("Links to Mock Drafts", "review"),
     ),
 )
 
 render_upcoming_draft_prep()
-
-section_label("Guardrails")
-render_guardrails()
+render_planning_advanced_details()

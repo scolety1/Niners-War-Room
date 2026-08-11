@@ -9,25 +9,23 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.development_lab import (  # noqa: E402
     render_future_pick_planning,
-    render_guardrails,
+    render_planning_advanced_details,
 )
-from app.components.ui_framework import page_header, section_label  # noqa: E402
+from app.components.ui_framework import page_header  # noqa: E402
 
 page_header(
-    "Future Pick Planning",
-    eyebrow="Development Lab / Safe V0",
+    "Future Pick Planner",
+    eyebrow="Team Planning",
     description=(
-        "Future pick and asset ledger for planning notes. It may read manual Draft Cockpit "
-        "trade events, while keeping pick/trade context descriptive and manual."
+        "Keep one clear inventory of the future picks you own, acquired, sent, or still "
+        "need to verify before building a trade or draft plan."
     ),
     status_items=(
-        ("Planning ledger", "review"),
-        ("Display-only", "safe"),
-        ("Manual context", "safe"),
+        ("Guided pick entry", "safe"),
+        ("Saved locally", "safe"),
+        ("No automatic price", "review"),
     ),
 )
 
 render_future_pick_planning()
-
-section_label("Guardrails")
-render_guardrails()
+render_planning_advanced_details()

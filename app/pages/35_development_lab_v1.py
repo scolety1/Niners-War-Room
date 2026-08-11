@@ -32,11 +32,11 @@ from app.components.development_lab import (  # noqa: E402
 from app.components.ui_framework import page_header, section_label  # noqa: E402
 
 page_header(
-    "Lab Home",
-    eyebrow="Development Lab",
+    "Research Tools",
+    eyebrow="Advanced / Data",
     description=(
-        "Control board for Safe V0 manual/display tools, blocked gates, and future-only ideas. "
-        "Everything here is display-only/manual, not model truth or source truth."
+        "Inspect experimental evidence, candidate reviews, data readiness, and research ideas. "
+        "Team and draft planning tools now live in their task-oriented destinations."
     ),
     status_items=(
         ("Safe V0 only", "review"),
@@ -50,7 +50,7 @@ render_lab_warning()
 statuses = load_statuses()
 render_tool_status_metrics(statuses)
 
-section_label("Lab Home / Status Board")
+section_label("Research Status Board")
 render_review_upgrade_status_board()
 
 section_label("Dataset Browser")

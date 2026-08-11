@@ -7,24 +7,25 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.components.development_lab import render_deadline_prep, render_guardrails  # noqa: E402
-from app.components.ui_framework import page_header, section_label  # noqa: E402
+from app.components.development_lab import (  # noqa: E402
+    render_deadline_prep,
+    render_planning_advanced_details,
+)
+from app.components.ui_framework import page_header  # noqa: E402
 
 page_header(
     "Drop Deadline Prep",
-    eyebrow="Development Lab / Safe V0",
+    eyebrow="Team Planning",
     description=(
-        "Manual drop-deadline checklist and review notes. It records missing data and "
-        "human-review status only."
+        "Capture the deadline, list the roster questions that still matter, and complete "
+        "the final checks before making any cuts."
     ),
     status_items=(
-        ("Checklist only", "review"),
-        ("Manual notes", "safe"),
-        ("Human review", "safe"),
+        ("Trackable checklist", "safe"),
+        ("Saved locally", "safe"),
+        ("You make the cuts", "review"),
     ),
 )
 
 render_deadline_prep("drop_deadline_prep", "Drop Deadline Prep")
-
-section_label("Guardrails")
-render_guardrails()
+render_planning_advanced_details()

@@ -20,10 +20,10 @@ from app.components.ui_framework import page_header, section_label  # noqa: E402
 
 page_header(
     "Future Tools",
-    eyebrow="Development Lab / Roadmap Ideas",
+    eyebrow="Advanced / Roadmap",
     description=(
-        "Ideas-only parking lot for tools that are not active yet. Safe V0 lab tools now "
-        "live on their own Development Lab pages."
+        "Ideas-only parking lot for tools that are not active yet. Owner planning tools live "
+        "in Team Planning or Draft Tools instead."
     ),
     status_items=(
         ("Roadmap only", "review"),
@@ -45,14 +45,10 @@ render_future_tool_gate_badges(statuses)
 section_label("What Is Not Active Here")
 render_guardrails()
 
-section_label("Safe V0 Lab Tools Moved")
-st_link = '<a href="/development-lab" target="_self">Open Development Lab</a>'
-
+section_label("Graduated Planning Tools")
 st.markdown(
-    (
-        "Roster Weakness Tracker, Future Pick Planning, Keeper Deadline Prep, "
-        "Drop Deadline Prep, and Trade Deadline Prep are now split into their own "
-        f"Safe V0 lab pages. {st_link}"
-    ),
-    unsafe_allow_html=True,
+    "Roster Planner, Future Pick Planner, Keeper Deadline Prep, "
+    "Drop Deadline Prep, and Trade Deadline Prep live in **Team Planning**. "
+    "Upcoming Draft Prep lives in **Draft Tools**. Technical research and gate detail "
+    "remains in [Research Tools](/development-lab)."
 )

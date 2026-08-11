@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import streamlit as st
 
@@ -46,6 +48,7 @@ from src.services.display_only_ngs_context_service import (
 from src.services.draft_day_runtime_state_service import load_runtime_state_with_status
 from src.services.future_tools_rd_service import (
     FutureToolStatus,
+    append_manual_csv_row,
     blocked_tools,
     deadline_checklist,
     development_lab_readiness_rows,
@@ -81,8 +84,8 @@ UPCOMING_DRAFT_PREP_WARNING = (
 )
 
 TOOL_LABELS = {
-    "roster_weakness_tracker": "Roster Weakness Tracker",
-    "future_pick_planning": "Future Pick Planning",
+    "roster_weakness_tracker": "Roster Planner",
+    "future_pick_planning": "Future Pick Planner",
     "upcoming_draft_prep": "Upcoming Draft Prep",
     "keeper_deadline_prep": "Keeper Deadline Prep",
     "drop_deadline_prep": "Drop Deadline Prep",
@@ -96,6 +99,107 @@ def load_statuses() -> list[FutureToolStatus]:
 
 def render_lab_warning() -> None:
     st.warning(LAB_WARNING)
+
+
+def render_planner_note() -> None:
+    st.caption(
+        "This workspace saves only your local planning notes. It never changes NWR "
+        "rankings, projections, or league data."
+    )
+
+
+def _guided_manual_entry(
+    *,
+    storage_key: str,
+    form_key: str,
+    fields: tuple[tuple[str, str, str, tuple[str, ...]], ...],
+    required_field: str,
+    paste_label: str,
+    paste_help: str,
+) -> str:
+    """Render an approachable one-row form while retaining bulk-paste compatibility."""
+
+    values: dict[str, str] = {}
+    with st.form(form_key, clear_on_submit=True):
+        columns = st.columns(min(len(fields), 3))
+        for index, (field_key, label, placeholder, options) in enumerate(fields):
+            container = columns[index % len(columns)]
+            if options:
+                values[field_key] = container.selectbox(
+                    label,
+                    options,
+                    key=f"{form_key}_{field_key}",
+                )
+            else:
+                values[field_key] = container.text_input(
+                    label,
+                    placeholder=placeholder,
+                    key=f"{form_key}_{field_key}",
+                )
+        submitted = st.form_submit_button("Add to plan", type="primary")
+    if submitted:
+        if not values.get(required_field, "").strip():
+            st.warning(f"Enter {required_field.replace('_', ' ')} before adding this row.")
+        else:
+            current = str(st.session_state.get(storage_key, "") or "")
+            ordered = tuple(values[field_key] for field_key, *_rest in fields)
+            st.session_state[storage_key] = append_manual_csv_row(current, ordered)
+            st.rerun()
+
+    with st.expander("Paste or edit several rows", expanded=False):
+        return st.text_area(
+            paste_label,
+            key=storage_key,
+            help=paste_help,
+        )
+
+
+def _owner_table(
+    rows: list[dict[str, object]],
+    columns: tuple[tuple[str, str], ...],
+) -> None:
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return
+    selected = [source for source, _label in columns if source in frame.columns]
+    labels = {source: label for source, label in columns}
+    st.dataframe(
+        frame[selected].rename(columns=labels),
+        width="stretch",
+        hide_index=True,
+    )
+
+
+def _interactive_checklist(
+    rows: list[dict[str, str]],
+    *,
+    task_column: str,
+    storage_key: str,
+    widget_prefix: str,
+) -> list[dict[str, str]]:
+    try:
+        completed = set(json.loads(str(st.session_state.get(storage_key, "[]") or "[]")))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        completed = set()
+    updated: list[dict[str, str]] = []
+    for index, row in enumerate(rows):
+        task = str(row.get(task_column, ""))
+        is_done = st.checkbox(
+            task,
+            value=task in completed,
+            key=f"{widget_prefix}_{index}",
+        )
+        next_row = dict(row)
+        next_row["status"] = "Done" if is_done else "To do"
+        updated.append(next_row)
+        if is_done:
+            completed.add(task)
+        else:
+            completed.discard(task)
+    st.session_state[storage_key] = json.dumps(sorted(completed))
+    done = sum(row["status"] == "Done" for row in updated)
+    st.progress(done / len(updated) if updated else 0.0, text=f"{done} of {len(updated)} complete")
+    return updated
 
 
 def render_roadmap_warning() -> None:
@@ -240,8 +344,8 @@ def render_future_tool_gate_badges(statuses: list[FutureToolStatus]) -> None:
 def render_lab_links() -> None:
     link_cols = st.columns(3)
     links = (
-        ("Roster Weakness Tracker", "/roster-weakness-tracker"),
-        ("Future Pick Planning", "/future-pick-planning"),
+        ("Roster Planner", "/roster-weakness-tracker"),
+        ("Future Pick Planner", "/future-pick-planning"),
         ("Upcoming Draft Prep", "/upcoming-draft-prep"),
         ("Keeper Deadline Prep", "/keeper-deadline-prep"),
         ("Drop Deadline Prep", "/drop-deadline-prep"),
@@ -250,7 +354,7 @@ def render_lab_links() -> None:
     )
     for index, (label, path) in enumerate(links):
         with link_cols[index % 3]:
-            st.link_button(label, path, use_container_width=True)
+            st.link_button(label, path, width="stretch")
 
 
 def render_local_lab_state_status() -> None:
@@ -265,7 +369,7 @@ def render_local_lab_state_status() -> None:
                 "Guardrail": "Local lab notes only; not model input or source truth.",
             }
         )
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
     st.caption(
         "Saved Development Lab notes use the configured local manual-state root and are not "
         "tracked by git. Export JSON before major review sessions if you want a portable copy."
@@ -283,7 +387,7 @@ def render_bulk_lab_state_controls() -> None:
         file_name="nwr_development_lab_all_manual_state.json",
         mime="application/json",
         key="development_lab_bulk_export_state",
-        use_container_width=True,
+        width="stretch",
     )
     with st.expander("Import all local lab notes", expanded=False):
         uploaded = st.file_uploader(
@@ -332,128 +436,191 @@ def render_bulk_lab_state_controls() -> None:
 
 
 def render_roster_weakness_tracker() -> None:
-    render_lab_warning()
-    st.caption(
-        "Display-only roster structure. Not model input. Local lab notes can be saved "
-        "and reloaded."
-    )
+    render_planner_note()
     fields = {"manual_roster_rows": "development_lab_roster_weakness_tracker_rows"}
     _hydrate_local_lab_state("roster_weakness_tracker", fields)
-    roster_text = st.text_area(
-        "Manual roster rows",
-        placeholder="Player, Position, Age, Dynasty Rank, Notes, NWR Player ID",
-        key="development_lab_roster_weakness_tracker_rows",
-        help=(
-            "Optional manual input. Save local lab state to preserve it across reloads. "
-            "Add NWR Player ID to join display-only NFLVerse context. Missing values stay "
-            "Not enough information."
+    st.subheader("Add a roster player")
+    roster_text = _guided_manual_entry(
+        storage_key="development_lab_roster_weakness_tracker_rows",
+        form_key="roster_planner_add_player",
+        fields=(
+            ("player", "Player", "Player name", ()),
+            ("position", "Position", "", ("QB", "RB", "WR", "TE", "K", "DST")),
+            ("age", "Age (optional)", "Example: 24", ()),
+            ("dynasty_rank", "Dynasty rank (optional)", "Example: 18", ()),
+            ("notes", "Notes (optional)", "Role, injury, or roster context", ()),
+            ("nwr_player_id", "NWR player ID (advanced)", "Optional exact ID", ()),
+        ),
+        required_field="player",
+        paste_label="Roster rows",
+        paste_help=(
+            "One player per line: Player, Position, Age, Dynasty Rank, Notes, NWR Player ID. "
+            "Quoted commas are supported."
         ),
     )
     rows = parse_manual_roster_text(roster_text)
     if not rows:
-        _render_roster_status_context(())
         st.info(
-            "Enter manual roster rows to generate display-only counts. "
-            "Only manual/display-only summaries are shown."
+            "Add your first player to see position depth, age balance, and dynasty-rank bands."
         )
+        with st.expander("Advanced data details", expanded=False):
+            _render_roster_status_context(())
         _render_lab_state_controls("roster_weakness_tracker", fields)
         return
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    _render_roster_status_context(manual_nwr_player_ids(rows))
+    section = st.container()
+    with section:
+        st.subheader("Your roster plan")
+        _owner_table(
+            rows,
+            (
+                ("player", "Player"),
+                ("position", "Pos"),
+                ("age", "Age"),
+                ("dynasty_rank", "Dynasty Rank"),
+                ("notes", "Notes"),
+            ),
+        )
     col_a, col_b = st.columns(2)
     with col_a:
-        st.caption("Position coverage versus simple starter-count thresholds")
-        st.dataframe(pd.DataFrame(roster_position_summary(rows)), use_container_width=True)
-        st.caption("Age buckets")
-        st.dataframe(pd.DataFrame(roster_age_bucket_summary(rows)), use_container_width=True)
+        st.subheader("Position depth")
+        _owner_table(
+            roster_position_summary(rows),
+            (
+                ("position", "Pos"),
+                ("player_count", "Players"),
+                ("starter_threshold", "Starter Need"),
+                ("coverage_note", "What to review"),
+            ),
+        )
+        st.subheader("Age balance")
+        _owner_table(
+            roster_age_bucket_summary(rows),
+            (("age_bucket", "Age Band"), ("player_count", "Players")),
+        )
     with col_b:
-        st.caption("Dynasty Rank buckets, if manually provided")
-        st.dataframe(
-            pd.DataFrame(roster_dynasty_rank_bucket_summary(rows)),
-            use_container_width=True,
+        st.subheader("Dynasty asset bands")
+        _owner_table(
+            roster_dynasty_rank_bucket_summary(rows),
+            (("dynasty_rank_bucket", "Rank Band"), ("player_count", "Players")),
         )
         csv_download(
-            "Download roster structure CSV",
+            "Download roster plan",
             rows,
             "nwr_roster_weakness_tracker_v0_display_only.csv",
         )
+    with st.expander("Advanced data details", expanded=False):
+        _render_roster_status_context(manual_nwr_player_ids(rows))
     _render_lab_state_controls("roster_weakness_tracker", fields)
 
 
 def render_future_pick_planning() -> None:
-    render_lab_warning()
-    st.caption(
-        "Planning ledger only. Pick and trade context stays descriptive/manual. "
-        "Local manual notes can be saved and reloaded."
-    )
-    _render_draft_capital_context()
+    render_planner_note()
     fields = {"manual_future_pick_notes": "development_lab_future_pick_planning_rows"}
     _hydrate_local_lab_state("future_pick_planning", fields)
     live_state_result = load_runtime_state_with_status(mode="live")
     runtime_rows = future_pick_ledger_from_runtime_state(live_state_result.state)
-    st.caption(
-        f"Live runtime state status: {live_state_result.status}. Runtime events are manual/local "
-        "and not official source truth."
-    )
-    if runtime_rows:
-        st.dataframe(pd.DataFrame(runtime_rows), use_container_width=True, hide_index=True)
-    else:
-        st.info("No future picks found in the live runtime trade event log.")
-    manual_text = st.text_area(
-        "Manual future pick notes",
-        placeholder="2028, 1st, acquired, WhoDat, confirm against Sleeper later",
-        key="development_lab_future_pick_planning_rows",
-        help="Optional manual notes. Save local lab state to preserve them across reloads.",
+    st.subheader("Add a future pick")
+    manual_text = _guided_manual_entry(
+        storage_key="development_lab_future_pick_planning_rows",
+        form_key="future_pick_planner_add_pick",
+        fields=(
+            ("pick_year", "Year", "Example: 2028", ()),
+            ("pick_round", "Round", "", ("1st", "2nd", "3rd", "4th", "Other")),
+            (
+                "direction",
+                "Ownership status",
+                "",
+                ("Owned", "Acquired", "Sent", "Swap rights", "Uncertain"),
+            ),
+            ("counterparty", "From / to (optional)", "Team or manager", ()),
+            ("notes", "Notes (optional)", "Conditions or verification needed", ()),
+        ),
+        required_field="pick_year",
+        paste_label="Future pick rows",
+        paste_help=(
+            "One pick per line: Year, Round, Ownership Status, From/To, Notes. "
+            "Quoted commas are supported."
+        ),
     )
     manual_rows = parse_manual_future_pick_text(manual_text)
-    if manual_rows:
-        st.dataframe(pd.DataFrame(manual_rows), use_container_width=True, hide_index=True)
+    combined = [*runtime_rows, *manual_rows]
+    st.subheader("Pick inventory")
+    if combined:
+        _owner_table(
+            combined,
+            (
+                ("pick_year", "Year"),
+                ("pick_round", "Round"),
+                ("direction", "Status"),
+                ("counterparty", "From / To"),
+                ("notes", "Notes"),
+                ("source", "Source"),
+            ),
+        )
+    else:
+        st.info("Add a pick or record one in a saved trade scenario to begin your inventory.")
     csv_download(
-        "Download future pick planning CSV",
-        [*runtime_rows, *manual_rows],
+        "Download pick inventory",
+        combined,
         "nwr_future_pick_planning_v0_display_only.csv",
     )
+    with st.expander("Advanced data details", expanded=False):
+        st.caption(f"Local draft-event status: {live_state_result.status}")
+        _render_draft_capital_context()
     _render_lab_state_controls("future_pick_planning", fields)
 
 
 def render_upcoming_draft_prep() -> None:
-    st.warning(UPCOMING_DRAFT_PREP_WARNING)
-    st.info(
-        "Local lab notes only. Save to preserve manual inputs across reloads. "
-        "This is not model input, source truth, or draft-room runtime state."
-    )
-    _render_draft_capital_context()
+    render_planner_note()
     fields = {
         "setup_notes": "development_lab_upcoming_draft_setup_notes",
+        "setup_completed": "development_lab_upcoming_draft_setup_completed",
         "roster_need_rows": "development_lab_upcoming_roster_needs",
         "pick_inventory_rows": "development_lab_upcoming_pick_inventory",
         "watchlist_rows": "development_lab_upcoming_watchlist",
         "scenario_rows": "development_lab_upcoming_mock_scenarios",
         "question_notes": "development_lab_upcoming_question_notes",
+        "questions_completed": "development_lab_upcoming_questions_completed",
         "readiness_notes": "development_lab_upcoming_readiness_notes",
+        "readiness_completed": "development_lab_upcoming_readiness_completed",
     }
     _hydrate_local_lab_state("upcoming_draft_prep", fields)
 
-    st.subheader("Draft Setup Checklist")
+    st.subheader("1. Draft setup")
     setup_notes = st.text_area(
-        "Draft setup notes",
+        "Setup notes (optional)",
         key="development_lab_upcoming_draft_setup_notes",
         help="Optional manual note. Save local lab state to preserve it across reloads.",
     )
-    setup_rows = upcoming_draft_setup_checklist(notes=setup_notes)
-    st.dataframe(pd.DataFrame(setup_rows), use_container_width=True, hide_index=True)
+    setup_rows = _interactive_checklist(
+        upcoming_draft_setup_checklist(notes=setup_notes),
+        task_column="task",
+        storage_key="development_lab_upcoming_draft_setup_completed",
+        widget_prefix="upcoming_draft_setup_check",
+    )
     csv_download(
-        "Download draft setup checklist CSV",
+        "Download setup checklist",
         setup_rows,
         "nwr_draft_setup_checklist_v0.csv",
     )
 
-    st.subheader("Roster Needs Snapshot")
-    st.caption("Manual/display-only planning area. No position target plan is generated.")
-    roster_need_text = st.text_area(
-        "Roster need rows",
-        placeholder="Position, short-term need, long-term need, depth concern notes, watch notes",
-        key="development_lab_upcoming_roster_needs",
+    st.subheader("2. Roster needs")
+    roster_need_text = _guided_manual_entry(
+        storage_key="development_lab_upcoming_roster_needs",
+        form_key="upcoming_draft_add_roster_need",
+        fields=(
+            ("position", "Position", "", ("QB", "RB", "WR", "TE", "K", "DST")),
+            ("short_term_need", "Short-term need", "Example: starter depth", ()),
+            ("long_term_need", "Long-term need", "Example: aging room", ()),
+            ("depth_concern_notes", "Depth concern", "What is thin?", ()),
+            ("watch_notes", "Draft note", "What should you watch?", ()),
+        ),
+        required_field="position",
+        paste_label="Roster need rows",
+        paste_help=(
+            "One need per line: Position, Short-term Need, Long-term Need, "
+            "Depth Concern, Draft Note."
+        ),
     )
     roster_need_rows = parse_manual_table_text(
         roster_need_text,
@@ -467,32 +634,41 @@ def render_upcoming_draft_prep() -> None:
         source="Manual input / display-only",
         guardrail="Planning notes only; no position target plan.",
     )
-    _render_optional_manual_table(roster_need_rows, "No roster need notes entered.")
+    if roster_need_rows:
+        _owner_table(
+            roster_need_rows,
+            (
+                ("position", "Pos"),
+                ("short_term_need", "Now"),
+                ("long_term_need", "Later"),
+                ("depth_concern_notes", "Depth Concern"),
+                ("watch_notes", "Draft Note"),
+            ),
+        )
+    else:
+        st.info("Add the position rooms you want to improve in this draft.")
     csv_download(
         "Download roster needs CSV",
         roster_need_rows,
         "nwr_upcoming_draft_roster_needs_v0.csv",
     )
 
-    st.subheader("Pick Inventory / Asset Prep")
-    st.caption(
-        "Planning ledger only. Pick context stays descriptive; no class-strength labels "
-        "or trade calculator."
-    )
+    st.subheader("3. Pick inventory")
     live_state_result = load_runtime_state_with_status(mode="live")
     runtime_rows = future_pick_ledger_from_runtime_state(live_state_result.state)
-    st.caption(
-        f"Live runtime state status: {live_state_result.status}. Future picks from the event log "
-        "are manual/local context only."
-    )
-    _render_optional_manual_table(
-        runtime_rows,
-        "No future picks found in the live runtime event log.",
-    )
-    pick_text = st.text_area(
-        "Manual pick inventory rows",
-        placeholder="Year, round/pick, owned/sent/acquired/uncertain, source/note, action needed",
-        key="development_lab_upcoming_pick_inventory",
+    pick_text = _guided_manual_entry(
+        storage_key="development_lab_upcoming_pick_inventory",
+        form_key="upcoming_draft_add_pick",
+        fields=(
+            ("year", "Year", "Example: 2027", ()),
+            ("round_pick", "Round / pick", "Example: 1.08", ()),
+            ("status", "Status", "", ("Owned", "Acquired", "Sent", "Uncertain")),
+            ("source_note", "Source / note", "Where did this come from?", ()),
+            ("action_needed", "Next action", "Verify, hold, shop, or package", ()),
+        ),
+        required_field="year",
+        paste_label="Pick inventory rows",
+        paste_help="One pick per line: Year, Round/Pick, Status, Source/Note, Next Action.",
     )
     pick_rows = parse_manual_table_text(
         pick_text,
@@ -500,21 +676,51 @@ def render_upcoming_draft_prep() -> None:
         source="Manual input / display-only",
         guardrail="Planning ledger only; no pick/trade math.",
     )
-    _render_optional_manual_table(pick_rows, "No manual pick inventory rows entered.")
+    combined_picks = [*runtime_rows, *pick_rows]
+    if combined_picks:
+        display_picks = [
+            {
+                "year": row.get("year") or row.get("pick_year"),
+                "round_pick": row.get("round_pick") or row.get("pick_round"),
+                "status": row.get("status") or row.get("direction"),
+                "source_note": row.get("source_note") or row.get("notes"),
+                "action_needed": row.get("action_needed", ""),
+            }
+            for row in combined_picks
+        ]
+        _owner_table(
+            display_picks,
+            (
+                ("year", "Year"),
+                ("round_pick", "Round / Pick"),
+                ("status", "Status"),
+                ("source_note", "Source / Note"),
+                ("action_needed", "Next Action"),
+            ),
+        )
+    else:
+        st.info("Add the picks you expect to control on draft day.")
     csv_download(
         "Download pick inventory CSV",
-        [*runtime_rows, *pick_rows],
+        combined_picks,
         "nwr_upcoming_draft_pick_inventory_v0.csv",
     )
 
-    st.subheader("Rookie / Prospect Watchlist Placeholder")
-    st.caption(
-        "Manual watchlist only. CFBD/prospect data remains review-only unless separately approved."
-    )
-    watchlist_text = st.text_area(
-        "Manual rookie/prospect watchlist rows",
-        placeholder="Player name, school/team, position, note, source note, review status",
-        key="development_lab_upcoming_watchlist",
+    st.subheader("4. Rookie watchlist")
+    watchlist_text = _guided_manual_entry(
+        storage_key="development_lab_upcoming_watchlist",
+        form_key="upcoming_draft_add_watchlist",
+        fields=(
+            ("player_name", "Player", "Prospect name", ()),
+            ("school_team", "School / team", "Optional", ()),
+            ("position", "Position", "", ("QB", "RB", "WR", "TE", "Other")),
+            ("note", "Why watch?", "Your scouting question", ()),
+            ("source_note", "Source note", "Optional", ()),
+            ("review_status", "Status", "", ("Need review", "Watching", "Done")),
+        ),
+        required_field="player_name",
+        paste_label="Watchlist rows",
+        paste_help="One player per line: Player, School/Team, Position, Why Watch, Source, Status.",
     )
     watchlist_rows = parse_manual_table_text(
         watchlist_text,
@@ -522,23 +728,43 @@ def render_upcoming_draft_prep() -> None:
         source="Manual input / display-only",
         guardrail="Manual watchlist only; no CFBD promotion, rank change, or model output.",
     )
-    _render_optional_manual_table(watchlist_rows, "No manual watchlist rows entered.")
+    if watchlist_rows:
+        _owner_table(
+            watchlist_rows,
+            (
+                ("player_name", "Player"),
+                ("school_team", "School / Team"),
+                ("position", "Pos"),
+                ("note", "Why Watch"),
+                ("review_status", "Status"),
+            ),
+        )
+    else:
+        st.info("Add prospects you want to investigate before the draft.")
     csv_download(
         "Download rookie watchlist CSV",
         watchlist_rows,
         "nwr_upcoming_draft_manual_watchlist_v0.csv",
     )
 
-    st.subheader("Mock Draft Scenario Prep")
-    st.caption("Manual scenario notes only. Use Mock Drafts for experiments.")
-    st.link_button("Open Mock Drafts", "/mock-draft", use_container_width=False)
-    scenario_text = st.text_area(
-        "Manual mock draft scenario rows",
-        placeholder=(
-            "Scenario name, what happens before my pick, trade-down scenario, "
-            "position run scenario, if player X is gone"
+    st.subheader("5. Draft scenarios")
+    st.link_button("Open Mock Drafts", "/mock-draft", width="content")
+    scenario_text = _guided_manual_entry(
+        storage_key="development_lab_upcoming_mock_scenarios",
+        form_key="upcoming_draft_add_scenario",
+        fields=(
+            ("scenario_name", "Scenario", "Example: RB run before 1.08", ()),
+            ("before_my_pick", "Before my pick", "What happens?", ()),
+            ("trade_down_scenario", "Trade-down option", "Optional", ()),
+            ("position_run_scenario", "Position run", "Optional", ()),
+            ("if_player_x_is_gone", "Fallback", "What if your target is gone?", ()),
         ),
-        key="development_lab_upcoming_mock_scenarios",
+        required_field="scenario_name",
+        paste_label="Draft scenario rows",
+        paste_help=(
+            "One scenario per line: Scenario, Before My Pick, Trade-down Option, "
+            "Position Run, Fallback."
+        ),
     )
     scenario_rows = parse_manual_table_text(
         scenario_text,
@@ -552,71 +778,101 @@ def render_upcoming_draft_prep() -> None:
         source="Manual input / display-only",
         guardrail="Scenario prep only; no automated mock simulation or active output.",
     )
-    _render_optional_manual_table(scenario_rows, "No manual mock draft scenarios entered.")
+    if scenario_rows:
+        _owner_table(
+            scenario_rows,
+            (
+                ("scenario_name", "Scenario"),
+                ("before_my_pick", "Before My Pick"),
+                ("trade_down_scenario", "Trade-down"),
+                ("position_run_scenario", "Position Run"),
+                ("if_player_x_is_gone", "Fallback"),
+            ),
+        )
+    else:
+        st.info("Add the draft-board situations you want to rehearse.")
     csv_download(
         "Download mock scenario CSV",
         scenario_rows,
         "nwr_upcoming_draft_mock_scenarios_v0.csv",
     )
 
-    st.subheader("Questions to Answer Before Draft")
+    st.subheader("6. Questions to answer")
     question_notes = st.text_area(
         "Open question notes",
         key="development_lab_upcoming_question_notes",
     )
-    question_rows = upcoming_draft_questions_checklist(notes=question_notes)
-    st.dataframe(pd.DataFrame(question_rows), use_container_width=True, hide_index=True)
+    question_rows = _interactive_checklist(
+        upcoming_draft_questions_checklist(notes=question_notes),
+        task_column="question",
+        storage_key="development_lab_upcoming_questions_completed",
+        widget_prefix="upcoming_draft_question_check",
+    )
     csv_download(
         "Download draft questions CSV",
         question_rows,
         "nwr_upcoming_draft_questions_v0.csv",
     )
 
-    st.subheader("Data Readiness Checklist")
-    st.caption("Manual/status checklist only. This is not a refresh button or data promotion tool.")
+    st.subheader("7. Final readiness")
     readiness_notes = st.text_area(
         "Data readiness notes",
         key="development_lab_upcoming_readiness_notes",
     )
-    readiness_rows = upcoming_draft_data_readiness_checklist(notes=readiness_notes)
-    st.dataframe(pd.DataFrame(readiness_rows), use_container_width=True, hide_index=True)
+    readiness_rows = _interactive_checklist(
+        upcoming_draft_data_readiness_checklist(notes=readiness_notes),
+        task_column="check",
+        storage_key="development_lab_upcoming_readiness_completed",
+        widget_prefix="upcoming_draft_readiness_check",
+    )
     csv_download(
         "Download data readiness CSV",
         readiness_rows,
         "nwr_upcoming_draft_data_readiness_v0.csv",
     )
+    with st.expander("Advanced data details", expanded=False):
+        st.caption(f"Local draft-event status: {live_state_result.status}")
+        _render_draft_capital_context()
     _render_lab_state_controls("upcoming_draft_prep", fields)
 
 
 def render_deadline_prep(tool_id: str, title: str) -> None:
-    render_lab_warning()
-    st.caption(
-        "Manual checklist only. Not a decision engine. Not model input. "
-        "Local lab notes can be saved and reloaded."
-    )
-    _render_deadline_status_context()
+    render_planner_note()
     fields = {
         "manual_deadline_date": f"development_lab_{tool_id}_date",
         "manual_notes": f"development_lab_{tool_id}_notes",
+        "completed_tasks": f"development_lab_{tool_id}_completed",
     }
     _hydrate_local_lab_state(tool_id, fields)
+    st.subheader("Deadline and plan")
     date_text = st.text_input(
-        f"{title} manual deadline date",
-        placeholder="YYYY-MM-DD or league note",
+        "League deadline",
+        placeholder="YYYY-MM-DD, time, or league note",
         key=f"development_lab_{tool_id}_date",
     )
     notes = st.text_area(
-        f"{title} manual notes",
+        "Plan notes",
         key=f"development_lab_{tool_id}_notes",
-        help="Optional manual note. Save local lab state to preserve it across reloads.",
+        help="Record the decisions, questions, and people you need to follow up with.",
     )
-    rows = deadline_checklist(tool_id, date_text=date_text, notes=notes)
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.subheader("Checklist")
+    rows = _interactive_checklist(
+        deadline_checklist(
+            tool_id,
+            date_text=date_text,
+            notes=notes,
+        )[:-1],
+        task_column="task",
+        storage_key=f"development_lab_{tool_id}_completed",
+        widget_prefix=f"{tool_id}_check",
+    )
     csv_download(
-        f"Download {title} checklist CSV",
+        "Download checklist",
         rows,
         f"nwr_{tool_id}_v0_manual_checklist.csv",
     )
+    with st.expander("Advanced data details", expanded=False):
+        _render_deadline_status_context()
     _render_lab_state_controls(tool_id, fields)
 
 
@@ -635,6 +891,11 @@ def render_guardrails() -> None:
     )
 
 
+def render_planning_advanced_details() -> None:
+    with st.expander("Advanced data details and safety", expanded=False):
+        render_guardrails()
+
+
 def csv_download(label: str, rows: list[dict[str, object]], filename: str) -> None:
     if not rows:
         return
@@ -643,12 +904,12 @@ def csv_download(label: str, rows: list[dict[str, object]], filename: str) -> No
 
 
 def _tool_table(rows: list[dict[str, str]]) -> None:
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
 
 def _render_optional_manual_table(rows: list[dict[str, str]], empty_message: str) -> None:
     if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
     else:
         st.info(empty_message)
 
@@ -710,43 +971,41 @@ def _hydrate_local_lab_state(tool_key: str, fields: dict[str, str]) -> None:
         for payload_key, widget_key in fields.items():
             if widget_key not in st.session_state and payload_key in state.payload:
                 st.session_state[widget_key] = state.payload[payload_key]
-        st.caption(f"Local lab state loaded. Last updated: {state.saved_at_utc}.")
+        st.caption(f"Saved plan loaded. Last updated: {state.saved_at_utc}.")
     elif state.status == "MISSING":
-        st.caption("Local lab state: no saved notes yet.")
+        st.caption("No saved plan yet. Add your notes, then save below.")
     else:
         st.warning(state.message)
 
 
 def _render_lab_state_controls(tool_key: str, fields: dict[str, str]) -> None:
     st.divider()
-    st.subheader("Local Lab State")
-    st.caption(
-        "Local lab notes only. Not model input. Not source truth. Not draft-room runtime state."
-    )
+    st.subheader("Save your plan")
+    st.caption("Saved locally on this computer. Your NWR rankings and league data stay unchanged.")
     payload = _payload_from_session(fields)
     col_save, col_export = st.columns(2)
     if col_save.button(
-        "Save local lab state",
+        "Save this plan",
         key=f"development_lab_{tool_key}_save_state",
-        use_container_width=True,
+        width="stretch",
     ):
         result = save_tool_state(tool_key, payload)
         if result.backup_path:
             st.success(f"Saved. Previous state backed up to {result.backup_path.name}.")
         else:
-            st.success("Saved local lab state.")
+            st.success("Plan saved locally.")
     col_export.download_button(
-        "Export state JSON",
+        "Download backup",
         data=export_tool_state_json(tool_key, payload),
         file_name=f"nwr_development_lab_{tool_key}_state.json",
         mime="application/json",
         key=f"development_lab_{tool_key}_export_state",
-        use_container_width=True,
+        width="stretch",
     )
 
-    with st.expander("Import / reset local lab state", expanded=False):
+    with st.expander("Advanced backup, import, or reset", expanded=False):
         uploaded = st.file_uploader(
-            "Import Development Lab state JSON",
+            "Import a planning backup",
             type=["json"],
             key=f"development_lab_{tool_key}_import_file",
             help="Preview first; import is blocked until explicitly confirmed.",
@@ -778,7 +1037,8 @@ def _render_lab_state_controls(tool_key: str, fields: dict[str, str]) -> None:
                     if result.status == "SAVED" and preview.payload:
                         for payload_key, widget_key in fields.items():
                             st.session_state[widget_key] = preview.payload.get(payload_key, "")
-                        st.success("Imported local lab state.")
+                        _clear_planning_check_widgets(tool_key)
+                        st.success("Planning backup imported.")
                         st.rerun()
                     else:
                         st.warning(result.message)
@@ -786,17 +1046,18 @@ def _render_lab_state_controls(tool_key: str, fields: dict[str, str]) -> None:
                 st.warning(preview.message)
 
         confirm_reset = st.checkbox(
-            "Confirm reset saved local state",
+            "Confirm reset of this saved plan",
             key=f"development_lab_{tool_key}_confirm_reset",
         )
         if st.button(
-            "Reset saved local state",
+            "Reset this plan",
             key=f"development_lab_{tool_key}_reset_state",
         ):
             result = reset_tool_state(tool_key, confirmed=confirm_reset)
             if result.status == "RESET":
                 for widget_key in fields.values():
                     st.session_state[widget_key] = ""
+                _clear_planning_check_widgets(tool_key)
                 if result.backup_path:
                     st.success(f"Reset complete. Backup created: {result.backup_path.name}.")
                 else:
@@ -811,6 +1072,18 @@ def _payload_from_session(fields: dict[str, str]) -> dict[str, str]:
         payload_key: str(st.session_state.get(widget_key, "") or "")
         for payload_key, widget_key in fields.items()
     }
+
+
+def _clear_planning_check_widgets(tool_key: str) -> None:
+    prefixes = (
+        f"{tool_key}_check_",
+        "upcoming_draft_setup_check_",
+        "upcoming_draft_question_check_",
+        "upcoming_draft_readiness_check_",
+    )
+    for key in list(st.session_state):
+        if any(str(key).startswith(prefix) for prefix in prefixes):
+            st.session_state.pop(key, None)
 
 
 def _local_state_status_label(state: DevelopmentLabToolState) -> str:

@@ -74,12 +74,12 @@ VISIBLE_NAVIGATION_PAGES: tuple[NavigationPageSpec, ...] = (
         url_path="development-lab",
     ),
     NavigationPageSpec(
-        title="Roster Weakness Tracker",
+        title="Roster Planner",
         file_path="pages/36_roster_weakness_tracker_v1.py",
         url_path="roster-weakness-tracker",
     ),
     NavigationPageSpec(
-        title="Future Pick Planning",
+        title="Future Pick Planner",
         file_path="pages/37_future_pick_planning_v1.py",
         url_path="future-pick-planning",
     ),

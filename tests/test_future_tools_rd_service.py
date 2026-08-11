@@ -6,6 +6,7 @@ from src.services.future_tools_rd_service import (
     ALLOWED_DECISIONS,
     REFRESH_HEALTH_WAITING,
     SAFE_REFRESH_CONTEXT_READY,
+    append_manual_csv_row,
     deadline_checklist,
     development_lab_readiness_rows,
     future_pick_ledger_from_runtime_state,
@@ -173,6 +174,17 @@ def test_roster_weakness_tracker_is_descriptive_only() -> None:
     assert all("not active output" in row["guardrail"] for row in position_summary)
 
 
+def test_guided_planning_rows_preserve_commas_in_notes() -> None:
+    text = append_manual_csv_row(
+        "",
+        ("Player One", "WR", "23", "19", "Starter, but monitor role", "00-1"),
+    )
+    rows = parse_manual_roster_text(text)
+
+    assert rows[0]["notes"] == "Starter, but monitor role"
+    assert rows[0]["nwr_player_id"] == "00-1"
+
+
 def test_future_pick_planning_does_not_value_picks() -> None:
     state = {
         "trade_events": [
@@ -213,10 +225,17 @@ def test_deadline_prep_toolkit_is_manual_checklist_only() -> None:
     )
 
     assert rows
-    assert rows[0]["status"] == "Not Started"
+    assert rows[0]["status"] == "To do"
     assert rows[0]["manual_deadline"] == "2026-10-31"
     assert rows[-1]["status"] == SAFE_REFRESH_CONTEXT_READY
     assert all("model output" in row["guardrail"] for row in rows[:4])
+
+    completed = deadline_checklist(
+        "trade_deadline_prep",
+        completed_tasks=("Confirm league trade deadline",),
+    )
+    assert completed[0]["status"] == "Done"
+    assert completed[1]["status"] == "To do"
 
 
 def test_upcoming_draft_prep_is_manual_only() -> None:

@@ -8,26 +8,24 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from app.components.development_lab import (  # noqa: E402
-    render_guardrails,
+    render_planning_advanced_details,
     render_roster_weakness_tracker,
 )
-from app.components.ui_framework import page_header, section_label  # noqa: E402
+from app.components.ui_framework import page_header  # noqa: E402
 
 page_header(
-    "Roster Weakness Tracker",
-    eyebrow="Development Lab / Safe V0",
+    "Roster Planner",
+    eyebrow="Team Planning",
     description=(
-        "Manual roster structure view for position counts, starter/depth coverage, and "
-        "display-only notes. Decisions remain human/manual outside this page."
+        "Add your roster to see where you are thin by position, age, and dynasty value. "
+        "Use the result to set priorities before trades, waivers, or the draft."
     ),
     status_items=(
-        ("Display-only", "review"),
-        ("Manual workflow", "safe"),
-        ("Manual decisions", "safe"),
+        ("Guided roster entry", "safe"),
+        ("Saves locally", "safe"),
+        ("You make the decision", "review"),
     ),
 )
 
 render_roster_weakness_tracker()
-
-section_label("Guardrails")
-render_guardrails()
+render_planning_advanced_details()

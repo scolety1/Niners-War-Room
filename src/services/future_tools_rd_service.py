@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import io
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -277,11 +278,7 @@ def tool_refresh_waiting_rows(tool_id: str) -> list[dict[str, str]]:
 
 def parse_manual_roster_text(text: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for line in text.splitlines():
-        raw = line.strip()
-        if not raw:
-            continue
-        parts = [part.strip() for part in raw.split(",")]
+    for parts in _manual_csv_rows(text):
         player = parts[0] if parts else ""
         position = _position(parts[1] if len(parts) > 1 else "")
         rows.append(
@@ -413,11 +410,7 @@ def future_pick_ledger_from_runtime_state(state: dict[str, Any]) -> list[dict[st
 
 def parse_manual_future_pick_text(text: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for line in text.splitlines():
-        raw = line.strip()
-        if not raw:
-            continue
-        parts = [part.strip() for part in raw.split(",")]
+    for parts in _manual_csv_rows(text):
         rows.append(
             {
                 "pick_year": parts[0] if parts else NOT_ENOUGH_INFORMATION,
@@ -440,11 +433,7 @@ def parse_manual_table_text(
     guardrail: str,
 ) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for line in text.splitlines():
-        raw = line.strip()
-        if not raw:
-            continue
-        parts = [part.strip() for part in raw.split(",")]
+    for parts in _manual_csv_rows(text):
         row = {
             column: (
                 parts[index]
@@ -531,7 +520,33 @@ def deadline_checklist(
     *,
     date_text: str = "",
     notes: str = "",
+    completed_tasks: tuple[str, ...] = (),
 ) -> list[dict[str, str]]:
+    tasks = deadline_tasks(tool_id)
+    completed = set(completed_tasks)
+    rows = [
+        {
+            "task": task,
+            "status": "Done" if task in completed else "To do",
+            "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
+            "manual_notes": notes,
+            "guardrail": "Manual checklist only; not active output or model output.",
+        }
+        for task in tasks
+    ]
+    rows.append(
+        {
+            "task": "Read-only roster/status context handoff checked",
+            "status": SAFE_REFRESH_CONTEXT_READY,
+            "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
+            "manual_notes": notes,
+            "guardrail": "Tracked artifact context only; manual checklist remains usable.",
+        }
+    )
+    return rows
+
+
+def deadline_tasks(tool_id: str) -> tuple[str, ...]:
     rows_by_tool = {
         "keeper_deadline_prep": (
             "Confirm league keeper deadline",
@@ -552,27 +567,18 @@ def deadline_checklist(
             "Keep market context display-only",
         ),
     }
-    tasks = rows_by_tool.get(tool_id, ())
-    rows = [
-        {
-            "task": task,
-            "status": "Not Started",
-            "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
-            "manual_notes": notes,
-            "guardrail": "Manual checklist only; not active output or model output.",
-        }
-        for task in tasks
-    ]
-    rows.append(
-        {
-            "task": "Read-only roster/status context handoff checked",
-            "status": SAFE_REFRESH_CONTEXT_READY,
-            "manual_deadline": date_text or NOT_ENOUGH_INFORMATION,
-            "manual_notes": notes,
-            "guardrail": "Tracked artifact context only; manual checklist remains usable.",
-        }
-    )
-    return rows
+    return rows_by_tool.get(tool_id, ())
+
+
+def append_manual_csv_row(text: str, values: tuple[object, ...]) -> str:
+    """Append one comma-safe row to a manual planning payload."""
+
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow([str(value or "").strip() for value in values])
+    existing = str(text or "").rstrip("\r\n")
+    row = buffer.getvalue().rstrip("\r\n")
+    return f"{existing}\n{row}" if existing else row
 
 
 def _manual_checklist_rows(
@@ -608,6 +614,15 @@ def _future_pick_row(
         "notes": str(trade.get("notes") or ""),
         "guardrail": "Planning ledger only; no pick/trade math.",
     }
+
+
+def _manual_csv_rows(text: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for raw_parts in csv.reader(io.StringIO(str(text or ""))):
+        parts = [part.strip() for part in raw_parts]
+        if any(parts):
+            rows.append(parts)
+    return rows
 
 
 def _tool_waiting_alias(tool_id: str) -> str:
