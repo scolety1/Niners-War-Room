@@ -229,6 +229,27 @@ def test_canonical_evidence_preserves_finished_v1_and_recovers_market(monkeypatc
     assert chris["rank_value"] == "12"
 
 
+def test_owner_evidence_preserves_frozen_board_display_market_rank_without_legacy_join() -> None:
+    rows = (_asset("current:9493", "Puka Nacua", rank="1"),)
+    dynasty = pd.DataFrame(
+        [
+            {
+                "player_id": "9493",
+                "player_name": "Puka Nacua",
+                "position": "WR",
+                "nwr_rank": "1",
+                "market_rank": "3.7",
+                "market_rank_source": "market_gap_report.dynasty_startup_adp",
+            }
+        ]
+    )
+
+    evidence = compose_owner_asset_evidence(rows, dynasty_frame=dynasty, include_market=False)
+
+    assert evidence.rows[0]["market_dp_rank"] == "3.7"
+    assert evidence.rows[0]["market_status"] == "Display-only source context"
+
+
 def test_current_trade_is_exact_and_brock_purdy_cannot_ghost_into_any_derived_output() -> None:
     rows = (
         _asset("current:12519", "Luther Burden", rank="85"),

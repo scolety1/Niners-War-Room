@@ -100,7 +100,7 @@ export function AppShell(props: AppShellProps) {
   useEffect(() => setMobileNavOpen(false), [location.pathname]);
   return <div className={`app-frame app-frame--${mode}`}>
     <WindowChrome title={title} />
-    <div aria-hidden={paletteOpen ? true : undefined} className="app-frame__body">
+    <div aria-hidden={paletteOpen ? true : undefined} className="app-frame__body" inert={paletteOpen ? true : undefined}>
       <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}>
         <div className="brand-lockup"><div className="brand-lockup__crest" aria-hidden="true"><span>SF</span><i /></div><div><strong>Niners War Room</strong><span>{mode}</span></div></div>
         <div className="mode-ribbon"><i /><span>{contextLabel}</span></div>
@@ -134,6 +134,30 @@ function CommandPalette({ commands, open, onClose }: { commands: CommandItem[]; 
     if (event.key === "Enter") { event.preventDefault(); openResult(activeIndex); }
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
   };
+  useEffect(() => {
+    if (!open) return;
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const dialog = input.current?.closest<HTMLElement>(".command-palette");
+      const focusable = Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'input:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", trapFocus);
+    return () => window.removeEventListener("keydown", trapFocus);
+  }, [open, results.length]);
   if (!open) return null;
   return <div className="palette-backdrop" onMouseDown={onClose} role="presentation"><section aria-label="Command palette" aria-modal="true" className="command-palette" onMouseDown={(event) => event.stopPropagation()} role="dialog"><div className="command-palette__search"><Icon name="search" /><input aria-activedescendant={results[activeIndex] ? `command-result-${activeIndex}` : undefined} aria-controls="command-results" aria-label="Search commands" onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} onKeyDown={onKeyDown} placeholder="Search players, boards, decisions…" ref={input} value={query} /><kbd>Esc</kbd></div><div className="command-palette__results" id="command-results" role="listbox"><span className="command-palette__label">Best matches</span>{results.map((command, index) => <button aria-selected={activeIndex === index} className={activeIndex === index ? "command-palette__result--active" : ""} id={`command-result-${index}`} key={command.id} onClick={() => openResult(index)} onMouseEnter={() => setActiveIndex(index)} role="option"><span className="command-palette__icon"><Icon name={command.icon} /></span><span><strong>{command.label}</strong><small>{command.detail}</small></span><Icon name="chevron" size={14} /></button>)}{!results.length ? <div className="command-palette__empty">No matching action</div> : null}</div><footer><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>↵</kbd> Open</span></footer></section></div>;
 }

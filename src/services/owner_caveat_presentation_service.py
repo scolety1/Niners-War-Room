@@ -6,6 +6,12 @@ import re
 from collections.abc import Iterable
 
 CAVEAT_PRESENTATION_MAP: dict[str, str] = {
+    "BLOCKED_UNRESOLVED_IDENTITY": (
+        "The source draft record does not yet have an exact player ID."
+    ),
+    "Canonical nflverse draft row has no exact GSIS player_id.": (
+        "The source draft record does not yet have an exact player ID."
+    ),
     "licensed_route_metrics_not_available": "Route-level metrics are unavailable.",
     "not_used_in_stats_first_value": (
         "This evidence is context only and was not used in the production value."
@@ -64,6 +70,13 @@ def owner_caveat_text(code: object) -> str:
         return ""
     if raw in CAVEAT_PRESENTATION_MAP:
         return CAVEAT_PRESENTATION_MAP[raw]
+    if "gsis" in raw.casefold():
+        if "newer governed source" in raw.casefold():
+            return (
+                "A newer source has an exact player ID, but the frozen Rookie Review "
+                "has not been rebuilt with it. The prospect remains visible and unranked."
+            )
+        return "The source draft record does not yet have an exact player ID."
     if " " in raw and "_" not in raw:
         return raw if raw.endswith((".", "!", "?")) else f"{raw}."
     words = re.sub(r"_v\d+\b", "", raw).replace("_", " ")

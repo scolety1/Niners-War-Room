@@ -318,7 +318,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
     <div className="comparison-result">
       <div className="section-title">
         <h2>NWR preference by horizon</h2>
-        <span>Decision first · receipts second</span>
+        <span>Decision first · evidence second</span>
       </div>
       <div className="horizon-grid">
         {result.leans.map((lean) => (

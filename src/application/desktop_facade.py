@@ -47,6 +47,7 @@ from src.services.owner_asset_evidence_service import (
     OwnerAssetEvidenceBundle,
     compose_owner_asset_evidence,
 )
+from src.services.owner_caveat_presentation_service import owner_caveat_text
 from src.services.owner_mode_view_service import (
     market_decision_label,
     market_rank_gap,
@@ -83,6 +84,10 @@ from src.services.player_compare_universe_service import (
     NO_COMMON_SCALE_NOTE,
     PlayerCompareUniverse,
     build_player_compare_universe,
+)
+from src.services.player_rank_owner_explanation_service import (
+    owner_rank_explanation,
+    owner_rank_reason_bullets,
 )
 from src.services.redraft_engine_v1_service import (
     LeagueProfile,
@@ -218,6 +223,7 @@ class _OwnerSnapshot:
     outcome: OutcomeV3DisplayBundle
     evidence: OwnerAssetEvidenceBundle
     compare: PlayerCompareUniverse
+    rank_receipts: Mapping[str, Mapping[str, Any]]
     dynasty_hash: str
     warnings: tuple[str, ...]
 
@@ -920,7 +926,15 @@ class DesktopBackendFacade:
                 position=str(row.get("position")),
             )
             outcomes = matrix.to_dict("records")
-        return FacadePayload(data=self._player_detail_payload(row, outcomes=outcomes))
+        player_id = _text(row.get("player_id"))
+        return FacadePayload(
+            data=self._player_detail_payload(
+                row,
+                outcomes=outcomes,
+                rank_receipt=snapshot.rank_receipts.get(player_id),
+                total_ranked=len(snapshot.rank_receipts),
+            )
+        )
 
     def compare_dynasty_assets(self, asset_ids: Sequence[str]) -> FacadePayload:
         self._require_mode("dynasty")
@@ -1930,6 +1944,11 @@ class DesktopBackendFacade:
             outcome=outcome,
             evidence=evidence,
             compare=compare,
+            rank_receipts={
+                _text(row.get("player_id")): row
+                for row in rankings_source.frame.to_dict("records")
+                if _text(row.get("player_id"))
+            },
             dynasty_hash=rankings_source.source_hash,
             warnings=tuple(dict.fromkeys(warnings)),
         )
@@ -2202,7 +2221,9 @@ class DesktopBackendFacade:
                     "boardScore": _number(source.get("Board Score")),
                     "reviewScore": _number(source.get("Review Score")),
                     "authority": _text(source.get("Authority")),
-                    "blockedReason": _text(source.get("Blocked / pending reason")),
+                    "blockedReason": owner_caveat_text(
+                        source.get("Blocked / pending reason")
+                    ),
                     "warnings": _text(source.get("Warnings")),
                     "confidence": _text(source.get("Confidence")),
                     "age": _number(source.get("Age")),
@@ -2238,6 +2259,8 @@ class DesktopBackendFacade:
         row: Mapping[str, Any],
         *,
         outcomes: Sequence[Mapping[str, Any]],
+        rank_receipt: Mapping[str, Any] | None = None,
+        total_ranked: int = 0,
     ) -> dict[str, Any]:
         range_contract = owner_range_contract(row)
         market_band, _gap_label = market_decision_label(
@@ -2294,14 +2317,71 @@ class DesktopBackendFacade:
                 "status": _text(row.get("market_status")) or "Market data unavailable",
             },
             "risk": owner_risk(row),
-            "reasons": cls._asset_reasons(row),
+            "reasons": cls._asset_reasons(
+                row,
+                rank_receipt=rank_receipt,
+                total_ranked=total_ranked,
+            ),
             "outcomes": [dict(value) for value in outcomes],
             "research": research,
             "caveats": _string_list(row.get("owner_caveats")),
         }
 
     @staticmethod
-    def _asset_reasons(row: Mapping[str, Any]) -> list[str]:
+    def _asset_reasons(
+        row: Mapping[str, Any],
+        *,
+        rank_receipt: Mapping[str, Any] | None = None,
+        total_ranked: int = 0,
+    ) -> list[str]:
+        if rank_receipt:
+            receipt = dict(rank_receipt)
+            summary, _evidence, _caveat = owner_rank_explanation(
+                receipt,
+                total_ranked=max(total_ranked, 1),
+            )
+            useful_bullets = [
+                bullet
+                for bullet in owner_rank_reason_bullets(receipt, limit=24)
+                if bullet.startswith(
+                    (
+                        "Helps:",
+                        "Holds them back:",
+                        "The admitted adjustment",
+                        "Gate context:",
+                        "Watch-out:",
+                    )
+                )
+                and "raw value is not carried" not in bullet
+            ]
+            return list(dict.fromkeys([summary, *useful_bullets]))[:5]
+
+        asset_type = _text(row.get("asset_type"))
+        if asset_type == "Blocked Rookie":
+            blocked_reason = owner_caveat_text(row.get("blocking_reason"))
+            return [
+                f"Not ranked: {blocked_reason}",
+                "Visible for identity review, but blocked from rankings, Compare, and Trade Lab.",
+            ]
+
+        if asset_type == "Rookie Review":
+            reasons: list[str] = []
+            rank = _integer(row.get("rank_value"))
+            score = _number(row.get("score_value"))
+            if rank is not None:
+                score_copy = f" with a review score of {score:.2f}" if score is not None else ""
+                reasons.append(f"Separate 2026 Rookie Review: #{rank}{score_copy}.")
+            if tier := _text(row.get("tier")):
+                reasons.append(
+                    "Rookie tier: " + tier.replace("_", " ").capitalize() + "."
+                )
+            confidence = _text(row.get("confidence"))
+            if confidence == "usable_with_confidence_cap":
+                reasons.append("Usable for review, with confidence capped by evidence gaps.")
+            elif confidence == "capped_review_required":
+                reasons.append("Review required: governed evidence gaps cap confidence.")
+            return reasons
+
         reasons: list[str] = []
         rank = _integer(row.get("dynasty_rank") or row.get("rank_value"))
         if rank is not None:
@@ -2417,10 +2497,15 @@ class DesktopBackendFacade:
         messages = list(health.messages)
         if additional_blocked:
             if status.startswith("READY"):
-                status = "READY_WITH_BLOCKED_PLAYERS"
+                noun = "player" if additional_blocked == 1 else "players"
+                status = f"Ready · {additional_blocked} blocked {noun} visible"
             messages.append(
                 f"{additional_blocked} position-conflict rookies are excluded from rankings."
             )
+        elif status.startswith("READY"):
+            status = "Ready"
+        elif status.startswith("BLOCKED"):
+            status = "Blocked · current-season evidence required"
         return {
             "status": status,
             "playerUniverseAvailable": health.player_universe_available,

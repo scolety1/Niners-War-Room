@@ -88,3 +88,14 @@ export function ownerFieldLabel(value: string) {
     .replace(/^Nfl\b/, "NFL")
     .replace(/\bId\b/g, "ID");
 }
+
+export function ownerResearchValue(key: string, value: unknown) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (Number.isFinite(numeric)) {
+    if (["confidence", "ceilingSignal", "downsideSignal"].includes(key)) {
+      return `${(numeric * 100).toFixed(1)}%`;
+    }
+    if (["outlook3y", "outlook5y"].includes(key)) return numeric.toFixed(2);
+  }
+  return ownerLabel(value);
+}

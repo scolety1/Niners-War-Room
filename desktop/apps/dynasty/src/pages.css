@@ -82,3 +82,6 @@
 .planning-nav strong,
 .planning-canvas__hero h3 { font-size: 12px; }
 .dimension-grid header strong { font-size: 12px; }
+.advanced-details { margin-top: 14px; }
+.advanced-details summary { color: var(--text-soft); cursor: pointer; font-size: 12px; font-weight: 650; padding: 8px 0; }
+.advanced-details[open] summary { margin-bottom: 8px; }

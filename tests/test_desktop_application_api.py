@@ -155,7 +155,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
     }
     assert bootstrap.data["summary"] | {"workspace": None} == {
         "rankedPlayers": 240,
-        "marketMatched": 232,
+        "marketMatched": 239,
         "rookieRows": 80,
         "blockedRookies": 7,
         "outcomeRows": 17280,
@@ -273,6 +273,30 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "sourceAsOf",
         "status",
     }
+    assert "admitted score" in detail.data["reasons"][0].lower()
+    assert all("usable_with_confidence_cap" not in reason for reason in detail.data["reasons"])
+    assert any(
+        reason.startswith(("Holds them back:", "Gate context:", "Watch-out:"))
+        for reason in detail.data["reasons"][1:]
+    )
+
+    blocked_rows = [row for row in bootstrap.data["rookies"] if row["blockedReason"]]
+    assert blocked_rows
+    assert all("canonical" not in row["blockedReason"].lower() for row in blocked_rows)
+    assert all("gsis" not in row["blockedReason"].lower() for row in blocked_rows)
+    blocked_rookie = next(
+        row for row in blocked_rows if row["player"] == "De'Zhaun Stribling"
+    )
+    assert blocked_rookie["blockedReason"] == (
+        "A newer source has an exact player ID, but the frozen Rookie Review has not "
+        "been rebuilt with it. The prospect remains visible and unranked."
+    )
+    blocked_detail = facade.dynasty_asset(blocked_rookie["assetId"])
+    assert blocked_detail.data["reasons"][0] == (
+        "Not ranked: The source draft record does not yet have an exact player ID."
+    )
+    assert "canonical" not in " ".join(blocked_detail.data["reasons"]).lower()
+    assert "gsis" not in " ".join(blocked_detail.data["reasons"]).lower()
 
     assert set(comparison.data) == {"leans", "ranges", "players", "warnings"}
     assert [row["assetId"] for row in comparison.data["players"]] == current_ids
@@ -536,6 +560,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     assert active.data["status"]["ready"] is True
     assert len(active.data["rankings"]) == 608
     assert active.data["health"]["blockedPlayers"] == 2
+    assert active.data["health"]["status"] == "Ready · 2 blocked players visible"
     assert set(active.data["rankings"][0]) == {
         "overallRank",
         "positionRank",

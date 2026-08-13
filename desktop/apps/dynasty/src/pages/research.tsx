@@ -3,7 +3,7 @@ import type { DynastyBootstrap, PlayerDetail, RookieRanking } from "@nwr/contrac
 import { Button, DataTable, EmptyState, ErrorState, MetricCard, PageHeader, Panel, SearchInput, StatusBadge, formatNumber } from "@nwr/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ownerDisplay, ownerFieldLabel, ownerLabel } from "../lib/owner-copy";
+import { ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "../lib/owner-copy";
 
 function OwnerValue({ value, fallback }: { value: unknown; fallback?: string }) {
   const display = ownerDisplay(value, fallback);
@@ -38,7 +38,13 @@ export function PlayerDetailPage({ client, data }: { client: NwrApiClient; data:
   </>;
 }
 
-function PlayerDetailBody({ detail, onCompare, onPersonal, onTrade }: { detail: PlayerDetail; onCompare: () => void; onPersonal: () => void; onTrade: () => void }) {
+function PlayerDetailBody({ detail: sourceDetail, onCompare, onPersonal, onTrade }: { detail: PlayerDetail; onCompare: () => void; onPersonal: () => void; onTrade: () => void }) {
+  const detail = {
+    ...sourceDetail,
+    research: Object.fromEntries(
+      Object.entries(sourceDetail.research).map(([key, value]) => [key, ownerResearchValue(key, value)]),
+    ),
+  };
   const outcomeRows = detail.outcomes.map((row, index) => ({ row: index + 1, ...row }));
   const outcomeColumns = outcomeRows.length ? Object.keys(outcomeRows[0]!).filter((key) => key !== "row").slice(0, 8).map((key) => ({ key, label: ownerFieldLabel(key), render: (row: Record<string, unknown>) => <OwnerValue value={row[key]} /> })) : [];
   const decisionBlocked = detail.assetType === "Blocked Rookie";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ownerDisplay, ownerFieldLabel, ownerLabel } from "./owner-copy";
+import { ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "./owner-copy";
 
 describe("Dynasty owner copy", () => {
   it("translates governed confidence states without changing their meaning", () => {
@@ -26,5 +26,11 @@ describe("Dynasty owner copy", () => {
     expect(ownerLabel("first_round_board_context_review")).toBe("First round board context review");
     expect(ownerLabel("This is already owner copy.")).toBe("This is already owner copy.");
     expect(ownerFieldLabel("nfl_draft_capital")).toBe("NFL draft capital");
+  });
+
+  it("formats research signals without leaking raw machine precision", () => {
+    expect(ownerResearchValue("confidence", 0.805735)).toBe("80.6%");
+    expect(ownerResearchValue("ceilingSignal", "0.634846")).toBe("63.5%");
+    expect(ownerResearchValue("outlook3y", 157.334128)).toBe("157.33");
   });
 });

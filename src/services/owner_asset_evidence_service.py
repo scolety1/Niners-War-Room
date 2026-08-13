@@ -109,7 +109,10 @@ def compose_owner_asset_evidence(
                 "raw_caveat_codes": raw_caveats,
                 "owner_caveats": owner_caveats(raw_caveats),
                 "market_dp_value": _first_present(current.get("dp_value_1qb")),
-                "market_dp_rank": _first_present(current.get("dp_market_rank_1qb")),
+                "market_dp_rank": _first_present(
+                    current.get("dp_market_rank_1qb"),
+                    current.get("market_rank"),
+                ),
                 "market_dp_ecr": _first_present(current.get("dp_ecr_pos")),
                 "market_dp_age": _first_present(current.get("dp_age")),
                 "market_join": _first_present(current.get("market_join_confidence")),
@@ -165,8 +168,14 @@ def _text(value: object) -> str:
 
 
 def _market_status(current: Mapping[str, Any], freshness: Mapping[str, str]) -> str:
-    if not _first_present(current.get("dp_value_1qb"), current.get("dp_market_rank_1qb")):
+    if not _first_present(
+        current.get("dp_value_1qb"),
+        current.get("dp_market_rank_1qb"),
+        current.get("market_rank"),
+    ):
         return NOT_AVAILABLE
+    if not _first_present(current.get("dp_value_1qb"), current.get("dp_market_rank_1qb")):
+        return "Display-only source context"
     status = _first_present(freshness.get("freshness_status"), current.get("freshness_status"))
     evidence_date = _first_present(freshness.get("upstream_scrape_date"))
     if "STALE" in status or "FETCH_FAILED" in status:
