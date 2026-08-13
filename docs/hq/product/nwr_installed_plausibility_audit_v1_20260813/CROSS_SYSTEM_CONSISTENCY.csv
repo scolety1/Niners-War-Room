@@ -1,0 +1,8 @@
+﻿player,asset_id,team,age,dynasty_rank,detail_rank,detail_position_rank,market_band,market_gap,outcome_rows,rookie_rank,redraft_standard_rank,redraft_projected_points,identity_consistent,rank_consistent,notes
+Courtland Sutton,current:5045,DEN,30.7,29,29,WR16,Potential Buy,80.0,1,,52,143.7,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+Luther Burden,current:12519,CHI,,85,85,WR47,Potential Sell / Caution,-38.7,1,,,,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+Brock Purdy,current:8183,SF,26.5,185,185,QB21,Potential Sell / Caution,-86.4,1,,196,175.38,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+George Kittle,current:4217,SF,32.7,151,151,TE15,Potential Sell / Caution,-51.599999999999994,1,,100,104.5,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+Puka Nacua,current:9493,LAR,25.1,1,1,WR1,Aligned,2.7,1,,8,246.0,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+Jeremiyah Love,rookie:LOV121782,ARI,20.895706,,1,,Market data unavailable,,0,1,36,165.2,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"
+Carnell Tate,rookie:TAT143045,TEN,21.25711,,8,,Market data unavailable,,0,8,127,87.0,True,True,"Targets differ legitimately across Dynasty, Rookie Review, Outcome, and Redraft"

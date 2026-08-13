@@ -1,0 +1,8 @@
+player,frozen_board_status,newer_governed_player_id,newer_team,draft_round,overall_pick,newer_projection_status,candidate_action
+De'Zhaun Stribling,BLOCKED_UNRESOLVED_IDENTITY,00-0041035,SF,2,33,ELIGIBLE,Resolve identity in a separately governed Rookie Review rebuild; do not invent missing CFBD production or mutate frozen board
+Carson Beck,BLOCKED_UNRESOLVED_IDENTITY,00-0041561,AZ,3,65,ELIGIBLE,Queue for separately governed Rookie Review identity refresh
+Oscar Delp,BLOCKED_UNRESOLVED_IDENTITY,00-0041041,NO,3,73,ELIGIBLE,Queue for separately governed Rookie Review identity refresh
+Colbie Young,BLOCKED_UNRESOLVED_IDENTITY,00-0041069,CIN,4,140,ELIGIBLE,Queue for separately governed Rookie Review identity refresh
+Nicholas Singleton,BLOCKED_UNRESOLVED_IDENTITY,00-0040886,TEN,5,165,ELIGIBLE,Queue for separately governed Rookie Review identity refresh
+Joe Royer,BLOCKED_UNRESOLVED_IDENTITY,00-0041087,CLE,5,170,ELIGIBLE,Queue for separately governed Rookie Review identity refresh
+Deion Burks,BLOCKED_UNRESOLVED_IDENTITY,00-0041132,IND,7,254,ELIGIBLE,Queue for separately governed Rookie Review identity refresh

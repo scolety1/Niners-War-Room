@@ -1,0 +1,21 @@
+player,position,nwr_rank,market_rank_july17,gap,label,sign_valid,observation_context,current_context_risk,nwr_thesis,classification
+Joe Mixon,RB,97,316.8,219.8,Potential Buy,True,INSTALLED_UI,"Current player/team unavailable; route/status incomplete","Prior production remains strong despite lifecycle flags",TRUST_EXTERNAL_CONTEXT_MORE
+Calvin Austin,WR,100,310,210,Potential Buy,True,INSTALLED_UI,"Depth role and team context may have changed","NWR research/production stronger than market depth price",STALE_MARKET_OUTLIER
+Darius Slayton,WR,89,296,207,Potential Buy,True,INSTALLED_UI,"Depth role and current routes require verification","NWR production persists above market",STALE_MARKET_OUTLIER
+Kendrick Bourne,WR,146,342,196,Potential Buy,True,INSTALLED_UI,"Current roster role uncertain","NWR retains replacement/depth value",TRUST_EXTERNAL_CONTEXT_MORE
+Mack Hollins,WR,140,331,191,Potential Buy,True,INSTALLED_UI,"Veteran role can change quickly","NWR prior role/production exceeds market",TRUST_EXTERNAL_CONTEXT_MORE
+Dont'e Thornton,WR,136,314,178,Potential Buy,True,INSTALLED_UI,"Young-role uncertainty and stale snapshot","NWR evidence values upside above market",DOUBLE_CHECK_ROLE
+Gabe Davis,WR,156,334,178,Potential Buy,True,INSTALLED_UI,"Health/team/role freshness required","NWR past production exceeds market",TRUST_EXTERNAL_CONTEXT_MORE
+Michael Carter,RB,171,347,176,Potential Buy,True,INSTALLED_UI,"Replacement-level RB role volatility","NWR retains contingent value",DOUBLE_CHECK_ROLE
+Andrei Iosivas,WR,123,294,171,Potential Buy,True,INSTALLED_UI,"Depth chart and route share volatile","NWR research/production above market",DOUBLE_CHECK_ROLE
+DeMario Douglas,WR,104,263,159,Potential Buy,True,INSTALLED_UI,"Role and team competition require current check","NWR target/production evidence above market",DOUBLE_CHECK_ROLE
+Courtland Sutton,WR,29,99,70,Potential Buy,True,INSTALLED_UI,"Age and role sustainability","High opportunity and production persistence",DEFENSIBLE_DISSENT_DOUBLE_CHECK
+Brock Bowers,TE,45,24,-21,Potential Sell / Caution,True,INSTALLED_UI,"Public evidence strongly favors elite young-TE value","NWR-specific production/research treatment discounts him",QUESTIONABLE_OUTLIER
+Ashton Jeanty,RB,46,10,-36,Potential Sell / Caution,True,INSTALLED_UI,"Young cornerstone market value is much higher","Finished evidence scale discounts him",QUESTIONABLE_OUTLIER
+Bijan Robinson,RB,3,2,-1,Aligned,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Facade optional artifact; not installed authority","Elite young RB",BROADLY_ALIGNED
+Rome Odunze,WR,48,47,-1,Aligned,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Facade optional artifact; not installed authority","Young WR evidence",BROADLY_ALIGNED
+Jahmyr Gibbs,RB,5,4,-1,Aligned,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Facade optional artifact; not installed authority","Elite young RB",BROADLY_ALIGNED
+Joe Burrow,QB,199,23,-176,Potential Sell / Caution,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Format-compatible price still depends on league QB behavior","10-team 1QB replacement economics",DEFENSIBLE_FORMAT_DISSENT
+Jayden Daniels,QB,180,31,-149,Potential Sell / Caution,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Format-compatible price still depends on league QB behavior","10-team 1QB replacement economics",DEFENSIBLE_FORMAT_DISSENT
+Lamar Jackson,QB,144,26,-118,Potential Sell / Caution,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Format-compatible price still depends on league QB behavior","10-team 1QB replacement economics",DEFENSIBLE_FORMAT_DISSENT
+Omarion Hampton,RB,134,18,-116,Potential Sell / Caution,True,ISOLATED_FACADE_OPTIONAL_MARKET,"Young role/health and stale snapshot","Finished production scale is conservative on market youth",QUESTIONABLE_OUTLIER

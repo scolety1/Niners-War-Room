@@ -1,0 +1,17 @@
+position,player,available,bounds_ok,nested_thresholds_ok,notes,NWR Rank,outcome_player,Pos,2026 T6,2026 T12,2027 T6,2027 T12,2028 T6,2028 T12,Within 3Y T6,Within 3Y T12,Within 5Y T6,Within 5Y T12,2 of 3Y T6,2 of 3Y T12,2026 T24,2026 T36,2027 T24,2027 T36,2028 T24,2028 T36,Within 3Y T24,Within 3Y T36,Within 5Y T24,Within 5Y T36,2 of 3Y T24,2 of 3Y T36
+QB,Josh Allen,True,True,True,,21,Josh Allen,QB,—,—,37.7%,53.2%,—,—,—,84.7%,83.4%,92.8%,—,—,,,,,,,,,,,,
+QB,Drake Maye,True,True,True,,23,Drake Maye,QB,—,—,37.7%,53.2%,—,—,—,84.7%,83.4%,92.8%,—,—,,,,,,,,,,,,
+QB,Trevor Lawrence,True,True,True,,28,Trevor Lawrence,QB,—,—,37.7%,53.2%,—,—,—,84.7%,83.4%,92.8%,—,—,,,,,,,,,,,,
+QB,Jalen Hurts,True,True,True,,49,Jalen Hurts,QB,—,—,19.4%,53.2%,—,—,—,84.7%,70.2%,92.8%,—,—,,,,,,,,,,,,
+RB,Bijan Robinson,True,True,True,,3,Bijan Robinson,RB,35.4%,43.2%,21.5%,—,—,30.2%,61.3%,72.4%,—,—,—,33.9%,63.0%,80.6%,—,55.7%,42.4%,52.0%,84.9%,94.4%,95.2%,—,55.0%,68.0%
+RB,Jonathan Taylor,True,True,True,,4,Jonathan Taylor,RB,35.4%,43.2%,21.5%,—,—,30.2%,61.3%,72.4%,—,—,—,33.9%,63.0%,80.6%,—,55.7%,42.4%,52.0%,84.9%,94.4%,95.2%,—,55.0%,68.0%
+RB,De'Von Achane,True,True,True,,9,De'Von Achane,RB,17.8%,43.2%,16.2%,—,—,30.2%,34.7%,72.4%,—,—,—,33.9%,63.0%,80.6%,—,55.7%,42.4%,52.0%,84.9%,94.4%,95.2%,—,55.0%,68.0%
+RB,Christian McCaffrey,True,True,True,,18,Christian McCaffrey,RB,35.4%,43.2%,21.5%,—,—,30.2%,61.3%,72.4%,—,—,—,33.9%,63.0%,80.6%,—,55.7%,42.4%,52.0%,84.9%,94.4%,95.2%,—,55.0%,68.0%
+WR,Puka Nacua,True,True,True,,1,Puka Nacua,WR,40.0%,41.2%,36.8%,42.3%,—,—,62.9%,72.0%,66.1%,—,—,40.9%,—,—,48.0%,56.4%,—,—,80.3%,86.9%,—,97.3%,55.2%,66.7%
+WR,Ja'Marr Chase,True,True,True,,6,Ja'Marr Chase,WR,40.0%,41.2%,36.8%,42.3%,—,—,62.9%,72.0%,66.1%,—,—,40.9%,—,—,48.0%,56.4%,—,—,80.3%,86.9%,—,97.3%,55.2%,66.7%
+WR,Courtland Sutton,True,True,True,,29,Courtland Sutton,WR,12.3%,41.2%,16.5%,42.3%,—,—,30.2%,72.0%,40.0%,—,—,40.9%,—,—,48.0%,56.4%,—,—,80.3%,86.9%,—,97.3%,55.2%,66.7%
+WR,Tetairoa McMillan,True,True,True,,30,Tetairoa McMillan,WR,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—,—
+TE,Trey McBride,True,True,True,,8,Trey McBride,TE,46.2%,49.5%,34.3%,39.9%,30.5%,35.3%,65.3%,75.0%,89.9%,—,40.9%,44.2%,,,,,,,,,,,,,
+TE,Kyle Pitts,True,True,True,,17,Kyle Pitts,TE,46.2%,49.5%,34.3%,39.9%,30.5%,35.3%,65.3%,75.0%,89.9%,—,40.9%,44.2%,,,,,,,,,,,,,
+TE,Brock Bowers,True,True,True,,45,Brock Bowers,TE,17.3%,49.5%,15.6%,39.9%,12.6%,35.3%,36.0%,75.0%,68.4%,—,12.4%,44.2%,,,,,,,,,,,,,
+TE,George Kittle,True,True,True,,151,George Kittle,TE,17.3%,49.5%,15.6%,39.9%,12.6%,35.3%,36.0%,75.0%,68.4%,—,12.4%,44.2%,,,,,,,,,,,,,
