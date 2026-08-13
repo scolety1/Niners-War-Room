@@ -1,0 +1,11 @@
+surface,scenario,sample_count,mean_ms,max_ms,main_memory_mb,sidecar_memory_mb,result
+Dynasty,Cold authenticated packaged readiness,1,7394,7394,23.9,,PASS
+Redraft,Cold authenticated packaged readiness,1,4825,4825,23.7,,PASS
+Dynasty,Warm packaged readiness,10,3964,4762,23.8,130.0,PASS
+Redraft,Warm packaged readiness,10,4152,5611,23.9,125.1,PASS
+Dynasty,Source bootstrap,1,2340,2340,,,PASS
+Dynasty,Exact trade evaluation,6,5.5,5.7,,,PASS_DETERMINISTIC
+Redraft,10-team 1QB Standard create activate rank,1,18.4,18.4,,,PASS_608_UNIQUE
+Redraft,12-team 1QB Half-PPR create activate rank,1,17.6,17.6,,,PASS_608_UNIQUE
+Redraft,12-team PPR create activate rank,1,21.7,21.7,,,PASS_608_UNIQUE
+Redraft,12-team Superflex PPR create activate rank,1,25.3,25.3,,,PASS_608_UNIQUE
