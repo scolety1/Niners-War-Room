@@ -55,7 +55,7 @@ function PlayerDetailBody({ detail: sourceDetail, onCompare, onPersonal, onTrade
   </>;
 }
 
-function RangeCell({ label, value, tone }: { label: string; value: string; tone: string }) { return <div className={`range-cell range-cell--${tone}`}><span>{label}</span><strong><OwnerValue value={value} fallback="Not enough information" /></strong><i /></div>; }
+function RangeCell({ label, value, tone }: { label: string; value: string; tone: string }) { const sourceNativeLabel = { Floor: "Downside signal", "NWR expected": "Research neighborhood", Ceiling: "Upside signal" }[label] ?? label; return <div className={`range-cell range-cell--${tone}`}><span>{sourceNativeLabel}</span><strong><OwnerValue value={value} fallback="Not enough information" /></strong><i /></div>; }
 
 function rookieRecords(rows: RookieRanking[]) { return rows.map((row) => ({ ...row })); }
 

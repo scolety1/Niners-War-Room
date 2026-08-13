@@ -335,6 +335,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "reasons",
         "mainUncertainty",
         "whatWouldChange",
+        "synthesisTrace",
         "dimensions",
         "counterStatus",
         "counterMessage",

@@ -195,14 +195,37 @@ def _reason_effect(value: str) -> str:
         return "NEUTRAL"
     if any(term in normalized for term in ("missing", "unavailable", "insufficient")):
         return "MISSING"
-    if any(term in normalized for term in ("penalty", "blocked", "fragile", "decline")):
+    if any(term in normalized for term in ("penalty", "blocked", "fragile", "decline", " cap")):
         return "HURTS"
-    if any(term in normalized for term in ("supported", "elite", "positive", "priority")):
+    if any(term in normalized for term in ("supported", "elite", "positive", "priority", "exception")):
         return "HELPS"
     return "NEUTRAL"
 
 
 def _reason_label(value: str) -> str:
+    governed_labels = {
+        "partial_first_down_confidence_cap": (
+            "Partial first-down coverage caps confidence; missing coverage is not treated as zero"
+        ),
+        "no_premium_te_small_gap_cap": (
+            "No-premium TE discipline caps a small proven value-over-replacement gap"
+        ),
+        "te_upper_band_guard_v2_elite_exception": (
+            "Elite TE evidence clears the upper-band exception"
+        ),
+        "no_historical_evidence_for_component": (
+            "Short-history component is unavailable and does not receive invented credit"
+        ),
+        "one_qb_replacement_level_cap": (
+            "Shallow 10-team 1QB replacement economics cap low value-over-replacement evidence"
+        ),
+        "qb_elite_floor_gate_not_met": (
+            "Admitted production does not clear the elite-QB floor gate"
+        ),
+        "qb_hybrid_floor": "Hybrid QB evidence clears the declared floor",
+    }
+    if value in governed_labels:
+        return governed_labels[value]
     words = value.replace("_", " ").strip().split()
     acronyms = {"qb", "rb", "wr", "te", "nwr", "vorp", "adp"}
     formatted = [word.upper() if word.casefold() in acronyms else word for word in words]

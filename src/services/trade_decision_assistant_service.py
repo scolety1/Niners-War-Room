@@ -608,22 +608,43 @@ def _synthesize(dimensions: Sequence[DecisionDimension]) -> tuple[Recommendation
     b = [row for row in dimensions if row.outcome in {"SIDE_B_CLEAR", "SIDE_B_LEAN"}]
     a_clear = sum(row.outcome == "SIDE_A_CLEAR" for row in dimensions)
     b_clear = sum(row.outcome == "SIDE_B_CLEAR" for row in dimensions)
-    if len(a) == len(b):
+    a_units = sum(_evidence_units(row) for row in a)
+    b_units = sum(_evidence_units(row) for row in b)
+    if a_units == b_units:
         return (
             ("COUNTER", "Your current side")
             if (a_clear or b_clear)
             else ("TOO_CLOSE", "No clear side")
         )
-    preferred_a = len(a) > len(b)
+    preferred_a = a_units > b_units
     preferred = "Your current side" if preferred_a else "The incoming side"
     support, oppose = (a, b) if preferred_a else (b, a)
     clear, opposing_clear = (a_clear, b_clear) if preferred_a else (b_clear, a_clear)
-    margin = len(support) - len(oppose)
-    if clear >= 2 and opposing_clear == 0 and margin >= 3:
+    support_units, oppose_units = (
+        (a_units, b_units) if preferred_a else (b_units, a_units)
+    )
+    margin = support_units - oppose_units
+    best_asset_clear = any(
+        row.code == "D1"
+        and row.outcome == ("SIDE_A_CLEAR" if preferred_a else "SIDE_B_CLEAR")
+        and row.confidence == "HIGH"
+        for row in dimensions
+    )
+    if opposing_clear == 0 and margin >= 3 and (clear >= 2 or best_asset_clear):
         return ("REJECT" if preferred_a else "ACCEPT"), preferred
-    if opposing_clear or (support and len(oppose) >= 2):
+    if opposing_clear or margin <= 2:
         return "COUNTER", preferred
     return ("LEAN_REJECT" if preferred_a else "LEAN_ACCEPT"), preferred
+
+
+def _evidence_units(row: DecisionDimension) -> int:
+    """Return a disclosed ordinal strength, never an asset or package value."""
+
+    if row.outcome.endswith("LEAN"):
+        return 1
+    if row.outcome.endswith("CLEAR"):
+        return {"HIGH": 3, "MEDIUM": 2, "LOW": 1}[row.confidence]
+    return 0
 
 
 def _decision_confidence(
@@ -850,11 +871,18 @@ def _synthesis_trace(dimensions: Sequence[DecisionDimension]) -> tuple[str, ...]
     a = [row.label for row in dimensions if row.outcome.startswith("SIDE_A")]
     b = [row.label for row in dimensions if row.outcome.startswith("SIDE_B")]
     neutral = [row.label for row in dimensions if row.outcome in {"EVEN", "UNKNOWN"}]
+    a_units = sum(
+        _evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_A")
+    )
+    b_units = sum(
+        _evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_B")
+    )
     return (
-        f"Current-side support ({len(a)}): {', '.join(a) or 'none'}.",
-        f"Incoming-side support ({len(b)}): {', '.join(b) or 'none'}.",
+        f"Current-side support ({len(a)} dimensions; {a_units} evidence units): {', '.join(a) or 'none'}.",
+        f"Incoming-side support ({len(b)} dimensions; {b_units} evidence units): {', '.join(b) or 'none'}.",
         f"Even/unknown ({len(neutral)}): {', '.join(neutral) or 'none'}.",
-        "No package score, side total, or rookie/pick-to-veteran conversion is used.",
+        "Visible ordinal weights: HIGH-clear 3, MEDIUM-clear 2, LOW-clear 1, lean 1. Decisive requires a 3-unit margin, no opposing clear, and two clear dimensions or a HIGH-clear best-asset edge.",
+        "Evidence units are not a package score, side value, or rookie/pick-to-veteran conversion.",
     )
 
 

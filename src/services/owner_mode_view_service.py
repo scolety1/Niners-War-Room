@@ -89,11 +89,14 @@ def owner_range_contract(row: Mapping[str, Any]) -> dict[str, str]:
         )
         authority = "Rookie Review / research only"
     else:
-        method = "No admitted Floor / NWR Expected / Ceiling method for this asset authority."
+        method = "No admitted dynasty or rookie outlook-signal method for this asset authority."
         authority = "Unsupported for this asset type"
     return {
         **values,
         "NWR Expected": values["Expected"],
+        "Downside label": "Downside signal",
+        "Expected label": "Research neighborhood",
+        "Upside label": "Upside signal",
         "Method": method,
         "Authority": authority,
         "Status": "Supported context" if supported else "Not enough information",

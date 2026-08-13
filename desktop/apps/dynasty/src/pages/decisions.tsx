@@ -353,16 +353,15 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
         ))}
       </div>
       <p className="copy-muted">
-        Floor, expected, and ceiling are source-native research bands or signals,
-        not one shared numeric scale.
+        These are source-native research signals, not one shared numeric scale or a forecast interval.
       </p>
       <div className="advantage-grid">
         {result.ranges.map((range) => (
           <Panel key={range.assetId} title={range.player} eyebrow={range.ageWindow}>
             <div className="range-grid">
-              <RangeCell label="Floor" value={range.floor} tone="floor" />
-              <RangeCell label="NWR expected" value={range.expected} tone="expected" />
-              <RangeCell label="Ceiling" value={range.ceiling} tone="ceiling" />
+              <RangeCell label="Downside signal" value={range.floor} tone="floor" />
+              <RangeCell label="Research neighborhood" value={range.expected} tone="expected" />
+              <RangeCell label="Upside signal" value={range.ceiling} tone="ceiling" />
             </div>
             <div className="risk-callout">{range.risk}</div>
             <p className="copy-muted">
@@ -929,6 +928,13 @@ function TradeResult({ decision }: { decision: TradeDecision }) {
         </Panel>
       </div>
       <div className="alert-strip">{decision.counterMessage}</div>
+      <Panel title="Synthesis" eyebrow="Visible ordinal decision rule">
+        <ul className="compact-list">
+          {decision.synthesisTrace.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </Panel>
       <Panel title="Decision trace" eyebrow="No package total · ten ordinal dimensions">
         <div className="dimension-grid">
           {decision.dimensions.map((dimension) => (

@@ -38,6 +38,7 @@ from src.services.governed_asset_registry_service import (
     GovernedAssetRegistry,
     load_governed_asset_registry,
 )
+from src.services.market_baseline_service import DEFAULT_ARTIFACT_DIR
 from src.services.outcome_v3_display_service import (
     OutcomeV3DisplayBundle,
     load_outcome_v3_display,
@@ -1910,6 +1911,9 @@ class DesktopBackendFacade:
             dynasty_frame=rankings_source.frame,
             research_frame=research.board,
             outcome_frame=outcome.frame,
+            # The canonical sentinel deliberately resolves through the launcher-owned
+            # physical refresh root in packaged and repository runtimes.
+            market_artifact_dir=DEFAULT_ARTIFACT_DIR,
         )
         if evidence.errors:
             warnings.append("Optional market context is unavailable or incomplete.")
@@ -2427,6 +2431,7 @@ class DesktopBackendFacade:
             "reasons": _string_list(source.get("reasons")),
             "mainUncertainty": _text(source.get("main_uncertainty")),
             "whatWouldChange": _string_list(source.get("what_would_change")),
+            "synthesisTrace": _string_list(source.get("synthesis_trace")),
             "dimensions": [
                 {
                     "code": _text(value.get("code")),

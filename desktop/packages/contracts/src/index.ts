@@ -327,6 +327,7 @@ export interface TradeDecision {
   reasons: string[];
   mainUncertainty: string;
   whatWouldChange: string[];
+  synthesisTrace: string[];
   dimensions: TradeDimension[];
   counterStatus: "available" | "blocked";
   counterMessage: string;

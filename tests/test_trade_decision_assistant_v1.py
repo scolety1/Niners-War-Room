@@ -331,6 +331,26 @@ def test_negation_display_formatting_does_not_change_recommendation() -> None:
     )
 
 
+def test_lopsided_premium_for_depth_uses_decisive_language() -> None:
+    premium = "registry:current:premium"
+    depth = "registry:current:depth"
+    second = "registry:pick:2028:2nd"
+    decision = _decision(
+        [
+            _player(premium, "Premium Asset", rank=1, age=24),
+            _player(depth, "Depth Asset", rank=156, age=28),
+            _pick(second, "2028 2nd"),
+        ],
+        [premium],
+        [depth, second],
+    )
+
+    assert decision.recommendation == "REJECT"
+    assert decision.preferred_side == "Your current side"
+    assert "HIGH-clear 3" in decision.synthesis_trace[-2]
+    assert "not a package score" in decision.synthesis_trace[-1]
+
+
 def test_negation_stale_unknown_key_cannot_affect_decision() -> None:
     a, b = "registry:current:a", "registry:current:b"
     lookup = dict([_player(a, "A", rank=25), _player(b, "B", rank=125)])

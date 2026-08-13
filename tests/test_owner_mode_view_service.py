@@ -45,6 +45,9 @@ def test_owner_range_contract_and_value_tier_are_explicit() -> None:
         }
     )
     assert contract["NWR Expected"] == "Research neighborhood 2"
+    assert contract["Downside label"] == "Downside signal"
+    assert contract["Expected label"] == "Research neighborhood"
+    assert contract["Upside label"] == "Upside signal"
     assert contract["Authority"] == "Research context beside Finished V1"
     assert "Frozen Unified Research" in contract["Method"]
     assert owner_value_tier("priority candidate") == ("Tier A", "Core priority")
