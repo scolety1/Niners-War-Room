@@ -3,7 +3,7 @@ import type { DynastyBootstrap, PlayerDetail, RookieRanking } from "@nwr/contrac
 import { Button, DataTable, EmptyState, ErrorState, MetricCard, PageHeader, Panel, SearchInput, StatusBadge, formatNumber } from "@nwr/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "../lib/owner-copy";
+import { ownerAge, ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "../lib/owner-copy";
 
 function OwnerValue({ value, fallback }: { value: unknown; fallback?: string }) {
   const display = ownerDisplay(value, fallback);
@@ -72,7 +72,7 @@ export function RookieReviewPage({ data }: { data: DynastyBootstrap }) {
       <div className="toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Find a rookie…" /><div className="chip-row">{positions.map((value) => <button className={`filter-chip ${position === value ? "filter-chip--active" : ""}`} key={value} onClick={() => setPosition(value)}>{value}</button>)}</div></div>
       <DataTable columns={[
         { key: "rank", label: "Rank", render: (row) => row.rank == null ? <span className="blocked-rank">Blocked</span> : <span className="rank-cell"><i /><b>#{String(row.rank)}</b></span> },
-        { key: "player", label: "Prospect", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · Age {String(row.age ?? "—")}</small></span> },
+        { key: "player", label: "Prospect", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · Age {ownerAge(row.age)}</small></span> },
         { key: "position", label: "Pos", align: "center", render: (row) => <span className="position-pill">{String(row.position)}</span> },
         { key: "rookieTier", label: "Rookie tier", render: (row) => <span className="tier-pill"><OwnerValue value={row.rookieTier} /></span> },
         { key: "draftRange", label: "Dynasty draft range", render: (row) => <OwnerValue value={row.draftRange} /> }, { key: "nflDraftCapital", label: "NFL capital", render: (row) => <OwnerValue value={row.nflDraftCapital} /> },

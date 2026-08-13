@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "./owner-copy";
+import { ownerAge, ownerDisplay, ownerFieldLabel, ownerLabel, ownerResearchValue } from "./owner-copy";
 
 describe("Dynasty owner copy", () => {
   it("translates governed confidence states without changing their meaning", () => {
@@ -32,5 +32,11 @@ describe("Dynasty owner copy", () => {
     expect(ownerResearchValue("confidence", 0.805735)).toBe("80.6%");
     expect(ownerResearchValue("ceilingSignal", "0.634846")).toBe("63.5%");
     expect(ownerResearchValue("outlook3y", 157.334128)).toBe("157.33");
+  });
+
+  it("formats rookie age as owner-facing lifecycle context", () => {
+    expect(ownerAge(20.895706)).toBe("20.9");
+    expect(ownerAge("21")).toBe("21.0");
+    expect(ownerAge(null)).toBe("—");
   });
 });

@@ -421,7 +421,16 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const inputRevision = useRef(0);
   const requestSequence = useRef(0);
+  const decisionResult = useRef<HTMLDivElement>(null);
   const busy = evaluating || saving || exporting;
+
+  useEffect(() => {
+    if (!decision) return;
+    window.requestAnimationFrame(() => {
+      decisionResult.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      decisionResult.current?.focus({ preventScroll: true });
+    });
+  }, [decision]);
 
   const invalidateDecision = () => {
     inputRevision.current += 1;
@@ -798,7 +807,11 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
         </p>
       </Panel>
       {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-      {decision ? <TradeResult decision={decision} /> : null}
+      {decision ? (
+        <div aria-live="polite" ref={decisionResult} tabIndex={-1}>
+          <TradeResult decision={decision} />
+        </div>
+      ) : null}
     </>
   );
 }

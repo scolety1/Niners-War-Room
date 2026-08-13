@@ -99,3 +99,9 @@ export function ownerResearchValue(key: string, value: unknown) {
   }
   return ownerLabel(value);
 }
+
+export function ownerAge(value: unknown) {
+  if (value == null || String(value).trim() === "") return "—";
+  const numeric = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(1) : "—";
+}

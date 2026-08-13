@@ -56,7 +56,16 @@ function rankingColumns(compact = false): TableColumn[] {
     { key: "tier", label: "Tier", sort: "number", render: (row) => <span className="tier-pill">Tier {String(row.tier)}</span> },
     { key: "projectedPoints", label: "Proj pts", sort: "number", align: "right", render: (row) => formatNumber(row.projectedPoints as number, 1) },
     { key: "replacementAdjustedValue", label: "Value over replacement", sort: "number", align: "right", render: (row) => <span className="vor-cell"><strong>{formatNumber(row.replacementAdjustedValue as number, 1)}</strong><ProgressBar value={Number(row.replacementAdjustedValue ?? 0)} max={250} tone="gold" /></span> },
-    { key: "confidence", label: "Confidence", sort: "text" },
+    {
+      key: "confidence",
+      label: "Projection evidence",
+      sort: "text",
+      render: (row) => (
+        <span title="Projection evidence strength; separate from board readiness.">
+          {`${String(row.confidence).charAt(0).toUpperCase()}${String(row.confidence).slice(1).toLowerCase()} evidence`}
+        </span>
+      ),
+    },
   ];
   return compact ? base.slice(0, 6) : [...base, { key: "sourceAsOf", label: "Source as of", sort: "text" }];
 }
@@ -136,7 +145,7 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   return <div aria-busy={Boolean(working)} className="draft-room-page">
     {data.draftBoard?.recoveredFromBackup ? <div className="alert-strip" role="status"><strong>Draft board recovered</strong><span>NWR restored the last verified local backup before opening this board.</span></div> : null}
     <PageHeader eyebrow="Live draft · Current season" title={`${data.activeProfile.leagueName} Draft Room`} description="A fast current-season board built from this league's scoring, roster demand, and governed projections." status={<><StatusBadge tone="safe" label={`${data.rankings.length} ranked`} /><StatusBadge tone="review" label={`${drafted.length} drafted`} /></>} actions={<><Button data-draft-undo disabled={!drafted.length || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>{working === "undo" ? "Restoring…" : "Undo last pick"}</Button><Button disabled={Boolean(working)} icon="profile" variant="ghost" onClick={() => { window.location.hash = "#/profile"; }}>League profile</Button></>} />
-    <p aria-atomic="true" aria-live={error ? "assertive" : "polite"} className={`draft-feedback ${error ? "draft-feedback--error" : ""}`} role="status">{announcement || "Draft board ready."}</p>
+    <p aria-atomic="true" aria-live={error ? "assertive" : "polite"} className={`draft-feedback ${error ? "draft-feedback--error" : ""}`} role="status">{announcement || "Draft board ready. Projection evidence strength is separate from readiness."}</p>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <section className="on-clock"><div><span>On the clock</span><strong>Pick {drafted.length + 1}</strong><small>{data.activeProfile.draft.draftType} · Slot {data.activeProfile.draft.draftSlot ?? "—"}</small></div><div className="clock-ring"><strong>∞</strong><span>Offline</span></div><div><span>Top available</span><strong>{filteredRows[0]?.playerName ? String(filteredRows[0].playerName) : "No admitted player"}</strong><small>{filteredRows[0]?.position ? `${String(filteredRows[0].position)}${String(filteredRows[0].positionRank)} · Tier ${String(filteredRows[0].tier)}` : "Projection evidence required"}</small></div></section>
     <div className="metric-grid"><MetricCard label="Available players" value={Math.max(0, data.rankings.length - drafted.length)} detail="Current board" icon="players" tone="gold" /><MetricCard label="Drafted" value={drafted.length} detail={`Next pick ${drafted.length + 1}`} icon="check" tone="crimson" /><MetricCard label="League teams" value={data.activeProfile.teamCount} detail={data.activeProfile.roster.superflex ? "Superflex" : "1QB"} icon="profile" tone="violet" /><MetricCard label="Scoring" value={data.activeProfile.scoring.reception === 1 ? "PPR" : data.activeProfile.scoring.reception === .5 ? "Half" : "Std"} detail={`${data.activeProfile.draft.rounds} rounds`} icon="settings" tone="cyan" /></div>
