@@ -17,7 +17,11 @@ ROOKIE_BOARD_PATH = REPO_ROOT / (
 )
 
 
-def load_owner_rookie_board(path: str | Path = ROOKIE_BOARD_PATH) -> pd.DataFrame:
+def load_owner_rookie_board(
+    path: str | Path = ROOKIE_BOARD_PATH,
+    *,
+    research_packet_dir: str | Path | None = None,
+) -> pd.DataFrame:
     source = pd.read_csv(path, dtype=str, keep_default_na=False)
     if len(source) != 80:
         raise ValueError(f"Rookie Review must contain 80 drafted prospects; found {len(source)}")
@@ -41,7 +45,9 @@ def load_owner_rookie_board(path: str | Path = ROOKIE_BOARD_PATH) -> pd.DataFram
     output["Age"] = output["age_at_draft"].replace("", "-")
     output["College Production"] = output["production_component"].map(_component_context)
     output["Athletic Context"] = output["athletic_component"].map(_component_context)
-    research = load_unified_research_preview().board
+    research = load_unified_research_preview(
+        Path(research_packet_dir) if research_packet_dir is not None else None
+    ).board
     research_by_asset = {
         str(row.get("source_asset_id") or ""): row for row in research.to_dict("records")
     }

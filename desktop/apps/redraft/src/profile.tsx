@@ -1,0 +1,142 @@
+import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
+import type {
+  LeagueProfile,
+  RedraftBootstrap,
+  RedraftProfileUpdateInput,
+} from "@nwr/contracts";
+import { Button, ErrorState, Icon, PageHeader, Panel, StatusBadge } from "@nwr/ui";
+import { useEffect, useState } from "react";
+
+function editableProfile(profile: LeagueProfile): RedraftProfileUpdateInput {
+  return {
+    leagueName: profile.leagueName,
+    teamCount: profile.teamCount,
+    roster: {
+      qb: profile.roster.qb,
+      rb: profile.roster.rb,
+      wr: profile.roster.wr,
+      te: profile.roster.te,
+      flex: profile.roster.flex,
+      superflex: profile.roster.superflex,
+      k: profile.roster.k,
+      dst: profile.roster.dst,
+      benchSize: profile.roster.benchSize,
+    },
+    scoring: {
+      reception: profile.scoring.reception,
+      passingTd: profile.scoring.passingTd,
+      interception: profile.scoring.interception,
+      tePremium: profile.scoring.tePremium,
+    },
+    draft: {
+      rounds: profile.draft.rounds,
+      draftSlot: profile.draft.draftSlot,
+      replacementMethod: profile.draft.replacementMethod,
+    },
+  };
+}
+
+export function ProfilePage({
+  client,
+  data,
+  onUpdate,
+}: {
+  client: NwrApiClient;
+  data: RedraftBootstrap;
+  onUpdate: (data: RedraftBootstrap) => void;
+}) {
+  const [preset, setPreset] = useState(data.presets[0]?.presetKey ?? "");
+  const [name, setName] = useState(data.presets[0]?.leagueName ?? "My Redraft League");
+  const [edit, setEdit] = useState<RedraftProfileUpdateInput | null>(
+    data.activeProfile ? editableProfile(data.activeProfile) : null,
+  );
+  const [working, setWorking] = useState("");
+  const [error, setError] = useState<NwrApiError | null>(null);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setEdit(data.activeProfile ? editableProfile(data.activeProfile) : null);
+  }, [data.activeProfile]);
+
+  const fail = (reason: unknown, fallback: string) => {
+    setError(reason instanceof NwrApiError ? reason : new NwrApiError(fallback));
+  };
+  const create = async () => {
+    if (!preset || !name.trim() || working) return;
+    setWorking("create"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.createRedraftProfile(preset, name));
+      setMessage("Profile created and activated.");
+    } catch (reason) { fail(reason, "Profile could not be created."); }
+    finally { setWorking(""); }
+  };
+  const activate = async (profile: LeagueProfile) => {
+    if (working) return;
+    setWorking(`activate:${profile.profileId}`); setError(null); setMessage("");
+    try {
+      onUpdate(await client.activateRedraftProfile(profile.profileId));
+      setMessage(`${profile.leagueName} is active.`);
+    } catch (reason) { fail(reason, "Profile could not be activated."); }
+    finally { setWorking(""); }
+  };
+  const duplicate = async () => {
+    if (!data.activeProfile || working) return;
+    setWorking("duplicate"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.duplicateRedraftProfile(data.activeProfile.profileId));
+      setMessage("Profile duplicated and activated. Its draft board starts empty.");
+    } catch (reason) { fail(reason, "Profile could not be duplicated."); }
+    finally { setWorking(""); }
+  };
+  const save = async () => {
+    if (!data.activeProfile || !edit || working) return;
+    setWorking("save"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.updateRedraftProfile(data.activeProfile.profileId, edit));
+      setMessage("Scoring, roster, and draft settings saved. Rankings were refreshed.");
+    } catch (reason) { fail(reason, "Profile settings could not be saved."); }
+    finally { setWorking(""); }
+  };
+
+  const profileCount = data.profiles.length;
+  const profileLabel = `${profileCount} profile${profileCount === 1 ? "" : "s"} · ${data.activeProfileId ? "active" : "none active"}`;
+  return <>
+    <PageHeader eyebrow="League · Local and isolated" title="League Profiles & Scoring" description="Each Redraft league keeps its own scoring, roster demand, and draft state. Nothing here changes Dynasty." status={<><StatusBadge tone="safe" label={profileLabel} /><StatusBadge tone="safe" label="Redraft only" /></>} />
+    {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    <p aria-live="polite" className="profile-feedback">{message}</p>
+    <div className="profile-layout">
+      <Panel title="Your leagues" eyebrow="Current-season profiles">
+        <div className="profile-list">
+          {data.profiles.map((profile) => <button className={profile.profileId === data.activeProfileId ? "active" : ""} disabled={Boolean(working)} key={profile.profileId} onClick={() => void activate(profile)}><span><Icon name="trophy" /></span><div><strong>{profile.leagueName}</strong><small>{profile.teamCount} teams · {profile.roster.superflex ? "Superflex" : "1QB"} · {profile.scoring.reception === 1 ? "PPR" : profile.scoring.reception === .5 ? "Half PPR" : "Standard"}</small></div>{profile.profileId === data.activeProfileId ? <em>Active</em> : <Icon name="chevron" size={13} />}</button>)}
+          {!data.profiles.length ? <p className="copy-muted">No profile exists yet. Create one from a validated preset.</p> : null}
+        </div>
+      </Panel>
+      <Panel title="Create from preset" eyebrow="Fast setup">
+        <div className="form-grid">
+          <label className="form-field"><span>Preset</span><select disabled={Boolean(working)} value={preset ?? ""} onChange={(event) => { setPreset(event.target.value); const match = data.presets.find((item) => item.presetKey === event.target.value); if (match) setName(match.leagueName); }}>{data.presets.map((item) => <option key={item.presetKey} value={item.presetKey ?? ""}>{item.leagueName}</option>)}</select></label>
+          <label className="form-field"><span>League name</span><input disabled={Boolean(working)} maxLength={120} value={name} onChange={(event) => setName(event.target.value)} /></label>
+        </div>
+        <div className="profile-create-footer"><p>Creates a separate profile and makes it active.</p><Button disabled={!preset || !name.trim() || Boolean(working)} icon="profile" onClick={() => void create()}>{working === "create" ? "Saving…" : "Create & activate"}</Button></div>
+      </Panel>
+    </div>
+    {data.activeProfile && edit ? <ProfileEditor edit={edit} disabled={Boolean(working)} onChange={setEdit} onDuplicate={() => void duplicate()} onSave={() => void save()} working={working} /> : null}
+  </>;
+}
+
+function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working }: { edit: RedraftProfileUpdateInput; disabled: boolean; onChange: (value: RedraftProfileUpdateInput) => void; onDuplicate: () => void; onSave: () => void; working: string }) {
+  const number = (value: string) => Number(value);
+  const rosterField = (key: keyof RedraftProfileUpdateInput["roster"], label: string) => <label className="form-field"><span>{label}</span><input disabled={disabled} min={0} max={40} type="number" value={edit.roster[key]} onChange={(event) => onChange({ ...edit, roster: { ...edit.roster, [key]: number(event.target.value) } })} /></label>;
+  const scoringField = (key: keyof RedraftProfileUpdateInput["scoring"], label: string, step = 0.5) => <label className="form-field"><span>{label}</span><input disabled={disabled} step={step} type="number" value={edit.scoring[key]} onChange={(event) => onChange({ ...edit, scoring: { ...edit.scoring, [key]: number(event.target.value) } })} /></label>;
+  return <Panel title="Edit active profile" eyebrow="Validated scoring · roster · draft settings">
+    <div className="profile-edit-grid">
+      <label className="form-field"><span>League name</span><input disabled={disabled} maxLength={120} value={edit.leagueName} onChange={(event) => onChange({ ...edit, leagueName: event.target.value })} /></label>
+      <label className="form-field"><span>Teams</span><input disabled={disabled} min={2} max={32} type="number" value={edit.teamCount} onChange={(event) => onChange({ ...edit, teamCount: number(event.target.value) })} /></label>
+      {rosterField("qb", "QB")}{rosterField("rb", "RB")}{rosterField("wr", "WR")}{rosterField("te", "TE")}{rosterField("flex", "Flex")}{rosterField("superflex", "Superflex")}{rosterField("k", "K")}{rosterField("dst", "DST")}{rosterField("benchSize", "Bench")}
+      {scoringField("reception", "Reception")}{scoringField("passingTd", "Passing TD")}{scoringField("interception", "Interception")}{scoringField("tePremium", "TE premium")}
+      <label className="form-field"><span>Draft rounds</span><input disabled={disabled} min={1} max={40} type="number" value={edit.draft.rounds} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, rounds: number(event.target.value) } })} /></label>
+      <label className="form-field"><span>Draft slot</span><input disabled={disabled} min={1} max={edit.teamCount} placeholder="Optional" type="number" value={edit.draft.draftSlot ?? ""} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, draftSlot: event.target.value ? number(event.target.value) : null } })} /></label>
+      <label className="form-field"><span>Replacement method</span><select disabled={disabled} value={edit.draft.replacementMethod} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, replacementMethod: event.target.value as RedraftProfileUpdateInput["draft"]["replacementMethod"] } })}><option value="expected_available">Expected available</option><option value="starter_cutoff">Starter cutoff</option></select></label>
+    </div>
+    <div className="profile-edit-actions"><Button disabled={disabled || !edit.leagueName.trim()} icon="check" onClick={onSave}>{working === "save" ? "Saving…" : "Save & refresh rankings"}</Button><Button disabled={disabled} icon="layers" onClick={onDuplicate} variant="secondary">{working === "duplicate" ? "Duplicating…" : "Duplicate profile"}</Button></div>
+  </Panel>;
+}

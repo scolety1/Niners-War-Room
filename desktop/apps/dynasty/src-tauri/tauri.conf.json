@@ -1,0 +1,70 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Niners War Room — Dynasty",
+  "version": "1.0.0",
+  "identifier": "com.ninerswarroom.dynasty",
+  "mainBinaryName": "nwr-dynasty-war-room",
+  "build": {
+    "beforeDevCommand": {
+      "cwd": "..",
+      "script": "npm run dev",
+      "wait": false
+    },
+    "beforeBuildCommand": {
+      "cwd": "..",
+      "script": "npm run build"
+    },
+    "devUrl": "http://127.0.0.1:1421",
+    "frontendDist": "../dist",
+    "removeUnusedCommands": true
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Niners War Room — Dynasty",
+        "width": 1440,
+        "height": 920,
+        "minWidth": 720,
+        "minHeight": 560,
+        "center": true,
+        "decorations": false,
+        "visible": false,
+        "resizable": true,
+        "fullscreen": false,
+        "devtools": false
+      }
+    ],
+    "security": {
+      "capabilities": ["dynasty-main-runtime"],
+      "freezePrototype": true,
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:*; img-src 'self' data: blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; frame-ancestors 'none'; worker-src 'none'; media-src 'none'",
+      "devCsp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* ws://127.0.0.1:1421; img-src 'self' data: blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; frame-ancestors 'none'; worker-src 'none'; media-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "externalBin": ["../../../binaries/nwr-desktop-api"],
+    "publisher": "Niners War Room",
+    "shortDescription": "Private local-first dynasty football decision workspace.",
+    "icon": [
+      "../../../../assets/branding/nwr_dynasty_desktop_icon.ico",
+      "../../../../assets/branding/nwr_dynasty_desktop_icon.png"
+    ],
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
+      },
+      "wix": {
+        "upgradeCode": "60a0f8fa-f563-5925-9bcb-3b784632fadf"
+      },
+      "nsis": {
+        "installerIcon": "../../../../assets/branding/nwr_dynasty_desktop_icon.ico"
+      }
+    }
+  }
+}

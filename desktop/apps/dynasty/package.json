@@ -1,0 +1,22 @@
+{
+  "name": "@nwr/dynasty-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 1421 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 4421 --strictPort",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@nwr/api-client": "1.0.0",
+    "@nwr/contracts": "1.0.0",
+    "@nwr/ui": "1.0.0",
+    "@tauri-apps/api": "2.11.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.1"
+  }
+}

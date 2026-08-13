@@ -51,20 +51,24 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_unified_research_preview() -> UnifiedResearchPreview:
+def load_unified_research_preview(packet_dir: Path | None = None) -> UnifiedResearchPreview:
     """Load and fully validate the immutable research-only preview packet."""
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    resolved_packet = (packet_dir or PACKET_DIR).resolve()
+    manifest_path = resolved_packet / MANIFEST_PATH.name
+    board_path = resolved_packet / BOARD_PATH.name
+    neighborhoods_path = resolved_packet / NEIGHBORHOODS_PATH.name
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("authority") != AUTHORITY:
         raise ValueError("Unified research preview authority mismatch")
     if manifest.get("source_hashes") != EXPECTED_SOURCE_HASHES:
         raise ValueError("Unified research preview frozen source hashes mismatch")
-    if file_sha256(BOARD_PATH) != EXPECTED_BOARD_SHA256:
+    if file_sha256(board_path) != EXPECTED_BOARD_SHA256:
         raise ValueError("Unified research preview board hash mismatch")
-    if file_sha256(NEIGHBORHOODS_PATH) != EXPECTED_NEIGHBORHOODS_SHA256:
+    if file_sha256(neighborhoods_path) != EXPECTED_NEIGHBORHOODS_SHA256:
         raise ValueError("Unified research preview neighborhood hash mismatch")
 
-    board = pd.read_csv(BOARD_PATH, dtype={"source_asset_id": "string"}, low_memory=False)
-    neighborhoods = pd.read_csv(NEIGHBORHOODS_PATH, low_memory=False)
+    board = pd.read_csv(board_path, dtype={"source_asset_id": "string"}, low_memory=False)
+    neighborhoods = pd.read_csv(neighborhoods_path, low_memory=False)
     if len(board) != 320 or len(neighborhoods) != 73:
         raise ValueError("Unified research preview row-count contract failed")
     if set(board["authority"].dropna()) != {AUTHORITY}:

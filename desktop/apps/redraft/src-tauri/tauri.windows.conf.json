@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "resources": {
+      "../../../../docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/BLOCKED_2026_ROOKIES.csv": "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/BLOCKED_2026_ROOKIES.csv",
+      "../../../../docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv": "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv",
+      "../../../../docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/NWR_DATA_GOVERNANCE.json": "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/NWR_DATA_GOVERNANCE.json"
+    }
+  }
+}

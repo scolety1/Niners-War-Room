@@ -1,0 +1,344 @@
+import { invoke } from "@tauri-apps/api/core";
+import {
+  CONTRACT_VERSION,
+  type ApiEnvelope,
+  type ApiErrorBody,
+  type DesktopMode,
+  type DynastyBootstrap,
+  type DynastyComparison,
+  type DynastyWorkspace,
+  type OwnerDecisionInput,
+  type PersonalBoardInput,
+  type PlayerDetail,
+  type PlanningModuleId,
+  type PlanningModuleInput,
+  type PlanningWorkspace,
+  type RedraftBootstrap,
+  type RedraftProfileUpdateInput,
+  type RuntimeDescriptor,
+  type TradeBriefExport,
+  type TradeBriefInput,
+  type TeamWindow,
+  type TradeDecision,
+  type TradeSaveResult,
+  type TradeScenarioInput,
+  type TradeWorkspace,
+} from "@nwr/contracts";
+
+const REQUEST_TIMEOUT_MS = 20_000;
+const STARTUP_RETRY_DELAYS_MS = [0, 160, 320, 640, 1_000, 1_600] as const;
+
+export class NwrApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly recoveryAction: string;
+  readonly fieldErrors: Record<string, string[]>;
+
+  constructor(
+    message: string,
+    options: {
+      status?: number | undefined;
+      code?: string | undefined;
+      recoveryAction?: string | undefined;
+      fieldErrors?: Record<string, string[]> | undefined;
+    } = {},
+  ) {
+    super(message);
+    this.name = "NwrApiError";
+    this.status = options.status ?? 0;
+    this.code = options.code ?? "DESKTOP_API_ERROR";
+    this.recoveryAction = options.recoveryAction ?? "Retry after checking Data Health.";
+    this.fieldErrors = options.fieldErrors ?? {};
+  }
+}
+
+function isTauriRuntime(): boolean {
+  return "__TAURI_INTERNALS__" in window;
+}
+
+function browserRuntime(mode: DesktopMode): RuntimeDescriptor {
+  const defaultPort = mode === "dynasty" ? "18741" : "18742";
+  return {
+    mode,
+    apiBaseUrl:
+      import.meta.env.VITE_NWR_API_BASE_URL ?? `http://127.0.0.1:${defaultPort}`,
+    token:
+      import.meta.env.VITE_NWR_API_TOKEN ??
+      "nwr-desktop-development-token-only-000000000000",
+    contractVersion: CONTRACT_VERSION,
+  };
+}
+
+export function assertLocalApiBase(apiBaseUrl: string): URL {
+  let value: URL;
+  try {
+    value = new URL(apiBaseUrl);
+  } catch {
+    throw new NwrApiError("The desktop service returned an invalid local address.", {
+      code: "INVALID_API_ADDRESS",
+    });
+  }
+  const localHost = value.hostname === "127.0.0.1" || value.hostname === "localhost";
+  if (value.protocol !== "http:" || !localHost || value.username || value.password) {
+    throw new NwrApiError("NWR Desktop only accepts an unauthenticated loopback URL.", {
+      code: "NON_LOCAL_API_ADDRESS",
+    });
+  }
+  value.pathname = value.pathname.replace(/\/$/, "");
+  value.search = "";
+  value.hash = "";
+  return value;
+}
+
+export function buildLocalApiUrl(apiBaseUrl: string, path: string): URL {
+  if (!path.startsWith("/") || path.startsWith("//")) {
+    throw new NwrApiError("The desktop API path must be root-relative.", {
+      code: "INVALID_API_PATH",
+    });
+  }
+  const base = assertLocalApiBase(apiBaseUrl);
+  return new URL(path, base);
+}
+
+async function resolveRuntime(mode: DesktopMode): Promise<RuntimeDescriptor> {
+  const descriptor = isTauriRuntime()
+    ? await invoke<RuntimeDescriptor>("desktop_runtime")
+    : browserRuntime(mode);
+  if (descriptor.mode !== mode) {
+    throw new NwrApiError(
+      `The ${mode} interface refused a ${descriptor.mode} desktop service.`,
+      { code: "MODE_MISMATCH" },
+    );
+  }
+  if (!descriptor.token || descriptor.token.length < 32) {
+    throw new NwrApiError("The desktop session token is missing or invalid.", {
+      code: "INVALID_SESSION",
+    });
+  }
+  assertLocalApiBase(descriptor.apiBaseUrl);
+  return descriptor;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+export class NwrApiClient {
+  readonly mode: DesktopMode;
+  private readonly runtime: RuntimeDescriptor;
+
+  constructor(mode: DesktopMode, runtime: RuntimeDescriptor) {
+    this.mode = mode;
+    this.runtime = runtime;
+  }
+
+  async bootstrap<T extends DynastyBootstrap | RedraftBootstrap>(): Promise<T> {
+    let lastError: unknown;
+    for (const wait of STARTUP_RETRY_DELAYS_MS) {
+      if (wait) await delay(wait);
+      try {
+        return await this.request<T>("/api/v1/bootstrap");
+      } catch (error) {
+        lastError = error;
+        if (error instanceof NwrApiError && error.status > 0 && error.status < 500) break;
+      }
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new NwrApiError("NWR Desktop could not start its local service.");
+  }
+
+  dynastyPlayer(assetId: string): Promise<PlayerDetail> {
+    return this.request(`/api/v1/dynasty/assets/${encodeURIComponent(assetId)}`);
+  }
+
+  dynastyCompare(assetIds: string[]): Promise<DynastyComparison> {
+    return this.request("/api/v1/dynasty/compare", {
+      method: "POST",
+      body: JSON.stringify({ assetIds }),
+    });
+  }
+
+  evaluateTrade(
+    give: string[],
+    receive: string[],
+    teamWindow: TeamWindow,
+  ): Promise<TradeDecision> {
+    return this.request("/api/v1/dynasty/trades/evaluate", {
+      method: "POST",
+      body: JSON.stringify({ give, receive, teamWindow }),
+    });
+  }
+
+  listSavedTrades(): Promise<TradeWorkspace> {
+    return this.request("/api/v1/dynasty/trades");
+  }
+
+  saveTradeScenario(input: TradeScenarioInput): Promise<TradeSaveResult> {
+    return this.request("/api/v1/dynasty/trades", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  exportTradeBrief(input: TradeBriefInput): Promise<TradeBriefExport> {
+    return this.request("/api/v1/dynasty/trades/export", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  savePlanningModule(
+    moduleId: PlanningModuleId,
+    input: PlanningModuleInput,
+  ): Promise<PlanningWorkspace> {
+    return this.request(`/api/v1/dynasty/planning/modules/${encodeURIComponent(moduleId)}`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  createRedraftProfile(presetKey: string, leagueName: string): Promise<RedraftBootstrap> {
+    return this.request("/api/v1/redraft/profiles", {
+      method: "POST",
+      body: JSON.stringify({ presetKey, leagueName }),
+    });
+  }
+
+  activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/activate`, {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  loadDynastyWorkspace(): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace");
+  }
+
+  savePersonalBoardEntry(input: PersonalBoardInput): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace/personal-board", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  createOwnerDecision(input: OwnerDecisionInput): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace/decisions", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  backupDynastyWorkspace(): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace/backup", {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  checkDynastyWorkspaceRestore(): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace/backup/check", {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  adoptLegacyDynastyWorkspace(): Promise<DynastyWorkspace> {
+    return this.request("/api/v1/dynasty/workspace/adopt-legacy", {
+      method: "POST",
+      body: JSON.stringify({ confirmed: true }),
+    });
+  }
+
+  duplicateRedraftProfile(profileId: string, leagueName?: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/duplicate`, {
+      method: "POST",
+      body: JSON.stringify({ ...(leagueName?.trim() ? { leagueName: leagueName.trim() } : {}) }),
+    });
+  }
+
+  updateRedraftProfile(
+    profileId: string,
+    input: RedraftProfileUpdateInput,
+  ): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/edit`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  markDrafted(profileId: string, playerId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick`, {
+      method: "POST",
+      body: JSON.stringify({ playerId }),
+    });
+  }
+
+  undoDraftPick(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/undo`, {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const target = buildLocalApiUrl(this.runtime.apiBaseUrl, path);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(target, {
+        ...init,
+        cache: "no-store",
+        credentials: "omit",
+        redirect: "error",
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-NWR-Desktop-Token": this.runtime.token,
+          ...(init.headers ?? {}),
+        },
+      });
+      const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+      if (!response.ok) {
+        const error = payload?.errors?.[0];
+        throw new NwrApiError(error?.message ?? `Desktop request failed (${response.status}).`, {
+          status: response.status,
+          code: error?.code,
+          recoveryAction: error?.recoveryAction,
+          fieldErrors: error?.fieldErrors,
+        });
+      }
+      if (!payload || !("data" in payload) || payload.mode !== this.mode) {
+        throw new NwrApiError("The desktop service returned an invalid contract envelope.", {
+          status: response.status,
+          code: "INVALID_CONTRACT",
+        });
+      }
+      if (!payload.contractVersion.startsWith("1.")) {
+        throw new NwrApiError(
+          `Desktop contract ${payload.contractVersion} is not supported by this app.`,
+          { status: response.status, code: "CONTRACT_VERSION_MISMATCH" },
+        );
+      }
+      return payload.data;
+    } catch (error) {
+      if (error instanceof NwrApiError) throw error;
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new NwrApiError("The local NWR service did not respond in time.", {
+          code: "REQUEST_TIMEOUT",
+        });
+      }
+      throw new NwrApiError("The local NWR service is not available yet.", {
+        code: "SERVICE_UNAVAILABLE",
+      });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+}
+
+export async function createNwrClient(mode: DesktopMode): Promise<NwrApiClient> {
+  return new NwrApiClient(mode, await resolveRuntime(mode));
+}

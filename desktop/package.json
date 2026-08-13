@@ -1,0 +1,37 @@
+{
+  "name": "nwr-desktop-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "check:resources": "node ./scripts/check-resource-allowlists.mjs",
+    "dev:dynasty": "npm run dev --workspace @nwr/dynasty-desktop",
+    "dev:redraft": "npm run dev --workspace @nwr/redraft-desktop",
+    "build": "npm run check:resources && npm run typecheck && npm run build:dynasty && npm run build:redraft",
+    "build:dynasty": "npm run build --workspace @nwr/dynasty-desktop",
+    "build:redraft": "npm run build --workspace @nwr/redraft-desktop",
+    "sidecar:build": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-python-sidecar.ps1",
+    "typecheck": "tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json",
+    "test": "vitest run",
+    "tauri:dynasty": "npm run tauri:dev --workspace @nwr/dynasty-desktop",
+    "tauri:redraft": "npm run tauri:dev --workspace @nwr/redraft-desktop",
+    "bundle:dynasty": "npm run check:resources && npm run sidecar:build && npm run tauri:build --workspace @nwr/dynasty-desktop",
+    "bundle:redraft": "npm run check:resources && npm run sidecar:build && npm run tauri:build --workspace @nwr/redraft-desktop"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  }
+}

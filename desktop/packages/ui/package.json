@@ -1,0 +1,16 @@
+{
+  "name": "@nwr/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@nwr/contracts": "1.0.0",
+    "@tauri-apps/api": "2.11.1",
+    "react": "19.2.8",
+    "react-router-dom": "7.18.1"
+  }
+}
