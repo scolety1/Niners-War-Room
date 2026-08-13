@@ -546,6 +546,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     blocked_notice = " ".join(row["message"] for row in first.data["notices"])
     assert "Max Bredeson" in blocked_notice
     assert "Riley Nowakowski" in blocked_notice
+    assert "does not infer target or touch shares" in blocked_notice
     assert second.data["health"]["blockedPlayers"] == 2
 
     created = facade.create_redraft_profile(

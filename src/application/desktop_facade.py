@@ -1541,6 +1541,15 @@ class DesktopBackendFacade:
                 "title": "Current-season evidence only",
                 "message": ("Redraft rankings require governed projections for the active season."),
             },
+            {
+                "tone": "review",
+                "title": "Role-change context is not yet modeled",
+                "message": (
+                    "This projection snapshot uses prior-season production plus current "
+                    "identity/status. It does not infer target or touch shares from offseason "
+                    "competition, depth-chart labels, or injury news."
+                ),
+            },
         ]
         if using_bundled_seed:
             notices.append(
