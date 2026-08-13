@@ -106,6 +106,7 @@ def test_rookie_and_blocked_rows_remain_truthful_and_source_separated(tmp_path: 
     blocked = universe.frame.loc[universe.frame["compare_asset_type"].eq("Blocked Rookie")]
 
     assert len(rookies) == 73
+    assert rookies["age"].ne("").all()
     assert rookies["source_score_value"].ne("").all()
     assert rookies["compare_source_label"].eq("Model V4 2026 Rookie Review").all()
     assert len(blocked) == 7

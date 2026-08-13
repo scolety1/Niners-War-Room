@@ -98,6 +98,20 @@ def _short_term_lean(rows: list[dict[str, Any]]) -> CompareLean:
 def _research_lean(
     rows: list[dict[str, Any]], horizon: str, outlook_field: str
 ) -> CompareLean:
+    asset_types = {_text(row.get("compare_asset_type")) for row in rows}
+    if asset_types != {"Current Player"}:
+        reason = (
+            "Selected assets use source-separated authorities; no production research "
+            "preference is calculated across them."
+            if len(asset_types) > 1
+            else "The production research order does not rank review-only rookie assets."
+        )
+        return CompareLean(
+            horizon,
+            "No admitted production lean",
+            "Source-separated review",
+            reason,
+        )
     ranked: list[tuple[int, str, str]] = []
     for row in rows:
         try:

@@ -48,6 +48,10 @@ function withDepth<T>(rows: T[], depth: string): T[] {
   return depth === "all" ? rows : rows.slice(0, Number(depth));
 }
 
+export function rankingSearchRows<T>(rows: T[], depth: string, query: string): T[] {
+  return query.trim() ? rows : withDepth(rows, depth);
+}
+
 function rankingColumns(compact = false): TableColumn[] {
   const base: TableColumn[] = [
     { key: "overallRank", label: "Rank", sort: "number", width: "60px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.overallRank)}</b></span> },
@@ -166,7 +170,10 @@ export function RankingsPage({ data }: { data: RedraftBootstrap }) {
   useEffect(() => { if (requestedName) setQuery(requestedName); }, [requestedName]);
   const teams = ["ALL", ...new Set(data.rankings.map((row) => row.team).filter(Boolean))].sort();
   const filteredRows = useMemo(() => rankingRows(data).filter((row) => (position === "ALL" || row.position === position) && (team === "ALL" || row.team === team) && (availability === "All" || (availability === "Drafted") === Boolean(row.drafted)) && (!query || `${String(row.playerName)} ${String(row.team)}`.toLowerCase().includes(query.toLowerCase()))), [availability, data, position, query, team]);
-  const rows = useMemo(() => withDepth(filteredRows, depth), [depth, filteredRows]);
+  const rows = useMemo(
+    () => rankingSearchRows(filteredRows, depth, query),
+    [depth, filteredRows, query],
+  );
   const reset = () => {
     setQuery("");
     setPosition("ALL");

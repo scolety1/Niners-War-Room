@@ -42,6 +42,28 @@ export function isCurrentDecisionRequest(
   return requestId === currentRequestId && inputRevision === currentInputRevision;
 }
 
+export function isSameTradePackage(
+  give: readonly string[],
+  receive: readonly string[],
+  evaluatedGive: readonly string[],
+  evaluatedReceive: readonly string[],
+): boolean {
+  return (
+    give.length === evaluatedGive.length &&
+    receive.length === evaluatedReceive.length &&
+    give.every((assetId, index) => assetId === evaluatedGive[index]) &&
+    receive.every((assetId, index) => assetId === evaluatedReceive[index])
+  );
+}
+
+export function ownerDimensionLabel(value: string): string {
+  const spaced = value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replaceAll("_", " ")
+    .trim();
+  return spaced ? `${spaced.charAt(0).toUpperCase()}${spaced.slice(1)}` : "Evidence";
+}
+
 function AssetPicker({
   assets,
   selected,
@@ -330,6 +352,10 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
           </article>
         ))}
       </div>
+      <p className="copy-muted">
+        Floor, expected, and ceiling are source-native research bands or signals,
+        not one shared numeric scale.
+      </p>
       <div className="advantage-grid">
         {result.ranges.map((range) => (
           <Panel key={range.assetId} title={range.player} eyebrow={range.ageWindow}>
@@ -355,7 +381,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
           </div>
           {dimensions.map((dimension) => (
             <div className="matrix__row" key={dimension}>
-              <span>{dimension.replaceAll("_", " ")}</span>
+              <span>{ownerDimensionLabel(dimension)}</span>
               {result.players.map((player) => (
                 <b key={player.assetId}>{String(player.dimensions[dimension] ?? "—")}</b>
               ))}
@@ -408,6 +434,10 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   const [receive, setReceive] = useState<string[]>([]);
   const [teamWindow, setTeamWindow] = useState<TeamWindow>("Balanced");
   const [decision, setDecision] = useState<TradeDecision | null>(null);
+  const [evaluatedPackage, setEvaluatedPackage] = useState<{
+    give: string[];
+    receive: string[];
+  } | null>(null);
   const [workspace, setWorkspace] = useState<TradeWorkspace | null>(null);
   const [savedSelection, setSavedSelection] = useState("");
   const [scenarioId, setScenarioId] = useState<string | null>(null);
@@ -436,6 +466,7 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     inputRevision.current += 1;
     requestSequence.current += 1;
     setDecision(null);
+    setEvaluatedPackage(null);
     setError(null);
     setStatusMessage("");
     setEvaluating(false);
@@ -480,7 +511,16 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
           inputRevision.current,
         )
       ) {
+        // Re-assert the exact request snapshot before exposing its decision. This also
+        // protects save/export if an accessibility click is delivered twice at the
+        // evaluation boundary.
+        setGive(requestedGive);
+        setReceive(requestedReceive);
+        setEvaluatedPackage({ give: requestedGive, receive: requestedReceive });
         setDecision(result);
+        setStatusMessage(
+          `Evaluated the exact ${requestedGive.length}-for-${requestedReceive.length} selected package.`,
+        );
       }
     } catch (reason) {
       if (
@@ -538,6 +578,24 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
 
   const save = async () => {
     if (busy || !give.length || !receive.length || !title.trim()) return;
+    if (
+      decision &&
+      (!evaluatedPackage ||
+        !isSameTradePackage(
+          give,
+          receive,
+          evaluatedPackage.give,
+          evaluatedPackage.receive,
+        ))
+    ) {
+      setError(
+        new NwrApiError("The selected package no longer matches the evaluated package.", {
+          code: "TRADE_PACKAGE_CHANGED",
+          recoveryAction: "Evaluate the exact selected package again before saving it.",
+        }),
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
     setStatusMessage("");
@@ -609,6 +667,23 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
 
   const exportBrief = async () => {
     if (busy || !decision) return;
+    if (
+      !evaluatedPackage ||
+      !isSameTradePackage(
+        give,
+        receive,
+        evaluatedPackage.give,
+        evaluatedPackage.receive,
+      )
+    ) {
+      setError(
+        new NwrApiError("The selected package no longer matches the evaluated package.", {
+          code: "TRADE_PACKAGE_CHANGED",
+          recoveryAction: "Evaluate the exact selected package again before exporting it.",
+        }),
+      );
+      return;
+    }
     setExporting(true);
     setError(null);
     setStatusMessage("");

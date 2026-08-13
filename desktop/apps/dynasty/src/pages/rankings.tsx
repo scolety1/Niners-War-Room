@@ -1,4 +1,4 @@
-import type { DynastyBootstrap, DynastyRanking } from "@nwr/contracts";
+import type { AssetOption, DynastyBootstrap, DynastyRanking } from "@nwr/contracts";
 import { Button, DataTable, PageHeader, Panel, SearchInput, SegmentedControl, SelectField, StatusBadge, formatNumber, stableSortRows } from "@nwr/ui";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,67 @@ function marketClass(value: unknown) {
 }
 
 function rankingRecords(rows: DynastyRanking[]) { return rows.map((row) => ({ ...row })); }
+
+export function assetExplorerRows(
+  rows: AssetOption[],
+  query: string,
+  assetType: string,
+  evidence: string,
+) {
+  const needle = query.trim().toLowerCase();
+  return rows.filter((row) => {
+    if (assetType !== "All" && row.assetType !== assetType) return false;
+    if (evidence === "Available" && row.blocked) return false;
+    if (evidence === "Blocked" && !row.blocked) return false;
+    return !needle || `${row.name} ${row.team} ${row.position} ${row.authority} ${row.assetType}`.toLowerCase().includes(needle);
+  });
+}
+
+export function AssetExplorerPage({ data }: { data: DynastyBootstrap }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [assetType, setAssetType] = useState("All");
+  const [evidence, setEvidence] = useState("All");
+  const [tableResetKey, setTableResetKey] = useState(0);
+  const assetTypes = ["All", ...new Set(data.assetOptions.map((row) => row.assetType).filter(Boolean))];
+  const rows = useMemo(
+    () => assetExplorerRows(data.assetOptions, query, assetType, evidence),
+    [assetType, data.assetOptions, evidence, query],
+  );
+  const blockedCount = data.assetOptions.filter((row) => row.blocked).length;
+  const reset = () => {
+    setQuery("");
+    setAssetType("All");
+    setEvidence("All");
+    setTableResetKey((value) => value + 1);
+  };
+
+  return <>
+    <PageHeader
+      eyebrow="Players · governed registry"
+      title="Asset Explorer"
+      description="Browse current players, Rookie Review assets, and future picks without merging their source scales or changing NWR authority."
+      status={<><StatusBadge tone="safe" label={`${data.assetOptions.length} governed assets`} /><StatusBadge tone={blockedCount ? "review" : "safe"} label={`${blockedCount} evidence blocked`} /></>}
+      actions={<Button icon="compare" onClick={() => navigate("/compare")}>Compare assets</Button>}
+    />
+    <div className="alert-strip"><strong>Read-only registry</strong><span>Ranks remain source-native. Missing evidence stays unavailable, never zero, and blocked assets remain visible.</span></div>
+    <Panel title="Governed asset registry" eyebrow="Current players · rookies · picks">
+      <div className="toolbar">
+        <SearchInput value={query} onChange={setQuery} placeholder="Find an asset, team, position, or authority…" />
+        <SelectField label="Asset type" value={assetType} onChange={setAssetType} options={assetTypes.map((value) => ({ value, label: value }))} />
+        <SelectField label="Evidence" value={evidence} onChange={setEvidence} options={["All", "Available", "Blocked"].map((value) => ({ value, label: value }))} />
+        <Button icon="undo" onClick={reset} variant="ghost">Reset</Button>
+      </div>
+      <DataTable columns={[
+        { key: "rank", label: "Source rank", sort: "number", width: "90px", render: (row) => row.rank == null ? "—" : `#${String(row.rank)}` },
+        { key: "name", label: "Asset", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.name)}</strong><small>{ownerLabel(row.team)} · {ownerLabel(row.position)}</small></span> },
+        { key: "assetType", label: "Asset type", sort: "text", render: (row) => ownerLabel(row.assetType) },
+        { key: "authority", label: "Source authority", sort: "text", render: (row) => ownerLabel(row.authority) },
+        { key: "blocked", label: "Evidence", sort: "text", render: (row) => <StatusBadge tone={row.blocked ? "blocked" : "safe"} label={row.blocked ? "Blocked" : "Available"} /> },
+      ]} resetKey={tableResetKey} rows={rows.map((row) => ({ ...row }))} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
+    </Panel>
+  </>;
+}
 
 export function RankingsPage({ data }: { data: DynastyBootstrap }) {
   const navigate = useNavigate();

@@ -100,6 +100,7 @@ def _rookie_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
             "asset_name": row["player_name"],
             "position": row["position"],
             "team": row["nfl_team"],
+            "age": row["age_at_draft"],
             "source_label": "Model V4 2026 Rookie Review",
             "authority_status": "Review-Only",
             "rank_label": row["rank_label"],

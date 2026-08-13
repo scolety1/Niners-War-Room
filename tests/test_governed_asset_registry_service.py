@@ -81,6 +81,7 @@ def test_registry_keeps_sources_and_scales_separate(tmp_path: Path) -> None:
     assert current_row["source_label"] == "Finished V1"
     assert current_row["authority_status"] == "Production"
     assert rookie["authority_status"] == "Review-Only"
+    assert rookie["age"]
     assert "only within the 2026 Rookie Review" in rookie["comparison_scope"]
     assert pick["score_label"] == "No common value"
     assert "no player-value equivalence" in pick["comparison_scope"]

@@ -10,6 +10,7 @@ import {
   DataHealthPage,
   DraftCockpitPage,
   HomePage,
+  AssetExplorerPage,
   MarketPage,
   PlanningPage,
   PlayerDetailPage,
@@ -25,6 +26,7 @@ const NAVIGATION: NavigationGroup[] = [
     label: "Players",
     items: [
       { label: "Dynasty Rankings", path: "/rankings", icon: "board", shortcut: "2" },
+      { label: "Asset Explorer", path: "/assets", icon: "players" },
       { label: "Player Detail", path: "/players", icon: "players" },
       { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" },
       { label: "Market Analysis", path: "/market", icon: "market" },
@@ -119,6 +121,7 @@ export function DynastyApp() {
       <Routes>
         <Route path="/" element={<HomePage data={data} />} />
         <Route path="/rankings" element={<RankingsPage data={data} />} />
+        <Route path="/assets" element={<AssetExplorerPage data={data} />} />
         <Route path="/players" element={<PlayerDetailPage client={client} data={data} />} />
         <Route path="/players/:assetId" element={<PlayerDetailPage client={client} data={data} />} />
         <Route path="/compare" element={<ComparePage client={client} data={data} />} />

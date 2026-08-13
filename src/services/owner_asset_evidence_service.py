@@ -88,7 +88,7 @@ def compose_owner_asset_evidence(
                 "asset_name": _first_present(current.get("player_name"), row.get("asset_name")),
                 "position": _first_present(current.get("position"), row.get("position")),
                 "team": _first_present(current.get("nfl_team"), row.get("team")),
-                "age": _first_present(current.get("age")),
+                "age": _first_present(current.get("age"), row.get("age")),
                 "dynasty_rank": _first_present(
                     current.get("nwr_rank"),
                     row.get("rank_value") if row.get("asset_type") == "Current Player" else "",

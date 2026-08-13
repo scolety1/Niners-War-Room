@@ -65,3 +65,16 @@ def test_compare_formats_numeric_research_values_for_owners() -> None:
     assert "241.7 research-index points" in summary.leans[2].reason
     assert any("63.5%" in value for value in summary.notes[0]["Advantages"])
     assert "0.634846" not in " ".join(summary.notes[0]["Advantages"])
+
+
+def test_mixed_authority_compare_never_names_a_production_preference() -> None:
+    veteran = _row("Veteran", 10, 62.0)
+    rookie = _row("Rookie", 1, 64.0)
+    rookie["compare_asset_type"] = "Rookie Review"
+
+    summary = build_owner_compare_summary([veteran, rookie])
+
+    assert summary.leans[1].preferred == "No admitted production lean"
+    assert summary.leans[2].preferred == "No admitted production lean"
+    assert summary.leans[1].authority == "Source-separated review"
+    assert "source-separated authorities" in summary.leans[1].reason

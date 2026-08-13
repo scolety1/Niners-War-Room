@@ -36,6 +36,7 @@ def _asset(
     rank: str = "",
     score: str = "",
     warning: str = "",
+    age: str = "",
 ) -> dict[str, str]:
     return {
         "asset_id": asset_id,
@@ -43,6 +44,7 @@ def _asset(
         "asset_name": name,
         "position": position,
         "team": "TEST",
+        "age": age,
         "source_label": "Finished V1" if asset_type == "Current Player" else "Rookie Review",
         "authority_status": "Production" if asset_type == "Current Player" else "Review-Only",
         "rank_label": "NWR Dynasty Rank"
@@ -248,6 +250,23 @@ def test_owner_evidence_preserves_frozen_board_display_market_rank_without_legac
 
     assert evidence.rows[0]["market_dp_rank"] == "3.7"
     assert evidence.rows[0]["market_status"] == "Display-only source context"
+
+
+def test_owner_evidence_preserves_governed_rookie_age_without_current_player_row() -> None:
+    rows = (
+        _asset(
+            "rookie:LOV121782",
+            "Jeremiyah Love",
+            asset_type="Rookie Review",
+            position="RB",
+            rank="1",
+            age="20.895706",
+        ),
+    )
+
+    evidence = compose_owner_asset_evidence(rows, include_market=False)
+
+    assert evidence.rows[0]["age"] == "20.895706"
 
 
 def test_current_trade_is_exact_and_brock_purdy_cannot_ghost_into_any_derived_output() -> None:
