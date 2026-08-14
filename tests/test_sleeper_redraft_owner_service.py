@@ -12,7 +12,8 @@ from src.services.sleeper_redraft_owner_service import (
 
 
 class FakeSleeperClient:
-    def __init__(self, *, scoring: object | None = None, drafts: object | None = None) -> None:
+    def __init__(self, *, league_id: str = "league-1", scoring: object | None = None, drafts: object | None = None) -> None:
+        self.league_id = league_id
         self.scoring = scoring if scoring is not None else {
             "pass_yd": 0.04, "pass_td": 4, "pass_int": -2, "rush_yd": 0.1,
             "rush_td": 6, "rec_yd": 0.1, "rec": 1, "rec_td": 6,
@@ -24,11 +25,11 @@ class FakeSleeperClient:
 
     def get_json(self, path: str):
         values = {
-            "league/league-1": {"league_id": "league-1", "name": "Fantasy Gamers", "season": "2026", "status": "pre_draft", "settings": {"num_teams": 10}, "roster_positions": ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF", "BN", "BN", "BN", "BN", "BN", "BN"], "scoring_settings": self.scoring},
+            f"league/{self.league_id}": {"league_id": self.league_id, "name": "Fantasy Gamers", "season": "2026", "status": "pre_draft", "settings": {"num_teams": 10}, "roster_positions": ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF", "BN", "BN", "BN", "BN", "BN", "BN"], "scoring_settings": self.scoring},
             "user/scolety": {"user_id": "owner-9", "username": "scolety", "display_name": "scolety"},
-            "league/league-1/users": [{"user_id": "owner-9", "metadata": {"team_name": "Brown Town & Big Mike"}}],
-            "league/league-1/rosters": [{"roster_id": 9, "owner_id": "owner-9", "keepers": [], "players": []}],
-            "league/league-1/drafts": self.drafts,
+            f"league/{self.league_id}/users": [{"user_id": "owner-9", "metadata": {"team_name": "Brown Town & Big Mike"}}],
+            f"league/{self.league_id}/rosters": [{"roster_id": 9, "owner_id": "owner-9", "keepers": [], "players": []}],
+            f"league/{self.league_id}/drafts": self.drafts,
             "draft/draft-2026/picks": [{"pick_no": 1, "player_id": "p1"}],
         }
         return values[path]
@@ -51,6 +52,22 @@ def test_import_maps_exact_core_settings_and_records_unsupported_scoring(tmp_pat
     assert receipt["owner"]["roster_id"] == 9
     assert receipt["write_behavior"] == "NO_SLEEPER_WRITES"
     assert {row["sleeper_setting"] for row in receipt["scoring_reconciliation"] if row["status"] == "exact"} == {"pass_yd", "pass_td", "pass_int", "rush_yd", "rush_td", "rec_yd", "rec", "rec_td", "fum_lost"}
+
+
+def test_fantasy_gamers_identity_is_stable_and_ppr(tmp_path) -> None:
+    league_id = "1312983576827920384"
+    imported = import_sleeper_redraft_profile(
+        league_id=league_id,
+        username="scolety",
+        redraft_root=tmp_path,
+        client=FakeSleeperClient(league_id=league_id),
+    )
+
+    assert imported.profile.league_name == "Fantasy Gamers"
+    assert imported.profile.team_count == 10
+    assert imported.profile.scoring.reception == 1.0
+    assert imported.profile.provider == "sleeper"
+    assert imported.profile.provider_league_id == league_id
 
 
 def test_import_rejects_malformed_and_ambiguous_sleeper_responses(tmp_path) -> None:

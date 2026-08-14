@@ -111,6 +111,7 @@ from src.services.redraft_engine_v1_service import (
     profile_store_errors,
     projection_snapshot_path,
     redraft_store_root,
+    reconcile_sleeper_profile_identities,
     save_profile,
     set_active_profile,
     undo_last_draft_pick,
@@ -1566,6 +1567,7 @@ class DesktopBackendFacade:
         seed_installed, seed_warnings = self._ensure_redraft_projection_seed()
         warnings: list[str] = list(seed_warnings)
         try:
+            reconcile_sleeper_profile_identities(self.redraft_root)
             profiles = list_profiles(self.redraft_root, include_archived=False)
             raw_selected_id = active_profile_id(self.redraft_root)
             selected = active_profile(self.redraft_root)
@@ -2481,6 +2483,8 @@ class DesktopBackendFacade:
             "createdAtUtc": profile.created_at_utc,
             "updatedAtUtc": profile.updated_at_utc,
             "practicalMode": profile.practical_mode,
+            "provider": profile.provider,
+            "providerLeagueId": profile.provider_league_id,
         }
 
     @staticmethod

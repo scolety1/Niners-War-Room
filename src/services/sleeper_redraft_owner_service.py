@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -19,6 +19,9 @@ from src.services.redraft_engine_v1_service import (
     RosterSettings,
     ScoringSettings,
     create_profile,
+    list_profiles,
+    reconcile_sleeper_profile_identities,
+    save_profile,
 )
 from src.services.sleeper_import_service import SleeperHttpClient
 
@@ -110,8 +113,27 @@ def import_sleeper_redraft_profile(
             keeper_count=keeper_count,
             roster_limits={"K": roster_settings.k, "DST": roster_settings.dst},
         ),
+        provider="sleeper",
+        provider_league_id=normalized_league_id,
     )
-    profile = create_profile(redraft_root, template, league_name=league_name)
+    reconcile_sleeper_profile_identities(redraft_root)
+    existing = next(
+        (
+            value
+            for value in list_profiles(redraft_root, include_archived=True)
+            if value.provider == "sleeper"
+            and value.provider_league_id == normalized_league_id
+            and value.season == season
+        ),
+        None,
+    )
+    if existing is None:
+        profile = create_profile(redraft_root, template, league_name=league_name)
+    else:
+        profile = save_profile(
+            redraft_root,
+            replace(template, profile_id=existing.profile_id, archived=False),
+        )
     receipt = {
         "schema_version": 1,
         "source": "Sleeper public read-only API via existing SleeperHttpClient",

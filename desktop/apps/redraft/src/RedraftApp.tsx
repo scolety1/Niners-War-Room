@@ -4,10 +4,11 @@ import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { CheatSheetPage } from "./cheat-sheet";
+import { leagueFormat } from "./league-context";
 import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { ProfilePage } from "./profile";
-import { assertRedraftBootstrap } from "./bootstrap-guard";
 
 const NAVIGATION: NavigationGroup[] = [
   { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
@@ -32,18 +33,24 @@ export function RedraftApp() {
       const bootstrap = assertRedraftBootstrap(await nextClient.bootstrap<RedraftBootstrap>());
       if (!active) return;
       setClient(nextClient); setData(bootstrap); setRefreshing(false);
-    }).catch((reason: unknown) => { if (active) { setError(reason instanceof NwrApiError ? reason : new NwrApiError("NWR Redraft could not initialize its local service.")); setRefreshing(false); } });
+    }).catch((reason: unknown) => {
+      if (active) {
+        setError(reason instanceof NwrApiError ? reason : new NwrApiError("NWR Redraft could not initialize its local service."));
+        setRefreshing(false);
+      }
+    });
     return () => { active = false; };
   }, [attempt]);
   const update = useCallback((next: RedraftBootstrap) => setData(next), []);
   const commands = useMemo<CommandItem[]>(() => {
     const tools = NAVIGATION.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
-    const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position,row.team,`tier ${row.tier}`] }));
+    const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position, row.team, `tier ${row.tier}`] }));
     return [...tools, ...players];
   }, [data]);
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><LoadingScreen label="Opening Redraft command center" /></div>;
   if (!data || !client) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><div className="standalone-state"><ErrorState message={error?.message ?? "The governed Redraft service is unavailable."} recovery={error?.recoveryAction} onRetry={reload} /></div></div>;
-  return <AppShell commands={commands} contextLabel="Redraft · Current season" healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+  return <AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+    <ActiveLeagueSelector client={client} data={data} onUpdate={update} />
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
@@ -58,4 +65,21 @@ export function RedraftApp() {
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   </AppShell>;
+}
+
+function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState("");
+  const active = data.activeProfile;
+  const switchLeague = async (profileId: string) => {
+    if (!profileId || profileId === data.activeProfileId || working) return;
+    setWorking(true); setError("");
+    try { onUpdate(await client.activateRedraftProfile(profileId)); }
+    catch { setError("League switch could not be saved. The current workspace remains active."); }
+    finally { setWorking(false); }
+  };
+  return <section className="active-league-selector" aria-label="Active League">
+    <div><span>Active League</span><strong>{active?.leagueName ?? "Choose a league"}</strong><small>{active ? leagueFormat(active) : "Create or import a Redraft league profile"}</small>{error ? <em role="status">{error}</em> : null}</div>
+    <label><span>Switch League</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.leagueName} — {leagueFormat(profile)}</option>)}</select></label>
+  </section>;
 }

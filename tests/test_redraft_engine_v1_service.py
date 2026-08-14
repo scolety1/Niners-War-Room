@@ -34,6 +34,7 @@ from src.services.redraft_engine_v1_service import (
     profile_store_errors,
     projection_snapshot_path,
     redraft_compare_pool_rows,
+    reconcile_sleeper_profile_identities,
     restore_profile,
     save_profile,
     score_projection,
@@ -322,6 +323,38 @@ def test_profile_create_edit_duplicate_archive_delete_and_active_isolation(tmp_p
         delete_profile(tmp_path, copied.profile_id, confirmed=False)
     delete_profile(tmp_path, copied.profile_id, confirmed=True)
     assert {profile.profile_id for profile in list_profiles(tmp_path)} == {second.profile_id}
+
+
+def test_receipt_backed_sleeper_profile_identity_migration_preserves_existing_settings(
+    tmp_path: Path,
+) -> None:
+    legacy = create_profile(
+        tmp_path,
+        _profile(name="Fantasy Gamers", teams=10, reception=1.0),
+        league_name="Fantasy Gamers",
+    )
+    receipt_path = tmp_path / "sleeper_imports" / f"{legacy.profile_id}.json"
+    receipt_path.parent.mkdir()
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "league": {
+                    "league_id": "1312983576827920384",
+                    "season": 2026,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    reconciled = reconcile_sleeper_profile_identities(tmp_path)
+
+    assert reconciled[0].profile_id == legacy.profile_id
+    assert reconciled[0].league_name == "Fantasy Gamers"
+    assert reconciled[0].team_count == 10
+    assert reconciled[0].scoring.reception == 1.0
+    assert reconciled[0].provider == "sleeper"
+    assert reconciled[0].provider_league_id == "1312983576827920384"
 
 
 def test_malformed_profile_is_reported_without_hiding_healthy_profiles(tmp_path: Path) -> None:

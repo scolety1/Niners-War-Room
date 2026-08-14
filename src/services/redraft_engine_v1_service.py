@@ -134,6 +134,10 @@ class LeagueProfile:
     created_at_utc: str = ""
     updated_at_utc: str = ""
     practical_mode: bool = False
+    # Profile ids scope local Redraft state. External identity distinguishes
+    # same-named league workspaces without changing any scoring model.
+    provider: str = "local"
+    provider_league_id: str | None = None
     schema_version: int = SCHEMA_VERSION
 
 
@@ -266,6 +270,15 @@ def validate_profile(profile: LeagueProfile) -> None:
         raise RedraftValidationError("Profile id contains unsupported characters.")
     if not profile.league_name.strip():
         raise RedraftValidationError("League name is required.")
+    if profile.provider not in {"local", "sleeper"}:
+        raise RedraftValidationError("League provider must be local or sleeper.")
+    if profile.provider == "sleeper":
+        if not profile.provider_league_id or not re.fullmatch(
+            r"[A-Za-z0-9_-]+", profile.provider_league_id
+        ):
+            raise RedraftValidationError("Sleeper profiles require a valid Sleeper league id.")
+    elif profile.provider_league_id is not None:
+        raise RedraftValidationError("Only Sleeper profiles may include a provider league id.")
     if not 2000 <= profile.season <= 2100:
         raise RedraftValidationError("Season must be between 2000 and 2100.")
     if not 2 <= profile.team_count <= 32:
@@ -345,6 +358,12 @@ def _profile_from_document(document: Mapping[str, Any]) -> LeagueProfile:
             created_at_utc=str(document.get("created_at_utc", "")),
             updated_at_utc=str(document.get("updated_at_utc", "")),
             practical_mode=bool(document.get("practical_mode", False)),
+            provider=str(document.get("provider", "local")),
+            provider_league_id=(
+                str(document["provider_league_id"])
+                if document.get("provider_league_id")
+                else None
+            ),
             schema_version=int(document.get("schema_version", 0)),
         )
     except (KeyError, TypeError, ValueError) as exc:
@@ -448,9 +467,46 @@ def duplicate_profile(
     source = load_profile(root, profile_id)
     return create_profile(
         root,
-        replace(source, preset_key=source.preset_key),
+        replace(source, preset_key=source.preset_key, provider="local", provider_league_id=None),
         league_name=league_name or f"{source.league_name} Copy",
     )
+
+
+def reconcile_sleeper_profile_identities(root: str | Path) -> tuple[LeagueProfile, ...]:
+    """Attach stable Sleeper identity to legacy receipt-backed profiles.
+
+    This is a local metadata migration only: scoring, roster settings, draft
+    state, and the existing profile id are retained exactly as stored.
+    """
+
+    root_path = Path(root)
+    reconciled: list[LeagueProfile] = []
+    for profile in list_profiles(root_path, include_archived=True):
+        receipt_path = root_path / "sleeper_imports" / f"{profile.profile_id}.json"
+        if not receipt_path.is_file():
+            reconciled.append(profile)
+            continue
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            league = receipt["league"]
+            league_id = str(league["league_id"])
+            season = int(league["season"])
+        except (OSError, ValueError, KeyError, TypeError):
+            reconciled.append(profile)
+            continue
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", league_id) or season != profile.season:
+            reconciled.append(profile)
+            continue
+        if profile.provider == "sleeper" and profile.provider_league_id == league_id:
+            reconciled.append(profile)
+            continue
+        reconciled.append(
+            save_profile(
+                root_path,
+                replace(profile, provider="sleeper", provider_league_id=league_id),
+            )
+        )
+    return tuple(reconciled)
 
 
 def archive_profile(root: str | Path, profile_id: str) -> LeagueProfile:

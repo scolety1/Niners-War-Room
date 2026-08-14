@@ -556,6 +556,8 @@ export interface LeagueProfile {
   createdAtUtc: string;
   updatedAtUtc: string;
   practicalMode: boolean;
+  provider: "local" | "sleeper";
+  providerLeagueId: string | null;
 }
 
 export interface RedraftProfileUpdateInput {

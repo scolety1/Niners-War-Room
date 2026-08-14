@@ -20,7 +20,13 @@ from src.application.desktop_facade import (
 )
 from src.services.draft_day_app_v1_service import file_sha256
 from src.services.outcome_v3_display_service import load_outcome_v3_display
-from src.services.redraft_engine_v1_service import builtin_presets, projection_snapshot_path
+from src.services.redraft_engine_v1_service import (
+    DraftContext,
+    LeagueProfile,
+    builtin_presets,
+    create_profile,
+    projection_snapshot_path,
+)
 from src.services.rookie_draft_eligibility_service import (
     load_rookie_draft_eligibility_overlay,
 )
@@ -891,6 +897,8 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
             "createdAtUtc",
             "updatedAtUtc",
             "practicalMode",
+            "provider",
+            "providerLeagueId",
         }
         for row in first.data["presets"]
     )
@@ -1151,7 +1159,6 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
             player_id=player_id,
             drafted=True,
         )
-
     edited = facade.update_redraft_profile(
         profile_id,
         league_name="Restart League Updated",
@@ -1229,6 +1236,55 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
                 "replacementMethod": "expected_available",
             },
         )
+
+
+def test_redraft_league_switching_isolates_draft_state_and_persists_active_profile(tmp_path: Path) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    niners = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Niners"
+    ).data["profile"]
+    ppr_preset = builtin_presets()[2]
+    fantasy = create_profile(
+        store,
+        LeagueProfile(
+            profile_id="fantasy-gamers-template",
+            league_name="Fantasy Gamers",
+            season=2026,
+            team_count=10,
+            roster=ppr_preset.roster,
+            scoring=ppr_preset.scoring,
+            draft=DraftContext(rounds=15, draft_slot=5),
+            provider="sleeper",
+            provider_league_id="1312983576827920384",
+        ),
+        league_name="Fantasy Gamers",
+    )
+    facade.activate_redraft_profile(fantasy.profile_id)
+    fantasy_board = facade.redraft_bootstrap()
+    drafted_id = fantasy_board.data["rankings"][0]["playerId"]
+    facade.mark_redraft_player(profile_id=fantasy.profile_id, player_id=drafted_id, drafted=True)
+
+    facade.activate_redraft_profile(niners["profileId"])
+    niners_board = facade.redraft_bootstrap()
+    assert niners_board.data["activeProfile"]["leagueName"] == "Niners"
+    assert niners_board.data["activeProfile"]["scoring"]["reception"] == 0.5
+    assert niners_board.data["draftBoard"]["drafted"] == []
+    assert niners_board.data["activeProfile"]["providerLeagueId"] is None
+
+    restarted = DesktopBackendFacade(
+        repo_root=REPO_ROOT, mode="redraft", redraft_root=store
+    ).redraft_bootstrap()
+    assert restarted.data["activeProfileId"] == niners["profileId"]
+
+    facade.activate_redraft_profile(fantasy.profile_id)
+    restored = facade.redraft_bootstrap()
+    assert restored.data["activeProfile"]["leagueName"] == "Fantasy Gamers"
+    assert restored.data["activeProfile"]["teamCount"] == 10
+    assert restored.data["activeProfile"]["scoring"]["reception"] == 1.0
+    assert restored.data["activeProfile"]["provider"] == "sleeper"
+    assert restored.data["activeProfile"]["providerLeagueId"] == "1312983576827920384"
+    assert restored.data["draftBoard"]["drafted"] == [drafted_id]
 
 
 def test_launcher_repo_root_validation_is_frozen_aware(tmp_path: Path) -> None:

@@ -7,6 +7,8 @@ import type {
 import { Button, ErrorState, Icon, PageHeader, Panel, StatusBadge } from "@nwr/ui";
 import { useEffect, useState } from "react";
 
+import { leagueFormat, leagueIdentityFormat } from "./league-context";
+
 function editableProfile(profile: LeagueProfile): RedraftProfileUpdateInput {
   return {
     leagueName: profile.leagueName,
@@ -121,13 +123,13 @@ export function ProfilePage({
   const profileCount = data.profiles.length;
   const profileLabel = `${profileCount} profile${profileCount === 1 ? "" : "s"} · ${data.activeProfileId ? "active" : "none active"}`;
   return <>
-    <PageHeader eyebrow="League · Local and isolated" title="League Profiles & Scoring" description="Each Redraft league keeps its own scoring, roster demand, and draft state. Nothing here changes Dynasty." status={<><StatusBadge tone="safe" label={profileLabel} /><StatusBadge tone="safe" label="Redraft only" /></>} />
+    <PageHeader eyebrow={data.activeProfile ? `Active League · ${leagueFormat(data.activeProfile)}` : "League management · Local and isolated"} title="League Profiles & Scoring" description="Switch, import, and inspect each Redraft league. Scoring, roster demand, Sleeper context, and draft state remain isolated." status={<><StatusBadge tone="safe" label={profileLabel} /><StatusBadge tone="safe" label="Redraft only" /></>} />
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <p aria-live="polite" className="profile-feedback">{message}</p>
     <div className="profile-layout">
       <Panel title="Your leagues" eyebrow="Current-season profiles">
         <div className="profile-list">
-          {data.profiles.map((profile) => <button className={profile.profileId === data.activeProfileId ? "active" : ""} disabled={Boolean(working)} key={profile.profileId} onClick={() => void activate(profile)}><span><Icon name="trophy" /></span><div><strong>{profile.leagueName}</strong><small>{profile.teamCount} teams · {profile.roster.superflex ? "Superflex" : "1QB"} · {profile.scoring.reception === 1 ? "PPR" : profile.scoring.reception === .5 ? "Half PPR" : "Standard"}</small></div>{profile.profileId === data.activeProfileId ? <em>Active</em> : <Icon name="chevron" size={13} />}</button>)}
+          {data.profiles.map((profile) => <button className={profile.profileId === data.activeProfileId ? "active" : ""} disabled={Boolean(working)} key={profile.profileId} onClick={() => void activate(profile)}><span><Icon name="trophy" /></span><div><strong>{profile.leagueName}</strong><small>{leagueFormat(profile)}</small><small>{leagueIdentityFormat(profile)}</small></div>{profile.profileId === data.activeProfileId ? <em>Active</em> : <Icon name="chevron" size={13} />}</button>)}
           {!data.profiles.length ? <p className="copy-muted">No profile exists yet. Create one from a validated preset.</p> : null}
         </div>
       </Panel>
