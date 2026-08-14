@@ -1,0 +1,58 @@
+{
+  "candidate_scores_ranks_runtime_integrated": false,
+  "canonical_promotion": "NOT_APPROVED",
+  "class_counts": {
+    "approved_identity_rows": 7,
+    "frozen_champion_rows": 73,
+    "official": 80,
+    "rank_shifts": 63,
+    "represented": 80
+  },
+  "files": {
+    "DESKTOP_VERIFICATION.md": {
+      "bytes": 666,
+      "sha256": "7afc5f6c53573f74f8b962061363677774ce7cb6f8cb6ab2d74b61ef4122748d"
+    },
+    "FROZEN_VS_CANDIDATE_RANK_DIFF.csv": {
+      "bytes": 8175,
+      "sha256": "e63a92bfa06a5959f3c78eea22b5c4f84ffedd866de45fcc5163f540c4bfa4f6"
+    },
+    "IDENTITY_CONTRACT.md": {
+      "bytes": 396,
+      "sha256": "17b61c5974a70c38de44d159f7c69e3e87b361bca226c5dfbacffdb678b44cfa"
+    },
+    "MODEL_V4_2026_ROOKIE_REVIEW_CANDIDATE.csv": {
+      "bytes": 113708,
+      "sha256": "0b89cd3b0b2e92146eac7e1389475219021831544f4c37eb817255f7c428668e"
+    },
+    "OFFICIAL_CLASS_COMPLETENESS.csv": {
+      "bytes": 183,
+      "sha256": "a15c2d9580a232980f14709c00d8734922381d9ee97ac5c3cf6da3ab013f68fe"
+    },
+    "OWNER_APPROVAL_RECEIPT.md": {
+      "bytes": 438,
+      "sha256": "e25c74d4b1b803decf4fb8f5acda0ecdd91b51f4dce5c6772e3a0fa128b3843b"
+    },
+    "PLAUSIBILITY_AUDIT.md": {
+      "bytes": 1515,
+      "sha256": "3fb95bcd68e1ba82b0bbd574a017d31c882a3cc3b3a0d614d2240efef0782eaf"
+    },
+    "PROMOTION_RECOMMENDATION.md": {
+      "bytes": 401,
+      "sha256": "76e7276fae9e0defebb0c9c60df4f993ecb10db3e6b258201de9d853c51a11fe"
+    },
+    "SEVEN_NEWLY_SCORED_ROOKIES.csv": {
+      "bytes": 10090,
+      "sha256": "4c186e4b539e203a087bf11b6617e059ea59903391038755b073ed225ab5a269"
+    },
+    "VALIDATION_RESULTS.md": {
+      "bytes": 817,
+      "sha256": "f62b93322732e4da616bd034cb4b7867d79e0a5d53b79a16a73e1f1038e3bc84"
+    }
+  },
+  "frozen_champion_sha256": "06853164a41cd9715accfc3c4f3e54d0cc915be6c55ebab040de6fc0abd96c2f",
+  "identity_contract": "APPROVED_OFFICIAL_PICK_PLUS_PINNED_GOVERNED_LIVE_ID_V1",
+  "packet": "NWR_ROOKIE_REVIEW_CANDIDATE_V1_20260814",
+  "source_formula_builder": "build_nwr_rookie_intelligence_v2.py",
+  "verdict": "HOLD_80_PLAYER_ROOKIE_REVIEW_CANDIDATE"
+}

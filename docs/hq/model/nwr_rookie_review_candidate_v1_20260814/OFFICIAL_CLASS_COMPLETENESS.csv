@@ -1,0 +1,8 @@
+metric,expected,actual,result
+official_rookies,80,80,PASS
+represented,80,80,PASS
+searchable,80,80,PASS
+selectable,80,80,PASS
+draftable,80,80,PASS
+missing,0,0,PASS
+duplicates,0,0,PASS

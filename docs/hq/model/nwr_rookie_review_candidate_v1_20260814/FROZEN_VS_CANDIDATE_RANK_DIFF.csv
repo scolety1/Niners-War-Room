@@ -1,0 +1,81 @@
+player,position,overall_pick,frozen_rank,candidate_rank,rank_change,classification,existing_player_score_change,score_change_explanation
+Jeremiyah Love,RB,3,1,1,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Jordyn Tyson,WR,8,2,2,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Makai Lemon,WR,20,3,3,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Jonah Coleman,RB,108,4,4,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Skyler Bell,WR,125,5,5,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Denzel Boston,WR,39,6,6,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Emmett Johnson,RB,161,7,7,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Carnell Tate,WR,4,8,8,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Chris Bell,WR,94,9,9,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+Omar Cooper Jr.,WR,30,10,10,0,NO_RANK_CHANGE,NO,unchanged frozen formula inputs and score
+De'Zhaun Stribling,WR,33,,11,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Zachariah Branch,WR,79,11,12,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Germie Bernard,WR,47,12,13,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Ted Hurst,WR,84,13,14,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+KC Concepcion,WR,24,14,15,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Malachi Fields,WR,74,15,16,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Chris Brazzell II,WR,83,16,17,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Antonio Williams,WR,71,17,18,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Caleb Douglas,WR,75,18,19,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Jadarian Price,RB,32,19,20,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kenyon Sadiq,TE,16,20,21,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Seth McGowan,RB,237,21,22,1,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Nicholas Singleton,RB,165,,23,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Mike Washington Jr.,RB,122,22,24,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kevin Coleman Jr.,WR,177,23,25,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kaytron Allen,RB,187,24,26,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Elijah Sarratt,WR,115,25,27,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Demond Claiborne,RB,198,26,28,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Brenen Thompson,WR,105,27,29,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Adam Randall,RB,174,28,30,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+CJ Daniels,WR,197,29,31,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Fernando Mendoza,QB,1,30,32,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Ja'Kobi Lane,WR,80,31,33,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Josh Cameron,WR,191,32,34,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Zavion Thomas,WR,89,33,35,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Lewis Bond,WR,204,34,36,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Cyrus Allen,WR,176,35,37,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Bryce Lance,WR,136,36,38,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+CJ Williams,WR,203,37,39,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kaelon Black,RB,90,38,40,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Anthony Smith,WR,218,39,41,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Tanner Koziol,TE,164,40,42,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Sam Roush,TE,69,41,43,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Max Klare,TE,61,42,44,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Justin Joly,TE,152,43,45,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Josh Cuevas,TE,173,44,46,2,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Joe Royer,TE,170,,47,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Eli Stowers,TE,54,45,48,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Eli Raridon,TE,95,46,49,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Reggie Virgil,WR,143,47,50,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Marlin Klein,TE,59,48,51,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Dallen Bentley,TE,256,49,52,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Jack Endries,TE,221,50,53,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Emmanuel Henderson Jr.,WR,199,51,54,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kendrick Law,WR,168,52,55,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Barion Brown,WR,190,53,56,3,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Oscar Delp,TE,73,,57,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Matthew Hibner,TE,133,54,58,4,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Bauer Sharp,TE,185,55,59,4,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Deion Burks,WR,254,,60,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Jaren Kanak,TE,225,56,61,5,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Nate Boerkircher,TE,56,57,62,5,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Seydou Traore,TE,180,58,63,5,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Riley Nowakowski,TE,169,59,64,5,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Colbie Young,WR,140,,65,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Malik Benson,WR,195,60,66,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Jam Miller,RB,245,61,67,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Carsen Ryan,TE,248,62,68,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Ty Simpson,QB,13,63,69,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Taylen Green,QB,182,64,70,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Drew Allar,QB,76,65,71,6,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Carson Beck,QB,65,,72,,NEWLY_ADMITTED_APPROVED_IDENTITY,NO,newly scored only under approved identity contract
+Cade Klubnik,QB,110,66,73,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Cole Payton,QB,178,67,74,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Athan Kaliakmanis,QB,223,68,75,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Kaden Wetjen,WR,121,69,76,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Behren Morton,QB,234,70,77,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Will Kacmarek,TE,87,71,78,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Garrett Nussmeier,QB,249,72,79,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
+Max Bredeson,TE,159,73,80,7,PURE_INSERTION_DISPLACEMENT,NO,unchanged frozen formula inputs and score
