@@ -290,6 +290,13 @@ export class NwrApiClient {
     });
   }
 
+  startPracticalMock(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/practical-mock`, {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
   kdstStreamer(week: number): Promise<KdstStreamerResult> {
     return this.request("/api/v1/redraft/kdst/streamer", {
       method: "POST",

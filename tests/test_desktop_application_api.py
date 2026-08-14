@@ -787,6 +787,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "rankings",
         "replacementLevels",
         "draftBoard",
+        "manualAssets",
         "externalConsensus",
         "health",
         "notices",
@@ -807,6 +808,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     assert first.data["profiles"] == []
     assert first.data["activeProfileId"] is None
     assert first.data["activeProfile"] is None
+    assert first.data["manualAssets"] == []
     assert first.data["externalConsensus"] == {
         "authority": "EXTERNAL CONSENSUS — FANTASYPROS",
         "configured": False,
@@ -830,6 +832,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
             "archived",
             "createdAtUtc",
             "updatedAtUtc",
+            "practicalMode",
         }
         for row in first.data["presets"]
     )

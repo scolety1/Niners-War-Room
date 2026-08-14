@@ -411,6 +411,16 @@ def test_rankings_are_deterministic_and_block_missing_evidence(snapshot) -> None
     assert rookie.confidence == "LOW"
 
 
+def test_practical_mode_keeps_kdst_out_of_nwr_math_without_blocking_supported_board(snapshot) -> None:
+    exact = replace(_profile(), roster=replace(_profile().roster, k=1, dst=1))
+    assert generate_rankings(exact, snapshot).errors
+    practical = replace(exact, practical_mode=True)
+    ranking = generate_rankings(practical, snapshot)
+    assert ranking.ready
+    assert {row.position for row in ranking.rows} == {"QB", "RB", "WR", "TE"}
+    assert "manual and unmodeled" in " ".join(build_health_report(practical, snapshot, ranking).messages)
+
+
 def test_superflex_materially_increases_qb_value_and_rank(snapshot) -> None:
     one_qb = generate_rankings(_profile(superflex=0), snapshot)
     superflex = generate_rankings(_profile(superflex=1), snapshot)

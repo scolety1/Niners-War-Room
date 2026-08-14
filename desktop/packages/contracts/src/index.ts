@@ -518,6 +518,7 @@ export interface LeagueProfile {
   archived: boolean;
   createdAtUtc: string;
   updatedAtUtc: string;
+  practicalMode: boolean;
 }
 
 export interface RedraftProfileUpdateInput {
@@ -579,6 +580,14 @@ export interface DraftBoard {
   recoveredFromBackup?: boolean;
 }
 
+export interface ManualDraftAsset {
+  playerId: string;
+  playerName: string;
+  position: "K" | "DST";
+  team: string;
+  authority: "MANUAL — NOT MODELED BY NWR";
+}
+
 export interface ExternalConsensusStatus {
   authority: string;
   configured: boolean;
@@ -621,6 +630,7 @@ export interface RedraftBootstrap {
   rankings: RedraftRanking[];
   replacementLevels: ReplacementLevel[];
   draftBoard: DraftBoard | null;
+  manualAssets?: ManualDraftAsset[];
   externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;
   notices: Notice[];

@@ -108,6 +108,15 @@ export function ProfilePage({
     } catch (reason) { fail(reason, "Profile settings could not be saved."); }
     finally { setWorking(""); }
   };
+  const startPracticalMock = async () => {
+    if (!data.activeProfile || working) return;
+    setWorking("practical"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.startPracticalMock(data.activeProfile.profileId));
+      setMessage("Practical Mock is ready. Five uncommon scoring events remain omitted; K/DST are manual and unmodeled.");
+    } catch (reason) { fail(reason, "Practical Mock could not start."); }
+    finally { setWorking(""); }
+  };
 
   const profileCount = data.profiles.length;
   const profileLabel = `${profileCount} profile${profileCount === 1 ? "" : "s"} · ${data.activeProfileId ? "active" : "none active"}`;
@@ -135,6 +144,10 @@ export function ProfilePage({
           <label className="form-field"><span>Sleeper username</span><input disabled={Boolean(working)} value={sleeperUsername} onChange={(event) => setSleeperUsername(event.target.value)} /></label>
         </div>
         <div className="profile-create-footer"><p>Reads league settings once, creates an isolated local Redraft profile, and never makes a Sleeper pick or roster change.</p><Button disabled={!sleeperLeagueId.trim() || !sleeperUsername.trim() || Boolean(working)} icon="profile" onClick={() => void importSleeper()}>{working === "sleeper-import" ? "Importing…" : "Import & activate"}</Button></div>
+      </Panel>
+      <Panel title="Practical Mock Mode" eyebrow="Owner-authorized · Fantasy Gamers">
+        <p>NWR models the major QB/RB/WR/TE scoring rules for Fantasy Gamers. Five uncommon scoring events are not included. Kicker and DST are manual/unmodeled.</p>
+        <div className="profile-create-footer"><p>{data.activeProfile?.practicalMode ? "Practical Mode is active. Use Draft Room to search and draft manual K/DST assets." : "Refreshes public Sleeper K/DST identities locally and enables this approximate profile."}</p><Button disabled={!data.activeProfile || data.activeProfile.practicalMode || Boolean(working)} icon="draft" onClick={() => void startPracticalMock()}>{working === "practical" ? "Starting…" : "Start Practical Mock"}</Button></div>
       </Panel>
     </div>
     {data.activeProfile && edit ? <ProfileEditor edit={edit} disabled={Boolean(working)} onChange={setEdit} onDuplicate={() => void duplicate()} onSave={() => void save()} working={working} /> : null}

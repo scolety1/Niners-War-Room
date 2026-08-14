@@ -133,6 +133,7 @@ class LeagueProfile:
     archived: bool = False
     created_at_utc: str = ""
     updated_at_utc: str = ""
+    practical_mode: bool = False
     schema_version: int = SCHEMA_VERSION
 
 
@@ -343,6 +344,7 @@ def _profile_from_document(document: Mapping[str, Any]) -> LeagueProfile:
             archived=bool(document.get("archived", False)),
             created_at_utc=str(document.get("created_at_utc", "")),
             updated_at_utc=str(document.get("updated_at_utc", "")),
+            practical_mode=bool(document.get("practical_mode", False)),
             schema_version=int(document.get("schema_version", 0)),
         )
     except (KeyError, TypeError, ValueError) as exc:
@@ -1017,7 +1019,9 @@ def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> R
     insufficient = [
         f"{position} {counts[position]}/{count + 1}"
         for position, count in required.items()
-        if count > 0 and counts[position] < count + 1
+        if count > 0
+        and counts[position] < count + 1
+        and not (profile.practical_mode and position in {"K", "DST"})
     ]
     if insufficient:
         return RankingResult(
@@ -1322,7 +1326,11 @@ def build_health_report(
         messages.append("Governed granular current-season projections are missing or blocked.")
     replacement_valid = bool(ranking and ranking.replacement_levels and not ranking.errors)
     if profile and (profile.roster.k or profile.roster.dst):
-        messages.append("K/DST require governed projected_points_override rows.")
+        messages.append(
+            "K/DST are manual and unmodeled in Practical Mode."
+            if profile.practical_mode
+            else "K/DST require governed projected_points_override rows."
+        )
     ranked = len(ranking.rows) if ranking else 0
     blocked = len(snapshot.blocked_rows) if snapshot else 0
     if not profile_valid:

@@ -118,6 +118,7 @@ from src.services.redraft_engine_v1_service import (
 from src.services.sleeper_redraft_owner_service import (
     SleeperRedraftImportError,
     import_sleeper_redraft_profile,
+    manual_kdst_assets_from_sleeper_players,
 )
 from src.services.sleeper_import_service import SleeperHttpClient
 from src.services.fantasypros_kdst_consensus_service import (
@@ -1548,6 +1549,7 @@ class DesktopBackendFacade:
         rankings: list[dict[str, Any]] = []
         replacement_levels: list[dict[str, Any]] = []
         draft_board: dict[str, Any] | None = None
+        manual_assets: list[dict[str, str]] = []
         snapshot = None
         ranking = None
         if selected is not None:
@@ -1581,6 +1583,10 @@ class DesktopBackendFacade:
                     }
                     for value in ranking.replacement_levels
                 ]
+            if selected.practical_mode:
+                manual_assets = self._manual_assets_for_profile(selected.profile_id)
+                if not manual_assets:
+                    warnings.append("Practical Mode has no local K/DST manual assets. Start Practical Mock to refresh Sleeper identities.")
 
         using_bundled_seed = self._using_bundled_redraft_seed()
         blocked_seed_rows = self._bundled_redraft_blocked_rows() if using_bundled_seed else ()
@@ -1657,6 +1663,14 @@ class DesktopBackendFacade:
                         "message": "Unsupported non-zero Sleeper fields are explicit: " + ", ".join(str(value) for value in unsupported) + ". NWR did not silently map them to zero.",
                     }
                 )
+            if selected.practical_mode:
+                notices.append(
+                    {
+                        "tone": "review",
+                        "title": "PRACTICAL SCORING",
+                        "message": "NWR models the major QB/RB/WR/TE scoring rules for Fantasy Gamers. Five uncommon scoring events are not included. Kicker and DST are manual/unmodeled.",
+                    }
+                )
         if using_bundled_seed:
             notices.append(
                 {
@@ -1714,6 +1728,7 @@ class DesktopBackendFacade:
                 "rankings": rankings,
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
+                "manualAssets": manual_assets,
                 "externalConsensus": {
                     "authority": fantasypros_status.authority,
                     "configured": fantasypros_status.configured,
@@ -1783,6 +1798,36 @@ class DesktopBackendFacade:
                 "unsupportedScoring": list(imported.unsupported_scoring),
             }
         )
+
+    def start_practical_redraft_mock(self, *, profile_id: str) -> FacadePayload:
+        """Owner-authorized local practical mode; never changes a Sleeper league."""
+
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        if active_profile_id(self.redraft_root) != normalized:
+            raise FacadeError("REDRAFT_PROFILE_NOT_ACTIVE", "Start Practical Mock from the active Redraft profile.", status=409)
+        try:
+            profile = load_profile(self.redraft_root, normalized)
+            receipt_path = self.redraft_root / "sleeper_imports" / f"{normalized}.json"
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            league_id = str(receipt["league"]["league_id"])
+            if league_id != "1312983576827920384":
+                raise FacadeError("PRACTICAL_MODE_NOT_AUTHORIZED", "Practical Mock authorization is limited to Fantasy Gamers.", status=409)
+            assets = manual_kdst_assets_from_sleeper_players(SleeperHttpClient().get_json("players/nfl"))
+            if not any(item["position"] == "K" for item in assets) or not any(item["position"] == "DST" for item in assets):
+                raise SleeperRedraftImportError("Sleeper did not return usable K and DST manual assets.")
+            manual_path = self.redraft_root / "manual_assets" / f"{normalized}.json"
+            manual_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = manual_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps({"schema_version": 1, "profile_id": normalized, "assets": list(assets)}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            temporary.replace(manual_path)
+            profile = replace(profile, practical_mode=True)
+            save_profile(self.redraft_root, profile)
+        except FacadeError:
+            raise
+        except (OSError, ValueError, KeyError, SleeperRedraftImportError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("PRACTICAL_MODE_START_FAILED", "Practical Mock could not refresh its read-only Sleeper K/DST identities. No Sleeper state was changed.", status=409) from exc
+        return FacadePayload(data={"profile": self._profile_payload(profile), "manualAssets": list(assets)})
 
     def redraft_kdst_streamer(self, *, week: int) -> FacadePayload:
         """Read FantasyPros K/DST ECR and Sleeper availability; never writes either service."""
@@ -2030,7 +2075,8 @@ class DesktopBackendFacade:
                 status=409,
             )
         ranking = self._redraft_ranking_for_profile(normalized_profile)
-        if normalized_player not in {row.player_id for row in ranking.rows}:
+        manual_ids = {item["player_id"] for item in self._manual_assets_for_profile(normalized_profile)}
+        if normalized_player not in {row.player_id for row in ranking.rows} | manual_ids:
             raise FacadeError(
                 "REDRAFT_PLAYER_NOT_RANKED",
                 "The requested player is not in the active Redraft ranking.",
@@ -2328,6 +2374,27 @@ class DesktopBackendFacade:
             raise FacadeError("INVALID_PLAYER_ID", "The Redraft player ID is invalid.")
         return text
 
+    def _manual_assets_for_profile(self, profile_id: str) -> list[dict[str, str]]:
+        path = self.redraft_root / "manual_assets" / f"{profile_id}.json"
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+            values = document.get("assets") if isinstance(document, dict) else None
+        except (OSError, ValueError):
+            return []
+        if not isinstance(values, list):
+            return []
+        output: list[dict[str, str]] = []
+        for value in values:
+            if not isinstance(value, dict):
+                continue
+            player_id = _text(value.get("player_id"))
+            name = _text(value.get("player_name"))
+            position = _text(value.get("position")).upper()
+            team = _text(value.get("team")).upper()
+            if player_id and name and team and position in {"K", "DST"}:
+                output.append({"player_id": player_id, "player_name": name, "position": position, "team": team, "authority": "MANUAL — NOT MODELED BY NWR"})
+        return output
+
     @staticmethod
     def _profile_payload(profile: LeagueProfile) -> dict[str, Any]:
         return {
@@ -2378,6 +2445,7 @@ class DesktopBackendFacade:
             "archived": profile.archived,
             "createdAtUtc": profile.created_at_utc,
             "updatedAtUtc": profile.updated_at_utc,
+            "practicalMode": profile.practical_mode,
         }
 
     @staticmethod

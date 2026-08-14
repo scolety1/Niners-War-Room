@@ -136,6 +136,44 @@ def load_sleeper_draft_picks(*, draft_id: str, client: SleeperHttpClient | None 
     return tuple(dict(value) for value in values)
 
 
+def manual_kdst_assets_from_sleeper_players(value: object) -> tuple[dict[str, str], ...]:
+    """Create selectable, unranked K/DST assets from Sleeper's public identities.
+
+    These are draft-state assets only.  They intentionally contain no projection,
+    rank, score, tier, or confidence field.
+    """
+
+    if not isinstance(value, Mapping):
+        raise SleeperRedraftImportError("Sleeper player response is malformed.")
+    rows: list[dict[str, str]] = []
+    for sleeper_id, raw in value.items():
+        if not isinstance(raw, Mapping):
+            continue
+        position = str(raw.get("position") or "").upper()
+        position = "DST" if position == "DEF" else position
+        if position not in {"K", "DST"} or raw.get("active") is False:
+            continue
+        team = str(raw.get("team") or "").upper().strip()
+        name = str(raw.get("full_name") or raw.get("search_full_name") or "").strip()
+        if position == "DST" and not name and team:
+            name = f"{team} D/ST"
+        if not team or not name:
+            continue
+        safe_id = str(sleeper_id).strip()
+        if not safe_id:
+            continue
+        rows.append(
+            {
+                "player_id": f"manual:{position}:{safe_id}",
+                "player_name": name,
+                "position": position,
+                "team": team,
+                "authority": "MANUAL — NOT MODELED BY NWR",
+            }
+        )
+    return tuple(sorted(rows, key=lambda row: (row["position"], row["team"], row["player_name"], row["player_id"])))
+
+
 def _select_draft(league: Mapping[str, Any], drafts: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
     season = str(league.get("season") or "")
     candidates = [value for value in drafts if str(value.get("season") or "") == season and str(value.get("type") or "").casefold() in {"snake", "auction"}]

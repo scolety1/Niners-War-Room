@@ -1,0 +1,13 @@
+{
+  "league": "Fantasy Gamers",
+  "team_count": 10,
+  "rounds": 15,
+  "total_picks_per_mock": 150,
+  "manual_asset_counts": {"K": 43, "DST": 32},
+  "runs": [
+    {"owner_slot": 2, "picks": 150, "errors": [], "owner_kdst": ["Andre Szmyt", "ATL D/ST"]},
+    {"owner_slot": 5, "picks": 150, "errors": [], "owner_kdst": ["Ryan Fitzgerald", "CAR D/ST"]},
+    {"owner_slot": 9, "picks": 150, "errors": [], "owner_kdst": ["Nick Folk", "DAL D/ST"]}
+  ],
+  "checks": ["unique picks", "snake order", "late K/DST completion", "K/DST manual status", "all teams have K and DST"]
+}

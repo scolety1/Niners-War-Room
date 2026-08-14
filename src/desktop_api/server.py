@@ -29,6 +29,7 @@ _PROFILE_ACTIVATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/activate$")
 _PROFILE_DUPLICATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/duplicate$")
 _PROFILE_EDIT = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/edit$")
 _SLEEPER_REDRAFT_IMPORT = "/api/v1/redraft/sleeper/import"
+_PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical-mock$")
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
@@ -420,6 +421,12 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if type(week) is not int:
                 raise self._invalid_body("week must be an integer.")
             return self.server.facade.redraft_kdst_streamer(week=week)
+        practical_match = _PRACTICAL_MOCK_START.fullmatch(path)
+        if method == "POST" and practical_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            self.server.facade.start_practical_redraft_mock(profile_id=unquote(practical_match.group(1)))
+            return self.server.facade.redraft_bootstrap()
         match = _PROFILE_ACTIVATE.fullmatch(path)
         if method == "POST" and match:
             body = self._json_body(allow_empty=True)
