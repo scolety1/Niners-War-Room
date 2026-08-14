@@ -232,6 +232,24 @@ export function PlayerDetailBody({
           </>
         )}
       </div>
+      {detail.immediateProduction ? (
+        <Panel title="Immediate production context" eyebrow="Shared 2026 Redraft authority">
+          {detail.immediateProduction.available ? (
+            <div className="bridge-production-grid bridge-production-grid--detail">
+              <article>
+                <strong>{detail.name}</strong>
+                <dl>
+                  <div><dt>Projected points</dt><dd>{formatNumber(detail.immediateProduction.projectedPoints, 1)}</dd></div>
+                  <div><dt>Overall / position</dt><dd>#{detail.immediateProduction.overallRank} / #{detail.immediateProduction.positionRank}</dd></div>
+                  <div><dt>Replacement-adjusted</dt><dd>{formatNumber(detail.immediateProduction.replacementAdjustedValue, 1)}</dd></div>
+                  <div><dt>Confidence</dt><dd>{ownerLabel(detail.immediateProduction.confidence)}</dd></div>
+                </dl>
+                <p className="copy-muted">{detail.immediateProduction.uncertainty}</p>
+              </article>
+            </div>
+          ) : <p className="copy-muted">Exact-ID current-season evidence is unavailable; it remains unknown and is not treated as zero.</p>}
+        </Panel>
+      ) : null}
       <div className="split-view">
         <div className="stack">
           <Panel title="Owner outlook" eyebrow={ownerLabel(detail.range.authority, "Source-separated range")}>

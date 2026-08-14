@@ -26,6 +26,9 @@ def _player(
     caveats: tuple[str, ...] = (),
     market_rank: object = "",
     market_status: str = "Not available",
+    redraft_vbd: object = "",
+    redraft_points: object = "",
+    research_outlook_3y: object = "",
 ) -> tuple[str, dict[str, object]]:
     return key, {
         "item_key": key,
@@ -43,7 +46,45 @@ def _player(
         "market_status": market_status,
         "owner_caveats": caveats,
         "outcome_signals": (),
+        "redraft_available": redraft_vbd != "",
+        "redraft_vbd": redraft_vbd,
+        "redraft_projected_points": redraft_points,
+        "research_outlook_3y": research_outlook_3y,
     }
+
+
+def test_mixed_rookie_veteran_trade_adds_disclosed_non_additive_bridge_dimensions() -> None:
+    veteran = "registry:current:veteran"
+    rookie = "registry:rookie:rookie"
+    decision = _decision(
+        [
+            _player(
+                veteran,
+                "Veteran",
+                rank=30,
+                redraft_vbd=45,
+                redraft_points=200,
+                research_outlook_3y=60,
+            ),
+            _player(
+                rookie,
+                "Rookie",
+                rank=5,
+                registry_type="Rookie Review",
+                redraft_vbd=25,
+                redraft_points=170,
+                research_outlook_3y=85,
+            ),
+        ],
+        [veteran],
+        [rookie],
+    )
+
+    dimensions = {row.code: row for row in decision.dimensions}
+    assert dimensions["D11"].outcome == "SIDE_A_LEAN"
+    assert "No Redraft side total" in " ".join(dimensions["D11"].evidence)
+    assert dimensions["D12"].outcome == "SIDE_B_LEAN"
+    assert dimensions["D12"].confidence == "LOW"
 
 
 def _pick(key: str, name: str) -> tuple[str, dict[str, object]]:

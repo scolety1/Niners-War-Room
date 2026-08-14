@@ -1,0 +1,10 @@
+horizon,cohort,rookie_rows,veteran_rows,target_rows_present,target_rows_missing,untouched_status,production_status,reason
+1Y,2024,77,,66,11,CONDITIONALLY_FUTURE_ELIGIBLE,BLOCKED,"Rookie target-season rows are absent for 11 entities; inactive/retired/roster masks are unavailable"
+1Y,2025,85,,70,15,CONDITIONALLY_FUTURE_ELIGIBLE,BLOCKED,"Rookie target-season rows are absent for 15 entities; no formal outcome quarantine"
+1Y,2024,,586,446,140,NOT_FRESHLY_QUARANTINED,BLOCKED,"Veteran target-season rows are absent for 140 states"
+1Y,2025,,596,458,138,NOT_FRESHLY_QUARANTINED,BLOCKED,"Veteran target-season rows are absent for 138 states"
+3Y,2022,79,,,,VALIDATION_SPENT,BLOCKED,"Prior lane read 3Y target/censoring diagnostics; nominal completeness relied on missing-as-zero"
+3Y,2023,80,,,,VALIDATION_SPENT,BLOCKED,"Prior lane read 3Y target/censoring diagnostics; nominal completeness relied on missing-as-zero"
+3Y,2024,77,,,,IMMATURE,BLOCKED,"Not approximately three complete seasons"
+5Y,2013-2021,720,5238,,,VALIDATION_SPENT,BLOCKED,"All mature rookie cohorts spent; nominal completeness has missing-as-zero defect"
+5Y,2022-2025,321,,,,IMMATURE,BLOCKED,"No complete five-year observations"

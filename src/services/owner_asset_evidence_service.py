@@ -130,6 +130,10 @@ def compose_owner_asset_evidence(
                     market_freshness.get("upstream_scrape_date")
                 ),
                 "research_rank": _first_present(research.get("research_rank")),
+                "governed_player_id": _first_present(
+                    row.get("live_governed_player_id"),
+                    research.get("governed_player_id"),
+                ),
                 "research_tier": _first_present(research.get("research_tier")),
                 "research_status": _first_present(research.get("status")),
                 "research_status_owner": owner_evidence_status(research.get("status")),

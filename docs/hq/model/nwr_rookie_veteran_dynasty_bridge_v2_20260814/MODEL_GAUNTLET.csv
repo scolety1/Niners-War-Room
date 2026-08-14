@@ -1,0 +1,9 @@
+model,family,status,decision
+B0,existing Unified Research bridge,RESEARCH_ONLY,Retained as frozen research champion
+B1,1Y realized-utility bridge,BLOCKED,No fit; no complete untouched leakage-safe cohort
+B2,3Y realized-utility bridge,BLOCKED,No fit; 2022-2023 spent and 2024 immature
+B3,multi-horizon 1Y plus 3Y learner,BLOCKED,No fit; inherits B1 and B2 blockers
+B4,pairwise rookie-veteran preference learner,RESEARCH_ONLY,Recovered prior results only
+B5,position-aware calibrated bridge,BLOCKED,No fit; rookie calibration and fresh-cohort gates fail
+B6,Outcome hybrid with lawful feature parity,BLOCKED,No fit; current/historical rookie-veteran parity not proven
+M5_BOUNDED_QUADRATIC,prior bounded quadratic learner,RESEARCH_ONLY,"Preserved; promising spent pairwise results do not override calibration/missingness"

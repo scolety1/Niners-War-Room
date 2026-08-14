@@ -133,6 +133,12 @@ from src.services.rookie_draft_eligibility_service import (
     reconcile_rookie_draft_readiness,
 )
 from src.services.rookie_owner_experience_service import load_owner_rookie_board
+from src.services.rookie_veteran_dynasty_bridge_service import (
+    build_rookie_veteran_bridge,
+    immediate_production_for_row,
+    immediate_production_payload,
+    load_redraft_bridge_context,
+)
 from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
     build_trade_brief,
@@ -1006,12 +1012,17 @@ class DesktopBackendFacade:
             )
             outcomes = matrix.to_dict("records")
         player_id = _text(row.get("player_id"))
+        immediate_production = immediate_production_for_row(
+            row,
+            load_redraft_bridge_context(self.repo_root),
+        )
         return FacadePayload(
             data=self._player_detail_payload(
                 row,
                 outcomes=outcomes,
                 rank_receipt=snapshot.rank_receipts.get(player_id),
                 total_ranked=len(snapshot.rank_receipts),
+                immediate_production=immediate_production_payload(immediate_production),
             )
         )
 
@@ -1041,6 +1052,10 @@ class DesktopBackendFacade:
                 status=404,
             )
         rows = [indexed[asset_id] for asset_id in normalized]
+        bridge = build_rookie_veteran_bridge(
+            rows,
+            redraft_context=load_redraft_bridge_context(self.repo_root),
+        )
         owner_summary = build_owner_compare_summary(rows)
         visible_summary = build_player_compare_decision_summary(rows[0], rows[1], rows[2:])
         context_rows = decision_summary_rows(rows)
@@ -1094,6 +1109,7 @@ class DesktopBackendFacade:
                 "ranges": ranges,
                 "players": players,
                 "warnings": list(dict.fromkeys(compare_warnings)),
+                "bridge": bridge.as_payload() if bridge is not None else None,
             }
         )
 
@@ -1399,6 +1415,25 @@ class DesktopBackendFacade:
             raise FacadeError("INVALID_TEAM_WINDOW", "Unsupported team window.")
         snapshot = self._owner_snapshot()
         lookup = build_registry_trade_item_lookup(snapshot.evidence.rows)
+        redraft_context = load_redraft_bridge_context(self.repo_root)
+        evidence_by_id = snapshot.evidence.by_id
+        for value in lookup.values():
+            asset_id = _text(value.get("asset_id"))
+            evidence = evidence_by_id.get(asset_id, {})
+            immediate = immediate_production_for_row(evidence, redraft_context)
+            value.update(
+                {
+                    "redraft_available": immediate.available,
+                    "redraft_projected_points": immediate.projected_points,
+                    "redraft_overall_rank": immediate.overall_rank,
+                    "redraft_position_rank": immediate.position_rank,
+                    "redraft_vbd": immediate.replacement_adjusted_value,
+                    "redraft_confidence": immediate.confidence,
+                    "research_outlook_3y": evidence.get("research_outlook_3y", ""),
+                    "research_outlook_5y": evidence.get("research_outlook_5y", ""),
+                    "research_ceiling_signal": evidence.get("research_ceiling_signal", ""),
+                }
+            )
         key_for_id = {str(row.get("asset_id")): key for key, row in lookup.items()}
         missing = [value for value in (*give_ids, *receive_ids) if value not in key_for_id]
         if missing:
@@ -2624,6 +2659,7 @@ class DesktopBackendFacade:
         outcomes: Sequence[Mapping[str, Any]],
         rank_receipt: Mapping[str, Any] | None = None,
         total_ranked: int = 0,
+        immediate_production: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         range_contract = owner_range_contract(row)
         market_band, _gap_label = market_decision_label(
@@ -2699,6 +2735,7 @@ class DesktopBackendFacade:
             ),
             "outcomes": [dict(value) for value in outcomes],
             "research": research,
+            "immediateProduction": dict(immediate_production or {}),
             "caveats": _string_list(row.get("owner_caveats")),
             "playerId": _text(row.get("player_id")),
             "identityStatus": _text(row.get("identity_status")),

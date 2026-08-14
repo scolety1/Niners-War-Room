@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "packet": "nwr_rookie_veteran_dynasty_bridge_v2_20260814",
+  "verdict": "GREEN_NWR_ROOKIE_VETERAN_COMPARE_MULTI_AUTHORITY_READY",
+  "branch": "codex/nwr-rookie-veteran-dynasty-bridge-v2-20260814",
+  "base_commit": "24feca2ffa69b2bfdf26a2daa9283b20c7419623",
+  "canonical_hq_observed": "dec9e18dcb41d252723759a950b33b5ca5e4b2d7",
+  "desktop_candidate_observed": "3ea8619a239cebc274ef89dd020603a1590f2338",
+  "rookie_candidate_observed": "24feca2ffa69b2bfdf26a2daa9283b20c7419623",
+  "redraft_source_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
+  "fresh_model_fits": 0,
+  "fresh_validation_executions": 0,
+  "common_dynasty_scale_admitted": false,
+  "artifacts": [
+    "EXECUTIVE_VERDICT.md",
+    "PRIOR_BRIDGE_RECOVERY.md",
+    "DATA_AUTHORITY.md",
+    "HORIZON_COMPLETENESS.csv",
+    "VALIDATION_SPEND_LEDGER.md",
+    "TARGET_GAUNTLET.csv",
+    "MODEL_GAUNTLET.csv",
+    "TEMPORAL_VALIDATION.csv",
+    "PAIRWISE_RESULTS.csv",
+    "POSITION_RESULTS.csv",
+    "ONE_YEAR_RESULT.md",
+    "THREE_YEAR_RESULT.md",
+    "FIVE_YEAR_RESULT.md",
+    "CURRENT_COMPARISON_CASES.md",
+    "PRODUCT_CONTRACT.md",
+    "DESKTOP_INTEGRATION.md",
+    "TRADE_INTEGRATION.md",
+    "AUTHORITY_PRESERVATION.md",
+    "OWNER_ACCEPTANCE.md",
+    "NEXT_ACTION.md"
+  ],
+  "preserved_authorities": [
+    "Finished V1",
+    "Outcome V3",
+    "Rookie Review",
+    "Redraft Champion",
+    "Unified Research Preview"
+  ]
+}

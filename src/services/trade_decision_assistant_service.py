@@ -116,7 +116,7 @@ def evaluate_trade_decision(
     if not give or not receive:
         return _insufficient(team_window, "Both trade sides need at least one governed asset.")
 
-    dimensions = (
+    core_dimensions = (
         _best_asset(give, receive),
         _established_standing(give, receive),
         _youth_window(give, receive),
@@ -128,6 +128,7 @@ def evaluate_trade_decision(
         _outcome_risk(give, receive),
         _market_corroboration(give, receive),
     )
+    dimensions = core_dimensions + _rookie_veteran_bridge_dimensions(give, receive)
     if _evidence_is_insufficient(give, receive, dimensions):
         uncertainty = _main_uncertainty(give, receive, dimensions)
         return TradeDecision(
@@ -603,6 +604,125 @@ def _market_corroboration(
     )
 
 
+def _rookie_veteran_bridge_dimensions(
+    give: list[dict[str, object]],
+    receive: list[dict[str, object]],
+) -> tuple[DecisionDimension, ...]:
+    rows = (*give, *receive)
+    has_rookie = any(_is_rookie(row) for row in rows)
+    has_veteran = any(str(row.get("registry_asset_type")) == "Current Player" for row in rows)
+    if not (has_rookie and has_veteran):
+        return ()
+    return (
+        _immediate_production_context(give, receive),
+        _medium_term_research_context(give, receive),
+    )
+
+
+def _immediate_production_context(
+    give: list[dict[str, object]],
+    receive: list[dict[str, object]],
+) -> DecisionDimension:
+    a = _best_redraft(give)
+    b = _best_redraft(receive)
+    if not a or not b:
+        missing = []
+        if not a:
+            missing.append("You give")
+        if not b:
+            missing.append("You receive")
+        return _dimension(
+            "D11",
+            "Immediate production context",
+            "UNKNOWN",
+            "LOW",
+            (f"Exact-ID Redraft evidence unavailable for: {', '.join(missing)}.",),
+            "Missing current-season evidence remains unknown, never zero.",
+        )
+    gap = abs(a[1] - b[1])
+    evidence = (
+        f"You give best: {a[0]} (VBD {a[1]:.1f}; {a[2]:.1f} projected points).",
+        f"You receive best: {b[0]} (VBD {b[1]:.1f}; {b[2]:.1f} projected points).",
+        "No Redraft side total is calculated.",
+    )
+    if gap <= 5.0:
+        outcome: DimensionOutcome = "EVEN"
+    else:
+        outcome = "SIDE_A_LEAN" if a[1] > b[1] else "SIDE_B_LEAN"
+    return _dimension(
+        "D11",
+        "Immediate production context",
+        outcome,
+        "MEDIUM",
+        evidence,
+        "The best individual 2026 replacement-adjusted projection is compared on the "
+        "shared Redraft authority.",
+    )
+
+
+def _medium_term_research_context(
+    give: list[dict[str, object]],
+    receive: list[dict[str, object]],
+) -> DecisionDimension:
+    a = _best_research_outlook(give)
+    b = _best_research_outlook(receive)
+    if not a or not b:
+        return _dimension(
+            "D12",
+            "Medium-term research outlook",
+            "UNKNOWN",
+            "LOW",
+            ("Comparable frozen 3-year research evidence is unavailable on both sides.",),
+            "The missing research signal is not replaced with Rookie Review or Finished V1 scores.",
+        )
+    denominator = max(abs(a[1]), abs(b[1]), 1.0)
+    difference = abs(a[1] - b[1]) / denominator
+    evidence = (
+        f"You give best frozen 3-year research signal: {a[0]}.",
+        f"You receive best frozen 3-year research signal: {b[0]}.",
+        "Research only; no side sum or player-equivalent package value is calculated.",
+    )
+    if difference <= 0.05:
+        outcome: DimensionOutcome = "EVEN"
+    else:
+        outcome = "SIDE_A_LEAN" if a[1] > b[1] else "SIDE_B_LEAN"
+    return _dimension(
+        "D12",
+        "Medium-term research outlook",
+        outcome,
+        "LOW",
+        evidence,
+        "The frozen shared-target preview provides a research lean only; failed rookie "
+        "calibration keeps confidence low.",
+    )
+
+
+def _best_redraft(rows: Sequence[Mapping[str, object]]) -> tuple[str, float, float] | None:
+    values = [
+        (
+            str(row.get("player") or "Unknown player"),
+            vbd,
+            projected,
+        )
+        for row in rows
+        if _truth(row.get("redraft_available"))
+        and (vbd := _number(row.get("redraft_vbd"))) is not None
+        and (projected := _number(row.get("redraft_projected_points"))) is not None
+    ]
+    return max(values, key=lambda item: (item[1], item[2], item[0])) if values else None
+
+
+def _best_research_outlook(
+    rows: Sequence[Mapping[str, object]],
+) -> tuple[str, float] | None:
+    values = [
+        (str(row.get("player") or "Unknown player"), outlook)
+        for row in rows
+        if (outlook := _number(row.get("research_outlook_3y"))) is not None
+    ]
+    return max(values, key=lambda item: (item[1], item[0])) if values else None
+
+
 def _synthesize(dimensions: Sequence[DecisionDimension]) -> tuple[Recommendation, str]:
     a = [row for row in dimensions if row.outcome in {"SIDE_A_CLEAR", "SIDE_A_LEAN"}]
     b = [row for row in dimensions if row.outcome in {"SIDE_B_CLEAR", "SIDE_B_LEAN"}]
@@ -620,9 +740,7 @@ def _synthesize(dimensions: Sequence[DecisionDimension]) -> tuple[Recommendation
     preferred = "Your current side" if preferred_a else "The incoming side"
     support, oppose = (a, b) if preferred_a else (b, a)
     clear, opposing_clear = (a_clear, b_clear) if preferred_a else (b_clear, a_clear)
-    support_units, oppose_units = (
-        (a_units, b_units) if preferred_a else (b_units, a_units)
-    )
+    support_units, oppose_units = (a_units, b_units) if preferred_a else (b_units, a_units)
     margin = support_units - oppose_units
     best_asset_clear = any(
         row.code == "D1"
@@ -687,9 +805,7 @@ def _main_uncertainty(
     receive: Sequence[Mapping[str, object]],
     dimensions: Sequence[DecisionDimension],
 ) -> str:
-    unscored = [
-        str(row.get("player")) for row in (*give, *receive) if _is_unscored_rookie(row)
-    ]
+    unscored = [str(row.get("player")) for row in (*give, *receive) if _is_unscored_rookie(row)]
     if unscored:
         return (
             f"{', '.join(unscored)} has no admitted Rookie Review score. The missing value "
@@ -879,12 +995,8 @@ def _synthesis_trace(dimensions: Sequence[DecisionDimension]) -> tuple[str, ...]
     a = [row.label for row in dimensions if row.outcome.startswith("SIDE_A")]
     b = [row.label for row in dimensions if row.outcome.startswith("SIDE_B")]
     neutral = [row.label for row in dimensions if row.outcome in {"EVEN", "UNKNOWN"}]
-    a_units = sum(
-        _evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_A")
-    )
-    b_units = sum(
-        _evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_B")
-    )
+    a_units = sum(_evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_A"))
+    b_units = sum(_evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_B"))
     return (
         f"Current-side support ({len(a)} dimensions; {a_units} evidence units): "
         f"{', '.join(a) or 'none'}.",

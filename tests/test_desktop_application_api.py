@@ -165,7 +165,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
     }
     assert bootstrap.data["summary"] | {"workspace": None} == {
         "rankedPlayers": 240,
-        "marketMatched": 239,
+        "marketMatched": 230,
         "rookieRows": 80,
         "blockedRookies": 0,
         "manualReviewRookies": 7,
@@ -375,6 +375,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "selectable",
         "refreshAvailable",
         "rookieIntelligence",
+        "immediateProduction",
     }
     assert detail.data["assetId"] == current_ids[0]
     assert set(detail.data["range"]) == {"floor", "expected", "ceiling", "method", "authority"}
@@ -458,7 +459,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
     assert kc_detail["rookieIntelligence"]["nwrRookieScore"] == 50.0
     assert kc_detail["rookieIntelligence"]["reviewScore"] == kc["reviewScore"]
 
-    assert set(comparison.data) == {"leans", "ranges", "players", "warnings"}
+    assert set(comparison.data) == {"leans", "ranges", "players", "warnings", "bridge"}
     assert [row["assetId"] for row in comparison.data["players"]] == current_ids
     assert [row["assetId"] for row in comparison.data["ranges"]] == current_ids
     assert all(
@@ -512,6 +513,63 @@ def test_dynasty_facade_composes_real_governed_workflows(
             contract_envelope("dynasty", data=payload.data, warnings=payload.warnings),
             allow_nan=False,
         )
+
+
+def test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("NWR_DYNASTY_RANKINGS_ROOT", raising=False)
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="dynasty")
+    bootstrap = facade.dynasty_bootstrap().data
+    ids = {row["name"]: row["assetId"] for row in bootstrap["assetOptions"]}
+
+    comparison = facade.compare_dynasty_assets(
+        [ids["Jeremiyah Love"], ids["Jahmyr Gibbs"]]
+    ).data
+    bridge = comparison["bridge"]
+
+    assert bridge["mode"] == "ROOKIE_VETERAN"
+    assert len(bridge["decisions"]) == 7
+    by_key = {row["key"]: row for row in bridge["decisions"]}
+    assert by_key["win_now"]["preferred"] == "Jahmyr Gibbs"
+    assert by_key["win_now"]["badge"] == "PRODUCTION"
+    assert by_key["three_year"]["badge"] == "RESEARCH ONLY"
+    assert by_key["long_term"]["badge"] == "RESEARCH ONLY"
+    assert by_key["safety"]["preferred"] == "Jahmyr Gibbs"
+    assert by_key["uncertainty"]["preferred"] == "Jeremiyah Love"
+    assert all(row["projectedPoints"] is not None for row in bridge["immediateProduction"])
+    assert "nwrScore" not in json.dumps(bridge)
+
+    detail = facade.dynasty_asset(ids["Jeremiyah Love"]).data
+    assert detail["immediateProduction"]["available"] is True
+    assert detail["immediateProduction"]["authority"] == "Redraft 2026"
+
+    trade = facade.evaluate_dynasty_trade(
+        give=[ids["Jahmyr Gibbs"]],
+        receive=[ids["Jeremiyah Love"]],
+        team_window="Balanced",
+    ).data
+    dimensions = {row["code"]: row for row in trade["dimensions"]}
+    assert dimensions["D11"]["label"] == "Immediate production context"
+    assert dimensions["D12"]["label"] == "Medium-term research outlook"
+    assert dimensions["D12"]["confidence"] == "LOW"
+
+    rookie_pair = facade.compare_dynasty_assets(
+        [ids["Jeremiyah Love"], ids["Carnell Tate"]]
+    ).data
+    veteran_pair = facade.compare_dynasty_assets(
+        [ids["Jahmyr Gibbs"], ids["CeeDee Lamb"]]
+    ).data
+    assert rookie_pair["bridge"] is None
+    assert veteran_pair["bridge"] is None
+
+    manual = facade.compare_dynasty_assets(
+        [ids["De'Zhaun Stribling"], ids["Luke McCaffrey"]]
+    ).data["bridge"]
+    manual_by_key = {row["key"]: row for row in manual["decisions"]}
+    assert manual_by_key["win_now"]["badge"] == "PRODUCTION"
+    assert manual_by_key["three_year"]["preferred"] == "INSUFFICIENT EVIDENCE"
+    assert manual_by_key["uncertainty"]["preferred"] == "De'Zhaun Stribling"
 
 
 def test_dynasty_planning_modules_save_and_reload_through_personal_workspace(

@@ -16,12 +16,26 @@ import {
   SearchInput,
   SegmentedControl,
   StatusBadge,
+  formatNumber,
 } from "@nwr/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { matchesPlayerSearch } from "../lib/search";
 
 const TRADE_SIDE_LIMIT = 6;
+
+export function bridgeBadgeTone(badge: string): "safe" | "blocked" | "review" {
+  if (badge === "PRODUCTION") return "safe";
+  if (badge === "INSUFFICIENT EVIDENCE") return "blocked";
+  return "review";
+}
+
+export function bridgeDecisionGroups(result: DynastyComparison) {
+  return {
+    horizons: result.bridge?.decisions.slice(0, 4) ?? [],
+    traits: result.bridge?.decisions.slice(4) ?? [],
+  };
+}
 
 export function nextTradeSide(
   current: readonly string[],
@@ -342,25 +356,81 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
   const dimensions = Array.from(
     new Set(result.players.flatMap((player) => Object.keys(player.dimensions))),
   );
+  const bridge = result.bridge;
+  const { horizons: horizonDecisions, traits: traitDecisions } = bridgeDecisionGroups(result);
   return (
     <div className="comparison-result">
       <div className="section-title">
-        <h2>NWR preference by horizon</h2>
-        <span>Decision first · evidence second</span>
+        <h2>{bridge ? `${bridge.players[0]} vs ${bridge.players[1]}` : "NWR preference by horizon"}</h2>
+        <span>{bridge ? "Rookie ↔ Veteran mode" : "Decision first · evidence second"}</span>
       </div>
-      <div className="horizon-grid">
-        {result.leans.map((lean) => (
-          <article key={lean.horizon}>
-            <span>{lean.horizon}</span>
-            <strong>{lean.preferred}</strong>
-            <p>{lean.reason}</p>
-            <small>{lean.authority}</small>
-          </article>
-        ))}
-      </div>
-      <p className="copy-muted">
-        These are source-native research signals, not one shared numeric scale or a forecast interval.
-      </p>
+      {bridge ? (
+        <>
+          <div className="bridge-horizon-grid">
+            {horizonDecisions.map((decision) => (
+              <article key={decision.key}>
+                <header>
+                  <span>{decision.label}</span>
+                  <StatusBadge tone={bridgeBadgeTone(decision.badge)} label={decision.badge} />
+                </header>
+                <strong>{decision.preferred}</strong>
+                <p>{decision.reason}</p>
+                <small>{decision.authority}</small>
+              </article>
+            ))}
+          </div>
+          <div className="bridge-trait-grid">
+            {traitDecisions.map((decision) => (
+              <article key={decision.key}>
+                <span>{decision.label}</span>
+                <strong>{decision.preferred}</strong>
+                <StatusBadge tone={bridgeBadgeTone(decision.badge)} label={decision.badge} />
+                <p>{decision.reason}</p>
+              </article>
+            ))}
+          </div>
+          <Panel title="Immediate production context" eyebrow="Shared 2026 Redraft authority">
+            <div className="bridge-production-grid">
+              {bridge.immediateProduction.map((player) => (
+                <article key={player.assetId || player.player}>
+                  <strong>{player.player}</strong>
+                  {player.available ? (
+                    <dl>
+                      <div><dt>Projected points</dt><dd>{formatNumber(player.projectedPoints, 1)}</dd></div>
+                      <div><dt>Overall / position</dt><dd>#{player.overallRank} / #{player.positionRank}</dd></div>
+                      <div><dt>Replacement-adjusted</dt><dd>{formatNumber(player.replacementAdjustedValue, 1)}</dd></div>
+                      <div><dt>Confidence</dt><dd>{player.confidence}</dd></div>
+                    </dl>
+                  ) : <p>Exact-ID current-season evidence is unavailable.</p>}
+                  <small>{player.uncertainty}</small>
+                </article>
+              ))}
+            </div>
+          </Panel>
+          <Panel title="Why" eyebrow="Source-separated evidence">
+            <ul className="compact-list">{bridge.why.map((item) => <li key={item}>{item}</li>)}</ul>
+          </Panel>
+          <p className="copy-muted">
+            Rookie Review Score and veteran Finished V1 Score are not directly comparable. No shared 0–100 value or additive package score is shown.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="horizon-grid">
+            {result.leans.map((lean) => (
+              <article key={lean.horizon}>
+                <span>{lean.horizon}</span>
+                <strong>{lean.preferred}</strong>
+                <p>{lean.reason}</p>
+                <small>{lean.authority}</small>
+              </article>
+            ))}
+          </div>
+          <p className="copy-muted">
+            These are source-native research signals, not one shared numeric scale or a forecast interval.
+          </p>
+        </>
+      )}
       <div className="advantage-grid">
         {result.ranges.map((range) => (
           <Panel key={range.assetId} title={range.player} eyebrow={range.ageWindow}>

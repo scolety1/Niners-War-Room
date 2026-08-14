@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { AssetOption } from "@nwr/contracts";
+import type { AssetOption, BridgeDecision, DynastyComparison } from "@nwr/contracts";
 
 import {
+  bridgeBadgeTone,
+  bridgeDecisionGroups,
   isCurrentDecisionRequest,
   isSameTradePackage,
   nextTradeSide,
@@ -32,6 +34,47 @@ const stribling: AssetOption = {
 };
 
 describe("decision input guards", () => {
+  it("keeps rookie-veteran horizons and authority badges explicit", () => {
+    const decisionInputs: Array<[string, BridgeDecision["badge"]]> = [
+      ["win", "PRODUCTION"],
+      ["today", "RESEARCH ONLY"],
+      ["three", "RESEARCH ONLY"],
+      ["long", "INSUFFICIENT EVIDENCE"],
+      ["safety", "REVIEW"],
+      ["upside", "RESEARCH ONLY"],
+      ["uncertainty", "REVIEW"],
+    ];
+    const decisions = decisionInputs.map(([key, badge]) => ({
+      key,
+      label: key,
+      preferred: "TOO CLOSE",
+      badge,
+      authority: "test",
+      reason: "test",
+      evidence: [],
+    }));
+    const result = {
+      leans: [],
+      ranges: [],
+      players: [],
+      warnings: [],
+      bridge: {
+        mode: "ROOKIE_VETERAN",
+        players: ["Rookie", "Veteran"],
+        decisions,
+        immediateProduction: [],
+        why: [],
+        warnings: [],
+      },
+    } satisfies DynastyComparison;
+
+    expect(bridgeDecisionGroups(result).horizons).toHaveLength(4);
+    expect(bridgeDecisionGroups(result).traits).toHaveLength(3);
+    expect(bridgeBadgeTone("PRODUCTION")).toBe("safe");
+    expect(bridgeBadgeTone("RESEARCH ONLY")).toBe("review");
+    expect(bridgeBadgeTone("INSUFFICIENT EVIDENCE")).toBe("blocked");
+  });
+
   it("prevents a trade asset from being added across both sides", () => {
     expect(nextTradeSide(["current:a"], ["current:b"], "current:b")).toEqual([
       "current:a",

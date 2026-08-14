@@ -354,6 +354,42 @@ export interface PlayerDetail {
   selectable: boolean;
   refreshAvailable: boolean;
   rookieIntelligence: RookieIntelligence | null;
+  immediateProduction?: ImmediateProduction;
+}
+
+export interface ImmediateProduction {
+  assetId: string;
+  player: string;
+  available: boolean;
+  projectedPoints: number | null;
+  overallRank: number | null;
+  positionRank: number | null;
+  replacementPoints: number | null;
+  replacementAdjustedValue: number | null;
+  confidence: string;
+  rookie: boolean | null;
+  authority: string;
+  sourceAsOf: string;
+  uncertainty: string;
+}
+
+export interface BridgeDecision {
+  key: string;
+  label: string;
+  preferred: string;
+  badge: "PRODUCTION" | "REVIEW" | "RESEARCH ONLY" | "INSUFFICIENT EVIDENCE";
+  authority: string;
+  reason: string;
+  evidence: string[];
+}
+
+export interface RookieVeteranBridge {
+  mode: "ROOKIE_VETERAN";
+  players: string[];
+  decisions: BridgeDecision[];
+  immediateProduction: ImmediateProduction[];
+  why: string[];
+  warnings: string[];
 }
 
 export interface CompareLean {
@@ -388,6 +424,7 @@ export interface DynastyComparison {
   ranges: CompareRange[];
   players: ComparePlayer[];
   warnings: string[];
+  bridge?: RookieVeteranBridge | null;
 }
 
 export type TeamWindow = "Contending" | "Balanced" | "Rebuilding";

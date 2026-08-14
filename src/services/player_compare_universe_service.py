@@ -108,6 +108,7 @@ def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "asset_id": asset_id,
         "player_id": player_id,
+        "governed_player_id": asset.get("governed_player_id", ""),
         "player": asset["asset_name"],
         "position": asset["position"],
         "nfl_team": asset["team"],

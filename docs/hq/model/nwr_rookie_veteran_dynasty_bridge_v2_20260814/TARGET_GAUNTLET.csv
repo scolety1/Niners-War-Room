@@ -1,0 +1,7 @@
+target,candidate_definition,historically_measurable,status,reason
+T0,future league-scoring production,PARTIAL,BLOCKED,"Missing target rows cannot be separated from inactivity without explicit masks"
+T1,future position-relative VORP,PARTIAL,BLOCKED,"Replacement economics are computable but target completeness is not"
+T2,forward multi-season production utility,PARTIAL,RESEARCH_ONLY,"Recovered 3Y research exists; no fresh valid cohort"
+T3,qualifying-season or Outcome-derived utility,PARTIAL,RESEARCH_ONLY,"Feature parity and rookie calibration are not admitted"
+T4,production plus longevity plus position economics,NO,BLOCKED,"No governed career-exit truth; absence cannot equal retirement"
+T5,pairwise subsequently realized NWR-format utility,PARTIAL,RESEARCH_ONLY,"Prior pairwise results are spent and inherit target missingness defect"
