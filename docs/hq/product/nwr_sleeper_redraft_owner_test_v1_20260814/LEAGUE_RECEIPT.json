@@ -1,0 +1,9 @@
+{
+  "source": "Sleeper public read-only API via existing SleeperHttpClient",
+  "write_behavior": "NO_SLEEPER_WRITES",
+  "league": {"league_id": "1312983576827920384", "name": "Fantasy Gamers", "season": 2026, "status": "pre_draft", "team_count": 10},
+  "owner": {"username": "scolety", "user_id": "1000507609050337280", "roster_id": 9, "team_name": "Brown Town & Big Mike", "keepers": []},
+  "roster_positions": ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF", "BN", "BN", "BN", "BN", "BN", "BN"],
+  "nwr_profile_id": "78ed19cf467945c189481799015fbfd6",
+  "unsupported_nonzero_scoring": ["blk_kick", "def_st_ff", "def_st_fum_rec", "def_st_td", "def_td", "ff", "fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50_59", "fgm_60p", "fgmiss", "fum_rec", "fum_rec_td", "int", "pass_2pt", "pts_allow_0", "pts_allow_14_20", "pts_allow_1_6", "pts_allow_28_34", "pts_allow_35p", "pts_allow_7_13", "rec_2pt", "rush_2pt", "sack", "safe", "st_ff", "st_fum_rec", "st_td", "xpm", "xpmiss"]
+}

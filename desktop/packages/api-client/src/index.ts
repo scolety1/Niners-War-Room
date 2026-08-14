@@ -205,6 +205,13 @@ export class NwrApiClient {
     });
   }
 
+  importSleeperRedraftProfile(leagueId: string, username: string): Promise<RedraftBootstrap> {
+    return this.request("/api/v1/redraft/sleeper/import", {
+      method: "POST",
+      body: JSON.stringify({ leagueId, username }),
+    });
+  }
+
   activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {
     return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/activate`, {
       method: "POST",

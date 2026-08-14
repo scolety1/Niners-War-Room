@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 from collections.abc import Mapping, Sequence
@@ -113,6 +114,10 @@ from src.services.redraft_engine_v1_service import (
     save_profile,
     set_active_profile,
     undo_last_draft_pick,
+)
+from src.services.sleeper_redraft_owner_service import (
+    SleeperRedraftImportError,
+    import_sleeper_redraft_profile,
 )
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
@@ -1623,6 +1628,22 @@ class DesktopBackendFacade:
                 ),
             },
         ]
+        if selected is not None:
+            import_receipt = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
+            try:
+                receipt = json.loads(import_receipt.read_text(encoding="utf-8")) if import_receipt.is_file() else {}
+            except (OSError, ValueError):
+                receipt = {}
+                warnings.append("The Sleeper import receipt could not be read; no Sleeper state was changed.")
+            unsupported = receipt.get("unsupported_scoring") if isinstance(receipt, dict) else None
+            if isinstance(unsupported, list) and unsupported:
+                notices.append(
+                    {
+                        "tone": "review",
+                        "title": "Sleeper scoring needs review",
+                        "message": "Unsupported non-zero Sleeper fields are explicit: " + ", ".join(str(value) for value in unsupported) + ". NWR did not silently map them to zero.",
+                    }
+                )
         if using_bundled_seed:
             notices.append(
                 {
@@ -1717,6 +1738,32 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         return FacadePayload(data={"profile": self._profile_payload(profile)})
+
+    def import_sleeper_redraft_profile(
+        self, *, league_id: str, username: str
+    ) -> FacadePayload:
+        """Explicit, read-only Sleeper import into the isolated Redraft store."""
+
+        self._require_mode("redraft")
+        try:
+            imported = import_sleeper_redraft_profile(
+                league_id=league_id,
+                username=username,
+                redraft_root=self.redraft_root,
+            )
+            set_active_profile(self.redraft_root, imported.profile.profile_id)
+        except (OSError, SleeperRedraftImportError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_IMPORT_FAILED",
+                "Sleeper league import could not be completed. No profile was activated.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "profile": self._profile_payload(imported.profile),
+                "unsupportedScoring": list(imported.unsupported_scoring),
+            }
+        )
 
     def activate_redraft_profile(self, profile_id: str) -> FacadePayload:
         self._require_mode("redraft")

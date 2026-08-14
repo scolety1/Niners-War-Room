@@ -53,6 +53,8 @@ export function ProfilePage({
   const [working, setWorking] = useState("");
   const [error, setError] = useState<NwrApiError | null>(null);
   const [message, setMessage] = useState("");
+  const [sleeperLeagueId, setSleeperLeagueId] = useState("1312983576827920384");
+  const [sleeperUsername, setSleeperUsername] = useState("scolety");
 
   useEffect(() => {
     setEdit(data.activeProfile ? editableProfile(data.activeProfile) : null);
@@ -88,6 +90,15 @@ export function ProfilePage({
     } catch (reason) { fail(reason, "Profile could not be duplicated."); }
     finally { setWorking(""); }
   };
+  const importSleeper = async () => {
+    if (!sleeperLeagueId.trim() || !sleeperUsername.trim() || working) return;
+    setWorking("sleeper-import"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.importSleeperRedraftProfile(sleeperLeagueId.trim(), sleeperUsername.trim()));
+      setMessage("Sleeper league imported locally. Any unsupported scoring fields are shown in the data-health notices; no Sleeper data was changed.");
+    } catch (reason) { fail(reason, "Sleeper league could not be imported."); }
+    finally { setWorking(""); }
+  };
   const save = async () => {
     if (!data.activeProfile || !edit || working) return;
     setWorking("save"); setError(null); setMessage("");
@@ -117,6 +128,13 @@ export function ProfilePage({
           <label className="form-field"><span>League name</span><input disabled={Boolean(working)} maxLength={120} value={name} onChange={(event) => setName(event.target.value)} /></label>
         </div>
         <div className="profile-create-footer"><p>Creates a separate profile and makes it active.</p><Button disabled={!preset || !name.trim() || Boolean(working)} icon="profile" onClick={() => void create()}>{working === "create" ? "Saving…" : "Create & activate"}</Button></div>
+      </Panel>
+      <Panel title="Import from Sleeper" eyebrow="Read-only league profile">
+        <div className="form-grid">
+          <label className="form-field"><span>League ID</span><input disabled={Boolean(working)} value={sleeperLeagueId} onChange={(event) => setSleeperLeagueId(event.target.value)} /></label>
+          <label className="form-field"><span>Sleeper username</span><input disabled={Boolean(working)} value={sleeperUsername} onChange={(event) => setSleeperUsername(event.target.value)} /></label>
+        </div>
+        <div className="profile-create-footer"><p>Reads league settings once, creates an isolated local Redraft profile, and never makes a Sleeper pick or roster change.</p><Button disabled={!sleeperLeagueId.trim() || !sleeperUsername.trim() || Boolean(working)} icon="profile" onClick={() => void importSleeper()}>{working === "sleeper-import" ? "Importing…" : "Import & activate"}</Button></div>
       </Panel>
     </div>
     {data.activeProfile && edit ? <ProfileEditor edit={edit} disabled={Boolean(working)} onChange={setEdit} onDuplicate={() => void duplicate()} onSave={() => void save()} working={working} /> : null}

@@ -28,6 +28,7 @@ _HIGH_PORT_ATTEMPTS = 128
 _PROFILE_ACTIVATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/activate$")
 _PROFILE_DUPLICATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/duplicate$")
 _PROFILE_EDIT = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/edit$")
+_SLEEPER_REDRAFT_IMPORT = "/api/v1/redraft/sleeper/import"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
@@ -398,6 +399,18 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.CONFLICT,
                 )
             self.server.facade.activate_redraft_profile(profile_id)
+            return self.server.facade.redraft_bootstrap()
+        if method == "POST" and path == _SLEEPER_REDRAFT_IMPORT:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"leagueId", "username"})
+            league_id = body.get("leagueId")
+            username = body.get("username")
+            if not isinstance(league_id, str) or not isinstance(username, str):
+                raise self._invalid_body("leagueId and username must be strings.")
+            self.server.facade.import_sleeper_redraft_profile(
+                league_id=league_id,
+                username=username,
+            )
             return self.server.facade.redraft_bootstrap()
         match = _PROFILE_ACTIVATE.fullmatch(path)
         if method == "POST" and match:

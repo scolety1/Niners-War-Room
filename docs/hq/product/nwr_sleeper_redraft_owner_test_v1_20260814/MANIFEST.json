@@ -1,0 +1,8 @@
+{
+  "packet": "nwr_sleeper_redraft_owner_test_v1_20260814",
+  "verdict": "YELLOW_NWR_SLEEPER_REDRAFT_PARTIAL_MAPPING",
+  "league_id": "1312983576827920384",
+  "owner": "scolety",
+  "sleeper_write_behavior": "none",
+  "files": ["EXECUTIVE_VERDICT.md", "SLEEPER_INTEGRATION_RECOVERY.md", "LEAGUE_RECEIPT.json", "LEAGUE_PROFILE_MAPPING.md", "SCORING_RECONCILIATION.csv", "ROSTER_RULES.md", "DRAFT_RECEIPT.json", "OWNER_DRAFT_SLOT.md", "MOCK_DRAFT_RESULTS.md", "OWNER_STYLE_MOCK.md", "LIVE_COMPANION_STATUS.md", "VALIDATION_RESULTS.md", "AUTHORITY_PRESERVATION.md", "NEXT_ACTION.md"]
+}

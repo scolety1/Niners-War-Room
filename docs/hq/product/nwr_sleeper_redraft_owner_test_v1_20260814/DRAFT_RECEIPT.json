@@ -1,0 +1,14 @@
+{
+  "draft_id": "1312983576832122880",
+  "season": 2026,
+  "status": "pre_draft",
+  "type": "snake",
+  "rounds": 15,
+  "teams": 10,
+  "pick_timer_seconds": 60,
+  "start_time": null,
+  "draft_order_assigned": false,
+  "slot_to_user_mapping": null,
+  "owner_draft_slot": null,
+  "selection_rule": "only matching 2026 snake/auction candidate; unique pre_draft candidate selected"
+}
