@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { CheatSheetPage } from "./cheat-sheet";
-import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage } from "./pages";
+import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { ProfilePage } from "./profile";
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 
@@ -13,6 +13,7 @@ const NAVIGATION: NavigationGroup[] = [
   { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
   { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }] },
+  { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
   { label: "System", items: [{ label: "Projection & Data Health", path: "/data-health", icon: "health" }] },
 ];
 
@@ -52,6 +53,7 @@ export function RedraftApp() {
       <Route path="/compare" element={<ComparePage data={data} />} />
       <Route path="/cheat-sheet" element={<CheatSheetPage data={data} />} />
       <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
+      <Route path="/weekly-tools" element={<WeeklyToolsPage client={client} data={data} />} />
       <Route path="/data-health" element={<DataHealthPage data={data} onReload={reload} />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

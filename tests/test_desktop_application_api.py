@@ -787,6 +787,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "rankings",
         "replacementLevels",
         "draftBoard",
+        "externalConsensus",
         "health",
         "notices",
     }
@@ -806,6 +807,12 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     assert first.data["profiles"] == []
     assert first.data["activeProfileId"] is None
     assert first.data["activeProfile"] is None
+    assert first.data["externalConsensus"] == {
+        "authority": "EXTERNAL CONSENSUS — FANTASYPROS",
+        "configured": False,
+        "manualFallback": "NOT_ADMITTED",
+        "message": "FantasyPros API key is not configured. No provider request was attempted; the existing K/DST manual-draft fallback is not yet admitted.",
+    }
     assert [row["profileId"] for row in first.data["presets"]] == [
         profile.profile_id for profile in builtin_presets()
     ]

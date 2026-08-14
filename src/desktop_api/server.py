@@ -29,6 +29,7 @@ _PROFILE_ACTIVATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/activate$")
 _PROFILE_DUPLICATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/duplicate$")
 _PROFILE_EDIT = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/edit$")
 _SLEEPER_REDRAFT_IMPORT = "/api/v1/redraft/sleeper/import"
+_KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
@@ -412,6 +413,13 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 username=username,
             )
             return self.server.facade.redraft_bootstrap()
+        if method == "POST" and path == _KDST_STREAMER:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"week"})
+            week = body.get("week")
+            if type(week) is not int:
+                raise self._invalid_body("week must be an integer.")
+            return self.server.facade.redraft_kdst_streamer(week=week)
         match = _PROFILE_ACTIVATE.fullmatch(path)
         if method == "POST" and match:
             body = self._json_body(allow_empty=True)

@@ -119,6 +119,13 @@ from src.services.sleeper_redraft_owner_service import (
     SleeperRedraftImportError,
     import_sleeper_redraft_profile,
 )
+from src.services.sleeper_import_service import SleeperHttpClient
+from src.services.fantasypros_kdst_consensus_service import (
+    FantasyProsConsensusClient,
+    FantasyProsProviderError,
+    provider_status as fantasypros_provider_status,
+    sleeper_streamer_actions,
+)
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -1607,6 +1614,7 @@ class DesktopBackendFacade:
             summary = health.messages[0]
         else:
             summary = "Redraft evidence requires review."
+        fantasypros_status = fantasypros_provider_status()
         notices = [
             {
                 "tone": "ready",
@@ -1626,6 +1634,11 @@ class DesktopBackendFacade:
                     "identity/status. It does not infer target or touch shares from offseason "
                     "competition, depth-chart labels, or injury news."
                 ),
+            },
+            {
+                "tone": "review" if fantasypros_status.configured else "blocked",
+                "title": "External K/DST consensus boundary",
+                "message": fantasypros_status.message,
             },
         ]
         if selected is not None:
@@ -1701,6 +1714,12 @@ class DesktopBackendFacade:
                 "rankings": rankings,
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
+                "externalConsensus": {
+                    "authority": fantasypros_status.authority,
+                    "configured": fantasypros_status.configured,
+                    "manualFallback": "NOT_ADMITTED",
+                    "message": fantasypros_status.message,
+                },
                 "health": self._redraft_health_payload(
                     health,
                     additional_blocked=len(blocked_seed_rows),
@@ -1762,6 +1781,70 @@ class DesktopBackendFacade:
             data={
                 "profile": self._profile_payload(imported.profile),
                 "unsupportedScoring": list(imported.unsupported_scoring),
+            }
+        )
+
+    def redraft_kdst_streamer(self, *, week: int) -> FacadePayload:
+        """Read FantasyPros K/DST ECR and Sleeper availability; never writes either service."""
+
+        self._require_mode("redraft")
+        if not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18:
+            raise FacadeError("KDST_STREAMER_WEEK_INVALID", "Week must be an integer from 1 through 18.")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError("KDST_STREAMER_PROFILE_REQUIRED", "Activate a Sleeper-imported Redraft profile first.", status=409)
+        receipt_path = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            league = receipt["league"]
+            owner = receipt["owner"]
+            league_id = str(league["league_id"])
+            owner_user_id = str(owner["user_id"])
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise FacadeError(
+                "KDST_STREAMER_SLEEPER_CONTEXT_REQUIRED",
+                "The active profile has no valid Sleeper import receipt. Re-import it before opening the K/DST Streamer.",
+                status=409,
+            ) from exc
+        status = fantasypros_provider_status()
+        if not status.configured:
+            raise FacadeError("KDST_STREAMER_PROVIDER_UNAVAILABLE", status.message, status=409)
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+            consensus = FantasyProsConsensusClient()
+            positions: dict[str, list[dict[str, Any]]] = {}
+            unmatched: dict[str, list[str]] = {}
+            for position in ("K", "DST"):
+                rows = consensus.consensus_rankings(
+                    season=selected.season,
+                    position=position,
+                    week=week,
+                    scoring="PPR",
+                )
+                actions, unresolved = sleeper_streamer_actions(
+                    rows,
+                    rosters=rosters,
+                    players=players,
+                    owner_user_id=owner_user_id,
+                )
+                positions[position] = list(actions)
+                unmatched[position] = list(unresolved)
+        except (FantasyProsProviderError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "KDST_STREAMER_READ_FAILED",
+                "K/DST consensus or Sleeper roster data could not be read. No local or remote state was changed.",
+                status=503,
+            ) from exc
+        return FacadePayload(
+            data={
+                "authority": status.authority,
+                "week": week,
+                "leagueId": league_id,
+                "positions": positions,
+                "unmatchedSleeperPlayerIds": unmatched,
+                "writeBehavior": "NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES",
             }
         )
 

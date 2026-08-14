@@ -579,6 +579,34 @@ export interface DraftBoard {
   recoveredFromBackup?: boolean;
 }
 
+export interface ExternalConsensusStatus {
+  authority: string;
+  configured: boolean;
+  manualFallback: string;
+  message: string;
+}
+
+export interface KdstStreamerRow {
+  playerName: string;
+  position: "K" | "DST";
+  team: string;
+  ecr: number;
+  tier: number | null;
+  week: number;
+  authority: string;
+  rosterStatus: string;
+  recommendation: "START" | "HOLD" | "ROSTERED_ELSEWHERE" | "ADD" | "ALTERNATIVE";
+}
+
+export interface KdstStreamerResult {
+  authority: string;
+  week: number;
+  leagueId: string;
+  positions: Record<"K" | "DST", KdstStreamerRow[]>;
+  unmatchedSleeperPlayerIds: Record<"K" | "DST", string[]>;
+  writeBehavior: string;
+}
+
 export interface RedraftBootstrap {
   product: {
     title: string;
@@ -593,6 +621,7 @@ export interface RedraftBootstrap {
   rankings: RedraftRanking[];
   replacementLevels: ReplacementLevel[];
   draftBoard: DraftBoard | null;
+  externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;
   notices: Notice[];
 }

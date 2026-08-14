@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { RedraftBootstrap, RedraftRanking } from "@nwr/contracts";
+import type { KdstStreamerResult, RedraftBootstrap, RedraftRanking } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -221,4 +221,36 @@ function CompareCards({ players }: { players: [RedraftRanking, RedraftRanking] }
 export function DataHealthPage({ data, onReload }: { data: RedraftBootstrap; onReload: () => void }) {
   const health = data.health;
   return <><PageHeader eyebrow="System · Current-season authority" title="Projection & Data Health" description="Governed projection admission, profile validation, replacement calculation, and local runtime status." status={<><StatusBadge tone={data.status.tone} label={health.status || "Review"} /><StatusBadge tone="safe" label="Dynasty isolated" /></>} actions={<Button icon="activity" onClick={onReload}>Reload local snapshot</Button>} /><section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft V1 · Review authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p></div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section><div className="metric-grid"><MetricCard label="Ranked players" value={health.rankedPlayers} detail="Active profile" icon="board" tone="gold" /><MetricCard label="Blocked rows" value={health.blockedPlayers} detail="Visible, never imputed" icon="alert" tone="crimson" /><MetricCard label="Profiles" value={data.profiles.length} detail="Redraft namespace" icon="profile" tone="violet" /><MetricCard label="External network" value="OFF" detail="Local runtime only" icon="shield" tone="cyan" /></div><div className="split-view"><Panel title="Readiness checks" eyebrow="Deterministic validation"><dl className="health-list"><div><dt>Player universe</dt><dd><StatusBadge tone={health.playerUniverseAvailable ? "safe" : "blocked"} label={health.playerUniverseAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Current forecast</dt><dd><StatusBadge tone={health.currentSeasonForecastAvailable ? "safe" : "blocked"} label={health.currentSeasonForecastAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Scoring profile</dt><dd><StatusBadge tone={health.scoringProfileValid ? "safe" : "blocked"} label={health.scoringProfileValid ? "Valid" : "Invalid"} /></dd></div><div><dt>Replacement model</dt><dd><StatusBadge tone={health.replacementCalculationValid ? "safe" : "blocked"} label={health.replacementCalculationValid ? "Valid" : "Blocked"} /></dd></div></dl></Panel><Panel title="Desktop safeguards" eyebrow="Windows desktop"><dl className="health-list"><div><dt>Connection</dt><dd>Local computer only</dd></div><div><dt>Saved state</dt><dd>Redraft isolated</dd></div><div><dt>Cloud dependency</dt><dd>None</dd></div><div><dt>Streamlit fallback</dt><dd>Preserved</dd></div></dl></Panel></div>{data.notices.map((notice, index) => <div className={`alert-strip alert-strip--${notice.tone}`} key={`${notice.title}-${index}`}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}{health.messages.map((message, index) => <div className="alert-strip" key={`health-${index}-${message}`}>{message}</div>)}</>;
+}
+
+export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+  const [week, setWeek] = useState(1);
+  const [result, setResult] = useState<KdstStreamerResult | null>(null);
+  const [error, setError] = useState<NwrApiError | null>(null);
+  const [working, setWorking] = useState(false);
+  const provider = data.externalConsensus;
+  const load = async () => {
+    if (working || !provider?.configured) return;
+    setWorking(true); setError(null);
+    try { setResult(await client.kdstStreamer(week)); }
+    catch (reason) { setError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources.")); }
+    finally { setWorking(false); }
+  };
+  const columns: TableColumn[] = [
+    { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
+    { key: "ecr", label: "FantasyPros ECR", sort: "number", align: "right" },
+    { key: "tier", label: "Tier", sort: "number" },
+    { key: "rosterStatus", label: "Sleeper status", sort: "text" },
+    { key: "recommendation", label: "Action", sort: "text", render: (row) => <StatusBadge tone={String(row.recommendation) === "ADD" || String(row.recommendation) === "START" ? "safe" : "review"} label={String(row.recommendation)} /> },
+  ];
+  return <>
+    <PageHeader eyebrow="Weekly Tools · Read-only" title="K/DST Streamer" description="External K/DST consensus from FantasyPros, filtered against the active Sleeper roster. NWR does not calculate a K/DST score or combine ECR with Redraft projections." status={<StatusBadge tone={provider?.configured ? "review" : "blocked"} label={provider?.configured ? "Provider configured" : "Provider key required"} />} />
+    <Panel title="External consensus authority" eyebrow={provider?.authority ?? "EXTERNAL CONSENSUS — FANTASYPROS"}>
+      <p>{provider?.message ?? "Provider status is unavailable."}</p>
+      <p className="copy-muted">Use a FantasyPros API key authorized for your account in the local Desktop environment, then restart. No API key is shown, stored in a profile, or sent to Sleeper.</p>
+      <div className="profile-edit-actions"><label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label><Button disabled={!provider?.configured || working || !data.activeProfile} icon="activity" onClick={() => void load()}>{working ? "Reading…" : "Refresh K/DST ECR"}</Button></div>
+    </Panel>
+    {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {result ? <><p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · ECR only; schedule, betting, weather, and hidden weights are not used.</p>{(["K", "DST"] as const).map((position) => <Panel key={position} title={`${position} streamer actions`} eyebrow="FantasyPros ECR · Sleeper availability"><DataTable columns={columns} rows={result.positions[position] as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.playerName)}-${String(row.ecr)}`} /></Panel>)}</> : null}
+  </>;
 }

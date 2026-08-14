@@ -7,6 +7,7 @@ import {
   type DynastyBootstrap,
   type DynastyComparison,
   type DynastyWorkspace,
+  type KdstStreamerResult,
   type OwnerDecisionInput,
   type PersonalBoardInput,
   type PlayerDetail,
@@ -286,6 +287,13 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/undo`, {
       method: "POST",
       body: "{}",
+    });
+  }
+
+  kdstStreamer(week: number): Promise<KdstStreamerResult> {
+    return this.request("/api/v1/redraft/kdst/streamer", {
+      method: "POST",
+      body: JSON.stringify({ week }),
     });
   }
 

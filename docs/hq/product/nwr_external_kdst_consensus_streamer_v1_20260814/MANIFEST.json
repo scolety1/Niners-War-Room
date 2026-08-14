@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "verdict": "BLOCKED_NWR_FANTASYPROS_PROVIDER_AUTHORITY",
+  "league_id": "1312983576827920384",
+  "owner_username": "scolety",
+  "provider": "FantasyPros official Public API / ECR",
+  "provider_key_configured": false,
+  "sleeper_write_behavior": "NO_SLEEPER_WRITES",
+  "models_modified": [],
+  "mock_runs": 0
+}
