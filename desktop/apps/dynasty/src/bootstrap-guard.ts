@@ -26,7 +26,11 @@ function isRookieRanking(value: unknown): boolean {
     && typeof value.draftable === "boolean"
     && typeof value.modelScoreEligible === "boolean"
     && isFiniteNumberOrNull(value.rank)
-    && isFiniteNumberOrNull(value.reviewScore);
+    && isFiniteNumberOrNull(value.boardScore)
+    && isFiniteNumberOrNull(value.reviewScore)
+    && (value.modelScoreEligible
+      ? value.rank !== null && value.boardScore !== null
+      : value.rank === null && value.boardScore === null);
 }
 
 function isAssetOption(value: unknown): boolean {

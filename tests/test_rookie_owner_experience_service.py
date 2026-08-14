@@ -22,6 +22,10 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
     assert "Admitted component context" in carnell["Why this rank"]
     assert carnell["Unified Research"] == "Research neighborhood 1"
     assert carnell["NWR Expected"] == "Research neighborhood 1"
+    assert carnell["NWR Rookie Score"] == carnell["Board Score"]
+    assert "above" in carnell["Research Neighborhood"]
+    assert "below" in carnell["Research Neighborhood"]
+    assert carnell["Current Role"].endswith("(factual context only)")
     assert carnell["Blocked / pending reason"] == ""
 
     kc = by_name["KC Concepcion"]
@@ -30,6 +34,13 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
     assert "Review Score" in kc["Why this rank"]
     assert "confidence cap is 0.84" in kc["Why this rank"]
     assert "Missing components" in kc["Why this rank"]
+    assert "player name descending" in kc["Why rank differs from raw score"]
+
+    for player, current_position in (("Max Bredeson", "RB"), ("Riley Nowakowski", "FB")):
+        role = by_name[player]["Current Role"]
+        assert "Frozen Rookie Review position TE" in role
+        assert f"current registry position {current_position}" in role
+        assert "dynasty score unchanged" in role
 
     stribling = by_name["De'Zhaun Stribling"]
     assert stribling["Rank"] == "—"
@@ -40,6 +51,15 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
     assert stribling["Selectable"] is True
     assert stribling["Model Score Eligible"] is False
     assert "no replacement score or rank was invented" in stribling["Blocked / pending reason"]
+    assert float(stribling["Age"]) == 23.348871
+    assert stribling["College Production"] == "72.6 / 100 normalized"
+    assert stribling["Market Share"] == "51.4 / 100 normalized"
+    assert stribling["Athletic Context"] == "NOT_ENOUGH_INFORMATION"
+    assert "candidate score and rank remain excluded" in stribling["Warnings"]
+    assert "College production 72.6/100" in stribling["What NWR likes"]
+
+    assert by_name["Oscar Delp"]["Athletic Context"].startswith("STRONG (94.2/100")
+    assert by_name["Joe Royer"]["Athletic Context"].startswith("STRONG (95.0/100")
 
     components = rookie_component_rows(carnell)
     assert set(components["Model effect"]) <= {
@@ -55,8 +75,9 @@ def test_rookie_page_puts_warnings_last_and_uses_owner_language() -> None:
         Path(__file__).resolve().parents[1] / "app/pages/48_rookie_board_review_v1.py"
     ).read_text(encoding="utf-8")
     assert "Why is this rookie here?" in page
-    assert "Rookie draft range" in page
-    assert "Rookie Tier" in page
+    assert "eligibility_rows=eligibility.rows" in page
+    assert "Draft Range Band" in page
+    assert "Evidence Band" in page
     assert "NWR Rookie Score" in page
     assert "College Production" in page
     assert "Unified Research" in page

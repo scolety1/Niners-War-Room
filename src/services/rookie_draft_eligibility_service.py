@@ -25,10 +25,17 @@ LIVE_IDENTITY_RELATIVE = Path(
     "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/"
     "CURRENT_2026_IDENTITY_AND_ROLE.csv"
 )
+ROOKIE_INTELLIGENCE_RELATIVE = Path(
+    "docs/hq/product/nwr_rookie_intelligence_v2_factual_overlay_v1_20260814/"
+    "MANUAL_REVIEW_FACTUAL_COMPONENT_OVERLAY.csv"
+)
 
 ROOKIE_BOARD_SHA256 = "06853164a41cd9715accfc3c4f3e54d0cc915be6c55ebab040de6fc0abd96c2f"
 BLOCKED_ROOKIES_SHA256 = "361011524dfbabc62cecaf4286d201b219e275a5fa8b43b57c93017eca56d19a"
 LIVE_IDENTITY_SHA256 = "f4ae6106f5302c59f23d83a27c006a894c5660b3058a011e5b2f16c6a2c79ff9"
+ROOKIE_INTELLIGENCE_SHA256 = (
+    "4d45fc0009cb01569a292d881778a575ee8b625235adc3595eac8d71504b35cb"
+)
 
 SUPPORTED_POSITIONS = ("QB", "RB", "WR", "TE")
 EXPECTED_POSITION_COUNTS = {"QB": 10, "RB": 12, "WR": 36, "TE": 22}
@@ -233,11 +240,27 @@ def _pick_index(
     return indexed
 
 
+def _factual_evidence_value(
+    frozen: Mapping[str, object],
+    intelligence: Mapping[str, object],
+    *,
+    model_score_eligible: bool,
+    field: str,
+    frozen_field: str,
+) -> str:
+    """Use frozen inputs for scored rows and approved non-score facts for manual rows."""
+
+    if model_score_eligible or not intelligence:
+        return str(frozen.get(frozen_field) or "").strip()
+    return str(intelligence.get(field) or "").strip()
+
+
 def build_rookie_draft_eligibility_overlay(
     rookie_rows: Sequence[Mapping[str, object]],
     live_identity_rows: Sequence[Mapping[str, object]],
     blocker_rows: Sequence[Mapping[str, object]],
     *,
+    intelligence_rows: Sequence[Mapping[str, object]] = (),
     source_hashes: Mapping[str, str] | None = None,
 ) -> RookieDraftEligibilityOverlay:
     """Compose the full official class using exact official-pick reconciliation."""
@@ -262,6 +285,18 @@ def build_rookie_draft_eligibility_overlay(
     blocker_by_pick = _pick_index(
         blocker_rows, "overall_pick", label="Frozen blocker inventory", errors=errors
     )
+    intelligence_by_pick = _pick_index(
+        intelligence_rows,
+        "overall_pick",
+        label="Rookie Intelligence V2 factual overlay",
+        errors=errors,
+    )
+    if intelligence_rows and len(intelligence_by_pick) != EXPECTED_MANUAL_REVIEW_COUNT:
+        errors.append(
+            "Rookie Intelligence V2 factual overlay must contain "
+            f"{EXPECTED_MANUAL_REVIEW_COUNT} unique manual-review picks; "
+            f"found {len(intelligence_by_pick)}"
+        )
 
     if len(official) != EXPECTED_OFFICIAL_COUNT:
         errors.append(
@@ -340,6 +375,17 @@ def build_rookie_draft_eligibility_overlay(
         blocker = blocker_by_pick.get(pick, {})
         refresh_available = bool(live_player_id and not frozen_player_id and blocker)
         previous_block_reason = str(blocker.get("blocking_reason") or "").strip()
+        intelligence = intelligence_by_pick.get(pick, {})
+        if intelligence:
+            intelligence_identity = str(intelligence.get("live_player_id") or "").strip()
+            if (
+                str(intelligence.get("player") or "").strip() != frozen_name
+                or str(intelligence.get("position") or "").strip().upper() != frozen_position
+                or intelligence_identity != live_player_id
+                or str(intelligence.get("factual_overlay_authority") or "").strip()
+                != "ROOKIE_INTELLIGENCE_V2_REVIEW_ONLY_FACTUAL_COMPONENTS"
+            ):
+                errors.append(f"Rookie Intelligence V2 receipt mismatch at official pick {pick}")
 
         if model_score_eligible:
             authority_status = "SCORED_REVIEW_ONLY"
@@ -420,8 +466,94 @@ def build_rookie_draft_eligibility_overlay(
                 "source_tier": str(frozen.get("tier") or "").strip(),
                 "source_confidence": str(frozen.get("evidence_confidence") or "").strip(),
                 "source_warnings": str(frozen.get("warning_codes") or "").strip(),
-                "age_at_draft": str(frozen.get("age_at_draft") or "").strip(),
+                "source_raw_model_score": str(
+                    frozen.get("raw_model_v4_score") or ""
+                ).strip(),
+                "source_review_score": str(frozen.get("final_review_score") or "").strip(),
+                "source_board_score": str(
+                    frozen.get("sprint14e_format_score") or ""
+                ).strip(),
+                "source_production_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="production_component",
+                    frozen_field="production_component",
+                ),
+                "source_market_share_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="market_share_component",
+                    frozen_field="market_share_component",
+                ),
+                "source_draft_capital_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="draft_capital_component",
+                    frozen_field="draft_capital_component",
+                ),
+                "source_athletic_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="athletic_component",
+                    frozen_field="athletic_component",
+                ),
+                "source_recruiting_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="recruiting_component",
+                    frozen_field="recruiting_component",
+                ),
+                "source_age_component": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="age_component",
+                    frozen_field="age_component",
+                ),
+                "source_missing_components": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="missing_components",
+                    frozen_field="missing_components",
+                ),
+                "refresh_evidence_status": (
+                    "REVIEW_ONLY_FACTUAL_COMPONENTS_CONNECTED_SCORE_EXCLUDED"
+                    if intelligence and not model_score_eligible
+                    else "FROZEN_ROW_ONLY"
+                ),
+                "current_role_position": str(current.get("current_position") or "").strip(),
+                "current_role_status": str(current.get("current_status") or "").strip(),
+                "current_role_projection_status": str(
+                    current.get("projection_status") or ""
+                ).strip(),
+                "current_role_block_reason": str(
+                    current.get("block_reason") or ""
+                ).strip(),
+                "age_at_draft": _factual_evidence_value(
+                    frozen,
+                    intelligence,
+                    model_score_eligible=model_score_eligible,
+                    field="age_at_draft",
+                    frozen_field="age_at_draft",
+                ),
             }
+        )
+
+    board_score_counts = Counter(
+        str(row.get("source_board_score") or "")
+        for row in output
+        if str(row.get("source_board_score") or "")
+    )
+    for row in output:
+        score_key = str(row.get("source_board_score") or "")
+        row["source_board_score_tied"] = bool(
+            score_key and board_score_counts[score_key] > 1
         )
 
     output.sort(
@@ -503,11 +635,13 @@ def load_rookie_draft_eligibility_overlay(
         "Rookie Review": root / ROOKIE_BOARD_RELATIVE,
         "Blocked Rookie Inventory": root / BLOCKED_ROOKIES_RELATIVE,
         "Live Rookie Identity": root / LIVE_IDENTITY_RELATIVE,
+        "Rookie Intelligence V2 Factual Overlay": root / ROOKIE_INTELLIGENCE_RELATIVE,
     }
     expected = {
         "Rookie Review": ROOKIE_BOARD_SHA256,
         "Blocked Rookie Inventory": BLOCKED_ROOKIES_SHA256,
         "Live Rookie Identity": LIVE_IDENTITY_SHA256,
+        "Rookie Intelligence V2 Factual Overlay": ROOKIE_INTELLIGENCE_SHA256,
     }
     errors: list[str] = []
     hashes: dict[str, str] = {}
@@ -547,5 +681,6 @@ def load_rookie_draft_eligibility_overlay(
         _read_rows(paths["Rookie Review"]),
         _read_rows(paths["Live Rookie Identity"]),
         _read_rows(paths["Blocked Rookie Inventory"]),
+        intelligence_rows=_read_rows(paths["Rookie Intelligence V2 Factual Overlay"]),
         source_hashes=hashes,
     )

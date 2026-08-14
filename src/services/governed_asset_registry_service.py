@@ -211,6 +211,24 @@ def _rookie_overlay_assets(
                 "rebuild_status": row["rebuild_status"],
                 "previous_block_reason": row["previous_block_reason"],
                 "owner_reason": row["owner_reason"],
+                "raw_model_score": row["source_raw_model_score"],
+                "review_score": row["source_review_score"],
+                "board_score": row["source_board_score"],
+                "board_score_tied": row["source_board_score_tied"],
+                "production_component": row["source_production_component"],
+                "market_share_component": row["source_market_share_component"],
+                "draft_capital_component": row["source_draft_capital_component"],
+                "athletic_component": row["source_athletic_component"],
+                "recruiting_component": row["source_recruiting_component"],
+                "age_component": row["source_age_component"],
+                "missing_components": row["source_missing_components"],
+                "current_role_position": row["current_role_position"],
+                "current_role_status": row["current_role_status"],
+                "current_role_projection_status": row[
+                    "current_role_projection_status"
+                ],
+                "current_role_block_reason": row["current_role_block_reason"],
+                "refresh_evidence_status": row.get("refresh_evidence_status", ""),
             }
         )
     return assets

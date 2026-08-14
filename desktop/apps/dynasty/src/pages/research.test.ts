@@ -35,6 +35,7 @@ const veteran: PlayerDetail = {
   scoreStatus: "Score available",
   selectable: true,
   refreshAvailable: false,
+  rookieIntelligence: null,
 };
 
 function render(detail: PlayerDetail): string {
@@ -56,6 +57,7 @@ describe("PlayerDetailBody", () => {
     expect(html).toContain("Confidence");
     expect(html).toContain("Lifecycle context");
     expect(html).toContain("Finished V1 authority");
+    expect(html).toContain("Market read");
     expect(html).not.toContain("Manual Review");
     expect(html).not.toContain("NFL draft");
     expect(html).not.toContain("Draft status");
@@ -80,6 +82,19 @@ describe("PlayerDetailBody", () => {
       modelScoreEligible: false,
       scoreStatus: "No admitted Rookie Review score - manual review required",
       refreshAvailable: true,
+      rookieIntelligence: {
+        nwrRookieScore: null,
+        reviewScore: null,
+        rawModelScore: null,
+        collegeProduction: "Not enough information",
+        marketShare: "Not enough information",
+        athleticContext: "NOT_ENOUGH_INFORMATION",
+        currentRole: "Active on SF's current roster; not used in Rookie Review score",
+        whatNwrLikes: ["Official NFL selection: Round 2, pick 33"],
+        whatHoldsBack: ["No admitted Rookie Review score"],
+        biggestUncertainty: "Whether a governed rebuild can recover every required input",
+        rankScoreExplanation: "No rank because the frozen Rookie Review did not admit a score",
+      },
     });
 
     expect(html).toContain("Manual Review");

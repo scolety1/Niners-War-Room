@@ -1,0 +1,13 @@
+window,target,eligible_rows,hits,censored_rows_policy,required_rolling_origin_rule,suggested_test_classes,promotion_use,execution_status
+rookie,T12,818,41,EXCLUDE_NOT_MISS,train_label_year<=test_class-1,2016-2024,SECONDARY,NOT_EXECUTED_IN_V2
+rookie,T24,579,67,EXCLUDE_NOT_MISS,train_label_year<=test_class-1,2016-2024,SECONDARY,NOT_EXECUTED_IN_V2
+rookie,T36,579,107,EXCLUDE_NOT_MISS,train_label_year<=test_class-1,2016-2024,SECONDARY,NOT_EXECUTED_IN_V2
+year2,T12,737,79,EXCLUDE_NOT_MISS,train_label_year<=test_class-2,2017-2023,SECONDARY,NOT_EXECUTED_IN_V2
+year2,T24,506,92,EXCLUDE_NOT_MISS,train_label_year<=test_class-2,2017-2023,SECONDARY,NOT_EXECUTED_IN_V2
+year2,T36,506,120,EXCLUDE_NOT_MISS,train_label_year<=test_class-2,2017-2023,SECONDARY,NOT_EXECUTED_IN_V2
+first3y,T12,492,112,EXCLUDE_NOT_MISS,train_label_year<=test_class-3,2018-2022,PRIMARY,NOT_EXECUTED_IN_V2
+first3y,T24,349,131,EXCLUDE_NOT_MISS,train_label_year<=test_class-3,2018-2022,PRIMARY,NOT_EXECUTED_IN_V2
+first3y,T36,355,167,EXCLUDE_NOT_MISS,train_label_year<=test_class-3,2018-2022,PRIMARY,NOT_EXECUTED_IN_V2
+first5y,T12,291,116,EXCLUDE_NOT_MISS,train_label_year<=test_class-5,2018-2020,DESCRIPTIVE_ONLY,NOT_EXECUTED_IN_V2
+first5y,T24,210,117,EXCLUDE_NOT_MISS,train_label_year<=test_class-5,2018-2020,DESCRIPTIVE_ONLY,NOT_EXECUTED_IN_V2
+first5y,T36,224,157,EXCLUDE_NOT_MISS,train_label_year<=test_class-5,2018-2020,DESCRIPTIVE_ONLY,NOT_EXECUTED_IN_V2

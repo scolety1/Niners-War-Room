@@ -14,6 +14,9 @@ from app.components.post_release_status import render_source_freshness  # noqa: 
 from app.components.ui_framework import page_header  # noqa: E402
 from src.services.personal_workspace_service import load_store  # noqa: E402
 from src.services.post_release_usability_service import freshness_for_sources  # noqa: E402
+from src.services.rookie_draft_eligibility_service import (  # noqa: E402
+    load_rookie_draft_eligibility_overlay,
+)
 from src.services.rookie_owner_experience_service import (  # noqa: E402
     load_owner_rookie_board,
     rookie_component_rows,
@@ -34,11 +37,12 @@ page_header(
 )
 owner_intro(
     "A rookie draft board you can use on the clock.",
-    "Start with tier and draft range. Open the component receipts only when two rookies are close.",
+    "Start with draft range and evidence band. Open component receipts when two rookies are close.",
 )
 render_source_freshness(freshness_for_sources(("Model V4 2026 Rookie Review",)))
 
-rookies = load_owner_rookie_board()
+eligibility = load_rookie_draft_eligibility_overlay()
+rookies = load_owner_rookie_board(eligibility_rows=eligibility.rows)
 personal = {row["asset_id"]: row for row in load_store("personal_board").records}
 
 
@@ -82,7 +86,8 @@ display_columns = [
     "NFL Team",
     "NFL Draft Capital",
     "NWR Rookie Score",
-    "Rookie Tier",
+    "Draft Range Band",
+    "Evidence Band",
     "College Production",
     "Age",
     "Athletic Context",
@@ -107,8 +112,8 @@ selected_name = st.selectbox("Rookie", filtered["player_name"].tolist())
 detail = rookies.loc[rookies["player_name"].eq(selected_name)].iloc[0].to_dict()
 summary = st.columns(5)
 summary[0].metric("Rookie rank", detail["Rank"])
-summary[1].metric("Tier", detail["Rookie Tier"])
-summary[2].metric("Draft range", detail["Rookie draft range"])
+summary[1].metric("Evidence band", detail["Evidence Band"])
+summary[2].metric("Draft range band", detail["Draft Range Band"])
 summary[3].metric("NWR Rookie Score", detail["Board Score"])
 summary[4].metric("Confidence", detail["Confidence"])
 st.write(detail["Why this rank"])

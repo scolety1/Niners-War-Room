@@ -199,7 +199,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "player",
         "position",
         "team",
-        "rookieTier",
+        "evidenceBand",
         "draftRange",
         "nflDraftCapital",
         "boardScore",
@@ -210,8 +210,15 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "confidence",
         "age",
         "collegeProduction",
+        "marketShare",
         "athleticContext",
         "researchTier",
+        "researchNeighborhood",
+        "currentRole",
+        "whatNwrLikes",
+        "whatHoldsBack",
+        "biggestUncertainty",
+        "rankScoreExplanation",
         "floor",
         "expected",
         "ceiling",
@@ -367,6 +374,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "scoreStatus",
         "selectable",
         "refreshAvailable",
+        "rookieIntelligence",
     }
     assert detail.data["assetId"] == current_ids[0]
     assert set(detail.data["range"]) == {"floor", "expected", "ceiling", "method", "authority"}
@@ -378,6 +386,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "sourceAsOf",
         "status",
     }
+    assert detail.data["rookieIntelligence"] is None
     assert "admitted score" in detail.data["reasons"][0].lower()
     assert all("usable_with_confidence_cap" not in reason for reason in detail.data["reasons"])
     assert any(
@@ -401,6 +410,19 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "The frozen Rookie Review did not admit a score."
     )
     blocked_detail = facade.dynasty_asset(blocked_rookie["assetId"])
+    assert set(blocked_detail.data["rookieIntelligence"]) == {
+        "nwrRookieScore",
+        "reviewScore",
+        "rawModelScore",
+        "collegeProduction",
+        "marketShare",
+        "athleticContext",
+        "currentRole",
+        "whatNwrLikes",
+        "whatHoldsBack",
+        "biggestUncertainty",
+        "rankScoreExplanation",
+    }
     assert blocked_detail.data["reasons"][0] == (
         "Draft eligible and selectable using the governed official draft asset."
     )
@@ -408,8 +430,33 @@ def test_dynasty_facade_composes_real_governed_workflows(
     assert blocked_detail.data["nflDraftCapital"] == "NFL Round 2 · Pick 33"
     assert blocked_detail.data["selectable"] is True
     assert blocked_detail.data["nwrScore"] is None
+    assert blocked_detail.data["rookieIntelligence"]["nwrRookieScore"] is None
+    assert blocked_detail.data["age"] == 23.348871
+    assert blocked_detail.data["rookieIntelligence"]["collegeProduction"] == (
+        "72.6 / 100 normalized"
+    )
+    assert blocked_detail.data["rookieIntelligence"]["marketShare"] == (
+        "51.4 / 100 normalized"
+    )
+    assert blocked_detail.data["rookieIntelligence"]["athleticContext"] == (
+        "NOT_ENOUGH_INFORMATION"
+    )
+    assert blocked_detail.data["rookieIntelligence"]["whatNwrLikes"][:3] == [
+        "Age: 87.7/100",
+        "NFL draft capital: 77.6/100",
+        "College production: 72.6/100",
+    ]
+    assert blocked_detail.data["rookieIntelligence"]["biggestUncertainty"].startswith(
+        "Owner approval of the proposed identity contract"
+    )
     assert "canonical" not in " ".join(blocked_detail.data["reasons"]).lower()
     assert "gsis" not in " ".join(blocked_detail.data["reasons"]).lower()
+
+    kc = next(row for row in bootstrap.data["rookies"] if row["player"] == "KC Concepcion")
+    kc_detail = facade.dynasty_asset(kc["assetId"]).data
+    assert kc_detail["nwrScore"] == kc["boardScore"] == 50.0
+    assert kc_detail["rookieIntelligence"]["nwrRookieScore"] == 50.0
+    assert kc_detail["rookieIntelligence"]["reviewScore"] == kc["reviewScore"]
 
     assert set(comparison.data) == {"leans", "ranges", "players", "warnings"}
     assert [row["assetId"] for row in comparison.data["players"]] == current_ids

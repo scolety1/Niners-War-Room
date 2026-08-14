@@ -204,7 +204,7 @@ export interface RookieRanking {
   player: string;
   position: string;
   team: string;
-  rookieTier: string;
+  evidenceBand: string;
   draftRange: string;
   nflDraftCapital: string;
   boardScore: number | null;
@@ -215,8 +215,15 @@ export interface RookieRanking {
   confidence: string;
   age: number | null;
   collegeProduction: string;
+  marketShare: string;
   athleticContext: string;
   researchTier: string;
+  researchNeighborhood: string;
+  currentRole: string;
+  whatNwrLikes: string;
+  whatHoldsBack: string;
+  biggestUncertainty: string;
+  rankScoreExplanation: string;
   floor: string;
   expected: string;
   ceiling: string;
@@ -231,6 +238,20 @@ export interface RookieRanking {
   draftRound: number | null;
   overallPick: number | null;
   eligibilityReason: string;
+}
+
+export interface RookieIntelligence {
+  nwrRookieScore: number | null;
+  reviewScore: number | null;
+  rawModelScore: number | null;
+  collegeProduction: string;
+  marketShare: string;
+  athleticContext: string;
+  currentRole: string;
+  whatNwrLikes: string[];
+  whatHoldsBack: string[];
+  biggestUncertainty: string;
+  rankScoreExplanation: string;
 }
 
 export interface RookieDraftReadiness {
@@ -332,6 +353,7 @@ export interface PlayerDetail {
   scoreStatus: string;
   selectable: boolean;
   refreshAvailable: boolean;
+  rookieIntelligence: RookieIntelligence | null;
 }
 
 export interface CompareLean {

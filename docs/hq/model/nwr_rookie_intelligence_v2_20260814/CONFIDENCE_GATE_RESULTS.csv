@@ -1,0 +1,5 @@
+gate,rows,result,authority,finding
+current_2026_confidence_contract,80,60_AT_0.88;20_AT_0.84,REFRESH_CANDIDATE_ONLY,unchanged formula and governed missingness; not historical validation
+recruiting_missingness,80,80_MISSING_NOT_ZERO,EXACT_SOURCE_GAP,no numeric substitution
+historical_confidence_cap_shadow,128,broad=.567;strict=.317;draft_misses=14,PUBLISHED_AGGREGATE_UNREPRODUCIBLE,documented shadow tied current; not promotable
+historical_champion_confidence_join,0,BLOCKED,MISSING_ROW_LEVEL_CHAMPION,cannot measure separation or calibration

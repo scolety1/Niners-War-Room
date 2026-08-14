@@ -107,6 +107,6 @@ def test_desktop_selection_gate_uses_selectable_not_score_block() -> None:
     assert "data.rookieReadiness.draftableAssetIds" in cockpit
     assert "admittedIds.has(row.assetId)" in cockpit
     assert ".filter((row) => row.rank != null && !row.blockedReason)" not in cockpit
-    assert 'key: "reviewScore", label: "Review score"' in rookie_board
+    assert 'key: "boardScore", label: "NWR rookie score"' in rookie_board
     for field in ("draftEligible", "modelScoreEligible", "selectable", "scoreStatus"):
         assert field in contract

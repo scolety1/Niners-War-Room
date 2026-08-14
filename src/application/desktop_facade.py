@@ -2302,8 +2302,8 @@ class DesktopBackendFacade:
                     "player": _text(source.get("Player")),
                     "position": _text(source.get("Pos")),
                     "team": _text(source.get("NFL Team")),
-                    "rookieTier": _text(source.get("Rookie Tier")),
-                    "draftRange": _text(source.get("Rookie draft range")),
+                    "evidenceBand": _text(source.get("Evidence Band")),
+                    "draftRange": _text(source.get("Draft Range Band")),
                     "nflDraftCapital": _text(source.get("NFL Draft Capital")),
                     "boardScore": _number(source.get("Board Score")),
                     "reviewScore": _number(source.get("Review Score")),
@@ -2315,8 +2315,17 @@ class DesktopBackendFacade:
                     "confidence": _text(source.get("Confidence")),
                     "age": _number(source.get("Age")),
                     "collegeProduction": _text(source.get("College Production")),
+                    "marketShare": _text(source.get("Market Share")),
                     "athleticContext": _text(source.get("Athletic Context")),
                     "researchTier": _text(source.get("Unified Research")),
+                    "researchNeighborhood": _text(source.get("Research Neighborhood")),
+                    "currentRole": _text(source.get("Current Role")),
+                    "whatNwrLikes": _text(source.get("What NWR likes")),
+                    "whatHoldsBack": _text(source.get("What holds them back")),
+                    "biggestUncertainty": _text(source.get("Biggest uncertainty")),
+                    "rankScoreExplanation": _text(
+                        source.get("Why rank differs from raw score")
+                    ),
                     "floor": _text(source.get("Floor")),
                     "expected": _text(source.get("NWR Expected")),
                     "ceiling": _text(source.get("Ceiling")),
@@ -2444,6 +2453,12 @@ class DesktopBackendFacade:
             row.get("model_score_eligible"),
             default=_number(row.get("nwr_dynasty_score") or row.get("score_value")) is not None,
         )
+        is_rookie_draft_asset = bool(_text(row.get("official_draft_asset_id")))
+        owner_score = (
+            _number(row.get("board_score"))
+            if is_rookie_draft_asset
+            else _number(row.get("nwr_dynasty_score") or row.get("score_value"))
+        )
         return {
             "assetId": _text(row.get("asset_id")),
             "name": _text(row.get("asset_name")),
@@ -2452,7 +2467,7 @@ class DesktopBackendFacade:
             "team": _text(row.get("team")),
             "rank": _integer(row.get("dynasty_rank") or row.get("rank_value")),
             "positionRank": _text(row.get("position_rank")),
-            "nwrScore": _number(row.get("nwr_dynasty_score") or row.get("score_value")),
+            "nwrScore": owner_score,
             "age": _number(row.get("age")),
             "confidence": _text(row.get("confidence")) or "Not enough information",
             "authority": (
@@ -2505,6 +2520,25 @@ class DesktopBackendFacade:
             or ("Score available" if score_eligible else "No common model score"),
             "selectable": _flag(row.get("selectable"), default=True),
             "refreshAvailable": _flag(row.get("refresh_available")),
+            "rookieIntelligence": ({
+                "nwrRookieScore": _number(row.get("board_score")),
+                "reviewScore": _number(row.get("review_score")),
+                "rawModelScore": _number(row.get("raw_model_score")),
+                "collegeProduction": _component_owner_context(
+                    row.get("production_component")
+                ),
+                "marketShare": _component_owner_context(
+                    row.get("market_share_component")
+                ),
+                "athleticContext": _athletic_owner_context(
+                    row.get("athletic_component")
+                ),
+                "currentRole": _current_role_owner_context(row),
+                "whatNwrLikes": _rookie_likes(row),
+                "whatHoldsBack": _rookie_holds_back(row),
+                "biggestUncertainty": _rookie_uncertainty(row),
+                "rankScoreExplanation": _rookie_rank_score_explanation(row),
+            } if _text(row.get("official_draft_asset_id")) else None),
         }
 
     @staticmethod
@@ -2555,9 +2589,7 @@ class DesktopBackendFacade:
                 score_copy = f" with a review score of {score:.2f}" if score is not None else ""
                 reasons.append(f"Separate 2026 Rookie Review: #{rank}{score_copy}.")
             if tier := _text(row.get("tier")):
-                reasons.append(
-                    "Rookie tier: " + tier.replace("_", " ").capitalize() + "."
-                )
+                reasons.append("Evidence band: " + _rookie_evidence_band_label(tier) + ".")
             confidence = _text(row.get("confidence"))
             if confidence == "usable_with_confidence_cap":
                 reasons.append("Usable for review, with confidence capped by evidence gaps.")
@@ -2754,3 +2786,137 @@ def _string_list(value: object) -> list[str]:
         return [text for item in value if (text := _text(item))]
     text = _text(value)
     return [text] if text else []
+
+
+def _component_owner_context(value: object) -> str:
+    number = _number(value)
+    return f"{number:.1f} / 100 normalized" if number is not None else "Not enough information"
+
+
+def _athletic_owner_context(value: object) -> str:
+    number = _number(value)
+    if number is None:
+        return "NOT_ENOUGH_INFORMATION"
+    if number >= 70:
+        return f"STRONG ({number:.1f}/100 governed component)"
+    if number >= 40:
+        return f"ADEQUATE ({number:.1f}/100 governed component)"
+    return f"CONCERN ({number:.1f}/100 governed component)"
+
+
+def _current_role_owner_context(row: Mapping[str, Any]) -> str:
+    team = _text(row.get("team"))
+    frozen_position = _text(row.get("position"))
+    current_position = _text(row.get("current_role_position"))
+    status = _text(row.get("current_role_status")).upper()
+    projection_status = _text(row.get("current_role_projection_status")).lower()
+    if current_position and frozen_position and current_position != frozen_position:
+        return (
+            f"Frozen Rookie Review position {frozen_position}; current registry position "
+            f"{current_position} with {team or 'team unavailable'}. Redraft projection status "
+            f"is {projection_status or 'under review'} for the role conflict; "
+            "dynasty score unchanged."
+        )
+    if status == "ACT" and team:
+        return f"Active on {team}'s current roster; not used in Rookie Review score"
+    if status and team:
+        return f"{status} with {team}; not used in Rookie Review score"
+    if team:
+        return f"Current team {team}; depth role not governed"
+    return "Not enough information"
+
+
+def _rookie_component_values(row: Mapping[str, Any]) -> list[tuple[float, str]]:
+    fields = (
+        ("college production", "production_component"),
+        ("market share", "market_share_component"),
+        ("NFL draft capital", "draft_capital_component"),
+        ("athletic evidence", "athletic_component"),
+        ("recruiting", "recruiting_component"),
+        ("age", "age_component"),
+    )
+    values: list[tuple[float, str]] = []
+    for label, field in fields:
+        number = _number(row.get(field))
+        if number is not None:
+            values.append((number, label))
+    return values
+
+
+def _rookie_likes(row: Mapping[str, Any]) -> list[str]:
+    values = sorted(_rookie_component_values(row), reverse=True)
+    if values:
+        return [
+            f"{label[:1].upper() + label[1:]}: {value:.1f}/100"
+            for value, label in values[:3]
+        ]
+    draft_round = _integer(row.get("draft_round"))
+    overall_pick = _integer(row.get("overall_pick"))
+    if draft_round is not None and overall_pick is not None:
+        return [f"Official NFL selection: Round {draft_round}, pick {overall_pick}"]
+    return ["Governed official draft asset is represented and selectable"]
+
+
+def _rookie_holds_back(row: Mapping[str, Any]) -> list[str]:
+    if not _flag(row.get("model_score_eligible")):
+        return [
+            _text(row.get("owner_reason"))
+            or "Required frozen Rookie Review evidence is not admitted"
+        ]
+    values = _rookie_component_values(row)
+    output: list[str] = []
+    if values:
+        value, label = min(values)
+        output.append(f"Lowest available component: {label} {value:.1f}/100")
+    missing = _text(row.get("missing_components"))
+    if missing:
+        output.append("Missing governed components: " + missing.replace("|", ", "))
+    return output or ["No separately admitted negative component"]
+
+
+def _rookie_uncertainty(row: Mapping[str, Any]) -> str:
+    if not _flag(row.get("model_score_eligible")):
+        missing = _text(row.get("missing_components"))
+        suffix = f"; remaining missing components: {missing.replace('|', ', ')}" if missing else ""
+        return "Owner approval of the proposed identity contract and governed rebuild" + suffix
+    warnings = _text(row.get("warnings"))
+    if "missing_combine_evidence" in warnings:
+        return "Athletic evidence is absent and is not treated as neutral"
+    if "model_edge_weirdness" in warnings:
+        return "Model-edge behavior is flagged for owner review"
+    if "draft_capital_anchor_warning" in warnings:
+        return "Draft-capital anchoring materially limits the evidence-adjusted score"
+    return "Missing athletic/recruiting evidence limits confidence"
+
+
+def _rookie_rank_score_explanation(row: Mapping[str, Any]) -> str:
+    if not _flag(row.get("model_score_eligible")):
+        return "No rank because the frozen Rookie Review did not admit a score"
+    board = _number(row.get("board_score"))
+    review = _number(row.get("review_score"))
+    if board is None:
+        return "Rank score unavailable"
+    review_text = f"; broader Review Score {review:.2f}" if review is not None else ""
+    explanation = (
+        f"Rank uses NWR Rookie Score {board:.2f}{review_text}. "
+        "The Board Score already applies the governed format and evidence gates."
+    )
+    if _flag(row.get("board_score_tied")):
+        explanation += (
+            " Equal Board Scores use the frozen builder's deterministic secondary key: "
+            "player name descending."
+        )
+    return explanation
+
+
+def _rookie_evidence_band_label(value: str) -> str:
+    return {
+        "first_round_board_context_review": "First-round evidence context",
+        "second_round_board_context_review": "Second-round evidence context",
+        "depth_board_context_review": "Depth-board evidence context",
+        "watchlist_context_review": "Watchlist evidence context",
+        "watchlist_or_data_incomplete_context_review": (
+            "Watchlist or incomplete evidence context"
+        ),
+        "manual_review": "Manual review",
+    }.get(value, "Not enough information")

@@ -82,6 +82,15 @@ def test_stribling_is_exact_draftable_and_unscored_without_fake_values() -> None
     assert row["frozen_rank"] is None
     assert row["frozen_score"] is None
     assert row["refresh_available"]
+    assert row["age_at_draft"] == "23.348871"
+    assert row["source_production_component"] == "72.6399"
+    assert row["source_market_share_component"] == "51.4169"
+    assert row["source_athletic_component"] == ""
+    assert row["refresh_evidence_status"] == (
+        "REVIEW_ONLY_FACTUAL_COMPONENTS_CONNECTED_SCORE_EXCLUDED"
+    )
+    assert not any("candidate" in key.casefold() and "score" in key.casefold() for key in row)
+    assert not any("candidate" in key.casefold() and "rank" in key.casefold() for key in row)
 
 
 def test_exact_identity_update_never_mutates_frozen_rookie_authority() -> None:

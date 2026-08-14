@@ -16,7 +16,15 @@ function validBootstrap(): Record<string, unknown> {
       rank: 1,
       nwrScore: 99.5,
     }],
-    rookies: [],
+    rookies: [{
+      assetId: "rookie:one",
+      player: "Rookie One",
+      draftable: true,
+      modelScoreEligible: true,
+      rank: 1,
+      boardScore: 67.3,
+      reviewScore: 81.1,
+    }],
     assetOptions: [],
     rookieReadiness: {
       ready: true,
@@ -56,6 +64,21 @@ describe("assertDynastyBootstrap", () => {
   it("rejects a wrong scalar type inside a ranking row", () => {
     const value = validBootstrap();
     (value.rankings as Array<Record<string, unknown>>)[0]!.rank = "1";
+    expect(() => assertDynastyBootstrap(value)).toThrow("Dynasty data could not be opened safely.");
+  });
+
+  it("rejects a scored rookie whose rank score is missing", () => {
+    const value = validBootstrap();
+    (value.rookies as Array<Record<string, unknown>>)[0]!.boardScore = null;
+    expect(() => assertDynastyBootstrap(value)).toThrow("Dynasty data could not be opened safely.");
+  });
+
+  it("rejects an unscored rookie with a fabricated rank score", () => {
+    const value = validBootstrap();
+    const rookie = (value.rookies as Array<Record<string, unknown>>)[0]!;
+    rookie.modelScoreEligible = false;
+    rookie.rank = null;
+    rookie.boardScore = 0;
     expect(() => assertDynastyBootstrap(value)).toThrow("Dynasty data could not be opened safely.");
   });
 });
