@@ -1,0 +1,9 @@
+{
+  "packet": "nwr_redraft_kdst_sleeper_scoring_closure_v1_20260814",
+  "verdict": "BLOCKED_NWR_REDRAFT_KDST_NO_LAWFUL_PROJECTION_SUPPORT",
+  "league_id": "1312983576827920384",
+  "owner": "scolety",
+  "blockers": 32,
+  "sleeper_writes": false,
+  "files": ["EXECUTIVE_VERDICT.md", "NONZERO_SCORING_RECONCILIATION.csv", "KDST_FRAMEWORK_RECOVERY.md", "COMPLETE_BOARD_GATE.md", "MOCK_GATE.md", "LIVE_COMPANION.md", "AUTHORITY_PRESERVATION.md", "VALIDATION_RESULTS.md", "NEXT_ACTION.md"]
+}
