@@ -3,6 +3,7 @@ import { Button, DataTable, PageHeader, Panel, SearchInput, SegmentedControl, Se
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ownerDisplay, ownerLabel } from "../lib/owner-copy";
+import { matchesPlayerSearch } from "../lib/search";
 
 function OwnerValue({ value }: { value: unknown }) {
   const display = ownerDisplay(value);
@@ -22,12 +23,12 @@ export function assetExplorerRows(
   assetType: string,
   evidence: string,
 ) {
-  const needle = query.trim().toLowerCase();
   return rows.filter((row) => {
     if (assetType !== "All" && row.assetType !== assetType) return false;
-    if (evidence === "Available" && row.blocked) return false;
-    if (evidence === "Blocked" && !row.blocked) return false;
-    return !needle || `${row.name} ${row.team} ${row.position} ${row.authority} ${row.assetType}`.toLowerCase().includes(needle);
+    if (evidence === "Score available" && !row.modelScoreEligible) return false;
+    if (evidence === "Manual review" && !row.evidenceBlocked) return false;
+    if (evidence === "Selection blocked" && row.selectable) return false;
+    return matchesPlayerSearch([row.name, row.team, row.position, row.authority, row.assetType, row.playerId, row.scoreStatus], query);
   });
 }
 
@@ -42,7 +43,7 @@ export function AssetExplorerPage({ data }: { data: DynastyBootstrap }) {
     () => assetExplorerRows(data.assetOptions, query, assetType, evidence),
     [assetType, data.assetOptions, evidence, query],
   );
-  const blockedCount = data.assetOptions.filter((row) => row.blocked).length;
+  const manualReviewCount = data.assetOptions.filter((row) => row.evidenceBlocked && row.draftEligible).length;
   const reset = () => {
     setQuery("");
     setAssetType("All");
@@ -55,15 +56,15 @@ export function AssetExplorerPage({ data }: { data: DynastyBootstrap }) {
       eyebrow="Players · governed registry"
       title="Asset Explorer"
       description="Browse current players, Rookie Review assets, and future picks without merging their source scales or changing NWR authority."
-      status={<><StatusBadge tone="safe" label={`${data.assetOptions.length} governed assets`} /><StatusBadge tone={blockedCount ? "review" : "safe"} label={`${blockedCount} evidence blocked`} /></>}
+      status={<><StatusBadge tone="safe" label={`${data.assetOptions.length} governed assets`} /><StatusBadge tone={manualReviewCount ? "review" : "safe"} label={`${manualReviewCount} manual review`} /></>}
       actions={<Button icon="compare" onClick={() => navigate("/compare")}>Compare assets</Button>}
     />
-    <div className="alert-strip"><strong>Read-only registry</strong><span>Ranks remain source-native. Missing evidence stays unavailable, never zero, and blocked assets remain visible.</span></div>
+    <div className="alert-strip"><strong>Read-only registry</strong><span>Draft eligibility and model-score eligibility are separate. Missing evidence stays unavailable, never zero.</span></div>
     <Panel title="Governed asset registry" eyebrow="Current players · rookies · picks">
       <div className="toolbar">
         <SearchInput value={query} onChange={setQuery} placeholder="Find an asset, team, position, or authority…" />
         <SelectField label="Asset type" value={assetType} onChange={setAssetType} options={assetTypes.map((value) => ({ value, label: value }))} />
-        <SelectField label="Evidence" value={evidence} onChange={setEvidence} options={["All", "Available", "Blocked"].map((value) => ({ value, label: value }))} />
+        <SelectField label="Evidence" value={evidence} onChange={setEvidence} options={["All", "Score available", "Manual review", "Selection blocked"].map((value) => ({ value, label: value }))} />
         <Button icon="undo" onClick={reset} variant="ghost">Reset</Button>
       </div>
       <DataTable columns={[
@@ -71,7 +72,8 @@ export function AssetExplorerPage({ data }: { data: DynastyBootstrap }) {
         { key: "name", label: "Asset", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.name)}</strong><small>{ownerLabel(row.team)} · {ownerLabel(row.position)}</small></span> },
         { key: "assetType", label: "Asset type", sort: "text", render: (row) => ownerLabel(row.assetType) },
         { key: "authority", label: "Source authority", sort: "text", render: (row) => ownerLabel(row.authority) },
-        { key: "blocked", label: "Evidence", sort: "text", render: (row) => <StatusBadge tone={row.blocked ? "blocked" : "safe"} label={row.blocked ? "Blocked" : "Available"} /> },
+        { key: "draftEligible", label: "Draft", sort: "text", render: (row) => row.draftEligible ? <StatusBadge tone="safe" label="Draft eligible" /> : <span>—</span> },
+        { key: "scoreStatus", label: "Score status", sort: "text", render: (row) => <StatusBadge tone={row.evidenceBlocked ? "review" : row.modelScoreEligible ? "safe" : "review"} label={row.evidenceBlocked ? "Manual review" : String(row.scoreStatus)} /> },
       ]} resetKey={tableResetKey} rows={rows.map((row) => ({ ...row }))} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
     </Panel>
   </>;

@@ -6,8 +6,15 @@ import csv
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
+
+from src.services.rookie_draft_eligibility_service import (
+    RookieDraftEligibilityOverlay,
+    load_rookie_draft_eligibility_overlay,
+    reconcile_rookie_draft_readiness,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_BOARD_RELATIVE = Path(
@@ -37,10 +44,12 @@ EXPECTED_BLOCKED = {
 
 @dataclass(frozen=True)
 class GovernedAssetRegistry:
-    rows: tuple[dict[str, str], ...]
+    rows: tuple[dict[str, Any], ...]
     errors: tuple[str, ...]
     counts: dict[str, int]
     source_hashes: dict[str, str]
+    rookie_eligibility_rows: tuple[dict[str, Any], ...]
+    rookie_readiness: dict[str, Any]
 
 
 def finished_v1_coverage_counts(frame: pd.DataFrame) -> dict[str, int]:
@@ -141,6 +150,72 @@ def _blocked_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     ]
 
 
+def _rookie_overlay_assets(
+    overlay: RookieDraftEligibilityOverlay,
+) -> list[dict[str, Any]]:
+    assets: list[dict[str, Any]] = []
+    for row in overlay.rows:
+        scored = bool(row["model_score_eligible"])
+        selectable = bool(row["selectable"])
+        assets.append(
+            {
+                "asset_id": row["asset_id"],
+                "asset_type": "Rookie Review" if scored else "Blocked Rookie",
+                "asset_name": row["player_name"],
+                "position": row["position"],
+                "team": row["team"],
+                "age": row["age_at_draft"],
+                "source_label": "Model V4 2026 Rookie Review + live factual overlay",
+                "authority_status": row["authority_status"],
+                "rank_label": (
+                    row["source_rank_label"]
+                    if scored
+                    else "No admitted Rookie Review rank"
+                ),
+                "rank_value": row["frozen_rank"] if scored else "",
+                "tier": row["source_tier"] if scored else "manual_review",
+                "score_label": (
+                    row["source_score_label"]
+                    if scored
+                    else "No admitted Rookie Review score"
+                ),
+                "score_value": row["frozen_score"] if scored else "",
+                "confidence": row["source_confidence"] if scored else "manual_review",
+                "warnings": (
+                    row["source_warnings"]
+                    if scored
+                    else "manual_review_required|identity_refresh_available"
+                ),
+                "previous_warning_codes": row["source_warnings"],
+                "blocking_reason": row["score_block_reason"],
+                "selection_block_reason": "" if selectable else row["owner_reason"],
+                "comparison_scope": (
+                    "Source-separated rookie context; unscored assets use factual context only"
+                ),
+                "official_draft_asset_id": row["official_draft_asset_id"],
+                "frozen_model_player_id": row["frozen_model_player_id"],
+                "live_governed_player_id": row["live_governed_player_id"],
+                "live_player_id_namespace": row["live_player_id_namespace"],
+                "identity_status": row["identity_status"],
+                "identity_method": row["identity_method"],
+                "asset_exists": row["asset_exists"],
+                "draft_eligible": row["draft_eligible"],
+                "model_score_eligible": row["model_score_eligible"],
+                "score_status": row["score_status"],
+                "searchable": row["searchable"],
+                "selectable": row["selectable"],
+                "draftable": row["draftable"],
+                "draft_round": row["draft_round"],
+                "overall_pick": row["overall_pick"],
+                "refresh_available": row["refresh_available"],
+                "rebuild_status": row["rebuild_status"],
+                "previous_block_reason": row["previous_block_reason"],
+                "owner_reason": row["owner_reason"],
+            }
+        )
+    return assets
+
+
 def _pick_assets(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return [
         {
@@ -228,6 +303,9 @@ def load_governed_asset_registry(
     rookie_authority = _rows(rookie_path)
     rookie = [row for row in rookie_authority if row["final_review_score"]]
     blocked = _rows(blocked_path)
+    rookie_overlay = load_rookie_draft_eligibility_overlay(repo_root=root)
+    errors.extend(rookie_overlay.errors)
+    hashes.update(rookie_overlay.source_hashes)
     picks = _rows(picks_path)
     future_picks = _rows(future_picks_path)
     hashes["Future Pick Context"] = file_sha256(future_picks_path)
@@ -246,10 +324,10 @@ def load_governed_asset_registry(
     if len(future_picks) != 9 or len({row["asset_id"] for row in future_picks}) != 9:
         errors.append("future-pick context must contain nine unique 2027-2029 round assets")
 
+    rookie_assets = _rookie_overlay_assets(rookie_overlay)
     rows = (
         *_current_assets(current),
-        *_rookie_assets(rookie),
-        *_blocked_assets(blocked),
+        *rookie_assets,
         *_pick_assets(picks),
         *_future_pick_assets(future_picks),
     )
@@ -265,4 +343,30 @@ def load_governed_asset_registry(
             "Future Pick",
         )
     }
-    return GovernedAssetRegistry(tuple(rows), tuple(errors), counts, hashes)
+    rookie_readiness = reconcile_rookie_draft_readiness(
+        rookie_overlay.rows,
+        surface_asset_ids={
+            "registry": [row["asset_id"] for row in rookie_assets],
+            "detail": [row["asset_id"] for row in rookie_assets if row.get("asset_exists")],
+            "search": [row["asset_id"] for row in rookie_assets if row.get("searchable")],
+            "selectable": [row["asset_id"] for row in rookie_assets if row.get("selectable")],
+            "compare": [row["asset_id"] for row in rookie_assets if row.get("selectable")],
+            "trade": [row["asset_id"] for row in rookie_assets if row.get("selectable")],
+            "draftable": [row["asset_id"] for row in rookie_assets if row.get("draftable")],
+            "rookie_board": [row["asset_id"] for row in rookie_assets],
+            "draft_cockpit": [
+                row["asset_id"]
+                for row in rookie_assets
+                if row.get("draftable") and row.get("selectable")
+            ],
+        },
+        source_errors=rookie_overlay.errors,
+    )
+    return GovernedAssetRegistry(
+        tuple(rows),
+        tuple(dict.fromkeys(errors)),
+        counts,
+        hashes,
+        rookie_overlay.rows,
+        rookie_readiness,
+    )

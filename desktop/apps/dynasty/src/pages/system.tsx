@@ -92,6 +92,7 @@ function planningStateMap(workspace: PlanningWorkspace): PlanningStateMap {
 }
 
 export function PlanningPage({ data }: { data: DynastyBootstrap }) {
+  const navigate = useNavigate();
   const planningWorkspace = data.planning ?? {
     storeStatus: "empty" as const,
     updatedAtUtc: "",
@@ -105,6 +106,9 @@ export function PlanningPage({ data }: { data: DynastyBootstrap }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState("");
+  const selectableAssets = data.assetOptions.filter((asset) => asset.selectable);
+  const [contextAssetId, setContextAssetId] = useState(selectableAssets[0]?.assetId ?? "");
+  const contextAsset = selectableAssets.find((asset) => asset.assetId === contextAssetId);
   const tool = PLANNING_TOOLS.find((item) => item.id === active)!;
   const current = modules[active];
   const saved = persisted[active];
@@ -254,6 +258,26 @@ export function PlanningPage({ data }: { data: DynastyBootstrap }) {
           </section>
         </Panel>
       </div>
+      <Panel title="Governed asset context" eyebrow="Scenario Playground · no hidden value">
+        <section className="planning-canvas">
+          <label className="form-field">
+            <span>Asset</span>
+            <select value={contextAssetId} onChange={(event) => setContextAssetId(event.target.value)}>
+              {selectableAssets.map((asset) => (
+                <option key={asset.assetId} value={asset.assetId}>
+                  {asset.name} · {asset.assetType} · {asset.evidenceBlocked ? "Manual review" : asset.rank == null ? "Context only" : `#${asset.rank}`}
+                </option>
+              ))}
+            </select>
+          </label>
+          {contextAsset ? <div className="alert-strip"><strong>{contextAsset.name}</strong><span>{contextAsset.draftEligible ? "Draft eligible · " : ""}{contextAsset.scoreStatus}</span></div> : null}
+          <div className="button-row">
+            <Button disabled={!contextAssetId} onClick={() => navigate(`/players/${encodeURIComponent(contextAssetId)}`)} variant="secondary">Open detail</Button>
+            <Button disabled={!contextAssetId} onClick={() => navigate(`/compare?assets=${encodeURIComponent(contextAssetId)}`)}>Add to Compare</Button>
+            <Button disabled={!contextAssetId} onClick={() => navigate(`/trades?asset=${encodeURIComponent(contextAssetId)}`)} variant="ghost">Add to Trade Lab</Button>
+          </div>
+        </section>
+      </Panel>
       <div className="metric-grid planning-metrics">
         <MetricCard label="Watchlist" value={data.summary.workspace.watchlist} detail="Owner tagged" icon="target" tone="violet" />
         <MetricCard label="Targets" value={data.summary.workspace.targets} detail="Active interest" icon="check" tone="gold" />
@@ -264,12 +288,14 @@ export function PlanningPage({ data }: { data: DynastyBootstrap }) {
   );
 }
 
+export function draftCockpitRookieRows(data: Pick<DynastyBootstrap, "rookies" | "rookieReadiness">) {
+  const admittedIds = new Set(data.rookieReadiness.draftableAssetIds);
+  return data.rookies.filter((row) => admittedIds.has(row.assetId)).map((row) => ({ ...row }));
+}
+
 export function DraftCockpitPage({ data }: { data: DynastyBootstrap }) {
   const navigate = useNavigate();
-  const rookieRows = data.rookies
-    .filter((row) => row.rank != null && !row.blockedReason)
-    .slice(0, 12)
-    .map((row) => ({ ...row }));
+  const rookieRows = draftCockpitRookieRows(data);
   const premium = data.rankings
     .filter((row) => (row.rank ?? 999) <= 24)
     .slice(0, 12)
@@ -288,17 +314,18 @@ export function DraftCockpitPage({ data }: { data: DynastyBootstrap }) {
         description="A governed, read-only on-clock decision surface for rookie evidence, current-player anchors, and direct comparison."
         status={
           <>
-            <StatusBadge tone="review" label="Rookie Review authority" />
+            <StatusBadge tone="safe" label={`${data.rookieReadiness.officialDrafted} draftable rookies`} />
+            <StatusBadge tone="review" label={`${data.rookieReadiness.manualReview} manual review`} />
             <StatusBadge tone="safe" label="No live provider calls" />
           </>
         }
         actions={<Button icon="rookie" onClick={() => navigate("/rookies")}>Open Rookie Review</Button>}
       />
       <div className="alert-strip">
-        <strong>Desktop V1 boundary</strong>
+        <strong>{data.rookieReadiness.alertTitle}</strong>
         <span>
-          Live picks remain in the existing Streamlit draft runtime until its session lifecycle,
-          event log, backup, and recovery contract are wrapped together. This page never implies a pick was recorded.
+          {data.rookieReadiness.alertMessage} Live pick writes remain in the existing Streamlit
+          runtime; this page never implies a pick was recorded.
         </span>
       </div>
       <div className="dashboard-grid">
@@ -309,7 +336,7 @@ export function DraftCockpitPage({ data }: { data: DynastyBootstrap }) {
               <select value={rookieId} onChange={(event) => setRookieId(event.target.value)}>
                 {rookieRows.map((row) => (
                   <option key={row.assetId} value={row.assetId}>
-                    #{row.rank} · {row.player} · {row.position}
+                    {row.rank == null ? "Manual Review" : `#${row.rank}`} · {row.player} · {row.position} · Pick {row.overallPick ?? "—"}
                   </option>
                 ))}
               </select>
@@ -351,25 +378,26 @@ export function DraftCockpitPage({ data }: { data: DynastyBootstrap }) {
         </Panel>
         <Panel title="Evidence readiness" eyebrow="Local, read-only">
           <div className="readiness-ring">
-            <div><strong>{data.status.ready ? "92" : "46"}</strong><span>/ 100</span></div>
-            <p>{data.status.ready ? "Governed evidence loaded" : "Source blockers require review"}</p>
+            <div><strong>{data.rookieReadiness.missingFromDraftablePool === 0 ? "100" : "0"}</strong><span>/ 100</span></div>
+            <p>{data.rookieReadiness.ready ? "Official draft class complete" : "Draft-class gaps require review"}</p>
           </div>
           <dl className="health-list">
             <div><dt>Dynasty board</dt><dd><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.rankings.length ? "Ready" : "Blocked"} /></dd></div>
-            <div><dt>Rookie Review</dt><dd><StatusBadge tone="review" label={`${data.rookies.length} rows`} /></dd></div>
+            <div><dt>Official QB/RB/WR/TE</dt><dd><StatusBadge tone="safe" label={`${data.rookieReadiness.officialDrafted} rows`} /></dd></div>
+            <div><dt>Missing draftable</dt><dd><StatusBadge tone={data.rookieReadiness.missingFromDraftablePool ? "blocked" : "safe"} label={String(data.rookieReadiness.missingFromDraftablePool)} /></dd></div>
             <div><dt>Live draft writes</dt><dd><StatusBadge tone="review" label="Legacy runtime only" /></dd></div>
             <div><dt>Provider network</dt><dd><StatusBadge tone="safe" label="Off" /></dd></div>
           </dl>
         </Panel>
       </div>
-      <Panel title="Top rookie targets" eyebrow="Frozen 2026 review · open a row for evidence">
+      <Panel title="Complete rookie draft board" eyebrow="Ranked first · manual-review assets retained">
         <DataTable
           columns={[
-            { key: "rank", label: "Rank", render: (row) => `#${String(row.rank)}` },
+            { key: "rank", label: "Rookie rank", render: (row) => row.rank == null ? "Manual Review" : `#${String(row.rank)}` },
             { key: "player", label: "Player", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · {ownerLabel(row.position)}</small></span> },
-            { key: "rookieTier", label: "Tier", render: (row) => <span className="tier-pill">{ownerLabel(row.rookieTier)}</span> },
-            { key: "draftRange", label: "Draft range", render: (row) => ownerLabel(row.draftRange) },
-            { key: "confidence", label: "Confidence", render: (row) => ownerLabel(row.confidence) },
+            { key: "overallPick", label: "NFL pick", render: (row) => row.overallPick == null ? "—" : `R${String(row.draftRound)} · #${String(row.overallPick)}` },
+            { key: "draftEligibility", label: "Draft eligibility", render: (row) => <StatusBadge tone={row.draftable ? "safe" : "blocked"} label={String(row.draftEligibility)} /> },
+            { key: "scoreStatus", label: "Score status", render: (row) => <StatusBadge tone={row.modelScoreEligible ? "safe" : "review"} label={row.modelScoreEligible ? "Scored" : "Manual review"} /> },
           ]}
           rows={rookieRows}
           rowKey={(row) => String(row.assetId)}
@@ -400,7 +428,7 @@ export function DataHealthPage({ data, onReload }: { data: DynastyBootstrap; onR
   return <>
     <PageHeader eyebrow="System · Trust & freshness" title="Data Health" description="Inspect the governed source state, freshness, and local runtime boundary. No page-open refresh or provider call occurs here." status={<><StatusBadge tone={status.tone} label={status.ready ? "Decision ready" : "Review required"} /><StatusBadge tone="safe" label="Scheduled refresh disabled" /></>} actions={<Button icon="activity" onClick={onReload}>Reload local snapshot</Button>} />
     <section className={`health-hero health-hero--${status.tone}`}><div className="health-hero__icon"><Icon name={status.ready ? "check" : "alert"} size={27} /></div><div><span>{status.authority}</span><h2>{status.summary}</h2><p>Source as of {status.sourceAsOf || "unavailable"} · {status.freshness || "freshness unclassified"}</p></div><div><strong>{status.ready ? "READY" : "REVIEW"}</strong><small>Local contract 1.0</small></div></section>
-    <div className="metric-grid"><MetricCard label="Dynasty rows" value={data.rankings.length} detail="Expected 240" trend={data.rankings.length === 240 ? "Exact" : "Review"} icon="board" tone="violet" /><MetricCard label="Market matches" value={data.summary.marketMatched} detail={`As of ${data.marketFreshness.sourceAsOf || "—"}`} trend={data.marketFreshness.status} icon="market" tone="gold" /><MetricCard label="Rookie rows" value={data.rookies.length} detail={`${data.summary.blockedRookies} blocked`} trend="Review only" icon="rookie" tone="crimson" /><MetricCard label="Scheduled refresh" value="OFF" detail="Owner approval required" trend="Fail-closed" icon="shield" tone="cyan" /></div>
+    <div className="metric-grid"><MetricCard label="Dynasty rows" value={data.rankings.length} detail="Expected 240" trend={data.rankings.length === 240 ? "Exact" : "Review"} icon="board" tone="violet" /><MetricCard label="Market matches" value={data.summary.marketMatched} detail={`As of ${data.marketFreshness.sourceAsOf || "—"}`} trend={data.marketFreshness.status} icon="market" tone="gold" /><MetricCard label="Rookie rows" value={data.rookies.length} detail={`${data.summary.manualReviewRookies} manual review`} trend="Review only" icon="rookie" tone="crimson" /><MetricCard label="Scheduled refresh" value="OFF" detail="Owner approval required" trend="Fail-closed" icon="shield" tone="cyan" /></div>
     <div className="split-view"><Panel title="Source integrity" eyebrow="Owner view"><p className="copy-muted">All required Dynasty sources passed local integrity checks. Technical source fingerprints are available below when needed.</p><details className="advanced-details"><summary>Advanced source details</summary>{sourceRows.length ? <DataTable columns={[{key:"source",label:"Authority"},{key:"hash",label:"Source fingerprint",render:(row)=><code className="hash-value">{String(row.hash)}</code>},{key:"state",label:"State",render:()=> <StatusBadge tone="safe" label="Verified" />}]} rows={sourceRows} rowKey={(row)=>String(row.source)} /> : <p className="copy-muted">Technical source details were not included in this runtime snapshot.</p>}</details></Panel><Panel title="Runtime boundary" eyebrow="Windows desktop"><dl className="health-list"><div><dt>Transport</dt><dd>Local computer only</dd></div><div><dt>Cloud dependency</dt><dd>None</dd></div><div><dt>Provider calls</dt><dd>Disabled</dd></div><div><dt>Streamlit fallback</dt><dd>Preserved</dd></div><div><dt>Mode isolation</dt><dd>Dynasty only</dd></div></dl></Panel></div>
     {status.errors.map((error) => <div className="alert-strip alert-strip--blocked" key={error}><strong>Blocked</strong>{error}</div>)}{status.warnings.map((warning) => <div className="alert-strip" key={warning}><strong>Review</strong>{warning}</div>)}
   </>;

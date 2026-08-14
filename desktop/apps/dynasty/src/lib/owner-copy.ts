@@ -20,6 +20,14 @@ const GOVERNED_COPY: Record<string, OwnerDisplayValue> = {
     label: "Blocked",
     title: "Governed evidence does not support using this value.",
   },
+  blocked_rookie: {
+    label: "Manual Review Rookie",
+    title: "Official draft asset; the frozen Rookie Review did not admit a score.",
+  },
+  unscored_manual_review: {
+    label: "Unscored · Manual Review",
+    title: "Draft eligible and selectable; no admitted Rookie Review score.",
+  },
   unassigned: {
     label: "—",
     title: "No governed label is assigned.",

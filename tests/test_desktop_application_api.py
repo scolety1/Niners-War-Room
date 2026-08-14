@@ -4,6 +4,7 @@ import ast
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -20,6 +21,9 @@ from src.application.desktop_facade import (
 from src.services.draft_day_app_v1_service import file_sha256
 from src.services.outcome_v3_display_service import load_outcome_v3_display
 from src.services.redraft_engine_v1_service import builtin_presets, projection_snapshot_path
+from src.services.rookie_draft_eligibility_service import (
+    load_rookie_draft_eligibility_overlay,
+)
 from src.services.rookie_owner_experience_service import load_owner_rookie_board
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -56,7 +60,11 @@ def test_dynasty_bootstrap_fails_closed_when_rankings_are_missing(tmp_path: Path
 
 
 def test_rookie_review_facade_matches_governed_service_fixture() -> None:
-    expected = load_owner_rookie_board(REPO_ROOT / ROOKIE_BOARD_RELATIVE)
+    eligibility = load_rookie_draft_eligibility_overlay(repo_root=REPO_ROOT)
+    expected = load_owner_rookie_board(
+        REPO_ROOT / ROOKIE_BOARD_RELATIVE,
+        eligibility_rows=eligibility.rows,
+    )
     actual = DesktopBackendFacade(repo_root=REPO_ROOT, mode="dynasty").rookie_review()
     rows = actual.data["rookies"]
 
@@ -116,6 +124,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "rankings",
         "rookies",
         "assetOptions",
+        "rookieReadiness",
         "marketFreshness",
         "planning",
         "notices",
@@ -143,6 +152,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "marketMatched",
         "rookieRows",
         "blockedRookies",
+        "manualReviewRookies",
         "outcomeRows",
         "workspace",
     }
@@ -157,7 +167,8 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "rankedPlayers": 240,
         "marketMatched": 239,
         "rookieRows": 80,
-        "blockedRookies": 7,
+        "blockedRookies": 0,
+        "manualReviewRookies": 7,
         "outcomeRows": 17280,
         "workspace": None,
     }
@@ -204,6 +215,17 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "floor",
         "expected",
         "ceiling",
+        "identityStatus",
+        "draftEligibility",
+        "scoreStatus",
+        "modelScoreEligible",
+        "searchable",
+        "selectable",
+        "draftable",
+        "refreshAvailable",
+        "draftRound",
+        "overallPick",
+        "eligibilityReason",
     }
     assert set(bootstrap.data["assetOptions"][0]) == {
         "assetId",
@@ -214,12 +236,84 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "rank",
         "authority",
         "blocked",
+        "selectable",
+        "searchable",
+        "draftEligible",
+        "modelScoreEligible",
+        "evidenceBlocked",
+        "scoreStatus",
+        "identityStatus",
+        "playerId",
+        "draftRound",
+        "overallPick",
+        "refreshAvailable",
     }
     assert set(bootstrap.data["marketFreshness"]) == {
         "sourceAsOf",
         "status",
         "message",
     }
+    readiness = bootstrap.data["rookieReadiness"]
+    assert readiness | {
+        "reviewAssetIds": None,
+        "draftableAssetIds": None,
+        "validatedSurfaces": None,
+    } == readiness | {
+        "verdict": "GREEN_NWR_ROOKIE_DRAFT_CLASS_COMPLETE_WITH_MANUAL_REVIEW_ASSETS",
+        "ready": True,
+        "officialDrafted": 80,
+        "positionCounts": {"QB": 10, "RB": 12, "WR": 36, "TE": 22},
+        "exactIdentity": 80,
+        "scored": 73,
+        "manualReview": 7,
+        "unresolved": 0,
+        "missingFromRegistry": 0,
+        "missingFromDraftablePool": 0,
+        "duplicateAssetIds": 0,
+        "refreshAvailable": 7,
+        "reviewAssetIds": None,
+        "missingAssetIds": [],
+        "surfaceGapAssetIds": [],
+        "nonselectableAssetIds": [],
+        "draftableAssetIds": None,
+        "missingBySurface": {
+            surface: []
+            for surface in (
+                "registry",
+                "detail",
+                "search",
+                "selectable",
+                "compare",
+                "trade",
+                "draftable",
+                "rookie_board",
+                "draft_cockpit",
+            )
+        },
+        "duplicateBySurface": {
+            surface: []
+            for surface in (
+                "registry",
+                "detail",
+                "search",
+                "selectable",
+                "compare",
+                "trade",
+                "draftable",
+                "rookie_board",
+                "draft_cockpit",
+            )
+        },
+        "validatedSurfaces": None,
+        "alertCode": "ROOKIE_DRAFT_CLASS_COMPLETE",
+        "alertTitle": "Rookie Draft Class Complete",
+        "alertMessage": (
+            "80 official QB/RB/WR/TE assets survived every validated workflow surface: "
+            "73 scored, 7 manual review, 0 missing or duplicated."
+        ),
+    }
+    assert len(readiness["draftableAssetIds"]) == 80
+    assert set(readiness["validatedSurfaces"]) == set(readiness["missingBySurface"])
     assert set(bootstrap.data["planning"]) == {
         "storeStatus",
         "updatedAtUtc",
@@ -262,6 +356,17 @@ def test_dynasty_facade_composes_real_governed_workflows(
         "outcomes",
         "research",
         "caveats",
+        "playerId",
+        "identityStatus",
+        "officialDraftAssetId",
+        "nflDraftCapital",
+        "draftRound",
+        "overallPick",
+        "draftEligibility",
+        "modelScoreEligible",
+        "scoreStatus",
+        "selectable",
+        "refreshAvailable",
     }
     assert detail.data["assetId"] == current_ids[0]
     assert set(detail.data["range"]) == {"floor", "expected", "ceiling", "method", "authority"}
@@ -287,14 +392,22 @@ def test_dynasty_facade_composes_real_governed_workflows(
     blocked_rookie = next(
         row for row in blocked_rows if row["player"] == "De'Zhaun Stribling"
     )
-    assert blocked_rookie["blockedReason"] == (
-        "A newer source has an exact player ID, but the frozen Rookie Review has not "
-        "been rebuilt with it. The prospect remains visible and unranked."
+    assert blocked_rookie["playerId"] == "00-0041035"
+    assert blocked_rookie["team"] == "SF"
+    assert blocked_rookie["draftable"] is True
+    assert blocked_rookie["selectable"] is True
+    assert blocked_rookie["modelScoreEligible"] is False
+    assert blocked_rookie["blockedReason"].startswith(
+        "The frozen Rookie Review did not admit a score."
     )
     blocked_detail = facade.dynasty_asset(blocked_rookie["assetId"])
     assert blocked_detail.data["reasons"][0] == (
-        "Not ranked: The source draft record does not yet have an exact player ID."
+        "Draft eligible and selectable using the governed official draft asset."
     )
+    assert blocked_detail.data["playerId"] == "00-0041035"
+    assert blocked_detail.data["nflDraftCapital"] == "NFL Round 2 · Pick 33"
+    assert blocked_detail.data["selectable"] is True
+    assert blocked_detail.data["nwrScore"] is None
     assert "canonical" not in " ".join(blocked_detail.data["reasons"]).lower()
     assert "gsis" not in " ".join(blocked_detail.data["reasons"]).lower()
 
@@ -398,6 +511,131 @@ def test_dynasty_planning_modules_save_and_reload_through_personal_workspace(
             module_id="unknown", checks=[False] * 4, notes="invalid"
         )
     assert caught.value.code == "PLANNING_MODULE_NOT_FOUND"
+
+
+def test_stribling_is_searchable_selectable_comparable_tradeable_and_scenario_safe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("NWR_DYNASTY_RANKINGS_ROOT", raising=False)
+    facade = DesktopBackendFacade(
+        repo_root=REPO_ROOT,
+        mode="dynasty",
+        workspace_root=tmp_path / "workspace",
+    )
+    bootstrap = facade.dynasty_bootstrap().data
+    stribling = next(
+        row for row in bootstrap["assetOptions"] if row["name"] == "De'Zhaun Stribling"
+    )
+    anchor = next(
+        row for row in bootstrap["assetOptions"] if row["assetType"] == "Current Player"
+    )
+
+    assert stribling | {
+        "assetId": "blocked-rookie:dezhaun-stribling",
+        "playerId": "00-0041035",
+        "team": "SF",
+        "position": "WR",
+        "draftRound": 2,
+        "overallPick": 33,
+        "rank": None,
+        "selectable": True,
+        "draftEligible": True,
+        "modelScoreEligible": False,
+        "evidenceBlocked": True,
+        "blocked": False,
+    } == stribling
+    assert "stribling" in stribling["name"].casefold()
+    assert "dezhaun" in "".join(
+        character for character in stribling["name"].casefold() if character.isalnum()
+    )
+
+    detail = facade.dynasty_asset(stribling["assetId"]).data
+    comparison = facade.compare_dynasty_assets(
+        [stribling["assetId"], anchor["assetId"]]
+    ).data
+    trade = facade.evaluate_dynasty_trade(
+        give=[stribling["assetId"]],
+        receive=[anchor["assetId"]],
+        team_window="Balanced",
+    ).data
+    saved = facade.save_dynasty_trade(
+        scenario_id=None,
+        title="Stribling manual-review scenario",
+        give=[stribling["assetId"]],
+        receive=[anchor["assetId"]],
+        team_window="Balanced",
+        notes="Missing Rookie Review score remains unknown.",
+    ).data
+
+    assert detail["playerId"] == "00-0041035"
+    assert detail["nflDraftCapital"] == "NFL Round 2 · Pick 33"
+    assert detail["nwrScore"] is None and detail["rank"] is None
+    assert detail["modelScoreEligible"] is False and detail["selectable"] is True
+    assert all("No admitted" in row["preferred"] for row in comparison["leans"])
+    assert any("No admitted Rookie Review score" in warning for warning in comparison["warnings"])
+    assert trade["recommendation"] == "INSUFFICIENT_EVIDENCE"
+    assert trade["preferredSide"] == "No side"
+    assert trade["confidence"] == "LOW"
+    assert "UNKNOWN, not zero" in trade["mainUncertainty"]
+    assert saved["workspace"]["scenarios"][0]["give"] == [stribling["assetId"]]
+    assert bootstrap["rookieReadiness"]["missingFromDraftablePool"] == 0
+
+
+def test_final_readiness_turns_red_when_draft_cockpit_adapter_drops_stribling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("NWR_DYNASTY_RANKINGS_ROOT", raising=False)
+    original = DesktopBackendFacade._rookie_records
+
+    def without_stribling(frame: Any) -> list[dict[str, Any]]:
+        return [
+            row
+            for row in original(frame)
+            if row["assetId"] != "blocked-rookie:dezhaun-stribling"
+        ]
+
+    monkeypatch.setattr(DesktopBackendFacade, "_rookie_records", staticmethod(without_stribling))
+    readiness = DesktopBackendFacade(
+        repo_root=REPO_ROOT,
+        mode="dynasty",
+    ).dynasty_bootstrap().data["rookieReadiness"]
+
+    assert readiness["verdict"] == "RED_NWR_ROOKIE_DRAFT_SAFETY_STILL_UNACCEPTABLE"
+    assert readiness["ready"] is False
+    assert readiness["missingBySurface"]["draft_cockpit"] == [
+        "blocked-rookie:dezhaun-stribling"
+    ]
+    assert readiness["surfaceGapAssetIds"] == ["blocked-rookie:dezhaun-stribling"]
+
+
+def test_final_readiness_turns_red_when_search_and_selection_drop_stribling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("NWR_DYNASTY_RANKINGS_ROOT", raising=False)
+    original = DesktopBackendFacade._asset_option
+
+    def disable_stribling(row: Any) -> dict[str, Any]:
+        option = original(row)
+        if option["assetId"] == "blocked-rookie:dezhaun-stribling":
+            option = {**option, "searchable": False, "selectable": False, "blocked": True}
+        return option
+
+    monkeypatch.setattr(DesktopBackendFacade, "_asset_option", staticmethod(disable_stribling))
+    readiness = DesktopBackendFacade(
+        repo_root=REPO_ROOT,
+        mode="dynasty",
+    ).dynasty_bootstrap().data["rookieReadiness"]
+
+    assert readiness["ready"] is False
+    assert readiness["missingBySurface"]["search"] == [
+        "blocked-rookie:dezhaun-stribling"
+    ]
+    assert readiness["missingBySurface"]["selectable"] == [
+        "blocked-rookie:dezhaun-stribling"
+    ]
+    assert readiness["missingBySurface"]["draft_cockpit"] == []
+    assert readiness["missingFromDraftablePool"] == 0
 
 
 def test_dynasty_trade_scenarios_save_reopen_update_and_export(

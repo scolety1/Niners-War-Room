@@ -150,6 +150,13 @@ def _player_notes(row: dict[str, Any]) -> dict[str, object]:
     player = _text(row.get("player")) or "Unknown player"
     advantages: list[str] = []
     risks: list[str] = []
+    if (
+        _text(row.get("compare_asset_type")) in {"Rookie Review", "Blocked Rookie"}
+        and not _truth(row.get("model_score_eligible"))
+    ):
+        risks.append(
+            "No admitted Rookie Review score is available; only factual draft context is used."
+        )
     if rank := _text(row.get("nwr_rank")):
         advantages.append(f"Finished V1 rank: #{rank}.")
     if position_rank := _text(row.get("position_rank")):
@@ -184,6 +191,12 @@ def _player_notes(row: dict[str, Any]) -> dict[str, object]:
 def _text(value: object) -> str:
     text = str(value if value is not None else "").strip()
     return "" if text.casefold() in {"", "nan", "none", "null", "<na>"} else text
+
+
+def _truth(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return _text(value).casefold() in {"1", "true", "yes", "y"}
 
 
 def _research_score(value: object) -> str:

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -21,6 +23,7 @@ def load_owner_rookie_board(
     path: str | Path = ROOKIE_BOARD_PATH,
     *,
     research_packet_dir: str | Path | None = None,
+    eligibility_rows: Sequence[Mapping[str, Any]] | None = None,
 ) -> pd.DataFrame:
     source = pd.read_csv(path, dtype=str, keep_default_na=False)
     if len(source) != 80:
@@ -45,6 +48,72 @@ def load_owner_rookie_board(
     output["Age"] = output["age_at_draft"].replace("", "-")
     output["College Production"] = output["production_component"].map(_component_context)
     output["Athletic Context"] = output["athletic_component"].map(_component_context)
+    if eligibility_rows is not None:
+        eligibility_by_pick = {
+            str(row.get("overall_pick") or "").strip(): row for row in eligibility_rows
+        }
+        overlay_records: list[dict[str, Any]] = []
+        for row in output.to_dict("records"):
+            pick = str(row.get("overall_pick") or "").strip()
+            context = eligibility_by_pick.get(pick)
+            if context is None:
+                raise ValueError(f"Rookie eligibility overlay is missing official pick {pick}")
+            if (
+                str(context.get("player_name") or "").strip()
+                != str(row.get("player_name") or "").strip()
+                or str(context.get("position") or "").strip()
+                != str(row.get("position") or "").strip()
+            ):
+                raise ValueError(f"Rookie eligibility receipt mismatch at official pick {pick}")
+            score_eligible = bool(context.get("model_score_eligible"))
+            overlay_records.append(
+                {
+                    "Live Player ID": str(context.get("live_governed_player_id") or ""),
+                    "Identity Status": str(context.get("identity_status") or ""),
+                    "Draft Eligibility": (
+                        "Draft eligible" if context.get("draft_eligible") else "Not draft eligible"
+                    ),
+                    "Score Status": str(context.get("score_status") or ""),
+                    "Model Score Eligible": score_eligible,
+                    "Searchable": bool(context.get("searchable")),
+                    "Selectable": bool(context.get("selectable")),
+                    "Draftable": bool(context.get("draftable")),
+                    "Refresh Available": bool(context.get("refresh_available")),
+                    "Draft Round": context.get("draft_round"),
+                    "Overall Pick": context.get("overall_pick"),
+                    "Current Team": str(context.get("team") or ""),
+                    "Eligibility Authority": str(context.get("authority_status") or ""),
+                    "Eligibility Reason": str(context.get("owner_reason") or ""),
+                }
+            )
+        overlay_frame = pd.DataFrame(overlay_records)
+        output = pd.concat([output.reset_index(drop=True), overlay_frame], axis=1)
+        output["Player"] = output["player_name"]
+        output["NFL Team"] = output["Current Team"].replace("", "—")
+        output["NFL Draft Capital"] = output.apply(
+            lambda row: (
+                f"NFL Round {int(row['Draft Round'])} · Pick {int(row['Overall Pick'])}"
+                if pd.notna(row["Draft Round"]) and pd.notna(row["Overall Pick"])
+                else "—"
+            ),
+            axis=1,
+        )
+        output["Authority"] = output["Eligibility Authority"]
+        manual = ~output["Model Score Eligible"].astype(bool)
+        output.loc[manual, "Rookie Tier"] = "Manual Review"
+        output.loc[manual, "Rookie draft range"] = "Unranked — manual review required"
+        output.loc[manual, "Blocked / pending reason"] = output.loc[
+            manual, "Eligibility Reason"
+        ]
+        output.loc[manual, "Confidence"] = "Manual review"
+        output.loc[manual, "Warnings"] = output.loc[manual].apply(
+            lambda row: (
+                "Updated identity available; frozen Rookie Review score not rebuilt."
+                if row["Refresh Available"]
+                else str(row.get("Warnings") or "")
+            ),
+            axis=1,
+        )
     research = load_unified_research_preview(
         Path(research_packet_dir) if research_packet_dir is not None else None
     ).board

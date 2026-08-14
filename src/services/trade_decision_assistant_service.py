@@ -687,6 +687,14 @@ def _main_uncertainty(
     receive: Sequence[Mapping[str, object]],
     dimensions: Sequence[DecisionDimension],
 ) -> str:
+    unscored = [
+        str(row.get("player")) for row in (*give, *receive) if _is_unscored_rookie(row)
+    ]
+    if unscored:
+        return (
+            f"{', '.join(unscored)} has no admitted Rookie Review score. The missing value "
+            "is UNKNOWN, not zero, so no side preference is supported."
+        )
     blocked = [str(row.get("player")) for row in (*give, *receive) if _is_blocked(row)]
     if blocked:
         return f"{', '.join(blocked)} has blocked evidence and cannot support a recommendation."
@@ -878,10 +886,14 @@ def _synthesis_trace(dimensions: Sequence[DecisionDimension]) -> tuple[str, ...]
         _evidence_units(row) for row in dimensions if row.outcome.startswith("SIDE_B")
     )
     return (
-        f"Current-side support ({len(a)} dimensions; {a_units} evidence units): {', '.join(a) or 'none'}.",
-        f"Incoming-side support ({len(b)} dimensions; {b_units} evidence units): {', '.join(b) or 'none'}.",
+        f"Current-side support ({len(a)} dimensions; {a_units} evidence units): "
+        f"{', '.join(a) or 'none'}.",
+        f"Incoming-side support ({len(b)} dimensions; {b_units} evidence units): "
+        f"{', '.join(b) or 'none'}.",
         f"Even/unknown ({len(neutral)}): {', '.join(neutral) or 'none'}.",
-        "Visible ordinal weights: HIGH-clear 3, MEDIUM-clear 2, LOW-clear 1, lean 1. Decisive requires a 3-unit margin, no opposing clear, and two clear dimensions or a HIGH-clear best-asset edge.",
+        "Visible ordinal weights: HIGH-clear 3, MEDIUM-clear 2, LOW-clear 1, lean 1. "
+        "Decisive requires a 3-unit margin, no opposing clear, and two clear dimensions "
+        "or a HIGH-clear best-asset edge.",
         "Evidence units are not a package score, side value, or rookie/pick-to-veteran conversion.",
     )
 
@@ -909,6 +921,8 @@ def _evidence_is_insufficient(
     dimensions: Sequence[DecisionDimension],
 ) -> bool:
     all_rows = (*give, *receive)
+    if any(_is_unscored_rookie(row) for row in all_rows):
+        return True
     if all(_is_blocked(row) for row in all_rows):
         return True
     if all(_is_pick(row) for row in all_rows):
@@ -975,11 +989,24 @@ def _best_market(rows: Sequence[Mapping[str, object]]) -> tuple[str, float, str]
 
 
 def _is_rookie(row: Mapping[str, object]) -> bool:
-    return str(row.get("registry_asset_type")) == "Rookie Review"
+    return str(row.get("registry_asset_type")) in {"Rookie Review", "Blocked Rookie"}
 
 
 def _is_blocked(row: Mapping[str, object]) -> bool:
-    return str(row.get("registry_asset_type")) == "Blocked Rookie"
+    if str(row.get("registry_asset_type")) != "Blocked Rookie":
+        return False
+    if "selectable" not in row:
+        return True
+    return not _truth(row.get("selectable"))
+
+
+def _is_unscored_rookie(row: Mapping[str, object]) -> bool:
+    asset_type = str(row.get("registry_asset_type"))
+    if asset_type not in {"Rookie Review", "Blocked Rookie"}:
+        return False
+    if "model_score_eligible" not in row:
+        return asset_type == "Blocked Rookie"
+    return not _truth(row.get("model_score_eligible"))
 
 
 def _is_pick(row: Mapping[str, object]) -> bool:
@@ -1052,3 +1079,14 @@ def _number(value: object) -> float | None:
         return float(text) if text and text.casefold() not in {"nan", "none"} else None
     except (TypeError, ValueError):
         return None
+
+
+def _truth(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value if value is not None else "").strip().casefold() in {
+        "1",
+        "true",
+        "yes",
+        "y",
+    }

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
+import pytest
 
+import src.services.governed_asset_registry_service as registry_service
 from src.services.governed_asset_registry_service import (
     EXPECTED_BLOCKED,
     file_sha256,
@@ -80,9 +83,9 @@ def test_registry_keeps_sources_and_scales_separate(tmp_path: Path) -> None:
 
     assert current_row["source_label"] == "Finished V1"
     assert current_row["authority_status"] == "Production"
-    assert rookie["authority_status"] == "Review-Only"
+    assert rookie["authority_status"] == "SCORED_REVIEW_ONLY"
     assert rookie["age"]
-    assert "only within the 2026 Rookie Review" in rookie["comparison_scope"]
+    assert "Source-separated rookie context" in rookie["comparison_scope"]
     assert pick["score_label"] == "No common value"
     assert "no player-value equivalence" in pick["comparison_scope"]
     assert future["asset_id"] == "pick:2027:1st"
@@ -101,8 +104,43 @@ def test_all_seven_blocked_rookies_are_visible(tmp_path: Path) -> None:
     blocked = [row for row in registry.rows if row["asset_type"] == "Blocked Rookie"]
 
     assert {row["asset_name"] for row in blocked} == EXPECTED_BLOCKED
-    assert all(row["authority_status"] == "Blocked - Visible" for row in blocked)
+    assert all(row["authority_status"] == "UNSCORED_MANUAL_REVIEW" for row in blocked)
     assert all(row["rank_value"] == "" and row["score_value"] == "" for row in blocked)
+    assert all(row["draft_eligible"] and row["selectable"] for row in blocked)
+    assert all(not row["model_score_eligible"] for row in blocked)
+    assert all(row["identity_status"] == "EXACT_GOVERNED_IDENTITY" for row in blocked)
+    assert registry.rookie_readiness["official_drafted"] == 80
+    assert registry.rookie_readiness["missing_from_draftable_pool"] == 0
+
+
+def test_registry_readiness_turns_red_when_composition_drops_stribling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current = tmp_path / "finished-v1.csv"
+    original = registry_service._rookie_overlay_assets
+
+    def without_stribling(overlay: Any) -> list[dict[str, Any]]:
+        return [
+            row
+            for row in original(overlay)
+            if row["asset_id"] != "blocked-rookie:dezhaun-stribling"
+        ]
+
+    monkeypatch.setattr(registry_service, "_rookie_overlay_assets", without_stribling)
+    registry = load_governed_asset_registry(
+        repo_root=ROOT,
+        current_board_path=current,
+        expected_current_hash=_current_board(current),
+    )
+
+    assert registry.errors == ()
+    assert registry.rookie_readiness["official_drafted"] == 80
+    assert registry.rookie_readiness["verdict"] == "RED_NWR_ROOKIE_DRAFT_SAFETY_STILL_UNACCEPTABLE"
+    assert registry.rookie_readiness["missing_from_registry"] == 1
+    assert registry.rookie_readiness["missing_by_surface"]["registry"] == [
+        "blocked-rookie:dezhaun-stribling"
+    ]
 
 
 def test_current_board_hash_mismatch_fails_closed(tmp_path: Path) -> None:
@@ -149,11 +187,11 @@ def test_asset_explorer_and_rookie_board_are_read_only_labeled_pages() -> None:
     explorer = (ROOT / "app/pages/47_asset_explorer_v1.py").read_text(encoding="utf-8")
     rookie = (ROOT / "app/pages/48_rookie_board_review_v1.py").read_text(encoding="utf-8")
 
-    assert '"Asset Explorer"' in explorer
+    assert "Asset Explorer" in explorer
     assert "range(0, len(count_items), 4)" in explorer
     assert "st.columns(len(batch))" in explorer
     assert "zip(metrics, registry.counts, strict=True)" not in explorer
-    assert '"Browse every governed dynasty asset"' in explorer
+    assert "Browse ranked players, rookies, future picks" in explorer
     assert "No common scale" in explorer
     assert "No recommendation" in explorer
     assert "st.button(" not in explorer

@@ -42,6 +42,12 @@ CAVEAT_PRESENTATION_MAP: dict[str, str] = {
     "player_equivalence_unavailable": (
         "No governed player-equivalence value is available for this pick."
     ),
+    "manual_review_required": (
+        "No admitted Rookie Review score is available; manual review is required."
+    ),
+    "identity_refresh_available": (
+        "Newer exact identity facts are available; the frozen score was not rebuilt."
+    ),
 }
 
 EVIDENCE_STATUS_PRESENTATION_MAP: dict[str, str] = {

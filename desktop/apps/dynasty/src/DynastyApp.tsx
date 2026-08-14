@@ -4,6 +4,7 @@ import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { assertDynastyBootstrap } from "./bootstrap-guard";
+import { normalizePlayerSearch } from "./lib/search";
 
 import {
   ComparePage,
@@ -90,10 +91,20 @@ export function DynastyApp() {
     const assetCommands = (data?.assetOptions ?? []).map((asset) => ({
       id: `asset:${asset.assetId}`,
       label: asset.name,
-      detail: `${asset.assetType} · ${asset.rank == null ? "Unranked" : `NWR #${asset.rank}`} · ${asset.team || asset.authority}`,
+      detail: `${asset.evidenceBlocked && asset.draftEligible ? "Manual Review Rookie" : asset.assetType} · ${asset.rank == null ? asset.scoreStatus : `NWR #${asset.rank}`} · ${asset.team || asset.authority}`,
       path: `/players/${encodeURIComponent(asset.assetId)}`,
       icon: "players",
-      keywords: [asset.assetType, asset.position, asset.team, asset.authority, asset.blocked ? "blocked evidence" : "available"],
+      keywords: [
+        asset.assetType,
+        asset.position,
+        asset.team,
+        asset.authority,
+        asset.scoreStatus,
+        asset.draftEligible ? "draft eligible" : "",
+        asset.modelScoreEligible ? "score available" : "manual review unscored",
+        asset.playerId,
+        normalizePlayerSearch(asset.name),
+      ],
     }));
     return [...navigationCommands, ...assetCommands];
   }, [data]);

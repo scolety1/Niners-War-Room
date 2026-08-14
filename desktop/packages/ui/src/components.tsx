@@ -116,17 +116,31 @@ export function AppShell(props: AppShellProps) {
   </div>;
 }
 
+export function normalizeCommandSearch(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+export function filterCommandItems(commands: CommandItem[], query: string): CommandItem[] {
+  const needle = normalizeCommandSearch(query.trim());
+  if (!needle) return commands.slice(0, 10);
+  return commands
+    .filter((command) => normalizeCommandSearch(
+      [command.label, command.detail, ...(command.keywords ?? [])].join(" "),
+    ).includes(needle))
+    .slice(0, 12);
+}
+
 function CommandPalette({ commands, open, onClose }: { commands: CommandItem[]; open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => { if (open) { setQuery(""); setActiveIndex(0); window.setTimeout(() => input.current?.focus(), 20); } }, [open]);
-  const results = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return commands.slice(0, 10);
-    return commands.filter((command) => [command.label, command.detail, ...(command.keywords ?? [])].join(" ").toLowerCase().includes(needle)).slice(0, 12);
-  }, [commands, query]);
+  const results = useMemo(() => filterCommandItems(commands, query), [commands, query]);
   const openResult = (index: number) => { const command = results[index]; if (command) { navigate(command.path); onClose(); } };
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown") { event.preventDefault(); setActiveIndex((value) => results.length ? (value + 1) % results.length : 0); }

@@ -19,6 +19,7 @@ import {
 } from "@nwr/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { matchesPlayerSearch } from "../lib/search";
 
 const TRADE_SIDE_LIMIT = 6;
 
@@ -64,6 +65,10 @@ export function ownerDimensionLabel(value: string): string {
   return spaced ? `${spaced.charAt(0).toUpperCase()}${spaced.slice(1)}` : "Evidence";
 }
 
+export function canSelectAsset(asset: AssetOption): boolean {
+  return asset.selectable;
+}
+
 function AssetPicker({
   assets,
   selected,
@@ -85,12 +90,11 @@ function AssetPicker({
   const visible = useMemo(
     () =>
       assets
-        .filter(
-          (asset) =>
-            !query ||
-            `${asset.name} ${asset.position} ${asset.team}`
-              .toLowerCase()
-              .includes(query.toLowerCase()),
+        .filter((asset) =>
+          matchesPlayerSearch(
+            [asset.name, asset.position, asset.team, asset.playerId, asset.scoreStatus],
+            query,
+          ),
         )
         .slice(0, 120),
     [assets, query],
@@ -112,21 +116,21 @@ function AssetPicker({
         {visible.map((asset) => {
           const selectedHere = selected.includes(asset.assetId);
           const selectedElsewhere = !selectedHere && unavailable.has(asset.assetId);
-          const blocked = asset.blocked || selectedElsewhere;
+          const selectionBlocked = !canSelectAsset(asset) || selectedElsewhere;
           return (
             <button
-              aria-disabled={blocked || disabled || undefined}
+              aria-disabled={selectionBlocked || disabled || undefined}
               className={selectedHere ? "selected" : ""}
               disabled={
                 disabled ||
-                blocked ||
+                selectionBlocked ||
                 (!selectedHere && selected.length >= limit)
               }
               key={asset.assetId}
               onClick={() => onToggle(asset.assetId)}
               title={
-                asset.blocked
-                  ? "Blocked by governed evidence"
+                !asset.selectable
+                  ? "This asset lacks a unique governed selection identity"
                   : selectedElsewhere
                     ? "Already selected on the other trade side"
                     : undefined
@@ -140,8 +144,10 @@ function AssetPicker({
                   {asset.team ? `· ${asset.team}` : ""}
                 </small>
               </span>
-              {blocked ? (
-                <em>{selectedElsewhere ? "Other side" : "Blocked"}</em>
+              {selectionBlocked ? (
+                <em>{selectedElsewhere ? "Other side" : "Unavailable"}</em>
+              ) : asset.evidenceBlocked ? (
+                <em>Manual review</em>
               ) : (
                 <b>{asset.rank == null ? "—" : `#${asset.rank}`}</b>
               )}
@@ -188,7 +194,7 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Dyna
   const [search] = useSearchParams();
   const [selected, setSelected] = useState<string[]>(() => {
     const eligibleAssets = new Set(
-      data.assetOptions.filter((asset) => !asset.blocked).map((asset) => asset.assetId),
+      data.assetOptions.filter(canSelectAsset).map((asset) => asset.assetId),
     );
     const requestedAssets = search.get("assets")?.split(",").filter(Boolean);
     const initial = requestedAssets
@@ -425,7 +431,7 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   const [search] = useSearchParams();
   const requestedAsset = search.get("asset") ?? "";
   const initialAsset = data.assetOptions.some(
-    (asset) => asset.assetId === requestedAsset && !asset.blocked,
+    (asset) => asset.assetId === requestedAsset && canSelectAsset(asset),
   )
     ? requestedAsset
     : "";

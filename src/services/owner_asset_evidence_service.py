@@ -84,7 +84,12 @@ def compose_owner_asset_evidence(
         # Canonical Finished V1 values win. Optional enrichments only fill context fields.
         row.update(
             {
-                "player_id": _first_present(current.get("player_id"), _asset_player_id(asset_id)),
+                "player_id": _first_present(
+                    current.get("player_id"),
+                    row.get("live_governed_player_id"),
+                    row.get("frozen_model_player_id"),
+                    _asset_player_id(asset_id),
+                ),
                 "asset_name": _first_present(current.get("player_name"), row.get("asset_name")),
                 "position": _first_present(current.get("position"), row.get("position")),
                 "team": _first_present(current.get("nfl_team"), row.get("team")),
@@ -105,7 +110,10 @@ def compose_owner_asset_evidence(
                     row.get("confidence"),
                 ),
                 "risk": _first_present(current.get("risk_level")),
-                "identity_status": EXACT_IDENTITY if asset_id else NOT_AVAILABLE,
+                "identity_status": _first_present(
+                    row.get("identity_status"),
+                    EXACT_IDENTITY if _asset_player_id(asset_id) else NOT_AVAILABLE,
+                ),
                 "raw_caveat_codes": raw_caveats,
                 "owner_caveats": owner_caveats(raw_caveats),
                 "market_dp_value": _first_present(current.get("dp_value_1qb")),

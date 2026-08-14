@@ -114,6 +114,11 @@ from src.services.redraft_engine_v1_service import (
     set_active_profile,
     undo_last_draft_pick,
 )
+from src.services.rookie_draft_eligibility_service import (
+    LIVE_IDENTITY_RELATIVE,
+    load_rookie_draft_eligibility_overlay,
+    reconcile_rookie_draft_readiness,
+)
 from src.services.rookie_owner_experience_service import load_owner_rookie_board
 from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
@@ -290,6 +295,47 @@ class DesktopBackendFacade:
         ]
         rookie_rows = self._rookie_records(snapshot.rookies)
         asset_options = [self._asset_option(row) for row in snapshot.evidence.rows]
+        trade_lookup = build_registry_trade_item_lookup(snapshot.evidence.rows)
+        reconciled_readiness = reconcile_rookie_draft_readiness(
+            snapshot.registry.rookie_eligibility_rows,
+            surface_asset_ids={
+                "registry": [
+                    _text(row.get("asset_id")) for row in snapshot.registry.rows
+                ],
+                "detail": [_text(row.get("asset_id")) for row in snapshot.evidence.rows],
+                "search": [
+                    _text(row.get("assetId"))
+                    for row in asset_options
+                    if _flag(row.get("searchable"))
+                ],
+                "selectable": [
+                    _text(row.get("assetId"))
+                    for row in asset_options
+                    if _flag(row.get("selectable"))
+                ],
+                "compare": [
+                    _text(row.get("asset_id"))
+                    for row in snapshot.compare.frame.to_dict("records")
+                    if _flag(row.get("selectable"), default=True)
+                ],
+                "trade": [
+                    _text(row.get("asset_id")) for row in trade_lookup.values()
+                ],
+                "draftable": [
+                    _text(row.get("assetId"))
+                    for row in rookie_rows
+                    if _flag(row.get("draftable"))
+                ],
+                "rookie_board": [_text(row.get("assetId")) for row in rookie_rows],
+                "draft_cockpit": [
+                    _text(row.get("assetId"))
+                    for row in rookie_rows
+                    if _flag(row.get("draftable")) and _flag(row.get("selectable"))
+                ],
+            },
+            source_errors=snapshot.registry.errors,
+        )
+        rookie_readiness = self._rookie_readiness_payload(reconciled_readiness)
         current_players = tuple(
             row
             for row in snapshot.evidence.rows
@@ -345,13 +391,15 @@ class DesktopBackendFacade:
                 "rankedPlayers": len(ranking_rows),
                 "marketMatched": market_matched,
                 "rookieRows": len(rookie_rows),
-                "blockedRookies": snapshot.registry.counts.get("Blocked Rookie", 0),
+                "blockedRookies": rookie_readiness["unresolved"],
+                "manualReviewRookies": rookie_readiness["manualReview"],
                 "outcomeRows": snapshot.outcome.row_count,
                 "workspace": self._workspace_summary(workspace_counts),
             },
             "rankings": ranking_rows,
             "rookies": rookie_rows,
             "assetOptions": asset_options,
+            "rookieReadiness": rookie_readiness,
             "marketFreshness": {
                 "sourceAsOf": market_date,
                 "status": freshness_label,
@@ -359,6 +407,19 @@ class DesktopBackendFacade:
             },
             "planning": self._planning_workspace(),
             "notices": [
+                {
+                    "tone": "ready" if rookie_readiness["ready"] else "blocked",
+                    "title": rookie_readiness["alertTitle"],
+                    "message": rookie_readiness["alertMessage"],
+                },
+                {
+                    "tone": "review",
+                    "title": "Rookie Review refresh available",
+                    "message": (
+                        "New factual rookie information is available. Draft eligibility has "
+                        "been updated, but the frozen Rookie Review score has not been rebuilt."
+                    ),
+                },
                 {
                     "tone": "review",
                     "title": "Market evidence is display-only",
@@ -861,9 +922,13 @@ class DesktopBackendFacade:
         self._require_mode("dynasty")
         path = self.repo_root / ROOKIE_BOARD_RELATIVE
         try:
+            eligibility = load_rookie_draft_eligibility_overlay(repo_root=self.repo_root)
+            if eligibility.errors:
+                raise ValueError("Rookie eligibility overlay failed its integrity contract")
             frame = load_owner_rookie_board(
                 path,
                 research_packet_dir=self.repo_root / RESEARCH_PACKET_RELATIVE,
+                eligibility_rows=eligibility.rows,
             )
         except (OSError, ValueError, KeyError, pd.errors.ParserError) as exc:
             raise FacadeError(
@@ -981,6 +1046,13 @@ class DesktopBackendFacade:
                 }
             )
         compare_warnings = [NO_COMMON_SCALE_NOTE]
+        compare_warnings.extend(
+            f"No admitted Rookie Review score is available for {_text(row.get('player'))}; "
+            "the comparison uses factual draft context only."
+            for row in rows
+            if _text(row.get("compare_asset_type")) in {"Rookie Review", "Blocked Rookie"}
+            and not _flag(row.get("model_score_eligible"))
+        )
         compare_warnings.extend(visible_summary.open_review_flags)
         if visible_summary.multi_player_note:
             compare_warnings.append(visible_summary.multi_player_note)
@@ -1942,6 +2014,7 @@ class DesktopBackendFacade:
             rookies = load_owner_rookie_board(
                 self.repo_root / ROOKIE_BOARD_RELATIVE,
                 research_packet_dir=self.repo_root / RESEARCH_PACKET_RELATIVE,
+                eligibility_rows=registry.rookie_eligibility_rows,
             )
         except (OSError, ValueError, KeyError, pd.errors.ParserError) as exc:
             raise FacadeError(
@@ -2027,6 +2100,7 @@ class DesktopBackendFacade:
             rankings,
             self.repo_root / ROOKIE_BOARD_RELATIVE,
             self.repo_root / BLOCKED_ROOKIES_RELATIVE,
+            self.repo_root / LIVE_IDENTITY_RELATIVE,
             self.repo_root / PICKS_RELATIVE,
             self.repo_root / FUTURE_PICKS_RELATIVE,
             self.repo_root / OUTCOME_INTEGRATION_RELATIVE,
@@ -2224,7 +2298,7 @@ class DesktopBackendFacade:
                 {
                     "assetId": asset_id,
                     "rank": _integer(source.get("Rookie Rank")),
-                    "playerId": player_id,
+                    "playerId": _text(source.get("Live Player ID")) or player_id,
                     "player": _text(source.get("Player")),
                     "position": _text(source.get("Pos")),
                     "team": _text(source.get("NFL Team")),
@@ -2246,24 +2320,93 @@ class DesktopBackendFacade:
                     "floor": _text(source.get("Floor")),
                     "expected": _text(source.get("NWR Expected")),
                     "ceiling": _text(source.get("Ceiling")),
+                    "identityStatus": _text(source.get("Identity Status")),
+                    "draftEligibility": _text(source.get("Draft Eligibility")),
+                    "scoreStatus": _text(source.get("Score Status")),
+                    "modelScoreEligible": _flag(source.get("Model Score Eligible")),
+                    "searchable": _flag(source.get("Searchable"), default=True),
+                    "selectable": _flag(source.get("Selectable"), default=True),
+                    "draftable": _flag(source.get("Draftable"), default=True),
+                    "refreshAvailable": _flag(source.get("Refresh Available")),
+                    "draftRound": _integer(source.get("Draft Round")),
+                    "overallPick": _integer(source.get("Overall Pick")),
+                    "eligibilityReason": _text(source.get("Eligibility Reason")),
                 }
             )
         return rows
 
     @staticmethod
     def _asset_option(row: Mapping[str, Any]) -> dict[str, Any]:
+        asset_type = _text(row.get("asset_type"))
+        selectable = _flag(
+            row.get("selectable"),
+            default=not bool(_text(row.get("selection_block_reason"))),
+        )
+        if row.get("model_score_eligible") is None:
+            score_eligible = bool(
+                _number(row.get("nwr_dynasty_score") or row.get("score_value")) is not None
+            )
+        else:
+            score_eligible = _flag(row.get("model_score_eligible"))
         return {
             "assetId": _text(row.get("asset_id")),
             "name": _text(row.get("asset_name")),
-            "assetType": _text(row.get("asset_type")),
+            "assetType": asset_type,
             "position": _text(row.get("position")),
             "team": _text(row.get("team")),
             "rank": _integer(row.get("dynasty_rank") or row.get("rank_value")),
             "authority": _text(row.get("authority_status")),
-            "blocked": bool(
-                _text(row.get("blocking_reason"))
-                or _text(row.get("asset_type")) == "Blocked Rookie"
+            "blocked": not selectable,
+            "selectable": selectable,
+            "searchable": _flag(row.get("searchable"), default=True),
+            "draftEligible": _flag(row.get("draft_eligible")),
+            "modelScoreEligible": score_eligible,
+            "evidenceBlocked": asset_type in {"Rookie Review", "Blocked Rookie"}
+            and not score_eligible,
+            "scoreStatus": _text(row.get("score_status"))
+            or ("Score available" if score_eligible else "No common model score"),
+            "identityStatus": _text(row.get("identity_status")),
+            "playerId": _text(row.get("player_id")),
+            "draftRound": _integer(row.get("draft_round")),
+            "overallPick": _integer(row.get("overall_pick")),
+            "refreshAvailable": _flag(row.get("refresh_available")),
+        }
+
+    @staticmethod
+    def _rookie_readiness_payload(source: Mapping[str, Any]) -> dict[str, Any]:
+        positions = source.get("position_counts")
+        return {
+            "verdict": _text(source.get("verdict")),
+            "ready": _flag(source.get("ready")),
+            "officialDrafted": _integer(source.get("official_drafted")) or 0,
+            "positionCounts": dict(positions) if isinstance(positions, Mapping) else {},
+            "exactIdentity": _integer(source.get("exact_identity")) or 0,
+            "scored": _integer(source.get("scored")) or 0,
+            "manualReview": _integer(source.get("manual_review")) or 0,
+            "unresolved": _integer(source.get("unresolved")) or 0,
+            "missingFromRegistry": _integer(source.get("missing_from_registry")) or 0,
+            "missingFromDraftablePool": (
+                _integer(source.get("missing_from_draftable_pool")) or 0
             ),
+            "duplicateAssetIds": _integer(source.get("duplicate_asset_ids")) or 0,
+            "refreshAvailable": _integer(source.get("refresh_available")) or 0,
+            "reviewAssetIds": _string_list(source.get("review_asset_ids")),
+            "missingAssetIds": _string_list(source.get("missing_asset_ids")),
+            "surfaceGapAssetIds": _string_list(source.get("surface_gap_asset_ids")),
+            "nonselectableAssetIds": _string_list(source.get("nonselectable_asset_ids")),
+            "draftableAssetIds": _string_list(source.get("draftable_asset_ids")),
+            "missingBySurface": {
+                str(key): _string_list(value)
+                for key, value in dict(source.get("missing_by_surface") or {}).items()
+            },
+            "duplicateBySurface": {
+                str(key): _string_list(value)
+                for key, value in dict(source.get("duplicate_by_surface") or {}).items()
+            },
+            "validatedSurfaces": _string_list(source.get("validated_surfaces")),
+            "alertCode": _text(source.get("alert_code")),
+            "alertTitle": _text(source.get("alert_title")),
+            "alertMessage": _text(source.get("alert_message")),
         }
 
     @classmethod
@@ -2295,6 +2438,12 @@ class DesktopBackendFacade:
             "downsideSignal": _number(row.get("research_downside_signal")),
         }
         research = {key: value for key, value in research_values.items() if value not in (None, "")}
+        draft_round = _integer(row.get("draft_round"))
+        overall_pick = _integer(row.get("overall_pick"))
+        score_eligible = _flag(
+            row.get("model_score_eligible"),
+            default=_number(row.get("nwr_dynasty_score") or row.get("score_value")) is not None,
+        )
         return {
             "assetId": _text(row.get("asset_id")),
             "name": _text(row.get("asset_name")),
@@ -2338,6 +2487,24 @@ class DesktopBackendFacade:
             "outcomes": [dict(value) for value in outcomes],
             "research": research,
             "caveats": _string_list(row.get("owner_caveats")),
+            "playerId": _text(row.get("player_id")),
+            "identityStatus": _text(row.get("identity_status")),
+            "officialDraftAssetId": _text(row.get("official_draft_asset_id")),
+            "nflDraftCapital": (
+                f"NFL Round {draft_round} · Pick {overall_pick}"
+                if draft_round is not None and overall_pick is not None
+                else ""
+            ),
+            "draftRound": draft_round,
+            "overallPick": overall_pick,
+            "draftEligibility": (
+                "Draft eligible" if _flag(row.get("draft_eligible")) else "Not applicable"
+            ),
+            "modelScoreEligible": score_eligible,
+            "scoreStatus": _text(row.get("score_status"))
+            or ("Score available" if score_eligible else "No common model score"),
+            "selectable": _flag(row.get("selectable"), default=True),
+            "refreshAvailable": _flag(row.get("refresh_available")),
         }
 
     @staticmethod
@@ -2371,10 +2538,13 @@ class DesktopBackendFacade:
 
         asset_type = _text(row.get("asset_type"))
         if asset_type == "Blocked Rookie":
-            blocked_reason = owner_caveat_text(row.get("blocking_reason"))
+            blocked_reason = _text(row.get("owner_reason")) or owner_caveat_text(
+                row.get("blocking_reason")
+            )
             return [
-                f"Not ranked: {blocked_reason}",
-                "Visible for identity review, but blocked from rankings, Compare, and Trade Lab.",
+                "Draft eligible and selectable using the governed official draft asset.",
+                f"No admitted Rookie Review score: {blocked_reason}",
+                "Current factual identity and draft capital do not create a replacement rank.",
             ]
 
         if asset_type == "Rookie Review":
@@ -2425,6 +2595,18 @@ class DesktopBackendFacade:
             "ceilingEvidence": _text(context.get("Ceiling evidence")),
             "rosterWindow": _text(context.get("Roster-window context")),
             "reviewFlags": _text(context.get("Main review flags")),
+            "draftCapital": (
+                f"Round {_integer(row.get('draft_round'))} · "
+                f"Pick {_integer(row.get('overall_pick'))}"
+                if _integer(row.get("draft_round")) is not None
+                and _integer(row.get("overall_pick")) is not None
+                else "Not available"
+            ),
+            "draftEligibility": (
+                "Draft eligible" if _flag(row.get("draft_eligible")) else "Not applicable"
+            ),
+            "scoreStatus": _text(row.get("score_status")) or "No admitted score status",
+            "identityStatus": _text(row.get("identity_status")),
         }
 
     @staticmethod
@@ -2549,6 +2731,19 @@ def _number(value: object) -> float | None:
 def _integer(value: object) -> int | None:
     number = _number(value)
     return int(number) if number is not None and number.is_integer() else None
+
+
+def _flag(value: object, *, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = _text(value).casefold()
+    if not text:
+        return default
+    if text in {"1", "true", "yes", "y"}:
+        return True
+    if text in {"0", "false", "no", "n"}:
+        return False
+    return default
 
 
 def _string_list(value: object) -> list[str]:

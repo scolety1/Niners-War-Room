@@ -19,6 +19,24 @@ function isDynastyRanking(value: unknown): boolean {
     && isFiniteNumberOrNull(value.nwrScore);
 }
 
+function isRookieRanking(value: unknown): boolean {
+  return isRecord(value)
+    && typeof value.assetId === "string"
+    && typeof value.player === "string"
+    && typeof value.draftable === "boolean"
+    && typeof value.modelScoreEligible === "boolean"
+    && isFiniteNumberOrNull(value.rank)
+    && isFiniteNumberOrNull(value.reviewScore);
+}
+
+function isAssetOption(value: unknown): boolean {
+  return isRecord(value)
+    && typeof value.assetId === "string"
+    && typeof value.name === "string"
+    && typeof value.selectable === "boolean"
+    && typeof value.modelScoreEligible === "boolean";
+}
+
 function invalidDynastyBootstrap(): never {
   throw new NwrApiError("Dynasty data could not be opened safely.", {
     code: "INVALID_DYNASTY_BOOTSTRAP",
@@ -38,7 +56,16 @@ export function assertDynastyBootstrap(value: unknown): DynastyBootstrap {
     || !Array.isArray(value.rankings)
     || !value.rankings.every(isDynastyRanking)
     || !Array.isArray(value.rookies)
+    || !value.rookies.every(isRookieRanking)
     || !Array.isArray(value.assetOptions)
+    || !value.assetOptions.every(isAssetOption)
+    || !isRecord(value.rookieReadiness)
+    || typeof value.rookieReadiness.ready !== "boolean"
+    || typeof value.rookieReadiness.officialDrafted !== "number"
+    || typeof value.rookieReadiness.missingFromDraftablePool !== "number"
+    || !Array.isArray(value.rookieReadiness.surfaceGapAssetIds)
+    || !Array.isArray(value.rookieReadiness.draftableAssetIds)
+    || !isRecord(value.rookieReadiness.missingBySurface)
     || !isRecord(value.marketFreshness)
     || !isRecord(value.planning)
     || !Array.isArray(value.notices)) {

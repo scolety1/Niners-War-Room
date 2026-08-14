@@ -92,8 +92,13 @@ def governed_source_identity(label: str, artifact_path: str | Path | None = None
 def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
     asset_type = asset["asset_type"]
     asset_id = asset["asset_id"]
-    player_id = ""
-    if asset_type in {CURRENT_PLAYER, ROOKIE_REVIEW}:
+    player_id = str(
+        asset.get("player_id")
+        or asset.get("live_governed_player_id")
+        or asset.get("frozen_model_player_id")
+        or ""
+    ).strip()
+    if not player_id and asset_type in {CURRENT_PLAYER, ROOKIE_REVIEW}:
         player_id = asset_id.split(":", maxsplit=1)[1]
     source_rank_value = asset["rank_value"]
     canonical_complete = all(
@@ -124,7 +129,11 @@ def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
         "source_status": f"Available: {asset['source_label']}",
         "freshness_status": asset.get("market_status", ""),
         "identity_status": asset.get("identity_status", ""),
-        "missing_evidence": "Complete" if canonical_complete else "Optional evidence unavailable",
+        "missing_evidence": (
+            "Complete"
+            if canonical_complete
+            else str(asset.get("score_status") or "Optional evidence unavailable")
+        ),
         "warning_flags": " ".join(asset.get("owner_caveats", ())),
         "dynasty_asset_rank": source_rank_value if asset_type == CURRENT_PLAYER else "",
         "nwr_rank": asset.get(
@@ -145,6 +154,14 @@ def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
         "research_confidence": asset.get("research_confidence", ""),
         "outcome_signals": tuple(asset.get("outcome_signals", ())),
         "candidate_value_band": asset["tier"] if asset_type == ROOKIE_REVIEW else "",
-        "risk_notes": asset["blocking_reason"] or asset["warnings"],
+        "risk_notes": asset.get("owner_reason") or asset["blocking_reason"] or asset["warnings"],
+        "official_draft_asset_id": asset.get("official_draft_asset_id", ""),
+        "draft_round": asset.get("draft_round", ""),
+        "overall_pick": asset.get("overall_pick", ""),
+        "draft_eligible": asset.get("draft_eligible", False),
+        "model_score_eligible": asset.get("model_score_eligible", False),
+        "score_status": asset.get("score_status", ""),
+        "selectable": asset.get("selectable", True),
+        "live_governed_player_id": asset.get("live_governed_player_id", ""),
         "compare_select_label": (f"{asset['asset_name']} — {asset_type} · {asset['source_label']}"),
     }

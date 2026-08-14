@@ -1,0 +1,8 @@
+player,previous_block_reason,current_exact_identity,identity_namespace,current_team,position,draft_round,overall_pick,current_model_evidence,draftable_now,scoreable_now,rebuild_needed,authority_status
+De'Zhaun Stribling,Canonical nflverse draft row has no exact GSIS player_id.,00-0041035,GSIS,SF,WR,2,33,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Carson Beck,Canonical nflverse draft row has no exact GSIS player_id.,00-0041561,GSIS,AZ,QB,3,65,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Oscar Delp,Canonical nflverse draft row has no exact GSIS player_id.,00-0041041,GSIS,NO,TE,3,73,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Colbie Young,Canonical nflverse draft row has no exact GSIS player_id.,00-0041069,GSIS,CIN,WR,4,140,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Nicholas Singleton,Canonical nflverse draft row has no exact GSIS player_id.,00-0040886,GSIS,TEN,RB,5,165,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Joe Royer,Canonical nflverse draft row has no exact GSIS player_id.,00-0041087,GSIS,CLE,TE,5,170,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW
+Deion Burks,Canonical nflverse draft row has no exact GSIS player_id.,00-0041132,GSIS,IND,WR,7,254,NOT_REASSESSED_IN_ELIGIBILITY_LANE,YES,NO,YES_SEPARATE_GOVERNED,UNSCORED_MANUAL_REVIEW

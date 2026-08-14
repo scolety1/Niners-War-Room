@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.services.rookie_draft_eligibility_service import (
+    load_rookie_draft_eligibility_overlay,
+)
 from src.services.rookie_owner_experience_service import (
     load_owner_rookie_board,
     rookie_component_rows,
@@ -9,7 +12,8 @@ from src.services.rookie_owner_experience_service import (
 
 
 def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() -> None:
-    board = load_owner_rookie_board()
+    eligibility = load_rookie_draft_eligibility_overlay()
+    board = load_owner_rookie_board(eligibility_rows=eligibility.rows)
     by_name = {row["player_name"]: row for row in board.to_dict("records")}
 
     carnell = by_name["Carnell Tate"]
@@ -29,8 +33,13 @@ def test_named_owner_cases_explain_rank_score_and_identity_without_mutation() ->
 
     stribling = by_name["De'Zhaun Stribling"]
     assert stribling["Rank"] == "—"
-    assert "00-0041035" in stribling["Blocked / pending reason"]
-    assert "does not invent a score or rank" in stribling["Blocked / pending reason"]
+    assert stribling["Live Player ID"] == "00-0041035"
+    assert stribling["NFL Team"] == "SF"
+    assert stribling["Draft Eligibility"] == "Draft eligible"
+    assert stribling["Score Status"].startswith("No admitted Rookie Review score")
+    assert stribling["Selectable"] is True
+    assert stribling["Model Score Eligible"] is False
+    assert "no replacement score or rank was invented" in stribling["Blocked / pending reason"]
 
     components = rookie_component_rows(carnell)
     assert set(components["Model effect"]) <= {

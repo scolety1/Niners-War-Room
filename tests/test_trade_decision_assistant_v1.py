@@ -251,6 +251,29 @@ def test_t8_blocked_prospect_trade_returns_insufficient_evidence() -> None:
     assert decision.counters == ()
 
 
+def test_unscored_but_selectable_rookie_is_unknown_not_zero_or_decisive() -> None:
+    rookie, veteran = "registry:blocked:stribling", "registry:current:anchor"
+    _, manual = _blocked(rookie, "De'Zhaun Stribling")
+    manual.update(
+        {
+            "selectable": True,
+            "draft_eligible": True,
+            "model_score_eligible": False,
+            "score_status": "No admitted Rookie Review score — manual review required",
+        }
+    )
+    decision = _decision(
+        [(rookie, manual), _player(veteran, "Veteran Anchor", rank=20)],
+        [rookie],
+        [veteran],
+    )
+
+    assert decision.recommendation == "INSUFFICIENT_EVIDENCE"
+    assert decision.preferred_side == "No side"
+    assert decision.confidence == "LOW"
+    assert "UNKNOWN, not zero" in decision.main_uncertainty
+
+
 def test_t9_close_trade_returns_too_close() -> None:
     a, b = "registry:current:a", "registry:current:b"
     decision = _decision(

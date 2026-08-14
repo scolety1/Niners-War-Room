@@ -148,6 +148,7 @@ export interface DynastySummary {
   marketMatched: number;
   rookieRows: number;
   blockedRookies: number;
+  manualReviewRookies: number;
   outcomeRows: number;
   workspace: WorkspaceSummary;
 }
@@ -181,7 +182,19 @@ export interface AssetOption {
   team: string;
   rank: number | null;
   authority: string;
+  /** Compatibility-only selection block. Model evidence blocking is separate. */
   blocked: boolean;
+  selectable: boolean;
+  searchable: boolean;
+  draftEligible: boolean;
+  modelScoreEligible: boolean;
+  evidenceBlocked: boolean;
+  scoreStatus: string;
+  identityStatus: string;
+  playerId: string;
+  draftRound: number | null;
+  overallPick: number | null;
+  refreshAvailable: boolean;
 }
 
 export interface RookieRanking {
@@ -207,6 +220,43 @@ export interface RookieRanking {
   floor: string;
   expected: string;
   ceiling: string;
+  identityStatus: string;
+  draftEligibility: string;
+  scoreStatus: string;
+  modelScoreEligible: boolean;
+  searchable: boolean;
+  selectable: boolean;
+  draftable: boolean;
+  refreshAvailable: boolean;
+  draftRound: number | null;
+  overallPick: number | null;
+  eligibilityReason: string;
+}
+
+export interface RookieDraftReadiness {
+  verdict: string;
+  ready: boolean;
+  officialDrafted: number;
+  positionCounts: Record<string, number>;
+  exactIdentity: number;
+  scored: number;
+  manualReview: number;
+  unresolved: number;
+  missingFromRegistry: number;
+  missingFromDraftablePool: number;
+  duplicateAssetIds: number;
+  refreshAvailable: number;
+  reviewAssetIds: string[];
+  missingAssetIds: string[];
+  surfaceGapAssetIds: string[];
+  nonselectableAssetIds: string[];
+  draftableAssetIds: string[];
+  missingBySurface: Record<string, string[]>;
+  duplicateBySurface: Record<string, string[]>;
+  validatedSurfaces: string[];
+  alertCode: string;
+  alertTitle: string;
+  alertMessage: string;
 }
 
 export interface MarketFreshness {
@@ -233,6 +283,7 @@ export interface DynastyBootstrap {
   rankings: DynastyRanking[];
   rookies: RookieRanking[];
   assetOptions: AssetOption[];
+  rookieReadiness: RookieDraftReadiness;
   marketFreshness: MarketFreshness;
   planning: PlanningWorkspace;
   notices: Notice[];
@@ -270,6 +321,17 @@ export interface PlayerDetail {
   outcomes: Array<Record<string, JsonValue>>;
   research: Record<string, JsonValue>;
   caveats: string[];
+  playerId: string;
+  identityStatus: string;
+  officialDraftAssetId: string;
+  nflDraftCapital: string;
+  draftRound: number | null;
+  overallPick: number | null;
+  draftEligibility: string;
+  modelScoreEligible: boolean;
+  scoreStatus: string;
+  selectable: boolean;
+  refreshAvailable: boolean;
 }
 
 export interface CompareLean {

@@ -1,11 +1,35 @@
 import { describe, expect, it } from "vitest";
+import type { AssetOption } from "@nwr/contracts";
 
 import {
   isCurrentDecisionRequest,
   isSameTradePackage,
   nextTradeSide,
   ownerDimensionLabel,
+  canSelectAsset,
 } from "./decisions";
+
+const stribling: AssetOption = {
+  assetId: "blocked-rookie:dezhaun-stribling",
+  name: "De'Zhaun Stribling",
+  assetType: "Blocked Rookie",
+  position: "WR",
+  team: "SF",
+  rank: null,
+  authority: "UNSCORED_MANUAL_REVIEW",
+  blocked: false,
+  selectable: true,
+  searchable: true,
+  draftEligible: true,
+  modelScoreEligible: false,
+  evidenceBlocked: true,
+  scoreStatus: "No admitted Rookie Review score — manual review required",
+  identityStatus: "EXACT_GOVERNED_IDENTITY",
+  playerId: "00-0041035",
+  draftRound: 2,
+  overallPick: 33,
+  refreshAvailable: true,
+};
 
 describe("decision input guards", () => {
   it("prevents a trade asset from being added across both sides", () => {
@@ -48,5 +72,11 @@ describe("decision input guards", () => {
     expect(ownerDimensionLabel("tierOrBand")).toBe("Tier Or Band");
     expect(ownerDimensionLabel("outcome_support")).toBe("Outcome support");
     expect(ownerDimensionLabel("reviewFlags")).toBe("Review Flags");
+  });
+
+  it("keeps a draft-eligible unscored rookie selectable", () => {
+    expect(canSelectAsset(stribling)).toBe(true);
+    expect(stribling.modelScoreEligible).toBe(false);
+    expect(stribling.blocked).toBe(false);
   });
 });

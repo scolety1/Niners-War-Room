@@ -280,6 +280,13 @@ def build_registry_trade_item_lookup(
             "outcome_signals": tuple(row.get("outcome_signals", ())),
             "owner_caveats": tuple(row.get("owner_caveats", ())),
             "raw_caveat_codes": row.get("raw_caveat_codes", row.get("warnings", "")),
+            "draft_eligible": row.get("draft_eligible", False),
+            "model_score_eligible": row.get("model_score_eligible", False),
+            "score_status": row.get("score_status", ""),
+            "selectable": row.get("selectable", True),
+            "live_governed_player_id": row.get("live_governed_player_id", ""),
+            "draft_round": row.get("draft_round", ""),
+            "overall_pick": row.get("overall_pick", ""),
         }
     return lookup
 

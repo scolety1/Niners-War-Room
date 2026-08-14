@@ -108,11 +108,21 @@ def test_rookie_and_blocked_rows_remain_truthful_and_source_separated(tmp_path: 
     assert len(rookies) == 73
     assert rookies["age"].ne("").all()
     assert rookies["source_score_value"].ne("").all()
-    assert rookies["compare_source_label"].eq("Model V4 2026 Rookie Review").all()
+    assert rookies["compare_source_label"].eq(
+        "Model V4 2026 Rookie Review + live factual overlay"
+    ).all()
     assert len(blocked) == 7
     assert blocked["source_rank_value"].eq("").all()
     assert blocked["source_score_value"].eq("").all()
     assert blocked["blocking_reason"].ne("").all()
+    assert blocked["draft_eligible"].eq(True).all()  # noqa: E712
+    assert blocked["selectable"].eq(True).all()  # noqa: E712
+    assert blocked["model_score_eligible"].eq(False).all()  # noqa: E712
+    stribling = blocked.loc[blocked["player"].eq("De'Zhaun Stribling")].iloc[0]
+    assert stribling["player_id"] == "00-0041035"
+    assert stribling["nfl_team"] == "SF"
+    assert stribling["draft_round"] == 2
+    assert stribling["overall_pick"] == 33
 
 
 def test_veteran_rookie_compare_has_no_common_scale() -> None:

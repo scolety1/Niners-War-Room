@@ -19,7 +19,7 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
     <div className="metric-grid">
       <MetricCard label="Governed board" value={summary.rankedPlayers} detail="Finished V1 assets" trend="Board authority" icon="board" tone="violet" />
       <MetricCard label="Market coverage" value={summary.marketMatched} detail={`${Math.max(0, summary.rankedPlayers - summary.marketMatched)} unmatched`} trend={data.marketFreshness.sourceAsOf || "No date"} icon="market" tone="gold" />
-      <MetricCard label="Rookie review" value={summary.rookieRows} detail={`${summary.blockedRookies} identity blocked`} trend="Review only" icon="rookie" tone="crimson" />
+      <MetricCard label="Rookie review" value={summary.rookieRows} detail={`${summary.manualReviewRookies} manual review`} trend={`${summary.blockedRookies} unresolved`} icon="rookie" tone="crimson" />
       <MetricCard label="Open decisions" value={summary.workspace.openDecisions} detail={`${summary.workspace.savedScenarios} saved scenarios`} trend={`${summary.workspace.targets} targets`} icon="target" tone="cyan" />
     </div>
     <div className="dashboard-grid">
