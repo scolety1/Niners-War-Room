@@ -2,7 +2,9 @@
 
 The existing Desktop was upgraded; no new app was created.
 
-- Compare detects a two-player veteran/rookie pair and renders the four horizon decisions first, then safety/upside/uncertainty.
+Owner adoption status: installed in the local Dynasty Desktop candidate on branch `codex/nwr-rookie-veteran-dynasty-bridge-v2-20260814`. No canonical promotion or push was performed.
+
+- Compare detects a two-player veteran/rookie pair and renders the four horizon decisions first, including `LONG-TERM / 5Y`, then safety/upside/uncertainty.
 - Each result has an owner-readable authority badge.
 - The shared 2026 Redraft projection appears inline as **Immediate production context** with projected points, overall/position rank, replacement-adjusted evidence, confidence, and uncertainty.
 - Player Detail exposes the same immediate-production context.

@@ -8,4 +8,4 @@ Exact validation task required before any production common dynasty bridge:
 4. Quarantine target values until the cohort is mature and untouched.
 5. Run one bounded validation against the already-frozen existing bridge; report rookie-veteran, veteran-veteran, rookie-rookie, position, age, draft-capital, confidence, and Top-N results separately.
 
-Do not run an expensive follow-up gauntlet until that data contract exists. Owner approval is required to promote the local multi-authority Desktop candidate or authorize a new prospective validation program.
+Do not run an expensive follow-up gauntlet until that data contract exists. The owner approved local adoption of the multi-authority Desktop experience only. Separate owner authority is still required for prospective validation, any common-scale promotion, reconciliation into another lane's shared Desktop infrastructure, canonicalization, or push.

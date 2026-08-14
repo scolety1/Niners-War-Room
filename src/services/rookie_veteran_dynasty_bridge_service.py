@@ -269,21 +269,29 @@ def build_rookie_veteran_bridge(
         _win_now(rows, immediate),
         _research_rank_decision("dynasty_today", "DYNASTY TODAY", rows),
         _research_outlook_decision("three_year", "3-YEAR OUTLOOK", rows, "research_outlook_3y"),
-        _research_outlook_decision("long_term", "LONG-TERM", rows, "research_outlook_5y"),
+        _research_outlook_decision(
+            "long_term", "LONG-TERM / 5Y", rows, "research_outlook_5y"
+        ),
         _safety(veteran, rookie),
         _upside(rows),
         _uncertainty(veteran, rookie),
     )
     why = _why(rows, veteran, rookie, immediate_by_asset)
-    warnings = (
+    warnings = [
         "Rookie Review score and veteran Finished V1 score are not directly comparable.",
         "The 3-year and long-term preferences are frozen research signals, "
         "not production authority.",
         "Two-point conversion projections are unavailable in the admitted Redraft "
         "snapshot; they are not imputed as zero.",
         "No common dynasty 0-100 value or hidden additive package score is created.",
-    )
-    return RookieVeteranBridge(BRIDGE_MODE, decisions, immediate, why, warnings)
+    ]
+    if _truth(rookie.get("refresh_available")):
+        warnings.insert(
+            1,
+            "Current rookie identity or factual context includes refresh-candidate "
+            "evidence; the canonical Rookie Review score is unchanged.",
+        )
+    return RookieVeteranBridge(BRIDGE_MODE, decisions, immediate, why, tuple(warnings))
 
 
 def _win_now(

@@ -9,4 +9,4 @@
 7. **Which outputs are production?** Only the 2026 Redraft crossover. Review and research badges identify every other result.
 8. **Are Rookie Score and Veteran NWR Score directly comparable?** **NO.**
 
-Acceptance status: the truthful multi-authority comparison is ready; a production common dynasty scale is not.
+Acceptance status: the owner approved local adoption of the truthful multi-authority comparison on 2026-08-14; a production common dynasty scale remains unapproved and unadmitted.

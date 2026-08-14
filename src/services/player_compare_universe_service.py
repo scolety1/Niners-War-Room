@@ -164,5 +164,8 @@ def _compare_row(asset: Mapping[str, Any]) -> dict[str, Any]:
         "score_status": asset.get("score_status", ""),
         "selectable": asset.get("selectable", True),
         "live_governed_player_id": asset.get("live_governed_player_id", ""),
+        "refresh_available": asset.get("refresh_available", False),
+        "rebuild_status": asset.get("rebuild_status", ""),
+        "refresh_evidence_status": asset.get("refresh_evidence_status", ""),
         "compare_select_label": (f"{asset['asset_name']} — {asset_type} · {asset['source_label']}"),
     }

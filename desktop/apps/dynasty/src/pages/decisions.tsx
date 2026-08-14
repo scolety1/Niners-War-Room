@@ -37,6 +37,17 @@ export function bridgeDecisionGroups(result: DynastyComparison) {
   };
 }
 
+export function ownerBridgePreference(preferred: string, badge: string): string {
+  if (
+    badge === "RESEARCH ONLY" &&
+    preferred !== "TOO CLOSE" &&
+    preferred !== "INSUFFICIENT EVIDENCE"
+  ) {
+    return `NWR research leans ${preferred}`;
+  }
+  return preferred;
+}
+
 export function nextTradeSide(
   current: readonly string[],
   other: readonly string[],
@@ -373,7 +384,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
                   <span>{decision.label}</span>
                   <StatusBadge tone={bridgeBadgeTone(decision.badge)} label={decision.badge} />
                 </header>
-                <strong>{decision.preferred}</strong>
+                <strong>{ownerBridgePreference(decision.preferred, decision.badge)}</strong>
                 <p>{decision.reason}</p>
                 <small>{decision.authority}</small>
               </article>
@@ -383,7 +394,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
             {traitDecisions.map((decision) => (
               <article key={decision.key}>
                 <span>{decision.label}</span>
-                <strong>{decision.preferred}</strong>
+                <strong>{ownerBridgePreference(decision.preferred, decision.badge)}</strong>
                 <StatusBadge tone={bridgeBadgeTone(decision.badge)} label={decision.badge} />
                 <p>{decision.reason}</p>
               </article>

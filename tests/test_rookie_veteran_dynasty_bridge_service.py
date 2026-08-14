@@ -103,10 +103,23 @@ def test_mixed_pair_uses_production_only_for_win_now() -> None:
     assert decisions["win_now"].badge == PRODUCTION
     assert decisions["dynasty_today"].preferred == "Rookie"
     assert decisions["dynasty_today"].badge == RESEARCH_ONLY
+    assert decisions["long_term"].label == "LONG-TERM / 5Y"
     assert decisions["safety"].preferred == "Veteran"
     assert decisions["uncertainty"].preferred == "Rookie"
     assert "players" in first.as_payload()
     assert any("not directly comparable" in warning for warning in first.warnings)
+
+
+def test_refresh_candidate_evidence_is_disclosed_without_changing_review_authority() -> None:
+    veteran = _row("veteran", "Veteran", "Current Player", "00-vet")
+    rookie = _row("rookie", "Rookie", "Rookie Review", "00-rook")
+    rookie["refresh_available"] = True
+
+    bridge = build_rookie_veteran_bridge([veteran, rookie], redraft_context=_context())
+
+    assert bridge is not None
+    assert any("refresh-candidate" in warning for warning in bridge.warnings)
+    assert next(row for row in bridge.decisions if row.key == "safety").badge == "REVIEW"
 
 
 def test_missing_redraft_and_research_remain_unavailable_not_zero() -> None:

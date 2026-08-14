@@ -28,6 +28,7 @@ REQUIRED = {
     "TRADE_INTEGRATION.md",
     "AUTHORITY_PRESERVATION.md",
     "OWNER_ACCEPTANCE.md",
+    "OWNER_APPROVAL_ADOPTION.md",
     "NEXT_ACTION.md",
     "MANIFEST.json",
 }
@@ -43,6 +44,11 @@ def main() -> None:
         raise SystemExit("Manifest verdict mismatch")
     if manifest.get("common_dynasty_scale_admitted") is not False:
         raise SystemExit("Common dynasty scale must remain unadmitted")
+    approval = manifest.get("owner_approval", {})
+    if approval.get("local_multi_authority_adoption") is not True:
+        raise SystemExit("Local multi-authority owner approval is not recorded")
+    if approval.get("common_dynasty_scale_authorized") is not False:
+        raise SystemExit("Owner approval must not authorize a common dynasty scale")
     acceptance = (PACKET / "OWNER_ACCEPTANCE.md").read_text(encoding="utf-8")
     if "directly comparable?** **NO.**" not in acceptance:
         raise SystemExit("Owner score-comparability answer is not NO")

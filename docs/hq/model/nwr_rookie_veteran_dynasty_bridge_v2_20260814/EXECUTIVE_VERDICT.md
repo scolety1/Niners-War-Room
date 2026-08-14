@@ -2,6 +2,8 @@
 
 Verdict: `GREEN_NWR_ROOKIE_VETERAN_COMPARE_MULTI_AUTHORITY_READY`
 
+Owner status: approved for local multi-authority Desktop adoption on 2026-08-14. This approval does not promote a common dynasty scale or any research authority.
+
 NWR can now compare a rookie directly with a veteran without asserting that Rookie Review Score and Finished V1 Score share a scale.
 
 - **Win now / 2026:** production comparison from the governed combined Redraft snapshot, rescored for the owner's 10-team, 1QB, non-PPR, first-down format.

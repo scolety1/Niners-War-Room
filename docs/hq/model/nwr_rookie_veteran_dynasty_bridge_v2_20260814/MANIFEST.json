@@ -11,6 +11,14 @@
   "fresh_model_fits": 0,
   "fresh_validation_executions": 0,
   "common_dynasty_scale_admitted": false,
+  "owner_approval": {
+    "received_on": "2026-08-14",
+    "local_multi_authority_adoption": true,
+    "common_dynasty_scale_authorized": false,
+    "new_model_fitting_authorized": false,
+    "prospective_validation_authorized": false,
+    "canonical_push_authorized": false
+  },
   "artifacts": [
     "EXECUTIVE_VERDICT.md",
     "PRIOR_BRIDGE_RECOVERY.md",
@@ -31,6 +39,7 @@
     "TRADE_INTEGRATION.md",
     "AUTHORITY_PRESERVATION.md",
     "OWNER_ACCEPTANCE.md",
+    "OWNER_APPROVAL_ADOPTION.md",
     "NEXT_ACTION.md"
   ],
   "preserved_authorities": [

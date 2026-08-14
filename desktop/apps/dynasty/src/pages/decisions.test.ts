@@ -7,6 +7,7 @@ import {
   isCurrentDecisionRequest,
   isSameTradePackage,
   nextTradeSide,
+  ownerBridgePreference,
   ownerDimensionLabel,
   canSelectAsset,
 } from "./decisions";
@@ -73,6 +74,9 @@ describe("decision input guards", () => {
     expect(bridgeBadgeTone("PRODUCTION")).toBe("safe");
     expect(bridgeBadgeTone("RESEARCH ONLY")).toBe("review");
     expect(bridgeBadgeTone("INSUFFICIENT EVIDENCE")).toBe("blocked");
+    expect(ownerBridgePreference("Gibbs", "RESEARCH ONLY")).toBe("NWR research leans Gibbs");
+    expect(ownerBridgePreference("TOO CLOSE", "RESEARCH ONLY")).toBe("TOO CLOSE");
+    expect(ownerBridgePreference("Veteran", "PRODUCTION")).toBe("Veteran");
   });
 
   it("prevents a trade asset from being added across both sides", () => {
