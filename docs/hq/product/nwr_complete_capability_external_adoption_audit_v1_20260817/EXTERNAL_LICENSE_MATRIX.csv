@@ -1,0 +1,10 @@
+repository,commit,license,code_copy_allowed_by_audit,attribution_requirement,decision
+zacharykirby/ai-nfl-fantasy-draft,233d18e6fbd588516e05d16faa13033f79d7229c,MIT,NO,"required if later copied",ADAPT_PATTERN_NOW_REVIEW_COPY_LATER
+joewlos/fantasy_football_monte_carlo_draft_simulator,2e33e3fe1cb97dcbda539af93c7fff669dcc88bb,MIT,NO,"required if later copied",ADAPT_PATTERN
+VTNoble/adp-vs-projection,f5caf6a17742399a9d96c1c6a942af51f33d807e,NONE,NO,n/a,REJECT
+aptmac/fftiers-python,57877b58710610a4160fdfe4cb834f3b7bf933ea,NONE,NO,n/a,REJECT
+playjukeff/wire-room,82eab686b7daf33774fe73e500eec2cf67b03f54,NONE,NO,n/a,PATTERN_ONLY
+evanng07/FantasyFootballOptimizer,89d8dc986db3819257fef5de481b546e0d2a5bcb,NONE,NO,n/a,REJECT
+mattkjones/4-keeper-sleeper-ff-trade-machine,57f23f3709ef04940ac5e25f414a27350dd61ec7,MIT,NO,"required if later copied",PATTERN_ONLY
+gtonic/nfl_mcp,ae5553dffe53f8ed91ab2218787c17cb42e77683,MIT,NO,"required if later copied",WORKFLOW_PATTERN_ONLY
+nflverse/nflverse-data,9037aa840b8ff96ab3340d4c8a6daa403eed65f4,CC-BY-4.0,DATA_ONLY,"attribution and change/license notice as applicable",KEEP_GOVERNED_INGESTION

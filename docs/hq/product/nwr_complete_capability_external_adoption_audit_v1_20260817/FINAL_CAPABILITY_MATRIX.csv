@@ -1,0 +1,29 @@
+capability,Dynasty,Redraft,current_NWR_implementation,current_authority,external_best_candidate,external_license,gap,decision,implementation_effort,owner_value,priority
+League Setup,PARTIAL,STRONG,profiles plus Sleeper import,Sleeper/NWR workspace,gtonic/nfl_mcp,MIT,"shared immutable identity contract",UPGRADE_NWR,M,HIGH,P0
+Multi-League,PARTIAL,STRONG,isolated Redraft profiles,NWR owner state,zacharykirby/ai-nfl-fantasy-draft,MIT,"Dynasty parity/navigation",RECONNECT_NWR,M,HIGH,P0
+Rankings,STRONG,STRONG,Finished V1 and Redraft Champion,separate NWR authorities,none,n/a,"candidate not HQ",RECONNECT_NWR,M,CRITICAL,P0
+My Board,STRONG,PARTIAL,personal workspace,NWR owner state,none,n/a,"surface consistency",UPGRADE_NWR,S,HIGH,P0
+Player Compare,STRONG,STRONG_CANDIDATE,multi-authority compare,separate authorities,none,n/a,"candidate adoption",RECONNECT_NWR,S,HIGH,P0
+Draft Board,LEGACY_STRONG,PARTIAL,608 board plus mark/undo,NWR Redraft,zacharykirby/ai-nfl-fantasy-draft,MIT,"event state/rosters/recovery",ADAPT_EXTERNAL_PATTERN,L,CRITICAL,P1
+Mock Draft,LEGACY/PARTIAL,PARTIAL,deterministic NWR-rank CPU,NWR Redraft,joewlos/fantasy_football_monte_carlo_draft_simulator,MIT,"realistic opponents",ADAPT_EXTERNAL_PATTERN,L,CRITICAL,P1
+Beat ADP,NONE,NONE,none,none,VTNoble/adp-vs-projection,NONE,"provider and timing layer",BUILD_NEW,M,CRITICAL,P1
+ADP,NONE,NONE,none,none,owner CSV/provider,n/a,"governed snapshot",ADD_EXTERNAL_DATA_PROVIDER,M,CRITICAL,P1
+Tiering,NA,NEEDS_UPGRADE,global IQR gap threshold,NWR heuristic,aptmac/fftiers-python,NONE,"position-first stable tiers",UPGRADE_NWR,M,HIGH,P1
+Live Companion,PARTIAL,PARTIAL,Sleeper draft import/read-only,Sleeper plus NWR,zacharykirby/ai-nfl-fantasy-draft,MIT,"event command UX",ADAPT_EXTERNAL_PATTERN,L,HIGH,P1
+Weekly Lineup,NONE,NONE,roster/scoring prerequisites only,none,gtonic/nfl_mcp,MIT,"legal-slot optimizer/provider",BUILD_NEW,L,CRITICAL,P2
+Waiver Wire,NONE,PARTIAL_DATA,Sleeper state only,Sleeper,playjukeff/wire-room,NONE,"add/drop marginal value",ADAPT_EXTERNAL_PATTERN,L,CRITICAL,P2
+Streamers,NONE,PARTIAL,K/DST consensus boundary,external consensus,gtonic/nfl_mcp,MIT,"QB/TE plus shared substrate",UPGRADE_NWR,M,HIGH,P2
+FAAB,NONE,NONE,transactions available,Sleeper,playjukeff/wire-room,NONE,"calibration/budget state",DEFER,M,MEDIUM,P2+
+Bye Week Planning,PARTIAL,NONE,planner inputs,NWR/Sleeper,gtonic/nfl_mcp,MIT,"weekly integration",UPGRADE_NWR,M,MEDIUM,P2
+Injury Replacement,NONE,NONE,identity/roster prerequisites,none,gtonic/nfl_mcp,MIT,"approved injury/provider lane",BUILD_NEW,M,HIGH,P2
+Market Value,STALE,NONE,DynastyProcess 1QB display,DynastyProcess,none,n/a,"refresh plus Redraft separation",UPGRADE_NWR,M,HIGH,P0/P3
+Trade Analyzer,STRONG,PARTIAL,Trade Decision Assistant,NWR authorities,mattkjones trade machine,MIT,"Redraft surface if useful",KEEP_NWR,S,HIGH,P3
+Trade Finder,NONE,NONE,none,NWR trade authority,mattkjones trade machine,MIT,"opponent/package search",BUILD_NEW,L,HIGH,P3
+Counteroffers,STRONG,PARTIAL,counter families,NWR trade authority,mattkjones trade machine,MIT,"finder integration",UPGRADE_NWR,M,HIGH,P3
+Rookie Review,STRONG,NA,73 scored plus 7 review-only,Rookie Review,none,n/a,"owner adoption of 80 visibility",RECONNECT_NWR,S,HIGH,P0
+Outcome,STRONG,NA,Outcome V3,Outcome V3,none,n/a,"navigation",KEEP_NWR,S,MEDIUM,P4
+Research Context,STRONG,NA,Unified Research,Research only,none,n/a,"label consistency",KEEP_NWR,S,MEDIUM,P4
+Roster Planner,STRONG,PARTIAL,scenario/decision tools,NWR owner state,gtonic/nfl_mcp,MIT,"task navigation",RECONNECT_NWR,M,HIGH,P4
+Future Pick Planner,STRONG,NA,planning services,NWR owner state,none,n/a,"owner discoverability",RECONNECT_NWR,S,MEDIUM,P4
+Scenario Playground,STRONG,PARTIAL,personal workspace,NWR owner state,none,n/a,"cross-app consistency",RECONNECT_NWR,M,MEDIUM,P4
+Decision Tracker,STRONG,PARTIAL,decisions/backups,NWR owner state,none,n/a,"cross-app consistency",RECONNECT_NWR,S,HIGH,P4

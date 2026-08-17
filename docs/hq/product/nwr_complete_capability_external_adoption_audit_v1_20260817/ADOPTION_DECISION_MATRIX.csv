@@ -1,0 +1,17 @@
+capability,decision,evidence,what_is_adopted,what_is_not_adopted,gate
+Dynasty production ranks,KEEP_NWR,"Finished V1 is governing authority",existing authority,"external ranks/blended score",authority regression
+Desktop reconciliation,RECONNECT_NWR,"9cb6eaf is clean direct HQ descendant and installed Redraft hash match",candidate chain after review,"automatic merge in this audit",owner adoption lane
+Rookie Review visibility,RECONNECT_NWR,"80-player candidate keeps 7 review-only",visibility and labels,"silent canonical scoring",owner approval
+Redraft rankings,KEEP_NWR,"608-player league-scored replacement board",NWR engine,"external VORP authority",coverage/profile tests
+Draft state,ADAPT_EXTERNAL_PATTERN,"Zachary repo tests event state/undo/rosters",event command/read-model pattern,"whole app or model",MIT/code review plus NWR tests
+CPU mock,ADAPT_EXTERNAL_PATTERN,"Joe Wlos uses historical logistic selection",seeded ADP/history behavior,"unvalidated trained model",data/calibration gate
+ADP,ADD_EXTERNAL_DATA_PROVIDER,"none exists",provider-neutral snapshot plus owner CSV,"Dynasty Market relabel",owner source/terms approval
+Beat ADP,BUILD_NEW,"rank gap and timing are absent",separate NWR View and Draft Timing,"new rank authority",calibration/stale fallback
+Tiering,UPGRADE_NWR,"current global IQR threshold is brittle",position-first stable cliffs,"fixed-k KMeans",owner readability/stability tests
+Weekly lineup,BUILD_NEW,"only prerequisites exist",legal-slot optimizer,"black-box start/sit model",weekly provider approval
+Waivers,ADAPT_EXTERNAL_PATTERN,"wire-room has strong marginal add/drop concept but no license",NWR reimplementation,"external code",lineup/availability tests
+Streamers,UPGRADE_NWR,"K/DST boundary exists",shared QB/TE/K/DST workflow,"hidden custom predictions",provider/freshness gate
+Trade calculator,KEEP_NWR,"NWR multi-dimensional authority is stronger",existing assistant,"sum-based external calculator",regression tests
+Trade Finder,BUILD_NEW,"opponent/package discovery absent",search UX around NWR,"new valuation model",shared contracts first
+Full assistant,DEFER,"MCP reveals workflows but duplicates product shell",bounded future read-only query surface,"MCP as canonical app",complete deterministic services first
+Core NFL data,KEEP_NWR,"nflverse already governed and current",hashed attributed snapshots,"unreviewed datasets",dataset license receipt
