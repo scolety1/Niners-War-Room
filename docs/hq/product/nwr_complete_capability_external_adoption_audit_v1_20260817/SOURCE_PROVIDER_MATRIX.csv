@@ -1,0 +1,15 @@
+provider,domain,current_status,cost_or_access,license_terms,freshness_required,fallback,decision
+NWR Finished V1,Dynasty rank,PRODUCTION,local,internal authority,versioned,none,KEEP_NWR
+NWR Rookie Review,Rookies,PRODUCTION_PLUS_CANDIDATE,local,internal authority,versioned,show review-only separately,KEEP_NWR
+NWR Outcome V3,Outcomes,PRODUCTION,local,internal authority,versioned,unknown,KEEP_NWR
+NWR Unified Research,Research,RESEARCH_ONLY,local,internal evidence,dated citations,omit context,KEEP_NWR
+NWR Redraft Champion,Redraft rank,CANDIDATE_INSTALLED,local,internal authority,projection snapshot,offline snapshot,RECONNECT_NWR
+Sleeper API,League state,CURRENT,free read-only,official API terms,per workflow/cache,last snapshot plus stale flag,KEEP_NWR
+DynastyProcess snapshot,Dynasty Market,STALE,governed local snapshot,"source license noted; opaque content prohibited",refresh receipt,hide/stale label,UPGRADE_NWR
+Owner CSV,ADP/projection,NOT_IMPLEMENTED,owner supplied,owner attestation,preseason and on refresh,no ADP,ADD_EXTERNAL_DATA_PROVIDER
+FantasyPros API,Projection/consensus,OPTIONAL_KEYED,entitlement/API key,official API/data terms,weekly/preseason,owner CSV or no lane,DEFER
+nflverse-data,NFL stats,CURRENT_SOURCE,free,CC-BY-4.0 plus dataset-specific terms,release schedule,last governed snapshot,KEEP_NWR
+Open-Meteo or weather provider,Weather,NOT_APPROVED,provider-specific,terms review,game-week,unknown/omit,DEFER
+Odds provider,Game environment,NOT_APPROVED,provider-specific,terms review,game-week,unknown/omit,DEFER
+ESPN/CBS unofficial feeds,News/projections,NOT_APPROVED,unknown,contract and redistribution risk,near-live,omit,REJECT
+MFL ADP/API,ADP candidate,RESEARCH_GAP,unknown,official contract verification needed,preseason,owner CSV,DEFER
