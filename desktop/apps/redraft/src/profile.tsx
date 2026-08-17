@@ -119,6 +119,16 @@ export function ProfilePage({
     } catch (reason) { fail(reason, "Practical Mock could not start."); }
     finally { setWorking(""); }
   };
+  const refreshAdp = async () => {
+    if (!data.activeProfile || working) return;
+    setWorking("adp-refresh"); setError(null); setMessage("");
+    try {
+      const next = await client.refreshRedraftAdp(data.activeProfile.profileId);
+      onUpdate(next);
+      setMessage(next.draftBoard?.adp?.lastRefreshError ? "FFC refresh failed; the last known good cached ADP remains active." : "Fantasy Football Calculator ADP refreshed locally. NWR rankings were not changed.");
+    } catch (reason) { fail(reason, "Fantasy Football Calculator ADP could not be refreshed."); }
+    finally { setWorking(""); }
+  };
 
   const profileCount = data.profiles.length;
   const profileLabel = `${profileCount} profile${profileCount === 1 ? "" : "s"} · ${data.activeProfileId ? "active" : "none active"}`;
@@ -150,6 +160,10 @@ export function ProfilePage({
       <Panel title="Practical Mock Mode" eyebrow="Owner-authorized · Fantasy Gamers">
         <p>NWR models the major QB/RB/WR/TE scoring rules for Fantasy Gamers. Five uncommon scoring events are not included. Kicker and DST are manual/unmodeled.</p>
         <div className="profile-create-footer"><p>{data.activeProfile?.practicalMode ? "Practical Mode is active. Use Draft Room to search and draft manual K/DST assets." : "Refreshes public Sleeper K/DST identities locally and enables this approximate profile."}</p><Button disabled={!data.activeProfile || data.activeProfile.practicalMode || Boolean(working)} icon="draft" onClick={() => void startPracticalMock()}>{working === "practical" ? "Starting…" : "Start Practical Mock"}</Button></div>
+      </Panel>
+      <Panel title="ADP Provider" eyebrow="External market timing · local cache">
+        <p>Fantasy Football Calculator ADP is the default external 10-team PPR timing source. It never changes NWR rank or projections.</p>
+        <div className="profile-create-footer"><p>{data.draftBoard?.adp?.available ? `${data.draftBoard.adp.freshness ?? "CACHED"} · ${data.draftBoard.adp.dateWindow || data.draftBoard.adp.sourceDate}${data.draftBoard.adp.sampleSize ? ` · ${data.draftBoard.adp.sampleSize.toLocaleString()} drafts` : ""}` : "No cached ADP snapshot. Draft Room remains usable with disclosed fallback behavior."}</p><Button disabled={!data.activeProfile || Boolean(working)} icon="activity" onClick={() => void refreshAdp()}>{working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}</Button></div>
       </Panel>
     </div>
     {data.activeProfile && edit ? <ProfileEditor edit={edit} disabled={Boolean(working)} onChange={setEdit} onDuplicate={() => void duplicate()} onSave={() => void save()} working={working} /> : null}

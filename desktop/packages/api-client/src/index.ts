@@ -310,6 +310,13 @@ export class NwrApiClient {
     });
   }
 
+  refreshRedraftAdp(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/refresh`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   ingestSleeperDraftPick(
     profileId: string,
     playerId: string,

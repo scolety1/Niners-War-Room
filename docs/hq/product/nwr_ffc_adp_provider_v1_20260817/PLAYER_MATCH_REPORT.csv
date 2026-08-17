@@ -1,0 +1,12 @@
+record_type,source_player_id,source_player_name,source_position,source_team,match_status,match_method,match_confidence,unmatched_reason,times_drafted,count
+summary,,,,,MATCHED,DST_TEAM_POSITION,HIGH,,,26
+summary,,,,,MATCHED,EXACT_NAME_POSITION_TEAM,HIGH,,,213
+summary,,,,,MATCHED,EXACT_NAME_POSITION_TEAM_MISMATCH,MEDIUM,,,7
+summary,,,,,MATCHED,SUFFIX_TOLERANT_NAME_POSITION_TEAM,MEDIUM,,,6
+unmatched,2316,Stefon Diggs,WR,WAS,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,875,
+unmatched,6179,Jonathon Brooks,RB,CAR,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,1800,
+unmatched,3246,Deebo Samuel Sr.,WR,SF,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,421,
+unmatched,5711,Tank Dell,WR,HOU,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,176,
+unmatched,6563,Travis Hunter,WR,JAX,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,59,
+unmatched,5622,MarShawn Lloyd,RB,GB,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,22,
+unmatched,6517,Jordan James,RB,SF,UNMATCHED,,,NO_SAFE_IDENTITY_MATCH,8,

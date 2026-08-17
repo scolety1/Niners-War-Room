@@ -226,6 +226,10 @@ class FakeFacade:
         self.calls.append(("adp-import", value))
         return FacadePayload(data=value)
 
+    def refresh_redraft_adp(self, **value: Any) -> FacadePayload:
+        self.calls.append(("adp-refresh", value))
+        return FacadePayload(data=value)
+
     def ingest_redraft_sleeper_pick(self, **value: Any) -> FacadePayload:
         self.calls.append(("sleeper-pick", value))
         return FacadePayload(data=value)
@@ -710,6 +714,13 @@ def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:
             body={"csvText": "player,position,overall_adp,source,scoring_format,team_count,date\n"},
             headers=authenticated_headers(),
         )
+        refreshed = request(
+            server,
+            "POST",
+            "/api/v1/redraft/adp/profile-1/refresh",
+            body={},
+            headers=authenticated_headers(),
+        )
         sleeper = request(
             server,
             "POST",
@@ -725,7 +736,7 @@ def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:
             headers=authenticated_headers(),
         )
 
-    assert start[0] == advance[0] == adp[0] == sleeper[0] == 200
+    assert start[0] == advance[0] == adp[0] == refreshed[0] == sleeper[0] == 200
     assert invalid[0] == 400
     assert (
         "draft-start",
@@ -739,6 +750,7 @@ def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:
     ) in facade.calls
     assert ("draft-advance", {"profile_id": "profile-1", "one_pick": False}) in facade.calls
     assert any(call[0] == "adp-import" for call in facade.calls)
+    assert ("adp-refresh", {"profile_id": "profile-1"}) in facade.calls
     assert (
         "sleeper-pick",
         {"profile_id": "profile-1", "player_id": "fixture-player", "pick_number": 1},

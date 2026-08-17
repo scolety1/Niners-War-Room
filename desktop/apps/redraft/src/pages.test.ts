@@ -22,6 +22,7 @@ describe("Draft Room owner acceptance surface", () => {
       "Beat ADP pool",
       "Draft recommendations",
       "Advance to my pick",
+      "Refresh FFC ADP",
       "ADP unavailable",
     ]);
   });

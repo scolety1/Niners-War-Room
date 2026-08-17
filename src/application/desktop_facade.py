@@ -107,6 +107,7 @@ from src.services.redraft_draft_room_v1_service import (
     load_adp_snapshot,
     load_room_state,
     owner_pick_and_advance,
+    refresh_fantasy_football_calculator_adp,
     start_draft_room,
     undo_room_pick,
 )
@@ -1621,6 +1622,12 @@ class DesktopBackendFacade:
                         adp_snapshot,
                         room_state,
                     )
+                    for asset in manual_assets:
+                        entry = adp_snapshot.by_player_id.get(str(asset.get("player_id") or ""))
+                        asset["overallAdp"] = entry.overall_adp if entry else None  # type: ignore[assignment]
+                        asset["expectedPick"] = entry.expected_pick if entry else None  # type: ignore[assignment]
+                        asset["expectedRound"] = entry.expected_round if entry else None  # type: ignore[assignment]
+                        asset["adpSource"] = adp_snapshot.source if entry else ""
                 except (OSError, RedraftPersistenceError, RedraftValidationError):
                     warnings.append("The active Redraft draft board is unavailable.")
                 rankings = self._redraft_ranking_payloads(
@@ -1791,7 +1798,20 @@ class DesktopBackendFacade:
                 "rankings": rankings,
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
-                "manualAssets": manual_assets,
+                "manualAssets": [
+                    {
+                        "playerId": str(asset.get("player_id") or ""),
+                        "playerName": str(asset.get("player_name") or ""),
+                        "position": str(asset.get("position") or ""),
+                        "team": str(asset.get("team") or ""),
+                        "authority": str(asset.get("authority") or ""),
+                        "overallAdp": asset.get("overallAdp"),
+                        "expectedPick": asset.get("expectedPick"),
+                        "expectedRound": asset.get("expectedRound"),
+                        "adpSource": asset.get("adpSource"),
+                    }
+                    for asset in manual_assets
+                ],
                 "externalConsensus": {
                     "authority": fantasypros_status.authority,
                     "configured": fantasypros_status.configured,
@@ -2326,13 +2346,14 @@ class DesktopBackendFacade:
         )
 
     def import_redraft_adp(self, *, profile_id: str, csv_text: str) -> FacadePayload:
-        profile, ranking, _ = self._redraft_room_context(profile_id)
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
         try:
             snapshot = import_owner_adp_csv(
                 self.redraft_root,
                 profile,
                 ranking,
                 csv_text,
+                manual_assets,
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
@@ -2349,6 +2370,37 @@ class DesktopBackendFacade:
                     "matched": len(snapshot.entries),
                     "unmatched": list(snapshot.unmatched),
                     "sourceSha256": snapshot.source_sha256,
+                }
+            }
+        )
+
+    def refresh_redraft_adp(self, *, profile_id: str) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            snapshot = refresh_fantasy_football_calculator_adp(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_ADP_REFRESH_FAILED",
+                "Fantasy Football Calculator ADP could not be refreshed. The last known "
+                "good cache remains unchanged.",
+                status=503,
+            ) from exc
+        return FacadePayload(
+            data={
+                "adp": {
+                    "available": snapshot.available,
+                    "source": snapshot.source,
+                    "sourceDate": snapshot.source_date,
+                    "freshness": snapshot.freshness,
+                    "matched": len(snapshot.entries),
+                    "unmatched": list(snapshot.unmatched),
+                    "sourceSha256": snapshot.source_sha256,
+                    "lastRefreshError": snapshot.last_refresh_error,
                 }
             }
         )
@@ -3169,6 +3221,11 @@ class DesktopBackendFacade:
         drafted = [str(value) for value in (draft_board or {}).get("drafted", [])]
         pick_number = {player_id: index for index, player_id in enumerate(drafted, start=1)}
         adp_by_id = adp_snapshot.by_player_id if adp_snapshot is not None else {}
+        decision_by_id = {
+            str(value.get("playerId") or ""): value
+            for value in (draft_board or {}).get("decisionRows", [])
+            if isinstance(value, Mapping)
+        }
         return [
             {
                 "overallRank": row.overall_rank,
@@ -3193,6 +3250,21 @@ class DesktopBackendFacade:
                 ),
                 "expectedPick": (
                     adp_by_id[row.player_id].expected_pick if row.player_id in adp_by_id else None
+                ),
+                "expectedRound": (
+                    adp_by_id[row.player_id].expected_round
+                    if row.player_id in adp_by_id
+                    else None
+                ),
+                "nwrAdpGap": decision_by_id.get(row.player_id, {}).get("nwrEdge"),
+                "valueLabel": decision_by_id.get(row.player_id, {}).get(
+                    "nwrView", "ADP UNAVAILABLE"
+                ),
+                "timingLabel": decision_by_id.get(row.player_id, {}).get(
+                    "draftTiming", "ADP UNAVAILABLE"
+                ),
+                "makeItBack": decision_by_id.get(row.player_id, {}).get(
+                    "makeItBack", "MAKE-IT-BACK: UNAVAILABLE"
                 ),
                 "adpSource": (adp_snapshot.source if row.player_id in adp_by_id else ""),
                 "drafted": row.player_id in pick_number,

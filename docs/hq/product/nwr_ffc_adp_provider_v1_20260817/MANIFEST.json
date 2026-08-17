@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "packet": "nwr_ffc_adp_provider_v1_20260817",
+  "created_date": "2026-08-17",
+  "verdict": "YELLOW_NWR_FFC_ADP_READY_WITH_MATCHING_GAPS",
+  "branch": "codex/nwr-ffc-adp-provider-v1-20260817",
+  "base_commit": "4e6d66ed405db34b21dbefe1b4e63730721e5a0c",
+  "governing_plan_sha256": "83630daf365aa042392955837135ad3f3d5a62cf8434fd58adf5f38c08b23f78",
+  "provider_response_sha256": "69860910e59fe2d22b73a9c71e7db4abaeaa465cfdbd6e2916f0a1cad10f8bec",
+  "files": [
+    "EXECUTIVE_VERDICT.md",
+    "PROVIDER_AUTHORITY.md",
+    "FFC_ENDPOINT_RECEIPT.md",
+    "ADP_SNAPSHOT_RECEIPT.json",
+    "PLAYER_MATCH_REPORT.csv",
+    "SLEEPER_ADP_FINDINGS.md",
+    "OWNER_IMPORTED_SLEEPER_ADP_CSV.md",
+    "BEAT_ADP_INTEGRATION.md",
+    "CPU_ADP_BEHAVIOR.md",
+    "MAKE_IT_BACK_METHOD.md",
+    "TEST_RESULTS.md",
+    "INSTALL_RECEIPT.md",
+    "NEXT_ACTION.md",
+    "MANIFEST.json"
+  ],
+  "phase_2_started": false,
+  "phase_3_started": false,
+  "canonical_model_authorities_changed": false,
+  "owner_state_changed": false
+}

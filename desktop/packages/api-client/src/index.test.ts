@@ -202,7 +202,7 @@ describe("NwrApiClient Redraft profile management", () => {
 });
 
 describe("NwrApiClient Redraft Draft Room", () => {
-  it("uses only authenticated local start, advance, ADP import, and read-only Sleeper routes", async () => {
+  it("uses only authenticated local start, advance, ADP refresh/import, and read-only Sleeper routes", async () => {
     vi.stubGlobal("window", globalThis);
     const fetchMock = vi.fn().mockImplementation(() =>
       Promise.resolve(
@@ -228,6 +228,7 @@ describe("NwrApiClient Redraft Draft Room", () => {
 
     await client.startDraftRoom("fantasy-gamers", 9, "NORMAL", 20260817);
     await client.advanceDraftRoom("fantasy-gamers", false);
+    await client.refreshRedraftAdp("fantasy-gamers");
     await client.importRedraftAdp("fantasy-gamers", "player,position\n");
     await client.ingestSleeperDraftPick("fantasy-gamers", "player-1", 1);
 
@@ -235,6 +236,7 @@ describe("NwrApiClient Redraft Draft Room", () => {
     expect(requests.map(([target]) => target.pathname)).toEqual([
       "/api/v1/redraft/draft/fantasy-gamers/start",
       "/api/v1/redraft/draft/fantasy-gamers/advance",
+      "/api/v1/redraft/adp/fantasy-gamers/refresh",
       "/api/v1/redraft/adp/fantasy-gamers/import",
       "/api/v1/redraft/draft/fantasy-gamers/sleeper-pick",
     ]);
@@ -244,7 +246,7 @@ describe("NwrApiClient Redraft Draft Room", () => {
       speed: "NORMAL",
       mode: "MOCK",
     });
-    expect(JSON.parse(String(requests[3]?.[1].body))).toEqual({
+    expect(JSON.parse(String(requests[4]?.[1].body))).toEqual({
       playerId: "player-1",
       pickNumber: 1,
     });

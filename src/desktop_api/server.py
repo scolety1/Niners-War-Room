@@ -36,6 +36,7 @@ _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
 _REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
 _REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
+_REDRAFT_ADP_REFRESH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/refresh$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
@@ -532,6 +533,14 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             self.server.facade.import_redraft_adp(
                 profile_id=unquote(adp_match.group(1)),
                 csv_text=body["csvText"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        adp_refresh_match = _REDRAFT_ADP_REFRESH.fullmatch(path)
+        if method == "POST" and adp_refresh_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            self.server.facade.refresh_redraft_adp(
+                profile_id=unquote(adp_refresh_match.group(1)),
             )
             return self.server.facade.redraft_bootstrap()
         sleeper_pick_match = _REDRAFT_SLEEPER_PICK.fullmatch(path)

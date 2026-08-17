@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "provider_version": "NWR_FFC_ADP_PROVIDER_V1",
+  "profile_id": "4c5f04762921420595e4d8c7cda76582",
+  "league_name": "Fantasy Gamers",
+  "authority": "EXTERNAL ADP / MARKET TIMING",
+  "provider": "Fantasy Football Calculator ADP",
+  "endpoint": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=10&year=2026",
+  "attribution_url": "https://fantasyfootballcalculator.com/adp",
+  "season": 2026,
+  "scoring_format": "PPR",
+  "team_count": 10,
+  "position_filter": "ALL",
+  "retrieved_at_utc": "2026-08-17T18:40:09+00:00",
+  "date_window": {
+    "from": "2026-08-10",
+    "to": "2026-08-17"
+  },
+  "sample_size": 6665,
+  "source_rows": 259,
+  "matched_rows": 252,
+  "unmatched_rows": 7,
+  "match_rate_percent": 97.3,
+  "modeled_rows_with_adp": 205,
+  "manual_k_dst_rows_with_adp": 47,
+  "freshness_at_retrieval": "FRESH",
+  "canonical_response_sha256": "69860910e59fe2d22b73a9c71e7db4abaeaa465cfdbd6e2916f0a1cad10f8bec"
+}

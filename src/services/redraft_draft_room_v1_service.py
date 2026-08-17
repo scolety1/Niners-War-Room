@@ -14,10 +14,13 @@ import io
 import json
 import math
 import re
+import unicodedata
+import urllib.error
+import urllib.request
 from collections import Counter
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from dataclasses import dataclass, replace
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -31,24 +34,36 @@ from src.services.redraft_engine_v1_service import (
 )
 
 ROOM_SCHEMA_VERSION = 1
-ADP_SCHEMA_VERSION = 1
+ADP_SCHEMA_VERSION = 2
+FFC_PROVIDER_VERSION = "NWR_FFC_ADP_PROVIDER_V1"
+FFC_SOURCE = "Fantasy Football Calculator ADP"
+FFC_AUTHORITY = "EXTERNAL ADP / MARKET TIMING"
+FFC_ATTRIBUTION_URL = "https://fantasyfootballcalculator.com/adp"
+FFC_API_BASE = "https://fantasyfootballcalculator.com/api/v1/adp"
 DEFAULT_SEED = 20260817
 SUPPORTED_SPEEDS = frozenset({"FAST", "NORMAL", "STEP"})
 SUPPORTED_MODES = frozenset({"MOCK", "LIVE_READ_ONLY"})
 ADP_REQUIRED_COLUMNS = frozenset(
-    {
-        "player",
-        "position",
-        "overall_adp",
-        "source",
-        "scoring_format",
-        "team_count",
-        "date",
-    }
+    {"player", "position", "source", "scoring_format", "team_count", "date"}
 )
 ADP_OPTIONAL_COLUMNS = frozenset(
-    {"player_id", "team", "expected_pick", "min_pick", "max_pick", "std_dev"}
+    {
+        "player_id",
+        "team",
+        "overall_adp",
+        "expected_pick",
+        "min_pick",
+        "max_pick",
+        "std_dev",
+    }
 )
+ADP_COLUMN_ALIASES = {
+    "adp": "overall_adp",
+    "rank": "overall_adp",
+    "format": "scoring_format",
+    "player_name": "player",
+    "nfl_team": "team",
+}
 
 
 @dataclass(frozen=True)
@@ -62,6 +77,11 @@ class AdpEntry:
     min_pick: float | None
     max_pick: float | None
     std_dev: float | None
+    source_player_id: str = ""
+    expected_round: int | None = None
+    match_status: str = "MATCHED"
+    match_confidence: str = "HIGH"
+    unmatched_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -76,6 +96,17 @@ class AdpSnapshot:
     entries: tuple[AdpEntry, ...]
     unmatched: tuple[str, ...]
     errors: tuple[str, ...] = ()
+    provider: str = "OWNER_IMPORT"
+    authority: str = "EXTERNAL ADP / MARKET TIMING"
+    position_filter: str = "ALL"
+    sample_size: int | None = None
+    date_window: str = ""
+    retrieved_at_utc: str = ""
+    provider_version: str = ""
+    endpoint: str = ""
+    freshness: str = "UNAVAILABLE"
+    last_refresh_error: str = ""
+    match_report: tuple[dict[str, Any], ...] = ()
 
     @property
     def available(self) -> bool:
@@ -110,6 +141,7 @@ def import_owner_adp_csv(
     profile: LeagueProfile,
     ranking: RankingResult,
     csv_text: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
 ) -> AdpSnapshot:
     if not csv_text.strip() or len(csv_text.encode("utf-8")) > 2_000_000:
         raise RedraftValidationError("ADP CSV must be non-empty and no larger than 2 MB.")
@@ -117,20 +149,24 @@ def import_owner_adp_csv(
         reader = csv.DictReader(io.StringIO(csv_text.lstrip("\ufeff")))
     except csv.Error as exc:
         raise RedraftValidationError("ADP CSV could not be parsed.") from exc
-    fields = {str(value or "").strip() for value in (reader.fieldnames or [])}
+    original_fields = [str(value or "").strip() for value in (reader.fieldnames or [])]
+    normalized_fields = [
+        ADP_COLUMN_ALIASES.get(value.lower(), value.lower()) for value in original_fields
+    ]
+    if len(normalized_fields) != len(set(normalized_fields)):
+        raise RedraftValidationError("ADP CSV has duplicate or conflicting columns.")
+    fields = set(normalized_fields)
     missing = sorted(ADP_REQUIRED_COLUMNS - fields)
     unknown = sorted(fields - ADP_REQUIRED_COLUMNS - ADP_OPTIONAL_COLUMNS)
     if missing:
         raise RedraftValidationError("ADP CSV is missing columns: " + ", ".join(missing))
     if unknown:
         raise RedraftValidationError("ADP CSV has unsupported columns: " + ", ".join(unknown))
+    if "overall_adp" not in fields and "expected_pick" not in fields:
+        raise RedraftValidationError("ADP CSV requires adp, rank, overall_adp, or expected_pick.")
 
-    ranking_by_id = {row.player_id: row for row in ranking.rows}
-    ranking_by_identity: dict[tuple[str, str], list[Any]] = {}
-    for row in ranking.rows:
-        ranking_by_identity.setdefault(
-            (_normalized_name(row.player_name), row.position), []
-        ).append(row)
+    assets = _matching_assets(ranking, manual_assets)
+    assets_by_id = {str(row["player_id"]): row for row in assets}
 
     entries: list[AdpEntry] = []
     unmatched: list[str] = []
@@ -138,11 +174,16 @@ def import_owner_adp_csv(
     scoring_formats: set[str] = set()
     source_dates: set[str] = set()
     seen_ids: set[str] = set()
+    match_report: list[dict[str, Any]] = []
     for line_number, source_row in enumerate(reader, start=2):
-        row = {str(key).strip(): str(value or "").strip() for key, value in source_row.items()}
+        row = {
+            ADP_COLUMN_ALIASES.get(str(key).strip().lower(), str(key).strip().lower()):
+            str(value or "").strip()
+            for key, value in source_row.items()
+        }
         player = row["player"]
-        position = row["position"].upper()
-        if not player or position not in {"QB", "RB", "WR", "TE"}:
+        position = _normalized_position(row["position"])
+        if not player or position not in {"QB", "RB", "WR", "TE", "K", "DST"}:
             unmatched.append(f"line {line_number}: {player or 'missing player'}")
             continue
         try:
@@ -170,7 +211,8 @@ def import_owner_adp_csv(
         source_name = row["source"]
         if not source_name:
             raise RedraftValidationError(f"ADP line {line_number} source is required.")
-        overall = _positive_float(row["overall_adp"], line_number, "overall_adp")
+        overall_value = row.get("overall_adp") or row.get("expected_pick") or ""
+        overall = _positive_float(overall_value, line_number, "overall_adp")
         expected = (
             _positive_float(row["expected_pick"], line_number, "expected_pick")
             if row.get("expected_pick")
@@ -187,39 +229,51 @@ def import_owner_adp_csv(
             raise RedraftValidationError(f"ADP line {line_number} expected_pick exceeds max_pick.")
 
         requested_id = row.get("player_id", "")
-        matched = ranking_by_id.get(requested_id) if requested_id else None
+        matched = assets_by_id.get(requested_id) if requested_id else None
+        match_method = "EXACT_NWR_ID" if matched is not None else ""
+        confidence = "HIGH" if matched is not None else ""
+        reason = ""
         if matched is None:
-            candidates = ranking_by_identity.get((_normalized_name(player), position), [])
-            team = row.get("team", "").upper()
-            if team:
-                candidates = [
-                    candidate for candidate in candidates if candidate.team.upper() == team
-                ]
-            matched = candidates[0] if len(candidates) == 1 else None
+            matched, match_method, confidence, reason = _match_adp_player(
+                player, position, row.get("team", ""), assets
+            )
         if matched is None:
             unmatched.append(f"line {line_number}: {player} ({position})")
+            match_report.append(_match_report_row(
+                requested_id, player, position, row.get("team", ""), None,
+                "UNMATCHED", "", reason or "NO_SAFE_IDENTITY_MATCH",
+            ))
             continue
-        if matched.player_id in seen_ids:
+        matched_id = str(matched["player_id"])
+        if matched_id in seen_ids:
             raise RedraftValidationError(
-                f"ADP line {line_number} duplicates {matched.player_name}."
+                f"ADP line {line_number} duplicates {matched['player_name']}."
             )
-        seen_ids.add(matched.player_id)
+        seen_ids.add(matched_id)
         sources.add(source_name)
         scoring_formats.add(scoring)
         source_dates.add(source_date.isoformat())
         entries.append(
             AdpEntry(
-                player_id=matched.player_id,
-                player=matched.player_name,
-                team=matched.team,
-                position=matched.position,
+                player_id=matched_id,
+                player=str(matched["player_name"]),
+                team=str(matched["team"]),
+                position=str(matched["position"]),
                 overall_adp=round(overall, 2),
                 expected_pick=round(expected, 2),
                 min_pick=round(minimum, 2) if minimum is not None else None,
                 max_pick=round(maximum, 2) if maximum is not None else None,
                 std_dev=round(std_dev, 2) if std_dev is not None else None,
+                source_player_id=requested_id,
+                expected_round=max(1, math.ceil(expected / profile.team_count)),
+                match_status="MATCHED",
+                match_confidence=confidence,
             )
         )
+        match_report.append(_match_report_row(
+            requested_id, player, position, row.get("team", ""), matched,
+            match_method, confidence, "",
+        ))
     if not entries:
         raise RedraftValidationError("ADP CSV did not match any governed Redraft player IDs.")
     if len(sources) != 1 or len(scoring_formats) != 1 or len(source_dates) != 1:
@@ -227,9 +281,11 @@ def import_owner_adp_csv(
             "ADP CSV must contain one source, scoring format, and source date per snapshot."
         )
     entries.sort(key=lambda entry: (entry.expected_pick, entry.player_id))
+    raw_source = next(iter(sources))
+    sleeper_owner_import = "sleeper" in raw_source.lower()
     snapshot = AdpSnapshot(
         profile_id=profile.profile_id,
-        source=next(iter(sources)),
+        source="Owner-imported Sleeper ADP" if sleeper_owner_import else raw_source,
         scoring_format=next(iter(scoring_formats)),
         team_count=profile.team_count,
         source_date=next(iter(source_dates)),
@@ -237,13 +293,21 @@ def import_owner_adp_csv(
         source_sha256=hashlib.sha256(csv_text.encode("utf-8")).hexdigest(),
         entries=tuple(entries),
         unmatched=tuple(unmatched),
+        provider="OWNER_SLEEPER_CSV" if sleeper_owner_import else "OWNER_IMPORT",
+        authority=FFC_AUTHORITY,
+        retrieved_at_utc=utc_now(),
+        provider_version="OWNER_ADP_CSV_V1",
+        freshness="FRESH",
+        match_report=tuple(match_report),
     )
     _atomic_json(_adp_path(root, profile.profile_id), _adp_document(snapshot))
     return snapshot
 
 
 def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
-    path = _adp_path(root, profile.profile_id)
+    owner_path = _adp_path(root, profile.profile_id)
+    ffc_path = _ffc_adp_path(root, profile.profile_id)
+    path = owner_path if owner_path.is_file() else ffc_path
     if not path.is_file():
         return AdpSnapshot(
             profile_id=profile.profile_id,
@@ -256,10 +320,59 @@ def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
             entries=(),
             unmatched=(),
         )
+    return _read_adp_snapshot(path, profile)
+
+
+def refresh_fantasy_football_calculator_adp(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+    *,
+    fetcher: Any | None = None,
+) -> AdpSnapshot:
+    """Fetch one documented FFC snapshot and atomically preserve the last known good cache."""
+
+    scoring_slug = {"PPR": "ppr", "HALF_PPR": "half-ppr", "STANDARD": "standard"}.get(
+        _profile_scoring(profile)
+    )
+    if not scoring_slug:
+        raise RedraftValidationError("FFC ADP does not support the active scoring format.")
+    endpoint = f"{FFC_API_BASE}/{scoring_slug}?teams={profile.team_count}&year={profile.season}"
+    try:
+        raw = fetcher(endpoint) if fetcher is not None else _fetch_ffc_json(endpoint)
+        document = raw if isinstance(raw, Mapping) else json.loads(
+            raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
+        )
+        snapshot = _parse_ffc_snapshot(
+            profile, ranking, manual_assets, document, endpoint=endpoint
+        )
+        _atomic_json(_ffc_adp_path(root, profile.profile_id), _adp_document(snapshot))
+        return snapshot
+    except (
+        OSError,
+        ValueError,
+        TypeError,
+        KeyError,
+        json.JSONDecodeError,
+        urllib.error.URLError,
+    ) as exc:
+        cached_path = _ffc_adp_path(root, profile.profile_id)
+        if cached_path.is_file():
+            cached = _read_adp_snapshot(cached_path, profile)
+            failed = _snapshot_with_refresh_error(cached, str(exc))
+            _atomic_json(cached_path, _adp_document(failed))
+            return failed
+        raise RedraftPersistenceError(
+            "Fantasy Football Calculator ADP refresh failed and no cache is available."
+        ) from exc
+
+
+def _read_adp_snapshot(path: Path, profile: LeagueProfile) -> AdpSnapshot:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
         if (
-            document.get("schema_version") != ADP_SCHEMA_VERSION
+            int(document.get("schema_version") or 1) not in {1, ADP_SCHEMA_VERSION}
             or document.get("profile_id") != profile.profile_id
             or document.get("team_count") != profile.team_count
             or document.get("scoring_format") != _profile_scoring(profile)
@@ -276,9 +389,300 @@ def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
             source_sha256=str(document.get("source_sha256") or ""),
             entries=entries,
             unmatched=tuple(str(value) for value in document.get("unmatched", [])),
+            errors=tuple(str(value) for value in document.get("errors", [])),
+            provider=str(document.get("provider") or "OWNER_IMPORT"),
+            authority=str(document.get("authority") or FFC_AUTHORITY),
+            position_filter=str(document.get("position_filter") or "ALL"),
+            sample_size=_optional_int(document.get("sample_size")),
+            date_window=str(document.get("date_window") or ""),
+            retrieved_at_utc=str(
+                document.get("retrieved_at_utc") or document.get("imported_at_utc") or ""
+            ),
+            provider_version=str(document.get("provider_version") or ""),
+            endpoint=str(document.get("endpoint") or ""),
+            freshness=_freshness_label(
+                str(document.get("retrieved_at_utc") or document.get("imported_at_utc") or "")
+            ),
+            last_refresh_error=str(document.get("last_refresh_error") or ""),
+            match_report=tuple(
+                dict(value)
+                for value in document.get("match_report", [])
+                if isinstance(value, Mapping)
+            ),
         )
     except (OSError, ValueError, TypeError, json.JSONDecodeError, RedraftValidationError) as exc:
         raise RedraftPersistenceError("ADP snapshot is unreadable or incompatible.") from exc
+
+
+def _fetch_ffc_json(endpoint: str) -> bytes:
+    request = urllib.request.Request(
+        endpoint,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Niners-War-Room/1.0 (local owner ADP refresh)",
+        },
+        method="GET",
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - admitted HTTPS API
+        if getattr(response, "status", 200) != 200:
+            raise OSError(f"FFC returned HTTP {getattr(response, 'status', 'unknown')}.")
+        return response.read(4_000_001)
+
+
+def _parse_ffc_snapshot(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    document: Mapping[str, Any],
+    *,
+    endpoint: str,
+) -> AdpSnapshot:
+    if str(document.get("status") or "").lower() != "success":
+        raise ValueError("FFC response status was not Success.")
+    meta = document.get("meta")
+    players = document.get("players")
+    if not isinstance(meta, Mapping) or not isinstance(players, list):
+        raise ValueError("FFC response is missing meta or players.")
+    if int(meta.get("teams") or 0) != profile.team_count:
+        raise ValueError("FFC response team count does not match the active profile.")
+    response_scoring = _normalized_scoring(str(meta.get("type") or ""))
+    if response_scoring != _profile_scoring(profile):
+        raise ValueError("FFC response scoring format does not match the active profile.")
+
+    assets = _matching_assets(ranking, manual_assets)
+    entries: list[AdpEntry] = []
+    unmatched: list[str] = []
+    report: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for source in players:
+        if not isinstance(source, Mapping):
+            continue
+        source_id = str(source.get("player_id") or "")
+        player = str(source.get("name") or "").strip()
+        position = _normalized_position(str(source.get("position") or ""))
+        team = _normalized_team(str(source.get("team") or ""))
+        try:
+            expected = float(source.get("adp"))
+        except (TypeError, ValueError):
+            expected = 0.0
+        if not player or position not in {"QB", "RB", "WR", "TE", "K", "DST"} or expected <= 0:
+            reason = "INVALID_SOURCE_IDENTITY_OR_ADP"
+            unmatched.append(f"{source_id or 'unknown'}: {player or 'missing player'} ({position})")
+            report.append(_match_report_row(
+                source_id, player, position, team, None, "UNMATCHED", "", reason,
+                sample_size=_optional_int(source.get("times_drafted")),
+            ))
+            continue
+        matched, method, confidence, reason = _match_adp_player(player, position, team, assets)
+        if matched is None:
+            unmatched.append(f"{source_id}: {player} ({position}, {team})")
+            report.append(_match_report_row(
+                source_id, player, position, team, None, "UNMATCHED", "", reason,
+                sample_size=_optional_int(source.get("times_drafted")),
+            ))
+            continue
+        matched_id = str(matched["player_id"])
+        if matched_id in seen_ids:
+            unmatched.append(f"{source_id}: {player} duplicates matched NWR ID {matched_id}")
+            report.append(_match_report_row(
+                source_id, player, position, team, matched, "UNMATCHED", "",
+                "DUPLICATE_MATCHED_NWR_ID", sample_size=_optional_int(source.get("times_drafted")),
+            ))
+            continue
+        seen_ids.add(matched_id)
+        minimum = _source_float(source.get("high"))
+        maximum = _source_float(source.get("low"))
+        std_dev = _source_float(source.get("stdev"))
+        entries.append(
+            AdpEntry(
+                player_id=matched_id,
+                player=str(matched["player_name"]),
+                team=str(matched["team"]),
+                position=str(matched["position"]),
+                overall_adp=round(expected, 2),
+                expected_pick=round(expected, 2),
+                min_pick=round(minimum, 2) if minimum is not None else None,
+                max_pick=round(maximum, 2) if maximum is not None else None,
+                std_dev=round(std_dev, 2) if std_dev is not None else None,
+                source_player_id=source_id,
+                expected_round=max(1, math.ceil(expected / profile.team_count)),
+                match_status="MATCHED",
+                match_confidence=confidence,
+            )
+        )
+        report.append(_match_report_row(
+            source_id, player, position, team, matched, method, confidence, "",
+            sample_size=_optional_int(source.get("times_drafted")),
+        ))
+    if not entries:
+        raise ValueError("FFC response did not safely match any NWR Draft Room assets.")
+
+    entries.sort(key=lambda entry: (entry.expected_pick, entry.player_id))
+    retrieved = utc_now()
+    start_date = str(meta.get("start_date") or "")
+    end_date = str(meta.get("end_date") or "")
+    canonical_source = json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return AdpSnapshot(
+        profile_id=profile.profile_id,
+        source=FFC_SOURCE,
+        scoring_format=_profile_scoring(profile),
+        team_count=profile.team_count,
+        source_date=end_date,
+        imported_at_utc=retrieved,
+        source_sha256=hashlib.sha256(canonical_source).hexdigest(),
+        entries=tuple(entries),
+        unmatched=tuple(unmatched),
+        provider="FFC",
+        authority=FFC_AUTHORITY,
+        position_filter="ALL",
+        sample_size=_optional_int(meta.get("total_drafts")),
+        date_window=f"{start_date} to {end_date}" if start_date and end_date else end_date,
+        retrieved_at_utc=retrieved,
+        provider_version=FFC_PROVIDER_VERSION,
+        endpoint=endpoint,
+        freshness="FRESH",
+        match_report=tuple(report),
+    )
+
+
+def _matching_assets(
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> list[dict[str, str]]:
+    assets = [
+        {
+            "player_id": str(row.player_id),
+            "player_name": str(row.player_name),
+            "position": _normalized_position(str(row.position)),
+            "team": _normalized_team(str(row.team)),
+        }
+        for row in ranking.rows
+    ]
+    assets.extend(
+        {
+            "player_id": _manual_id(row),
+            "player_name": str(row.get("player_name") or row.get("playerName") or ""),
+            "position": _normalized_position(str(row.get("position") or "")),
+            "team": _normalized_team(str(row.get("team") or "")),
+        }
+        for row in manual_assets
+        if _manual_id(row)
+    )
+    return assets
+
+
+def _match_adp_player(
+    player: str,
+    position: str,
+    team: str,
+    assets: Sequence[Mapping[str, str]],
+) -> tuple[Mapping[str, str] | None, str, str, str]:
+    normalized_position = _normalized_position(position)
+    normalized_team = _normalized_team(team)
+    position_assets = [row for row in assets if row["position"] == normalized_position]
+    if normalized_position == "DST" and normalized_team:
+        team_matches = [row for row in position_assets if row["team"] == normalized_team]
+        if len(team_matches) == 1:
+            return team_matches[0], "DST_TEAM_POSITION", "HIGH", ""
+        return None, "", "", "DST_TEAM_NOT_UNIQUE"
+
+    exact_name = _normalized_name(player)
+    exact_matches = [
+        row for row in position_assets if _normalized_name(row["player_name"]) == exact_name
+    ]
+    if normalized_team:
+        exact_team = [row for row in exact_matches if row["team"] == normalized_team]
+        if len(exact_team) == 1:
+            return exact_team[0], "EXACT_NAME_POSITION_TEAM", "HIGH", ""
+        if len(exact_matches) == 1:
+            return exact_matches[0], "EXACT_NAME_POSITION_TEAM_MISMATCH", "MEDIUM", ""
+    elif len(exact_matches) == 1:
+        return exact_matches[0], "EXACT_NAME_POSITION", "HIGH", ""
+    if exact_matches:
+        return None, "", "", "EXACT_NAME_TEAM_COLLISION_OR_MISMATCH"
+
+    core_name = _normalized_name_without_suffix(player)
+    core_matches = [
+        row
+        for row in position_assets
+        if _normalized_name_without_suffix(row["player_name"]) == core_name
+    ]
+    if normalized_team:
+        core_team_matches = [row for row in core_matches if row["team"] == normalized_team]
+        if len(core_team_matches) == 1:
+            return core_team_matches[0], "SUFFIX_TOLERANT_NAME_POSITION_TEAM", "MEDIUM", ""
+        if len(core_matches) == 1:
+            return core_matches[0], "SUFFIX_TOLERANT_TEAM_MISMATCH", "MEDIUM", ""
+    elif len(core_matches) == 1:
+        return core_matches[0], "SUFFIX_TOLERANT_NAME_POSITION", "MEDIUM", ""
+    return None, "", "", "NO_SAFE_IDENTITY_MATCH" if not core_matches else "NAME_COLLISION"
+
+
+def _match_report_row(
+    source_id: str,
+    player: str,
+    position: str,
+    team: str,
+    matched: Mapping[str, str] | None,
+    method: str,
+    confidence: str,
+    reason: str,
+    *,
+    sample_size: int | None = None,
+) -> dict[str, Any]:
+    return {
+        "source_player_id": source_id,
+        "source_player_name": player,
+        "source_position": position,
+        "source_team": _normalized_team(team),
+        "matched_nwr_player_id": str((matched or {}).get("player_id") or ""),
+        "matched_nwr_player_name": str((matched or {}).get("player_name") or ""),
+        "match_status": "MATCHED" if matched is not None and method != "UNMATCHED" else "UNMATCHED",
+        "match_method": method,
+        "match_confidence": confidence,
+        "unmatched_reason": reason,
+        "times_drafted": sample_size,
+    }
+
+
+def _snapshot_with_refresh_error(snapshot: AdpSnapshot, error: str) -> AdpSnapshot:
+    return replace(
+        snapshot,
+        freshness=_freshness_label(snapshot.retrieved_at_utc or snapshot.imported_at_utc),
+        last_refresh_error=(error.strip() or "Provider refresh failed.")[:300],
+    )
+
+
+def _freshness_label(value: str, *, now: datetime | None = None) -> str:
+    if not value:
+        return "UNAVAILABLE"
+    try:
+        retrieved = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return "UNAVAILABLE"
+    reference = now or datetime.now(UTC)
+    age = reference - retrieved.astimezone(UTC)
+    if age <= timedelta(hours=24):
+        return "FRESH"
+    if age <= timedelta(hours=72):
+        return "RECENT"
+    return "STALE"
+
+
+def _source_float(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) and number > 0 else None
+
+
+def _optional_int(value: Any) -> int | None:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number >= 0 else None
 
 
 def draft_order(profile: LeagueProfile) -> tuple[int, ...]:
@@ -556,10 +960,14 @@ def build_draft_room_payload(
         "recoveredFromBackup": bool(normalized.get("recovered_from_backup")),
         "adp": _adp_status(adp, len(ranking.rows)),
         "beatAdpPool": recommendations["beatAdpPool"],
+        "decisionRows": recommendations["allRows"],
         "recommendations": recommendations["cards"],
         "positionRun": recommendations["positionRun"],
         "fallbackDisclosure": (
-            "CPU uses admitted owner ADP plus seeded variation and roster construction."
+            "CPU uses Fantasy Football Calculator market ADP plus seeded variation and "
+            "roster construction; NWR rank remains separate."
+            if adp.available and adp.provider == "FFC"
+            else "CPU uses owner-imported ADP plus seeded variation and roster construction."
             if adp.available
             else "ADP unavailable. CPU uses disclosed deterministic NWR order fallback; "
             "this is not market realism."
@@ -689,7 +1097,14 @@ def _select_asset(
             (base + jitter + need_adjustment + missing_adp_penalty, str(asset["player_id"]), asset)
         )
     scored.sort(key=lambda row: (row[0], row[1]))
-    behavior = "ADP_SEEDED_ROSTER_AWARE" if adp.available else "DISCLOSED_NWR_ORDER_FALLBACK"
+    if adp.available and adp.provider == "FFC":
+        behavior = "CPU_MARKET_ADP_FFC"
+    elif adp.available and adp.provider == "OWNER_SLEEPER_CSV":
+        behavior = "CPU_MARKET_ADP_OWNER_SLEEPER"
+    elif adp.available:
+        behavior = "CPU_MARKET_ADP_OWNER_IMPORT"
+    else:
+        behavior = "DISCLOSED_NWR_ORDER_FALLBACK"
     if scored[0][2]["position"] in {"K", "DST"}:
         behavior = "MANUAL_UNMODELED"
     return scored[0][2], behavior
@@ -796,7 +1211,12 @@ def _recommendations(
         for position, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
         if count >= 2
     ]
-    return {"cards": cards[:5], "beatAdpPool": beat_pool, "positionRun": position_run}
+    return {
+        "cards": cards[:5],
+        "beatAdpPool": beat_pool,
+        "allRows": enriched,
+        "positionRun": position_run,
+    }
 
 
 def _decision_row(
@@ -830,6 +1250,7 @@ def _decision_row(
         "replacementAdjustedValue": row.replacement_adjusted_value,
         "confidence": row.confidence,
         "expectedPick": entry.expected_pick if entry else None,
+        "expectedRound": entry.expected_round if entry else None,
         "overallAdp": entry.overall_adp if entry else None,
         "nwrEdge": edge,
         "nwrView": nwr_view,
@@ -1186,19 +1607,37 @@ def _seeded_unit(seed: int, pick_number: int, player_id: str) -> float:
 
 
 def _adp_status(snapshot: AdpSnapshot, ranking_count: int) -> dict[str, Any]:
+    source_players = len(snapshot.match_report) or len(snapshot.entries) + len(snapshot.unmatched)
     return {
         "available": snapshot.available,
-        "authority": "OWNER-IMPORTED ADP — MARKET TIMING ONLY",
+        "authority": snapshot.authority,
+        "provider": snapshot.provider,
         "source": snapshot.source,
         "sourceDate": snapshot.source_date,
+        "dateWindow": snapshot.date_window,
         "importedAtUtc": snapshot.imported_at_utc,
+        "retrievedAtUtc": snapshot.retrieved_at_utc,
         "sourceSha256": snapshot.source_sha256,
+        "endpoint": snapshot.endpoint,
+        "providerVersion": snapshot.provider_version,
+        "positionFilter": snapshot.position_filter,
+        "sampleSize": snapshot.sample_size,
+        "freshness": snapshot.freshness,
+        "lastRefreshError": snapshot.last_refresh_error,
+        "attributionUrl": FFC_ATTRIBUTION_URL if snapshot.provider == "FFC" else "",
         "matchedPlayers": len(snapshot.entries),
+        "sourcePlayers": source_players,
+        "sourceCoverage": (
+            round(len(snapshot.entries) / source_players, 3) if source_players else 0.0
+        ),
         "rankingPlayers": ranking_count,
         "coverage": round(len(snapshot.entries) / ranking_count, 3) if ranking_count else 0.0,
         "unmatched": list(snapshot.unmatched),
         "message": (
-            "Owner ADP is active for market timing; it does not change NWR rank."
+            "Fantasy Football Calculator ADP is active for market timing; it does not "
+            "change NWR rank. Data updates daily at the source."
+            if snapshot.available and snapshot.provider == "FFC"
+            else "Owner-imported ADP is active for market timing; it does not change NWR rank."
             if snapshot.available
             else "ADP unavailable. Import an owner-authorized CSV; NWR does not invent ADP."
         ),
@@ -1215,13 +1654,29 @@ def _adp_document(snapshot: AdpSnapshot) -> dict[str, Any]:
         "source_date": snapshot.source_date,
         "imported_at_utc": snapshot.imported_at_utc,
         "source_sha256": snapshot.source_sha256,
+        "errors": list(snapshot.errors),
+        "provider": snapshot.provider,
+        "authority": snapshot.authority,
+        "position_filter": snapshot.position_filter,
+        "sample_size": snapshot.sample_size,
+        "date_window": snapshot.date_window,
+        "retrieved_at_utc": snapshot.retrieved_at_utc,
+        "provider_version": snapshot.provider_version,
+        "endpoint": snapshot.endpoint,
+        "freshness": snapshot.freshness,
+        "last_refresh_error": snapshot.last_refresh_error,
         "entries": [entry.__dict__ for entry in snapshot.entries],
         "unmatched": list(snapshot.unmatched),
+        "match_report": list(snapshot.match_report),
     }
 
 
 def _adp_path(root: str | Path, profile_id: str) -> Path:
     return Path(root) / "adp_snapshots" / f"{profile_id}.json"
+
+
+def _ffc_adp_path(root: str | Path, profile_id: str) -> Path:
+    return Path(root) / "adp_provider_cache" / "ffc" / f"{profile_id}.json"
 
 
 def _profile_scoring(profile: LeagueProfile) -> str:
@@ -1239,7 +1694,38 @@ def _normalized_scoring(value: str) -> str:
 
 
 def _normalized_name(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", value.lower())
+    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]", "", ascii_value.lower())
+
+
+def _normalized_name_without_suffix(value: str) -> str:
+    words = re.sub(r"[^a-z0-9 ]+", " ", unicodedata.normalize("NFKD", value)
+                   .encode("ascii", "ignore").decode("ascii").lower()).split()
+    while words and words[-1] in {"jr", "sr", "ii", "iii", "iv", "v"}:
+        words.pop()
+    return "".join(words)
+
+
+def _normalized_position(value: str) -> str:
+    normalized = value.strip().upper()
+    return {"PK": "K", "DEF": "DST", "D/ST": "DST", "D": "DST"}.get(normalized, normalized)
+
+
+def _normalized_team(value: str) -> str:
+    normalized = re.sub(r"[^A-Z0-9]", "", value.strip().upper())
+    aliases = {
+        "ARZ": "ARI",
+        "JAC": "JAX",
+        "KAN": "KC",
+        "LVR": "LV",
+        "NOR": "NO",
+        "NWE": "NE",
+        "SFO": "SF",
+        "TAM": "TB",
+        "WSH": "WAS",
+        "LA": "LAR",
+    }
+    return aliases.get(normalized, normalized)
 
 
 def _positive_float(value: str, line_number: int, field: str) -> float:

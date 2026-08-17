@@ -591,6 +591,11 @@ export interface RedraftRanking {
   rookie: boolean;
   overallAdp: number | null;
   expectedPick: number | null;
+  expectedRound?: number | null;
+  nwrAdpGap?: number | null;
+  valueLabel?: string;
+  timingLabel?: string;
+  makeItBack?: string;
   adpSource: string;
   drafted: boolean;
   draftedBy: string;
@@ -643,6 +648,7 @@ export interface DraftBoard {
   canUndo?: boolean;
   adp?: AdpStatus;
   beatAdpPool?: BeatAdpRow[];
+  decisionRows?: BeatAdpRow[];
   recommendations?: DraftRecommendation[];
   positionRun?: Array<{ position: string; count: number }>;
   fallbackDisclosure?: string;
@@ -688,15 +694,27 @@ export interface DraftTeam {
 
 export interface AdpStatus {
   available: boolean;
+  provider?: string;
   source: string;
   sourceDate: string;
+  dateWindow?: string;
   importedAtUtc: string;
+  retrievedAtUtc?: string;
   matchedPlayers: number;
+  sourcePlayers?: number;
+  sourceCoverage?: number;
   rankingPlayers: number;
   coverage: number;
   unmatched: string[];
   sourceSha256: string;
   authority: string;
+  endpoint?: string;
+  providerVersion?: string;
+  positionFilter?: string;
+  sampleSize?: number | null;
+  freshness?: "FRESH" | "RECENT" | "STALE" | "UNAVAILABLE";
+  lastRefreshError?: string;
+  attributionUrl?: string;
   message: string;
 }
 
@@ -707,6 +725,8 @@ export interface BeatAdpRow {
   team: string;
   nwrRank: number;
   expectedPick: number | null;
+  expectedRound?: number | null;
+  overallAdp?: number | null;
   nwrEdge: number | null;
   nwrView: string;
   draftTiming: string;
@@ -737,6 +757,10 @@ export interface ManualDraftAsset {
   position: "K" | "DST";
   team: string;
   authority: "MANUAL — NOT MODELED BY NWR";
+  overallAdp?: number | null;
+  expectedPick?: number | null;
+  expectedRound?: number | null;
+  adpSource?: string;
 }
 
 export interface ExternalConsensusStatus {
