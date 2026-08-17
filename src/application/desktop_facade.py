@@ -103,11 +103,14 @@ from src.services.redraft_draft_room_v1_service import (
     advance_cpu_to_owner,
     build_draft_room_payload,
     import_owner_adp_csv,
+    preview_owner_paste_adp,
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
+    save_owner_paste_adp,
+    set_owner_paste_adp_active,
     start_draft_room,
     undo_room_pick,
 )
@@ -2404,6 +2407,61 @@ class DesktopBackendFacade:
                 }
             }
         )
+
+    def preview_redraft_paste_adp(
+        self, *, profile_id: str, paste_text: str, selected_source: str
+    ) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            preview = preview_owner_paste_adp(
+                profile, ranking, paste_text, selected_source, manual_assets
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_PASTE_ADP_PREVIEW_FAILED",
+                "The pasted platform ADP table was rejected without changing any local state.",
+                status=409,
+            ) from exc
+        return FacadePayload(data={
+            "pastePreview": {
+                "selectedSource": preview["selectedSource"],
+                "sourceRows": preview["sourceRows"],
+                "matchedRows": preview["matchedRows"],
+                "skippedRows": preview["skippedRows"],
+                "unmatched": preview["unmatched"][:20],
+                "warnings": preview["warnings"][:20],
+                "rows": preview["parsedRows"][:20],
+            }
+        })
+
+    def save_redraft_paste_adp(
+        self, *, profile_id: str, paste_text: str, selected_source: str, source_label: str
+    ) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            save_owner_paste_adp(
+                self.redraft_root, profile, ranking, paste_text, selected_source,
+                source_label, manual_assets, activate=False,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_SAVE_FAILED", "The pasted platform ADP snapshot was not saved.", status=409) from exc
+        return self.redraft_bootstrap()
+
+    def activate_redraft_paste_adp(self, *, profile_id: str) -> FacadePayload:
+        profile, _, _ = self._redraft_room_context(profile_id)
+        try:
+            set_owner_paste_adp_active(self.redraft_root, profile, active=True)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_ACTIVATE_FAILED", "The pasted platform ADP snapshot could not be activated.", status=409) from exc
+        return self.redraft_bootstrap()
+
+    def clear_redraft_paste_adp(self, *, profile_id: str) -> FacadePayload:
+        profile, _, _ = self._redraft_room_context(profile_id)
+        try:
+            set_owner_paste_adp_active(self.redraft_root, profile, active=False)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_CLEAR_FAILED", "The active pasted platform ADP snapshot could not be cleared.", status=409) from exc
+        return self.redraft_bootstrap()
 
     def ingest_redraft_sleeper_pick(
         self,

@@ -37,6 +37,10 @@ _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
 _REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
 _REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
 _REDRAFT_ADP_REFRESH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/refresh$")
+_REDRAFT_PASTE_ADP_PREVIEW = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/preview$")
+_REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$")
+_REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
+_REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
@@ -543,6 +547,36 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 profile_id=unquote(adp_refresh_match.group(1)),
             )
             return self.server.facade.redraft_bootstrap()
+        paste_preview_match = _REDRAFT_PASTE_ADP_PREVIEW.fullmatch(path)
+        if method == "POST" and paste_preview_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pasteText", "selectedSource"})
+            if not isinstance(body.get("pasteText"), str) or not isinstance(body.get("selectedSource"), str):
+                raise self._invalid_body("pasteText and selectedSource must be strings.")
+            return self.server.facade.preview_redraft_paste_adp(
+                profile_id=unquote(paste_preview_match.group(1)), paste_text=body["pasteText"],
+                selected_source=body["selectedSource"],
+            )
+        paste_save_match = _REDRAFT_PASTE_ADP_SAVE.fullmatch(path)
+        if method == "POST" and paste_save_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pasteText", "selectedSource", "sourceLabel"})
+            if not all(isinstance(body.get(key), str) for key in {"pasteText", "selectedSource", "sourceLabel"}):
+                raise self._invalid_body("pasteText, selectedSource, and sourceLabel must be strings.")
+            return self.server.facade.save_redraft_paste_adp(
+                profile_id=unquote(paste_save_match.group(1)), paste_text=body["pasteText"],
+                selected_source=body["selectedSource"], source_label=body["sourceLabel"],
+            )
+        paste_activate_match = _REDRAFT_PASTE_ADP_ACTIVATE.fullmatch(path)
+        if method == "POST" and paste_activate_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            return self.server.facade.activate_redraft_paste_adp(profile_id=unquote(paste_activate_match.group(1)))
+        paste_clear_match = _REDRAFT_PASTE_ADP_CLEAR.fullmatch(path)
+        if method == "POST" and paste_clear_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            return self.server.facade.clear_redraft_paste_adp(profile_id=unquote(paste_clear_match.group(1)))
         sleeper_pick_match = _REDRAFT_SLEEPER_PICK.fullmatch(path)
         if method == "POST" and sleeper_pick_match:
             body = self._json_body()

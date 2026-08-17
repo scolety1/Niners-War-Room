@@ -64,6 +64,12 @@ ADP_COLUMN_ALIASES = {
     "player_name": "player",
     "nfl_team": "team",
 }
+PASTE_PLATFORM_COLUMNS = frozenset({"CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS"})
+PASTE_COLUMN_ALIASES = {
+    "cons": "CONSENSUS", "consensus": "CONSENSUS",
+    "sleeper": "SLEEPER", "espn": "ESPN",
+    "fpros": "FANTASYPROS", "fantasypros": "FANTASYPROS", "fantasy pros": "FANTASYPROS",
+}
 
 
 @dataclass(frozen=True)
@@ -107,6 +113,7 @@ class AdpSnapshot:
     freshness: str = "UNAVAILABLE"
     last_refresh_error: str = ""
     match_report: tuple[dict[str, Any], ...] = ()
+    paste_rows: tuple[dict[str, Any], ...] = ()
 
     @property
     def available(self) -> bool:
@@ -304,10 +311,131 @@ def import_owner_adp_csv(
     return snapshot
 
 
+def preview_owner_paste_adp(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    paste_text: str,
+    selected_source: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Parse a stable owner-supplied markdown table without changing any state."""
+    if not paste_text.strip() or len(paste_text.encode("utf-8")) > 2_000_000:
+        raise RedraftValidationError("Pasted rankings must be non-empty and no larger than 2 MB.")
+    selected = _paste_selected_source(selected_source)
+    rows = _paste_table_rows(paste_text)
+    if not rows:
+        raise RedraftValidationError("Paste a markdown pipe table with Position, Player, and ADP columns.")
+    assets = _matching_assets(ranking, manual_assets)
+    parsed_rows: list[dict[str, Any]] = []
+    entries: list[AdpEntry] = []
+    unmatched: list[str] = []
+    warnings: list[str] = []
+    report: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for source_index, row in enumerate(rows, start=1):
+        position_rank, position = _paste_position(row.get("position", ""))
+        player = str(row.get("player") or "").strip()
+        selected_value = _paste_number(row.get(selected.lower(), ""))
+        raw_row = "|".join(str(row.get(key, "")) for key in ("position", "player", "consensus", "sleeper", "espn", "fantasypros"))
+        receipt = {
+            "source_row_index": source_index,
+            "position_rank": position_rank,
+            "position": position,
+            "positional_adp_rank": position_rank,
+            "player_name": player,
+            "consensus_adp": _paste_number(row.get("consensus", "")),
+            "sleeper_adp": _paste_number(row.get("sleeper", "")),
+            "espn_adp": _paste_number(row.get("espn", "")),
+            "fantasypros_adp": _paste_number(row.get("fantasypros", "")),
+            "selected_adp": selected_value,
+            "selected_source": selected,
+            "imported_at": "",
+            "import_source_label": "",
+            "raw_row_hash": hashlib.sha256(raw_row.encode("utf-8")).hexdigest(),
+        }
+        if not player or position not in {"QB", "RB", "WR", "TE", "K", "DST"}:
+            warnings.append(f"row {source_index}: missing or unsupported player identity")
+            unmatched.append(f"row {source_index}: {player or 'missing player'}")
+            receipt["match_status"] = "INVALID"
+            parsed_rows.append(receipt)
+            continue
+        if selected_value is None:
+            warnings.append(f"row {source_index}: {player} has no usable {selected.title()} ADP")
+            receipt["match_status"] = "SKIPPED_NO_SELECTED_ADP"
+            parsed_rows.append(receipt)
+            continue
+        matched, method, confidence, reason = _match_adp_player(player, position, "", assets)
+        if matched is None:
+            unmatched.append(f"row {source_index}: {player} ({position})")
+            warnings.append(f"row {source_index}: {player} not safely matched ({reason})")
+            receipt["match_status"] = "UNMATCHED"
+            receipt["unmatched_reason"] = reason or "NO_SAFE_IDENTITY_MATCH"
+            parsed_rows.append(receipt)
+            report.append(_match_report_row("", player, position, "", None, "UNMATCHED", "", reason or "NO_SAFE_IDENTITY_MATCH"))
+            continue
+        matched_id = str(matched["player_id"])
+        if matched_id in seen_ids:
+            warnings.append(f"row {source_index}: duplicate safe match for {matched['player_name']}")
+            receipt["match_status"] = "DUPLICATE_MATCH"
+            parsed_rows.append(receipt)
+            continue
+        seen_ids.add(matched_id)
+        receipt.update({"match_status": "MATCHED", "matched_nwr_player_id": matched_id, "matched_nwr_player_name": str(matched["player_name"]), "match_method": method, "match_confidence": confidence})
+        parsed_rows.append(receipt)
+        entries.append(AdpEntry(player_id=matched_id, player=str(matched["player_name"]), team=str(matched["team"]), position=str(matched["position"]), overall_adp=selected_value, expected_pick=selected_value, min_pick=None, max_pick=None, std_dev=None, source_player_id=f"paste:{source_index}", expected_round=max(1, math.ceil(selected_value / profile.team_count)), match_status="MATCHED", match_confidence=confidence))
+        report.append(_match_report_row("", player, position, "", matched, method, confidence, ""))
+    if not entries:
+        raise RedraftValidationError("The pasted table did not safely match any NWR Draft Room players.")
+    return {"selectedSource": selected, "parsedRows": parsed_rows, "entries": entries, "unmatched": unmatched, "warnings": warnings, "matchReport": report, "sourceRows": len(rows), "matchedRows": len(entries), "skippedRows": len(rows) - len(entries)}
+
+
+def save_owner_paste_adp(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    paste_text: str,
+    selected_source: str,
+    source_label: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+    *,
+    activate: bool = False,
+) -> AdpSnapshot:
+    preview = preview_owner_paste_adp(profile, ranking, paste_text, selected_source, manual_assets)
+    selected = str(preview["selectedSource"])
+    imported = utc_now()
+    label = source_label.strip()
+    canonical_source = f"Owner-imported {selected.title()} ADP"
+    source = canonical_source if not label else f"{canonical_source} — {label}"
+    rows = [{**row, "imported_at": imported, "import_source_label": source} for row in preview["parsedRows"]]
+    snapshot = AdpSnapshot(profile_id=profile.profile_id, source=source, scoring_format=_profile_scoring(profile), team_count=profile.team_count, source_date=datetime.now(UTC).date().isoformat(), imported_at_utc=imported, source_sha256=hashlib.sha256(paste_text.encode("utf-8")).hexdigest(), entries=tuple(sorted(preview["entries"], key=lambda entry: (entry.expected_pick, entry.player_id))), unmatched=tuple(preview["unmatched"]), provider=f"OWNER_PASTE_{selected}", authority="OWNER-IMPORTED PLATFORM ADP / MARKET TIMING", retrieved_at_utc=imported, provider_version="NWR_OWNER_PASTE_ADP_V1", freshness="FRESH", match_report=tuple(preview["matchReport"]), paste_rows=tuple(rows))
+    document = _adp_document(snapshot)
+    document["active"] = activate
+    _atomic_json(_owner_paste_adp_path(root, profile.profile_id), document)
+    _owner_paste_raw_path(root, profile.profile_id).parent.mkdir(parents=True, exist_ok=True)
+    _owner_paste_raw_path(root, profile.profile_id).write_text(paste_text, encoding="utf-8", newline="")
+    return snapshot
+
+
+def set_owner_paste_adp_active(root: str | Path, profile: LeagueProfile, *, active: bool) -> None:
+    path = _owner_paste_adp_path(root, profile.profile_id)
+    if not path.is_file():
+        raise RedraftValidationError("Save a pasted platform ADP snapshot before activating it.")
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["active"] = active
+    _atomic_json(path, document)
+
+
 def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
     owner_path = _adp_path(root, profile.profile_id)
     ffc_path = _ffc_adp_path(root, profile.profile_id)
-    path = owner_path if owner_path.is_file() else ffc_path
+    paste_path = _owner_paste_adp_path(root, profile.profile_id)
+    paste_active = False
+    if paste_path.is_file():
+        try:
+            paste_active = bool(json.loads(paste_path.read_text(encoding="utf-8")).get("active"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            paste_active = False
+    path = paste_path if paste_active else ffc_path if ffc_path.is_file() else owner_path
     if not path.is_file():
         return AdpSnapshot(
             profile_id=profile.profile_id,
@@ -407,6 +535,11 @@ def _read_adp_snapshot(path: Path, profile: LeagueProfile) -> AdpSnapshot:
             match_report=tuple(
                 dict(value)
                 for value in document.get("match_report", [])
+                if isinstance(value, Mapping)
+            ),
+            paste_rows=tuple(
+                dict(value)
+                for value in document.get("paste_rows", [])
                 if isinstance(value, Mapping)
             ),
         )
@@ -1099,6 +1232,14 @@ def _select_asset(
     scored.sort(key=lambda row: (row[0], row[1]))
     if adp.available and adp.provider == "FFC":
         behavior = "CPU_MARKET_ADP_FFC"
+    elif adp.available and adp.provider == "OWNER_PASTE_SLEEPER":
+        behavior = "CPU_MARKET_ADP_OWNER_SLEEPER"
+    elif adp.available and adp.provider == "OWNER_PASTE_CONSENSUS":
+        behavior = "CPU_MARKET_ADP_OWNER_CONSENSUS"
+    elif adp.available and adp.provider == "OWNER_PASTE_ESPN":
+        behavior = "CPU_MARKET_ADP_OWNER_ESPN"
+    elif adp.available and adp.provider == "OWNER_PASTE_FANTASYPROS":
+        behavior = "CPU_MARKET_ADP_OWNER_FANTASYPROS"
     elif adp.available and adp.provider == "OWNER_SLEEPER_CSV":
         behavior = "CPU_MARKET_ADP_OWNER_SLEEPER"
     elif adp.available:
@@ -1637,7 +1778,7 @@ def _adp_status(snapshot: AdpSnapshot, ranking_count: int) -> dict[str, Any]:
             "Fantasy Football Calculator ADP is active for market timing; it does not "
             "change NWR rank. Data updates daily at the source."
             if snapshot.available and snapshot.provider == "FFC"
-            else "Owner-imported ADP is active for market timing; it does not change NWR rank."
+            else "Owner-imported platform ADP is active for market timing; it does not change NWR rank."
             if snapshot.available
             else "ADP unavailable. Import an owner-authorized CSV; NWR does not invent ADP."
         ),
@@ -1668,6 +1809,7 @@ def _adp_document(snapshot: AdpSnapshot) -> dict[str, Any]:
         "entries": [entry.__dict__ for entry in snapshot.entries],
         "unmatched": list(snapshot.unmatched),
         "match_report": list(snapshot.match_report),
+        "paste_rows": list(snapshot.paste_rows),
     }
 
 
@@ -1677,6 +1819,76 @@ def _adp_path(root: str | Path, profile_id: str) -> Path:
 
 def _ffc_adp_path(root: str | Path, profile_id: str) -> Path:
     return Path(root) / "adp_provider_cache" / "ffc" / f"{profile_id}.json"
+
+
+def _owner_paste_adp_path(root: str | Path, profile_id: str) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_paste" / f"{profile_id}.json"
+
+
+def _owner_paste_raw_path(root: str | Path, profile_id: str) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_paste" / f"{profile_id}.md"
+
+
+def _paste_selected_source(value: str) -> str:
+    selected = str(value or "").strip().upper().replace(" ", "")
+    if selected not in PASTE_PLATFORM_COLUMNS:
+        raise RedraftValidationError("Select Consensus, Sleeper, ESPN, or FantasyPros ADP.")
+    return selected
+
+
+def _paste_table_rows(paste_text: str) -> list[dict[str, str]]:
+    lines = [line.strip() for line in paste_text.replace("\r\n", "\n").split("\n") if "|" in line]
+    if len(lines) < 2:
+        return []
+    header = _paste_cells(lines[0])
+    canonical = [_paste_header(value) for value in header]
+    if "position" not in canonical or "player" not in canonical:
+        return []
+    rows: list[dict[str, str]] = []
+    for line in lines[1:]:
+        cells = _paste_cells(line)
+        if not cells or all(re.fullmatch(r"[:\- ]+", value or "") for value in cells):
+            continue
+        if len(cells) != len(canonical):
+            continue
+        row = {key: value for key, value in zip(canonical, cells) if key}
+        if row:
+            rows.append(row)
+    return rows
+
+
+def _paste_cells(line: str) -> list[str]:
+    stripped = line.strip().strip("|")
+    return [value.strip() for value in stripped.split("|")]
+
+
+def _paste_header(value: str) -> str:
+    compact = re.sub(r"[^a-z0-9]", "", value.lower())
+    if compact in {"position", "pos", "rank"}:
+        return "position"
+    if compact in {"player", "name", "playername"}:
+        return "player"
+    return PASTE_COLUMN_ALIASES.get(
+        compact, PASTE_COLUMN_ALIASES.get(value.strip().lower(), "")
+    ).lower()
+
+
+def _paste_position(value: str) -> tuple[int | None, str]:
+    match = re.fullmatch(r"\s*(QB|RB|WR|TE|K|DST|D/ST)\s*(\d+)?\s*", str(value or ""), re.I)
+    if not match:
+        return None, ""
+    return (int(match.group(2)) if match.group(2) else None, _normalized_position(match.group(1)))
+
+
+def _paste_number(value: object) -> float | None:
+    raw = str(value or "").strip().replace(",", "")
+    if raw in {"", "-", "—", "–", "N/A", "NA"}:
+        return None
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return None
+    return round(parsed, 2) if math.isfinite(parsed) and parsed > 0 else None
 
 
 def _profile_scoring(profile: LeagueProfile) -> str:

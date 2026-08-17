@@ -718,6 +718,16 @@ export interface AdpStatus {
   message: string;
 }
 
+export interface PasteAdpPreview {
+  selectedSource: "CONSENSUS" | "SLEEPER" | "ESPN" | "FANTASYPROS";
+  sourceRows: number;
+  matchedRows: number;
+  skippedRows: number;
+  unmatched: string[];
+  warnings: string[];
+  rows: Array<Record<string, unknown>>;
+}
+
 export interface BeatAdpRow {
   playerId: string;
   playerName: string;

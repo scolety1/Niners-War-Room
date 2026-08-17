@@ -1,6 +1,7 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type {
   LeagueProfile,
+  PasteAdpPreview,
   RedraftBootstrap,
   RedraftProfileUpdateInput,
 } from "@nwr/contracts";
@@ -57,6 +58,10 @@ export function ProfilePage({
   const [message, setMessage] = useState("");
   const [sleeperLeagueId, setSleeperLeagueId] = useState("1312983576827920384");
   const [sleeperUsername, setSleeperUsername] = useState("scolety");
+  const [pasteText, setPasteText] = useState("");
+  const [pasteSource, setPasteSource] = useState<PasteAdpPreview["selectedSource"]>("CONSENSUS");
+  const [pasteLabel, setPasteLabel] = useState("Owner platform rankings");
+  const [pastePreview, setPastePreview] = useState<PasteAdpPreview | null>(null);
 
   useEffect(() => {
     setEdit(data.activeProfile ? editableProfile(data.activeProfile) : null);
@@ -129,6 +134,39 @@ export function ProfilePage({
     } catch (reason) { fail(reason, "Fantasy Football Calculator ADP could not be refreshed."); }
     finally { setWorking(""); }
   };
+  const previewPasteAdp = async () => {
+    if (!data.activeProfile || !pasteText.trim() || working) return;
+    setWorking("paste-preview"); setError(null); setMessage("");
+    try {
+      const result = await client.previewRedraftPasteAdp(data.activeProfile.profileId, pasteText, pasteSource);
+      setPastePreview(result.pastePreview);
+      setMessage(`Parsed ${result.pastePreview.matchedRows} safe player matches. Review warnings before saving.`);
+    } catch (reason) { fail(reason, "The pasted platform ADP table could not be parsed."); }
+    finally { setWorking(""); }
+  };
+  const savePasteAdp = async () => {
+    if (!data.activeProfile || !pasteText.trim() || working) return;
+    setWorking("paste-save"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.saveRedraftPasteAdp(data.activeProfile.profileId, pasteText, pasteSource, pasteLabel));
+      setMessage("Pasted platform ADP snapshot saved locally. Activate it to override FFC timing.");
+    } catch (reason) { fail(reason, "The pasted platform ADP snapshot could not be saved."); }
+    finally { setWorking(""); }
+  };
+  const activatePasteAdp = async () => {
+    if (!data.activeProfile || working) return;
+    setWorking("paste-activate"); setError(null); setMessage("");
+    try { onUpdate(await client.activateRedraftPasteAdp(data.activeProfile.profileId)); setMessage("Owner-imported platform ADP is active for market timing. NWR ranks did not change."); }
+    catch (reason) { fail(reason, "The pasted platform ADP snapshot could not be activated."); }
+    finally { setWorking(""); }
+  };
+  const clearPasteAdp = async () => {
+    if (!data.activeProfile || working) return;
+    setWorking("paste-clear"); setError(null); setMessage("");
+    try { onUpdate(await client.clearRedraftPasteAdp(data.activeProfile.profileId)); setMessage("Active pasted platform ADP cleared. FFC remains the default when available."); }
+    catch (reason) { fail(reason, "The active pasted platform ADP snapshot could not be cleared."); }
+    finally { setWorking(""); }
+  };
 
   const profileCount = data.profiles.length;
   const profileLabel = `${profileCount} profile${profileCount === 1 ? "" : "s"} · ${data.activeProfileId ? "active" : "none active"}`;
@@ -164,6 +202,17 @@ export function ProfilePage({
       <Panel title="ADP Provider" eyebrow="External market timing · local cache">
         <p>Fantasy Football Calculator ADP is the default external 10-team PPR timing source. It never changes NWR rank or projections.</p>
         <div className="profile-create-footer"><p>{data.draftBoard?.adp?.available ? `${data.draftBoard.adp.freshness ?? "CACHED"} · ${data.draftBoard.adp.dateWindow || data.draftBoard.adp.sourceDate}${data.draftBoard.adp.sampleSize ? ` · ${data.draftBoard.adp.sampleSize.toLocaleString()} drafts` : ""}` : "No cached ADP snapshot. Draft Room remains usable with disclosed fallback behavior."}</p><Button disabled={!data.activeProfile || Boolean(working)} icon="activity" onClick={() => void refreshAdp()}>{working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}</Button></div>
+      </Panel>
+      <Panel title="Paste Rankings / Platform ADP" eyebrow="Owner-imported market timing · local snapshot">
+        <p>Paste a stable markdown pipe table. This is market timing only: it never changes NWR rankings, projections, or Sleeper data.</p>
+        <div className="form-grid">
+          <label className="form-field"><span>Source label</span><input disabled={Boolean(working)} value={pasteLabel} onChange={(event) => setPasteLabel(event.target.value)} /></label>
+          <label className="form-field"><span>Selected ADP column</span><select disabled={Boolean(working)} value={pasteSource} onChange={(event) => setPasteSource(event.target.value as PasteAdpPreview["selectedSource"])}><option value="CONSENSUS">Consensus</option><option value="SLEEPER">Sleeper</option><option value="ESPN">ESPN</option><option value="FANTASYPROS">FantasyPros</option></select></label>
+          <label className="form-field"><span>League context</span><input disabled value="PPR · 10 teams · 2026" /></label>
+        </div>
+        <label className="form-field"><span>Markdown table</span><textarea disabled={Boolean(working)} rows={9} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); }} placeholder="| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |" /></label>
+        <div className="profile-create-footer"><p>Unknown, blank, dash, or em dash values are never treated as zero. Save keeps the original text locally; activation is explicit.</p><span><Button disabled={!data.activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void previewPasteAdp()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!data.activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void savePasteAdp()}>{working === "paste-save" ? "Saving…" : "Save snapshot"}</Button><Button disabled={!data.activeProfile || Boolean(working)} icon="draft" onClick={() => void activatePasteAdp()}>{working === "paste-activate" ? "Activating…" : "Activate for Fantasy Gamers"}</Button><Button disabled={!data.activeProfile || Boolean(working)} icon="undo" onClick={() => void clearPasteAdp()} variant="secondary">Clear active imported ranking</Button></span></div>
+        {pastePreview ? <div className="copy-muted"><strong>Preview: {pastePreview.matchedRows}/{pastePreview.sourceRows} safely matched; {pastePreview.skippedRows} skipped.</strong>{[...pastePreview.warnings, ...pastePreview.unmatched].slice(0, 20).map((warning) => <small key={warning}>{warning}</small>)}</div> : null}
       </Panel>
     </div>
     {data.activeProfile && edit ? <ProfileEditor edit={edit} disabled={Boolean(working)} onChange={setEdit} onDuplicate={() => void duplicate()} onSave={() => void save()} working={working} /> : null}

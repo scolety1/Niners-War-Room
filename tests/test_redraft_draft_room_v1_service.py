@@ -14,7 +14,10 @@ from src.services.redraft_draft_room_v1_service import (
     load_room_state,
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
+    preview_owner_paste_adp,
     run_complete_mock,
+    save_owner_paste_adp,
+    set_owner_paste_adp_active,
     start_draft_room,
     undo_room_pick,
     validate_complete_mock,
@@ -307,7 +310,7 @@ def test_ffc_failure_uses_last_known_good_cache(tmp_path) -> None:
     assert load_adp_snapshot(tmp_path, ranking.profile).last_refresh_error == "provider offline"
 
 
-def test_owner_imported_sleeper_alias_schema_overrides_ffc(tmp_path) -> None:
+def test_ffc_remains_above_generic_owner_csv_in_provider_priority(tmp_path) -> None:
     ranking = _ranking()
     refresh_fantasy_football_calculator_adp(
         tmp_path, ranking.profile, ranking, _manual_assets(), fetcher=lambda _: _ffc_response()
@@ -322,7 +325,44 @@ def test_owner_imported_sleeper_alias_schema_overrides_ffc(tmp_path) -> None:
     )
     assert imported.source == "Owner-imported Sleeper ADP"
     assert imported.provider == "OWNER_SLEEPER_CSV"
-    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "OWNER_SLEEPER_CSV"
+    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
+
+
+def test_owner_paste_preview_snapshot_activation_and_cpu_labels(tmp_path) -> None:
+    ranking = _ranking()
+    refresh_fantasy_football_calculator_adp(
+        tmp_path, ranking.profile, ranking, _manual_assets(), fetcher=lambda _: _ffc_response()
+    )
+    paste = (
+        "| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n"
+        "| --- | --- | ---: | ---: | ---: | ---: |\n"
+        "| QB1 | QB 0 | 1.5 | — | 2.1 | 1.8 |\n"
+        "| RB1 | RB 0 | 2.5 | 2.2 | 2.7 | 2.4 |\n"
+        "| WR1 | Unknown Player | 5.0 | - | 5.1 | 5.2 |\n"
+    )
+    preview = preview_owner_paste_adp(
+        ranking.profile, ranking, paste, "SLEEPER", _manual_assets()
+    )
+    assert preview["matchedRows"] == 1
+    assert preview["sourceRows"] == 3
+    assert preview["parsedRows"][0]["selected_adp"] is None
+    assert preview["parsedRows"][1]["selected_adp"] == 2.2
+    snapshot = save_owner_paste_adp(
+        tmp_path, ranking.profile, ranking, paste, "CONSENSUS", "Owner platform", _manual_assets()
+    )
+    assert snapshot.provider == "OWNER_PASTE_CONSENSUS"
+    assert len(snapshot.paste_rows) == 3
+    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
+    set_owner_paste_adp_active(tmp_path, ranking.profile, active=True)
+    active = load_adp_snapshot(tmp_path, ranking.profile)
+    assert active.provider == "OWNER_PASTE_CONSENSUS"
+    assert active.source == "Owner-imported Consensus ADP — Owner platform"
+    assert active.paste_rows[1]["raw_row_hash"]
+    assert (tmp_path / "adp_provider_cache" / "owner_paste" / f"{ranking.profile.profile_id}.md").read_text(encoding="utf-8") == paste
+    mock = run_complete_mock(ranking.profile, ranking, _manual_assets(), active, owner_slot=9)
+    assert any(pick["selection_behavior"] == "CPU_MARKET_ADP_OWNER_CONSENSUS" for pick in mock["picks"] if pick["actor"] == "CPU")
+    set_owner_paste_adp_active(tmp_path, ranking.profile, active=False)
+    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
 
 
 def test_ffc_cpu_source_pick_nine_and_freshness_labels(tmp_path) -> None:

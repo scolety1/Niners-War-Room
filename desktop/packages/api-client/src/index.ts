@@ -14,6 +14,7 @@ import {
   type PlanningModuleId,
   type PlanningModuleInput,
   type PlanningWorkspace,
+  type PasteAdpPreview,
   type RedraftBootstrap,
   type RedraftProfileUpdateInput,
   type RuntimeDescriptor,
@@ -315,6 +316,26 @@ export class NwrApiClient {
       method: "POST",
       body: JSON.stringify({}),
     });
+  }
+
+  previewRedraftPasteAdp(profileId: string, pasteText: string, selectedSource: PasteAdpPreview["selectedSource"]): Promise<{ pastePreview: PasteAdpPreview }> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/preview`, {
+      method: "POST", body: JSON.stringify({ pasteText, selectedSource }),
+    });
+  }
+
+  saveRedraftPasteAdp(profileId: string, pasteText: string, selectedSource: PasteAdpPreview["selectedSource"], sourceLabel: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/save`, {
+      method: "POST", body: JSON.stringify({ pasteText, selectedSource, sourceLabel }),
+    });
+  }
+
+  activateRedraftPasteAdp(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/activate`, { method: "POST", body: "{}" });
+  }
+
+  clearRedraftPasteAdp(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/clear`, { method: "POST", body: "{}" });
   }
 
   ingestSleeperDraftPick(
