@@ -201,6 +201,56 @@ describe("NwrApiClient Redraft profile management", () => {
   });
 });
 
+describe("NwrApiClient Redraft Draft Room", () => {
+  it("uses only authenticated local start, advance, ADP import, and read-only Sleeper routes", async () => {
+    vi.stubGlobal("window", globalThis);
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            contractVersion: "1.0.0",
+            mode: "redraft",
+            data: {},
+            warnings: [],
+            errors: [],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new NwrApiClient("redraft", {
+      mode: "redraft",
+      apiBaseUrl: "http://127.0.0.1:18742",
+      token: "nwr-desktop-test-token-0123456789-abcdef",
+      contractVersion: "1.0.0",
+    });
+
+    await client.startDraftRoom("fantasy-gamers", 9, "NORMAL", 20260817);
+    await client.advanceDraftRoom("fantasy-gamers", false);
+    await client.importRedraftAdp("fantasy-gamers", "player,position\n");
+    await client.ingestSleeperDraftPick("fantasy-gamers", "player-1", 1);
+
+    const requests = fetchMock.mock.calls as [URL, RequestInit][];
+    expect(requests.map(([target]) => target.pathname)).toEqual([
+      "/api/v1/redraft/draft/fantasy-gamers/start",
+      "/api/v1/redraft/draft/fantasy-gamers/advance",
+      "/api/v1/redraft/adp/fantasy-gamers/import",
+      "/api/v1/redraft/draft/fantasy-gamers/sleeper-pick",
+    ]);
+    expect(JSON.parse(String(requests[0]?.[1].body))).toEqual({
+      ownerSlot: 9,
+      seed: 20260817,
+      speed: "NORMAL",
+      mode: "MOCK",
+    });
+    expect(JSON.parse(String(requests[3]?.[1].body))).toEqual({
+      playerId: "player-1",
+      pickNumber: 1,
+    });
+  });
+});
+
 describe("NwrApiClient Personal Workspace", () => {
   it("uses the bounded owner-board, decision, backup, and dry-run routes", async () => {
     vi.stubGlobal("window", globalThis);

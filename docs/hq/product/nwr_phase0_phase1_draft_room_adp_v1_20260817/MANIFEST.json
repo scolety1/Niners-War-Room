@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "packet": "nwr_phase0_phase1_draft_room_adp_v1_20260817",
+  "created_date": "2026-08-17",
+  "verdict": "YELLOW_NWR_PHASE1_DRAFT_ROOM_READY_ADP_LIMITED",
+  "branch": "codex/nwr-phase0-phase1-draft-room-adp-v1-20260817",
+  "base_candidate": "9cb6eaf5eb370c69c5732aea8ced9419783b10b5",
+  "governing_plan_sha256": "83630daf365aa042392955837135ad3f3d5a62cf8434fd58adf5f38c08b23f78",
+  "audit_commit": "ed4ef3de4b554c993f126db07326c21d2a45bab9",
+  "files": [
+    "EXECUTIVE_VERDICT.md",
+    "GOVERNING_PLAN_COMPLIANCE.md",
+    "RECONCILIATION_SUMMARY.md",
+    "DRAFT_ROOM_IMPLEMENTATION.md",
+    "DRAFT_BOARD_ACCEPTANCE.md",
+    "ADP_PROVIDER_BOUNDARY.md",
+    "BEAT_ADP_POOL.md",
+    "MAKE_IT_BACK_METHOD.md",
+    "TIERING_REPLACEMENT.md",
+    "CPU_MOCK_BEHAVIOR.md",
+    "FANTASY_GAMERS_MOCK_RESULTS.md",
+    "OWNER_ACCEPTANCE_CHECKLIST.md",
+    "AUTHORITY_PRESERVATION.md",
+    "TEST_RESULTS.md",
+    "INSTALL_RECEIPT.md",
+    "NEXT_ACTION.md",
+    "MANIFEST.json"
+  ],
+  "phase_2_started": false,
+  "phase_3_started": false,
+  "sleeper_writes": false,
+  "canonical_or_hq_updated": false
+}

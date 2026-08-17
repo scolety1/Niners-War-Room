@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 
@@ -33,8 +34,8 @@ from src.services.redraft_engine_v1_service import (
     player_compare_rows,
     profile_store_errors,
     projection_snapshot_path,
-    redraft_compare_pool_rows,
     reconcile_sleeper_profile_identities,
+    redraft_compare_pool_rows,
     restore_profile,
     save_profile,
     score_projection,
@@ -362,9 +363,7 @@ def test_malformed_profile_is_reported_without_hiding_healthy_profiles(tmp_path:
     malformed = tmp_path / "profiles" / "broken.json"
     malformed.write_text('{"profile_id":', encoding="utf-8")
     assert [profile.profile_id for profile in list_profiles(tmp_path)] == [healthy.profile_id]
-    assert profile_store_errors(tmp_path) == (
-        "broken.json: unreadable or invalid profile state",
-    )
+    assert profile_store_errors(tmp_path) == ("broken.json: unreadable or invalid profile state",)
 
 
 def test_projection_install_is_separate_and_hash_verified(tmp_path: Path) -> None:
@@ -444,14 +443,32 @@ def test_rankings_are_deterministic_and_block_missing_evidence(snapshot) -> None
     assert rookie.confidence == "LOW"
 
 
-def test_practical_mode_keeps_kdst_out_of_nwr_math_without_blocking_supported_board(snapshot) -> None:
+def test_tiers_are_deep_bounded_and_position_specific(snapshot) -> None:
+    ranking = generate_rankings(_profile(), snapshot)
+    overall = Counter(row.tier for row in ranking.rows)
+    assert len(overall) >= 10
+    assert max(overall.values()) <= 24
+    assert all(row.overall_tier_label.startswith(f"Tier {row.tier}") for row in ranking.rows)
+    for position in ("QB", "RB", "WR", "TE"):
+        rows = [row for row in ranking.rows if row.position == position]
+        tiers = Counter(row.position_tier for row in rows)
+        assert len(tiers) >= 2
+        assert max(tiers.values()) <= 14
+        assert all(row.position_tier_label.startswith(f"{position} Tier ") for row in rows)
+
+
+def test_practical_mode_keeps_kdst_out_of_nwr_math_without_blocking_supported_board(
+    snapshot,
+) -> None:
     exact = replace(_profile(), roster=replace(_profile().roster, k=1, dst=1))
     assert generate_rankings(exact, snapshot).errors
     practical = replace(exact, practical_mode=True)
     ranking = generate_rankings(practical, snapshot)
     assert ranking.ready
     assert {row.position for row in ranking.rows} == {"QB", "RB", "WR", "TE"}
-    assert "manual and unmodeled" in " ".join(build_health_report(practical, snapshot, ranking).messages)
+    assert "manual and unmodeled" in " ".join(
+        build_health_report(practical, snapshot, ranking).messages
+    )
 
 
 def test_superflex_materially_increases_qb_value_and_rank(snapshot) -> None:

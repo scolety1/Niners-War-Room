@@ -29,6 +29,14 @@ from src.services.draft_day_trade_lab_service import (
     build_registry_trade_item_lookup,
     replace_trade_state,
 )
+from src.services.fantasypros_kdst_consensus_service import (
+    FantasyProsConsensusClient,
+    FantasyProsProviderError,
+    sleeper_streamer_actions,
+)
+from src.services.fantasypros_kdst_consensus_service import (
+    provider_status as fantasypros_provider_status,
+)
 from src.services.governed_asset_registry_service import (
     BLOCKED_ROOKIES_RELATIVE,
     CURRENT_BOARD_RELATIVE,
@@ -91,6 +99,17 @@ from src.services.player_rank_owner_explanation_service import (
     owner_rank_explanation,
     owner_rank_reason_bullets,
 )
+from src.services.redraft_draft_room_v1_service import (
+    advance_cpu_to_owner,
+    build_draft_room_payload,
+    import_owner_adp_csv,
+    ingest_read_only_sleeper_pick,
+    load_adp_snapshot,
+    load_room_state,
+    owner_pick_and_advance,
+    start_draft_room,
+    undo_room_pick,
+)
 from src.services.redraft_engine_v1_service import (
     LeagueProfile,
     RedraftPersistenceError,
@@ -110,23 +129,11 @@ from src.services.redraft_engine_v1_service import (
     mark_player_drafted,
     profile_store_errors,
     projection_snapshot_path,
-    redraft_store_root,
     reconcile_sleeper_profile_identities,
+    redraft_store_root,
     save_profile,
     set_active_profile,
     undo_last_draft_pick,
-)
-from src.services.sleeper_redraft_owner_service import (
-    SleeperRedraftImportError,
-    import_sleeper_redraft_profile,
-    manual_kdst_assets_from_sleeper_players,
-)
-from src.services.sleeper_import_service import SleeperHttpClient
-from src.services.fantasypros_kdst_consensus_service import (
-    FantasyProsConsensusClient,
-    FantasyProsProviderError,
-    provider_status as fantasypros_provider_status,
-    sleeper_streamer_actions,
 )
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
@@ -139,6 +146,12 @@ from src.services.rookie_veteran_dynasty_bridge_service import (
     immediate_production_for_row,
     immediate_production_payload,
     load_redraft_bridge_context,
+)
+from src.services.sleeper_import_service import SleeperHttpClient
+from src.services.sleeper_redraft_owner_service import (
+    SleeperRedraftImportError,
+    import_sleeper_redraft_profile,
+    manual_kdst_assets_from_sleeper_players,
 )
 from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
@@ -319,9 +332,7 @@ class DesktopBackendFacade:
         reconciled_readiness = reconcile_rookie_draft_readiness(
             snapshot.registry.rookie_eligibility_rows,
             surface_asset_ids={
-                "registry": [
-                    _text(row.get("asset_id")) for row in snapshot.registry.rows
-                ],
+                "registry": [_text(row.get("asset_id")) for row in snapshot.registry.rows],
                 "detail": [_text(row.get("asset_id")) for row in snapshot.evidence.rows],
                 "search": [
                     _text(row.get("assetId"))
@@ -338,13 +349,9 @@ class DesktopBackendFacade:
                     for row in snapshot.compare.frame.to_dict("records")
                     if _flag(row.get("selectable"), default=True)
                 ],
-                "trade": [
-                    _text(row.get("asset_id")) for row in trade_lookup.values()
-                ],
+                "trade": [_text(row.get("asset_id")) for row in trade_lookup.values()],
                 "draftable": [
-                    _text(row.get("assetId"))
-                    for row in rookie_rows
-                    if _flag(row.get("draftable"))
+                    _text(row.get("assetId")) for row in rookie_rows if _flag(row.get("draftable"))
                 ],
                 "rookie_board": [_text(row.get("assetId")) for row in rookie_rows],
                 "draft_cockpit": [
@@ -506,9 +513,7 @@ class DesktopBackendFacade:
                 "PERSONAL_BOARD_TAGS_INVALID",
                 "Tags must be a list of short labels.",
             )
-        normalized_tags = list(
-            dict.fromkeys(tag.strip() for tag in tags if tag.strip())
-        )
+        normalized_tags = list(dict.fromkeys(tag.strip() for tag in tags if tag.strip()))
         if len(normalized_tags) > 12 or any(len(tag) > 40 for tag in normalized_tags):
             raise FacadeError(
                 "PERSONAL_BOARD_TAGS_INVALID",
@@ -582,8 +587,7 @@ class DesktopBackendFacade:
                 "Choose between one and eight unique assets.",
             )
         registry = {
-            key: _text(row.get("asset_type"))
-            for key, row in snapshot.evidence.by_id.items()
+            key: _text(row.get("asset_type")) for key, row in snapshot.evidence.by_id.items()
         }
         if any(asset_id not in registry for asset_id in normalized_assets):
             raise FacadeError(
@@ -793,11 +797,7 @@ class DesktopBackendFacade:
             latest = backups[0]
             preview = preview_workspace_restore(latest) if check_restore else None
             return {
-                "status": (
-                    "ready"
-                    if preview is None or preview.valid
-                    else "blocked"
-                ),
+                "status": ("ready" if preview is None or preview.valid else "blocked"),
                 "backupId": latest.name,
                 "fileCount": preview.file_count if preview is not None else 0,
                 "message": (
@@ -1093,13 +1093,10 @@ class DesktopBackendFacade:
                     "assetId": asset_id,
                     "player": _text(value.get("Player")) or "Unknown asset",
                     "floor": _text(value.get("Floor")) or "Not enough information",
-                    "expected": _text(value.get("NWR Expected"))
-                    or "Not enough information",
+                    "expected": _text(value.get("NWR Expected")) or "Not enough information",
                     "ceiling": _text(value.get("Ceiling")) or "Not enough information",
-                    "ageWindow": _text(value.get("Age / window"))
-                    or "Age/window unavailable",
-                    "risk": _text(value.get("Risk / uncertainty"))
-                    or "Not enough information",
+                    "ageWindow": _text(value.get("Age / window")) or "Age/window unavailable",
+                    "risk": _text(value.get("Risk / uncertainty")) or "Not enough information",
                     "authority": _text(value.get("Range authority")),
                     "method": _text(value.get("Range method")),
                 }
@@ -1209,9 +1206,7 @@ class DesktopBackendFacade:
             }
 
         selected_sides = [side_row(asset_id, "You give") for asset_id in give_ids]
-        selected_sides.extend(
-            side_row(asset_id, "You receive") for asset_id in receive_ids
-        )
+        selected_sides.extend(side_row(asset_id, "You receive") for asset_id in receive_ids)
         asset_registry = {
             str(asset_id): _text(row.get("asset_type"))
             for asset_id, row in snapshot.evidence.by_id.items()
@@ -1346,9 +1341,7 @@ class DesktopBackendFacade:
                     break
                 seen.add(asset_id)
             team_window = (
-                str(payload.get("team_window", ""))
-                if isinstance(payload, Mapping)
-                else ""
+                str(payload.get("team_window", "")) if isinstance(payload, Mapping) else ""
             )
             notes = payload.get("notes", "") if isinstance(payload, Mapping) else ""
             scenario_key = str(row.get("scenario_id", "")).strip()
@@ -1586,6 +1579,7 @@ class DesktopBackendFacade:
         rankings: list[dict[str, Any]] = []
         replacement_levels: list[dict[str, Any]] = []
         draft_board: dict[str, Any] | None = None
+        adp_snapshot = None
         manual_assets: list[dict[str, str]] = []
         snapshot = None
         ranking = None
@@ -1604,12 +1598,36 @@ class DesktopBackendFacade:
                     "The active Redraft projection snapshot is unavailable; "
                     "rankings remain blocked."
                 )
+            if selected.practical_mode:
+                manual_assets = self._manual_assets_for_profile(selected.profile_id)
+                if not manual_assets:
+                    warnings.append(
+                        "Practical Mode has no local K/DST manual assets. Start Practical "
+                        "Mock to refresh Sleeper identities."
+                    )
             if ranking is not None:
                 try:
-                    draft_board = load_draft_board(self.redraft_root, selected.profile_id)
+                    adp_snapshot = load_adp_snapshot(self.redraft_root, selected)
+                    room_state = load_room_state(
+                        self.redraft_root,
+                        selected,
+                        ranking,
+                        manual_assets,
+                    )
+                    draft_board = build_draft_room_payload(
+                        selected,
+                        ranking,
+                        manual_assets,
+                        adp_snapshot,
+                        room_state,
+                    )
                 except (OSError, RedraftPersistenceError, RedraftValidationError):
                     warnings.append("The active Redraft draft board is unavailable.")
-                rankings = self._redraft_ranking_payloads(ranking, draft_board)
+                rankings = self._redraft_ranking_payloads(
+                    ranking,
+                    draft_board,
+                    adp_snapshot,
+                )
                 replacement_levels = [
                     {
                         "position": value.position,
@@ -1620,10 +1638,6 @@ class DesktopBackendFacade:
                     }
                     for value in ranking.replacement_levels
                 ]
-            if selected.practical_mode:
-                manual_assets = self._manual_assets_for_profile(selected.profile_id)
-                if not manual_assets:
-                    warnings.append("Practical Mode has no local K/DST manual assets. Start Practical Mock to refresh Sleeper identities.")
 
         using_bundled_seed = self._using_bundled_redraft_seed()
         blocked_seed_rows = self._bundled_redraft_blocked_rows() if using_bundled_seed else ()
@@ -1687,17 +1701,25 @@ class DesktopBackendFacade:
         if selected is not None:
             import_receipt = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
             try:
-                receipt = json.loads(import_receipt.read_text(encoding="utf-8")) if import_receipt.is_file() else {}
+                receipt = (
+                    json.loads(import_receipt.read_text(encoding="utf-8"))
+                    if import_receipt.is_file()
+                    else {}
+                )
             except (OSError, ValueError):
                 receipt = {}
-                warnings.append("The Sleeper import receipt could not be read; no Sleeper state was changed.")
+                warnings.append(
+                    "The Sleeper import receipt could not be read; no Sleeper state was changed."
+                )
             unsupported = receipt.get("unsupported_scoring") if isinstance(receipt, dict) else None
             if isinstance(unsupported, list) and unsupported:
                 notices.append(
                     {
                         "tone": "review",
                         "title": "Sleeper scoring needs review",
-                        "message": "Unsupported non-zero Sleeper fields are explicit: " + ", ".join(str(value) for value in unsupported) + ". NWR did not silently map them to zero.",
+                        "message": "Unsupported non-zero Sleeper fields are explicit: "
+                        + ", ".join(str(value) for value in unsupported)
+                        + ". NWR did not silently map them to zero.",
                     }
                 )
             if selected.practical_mode:
@@ -1705,7 +1727,11 @@ class DesktopBackendFacade:
                     {
                         "tone": "review",
                         "title": "PRACTICAL SCORING",
-                        "message": "NWR models the major QB/RB/WR/TE scoring rules for Fantasy Gamers. Five uncommon scoring events are not included. Kicker and DST are manual/unmodeled.",
+                        "message": (
+                            "NWR models the major QB/RB/WR/TE scoring rules for Fantasy "
+                            "Gamers. Five uncommon scoring events are not included. Kicker "
+                            "and DST are manual/unmodeled."
+                        ),
                     }
                 )
         if using_bundled_seed:
@@ -1810,9 +1836,7 @@ class DesktopBackendFacade:
             ) from exc
         return FacadePayload(data={"profile": self._profile_payload(profile)})
 
-    def import_sleeper_redraft_profile(
-        self, *, league_id: str, username: str
-    ) -> FacadePayload:
+    def import_sleeper_redraft_profile(self, *, league_id: str, username: str) -> FacadePayload:
         """Explicit, read-only Sleeper import into the isolated Redraft store."""
 
         self._require_mode("redraft")
@@ -1823,7 +1847,12 @@ class DesktopBackendFacade:
                 redraft_root=self.redraft_root,
             )
             set_active_profile(self.redraft_root, imported.profile.profile_id)
-        except (OSError, SleeperRedraftImportError, RedraftPersistenceError, RedraftValidationError) as exc:
+        except (
+            OSError,
+            SleeperRedraftImportError,
+            RedraftPersistenceError,
+            RedraftValidationError,
+        ) as exc:
             raise FacadeError(
                 "SLEEPER_REDRAFT_IMPORT_FAILED",
                 "Sleeper league import could not be completed. No profile was activated.",
@@ -1842,39 +1871,81 @@ class DesktopBackendFacade:
         self._require_mode("redraft")
         normalized = self._profile_id(profile_id)
         if active_profile_id(self.redraft_root) != normalized:
-            raise FacadeError("REDRAFT_PROFILE_NOT_ACTIVE", "Start Practical Mock from the active Redraft profile.", status=409)
+            raise FacadeError(
+                "REDRAFT_PROFILE_NOT_ACTIVE",
+                "Start Practical Mock from the active Redraft profile.",
+                status=409,
+            )
         try:
             profile = load_profile(self.redraft_root, normalized)
             receipt_path = self.redraft_root / "sleeper_imports" / f"{normalized}.json"
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
             league_id = str(receipt["league"]["league_id"])
             if league_id != "1312983576827920384":
-                raise FacadeError("PRACTICAL_MODE_NOT_AUTHORIZED", "Practical Mock authorization is limited to Fantasy Gamers.", status=409)
-            assets = manual_kdst_assets_from_sleeper_players(SleeperHttpClient().get_json("players/nfl"))
-            if not any(item["position"] == "K" for item in assets) or not any(item["position"] == "DST" for item in assets):
-                raise SleeperRedraftImportError("Sleeper did not return usable K and DST manual assets.")
+                raise FacadeError(
+                    "PRACTICAL_MODE_NOT_AUTHORIZED",
+                    "Practical Mock authorization is limited to Fantasy Gamers.",
+                    status=409,
+                )
+            assets = manual_kdst_assets_from_sleeper_players(
+                SleeperHttpClient().get_json("players/nfl")
+            )
+            if not any(item["position"] == "K" for item in assets) or not any(
+                item["position"] == "DST" for item in assets
+            ):
+                raise SleeperRedraftImportError(
+                    "Sleeper did not return usable K and DST manual assets."
+                )
             manual_path = self.redraft_root / "manual_assets" / f"{normalized}.json"
             manual_path.parent.mkdir(parents=True, exist_ok=True)
             temporary = manual_path.with_suffix(".tmp")
-            temporary.write_text(json.dumps({"schema_version": 1, "profile_id": normalized, "assets": list(assets)}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            temporary.write_text(
+                json.dumps(
+                    {"schema_version": 1, "profile_id": normalized, "assets": list(assets)},
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             temporary.replace(manual_path)
             profile = replace(profile, practical_mode=True)
             save_profile(self.redraft_root, profile)
         except FacadeError:
             raise
-        except (OSError, ValueError, KeyError, SleeperRedraftImportError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("PRACTICAL_MODE_START_FAILED", "Practical Mock could not refresh its read-only Sleeper K/DST identities. No Sleeper state was changed.", status=409) from exc
-        return FacadePayload(data={"profile": self._profile_payload(profile), "manualAssets": list(assets)})
+        except (
+            OSError,
+            ValueError,
+            KeyError,
+            SleeperRedraftImportError,
+            RedraftPersistenceError,
+            RedraftValidationError,
+        ) as exc:
+            raise FacadeError(
+                "PRACTICAL_MODE_START_FAILED",
+                "Practical Mock could not refresh its read-only Sleeper K/DST identities. "
+                "No Sleeper state was changed.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={"profile": self._profile_payload(profile), "manualAssets": list(assets)}
+        )
 
     def redraft_kdst_streamer(self, *, week: int) -> FacadePayload:
         """Read FantasyPros K/DST ECR and Sleeper availability; never writes either service."""
 
         self._require_mode("redraft")
         if not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18:
-            raise FacadeError("KDST_STREAMER_WEEK_INVALID", "Week must be an integer from 1 through 18.")
+            raise FacadeError(
+                "KDST_STREAMER_WEEK_INVALID", "Week must be an integer from 1 through 18."
+            )
         selected = active_profile(self.redraft_root)
         if selected is None:
-            raise FacadeError("KDST_STREAMER_PROFILE_REQUIRED", "Activate a Sleeper-imported Redraft profile first.", status=409)
+            raise FacadeError(
+                "KDST_STREAMER_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
         receipt_path = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
         try:
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -1885,7 +1956,8 @@ class DesktopBackendFacade:
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise FacadeError(
                 "KDST_STREAMER_SLEEPER_CONTEXT_REQUIRED",
-                "The active profile has no valid Sleeper import receipt. Re-import it before opening the K/DST Streamer.",
+                "The active profile has no valid Sleeper import receipt. Re-import it before "
+                "opening the K/DST Streamer.",
                 status=409,
             ) from exc
         status = fantasypros_provider_status()
@@ -1916,7 +1988,8 @@ class DesktopBackendFacade:
         except (FantasyProsProviderError, OSError, ValueError) as exc:
             raise FacadeError(
                 "KDST_STREAMER_READ_FAILED",
-                "K/DST consensus or Sleeper roster data could not be read. No local or remote state was changed.",
+                "K/DST consensus or Sleeper roster data could not be read. No local or "
+                "remote state was changed.",
                 status=503,
             ) from exc
         return FacadePayload(
@@ -2055,11 +2128,7 @@ class DesktopBackendFacade:
             )
         try:
             prior = load_profile(self.redraft_root, normalized)
-            roster_values = {
-                key: value
-                for key, value in roster.items()
-                if key != "benchSize"
-            }
+            roster_values = {key: value for key, value in roster.items() if key != "benchSize"}
             roster_values["bench_size"] = roster["benchSize"]
             scoring_values = {
                 "reception": scoring["reception"],
@@ -2111,8 +2180,10 @@ class DesktopBackendFacade:
                 "Draft-board changes require the active Redraft profile.",
                 status=409,
             )
+        profile = load_profile(self.redraft_root, normalized_profile)
         ranking = self._redraft_ranking_for_profile(normalized_profile)
-        manual_ids = {item["player_id"] for item in self._manual_assets_for_profile(normalized_profile)}
+        manual_assets = self._manual_assets_for_profile(normalized_profile)
+        manual_ids = {item["player_id"] for item in manual_assets}
         if normalized_player not in {row.player_id for row in ranking.rows} | manual_ids:
             raise FacadeError(
                 "REDRAFT_PLAYER_NOT_RANKED",
@@ -2120,12 +2191,30 @@ class DesktopBackendFacade:
                 status=404,
             )
         try:
-            board = mark_player_drafted(
-                self.redraft_root,
-                normalized_profile,
-                normalized_player,
-                drafted=bool(drafted),
-            )
+            existing = load_draft_board(self.redraft_root, normalized_profile)
+            if drafted and isinstance(existing.get("owner_slot"), int):
+                board = owner_pick_and_advance(
+                    self.redraft_root,
+                    profile,
+                    ranking,
+                    manual_assets,
+                    load_adp_snapshot(self.redraft_root, profile),
+                    player_id=normalized_player,
+                )
+                board = build_draft_room_payload(
+                    profile,
+                    ranking,
+                    manual_assets,
+                    load_adp_snapshot(self.redraft_root, profile),
+                    board,
+                )
+            else:
+                board = mark_player_drafted(
+                    self.redraft_root,
+                    normalized_profile,
+                    normalized_player,
+                    drafted=bool(drafted),
+                )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
                 "REDRAFT_DRAFT_MARK_FAILED",
@@ -2144,7 +2233,26 @@ class DesktopBackendFacade:
                 status=409,
             )
         try:
-            board = undo_last_draft_pick(self.redraft_root, normalized)
+            profile = load_profile(self.redraft_root, normalized)
+            ranking = self._redraft_ranking_for_profile(normalized)
+            manual_assets = self._manual_assets_for_profile(normalized)
+            existing = load_draft_board(self.redraft_root, normalized)
+            if isinstance(existing.get("owner_slot"), int):
+                state = undo_room_pick(
+                    self.redraft_root,
+                    profile,
+                    ranking,
+                    manual_assets,
+                )
+                board = build_draft_room_payload(
+                    profile,
+                    ranking,
+                    manual_assets,
+                    load_adp_snapshot(self.redraft_root, profile),
+                    state,
+                )
+            else:
+                board = undo_last_draft_pick(self.redraft_root, normalized)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
                 "REDRAFT_DRAFT_UNDO_FAILED",
@@ -2152,6 +2260,128 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def start_redraft_draft_room(
+        self,
+        *,
+        profile_id: str,
+        owner_slot: int,
+        seed: int,
+        speed: str,
+        mode: str,
+    ) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            state = start_draft_room(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                adp,
+                owner_slot=owner_slot,
+                seed=seed,
+                speed=speed,
+                mode=mode,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_DRAFT_START_FAILED",
+                "The Draft Room could not be started with those settings.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+            }
+        )
+
+    def advance_redraft_draft_room(
+        self,
+        *,
+        profile_id: str,
+        one_pick: bool,
+    ) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            state = advance_cpu_to_owner(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                adp,
+                one_pick=one_pick,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_DRAFT_ADVANCE_FAILED",
+                "The CPU draft could not advance.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+            }
+        )
+
+    def import_redraft_adp(self, *, profile_id: str, csv_text: str) -> FacadePayload:
+        profile, ranking, _ = self._redraft_room_context(profile_id)
+        try:
+            snapshot = import_owner_adp_csv(
+                self.redraft_root,
+                profile,
+                ranking,
+                csv_text,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_ADP_IMPORT_FAILED",
+                "The owner-supplied ADP CSV was rejected without changing NWR rankings.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "adp": {
+                    "available": snapshot.available,
+                    "source": snapshot.source,
+                    "sourceDate": snapshot.source_date,
+                    "matched": len(snapshot.entries),
+                    "unmatched": list(snapshot.unmatched),
+                    "sourceSha256": snapshot.source_sha256,
+                }
+            }
+        )
+
+    def ingest_redraft_sleeper_pick(
+        self,
+        *,
+        profile_id: str,
+        player_id: str,
+        pick_number: int,
+    ) -> FacadePayload:
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            state = ingest_read_only_sleeper_pick(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                player_id=self._player_id(player_id),
+                pick_number=pick_number,
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_SLEEPER_PICK_REJECTED",
+                "The read-only Sleeper pick event was rejected.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+            }
+        )
 
     def _owner_snapshot(self) -> _OwnerSnapshot:
         key = self._owner_source_fingerprint()
@@ -2184,9 +2414,7 @@ class DesktopBackendFacade:
                 status=503,
             )
         try:
-            research = load_unified_research_preview(
-                self.repo_root / RESEARCH_PACKET_RELATIVE
-            )
+            research = load_unified_research_preview(self.repo_root / RESEARCH_PACKET_RELATIVE)
         except (OSError, ValueError, KeyError, pd.errors.ParserError) as exc:
             raise FacadeError(
                 "UNIFIED_RESEARCH_UNAVAILABLE",
@@ -2370,6 +2598,29 @@ class DesktopBackendFacade:
             )
         return ranking
 
+    def _redraft_room_context(self, profile_id: str):
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        if active_profile_id(self.redraft_root) != normalized:
+            raise FacadeError(
+                "REDRAFT_PROFILE_NOT_ACTIVE",
+                "Draft Room changes require the active Redraft profile.",
+                status=409,
+            )
+        try:
+            profile = load_profile(self.redraft_root, normalized)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_PROFILE_NOT_FOUND",
+                "The requested Redraft profile was not found.",
+                status=404,
+            ) from exc
+        return (
+            profile,
+            self._redraft_ranking_for_profile(normalized),
+            self._manual_assets_for_profile(normalized),
+        )
+
     def _require_mode(self, expected: str) -> None:
         if self.mode != expected:
             raise FacadeError(
@@ -2429,7 +2680,15 @@ class DesktopBackendFacade:
             position = _text(value.get("position")).upper()
             team = _text(value.get("team")).upper()
             if player_id and name and team and position in {"K", "DST"}:
-                output.append({"player_id": player_id, "player_name": name, "position": position, "team": team, "authority": "MANUAL — NOT MODELED BY NWR"})
+                output.append(
+                    {
+                        "player_id": player_id,
+                        "player_name": name,
+                        "position": position,
+                        "team": team,
+                        "authority": "MANUAL — NOT MODELED BY NWR",
+                    }
+                )
         return output
 
     @staticmethod
@@ -2545,9 +2804,7 @@ class DesktopBackendFacade:
                     "boardScore": _number(source.get("Board Score")),
                     "reviewScore": _number(source.get("Review Score")),
                     "authority": _text(source.get("Authority")),
-                    "blockedReason": owner_caveat_text(
-                        source.get("Blocked / pending reason")
-                    ),
+                    "blockedReason": owner_caveat_text(source.get("Blocked / pending reason")),
                     "warnings": _text(source.get("Warnings")),
                     "confidence": _text(source.get("Confidence")),
                     "age": _number(source.get("Age")),
@@ -2560,9 +2817,7 @@ class DesktopBackendFacade:
                     "whatNwrLikes": _text(source.get("What NWR likes")),
                     "whatHoldsBack": _text(source.get("What holds them back")),
                     "biggestUncertainty": _text(source.get("Biggest uncertainty")),
-                    "rankScoreExplanation": _text(
-                        source.get("Why rank differs from raw score")
-                    ),
+                    "rankScoreExplanation": _text(source.get("Why rank differs from raw score")),
                     "floor": _text(source.get("Floor")),
                     "expected": _text(source.get("NWR Expected")),
                     "ceiling": _text(source.get("Ceiling")),
@@ -2631,9 +2886,7 @@ class DesktopBackendFacade:
             "manualReview": _integer(source.get("manual_review")) or 0,
             "unresolved": _integer(source.get("unresolved")) or 0,
             "missingFromRegistry": _integer(source.get("missing_from_registry")) or 0,
-            "missingFromDraftablePool": (
-                _integer(source.get("missing_from_draftable_pool")) or 0
-            ),
+            "missingFromDraftablePool": (_integer(source.get("missing_from_draftable_pool")) or 0),
             "duplicateAssetIds": _integer(source.get("duplicate_asset_ids")) or 0,
             "refreshAvailable": _integer(source.get("refresh_available")) or 0,
             "reviewAssetIds": _string_list(source.get("review_asset_ids")),
@@ -2759,25 +3012,23 @@ class DesktopBackendFacade:
             or ("Score available" if score_eligible else "No common model score"),
             "selectable": _flag(row.get("selectable"), default=True),
             "refreshAvailable": _flag(row.get("refresh_available")),
-            "rookieIntelligence": ({
-                "nwrRookieScore": _number(row.get("board_score")),
-                "reviewScore": _number(row.get("review_score")),
-                "rawModelScore": _number(row.get("raw_model_score")),
-                "collegeProduction": _component_owner_context(
-                    row.get("production_component")
-                ),
-                "marketShare": _component_owner_context(
-                    row.get("market_share_component")
-                ),
-                "athleticContext": _athletic_owner_context(
-                    row.get("athletic_component")
-                ),
-                "currentRole": _current_role_owner_context(row),
-                "whatNwrLikes": _rookie_likes(row),
-                "whatHoldsBack": _rookie_holds_back(row),
-                "biggestUncertainty": _rookie_uncertainty(row),
-                "rankScoreExplanation": _rookie_rank_score_explanation(row),
-            } if _text(row.get("official_draft_asset_id")) else None),
+            "rookieIntelligence": (
+                {
+                    "nwrRookieScore": _number(row.get("board_score")),
+                    "reviewScore": _number(row.get("review_score")),
+                    "rawModelScore": _number(row.get("raw_model_score")),
+                    "collegeProduction": _component_owner_context(row.get("production_component")),
+                    "marketShare": _component_owner_context(row.get("market_share_component")),
+                    "athleticContext": _athletic_owner_context(row.get("athletic_component")),
+                    "currentRole": _current_role_owner_context(row),
+                    "whatNwrLikes": _rookie_likes(row),
+                    "whatHoldsBack": _rookie_holds_back(row),
+                    "biggestUncertainty": _rookie_uncertainty(row),
+                    "rankScoreExplanation": _rookie_rank_score_explanation(row),
+                }
+                if _text(row.get("official_draft_asset_id"))
+                else None
+            ),
         }
 
     @staticmethod
@@ -2913,9 +3164,11 @@ class DesktopBackendFacade:
     def _redraft_ranking_payloads(
         ranking: Any,
         draft_board: Mapping[str, Any] | None,
+        adp_snapshot: Any | None = None,
     ) -> list[dict[str, Any]]:
         drafted = [str(value) for value in (draft_board or {}).get("drafted", [])]
         pick_number = {player_id: index for index, player_id in enumerate(drafted, start=1)}
+        adp_by_id = adp_snapshot.by_player_id if adp_snapshot is not None else {}
         return [
             {
                 "overallRank": row.overall_rank,
@@ -2930,8 +3183,18 @@ class DesktopBackendFacade:
                 "starterGap": row.starter_gap,
                 "confidence": row.confidence,
                 "tier": row.tier,
+                "positionTier": row.position_tier,
+                "overallTierLabel": row.overall_tier_label,
+                "positionTierLabel": row.position_tier_label,
                 "sourceAsOf": row.source_as_of,
                 "rookie": row.rookie,
+                "overallAdp": (
+                    adp_by_id[row.player_id].overall_adp if row.player_id in adp_by_id else None
+                ),
+                "expectedPick": (
+                    adp_by_id[row.player_id].expected_pick if row.player_id in adp_by_id else None
+                ),
+                "adpSource": (adp_snapshot.source if row.player_id in adp_by_id else ""),
                 "drafted": row.player_id in pick_number,
                 "draftedBy": "",
                 "pickNumber": pick_number.get(row.player_id),
@@ -2943,6 +3206,8 @@ class DesktopBackendFacade:
     def _draft_board_payload(board: Mapping[str, Any] | None) -> dict[str, Any] | None:
         if board is None:
             return None
+        if "boardCells" in board:
+            return dict(board)
         output: dict[str, Any] = {
             "schemaVersion": _integer(board.get("schema_version")) or 1,
             "profileId": _text(board.get("profile_id")),
@@ -3085,10 +3350,7 @@ def _rookie_component_values(row: Mapping[str, Any]) -> list[tuple[float, str]]:
 def _rookie_likes(row: Mapping[str, Any]) -> list[str]:
     values = sorted(_rookie_component_values(row), reverse=True)
     if values:
-        return [
-            f"{label[:1].upper() + label[1:]}: {value:.1f}/100"
-            for value, label in values[:3]
-        ]
+        return [f"{label[:1].upper() + label[1:]}: {value:.1f}/100" for value, label in values[:3]]
     draft_round = _integer(row.get("draft_round"))
     overall_pick = _integer(row.get("overall_pick"))
     if draft_round is not None and overall_pick is not None:
@@ -3154,8 +3416,6 @@ def _rookie_evidence_band_label(value: str) -> str:
         "second_round_board_context_review": "Second-round evidence context",
         "depth_board_context_review": "Depth-board evidence context",
         "watchlist_context_review": "Watchlist evidence context",
-        "watchlist_or_data_incomplete_context_review": (
-            "Watchlist or incomplete evidence context"
-        ),
+        "watchlist_or_data_incomplete_context_review": ("Watchlist or incomplete evidence context"),
         "manual_review": "Manual review",
     }.get(value, "Not enough information")

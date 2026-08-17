@@ -35,7 +35,20 @@ function Write-IntegrityReceipt {
         [string]$BinaryPath
     )
 
-    $hash = (Get-FileHash -LiteralPath $BinaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $stream = [System.IO.File]::OpenRead($BinaryPath)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hashBytes = $sha256.ComputeHash($stream)
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+    $hash = ([System.BitConverter]::ToString($hashBytes) -replace "-", "").ToLowerInvariant()
     Set-Content -LiteralPath $receiptPath -Encoding Ascii -Value "$hash *$sidecarBaseName.exe"
     Write-Host "SHA-256: $hash"
     Write-Host "Receipt: $receiptPath"

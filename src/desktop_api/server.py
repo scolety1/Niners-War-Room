@@ -33,6 +33,10 @@ _PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
+_REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
+_REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
+_REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
+_REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
     {
@@ -169,12 +173,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.BAD_REQUEST,
             )
         port = int(self.server.server_port)
-        message = (
-            f"{STARTUP_PROTOCOL}\n"
-            f"{self.server.facade.mode}\n"
-            f"{port}\n"
-            f"{challenge}"
-        )
+        message = f"{STARTUP_PROTOCOL}\n{self.server.facade.mode}\n{port}\n{challenge}"
         proof = hmac.new(
             self.server.startup_proof_key.encode("ascii"),
             message.encode("ascii"),
@@ -272,9 +271,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             confirmed = body.get("confirmed")
             if type(confirmed) is not bool:
                 raise self._invalid_body("confirmed must be a boolean.")
-            return self.server.facade.adopt_legacy_dynasty_workspace(
-                confirmed=confirmed
-            )
+            return self.server.facade.adopt_legacy_dynasty_workspace(confirmed=confirmed)
 
         if method == "GET" and path.startswith("/api/v1/dynasty/assets/"):
             encoded = path.removeprefix("/api/v1/dynasty/assets/")
@@ -425,7 +422,9 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         if method == "POST" and practical_match:
             body = self._json_body(allow_empty=True)
             self._reject_unknown_fields(body, set())
-            self.server.facade.start_practical_redraft_mock(profile_id=unquote(practical_match.group(1)))
+            self.server.facade.start_practical_redraft_mock(
+                profile_id=unquote(practical_match.group(1))
+            )
             return self.server.facade.redraft_bootstrap()
         match = _PROFILE_ACTIVATE.fullmatch(path)
         if method == "POST" and match:
@@ -495,6 +494,56 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 roster=roster,
                 scoring=scoring,
                 draft=draft,
+            )
+            return self.server.facade.redraft_bootstrap()
+        start_match = _REDRAFT_DRAFT_START.fullmatch(path)
+        if method == "POST" and start_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"ownerSlot", "seed", "speed", "mode"})
+            if type(body.get("ownerSlot")) is not int or type(body.get("seed")) is not int:
+                raise self._invalid_body("ownerSlot and seed must be integers.")
+            if not isinstance(body.get("speed"), str) or not isinstance(body.get("mode"), str):
+                raise self._invalid_body("speed and mode must be strings.")
+            self.server.facade.start_redraft_draft_room(
+                profile_id=unquote(start_match.group(1)),
+                owner_slot=body["ownerSlot"],
+                seed=body["seed"],
+                speed=body["speed"],
+                mode=body["mode"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        advance_match = _REDRAFT_DRAFT_ADVANCE.fullmatch(path)
+        if method == "POST" and advance_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"onePick"})
+            if type(body.get("onePick")) is not bool:
+                raise self._invalid_body("onePick must be a boolean.")
+            self.server.facade.advance_redraft_draft_room(
+                profile_id=unquote(advance_match.group(1)),
+                one_pick=body["onePick"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        adp_match = _REDRAFT_ADP_IMPORT.fullmatch(path)
+        if method == "POST" and adp_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"csvText"})
+            if not isinstance(body.get("csvText"), str):
+                raise self._invalid_body("csvText must be a string.")
+            self.server.facade.import_redraft_adp(
+                profile_id=unquote(adp_match.group(1)),
+                csv_text=body["csvText"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        sleeper_pick_match = _REDRAFT_SLEEPER_PICK.fullmatch(path)
+        if method == "POST" and sleeper_pick_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"playerId", "pickNumber"})
+            if not isinstance(body.get("playerId"), str) or type(body.get("pickNumber")) is not int:
+                raise self._invalid_body("playerId must be a string and pickNumber an integer.")
+            self.server.facade.ingest_redraft_sleeper_pick(
+                profile_id=unquote(sleeper_pick_match.group(1)),
+                player_id=body["playerId"],
+                pick_number=body["pickNumber"],
             )
             return self.server.facade.redraft_bootstrap()
         pick_match = _REDRAFT_DRAFT_PICK.fullmatch(path)

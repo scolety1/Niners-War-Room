@@ -197,6 +197,9 @@ class RedraftRankingRow:
     rookie: bool
     authority_label: str = REDRAFT_AUTHORITY_LABEL
     model_family: str = MODEL_FAMILY
+    position_tier: int = 1
+    overall_tier_label: str = "Tier 1 · Elite"
+    position_tier_label: str = "Position Tier 1"
 
 
 @dataclass(frozen=True)
@@ -360,9 +363,7 @@ def _profile_from_document(document: Mapping[str, Any]) -> LeagueProfile:
             practical_mode=bool(document.get("practical_mode", False)),
             provider=str(document.get("provider", "local")),
             provider_league_id=(
-                str(document["provider_league_id"])
-                if document.get("provider_league_id")
-                else None
+                str(document["provider_league_id"]) if document.get("provider_league_id") else None
             ),
             schema_version=int(document.get("schema_version", 0)),
         )
@@ -1125,7 +1126,25 @@ def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> R
             row["player"].player_id,
         )
     )
-    tier_by_index = _tier_assignments([float(row["value"]) for row in preliminary])
+    tier_by_index = _tier_assignments(
+        [float(row["value"]) for row in preliminary],
+        maximum_tiers=64,
+    )
+    position_tier_by_player: dict[str, int] = {}
+    for position in SUPPORTED_POSITIONS:
+        position_rows = [item for item in preliminary if item["player"].position == position]
+        assignments = _tier_assignments(
+            [float(item["value"]) for item in position_rows],
+            minimum_size=3,
+            maximum_size=14,
+            maximum_tiers=32,
+        )
+        position_tier_by_player.update(
+            {
+                item["player"].player_id: assignments[index]
+                for index, item in enumerate(position_rows)
+            }
+        )
     position_ranks: dict[str, int] = {position: 0 for position in SUPPORTED_POSITIONS}
     rows: list[RedraftRankingRow] = []
     for index, item in enumerate(preliminary, start=1):
@@ -1151,6 +1170,11 @@ def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> R
                 evidence_status=player.evidence_status,
                 source_as_of=player.source_as_of,
                 rookie=player.rookie,
+                position_tier=position_tier_by_player[player.player_id],
+                overall_tier_label=_overall_tier_label(tier_by_index[index - 1]),
+                position_tier_label=(
+                    f"{player.position} Tier {position_tier_by_player[player.player_id]}"
+                ),
             )
         )
     return RankingResult(
@@ -1178,24 +1202,78 @@ def _confidence(player: ProjectionPlayer, projected: float) -> str:
     return "LOW"
 
 
-def _tier_assignments(values: Sequence[float]) -> list[int]:
+def _tier_assignments(
+    values: Sequence[float],
+    *,
+    minimum_size: int = 4,
+    maximum_size: int = 24,
+    maximum_tiers: int = 64,
+) -> list[int]:
+    """Create stable evidence-gap tiers with bounded draft-day presentation.
+
+    Boundaries prefer statistically unusual adjacent value cliffs. A maximum
+    segment size is only a readability guard and selects the strongest local
+    gap; it never forces equal tier sizes. Tier count remains bounded while the
+    size guard prevents a large catch-all deep tier.
+    """
+
     if not values:
         return []
     if len(values) == 1:
         return [1]
-    gaps = [max(0.0, values[index] - values[index + 1]) for index in range(len(values) - 1)]
-    ordered = sorted(gaps)
-    median = _percentile(ordered, 0.50)
-    q1 = _percentile(ordered, 0.25)
-    q3 = _percentile(ordered, 0.75)
-    threshold = max(5.0, median + 1.5 * (q3 - q1))
-    tiers = [1]
-    current = 1
-    for gap in gaps:
-        if gap >= threshold:
-            current += 1
-        tiers.append(current)
+    minimum_size = max(2, int(minimum_size))
+    maximum_size = max(minimum_size + 1, int(maximum_size))
+    maximum_tiers = max(2, int(maximum_tiers))
+    gaps = [
+        max(0.0, float(values[index]) - float(values[index + 1]))
+        for index in range(len(values) - 1)
+    ]
+    positive = sorted(gap for gap in gaps if gap > 0)
+    median = _percentile(positive, 0.50)
+    deviations = sorted(abs(gap - median) for gap in positive)
+    mad = _percentile(deviations, 0.50)
+    evidence_threshold = max(1.0, median + (2.5 * max(mad, 0.25)))
+
+    boundaries: list[int] = []
+    start = 0
+    while start + minimum_size < len(values) and len(boundaries) < maximum_tiers - 1:
+        earliest = start + minimum_size - 1
+        latest = min(start + maximum_size - 1, len(gaps) - 1)
+        if earliest > latest:
+            break
+        window = list(range(earliest, latest + 1))
+        supported = [index for index in window if gaps[index] >= evidence_threshold]
+        if supported:
+            boundary = max(supported, key=lambda index: (gaps[index], -index))
+        elif len(values) - start <= maximum_size:
+            break
+        else:
+            boundary = max(window, key=lambda index: (gaps[index], -index))
+        cut = boundary + 1
+        if len(values) - cut < minimum_size:
+            break
+        boundaries.append(cut)
+        start = cut
+
+    tiers: list[int] = []
+    for index in range(len(values)):
+        tiers.append(1 + sum(index >= boundary for boundary in boundaries))
     return tiers
+
+
+def _overall_tier_label(tier: int) -> str:
+    labels = {
+        1: "Tier 1 · Elite",
+        2: "Tier 2 · Foundation",
+        3: "Tier 3 · Strong starters",
+        4: "Tier 4 · Core starters",
+        5: "Tier 5 · Flex value",
+        6: "Tier 6 · Bench value",
+        7: "Tier 7 · Late targets",
+        8: "Tier 8 · Deep targets",
+        9: "Tier 9 · Deep targets",
+    }
+    return labels.get(tier, f"Tier {tier} · Deep pool")
 
 
 def _percentile(values: Sequence[float], percentile: float) -> float:

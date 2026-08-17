@@ -584,8 +584,14 @@ export interface RedraftRanking {
   starterGap: number;
   confidence: string;
   tier: number;
+  positionTier: number;
+  overallTierLabel: string;
+  positionTierLabel: string;
   sourceAsOf: string;
   rookie: boolean;
+  overallAdp: number | null;
+  expectedPick: number | null;
+  adpSource: string;
   drafted: boolean;
   draftedBy: string;
   pickNumber: number | null;
@@ -617,6 +623,112 @@ export interface DraftBoard {
   drafted: string[];
   updatedAtUtc?: string;
   recoveredFromBackup?: boolean;
+  configured?: boolean;
+  ownerSlot?: number | null;
+  seed?: number;
+  speed?: "FAST" | "NORMAL" | "STEP";
+  mode?: "MOCK" | "LIVE_READ_ONLY";
+  picks?: DraftPick[];
+  boardCells?: DraftBoardCell[];
+  teams?: DraftTeam[];
+  recentPicks?: DraftPick[];
+  draftLog?: DraftPick[];
+  myRoster?: DraftRosterPlayer[];
+  currentPick?: number | null;
+  currentTeamSlot?: number | null;
+  nextOwnerPick?: number | null;
+  isOwnerTurn?: boolean;
+  complete?: boolean;
+  availableCount?: number;
+  canUndo?: boolean;
+  adp?: AdpStatus;
+  beatAdpPool?: BeatAdpRow[];
+  recommendations?: DraftRecommendation[];
+  positionRun?: Array<{ position: string; count: number }>;
+  fallbackDisclosure?: string;
+  sleeperCompatibility?: {
+    mode: string;
+    pollingDefault: string;
+    writes: string;
+  };
+}
+
+export interface DraftPick {
+  pickNumber: number;
+  round: number;
+  teamSlot: number;
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  actor: string;
+  selectionBehavior: string;
+}
+
+export interface DraftBoardCell extends DraftPick {
+  ownerPick: boolean;
+  current: boolean;
+}
+
+export interface DraftRosterPlayer {
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  pickNumber: number;
+}
+
+export interface DraftTeam {
+  teamSlot: number;
+  name: string;
+  owner: boolean;
+  roster: DraftRosterPlayer[];
+  picks: Array<Record<string, unknown>>;
+}
+
+export interface AdpStatus {
+  available: boolean;
+  source: string;
+  sourceDate: string;
+  importedAtUtc: string;
+  matchedPlayers: number;
+  rankingPlayers: number;
+  coverage: number;
+  unmatched: string[];
+  sourceSha256: string;
+  authority: string;
+  message: string;
+}
+
+export interface BeatAdpRow {
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  nwrRank: number;
+  expectedPick: number | null;
+  nwrEdge: number | null;
+  nwrView: string;
+  draftTiming: string;
+  makeItBackProbability: number | null;
+  makeItBackMethod: string;
+  confidence: string;
+}
+
+export interface DraftRecommendation {
+  label: "Best Available" | "Best Fit" | "Value vs ADP" | "Upside" | "Safer";
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  nwrRank: number;
+  nwrView: string;
+  draftTiming: string;
+  makeItBack: string;
+  overallTierLabel: string;
+  positionTierLabel: string;
+  rosterFit: string;
+  note: string;
 }
 
 export interface ManualDraftAsset {

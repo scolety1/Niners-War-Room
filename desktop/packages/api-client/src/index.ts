@@ -283,6 +283,44 @@ export class NwrApiClient {
     });
   }
 
+  startDraftRoom(
+    profileId: string,
+    ownerSlot: number,
+    speed: "FAST" | "NORMAL" | "STEP" = "NORMAL",
+    seed = 20260817,
+    mode: "MOCK" | "LIVE_READ_ONLY" = "MOCK",
+  ): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/start`, {
+      method: "POST",
+      body: JSON.stringify({ ownerSlot, seed, speed, mode }),
+    });
+  }
+
+  advanceDraftRoom(profileId: string, onePick = false): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/advance`, {
+      method: "POST",
+      body: JSON.stringify({ onePick }),
+    });
+  }
+
+  importRedraftAdp(profileId: string, csvText: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ csvText }),
+    });
+  }
+
+  ingestSleeperDraftPick(
+    profileId: string,
+    playerId: string,
+    pickNumber: number,
+  ): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/sleeper-pick`, {
+      method: "POST",
+      body: JSON.stringify({ playerId, pickNumber }),
+    });
+  }
+
   undoDraftPick(profileId: string): Promise<RedraftBootstrap> {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/undo`, {
       method: "POST",

@@ -405,9 +405,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
     assert blocked_rows
     assert all("canonical" not in row["blockedReason"].lower() for row in blocked_rows)
     assert all("gsis" not in row["blockedReason"].lower() for row in blocked_rows)
-    blocked_rookie = next(
-        row for row in blocked_rows if row["player"] == "De'Zhaun Stribling"
-    )
+    blocked_rookie = next(row for row in blocked_rows if row["player"] == "De'Zhaun Stribling")
     assert blocked_rookie["playerId"] == "00-0041035"
     assert blocked_rookie["team"] == "SF"
     assert blocked_rookie["draftable"] is True
@@ -442,9 +440,7 @@ def test_dynasty_facade_composes_real_governed_workflows(
     assert blocked_detail.data["rookieIntelligence"]["collegeProduction"] == (
         "72.6 / 100 normalized"
     )
-    assert blocked_detail.data["rookieIntelligence"]["marketShare"] == (
-        "51.4 / 100 normalized"
-    )
+    assert blocked_detail.data["rookieIntelligence"]["marketShare"] == ("51.4 / 100 normalized")
     assert blocked_detail.data["rookieIntelligence"]["athleticContext"] == (
         "NOT_ENOUGH_INFORMATION"
     )
@@ -529,9 +525,7 @@ def test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware(
     bootstrap = facade.dynasty_bootstrap().data
     ids = {row["name"]: row["assetId"] for row in bootstrap["assetOptions"]}
 
-    comparison = facade.compare_dynasty_assets(
-        [ids["Jeremiyah Love"], ids["Jahmyr Gibbs"]]
-    ).data
+    comparison = facade.compare_dynasty_assets([ids["Jeremiyah Love"], ids["Jahmyr Gibbs"]]).data
     bridge = comparison["bridge"]
 
     assert bridge["mode"] == "ROOKIE_VETERAN"
@@ -560,18 +554,14 @@ def test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware(
     assert dimensions["D12"]["label"] == "Medium-term research outlook"
     assert dimensions["D12"]["confidence"] == "LOW"
 
-    rookie_pair = facade.compare_dynasty_assets(
-        [ids["Jeremiyah Love"], ids["Carnell Tate"]]
-    ).data
-    veteran_pair = facade.compare_dynasty_assets(
-        [ids["Jahmyr Gibbs"], ids["CeeDee Lamb"]]
-    ).data
+    rookie_pair = facade.compare_dynasty_assets([ids["Jeremiyah Love"], ids["Carnell Tate"]]).data
+    veteran_pair = facade.compare_dynasty_assets([ids["Jahmyr Gibbs"], ids["CeeDee Lamb"]]).data
     assert rookie_pair["bridge"] is None
     assert veteran_pair["bridge"] is None
 
-    manual = facade.compare_dynasty_assets(
-        [ids["De'Zhaun Stribling"], ids["Luke McCaffrey"]]
-    ).data["bridge"]
+    manual = facade.compare_dynasty_assets([ids["De'Zhaun Stribling"], ids["Luke McCaffrey"]]).data[
+        "bridge"
+    ]
     manual_by_key = {row["key"]: row for row in manual["decisions"]}
     assert manual_by_key["win_now"]["badge"] == "PRODUCTION"
     assert manual_by_key["three_year"]["preferred"] == "INSUFFICIENT EVIDENCE"
@@ -638,33 +628,33 @@ def test_stribling_is_searchable_selectable_comparable_tradeable_and_scenario_sa
     stribling = next(
         row for row in bootstrap["assetOptions"] if row["name"] == "De'Zhaun Stribling"
     )
-    anchor = next(
-        row for row in bootstrap["assetOptions"] if row["assetType"] == "Current Player"
-    )
+    anchor = next(row for row in bootstrap["assetOptions"] if row["assetType"] == "Current Player")
 
-    assert stribling | {
-        "assetId": "blocked-rookie:dezhaun-stribling",
-        "playerId": "00-0041035",
-        "team": "SF",
-        "position": "WR",
-        "draftRound": 2,
-        "overallPick": 33,
-        "rank": None,
-        "selectable": True,
-        "draftEligible": True,
-        "modelScoreEligible": False,
-        "evidenceBlocked": True,
-        "blocked": False,
-    } == stribling
+    assert (
+        stribling
+        | {
+            "assetId": "blocked-rookie:dezhaun-stribling",
+            "playerId": "00-0041035",
+            "team": "SF",
+            "position": "WR",
+            "draftRound": 2,
+            "overallPick": 33,
+            "rank": None,
+            "selectable": True,
+            "draftEligible": True,
+            "modelScoreEligible": False,
+            "evidenceBlocked": True,
+            "blocked": False,
+        }
+        == stribling
+    )
     assert "stribling" in stribling["name"].casefold()
     assert "dezhaun" in "".join(
         character for character in stribling["name"].casefold() if character.isalnum()
     )
 
     detail = facade.dynasty_asset(stribling["assetId"]).data
-    comparison = facade.compare_dynasty_assets(
-        [stribling["assetId"], anchor["assetId"]]
-    ).data
+    comparison = facade.compare_dynasty_assets([stribling["assetId"], anchor["assetId"]]).data
     trade = facade.evaluate_dynasty_trade(
         give=[stribling["assetId"]],
         receive=[anchor["assetId"]],
@@ -701,22 +691,22 @@ def test_final_readiness_turns_red_when_draft_cockpit_adapter_drops_stribling(
 
     def without_stribling(frame: Any) -> list[dict[str, Any]]:
         return [
-            row
-            for row in original(frame)
-            if row["assetId"] != "blocked-rookie:dezhaun-stribling"
+            row for row in original(frame) if row["assetId"] != "blocked-rookie:dezhaun-stribling"
         ]
 
     monkeypatch.setattr(DesktopBackendFacade, "_rookie_records", staticmethod(without_stribling))
-    readiness = DesktopBackendFacade(
-        repo_root=REPO_ROOT,
-        mode="dynasty",
-    ).dynasty_bootstrap().data["rookieReadiness"]
+    readiness = (
+        DesktopBackendFacade(
+            repo_root=REPO_ROOT,
+            mode="dynasty",
+        )
+        .dynasty_bootstrap()
+        .data["rookieReadiness"]
+    )
 
     assert readiness["verdict"] == "RED_NWR_ROOKIE_DRAFT_SAFETY_STILL_UNACCEPTABLE"
     assert readiness["ready"] is False
-    assert readiness["missingBySurface"]["draft_cockpit"] == [
-        "blocked-rookie:dezhaun-stribling"
-    ]
+    assert readiness["missingBySurface"]["draft_cockpit"] == ["blocked-rookie:dezhaun-stribling"]
     assert readiness["surfaceGapAssetIds"] == ["blocked-rookie:dezhaun-stribling"]
 
 
@@ -733,18 +723,18 @@ def test_final_readiness_turns_red_when_search_and_selection_drop_stribling(
         return option
 
     monkeypatch.setattr(DesktopBackendFacade, "_asset_option", staticmethod(disable_stribling))
-    readiness = DesktopBackendFacade(
-        repo_root=REPO_ROOT,
-        mode="dynasty",
-    ).dynasty_bootstrap().data["rookieReadiness"]
+    readiness = (
+        DesktopBackendFacade(
+            repo_root=REPO_ROOT,
+            mode="dynasty",
+        )
+        .dynasty_bootstrap()
+        .data["rookieReadiness"]
+    )
 
     assert readiness["ready"] is False
-    assert readiness["missingBySurface"]["search"] == [
-        "blocked-rookie:dezhaun-stribling"
-    ]
-    assert readiness["missingBySurface"]["selectable"] == [
-        "blocked-rookie:dezhaun-stribling"
-    ]
+    assert readiness["missingBySurface"]["search"] == ["blocked-rookie:dezhaun-stribling"]
+    assert readiness["missingBySurface"]["selectable"] == ["blocked-rookie:dezhaun-stribling"]
     assert readiness["missingBySurface"]["draft_cockpit"] == []
     assert readiness["missingFromDraftablePool"] == 0
 
@@ -785,11 +775,15 @@ def test_dynasty_trade_scenarios_save_reopen_update_and_export(
         team_window="Contending",
         notes="The asset sides remain exact.",
     ).data
-    reloaded = DesktopBackendFacade(
-        repo_root=REPO_ROOT,
-        mode="dynasty",
-        workspace_root=workspace,
-    ).list_dynasty_trades().data
+    reloaded = (
+        DesktopBackendFacade(
+            repo_root=REPO_ROOT,
+            mode="dynasty",
+            workspace_root=workspace,
+        )
+        .list_dynasty_trades()
+        .data
+    )
     exported = facade.export_dynasty_trade(
         title="Contender window brief",
         give=[current_ids[0]],
@@ -877,7 +871,10 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "authority": "EXTERNAL CONSENSUS — FANTASYPROS",
         "configured": False,
         "manualFallback": "NOT_ADMITTED",
-        "message": "FantasyPros API key is not configured. No provider request was attempted; the existing K/DST manual-draft fallback is not yet admitted.",
+        "message": (
+            "FantasyPros API key is not configured. No provider request was attempted; "
+            "the existing K/DST manual-draft fallback is not yet admitted."
+        ),
     }
     assert [row["profileId"] for row in first.data["presets"]] == [
         profile.profile_id for profile in builtin_presets()
@@ -937,8 +934,14 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "starterGap",
         "confidence",
         "tier",
+        "positionTier",
+        "overallTierLabel",
+        "positionTierLabel",
         "sourceAsOf",
         "rookie",
+        "overallAdp",
+        "expectedPick",
+        "adpSource",
         "drafted",
         "draftedBy",
         "pickNumber",
@@ -962,15 +965,19 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "messages",
     }
     if active.data["draftBoard"] is not None:
-        assert set(active.data["draftBoard"]).issubset(
-            {
-                "schemaVersion",
-                "profileId",
-                "drafted",
-                "updatedAtUtc",
-                "recoveredFromBackup",
-            }
-        )
+        assert {
+            "schemaVersion",
+            "profileId",
+            "configured",
+            "drafted",
+            "boardCells",
+            "teams",
+            "adp",
+            "recommendations",
+            "beatAdpPool",
+            "fallbackDisclosure",
+        }.issubset(active.data["draftBoard"])
+        assert len(active.data["draftBoard"]["boardCells"]) == 192
     json.dumps(
         contract_envelope("redraft", data=active.data, warnings=active.warnings),
         allow_nan=False,
@@ -985,9 +992,7 @@ def test_dynasty_personal_workspace_persists_and_verifies_backup(tmp_path: Path)
         workspace_root=workspace_root,
     )
     before = facade.dynasty_bootstrap()
-    asset = next(
-        row for row in before.data["assetOptions"] if row["assetType"] == "Current Player"
-    )
+    asset = next(row for row in before.data["assetOptions"] if row["assetType"] == "Current Player")
 
     board = facade.save_dynasty_personal_entry(
         asset_id=asset["assetId"],
@@ -1238,7 +1243,9 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
         )
 
 
-def test_redraft_league_switching_isolates_draft_state_and_persists_active_profile(tmp_path: Path) -> None:
+def test_redraft_league_switching_isolates_draft_state_and_persists_active_profile(
+    tmp_path: Path,
+) -> None:
     store = tmp_path / "redraft-store"
     facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
     niners = facade.create_redraft_profile(

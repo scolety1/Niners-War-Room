@@ -16,9 +16,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ROOKIE_PACKET_RELATIVE = Path(
-    "docs/hq/master/nwr_model_v4_2026_rookie_board_review_v1_20260730"
-)
+ROOKIE_PACKET_RELATIVE = Path("docs/hq/master/nwr_model_v4_2026_rookie_board_review_v1_20260730")
 ROOKIE_BOARD_RELATIVE = ROOKIE_PACKET_RELATIVE / "MODEL_V4_2026_ROOKIE_BOARD_REVIEW.csv"
 BLOCKED_ROOKIES_RELATIVE = ROOKIE_PACKET_RELATIVE / "2026_ROOKIE_IDENTITY_BLOCKERS.csv"
 LIVE_IDENTITY_RELATIVE = Path(
@@ -33,9 +31,7 @@ ROOKIE_INTELLIGENCE_RELATIVE = Path(
 ROOKIE_BOARD_SHA256 = "06853164a41cd9715accfc3c4f3e54d0cc915be6c55ebab040de6fc0abd96c2f"
 BLOCKED_ROOKIES_SHA256 = "361011524dfbabc62cecaf4286d201b219e275a5fa8b43b57c93017eca56d19a"
 LIVE_IDENTITY_SHA256 = "f4ae6106f5302c59f23d83a27c006a894c5660b3058a011e5b2f16c6a2c79ff9"
-ROOKIE_INTELLIGENCE_SHA256 = (
-    "68afdb6010d549cd45fe7e6bd9e25036926802ab570a2a51d3d80aa8f4c2e922"
-)
+ROOKIE_INTELLIGENCE_SHA256 = "4d45fc0009cb01569a292d881778a575ee8b625235adc3595eac8d71504b35cb"
 
 SUPPORTED_POSITIONS = ("QB", "RB", "WR", "TE")
 EXPECTED_POSITION_COUNTS = {"QB": 10, "RB": 12, "WR": 36, "TE": 22}
@@ -80,9 +76,7 @@ def reconcile_rookie_draft_readiness(
         str(surface): [str(asset_id).strip() for asset_id in asset_ids if str(asset_id).strip()]
         for surface, asset_ids in surface_asset_ids.items()
     }
-    surface_sets = {
-        surface: set(asset_ids) for surface, asset_ids in surface_sequences.items()
-    }
+    surface_sets = {surface: set(asset_ids) for surface, asset_ids in surface_sequences.items()}
     missing_by_surface = {
         surface: [asset_id for asset_id in official_ids if asset_id not in asset_ids]
         for surface, asset_ids in surface_sets.items()
@@ -109,16 +103,13 @@ def reconcile_rookie_draft_readiness(
     }
     scored = sum(bool(row.get("model_score_eligible")) for row in official_rows)
     manual = sum(
-        str(row.get("authority_status") or "") == "UNSCORED_MANUAL_REVIEW"
-        for row in official_rows
+        str(row.get("authority_status") or "") == "UNSCORED_MANUAL_REVIEW" for row in official_rows
     )
     unresolved = sum(
-        str(row.get("authority_status") or "") == "BLOCKED_IDENTITY"
-        for row in official_rows
+        str(row.get("authority_status") or "") == "BLOCKED_IDENTITY" for row in official_rows
     )
     exact = sum(
-        str(row.get("identity_status") or "") == "EXACT_GOVERNED_IDENTITY"
-        for row in official_rows
+        str(row.get("identity_status") or "") == "EXACT_GOVERNED_IDENTITY" for row in official_rows
     )
     duplicate_asset_ids = len(official_ids) - len(official_set)
     source_invalid = bool(source_errors) or any(
@@ -451,9 +442,7 @@ def build_rookie_draft_eligibility_overlay(
                 "refresh_available": refresh_available,
                 "rebuild_needed": not model_score_eligible,
                 "rebuild_status": (
-                    "NO_REBUILD_NEEDED"
-                    if model_score_eligible
-                    else "YES_SEPARATE_GOVERNED_REBUILD"
+                    "NO_REBUILD_NEEDED" if model_score_eligible else "YES_SEPARATE_GOVERNED_REBUILD"
                 ),
                 "previous_identity_status": str(frozen.get("identity_status") or "").strip(),
                 "previous_block_reason": previous_block_reason,
@@ -466,13 +455,9 @@ def build_rookie_draft_eligibility_overlay(
                 "source_tier": str(frozen.get("tier") or "").strip(),
                 "source_confidence": str(frozen.get("evidence_confidence") or "").strip(),
                 "source_warnings": str(frozen.get("warning_codes") or "").strip(),
-                "source_raw_model_score": str(
-                    frozen.get("raw_model_v4_score") or ""
-                ).strip(),
+                "source_raw_model_score": str(frozen.get("raw_model_v4_score") or "").strip(),
                 "source_review_score": str(frozen.get("final_review_score") or "").strip(),
-                "source_board_score": str(
-                    frozen.get("sprint14e_format_score") or ""
-                ).strip(),
+                "source_board_score": str(frozen.get("sprint14e_format_score") or "").strip(),
                 "source_production_component": _factual_evidence_value(
                     frozen,
                     intelligence,
@@ -532,9 +517,7 @@ def build_rookie_draft_eligibility_overlay(
                 "current_role_projection_status": str(
                     current.get("projection_status") or ""
                 ).strip(),
-                "current_role_block_reason": str(
-                    current.get("block_reason") or ""
-                ).strip(),
+                "current_role_block_reason": str(current.get("block_reason") or "").strip(),
                 "age_at_draft": _factual_evidence_value(
                     frozen,
                     intelligence,
@@ -552,9 +535,7 @@ def build_rookie_draft_eligibility_overlay(
     )
     for row in output:
         score_key = str(row.get("source_board_score") or "")
-        row["source_board_score_tied"] = bool(
-            score_key and board_score_counts[score_key] > 1
-        )
+        row["source_board_score_tied"] = bool(score_key and board_score_counts[score_key] > 1)
 
     output.sort(
         key=lambda row: (
@@ -606,9 +587,7 @@ def build_rookie_draft_eligibility_overlay(
         "review_asset_ids": [
             str(row["asset_id"]) for row in output if not row["model_score_eligible"]
         ],
-        "alert_code": (
-            "ROOKIE_DRAFT_CLASS_COMPLETE" if ready else "ROOKIE_DRAFT_READINESS_REVIEW"
-        ),
+        "alert_code": ("ROOKIE_DRAFT_CLASS_COMPLETE" if ready else "ROOKIE_DRAFT_READINESS_REVIEW"),
         "alert_title": (
             "Rookie Draft Class Complete"
             if ready

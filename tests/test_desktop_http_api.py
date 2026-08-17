@@ -214,6 +214,22 @@ class FakeFacade:
         self.calls.append(("undo", profile_id))
         return FacadePayload(data={"profileId": profile_id})
 
+    def start_redraft_draft_room(self, **value: Any) -> FacadePayload:
+        self.calls.append(("draft-start", value))
+        return FacadePayload(data=value)
+
+    def advance_redraft_draft_room(self, **value: Any) -> FacadePayload:
+        self.calls.append(("draft-advance", value))
+        return FacadePayload(data=value)
+
+    def import_redraft_adp(self, **value: Any) -> FacadePayload:
+        self.calls.append(("adp-import", value))
+        return FacadePayload(data=value)
+
+    def ingest_redraft_sleeper_pick(self, **value: Any) -> FacadePayload:
+        self.calls.append(("sleeper-pick", value))
+        return FacadePayload(data=value)
+
 
 @contextmanager
 def running_server(facade: FakeFacade) -> Iterator[DesktopApiServer]:
@@ -588,15 +604,18 @@ def test_dynasty_workspace_routes_are_bounded_and_authenticated() -> None:
     assert invalid[0] == 400
     assert invalid_adoption[0] == 400
     assert unauthenticated[0] == 401
-    assert ("personal-board", {
-        "asset_id": "current:1",
-        "watchlist": True,
-        "target": False,
-        "avoid": False,
-        "tags": ["camp"],
-        "notes": "Revisit after camp.",
-        "team_window": "Contending",
-    }) in facade.calls
+    assert (
+        "personal-board",
+        {
+            "asset_id": "current:1",
+            "watchlist": True,
+            "target": False,
+            "avoid": False,
+            "tags": ["camp"],
+            "notes": "Revisit after camp.",
+            "team_window": "Contending",
+        },
+    ) in facade.calls
     assert any(call[0] == "decision-create" for call in facade.calls)
     assert ("workspace-adopt", True) in facade.calls
     assert sum(call[0] == "personal-board" for call in facade.calls) == 1
@@ -665,6 +684,65 @@ def test_redraft_mutation_routes_return_bootstrap_and_reject_pick_metadata() -> 
         == 1
     )
     assert ("undo", "profile-1") in facade.calls
+
+
+def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        start = request(
+            server,
+            "POST",
+            "/api/v1/redraft/draft/profile-1/start",
+            body={"ownerSlot": 9, "seed": 20260817, "speed": "NORMAL", "mode": "MOCK"},
+            headers=authenticated_headers(),
+        )
+        advance = request(
+            server,
+            "POST",
+            "/api/v1/redraft/draft/profile-1/advance",
+            body={"onePick": False},
+            headers=authenticated_headers(),
+        )
+        adp = request(
+            server,
+            "POST",
+            "/api/v1/redraft/adp/profile-1/import",
+            body={"csvText": "player,position,overall_adp,source,scoring_format,team_count,date\n"},
+            headers=authenticated_headers(),
+        )
+        sleeper = request(
+            server,
+            "POST",
+            "/api/v1/redraft/draft/profile-1/sleeper-pick",
+            body={"playerId": "fixture-player", "pickNumber": 1},
+            headers=authenticated_headers(),
+        )
+        invalid = request(
+            server,
+            "POST",
+            "/api/v1/redraft/draft/profile-1/start",
+            body={"ownerSlot": True, "seed": 1, "speed": "FAST", "mode": "MOCK"},
+            headers=authenticated_headers(),
+        )
+
+    assert start[0] == advance[0] == adp[0] == sleeper[0] == 200
+    assert invalid[0] == 400
+    assert (
+        "draft-start",
+        {
+            "profile_id": "profile-1",
+            "owner_slot": 9,
+            "seed": 20260817,
+            "speed": "NORMAL",
+            "mode": "MOCK",
+        },
+    ) in facade.calls
+    assert ("draft-advance", {"profile_id": "profile-1", "one_pick": False}) in facade.calls
+    assert any(call[0] == "adp-import" for call in facade.calls)
+    assert (
+        "sleeper-pick",
+        {"profile_id": "profile-1", "player_id": "fixture-player", "pick_number": 1},
+    ) in facade.calls
 
 
 def test_redraft_profile_duplicate_and_edit_routes_are_strict() -> None:
@@ -793,6 +871,7 @@ def test_disallowed_methods_still_require_authentication() -> None:
 
     assert unauthenticated[0] == 401
     assert authenticated[0] == 405
+
 
 def test_random_port_is_atomically_bound_in_the_ephemeral_high_range() -> None:
     with running_server(FakeFacade("dynasty")) as server:
