@@ -107,9 +107,12 @@ from src.services.redraft_draft_room_v1_service import (
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
+    owner_platform_snapshot_status,
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
     save_owner_paste_adp,
+    set_owner_platform_selection,
+    clear_owner_platform_selection,
     set_owner_paste_adp_active,
     start_draft_room,
     undo_room_pick,
@@ -1801,6 +1804,7 @@ class DesktopBackendFacade:
                 "rankings": rankings,
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
+                "ownerPlatformSnapshot": owner_platform_snapshot_status(self.redraft_root, selected),
                 "manualAssets": [
                     {
                         "playerId": str(asset.get("player_id") or ""),
@@ -2425,6 +2429,8 @@ class DesktopBackendFacade:
         return FacadePayload(data={
             "pastePreview": {
                 "selectedSource": preview["selectedSource"],
+                "parserMode": preview["parserMode"],
+                "platformCoverage": preview["platformCoverage"],
                 "sourceRows": preview["sourceRows"],
                 "matchedRows": preview["matchedRows"],
                 "skippedRows": preview["skippedRows"],
@@ -2458,9 +2464,20 @@ class DesktopBackendFacade:
     def clear_redraft_paste_adp(self, *, profile_id: str) -> FacadePayload:
         profile, _, _ = self._redraft_room_context(profile_id)
         try:
-            set_owner_paste_adp_active(self.redraft_root, profile, active=False)
+            if owner_platform_snapshot_status(self.redraft_root).get("available"):
+                clear_owner_platform_selection(self.redraft_root, profile)
+            else:
+                set_owner_paste_adp_active(self.redraft_root, profile, active=False)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_PASTE_ADP_CLEAR_FAILED", "The active pasted platform ADP snapshot could not be cleared.", status=409) from exc
+        return self.redraft_bootstrap()
+
+    def set_redraft_owner_platform_selection(self, *, profile_id: str, selection: str) -> FacadePayload:
+        profile, _, _ = self._redraft_room_context(profile_id)
+        try:
+            set_owner_platform_selection(self.redraft_root, profile, selection)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_OWNER_PLATFORM_SELECTION_FAILED", "The league ADP column selection could not be saved.", status=409) from exc
         return self.redraft_bootstrap()
 
     def ingest_redraft_sleeper_pick(

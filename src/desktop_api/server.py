@@ -41,6 +41,7 @@ _REDRAFT_PASTE_ADP_PREVIEW = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/pre
 _REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$")
 _REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
 _REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear$")
+_REDRAFT_PASTE_ADP_SELECTION = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/selection$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
@@ -577,6 +578,15 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             body = self._json_body(allow_empty=True)
             self._reject_unknown_fields(body, set())
             return self.server.facade.clear_redraft_paste_adp(profile_id=unquote(paste_clear_match.group(1)))
+        paste_selection_match = _REDRAFT_PASTE_ADP_SELECTION.fullmatch(path)
+        if method == "POST" and paste_selection_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"selection"})
+            if not isinstance(body.get("selection"), str):
+                raise self._invalid_body("selection must be a string.")
+            return self.server.facade.set_redraft_owner_platform_selection(
+                profile_id=unquote(paste_selection_match.group(1)), selection=body["selection"],
+            )
         sleeper_pick_match = _REDRAFT_SLEEPER_PICK.fullmatch(path)
         if method == "POST" and sleeper_pick_match:
             body = self._json_body()

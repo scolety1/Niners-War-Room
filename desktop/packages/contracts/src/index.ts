@@ -556,7 +556,7 @@ export interface LeagueProfile {
   createdAtUtc: string;
   updatedAtUtc: string;
   practicalMode: boolean;
-  provider: "local" | "sleeper";
+  provider: "local" | "sleeper" | "espn" | "fantasypros";
   providerLeagueId: string | null;
 }
 
@@ -726,6 +726,23 @@ export interface PasteAdpPreview {
   unmatched: string[];
   warnings: string[];
   rows: Array<Record<string, unknown>>;
+  parserMode?: "MARKDOWN_TABLE" | "PLAIN_TEXT_BLOCK";
+  platformCoverage?: Record<string, { available: number; total: number }>;
+}
+
+export interface OwnerPlatformSnapshotStatus {
+  available: boolean;
+  active: boolean;
+  parserMode: string;
+  rowCount: number;
+  matchedRows?: number;
+  platformCoverage: Record<string, { available: number; total: number }>;
+  sourceLabel: string;
+  rawHash: string;
+  importedAtUtc: string;
+  leagueSelection: string;
+  detectedPlatform: string;
+  activeColumn?: string;
 }
 
 export interface BeatAdpRow {
@@ -815,6 +832,7 @@ export interface RedraftBootstrap {
   rankings: RedraftRanking[];
   replacementLevels: ReplacementLevel[];
   draftBoard: DraftBoard | null;
+  ownerPlatformSnapshot?: OwnerPlatformSnapshotStatus;
   manualAssets?: ManualDraftAsset[];
   externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;

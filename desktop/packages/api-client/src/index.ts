@@ -338,6 +338,12 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/clear`, { method: "POST", body: "{}" });
   }
 
+  setRedraftOwnerPlatformSelection(profileId: string, selection: "AUTO" | "CONSENSUS" | "SLEEPER" | "ESPN" | "FANTASYPROS" | "DISABLED"): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/selection`, {
+      method: "POST", body: JSON.stringify({ selection }),
+    });
+  }
+
   ingestSleeperDraftPick(
     profileId: string,
     playerId: string,

@@ -65,6 +65,7 @@ ADP_COLUMN_ALIASES = {
     "nfl_team": "team",
 }
 PASTE_PLATFORM_COLUMNS = frozenset({"CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS"})
+OWNER_PLATFORM_SELECTIONS = frozenset({"AUTO", "CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS", "DISABLED"})
 PASTE_COLUMN_ALIASES = {
     "cons": "CONSENSUS", "consensus": "CONSENSUS",
     "sleeper": "SLEEPER", "espn": "ESPN",
@@ -322,14 +323,17 @@ def preview_owner_paste_adp(
     if not paste_text.strip() or len(paste_text.encode("utf-8")) > 2_000_000:
         raise RedraftValidationError("Pasted rankings must be non-empty and no larger than 2 MB.")
     selected = _paste_selected_source(selected_source)
-    rows = _paste_table_rows(paste_text)
+    rows, parser_mode, parser_warnings = _owner_platform_rows(paste_text)
     if not rows:
-        raise RedraftValidationError("Paste a markdown pipe table with Position, Player, and ADP columns.")
+        raise RedraftValidationError(
+            "Paste a markdown pipe table, or plain-text blocks such as `WR13`, player name, "
+            "then `Consensus Sleeper ESPN FantasyPros` numbers. No local state was changed."
+        )
     assets = _matching_assets(ranking, manual_assets)
     parsed_rows: list[dict[str, Any]] = []
     entries: list[AdpEntry] = []
     unmatched: list[str] = []
-    warnings: list[str] = []
+    warnings: list[str] = list(parser_warnings)
     report: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for source_index, row in enumerate(rows, start=1):
@@ -359,9 +363,19 @@ def preview_owner_paste_adp(
             receipt["match_status"] = "INVALID"
             parsed_rows.append(receipt)
             continue
-        if selected_value is None:
-            warnings.append(f"row {source_index}: {player} has no usable {selected.title()} ADP")
-            receipt["match_status"] = "SKIPPED_NO_SELECTED_ADP"
+        match_value = selected_value
+        if match_value is None:
+            for fallback in ("consensus", "sleeper", "espn", "fantasypros"):
+                match_value = _paste_number(row.get(fallback, ""))
+                if match_value is not None:
+                    warnings.append(
+                        f"row {source_index}: {player} has no usable {selected.title()} ADP; "
+                        "it remains available through its populated platform column."
+                    )
+                    break
+        if match_value is None:
+            warnings.append(f"row {source_index}: {player} has no usable platform ADP")
+            receipt["match_status"] = "SKIPPED_NO_PLATFORM_ADP"
             parsed_rows.append(receipt)
             continue
         matched, method, confidence, reason = _match_adp_player(player, position, "", assets)
@@ -380,13 +394,13 @@ def preview_owner_paste_adp(
             parsed_rows.append(receipt)
             continue
         seen_ids.add(matched_id)
-        receipt.update({"match_status": "MATCHED", "matched_nwr_player_id": matched_id, "matched_nwr_player_name": str(matched["player_name"]), "match_method": method, "match_confidence": confidence})
+        receipt.update({"match_status": "MATCHED", "matched_nwr_player_id": matched_id, "matched_nwr_player_name": str(matched["player_name"]), "matched_nwr_team": str(matched["team"]), "match_method": method, "match_confidence": confidence})
         parsed_rows.append(receipt)
-        entries.append(AdpEntry(player_id=matched_id, player=str(matched["player_name"]), team=str(matched["team"]), position=str(matched["position"]), overall_adp=selected_value, expected_pick=selected_value, min_pick=None, max_pick=None, std_dev=None, source_player_id=f"paste:{source_index}", expected_round=max(1, math.ceil(selected_value / profile.team_count)), match_status="MATCHED", match_confidence=confidence))
+        entries.append(AdpEntry(player_id=matched_id, player=str(matched["player_name"]), team=str(matched["team"]), position=str(matched["position"]), overall_adp=match_value, expected_pick=match_value, min_pick=None, max_pick=None, std_dev=None, source_player_id=f"paste:{source_index}", expected_round=max(1, math.ceil(match_value / profile.team_count)), match_status="MATCHED", match_confidence=confidence))
         report.append(_match_report_row("", player, position, "", matched, method, confidence, ""))
     if not entries:
         raise RedraftValidationError("The pasted table did not safely match any NWR Draft Room players.")
-    return {"selectedSource": selected, "parsedRows": parsed_rows, "entries": entries, "unmatched": unmatched, "warnings": warnings, "matchReport": report, "sourceRows": len(rows), "matchedRows": len(entries), "skippedRows": len(rows) - len(entries)}
+    return {"selectedSource": selected, "parserMode": parser_mode, "platformCoverage": _platform_coverage(parsed_rows), "parsedRows": parsed_rows, "entries": entries, "unmatched": unmatched, "warnings": warnings, "matchReport": report, "sourceRows": len(rows), "matchedRows": len(entries), "skippedRows": len(rows) - len(entries)}
 
 
 def save_owner_paste_adp(
@@ -408,15 +422,25 @@ def save_owner_paste_adp(
     source = canonical_source if not label else f"{canonical_source} — {label}"
     rows = [{**row, "imported_at": imported, "import_source_label": source} for row in preview["parsedRows"]]
     snapshot = AdpSnapshot(profile_id=profile.profile_id, source=source, scoring_format=_profile_scoring(profile), team_count=profile.team_count, source_date=datetime.now(UTC).date().isoformat(), imported_at_utc=imported, source_sha256=hashlib.sha256(paste_text.encode("utf-8")).hexdigest(), entries=tuple(sorted(preview["entries"], key=lambda entry: (entry.expected_pick, entry.player_id))), unmatched=tuple(preview["unmatched"]), provider=f"OWNER_PASTE_{selected}", authority="OWNER-IMPORTED PLATFORM ADP / MARKET TIMING", retrieved_at_utc=imported, provider_version="NWR_OWNER_PASTE_ADP_V1", freshness="FRESH", match_report=tuple(preview["matchReport"]), paste_rows=tuple(rows))
-    document = _adp_document(snapshot)
-    document["active"] = activate
-    _atomic_json(_owner_paste_adp_path(root, profile.profile_id), document)
-    _owner_paste_raw_path(root, profile.profile_id).parent.mkdir(parents=True, exist_ok=True)
-    _owner_paste_raw_path(root, profile.profile_id).write_text(paste_text, encoding="utf-8", newline="")
+    _save_owner_platform_snapshot(
+        root, profile, snapshot, rows, paste_text,
+        source_label=label or "Owner platform rankings",
+        parser_mode=str(preview["parserMode"]),
+        platform_coverage=dict(preview["platformCoverage"]),
+        active=True,
+    )
     return snapshot
 
 
 def set_owner_paste_adp_active(root: str | Path, profile: LeagueProfile, *, active: bool) -> None:
+    if _owner_platform_snapshot_path(root).is_file():
+        selection = _owner_platform_selection(root, profile)[0]
+        _atomic_json(_owner_platform_selection_path(root, profile.profile_id), {
+            "profile_id": profile.profile_id,
+            "selection": selection if active else "DISABLED",
+            "updated_at_utc": utc_now(),
+        })
+        return
     path = _owner_paste_adp_path(root, profile.profile_id)
     if not path.is_file():
         raise RedraftValidationError("Save a pasted platform ADP snapshot before activating it.")
@@ -426,6 +450,16 @@ def set_owner_paste_adp_active(root: str | Path, profile: LeagueProfile, *, acti
 
 
 def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
+    has_global_snapshot = _owner_platform_snapshot_path(root).is_file()
+    global_snapshot = _load_owner_platform_snapshot(root, profile)
+    if global_snapshot is not None:
+        ffc_path = _ffc_adp_path(root, profile.profile_id)
+        if ffc_path.is_file():
+            try:
+                return _merge_owner_platform_fallback(global_snapshot, _read_adp_snapshot(ffc_path, profile))
+            except RedraftPersistenceError:
+                pass
+        return global_snapshot
     owner_path = _adp_path(root, profile.profile_id)
     ffc_path = _ffc_adp_path(root, profile.profile_id)
     paste_path = _owner_paste_adp_path(root, profile.profile_id)
@@ -435,7 +469,15 @@ def load_adp_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot:
             paste_active = bool(json.loads(paste_path.read_text(encoding="utf-8")).get("active"))
         except (OSError, ValueError, json.JSONDecodeError):
             paste_active = False
-    path = paste_path if paste_active else ffc_path if ffc_path.is_file() else owner_path
+    # Once a global snapshot exists, Disabled/use FFC must not be shadowed by an
+    # older profile-scoped owner paste cache from the pre-snapshot implementation.
+    path = (
+        ffc_path if has_global_snapshot and ffc_path.is_file()
+        else owner_path if has_global_snapshot
+        else paste_path if paste_active
+        else ffc_path if ffc_path.is_file()
+        else owner_path
+    )
     if not path.is_file():
         return AdpSnapshot(
             profile_id=profile.profile_id,
@@ -1232,6 +1274,22 @@ def _select_asset(
     scored.sort(key=lambda row: (row[0], row[1]))
     if adp.available and adp.provider == "FFC":
         behavior = "CPU_MARKET_ADP_FFC"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_AUTO_SLEEPER":
+        behavior = "CPU_MARKET_ADP_OWNER_AUTO_SLEEPER"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_AUTO_ESPN":
+        behavior = "CPU_MARKET_ADP_OWNER_AUTO_ESPN"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_AUTO_CONSENSUS":
+        behavior = "CPU_MARKET_ADP_OWNER_AUTO_CONSENSUS"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_AUTO_FANTASYPROS":
+        behavior = "CPU_MARKET_ADP_OWNER_AUTO_FANTASYPROS"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_SLEEPER":
+        behavior = "CPU_MARKET_ADP_OWNER_SLEEPER"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_ESPN":
+        behavior = "CPU_MARKET_ADP_OWNER_ESPN"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_CONSENSUS":
+        behavior = "CPU_MARKET_ADP_OWNER_CONSENSUS"
+    elif adp.available and adp.provider == "OWNER_PLATFORM_FANTASYPROS":
+        behavior = "CPU_MARKET_ADP_OWNER_FANTASYPROS"
     elif adp.available and adp.provider == "OWNER_PASTE_SLEEPER":
         behavior = "CPU_MARKET_ADP_OWNER_SLEEPER"
     elif adp.available and adp.provider == "OWNER_PASTE_CONSENSUS":
@@ -1829,6 +1887,198 @@ def _owner_paste_raw_path(root: str | Path, profile_id: str) -> Path:
     return Path(root) / "adp_provider_cache" / "owner_paste" / f"{profile_id}.md"
 
 
+def _owner_platform_snapshot_path(root: str | Path) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.json"
+
+
+def _owner_platform_raw_path(root: str | Path) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.txt"
+
+
+def _owner_platform_selection_path(root: str | Path, profile_id: str) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_platform_snapshot" / "leagues" / f"{profile_id}.json"
+
+
+def _detected_platform(profile: LeagueProfile) -> str:
+    provider = str(profile.provider or "").strip().lower()
+    if provider == "sleeper":
+        return "SLEEPER"
+    if provider == "espn":
+        return "ESPN"
+    if provider in {"fantasypros", "fantasy_pros"}:
+        return "FANTASYPROS"
+    return "CONSENSUS"
+
+
+def _owner_platform_selection(root: str | Path, profile: LeagueProfile) -> tuple[str, bool]:
+    selection = "AUTO"
+    path = _owner_platform_selection_path(root, profile.profile_id)
+    if path.is_file():
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+            candidate = str(document.get("selection") or "AUTO").upper()
+            if candidate in OWNER_PLATFORM_SELECTIONS:
+                selection = candidate
+        except (OSError, ValueError, json.JSONDecodeError):
+            selection = "AUTO"
+    return (_detected_platform(profile) if selection == "AUTO" else selection, selection == "AUTO")
+
+
+def set_owner_platform_selection(root: str | Path, profile: LeagueProfile, selection: str) -> None:
+    normalized = str(selection or "").strip().upper()
+    if normalized not in OWNER_PLATFORM_SELECTIONS:
+        raise RedraftValidationError("Select Auto, Consensus, Sleeper, ESPN, FantasyPros, or Disabled/use FFC.")
+    if not _owner_platform_snapshot_path(root).is_file():
+        raise RedraftValidationError("Save one global owner platform snapshot before selecting a league column.")
+    _atomic_json(_owner_platform_selection_path(root, profile.profile_id), {
+        "profile_id": profile.profile_id,
+        "selection": normalized,
+        "updated_at_utc": utc_now(),
+    })
+
+
+def clear_owner_platform_selection(root: str | Path, profile: LeagueProfile) -> None:
+    path = _owner_platform_selection_path(root, profile.profile_id)
+    if path.is_file():
+        path.unlink()
+
+
+def _save_owner_platform_snapshot(
+    root: str | Path,
+    profile: LeagueProfile,
+    snapshot: AdpSnapshot,
+    rows: Sequence[Mapping[str, Any]],
+    paste_text: str,
+    *,
+    source_label: str,
+    parser_mode: str,
+    platform_coverage: Mapping[str, Any],
+    active: bool,
+) -> None:
+    path = _owner_platform_snapshot_path(root)
+    document = {
+        "schema_version": 1,
+        "active": active,
+        "source_label": source_label,
+        "parser_mode": parser_mode,
+        "rows": [dict(row) for row in rows],
+        "scoring_format": snapshot.scoring_format,
+        "year": profile.season,
+        "team_count": profile.team_count,
+        "imported_at_utc": snapshot.imported_at_utc,
+        "source_date": snapshot.source_date,
+        "raw_hash": snapshot.source_sha256,
+        "row_count": len(rows),
+        "match_report": list(snapshot.match_report),
+        "unmatched": list(snapshot.unmatched),
+        "platform_coverage": dict(platform_coverage),
+    }
+    _atomic_json(path, document)
+    raw_path = _owner_platform_raw_path(root)
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_path.write_text(paste_text, encoding="utf-8", newline="")
+
+
+def _load_owner_platform_snapshot(root: str | Path, profile: LeagueProfile) -> AdpSnapshot | None:
+    path = _owner_platform_snapshot_path(root)
+    if not path.is_file():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        if not bool(document.get("active")):
+            return None
+        selected, automatic = _owner_platform_selection(root, profile)
+        if selected == "DISABLED":
+            return None
+        rows = [dict(row) for row in document.get("rows", []) if isinstance(row, Mapping)]
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+    entries: list[AdpEntry] = []
+    unmatched: list[str] = [str(value) for value in document.get("unmatched", [])]
+    report = [dict(value) for value in document.get("match_report", []) if isinstance(value, Mapping)]
+    seen: set[str] = set()
+    for row in rows:
+        player_id = str(row.get("matched_nwr_player_id") or "")
+        if not player_id or str(row.get("match_status") or "") != "MATCHED" or player_id in seen:
+            continue
+        selected_value = _paste_number(row.get(f"{selected.lower()}_adp"))
+        origin = selected
+        if selected_value is None and selected != "CONSENSUS":
+            selected_value = _paste_number(row.get("consensus_adp"))
+            origin = "CONSENSUS"
+        if selected_value is None:
+            unmatched.append(f"{row.get('player_name') or player_id}: missing {selected.title()} and Consensus ADP")
+            continue
+        seen.add(player_id)
+        row["active_selected_source"] = origin
+        entries.append(AdpEntry(
+            player_id=player_id,
+            player=str(row.get("matched_nwr_player_name") or row.get("player_name") or ""),
+            team=str(row.get("matched_nwr_team") or ""),
+            position=str(row.get("position") or ""),
+            overall_adp=selected_value,
+            expected_pick=selected_value,
+            min_pick=None,
+            max_pick=None,
+            std_dev=None,
+            source_player_id=f"owner-platform:{row.get('source_row_index') or player_id}",
+            expected_round=max(1, math.ceil(selected_value / profile.team_count)),
+            match_status="MATCHED",
+            match_confidence=str(row.get("match_confidence") or "HIGH"),
+        ))
+    if not entries:
+        return None
+    entries.sort(key=lambda entry: (entry.expected_pick, entry.player_id))
+    source_label = str(document.get("source_label") or "Owner platform rankings")
+    display = f"Owner-imported {selected.title()} ADP"
+    provider = f"OWNER_PLATFORM_{'AUTO_' if automatic else ''}{selected}"
+    return AdpSnapshot(
+        profile_id=profile.profile_id,
+        source=f"{display} — {source_label}",
+        scoring_format=str(document.get("scoring_format") or _profile_scoring(profile)),
+        team_count=profile.team_count,
+        source_date=str(document.get("source_date") or ""),
+        imported_at_utc=str(document.get("imported_at_utc") or ""),
+        source_sha256=str(document.get("raw_hash") or ""),
+        entries=tuple(entries),
+        unmatched=tuple(dict.fromkeys(unmatched)),
+        provider=provider,
+        authority="OWNER-IMPORTED PLATFORM ADP / MARKET TIMING",
+        retrieved_at_utc=str(document.get("imported_at_utc") or ""),
+        provider_version="NWR_OWNER_PLATFORM_SNAPSHOT_V1",
+        freshness="FRESH",
+        match_report=tuple(report),
+        paste_rows=tuple(rows),
+    )
+
+
+def _merge_owner_platform_fallback(owner: AdpSnapshot, ffc: AdpSnapshot) -> AdpSnapshot:
+    existing = owner.by_player_id
+    entries = list(owner.entries)
+    entries.extend(entry for entry in ffc.entries if entry.player_id not in existing)
+    return replace(owner, entries=tuple(sorted(entries, key=lambda entry: (entry.expected_pick, entry.player_id))))
+
+
+def owner_platform_snapshot_status(root: str | Path, profile: LeagueProfile | None = None) -> dict[str, Any]:
+    path = _owner_platform_snapshot_path(root)
+    if not path.is_file():
+        return {"available": False, "active": False, "parserMode": "", "rowCount": 0, "platformCoverage": {}, "sourceLabel": "", "rawHash": "", "importedAtUtc": "", "leagueSelection": "", "detectedPlatform": ""}
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {"available": False, "active": False, "parserMode": "", "rowCount": 0, "platformCoverage": {}, "sourceLabel": "", "rawHash": "", "importedAtUtc": "", "leagueSelection": "", "detectedPlatform": ""}
+    selected, automatic = _owner_platform_selection(root, profile) if profile else ("", False)
+    return {
+        "available": bool(document.get("rows")), "active": bool(document.get("active")),
+        "parserMode": str(document.get("parser_mode") or ""), "rowCount": int(document.get("row_count") or 0),
+        "matchedRows": sum(1 for row in document.get("rows", []) if isinstance(row, Mapping) and row.get("match_status") == "MATCHED"),
+        "platformCoverage": dict(document.get("platform_coverage") or {}), "sourceLabel": str(document.get("source_label") or ""),
+        "rawHash": str(document.get("raw_hash") or ""), "importedAtUtc": str(document.get("imported_at_utc") or ""),
+        "leagueSelection": ("AUTO" if automatic else selected), "detectedPlatform": _detected_platform(profile) if profile else "",
+        "activeColumn": selected,
+    }
+
+
 def _paste_selected_source(value: str) -> str:
     selected = str(value or "").strip().upper().replace(" ", "")
     if selected not in PASTE_PLATFORM_COLUMNS:
@@ -1857,9 +2107,69 @@ def _paste_table_rows(paste_text: str) -> list[dict[str, str]]:
     return rows
 
 
+def _owner_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], str, list[str]]:
+    markdown_rows = _paste_table_rows(paste_text)
+    if markdown_rows:
+        return markdown_rows, "MARKDOWN_TABLE", []
+    plain_rows, warnings = _plain_text_platform_rows(paste_text)
+    return plain_rows, "PLAIN_TEXT_BLOCK", warnings
+
+
+def _plain_text_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], list[str]]:
+    lines = [re.sub(r"\*+", "", value).strip() for value in paste_text.replace("\r\n", "\n").split("\n")]
+    lines = [value for value in lines if value]
+    rows: list[dict[str, str]] = []
+    warnings: list[str] = []
+    index = 0
+    while index < len(lines):
+        combined = _plain_position(lines[index])
+        consumed = 1
+        if combined is None and index + 1 < len(lines):
+            maybe_position = _normalized_position(lines[index])
+            if maybe_position in {"QB", "RB", "WR", "TE", "K", "DST"} and re.fullmatch(r"\d+", lines[index + 1]):
+                combined = f"{maybe_position}{lines[index + 1]}"
+                consumed = 2
+        if combined is None:
+            index += 1
+            continue
+        player_index = index + consumed
+        values_index = player_index + 1
+        if values_index >= len(lines):
+            warnings.append(f"plain-text row near line {index + 1}: missing player or ADP values")
+            break
+        values = lines[values_index].replace(",", "").split()
+        if len(values) < 1 or len(values) > 4:
+            warnings.append(f"plain-text row near line {index + 1}: expected 1–4 ADP values after player name")
+            index += consumed
+            continue
+        rows.append({
+            "position": combined,
+            "player": lines[player_index],
+            "consensus": values[0] if len(values) > 0 else "",
+            "sleeper": values[1] if len(values) > 1 else "",
+            "espn": values[2] if len(values) > 2 else "",
+            "fantasypros": values[3] if len(values) > 3 else "",
+        })
+        index = values_index + 1
+    return rows, warnings
+
+
+def _plain_position(value: str) -> str | None:
+    match = re.fullmatch(r"\s*(QB|RB|WR|TE|K|DST|D/ST)\s*(\d+)\s*", value, re.I)
+    return f"{_normalized_position(match.group(1))}{match.group(2)}" if match else None
+
+
+def _platform_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
+    total = len(rows)
+    return {
+        source: {"available": sum(1 for row in rows if _paste_number(row.get(f"{source.lower()}_adp")) is not None), "total": total}
+        for source in ("CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS")
+    }
+
+
 def _paste_cells(line: str) -> list[str]:
     stripped = line.strip().strip("|")
-    return [value.strip() for value in stripped.split("|")]
+    return [re.sub(r"\*+", "", value).strip() for value in stripped.split("|")]
 
 
 def _paste_header(value: str) -> str:

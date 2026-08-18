@@ -1,0 +1,19 @@
+{
+  "artifact": "NWR Owner Platform ADP Snapshot V1",
+  "date": "2026-08-18",
+  "scope": "Redraft owner-provided market timing only",
+  "verdict": "GREEN_NWR_OWNER_PLATFORM_ADP_SNAPSHOT_READY_FOR_OWNER_TEST",
+  "documents": [
+    "EXECUTIVE_VERDICT.md",
+    "PARSER_REPAIR.md",
+    "GLOBAL_SNAPSHOT_STORAGE.md",
+    "PER_LEAGUE_PLATFORM_SELECTION.md",
+    "PROVIDER_PRIORITY.md",
+    "DRAFT_ROOM_INTEGRATION.md",
+    "BEAT_ADP_INTEGRATION.md",
+    "CPU_BEHAVIOR.md",
+    "TEST_RESULTS.md",
+    "INSTALL_RECEIPT.md",
+    "NEXT_ACTION.md"
+  ]
+}

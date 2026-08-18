@@ -17,7 +17,7 @@ from src.services.redraft_draft_room_v1_service import (
     preview_owner_paste_adp,
     run_complete_mock,
     save_owner_paste_adp,
-    set_owner_paste_adp_active,
+    set_owner_platform_selection,
     start_draft_room,
     undo_room_pick,
     validate_complete_mock,
@@ -328,7 +328,7 @@ def test_ffc_remains_above_generic_owner_csv_in_provider_priority(tmp_path) -> N
     assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
 
 
-def test_owner_paste_preview_snapshot_activation_and_cpu_labels(tmp_path) -> None:
+def test_owner_platform_snapshot_serves_profiles_and_uses_platform_fallbacks(tmp_path) -> None:
     ranking = _ranking()
     refresh_fantasy_football_calculator_adp(
         tmp_path, ranking.profile, ranking, _manual_assets(), fetcher=lambda _: _ffc_response()
@@ -340,10 +340,9 @@ def test_owner_paste_preview_snapshot_activation_and_cpu_labels(tmp_path) -> Non
         "| RB1 | RB 0 | 2.5 | 2.2 | 2.7 | 2.4 |\n"
         "| WR1 | Unknown Player | 5.0 | - | 5.1 | 5.2 |\n"
     )
-    preview = preview_owner_paste_adp(
-        ranking.profile, ranking, paste, "SLEEPER", _manual_assets()
-    )
-    assert preview["matchedRows"] == 1
+    preview = preview_owner_paste_adp(ranking.profile, ranking, paste, "SLEEPER", _manual_assets())
+    assert preview["parserMode"] == "MARKDOWN_TABLE"
+    assert preview["matchedRows"] == 2
     assert preview["sourceRows"] == 3
     assert preview["parsedRows"][0]["selected_adp"] is None
     assert preview["parsedRows"][1]["selected_adp"] == 2.2
@@ -352,17 +351,54 @@ def test_owner_paste_preview_snapshot_activation_and_cpu_labels(tmp_path) -> Non
     )
     assert snapshot.provider == "OWNER_PASTE_CONSENSUS"
     assert len(snapshot.paste_rows) == 3
-    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
-    set_owner_paste_adp_active(tmp_path, ranking.profile, active=True)
     active = load_adp_snapshot(tmp_path, ranking.profile)
-    assert active.provider == "OWNER_PASTE_CONSENSUS"
-    assert active.source == "Owner-imported Consensus ADP — Owner platform"
-    assert active.paste_rows[1]["raw_row_hash"]
-    assert (tmp_path / "adp_provider_cache" / "owner_paste" / f"{ranking.profile.profile_id}.md").read_text(encoding="utf-8") == paste
+    assert active.provider == "OWNER_PLATFORM_AUTO_SLEEPER"
+    assert active.by_player_id["QB-0"].overall_adp == 1.5
+    assert active.by_player_id["RB-0"].overall_adp == 2.2
+    assert active.source == "Owner-imported Sleeper ADP — Owner platform"
+    assert (tmp_path / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.txt").read_text(encoding="utf-8") == paste
+    espn_profile = replace(ranking.profile, profile_id="espn-test", provider="espn", provider_league_id="2026")
+    refresh_fantasy_football_calculator_adp(
+        tmp_path, espn_profile, ranking, _manual_assets(), fetcher=lambda _: _ffc_response()
+    )
+    assert load_adp_snapshot(tmp_path, espn_profile).provider == "OWNER_PLATFORM_AUTO_ESPN"
+    assert load_adp_snapshot(tmp_path, espn_profile).by_player_id["RB-0"].overall_adp == 2.7
+    manual_profile = replace(ranking.profile, profile_id="manual-test", provider="local", provider_league_id=None)
+    assert load_adp_snapshot(tmp_path, manual_profile).provider == "OWNER_PLATFORM_AUTO_CONSENSUS"
+    set_owner_platform_selection(tmp_path, espn_profile, "FANTASYPROS")
+    assert load_adp_snapshot(tmp_path, espn_profile).provider == "OWNER_PLATFORM_FANTASYPROS"
+    assert load_adp_snapshot(tmp_path, espn_profile).by_player_id["RB-0"].overall_adp == 2.4
+    set_owner_platform_selection(tmp_path, espn_profile, "DISABLED")
+    assert load_adp_snapshot(tmp_path, espn_profile).provider == "FFC"
+    assert (tmp_path / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.json").is_file()
     mock = run_complete_mock(ranking.profile, ranking, _manual_assets(), active, owner_slot=9)
-    assert any(pick["selection_behavior"] == "CPU_MARKET_ADP_OWNER_CONSENSUS" for pick in mock["picks"] if pick["actor"] == "CPU")
-    set_owner_paste_adp_active(tmp_path, ranking.profile, active=False)
-    assert load_adp_snapshot(tmp_path, ranking.profile).provider == "FFC"
+    assert any(pick["selection_behavior"] == "CPU_MARKET_ADP_OWNER_AUTO_SLEEPER" for pick in mock["picks"] if pick["actor"] == "CPU")
+    room = build_draft_room_payload(ranking.profile, ranking, _manual_assets(), active, {
+        "profile_id": ranking.profile.profile_id, "owner_slot": 9, "seed": 1729,
+        "speed": "NORMAL", "mode": "MOCK", "drafted": [], "picks": [],
+    })
+    assert room["adp"]["source"] == "Owner-imported Sleeper ADP — Owner platform"
+    assert any(item["playerId"] == "RB-0" and item["overallAdp"] == 2.2 for item in room["decisionRows"])
+
+
+def test_owner_platform_plain_text_split_and_compact_parser(tmp_path) -> None:
+    ranking = _ranking()
+    plain_text = """WR
+13
+WR 0
+29.3 28.1 32.0 27.8
+
+RB14
+RB 0
+32.0 25.2 — 38.9
+"""
+    preview = preview_owner_paste_adp(ranking.profile, ranking, plain_text, "SLEEPER", _manual_assets())
+    assert preview["parserMode"] == "PLAIN_TEXT_BLOCK"
+    assert preview["sourceRows"] == 2
+    assert preview["platformCoverage"]["SLEEPER"] == {"available": 2, "total": 2}
+    assert preview["platformCoverage"]["ESPN"] == {"available": 1, "total": 2}
+    with pytest.raises(RedraftValidationError, match="markdown pipe table, or plain-text blocks"):
+        preview_owner_paste_adp(ranking.profile, ranking, "not a platform table", "CONSENSUS", _manual_assets())
 
 
 def test_ffc_cpu_source_pick_nine_and_freshness_labels(tmp_path) -> None:
