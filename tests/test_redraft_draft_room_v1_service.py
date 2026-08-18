@@ -12,6 +12,7 @@ from src.services.redraft_draft_room_v1_service import (
     clear_owner_platform_manual_match,
     _adp_explanation,
     _freshness_label,
+    _owner_platform_rows,
     build_draft_room_payload,
     import_owner_adp_csv,
     load_adp_snapshot,
@@ -400,7 +401,7 @@ RB 0
 32.0 25.2 — 38.9
 """
     preview = preview_owner_paste_adp(ranking.profile, ranking, plain_text, "SLEEPER", _manual_assets())
-    assert preview["parserMode"] == "PLAIN_TEXT_BLOCK"
+    assert preview["parserMode"] == "RESPONSIVE_PLATFORM_CLIPBOARD"
     assert preview["sourceRows"] == 2
     assert preview["parsedRows"][0]["consensus_adp"] == 29.3
     assert preview["parsedRows"][0]["sleeper_adp"] == 28.1
@@ -415,6 +416,29 @@ RB 0
     assert public_preview["platformCoverage"]["sleeper"] == {"available": 2, "total": 2}
     with pytest.raises(RedraftValidationError, match="markdown pipe table, or plain-text blocks"):
         preview_owner_paste_adp(ranking.profile, ranking, "not a platform table", "CONSENSUS", _manual_assets())
+
+
+def test_responsive_clipboard_parser_supports_status_team_noise_and_tabs() -> None:
+    rows, mode, warnings = _owner_platform_rows("""Position
+Player
+RB
+1
+
+Jahmyr Gibbs
+●
+DET
+1.8\t1.4\t1.0\t3.0
+
+WR7
+Ja'Marr Chase
+2.6    3.2    3.0    1.6
+""")
+    assert mode == "RESPONSIVE_PLATFORM_CLIPBOARD"
+    assert not warnings
+    assert rows[0] == {"position": "RB1", "player": "Jahmyr Gibbs", "team": "DET", "consensus": "1.8", "sleeper": "1.4", "espn": "1.0", "fantasypros": "3.0"}
+    assert rows[1]["position"] == "WR7"
+    assert rows[1]["player"] == "Ja'Marr Chase"
+    assert rows[1]["team"] == ""
 
 
 def test_owner_platform_manual_alias_is_local_and_applies_on_next_preview(tmp_path) -> None:

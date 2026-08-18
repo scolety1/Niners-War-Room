@@ -343,6 +343,7 @@ def preview_owner_paste_adp(
     for source_index, row in enumerate(rows, start=1):
         position_rank, position = _paste_position(row.get("position", ""))
         player = str(row.get("player") or "").strip()
+        source_team = _normalized_team(str(row.get("team") or ""))
         selected_value = _paste_number(row.get(selected.lower(), ""))
         raw_row = "|".join(str(row.get(key, "")) for key in ("position", "player", "consensus", "sleeper", "espn", "fantasypros"))
         receipt = {
@@ -351,6 +352,7 @@ def preview_owner_paste_adp(
             "position": position,
             "positional_adp_rank": position_rank,
             "player_name": player,
+            "source_team": source_team,
             "consensus_adp": _paste_number(row.get("consensus", "")),
             "sleeper_adp": _paste_number(row.get("sleeper", "")),
             "espn_adp": _paste_number(row.get("espn", "")),
@@ -387,7 +389,7 @@ def preview_owner_paste_adp(
         if matched is not None:
             method, confidence, reason = "OWNER_APPROVED", "OWNER", ""
         else:
-            matched, method, confidence, reason = _match_adp_player(player, position, "", assets)
+            matched, method, confidence, reason = _match_adp_player(player, position, source_team, assets)
         if matched is None:
             unmatched.append(f"row {source_index}: {player} ({position})")
             warnings.append(f"row {source_index}: {player} not safely matched ({reason})")
@@ -2204,6 +2206,16 @@ def _paste_selected_source(value: str) -> str:
 
 def _paste_table_rows(paste_text: str) -> list[dict[str, str]]:
     lines = [line.strip() for line in paste_text.replace("\r\n", "\n").split("\n") if "|" in line]
+    if not lines:
+        return []
+    # Responsive clipboard copies can contain data rows without a header.
+    compact_rows = []
+    for line in lines:
+        cells = _paste_cells(line)
+        if len(cells) == 6 and _plain_position(cells[0]):
+            compact_rows.append({"position": cells[0], "player": cells[1], "consensus": cells[2], "sleeper": cells[3], "espn": cells[4], "fantasypros": cells[5]})
+    if compact_rows:
+        return compact_rows
     if len(lines) < 2:
         return []
     header = _paste_cells(lines[0])
@@ -2228,12 +2240,11 @@ def _owner_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], str, li
     if markdown_rows:
         return markdown_rows, "MARKDOWN_TABLE", []
     plain_rows, warnings = _plain_text_platform_rows(paste_text)
-    return plain_rows, "PLAIN_TEXT_BLOCK", warnings
+    return plain_rows, "RESPONSIVE_PLATFORM_CLIPBOARD", warnings
 
 
 def _plain_text_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], list[str]]:
     lines = [re.sub(r"\*+", "", value).strip() for value in paste_text.replace("\r\n", "\n").split("\n")]
-    lines = [value for value in lines if value]
     rows: list[dict[str, str]] = []
     warnings: list[str] = []
     index = 0
@@ -2248,26 +2259,43 @@ def _plain_text_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], li
         if combined is None:
             index += 1
             continue
-        player_index = index + consumed
-        values_index = player_index + 1
-        if values_index >= len(lines):
+        cursor = index + consumed
+        player = ""
+        team = ""
+        values: list[str] = []
+        while cursor < len(lines):
+            value = lines[cursor]
+            if _plain_position(value) or (_normalized_position(value) in {"QB", "RB", "WR", "TE", "K", "DST"} and cursor + 1 < len(lines) and re.fullmatch(r"\d+", lines[cursor + 1] or "")):
+                break
+            tokens = value.replace(",", "").split()
+            if value and 1 <= len(tokens) <= 4 and all(re.fullmatch(r"(?:\d+(?:\.\d+)?|—|-)", token) for token in tokens):
+                values = tokens
+                break
+            if value and not _clipboard_noise(value) and value not in {"●", "•", "-", "—"}:
+                if re.fullmatch(r"[A-Z]{2,4}", value):
+                    team = value
+                elif not player:
+                    player = value
+            cursor += 1
+        if not player or not values:
             warnings.append(f"plain-text row near line {index + 1}: missing player or ADP values")
-            break
-        values = lines[values_index].replace(",", "").split()
-        if len(values) < 1 or len(values) > 4:
-            warnings.append(f"plain-text row near line {index + 1}: expected 1–4 ADP values after player name")
             index += consumed
             continue
         rows.append({
             "position": combined,
-            "player": lines[player_index],
+            "player": player,
+            "team": team,
             "consensus": values[0] if len(values) > 0 else "",
             "sleeper": values[1] if len(values) > 1 else "",
             "espn": values[2] if len(values) > 2 else "",
             "fantasypros": values[3] if len(values) > 3 else "",
         })
-        index = values_index + 1
+        index = cursor + 1
     return rows, warnings
+
+
+def _clipboard_noise(value: str) -> bool:
+    return re.sub(r"[^a-z]", "", value.lower()) in {"position", "player", "consensus", "sleeper", "espn", "fantasypros", "fpros", "ppr", "halfppr", "std", "qbrbwrte", "tagsfilters"}
 
 
 def _plain_position(value: str) -> str | None:
