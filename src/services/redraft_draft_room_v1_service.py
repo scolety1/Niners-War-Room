@@ -2265,7 +2265,7 @@ def _plain_text_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], li
         values: list[str] = []
         while cursor < len(lines):
             value = lines[cursor]
-            if _plain_position(value) or (_normalized_position(value) in {"QB", "RB", "WR", "TE", "K", "DST"} and cursor + 1 < len(lines) and re.fullmatch(r"\d+", lines[cursor + 1] or "")):
+            if re.fullmatch(r"(?:QB|RB|WR|TE|K|DST|D/ST)\d+", value, re.I) or (_normalized_position(value) in {"QB", "RB", "WR", "TE", "K", "DST"} and cursor + 1 < len(lines) and re.fullmatch(r"\d+", lines[cursor + 1] or "")):
                 break
             tokens = value.replace(",", "").split()
             if value and 1 <= len(tokens) <= 4 and all(re.fullmatch(r"(?:\d+(?:\.\d+)?|—|-)", token) for token in tokens):

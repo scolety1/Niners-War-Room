@@ -414,6 +414,18 @@ RB 0
     assert preview["platformCoverage"]["espn"] == {"available": 1, "total": 2}
     public_preview = public_json_value({"platformCoverage": preview["platformCoverage"]})
     assert public_preview["platformCoverage"]["sleeper"] == {"available": 2, "total": 2}
+    rendered_row = public_json_value(preview["parsedRows"][0])
+    assert rendered_row["sourceRowIndex"] == 1
+    assert rendered_row["positionRank"] == 13
+    assert rendered_row["playerName"] == "WR 0"
+    assert rendered_row["consensusAdp"] == 29.3
+    assert rendered_row["sleeperAdp"] == 28.1
+    rendered_row = public_json_value(preview["parsedRows"][0])
+    assert rendered_row["sourceRowIndex"] == 1
+    assert rendered_row["positionRank"] == 13
+    assert rendered_row["playerName"] == "WR 0"
+    assert rendered_row["consensusAdp"] == 29.3
+    assert rendered_row["sleeperAdp"] == 28.1
     with pytest.raises(RedraftValidationError, match="markdown pipe table, or plain-text blocks"):
         preview_owner_paste_adp(ranking.profile, ranking, "not a platform table", "CONSENSUS", _manual_assets())
 

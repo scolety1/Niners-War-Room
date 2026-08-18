@@ -726,7 +726,7 @@ export interface PasteAdpPreview {
   unmatched: string[];
   warnings: string[];
   rows: Array<Record<string, unknown>>;
-  parserMode?: "MARKDOWN_TABLE" | "PLAIN_TEXT_BLOCK";
+  parserMode?: "MARKDOWN_TABLE" | "PLAIN_TEXT_BLOCK" | "RESPONSIVE_PLATFORM_CLIPBOARD";
   platformCoverage?: Record<string, { available: number; total: number }>;
 }
 
