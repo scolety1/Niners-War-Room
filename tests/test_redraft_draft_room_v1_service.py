@@ -8,6 +8,7 @@ import pytest
 from src.application.contracts import public_json_value
 from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
+    _adp_explanation,
     _freshness_label,
     build_draft_room_payload,
     import_owner_adp_csv,
@@ -347,6 +348,7 @@ def test_owner_platform_snapshot_serves_profiles_and_uses_platform_fallbacks(tmp
     assert preview["sourceRows"] == 3
     assert preview["parsedRows"][0]["selected_adp"] is None
     assert preview["parsedRows"][1]["selected_adp"] == 2.2
+    assert preview["parsedRows"][2]["unmatched_reason"] == "NO_SAFE_IDENTITY_MATCH"
     snapshot = save_owner_paste_adp(
         tmp_path, ranking.profile, ranking, paste, "CONSENSUS", "Owner platform", _manual_assets()
     )
@@ -356,6 +358,8 @@ def test_owner_platform_snapshot_serves_profiles_and_uses_platform_fallbacks(tmp
     assert active.provider == "OWNER_PLATFORM_AUTO_SLEEPER"
     assert active.by_player_id["QB-0"].overall_adp == 1.5
     assert active.by_player_id["RB-0"].overall_adp == 2.2
+    assert _adp_explanation(active, "QB-0", active.by_player_id["QB-0"])["source"] == "Consensus fallback"
+    assert _adp_explanation(active, "not-in-adp", None)["unavailableReason"] == "NO_ACTIVE_ADP_FOR_PLAYER"
     assert active.source == "Owner-imported Sleeper ADP — Owner platform"
     assert (tmp_path / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.txt").read_text(encoding="utf-8") == paste
     espn_profile = replace(ranking.profile, profile_id="espn-test", provider="espn", provider_league_id="2026")

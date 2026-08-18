@@ -760,6 +760,9 @@ export interface BeatAdpRow {
   makeItBackProbability: number | null;
   makeItBackMethod: string;
   confidence: string;
+  adpSource?: string;
+  adpExplanation?: string;
+  adpUnavailableReason?: string;
 }
 
 export interface DraftRecommendation {
@@ -775,6 +778,10 @@ export interface DraftRecommendation {
   overallTierLabel: string;
   positionTierLabel: string;
   rosterFit: string;
+  overallAdp?: number | null;
+  adpSource?: string;
+  adpExplanation?: string;
+  adpUnavailableReason?: string;
   note: string;
 }
 

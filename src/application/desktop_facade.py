@@ -2436,7 +2436,7 @@ class DesktopBackendFacade:
                 "skippedRows": preview["skippedRows"],
                 "unmatched": preview["unmatched"][:20],
                 "warnings": preview["warnings"][:20],
-                "rows": preview["parsedRows"][:20],
+            "rows": preview["parsedRows"],
             }
         })
 

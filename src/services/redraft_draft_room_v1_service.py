@@ -776,6 +776,12 @@ def _match_adp_player(
     if exact_matches:
         return None, "", "", "EXACT_NAME_TEAM_COLLISION_OR_MISMATCH"
 
+    name_any_position = [
+        row for row in assets if _normalized_name(row["player_name"]) == exact_name
+    ]
+    if name_any_position:
+        return None, "", "", "POSITION_MISMATCH"
+
     core_name = _normalized_name_without_suffix(player)
     core_matches = [
         row
@@ -790,7 +796,13 @@ def _match_adp_player(
             return core_matches[0], "SUFFIX_TOLERANT_TEAM_MISMATCH", "MEDIUM", ""
     elif len(core_matches) == 1:
         return core_matches[0], "SUFFIX_TOLERANT_NAME_POSITION", "MEDIUM", ""
-    return None, "", "", "NO_SAFE_IDENTITY_MATCH" if not core_matches else "NAME_COLLISION"
+    core_any_position = [
+        row for row in assets
+        if _normalized_name_without_suffix(row["player_name"]) == core_name
+    ]
+    if core_any_position:
+        return None, "", "", "POSITION_MISMATCH" if not core_matches else "AMBIGUOUS_NAME"
+    return None, "", "", "NO_SAFE_IDENTITY_MATCH" if not core_matches else "AMBIGUOUS_NAME"
 
 
 def _match_report_row(
@@ -1435,6 +1447,7 @@ def _decision_row(
         current_pick,
         next_owner_pick,
     )
+    adp_explanation = _adp_explanation(adp, row.player_id, entry)
     return {
         "playerId": row.player_id,
         "playerName": row.player_name,
@@ -1458,9 +1471,30 @@ def _decision_row(
         "makeItBackProbability": probability,
         "makeItBackMethod": method,
         "rosterFit": _roster_fit(profile, roster, row.position),
-        "adpSource": adp.source if entry else "",
+        "adpSource": adp_explanation["source"],
+        "adpExplanation": adp_explanation["label"],
+        "adpUnavailableReason": adp_explanation["unavailableReason"],
         "adpSourceDate": adp.source_date if entry else "",
     }
+
+
+def _adp_explanation(adp: AdpSnapshot, player_id: str, entry: AdpEntry | None) -> dict[str, str]:
+    if entry is None:
+        return {
+            "source": "",
+            "label": "ADP unavailable · no selected platform, Consensus, or FFC match",
+            "unavailableReason": "NO_ACTIVE_ADP_FOR_PLAYER",
+        }
+    if not adp.provider.startswith("OWNER_PLATFORM_"):
+        return {"source": adp.source, "label": f"ADP: {entry.overall_adp:.1f} · {adp.source}", "unavailableReason": ""}
+    selected = adp.provider.removeprefix("OWNER_PLATFORM_AUTO_").removeprefix("OWNER_PLATFORM_")
+    owner_row = next((row for row in adp.paste_rows if str(row.get("matched_nwr_player_id") or "") == player_id), None)
+    if owner_row is None:
+        return {"source": "FFC fallback", "label": f"ADP: {entry.overall_adp:.1f} · FFC fallback", "unavailableReason": ""}
+    origin = str(owner_row.get("active_selected_source") or selected)
+    if origin != selected:
+        return {"source": "Consensus fallback", "label": f"ADP: {entry.overall_adp:.1f} · Consensus fallback", "unavailableReason": ""}
+    return {"source": f"Owner {selected.title()}", "label": f"ADP: {entry.overall_adp:.1f} · Owner {selected.title()}", "unavailableReason": ""}
 
 
 def _draft_timing(
@@ -1766,6 +1800,10 @@ def _card(label: str, row: Mapping[str, Any], note: str) -> dict[str, Any]:
         "overallTierLabel": row["overallTierLabel"],
         "positionTierLabel": row["positionTierLabel"],
         "rosterFit": row["rosterFit"],
+        "overallAdp": row["overallAdp"],
+        "adpSource": row["adpSource"],
+        "adpExplanation": row["adpExplanation"],
+        "adpUnavailableReason": row["adpUnavailableReason"],
         "note": note,
     }
 
