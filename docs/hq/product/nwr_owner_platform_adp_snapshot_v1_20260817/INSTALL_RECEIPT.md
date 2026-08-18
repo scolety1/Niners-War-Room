@@ -12,3 +12,12 @@ The preliminary 1.0.2 package was installed successfully, then superseded before
 - Installed app: `C:\Users\codex-agent\AppData\Local\Niners War Room — Redraft\nwr-redraft-war-room.exe`, product version `1.0.3`.
 - Installed sidecar SHA-256 matches the final built receipt: `E1E9EB05920DE2CC5D3F4B8A9BF3F5384EFAA21A3F0B65DCE50F00F25E39304D`.
 - Post-install owner-state manifest: 24 files, SHA-256 `59F977866B777F4FE345E9E1B4BDAB62B01B1D040A2F015443448D773CD34C18`, unchanged from baseline.
+
+## Parse coverage repair V2
+
+- Final installer: `Niners War Room — Redraft_1.0.4_x64-setup.exe`.
+- Installer SHA-256: `5666DAA5FE2BF9E31EC49751105F5BA127A70CD60F95260FD9C62815722F4DAF`.
+- Installation: normal silent NSIS upgrade (`/S`), exit code 0; no force.
+- Installed product version: `1.0.4`.
+- Installed/built sidecar SHA-256: `434E236942B4263F7D84F1FEF6C4F3A8B6656F8032D707A0996E5D9943658643`.
+- Owner-state baseline and post-install manifest: 24 files, SHA-256 `3CD4FC2ABC8BE9DA2E155022107D36E9F5A2C3E73AAA93C8A10D4BA1ADD5B7A2`, unchanged.

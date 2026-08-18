@@ -12,12 +12,21 @@ function providerLabel(adp: NonNullable<RedraftBootstrap["draftBoard"]>["adp"] |
   return `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}`;
 }
 
-function coverageText(preview: PasteAdpPreview | null) {
-  if (!preview?.platformCoverage) return "Preview to inspect platform-column coverage.";
-  return ["CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS"].map((column) => {
-    const coverage = preview.platformCoverage?.[column];
-    return `${column}: ${coverage?.available ?? 0}/${coverage?.total ?? 0}`;
+type PlatformCoverage = Record<string, { available: number; total: number }> | undefined;
+
+export function platformCoverageText(platformCoverage: PlatformCoverage) {
+  if (!platformCoverage) return "Preview to inspect platform-column coverage.";
+  return [{ label: "Consensus", key: "consensus" }, { label: "Sleeper", key: "sleeper" }, { label: "ESPN", key: "espn" }, { label: "FantasyPros", key: "fantasypros" }].map(({ label, key }) => {
+    const coverage = platformCoverage[key] ?? platformCoverage[key.toUpperCase()];
+    return `${label}: ${coverage?.available ?? 0}/${coverage?.total ?? 0}`;
   }).join(" · ");
+}
+
+export function detectedPlatform(profile: RedraftBootstrap["activeProfile"]) {
+  if (profile?.provider === "sleeper") return "Sleeper";
+  if (profile?.provider === "espn") return "ESPN";
+  if (profile?.provider === "fantasypros") return "FantasyPros";
+  return "Consensus";
 }
 
 export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
@@ -30,6 +39,7 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
   const activeProfile = data.activeProfile;
   const adp = data.draftBoard?.adp;
   const snapshot = data.ownerPlatformSnapshot;
+  const detectedPlatformLabel = detectedPlatform(activeProfile);
   const [leagueSelection, setLeagueSelection] = useState<LeagueSelection>("AUTO");
   useEffect(() => setLeagueSelection((snapshot?.leagueSelection || "AUTO") as LeagueSelection), [snapshot?.leagueSelection, activeProfile?.profileId]);
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof NwrApiError ? reason : new NwrApiError(fallback));
@@ -70,11 +80,11 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
         <div className="form-grid"><label className="form-field"><span>Source label</span><input disabled={Boolean(working)} value={pasteLabel} onChange={(event) => setPasteLabel(event.target.value)} /></label><div className="form-field"><span>Parser modes</span><small>Markdown table first; plain-text player blocks are accepted when no table header is present.</small></div></div>
         <label className="form-field"><span>Platform rankings / ADP</span><textarea disabled={Boolean(working)} rows={10} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); }} placeholder={"| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |\n\nor plain text:\nWR13\nExample Player\n18.4 19.1 17.8 18.0"} /></label>
         <div className="profile-edit-actions"><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void preview()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void run("paste-save", () => client.saveRedraftPasteAdp(activeProfile!.profileId, pasteText, "CONSENSUS", pasteLabel), "Global owner platform snapshot saved locally. Each league can now choose its column.")}>{working === "paste-save" ? "Saving…" : "Save global snapshot"}</Button></div>
-        {pastePreview ? <div className="copy-muted"><strong>{pastePreview.parserMode === "PLAIN_TEXT_BLOCK" ? "Plain-text fallback" : "Markdown table"}: {pastePreview.matchedRows}/{pastePreview.sourceRows} safely matched; {pastePreview.skippedRows} skipped.</strong><small>{coverageText(pastePreview)}</small>{[...pastePreview.warnings, ...pastePreview.unmatched].slice(0, 12).map((warning) => <small key={warning}>{warning}</small>)}</div> : null}
-        {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {snapshot.parserMode || "unknown"} parser, hash {snapshot.rawHash.slice(0, 12)}…</p> : null}
+        {pastePreview ? <div className="copy-muted"><strong>{pastePreview.parserMode === "PLAIN_TEXT_BLOCK" ? "Plain-text fallback" : "Markdown table"}: {pastePreview.matchedRows}/{pastePreview.sourceRows} safely matched; {pastePreview.skippedRows} skipped.</strong><small>{platformCoverageText(pastePreview.platformCoverage)}</small>{[...pastePreview.warnings, ...pastePreview.unmatched].slice(0, 12).map((warning) => <small key={warning}>{warning}</small>)}</div> : null}
+        {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {snapshot.parserMode || "unknown"} parser, hash {snapshot.rawHash.slice(0, 12)}… <small>{platformCoverageText(snapshot.platformCoverage)}</small></p> : null}
       </Panel>
       <Panel title="League Platform Selection" eyebrow="Per league · global snapshot remains unchanged">
-        <p>This league is detected as <strong>{snapshot?.detectedPlatform || "Consensus"}</strong>. Auto follows the connected provider: Sleeper → Sleeper, ESPN → ESPN, FantasyPros → FantasyPros, otherwise Consensus.</p>
+        <p>This league is detected as <strong>{snapshot?.detectedPlatform || detectedPlatformLabel}</strong>. Auto follows the connected provider: Sleeper → Sleeper, ESPN → ESPN, FantasyPros → FantasyPros, otherwise Consensus.</p>
         <label className="form-field"><span>Use platform ADP for this league</span><select disabled={!snapshot?.available || Boolean(working)} value={leagueSelection} onChange={(event) => setLeagueSelection(event.target.value as LeagueSelection)}><option value="AUTO">Auto (detected platform)</option><option value="CONSENSUS">Consensus</option><option value="SLEEPER">Sleeper</option><option value="ESPN">ESPN</option><option value="FANTASYPROS">FantasyPros</option><option value="DISABLED">Disabled / use FFC fallback</option></select></label>
         <p className="boundary-note">Missing selected-column values use Consensus, then FFC, then show unavailable. Sleeper is always owner-imported and read-only.</p>
         <div className="profile-edit-actions"><Button disabled={!activeProfile || !snapshot?.available || Boolean(working)} icon="draft" onClick={() => void run("platform-selection", () => client.setRedraftOwnerPlatformSelection(activeProfile!.profileId, leagueSelection), `Active platform selection set to ${leagueSelection === "AUTO" ? "Auto" : leagueSelection}.`)}>{working === "platform-selection" ? "Activating…" : "Activate for this league"}</Button></div>

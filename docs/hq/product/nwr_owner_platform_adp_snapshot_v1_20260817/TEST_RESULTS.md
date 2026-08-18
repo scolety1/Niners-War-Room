@@ -7,3 +7,10 @@
 - Normal Redraft 1.0.3 NSIS packaging and installation passed; installed sidecar matches the final built sidecar receipt and owner state is unchanged.
 
 The bundled Python runtime does not include `pytest`, so the focused service checks were executed directly in isolated temporary state rather than installing a new dependency.
+
+## Parse coverage repair V2
+
+- Plain-text four-column extraction and selected/fallback provider checks passed in isolated temporary state.
+- Desktop TypeScript typecheck passed.
+- Focused Redraft/API Vitest suite passed: 18 assertions.
+- Redraft 1.0.4 NSIS package/install passed with an unchanged owner-state manifest.

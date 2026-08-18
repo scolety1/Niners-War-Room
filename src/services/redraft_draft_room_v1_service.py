@@ -2072,7 +2072,7 @@ def owner_platform_snapshot_status(root: str | Path, profile: LeagueProfile | No
         "available": bool(document.get("rows")), "active": bool(document.get("active")),
         "parserMode": str(document.get("parser_mode") or ""), "rowCount": int(document.get("row_count") or 0),
         "matchedRows": sum(1 for row in document.get("rows", []) if isinstance(row, Mapping) and row.get("match_status") == "MATCHED"),
-        "platformCoverage": dict(document.get("platform_coverage") or {}), "sourceLabel": str(document.get("source_label") or ""),
+        "platformCoverage": _normalized_platform_coverage(document.get("platform_coverage")), "sourceLabel": str(document.get("source_label") or ""),
         "rawHash": str(document.get("raw_hash") or ""), "importedAtUtc": str(document.get("imported_at_utc") or ""),
         "leagueSelection": ("AUTO" if automatic else selected), "detectedPlatform": _detected_platform(profile) if profile else "",
         "activeColumn": selected,
@@ -2162,9 +2162,24 @@ def _plain_position(value: str) -> str | None:
 def _platform_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
     total = len(rows)
     return {
-        source: {"available": sum(1 for row in rows if _paste_number(row.get(f"{source.lower()}_adp")) is not None), "total": total}
-        for source in ("CONSENSUS", "SLEEPER", "ESPN", "FANTASYPROS")
+        source: {"available": sum(1 for row in rows if _paste_number(row.get(f"{source}_adp")) is not None), "total": total}
+        for source in ("consensus", "sleeper", "espn", "fantasypros")
     }
+
+
+def _normalized_platform_coverage(value: object) -> dict[str, dict[str, int]]:
+    raw = value if isinstance(value, Mapping) else {}
+    coverage: dict[str, dict[str, int]] = {}
+    for source in ("consensus", "sleeper", "espn", "fantasypros"):
+        candidate = raw.get(source) or raw.get(source.upper()) or raw.get(source.title()) or {}
+        if isinstance(candidate, Mapping):
+            coverage[source] = {
+                "available": int(candidate.get("available") or 0),
+                "total": int(candidate.get("total") or 0),
+            }
+        else:
+            coverage[source] = {"available": 0, "total": 0}
+    return coverage
 
 
 def _paste_cells(line: str) -> list[str]:

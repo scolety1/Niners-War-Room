@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from src.application.contracts import public_json_value
 from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _freshness_label,
@@ -395,8 +396,17 @@ RB 0
     preview = preview_owner_paste_adp(ranking.profile, ranking, plain_text, "SLEEPER", _manual_assets())
     assert preview["parserMode"] == "PLAIN_TEXT_BLOCK"
     assert preview["sourceRows"] == 2
-    assert preview["platformCoverage"]["SLEEPER"] == {"available": 2, "total": 2}
-    assert preview["platformCoverage"]["ESPN"] == {"available": 1, "total": 2}
+    assert preview["parsedRows"][0]["consensus_adp"] == 29.3
+    assert preview["parsedRows"][0]["sleeper_adp"] == 28.1
+    assert preview["parsedRows"][0]["espn_adp"] == 32.0
+    assert preview["parsedRows"][0]["fantasypros_adp"] == 27.8
+    assert preview["parsedRows"][1]["sleeper_adp"] == 25.2
+    assert preview["parsedRows"][1]["espn_adp"] is None
+    assert preview["platformCoverage"]["consensus"] == {"available": 2, "total": 2}
+    assert preview["platformCoverage"]["sleeper"] == {"available": 2, "total": 2}
+    assert preview["platformCoverage"]["espn"] == {"available": 1, "total": 2}
+    public_preview = public_json_value({"platformCoverage": preview["platformCoverage"]})
+    assert public_preview["platformCoverage"]["sleeper"] == {"available": 2, "total": 2}
     with pytest.raises(RedraftValidationError, match="markdown pipe table, or plain-text blocks"):
         preview_owner_paste_adp(ranking.profile, ranking, "not a platform table", "CONSENSUS", _manual_assets())
 
