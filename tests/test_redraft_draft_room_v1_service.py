@@ -8,6 +8,8 @@ import pytest
 from src.application.contracts import public_json_value
 from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
+    approve_owner_platform_manual_match,
+    clear_owner_platform_manual_match,
     _adp_explanation,
     _freshness_label,
     build_draft_room_payload,
@@ -348,7 +350,7 @@ def test_owner_platform_snapshot_serves_profiles_and_uses_platform_fallbacks(tmp
     assert preview["sourceRows"] == 3
     assert preview["parsedRows"][0]["selected_adp"] is None
     assert preview["parsedRows"][1]["selected_adp"] == 2.2
-    assert preview["parsedRows"][2]["unmatched_reason"] == "NO_SAFE_IDENTITY_MATCH"
+    assert preview["parsedRows"][2]["unmatched_reason"] == "NOT_IN_ACTIVE_REDRAFT_BOARD"
     snapshot = save_owner_paste_adp(
         tmp_path, ranking.profile, ranking, paste, "CONSENSUS", "Owner platform", _manual_assets()
     )
@@ -413,6 +415,20 @@ RB 0
     assert public_preview["platformCoverage"]["sleeper"] == {"available": 2, "total": 2}
     with pytest.raises(RedraftValidationError, match="markdown pipe table, or plain-text blocks"):
         preview_owner_paste_adp(ranking.profile, ranking, "not a platform table", "CONSENSUS", _manual_assets())
+
+
+def test_owner_platform_manual_alias_is_local_and_applies_on_next_preview(tmp_path) -> None:
+    ranking = _ranking()
+    paste = "| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Owner Alias Runner | 12.0 | 11.0 | 13.0 | 12.5 |\n"
+    before = preview_owner_paste_adp(ranking.profile, ranking, paste, "SLEEPER", _manual_assets(), root=tmp_path)
+    assert before["parsedRows"][0]["unmatched_reason"] in {"POSSIBLE_ALIAS_REVIEW", "NOT_IN_ACTIVE_REDRAFT_BOARD"}
+    approve_owner_platform_manual_match(tmp_path, ranking, _manual_assets(), pasted_name="Owner Alias Runner", pasted_position="RB", pasted_position_rank="1", selected_nwr_player_id="RB-0", source_snapshot_hash="snapshot")
+    after = preview_owner_paste_adp(ranking.profile, ranking, paste, "SLEEPER", _manual_assets(), root=tmp_path)
+    assert after["parsedRows"][0]["matched_nwr_player_id"] == "RB-0"
+    assert after["parsedRows"][0]["match_source"] == "OWNER_APPROVED"
+    assert (tmp_path / "adp_provider_cache" / "owner_platform_snapshot" / "manual_matches.json").is_file()
+    clear_owner_platform_manual_match(tmp_path, pasted_name="Owner Alias Runner", pasted_position="RB")
+    assert preview_owner_paste_adp(ranking.profile, ranking, paste, "SLEEPER", _manual_assets(), root=tmp_path)["parsedRows"][0]["match_status"] == "UNMATCHED"
 
 
 def test_ffc_cpu_source_pick_nine_and_freshness_labels(tmp_path) -> None:

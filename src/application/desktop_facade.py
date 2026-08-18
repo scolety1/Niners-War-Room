@@ -104,6 +104,8 @@ from src.services.redraft_draft_room_v1_service import (
     build_draft_room_payload,
     import_owner_adp_csv,
     preview_owner_paste_adp,
+    approve_owner_platform_manual_match,
+    clear_owner_platform_manual_match,
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
@@ -2418,7 +2420,7 @@ class DesktopBackendFacade:
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)
         try:
             preview = preview_owner_paste_adp(
-                profile, ranking, paste_text, selected_source, manual_assets
+                profile, ranking, paste_text, selected_source, manual_assets, root=self.redraft_root
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
@@ -2478,6 +2480,19 @@ class DesktopBackendFacade:
             set_owner_platform_selection(self.redraft_root, profile, selection)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_OWNER_PLATFORM_SELECTION_FAILED", "The league ADP column selection could not be saved.", status=409) from exc
+        return self.redraft_bootstrap()
+
+    def approve_redraft_owner_platform_manual_match(self, *, profile_id: str, pasted_name: str, pasted_position: str, pasted_position_rank: str, selected_nwr_player_id: str, source_snapshot_hash: str = "") -> FacadePayload:
+        _, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            approve_owner_platform_manual_match(self.redraft_root, ranking, manual_assets, pasted_name=pasted_name, pasted_position=pasted_position, pasted_position_rank=pasted_position_rank, selected_nwr_player_id=selected_nwr_player_id, source_snapshot_hash=source_snapshot_hash)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_OWNER_PLATFORM_ALIAS_FAILED", "The local ADP-only match was not saved.", status=409) from exc
+        return self.redraft_bootstrap()
+
+    def clear_redraft_owner_platform_manual_match(self, *, profile_id: str, pasted_name: str, pasted_position: str) -> FacadePayload:
+        self._redraft_room_context(profile_id)
+        clear_owner_platform_manual_match(self.redraft_root, pasted_name=pasted_name, pasted_position=pasted_position)
         return self.redraft_bootstrap()
 
     def ingest_redraft_sleeper_pick(

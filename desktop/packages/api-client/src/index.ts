@@ -344,6 +344,12 @@ export class NwrApiClient {
     });
   }
 
+  approveRedraftOwnerPlatformManualMatch(profileId: string, pastedName: string, pastedPosition: string, pastedPositionRank: string, selectedNwrPlayerId: string, sourceSnapshotHash = ""): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/manual-match`, {
+      method: "POST", body: JSON.stringify({ pastedName, pastedPosition, pastedPositionRank, selectedNwrPlayerId, sourceSnapshotHash }),
+    });
+  }
+
   ingestSleeperDraftPick(
     profileId: string,
     playerId: string,

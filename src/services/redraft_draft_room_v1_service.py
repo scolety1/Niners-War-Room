@@ -9,6 +9,7 @@ module contains no platform write client.
 from __future__ import annotations
 
 import csv
+import difflib
 import hashlib
 import io
 import json
@@ -318,6 +319,8 @@ def preview_owner_paste_adp(
     paste_text: str,
     selected_source: str,
     manual_assets: Sequence[Mapping[str, Any]] = (),
+    *,
+    root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Parse a stable owner-supplied markdown table without changing any state."""
     if not paste_text.strip() or len(paste_text.encode("utf-8")) > 2_000_000:
@@ -330,6 +333,7 @@ def preview_owner_paste_adp(
             "then `Consensus Sleeper ESPN FantasyPros` numbers. No local state was changed."
         )
     assets = _matching_assets(ranking, manual_assets)
+    aliases = _load_owner_platform_manual_matches(root) if root is not None else {}
     parsed_rows: list[dict[str, Any]] = []
     entries: list[AdpEntry] = []
     unmatched: list[str] = []
@@ -378,14 +382,20 @@ def preview_owner_paste_adp(
             receipt["match_status"] = "SKIPPED_NO_PLATFORM_ADP"
             parsed_rows.append(receipt)
             continue
-        matched, method, confidence, reason = _match_adp_player(player, position, "", assets)
+        alias = aliases.get(_manual_match_key(player, position))
+        matched = next((asset for asset in assets if alias and asset["player_id"] == alias.get("selected_nwr_player_id") and asset["position"] == position), None)
+        if matched is not None:
+            method, confidence, reason = "OWNER_APPROVED", "OWNER", ""
+        else:
+            matched, method, confidence, reason = _match_adp_player(player, position, "", assets)
         if matched is None:
             unmatched.append(f"row {source_index}: {player} ({position})")
             warnings.append(f"row {source_index}: {player} not safely matched ({reason})")
             receipt["match_status"] = "UNMATCHED"
-            receipt["unmatched_reason"] = reason or "NO_SAFE_IDENTITY_MATCH"
+            receipt["unmatched_reason"] = _classify_owner_platform_gap(player, position, reason, assets)
+            receipt["candidate_suggestions"] = _owner_platform_candidates(player, position, assets)
             parsed_rows.append(receipt)
-            report.append(_match_report_row("", player, position, "", None, "UNMATCHED", "", reason or "NO_SAFE_IDENTITY_MATCH"))
+            report.append(_match_report_row("", player, position, "", None, "UNMATCHED", "", receipt["unmatched_reason"]))
             continue
         matched_id = str(matched["player_id"])
         if matched_id in seen_ids:
@@ -394,12 +404,11 @@ def preview_owner_paste_adp(
             parsed_rows.append(receipt)
             continue
         seen_ids.add(matched_id)
-        receipt.update({"match_status": "MATCHED", "matched_nwr_player_id": matched_id, "matched_nwr_player_name": str(matched["player_name"]), "matched_nwr_team": str(matched["team"]), "match_method": method, "match_confidence": confidence})
+        receipt.update({"match_status": "MATCHED", "matched_nwr_player_id": matched_id, "matched_nwr_player_name": str(matched["player_name"]), "matched_nwr_team": str(matched["team"]), "match_method": method, "match_confidence": confidence, "match_source": "OWNER_APPROVED" if method == "OWNER_APPROVED" else "AUTOMATIC"})
         parsed_rows.append(receipt)
         entries.append(AdpEntry(player_id=matched_id, player=str(matched["player_name"]), team=str(matched["team"]), position=str(matched["position"]), overall_adp=match_value, expected_pick=match_value, min_pick=None, max_pick=None, std_dev=None, source_player_id=f"paste:{source_index}", expected_round=max(1, math.ceil(match_value / profile.team_count)), match_status="MATCHED", match_confidence=confidence))
         report.append(_match_report_row("", player, position, "", matched, method, confidence, ""))
-    if not entries:
-        raise RedraftValidationError("The pasted table did not safely match any NWR Draft Room players.")
+    # A zero-match preview is still useful: it is the owner’s safe review queue.
     return {"selectedSource": selected, "parserMode": parser_mode, "platformCoverage": _platform_coverage(parsed_rows), "parsedRows": parsed_rows, "entries": entries, "unmatched": unmatched, "warnings": warnings, "matchReport": report, "sourceRows": len(rows), "matchedRows": len(entries), "skippedRows": len(rows) - len(entries)}
 
 
@@ -414,7 +423,7 @@ def save_owner_paste_adp(
     *,
     activate: bool = False,
 ) -> AdpSnapshot:
-    preview = preview_owner_paste_adp(profile, ranking, paste_text, selected_source, manual_assets)
+    preview = preview_owner_paste_adp(profile, ranking, paste_text, selected_source, manual_assets, root=root)
     selected = str(preview["selectedSource"])
     imported = utc_now()
     label = source_label.strip()
@@ -1927,6 +1936,75 @@ def _owner_paste_raw_path(root: str | Path, profile_id: str) -> Path:
 
 def _owner_platform_snapshot_path(root: str | Path) -> Path:
     return Path(root) / "adp_provider_cache" / "owner_platform_snapshot" / "snapshot.json"
+
+
+def _owner_platform_manual_matches_path(root: str | Path) -> Path:
+    return Path(root) / "adp_provider_cache" / "owner_platform_snapshot" / "manual_matches.json"
+
+
+def _manual_match_key(player: str, position: str) -> str:
+    return f"{_normalized_position(position)}:{_normalized_name_without_suffix(player)}"
+
+
+def _load_owner_platform_manual_matches(root: str | Path | None) -> dict[str, dict[str, Any]]:
+    if root is None:
+        return {}
+    path = _owner_platform_manual_matches_path(root)
+    try:
+        rows = json.loads(path.read_text(encoding="utf-8")).get("matches", [])
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return {}
+    return {_manual_match_key(str(row.get("pasted_name") or ""), str(row.get("pasted_position") or "")): dict(row) for row in rows if isinstance(row, Mapping)}
+
+
+def approve_owner_platform_manual_match(
+    root: str | Path, ranking: RankingResult, manual_assets: Sequence[Mapping[str, Any]], *,
+    pasted_name: str, pasted_position: str, pasted_position_rank: str, selected_nwr_player_id: str,
+    source_snapshot_hash: str = "",
+) -> None:
+    """Persist an owner decision scoped solely to Redraft pasted ADP identity."""
+    assets = _matching_assets(ranking, manual_assets)
+    position = _normalized_position(pasted_position)
+    candidate = next((row for row in assets if row["player_id"] == selected_nwr_player_id and row["position"] == position), None)
+    if candidate is None:
+        raise RedraftValidationError("Choose an existing NWR player with the same position for this local ADP alias.")
+    path = _owner_platform_manual_matches_path(root)
+    existing = _load_owner_platform_manual_matches(root)
+    existing[_manual_match_key(pasted_name, position)] = {
+        "pasted_name": pasted_name.strip(), "pasted_position": position, "pasted_position_rank": pasted_position_rank,
+        "selected_nwr_player_id": selected_nwr_player_id, "selected_nwr_player_name": candidate["player_name"],
+        "selected_nwr_position": candidate["position"], "selected_nwr_team": candidate["team"],
+        "approved_at": utc_now(), "approved_by": "owner", "source_snapshot_hash": source_snapshot_hash,
+        "scope": "REDRAFT_ADP_IMPORT_ONLY",
+    }
+    _atomic_json(path, {"schema_version": 1, "matches": list(existing.values())})
+
+
+def clear_owner_platform_manual_match(root: str | Path, *, pasted_name: str, pasted_position: str) -> None:
+    existing = _load_owner_platform_manual_matches(root)
+    existing.pop(_manual_match_key(pasted_name, pasted_position), None)
+    _atomic_json(_owner_platform_manual_matches_path(root), {"schema_version": 1, "matches": list(existing.values())})
+
+
+def _owner_platform_candidates(player: str, position: str, assets: Sequence[Mapping[str, str]]) -> list[dict[str, str]]:
+    target = _normalized_name_without_suffix(player)
+    candidates: list[tuple[float, Mapping[str, str]]] = []
+    for asset in assets:
+        score = difflib.SequenceMatcher(None, target, _normalized_name_without_suffix(asset["player_name"])).ratio()
+        if asset["position"] == position:
+            score += 0.2
+        if score >= 0.58:
+            candidates.append((score, asset))
+    candidates.sort(key=lambda item: (-item[0], item[1]["player_name"]))
+    return [{"player_id": str(row["player_id"]), "player_name": str(row["player_name"]), "position": str(row["position"]), "team": str(row["team"]), "active_redraft_board": True, "confidence": "HIGH" if score >= 1.0 else "REVIEW", "reason": "normalized name and position candidate" if row["position"] == position else "name candidate; position differs"} for score, row in candidates[:5]]
+
+
+def _classify_owner_platform_gap(player: str, position: str, reason: str, assets: Sequence[Mapping[str, str]]) -> str:
+    if reason in {"POSITION_MISMATCH", "AMBIGUOUS_NAME"}:
+        return reason
+    if _owner_platform_candidates(player, position, assets):
+        return "POSSIBLE_ALIAS_REVIEW"
+    return "NOT_IN_ACTIVE_REDRAFT_BOARD"
 
 
 def _owner_platform_raw_path(root: str | Path) -> Path:

@@ -42,6 +42,7 @@ _REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$"
 _REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
 _REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear$")
 _REDRAFT_PASTE_ADP_SELECTION = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/selection$")
+_REDRAFT_PASTE_ADP_MANUAL_MATCH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/manual-match$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
@@ -587,6 +588,13 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             return self.server.facade.set_redraft_owner_platform_selection(
                 profile_id=unquote(paste_selection_match.group(1)), selection=body["selection"],
             )
+        manual_match = _REDRAFT_PASTE_ADP_MANUAL_MATCH.fullmatch(path)
+        if method == "POST" and manual_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pastedName", "pastedPosition", "pastedPositionRank", "selectedNwrPlayerId", "sourceSnapshotHash"})
+            if not all(isinstance(body.get(key), str) for key in {"pastedName", "pastedPosition", "pastedPositionRank", "selectedNwrPlayerId"}):
+                raise self._invalid_body("Manual ADP match fields must be strings.")
+            return self.server.facade.approve_redraft_owner_platform_manual_match(profile_id=unquote(manual_match.group(1)), pasted_name=body["pastedName"], pasted_position=body["pastedPosition"], pasted_position_rank=body["pastedPositionRank"], selected_nwr_player_id=body["selectedNwrPlayerId"], source_snapshot_hash=str(body.get("sourceSnapshotHash") or ""))
         sleeper_pick_match = _REDRAFT_SLEEPER_PICK.fullmatch(path)
         if method == "POST" and sleeper_pick_match:
             body = self._json_body()
