@@ -1,0 +1,15 @@
+{
+  "artifact": "nwr_redraft_adp_ux_layout_repair_v1_20260817",
+  "verdict": "GREEN",
+  "scope": "Redraft UI navigation, layout, copy, and release metadata only",
+  "installedProductVersion": "1.0.1",
+  "tests": {
+    "typecheck": "passed",
+    "frontend": "14 files / 58 tests passed",
+    "productionBundle": "passed",
+    "installedUi": "passed"
+  },
+  "authorityChanges": false,
+  "sleeperWrites": false,
+  "ownerState": "Only runtime.json heartbeat changed during launch; protected state preserved."
+}

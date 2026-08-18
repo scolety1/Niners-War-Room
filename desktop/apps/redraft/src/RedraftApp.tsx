@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
+import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
 import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
@@ -13,7 +14,7 @@ import { ProfilePage } from "./profile";
 const NAVIGATION: NavigationGroup[] = [
   { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
-  { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }] },
+  { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
   { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
   { label: "System", items: [{ label: "Projection & Data Health", path: "/data-health", icon: "health" }] },
 ];
@@ -60,6 +61,7 @@ export function RedraftApp() {
       <Route path="/compare" element={<ComparePage data={data} />} />
       <Route path="/cheat-sheet" element={<CheatSheetPage data={data} />} />
       <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
+      <Route path="/adp" element={<AdpProvidersPage client={client} data={data} onUpdate={update} />} />
       <Route path="/weekly-tools" element={<WeeklyToolsPage client={client} data={data} />} />
       <Route path="/data-health" element={<DataHealthPage data={data} onReload={reload} />} />
       <Route path="*" element={<Navigate replace to="/" />} />
@@ -78,8 +80,11 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
     catch { setError("League switch could not be saved. The current workspace remains active."); }
     finally { setWorking(false); }
   };
+  const adp = data.draftBoard?.adp;
+  const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
   return <section className="active-league-selector" aria-label="Active League">
     <div><span>Active League</span><strong>{active?.leagueName ?? "Choose a league"}</strong><small>{active ? leagueFormat(active) : "Create or import a Redraft league profile"}</small>{error ? <em role="status">{error}</em> : null}</div>
-    <label><span>Switch League</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.leagueName} — {leagueFormat(profile)}</option>)}</select></label>
+    <label><span>Switch</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.leagueName} — {leagueFormat(profile)}</option>)}</select></label>
+    <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span><span className="active-league-ready">Draft board ready</span>
   </section>;
 }
