@@ -1,0 +1,5 @@
+name,recommendation,phase,boundary
+rapidfuzz,ADOPT_PACKAGE,2A,candidate-only review
+pydantic,ADOPT_PACKAGE,2A,typed contracts
+scikit-learn,ADOPT_PACKAGE,2B,metrics only
+ortools,DEEP_INSPECT_LATER,2C,legal constraints
