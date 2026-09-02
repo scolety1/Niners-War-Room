@@ -153,6 +153,12 @@ class ProjectionPlayer:
     source_as_of: str = ""
     rookie: bool = False
     stats: dict[str, float | None] = field(default_factory=dict)
+    # True only when this row's normal 30-day source_as_of freshness gate was
+    # bypassed under an explicit, narrowly-scoped, SHA-bound, time-limited
+    # owner draft-day authorization (see _load_draft_day_authorization). The
+    # projection VALUE and source_as_of date are never altered -- this is a
+    # display/authority label, not a freshness claim.
+    draft_day_prior_override: bool = False
 
 
 @dataclass(frozen=True)
@@ -640,6 +646,50 @@ def install_projection_snapshot(
     return load_projection_snapshot(destination, season=season, require_manifest=True)
 
 
+DRAFT_DAY_AUTHORIZATION_FILENAME = "DRAFT_DAY_AUTHORIZATION.json"
+DRAFT_DAY_AUTHORIZATION_LABEL = "OWNER_DRAFT_DAY_APPROVAL_2026_KHA"
+
+
+def _load_draft_day_authorization(snapshot_dir: Path, *, source_sha256: str) -> frozenset[str]:
+    """Return the set of player_ids explicitly authorized, tonight, to bypass
+    the normal source_as_of freshness gate -- ONLY if every safety condition
+    holds. Any failure returns an empty set (i.e. the normal, safe, blocked
+    behavior), never an exception -- this is a narrow, self-expiring, opt-in
+    relaxation, not a new default.
+
+    Conditions, all required:
+      - the authorization file exists next to the projection snapshot;
+      - its label is exactly DRAFT_DAY_AUTHORIZATION_LABEL;
+      - its bound_source_sha256 matches the snapshot actually being loaded
+        (if the projection artifact ever changes, this authorization goes
+        inert automatically -- "if the artifact hash differs, STOP");
+      - it has not passed its own expires_at_utc.
+    """
+    path = snapshot_dir / DRAFT_DAY_AUTHORIZATION_FILENAME
+    if not path.is_file():
+        return frozenset()
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return frozenset()
+    if not isinstance(document, dict):
+        return frozenset()
+    if document.get("label") != DRAFT_DAY_AUTHORIZATION_LABEL:
+        return frozenset()
+    if str(document.get("bound_source_sha256") or "") != source_sha256:
+        return frozenset()
+    try:
+        expires_at = datetime.fromisoformat(str(document.get("expires_at_utc") or "").replace("Z", "+00:00"))
+    except ValueError:
+        return frozenset()
+    if expires_at.tzinfo is None or datetime.now(UTC) > expires_at.astimezone(UTC):
+        return frozenset()
+    player_ids = document.get("player_ids")
+    if not isinstance(player_ids, list):
+        return frozenset()
+    return frozenset(str(value) for value in player_ids)
+
+
 def load_projection_snapshot(
     path: str | Path,
     *,
@@ -659,6 +709,7 @@ def load_projection_snapshot(
         )
     source_bytes = source_path.read_bytes()
     digest = hashlib.sha256(source_bytes).hexdigest()
+    stale_override_ids = _load_draft_day_authorization(source_path.parent, source_sha256=digest)
     errors: list[str] = []
     players: list[ProjectionPlayer] = []
     blocked: list[dict[str, str]] = []
@@ -696,6 +747,14 @@ def load_projection_snapshot(
                     )
                 else:
                     reason = _source_as_of_reason(source_as_of, season)
+                draft_day_override_applied = False
+                if (
+                    reason
+                    and reason.endswith("freshness window")
+                    and player_id in stale_override_ids
+                ):
+                    reason = ""
+                    draft_day_override_applied = True
                 stats: dict[str, float | None] = {
                     column: _optional_float(row.get(column))
                     for column in PROJECTION_NUMERIC_COLUMNS
@@ -741,6 +800,7 @@ def load_projection_snapshot(
                         source_as_of=source_as_of,
                         rookie=_truthy(row.get("rookie")),
                         stats=stats,
+                        draft_day_prior_override=draft_day_override_applied,
                     )
                 )
     if players and not errors:

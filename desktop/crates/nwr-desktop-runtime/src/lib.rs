@@ -472,7 +472,10 @@ pub fn run(context: tauri::Context<Wry>, mode: AppMode) {
         .setup(move |app| {
             let state = match DesktopState::launch(app.handle(), mode) {
                 Ok(state) => ManagedDesktopState::Ready(state),
-                Err(_) => ManagedDesktopState::Failed,
+                Err(err) => {
+                    eprintln!("NWR_DESKTOP_RUNTIME_LAUNCH_FAILED: {err}");
+                    ManagedDesktopState::Failed
+                }
             };
             if !app.manage(state) {
                 return Err(Box::new(RuntimeError::message(

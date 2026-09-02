@@ -1,0 +1,16 @@
+player_id,player_name,position,team,status,detail,source_as_of
+00-0039921,Trey Benson,RB,AZ,SEASON_ENDING,Knee injury; out for the 2026 season,2026-09-01
+00-0040130,Jayden Higgins,WR,HOU,SEASON_ENDING,Knee injury; out for the 2026 season,2026-09-01
+00-0039916,Ricky Pearsall,WR,SF,SEASON_ENDING,Knee injury; out for the 2026 season,2026-09-01
+00-0038752,Jake Bobo,WR,SEA,SEASON_ENDING,Knee injury; out for the 2026 season,2026-09-01
+00-0040202,Devin Neal,RB,NO,SEASON_ENDING,Hamstring injury; out for the 2026 season,2026-09-01
+00-0037276,Ty Chandler,RB,NO,SEASON_ENDING,Knee injury; out for the 2026 season,2026-09-01
+00-0033553,James Conner,RB,AZ,OUT_RETURNING_WK5,Reported eligible to return around Week 5; will miss the early season,2026-09-01
+00-0039363,Isaac Guerendo,RB,SF,OUT_RETURNING_WK5,Reported eligible to return around Week 5; will miss the early season,2026-09-01
+00-0039165,Zach Charbonnet,RB,SEA,OUT_RETURNING_WK5,Reported eligible to return around Week 5; will miss the early season,2026-09-01
+00-0034775,Christian Kirk,WR,SF,OUT_RETURNING_WK5,Reported eligible to return around Week 5; will miss the early season,2026-09-01
+MANUAL_K_IND,Blake Grupe,K,IND,ROSTER_UNSETTLED,Conflicting reports also place him on NYJ waivers; confirm actual team before drafting,2026-09-01
+MANUAL_K_LV,Daniel Carlson,K,LV,ROSTER_UNSETTLED,Conflicting reports say Carlson signed with NO; LV successor unclear,2026-09-01
+MANUAL_K_NO,Daniel Carlson,K,NO,ROSTER_UNSETTLED,Reported signed by NO after Blake Grupe's departure; conflicts with LV report on the same player,2026-09-01
+MANUAL_K_NYJ,Jason Sanders,K,NYJ,ROSTER_UNSETTLED,Active Week 1 kicker competition vs. Blake Grupe per multiple reports,2026-09-01
+MANUAL_K_BAL,Tyler Loop,K,BAL,ROSTER_UNSETTLED,Conflicting reports on whether Loop is retained or being replaced; no named successor found,2026-09-01
