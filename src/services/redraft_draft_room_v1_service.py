@@ -961,6 +961,9 @@ def owner_pick_and_advance(
     asset = _asset_pool(ranking, manual_assets).get(player_id)
     if asset is None or player_id in state["drafted"]:
         raise RedraftValidationError("The selected Draft Room player is unavailable.")
+    violation = _roster_limit_violation(profile, state, owner_slot, asset)
+    if violation is not None:
+        raise RedraftValidationError(violation)
     state = _record_pick(profile, state, asset, actor="OWNER", behavior="OWNER_SELECTION")
     if state.get("mode") == "MOCK" and not _complete(profile, state):
         step = state.get("speed") == "STEP"
@@ -1674,6 +1677,9 @@ def _roster_candidate_allowed(
     asset: Mapping[str, Any],
 ) -> bool:
     position = str(asset["position"])
+    explicit_limit = profile.draft.roster_limits.get(position)
+    if explicit_limit is not None:
+        return roster[position] < int(explicit_limit)
     if position in {"K", "DST"}:
         return roster[position] < int(getattr(profile.roster, position.lower()))
     if position == "QB":
@@ -1681,6 +1687,33 @@ def _roster_candidate_allowed(
     if position == "TE":
         return roster[position] < max(profile.roster.te + 1, 2)
     return roster[position] < profile.draft.rounds
+
+
+def _roster_limit_violation(
+    profile: LeagueProfile,
+    state: Mapping[str, Any],
+    team_slot: int,
+    asset: Mapping[str, Any],
+) -> str | None:
+    """Return a human-readable message if drafting `asset` for `team_slot` would
+    exceed a configured position maximum, else None. Applies to every actor
+    (owner and CPU alike) so a human owner cannot violate the same league
+    position caps that constrain the bots."""
+    roster = Counter(
+        str(pick["position"])
+        for pick in state.get("picks", [])
+        if int(pick["team_slot"]) == team_slot
+    )
+    if _roster_candidate_allowed(profile, roster, asset):
+        return None
+    position = str(asset["position"])
+    explicit_limit = profile.draft.roster_limits.get(position)
+    limit = (
+        int(explicit_limit)
+        if explicit_limit is not None
+        else roster[position]  # heuristic cap already reached; report the count as the limit
+    )
+    return f"Drafting this {position} would exceed the league position maximum of {limit}."
 
 
 def _roster_need_adjustment(
@@ -2164,7 +2197,7 @@ def _load_owner_platform_snapshot(root: str | Path, profile: LeagueProfile) -> A
         authority="OWNER-IMPORTED PLATFORM ADP / MARKET TIMING",
         retrieved_at_utc=str(document.get("imported_at_utc") or ""),
         provider_version="NWR_OWNER_PLATFORM_SNAPSHOT_V1",
-        freshness="FRESH",
+        freshness=_freshness_label(str(document.get("imported_at_utc") or "")),
         match_report=tuple(report),
         paste_rows=tuple(rows),
     )

@@ -273,8 +273,10 @@ def validate_profile(profile: LeagueProfile) -> None:
         raise RedraftValidationError("Profile id contains unsupported characters.")
     if not profile.league_name.strip():
         raise RedraftValidationError("League name is required.")
-    if profile.provider not in {"local", "sleeper"}:
-        raise RedraftValidationError("League provider must be local or sleeper.")
+    if profile.provider not in {"local", "sleeper", "espn", "fantasypros"}:
+        raise RedraftValidationError(
+            "League provider must be local, sleeper, espn, or fantasypros."
+        )
     if profile.provider == "sleeper":
         if not profile.provider_league_id or not re.fullmatch(
             r"[A-Za-z0-9_-]+", profile.provider_league_id
