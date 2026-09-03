@@ -1,0 +1,420 @@
+{
+  "assets": [
+    {
+      "player_id": "MANUAL_DST_ATL",
+      "player_name": "Falcons D/ST",
+      "position": "DST",
+      "team": "ATL"
+    },
+    {
+      "player_id": "MANUAL_DST_AZ",
+      "player_name": "Cardinals D/ST",
+      "position": "DST",
+      "team": "AZ"
+    },
+    {
+      "player_id": "MANUAL_DST_BAL",
+      "player_name": "Ravens D/ST",
+      "position": "DST",
+      "team": "BAL"
+    },
+    {
+      "player_id": "MANUAL_DST_BUF",
+      "player_name": "Bills D/ST",
+      "position": "DST",
+      "team": "BUF"
+    },
+    {
+      "player_id": "MANUAL_DST_CAR",
+      "player_name": "Panthers D/ST",
+      "position": "DST",
+      "team": "CAR"
+    },
+    {
+      "player_id": "MANUAL_DST_CHI",
+      "player_name": "Bears D/ST",
+      "position": "DST",
+      "team": "CHI"
+    },
+    {
+      "player_id": "MANUAL_DST_CIN",
+      "player_name": "Bengals D/ST",
+      "position": "DST",
+      "team": "CIN"
+    },
+    {
+      "player_id": "MANUAL_DST_CLE",
+      "player_name": "Browns D/ST",
+      "position": "DST",
+      "team": "CLE"
+    },
+    {
+      "player_id": "MANUAL_DST_DAL",
+      "player_name": "Cowboys D/ST",
+      "position": "DST",
+      "team": "DAL"
+    },
+    {
+      "player_id": "MANUAL_DST_DEN",
+      "player_name": "Broncos D/ST",
+      "position": "DST",
+      "team": "DEN"
+    },
+    {
+      "player_id": "MANUAL_DST_DET",
+      "player_name": "Lions D/ST",
+      "position": "DST",
+      "team": "DET"
+    },
+    {
+      "player_id": "MANUAL_DST_GB",
+      "player_name": "Packers D/ST",
+      "position": "DST",
+      "team": "GB"
+    },
+    {
+      "player_id": "MANUAL_DST_HOU",
+      "player_name": "Texans D/ST",
+      "position": "DST",
+      "team": "HOU"
+    },
+    {
+      "player_id": "MANUAL_DST_IND",
+      "player_name": "Colts D/ST",
+      "position": "DST",
+      "team": "IND"
+    },
+    {
+      "player_id": "MANUAL_DST_JAX",
+      "player_name": "Jaguars D/ST",
+      "position": "DST",
+      "team": "JAX"
+    },
+    {
+      "player_id": "MANUAL_DST_KC",
+      "player_name": "Chiefs D/ST",
+      "position": "DST",
+      "team": "KC"
+    },
+    {
+      "player_id": "MANUAL_DST_LA",
+      "player_name": "Rams D/ST",
+      "position": "DST",
+      "team": "LA"
+    },
+    {
+      "player_id": "MANUAL_DST_LAC",
+      "player_name": "Chargers D/ST",
+      "position": "DST",
+      "team": "LAC"
+    },
+    {
+      "player_id": "MANUAL_DST_LV",
+      "player_name": "Raiders D/ST",
+      "position": "DST",
+      "team": "LV"
+    },
+    {
+      "player_id": "MANUAL_DST_MIA",
+      "player_name": "Dolphins D/ST",
+      "position": "DST",
+      "team": "MIA"
+    },
+    {
+      "player_id": "MANUAL_DST_MIN",
+      "player_name": "Vikings D/ST",
+      "position": "DST",
+      "team": "MIN"
+    },
+    {
+      "player_id": "MANUAL_DST_NE",
+      "player_name": "Patriots D/ST",
+      "position": "DST",
+      "team": "NE"
+    },
+    {
+      "player_id": "MANUAL_DST_NO",
+      "player_name": "Saints D/ST",
+      "position": "DST",
+      "team": "NO"
+    },
+    {
+      "player_id": "MANUAL_DST_NYG",
+      "player_name": "Giants D/ST",
+      "position": "DST",
+      "team": "NYG"
+    },
+    {
+      "player_id": "MANUAL_DST_NYJ",
+      "player_name": "Jets D/ST",
+      "position": "DST",
+      "team": "NYJ"
+    },
+    {
+      "player_id": "MANUAL_DST_PHI",
+      "player_name": "Eagles D/ST",
+      "position": "DST",
+      "team": "PHI"
+    },
+    {
+      "player_id": "MANUAL_DST_PIT",
+      "player_name": "Steelers D/ST",
+      "position": "DST",
+      "team": "PIT"
+    },
+    {
+      "player_id": "MANUAL_DST_SEA",
+      "player_name": "Seahawks D/ST",
+      "position": "DST",
+      "team": "SEA"
+    },
+    {
+      "player_id": "MANUAL_DST_SF",
+      "player_name": "49ers D/ST",
+      "position": "DST",
+      "team": "SF"
+    },
+    {
+      "player_id": "MANUAL_DST_TB",
+      "player_name": "Buccaneers D/ST",
+      "position": "DST",
+      "team": "TB"
+    },
+    {
+      "player_id": "MANUAL_DST_TEN",
+      "player_name": "Titans D/ST",
+      "position": "DST",
+      "team": "TEN"
+    },
+    {
+      "player_id": "MANUAL_DST_WAS",
+      "player_name": "Commanders D/ST",
+      "position": "DST",
+      "team": "WAS"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_ATL",
+      "player_name": "Younghoe Koo",
+      "position": "K",
+      "team": "ATL"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_AZ",
+      "player_name": "Chad Ryland",
+      "position": "K",
+      "team": "AZ"
+    },
+    {
+      "confidence": "unsettled",
+      "player_id": "MANUAL_K_BAL",
+      "player_name": "Tyler Loop",
+      "position": "K",
+      "team": "BAL"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_BUF",
+      "player_name": "Tyler Bass",
+      "position": "K",
+      "team": "BUF"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_CAR",
+      "player_name": "Ryan Fitzgerald",
+      "position": "K",
+      "team": "CAR"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_CHI",
+      "player_name": "Cairo Santos",
+      "position": "K",
+      "team": "CHI"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_CIN",
+      "player_name": "Evan McPherson",
+      "position": "K",
+      "team": "CIN"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_CLE",
+      "player_name": "Andre Szmyt",
+      "position": "K",
+      "team": "CLE"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_DAL",
+      "player_name": "Brandon Aubrey",
+      "position": "K",
+      "team": "DAL"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_DEN",
+      "player_name": "Wil Lutz",
+      "position": "K",
+      "team": "DEN"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_DET",
+      "player_name": "Jake Bates",
+      "position": "K",
+      "team": "DET"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_GB",
+      "player_name": "Trey Smack",
+      "position": "K",
+      "team": "GB"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_HOU",
+      "player_name": "Ka'imi Fairbairn",
+      "position": "K",
+      "team": "HOU"
+    },
+    {
+      "confidence": "unsettled",
+      "player_id": "MANUAL_K_IND",
+      "player_name": "Blake Grupe",
+      "position": "K",
+      "team": "IND"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_JAX",
+      "player_name": "Cam Little",
+      "position": "K",
+      "team": "JAX"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_KC",
+      "player_name": "Harrison Butker",
+      "position": "K",
+      "team": "KC"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_LA",
+      "player_name": "Joshua Karty",
+      "position": "K",
+      "team": "LA"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_LAC",
+      "player_name": "Cameron Dicker",
+      "position": "K",
+      "team": "LAC"
+    },
+    {
+      "confidence": "unsettled",
+      "player_id": "MANUAL_K_LV",
+      "player_name": "Daniel Carlson",
+      "position": "K",
+      "team": "LV"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_MIA",
+      "player_name": "Riley Patterson",
+      "position": "K",
+      "team": "MIA"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_MIN",
+      "player_name": "Will Reichard",
+      "position": "K",
+      "team": "MIN"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_NE",
+      "player_name": "Andy Borregales",
+      "position": "K",
+      "team": "NE"
+    },
+    {
+      "confidence": "unsettled",
+      "player_id": "MANUAL_K_NO",
+      "player_name": "Daniel Carlson",
+      "position": "K",
+      "team": "NO"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_NYG",
+      "player_name": "Dominic Zvada",
+      "position": "K",
+      "team": "NYG"
+    },
+    {
+      "confidence": "unsettled",
+      "player_id": "MANUAL_K_NYJ",
+      "player_name": "Jason Sanders",
+      "position": "K",
+      "team": "NYJ"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_PHI",
+      "player_name": "Jake Elliott",
+      "position": "K",
+      "team": "PHI"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_PIT",
+      "player_name": "Chris Boswell",
+      "position": "K",
+      "team": "PIT"
+    },
+    {
+      "confidence": "ok",
+      "player_id": "MANUAL_K_SEA",
+      "player_name": "Jason Myers",
+      "position": "K",
+      "team": "SEA"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_SF",
+      "player_name": "Eddy Pineiro",
+      "position": "K",
+      "team": "SF"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_TB",
+      "player_name": "Ryan Succop",
+      "position": "K",
+      "team": "TB"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_TEN",
+      "player_name": "Joey Slye",
+      "position": "K",
+      "team": "TEN"
+    },
+    {
+      "confidence": "confirmed",
+      "player_id": "MANUAL_K_WAS",
+      "player_name": "Jake Moody",
+      "position": "K",
+      "team": "WAS"
+    }
+  ]
+}

@@ -37,6 +37,13 @@
       "description": "Cleaned, replay-ready derivative: 192 rows, columns overall_pick,round,pick_in_round,team_slot,team_name,player_name,nfl_team,position. team_slot derived from round-1 draft order (snake). Deterministic parse, no player/pick data invented or altered."
     },
     {
+      "path": "live_manual_kdst_assets_64.json",
+      "source": "C:\\Users\\codex-agent\\AppData\\Local\\com.ninerswarroom.redraft\\state\\redraft\\manual_assets\\fb1c49402c7644a99120197d41344bbb.json",
+      "sha256": "fabc1e5f585040c06194bd34db1a6c8d4c97a885e0151bff4484888d20399a08",
+      "bytes": 9665,
+      "description": "Real live NWR manual K/DST asset pool for the KHA profile at draft time: 32 K + 32 DST, practical_mode=true so this was actually loaded and exposed to the Draft Room during the live draft. Proves the 14 historical K_DST_UNREPRESENTABLE picks were a discoverability/UI failure (position filter had to already be K or DST to see these), not a missing-data failure -- see docs/codex/KDST_AND_UNIVERSE_GAP_EVIDENCE_20260903.md and tests/test_kha_reconciliation_regression.py."
+    },
+    {
       "path": "RECONCILIATION_LEDGER.csv",
       "source": "derived from official_recap_192picks_clean.csv + live_runtime_draft_board_157picks.json + the draft-day player-universe snapshot",
       "sha256": "8f17a5c907933bd05032efce1189e3290b001b616495f8a69b7e7b246ee637b3",
