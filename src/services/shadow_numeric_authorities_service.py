@@ -23,9 +23,10 @@ from __future__ import annotations
 import random
 import statistics
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
+from src.services.ai_intelligence_backend_service import ImpactHypothesis
 from src.services.redraft_draft_room_v1_service import AdpSnapshot, _asset_pool, run_complete_mock
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
 
@@ -69,14 +70,22 @@ def _roster_players(
     return players
 
 
-def optimal_starting_lineup_value(players: Sequence[RosterPlayer], profile: LeagueProfile) -> float:
-    """Greedy starting-lineup assignment: fill each required position slot
+def _select_starting_lineup(
+    players: Sequence[RosterPlayer], profile: LeagueProfile
+) -> tuple[list[RosterPlayer], tuple[str, ...]]:
+    """Shared greedy starter-selection: fill each required position slot
     with the best-by-value player at that position, then fill FLEX (and
     superflex, if configured) with the best remaining FLEX-eligible
     players. This is a documented heuristic, not a proven globally-optimal
     assignment -- for the single-FLEX-type case it is standard and nearly
-    always optimal in practice, but is not exhaustively verified against
-    every possible roster shape.
+    always optimal in practice (see
+    test_optimal_starting_lineup_value_matches_brute_force_on_small_rosters
+    for an empirical check against exhaustive search), but is not
+    exhaustively verified against every possible roster shape.
+
+    Returns (chosen starters, unmet-requirement labels) -- the labels are
+    used by roster_composition_report() to surface real starter holes
+    rather than silently under-filling a lineup.
     """
     remaining = sorted(players, key=lambda p: -p.value)
     slot_requirements: list[tuple[str, int]] = [
@@ -89,14 +98,16 @@ def optimal_starting_lineup_value(players: Sequence[RosterPlayer], profile: Leag
     ]
     used_ids: set[str] = set()
     starters: list[RosterPlayer] = []
+    holes: list[str] = []
     for position, count in slot_requirements:
         if count <= 0:
             continue
-        chosen = [p for p in remaining if p.position == position and p.player_id not in used_ids][
-            :count
-        ]
+        available = [p for p in remaining if p.position == position and p.player_id not in used_ids]
+        chosen = available[:count]
         starters.extend(chosen)
         used_ids.update(p.player_id for p in chosen)
+        if len(chosen) < count:
+            holes.append(f"{position} {len(chosen)}/{count}")
     flex_needed = profile.roster.flex
     if flex_needed > 0:
         flex_pool = [
@@ -104,6 +115,8 @@ def optimal_starting_lineup_value(players: Sequence[RosterPlayer], profile: Leag
         ][:flex_needed]
         starters.extend(flex_pool)
         used_ids.update(p.player_id for p in flex_pool)
+        if len(flex_pool) < flex_needed:
+            holes.append(f"FLEX {len(flex_pool)}/{flex_needed}")
     superflex_needed = profile.roster.superflex
     if superflex_needed > 0:
         superflex_eligible = FLEX_ELIGIBLE | {"QB"}
@@ -112,7 +125,106 @@ def optimal_starting_lineup_value(players: Sequence[RosterPlayer], profile: Leag
         ][:superflex_needed]
         starters.extend(superflex_pool)
         used_ids.update(p.player_id for p in superflex_pool)
+        if len(superflex_pool) < superflex_needed:
+            holes.append(f"SUPERFLEX {len(superflex_pool)}/{superflex_needed}")
+    return starters, tuple(holes)
+
+
+def optimal_starting_lineup_value(players: Sequence[RosterPlayer], profile: LeagueProfile) -> float:
+    """Greedy starting-lineup value -- see _select_starting_lineup for the
+    selection algorithm this reports on."""
+    starters, _holes = _select_starting_lineup(players, profile)
     return sum(p.value for p in starters)
+
+
+@dataclass(frozen=True)
+class RosterCompositionReport:
+    """Diagnostic beyond a single Team Score percentile: which starter
+    slots this roster cannot currently fill, how much value its bench
+    provides as depth/bye-week/injury insurance, and how many rostered
+    players at each position exceed what starters+FLEX can even use.
+    Built directly on _select_starting_lineup's own selection -- this is
+    a report on that selection, not a second, competing lineup algorithm.
+    """
+
+    starter_holes: tuple[str, ...]
+    starting_lineup_value: float
+    bench_contingency_value: float
+    total_roster_value: float
+    position_redundancy: Mapping[str, int]
+
+
+def roster_composition_report(
+    players: Sequence[RosterPlayer], profile: LeagueProfile
+) -> RosterCompositionReport:
+    starters, holes = _select_starting_lineup(players, profile)
+    starter_ids = {p.player_id for p in starters}
+    bench = sorted(
+        (p for p in players if p.player_id not in starter_ids), key=lambda p: -p.value
+    )[: max(0, profile.roster.bench_size)]
+    flex_needed = profile.roster.flex
+    superflex_needed = profile.roster.superflex
+    position_starter_slots = {
+        "QB": profile.roster.qb,
+        "RB": profile.roster.rb,
+        "WR": profile.roster.wr,
+        "TE": profile.roster.te,
+    }
+    redundancy: dict[str, int] = {}
+    for position, required in position_starter_slots.items():
+        rostered = sum(1 for p in players if p.position == position)
+        usable = required
+        if position in FLEX_ELIGIBLE:
+            usable += flex_needed
+        if position in FLEX_ELIGIBLE | {"QB"}:
+            usable += superflex_needed
+        redundancy[position] = max(0, rostered - usable)
+    return RosterCompositionReport(
+        starter_holes=holes,
+        starting_lineup_value=round(sum(p.value for p in starters), 2),
+        bench_contingency_value=round(sum(p.value for p in bench), 2),
+        total_roster_value=round(sum(p.value for p in players), 2),
+        position_redundancy=redundancy,
+    )
+
+
+def availability_discount_for_hypotheses(
+    player_id: str, impact_hypotheses: Sequence[ImpactHypothesis]
+) -> float:
+    """A value multiplier in [0.0, 1.0] driven ONLY by an existing
+    HIGH-confidence NEGATIVE Impact Analyst hypothesis about this exact
+    player (ai_intelligence_backend_service.py's own disclosed rule
+    table -- not a new invented severity model). Anything else (MEDIUM/
+    LOW confidence, UNCERTAIN direction, or no hypothesis at all) returns
+    1.0 -- no discount without a real, already-computed, high-confidence
+    structural signal."""
+    for hypothesis in impact_hypotheses:
+        if hypothesis.subject_player_id != player_id:
+            continue
+        if hypothesis.direction == "NEGATIVE" and hypothesis.confidence == "HIGH":
+            return 0.0
+    return 1.0
+
+
+def availability_adjusted_players(
+    players: Sequence[RosterPlayer], impact_hypotheses: Sequence[ImpactHypothesis]
+) -> list[RosterPlayer]:
+    """Applies availability_discount_for_hypotheses to every player.
+    Callers pass the result into optimal_starting_lineup_value/team_score/
+    roster_composition_report in place of the raw player list -- those
+    functions themselves stay unaware of Impact Analyst hypotheses,
+    keeping the "status availability" concern in one place."""
+    if not impact_hypotheses:
+        return list(players)
+    return [
+        replace(
+            player,
+            value=player.value * availability_discount_for_hypotheses(
+                player.player_id, impact_hypotheses
+            ),
+        )
+        for player in players
+    ]
 
 
 def _rosters_from_mock_state(state: Mapping[str, Any], team_count: int) -> dict[int, list[str]]:

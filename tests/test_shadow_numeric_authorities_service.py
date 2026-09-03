@@ -10,6 +10,7 @@ from dataclasses import replace
 
 import pytest
 
+from src.services.ai_intelligence_backend_service import ImpactHypothesis
 from src.services.redraft_draft_room_v1_service import _asset_pool
 from src.services.redraft_engine_v1_service import (
     DraftContext,
@@ -22,10 +23,13 @@ from src.services.redraft_engine_v1_service import (
 from src.services.shadow_numeric_authorities_service import (
     ChampionshipEquityAssumptions,
     RosterPlayer,
+    availability_adjusted_players,
+    availability_discount_for_hypotheses,
     championship_equity,
     cost_of_waiting,
     optimal_starting_lineup_value,
     pick_score,
+    roster_composition_report,
     simulate_comparable_leagues,
     team_score,
 )
@@ -131,6 +135,156 @@ def test_optimal_starting_lineup_value_handles_superflex() -> None:
     ]
     value = optimal_starting_lineup_value(players, profile)
     assert value == 60 + 30 + 25 + 10 + 55
+
+
+def _brute_force_optimal_lineup_value(players: list[RosterPlayer], profile) -> float:
+    """Exhaustive reference implementation: try every legal assignment of
+    players to starter slots (QB/RB/WR/TE/FLEX/SUPERFLEX) and return the
+    best total value. Only tractable for small player pools -- exists
+    solely to empirically check the greedy algorithm against ground
+    truth, not to replace it."""
+    import itertools
+
+    slots: list[str] = (
+        ["QB"] * profile.roster.qb
+        + ["RB"] * profile.roster.rb
+        + ["WR"] * profile.roster.wr
+        + ["TE"] * profile.roster.te
+        + ["FLEX"] * profile.roster.flex
+        + ["SUPERFLEX"] * profile.roster.superflex
+    )
+    eligibility = {
+        "QB": {"QB"}, "RB": {"RB"}, "WR": {"WR"}, "TE": {"TE"},
+        "FLEX": {"RB", "WR", "TE"}, "SUPERFLEX": {"QB", "RB", "WR", "TE"},
+    }
+    best = 0.0
+    for combo in itertools.permutations(players, min(len(slots), len(players))):
+        total = 0.0
+        valid = True
+        for slot, player in zip(slots, combo, strict=False):
+            if player.position not in eligibility[slot]:
+                valid = False
+                break
+            total += player.value
+        if valid:
+            best = max(best, total)
+    return best
+
+
+@pytest.mark.parametrize("seed", range(8))
+def test_optimal_starting_lineup_value_matches_brute_force_on_small_rosters(seed: int) -> None:
+    # Kept deliberately tiny (8 players, 5 slots -> P(8,5) = 6,720
+    # candidate assignments) so exhaustive search stays fast; correctness
+    # of the exhaustive reference does not depend on pool size.
+    import random as _random
+
+    rng = _random.Random(seed)
+    profile = replace(
+        _ranking().profile,
+        roster=RosterSettings(
+            qb=1, rb=1, wr=1, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=3
+        ),
+    )
+    positions = ["QB"] * 2 + ["RB"] * 2 + ["WR"] * 2 + ["TE"] * 2
+    players = [
+        RosterPlayer(f"p{i}", pos, round(rng.uniform(5.0, 100.0), 1))
+        for i, pos in enumerate(positions)
+    ]
+    greedy = optimal_starting_lineup_value(players, profile)
+    brute_force = _brute_force_optimal_lineup_value(players, profile)
+    assert greedy == pytest.approx(brute_force)
+
+
+def test_roster_composition_report_flags_starter_holes() -> None:
+    profile = replace(
+        _ranking().profile,
+        roster=RosterSettings(
+            qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=1, dst=1, bench_size=6
+        ),
+    )
+    players = [RosterPlayer("qb1", "QB", 50.0), RosterPlayer("rb1", "RB", 40.0)]
+    report = roster_composition_report(players, profile)
+    assert "RB 1/2" in report.starter_holes
+    assert "WR 0/2" in report.starter_holes
+    assert "TE 0/1" in report.starter_holes
+    assert "K 0/1" in report.starter_holes
+    assert "DST 0/1" in report.starter_holes
+    assert "QB" not in " ".join(h for h in report.starter_holes if h.startswith("QB "))
+
+
+def test_roster_composition_report_computes_bench_and_redundancy() -> None:
+    profile = replace(
+        _ranking().profile,
+        roster=RosterSettings(
+            qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=2
+        ),
+    )
+    players = [
+        RosterPlayer("qb1", "QB", 50.0),
+        RosterPlayer("qb2", "QB", 45.0),  # 2nd QB -- pure redundancy, no starter/flex slot uses it
+        RosterPlayer("rb1", "RB", 40.0),
+        RosterPlayer("rb2", "RB", 35.0),
+        RosterPlayer("rb3", "RB", 30.0),  # 3rd RB -- fills FLEX
+        RosterPlayer("wr1", "WR", 25.0),
+        RosterPlayer("wr2", "WR", 20.0),
+        RosterPlayer("te1", "TE", 10.0),
+    ]
+    report = roster_composition_report(players, profile)
+    assert report.starter_holes == ()
+    # starters: qb1, rb1, rb2, wr1, wr2, te1, + FLEX(rb3) = 50+40+35+25+20+10+30 = 210
+    assert report.starting_lineup_value == pytest.approx(210.0)
+    assert report.total_roster_value == pytest.approx(sum(p.value for p in players))
+    # bench (2 slots, best remaining by value): qb2 (45) is the single best remaining
+    assert report.bench_contingency_value == pytest.approx(45.0)
+    assert report.position_redundancy["QB"] == 1  # qb2 fills nothing
+    assert report.position_redundancy["RB"] == 0  # rb3 fills the FLEX slot
+    assert report.position_redundancy["WR"] == 0
+    assert report.position_redundancy["TE"] == 0
+
+
+def _hypothesis(player_id: str, *, direction: str, confidence: str) -> ImpactHypothesis:
+    return ImpactHypothesis(
+        hypothesis_id=f"h:{player_id}",
+        subject_player_id=player_id,
+        direction=direction,
+        confidence=confidence,
+        hypothesis_text="test hypothesis",
+        evidence_event_ids=("evt-1",),
+        requires_owner_review=False,
+        generated_at_utc="2026-08-16T12:05:00+00:00",
+    )
+
+
+def test_availability_discount_zeroes_only_high_confidence_negative_hypotheses() -> None:
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p1", direction="NEGATIVE", confidence="HIGH")]
+    ) == 0.0
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p1", direction="NEGATIVE", confidence="MEDIUM")]
+    ) == 1.0
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p1", direction="UNCERTAIN", confidence="HIGH")]
+    ) == 1.0
+    assert availability_discount_for_hypotheses("p1", []) == 1.0
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p2", direction="NEGATIVE", confidence="HIGH")]
+    ) == 1.0  # a hypothesis about a different player never affects this one
+
+
+def test_availability_adjusted_players_zeroes_the_affected_player_only() -> None:
+    players = [RosterPlayer("p1", "RB", 50.0), RosterPlayer("p2", "RB", 40.0)]
+    hypotheses = [_hypothesis("p1", direction="NEGATIVE", confidence="HIGH")]
+    adjusted = availability_adjusted_players(players, hypotheses)
+    by_id = {p.player_id: p.value for p in adjusted}
+    assert by_id["p1"] == 0.0
+    assert by_id["p2"] == 40.0
+    # original list is untouched (players are frozen, but confirm no aliasing surprises)
+    assert players[0].value == 50.0
+
+
+def test_availability_adjusted_players_is_a_no_op_with_no_hypotheses() -> None:
+    players = [RosterPlayer("p1", "RB", 50.0)]
+    assert availability_adjusted_players(players, []) == players
 
 
 def test_team_score_percentile_is_consistent_with_a_synthetic_population() -> None:
