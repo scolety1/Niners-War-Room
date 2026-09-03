@@ -9,11 +9,14 @@ from src.services.ai_intelligence_backend_service import (
     ImpactHypothesis,
     NewsEvent,
     PickExplanationInputs,
+    RosterContext,
     append_news_event,
     explain_pick_recommendation,
     generate_beneficiary_hypotheses,
     generate_direct_impact_hypothesis,
+    generate_role_uncertainty_hypotheses,
     read_news_events,
+    run_impact_pipeline,
     validate_news_event,
 )
 
@@ -216,3 +219,153 @@ def test_explain_pick_recommendation_includes_impact_hypotheses_and_review_flag(
     )
     assert "possible missed game" in explanation
     assert "needs owner review" in explanation
+
+
+# --- Sections 15-16: fixture-driven end-to-end pipeline + consequence
+# chains. Every event below is a deterministic, offline fixture -- no
+# live API call is required or made to prove this architecture.
+
+
+def _fixture_event(**overrides) -> NewsEvent:
+    base = dict(
+        event_id="evt-fixture", player_id="rb1", player_name="RB One", position="RB",
+        team="SEA", event_type="IR", severity="HIGH",
+        headline="RB One placed on injured reserve",
+        source="Beat Writer", source_url="https://example.test/a",
+        published_at_utc="2026-09-10T12:00:00+00:00",
+        ingested_at_utc="2026-09-10T12:05:00+00:00",
+    )
+    base.update(overrides)
+    return NewsEvent(**base)
+
+
+def test_rb1_to_ir_consequence_chain_has_all_three_real_tiers() -> None:
+    """The directive's own worked example: RB1 -> IR should produce
+    RB1: AVAILABILITY_DOWN (direction=NEGATIVE), Backup: OPPORTUNITY_UP
+    (direction=POSITIVE), Other backfield: ROLE_UNCERTAINTY_UP
+    (direction=UNCERTAIN) -- confidence/horizon/reason explicit on all
+    three, not left implicit."""
+    event = _fixture_event()
+    context = RosterContext(
+        primary_beneficiary=("rb2", "Backup Runner"),
+        other_same_position_players=(
+            ("rb2", "Backup Runner"), ("rb3", "Third String"), ("rb4", "Fourth String"),
+        ),
+    )
+    hypotheses = run_impact_pipeline(event, roster_context=context)
+    by_subject = {h.subject_player_id: h for h in hypotheses}
+
+    assert by_subject["rb1"].direction == "NEGATIVE"  # AVAILABILITY_DOWN
+    assert by_subject["rb1"].confidence == "HIGH"
+    assert by_subject["rb1"].horizon == "REST_OF_SEASON"
+
+    assert by_subject["rb2"].direction == "POSITIVE"  # OPPORTUNITY_UP
+    assert by_subject["rb2"].confidence == "LOW"
+    assert by_subject["rb2"].horizon == "REST_OF_SEASON"
+
+    for backfield_id in ("rb3", "rb4"):
+        assert by_subject[backfield_id].direction == "UNCERTAIN"  # ROLE_UNCERTAINTY_UP
+        assert by_subject[backfield_id].confidence == "LOW"
+        assert by_subject[backfield_id].requires_owner_review is True
+
+    # Every hypothesis traces back to the one real event -- no invented source.
+    assert all(h.evidence_event_ids == ("evt-fixture",) for h in hypotheses)
+    assert len(hypotheses) == 4  # rb1 direct + rb2 beneficiary + rb3/rb4 role-uncertainty
+
+
+@pytest.mark.parametrize(
+    "event_kwargs,expected_direction,expected_horizon",
+    [
+        pytest.param(
+            {"event_type": "IR", "severity": "HIGH"}, "NEGATIVE", "REST_OF_SEASON", id="IR",
+        ),
+        pytest.param(
+            {"event_type": "SUSPENSION", "severity": "HIGH"}, "NEGATIVE", "IMMEDIATE",
+            id="suspension",
+        ),
+        pytest.param(
+            {"event_type": "TRADE", "severity": "MEDIUM"}, "UNCERTAIN", "REST_OF_SEASON",
+            id="trade",
+        ),
+        pytest.param(
+            {
+                "event_type": "ROLE_CHANGE", "severity": "HIGH", "position": "QB",
+                "headline": "Starting QB change announced",
+            },
+            "UNCERTAIN", "REST_OF_SEASON", id="starting-qb-change",
+        ),
+        pytest.param(
+            {
+                "event_type": "DEPTH_CHART_CHANGE", "severity": "MEDIUM", "position": "WR",
+                "headline": "Rookie WR promoted on depth chart",
+            },
+            "UNCERTAIN", "REST_OF_SEASON", id="rookie-role-promotion",
+        ),
+        pytest.param(
+            {"event_type": "INJURY", "severity": "MEDIUM", "position": "WR"}, "NEGATIVE",
+            "IMMEDIATE", id="wr-injury",
+        ),
+    ],
+)
+def test_direct_hypothesis_fixtures_cover_real_world_event_shapes(
+    event_kwargs, expected_direction, expected_horizon
+) -> None:
+    event = _fixture_event(**event_kwargs)
+    hypothesis = generate_direct_impact_hypothesis(event)
+    assert hypothesis.direction == expected_direction
+    assert hypothesis.horizon == expected_horizon
+    assert hypothesis.confidence in {"LOW", "MEDIUM", "HIGH"}
+    assert hypothesis.hypothesis_text  # a real, non-empty reason every time
+
+
+def test_run_impact_pipeline_with_no_roster_context_returns_only_the_direct_hypothesis() -> None:
+    event = _fixture_event()
+    hypotheses = run_impact_pipeline(event)
+    assert len(hypotheses) == 1
+    assert hypotheses[0].subject_player_id == "rb1"
+
+
+def test_run_impact_pipeline_rejects_a_malformed_event_before_generating_anything() -> None:
+    with pytest.raises(AiIntelligenceError):
+        run_impact_pipeline(_fixture_event(event_type="NOT_A_REAL_TYPE"))
+
+
+def test_pipeline_output_is_directly_consumable_by_explain_pick_recommendation() -> None:
+    """"Downstream explanation availability" (section 15): the pipeline's
+    own hypotheses feed explain_pick_recommendation with no adapter step."""
+    event = _fixture_event(
+        event_type="INJURY", severity="MEDIUM", player_id="wr1",
+        player_name="Star Wideout", position="WR",
+    )
+    hypotheses = run_impact_pipeline(event)
+    explanation = explain_pick_recommendation(
+        PickExplanationInputs(
+            player_id="wr1", player_name="Star Wideout", position="WR", overall_rank=20,
+            replacement_adjusted_value=60.0, roster_position_count=1, position_max=4,
+            adp_expected_pick=None, current_pick_number=20, impact_hypotheses=hypotheses,
+        )
+    )
+    assert "Star Wideout" in explanation
+    assert "possible missed game" in explanation or "monitor" in explanation
+
+
+def test_role_uncertainty_hypotheses_exclude_the_event_subject() -> None:
+    event = _fixture_event()
+    others = generate_role_uncertainty_hypotheses(
+        event,
+        other_same_position_players=(
+            ("rb1", "RB One"), ("rb2", "Backup Runner"), ("rb3", "Third String"),
+        ),
+    )
+    subjects = {h.subject_player_id for h in others}
+    # never generates a hypothesis about the event's own subject via this path
+    assert "rb1" not in subjects
+    assert subjects == {"rb2", "rb3"}
+
+
+def test_generate_role_uncertainty_hypotheses_is_empty_for_a_low_severity_event() -> None:
+    event = _fixture_event(severity="LOW")
+    others = generate_role_uncertainty_hypotheses(
+        event, other_same_position_players=(("rb3", "Third String"),)
+    )
+    assert others == ()

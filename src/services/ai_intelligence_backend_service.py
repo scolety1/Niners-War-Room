@@ -36,6 +36,7 @@ from pathlib import Path
 NEWS_EVENT_TYPES = frozenset(
     {
         "INJURY",
+        "IR",
         "DEPTH_CHART_CHANGE",
         "SUSPENSION",
         "TRADE",
@@ -49,7 +50,7 @@ NEWS_SEVERITIES = frozenset({"LOW", "MEDIUM", "HIGH"})
 # Event types where a same-position teammate plausibly benefits -- gates
 # generate_beneficiary_hypotheses(); everything else produces no
 # beneficiary inference at all rather than a low-quality guess.
-_BENEFICIARY_ELIGIBLE_EVENT_TYPES = frozenset({"INJURY", "SUSPENSION", "RETIREMENT"})
+_BENEFICIARY_ELIGIBLE_EVENT_TYPES = frozenset({"INJURY", "IR", "SUSPENSION", "RETIREMENT"})
 
 
 class AiIntelligenceError(ValueError):
@@ -136,6 +137,10 @@ def read_news_events(
 
 IMPACT_DIRECTIONS = frozenset({"POSITIVE", "NEGATIVE", "NEUTRAL", "UNCERTAIN"})
 IMPACT_CONFIDENCES = frozenset({"LOW", "MEDIUM", "HIGH"})
+# How long the hypothesis is expected to hold, disclosed explicitly on
+# every hypothesis (section 16's "confidence/horizon/reason must be
+# explicit") -- never left implicit in the text alone.
+IMPACT_HORIZONS = frozenset({"IMMEDIATE", "REST_OF_SEASON", "LONG_TERM"})
 
 
 @dataclass(frozen=True)
@@ -148,48 +153,67 @@ class ImpactHypothesis:
     evidence_event_ids: tuple[str, ...]
     requires_owner_review: bool
     generated_at_utc: str
+    horizon: str = "REST_OF_SEASON"
 
 
 # A disclosed, structural rule table -- not a live model call. Every rule
-# maps a real, ingested (event_type, severity) pair to a direction and
-# confidence; anything not in this table degrades to UNCERTAIN/LOW and
-# forces owner review rather than guessing.
-_DIRECT_IMPACT_RULES: dict[tuple[str, str], tuple[str, str, str]] = {
+# maps a real, ingested (event_type, severity) pair to a
+# (direction, confidence, horizon, template); anything not in this table
+# degrades to UNCERTAIN/LOW/REST_OF_SEASON and forces owner review rather
+# than guessing.
+_DIRECT_IMPACT_RULES: dict[tuple[str, str], tuple[str, str, str, str]] = {
     ("INJURY", "HIGH"): (
-        "NEGATIVE", "HIGH",
+        "NEGATIVE", "HIGH", "IMMEDIATE",
         "{player} ({event_type}, {severity} severity) -- expect reduced or zero "
         "near-term availability.",
     ),
     ("INJURY", "MEDIUM"): (
-        "NEGATIVE", "MEDIUM",
+        "NEGATIVE", "MEDIUM", "IMMEDIATE",
         "{player} ({event_type}, {severity} severity) -- possible missed game(s) or reduced usage.",
     ),
     ("INJURY", "LOW"): (
-        "NEGATIVE", "LOW",
+        "NEGATIVE", "LOW", "IMMEDIATE",
         "{player} ({event_type}, {severity} severity) -- monitor; impact uncertain.",
     ),
+    ("IR", "HIGH"): (
+        "NEGATIVE", "HIGH", "REST_OF_SEASON",
+        "{player} placed on injured reserve -- a minimum multi-week absence; treat "
+        "as unavailable for the foreseeable near-term schedule.",
+    ),
+    ("IR", "MEDIUM"): (
+        "NEGATIVE", "MEDIUM", "REST_OF_SEASON",
+        "{player} placed on injured reserve (return timeline uncertain) -- "
+        "unavailable at minimum for several weeks.",
+    ),
     ("SUSPENSION", "HIGH"): (
-        "NEGATIVE", "HIGH", "{player} ({event_type}) -- expect missed games.",
+        "NEGATIVE", "HIGH", "IMMEDIATE", "{player} ({event_type}) -- expect missed games.",
     ),
     ("SUSPENSION", "MEDIUM"): (
-        "NEGATIVE", "MEDIUM", "{player} ({event_type}) -- possible missed game(s).",
+        "NEGATIVE", "MEDIUM", "IMMEDIATE", "{player} ({event_type}) -- possible missed game(s).",
     ),
     ("RETIREMENT", "HIGH"): (
-        "NEGATIVE", "HIGH", "{player} ({event_type} reported) -- expect zero further availability.",
+        "NEGATIVE", "HIGH", "REST_OF_SEASON",
+        "{player} ({event_type} reported) -- expect zero further availability.",
     ),
     ("DEPTH_CHART_CHANGE", "MEDIUM"): (
-        "UNCERTAIN", "MEDIUM",
+        "UNCERTAIN", "MEDIUM", "REST_OF_SEASON",
         "{player} ({event_type}) -- role may be shifting; confirm before acting.",
     ),
     ("ROLE_CHANGE", "MEDIUM"): (
-        "UNCERTAIN", "MEDIUM",
+        "UNCERTAIN", "MEDIUM", "REST_OF_SEASON",
         "{player} ({event_type} reported) -- opportunity shift, direction not yet confirmed.",
     ),
+    ("ROLE_CHANGE", "HIGH"): (
+        "UNCERTAIN", "HIGH", "REST_OF_SEASON",
+        "{player} ({event_type} reported, {severity} confidence) -- a confirmed role "
+        "shift; direction of fantasy impact still depends on which player is affected.",
+    ),
     ("TRADE", "MEDIUM"): (
-        "UNCERTAIN", "MEDIUM", "{player} (traded) -- new team context; situation not yet modeled.",
+        "UNCERTAIN", "MEDIUM", "REST_OF_SEASON",
+        "{player} (traded) -- new team context; situation not yet modeled.",
     ),
     ("COACHING_CHANGE", "LOW"): (
-        "UNCERTAIN", "LOW",
+        "UNCERTAIN", "LOW", "LONG_TERM",
         "{player} (coaching change on team) -- long-horizon signal, no immediate action implied.",
     ),
 }
@@ -201,13 +225,13 @@ def _utc_now_iso() -> str:
 
 def generate_direct_impact_hypothesis(event: NewsEvent) -> ImpactHypothesis:
     """The hypothesis about the event's own player. Anything outside
-    _DIRECT_IMPACT_RULES degrades to UNCERTAIN/LOW with
+    _DIRECT_IMPACT_RULES degrades to UNCERTAIN/LOW/REST_OF_SEASON with
     requires_owner_review=True rather than guessing."""
     validate_news_event(event)
-    direction, confidence, template = _DIRECT_IMPACT_RULES.get(
+    direction, confidence, horizon, template = _DIRECT_IMPACT_RULES.get(
         (event.event_type, event.severity),
         (
-            "UNCERTAIN", "LOW",
+            "UNCERTAIN", "LOW", "REST_OF_SEASON",
             "{player} ({event_type}, {severity} severity) -- impact not modeled; "
             "owner review required.",
         ),
@@ -226,6 +250,7 @@ def generate_direct_impact_hypothesis(event: NewsEvent) -> ImpactHypothesis:
         evidence_event_ids=(event.event_id,),
         requires_owner_review=confidence != "HIGH" or direction == "UNCERTAIN",
         generated_at_utc=_utc_now_iso(),
+        horizon=horizon,
     )
 
 
@@ -268,9 +293,105 @@ def generate_beneficiary_hypotheses(
                 evidence_event_ids=(event.event_id,),
                 requires_owner_review=True,
                 generated_at_utc=_utc_now_iso(),
+                horizon=direct.horizon,
             )
         )
     return tuple(results)
+
+
+def generate_role_uncertainty_hypotheses(
+    event: NewsEvent,
+    *,
+    other_same_position_players: Sequence[tuple[str, str]],  # (player_id, player_name)
+) -> tuple[ImpactHypothesis, ...]:
+    """The "other backfield" case: players who share the event's team and
+    position but are NOT the primary beneficiary (that is
+    generate_beneficiary_hypotheses's job) get a direction=UNCERTAIN,
+    LOW-confidence role-uncertainty hypothesis instead of a POSITIVE
+    one -- a real depth-chart shakeup can go either way for a 3rd/4th
+    option, and asserting POSITIVE for all of them would overstate the
+    real signal. Same eligibility gate as generate_beneficiary_hypotheses
+    (a genuinely negative, medium+ confidence event on the primary
+    player); always requires_owner_review=True."""
+    validate_news_event(event)
+    direct = generate_direct_impact_hypothesis(event)
+    if (
+        event.event_type not in _BENEFICIARY_ELIGIBLE_EVENT_TYPES
+        or direct.direction != "NEGATIVE"
+        or direct.confidence == "LOW"
+    ):
+        return ()
+    results: list[ImpactHypothesis] = []
+    for player_id, player_name in other_same_position_players:
+        if player_id == event.player_id:
+            continue
+        results.append(
+            ImpactHypothesis(
+                hypothesis_id=f"role_uncertainty:{event.event_id}:{player_id}",
+                subject_player_id=player_id,
+                direction="UNCERTAIN",
+                confidence="LOW",
+                hypothesis_text=(
+                    f"{player_name} ({event.position}, {event.team}) role uncertainty "
+                    f"following {event.player_name}'s "
+                    f"{event.event_type.replace('_', ' ').lower()} -- depth chart may shift "
+                    "in either direction for this player; not a confirmed beneficiary."
+                ),
+                evidence_event_ids=(event.event_id,),
+                requires_owner_review=True,
+                generated_at_utc=_utc_now_iso(),
+                horizon=direct.horizon,
+            )
+        )
+    return tuple(results)
+
+
+@dataclass(frozen=True)
+class RosterContext:
+    """Caller-supplied, real roster context for one event's team/position
+    group -- who the likely primary beneficiary is, and who else shares
+    that position group. This module never looks up a roster itself; the
+    caller (with access to the real roster data) owns this step."""
+
+    primary_beneficiary: tuple[str, str] | None = None  # (player_id, player_name)
+    other_same_position_players: tuple[tuple[str, str], ...] = ()
+
+
+def run_impact_pipeline(
+    event: NewsEvent, *, roster_context: RosterContext | None = None
+) -> tuple[ImpactHypothesis, ...]:
+    """The end-to-end News Scout -> Impact Analyst pipeline (section 15):
+    verified fact normalization (validate_news_event, raising on a
+    malformed event rather than silently admitting it), the direct
+    hypothesis about the event's own player, and -- when the caller
+    supplies real roster context (the "affected player lookup" step,
+    which this module does not perform itself) -- the primary-
+    beneficiary and role-uncertainty hypotheses too. Returns every
+    hypothesis this event produces, in a stable
+    (direct, beneficiary, role-uncertainty) order, directly consumable by
+    explain_pick_recommendation's impact_hypotheses field -- this is the
+    "downstream explanation availability" step."""
+    hypotheses = [generate_direct_impact_hypothesis(event)]
+    if roster_context is not None:
+        if roster_context.primary_beneficiary is not None:
+            hypotheses.extend(
+                generate_beneficiary_hypotheses(
+                    event, same_team_same_position_teammates=(roster_context.primary_beneficiary,)
+                )
+            )
+        excluded_id = (
+            roster_context.primary_beneficiary[0] if roster_context.primary_beneficiary else None
+        )
+        others = tuple(
+            player
+            for player in roster_context.other_same_position_players
+            if player[0] != excluded_id
+        )
+        if others:
+            hypotheses.extend(
+                generate_role_uncertainty_hypotheses(event, other_same_position_players=others)
+            )
+    return tuple(hypotheses)
 
 
 # --- Explanation layer -------------------------------------------------------
