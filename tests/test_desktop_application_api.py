@@ -23,8 +23,11 @@ from src.services.outcome_v3_display_service import load_outcome_v3_display
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
+    RankingResult,
+    RedraftRankingRow,
     builtin_presets,
     create_profile,
+    load_profile,
     projection_snapshot_path,
 )
 from src.services.rookie_draft_eligibility_service import (
@@ -1327,3 +1330,159 @@ def test_facade_has_no_streamlit_or_app_component_dependency() -> None:
 
     assert all(not name.startswith("streamlit") for name in imports)
     assert all(not name.startswith("app") for name in imports)
+
+
+def _synthetic_ranking_for(profile: LeagueProfile) -> RankingResult:
+    """240 synthetic ranked players (30 QB + 80 RB + 100 WR + 30 TE) --
+    the same fixture shape test_redraft_draft_room_v1_service.py's own
+    _ranking() helper uses, sized to safely cover any preset's
+    team_count x rounds. The bundled/hermetic projection seed this
+    facade would otherwise auto-install from is not reliably available
+    in every checkout of this worktree (a pre-existing, environment-level
+    gap -- see test_redraft_bootstrap_seeds_once_and_matches_desktop_contract,
+    already failing before this session's changes); monkeypatching the
+    ranking here keeps this test independent of that gap."""
+    rows: list[RedraftRankingRow] = []
+    for position, count in (("QB", 30), ("RB", 80), ("WR", 100), ("TE", 30)):
+        for index in range(count):
+            rank = len(rows) + 1
+            rows.append(
+                RedraftRankingRow(
+                    rank,
+                    index + 1,
+                    f"{position}-{index}",
+                    f"{position} {index}",
+                    position,
+                    "TST",
+                    400 - rank,
+                    0,
+                    400 - rank,
+                    0,
+                    "HIGH" if index < 10 else "MEDIUM",
+                    1 + (rank - 1) // 20,
+                    profile.profile_id,
+                    profile.league_name,
+                    "GOVERNED",
+                    "AVAILABLE",
+                    "2026-08-17",
+                    False,
+                    position_tier=1 + index // 12,
+                )
+            )
+    return RankingResult(profile, tuple(rows), (), (), "2026-08-17T00:00:00+00:00", "fixture")
+
+
+def _started_redraft_room(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Correction UI Test League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    monkeypatch.setattr(
+        facade, "_redraft_ranking_for_profile", lambda _pid: _synthetic_ranking_for(profile)
+    )
+    facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=9, seed=20260817, speed="FAST", mode="MOCK"
+    )
+    return facade, profile_id
+
+
+def test_redraft_pick_corrections_require_a_started_draft_room(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="No Room Yet"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    monkeypatch.setattr(
+        facade, "_redraft_ranking_for_profile", lambda _pid: _synthetic_ranking_for(profile)
+    )
+    with pytest.raises(FacadeError, match="Start the Draft Room"):
+        facade.clear_redraft_pick(profile_id=profile_id, pick_number=1)
+
+
+def test_facade_replace_clear_fill_gap_undo_wire_through_to_persisted_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    total_picks = len(board["boardCells"])
+    assert total_picks > 0
+    original_pick_one = next(cell for cell in board["boardCells"] if cell["pickNumber"] == 1)
+    drafted_ids = {cell["playerId"] for cell in board["boardCells"] if cell["playerId"]}
+    # TE-29 is the lowest-ranked player in the 240-player synthetic pool --
+    # guaranteed still available this early in a 12-team mock draft.
+    assert "TE-29" not in drafted_ids
+    replacement = {"playerId": "TE-29"}
+
+    replaced = facade.replace_redraft_pick(
+        profile_id=profile_id, pick_number=1, player_id=replacement["playerId"]
+    )
+    replaced_cell = next(
+        cell for cell in replaced.data["draftBoard"]["boardCells"] if cell["pickNumber"] == 1
+    )
+    assert replaced_cell["playerId"] == replacement["playerId"]
+    assert len(replaced.data["draftBoard"]["boardCells"]) == total_picks
+
+    cleared = facade.clear_redraft_pick(profile_id=profile_id, pick_number=1)
+    cleared_cell = next(
+        cell for cell in cleared.data["draftBoard"]["boardCells"] if cell["pickNumber"] == 1
+    )
+    assert cleared_cell["status"] == "UNRESOLVED"
+    assert cleared_cell["playerId"] == ""
+
+    filled = facade.fill_redraft_pick_gap(
+        profile_id=profile_id, pick_number=1, player_id=original_pick_one["playerId"]
+    )
+    filled_cell = next(
+        cell for cell in filled.data["draftBoard"]["boardCells"] if cell["pickNumber"] == 1
+    )
+    assert filled_cell["playerId"] == original_pick_one["playerId"]
+    assert filled_cell["status"] == "RESOLVED"
+
+    # Reopen persistence -- a fresh facade against the same store sees the correction.
+    profile = load_profile(facade.redraft_root, profile_id)
+    reopened_facade = DesktopBackendFacade(
+        repo_root=REPO_ROOT, mode="redraft", redraft_root=facade.redraft_root
+    )
+    monkeypatch.setattr(
+        reopened_facade,
+        "_redraft_ranking_for_profile",
+        lambda _pid: _synthetic_ranking_for(profile),
+    )
+    reopened_facade.activate_redraft_profile(profile_id)
+    reopened_board = reopened_facade.redraft_bootstrap().data["draftBoard"]
+    reopened_cell = next(c for c in reopened_board["boardCells"] if c["pickNumber"] == 1)
+    assert reopened_cell["playerId"] == original_pick_one["playerId"]
+
+
+def test_facade_undo_pick_correction_reverses_only_the_latest_correction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    original_pick_one = next(cell for cell in board["boardCells"] if cell["pickNumber"] == 1)
+    drafted_ids = {cell["playerId"] for cell in board["boardCells"] if cell["playerId"]}
+    # TE-29 is the lowest-ranked player in the 240-player synthetic pool --
+    # guaranteed still available this early in a 12-team mock draft.
+    assert "TE-29" not in drafted_ids
+    replacement = {"playerId": "TE-29"}
+
+    facade.replace_redraft_pick(
+        profile_id=profile_id, pick_number=1, player_id=replacement["playerId"]
+    )
+    undone = facade.undo_redraft_pick_correction(profile_id=profile_id)
+    undone_cell = next(
+        cell for cell in undone.data["draftBoard"]["boardCells"] if cell["pickNumber"] == 1
+    )
+    assert undone_cell["playerId"] == original_pick_one["playerId"]
+
+    with pytest.raises(FacadeError, match="No pick correction"):
+        facade.undo_redraft_pick_correction(profile_id=profile_id)

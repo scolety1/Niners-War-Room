@@ -373,6 +373,34 @@ export class NwrApiClient {
     });
   }
 
+  replaceDraftPick(profileId: string, pickNumber: number, playerId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick/replace`, {
+      method: "POST",
+      body: JSON.stringify({ pickNumber, playerId }),
+    });
+  }
+
+  clearDraftPick(profileId: string, pickNumber: number): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick/clear`, {
+      method: "POST",
+      body: JSON.stringify({ pickNumber }),
+    });
+  }
+
+  fillDraftPickGap(profileId: string, pickNumber: number, playerId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick/fill-gap`, {
+      method: "POST",
+      body: JSON.stringify({ pickNumber, playerId }),
+    });
+  }
+
+  undoDraftPickCorrection(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick/undo-correction`, {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
   startPracticalMock(profileId: string): Promise<RedraftBootstrap> {
     return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/practical-mock`, {
       method: "POST",

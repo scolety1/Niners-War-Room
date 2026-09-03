@@ -106,17 +106,21 @@ from src.services.redraft_draft_room_v1_service import (
     preview_owner_paste_adp,
     approve_owner_platform_manual_match,
     clear_owner_platform_manual_match,
+    clear_pick,
+    fill_gap_pick,
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
     owner_platform_snapshot_status,
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
+    replace_pick,
     save_owner_paste_adp,
     set_owner_platform_selection,
     clear_owner_platform_selection,
     set_owner_paste_adp_active,
     start_draft_room,
+    undo_pick_correction,
     undo_room_pick,
 )
 from src.services.redraft_external_intelligence_service import load_external_intelligence
@@ -2336,6 +2340,99 @@ class DesktopBackendFacade:
                 "The last Redraft draft-board change could not be undone.",
                 status=409,
             ) from exc
+        return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def _redraft_correction_context(
+        self, profile_id: str
+    ) -> tuple[LeagueProfile, Any, list[dict[str, str]]]:
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        if active_profile_id(self.redraft_root) != normalized:
+            raise FacadeError(
+                "REDRAFT_PROFILE_NOT_ACTIVE",
+                "Draft-board corrections require the active Redraft profile.",
+                status=409,
+            )
+        profile = load_profile(self.redraft_root, normalized)
+        ranking = self._redraft_ranking_for_profile(normalized)
+        manual_assets = self._manual_assets_for_profile(normalized)
+        existing = load_draft_board(self.redraft_root, normalized)
+        if not isinstance(existing.get("owner_slot"), int):
+            raise FacadeError(
+                "REDRAFT_ROOM_NOT_STARTED",
+                "Start the Draft Room before correcting a pick.",
+                status=409,
+            )
+        return profile, ranking, manual_assets
+
+    def replace_redraft_pick(
+        self, *, profile_id: str, pick_number: int, player_id: str
+    ) -> FacadePayload:
+        """REPLACE PICK: swap the player at an exact historical pick.
+        Every other pick's number/round/team is untouched."""
+        normalized_player = self._player_id(player_id)
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            state = replace_pick(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                pick_number=int(pick_number),
+                player_id=normalized_player,
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_REPLACE_PICK_FAILED", str(exc), status=409) from exc
+        return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def clear_redraft_pick(self, *, profile_id: str, pick_number: int) -> FacadePayload:
+        """CLEAR PICK: mark a pick UNRESOLVED. pick_number/round/team are
+        preserved; every later pick is untouched."""
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            state = clear_pick(
+                self.redraft_root, profile, ranking, manual_assets, pick_number=int(pick_number)
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_CLEAR_PICK_FAILED", str(exc), status=409) from exc
+        return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def fill_redraft_pick_gap(
+        self, *, profile_id: str, pick_number: int, player_id: str
+    ) -> FacadePayload:
+        """FILL GAP: assign a player to an exact UNRESOLVED pick slot."""
+        normalized_player = self._player_id(player_id)
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            state = fill_gap_pick(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                pick_number=int(pick_number),
+                player_id=normalized_player,
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_FILL_GAP_FAILED", str(exc), status=409) from exc
+        return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def undo_redraft_pick_correction(self, *, profile_id: str) -> FacadePayload:
+        """Reverse only the single most recent REPLACE/CLEAR/FILL GAP
+        correction -- independent of undo_redraft_pick's separate
+        global-LIFO 'undo the latest recorded pick.'"""
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            state = undo_pick_correction(self.redraft_root, profile, ranking, manual_assets)
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_UNDO_CORRECTION_FAILED", str(exc), status=409) from exc
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def redraft_external_intelligence(self, *, profile_id: str) -> FacadePayload:

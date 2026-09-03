@@ -1288,6 +1288,7 @@ def build_draft_room_payload(
                 "team": str((pick or {}).get("team") or ""),
                 "actor": str((pick or {}).get("actor") or ""),
                 "selectionBehavior": str((pick or {}).get("selection_behavior") or ""),
+                "status": "OPEN" if pick is None else str(pick.get("status") or "RESOLVED"),
             }
         )
     teams = [
@@ -2063,6 +2064,7 @@ def _pick_payload(pick: Mapping[str, Any]) -> dict[str, Any]:
         "selectionBehavior": str(pick.get("selection_behavior") or ""),
         "nwrRank": pick.get("nwr_rank"),
         "pickedAtUtc": str(pick.get("picked_at_utc") or ""),
+        "status": str(pick.get("status") or "RESOLVED"),
     }
 
 

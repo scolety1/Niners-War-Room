@@ -44,6 +44,10 @@ _REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear
 _REDRAFT_PASTE_ADP_SELECTION = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/selection$")
 _REDRAFT_PASTE_ADP_MANUAL_MATCH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/manual-match$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
+_REDRAFT_PICK_REPLACE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/replace$")
+_REDRAFT_PICK_CLEAR = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/clear$")
+_REDRAFT_PICK_FILL_GAP = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/fill-gap$")
+_REDRAFT_PICK_CORRECTION_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/undo-correction$")
 _REDRAFT_EXTERNAL_INTELLIGENCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/external-intelligence$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
@@ -631,6 +635,49 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             body = self._json_body(allow_empty=True)
             self._reject_unknown_fields(body, set())
             self.server.facade.undo_redraft_pick(profile_id=unquote(undo_match.group(1)))
+            return self.server.facade.redraft_bootstrap()
+        replace_match = _REDRAFT_PICK_REPLACE.fullmatch(path)
+        if method == "POST" and replace_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pickNumber", "playerId"})
+            if type(body.get("pickNumber")) is not int or not isinstance(body.get("playerId"), str):
+                raise self._invalid_body("pickNumber must be an integer and playerId a string.")
+            self.server.facade.replace_redraft_pick(
+                profile_id=unquote(replace_match.group(1)),
+                pick_number=body["pickNumber"],
+                player_id=body["playerId"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        clear_match = _REDRAFT_PICK_CLEAR.fullmatch(path)
+        if method == "POST" and clear_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pickNumber"})
+            if type(body.get("pickNumber")) is not int:
+                raise self._invalid_body("pickNumber must be an integer.")
+            self.server.facade.clear_redraft_pick(
+                profile_id=unquote(clear_match.group(1)),
+                pick_number=body["pickNumber"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        fill_gap_match = _REDRAFT_PICK_FILL_GAP.fullmatch(path)
+        if method == "POST" and fill_gap_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"pickNumber", "playerId"})
+            if type(body.get("pickNumber")) is not int or not isinstance(body.get("playerId"), str):
+                raise self._invalid_body("pickNumber must be an integer and playerId a string.")
+            self.server.facade.fill_redraft_pick_gap(
+                profile_id=unquote(fill_gap_match.group(1)),
+                pick_number=body["pickNumber"],
+                player_id=body["playerId"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        undo_correction_match = _REDRAFT_PICK_CORRECTION_UNDO.fullmatch(path)
+        if method == "POST" and undo_correction_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            self.server.facade.undo_redraft_pick_correction(
+                profile_id=unquote(undo_correction_match.group(1))
+            )
             return self.server.facade.redraft_bootstrap()
 
         raise RequestContractError(
