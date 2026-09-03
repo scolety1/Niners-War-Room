@@ -44,22 +44,30 @@ _DISPLAY_FIELDS = {
 
 
 def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
-    """Returns {"available": bool, "generatedNote": str, "byPlayerId": {player_id: {...fields}}}.
+    """Returns {"available": bool, "generatedNote": str, "entries": [{"playerId": ..., ...fields}]}.
+
+    Deliberately a LIST, not a dict keyed by player_id: the shared desktop-API
+    response envelope (src/application/contracts.py:public_json_value)
+    recursively camelCases every dict key for contract consistency, which
+    silently mangles opaque identifiers like "00-0034857" into "000034857"
+    -- a dict-of-player-id-keys would round-trip through the API with none
+    of its keys matching the original player IDs. Keeping player_id as an
+    ordinary field value inside each list entry avoids that entirely.
     Never raises."""
     path = _cheat_sheet_path()
     if not path.is_file():
-        return {"available": False, "generatedNote": "EXTERNAL INTEL UNAVAILABLE -- file not found", "byPlayerId": {}}
+        return {"available": False, "generatedNote": "EXTERNAL INTEL UNAVAILABLE -- file not found", "entries": []}
     try:
         with path.open(encoding="utf-8") as handle:
             rows = list(csv.DictReader(handle))
     except (OSError, csv.Error):
-        return {"available": False, "generatedNote": "EXTERNAL INTEL UNAVAILABLE -- file unreadable", "byPlayerId": {}}
+        return {"available": False, "generatedNote": "EXTERNAL INTEL UNAVAILABLE -- file unreadable", "entries": []}
 
     nwr_by_key = {
         (row.position, _norm_name(row.player_name), row.team): row.player_id
         for row in ranking.rows
     }
-    by_player_id: dict[str, dict[str, Any]] = {}
+    entries: list[dict[str, Any]] = []
     for row in rows:
         try:
             key = (str(row.get("position", "")), _norm_name(str(row.get("player_name", ""))), str(row.get("team", "")))
@@ -68,14 +76,14 @@ def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
         player_id = nwr_by_key.get(key)
         if not player_id:
             continue  # unmatched external row simply does not enrich any NWR player
-        entry: dict[str, Any] = {}
+        entry: dict[str, Any] = {"playerId": player_id}
         for csv_field, js_field in _DISPLAY_FIELDS.items():
             value = row.get(csv_field, "")
             entry[js_field] = value if value not in ("", None, "API_TIER_NOT_RETURNED") else None
-        by_player_id[player_id] = entry
+        entries.append(entry)
 
     return {
         "available": True,
-        "generatedNote": f"{len(by_player_id)} of {len(ranking.rows)} NWR players enriched from the owner's external cheat sheet",
-        "byPlayerId": by_player_id,
+        "generatedNote": f"{len(entries)} of {len(ranking.rows)} NWR players enriched from the owner's external cheat sheet",
+        "entries": entries,
     }

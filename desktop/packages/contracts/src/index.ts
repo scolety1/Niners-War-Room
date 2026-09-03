@@ -826,6 +826,7 @@ export interface KdstStreamerResult {
 }
 
 export interface RedraftExternalIntelligenceEntry {
+  playerId: string;
   espnAdp: string | null;
   nwrVsEspnGap: string | null;
   fantasyProsEcr: string | null;
@@ -846,7 +847,7 @@ export interface RedraftExternalIntelligenceEntry {
 export interface RedraftExternalIntelligence {
   available: boolean;
   generatedNote: string;
-  byPlayerId: Record<string, RedraftExternalIntelligenceEntry>;
+  entries: RedraftExternalIntelligenceEntry[];
 }
 
 export interface RedraftExternalIntelligenceResponse {

@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftRanking } from "@nwr/contracts";
+import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftExternalIntelligenceEntry, RedraftRanking } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -140,10 +140,15 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
     let cancelled = false;
     client.getRedraftExternalIntelligence(data.activeProfileId)
       .then((response) => { if (!cancelled) setExternalIntel(response.externalIntelligence); })
-      .catch(() => { if (!cancelled) setExternalIntel({ available: false, generatedNote: "EXTERNAL INTEL UNAVAILABLE", byPlayerId: {} }); });
+      .catch(() => { if (!cancelled) setExternalIntel({ available: false, generatedNote: "EXTERNAL INTEL UNAVAILABLE", entries: [] }); });
     return () => { cancelled = true; };
   }, [client, data.activeProfileId]);
-  const intelFor = (playerId: string) => externalIntel?.byPlayerId[playerId];
+  const intelById = useMemo(() => {
+    const map = new Map<string, RedraftExternalIntelligenceEntry>();
+    for (const entry of externalIntel?.entries ?? []) map.set(entry.playerId, entry);
+    return map;
+  }, [externalIntel]);
+  const intelFor = (playerId: string) => intelById.get(playerId);
 
   useEffect(() => {
     if (!focusAfterMutation.current) return;
@@ -151,7 +156,7 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
     window.requestAnimationFrame(() => {
       const nextAction = document.querySelector<HTMLButtonElement>("[data-draft-action]:not(:disabled)");
       const undoAction = document.querySelector<HTMLButtonElement>("[data-draft-undo]:not(:disabled)");
-      (nextAction ?? undoAction)?.focus();
+      (nextAction ?? undoAction)?.focus({ preventScroll: true });
     });
   }, [drafted.length]);
 
