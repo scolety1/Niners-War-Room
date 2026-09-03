@@ -123,6 +123,14 @@ class PromotionDecision:
     decision: str  # "PROMOTED" | "REJECTED" | "RETIRED"
     decided_by: str  # a human identity/role, never "system" or "auto"
     reason: str
+    # Rollback pointer mechanics (section 19): for a RETIRED decision,
+    # names what becomes effective again -- either the literal string
+    # "CHAMPION" (fall back to NWR's own default, no challenger active),
+    # or another registered challenger_id this one superseded (so
+    # retiring v2 can roll back to v1 rather than all the way to the
+    # champion). Validated in record_promotion_decision(): a
+    # challenger_id target must itself have a real registration on disk.
+    rollback_pointer: str | None = None
     schema_version: int = REGISTRY_SCHEMA_VERSION
 
 
@@ -149,6 +157,15 @@ def record_promotion_decision(root: str | Path, decision: PromotionDecision) -> 
         raise ChampionChallengerRegistryError(
             f"Challenger {decision.challenger_id!r} has no registration; "
             "register_challenger() must run before a promotion decision can be recorded."
+        )
+    if (
+        decision.rollback_pointer is not None
+        and decision.rollback_pointer != "CHAMPION"
+        and load_registration(root, decision.rollback_pointer) is None
+    ):
+        raise ChampionChallengerRegistryError(
+            f"rollback_pointer {decision.rollback_pointer!r} is neither 'CHAMPION' nor a "
+            "registered challenger_id."
         )
     path = _decisions_path(root, decision.challenger_id)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -180,3 +197,30 @@ def current_status(root: str | Path, challenger_id: str) -> str:
     if not decisions:
         return "REGISTERED"
     return str(decisions[-1]["decision"])
+
+
+def resolve_rollback_target(root: str | Path, challenger_id: str) -> str:
+    """Follows a challenger's own RETIRED -> rollback_pointer chain to
+    find what is actually effective right now: "CHAMPION" if nothing is
+    promoted, or the challenger_id of whichever challenger in the chain
+    is currently PROMOTED. Detects and raises on a cycle rather than
+    looping forever -- a malformed chain is a real integrity error, not
+    something to silently paper over."""
+    visited: set[str] = set()
+    current = challenger_id
+    while True:
+        if current in visited:
+            raise ChampionChallengerRegistryError(
+                f"Rollback pointer cycle detected starting from {challenger_id!r}."
+            )
+        visited.add(current)
+        status = current_status(root, current)
+        if status == "PROMOTED":
+            return current
+        if status != "RETIRED":
+            return "CHAMPION"
+        decisions = read_promotion_decisions(root, current)
+        pointer = decisions[-1].get("rollback_pointer")
+        if pointer is None or pointer == "CHAMPION":
+            return "CHAMPION"
+        current = str(pointer)
