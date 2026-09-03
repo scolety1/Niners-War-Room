@@ -170,6 +170,9 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   const [rapidIndex, setRapidIndex] = useState(0);
   const rapidCaptureActive = useRef(false);
   const rapidInputRef = useRef<HTMLInputElement>(null);
+  const [correctionPickNumber, setCorrectionPickNumber] = useState<number | null>(null);
+  const [correctionMode, setCorrectionMode] = useState<"MENU" | "REPLACE" | "FILL_GAP">("MENU");
+  const [correctionQuery, setCorrectionQuery] = useState("");
   const drafted = draftedIds(data);
   const board = data.draftBoard;
   const ownerTurn = Boolean(board?.isOwnerTurn);
@@ -307,6 +310,64 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
     await mutate("undo", () => client.undoDraftPick(data.activeProfileId!), "Restored the last recorded pick.");
   };
 
+  // Event-sourced pick correction (section 9): click a completed cell on
+  // the draft board to Replace/Clear it, or an unresolved cell to Fill
+  // Gap. pick_number/round/team never change; every later pick is
+  // untouched (enforced server-side in redraft_draft_room_v1_service.py).
+  const openCorrection = (cell: { pickNumber: number; status?: string } | undefined) => {
+    if (!cell?.pickNumber || cell.status === "OPEN") return;
+    setCorrectionPickNumber(cell.pickNumber);
+    setCorrectionMode(cell.status === "UNRESOLVED" ? "FILL_GAP" : "MENU");
+    setCorrectionQuery("");
+  };
+  const closeCorrection = () => {
+    setCorrectionPickNumber(null);
+    setCorrectionMode("MENU");
+    setCorrectionQuery("");
+  };
+  const correctionCell = board?.boardCells?.find((cell) => cell.pickNumber === correctionPickNumber) ?? null;
+  const correctionResults = correctionQuery.trim()
+    ? globalPickSearchRows(rankingRows(data) as unknown as PickSearchAsset[], (data.manualAssets ?? []) as unknown as PickSearchAsset[], drafted, correctionQuery, 8)
+    : [];
+  const doReplace = async (playerId: string) => {
+    if (correctionPickNumber == null || !data.activeProfileId) return;
+    const pickNumber = correctionPickNumber;
+    await mutate(
+      `replace-${pickNumber}`,
+      () => client.replaceDraftPick(data.activeProfileId!, pickNumber, playerId),
+      `Replaced pick ${pickNumber}. Later picks are unchanged.`,
+    );
+    closeCorrection();
+  };
+  const doClear = async () => {
+    if (correctionPickNumber == null || !data.activeProfileId) return;
+    const pickNumber = correctionPickNumber;
+    await mutate(
+      `clear-${pickNumber}`,
+      () => client.clearDraftPick(data.activeProfileId!, pickNumber),
+      `Pick ${pickNumber} is now unresolved. Later picks are unchanged.`,
+    );
+    closeCorrection();
+  };
+  const doFillGap = async (playerId: string) => {
+    if (correctionPickNumber == null || !data.activeProfileId) return;
+    const pickNumber = correctionPickNumber;
+    await mutate(
+      `fill-${pickNumber}`,
+      () => client.fillDraftPickGap(data.activeProfileId!, pickNumber, playerId),
+      `Filled pick ${pickNumber}.`,
+    );
+    closeCorrection();
+  };
+  const undoCorrection = async () => {
+    if (!data.activeProfileId) return;
+    await mutate(
+      "undo-correction",
+      () => client.undoDraftPickCorrection(data.activeProfileId!),
+      "Reversed the last pick correction.",
+    );
+  };
+
   const start = async () => {
     if (!data.activeProfileId) return;
     const slot = Number(ownerSlot);
@@ -346,7 +407,7 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   ];
   return <div aria-busy={Boolean(working)} className="draft-room-page">
     {board?.recoveredFromBackup ? <div className="alert-strip" role="status"><strong>Draft board recovered</strong><span>NWR restored the last verified local backup before opening this board.</span></div> : null}
-    <PageHeader eyebrow={draftFormat(data.activeProfile)} title={`${data.activeProfile.leagueName} — Draft Room`} description={`A persistent ${data.activeProfile.teamCount}-team snake room with roster-aware CPU opponents, explicit ADP timing context, and no platform writes.`} status={<><StatusBadge tone="safe" label={`${data.rankings.length} ranked`} /><StatusBadge tone={board?.adp?.available ? "safe" : "review"} label={board?.adp?.available ? `ADP: ${board.adp.source.replace(/^Owner-imported /i, "Owner ")} · ${board.adp.freshness ?? "cached"}` : "ADP unavailable"} /><StatusBadge tone="review" label={`${drafted.length} / ${data.activeProfile.teamCount * data.activeProfile.draft.rounds} picks`} /></>} actions={<><Button data-draft-undo disabled={!board?.canUndo || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>{working === "undo" ? "Restoring…" : "Undo"}</Button><Button disabled={Boolean(working)} icon="profile" variant="ghost" onClick={() => { window.location.hash = "#/profile"; }}>League profile</Button></>} />
+    <PageHeader eyebrow={draftFormat(data.activeProfile)} title={`${data.activeProfile.leagueName} — Draft Room`} description={`A persistent ${data.activeProfile.teamCount}-team snake room with roster-aware CPU opponents, explicit ADP timing context, and no platform writes.`} status={<><StatusBadge tone="safe" label={`${data.rankings.length} ranked`} /><StatusBadge tone={board?.adp?.available ? "safe" : "review"} label={board?.adp?.available ? `ADP: ${board.adp.source.replace(/^Owner-imported /i, "Owner ")} · ${board.adp.freshness ?? "cached"}` : "ADP unavailable"} /><StatusBadge tone="review" label={`${drafted.length} / ${data.activeProfile.teamCount * data.activeProfile.draft.rounds} picks`} /></>} actions={<><Button data-draft-undo disabled={!board?.canUndo || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>{working === "undo" ? "Restoring…" : "Undo"}</Button><Button disabled={Boolean(working)} icon="undo" variant="ghost" onClick={() => void undoCorrection()} title="Reverses only the latest Replace/Clear/Fill Gap correction">{working === "undo-correction" ? "Restoring…" : "Undo correction"}</Button><Button disabled={Boolean(working)} icon="profile" variant="ghost" onClick={() => { window.location.hash = "#/profile"; }}>League profile</Button></>} />
     <p aria-atomic="true" aria-live={error ? "assertive" : "polite"} className={`draft-feedback ${error ? "draft-feedback--error" : ""}`} role="status">{announcement || "Draft board ready. Projection evidence strength is separate from readiness."}</p>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <Panel title={board?.configured ? "Room controls" : "Set your draft slot"} eyebrow="Deterministic local mock"><div className="draft-setup"><SelectField label="Draft mode" value={mode} onChange={(value) => setMode(value as "MOCK" | "LIVE_READ_ONLY")} options={[{ value: "MOCK", label: "Mock (CPU opponents)" }, { value: "LIVE_READ_ONLY", label: "Live (I enter every real pick)" }]} /><SelectField label="My slot" value={ownerSlot} onChange={setOwnerSlot} options={Array.from({ length: data.activeProfile.teamCount }, (_, index) => ({ value: String(index + 1), label: `Slot ${index + 1}` }))} />{mode === "MOCK" ? <SelectField label="CPU speed" value={speed} onChange={(value) => setSpeed(value as "FAST" | "NORMAL" | "STEP")} options={[{ value: "FAST", label: "Fast" }, { value: "NORMAL", label: "Normal" }, { value: "STEP", label: "Step" }]} /> : null}<Button disabled={Boolean(working)} variant={board?.configured && drafted.length > 0 ? "ghost" : "primary"} onClick={() => void start()}>{board?.configured ? "Restart draft" : "Start draft"}</Button>{board?.configured && !liveMode ? <><Button disabled={Boolean(working) || ownerTurn || board.complete} variant="secondary" onClick={() => void advance(false)}>Advance to my pick</Button><Button disabled={Boolean(working) || ownerTurn || board.complete} variant="ghost" onClick={() => void advance(true)}>One CPU pick</Button></> : null}<Button disabled={Boolean(working)} variant="secondary" onClick={() => void refreshAdp()}>{working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}</Button><Button disabled={Boolean(working)} icon="activity" variant="secondary" onClick={() => { window.location.hash = "#/adp"; }}>Paste Rankings / ADP</Button><label className="file-action">Import owner ADP CSV<input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => void importAdp(event.target.files?.[0])} type="file" /></label></div><p className="boundary-note">{board?.fallbackDisclosure ?? "ADP is optional market-timing context and never changes NWR value rank."}{board?.adp?.available ? ` ${board.adp.source} · ${board.adp.dateWindow || board.adp.sourceDate}${board.adp.sampleSize ? ` · ${board.adp.sampleSize.toLocaleString()} drafts` : ""}.${board.adp.attributionUrl ? ` Attribution: ${board.adp.attributionUrl}.` : ""}` : ""}</p><p className="boundary-note">Paste or import platform ADP from <strong>ADP Providers</strong>; it changes market timing only.</p></Panel>
@@ -392,7 +453,7 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
       </Panel>
       <Panel title="Draft recommendations" eyebrow="Five distinct decision lenses"><div className="recommendation-grid">{board.recommendations?.map((card) => <article key={card.label}><span>{card.label}</span><strong>{card.playerName}</strong><small>{card.position} · NWR #{card.nwrRank} · {card.rosterFit}</small><b>{card.nwrView} · {card.draftTiming}</b><p>{card.adpExplanation || "ADP unavailable · no active match"}</p><p>{card.note}</p><Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="secondary" onClick={() => void mark(card.playerId)}>Draft</Button></article>)}</div></Panel>
       {rosterStrip ? <Panel title="My roster needs" eyebrow="Base starters, then FLEX, then bench"><div className="roster-strip">{rosterStrip.map((slot) => <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>{slot.label} {slot.have}/{slot.need}</span>)}</div></Panel> : null}
-      <Panel title="Draft board" eyebrow={`${data.activeProfile.draft.rounds} rounds · click a team to inspect its roster`}><div className="draft-board-scroll"><div className="draft-board-grid" style={{ gridTemplateColumns: `38px repeat(${data.activeProfile.teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + data.activeProfile.teamCount * 109}px` }}><div className="draft-board-corner">Rd</div>{Array.from({ length: data.activeProfile.teamCount }, (_, index) => index + 1).map((slot) => <button className={slot === board.ownerSlot ? "owner-team" : ""} key={`head-${slot}`} onClick={() => setSelectedTeam(slot)}>T{slot}{slot === board.ownerSlot ? " · YOU" : ""}</button>)}{Array.from({ length: data.activeProfile.draft.rounds }, (_, index) => index + 1).flatMap((round) => [<b className="round-label" key={`round-${round}`}>{round}</b>, ...Array.from({ length: data.activeProfile!.teamCount }, (_, column) => { const slot = column + 1; const cell = board.boardCells?.find((item) => item.round === round && item.teamSlot === slot); return <article className={`${cell?.ownerPick ? "owner-pick" : ""} ${cell?.current ? "current-pick" : ""}`} key={`${round}-${slot}`}><small>{cell?.pickNumber}</small>{cell?.playerName ? <><strong>{cell.playerName}</strong><span>{cell.position} · {cell.team}</span></> : <em>Open</em>}</article>; })])}</div></div></Panel>
+      <Panel title="Draft board" eyebrow={`${data.activeProfile.draft.rounds} rounds · click a team to inspect its roster`}><div className="draft-board-scroll"><div className="draft-board-grid" style={{ gridTemplateColumns: `38px repeat(${data.activeProfile.teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + data.activeProfile.teamCount * 109}px` }}><div className="draft-board-corner">Rd</div>{Array.from({ length: data.activeProfile.teamCount }, (_, index) => index + 1).map((slot) => <button className={slot === board.ownerSlot ? "owner-team" : ""} key={`head-${slot}`} onClick={() => setSelectedTeam(slot)}>T{slot}{slot === board.ownerSlot ? " · YOU" : ""}</button>)}{Array.from({ length: data.activeProfile.draft.rounds }, (_, index) => index + 1).flatMap((round) => [<b className="round-label" key={`round-${round}`}>{round}</b>, ...Array.from({ length: data.activeProfile!.teamCount }, (_, column) => { const slot = column + 1; const cell = board.boardCells?.find((item) => item.round === round && item.teamSlot === slot); const correctable = cell?.status && cell.status !== "OPEN"; return <article className={`${cell?.ownerPick ? "owner-pick" : ""} ${cell?.current ? "current-pick" : ""} ${cell?.status === "UNRESOLVED" ? "unresolved-pick" : ""} ${correctable ? "correctable-pick" : ""}`} key={`${round}-${slot}`} onClick={correctable ? () => openCorrection(cell) : undefined} role={correctable ? "button" : undefined} tabIndex={correctable ? 0 : undefined}><small>{cell?.pickNumber}</small>{cell?.status === "UNRESOLVED" ? <em>Unresolved · Fill Gap</em> : cell?.playerName ? <><strong>{cell.playerName}</strong><span>{cell.position} · {cell.team}</span></> : <em>Open</em>}</article>; })])}</div></div>{correctionCell ? <div className="pick-correction-panel"><PageHeader eyebrow={`Pick ${correctionCell.pickNumber} · Round ${correctionCell.round} · Team ${correctionCell.teamSlot}`} title={correctionMode === "FILL_GAP" ? "Fill unresolved pick" : correctionCell.playerName ? `Correct: ${correctionCell.playerName}` : "Correct pick"} description={correctionMode === "MENU" ? "Later picks are never affected by a correction here." : "Search ignores the position filter, same as rapid capture."} actions={<Button variant="ghost" onClick={closeCorrection}>Cancel</Button>} />{correctionMode === "MENU" ? <div className="toolbar"><Button variant="secondary" onClick={() => setCorrectionMode("REPLACE")}>Replace</Button><Button variant="danger" onClick={() => void doClear()}>Clear</Button></div> : <div className="rapid-capture"><label className="search-input rapid-capture__input"><Icon name="search" size={16} /><input aria-label={correctionMode === "FILL_GAP" ? "Fill gap search" : "Replacement search"} onChange={(event) => setCorrectionQuery(event.target.value)} onFocus={(event) => event.target.select()} placeholder="Type a player, K, or D/ST…" type="search" value={correctionQuery} /></label><ul className="rapid-capture__results" role="listbox">{correctionResults.map((candidate) => <li key={candidate.playerId} onMouseDown={(event) => { event.preventDefault(); void (correctionMode === "FILL_GAP" ? doFillGap(candidate.playerId) : doReplace(candidate.playerId)); }}><strong>{candidate.playerName}</strong><small>{candidate.team} · {candidate.position}</small>{candidate.source === "MANUAL" ? <StatusBadge tone="review" label="Manual · not modeled" /> : null}</li>)}{correctionQuery.trim() && !correctionResults.length ? <li className="rapid-capture__empty">No match.</li> : null}</ul></div>}</div> : null}</Panel>
       <div className="draft-room-split"><Panel title="Recent picks" eyebrow="Latest eight selections"><div className="recent-picks">{board.recentPicks?.length ? board.recentPicks.slice().reverse().map((pick) => <article key={pick.pickNumber}><b>{pick.pickNumber}</b><span><strong>{pick.playerName}</strong><small>T{pick.teamSlot} · {pick.position} · {pick.actor}</small></span></article>) : <p>No picks yet.</p>}</div></Panel><Panel title={team?.owner ? "My Roster" : team?.name ?? `Team ${selectedTeam}`} eyebrow={`Team ${selectedTeam} roster`}><div className="roster-list">{team?.roster.length ? team.roster.map((player) => <article key={player.playerId}><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong><small>{player.team} · #{player.pickNumber}</small></article>) : <p>No players drafted.</p>}</div></Panel></div>
     </> : null}
     <div className="metric-grid"><MetricCard label="Available players" value={Math.max(0, data.rankings.length - drafted.length)} detail="Current board" icon="players" tone="gold" /><MetricCard label="Drafted" value={drafted.length} detail={`Next pick ${drafted.length + 1}`} icon="check" tone="crimson" /><MetricCard label="League teams" value={data.activeProfile.teamCount} detail={data.activeProfile.roster.superflex ? "Superflex" : "1QB"} icon="profile" tone="violet" /><MetricCard label="Scoring" value={data.activeProfile.scoring.reception === 1 ? "PPR" : data.activeProfile.scoring.reception === .5 ? "Half" : "Std"} detail={`${data.activeProfile.draft.rounds} rounds`} icon="settings" tone="cyan" /></div>

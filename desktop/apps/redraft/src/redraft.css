@@ -330,6 +330,12 @@
 .draft-board-grid article > em { color: var(--muted); font-size: 9px; font-style: normal; }
 .draft-board-grid article.owner-pick { background: rgba(211,169,84,.055); border-color: rgba(211,169,84,.22); }
 .draft-board-grid article.current-pick { border-color: var(--gold-bright); box-shadow: 0 0 14px rgba(211,169,84,.25); }
+.draft-board-grid article.correctable-pick { cursor: pointer; }
+.draft-board-grid article.correctable-pick:hover,
+.draft-board-grid article.correctable-pick:focus-visible { border-color: rgba(154,108,255,.45); outline: none; }
+.draft-board-grid article.unresolved-pick { background: rgba(211,84,84,.06); border-color: rgba(211,84,84,.3); border-style: dashed; }
+.draft-board-grid article.unresolved-pick em { color: #e0a3a3; }
+.pick-correction-panel { background: rgba(154,108,255,.05); border: 1px solid rgba(154,108,255,.2); border-radius: 10px; margin-top: 10px; padding: 12px 14px; }
 .draft-room-split { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
 .recent-picks,
 .roster-list { display: grid; gap: 5px; }

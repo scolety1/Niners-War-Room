@@ -669,6 +669,7 @@ export interface DraftPick {
   team: string;
   actor: string;
   selectionBehavior: string;
+  status?: "OPEN" | "RESOLVED" | "UNRESOLVED";
 }
 
 export interface DraftBoardCell extends DraftPick {
