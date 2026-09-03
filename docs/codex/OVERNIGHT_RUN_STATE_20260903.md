@@ -5,43 +5,66 @@ from this file + `LAST_GOOD_COMMIT` rather than restarting research from
 scratch.
 
 ```
-CURRENT_HEAD: 5a6d48b3 (see `git log -1` for full sha)
+CURRENT_HEAD: 2424faef5bdd5aa676fa8dd853b11a179283f14e
 CURRENT_BRANCH: work/nwr-draft-upgrade-hq-v1-20260903
 CLEAN_STATUS: clean (at time of writing)
-LAST_GOOD_COMMIT: 5a6d48b3 "feat: AI Intelligence pipeline -- News Scout to Explanation, tested end-to-end (sections 15-17)"
+LAST_GOOD_COMMIT: 2424faef "docs: UDK qualitative flags -- review queue, not fabricated extraction (section 6)"
 WORKTREE_ROOT: C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrade-hq
 ```
 
 ## ACTIVE_LANES
-- Section 18 next: decision receipts -- wire append_decision_receipt so
-  it actually fires on every NWR PURE owner pick.
+- Section 21 next: launcher/product consolidation -- design + a
+  provably-reversible candidate shortcut only.
 
 ## RECENTLY COMPLETED (since the last state snapshot)
-- AI Intelligence pipeline: News Scout -> Impact Analyst (direct +
-  beneficiary + NEW role-uncertainty tier) -> Explanation, fixture-tested
-  end-to-end (`run_impact_pipeline`), horizon field added, IR event type
-  added. 72/72 passing across all AI/shadow-authorities test files.
+- Decision receipts wired into NWR PURE owner picks (section 18):
+  build_and_append_owner_decision_receipt, blocks a pick on write
+  failure unless emergency_override, corrections append a
+  ReceiptCorrectionRecord without touching the original receipt.
+- Champion/Challenger rollback pointer mechanics + a structural
+  no-hidden-auto-promotion proof (section 19).
+- Historical adapter explicit BLOCKED_* status codes (section 20):
+  duplicate-player-season, outcome-maturity, and one orchestrating
+  validate_historical_dataset() entry point.
+- Draft Room V2: a real, isolated, tested candidate (tabs/drawer/
+  compare/UDK badges) at /draft-room-v2, built entirely on data the
+  production bootstrap payload already provides -- no new backend
+  endpoint (sections 3-6).
+- UDK qualitative flags: bounded investigation concluded deterministic
+  extraction cannot be proven in this environment (no PDF tooling
+  installed); produced the requested review-queue CSV instead of
+  fabricating badges (section 6).
 
 ## ACTIVE_WORKTREES
 - Only the controlling worktree above. No additional worktrees created
   this session.
 
-## COMPLETED_LANES (this continuation, commits `a5b9d8cf`..`bf415803`)
+## COMPLETED_LANES (this continuation, commits `a5b9d8cf`..`2424faef`)
 - NWR PURE experimental mode toggle + external-intel gate
 - Sleeper live auto-sync (bounded, read-only)
 - Catch-up mode (paste/preview/apply + real 35-tail-pick acceptance test)
-- Cost of Waiting V2 (Monte Carlo survival-weighted)
-- Champion/Challenger registry (no auto-promotion)
-- Historical replay data adapter (validators/loader/splitter/runner)
-- AI Intelligence backend skeleton (first pass -- being extended now)
-- Draft Room V2 UI contract (doc only, real code not yet built -- see
-  BLOCKED_LANES/NEXT_TASKS)
+- Cost of Waiting V2 (Monte Carlo survival-weighted) + real-case
+  labeling (Troy Franklin regression test)
+- Champion/Challenger registry (no auto-promotion) + rollback pointer
+  mechanics + a structural no-hidden-auto-promotion proof
+- Historical replay data adapter (validators/loader/splitter/runner) +
+  explicit BLOCKED_* status codes
+- AI Intelligence backend: News Scout -> Impact Analyst (direct +
+  beneficiary + role-uncertainty) -> Explanation, fixture-tested
+  end-to-end pipeline
+- Draft Room V2: real, isolated, tested candidate at /draft-room-v2
+  (tabs/drawer/compare/UDK badges) -- supersedes the earlier contract-
+  only doc
+- UDK qualitative flags review queue (deterministic extraction blocked
+  in this environment; not fabricated)
 - NWR PURE 001 freeze receipt real git-provenance wiring
+- Decision receipts wired into every NWR PURE owner pick (blocks on
+  write failure unless emergency_override; corrections never rewrite
+  the original receipt)
 - Player-universe Saturday renewal packet (owner decision packet)
-- Team Score V2 hardening (composition report, availability discount)
-- Team Score/Championship Equity/Pick Score/optimizer benchmark (real
+- Team Score V2 hardening (composition report, availability discount) +
+  Team Score/Championship Equity/Pick Score/optimizer benchmark (real
   CSVs in docs/codex/)
-- Cost of Waiting real-case labeling (Troy Franklin regression test)
 - QB pathology Moneyball demonstration (real numbers, Superflex
   inversion)
 - KHA decision shadow replay (real 157-pick board, 10 owner picks,
@@ -85,31 +108,22 @@ environment gap unrelated to this session's changes) was established
 early in the session.
 
 ## CURRENT_TASK
-AI Intelligence backend: extending the section-19-21 skeleton
-(`src/services/ai_intelligence_backend_service.py`) into a fixture-
-tested end-to-end pipeline per sections 15-17 -- adding a `horizon`
-field to `ImpactHypothesis`, a `generate_role_uncertainty_hypotheses`
-function (the "other backfield: ROLE_UNCERTAINTY_UP" case), a
-`run_impact_pipeline` tying News Event -> validation -> direct/
-beneficiary/role-uncertainty hypotheses -> (consumable by)
-`explain_pick_recommendation` into one call, and fixture tests for IR/
-suspension/trade/QB-starter-change/depth-chart-promotion.
+Launcher/product consolidation (section 21): inventory + design +, if
+provably reversible, a candidate "Niners War Room — Draft Upgrade
+Preview" shortcut. No renaming/deleting an existing owner launcher, no
+data-root migration, while unattended.
 
 ## NEXT_TASK (in priority order after CURRENT_TASK)
-1. Decision receipts -- wire `append_decision_receipt` so it actually
-   fires on every NWR PURE owner pick (not just schema-exists), with a
-   visible-failure-not-silent-proceed test (section 18).
-2. Champion/Challenger executable lifecycle proof using a real
-   registered challenger (rookie-market-blend-v2, already evidenced) --
-   confirm no hidden auto-promotion route exists anywhere in the repo
-   (grep-based test), plus rollback-pointer mechanics (section 19).
-3. Historical adapter synthetic-contract explicit failure codes
-   (BLOCKED_SCHEMA / BLOCKED_IDENTITY / BLOCKED_LEAKAGE named outcomes,
-   not just a bool) (section 20).
-4. Draft Room V2 real frontend code (tabs, Player Drawer, Compare, UDK
-   badges) -- the largest remaining lane, deliberately sequenced after
-   the backend lanes above since every one of its data dependencies is
-   already real and tested (see the existing UI contract doc).
-5. Launcher/product consolidation prep (section 21) -- design + a
-   provably-reversible candidate shortcut only.
-6. Final KHA operational replay re-verification + final report.
+1. Final KHA operational replay re-verification (section 22): re-run
+   the KHA/reconciliation regression suite fresh, confirm the stated
+   targets (192/192 representable, 23/23 search failures resolved,
+   14/14 K/DST, 5/5 missing-player fixtures, 35-tail Catch-Up pass,
+   corrections preserve later picks, checkpoint root correct), confirm
+   original KHA evidence files are still byte-identical to their
+   sources.
+2. Full combined regression re-run (backend + frontend) as the final
+   pre-report checkpoint (section 24).
+3. Final comprehensive report (section 26) with every item that
+   section demands: strongest branch/HEAD/tree/clean state, rollback
+   commits, exact player-universe owner action needed, exact next
+   three highest-value tasks.
