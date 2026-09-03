@@ -660,15 +660,19 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         pick_match = _REDRAFT_DRAFT_PICK.fullmatch(path)
         if method == "POST" and pick_match:
             body = self._json_body()
-            self._reject_unknown_fields(body, {"playerId"})
+            self._reject_unknown_fields(body, {"playerId", "emergencyOverride"})
             profile_id = unquote(pick_match.group(1))
             player_id = body.get("playerId")
             if not isinstance(player_id, str):
                 raise self._invalid_body("playerId must be a string.")
+            emergency_override = body.get("emergencyOverride", False)
+            if not isinstance(emergency_override, bool):
+                raise self._invalid_body("emergencyOverride must be a boolean when supplied.")
             self.server.facade.mark_redraft_player(
                 profile_id=profile_id,
                 player_id=player_id,
                 drafted=True,
+                emergency_override=emergency_override,
             )
             return self.server.facade.redraft_bootstrap()
         undo_match = _REDRAFT_DRAFT_UNDO.fullmatch(path)

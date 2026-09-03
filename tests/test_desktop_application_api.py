@@ -21,6 +21,10 @@ from src.application.desktop_facade import (
     FacadeError,
 )
 from src.services.draft_day_app_v1_service import file_sha256
+from src.services.nwr_pure_experiment_service import (
+    read_correction_records,
+    read_decision_receipts,
+)
 from src.services.outcome_v3_display_service import load_outcome_v3_display
 from src.services.redraft_engine_v1_service import (
     DraftContext,
@@ -1623,3 +1627,95 @@ def test_facade_catch_up_preview_and_apply_wire_through_to_draft_board(
         facade.apply_redraft_catch_up(profile_id=profile_id, paste="Nobody Real Person")
     unchanged = facade.redraft_bootstrap().data["draftBoard"]["boardCells"]
     assert len([cell for cell in unchanged if cell["playerId"]]) == 2
+
+
+# --- Section 18: decision receipts wired into NWR PURE owner picks --------
+
+
+def test_nwr_pure_mode_writes_a_decision_receipt_for_every_owner_pick(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    facade.set_redraft_nwr_pure_mode(profile_id=profile_id, enabled=True)
+
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    drafted_ids = {cell["playerId"] for cell in board["boardCells"] if cell["playerId"]}
+    assert "TE-29" not in drafted_ids  # lowest-ranked player in the 240-pool, safely available
+
+    result = facade.mark_redraft_player(profile_id=profile_id, player_id="TE-29", drafted=True)
+    assert "nwrPureDecisionReceiptSkipped" not in result.data
+
+    receipts = read_decision_receipts(facade.redraft_root, profile_id)
+    assert len(receipts) == 1
+    receipt = receipts[0]
+    assert receipt["selected_player"] == "TE-29"
+    assert receipt["decision_policy"] == "OWNER_OVERRIDE"
+    assert receipt["owner_slot"] == 9
+    assert receipt["team_score_before"] is not None
+
+    # Restart: a fresh facade against the same store sees the identical receipt.
+    reopened = DesktopBackendFacade(
+        repo_root=REPO_ROOT, mode="redraft", redraft_root=facade.redraft_root
+    )
+    assert read_decision_receipts(reopened.redraft_root, profile_id) == receipts
+
+
+def test_nwr_pure_mode_off_writes_no_decision_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    # nwr_pure_experimental left at its default (False).
+    facade.mark_redraft_player(profile_id=profile_id, player_id="TE-29", drafted=True)
+    assert read_decision_receipts(facade.redraft_root, profile_id) == []
+
+
+def test_nwr_pure_correction_appends_a_record_without_touching_the_original_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    facade.set_redraft_nwr_pure_mode(profile_id=profile_id, enabled=True)
+    facade.mark_redraft_player(profile_id=profile_id, player_id="TE-29", drafted=True)
+    original_receipts = read_decision_receipts(facade.redraft_root, profile_id)
+    assert len(original_receipts) == 1
+
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    owner_cell = next(cell for cell in board["boardCells"] if cell["playerId"] == "TE-29")
+    pick_number = owner_cell["pickNumber"]
+
+    facade.replace_redraft_pick(profile_id=profile_id, pick_number=pick_number, player_id="TE-28")
+
+    # The original decision receipt line is byte-for-byte untouched.
+    assert read_decision_receipts(facade.redraft_root, profile_id) == original_receipts
+
+    corrections = read_correction_records(facade.redraft_root, profile_id)
+    assert len(corrections) == 1
+    assert corrections[0]["correction_type"] == "REPLACE_PICK"
+    assert corrections[0]["original_pick_number"] == pick_number
+    assert corrections[0]["detail"]["new_player_id"] == "TE-28"
+
+
+def test_nwr_pure_mode_blocks_a_pick_when_the_decision_receipt_fails_to_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    facade.set_redraft_nwr_pure_mode(profile_id=profile_id, enabled=True)
+
+    def _boom(*args, **kwargs):
+        raise OSError("simulated disk failure")
+
+    monkeypatch.setattr(desktop_facade_module, "build_and_append_owner_decision_receipt", _boom)
+
+    with pytest.raises(FacadeError, match="decision"):
+        facade.mark_redraft_player(profile_id=profile_id, player_id="TE-29", drafted=True)
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    assert not any(cell["playerId"] == "TE-29" for cell in board["boardCells"])
+    assert read_decision_receipts(facade.redraft_root, profile_id) == []
+
+    # The explicit emergency override is the only sanctioned bypass.
+    result = facade.mark_redraft_player(
+        profile_id=profile_id, player_id="TE-29", drafted=True, emergency_override=True
+    )
+    assert result.data["nwrPureDecisionReceiptSkipped"]
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    assert any(cell["playerId"] == "TE-29" for cell in board["boardCells"])
+    assert read_decision_receipts(facade.redraft_root, profile_id) == []

@@ -26,18 +26,22 @@ import json
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from src.services.redraft_engine_v1_service import (
     MODEL_FAMILY,
     REDRAFT_AUTHORITY_LABEL,
+    LeagueProfile,
     RankingResult,
 )
 from src.services.shadow_numeric_authorities_service import (
     CHAMPIONSHIP_EQUITY_VERSION,
     PICK_SCORE_VERSION,
     TEAM_SCORE_VERSION,
+    RosterPlayer,
+    optimal_starting_lineup_value,
 )
 
 EXPERIMENT_SCHEMA_VERSION = 1
@@ -303,6 +307,96 @@ def read_decision_receipts(root: str | Path, experiment_id: str) -> list[dict[st
             if line:
                 receipts.append(json.loads(line))
     return receipts
+
+
+def build_and_append_owner_decision_receipt(
+    root: str | Path,
+    *,
+    experiment_id: str,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    state_before: Mapping[str, Any],
+    selected_player_id: str,
+) -> DecisionReceipt:
+    """Assembles and appends a real DecisionReceipt for one owner pick in
+    NWR PURE experimental mode. Called by desktop_facade.mark_redraft_player
+    BEFORE the pick is actually recorded, so a failure here blocks the
+    pick rather than silently proceeding with an unlogged experimental
+    decision (unless the facade caller passes emergency_override=True --
+    see that call site's own docstring for why that is the only
+    sanctioned bypass).
+
+    decision_policy is honestly OWNER_OVERRIDE, not OPTIMIZER: no
+    optimizer-driven Suggestions surface exists in the owner-facing UI
+    yet (see docs/codex/DRAFT_ROOM_V2_UI_CONTRACT_20260903.md) -- the
+    owner selects every pick through the existing search UI, with real
+    SHADOW research context (team_score_before, roster_before) attached
+    for the record, not used to drive the selection. Calling this
+    OPTIMIZER before an optimizer-driven UI exists would misrepresent
+    what actually chose this pick.
+    """
+    from src.services.redraft_draft_room_v1_service import _asset_pool
+
+    owner_slot = int(state_before["owner_slot"])
+    pick_number = len(state_before.get("picks", [])) + 1
+    round_number = ((pick_number - 1) // profile.team_count) + 1
+    roster_before_ids = tuple(
+        str(pick["player_id"])
+        for pick in state_before.get("picks", [])
+        if int(pick["team_slot"]) == owner_slot and pick.get("player_id")
+    )
+    pool = _asset_pool(ranking, manual_assets)
+    roster_before_players = [
+        RosterPlayer(
+            pid, pool[pid]["position"], float(pool[pid].get("replacement_adjusted_value") or 0.0)
+        )
+        for pid in roster_before_ids
+        if pid in pool
+    ]
+    team_score_before = (
+        round(optimal_starting_lineup_value(roster_before_players, profile), 2)
+        if roster_before_players
+        else 0.0
+    )
+    drafted = set(str(value) for value in state_before.get("drafted", []))
+    available_ids = [player_id for player_id in pool if player_id not in drafted]
+
+    receipt = DecisionReceipt(
+        experiment_id=experiment_id,
+        timestamp_utc=datetime.now(UTC).isoformat(timespec="seconds"),
+        pick_number=pick_number,
+        round=round_number,
+        owner_slot=owner_slot,
+        available_player_universe_hash=hash_player_universe(available_ids),
+        roster_before=roster_before_ids,
+        production_nwr_recommendation=None,
+        optimizer_recommendation=None,
+        candidate_set=(),
+        player_score_by_candidate={},
+        team_score_before=team_score_before,
+        team_score_after_by_candidate={},
+        championship_equity_before=None,
+        championship_equity_after_by_candidate={},
+        equity_gain_by_candidate={},
+        cost_of_waiting_by_candidate={},
+        pick_score_by_candidate={},
+        simulation_assumptions={},
+        simulation_count=0,
+        uncertainty={},
+        selected_player=selected_player_id,
+        decision_policy="OWNER_OVERRIDE",
+        fallback_reason=None,
+        owner_override=True,
+        override_reason=(
+            "No optimizer-driven Suggestions UI exists in the owner-facing Draft Room "
+            "yet; the owner selected this pick through the standard search UI."
+        ),
+        factual_alerts=(),
+        external_comparators={},
+    )
+    append_decision_receipt(root, receipt)
+    return receipt
 
 
 @dataclass(frozen=True)

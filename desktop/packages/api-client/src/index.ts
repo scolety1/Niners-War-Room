@@ -281,10 +281,14 @@ export class NwrApiClient {
     });
   }
 
-  markDrafted(profileId: string, playerId: string): Promise<RedraftBootstrap> {
+  markDrafted(
+    profileId: string,
+    playerId: string,
+    emergencyOverride?: boolean,
+  ): Promise<RedraftBootstrap> {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/pick`, {
       method: "POST",
-      body: JSON.stringify({ playerId }),
+      body: JSON.stringify({ playerId, ...(emergencyOverride ? { emergencyOverride } : {}) }),
     });
   }
 

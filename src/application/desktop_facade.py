@@ -58,6 +58,12 @@ from src.services.owner_asset_evidence_service import (
     compose_owner_asset_evidence,
 )
 from src.services.owner_caveat_presentation_service import owner_caveat_text
+from src.services.nwr_pure_experiment_service import (
+    NwrPureExperimentError,
+    ReceiptCorrectionRecord,
+    append_correction_record,
+    build_and_append_owner_decision_receipt,
+)
 from src.services.owner_mode_view_service import (
     market_decision_label,
     market_rank_gap,
@@ -2256,7 +2262,13 @@ class DesktopBackendFacade:
         profile_id: str,
         player_id: str,
         drafted: bool,
+        emergency_override: bool = False,
     ) -> FacadePayload:
+        """`emergency_override`: the ONLY sanctioned way to proceed with an
+        owner pick in NWR PURE experimental mode when writing its
+        immutable decision receipt fails. Without it, a receipt-write
+        failure blocks the pick entirely -- see section 18's "do not
+        silently proceed with an unlogged experimental decision" rule."""
         self._require_mode("redraft")
         normalized_profile = self._profile_id(profile_id)
         normalized_player = self._player_id(player_id)
@@ -2276,9 +2288,33 @@ class DesktopBackendFacade:
                 "The requested player is not in the active Redraft ranking.",
                 status=404,
             )
+        receipt_skipped_reason: str | None = None
         try:
             existing = load_draft_board(self.redraft_root, normalized_profile)
-            if drafted and isinstance(existing.get("owner_slot"), int):
+            is_owner_pick = drafted and isinstance(existing.get("owner_slot"), int)
+            if is_owner_pick and profile.nwr_pure_experimental:
+                try:
+                    build_and_append_owner_decision_receipt(
+                        self.redraft_root,
+                        experiment_id=profile.profile_id,
+                        profile=profile,
+                        ranking=ranking,
+                        manual_assets=manual_assets,
+                        state_before=existing,
+                        selected_player_id=normalized_player,
+                    )
+                except (NwrPureExperimentError, OSError) as exc:
+                    if not emergency_override:
+                        raise FacadeError(
+                            "NWR_PURE_DECISION_RECEIPT_FAILED",
+                            "NWR PURE experimental mode requires an immutable decision "
+                            "receipt for every owner pick, and writing it failed. The "
+                            "pick was not recorded. Pass an explicit emergency override "
+                            "to proceed without logging this decision.",
+                            status=409,
+                        ) from exc
+                    receipt_skipped_reason = str(exc)
+            if is_owner_pick:
                 board = owner_pick_and_advance(
                     self.redraft_root,
                     profile,
@@ -2307,7 +2343,10 @@ class DesktopBackendFacade:
                 "The Redraft draft board could not be updated.",
                 status=409,
             ) from exc
-        return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+        payload_data: dict[str, Any] = {"draftBoard": self._draft_board_payload(board)}
+        if receipt_skipped_reason is not None:
+            payload_data["nwrPureDecisionReceiptSkipped"] = receipt_skipped_reason
+        return FacadePayload(data=payload_data)
 
     def undo_redraft_pick(self, *, profile_id: str) -> FacadePayload:
         self._require_mode("redraft")
@@ -2370,6 +2409,39 @@ class DesktopBackendFacade:
             )
         return profile, ranking, manual_assets
 
+    def _append_nwr_pure_correction_record(
+        self,
+        *,
+        profile: LeagueProfile,
+        correction_type: str,
+        pick_number: int,
+        detail: dict[str, Any],
+    ) -> None:
+        """Best-effort audit trail: a correction (fixing already-recorded
+        state, often to fix a mistake) is never blocked by a failure to
+        write this secondary record -- unlike the original decision
+        receipt (section 18's own "do not silently proceed with an
+        unlogged experimental decision" rule applies to the ORIGINAL
+        pick, not to the owner fixing one after the fact). Never mutates
+        any existing decisions.jsonl line -- always a new, separate
+        corrections.jsonl entry referencing the pick_number."""
+        if not profile.nwr_pure_experimental:
+            return
+        try:
+            append_correction_record(
+                self.redraft_root,
+                ReceiptCorrectionRecord(
+                    experiment_id=profile.profile_id,
+                    timestamp_utc=datetime.now(UTC).isoformat(timespec="seconds"),
+                    original_pick_number=int(pick_number),
+                    reason=f"Event-ledger {correction_type} applied by the owner.",
+                    correction_type=correction_type,
+                    detail=detail,
+                ),
+            )
+        except OSError:
+            pass
+
     def replace_redraft_pick(
         self, *, profile_id: str, pick_number: int, player_id: str
     ) -> FacadePayload:
@@ -2390,6 +2462,10 @@ class DesktopBackendFacade:
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_REPLACE_PICK_FAILED", str(exc), status=409) from exc
+        self._append_nwr_pure_correction_record(
+            profile=profile, correction_type="REPLACE_PICK", pick_number=pick_number,
+            detail={"new_player_id": normalized_player},
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def clear_redraft_pick(self, *, profile_id: str, pick_number: int) -> FacadePayload:
@@ -2404,6 +2480,9 @@ class DesktopBackendFacade:
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_CLEAR_PICK_FAILED", str(exc), status=409) from exc
+        self._append_nwr_pure_correction_record(
+            profile=profile, correction_type="CLEAR_PICK", pick_number=pick_number, detail={},
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def fill_redraft_pick_gap(
@@ -2425,6 +2504,10 @@ class DesktopBackendFacade:
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_FILL_GAP_FAILED", str(exc), status=409) from exc
+        self._append_nwr_pure_correction_record(
+            profile=profile, correction_type="FILL_GAP", pick_number=pick_number,
+            detail={"filled_player_id": normalized_player},
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def undo_redraft_pick_correction(self, *, profile_id: str) -> FacadePayload:
