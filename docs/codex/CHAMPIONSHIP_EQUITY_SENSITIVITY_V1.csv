@@ -1,0 +1,7 @@
+dimension,value,win_probability,standard_error,latency_ms
+seasons_simulated,50,0.08,0.0384,2.4
+seasons_simulated,200,0.16,0.0259,7.1
+seasons_simulated,500,0.166,0.0166,16.0
+seed,1,0.16,0.0259,
+seed,2,0.175,0.0269,
+seed,3,0.12,0.023,

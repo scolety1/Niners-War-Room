@@ -1,0 +1,36 @@
+profile,team_count,scenario,starter_holes,starting_lineup_value,bench_contingency_value,total_roster_value,team_score_percentile,population_size,population_mean,population_stdev,simulate_comparable_leagues_ms,team_score_ms,population_deterministic_same_seed,team_score_deterministic_same_population,note
+10T_1QB,10,star_heavy_thin_bench,K 0/1; DST 0/1,2269.0,0,2269.0,100.0,300,2200.99,12.28,1452.8,1.78,True,True,
+10T_1QB,10,balanced,K 0/1; DST 0/1,2241.0,1464.0,3705.0,100.0,300,2200.99,12.28,1452.8,1.71,True,True,
+10T_1QB,10,qb_heavy_1qb,K 0/1; DST 0/1; FLEX 0/1,1877.0,795.0,2672.0,0.0,300,2200.99,12.28,1452.8,1.68,True,True,
+10T_1QB,10,rb_heavy,WR 1/2; K 0/1; DST 0/1,1957.0,731.0,2688.0,0.0,300,2200.99,12.28,1452.8,1.68,True,True,
+10T_1QB,10,wr_heavy,RB 1/2; K 0/1; DST 0/1,1797.0,571.0,2368.0,0.0,300,2200.99,12.28,1452.8,1.66,True,True,
+10T_1QB,10,missing_te,TE 0/1; K 0/1; DST 0/1,2037.0,384.0,2421.0,0.0,300,2200.99,12.28,1452.8,1.64,True,True,
+10T_1QB,10,injury_risk_heavy,K 0/1; DST 0/1; FLEX 0/1,1134.0,0,1134.0,0.0,300,2200.99,12.28,1452.8,1.66,True,True,availability-discounted 2 player(s)
+12T_1QB,12,star_heavy_thin_bench,K 0/1; DST 0/1,2269.0,0,2269.0,100.0,360,2186.1,15.96,1872.3,2.1,True,True,
+12T_1QB,12,balanced,K 0/1; DST 0/1,2241.0,1464.0,3705.0,100.0,360,2186.1,15.96,1872.3,2.13,True,True,
+12T_1QB,12,qb_heavy_1qb,K 0/1; DST 0/1; FLEX 0/1,1877.0,795.0,2672.0,0.0,360,2186.1,15.96,1872.3,1.94,True,True,
+12T_1QB,12,rb_heavy,WR 1/2; K 0/1; DST 0/1,1957.0,731.0,2688.0,0.0,360,2186.1,15.96,1872.3,1.97,True,True,
+12T_1QB,12,wr_heavy,RB 1/2; K 0/1; DST 0/1,1797.0,571.0,2368.0,0.0,360,2186.1,15.96,1872.3,1.94,True,True,
+12T_1QB,12,missing_te,TE 0/1; K 0/1; DST 0/1,2037.0,384.0,2421.0,0.0,360,2186.1,15.96,1872.3,2.19,True,True,
+12T_1QB,12,injury_risk_heavy,K 0/1; DST 0/1; FLEX 0/1,1134.0,0,1134.0,0.0,360,2186.1,15.96,1872.3,2.04,True,True,availability-discounted 2 player(s)
+16T_1QB_KHA_LIKE,16,star_heavy_thin_bench,K 0/1; DST 0/1,2269.0,0,2269.0,100.0,480,2151.63,24.13,2627.2,3.49,True,True,
+16T_1QB_KHA_LIKE,16,balanced,K 0/1; DST 0/1,2241.0,1464.0,3705.0,100.0,480,2151.63,24.13,2627.2,2.79,True,True,
+16T_1QB_KHA_LIKE,16,qb_heavy_1qb,K 0/1; DST 0/1; FLEX 0/1,1877.0,795.0,2672.0,0.0,480,2151.63,24.13,2627.2,3.11,True,True,
+16T_1QB_KHA_LIKE,16,rb_heavy,WR 1/2; K 0/1; DST 0/1,1957.0,731.0,2688.0,0.0,480,2151.63,24.13,2627.2,2.76,True,True,
+16T_1QB_KHA_LIKE,16,wr_heavy,RB 1/2; K 0/1; DST 0/1,1797.0,571.0,2368.0,0.0,480,2151.63,24.13,2627.2,3.06,True,True,
+16T_1QB_KHA_LIKE,16,missing_te,TE 0/1; K 0/1; DST 0/1,2037.0,384.0,2421.0,0.0,480,2151.63,24.13,2627.2,2.88,True,True,
+16T_1QB_KHA_LIKE,16,injury_risk_heavy,K 0/1; DST 0/1; FLEX 0/1,1134.0,0,1134.0,0.0,480,2151.63,24.13,2627.2,2.8,True,True,availability-discounted 2 player(s)
+12T_SUPERFLEX,12,star_heavy_thin_bench,K 0/1; DST 0/1; SUPERFLEX 0/1,2269.0,0,2269.0,0.0,360,2567.54,13.66,1867.3,3.85,True,True,
+12T_SUPERFLEX,12,balanced,K 0/1; DST 0/1,2626.0,1079.0,3705.0,100.0,360,2567.54,13.66,1867.3,3.9,True,True,
+12T_SUPERFLEX,12,qb_heavy_1qb,K 0/1; DST 0/1; FLEX 0/1,2275.0,397.0,2672.0,0.0,360,2567.54,13.66,1867.3,2.55,True,True,
+12T_SUPERFLEX,12,rb_heavy,WR 1/2; K 0/1; DST 0/1,2323.0,365.0,2688.0,0.0,360,2567.54,13.66,1867.3,2.35,True,True,
+12T_SUPERFLEX,12,wr_heavy,RB 1/2; K 0/1; DST 0/1,2083.0,285.0,2368.0,0.0,360,2567.54,13.66,1867.3,2.36,True,True,
+12T_SUPERFLEX,12,missing_te,TE 0/1; K 0/1; DST 0/1,2421.0,0,2421.0,0.0,360,2567.54,13.66,1867.3,3.65,True,True,
+12T_SUPERFLEX,12,injury_risk_heavy,K 0/1; DST 0/1; FLEX 0/1; SUPERFLEX 0/1,1134.0,0,1134.0,0.0,360,2567.54,13.66,1867.3,2.29,True,True,availability-discounted 2 player(s)
+12T_MULTI_FLEX,12,star_heavy_thin_bench,K 0/1; DST 0/1; FLEX 1/2,2269.0,0,2269.0,0.0,360,2513.38,14.82,1896.2,2.33,True,True,
+12T_MULTI_FLEX,12,balanced,K 0/1; DST 0/1,2596.0,1109.0,3705.0,100.0,360,2513.38,14.82,1896.2,2.05,True,True,
+12T_MULTI_FLEX,12,qb_heavy_1qb,K 0/1; DST 0/1; FLEX 0/2,1877.0,795.0,2672.0,0.0,360,2513.38,14.82,1896.2,1.99,True,True,
+12T_MULTI_FLEX,12,rb_heavy,WR 1/2; K 0/1; DST 0/1,2323.0,365.0,2688.0,0.0,360,2513.38,14.82,1896.2,2.02,True,True,
+12T_MULTI_FLEX,12,wr_heavy,RB 1/2; K 0/1; DST 0/1,2083.0,285.0,2368.0,0.0,360,2513.38,14.82,1896.2,2.39,True,True,
+12T_MULTI_FLEX,12,missing_te,TE 0/1; K 0/1; DST 0/1; FLEX 1/2,2037.0,384.0,2421.0,0.0,360,2513.38,14.82,1896.2,2.02,True,True,
+12T_MULTI_FLEX,12,injury_risk_heavy,K 0/1; DST 0/1; FLEX 0/2,1134.0,0,1134.0,0.0,360,2513.38,14.82,1896.2,2.0,True,True,availability-discounted 2 player(s)

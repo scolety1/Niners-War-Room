@@ -1,0 +1,7 @@
+team_count,rounds,candidate_count,single_forced_draft_completion_ms,full_evaluate_pick_candidates_ms,under_2s_interactive_target
+10,15,5,49.1,436.7,True
+10,15,10,51.0,670.6,True
+12,15,5,63.6,589.8,True
+12,15,10,62.7,836.8,True
+16,16,5,88.2,735.7,True
+16,16,10,83.1,1123.1,True
