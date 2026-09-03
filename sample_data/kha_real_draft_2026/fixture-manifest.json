@@ -37,6 +37,13 @@
       "description": "Cleaned, replay-ready derivative: 192 rows, columns overall_pick,round,pick_in_round,team_slot,team_name,player_name,nfl_team,position. team_slot derived from round-1 draft order (snake). Deterministic parse, no player/pick data invented or altered."
     },
     {
+      "path": "udk_skill_position_snapshot_with_identity_status.csv",
+      "source": "C:\\NWR_DRAFT_DAY_TOOLS\\2026-09-02\\udk\\KHA_UDK_2026_SNAPSHOT.csv",
+      "sha256": "c71b7f66e8eb14ce01370778e8af0d55b47bc83feea5f8f6b2ddddde62baa999",
+      "bytes": 228055,
+      "description": "Owner draft-prep UDK skill-position snapshot (315 rows) with an existing identity-reconciliation pass against the real KHA draft-day NWR universe: identity_status is MATCHED (301) or UNMATCHED (14) per row, plus nwr_player_id/match_method/match_confidence. The 14 UNMATCHED rows are the seed data for the missing-skill-player manual asset ingestion in src/services/udk_unmodeled_skill_asset_service.py -- includes all 5 historical OWNER_PLACEHOLDER_FOR_MISSING_PLAYER picks plus 9 more not yet hit by this draft."
+    },
+    {
       "path": "live_manual_kdst_assets_64.json",
       "source": "C:\\Users\\codex-agent\\AppData\\Local\\com.ninerswarroom.redraft\\state\\redraft\\manual_assets\\fb1c49402c7644a99120197d41344bbb.json",
       "sha256": "fabc1e5f585040c06194bd34db1a6c8d4c97a885e0151bff4484888d20399a08",

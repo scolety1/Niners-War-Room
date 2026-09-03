@@ -1678,10 +1678,19 @@ def _asset_pool(
         for row in ranking.rows
         if row.position in {"QB", "RB", "WR", "TE"}
     }
+    # K/DST are always manual (NWR has no model for them). Skill positions
+    # (QB/RB/WR/TE) are admitted from the manual pool only when NWR's own
+    # ranked universe has no entry for that player_id -- these are real,
+    # externally-known players NWR's projection universe is missing (see
+    # src/services/udk_unmodeled_skill_asset_service.py), not a second,
+    # conflicting entry for a player who is already ranked.
     for raw in manual_assets:
         player_id = _manual_id(raw)
         position = str(raw.get("position") or "").upper()
-        if player_id and position in {"K", "DST"}:
+        if not player_id:
+            continue
+        is_unranked_skill = position in {"QB", "RB", "WR", "TE"} and player_id not in pool
+        if position in {"K", "DST"} or is_unranked_skill:
             pool[player_id] = {
                 "player_id": player_id,
                 "player_name": str(raw.get("player_name") or raw.get("playerName") or ""),

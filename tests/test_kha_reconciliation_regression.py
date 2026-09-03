@@ -19,6 +19,10 @@ from pathlib import Path
 
 from src.services.redraft_draft_room_v1_service import _asset_pool
 from src.services.redraft_engine_v1_service import RankingResult
+from src.services.udk_unmodeled_skill_asset_service import (
+    merge_manual_assets,
+    parse_udk_unmatched_skill_assets,
+)
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "sample_data" / "kha_real_draft_2026"
 
@@ -28,7 +32,9 @@ def _empty_ranking() -> RankingResult:
 
 
 def _real_manual_kdst_assets() -> list[dict[str, str]]:
-    payload = json.loads((FIXTURE_DIR / "live_manual_kdst_assets_64.json").read_text(encoding="utf-8"))
+    payload = json.loads(
+        (FIXTURE_DIR / "live_manual_kdst_assets_64.json").read_text(encoding="utf-8")
+    )
     return payload["assets"]
 
 
@@ -36,7 +42,19 @@ def _historical_kdst_picks() -> list[dict[str, str]]:
     with (FIXTURE_DIR / "RECONCILIATION_LEDGER.csv").open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     picks = [row for row in rows if row["classification"] == "K_DST_UNREPRESENTABLE"]
-    assert len(picks) == 14, f"expected 14 historical K_DST_UNREPRESENTABLE rows, found {len(picks)}"
+    assert len(picks) == 14, (
+        f"expected 14 historical K_DST_UNREPRESENTABLE rows, found {len(picks)}"
+    )
+    return picks
+
+
+def _historical_missing_player_picks() -> list[dict[str, str]]:
+    with (FIXTURE_DIR / "RECONCILIATION_LEDGER.csv").open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    picks = [row for row in rows if row["classification"] == "OWNER_PLACEHOLDER_FOR_MISSING_PLAYER"]
+    assert len(picks) == 5, (
+        f"expected 5 historical OWNER_PLACEHOLDER_FOR_MISSING_PLAYER rows, found {len(picks)}"
+    )
     return picks
 
 
@@ -103,9 +121,50 @@ def test_harrison_mevis_gap_is_stale_manual_roster_data_not_a_search_problem() -
     time, or surface a role-uncertainty alert), not a search/UX fix.
     """
     pool = _asset_pool(_empty_ranking(), _real_manual_kdst_assets())
-    lar_kicker = next(entry for entry in pool.values() if entry["position"] == "K" and entry["team"] == "LA")
+    lar_kicker = next(
+        entry for entry in pool.values() if entry["position"] == "K" and entry["team"] == "LA"
+    )
     assert lar_kicker["player_name"] == "Joshua Karty"
     assert lar_kicker["player_name"] != "Harrison Mevis"
+
+
+def test_all_5_historical_missing_player_picks_are_findable_once_udk_assets_are_merged_in() -> None:
+    """Lane C acceptance for OWNER_PLACEHOLDER_FOR_MISSING_PLAYER: after
+    merging the UDK-sourced unmodeled-skill-player assets
+    (udk_unmodeled_skill_asset_service) into the manual asset pool and
+    running the real _asset_pool merge, every one of the 5 historical
+    missing-player picks must resolve to a real, drafted-representable
+    asset -- unlike before this lane's work, where they existed in no pool
+    at all (neither ranked nor manual)."""
+    udk_rows = parse_udk_unmatched_skill_assets(
+        FIXTURE_DIR / "udk_skill_position_snapshot_with_identity_status.csv"
+    )
+    manual_assets = merge_manual_assets(_real_manual_kdst_assets(), udk_rows)
+    pool = _asset_pool(_empty_ranking(), manual_assets)
+    assets = list(pool.values())
+    unresolved: list[str] = []
+    for row in _historical_missing_player_picks():
+        recap_name = row["recap_player_name"]
+        fragment = recap_name.split()[-1].rstrip(".")
+        found = [asset for asset in assets if fragment.lower() in asset["player_name"].lower()]
+        if not found:
+            unresolved.append(recap_name)
+    assert not unresolved, (
+        f"historical missing-player picks not found even after UDK merge: {unresolved}"
+    )
+
+
+def test_missing_player_assets_do_not_shadow_or_conflict_with_kdst() -> None:
+    udk_rows = parse_udk_unmatched_skill_assets(
+        FIXTURE_DIR / "udk_skill_position_snapshot_with_identity_status.csv"
+    )
+    kdst = _real_manual_kdst_assets()
+    merged = merge_manual_assets(kdst, udk_rows)
+    assert len(merged) == len(kdst) + len(udk_rows)
+    pool = _asset_pool(_empty_ranking(), merged)
+    assert len(pool) == len(merged)
+    positions = {entry["position"] for entry in pool.values()}
+    assert positions == {"K", "DST", "QB", "RB", "WR", "TE"}
 
 
 def test_team_code_alias_gap_is_real_not_a_test_artifact() -> None:

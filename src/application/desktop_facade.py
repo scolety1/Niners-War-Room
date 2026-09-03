@@ -167,6 +167,12 @@ from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
     build_trade_brief,
 )
+from src.services.udk_unmodeled_skill_asset_service import (
+    UdkUnmodeledSkillAssetError,
+    merge_manual_assets,
+    parse_udk_unmatched_skill_assets,
+    write_manual_assets_file,
+)
 from src.services.trade_decision_assistant_service import (
     TEAM_WINDOWS,
     evaluate_trade_decision,
@@ -1961,6 +1967,47 @@ class DesktopBackendFacade:
             data={"profile": self._profile_payload(profile), "manualAssets": list(assets)}
         )
 
+    def import_udk_unmodeled_skill_assets(self, *, profile_id: str, csv_path: str) -> FacadePayload:
+        """Add manual, unranked draftable assets for real skill-position
+        players an owner-authorized UDK identity snapshot flags as having
+        no NWR universe match (identity_status=UNMATCHED) -- e.g. rookies
+        or veterans missing from projections/<season>/current.csv.
+
+        Additive only: never overwrites an existing manual asset (K/DST or
+        otherwise), works for any profile/league, and never assigns a
+        score, rank, or projection to these players (see
+        src/services/udk_unmodeled_skill_asset_service.py).
+        """
+
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        try:
+            load_profile(self.redraft_root, normalized)
+        except RedraftPersistenceError as exc:
+            raise FacadeError("REDRAFT_PROFILE_NOT_FOUND", str(exc), status=404) from exc
+        try:
+            new_rows = parse_udk_unmatched_skill_assets(csv_path)
+        except UdkUnmodeledSkillAssetError as exc:
+            raise FacadeError("UDK_SKILL_SNAPSHOT_INVALID", str(exc), status=422) from exc
+        existing = self._manual_assets_for_profile(normalized)
+        merged = merge_manual_assets(existing, new_rows)
+        manual_path = self.redraft_root / "manual_assets" / f"{normalized}.json"
+        try:
+            write_manual_assets_file(manual_path, profile_id=normalized, assets=merged)
+        except OSError as exc:
+            raise FacadeError(
+                "UDK_SKILL_ASSET_WRITE_FAILED",
+                "Could not save the unmodeled skill player assets.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "profileId": normalized,
+                "manualAssets": merged,
+                "addedCount": len(merged) - len(existing),
+            }
+        )
+
     def redraft_kdst_streamer(self, *, week: int) -> FacadePayload:
         """Read FantasyPros K/DST ECR and Sleeper availability; never writes either service."""
 
@@ -2832,14 +2879,14 @@ class DesktopBackendFacade:
             name = _text(value.get("player_name"))
             position = _text(value.get("position")).upper()
             team = _text(value.get("team")).upper()
-            if player_id and name and team and position in {"K", "DST"}:
+            if player_id and name and team and position in {"K", "DST", "QB", "RB", "WR", "TE"}:
                 output.append(
                     {
                         "player_id": player_id,
                         "player_name": name,
                         "position": position,
                         "team": team,
-                        "authority": "MANUAL — NOT MODELED BY NWR",
+                        "authority": _text(value.get("authority")) or "MANUAL — NOT MODELED BY NWR",
                     }
                 )
         return output
