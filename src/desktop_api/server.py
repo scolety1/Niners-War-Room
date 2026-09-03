@@ -45,6 +45,7 @@ _REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear
 _REDRAFT_PASTE_ADP_SELECTION = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/selection$")
 _REDRAFT_PASTE_ADP_MANUAL_MATCH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/manual-match$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
+_REDRAFT_SLEEPER_SYNC = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-sync$")
 _REDRAFT_PICK_REPLACE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/replace$")
 _REDRAFT_PICK_CLEAR = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/clear$")
 _REDRAFT_PICK_FILL_GAP = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/fill-gap$")
@@ -629,6 +630,13 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 pick_number=body["pickNumber"],
             )
             return self.server.facade.redraft_bootstrap()
+        sleeper_sync_match = _REDRAFT_SLEEPER_SYNC.fullmatch(path)
+        if method == "POST" and sleeper_sync_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            return self.server.facade.sync_redraft_sleeper_picks(
+                profile_id=unquote(sleeper_sync_match.group(1))
+            )
         pick_match = _REDRAFT_DRAFT_PICK.fullmatch(path)
         if method == "POST" and pick_match:
             body = self._json_body()

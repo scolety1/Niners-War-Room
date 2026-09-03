@@ -20,6 +20,7 @@ from src.services.redraft_draft_room_v1_service import (
     _save_room_state,
     build_draft_room_payload,
     import_owner_adp_csv,
+    ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
     owner_pick_and_advance,
@@ -30,6 +31,7 @@ from src.services.redraft_draft_room_v1_service import (
     save_owner_paste_adp,
     set_owner_platform_selection,
     start_draft_room,
+    sync_read_only_sleeper_picks,
     undo_pick_correction,
     undo_room_pick,
     validate_complete_mock,
@@ -721,3 +723,153 @@ def test_corrections_do_not_disturb_downstream_rosters_or_board_payload(tmp_path
     # cleared slot must not appear as a phantom roster entry anywhere
     for team in payload["teams"]:
         assert all(player["playerId"] for player in team["roster"])
+
+
+def _sleeper_player(name: str, position: str) -> dict[str, str]:
+    return {"full_name": name, "position": position}
+
+
+def _live_room(tmp_path) -> tuple[RankingResult, dict]:
+    ranking = _ranking()
+    room = start_draft_room(
+        tmp_path,
+        ranking.profile,
+        ranking,
+        _manual_assets(),
+        _empty_adp(ranking.profile),
+        owner_slot=9,
+        mode="LIVE_READ_ONLY",
+    )
+    assert room["picks"] == []
+    return ranking, room
+
+
+def test_sleeper_auto_sync_applies_sequential_picks_in_order(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    sleeper_picks = [
+        {"pick_no": 1, "player_id": "s-1"},
+        {"pick_no": 2, "player_id": "s-2"},
+        {"pick_no": 3, "player_id": "s-3"},
+    ]
+    sleeper_players = {
+        "s-1": _sleeper_player("QB 0", "QB"),
+        "s-2": _sleeper_player("RB 0", "RB"),
+        "s-3": _sleeper_player("WR 0", "WR"),
+    }
+    summary = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=sleeper_picks, sleeper_players=sleeper_players,
+    )
+    assert [row["playerId"] for row in summary["applied"]] == ["QB-0", "RB-0", "WR-0"]
+    assert summary["conflicts"] == []
+    assert summary["nextExpectedPick"] == 4
+    assert summary["boundedBatchHit"] is False
+    reopened = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert [pick["player_id"] for pick in reopened["picks"]] == ["QB-0", "RB-0", "WR-0"]
+    assert all(pick["actor"] == "SLEEPER_READ_ONLY" for pick in reopened["picks"])
+
+
+def test_sleeper_auto_sync_stops_and_reports_out_of_order_conflict(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    # pick 3 is missing from Sleeper's own feed -- a gap must never be
+    # silently skipped past.
+    sleeper_picks = [
+        {"pick_no": 1, "player_id": "s-1"},
+        {"pick_no": 2, "player_id": "s-2"},
+        {"pick_no": 4, "player_id": "s-4"},
+    ]
+    sleeper_players = {
+        "s-1": _sleeper_player("QB 0", "QB"),
+        "s-2": _sleeper_player("RB 0", "RB"),
+        "s-4": _sleeper_player("TE 0", "TE"),
+    }
+    summary = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=sleeper_picks, sleeper_players=sleeper_players,
+    )
+    assert [row["playerId"] for row in summary["applied"]] == ["QB-0", "RB-0"]
+    assert len(summary["conflicts"]) == 1
+    assert summary["conflicts"][0]["reason"] == "OUT_OF_ORDER"
+    assert summary["conflicts"][0]["pickNumber"] == 4
+    assert summary["nextExpectedPick"] == 3
+
+
+def test_sleeper_auto_sync_reports_unknown_player_conflict(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    summary = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=[{"pick_no": 1, "player_id": "s-ghost"}],
+        sleeper_players={},
+    )
+    assert summary["applied"] == []
+    assert summary["conflicts"][0]["reason"] == "UNKNOWN_SLEEPER_PLAYER"
+
+
+def test_sleeper_auto_sync_reports_unresolved_local_identity_conflict(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    summary = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=[{"pick_no": 1, "player_id": "s-1"}],
+        sleeper_players={"s-1": _sleeper_player("Nobody Real", "QB")},
+    )
+    assert summary["applied"] == []
+    assert summary["conflicts"][0]["reason"] == "UNRESOLVED_LOCAL_IDENTITY"
+
+
+def test_sleeper_auto_sync_treats_a_locally_taken_identity_as_a_conflict(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    ingest_read_only_sleeper_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        player_id="QB-0", pick_number=1,
+    )
+    # Sleeper reports a second pick that (per a hypothetically glitched
+    # Sleeper player catalog) also resolves to the identity already taken
+    # locally -- must be flagged, never silently re-applied or skipped.
+    summary = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=[{"pick_no": 2, "player_id": "s-dup"}],
+        sleeper_players={"s-dup": _sleeper_player("QB 0", "QB")},
+    )
+    assert summary["applied"] == []
+    assert summary["conflicts"][0]["reason"] == "UNRESOLVED_LOCAL_IDENTITY"
+    assert summary["conflicts"][0]["pickNumber"] == 2
+
+
+def test_sleeper_auto_sync_is_bounded_per_call_and_resumable(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    sleeper_picks = [{"pick_no": i + 1, "player_id": f"s-{i}"} for i in range(5)]
+    positions = ["QB", "RB", "WR", "TE", "K"]
+    sleeper_players = {
+        f"s-{i}": _sleeper_player(f"{pos} {i}", pos) for i, pos in enumerate(positions)
+    }
+    first = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=sleeper_picks, sleeper_players=sleeper_players, max_picks=2,
+    )
+    assert len(first["applied"]) == 2
+    assert first["boundedBatchHit"] is True
+    assert first["nextExpectedPick"] == 3
+    second = sync_read_only_sleeper_picks(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        sleeper_picks=sleeper_picks, sleeper_players=sleeper_players, max_picks=2,
+    )
+    assert len(second["applied"]) == 2
+    assert second["nextExpectedPick"] == 5
+    reopened = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert len(reopened["picks"]) == 4
+
+
+def test_sleeper_auto_sync_requires_live_read_only_mode(tmp_path) -> None:
+    ranking = _ranking()
+    run_complete_mock(
+        ranking.profile, ranking, _manual_assets(), _empty_adp(ranking.profile), owner_slot=9
+    )
+    start_draft_room(
+        tmp_path, ranking.profile, ranking, _manual_assets(), _empty_adp(ranking.profile),
+        owner_slot=9, mode="MOCK",
+    )
+    with pytest.raises(RedraftValidationError, match="Live Read-Only"):
+        sync_read_only_sleeper_picks(
+            tmp_path, ranking.profile, ranking, _manual_assets(),
+            sleeper_picks=[], sleeper_players={},
+        )

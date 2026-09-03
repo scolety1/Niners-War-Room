@@ -18,6 +18,7 @@ import {
   type RedraftBootstrap,
   type RedraftExternalIntelligenceResponse,
   type RedraftProfileUpdateInput,
+  type RedraftSleeperSyncResult,
   type RuntimeDescriptor,
   type TradeBriefExport,
   type TradeBriefInput,
@@ -359,6 +360,13 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/sleeper-pick`, {
       method: "POST",
       body: JSON.stringify({ playerId, pickNumber }),
+    });
+  }
+
+  syncSleeperDraftPicks(profileId: string): Promise<RedraftSleeperSyncResult> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/sleeper-sync`, {
+      method: "POST",
+      body: "{}",
     });
   }
 

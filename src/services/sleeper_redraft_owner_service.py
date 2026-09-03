@@ -152,10 +152,29 @@ def import_sleeper_redraft_profile(
 
 
 def load_sleeper_draft_picks(*, draft_id: str, client: SleeperHttpClient | None = None) -> tuple[dict[str, Any], ...]:
-    """Safely read active-draft picks for a future local companion mode."""
+    """Read-only GET of a live Sleeper draft's picks (used by the bounded
+    auto-sync facade path -- see redraft_draft_room_v1_service.sync_read_only_sleeper_picks).
+    Issues no writes to Sleeper."""
 
     values = _objects((client or SleeperHttpClient()).get_json(f"draft/{_identifier(draft_id, 'draft id')}/picks"), "draft picks")
     return tuple(dict(value) for value in values)
+
+
+def load_sleeper_import_receipt(root: str | Path, profile_id: str) -> dict[str, Any] | None:
+    """Read back the local Sleeper import receipt written by
+    import_sleeper_redraft_profile, if one exists for this profile. Used to
+    recover the Sleeper draft_id for auto-sync without a second owner
+    prompt. Returns None (never raises) when no receipt is on disk or it is
+    malformed."""
+
+    path = Path(root) / "sleeper_imports" / f"{profile_id}.json"
+    if not path.is_file():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def manual_kdst_assets_from_sleeper_players(value: object) -> tuple[dict[str, str], ...]:

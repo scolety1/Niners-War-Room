@@ -120,6 +120,7 @@ from src.services.redraft_draft_room_v1_service import (
     clear_owner_platform_selection,
     set_owner_paste_adp_active,
     start_draft_room,
+    sync_read_only_sleeper_picks,
     undo_pick_correction,
     undo_room_pick,
 )
@@ -165,6 +166,8 @@ from src.services.sleeper_import_service import SleeperHttpClient
 from src.services.sleeper_redraft_owner_service import (
     SleeperRedraftImportError,
     import_sleeper_redraft_profile,
+    load_sleeper_draft_picks,
+    load_sleeper_import_receipt,
     manual_kdst_assets_from_sleeper_players,
 )
 from src.services.trade_brief_export_service import (
@@ -2713,6 +2716,63 @@ class DesktopBackendFacade:
         return FacadePayload(
             data={
                 "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state)
+            }
+        )
+
+    def sync_redraft_sleeper_picks(self, *, profile_id: str) -> FacadePayload:
+        """Bounded, read-only auto-sync of a live Sleeper draft (section 8):
+        GET .../draft/<draft_id>/picks, never a write. Applies at most
+        MAX_SLEEPER_AUTO_SYNC_BATCH new picks per call and stops at the
+        first conflict; the caller (frontend) re-invokes this on its own
+        polling cadence -- there is no background thread here."""
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        if profile.provider != "sleeper" or not profile.provider_league_id:
+            raise FacadeError(
+                "REDRAFT_SLEEPER_SYNC_NOT_LINKED",
+                "Sleeper auto-sync requires a profile imported from Sleeper.",
+                status=409,
+            )
+        receipt = load_sleeper_import_receipt(self.redraft_root, profile.profile_id)
+        draft_id = str(((receipt or {}).get("draft") or {}).get("draft_id") or "")
+        if not draft_id:
+            raise FacadeError(
+                "REDRAFT_SLEEPER_SYNC_NO_DRAFT_ID",
+                "No Sleeper draft id is on record for this profile's import receipt.",
+                status=409,
+            )
+        try:
+            client = SleeperHttpClient()
+            picks = load_sleeper_draft_picks(draft_id=draft_id, client=client)
+            players = client.get_json("players/nfl")
+            if not isinstance(players, dict):
+                raise SleeperRedraftImportError("Sleeper player catalog response is malformed.")
+            summary = sync_read_only_sleeper_picks(
+                self.redraft_root,
+                profile,
+                ranking,
+                manual_assets,
+                sleeper_picks=picks,
+                sleeper_players=players,
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+        except (
+            OSError,
+            ValueError,
+            SleeperRedraftImportError,
+            RedraftPersistenceError,
+            RedraftValidationError,
+        ) as exc:
+            raise FacadeError(
+                "REDRAFT_SLEEPER_SYNC_FAILED",
+                "The Sleeper auto-sync could not be completed. No local pick was changed "
+                "beyond what synced before the failure.",
+                status=409,
+            ) from exc
+        state = load_room_state(self.redraft_root, profile, ranking, manual_assets)
+        return FacadePayload(
+            data={
+                "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state),
+                "sleeperSync": summary,
             }
         )
 

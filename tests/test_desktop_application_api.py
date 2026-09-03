@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import ast
 import json
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
+import src.application.desktop_facade as desktop_facade_module
 from scripts.run_nwr_desktop_api import validate_repo_root
 from src.application.contracts import contract_envelope
 from src.application.desktop_facade import (
@@ -29,6 +31,7 @@ from src.services.redraft_engine_v1_service import (
     create_profile,
     load_profile,
     projection_snapshot_path,
+    save_profile,
 )
 from src.services.rookie_draft_eligibility_service import (
     load_rookie_draft_eligibility_overlay,
@@ -1521,3 +1524,64 @@ def test_redraft_external_intelligence_hidden_when_nwr_pure_experimental(
     assert untoggled.data["profile"]["nwrPureExperimental"] is False
     restored = facade.redraft_external_intelligence(profile_id=profile_id)
     assert restored.data["externalIntelligence"].get("hiddenByExperimentalMode") is not True
+
+
+def test_facade_sync_redraft_sleeper_picks_wires_through_to_draft_board(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Section 8: bounded, read-only Sleeper auto-sync. No live network call
+    is made in this test -- load_sleeper_draft_picks and
+    SleeperHttpClient.get_json are monkeypatched at the desktop_facade
+    module level so this exercises only NWR's own wiring: receipt lookup
+    (draft_id), the facade->service call, and the returned payload shape."""
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Sleeper Sync League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    ranking = _synthetic_ranking_for(profile)
+    monkeypatch.setattr(facade, "_redraft_ranking_for_profile", lambda _pid: ranking)
+
+    # Reproduces exactly the on-disk shape import_sleeper_redraft_profile
+    # writes -- the real import itself needs a live Sleeper call, out of
+    # scope for this unit test.
+    save_profile(store, replace(profile, provider="sleeper", provider_league_id="9999"))
+    receipt_dir = store / "sleeper_imports"
+    receipt_dir.mkdir(parents=True, exist_ok=True)
+    (receipt_dir / f"{profile_id}.json").write_text(
+        json.dumps({"draft": {"draft_id": "draft-abc"}}), encoding="utf-8"
+    )
+
+    facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=9, seed=20260817, speed="FAST", mode="LIVE_READ_ONLY"
+    )
+
+    monkeypatch.setattr(
+        desktop_facade_module,
+        "load_sleeper_draft_picks",
+        lambda *, draft_id, client=None: ({"pick_no": 1, "player_id": "s-1"},),
+    )
+    monkeypatch.setattr(
+        desktop_facade_module.SleeperHttpClient,
+        "get_json",
+        lambda self, path: {"s-1": {"full_name": "QB 0", "position": "QB"}},
+    )
+
+    result = facade.sync_redraft_sleeper_picks(profile_id=profile_id)
+    summary = result.data["sleeperSync"]
+    assert [row["playerId"] for row in summary["applied"]] == ["QB-0"]
+    assert summary["conflicts"] == []
+    assert result.data["draftBoard"]["complete"] is False
+
+    # A non-Sleeper (local) profile is rejected explicitly, not silently
+    # treated as having nothing to sync.
+    local_created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Local Only League"
+    )
+    local_id = local_created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(local_id)
+    with pytest.raises(FacadeError, match="requires a profile imported from Sleeper"):
+        facade.sync_redraft_sleeper_picks(profile_id=local_id)

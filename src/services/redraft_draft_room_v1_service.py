@@ -1225,6 +1225,116 @@ def ingest_read_only_sleeper_pick(
     return state
 
 
+# Bounded per call: a single sync never silently applies an entire draft.
+# The caller (facade) re-invokes the sync on its own polling cadence, so a
+# stuck draft or a bad connection surfaces as "no new picks" rather than one
+# call hanging on hundreds of Sleeper picks.
+MAX_SLEEPER_AUTO_SYNC_BATCH = 25
+
+
+def sync_read_only_sleeper_picks(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    sleeper_picks: Sequence[Mapping[str, Any]],
+    sleeper_players: Mapping[str, Mapping[str, Any]],
+    max_picks: int = MAX_SLEEPER_AUTO_SYNC_BATCH,
+) -> dict[str, Any]:
+    """Bounded, read-only sync of a live Sleeper draft into LIVE_READ_ONLY
+    room state. Never issues a Sleeper write. Applies at most `max_picks`
+    new picks per call, in strict pick-number order; a pick that cannot be
+    safely applied -- out of order relative to the next local pick, an
+    unresolvable Sleeper player identity, or a local player already marked
+    drafted -- is reported as a conflict and stops the sync at that point,
+    so nothing is ever applied out of order past an unresolved gap. Player
+    identity is resolved via the same normalized name+position key already
+    used for owner-platform manual matches (_manual_match_key), not a new
+    matching scheme."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    if state.get("mode") != "LIVE_READ_ONLY":
+        raise RedraftValidationError("Sleeper auto-sync requires Live Read-Only mode.")
+    pool = _asset_pool(ranking, manual_assets)
+    identity_index: dict[str, str] = {}
+    for asset in pool.values():
+        key = _manual_match_key(asset["player_name"], asset["position"])
+        identity_index.setdefault(key, asset["player_id"])
+
+    ordered = sorted(
+        (dict(raw) for raw in sleeper_picks if isinstance(raw.get("pick_no"), int)),
+        key=lambda raw: raw["pick_no"],
+    )
+    applied: list[dict[str, Any]] = []
+    conflicts: list[dict[str, Any]] = []
+    next_expected = len(state["picks"]) + 1
+    for raw_pick in ordered:
+        pick_no = raw_pick["pick_no"]
+        if pick_no < next_expected:
+            continue  # already applied in an earlier sync call
+        if len(applied) >= max_picks:
+            break
+        if pick_no != next_expected:
+            conflicts.append(
+                {
+                    "pickNumber": pick_no,
+                    "reason": "OUT_OF_ORDER",
+                    "detail": (
+                        f"Sleeper reports pick {pick_no} but the next local pick is "
+                        f"{next_expected}."
+                    ),
+                }
+            )
+            break
+        sleeper_player_id = str(raw_pick.get("player_id") or "").strip()
+        sleeper_player = sleeper_players.get(sleeper_player_id)
+        if not isinstance(sleeper_player, Mapping):
+            conflicts.append(
+                {
+                    "pickNumber": pick_no,
+                    "reason": "UNKNOWN_SLEEPER_PLAYER",
+                    "detail": (
+                        f"Sleeper player id {sleeper_player_id or '<missing>'} was not found "
+                        "in the Sleeper player catalog."
+                    ),
+                }
+            )
+            break
+        name = str(sleeper_player.get("full_name") or sleeper_player.get("search_full_name") or "")
+        position = str(sleeper_player.get("position") or "").upper()
+        position = "DST" if position == "DEF" else position
+        local_player_id = identity_index.get(_manual_match_key(name, position))
+        if local_player_id is None or local_player_id in state["drafted"]:
+            conflicts.append(
+                {
+                    "pickNumber": pick_no,
+                    "reason": "UNRESOLVED_LOCAL_IDENTITY",
+                    "detail": (
+                        f"Sleeper pick {pick_no} ({name or '<unnamed>'} — {position or '?'}) "
+                        "has no available local match."
+                    ),
+                }
+            )
+            break
+        asset = pool[local_player_id]
+        state = _record_pick(
+            profile, state, asset, actor="SLEEPER_READ_ONLY", behavior="AUTO_SYNC_PICK_EVENT"
+        )
+        applied.append(
+            {"pickNumber": pick_no, "playerId": local_player_id, "playerName": asset["player_name"]}
+        )
+        next_expected += 1
+    if applied:
+        _save_room_state(root, state)
+    return {
+        "applied": applied,
+        "conflicts": conflicts,
+        "nextExpectedPick": next_expected,
+        "sleeperPickCount": len(ordered),
+        "boundedBatchHit": len(applied) >= max_picks,
+    }
+
+
 def run_complete_mock(
     profile: LeagueProfile,
     ranking: RankingResult,

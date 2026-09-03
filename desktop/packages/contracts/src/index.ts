@@ -827,6 +827,31 @@ export interface KdstStreamerResult {
   writeBehavior: string;
 }
 
+export interface SleeperAutoSyncConflict {
+  pickNumber: number;
+  reason: "OUT_OF_ORDER" | "UNKNOWN_SLEEPER_PLAYER" | "UNRESOLVED_LOCAL_IDENTITY";
+  detail: string;
+}
+
+export interface SleeperAutoSyncApplied {
+  pickNumber: number;
+  playerId: string;
+  playerName: string;
+}
+
+export interface SleeperAutoSyncSummary {
+  applied: SleeperAutoSyncApplied[];
+  conflicts: SleeperAutoSyncConflict[];
+  nextExpectedPick: number;
+  sleeperPickCount: number;
+  boundedBatchHit: boolean;
+}
+
+export interface RedraftSleeperSyncResult {
+  draftBoard: DraftBoard;
+  sleeperSync: SleeperAutoSyncSummary;
+}
+
 export interface RedraftExternalIntelligenceEntry {
   playerId: string;
   espnAdp: string | null;
