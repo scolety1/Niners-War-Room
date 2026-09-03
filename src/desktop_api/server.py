@@ -30,6 +30,7 @@ _PROFILE_DUPLICATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/duplicate$")
 _PROFILE_EDIT = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/edit$")
 _SLEEPER_REDRAFT_IMPORT = "/api/v1/redraft/sleeper/import"
 _PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical-mock$")
+_REDRAFT_NWR_PURE_MODE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/nwr-pure-mode$")
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
@@ -458,6 +459,18 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             self.server.facade.duplicate_redraft_profile(
                 unquote(duplicate_match.group(1)),
                 league_name=league_name,
+            )
+            return self.server.facade.redraft_bootstrap()
+        nwr_pure_mode_match = _REDRAFT_NWR_PURE_MODE.fullmatch(path)
+        if method == "POST" and nwr_pure_mode_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"enabled"})
+            enabled = body.get("enabled")
+            if not isinstance(enabled, bool):
+                raise self._invalid_body("enabled must be a boolean.")
+            self.server.facade.set_redraft_nwr_pure_mode(
+                profile_id=unquote(nwr_pure_mode_match.group(1)),
+                enabled=enabled,
             )
             return self.server.facade.redraft_bootstrap()
         edit_match = _PROFILE_EDIT.fullmatch(path)

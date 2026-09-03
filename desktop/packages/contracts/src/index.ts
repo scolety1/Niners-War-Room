@@ -556,6 +556,7 @@ export interface LeagueProfile {
   createdAtUtc: string;
   updatedAtUtc: string;
   practicalMode: boolean;
+  nwrPureExperimental: boolean;
   provider: "local" | "sleeper" | "espn" | "fantasypros";
   providerLeagueId: string | null;
 }
@@ -849,6 +850,7 @@ export interface RedraftExternalIntelligence {
   available: boolean;
   generatedNote: string;
   entries: RedraftExternalIntelligenceEntry[];
+  hiddenByExperimentalMode?: boolean;
 }
 
 export interface RedraftExternalIntelligenceResponse {

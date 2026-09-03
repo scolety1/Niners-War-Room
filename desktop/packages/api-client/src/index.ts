@@ -408,6 +408,13 @@ export class NwrApiClient {
     });
   }
 
+  setNwrPureMode(profileId: string, enabled: boolean): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/nwr-pure-mode`, {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
   kdstStreamer(week: number): Promise<KdstStreamerResult> {
     return this.request("/api/v1/redraft/kdst/streamer", {
       method: "POST",

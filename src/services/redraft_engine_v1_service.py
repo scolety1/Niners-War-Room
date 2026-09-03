@@ -134,6 +134,12 @@ class LeagueProfile:
     created_at_utc: str = ""
     updated_at_utc: str = ""
     practical_mode: bool = False
+    # NWR PURE — EXPERIMENTAL: an explicitly experimental decision policy
+    # (see nwr_pure_experiment_service.py). When true, external expert
+    # opinion (UDK/FantasyPros) must never be shown to the owner before a
+    # pick -- gated at the facade layer in redraft_external_intelligence().
+    # Never affects NWR's own admitted ranking/Suggestions authority.
+    nwr_pure_experimental: bool = False
     # Profile ids scope local Redraft state. External identity distinguishes
     # same-named league workspaces without changing any scoring model.
     provider: str = "local"
@@ -369,6 +375,7 @@ def _profile_from_document(document: Mapping[str, Any]) -> LeagueProfile:
             created_at_utc=str(document.get("created_at_utc", "")),
             updated_at_utc=str(document.get("updated_at_utc", "")),
             practical_mode=bool(document.get("practical_mode", False)),
+            nwr_pure_experimental=bool(document.get("nwr_pure_experimental", False)),
             provider=str(document.get("provider", "local")),
             provider_league_id=(
                 str(document["provider_league_id"]) if document.get("provider_league_id") else None

@@ -1486,3 +1486,38 @@ def test_facade_undo_pick_correction_reverses_only_the_latest_correction(
 
     with pytest.raises(FacadeError, match="No pick correction"):
         facade.undo_redraft_pick_correction(profile_id=profile_id)
+
+
+def test_redraft_external_intelligence_hidden_when_nwr_pure_experimental(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+
+    # Default (NWR PURE experimental off): profile field is present and False;
+    # this does not assert on load_external_intelligence's own availability
+    # logic (a separate, pre-existing UDK-file-presence concern) -- only that
+    # the gate itself is not the thing hiding it when off.
+    bootstrap_profile = facade.redraft_bootstrap().data["activeProfile"]
+    assert bootstrap_profile["nwrPureExperimental"] is False
+
+    toggled = facade.set_redraft_nwr_pure_mode(profile_id=profile_id, enabled=True)
+    assert toggled.data["profile"]["nwrPureExperimental"] is True
+
+    hidden = facade.redraft_external_intelligence(profile_id=profile_id)
+    intel = hidden.data["externalIntelligence"]
+    assert intel["available"] is False
+    assert intel["hiddenByExperimentalMode"] is True
+    assert intel["entries"] == []
+    assert "NWR PURE EXPERIMENTAL" in intel["generatedNote"]
+
+    # Bootstrap continues to reflect the flag after the toggle.
+    bootstrap_after = facade.redraft_bootstrap().data["activeProfile"]
+    assert bootstrap_after["nwrPureExperimental"] is True
+
+    # Toggling back off restores the pass-through (may itself report
+    # available: False for unrelated reasons -- e.g. no UDK file in this
+    # test's tmp_path -- but must not carry the experimental-mode flag).
+    untoggled = facade.set_redraft_nwr_pure_mode(profile_id=profile_id, enabled=False)
+    assert untoggled.data["profile"]["nwrPureExperimental"] is False
+    restored = facade.redraft_external_intelligence(profile_id=profile_id)
+    assert restored.data["externalIntelligence"].get("hiddenByExperimentalMode") is not True

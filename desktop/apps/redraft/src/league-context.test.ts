@@ -15,6 +15,7 @@ const fantasyGamers = {
   createdAtUtc: "",
   updatedAtUtc: "",
   practicalMode: true,
+  nwrPureExperimental: false,
   provider: "sleeper" as const,
   providerLeagueId: "1312983576827920384",
 };

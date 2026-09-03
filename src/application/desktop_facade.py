@@ -2440,10 +2440,46 @@ class DesktopBackendFacade:
         already merged offline into a local CSV. Never touches NWR Core,
         ranks, projections, or CPU/live-mode mechanics -- display only. A
         missing/unreadable file returns an explicit unavailable result; it
-        never raises and never blocks the Draft Room."""
-        _, ranking, _ = self._redraft_room_context(profile_id)
+        never raises and never blocks the Draft Room.
+
+        NWR PURE — EXPERIMENTAL (profile.nwr_pure_experimental): external
+        expert opinion must never reach the owner before a pick in this
+        mode (section 6 of the Saturday NWR PURE wave) -- returns an
+        explicitly hidden result instead of the real one. UDK/FantasyPros
+        may still be logged silently for postmortem via a separate,
+        not-owner-facing path; this method is the owner-facing one and
+        stays hidden."""
+        profile, ranking, _ = self._redraft_room_context(profile_id)
+        if profile.nwr_pure_experimental:
+            return FacadePayload(
+                data={
+                    "externalIntelligence": {
+                        "available": False,
+                        "generatedNote": (
+                            "EXTERNAL INTEL HIDDEN — NWR PURE EXPERIMENTAL decision policy is "
+                            "active. UDK/FantasyPros are logged for postmortem only, never shown "
+                            "before a pick."
+                        ),
+                        "entries": [],
+                        "hiddenByExperimentalMode": True,
+                    }
+                }
+            )
         intel = load_external_intelligence(ranking)
         return FacadePayload(data={"externalIntelligence": intel})
+
+    def set_redraft_nwr_pure_mode(self, *, profile_id: str, enabled: bool) -> FacadePayload:
+        """Toggle NWR PURE — EXPERIMENTAL for a profile. Never affects NWR's
+        own admitted ranking/Suggestions authority -- only gates whether
+        external expert opinion (UDK/FantasyPros) is shown to the owner
+        pre-pick (see redraft_external_intelligence)."""
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        profile = load_profile(self.redraft_root, normalized)
+        updated = save_profile(
+            self.redraft_root, replace(profile, nwr_pure_experimental=bool(enabled))
+        )
+        return FacadePayload(data={"profile": self._profile_payload(updated)})
 
     def start_redraft_draft_room(
         self,
@@ -3039,6 +3075,7 @@ class DesktopBackendFacade:
             "createdAtUtc": profile.created_at_utc,
             "updatedAtUtc": profile.updated_at_utc,
             "practicalMode": profile.practical_mode,
+            "nwrPureExperimental": profile.nwr_pure_experimental,
             "provider": profile.provider,
             "providerLeagueId": profile.provider_league_id,
         }
