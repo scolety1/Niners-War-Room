@@ -33,6 +33,11 @@ FLEX_ELIGIBLE = {"RB", "WR", "TE"}
 TEAM_SCORE_LABEL = "TEAM SCORE — RESEARCH"
 CHAMPIONSHIP_EQUITY_LABEL = "CHAMPIONSHIP EQUITY — SIMULATED RESEARCH"
 PICK_SCORE_LABEL = "RESEARCH_ONLY_PICK_SCORE"
+# Version identifiers for experiment freeze receipts (NWR PURE 001) --
+# bump whenever the corresponding function's algorithm changes.
+TEAM_SCORE_VERSION = "shadow-team-score-v1"
+CHAMPIONSHIP_EQUITY_VERSION = "shadow-championship-equity-v1"
+PICK_SCORE_VERSION = "shadow-pick-score-v1"
 DEFAULT_TRIALS = 30
 DEFAULT_SEED = 20260817
 
