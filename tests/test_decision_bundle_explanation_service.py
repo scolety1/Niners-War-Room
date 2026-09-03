@@ -54,6 +54,7 @@ def _candidate(player_id: str, **overrides) -> CandidateBundle:
         player_id=player_id, player_score=None, team_score_after=60.0,
         team_score_delta=5.0, championship_equity_after=0.15, equity_gain=0.05,
         cost_of_waiting=2.0, make_it_back_probability=0.6, raw_decision_utility=10.0,
+        team_score_utility_component=5.0, equity_utility_component=5.0,
         pick_score=80.0, action="TAKE_NOW", warnings=(),
         uncertainty="LOW_MODEL_UNCERTAINTY (SE=0.0100)",
     )

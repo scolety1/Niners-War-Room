@@ -42,6 +42,15 @@ from src.services.shadow_numeric_authorities_service import (
 
 DECISION_BUNDLE_VERSION = "decision-bundle-v1"
 
+# Raw Decision Utility (section 8, follow-up directive) = team_score_utility_component
+# + equity_utility_component, where equity_utility_component multiplies a 0.0-1.0
+# probability delta by this constant to put it on a scale roughly commensurate
+# with a 0-100 Team Score percentile delta. This IS an arbitrary weight -- disclosed
+# here, not disguised by normalization -- see
+# docs/codex/RAW_DECISION_UTILITY_CONSTRUCTION_20260903.md for the full writeup and
+# exactly what historical calibration would need to replace it with something learned.
+EQUITY_TO_PERCENTILE_WEIGHT = 100.0
+
 
 @dataclass(frozen=True)
 class CandidateBundle:
@@ -54,6 +63,11 @@ class CandidateBundle:
     cost_of_waiting: float
     make_it_back_probability: float | None
     raw_decision_utility: float
+    # The two additive components raw_decision_utility is built from, preserved
+    # separately (not just the combined scalar) so historical calibration can
+    # later learn or replace EQUITY_TO_PERCENTILE_WEIGHT without re-deriving them.
+    team_score_utility_component: float
+    equity_utility_component: float
     pick_score: float
     action: str
     warnings: tuple[str, ...]
@@ -154,6 +168,12 @@ def build_decision_bundle(
         cow = cost_of_waiting_results.get(player_id)
         if player_id not in player_scores:
             warnings.append("No standalone Player Score supplied for this candidate.")
+        team_score_component = round(pick.team_score_after - current_team.percentile, 4)
+        equity_component = round(
+            EQUITY_TO_PERCENTILE_WEIGHT
+            * (pick.championship_equity_after - current_equity.win_probability),
+            4,
+        )
         candidates.append(
             CandidateBundle(
                 player_id=player_id,
@@ -166,11 +186,9 @@ def build_decision_bundle(
                 make_it_back_probability=(
                     cow.survival_probability if cow is not None else None
                 ),
-                raw_decision_utility=round(
-                    pick.team_score_after - current_team.percentile
-                    + 100.0 * (pick.championship_equity_after - current_equity.win_probability),
-                    4,
-                ),
+                raw_decision_utility=round(team_score_component + equity_component, 4),
+                team_score_utility_component=team_score_component,
+                equity_utility_component=equity_component,
                 pick_score=pick.relative_score,
                 action=actions.get(player_id, "UNSCORED"),
                 warnings=tuple(warnings),

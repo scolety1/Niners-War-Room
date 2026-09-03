@@ -41,7 +41,11 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from src.services.decision_bundle_service import CandidateBundle, DecisionBundle
+from src.services.decision_bundle_service import (
+    EQUITY_TO_PERCENTILE_WEIGHT,
+    CandidateBundle,
+    DecisionBundle,
+)
 from src.services.historical_ranking_bridge_service import (
     ExcludedHistoricalPlayer,
     HistoricalRankingBridgeResult,
@@ -225,6 +229,12 @@ def evaluate_historical_candidates(
                 "No real market ADP for this player -- make_it_back_probability is UNKNOWN, "
                 "not estimated."
             )
+        team_score_component = round(score.team_score_after - current_team.percentile, 4)
+        equity_component = round(
+            EQUITY_TO_PERCENTILE_WEIGHT
+            * (score.championship_equity_after - current_equity.win_probability),
+            4,
+        )
         candidates.append(
             CandidateBundle(
                 player_id=player_id,
@@ -235,11 +245,9 @@ def evaluate_historical_candidates(
                 equity_gain=score.equity_gain,
                 cost_of_waiting=cost_of_waiting,
                 make_it_back_probability=survival,
-                raw_decision_utility=round(
-                    score.team_score_after - current_team.percentile
-                    + 100.0 * (score.championship_equity_after - current_equity.win_probability),
-                    4,
-                ),
+                raw_decision_utility=round(team_score_component + equity_component, 4),
+                team_score_utility_component=team_score_component,
+                equity_utility_component=equity_component,
                 pick_score=score.relative_score,
                 action="UNSCORED",  # historical Cost-of-Waiting is a disclosed heuristic, not
                 # the live Draft Room's labeled decision taxonomy -- never mislabeled as one.
