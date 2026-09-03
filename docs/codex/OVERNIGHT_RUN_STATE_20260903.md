@@ -5,41 +5,47 @@ from this file + `LAST_GOOD_COMMIT` rather than restarting research from
 scratch.
 
 ```
-CURRENT_HEAD: 2424faef5bdd5aa676fa8dd853b11a179283f14e
+CURRENT_HEAD: b3969882 (feat: QB replacement-depth CHALLENGER -- mechanism-only proof, section 13)
 CURRENT_BRANCH: work/nwr-draft-upgrade-hq-v1-20260903
 CLEAN_STATUS: clean (at time of writing)
-LAST_GOOD_COMMIT: 2424faef "docs: UDK qualitative flags -- review queue, not fabricated extraction (section 6)"
+LAST_GOOD_COMMIT: b3969882 "feat: QB replacement-depth CHALLENGER -- mechanism-only proof (section 13)"
 WORKTREE_ROOT: C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrade-hq
 ```
 
 ## ACTIVE_LANES
-- Section 21 next: launcher/product consolidation -- design + a
-  provably-reversible candidate shortcut only.
+None. Every remaining directive lane is either COMPLETED or BLOCKED
+below. Writing the final comprehensive report now (section 26/12/13).
 
-## RECENTLY COMPLETED (since the last state snapshot)
-- Decision receipts wired into NWR PURE owner picks (section 18):
-  build_and_append_owner_decision_receipt, blocks a pick on write
-  failure unless emergency_override, corrections append a
-  ReceiptCorrectionRecord without touching the original receipt.
-- Champion/Challenger rollback pointer mechanics + a structural
-  no-hidden-auto-promotion proof (section 19).
-- Historical adapter explicit BLOCKED_* status codes (section 20):
-  duplicate-player-season, outcome-maturity, and one orchestrating
-  validate_historical_dataset() entry point.
-- Draft Room V2: a real, isolated, tested candidate (tabs/drawer/
-  compare/UDK badges) at /draft-room-v2, built entirely on data the
-  production bootstrap payload already provides -- no new backend
-  endpoint (sections 3-6).
-- UDK qualitative flags: bounded investigation concluded deterministic
-  extraction cannot be proven in this environment (no PDF tooling
-  installed); produced the requested review-queue CSV instead of
-  fabricating badges (section 6).
+## FULL-SUITE REGRESSION ATTEMPT (honest result, not "clean")
+A whole-repo `pytest tests/` run (4,015 tests total, confirmed via
+`--collect-only`) was attempted twice tonight and was killed by the
+environment both times, non-deterministically (52% completion on the
+first attempt, 21% on the second, `--tb=no` on the second to rule out
+output volume as the cause) -- consistent with this machine's known
+resource-exhaustion history, not with anything this session changed.
+It was NOT retried a third time, per the addendum's resource-discipline
+guidance against repeatedly retrying a failing heavyweight operation.
 
-## ACTIVE_WORKTREES
-- Only the controlling worktree above. No additional worktrees created
-  this session.
+The authoritative, complete result instead: every test file this
+session touched or created (13 files, `git diff --name-only
+a5b9d8cf..HEAD -- 'tests/*.py'`) run together start-to-finish:
+**260 passed / 5 failed**, all 5 the same pre-existing
+`test_desktop_application_api.py` baseline failures named below,
+unchanged in name and cause all session (confirmed by directly matching
+the position of the 5 F's against `test_desktop_application_api.py`'s
+known line range in the partial full-suite run before it was killed --
+same file, same count). This is the full, honest scope of this
+session's own regression claim -- whole-repo status outside these files
+was never exercised tonight and is an explicit unknown, not a claim
+this session makes.
 
-## COMPLETED_LANES (this continuation, commits `a5b9d8cf`..`2424faef`)
+Frontend: unchanged since the last verified run (commit `4c7a2900`,
+before this) -- `tsc -b` clean, `vitest run apps/redraft` 40/40, `vite
+build` clean. No frontend file has been touched since that
+verification (both commits since, `aa34efd7` and `b3969882`, are
+Python/docs only), so it was not re-run.
+
+## COMPLETED_LANES (this continuation, commits `a5b9d8cf`..`b3969882`)
 - NWR PURE experimental mode toggle + external-intel gate
 - Sleeper live auto-sync (bounded, read-only)
 - Catch-up mode (paste/preview/apply + real 35-tail-pick acceptance test)
@@ -70,30 +76,30 @@ WORKTREE_ROOT: C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrad
 - KHA decision shadow replay (real 157-pick board, 10 owner picks,
   independent no-leak recomputation test)
 - Rookie challenger v2 gap-gated variant (real backtest improvement)
+- Launcher/product consolidation plan (design only, no build/shortcut --
+  no built executable exists to point one at without an unattended
+  Tauri release build, an explicit resource-discipline risk skipped by
+  design)
+- Final KHA operational replay re-verification (192/192, 23/23, 14/14,
+  5/5, 35-tail, corrections, checkpoint root -- all re-confirmed fresh)
+- QB marginal-value CHALLENGER status (why a real backtested version is
+  blocked) + QB replacement-depth CHALLENGER mechanism-only proof
+  (calls the real unmodified `calculate_replacement_levels()` against a
+  disclosed synthetic ladder, confirms the fix direction mechanically)
 
 ## BLOCKED_LANES
 - **Formal Saturday NWR PURE 001 release**: BLOCKED. Player-universe
   approval receipt requires fresh owner action -- see
   `docs/codex/PLAYER_UNIVERSE_SATURDAY_RENEWAL_PACKET.md` for the exact
-  two options and the exact JSON the owner needs to sign. Not
-  re-investigated further this pass per the addendum's "park it, don't
-  rediscover" rule -- this is the recorded blocker.
+  two options and the exact JSON the owner needs to sign.
 - **Historical Dataset Research Engine**: BLOCKED, explicitly out of
   scope per the directive ("No Dataset Research Engine implementation").
-  Historical adapter (section 18, prior commit) is ready to consume real
-  data once it exists.
-
-## LAST_TEST_RESULT
-Full combined regression re-run mid-session (after the KHA shadow
-replay commit): 208 passed / 5 pre-existing baseline failures (backend,
-see KNOWN_BASELINE_FAILURES below, unchanged all session) across
-KHA/redraft/SHADOW/AI/historical/registry test files; 21/21 frontend
-vitest; clean `tsc -b`; clean `vite build`. Every commit since carries
-its own passing test run stated in its own commit message (ruff clean +
-pytest green for the files it touched) rather than a full-suite re-run
-every single commit, per the addendum's "serialize heavy operations"
-guidance -- a full-suite re-run is planned again before the final
-report.
+  Historical adapter is ready to consume real data once it exists.
+- **Real (backtested) QB replacement-baseline CHALLENGER**: BLOCKED on
+  the same player-universe/projection-magnitude data as the Saturday
+  release -- see `QB_MARGINAL_VALUE_CHALLENGER_STATUS_20260903.md`. The
+  mechanism-only proof (not blocked, completed) is the honest
+  substitute available without that data.
 
 ## KNOWN_BASELINE_FAILURES (backend, pre-existing all session, do not
 re-investigate unless behavior actually changes)
@@ -108,22 +114,9 @@ environment gap unrelated to this session's changes) was established
 early in the session.
 
 ## CURRENT_TASK
-Launcher/product consolidation (section 21): inventory + design +, if
-provably reversible, a candidate "Niners War Room — Draft Upgrade
-Preview" shortcut. No renaming/deleting an existing owner launcher, no
-data-root migration, while unattended.
+None -- writing the final comprehensive report
+(`docs/codex/OVERNIGHT_FINAL_REPORT_20260903.md`).
 
-## NEXT_TASK (in priority order after CURRENT_TASK)
-1. Final KHA operational replay re-verification (section 22): re-run
-   the KHA/reconciliation regression suite fresh, confirm the stated
-   targets (192/192 representable, 23/23 search failures resolved,
-   14/14 K/DST, 5/5 missing-player fixtures, 35-tail Catch-Up pass,
-   corrections preserve later picks, checkpoint root correct), confirm
-   original KHA evidence files are still byte-identical to their
-   sources.
-2. Full combined regression re-run (backend + frontend) as the final
-   pre-report checkpoint (section 24).
-3. Final comprehensive report (section 26) with every item that
-   section demands: strongest branch/HEAD/tree/clean state, rollback
-   commits, exact player-universe owner action needed, exact next
-   three highest-value tasks.
+## NEXT_TASK
+See the final report's "next three highest-value tasks" section once
+written.
