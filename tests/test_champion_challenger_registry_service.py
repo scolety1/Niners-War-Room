@@ -253,23 +253,40 @@ def test_resolve_rollback_target_detects_a_pointer_cycle(tmp_path: Path) -> None
         resolve_rollback_target(tmp_path, "chal-a")
 
 
-def test_no_other_source_file_references_the_champion_challenger_registry_module() -> None:
+def test_no_unexpected_source_file_references_the_champion_challenger_registry_module() -> None:
     """Structural proof there is no hidden auto-promotion route: the ONLY
     writers to <root>/champion_challenger_registry/ are
     register_challenger() and record_promotion_decision(), both in this
     exact module, and both requiring a human-authored reason/decider.
-    Verified by scanning every other src/ and scripts/ file for any
-    reference at all to this module -- confirming nothing else in the
-    codebase even imports it today, let alone writes to its storage
-    directly. If a real caller is added later, this test should be
-    updated to confirm it only calls the public register/decide
-    functions rather than to permit direct file writes."""
+
+    One legitimate caller now exists --
+    ai_hypothesis_challenger_pipeline_service.py (section 22) -- added
+    exactly per this test's own prior instruction: it is allowlisted
+    below ONLY after confirming it calls register_challenger() (the
+    public write path) and never touches _registration_path/
+    _decisions_path or opens any file under the registry root directly,
+    and that it never references record_promotion_decision at all (AI
+    proposes and registers; promotion stays a human calling that
+    function directly, never through this pipeline). Every OTHER file
+    in src/scripts is still asserted to have zero reference at all."""
     repo_root = Path(__file__).resolve().parents[1]
     this_module = repo_root / "src" / "services" / "champion_challenger_registry_service.py"
+    allowlisted_caller = (
+        repo_root / "src" / "services" / "ai_hypothesis_challenger_pipeline_service.py"
+    )
+
+    allowlisted_text = allowlisted_caller.read_text(encoding="utf-8")
+    assert "register_challenger(" in allowlisted_text
+    # A prose mention explaining it deliberately does NOT call this is fine
+    # (and expected -- see the module's own docstring); an actual CALL is not.
+    assert "record_promotion_decision(" not in allowlisted_text
+    assert "_registration_path" not in allowlisted_text
+    assert "_decisions_path" not in allowlisted_text
+
     offenders = []
     for directory in ("src", "scripts"):
         for py_file in (repo_root / directory).rglob("*.py"):
-            if py_file.resolve() == this_module.resolve():
+            if py_file.resolve() in {this_module.resolve(), allowlisted_caller.resolve()}:
                 continue
             text = py_file.read_text(encoding="utf-8", errors="ignore")
             if "champion_challenger_registry" in text:
