@@ -9,10 +9,11 @@ import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
 import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
-  { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
+  { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }, { label: "Draft Room V2 (preview)", path: "/draft-room-v2", icon: "draft" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
   { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
   { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
@@ -56,6 +57,7 @@ export function RedraftApp() {
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
       <Route path="/" element={<DraftRoomPage client={client} data={data} onUpdate={update} />} />
+      <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
       <Route path="/compare" element={<ComparePage data={data} />} />

@@ -377,3 +377,23 @@
 .rapid-capture__result--active { background: rgba(154,108,255,.12); border-color: rgba(154,108,255,.32); }
 .rapid-capture__nwr { color: var(--muted); font-size: 10px; white-space: nowrap; }
 .rapid-capture__empty { color: var(--muted); cursor: default; font-size: 11px; grid-template-columns: 1fr; padding: 10px; text-align: center; }
+
+/* Draft Room V2 -- isolated preview (sections 3-6) */
+.draft-room-v2-layout { display: grid; gap: 16px; grid-template-columns: 180px 1fr; }
+.draft-room-v2-sidebar { display: flex; flex-direction: column; gap: 4px; }
+.draft-room-v2-tab { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 12px; padding: 8px 10px; text-align: left; }
+.draft-room-v2-tab--active { border-color: rgba(211,169,84,.4); color: var(--gold-bright); }
+.draft-room-v2-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.draft-room-v2-compare-tray { align-items: center; background: rgba(154,108,255,.12); border: 1px solid rgba(154,108,255,.32); border-radius: 8px; bottom: 16px; display: flex; gap: 10px; padding: 8px 14px; position: fixed; right: 16px; z-index: 20; }
+.draft-board-v2-grid { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.draft-board-v2-cell { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; cursor: default; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; }
+.draft-board-v2-cell--owner { border-color: rgba(211,169,84,.4); }
+.draft-board-v2-cell--current { border-color: rgba(154,108,255,.5); }
+.draft-board-v2-cell__pick { color: var(--muted); font-size: 9px; }
+.draft-board-v2-cell__player { font-size: 11px; }
+.player-cell--clickable { cursor: pointer; }
+.udk-badge-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.player-drawer { background: var(--panel-bg, #14141c); border-left: 1px solid rgba(255,255,255,.1); bottom: 0; box-shadow: -8px 0 24px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding: 18px; position: fixed; right: 0; top: 0; width: 320px; z-index: 30; }
+.player-drawer__header { align-items: center; display: flex; justify-content: space-between; }
+.player-drawer section h3 { color: var(--muted); font-size: 11px; margin: 0 0 4px; text-transform: uppercase; }
+.player-drawer section p { font-size: 12px; margin: 2px 0; }
