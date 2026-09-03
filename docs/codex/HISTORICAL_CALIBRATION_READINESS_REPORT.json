@@ -1,0 +1,74 @@
+{
+  "BASELINE_RESULTS": {
+    "2023:GREEDY_NWR": {
+      "owner_roster_realized_production_total": 846.0,
+      "owner_roster_size": 6,
+      "picks": 24
+    },
+    "2023:PLATFORM_ADP": {
+      "owner_roster_realized_production_total": 1278.0,
+      "owner_roster_size": 6,
+      "picks": 24
+    },
+    "2024:GREEDY_NWR": {
+      "owner_roster_realized_production_total": 846.0,
+      "owner_roster_size": 6,
+      "picks": 24
+    },
+    "2024:PLATFORM_ADP": {
+      "owner_roster_realized_production_total": 1278.0,
+      "owner_roster_size": 6,
+      "picks": 24
+    }
+  },
+  "CHALLENGER_COMPARISON": {
+    "GREEDY_NWR": 846.0,
+    "PLATFORM_ADP": 1278.0
+  },
+  "CHAMPIONSHIP_EQUITY_CALIBRATION": {
+    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+  },
+  "CHRONOLOGICAL_SPLIT": {
+    "test_seasons": [
+      2024
+    ],
+    "train_seasons": [
+      2023
+    ],
+    "validate_seasons": []
+  },
+  "COST_OF_WAITING_CALIBRATION": {
+    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+  },
+  "DATASET_READINESS_REPORT": {
+    "duplicate_player_seasons": 0,
+    "immature_outcome_rows": 0,
+    "label": "SYNTHETIC_PIPELINE_TEST_ONLY",
+    "missing_field_rows": 0,
+    "row_count": 48,
+    "seasons": [
+      2023,
+      2024
+    ],
+    "status": "PASS_READY_FOR_REPLAY"
+  },
+  "LEAKAGE_REPORT": {
+    "blocked_column_rows": 0,
+    "future_dated_rows": 0,
+    "label": "SYNTHETIC_PIPELINE_TEST_ONLY",
+    "outcome_before_draft_rows": 0,
+    "valid": true
+  },
+  "PICK_SCORE_EVALUATION": {
+    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+  },
+  "TEAM_SCORE_CALIBRATION": {
+    "label": "SYNTHETIC_PIPELINE_TEST_ONLY",
+    "method": "owner-roster realized production total per strategy per season (a real proxy; full Team Score percentile calibration needs the RankingResult adapter named in CHAMPIONSHIP_EQUITY_CALIBRATION below)",
+    "per_strategy_mean_realized_production": {
+      "GREEDY_NWR": 846.0,
+      "PLATFORM_ADP": 1278.0
+    }
+  },
+  "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+}
