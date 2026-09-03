@@ -5,18 +5,22 @@ from this file + `LAST_GOOD_COMMIT` rather than restarting research from
 scratch.
 
 ```
-CURRENT_HEAD: bf4158034e8bd98d433e852a9b4dd4a640f3bdf7
-CURRENT_TREE: 4b020d7c1f24f1aff31591250590dd626ed22501
+CURRENT_HEAD: 5a6d48b3 (see `git log -1` for full sha)
 CURRENT_BRANCH: work/nwr-draft-upgrade-hq-v1-20260903
 CLEAN_STATUS: clean (at time of writing)
-LAST_GOOD_COMMIT: bf415803 "feat(shadow): rookie challenger v2 -- gap-gated variant (section 14)"
+LAST_GOOD_COMMIT: 5a6d48b3 "feat: AI Intelligence pipeline -- News Scout to Explanation, tested end-to-end (sections 15-17)"
 WORKTREE_ROOT: C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrade-hq
 ```
 
 ## ACTIVE_LANES
-- AI Intelligence backend: News Scout -> Impact Analyst -> Explanation
-  end-to-end pipeline (sections 15-17 of the remaining-runway directive)
-  -- IN PROGRESS at time of writing.
+- Section 18 next: decision receipts -- wire append_decision_receipt so
+  it actually fires on every NWR PURE owner pick.
+
+## RECENTLY COMPLETED (since the last state snapshot)
+- AI Intelligence pipeline: News Scout -> Impact Analyst (direct +
+  beneficiary + NEW role-uncertainty tier) -> Explanation, fixture-tested
+  end-to-end (`run_impact_pipeline`), horizon field added, IR event type
+  added. 72/72 passing across all AI/shadow-authorities test files.
 
 ## ACTIVE_WORKTREES
 - Only the controlling worktree above. No additional worktrees created
