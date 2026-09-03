@@ -356,3 +356,7 @@
   .draft-room-split { grid-template-columns: 1fr; }
   .recommendation-grid { grid-template-columns: repeat(5, 180px); }
 }
+
+.roster-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.roster-slot { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 9px; white-space: nowrap; }
+.roster-slot--full { border-color: rgba(211,169,84,.4); color: var(--gold-bright); }

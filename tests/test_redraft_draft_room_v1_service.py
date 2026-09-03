@@ -184,7 +184,7 @@ def test_room_starts_at_owner_persists_advances_and_undoes(tmp_path) -> None:
     assert [card["label"] for card in payload["recommendations"]] == [
         "Best Available",
         "Best Fit",
-        "Value vs ADP",
+        "Value vs ESPN",
         "Upside",
         "Safer",
     ]

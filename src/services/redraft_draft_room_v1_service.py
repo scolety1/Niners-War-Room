@@ -1389,6 +1389,7 @@ def _recommendations(
         for pick in state.get("picks", [])
         if pick.get("team_slot") == owner_slot
     )
+    round_number = ((current_pick - 1) // profile.team_count) + 1 if profile.team_count else 1
     enriched = [
         _decision_row(profile, row, adp, current_pick, next_owner_pick, roster)
         for row in available[:100]
@@ -1398,37 +1399,73 @@ def _recommendations(
         key=lambda row: (-float(row.get("nwrEdge") or 0), int(row["nwrRank"])),
     )[:30]
     cards: list[dict[str, Any]] = []
+    used_player_ids: set[str] = set()
+
+    def pick_distinct(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """Return the first candidate not already used by an earlier card,
+        falling back to the top candidate (materially the best option) if the
+        whole ranked pool is already exhausted of distinct alternatives."""
+        for candidate in candidates:
+            if candidate["playerId"] not in used_player_ids:
+                return candidate
+        return candidates[0] if candidates else None
+
     if enriched:
-        cards.append(_card("Best Available", enriched[0], "Highest available NWR Redraft rank."))
-        fit = min(
+        best_available = enriched[0]
+        cards.append(_card("Best Available", best_available, "Highest available NWR Redraft rank."))
+        used_player_ids.add(best_available["playerId"])
+
+        fit_ranked = sorted(
             enriched[:30],
             key=lambda row: (
-                _fit_penalty(profile, roster, str(row["position"])),
-                int(row["nwrRank"]),
+                _fit_penalty(profile, roster, str(row["position"]), round_number),
+                -float(row["replacementAdjustedValue"]),
             ),
         )
-        cards.append(_card("Best Fit", fit, "Best open-starter and FLEX fit among top options."))
-        value_rows = [row for row in enriched if row.get("expectedPick") is not None]
-        if value_rows:
-            value = max(value_rows, key=lambda row: float(row.get("nwrEdge") or -9999))
-            cards.append(_card("Value vs ADP", value, "Largest admitted ADP edge near this pick."))
+        fit = pick_distinct(fit_ranked)
+        if fit is not None:
+            cards.append(_card("Best Fit", fit, "Best roster-construction fit by scarcity and starter/FLEX need."))
+            used_player_ids.add(fit["playerId"])
+
+        # Value vs ESPN: bounded to actionable players near this pick / next
+        # owner pick, not a raw ADP-minus-rank edge over the whole available
+        # pool (which lets an irrelevant deep-bench player with a huge ADP
+        # dwarf any real near-term value signal).
+        reach_buffer = 12
+        window_end = (next_owner_pick + reach_buffer) if next_owner_pick is not None else (current_pick + 40)
+        actionable_value_rows = [
+            row for row in enriched
+            if row.get("expectedPick") is not None
+            and current_pick - 8 <= float(row["expectedPick"]) <= window_end
+            and row["draftTiming"] in {"TAKE NOW", "VALID"}
+        ]
+        actionable_value_rows.sort(key=lambda row: -float(row.get("nwrEdge") or -9999))
+        value = pick_distinct(actionable_value_rows)
+        if value is not None:
+            cards.append(_card("Value vs ESPN", value, "Largest ESPN-ADP edge among players actually relevant to this pick window."))
+            used_player_ids.add(value["playerId"])
         else:
+            fallback = pick_distinct(enriched[:30]) or best_available
             cards.append(
                 _card(
-                    "Value vs ADP",
-                    enriched[0],
-                    "ADP unavailable; this card preserves NWR order and makes no market claim.",
+                    "Value vs ESPN",
+                    fallback,
+                    "No actionable ADP edge in the current pick window; showing NWR order instead.",
                 )
             )
-        upside = max(enriched[:20], key=lambda row: float(row["replacementAdjustedValue"]))
-        cards.append(
-            _card("Upside", upside, "Highest replacement-adjusted ceiling proxy available.")
-        )
-        safe_rows = [row for row in enriched[:30] if str(row["confidence"]).upper() == "HIGH"]
-        safer = safe_rows[0] if safe_rows else enriched[0]
-        cards.append(
-            _card("Safer", safer, "Best high-evidence option; falls back visibly if none.")
-        )
+            used_player_ids.add(fallback["playerId"])
+
+        upside_ranked = sorted(enriched[:20], key=lambda row: -float(row["replacementAdjustedValue"]))
+        upside = pick_distinct(upside_ranked)
+        if upside is not None:
+            cards.append(_card("Upside", upside, "Highest replacement-adjusted ceiling proxy available."))
+            used_player_ids.add(upside["playerId"])
+
+        safe_ranked = [row for row in enriched[:30] if str(row["confidence"]).upper() == "HIGH"]
+        safer = pick_distinct(safe_ranked) if safe_ranked else pick_distinct(enriched[:30])
+        if safer is not None:
+            cards.append(_card("Safer", safer, "Best high-evidence option; falls back visibly if none."))
+            used_player_ids.add(safer["playerId"])
     recent_positions = [str(pick["position"]) for pick in state.get("picks", [])[-6:]]
     counts = Counter(recent_positions)
     position_run = [
@@ -1745,8 +1782,8 @@ def _owner_auto_score(
     return rank + _roster_need_adjustment(profile, roster, round_number, str(asset["position"]))
 
 
-def _fit_penalty(profile: LeagueProfile, roster: Counter[str], position: str) -> float:
-    return _roster_need_adjustment(profile, roster, 1, position)
+def _fit_penalty(profile: LeagueProfile, roster: Counter[str], position: str, round_number: int = 1) -> float:
+    return _roster_need_adjustment(profile, roster, round_number, position)
 
 
 def _roster_fit(profile: LeagueProfile, roster: Counter[str], position: str) -> str:
