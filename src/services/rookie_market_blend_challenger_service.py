@@ -43,6 +43,21 @@ ROOKIE_PRIOR_SCALING_SOURCE_ID = "NWR_REDRAFT_2026_ROOKIE_POSITION_ROUND_MEDIAN_
 ROOKIE_MARKET_BLEND_CHALLENGER_VERSION = "rookie-market-blend-challenger-v1"
 DEFAULT_BLEND_WEIGHT = 0.5
 
+# v2 (section 14): a bounded variant, predeclared from a pattern actually
+# found in the v1 backtest -- not tuned to any named player. Sorting the
+# 12 real-recap-matched rookies by |nwr_rank - espn_adp| showed every one
+# of the 7 rows the v1 blend improved had |gap| >= 24.8, while all 5 rows
+# it made worse had |gap| <= 42.7 with 4 of those 5 under 20 -- i.e. a
+# small NWR-vs-market gap is exactly the case where NWR is often already
+# close to right and blending toward market adds noise instead of signal
+# (the standard shrinkage-toward-a-noisy-target risk). See
+# docs/codex/ROOKIE_CHALLENGER_EXPANDED_ANALYSIS_20260903.md for the full
+# per-row breakdown, including the one real exception (Denzel Boston: a
+# large gap, -42.7, where NWR was nonetheless closer to the real outcome
+# than the market was).
+ROOKIE_MARKET_BLEND_CHALLENGER_V2_VERSION = "rookie-market-blend-challenger-v2-gap-gated"
+DEFAULT_GAP_GATE_THRESHOLD = 20.0
+
 
 @dataclass(frozen=True)
 class RookieChallengerInput:
@@ -77,12 +92,23 @@ def blend_rookie_rank(nwr_rank: float, espn_adp: float, blend_weight: float) -> 
 
 
 def challenge_rookie_ranks(
-    rows: Sequence[RookieChallengerInput], *, blend_weight: float = DEFAULT_BLEND_WEIGHT
+    rows: Sequence[RookieChallengerInput],
+    *,
+    blend_weight: float = DEFAULT_BLEND_WEIGHT,
+    min_gap_to_blend: float = 0.0,
 ) -> tuple[RookieChallengerResult, ...]:
     """Applies the CHALLENGER blend only to rows carrying
     ROOKIE_PRIOR_SCALING_SOURCE_ID with a known ESPN ADP -- every other
     row is returned with challenger_rank=None and a disclosed reason, not
-    silently left out of the result set."""
+    silently left out of the result set.
+
+    `min_gap_to_blend` (0.0 by default, matching v1's always-blend
+    behavior): when the champion/market gap `|nwr_rank - espn_adp|` is
+    below this threshold, the row is left at the champion's own rank
+    (challenger_rank == nwr_rank exactly, reason
+    GAP_BELOW_BLEND_THRESHOLD) instead of blending. Pass
+    DEFAULT_GAP_GATE_THRESHOLD for the v2 variant -- see that constant's
+    own comment for where this threshold came from."""
     results: list[RookieChallengerResult] = []
     for row in rows:
         if row.source_id != ROOKIE_PRIOR_SCALING_SOURCE_ID:
@@ -98,6 +124,14 @@ def challenge_rookie_ranks(
                 RookieChallengerResult(
                     row.player_id, row.player_name, row.nwr_rank, None, None,
                     False, "NO_MARKET_SIGNAL_AVAILABLE", blend_weight,
+                )
+            )
+            continue
+        if abs(row.nwr_rank - row.espn_adp) < min_gap_to_blend:
+            results.append(
+                RookieChallengerResult(
+                    row.player_id, row.player_name, row.nwr_rank, row.nwr_rank, row.espn_adp,
+                    False, "GAP_BELOW_BLEND_THRESHOLD", blend_weight,
                 )
             )
             continue
