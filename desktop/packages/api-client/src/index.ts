@@ -16,6 +16,7 @@ import {
   type PlanningWorkspace,
   type PasteAdpPreview,
   type RedraftBootstrap,
+  type RedraftExternalIntelligenceResponse,
   type RedraftProfileUpdateInput,
   type RuntimeDescriptor,
   type TradeBriefExport,
@@ -359,6 +360,10 @@ export class NwrApiClient {
       method: "POST",
       body: JSON.stringify({ playerId, pickNumber }),
     });
+  }
+
+  getRedraftExternalIntelligence(profileId: string): Promise<RedraftExternalIntelligenceResponse> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/external-intelligence`);
   }
 
   undoDraftPick(profileId: string): Promise<RedraftBootstrap> {

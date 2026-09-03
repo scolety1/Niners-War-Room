@@ -44,6 +44,7 @@ _REDRAFT_PASTE_ADP_CLEAR = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/clear
 _REDRAFT_PASTE_ADP_SELECTION = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/selection$")
 _REDRAFT_PASTE_ADP_MANUAL_MATCH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/manual-match$")
 _REDRAFT_SLEEPER_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/sleeper-pick$")
+_REDRAFT_EXTERNAL_INTELLIGENCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/external-intelligence$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
     {
@@ -201,6 +202,10 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             )
         if method == "GET" and path == "/api/v1/bootstrap":
             return self.server.facade.bootstrap()
+
+        external_intel_match = _REDRAFT_EXTERNAL_INTELLIGENCE.fullmatch(path)
+        if method == "GET" and external_intel_match:
+            return self.server.facade.redraft_external_intelligence(profile_id=unquote(external_intel_match.group(1)))
 
         if method == "GET" and path == "/api/v1/dynasty/trades":
             return self.server.facade.list_dynasty_trades()

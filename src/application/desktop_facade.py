@@ -119,6 +119,7 @@ from src.services.redraft_draft_room_v1_service import (
     start_draft_room,
     undo_room_pick,
 )
+from src.services.redraft_external_intelligence_service import load_external_intelligence
 from src.services.redraft_engine_v1_service import (
     LeagueProfile,
     RedraftPersistenceError,
@@ -2289,6 +2290,16 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def redraft_external_intelligence(self, *, profile_id: str) -> FacadePayload:
+        """Read-only owner-authorized UDK/FantasyPros/current-alert context,
+        already merged offline into a local CSV. Never touches NWR Core,
+        ranks, projections, or CPU/live-mode mechanics -- display only. A
+        missing/unreadable file returns an explicit unavailable result; it
+        never raises and never blocks the Draft Room."""
+        _, ranking, _ = self._redraft_room_context(profile_id)
+        intel = load_external_intelligence(ranking)
+        return FacadePayload(data={"externalIntelligence": intel})
 
     def start_redraft_draft_room(
         self,

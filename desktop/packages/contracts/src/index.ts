@@ -825,6 +825,34 @@ export interface KdstStreamerResult {
   writeBehavior: string;
 }
 
+export interface RedraftExternalIntelligenceEntry {
+  espnAdp: string | null;
+  nwrVsEspnGap: string | null;
+  fantasyProsEcr: string | null;
+  fantasyProsTier: string | null;
+  fantasyProsProjectedPoints: string | null;
+  nwrVsFantasyProsGap: string | null;
+  udkPositionRank: string | null;
+  udkTier: string | null;
+  udkAdp: string | null;
+  udkRisk: string | null;
+  udkUpside: string | null;
+  udkProjectedPoints: string | null;
+  currentAlert: string | null;
+  currentAlertSeverity: string | null;
+  udkCurrentConflictFlag: string | null;
+}
+
+export interface RedraftExternalIntelligence {
+  available: boolean;
+  generatedNote: string;
+  byPlayerId: Record<string, RedraftExternalIntelligenceEntry>;
+}
+
+export interface RedraftExternalIntelligenceResponse {
+  externalIntelligence: RedraftExternalIntelligence;
+}
+
 export interface RedraftBootstrap {
   product: {
     title: string;
