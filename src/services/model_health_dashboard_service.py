@@ -11,9 +11,10 @@ confidence as a well-supported one.
 
 This module does not compute any of the underlying metrics itself --
 those already exist for real in `outcome_evaluation_framework_service`
-(player/pick/roster/season level) and `champion_challenger_registry_service`
-(challenger lifecycle status). This module's job is only the health-area
-contract and the small-sample-aware assembly, not a second metrics engine.
+(player/pick/roster/season level) and the Champion/Challenger registry
+service (challenger lifecycle status). This module's job is only the
+health-area contract and the small-sample-aware assembly, not a second
+metrics engine.
 """
 
 from __future__ import annotations
