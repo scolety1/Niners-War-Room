@@ -27,12 +27,21 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 REGISTRY_SCHEMA_VERSION = 1
-VALID_DECISIONS = frozenset({"PROMOTED", "REJECTED", "RETIRED"})
+# RESEARCH_ONLY (section 23): a challenger explicitly marked never eligible
+# for promotion -- distinct from REJECTED, which means it WAS evaluated for
+# promotion and found wanting. A caller records RESEARCH_ONLY the same way
+# as any other decision (record_promotion_decision); current_status() then
+# reports it like any other terminal decision.
+VALID_DECISIONS = frozenset({"PROMOTED", "REJECTED", "RETIRED", "RESEARCH_ONLY"})
+# Fields a PROMOTED decision's receipt must carry (section 23's own list),
+# enforced only for PROMOTED -- a REJECTED/RETIRED/RESEARCH_ONLY decision
+# does not need a full promotion receipt.
+PROMOTION_RECEIPT_REQUIRED_FIELDS = ("baseline", "metrics", "confidence")
 
 
 class ChampionChallengerRegistryError(ValueError):
@@ -63,6 +72,15 @@ class ChallengerRegistration:
     evaluation_summary: Mapping[str, Any]
     registered_at_utc: str
     registered_by: str
+    # parent: another challenger_id this one supersedes/derives from, or
+    # None for a first-generation challenger (section 23's "parent" field).
+    parent: str | None = None
+    code_sha: str = ""
+    feature_set_sha: str = ""
+    training_dataset_sha: str = ""
+    calibration_dataset_sha: str = ""
+    evaluation_dataset_sha: str = ""
+    algorithm_parameters: Mapping[str, Any] = field(default_factory=dict)
     schema_version: int = REGISTRY_SCHEMA_VERSION
 
 
@@ -78,6 +96,13 @@ def register_challenger(root: str | Path, registration: ChallengerRegistration) 
         raise ChampionChallengerRegistryError(
             "evaluation_summary must not be empty -- a challenger is registered with real "
             "evidence, not a bare claim."
+        )
+    if (
+        registration.parent is not None
+        and load_registration(root, registration.parent) is None
+    ):
+        raise ChampionChallengerRegistryError(
+            f"parent {registration.parent!r} is not a registered challenger_id."
         )
     path = _registration_path(root, registration.challenger_id)
     if path.exists():
@@ -131,6 +156,13 @@ class PromotionDecision:
     # champion). Validated in record_promotion_decision(): a
     # challenger_id target must itself have a real registration on disk.
     rollback_pointer: str | None = None
+    # Promotion receipt fields (section 23) -- required (non-empty) only
+    # when decision == "PROMOTED", enforced in record_promotion_decision().
+    baseline: str = ""
+    metrics: Mapping[str, Any] = field(default_factory=dict)
+    confidence: str = ""
+    season_splits: Mapping[str, Any] = field(default_factory=dict)
+    guardrails: tuple[str, ...] = ()
     schema_version: int = REGISTRY_SCHEMA_VERSION
 
 
@@ -167,6 +199,15 @@ def record_promotion_decision(root: str | Path, decision: PromotionDecision) -> 
             f"rollback_pointer {decision.rollback_pointer!r} is neither 'CHAMPION' nor a "
             "registered challenger_id."
         )
+    if decision.decision == "PROMOTED":
+        missing_receipt_fields = [
+            name for name in PROMOTION_RECEIPT_REQUIRED_FIELDS if not getattr(decision, name)
+        ]
+        if missing_receipt_fields:
+            raise ChampionChallengerRegistryError(
+                "PROMOTED requires a full promotion receipt; missing/empty: "
+                + ", ".join(missing_receipt_fields)
+            )
     path = _decisions_path(root, decision.challenger_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:

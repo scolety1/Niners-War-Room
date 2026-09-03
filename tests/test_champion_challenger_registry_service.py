@@ -171,6 +171,8 @@ def test_full_lifecycle_register_reject_then_a_later_challenger_gets_promoted(tm
             decision="PROMOTED",
             decided_by="owner",
             reason="Backtested against 3 additional real drafts with a consistent improvement.",
+            baseline="rookie-market-blend-v1", metrics={"mean_error_improvement": 0.08},
+            confidence="MEDIUM",
         ),
     )
     assert current_status(tmp_path, "rookie-market-blend-v2") == "PROMOTED"
@@ -190,6 +192,8 @@ def _promote(tmp_path: Path, challenger_id: str, *, reason: str) -> None:
         PromotionDecision(
             challenger_id=challenger_id, decided_at_utc="2026-09-10T01:00:00+00:00",
             decision="PROMOTED", decided_by="owner", reason=reason,
+            baseline="champion", metrics={"mean_error_improvement": 0.05},
+            confidence="MEDIUM",
         ),
     )
 
@@ -271,3 +275,88 @@ def test_no_other_source_file_references_the_champion_challenger_registry_module
             if "champion_challenger_registry" in text:
                 offenders.append(str(py_file.relative_to(repo_root)))
     assert offenders == [], f"Unexpected references outside the registry's own module: {offenders}"
+
+
+def test_registration_carries_the_full_section_23_provenance_fields(tmp_path) -> None:
+    registration = _registration_with(
+        challenger_id="rookie-market-blend-v3",
+        parent="rookie-market-blend-v2",
+        code_sha="deadbeef" * 8,
+        feature_set_sha="feedface" * 8,
+        training_dataset_sha="cafebabe" * 8,
+        calibration_dataset_sha="d00dfeed" * 8,
+        evaluation_dataset_sha="0ff1ce00" * 8,
+        algorithm_parameters={"blend_weight": 0.35, "gap_gate_threshold": 20.0},
+    )
+    register_challenger(tmp_path, _registration_with(challenger_id="rookie-market-blend-v2"))
+    register_challenger(tmp_path, registration)
+    loaded = load_registration(tmp_path, "rookie-market-blend-v3")
+    assert loaded.parent == "rookie-market-blend-v2"
+    assert loaded.algorithm_parameters == {"blend_weight": 0.35, "gap_gate_threshold": 20.0}
+
+
+def test_registration_rejects_a_parent_that_is_not_actually_registered(tmp_path) -> None:
+    with pytest.raises(ChampionChallengerRegistryError, match="parent"):
+        register_challenger(
+            tmp_path, _registration_with(parent="no-such-challenger-registered")
+        )
+
+
+def test_promoted_decision_requires_a_full_receipt(tmp_path) -> None:
+    register_challenger(tmp_path, _registration())
+    with pytest.raises(ChampionChallengerRegistryError, match="promotion receipt"):
+        record_promotion_decision(
+            tmp_path,
+            PromotionDecision(
+                challenger_id="rookie-market-blend-v1",
+                decided_at_utc="2026-09-10T01:00:00+00:00",
+                decision="PROMOTED", decided_by="owner",
+                reason="Looked good.",  # missing baseline/metrics/confidence
+            ),
+        )
+
+
+def test_promoted_decision_with_a_full_receipt_succeeds_and_stores_every_field(tmp_path) -> None:
+    register_challenger(tmp_path, _registration())
+    record_promotion_decision(
+        tmp_path,
+        PromotionDecision(
+            challenger_id="rookie-market-blend-v1",
+            decided_at_utc="2026-09-10T01:00:00+00:00",
+            decision="PROMOTED", decided_by="owner", reason="Real backtest improvement.",
+            baseline="champion", metrics={"mean_error_improvement": 0.1},
+            confidence="HIGH", season_splits={"train": [2023, 2024], "test": [2025]},
+            guardrails=("no_named_player_tuning", "min_sample_size_10"),
+        ),
+    )
+    decisions = read_promotion_decisions(tmp_path, "rookie-market-blend-v1")
+    assert decisions[0]["baseline"] == "champion"
+    assert decisions[0]["confidence"] == "HIGH"
+    assert decisions[0]["guardrails"] == ["no_named_player_tuning", "min_sample_size_10"]
+
+
+def test_research_only_is_a_valid_terminal_decision_distinct_from_rejected(tmp_path) -> None:
+    register_challenger(tmp_path, _registration())
+    record_promotion_decision(
+        tmp_path,
+        PromotionDecision(
+            challenger_id="rookie-market-blend-v1",
+            decided_at_utc="2026-09-10T01:00:00+00:00",
+            decision="RESEARCH_ONLY", decided_by="owner",
+            reason="Kept for engineering/regression use only; not a promotion candidate.",
+        ),
+    )
+    assert current_status(tmp_path, "rookie-market-blend-v1") == "RESEARCH_ONLY"
+
+
+def test_rejected_and_retired_decisions_do_not_require_a_promotion_receipt(tmp_path) -> None:
+    register_challenger(tmp_path, _registration())
+    # Must not raise -- REJECTED/RETIRED never need baseline/metrics/confidence.
+    record_promotion_decision(
+        tmp_path,
+        PromotionDecision(
+            challenger_id="rookie-market-blend-v1",
+            decided_at_utc="2026-09-10T01:00:00+00:00",
+            decision="REJECTED", decided_by="owner", reason="Not enough evidence yet.",
+        ),
+    )
