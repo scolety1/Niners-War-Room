@@ -10,10 +10,14 @@ from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     approve_owner_platform_manual_match,
     clear_owner_platform_manual_match,
+    clear_pick,
+    fill_gap_pick,
     _adp_explanation,
+    _asset_pool,
     _freshness_label,
     _owner_platform_rows,
     _recommendations,
+    _save_room_state,
     build_draft_room_payload,
     import_owner_adp_csv,
     load_adp_snapshot,
@@ -21,10 +25,12 @@ from src.services.redraft_draft_room_v1_service import (
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
     preview_owner_paste_adp,
+    replace_pick,
     run_complete_mock,
     save_owner_paste_adp,
     set_owner_platform_selection,
     start_draft_room,
+    undo_pick_correction,
     undo_room_pick,
     validate_complete_mock,
 )
@@ -553,3 +559,165 @@ def test_suggestions_are_unrestricted_when_no_position_is_at_its_maximum() -> No
     assert result["cards"], "expected at least one suggestion card with an empty roster"
     best_available = result["cards"][0]
     assert best_available["playerId"] == ranking.rows[0].player_id
+
+
+# --- Event-sourced pick correction: REPLACE PICK / CLEAR PICK / FILL GAP / UNDO ---
+# Test/copy state only (tmp_path), per section 4's "Use copies/TEST state
+# only." Never touches real KHA production evidence.
+
+
+def _seeded_completed_room(tmp_path):
+    """A full 150-pick completed mock draft, persisted to tmp_path so the
+    correction functions (which load/save through the real root) can be
+    exercised end to end, including reopen-persistence."""
+    ranking = _ranking()
+    adp = _empty_adp(ranking.profile)
+    state = run_complete_mock(ranking.profile, ranking, _manual_assets(), adp, owner_slot=9)
+    _save_room_state(tmp_path, state)
+    return ranking, state
+
+
+def _first_undrafted(ranking, state) -> str:
+    pool = _asset_pool(ranking, _manual_assets())
+    drafted = set(state["drafted"])
+    return next(asset["player_id"] for asset in pool.values() if asset["player_id"] not in drafted)
+
+
+def test_replace_pick_various_distances_leave_every_other_pick_byte_identical(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    total = len(seeded["picks"])
+    # one pick ago, one round ago (10 picks), five rounds ago (50 picks), and
+    # Round 1 (pick 1) corrected late in a fully completed 150-pick draft.
+    targets = [total, total - 10, total - 50, 1]
+    for pick_number in targets:
+        before = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+        old_entry = dict(before["picks"][pick_number - 1])
+        untouched_snapshot = [
+            dict(p) for i, p in enumerate(before["picks"]) if i != pick_number - 1
+        ]
+        replacement_id = _first_undrafted(ranking, before)
+        updated = replace_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(),
+            pick_number=pick_number, player_id=replacement_id,
+        )
+        assert len(updated["picks"]) == total  # no renumbering, no growth/shrink
+        changed = updated["picks"][pick_number - 1]
+        assert changed["player_id"] == replacement_id
+        assert changed["pick_number"] == pick_number
+        assert changed["round"] == old_entry["round"]
+        assert changed["team_slot"] == old_entry["team_slot"]
+        # every other pick byte-for-byte identical except the one slot
+        other_after = [dict(p) for i, p in enumerate(updated["picks"]) if i != pick_number - 1]
+        assert other_after == untouched_snapshot
+        # old player returned to the pool
+        assert old_entry["player_id"] not in updated["drafted"]
+        assert replacement_id in updated["drafted"]
+
+
+def test_clear_then_fill_gap_round_1_late_in_a_completed_draft(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    total = len(seeded["picks"])
+    pick_number = 1  # Round 1, corrected after all 150 picks exist
+    original_player = seeded["picks"][0]["player_id"]
+
+    cleared = clear_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(), pick_number=pick_number
+    )
+    assert len(cleared["picks"]) == total
+    slot = cleared["picks"][0]
+    assert slot["status"] == "UNRESOLVED"
+    assert slot["player_id"] == ""
+    assert slot["pick_number"] == 1
+    assert slot["round"] == seeded["picks"][0]["round"]
+    assert slot["team_slot"] == seeded["picks"][0]["team_slot"]
+    assert original_player not in cleared["drafted"]  # availability restored
+    # a second, independent clear elsewhere must not collide via "" == ""
+    cleared_two = clear_pick(tmp_path, ranking.profile, ranking, _manual_assets(), pick_number=2)
+    assert len(cleared_two["drafted"]) == total - 2
+
+    filled = fill_gap_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        pick_number=pick_number, player_id=original_player,
+    )
+    assert filled["picks"][0]["player_id"] == original_player
+    assert filled["picks"][0]["status"] == "RESOLVED"
+    assert len(filled["picks"]) == total
+
+
+def test_replace_pick_rejects_a_player_already_drafted_elsewhere(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    already_drafted_id = seeded["picks"][5]["player_id"]  # pick 6's player
+    with pytest.raises(RedraftValidationError, match="already drafted at pick 6"):
+        replace_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(),
+            pick_number=1, player_id=already_drafted_id,
+        )
+
+
+def test_fill_gap_requires_unresolved_and_replace_requires_resolved(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    replacement_id = _first_undrafted(ranking, seeded)
+    with pytest.raises(RedraftValidationError, match="already resolved"):
+        fill_gap_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(),
+            pick_number=1, player_id=replacement_id,
+        )
+    clear_pick(tmp_path, ranking.profile, ranking, _manual_assets(), pick_number=1)
+    with pytest.raises(RedraftValidationError, match="unresolved"):
+        replace_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(),
+            pick_number=1, player_id=replacement_id,
+        )
+
+
+def test_undo_pick_correction_reverses_only_the_latest_correction(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    original_pick_1 = dict(seeded["picks"][0])
+    replacement_id = _first_undrafted(ranking, seeded)
+    replace_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        pick_number=1, player_id=replacement_id,
+    )
+    undone = undo_pick_correction(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert undone["picks"][0]["player_id"] == original_pick_1["player_id"]
+    assert len(undone["picks"]) == len(seeded["picks"])
+    with pytest.raises(RedraftValidationError, match="No pick correction"):
+        undo_pick_correction(tmp_path, ranking.profile, ranking, _manual_assets())
+
+
+def test_pick_correction_reopen_persistence(tmp_path) -> None:
+    """A correction, closed and reopened, must persist -- not just live
+    in-memory for the returned state object."""
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    replacement_id = _first_undrafted(ranking, seeded)
+    replace_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        pick_number=3, player_id=replacement_id,
+    )
+    reopened = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert reopened["picks"][2]["player_id"] == replacement_id
+    assert reopened["last_correction"]["pick_number"] == 3
+    # and the undo survives a reopen too
+    undo_pick_correction(tmp_path, ranking.profile, ranking, _manual_assets())
+    reopened_again = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert reopened_again["picks"][2]["player_id"] == seeded["picks"][2]["player_id"]
+
+
+def test_corrections_do_not_disturb_downstream_rosters_or_board_payload(tmp_path) -> None:
+    ranking, seeded = _seeded_completed_room(tmp_path)
+    adp = _empty_adp(ranking.profile)
+    replacement_id = _first_undrafted(ranking, seeded)
+    replace_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(),
+        pick_number=4, player_id=replacement_id,
+    )
+    state = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    payload = build_draft_room_payload(ranking.profile, ranking, _manual_assets(), adp, state)
+    assert payload["complete"] is True
+    assert len(payload["boardCells"]) == len(seeded["picks"])
+    clear_pick(tmp_path, ranking.profile, ranking, _manual_assets(), pick_number=5)
+    state = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    payload = build_draft_room_payload(ranking.profile, ranking, _manual_assets(), adp, state)
+    # cleared slot must not appear as a phantom roster entry anywhere
+    for team in payload["teams"]:
+        assert all(player["playerId"] for player in team["roster"])

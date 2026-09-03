@@ -1019,6 +1019,181 @@ def undo_room_pick(
     return state
 
 
+def _pick_slot_or_raise(state: Mapping[str, Any], pick_number: int) -> dict[str, Any]:
+    picks = state.get("picks", [])
+    if not isinstance(pick_number, int) or not (1 <= pick_number <= len(picks)):
+        raise RedraftValidationError(f"Pick {pick_number} does not exist in this draft room.")
+    return dict(picks[pick_number - 1])
+
+
+def _apply_pick_correction(
+    state: Mapping[str, Any],
+    *,
+    pick_number: int,
+    asset: Mapping[str, Any] | None,
+    action: str,
+) -> dict[str, Any]:
+    """Shared mechanism for REPLACE PICK / CLEAR PICK / FILL GAP: mutate
+    exactly one existing pick slot in place. pick_number, round, and
+    team_slot never change, and every other slot's record is untouched --
+    no later pick is renumbered or displaced. The prior snapshot of the
+    slot is kept in state["last_correction"] so undo_pick_correction can
+    reverse only this one action, independent of undo_room_pick's
+    separate global-LIFO "undo the latest recorded pick" semantics."""
+    picks = list(state.get("picks", []))
+    index = pick_number - 1
+    previous_snapshot = dict(picks[index])
+    if asset is not None:
+        player_id = str(asset["player_id"])
+        collision = next(
+            (
+                pick
+                for i, pick in enumerate(picks)
+                if i != index and str(pick.get("player_id") or "") == player_id
+            ),
+            None,
+        )
+        if collision is not None:
+            raise RedraftValidationError(
+                f"{asset.get('player_name', player_id)} is already drafted at pick "
+                f"{collision['pick_number']}."
+            )
+        new_entry = {
+            **previous_snapshot,
+            "player_id": player_id,
+            "player_name": str(asset["player_name"]),
+            "position": str(asset["position"]),
+            "team": str(asset.get("team") or ""),
+            "nwr_rank": asset.get("nwr_rank"),
+            "status": "RESOLVED",
+            "actor": "OWNER_CORRECTION",
+            "selection_behavior": action,
+            "picked_at_utc": utc_now(),
+        }
+    else:
+        new_entry = {
+            **previous_snapshot,
+            "player_id": "",
+            "player_name": "",
+            "position": "",
+            "team": "",
+            "nwr_rank": None,
+            "status": "UNRESOLVED",
+            "actor": "OWNER_CORRECTION",
+            "selection_behavior": action,
+            "picked_at_utc": utc_now(),
+        }
+    picks[index] = new_entry
+    updated = {**state, "picks": picks}
+    updated["drafted"] = [str(pick["player_id"]) for pick in picks if pick.get("player_id")]
+    updated["last_correction"] = {
+        "pick_number": pick_number,
+        "action": action,
+        "previous": previous_snapshot,
+        "corrected_at_utc": utc_now(),
+    }
+    updated["updated_at_utc"] = utc_now()
+    return updated
+
+
+def replace_pick(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    pick_number: int,
+    player_id: str,
+) -> dict[str, Any]:
+    """Change the player assigned to an exact historical pick. Every
+    later pick's pick_number/round/team_slot/player is untouched; the
+    old player returns to the available pool and the new one leaves it."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    target = _pick_slot_or_raise(state, pick_number)
+    if not target.get("player_id"):
+        raise RedraftValidationError(f"Pick {pick_number} is unresolved; use Fill Gap instead.")
+    asset = _asset_pool(ranking, manual_assets).get(player_id)
+    if asset is None:
+        raise RedraftValidationError("The selected replacement player is unavailable.")
+    state = _apply_pick_correction(
+        state, pick_number=pick_number, asset=asset, action="REPLACE_PICK"
+    )
+    _save_room_state(root, state)
+    return state
+
+
+def clear_pick(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    pick_number: int,
+) -> dict[str, Any]:
+    """Set a pick to UNRESOLVED. pick_number/round/team_slot are
+    preserved; every later pick is untouched. The previously-assigned
+    player returns to the available pool."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    target = _pick_slot_or_raise(state, pick_number)
+    if not target.get("player_id"):
+        raise RedraftValidationError(f"Pick {pick_number} is already unresolved.")
+    state = _apply_pick_correction(state, pick_number=pick_number, asset=None, action="CLEAR_PICK")
+    _save_room_state(root, state)
+    return state
+
+
+def fill_gap_pick(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    pick_number: int,
+    player_id: str,
+) -> dict[str, Any]:
+    """Assign a player to an exact UNRESOLVED slot. Identical mechanism to
+    replace_pick, gated to only apply when the slot starts UNRESOLVED."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    target = _pick_slot_or_raise(state, pick_number)
+    if target.get("player_id"):
+        raise RedraftValidationError(
+            f"Pick {pick_number} is already resolved; use Replace instead."
+        )
+    asset = _asset_pool(ranking, manual_assets).get(player_id)
+    if asset is None:
+        raise RedraftValidationError("The selected player is unavailable.")
+    state = _apply_pick_correction(state, pick_number=pick_number, asset=asset, action="FILL_GAP")
+    _save_room_state(root, state)
+    return state
+
+
+def undo_pick_correction(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Reverse only the single most recent REPLACE/CLEAR/FILL GAP action.
+    Independent of undo_room_pick (which undoes the latest *recorded*
+    pick globally, LIFO) -- correcting pick 12 and then undoing that
+    correction never touches picks 13+ or the draft's live tail."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    last = state.get("last_correction")
+    if not last:
+        raise RedraftValidationError("No pick correction is available to undo.")
+    picks = list(state.get("picks", []))
+    index = int(last["pick_number"]) - 1
+    if not (0 <= index < len(picks)):
+        raise RedraftValidationError("The corrected pick no longer exists.")
+    picks[index] = dict(last["previous"])
+    updated = {**state, "picks": picks}
+    updated["drafted"] = [str(pick["player_id"]) for pick in picks if pick.get("player_id")]
+    updated["last_correction"] = None
+    updated["updated_at_utc"] = utc_now()
+    _save_room_state(root, updated)
+    return updated
+
+
 def ingest_read_only_sleeper_pick(
     root: str | Path,
     profile: LeagueProfile,
@@ -1622,8 +1797,12 @@ def _coerce_room_state(
                     "picked_at_utc": str(document.get("updated_at_utc") or ""),
                 }
             )
-    if [str(pick["player_id"]) for pick in picks] != drafted:
-        drafted = [str(pick["player_id"]) for pick in picks]
+    # UNRESOLVED picks (CLEAR PICK) carry an empty player_id -- exclude
+    # them from `drafted` so multiple cleared slots don't collide with
+    # each other or block re-selecting the same real player elsewhere.
+    recomputed_drafted = [str(pick["player_id"]) for pick in picks if pick.get("player_id")]
+    if recomputed_drafted != drafted:
+        drafted = recomputed_drafted
     if len(drafted) != len(set(drafted)):
         raise RedraftValidationError("Draft Room contains duplicate player IDs.")
     return {
@@ -1637,6 +1816,7 @@ def _coerce_room_state(
         "picks": picks,
         "updated_at_utc": str(document.get("updated_at_utc") or ""),
         "recovered_from_backup": bool(document.get("recovered_from_backup")),
+        "last_correction": document.get("last_correction"),
     }
 
 
@@ -1653,6 +1833,7 @@ def _save_room_state(root: str | Path, state: Mapping[str, Any]) -> None:
         "drafted": [str(value) for value in state.get("drafted", [])],
         "picks": list(state.get("picks", [])),
         "updated_at_utc": str(state.get("updated_at_utc") or utc_now()),
+        "last_correction": state.get("last_correction"),
     }
     _atomic_json(path, document)
     _atomic_json(path.with_suffix(".backup.json"), document)
@@ -1826,6 +2007,8 @@ def _rosters(
         slot: [] for slot in range(1, profile.team_count + 1)
     }
     for pick in picks:
+        if not pick.get("player_id"):
+            continue  # UNRESOLVED (cleared) slot -- not a roster entry
         slot = int(pick["team_slot"])
         rosters[slot].append(
             {
