@@ -351,3 +351,100 @@ def test_champ_equity_assumptions_are_disclosed_not_silent() -> None:
     assumptions = ChampionshipEquityAssumptions()
     assert assumptions.regular_season_weeks > 0
     assert "disclosed simplifying" in assumptions.note
+
+
+# --- Bounded look-ahead (section 12) ---
+
+
+def test_simulate_pick_now_forces_the_candidate_and_completes_the_draft() -> None:
+    from src.services.shadow_numeric_authorities_service import simulate_pick_now
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    final_state = simulate_pick_now(
+        profile,
+        ranking,
+        _manual_assets(),
+        adp,
+        owner_slot=9,
+        candidate_player_id="RB-0",
+        seed=11,
+    )
+    assert len(final_state["picks"]) == profile.team_count * profile.draft.rounds
+    owner_picks = [p for p in final_state["picks"] if p["team_slot"] == 9]
+    assert any(p["player_id"] == "RB-0" for p in owner_picks)
+    forced = next(p for p in owner_picks if p["player_id"] == "RB-0")
+    assert forced["selection_behavior"] == "FORCED_CANDIDATE"
+
+
+def test_simulate_pick_now_rejects_an_already_drafted_candidate() -> None:
+    from src.services.shadow_numeric_authorities_service import simulate_pick_now
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    partial = {
+        "schema_version": 1,
+        "profile_id": profile.profile_id,
+        "owner_slot": 9,
+        "seed": 1,
+        "speed": "FAST",
+        "mode": "MOCK",
+        "drafted": ["RB-0"],
+        "picks": [
+            {
+                "pick_number": 1,
+                "round": 1,
+                "team_slot": 1,
+                "player_id": "RB-0",
+                "player_name": "RB 0",
+                "position": "RB",
+                "team": "TST",
+                "actor": "CPU",
+                "selection_behavior": "TEST",
+                "nwr_rank": 2,
+                "picked_at_utc": "",
+            }
+        ],
+        "updated_at_utc": "",
+    }
+    with pytest.raises(ValueError, match="already drafted"):
+        simulate_pick_now(
+            profile,
+            ranking,
+            _manual_assets(),
+            adp,
+            owner_slot=9,
+            candidate_player_id="RB-0",
+            seed=1,
+            from_state=partial,
+        )
+
+
+def test_evaluate_pick_candidates_ranks_a_realistic_candidate_set(tmp_path) -> None:
+    from src.services.shadow_numeric_authorities_service import evaluate_pick_candidates
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    candidates = ["QB-0", "RB-0", "RB-1", "WR-0"]
+    # owner_slot=1 so the owner picks first -- every candidate is
+    # guaranteed still available (no CPU turn happens before pick 1).
+    scored = evaluate_pick_candidates(
+        profile,
+        ranking,
+        _manual_assets(),
+        adp,
+        owner_slot=1,
+        candidate_player_ids=candidates,
+        trials=2,
+        seasons=30,
+        base_seed=5,
+    )
+    assert set(scored.keys()) == set(candidates)
+    for result in scored.values():
+        assert 0.0 <= result.relative_score <= 100.0
+        assert result.label == "RESEARCH_ONLY_PICK_SCORE"
+    # exactly one candidate should be the strongest of this evaluated set
+    assert any(r.relative_score == 100.0 for r in scored.values())

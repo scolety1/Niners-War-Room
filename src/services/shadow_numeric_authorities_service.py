@@ -355,3 +355,141 @@ def pick_score(
             cost_of_waiting=cost_of_waiting(team.percentile, best_alternative),
         )
     return out
+
+
+# --- Bounded look-ahead (section 12) ---
+# At each candidate: force it as the owner's next pick, then let the rest
+# of the draft (opponents AND the owner's own later picks) complete via
+# the same, already-tested run_complete_mock() machinery (CPU market-ADP
+# behavior when available, deterministic NWR-order/auto-score fallback
+# otherwise). This is ONE plausible continuation per candidate -- not an
+# exhaustive search over every future owner decision, which the brief
+# this serves explicitly says not to brute-force. Candidates should be
+# pre-filtered by the caller to actionable ones (e.g. _roster_candidate_allowed
+# from redraft_draft_room_v1_service, the same position-max legality rule
+# Suggestions already applies) before calling this.
+
+
+def simulate_pick_now(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    *,
+    owner_slot: int,
+    candidate_player_id: str,
+    seed: int = DEFAULT_SEED,
+    from_state: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Force `candidate_player_id` as the very next owner selection (from
+    `from_state`, or an empty draft if not given), then complete the rest
+    of the draft with the same market/auto-score logic run_complete_mock()
+    uses. Returns the full completed room state.
+    """
+    from src.services.redraft_draft_room_v1_service import (
+        _complete,
+        _current_team,
+        _record_pick,
+        _select_asset,
+    )
+
+    state: dict[str, Any] = (
+        dict(from_state)
+        if from_state is not None
+        else {
+            "schema_version": 1,
+            "profile_id": profile.profile_id,
+            "owner_slot": owner_slot,
+            "seed": seed,
+            "speed": "FAST",
+            "mode": "MOCK",
+            "drafted": [],
+            "picks": [],
+            "updated_at_utc": "",
+        }
+    )
+    pool = _asset_pool(ranking, manual_assets)
+    forced_pending = True
+    while not _complete(profile, state):
+        team_slot = _current_team(profile, state)
+        if team_slot == owner_slot and forced_pending:
+            asset = pool.get(candidate_player_id)
+            if asset is None:
+                raise ValueError(f"{candidate_player_id!r} is not a draftable asset.")
+            if candidate_player_id in state.get("drafted", []):
+                raise ValueError(f"{candidate_player_id!r} is already drafted.")
+            state = _record_pick(
+                profile, state, asset, actor="CANDIDATE_LOOKAHEAD", behavior="FORCED_CANDIDATE"
+            )
+            forced_pending = False
+            continue
+        actor = "OWNER_AUTO_TEST" if team_slot == owner_slot else "CPU"
+        asset, behavior = _select_asset(profile, ranking, adp, state, pool, team_slot, actor)
+        state = _record_pick(profile, state, asset, actor=actor, behavior=behavior)
+    return state
+
+
+@dataclass(frozen=True)
+class CandidateEvaluation:
+    player_id: str
+    team_score_result: TeamScoreResult
+    championship_equity_result: ChampionshipEquityResult
+
+
+def evaluate_pick_candidates(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    *,
+    owner_slot: int,
+    candidate_player_ids: Sequence[str],
+    from_state: Mapping[str, Any] | None = None,
+    comparable_leagues: Sequence[dict[int, list[RosterPlayer]]] | None = None,
+    trials: int = DEFAULT_TRIALS,
+    seasons: int = 200,
+    base_seed: int = DEFAULT_SEED,
+) -> dict[str, PickScoreResult]:
+    """The full look-ahead pipeline for one pick: for every candidate,
+    simulate_pick_now() to get a completed final roster, score it with
+    team_score()/championship_equity() against a shared comparable-league
+    population (computed once, reused across every candidate -- this is
+    the 'cache/precompute reusable components' the brief allows when full
+    per-candidate resimulation would be too slow), then rank all
+    candidates against each other with pick_score().
+    """
+    leagues = comparable_leagues or simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=trials, base_seed=base_seed
+    )
+    results: dict[str, tuple[TeamScoreResult, ChampionshipEquityResult]] = {}
+    for candidate in candidate_player_ids:
+        final_state = simulate_pick_now(
+            profile,
+            ranking,
+            manual_assets,
+            adp,
+            owner_slot=owner_slot,
+            candidate_player_id=candidate,
+            seed=base_seed,
+            from_state=from_state,
+        )
+        owner_player_ids = [
+            str(pick["player_id"])
+            for pick in final_state["picks"]
+            if int(pick["team_slot"]) == owner_slot and pick.get("player_id")
+        ]
+        team = team_score(
+            owner_player_ids, profile, ranking, manual_assets, comparable_leagues=leagues
+        )
+        equity = championship_equity(
+            owner_player_ids,
+            profile,
+            ranking,
+            manual_assets,
+            comparable_league=leagues[0],
+            target_team_slot=owner_slot if owner_slot in leagues[0] else next(iter(leagues[0])),
+            seasons=seasons,
+            base_seed=base_seed,
+        )
+        results[candidate] = (team, equity)
+    return pick_score(results)
