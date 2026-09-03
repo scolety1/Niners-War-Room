@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "packId": "nwr-kha-real-draft-2026-evidence",
+  "version": "1.0.0",
+  "fixtureClass": "REAL_PRODUCTION_DRAFT_EVIDENCE",
+  "rights": "OWNER_LEAGUE_DATA_PERSONAL_USE_ONLY",
+  "compiled_utc": "2026-09-03",
+  "networkRequired": false,
+  "notes": "See DIVERGENCE_FINDINGS_20260903.md before building any merged/reconciled replay fixture from these files. The live and recap sources are NOT a clean prefix+suffix of each other.",
+  "files": [
+    {
+      "path": "live_runtime_draft_board_157picks.json",
+      "source": "C:\\Users\\codex-agent\\AppData\\Local\\com.ninerswarroom.redraft\\state\\redraft\\draft_boards\\fb1c49402c7644a99120197d41344bbb.json",
+      "sha256": "e51c0dfddea8369d35a2bf3f1e0c293fabb2c45cb9b30c0bb63495fcf3cec0e6",
+      "bytes": 61210,
+      "description": "Real live NWR Redraft runtime draft board for the 2026 KHA High Stakes League. mode=LIVE_READ_ONLY, owner_slot=9, 157/192 picks recorded, last touched 2026-09-02 22:28 MDT. Byte-identical to the source app-data file and to its own .backup.json twin at capture time."
+    },
+    {
+      "path": "live_runtime_draft_board_157picks.backup.json",
+      "source": "C:\\Users\\codex-agent\\AppData\\Local\\com.ninerswarroom.redraft\\state\\redraft\\draft_boards\\fb1c49402c7644a99120197d41344bbb.backup.json",
+      "sha256": "e51c0dfddea8369d35a2bf3f1e0c293fabb2c45cb9b30c0bb63495fcf3cec0e6",
+      "bytes": 61210,
+      "description": "App-maintained backup twin of the file above, confirmed byte-identical."
+    },
+    {
+      "path": "official_recap_192picks_raw.csv",
+      "source": "C:\\NWR_DRAFT_DAY_TOOLS\\KHA_REAL_DRAFT_2026-09-02.csv.csv",
+      "sha256": "84322a9f1f64e4353a512e85fdcf07dd4195848ee2fb7509493120f4aa9a9232",
+      "bytes": 9659,
+      "description": "Verbatim copy of the owner's platform-exported draft recap (raw scraped page export, includes site-chrome header/footer rows). Confirmed byte-identical to the owner's separately preserved original export ('2026 KHA High Stakes League Fantasy Football - Sheet1 - Copy.csv')."
+    },
+    {
+      "path": "official_recap_192picks_clean.csv",
+      "source": "derived from official_recap_192picks_raw.csv",
+      "sha256": "90abae44cc9eb85ebe29089ad8850729ab8bffca9c23c465225847c27c82bf78",
+      "bytes": 9997,
+      "description": "Cleaned, replay-ready derivative: 192 rows, columns overall_pick,round,pick_in_round,team_slot,team_name,player_name,nfl_team,position. team_slot derived from round-1 draft order (snake). Deterministic parse, no player/pick data invented or altered."
+    }
+  ]
+}
