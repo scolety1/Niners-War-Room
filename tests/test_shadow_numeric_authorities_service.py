@@ -448,3 +448,129 @@ def test_evaluate_pick_candidates_ranks_a_realistic_candidate_set(tmp_path) -> N
         assert result.label == "RESEARCH_ONLY_PICK_SCORE"
     # exactly one candidate should be the strongest of this evaluated set
     assert any(r.relative_score == 100.0 for r in scored.values())
+
+
+# --- Cost of Waiting V2 (section 15) ---
+
+
+def _fresh_state(profile: LeagueProfile, owner_slot: int, seed: int = 1) -> dict:
+    return {
+        "schema_version": 1,
+        "profile_id": profile.profile_id,
+        "owner_slot": owner_slot,
+        "seed": seed,
+        "speed": "FAST",
+        "mode": "MOCK",
+        "drafted": [],
+        "picks": [],
+        "updated_at_utc": "",
+    }
+
+
+def test_candidate_survival_probability_reflects_how_contested_the_position_is() -> None:
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    state = _fresh_state(profile, owner_slot=1)
+    # QB-1 is the 2nd-highest-ranked player in the whole 240-player pool --
+    # if the owner takes QB-0 (rank 1) at pick 1 instead, QB-1 is very
+    # likely gone by the time the 18 CPU picks (picks 2-19) finish.
+    contested = candidate_survival_probability(
+        profile, ranking, _manual_assets(), adp, state,
+        owner_slot=1, candidate_player_id="QB-1", alternative_player_id="QB-0",
+        trials=20, base_seed=1,
+    )
+    # TE-29 is the very last-ranked player in the pool -- essentially never
+    # taken across only 18 CPU picks.
+    uncontested = candidate_survival_probability(
+        profile, ranking, _manual_assets(), adp, state,
+        owner_slot=1, candidate_player_id="TE-29", alternative_player_id="QB-0",
+        trials=20, base_seed=1,
+    )
+    assert 0.0 <= contested <= 1.0
+    assert 0.0 <= uncontested <= 1.0
+    assert uncontested > contested
+
+
+def test_candidate_survival_probability_is_one_for_unavailable_inputs() -> None:
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    drafted_state = {**_fresh_state(profile, owner_slot=1), "drafted": ["QB-0"]}
+    # candidate already drafted -> nothing left to lose by "waiting"
+    assert (
+        candidate_survival_probability(
+            profile, ranking, _manual_assets(), adp, drafted_state,
+            owner_slot=1, candidate_player_id="QB-0", alternative_player_id="RB-0",
+            trials=5,
+        )
+        == 1.0
+    )
+    # alternative not a real asset -> degenerate-safe default, not a crash
+    assert (
+        candidate_survival_probability(
+            profile, ranking, _manual_assets(), adp, _fresh_state(profile, owner_slot=1),
+            owner_slot=1, candidate_player_id="QB-1", alternative_player_id="not-a-real-player",
+            trials=5,
+        )
+        == 1.0
+    )
+
+
+def test_evaluate_cost_of_waiting_v2_layers_survival_onto_pick_score() -> None:
+    from src.services.shadow_numeric_authorities_service import (
+        evaluate_cost_of_waiting_v2,
+        evaluate_pick_candidates,
+    )
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    candidates = ["QB-0", "QB-1", "TE-29"]
+    scored = evaluate_pick_candidates(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, trials=2, seasons=20, base_seed=5,
+    )
+    v2 = evaluate_cost_of_waiting_v2(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, pick_scores=scored,
+        trials=10, base_seed=5,
+    )
+    assert set(v2) == set(candidates)
+    for player_id, result in v2.items():
+        assert result.candidate_player_id == player_id
+        assert result.best_alternative_player_id in candidates
+        assert result.best_alternative_player_id != player_id
+        assert 0.0 <= result.survival_probability <= 1.0
+        assert result.expected_cost >= 0.0
+        # survival-weighting only ever shrinks (or matches) the raw V1 gap
+        assert result.expected_cost <= result.value_gap + 1e-9
+        assert result.label == "COST_OF_WAITING_V2 — RESEARCH (Monte Carlo survival-weighted)"
+
+
+def test_evaluate_cost_of_waiting_v2_skips_candidates_with_no_alternative_to_compare() -> None:
+    from src.services.shadow_numeric_authorities_service import (
+        PickScoreResult,
+        evaluate_cost_of_waiting_v2,
+    )
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    solo_score = {
+        "QB-0": PickScoreResult(
+            relative_score=50.0, team_score_after=70.0, championship_equity_after=0.2,
+            equity_gain=0.0, cost_of_waiting=0.0,
+        )
+    }
+    v2 = evaluate_cost_of_waiting_v2(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=["QB-0", "not-scored"], pick_scores=solo_score,
+        trials=5,
+    )
+    # QB-0 has no other candidate to compare against; not-scored isn't in pick_scores
+    assert v2 == {}

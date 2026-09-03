@@ -362,6 +362,157 @@ def pick_score(
     return out
 
 
+# --- Cost of Waiting V2 (section 15) ------------------------------------
+# V1's cost_of_waiting() above is an explicitly-labeled lower bound: the
+# Team Score gap to the best alternative, with no weighting for whether
+# the candidate would actually still be there if the owner waited. V2
+# layers an empirical, Monte Carlo survival probability on top of that
+# same gap -- estimated by re-running the real CPU market-ADP simulator
+# (_advance_cpu / _select_asset, redraft_draft_room_v1_service.py) across
+# several seeds, exactly the same reuse-the-real-simulator approach Team
+# Score and Championship Equity already use. Not a closed-form/normal-
+# distribution ADP model.
+COST_OF_WAITING_V2_VERSION = "shadow-cost-of-waiting-v2"
+COST_OF_WAITING_V2_LABEL = "COST_OF_WAITING_V2 — RESEARCH (Monte Carlo survival-weighted)"
+
+
+def candidate_survival_probability(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    state: Mapping[str, Any],
+    *,
+    owner_slot: int,
+    candidate_player_id: str,
+    alternative_player_id: str,
+    trials: int = DEFAULT_TRIALS,
+    base_seed: int = DEFAULT_SEED,
+) -> float:
+    """Empirical probability `candidate_player_id` is still undrafted when
+    it becomes the owner's next turn, given the owner takes
+    `alternative_player_id` right now instead. Estimated across `trials`
+    independently-seeded re-runs of the real CPU-only advance between
+    picks (_advance_cpu with stop_at_owner=True) -- never mutates the
+    caller's `state`. If the candidate or alternative is already
+    unavailable, returns 1.0 (nothing left to lose by waiting) as the
+    honest structural answer rather than a fabricated number; if the
+    draft is already complete at `state`, likewise 1.0 (there is no next
+    owner turn to wait for)."""
+    from src.services.redraft_draft_room_v1_service import (
+        _advance_cpu,
+        _asset_pool,
+        _complete,
+        _record_pick,
+    )
+
+    drafted = set(state.get("drafted", []))
+    pool = _asset_pool(ranking, manual_assets)
+    alternative_asset = pool.get(alternative_player_id)
+    if (
+        alternative_asset is None
+        or candidate_player_id not in pool
+        or candidate_player_id in drafted
+        or alternative_player_id in drafted
+        or _complete(profile, state)
+    ):
+        return 1.0
+    survived = 0
+    trial_count = max(1, trials)
+    for trial in range(trial_count):
+        trial_state: dict[str, Any] = {**dict(state), "seed": base_seed + trial}
+        trial_state = _record_pick(
+            profile,
+            trial_state,
+            alternative_asset,
+            actor="OWNER_SIMULATED_ALTERNATIVE",
+            behavior="COST_OF_WAITING_V2_TRIAL",
+        )
+        trial_state = _advance_cpu(
+            profile, ranking, manual_assets, adp, trial_state, stop_at_owner=True
+        )
+        if candidate_player_id not in trial_state.get("drafted", []):
+            survived += 1
+    return round(survived / trial_count, 4)
+
+
+@dataclass(frozen=True)
+class CostOfWaitingV2Result:
+    candidate_player_id: str
+    best_alternative_player_id: str
+    survival_probability: float
+    trials: int
+    value_gap: float  # V1's plain Team-Score-gap lower bound, kept for transparency
+    expected_cost: float  # (1 - survival_probability) * value_gap
+    label: str = COST_OF_WAITING_V2_LABEL
+
+
+def evaluate_cost_of_waiting_v2(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    *,
+    owner_slot: int,
+    candidate_player_ids: Sequence[str],
+    pick_scores: Mapping[str, PickScoreResult],
+    from_state: Mapping[str, Any] | None = None,
+    trials: int = DEFAULT_TRIALS,
+    base_seed: int = DEFAULT_SEED,
+) -> dict[str, CostOfWaitingV2Result]:
+    """Layers survival-weighting on top of evaluate_pick_candidates()'s own
+    pick_score() output -- additive transparency, not a competing concept.
+    For each candidate, 'the best alternative' is whichever OTHER
+    evaluated candidate has the highest team_score_after, matching
+    pick_score()'s own definition exactly. Candidates not present in
+    `pick_scores`, or with no other evaluated candidate to compare
+    against, are skipped rather than guessed."""
+    state = from_state or {
+        "schema_version": 1,
+        "profile_id": profile.profile_id,
+        "owner_slot": owner_slot,
+        "seed": base_seed,
+        "speed": "FAST",
+        "mode": "MOCK",
+        "drafted": [],
+        "picks": [],
+        "updated_at_utc": "",
+    }
+    out: dict[str, CostOfWaitingV2Result] = {}
+    for candidate in candidate_player_ids:
+        score = pick_scores.get(candidate)
+        if score is None:
+            continue
+        others = {
+            pid: other.team_score_after for pid, other in pick_scores.items() if pid != candidate
+        }
+        if not others:
+            continue
+        alternative = max(others, key=lambda pid: others[pid])
+        survival = candidate_survival_probability(
+            profile,
+            ranking,
+            manual_assets,
+            adp,
+            state,
+            owner_slot=owner_slot,
+            candidate_player_id=candidate,
+            alternative_player_id=alternative,
+            trials=trials,
+            base_seed=base_seed,
+        )
+        expected = round((1.0 - survival) * score.cost_of_waiting, 2)
+        out[candidate] = CostOfWaitingV2Result(
+            candidate_player_id=candidate,
+            best_alternative_player_id=alternative,
+            survival_probability=survival,
+            trials=trials,
+            value_gap=score.cost_of_waiting,
+            expected_cost=expected,
+        )
+    return out
+
+
 # --- Bounded look-ahead (section 12) ---
 # At each candidate: force it as the owner's next pick, then let the rest
 # of the draft (opponents AND the owner's own later picks) complete via
