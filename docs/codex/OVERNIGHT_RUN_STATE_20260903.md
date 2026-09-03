@@ -5,101 +5,47 @@ from this file + `LAST_GOOD_COMMIT` rather than restarting research from
 scratch.
 
 ```
-CURRENT_HEAD: b3969882 (feat: QB replacement-depth CHALLENGER -- mechanism-only proof, section 13)
+CURRENT_HEAD: 971ee6b2a5ec2136410bb3d1c93116aa32f8aa33
 CURRENT_BRANCH: work/nwr-draft-upgrade-hq-v1-20260903
-CLEAN_STATUS: clean (at time of writing)
-LAST_GOOD_COMMIT: b3969882 "feat: QB replacement-depth CHALLENGER -- mechanism-only proof (section 13)"
+CLEAN_STATUS: not fully clean -- 5 pre-existing unrelated docs/model_v4/*.md
+  edits (untouched by this session, still awaiting owner review) +
+  1 untracked file (desktop/launch-draft-upgrade-preview.bat, deliberate)
+LAST_GOOD_COMMIT: 971ee6b2 "fix: reword model_health_dashboard_service docstring..."
 WORKTREE_ROOT: C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrade-hq
 ```
 
-## ACTIVE_LANES
-None. Every remaining directive lane is either COMPLETED or BLOCKED
-below. Writing the final comprehensive report now (section 26/12/13).
+## Wave: PRE-HISTORICAL CALIBRATION MAXIMUM READINESS V1 (this continuation)
 
-## FULL-SUITE REGRESSION ATTEMPT (honest result, not "clean")
-A whole-repo `pytest tests/` run (4,015 tests total, confirmed via
-`--collect-only`) was attempted twice tonight and was killed by the
-environment both times, non-deterministically (52% completion on the
-first attempt, 21% on the second, `--tb=no` on the second to rule out
-output volume as the cause) -- consistent with this machine's known
-resource-exhaustion history, not with anything this session changed.
-It was NOT retried a third time, per the addendum's resource-discipline
-guidance against repeatedly retrying a failing heavyweight operation.
+Full report: `docs/codex/PRE_HISTORICAL_CALIBRATION_MAXIMUM_READINESS_REPORT_20260903.md`
+(verdict: YELLOW_CALIBRATION_PIPELINE_READY_WITH_NAMED_GAPS).
 
-The authoritative, complete result instead: every test file this
-session touched or created (13 files, `git diff --name-only
-a5b9d8cf..HEAD -- 'tests/*.py'`) run together start-to-finish:
-**260 passed / 5 failed**, all 5 the same pre-existing
-`test_desktop_application_api.py` baseline failures named below,
-unchanged in name and cause all session (confirmed by directly matching
-the position of the 5 F's against `test_desktop_application_api.py`'s
-known line range in the partial full-suite run before it was killed --
-same file, same count). This is the full, honest scope of this
-session's own regression claim -- whole-repo status outside these files
-was never exercised tonight and is an explicit unknown, not a claim
-this session makes.
+14 commits this wave (`9937041d..971ee6b2`): preview bootstrap sidecar
+fix, point-in-time feature store, baseline strategy framework, outcome
+evaluation framework, score provenance + DecisionBundle API, AI
+Explanation API over DecisionBundle, historical draft replay engine,
+Champion/Challenger registry hardening (parent/code_sha/feature_set_sha/
+training-calibration-evaluation dataset sha/algorithm_parameters,
+promotion-receipt enforcement, RESEARCH_ONLY status), one-command
+historical calibration readiness entrypoint (proven against synthetic
+AND real-shaped CSV data), source conflict resolution, AI
+hypothesis-to-challenger pipeline, bounded challenger experiment runner,
+model health dashboard data contract.
 
-Frontend: unchanged since the last verified run (commit `4c7a2900`,
-before this) -- `tsc -b` clean, `vitest run apps/redraft` 40/40, `vite
-build` clean. No frontend file has been touched since that
-verification (both commits since, `aa34efd7` and `b3969882`, are
-Python/docs only), so it was not re-run.
+## Regression (this wave)
 
-## COMPLETED_LANES (this continuation, commits `a5b9d8cf`..`b3969882`)
-- NWR PURE experimental mode toggle + external-intel gate
-- Sleeper live auto-sync (bounded, read-only)
-- Catch-up mode (paste/preview/apply + real 35-tail-pick acceptance test)
-- Cost of Waiting V2 (Monte Carlo survival-weighted) + real-case
-  labeling (Troy Franklin regression test)
-- Champion/Challenger registry (no auto-promotion) + rollback pointer
-  mechanics + a structural no-hidden-auto-promotion proof
-- Historical replay data adapter (validators/loader/splitter/runner) +
-  explicit BLOCKED_* status codes
-- AI Intelligence backend: News Scout -> Impact Analyst (direct +
-  beneficiary + role-uncertainty) -> Explanation, fixture-tested
-  end-to-end pipeline
-- Draft Room V2: real, isolated, tested candidate at /draft-room-v2
-  (tabs/drawer/compare/UDK badges) -- supersedes the earlier contract-
-  only doc
-- UDK qualitative flags review queue (deterministic extraction blocked
-  in this environment; not fabricated)
-- NWR PURE 001 freeze receipt real git-provenance wiring
-- Decision receipts wired into every NWR PURE owner pick (blocks on
-  write failure unless emergency_override; corrections never rewrite
-  the original receipt)
-- Player-universe Saturday renewal packet (owner decision packet)
-- Team Score V2 hardening (composition report, availability discount) +
-  Team Score/Championship Equity/Pick Score/optimizer benchmark (real
-  CSVs in docs/codex/)
-- QB pathology Moneyball demonstration (real numbers, Superflex
-  inversion)
-- KHA decision shadow replay (real 157-pick board, 10 owner picks,
-  independent no-leak recomputation test)
-- Rookie challenger v2 gap-gated variant (real backtest improvement)
-- Launcher/product consolidation plan (design only, no build/shortcut --
-  no built executable exists to point one at without an unattended
-  Tauri release build, an explicit resource-discipline risk skipped by
-  design)
-- Final KHA operational replay re-verification (192/192, 23/23, 14/14,
-  5/5, 35-tail, corrections, checkpoint root -- all re-confirmed fresh)
-- QB marginal-value CHALLENGER status (why a real backtested version is
-  blocked) + QB replacement-depth CHALLENGER mechanism-only proof
-  (calls the real unmodified `calculate_replacement_levels()` against a
-  disclosed synthetic ladder, confirms the fix direction mechanically)
+Consolidated run across every module touched this wave plus every
+adjacent prior-wave suite (27 test files, ~355+ tests): **355 passed / 5
+pre-existing baseline failures** (same 5 as every prior wave, unchanged
+names/causes, in `tests/test_desktop_application_api.py`). No frontend
+file touched this wave -- last verified frontend state (40/40 vitest,
+clean tsc/build) stands unchanged.
 
-## BLOCKED_LANES
-- **Formal Saturday NWR PURE 001 release**: BLOCKED. Player-universe
-  approval receipt requires fresh owner action -- see
-  `docs/codex/PLAYER_UNIVERSE_SATURDAY_RENEWAL_PACKET.md` for the exact
-  two options and the exact JSON the owner needs to sign.
-- **Historical Dataset Research Engine**: BLOCKED, explicitly out of
-  scope per the directive ("No Dataset Research Engine implementation").
-  Historical adapter is ready to consume real data once it exists.
-- **Real (backtested) QB replacement-baseline CHALLENGER**: BLOCKED on
-  the same player-universe/projection-magnitude data as the Saturday
-  release -- see `QB_MARGINAL_VALUE_CHALLENGER_STATUS_20260903.md`. The
-  mechanism-only proof (not blocked, completed) is the honest
-  substitute available without that data.
+One real (self-caught, self-fixed) regression this wave: a docstring in
+`model_health_dashboard_service.py` named
+"champion_challenger_registry_service" in prose, tripping that module's
+own structural no-unexpected-references test. Fixed by rewording (commit
+`971ee6b2`); the registry's actual write-path guarantee was never
+actually violated (no import, no call).
 
 ## KNOWN_BASELINE_FAILURES (backend, pre-existing all session, do not
 re-investigate unless behavior actually changes)
@@ -109,14 +55,22 @@ re-investigate unless behavior actually changes)
 - `test_redraft_league_switching_isolates_draft_state_and_persists_active_profile`
 - `test_facade_has_no_streamlit_or_app_component_dependency`
 All five are in `tests/test_desktop_application_api.py`, none touch a
-file this session has modified, and root cause (a hermetic-seed/
-environment gap unrelated to this session's changes) was established
-early in the session.
+file any session this branch has modified, root cause (a hermetic-seed/
+environment gap) established early in the original overnight session.
+
+## BLOCKED_LANES (unchanged from the prior wave's report)
+- **Formal Saturday NWR PURE 001 release**: player-universe approval
+  needs fresh owner action -- `docs/codex/PLAYER_UNIVERSE_SATURDAY_RENEWAL_PACKET.md`.
+- **CHAMPIONSHIP_EQUITY_CALIBRATION / PICK_SCORE_EVALUATION /
+  COST_OF_WAITING_CALIBRATION real computation**: blocked on a
+  historical-row -> RankingResult/AdpSnapshot adapter (named exactly in
+  this wave's final report) -- the single next task, not attempted this
+  wave to avoid a rushed, undertested bridge.
 
 ## CURRENT_TASK
-None -- writing the final comprehensive report
-(`docs/codex/OVERNIGHT_FINAL_REPORT_20260903.md`).
+None -- this wave's final report is written
+(`PRE_HISTORICAL_CALIBRATION_MAXIMUM_READINESS_REPORT_20260903.md`).
 
 ## NEXT_TASK
-See the final report's "next three highest-value tasks" section once
-written.
+See that report's "Immediate first commands/actions once historical data
+arrives" section.
