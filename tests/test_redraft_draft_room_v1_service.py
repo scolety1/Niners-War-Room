@@ -8,6 +8,7 @@ import pytest
 from src.application.contracts import public_json_value
 from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
+    apply_catch_up_paste,
     approve_owner_platform_manual_match,
     clear_owner_platform_manual_match,
     clear_pick,
@@ -24,6 +25,8 @@ from src.services.redraft_draft_room_v1_service import (
     load_adp_snapshot,
     load_room_state,
     owner_pick_and_advance,
+    preview_catch_up_paste,
+    record_catch_up_pick,
     refresh_fantasy_football_calculator_adp,
     preview_owner_paste_adp,
     replace_pick,
@@ -872,4 +875,107 @@ def test_sleeper_auto_sync_requires_live_read_only_mode(tmp_path) -> None:
         sync_read_only_sleeper_picks(
             tmp_path, ranking.profile, ranking, _manual_assets(),
             sleeper_picks=[], sleeper_players={},
+        )
+
+
+def test_catch_up_preview_blocks_on_ambiguous_name(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    manual = _manual_assets() + [
+        {
+            "player_id": "manual:WR:dup-a", "player_name": "Duplicate Guy",
+            "position": "WR", "team": "AAA", "authority": "MANUAL",
+        },
+        {
+            "player_id": "manual:WR:dup-b", "player_name": "Duplicate Guy",
+            "position": "WR", "team": "BBB", "authority": "MANUAL",
+        },
+    ]
+    preview = preview_catch_up_paste(
+        tmp_path, ranking.profile, ranking, manual, paste="Duplicate Guy"
+    )
+    assert preview["rows"][0]["status"] == "AMBIGUOUS"
+    candidate_ids = {c["playerId"] for c in preview["rows"][0]["candidates"]}
+    assert candidate_ids == {"manual:WR:dup-a", "manual:WR:dup-b"}
+    assert preview["readyToApply"] is False
+    with pytest.raises(RedraftValidationError, match="unresolved, ambiguous"):
+        apply_catch_up_paste(tmp_path, ranking.profile, ranking, manual, paste="Duplicate Guy")
+    # nothing was written
+    assert load_room_state(tmp_path, ranking.profile, ranking, manual)["picks"] == []
+
+
+def test_catch_up_preview_blocks_on_no_match(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    preview = preview_catch_up_paste(
+        tmp_path, ranking.profile, ranking, _manual_assets(), paste="Nobody Real Person"
+    )
+    assert preview["rows"][0]["status"] == "NO_MATCH"
+    assert preview["readyToApply"] is False
+
+
+def test_catch_up_preview_blocks_when_more_names_than_open_slots(tmp_path) -> None:
+    ranking = _ranking()
+    tiny_profile = replace(
+        ranking.profile, team_count=1, draft=DraftContext(rounds=1, draft_slot=1)
+    )
+    tiny_ranking = replace(ranking, profile=tiny_profile)
+    start_draft_room(
+        tmp_path, tiny_profile, tiny_ranking, _manual_assets(), _empty_adp(tiny_profile),
+        owner_slot=1, mode="LIVE_READ_ONLY",
+    )
+    preview = preview_catch_up_paste(
+        tmp_path, tiny_profile, tiny_ranking, _manual_assets(), paste="QB 0\nRB 0\n"
+    )
+    assert preview["overflowNames"] == ["RB 0"]
+    assert preview["readyToApply"] is False
+
+
+def test_catch_up_apply_fills_an_existing_gap_and_appends_a_new_tail_pick(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    record_catch_up_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(), player_id="QB-0", pick_number=1
+    )
+    record_catch_up_pick(
+        tmp_path, ranking.profile, ranking, _manual_assets(), player_id="RB-0", pick_number=2
+    )
+    clear_pick(tmp_path, ranking.profile, ranking, _manual_assets(), pick_number=1)
+    state = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert state["picks"][0]["player_id"] == ""
+    assert len(state["picks"]) == 2
+
+    # WR 0 fills the pick-1 gap; TE 0 becomes a brand-new pick 3.
+    paste = "WR 0\nTE 0\n"
+    preview = preview_catch_up_paste(
+        tmp_path, ranking.profile, ranking, _manual_assets(), paste=paste
+    )
+    assert [row["pickNumber"] for row in preview["rows"]] == [1, 3]
+    assert preview["readyToApply"] is True
+
+    result = apply_catch_up_paste(tmp_path, ranking.profile, ranking, _manual_assets(), paste=paste)
+    assert [row["pickNumber"] for row in result["applied"]] == [1, 3]
+    state = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+    assert len(state["picks"]) == 3
+    assert state["picks"][0]["player_id"] == "WR-0"
+    assert state["picks"][0]["selection_behavior"] == "FILL_GAP"
+    assert state["picks"][2]["player_id"] == "TE-0"
+    assert state["picks"][2]["selection_behavior"] == "CATCH_UP_PASTE_EVENT"
+    assert state["picks"][2]["actor"] == "OWNER_CATCH_UP"
+
+
+def test_record_catch_up_pick_requires_live_read_only_and_next_pick_order(tmp_path) -> None:
+    ranking = _ranking()
+    start_draft_room(
+        tmp_path, ranking.profile, ranking, _manual_assets(), _empty_adp(ranking.profile),
+        owner_slot=9, mode="MOCK",
+    )
+    with pytest.raises(RedraftValidationError, match="Live Read-Only"):
+        record_catch_up_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(), player_id="QB-0", pick_number=1
+        )
+
+
+def test_record_catch_up_pick_rejects_out_of_order_pick_number(tmp_path) -> None:
+    ranking, _ = _live_room(tmp_path)
+    with pytest.raises(RedraftValidationError, match="does not match next pick"):
+        record_catch_up_pick(
+            tmp_path, ranking.profile, ranking, _manual_assets(), player_id="QB-0", pick_number=2
         )

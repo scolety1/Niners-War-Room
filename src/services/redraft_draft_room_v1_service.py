@@ -1335,6 +1335,211 @@ def sync_read_only_sleeper_picks(
     }
 
 
+# --- Catch-up mode (section 10) ---------------------------------------
+# See docs/codex/CATCH_UP_MODE_CONTRACT_20260903.md. A multi-line paste of
+# player names, one per line, resolved sequentially against the next N
+# slots that still need a player (an existing UNRESOLVED slot or a
+# brand-new upcoming one), previewed before anything is written, and
+# applied only when every line resolved unambiguously -- "AI cannot
+# silently admit ambiguous identity" (section 15) applied to this surface.
+
+
+def record_catch_up_pick(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    player_id: str,
+    pick_number: int,
+) -> dict[str, Any]:
+    """Append one new tail pick from a confirmed catch-up-mode paste line.
+    Same strict-next-pick-number append mechanism as
+    ingest_read_only_sleeper_pick, but under its own actor/behavior label
+    -- this pick did not come from Sleeper, it is an owner-confirmed match
+    against a pasted recap, and the ledger must not misattribute its
+    source."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    if state.get("mode") != "LIVE_READ_ONLY":
+        raise RedraftValidationError("Catch-up mode requires Live Read-Only mode.")
+    expected = len(state["picks"]) + 1
+    if pick_number != expected:
+        raise RedraftValidationError(
+            f"Catch-up pick {pick_number} does not match next pick {expected}."
+        )
+    asset = _asset_pool(ranking, manual_assets).get(player_id)
+    if asset is None or player_id in state["drafted"]:
+        raise RedraftValidationError("Catch-up pick player is unavailable locally.")
+    state = _record_pick(
+        profile, state, asset, actor="OWNER_CATCH_UP", behavior="CATCH_UP_PASTE_EVENT"
+    )
+    _save_room_state(root, state)
+    return state
+
+
+def _catch_up_line_names(paste: str) -> list[str]:
+    return [line.strip() for line in paste.splitlines() if line.strip()]
+
+
+def _catch_up_target_slots(
+    profile: LeagueProfile, state: Mapping[str, Any], count: int
+) -> list[int]:
+    total = profile.team_count * profile.draft.rounds
+    resolved_by_number = {pick["pick_number"]: pick for pick in state["picks"]}
+    targets: list[int] = []
+    pick_number = 1
+    while len(targets) < count and pick_number <= total:
+        existing = resolved_by_number.get(pick_number)
+        if existing is None or not existing.get("player_id"):
+            targets.append(pick_number)
+        pick_number += 1
+    return targets
+
+
+def _catch_up_candidate_row(asset: Mapping[str, Any]) -> dict[str, str]:
+    return {
+        "playerId": str(asset["player_id"]),
+        "playerName": str(asset["player_name"]),
+        "position": str(asset["position"]),
+        "team": str(asset.get("team") or ""),
+    }
+
+
+def _catch_up_resolve(
+    name: str, pool: Mapping[str, dict[str, Any]], unavailable: set[str]
+) -> dict[str, Any]:
+    core = _normalized_name_without_suffix(name)
+    exact = [
+        asset
+        for asset in pool.values()
+        if _normalized_name_without_suffix(asset["player_name"]) == core
+        and asset["player_id"] not in unavailable
+    ]
+    if len(exact) == 1:
+        match = exact[0]
+        return {
+            "pastedName": name,
+            "status": "MATCHED",
+            "playerId": match["player_id"],
+            "playerName": match["player_name"],
+            "position": match["position"],
+            "team": match.get("team") or "",
+            "candidates": [],
+        }
+    if len(exact) > 1:
+        return {
+            "pastedName": name,
+            "status": "AMBIGUOUS",
+            "playerId": None,
+            "playerName": None,
+            "position": None,
+            "team": None,
+            "candidates": [_catch_up_candidate_row(asset) for asset in exact],
+        }
+    scored = sorted(
+        (
+            (
+                difflib.SequenceMatcher(
+                    None, core, _normalized_name_without_suffix(asset["player_name"])
+                ).ratio(),
+                asset,
+            )
+            for asset in pool.values()
+            if asset["player_id"] not in unavailable
+        ),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
+    suggestions = [asset for score, asset in scored[:3] if score >= 0.6]
+    return {
+        "pastedName": name,
+        "status": "NO_MATCH",
+        "playerId": None,
+        "playerName": None,
+        "position": None,
+        "team": None,
+        "candidates": [_catch_up_candidate_row(asset) for asset in suggestions],
+    }
+
+
+def preview_catch_up_paste(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    paste: str,
+) -> dict[str, Any]:
+    """Pure preview -- never writes. Resolves each pasted name against the
+    next N slots needing a player; a name that is ambiguous or has no
+    confident match blocks readyToApply for the whole batch rather than
+    silently skipping or guessing."""
+    state = load_room_state(root, profile, ranking, manual_assets)
+    names = _catch_up_line_names(paste)
+    targets = _catch_up_target_slots(profile, state, len(names))
+    pool = _asset_pool(ranking, manual_assets)
+    unavailable = set(state["drafted"])
+    rows: list[dict[str, Any]] = []
+    for pick_number, name in zip(targets, names, strict=False):
+        row = _catch_up_resolve(name, pool, unavailable)
+        row["pickNumber"] = pick_number
+        if row["status"] == "MATCHED":
+            unavailable.add(row["playerId"])
+        rows.append(row)
+    overflow_names = names[len(targets) :]
+    ready = bool(rows) and not overflow_names and all(row["status"] == "MATCHED" for row in rows)
+    return {
+        "rows": rows,
+        "overflowNames": overflow_names,
+        "readyToApply": ready,
+    }
+
+
+def apply_catch_up_paste(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    paste: str,
+) -> dict[str, Any]:
+    """Apply a catch-up paste. Re-resolves from scratch (never trusts a
+    stale client-side preview) and refuses to apply anything if any line is
+    unresolved, ambiguous, or there are more names than open slots. Reuses
+    the event ledger verbatim: an existing UNRESOLVED slot goes through
+    fill_gap_pick; a brand-new tail slot goes through record_catch_up_pick,
+    applied in ascending pick order so each append satisfies its own
+    strict next-pick-number check. (preview_catch_up_paste never selects an
+    already-RESOLVED slot as a target, so there is no third case here --
+    correcting an already-resolved pick is the separate Replace action on
+    the event ledger, not a catch-up-paste concern.)"""
+    preview = preview_catch_up_paste(root, profile, ranking, manual_assets, paste=paste)
+    if not preview["readyToApply"]:
+        raise RedraftValidationError(
+            "Catch-up paste has unresolved, ambiguous, or unassigned lines; nothing was applied."
+        )
+    state = load_room_state(root, profile, ranking, manual_assets)
+    existing_numbers = {pick["pick_number"] for pick in state["picks"]}
+    applied: list[dict[str, Any]] = []
+    for row in sorted(preview["rows"], key=lambda item: item["pickNumber"]):
+        pick_number = row["pickNumber"]
+        player_id = row["playerId"]
+        if pick_number in existing_numbers:
+            state = fill_gap_pick(
+                root, profile, ranking, manual_assets,
+                pick_number=pick_number, player_id=player_id,
+            )
+        else:
+            state = record_catch_up_pick(
+                root, profile, ranking, manual_assets,
+                pick_number=pick_number, player_id=player_id,
+            )
+        applied.append(
+            {"pickNumber": pick_number, "playerId": player_id, "playerName": row["playerName"]}
+        )
+    return {"applied": applied, "state": state}
+
+
 def run_complete_mock(
     profile: LeagueProfile,
     ranking: RankingResult,

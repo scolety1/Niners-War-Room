@@ -19,8 +19,21 @@ import re
 import unicodedata
 from pathlib import Path
 
-from src.services.redraft_draft_room_v1_service import _asset_pool
-from src.services.redraft_engine_v1_service import RankingResult
+from src.services.redraft_draft_room_v1_service import (
+    AdpSnapshot,
+    _asset_pool,
+    apply_catch_up_paste,
+    load_room_state,
+    preview_catch_up_paste,
+    start_draft_room,
+)
+from src.services.redraft_engine_v1_service import (
+    DraftContext,
+    LeagueProfile,
+    RankingResult,
+    RosterSettings,
+    ScoringSettings,
+)
 from src.services.udk_unmodeled_skill_asset_service import (
     merge_manual_assets,
     parse_udk_unmatched_skill_assets,
@@ -217,3 +230,70 @@ def test_all_14_historical_k_dst_picks_resolve_against_the_current_udk_source() 
         if not found:
             unresolved.append(recap_name)
     assert not unresolved, f"historical K/DST picks not found in the CURRENT pool: {unresolved}"
+
+
+def _empty_adp(profile_id: str) -> AdpSnapshot:
+    return AdpSnapshot(profile_id, "", "ppr", 12, "", "", "", (), ())
+
+
+def test_catch_up_mode_resolves_all_35_real_kha_tail_picks_unambiguously(tmp_path: Path) -> None:
+    """Acceptance test from docs/codex/CATCH_UP_MODE_CONTRACT_20260903.md:
+    paste the 35 real KHA tail player names (classification NO_LIVE_RECORD
+    -- the real picks 158-192, entered from the recap after live capture
+    stopped) in real recap order and confirm every one resolves
+    unambiguously and applies without any invented data.
+
+    This does not replay the full 192-pick draft against the real KHA team
+    order/round structure (that is the separate, larger section-29 KHA
+    replay regression, not yet built); it isolates catch-up mode's own
+    identity-resolution and apply path -- the actual new code this test
+    exists to prove -- against real evidence, in a fresh room sized only
+    for these 35 picks."""
+    with (FIXTURE_DIR / "RECONCILIATION_LEDGER.csv").open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    tail = sorted(
+        (row for row in rows if row["classification"] == "NO_LIVE_RECORD"),
+        key=lambda row: int(row["recap_overall_pick"]),
+    )
+    assert len(tail) == 35
+
+    manual_assets = [
+        {
+            "player_id": f"kha-tail:{index}",
+            "player_name": row["recap_player_name"],
+            "position": "DST" if row["recap_position"] == "D/ST" else row["recap_position"],
+            "team": row["recap_nfl_team"],
+            "authority": "REAL_KHA_RECAP_EVIDENCE",
+        }
+        for index, row in enumerate(tail)
+    ]
+    profile = LeagueProfile(
+        "kha-tail-catchup-test",
+        "KHA Tail Catch-Up Test",
+        2026,
+        12,
+        RosterSettings(k=1, dst=1, bench_size=6),
+        ScoringSettings(reception=1),
+        DraftContext(rounds=3, draft_slot=1),  # 12 * 3 = 36 >= 35 target slots
+    )
+    ranking = RankingResult(profile, (), (), (), "2026-08-17T00:00:00+00:00", "kha-tail-fixture")
+    adp = _empty_adp(profile.profile_id)
+    start_draft_room(
+        tmp_path, profile, ranking, manual_assets, adp, owner_slot=1, mode="LIVE_READ_ONLY"
+    )
+
+    paste = "\n".join(row["recap_player_name"] for row in tail)
+    preview = preview_catch_up_paste(tmp_path, profile, ranking, manual_assets, paste=paste)
+    assert preview["overflowNames"] == []
+    assert [row["status"] for row in preview["rows"]] == ["MATCHED"] * 35
+    assert preview["readyToApply"] is True
+
+    applied = apply_catch_up_paste(tmp_path, profile, ranking, manual_assets, paste=paste)
+    assert len(applied["applied"]) == 35
+
+    state = load_room_state(tmp_path, profile, ranking, manual_assets)
+    assert [pick["player_name"] for pick in state["picks"]] == [
+        row["recap_player_name"] for row in tail
+    ]
+    assert all(pick["actor"] == "OWNER_CATCH_UP" for pick in state["picks"])
+    assert all(pick["selection_behavior"] == "CATCH_UP_PASTE_EVENT" for pick in state["picks"])

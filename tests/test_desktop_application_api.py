@@ -1585,3 +1585,41 @@ def test_facade_sync_redraft_sleeper_picks_wires_through_to_draft_board(
     facade.activate_redraft_profile(local_id)
     with pytest.raises(FacadeError, match="requires a profile imported from Sleeper"):
         facade.sync_redraft_sleeper_picks(profile_id=local_id)
+
+
+def test_facade_catch_up_preview_and_apply_wire_through_to_draft_board(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Catch-Up Test League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    ranking = _synthetic_ranking_for(profile)
+    monkeypatch.setattr(facade, "_redraft_ranking_for_profile", lambda _pid: ranking)
+    facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=9, seed=20260817, speed="FAST", mode="LIVE_READ_ONLY"
+    )
+
+    preview = facade.preview_redraft_catch_up(profile_id=profile_id, paste="QB 0\nRB 0\n")
+    rows = preview.data["catchUpPreview"]["rows"]
+    assert [row["status"] for row in rows] == ["MATCHED", "MATCHED"]
+    assert preview.data["catchUpPreview"]["readyToApply"] is True
+
+    applied = facade.apply_redraft_catch_up(profile_id=profile_id, paste="QB 0\nRB 0\n")
+    assert [row["playerId"] for row in applied.data["catchUpApplied"]] == ["QB-0", "RB-0"]
+    board_cells = applied.data["draftBoard"]["boardCells"]
+    first_two = sorted(
+        (cell for cell in board_cells if cell["pickNumber"] in (1, 2)),
+        key=lambda cell: cell["pickNumber"],
+    )
+    assert [cell["playerId"] for cell in first_two] == ["QB-0", "RB-0"]
+
+    # An ambiguous/unresolved paste is rejected -- nothing is written.
+    with pytest.raises(FacadeError, match="unresolved, ambiguous"):
+        facade.apply_redraft_catch_up(profile_id=profile_id, paste="Nobody Real Person")
+    unchanged = facade.redraft_bootstrap().data["draftBoard"]["boardCells"]
+    assert len([cell for cell in unchanged if cell["playerId"]]) == 2

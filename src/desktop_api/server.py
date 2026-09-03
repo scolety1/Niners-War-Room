@@ -51,6 +51,8 @@ _REDRAFT_PICK_CLEAR = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/clear$")
 _REDRAFT_PICK_FILL_GAP = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/fill-gap$")
 _REDRAFT_PICK_CORRECTION_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/undo-correction$")
 _REDRAFT_EXTERNAL_INTELLIGENCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/external-intelligence$")
+_REDRAFT_CATCH_UP_PREVIEW = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/preview$")
+_REDRAFT_CATCH_UP_APPLY = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/apply$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
     {
@@ -636,6 +638,24 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             self._reject_unknown_fields(body, set())
             return self.server.facade.sync_redraft_sleeper_picks(
                 profile_id=unquote(sleeper_sync_match.group(1))
+            )
+        catch_up_preview_match = _REDRAFT_CATCH_UP_PREVIEW.fullmatch(path)
+        if method == "POST" and catch_up_preview_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"paste"})
+            if not isinstance(body.get("paste"), str):
+                raise self._invalid_body("paste must be a string.")
+            return self.server.facade.preview_redraft_catch_up(
+                profile_id=unquote(catch_up_preview_match.group(1)), paste=body["paste"]
+            )
+        catch_up_apply_match = _REDRAFT_CATCH_UP_APPLY.fullmatch(path)
+        if method == "POST" and catch_up_apply_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"paste"})
+            if not isinstance(body.get("paste"), str):
+                raise self._invalid_body("paste must be a string.")
+            return self.server.facade.apply_redraft_catch_up(
+                profile_id=unquote(catch_up_apply_match.group(1)), paste=body["paste"]
             )
         pick_match = _REDRAFT_DRAFT_PICK.fullmatch(path)
         if method == "POST" and pick_match:

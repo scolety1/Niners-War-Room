@@ -16,6 +16,8 @@ import {
   type PlanningWorkspace,
   type PasteAdpPreview,
   type RedraftBootstrap,
+  type RedraftCatchUpApplyResponse,
+  type RedraftCatchUpPreviewResponse,
   type RedraftExternalIntelligenceResponse,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
@@ -367,6 +369,20 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/sleeper-sync`, {
       method: "POST",
       body: "{}",
+    });
+  }
+
+  previewCatchUpPaste(profileId: string, paste: string): Promise<RedraftCatchUpPreviewResponse> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/catch-up/preview`, {
+      method: "POST",
+      body: JSON.stringify({ paste }),
+    });
+  }
+
+  applyCatchUpPaste(profileId: string, paste: string): Promise<RedraftCatchUpApplyResponse> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/catch-up/apply`, {
+      method: "POST",
+      body: JSON.stringify({ paste }),
     });
   }
 

@@ -882,6 +882,45 @@ export interface RedraftExternalIntelligenceResponse {
   externalIntelligence: RedraftExternalIntelligence;
 }
 
+export interface CatchUpCandidate {
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+}
+
+export interface CatchUpPreviewRow {
+  pastedName: string;
+  status: "MATCHED" | "AMBIGUOUS" | "NO_MATCH";
+  playerId: string | null;
+  playerName: string | null;
+  position: string | null;
+  team: string | null;
+  candidates: CatchUpCandidate[];
+  pickNumber: number;
+}
+
+export interface CatchUpPreview {
+  rows: CatchUpPreviewRow[];
+  overflowNames: string[];
+  readyToApply: boolean;
+}
+
+export interface RedraftCatchUpPreviewResponse {
+  catchUpPreview: CatchUpPreview;
+}
+
+export interface CatchUpAppliedRow {
+  pickNumber: number;
+  playerId: string;
+  playerName: string;
+}
+
+export interface RedraftCatchUpApplyResponse {
+  draftBoard: DraftBoard;
+  catchUpApplied: CatchUpAppliedRow[];
+}
+
 export interface RedraftBootstrap {
   product: {
     title: string;

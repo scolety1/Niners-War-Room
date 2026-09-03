@@ -101,8 +101,10 @@ from src.services.player_rank_owner_explanation_service import (
 )
 from src.services.redraft_draft_room_v1_service import (
     advance_cpu_to_owner,
+    apply_catch_up_paste,
     build_draft_room_payload,
     import_owner_adp_csv,
+    preview_catch_up_paste,
     preview_owner_paste_adp,
     approve_owner_platform_manual_match,
     clear_owner_platform_manual_match,
@@ -2437,6 +2439,41 @@ class DesktopBackendFacade:
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_UNDO_CORRECTION_FAILED", str(exc), status=409) from exc
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
+
+    def preview_redraft_catch_up(self, *, profile_id: str, paste: str) -> FacadePayload:
+        """Section 10: pure preview of a multi-line catch-up paste -- never
+        writes. See docs/codex/CATCH_UP_MODE_CONTRACT_20260903.md."""
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            preview = preview_catch_up_paste(
+                self.redraft_root, profile, ranking, manual_assets, paste=str(paste)
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_CATCH_UP_PREVIEW_FAILED", str(exc), status=409) from exc
+        return FacadePayload(data={"catchUpPreview": preview})
+
+    def apply_redraft_catch_up(self, *, profile_id: str, paste: str) -> FacadePayload:
+        """Section 10: apply a catch-up paste -- refuses (via
+        apply_catch_up_paste) if any line is unresolved, ambiguous, or
+        there are more names than open slots. Re-resolves from scratch
+        rather than trusting a client-held preview."""
+        profile, ranking, manual_assets = self._redraft_correction_context(profile_id)
+        try:
+            result = apply_catch_up_paste(
+                self.redraft_root, profile, ranking, manual_assets, paste=str(paste)
+            )
+            adp = load_adp_snapshot(self.redraft_root, profile)
+            board = build_draft_room_payload(
+                profile, ranking, manual_assets, adp, result["state"]
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_CATCH_UP_APPLY_FAILED", str(exc), status=409) from exc
+        return FacadePayload(
+            data={
+                "draftBoard": self._draft_board_payload(board),
+                "catchUpApplied": result["applied"],
+            }
+        )
 
     def redraft_external_intelligence(self, *, profile_id: str) -> FacadePayload:
         """Read-only owner-authorized UDK/FantasyPros/current-alert context,
