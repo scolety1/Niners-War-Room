@@ -131,6 +131,39 @@ def test_bridge_builds_point_in_time_features_for_position_and_team() -> None:
     assert feature.value == "RB"
 
 
+def test_bridge_populates_market_overall_adp_in_the_feature_store() -> None:
+    # Regression: the ADP was previously only added to the AdpSnapshot,
+    # never the feature store -- PLATFORM_ADP strategy silently could not
+    # resolve a single candidate as a result. Locked in here.
+    result = build_ranking_result_from_historical_rows(
+        _real_rows(), _profile(), generated_at_utc="2019-08-25T00:00:00Z",
+        source_sha256="deadbeef" * 8,
+    )
+    feature = result.feature_store.lookup_as_of(
+        player_id="RB-0", season=2019, feature_name="market.overall_adp", as_of="2019-08-25",
+    )
+    assert feature.value_status == "KNOWN"
+    assert feature.value is not None
+
+
+def test_bridge_populates_nwr_overall_rank_and_vor_from_the_real_generated_ranking() -> None:
+    result = build_ranking_result_from_historical_rows(
+        _real_rows(), _profile(), generated_at_utc="2019-08-25T00:00:00Z",
+        source_sha256="deadbeef" * 8,
+    )
+    top_row = result.ranking.rows[0]
+    rank_feature = result.feature_store.lookup_as_of(
+        player_id=top_row.player_id, season=2019,
+        feature_name="nwr_component_scores.overall_rank", as_of="2019-08-25",
+    )
+    assert rank_feature.value == float(top_row.overall_rank)
+    vor_feature = result.feature_store.lookup_as_of(
+        player_id=top_row.player_id, season=2019,
+        feature_name="replacement_level.value_over_replacement", as_of="2019-08-25",
+    )
+    assert vor_feature.value == float(top_row.replacement_adjusted_value)
+
+
 def test_bridge_refuses_when_no_row_has_any_real_stats() -> None:
     rows = [_row("RB-0", "RB"), _row("WR-0", "WR")]
     with pytest.raises(HistoricalRankingBridgeError):

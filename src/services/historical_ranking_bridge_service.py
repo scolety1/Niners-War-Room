@@ -31,9 +31,12 @@ from typing import Any
 from src.services.point_in_time_feature_store_service import (
     FAMILY_AVAILABILITY,
     FAMILY_CURRENT_TEAM,
+    FAMILY_NWR_COMPONENT_SCORES,
     FAMILY_POSITION,
+    FAMILY_REPLACEMENT_LEVEL,
     FAMILY_ROOKIE_STATUS,
     PointInTimeFeatureStore,
+    feature_value_from_adp_entry,
     known_feature_value,
 )
 from src.services.redraft_draft_room_v1_service import AdpEntry, AdpSnapshot
@@ -217,6 +220,8 @@ def build_ranking_result_from_historical_rows(
         feature_values.extend(_feature_values_for_row(row, draft_date=draft_date))
 
         adp_value = row.get("platform_adp")
+        season = int(row["season"]) if row.get("season") is not None else None
+        adp_source_date = str(row.get("adp_as_of") or draft_date)
         if adp_value not in (None, ""):
             adp_entries.append(
                 AdpEntry(
@@ -226,8 +231,25 @@ def build_ranking_result_from_historical_rows(
                     min_pick=None, max_pick=None, std_dev=None,
                 )
             )
-        elif player_id:
-            unmatched_adp.append(player_id)
+            if season is not None:
+                feature_values.append(
+                    feature_value_from_adp_entry(
+                        player_id=player_id, season=season, as_of=draft_date,
+                        overall_adp=float(adp_value), source_date=adp_source_date,
+                        retrieved_at=draft_date, match_status="MATCHED",
+                    )
+                )
+        else:
+            if player_id:
+                unmatched_adp.append(player_id)
+            if season is not None and player_id:
+                feature_values.append(
+                    feature_value_from_adp_entry(
+                        player_id=player_id, season=season, as_of=draft_date,
+                        overall_adp=None, source_date=adp_source_date,
+                        retrieved_at=draft_date, match_status="NO_HISTORICAL_ADP",
+                    )
+                )
 
     if not players:
         raise HistoricalRankingBridgeError(
@@ -245,6 +267,33 @@ def build_ranking_result_from_historical_rows(
         source_as_of=generated_at_utc,
     )
     ranking = generate_rankings(profile, snapshot)
+
+    # NWR-derived features (overall_rank, VOR) only exist once generate_rankings()
+    # has run -- they are production-computed outputs, not raw historical row
+    # data, so they are added to the feature store here, not in the per-row
+    # loop above.
+    for output_row in ranking.rows:
+        feature_values.append(
+            known_feature_value(
+                player_id=output_row.player_id, season=profile.season, as_of=draft_date,
+                feature_name="nwr_component_scores.overall_rank",
+                feature_family=FAMILY_NWR_COMPONENT_SCORES,
+                value=float(output_row.overall_rank), source="historical_ranking_bridge",
+                source_as_of=draft_date, retrieved_at=generated_at_utc,
+                confidence="HIGH", feature_version=BRIDGE_VERSION,
+            )
+        )
+        feature_values.append(
+            known_feature_value(
+                player_id=output_row.player_id, season=profile.season, as_of=draft_date,
+                feature_name="replacement_level.value_over_replacement",
+                feature_family=FAMILY_REPLACEMENT_LEVEL,
+                value=float(output_row.replacement_adjusted_value),
+                source="historical_ranking_bridge",
+                source_as_of=draft_date, retrieved_at=generated_at_utc,
+                confidence="HIGH", feature_version=BRIDGE_VERSION,
+            )
+        )
 
     adp = AdpSnapshot(
         profile_id=profile.profile_id, source="historical_dataset",
