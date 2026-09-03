@@ -20,11 +20,54 @@ from typing import Any
 from src.services.redraft_engine_v1_service import RankingResult
 
 DEFAULT_CHEAT_SHEET_PATH = Path(r"C:\NWR_DRAFT_DAY_TOOLS\KHA_FINAL_CHEAT_SHEET.csv")
+DEFAULT_UDK_SNAPSHOT_PATH = Path(r"C:\NWR_DRAFT_DAY_TOOLS\2026-09-02\udk\KHA_UDK_2026_SNAPSHOT.csv")
 
 
 def _cheat_sheet_path() -> Path:
     override = os.environ.get("NWR_KHA_CHEAT_SHEET_PATH", "").strip()
     return Path(override) if override else DEFAULT_CHEAT_SHEET_PATH
+
+
+def _udk_snapshot_path() -> Path:
+    override = os.environ.get("NWR_KHA_UDK_SNAPSHOT_PATH", "").strip()
+    return Path(override) if override else DEFAULT_UDK_SNAPSHOT_PATH
+
+
+_UDK_SNAPSHOT_FIELDS = {
+    "udk_position_rank": "udkPositionRank", "udk_tier": "udkTier", "udk_adp_raw": "udkAdp",
+    "udk_risk": "udkRisk", "udk_upside": "udkUpside", "udk_projected_points": "udkProjectedPoints",
+}
+
+
+def _load_udk_by_player_id() -> dict[str, dict[str, Any]]:
+    """UDK fields keyed directly by the nwr_player_id the UDK ingestion pipeline
+    already resolved (KHA_UDK_2026_SNAPSHOT.csv's own identity-matching pass,
+    which tolerates provider team-code differences like LAR/LA, ARI/AZ,
+    JAC/JAX and Jr./Sr./III suffixes). No re-matching, no team-code
+    comparison, no fuzzy logic here -- a plain dict lookup by the identity
+    that pipeline already committed to. Returns {} on any failure."""
+    path = _udk_snapshot_path()
+    if not path.is_file():
+        return {}
+    try:
+        with path.open(encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+    except (OSError, csv.Error):
+        return {}
+    by_player_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        player_id = str(row.get("nwr_player_id", "")).strip()
+        if not player_id or str(row.get("identity_status", "")).strip() != "MATCHED":
+            continue
+        fields: dict[str, Any] = {}
+        for csv_field, js_field in _UDK_SNAPSHOT_FIELDS.items():
+            value = row.get(csv_field, "")
+            fields[js_field] = value if value not in ("", None, "UNKNOWN") else None
+        # A player can appear on the snapshot from both default.pdf and
+        # expanded.pdf reconciliation; keep the first (they're checked
+        # identical -- zero field-mismatch -- at ingestion time).
+        by_player_id.setdefault(player_id, fields)
+    return by_player_id
 
 
 def _norm_name(name: str) -> str:
@@ -67,6 +110,8 @@ def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
         (row.position, _norm_name(row.player_name), row.team): row.player_id
         for row in ranking.rows
     }
+    udk_by_player_id = _load_udk_by_player_id()
+    udk_overlay_count = 0
     entries: list[dict[str, Any]] = []
     for row in rows:
         try:
@@ -80,10 +125,22 @@ def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
         for csv_field, js_field in _DISPLAY_FIELDS.items():
             value = row.get(csv_field, "")
             entry[js_field] = value if value not in ("", None, "API_TIER_NOT_RETURNED") else None
+        # Overlay UDK fields from the already-resolved identity mapping,
+        # not the cheat sheet's own (provider-team-code-sensitive) copy of
+        # them -- this is what recovers players like Puka Nacua (LAR/LA),
+        # Matthew Stafford (LAR/LA), and Trey McBride (ARI/AZ) whose UDK
+        # data the cheat-sheet build's own exact-team-match had missed.
+        resolved = udk_by_player_id.get(player_id)
+        if resolved is not None:
+            entry.update(resolved)
+            udk_overlay_count += 1
         entries.append(entry)
 
     return {
         "available": True,
-        "generatedNote": f"{len(entries)} of {len(ranking.rows)} NWR players enriched from the owner's external cheat sheet",
+        "generatedNote": (
+            f"{len(entries)} of {len(ranking.rows)} NWR players enriched from the owner's external cheat sheet "
+            f"({udk_overlay_count} with identity-resolved UDK data)"
+        ),
         "entries": entries,
     }
