@@ -13,6 +13,7 @@ from src.services.redraft_draft_room_v1_service import (
     _adp_explanation,
     _freshness_label,
     _owner_platform_rows,
+    _recommendations,
     build_draft_room_payload,
     import_owner_adp_csv,
     load_adp_snapshot,
@@ -484,3 +485,71 @@ def test_ffc_cpu_source_pick_nine_and_freshness_labels(tmp_path) -> None:
     now = datetime.now(UTC)
     assert _freshness_label((now - timedelta(hours=25)).isoformat(), now=now) == "RECENT"
     assert _freshness_label((now - timedelta(hours=73)).isoformat(), now=now) == "STALE"
+
+
+def test_suggestions_exclude_a_position_already_at_its_league_maximum() -> None:
+    """Directive: 'QB max = 2, owner QB count = 2 -> QB players remain
+    visible/searchable in PLAYERS but QB is INELIGIBLE for actionable
+    SUGGESTIONS.' Legality filter, not a ranking-formula change -- QB1 in
+    _ranking() stays the top-ranked player overall, so this proves the
+    exclusion is the position-max filter, not a coincidence of rank."""
+    ranking = _ranking()
+    adp = _empty_adp(ranking.profile)
+    owner_slot = 9
+    # Heuristic QB cap with no explicit roster_limits configured is
+    # max(profile.roster.qb + 1, 2) = max(1 + 1, 2) = 2.
+    state = {
+        "owner_slot": owner_slot,
+        "picks": [
+            {"team_slot": owner_slot, "position": "QB", "player_id": "QB-0"},
+            {"team_slot": owner_slot, "position": "QB", "player_id": "QB-1"},
+        ],
+    }
+    result = _recommendations(
+        ranking.profile, ranking, adp, state, current_pick=3, next_owner_pick=None
+    )
+    card_positions = {card["position"] for card in result["cards"]}
+    assert "QB" not in card_positions, (
+        f"QB card slipped through position-max filter: {result['cards']}"
+    )
+    # The actual top-ranked player overall in _ranking() is a QB -- it must
+    # still exist in the underlying ranked universe and in allRows; only the
+    # actionable SUGGESTIONS cards exclude it, per the directive.
+    assert any(row.position == "QB" for row in ranking.rows)
+    assert any(row["position"] == "QB" for row in result["allRows"])
+
+
+def test_suggestions_respect_explicit_roster_limits_too() -> None:
+    """Same rule via the explicit profile.draft.roster_limits path (not
+    just the heuristic fallback)."""
+    ranking = _ranking()
+    draft = replace(ranking.profile.draft, roster_limits={"RB": 1})
+    profile = replace(ranking.profile, draft=draft)
+    ranking = replace(ranking, profile=profile)
+    adp = _empty_adp(profile)
+    owner_slot = 9
+    state = {
+        "owner_slot": owner_slot,
+        "picks": [{"team_slot": owner_slot, "position": "RB", "player_id": "RB-0"}],
+    }
+    result = _recommendations(
+        profile, ranking, adp, state, current_pick=2, next_owner_pick=None
+    )
+    card_positions = {card["position"] for card in result["cards"]}
+    assert "RB" not in card_positions
+    assert any(row["position"] == "RB" for row in result["allRows"])
+
+
+def test_suggestions_are_unrestricted_when_no_position_is_at_its_maximum() -> None:
+    """Sanity check the filter isn't overzealous: with an empty roster,
+    every position is eligible and Best Available is still the top-ranked
+    player overall."""
+    ranking = _ranking()
+    adp = _empty_adp(ranking.profile)
+    state = {"owner_slot": 9, "picks": []}
+    result = _recommendations(
+        ranking.profile, ranking, adp, state, current_pick=1, next_owner_pick=None
+    )
+    assert result["cards"], "expected at least one suggestion card with an empty roster"
+    best_available = result["cards"][0]
+    assert best_available["playerId"] == ranking.rows[0].player_id

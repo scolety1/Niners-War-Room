@@ -1398,6 +1398,13 @@ def _recommendations(
         [row for row in enriched if row["nwrView"] in {"STRONG VALUE", "VALUE"}],
         key=lambda row: (-float(row.get("nwrEdge") or 0), int(row["nwrRank"])),
     )[:30]
+    # Suggestions eligibility is a legality rule, not a ranking calibration:
+    # a position already at this league's configured maximum (roster_limits,
+    # or the same heuristic cap _roster_candidate_allowed enforces at pick
+    # time) is dropped from the actionable candidate set below. The player
+    # stays fully visible/searchable elsewhere (PLAYERS panel, beat_pool,
+    # allRows) -- this only narrows what gets *recommended*.
+    eligible = [row for row in enriched if _roster_candidate_allowed(profile, roster, row)]
     cards: list[dict[str, Any]] = []
     used_player_ids: set[str] = set()
 
@@ -1410,13 +1417,13 @@ def _recommendations(
                 return candidate
         return candidates[0] if candidates else None
 
-    if enriched:
-        best_available = enriched[0]
+    if eligible:
+        best_available = eligible[0]
         cards.append(_card("Best Available", best_available, "Highest available NWR Redraft rank."))
         used_player_ids.add(best_available["playerId"])
 
         fit_ranked = sorted(
-            enriched[:30],
+            eligible[:30],
             key=lambda row: (
                 _fit_penalty(profile, roster, str(row["position"]), round_number),
                 -float(row["replacementAdjustedValue"]),
@@ -1434,7 +1441,7 @@ def _recommendations(
         reach_buffer = 12
         window_end = (next_owner_pick + reach_buffer) if next_owner_pick is not None else (current_pick + 40)
         actionable_value_rows = [
-            row for row in enriched
+            row for row in eligible
             if row.get("expectedPick") is not None
             and current_pick - 8 <= float(row["expectedPick"]) <= window_end
             and row["draftTiming"] in {"TAKE NOW", "VALID"}
@@ -1445,7 +1452,7 @@ def _recommendations(
             cards.append(_card("Value vs ESPN", value, "Largest ESPN-ADP edge among players actually relevant to this pick window."))
             used_player_ids.add(value["playerId"])
         else:
-            fallback = pick_distinct(enriched[:30]) or best_available
+            fallback = pick_distinct(eligible[:30]) or best_available
             cards.append(
                 _card(
                     "Value vs ESPN",
@@ -1455,14 +1462,14 @@ def _recommendations(
             )
             used_player_ids.add(fallback["playerId"])
 
-        upside_ranked = sorted(enriched[:20], key=lambda row: -float(row["replacementAdjustedValue"]))
+        upside_ranked = sorted(eligible[:20], key=lambda row: -float(row["replacementAdjustedValue"]))
         upside = pick_distinct(upside_ranked)
         if upside is not None:
             cards.append(_card("Upside", upside, "Highest replacement-adjusted ceiling proxy available."))
             used_player_ids.add(upside["playerId"])
 
-        safe_ranked = [row for row in enriched[:30] if str(row["confidence"]).upper() == "HIGH"]
-        safer = pick_distinct(safe_ranked) if safe_ranked else pick_distinct(enriched[:30])
+        safe_ranked = [row for row in eligible[:30] if str(row["confidence"]).upper() == "HIGH"]
+        safer = pick_distinct(safe_ranked) if safe_ranked else pick_distinct(eligible[:30])
         if safer is not None:
             cards.append(_card("Safer", safer, "Best high-evidence option; falls back visibly if none."))
             used_player_ids.add(safer["playerId"])
