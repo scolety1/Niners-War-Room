@@ -6,7 +6,7 @@
   "rights": "OWNER_LEAGUE_DATA_PERSONAL_USE_ONLY",
   "compiled_utc": "2026-09-03",
   "networkRequired": false,
-  "notes": "See DIVERGENCE_FINDINGS_20260903.md before building any merged/reconciled replay fixture from these files. The live and recap sources are NOT a clean prefix+suffix of each other.",
+  "notes": "See DIVERGENCE_FINDINGS_20260903.md (owner-resolved) and RECONCILIATION_LEDGER.md for how the live 157-pick capture and the 192-pick recap relate. Historical replay work should use official_recap_192picks_clean.csv as truth; the live board is operational/reliability evidence, not replay input.",
   "files": [
     {
       "path": "live_runtime_draft_board_157picks.json",
@@ -35,6 +35,13 @@
       "sha256": "90abae44cc9eb85ebe29089ad8850729ab8bffca9c23c465225847c27c82bf78",
       "bytes": 9997,
       "description": "Cleaned, replay-ready derivative: 192 rows, columns overall_pick,round,pick_in_round,team_slot,team_name,player_name,nfl_team,position. team_slot derived from round-1 draft order (snake). Deterministic parse, no player/pick data invented or altered."
+    },
+    {
+      "path": "RECONCILIATION_LEDGER.csv",
+      "source": "derived from official_recap_192picks_clean.csv + live_runtime_draft_board_157picks.json + the draft-day player-universe snapshot",
+      "sha256": "8f17a5c907933bd05032efce1189e3290b001b616495f8a69b7e7b246ee637b3",
+      "bytes": 17340,
+      "description": "192 rows, one per (round, team_slot) real draft slot: recap truth vs. live capture, classified EXACT_MATCH / NO_LIVE_RECORD / K_DST_UNREPRESENTABLE / NAME_IDENTITY_MISMATCH / OWNER_PLACEHOLDER_FOR_MISSING_PLAYER / SEARCH_FAILURE / UNKNOWN. See RECONCILIATION_LEDGER.md for method and caveats."
     }
   ]
 }

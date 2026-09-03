@@ -1,0 +1,193 @@
+round,team_slot,team_name,recap_overall_pick,recap_player_name,recap_position,recap_nfl_team,live_pick_number,live_player_name,live_position,live_nfl_team,classification,recap_player_in_nwr_universe
+1,1,Adam's Awesome Team,1,Jahmyr Gibbs,RB,DET,1,Jahmyr Gibbs,RB,DET,EXACT_MATCH,True
+1,2,Casey's Team,2,Bijan Robinson,RB,ATL,2,Bijan Robinson,RB,ATL,EXACT_MATCH,True
+1,3,TDubs Chain Gang,3,Ja'Marr Chase,WR,CIN,3,Ja'Marr Chase,WR,CIN,EXACT_MATCH,True
+1,4,Anthony's Astounding Team,4,Puka Nacua,WR,LAR,4,Puka Nacua,WR,LA,EXACT_MATCH,True
+1,5,Ben's Brilliant Team,5,Jonathan Taylor,RB,IND,5,Jonathan Taylor,RB,IND,EXACT_MATCH,True
+1,6,Derek's Dangerous Team,6,Jaxon Smith-Njigba,WR,SEA,6,Jaxon Smith-Njigba,WR,SEA,EXACT_MATCH,True
+1,7,PERFECT PERFECT,7,Christian McCaffrey,RB,SF,7,Christian McCaffrey,RB,SF,EXACT_MATCH,True
+1,8,Takes Money to Make Money,8,Amon-Ra St. Brown,WR,DET,8,Amon-Ra St. Brown,WR,DET,EXACT_MATCH,True
+1,9,Colety Crusaders,9,James Cook III,RB,BUF,9,James Cook,RB,BUF,EXACT_MATCH,True
+1,10,Big Baller Brand,10,De'Von Achane,RB,MIA,10,De'Von Achane,RB,MIA,EXACT_MATCH,True
+1,11,Vini Vidi Vici,11,Justin Jefferson,WR,MIN,11,Justin Jefferson,WR,MIN,EXACT_MATCH,True
+1,12,Daejon Love 1st rd,12,Saquon Barkley,RB,PHI,12,Saquon Barkley,RB,PHI,EXACT_MATCH,True
+1,13,WHERES THE LAMB SAUCE,13,CeeDee Lamb,WR,DAL,13,CeeDee Lamb,WR,DAL,EXACT_MATCH,True
+1,14,Derek's Rowdy Team,14,Omarion Hampton,RB,LAC,14,Omarion Hampton,RB,LAC,EXACT_MATCH,True
+1,15,OBijan Kenobi,15,Derrick Henry,RB,BAL,15,Derrick Henry,RB,BAL,EXACT_MATCH,True
+1,16,Austin's Angry Team,16,Chase Brown,RB,CIN,16,Chase Brown,RB,CIN,EXACT_MATCH,True
+2,1,Adam's Awesome Team,32,Breece Hall,RB,NYJ,32,Breece Hall,RB,NYJ,EXACT_MATCH,True
+2,2,Casey's Team,31,Travis Etienne Jr.,RB,NO,31,Travis Etienne,RB,NO,EXACT_MATCH,True
+2,3,TDubs Chain Gang,30,Chris Olave,WR,NO,30,Chris Olave,WR,NO,EXACT_MATCH,True
+2,4,Anthony's Astounding Team,29,Garrett Wilson,WR,NYJ,29,Garrett Wilson,WR,NYJ,EXACT_MATCH,True
+2,5,Ben's Brilliant Team,28,Josh Allen,QB,BUF,28,Josh Allen,QB,BUF,EXACT_MATCH,True
+2,6,Derek's Dangerous Team,27,Javonte Williams,RB,DAL,27,Javonte Williams,RB,DAL,EXACT_MATCH,True
+2,7,PERFECT PERFECT,26,Jeremiyah Love,RB,ARI,26,Jeremiyah Love,RB,AZ,EXACT_MATCH,True
+2,8,Takes Money to Make Money,25,Nico Collins,WR,HOU,25,Nico Collins,WR,HOU,EXACT_MATCH,True
+2,9,Colety Crusaders,24,Kyren Williams,RB,LAR,24,Kyren Williams,RB,LA,EXACT_MATCH,True
+2,10,Big Baller Brand,23,Ashton Jeanty,RB,LV,23,Ashton Jeanty,RB,LV,EXACT_MATCH,True
+2,11,Vini Vidi Vici,22,Kenneth Walker III,RB,KC,22,Kenneth Walker III,RB,KC,EXACT_MATCH,True
+2,12,Daejon Love 1st rd,21,Rashee Rice,WR,KC,21,Rashee Rice,WR,KC,EXACT_MATCH,True
+2,13,WHERES THE LAMB SAUCE,20,Drake London,WR,ATL,20,Drake London,WR,ATL,EXACT_MATCH,True
+2,14,Derek's Rowdy Team,19,Brock Bowers,TE,LV,19,Brock Bowers,TE,LV,EXACT_MATCH,True
+2,15,OBijan Kenobi,18,A.J. Brown,WR,NE,18,A.J. Brown,WR,NE,EXACT_MATCH,True
+2,16,Austin's Angry Team,17,Trey McBride,TE,ARI,17,Trey McBride,TE,AZ,EXACT_MATCH,True
+3,1,Adam's Awesome Team,33,George Pickens,WR,DAL,33,George Pickens,WR,DAL,EXACT_MATCH,True
+3,2,Casey's Team,34,DeVonta Smith,WR,PHI,34,DeVonta Smith,WR,PHI,EXACT_MATCH,True
+3,3,TDubs Chain Gang,35,Ladd McConkey,WR,LAC,35,Ladd McConkey,WR,LAC,EXACT_MATCH,True
+3,4,Anthony's Astounding Team,36,Lamar Jackson,QB,BAL,36,Lamar Jackson,QB,BAL,EXACT_MATCH,True
+3,5,Ben's Brilliant Team,37,Malik Nabers,WR,NYG,37,Malik Nabers,WR,NYG,EXACT_MATCH,True
+3,6,Derek's Dangerous Team,38,Quinshon Judkins,RB,CLE,38,Quinshon Judkins,RB,CLE,EXACT_MATCH,True
+3,7,PERFECT PERFECT,39,Zay Flowers,WR,BAL,39,Zay Flowers,WR,BAL,EXACT_MATCH,True
+3,8,Takes Money to Make Money,40,Cam Skattebo,RB,NYG,40,Cam Skattebo,RB,NYG,EXACT_MATCH,True
+3,9,Colety Crusaders,41,Tetairoa McMillan,WR,CAR,41,Tetairoa McMillan,WR,CAR,EXACT_MATCH,True
+3,10,Big Baller Brand,42,DJ Moore,WR,BUF,42,DJ Moore,WR,BUF,EXACT_MATCH,True
+3,11,Vini Vidi Vici,43,Drake Maye,QB,NE,43,Drake Maye,QB,NE,EXACT_MATCH,True
+3,12,Daejon Love 1st rd,44,Jaylen Waddle,WR,DEN,44,Jaylen Waddle,WR,DEN,EXACT_MATCH,True
+3,13,WHERES THE LAMB SAUCE,45,Bhayshul Tuten,RB,JAX,45,Bhayshul Tuten,RB,JAX,EXACT_MATCH,True
+3,14,Derek's Rowdy Team,46,Emeka Egbuka,WR,TB,46,Emeka Egbuka,WR,TB,EXACT_MATCH,True
+3,15,OBijan Kenobi,47,Davante Adams,WR,LAR,47,Davante Adams,WR,LA,EXACT_MATCH,True
+3,16,Austin's Angry Team,48,Luther Burden III,WR,CHI,48,Luther Burden III,WR,CHI,EXACT_MATCH,True
+4,1,Adam's Awesome Team,64,Christian Watson,WR,GB,64,Christian Watson,WR,GB,EXACT_MATCH,True
+4,2,Casey's Team,63,Parker Washington,WR,JAX,63,Parker Washington,WR,JAX,EXACT_MATCH,True
+4,3,TDubs Chain Gang,62,George Kittle,TE,SF,62,George Kittle,TE,SF,EXACT_MATCH,True
+4,4,Anthony's Astounding Team,61,David Montgomery,RB,HOU,61,David Montgomery,RB,HOU,EXACT_MATCH,True
+4,5,Ben's Brilliant Team,60,Rome Odunze,WR,CHI,60,Rome Odunze,WR,CHI,EXACT_MATCH,True
+4,6,Derek's Dangerous Team,59,Kyle Pitts Sr.,TE,ATL,59,Kyle Pitts,TE,ATL,EXACT_MATCH,True
+4,7,PERFECT PERFECT,58,Joe Burrow,QB,CIN,58,Joe Burrow,QB,CIN,EXACT_MATCH,True
+4,8,Takes Money to Make Money,57,Jadarian Price,RB,SEA,57,Jadarian Price,RB,SEA,EXACT_MATCH,True
+4,9,Colety Crusaders,56,Jameson Williams,WR,DET,56,Jameson Williams,WR,DET,EXACT_MATCH,True
+4,10,Big Baller Brand,55,Tyler Warren,TE,IND,55,Tyler Warren,TE,IND,EXACT_MATCH,True
+4,11,Vini Vidi Vici,54,D'Andre Swift,RB,CHI,54,D'Andre Swift,RB,CHI,EXACT_MATCH,True
+4,12,Daejon Love 1st rd,53,Terry McLaurin,WR,WSH,53,Terry McLaurin,WR,WAS,EXACT_MATCH,True
+4,13,WHERES THE LAMB SAUCE,52,Colston Loveland,TE,CHI,52,Colston Loveland,TE,CHI,EXACT_MATCH,True
+4,14,Derek's Rowdy Team,51,Carnell Tate,WR,TEN,51,Carnell Tate,WR,TEN,EXACT_MATCH,True
+4,15,OBijan Kenobi,50,Bucky Irving,RB,TB,50,Bucky Irving,RB,TB,EXACT_MATCH,True
+4,16,Austin's Angry Team,49,Tee Higgins,WR,CIN,49,Tee Higgins,WR,CIN,EXACT_MATCH,True
+5,1,Adam's Awesome Team,65,Wan'Dale Robinson,WR,TEN,65,Wan'Dale Robinson,WR,TEN,EXACT_MATCH,True
+5,2,Casey's Team,66,TreVeyon Henderson,RB,NE,66,TreVeyon Henderson,RB,NE,EXACT_MATCH,True
+5,3,TDubs Chain Gang,67,Rhamondre Stevenson,RB,NE,67,Rhamondre Stevenson,RB,NE,EXACT_MATCH,True
+5,4,Anthony's Astounding Team,68,Tucker Kraft,TE,GB,68,Tucker Kraft,TE,GB,EXACT_MATCH,True
+5,5,Ben's Brilliant Team,69,Harold Fannin Jr.,TE,CLE,69,Harold Fannin Jr.,TE,CLE,EXACT_MATCH,True
+5,6,Derek's Dangerous Team,70,Dak Prescott,QB,DAL,70,Dak Prescott,QB,DAL,EXACT_MATCH,True
+5,7,PERFECT PERFECT,71,Courtland Sutton,WR,DEN,71,Courtland Sutton,WR,DEN,EXACT_MATCH,True
+5,8,Takes Money to Make Money,72,Jalen Hurts,QB,PHI,72,Jalen Hurts,QB,PHI,EXACT_MATCH,True
+5,9,Colety Crusaders,73,Kenny Gainwell,RB,TB,73,Kenny Gainwell,RB,TB,EXACT_MATCH,True
+5,10,Big Baller Brand,74,Marvin Harrison Jr.,WR,ARI,74,Marvin Harrison Jr.,WR,AZ,EXACT_MATCH,True
+5,11,Vini Vidi Vici,75,Jake Ferguson,TE,DAL,75,Jake Ferguson,TE,DAL,EXACT_MATCH,True
+5,12,Daejon Love 1st rd,76,Mike Evans,WR,SF,76,Mike Evans,WR,SF,EXACT_MATCH,True
+5,13,WHERES THE LAMB SAUCE,77,Jayden Daniels,QB,WSH,77,Jayden Daniels,QB,WAS,EXACT_MATCH,True
+5,14,Derek's Rowdy Team,78,Justin Herbert,QB,LAC,78,Justin Herbert,QB,LAC,EXACT_MATCH,True
+5,15,OBijan Kenobi,79,Sam LaPorta,TE,DET,79,Sam LaPorta,TE,DET,EXACT_MATCH,True
+5,16,Austin's Angry Team,80,Jaylen Warren,RB,PIT,80,Jaylen Warren,RB,PIT,EXACT_MATCH,True
+6,1,Adam's Awesome Team,96,Jordan Addison,WR,MIN,96,Jordan Addison,WR,MIN,EXACT_MATCH,True
+6,2,Casey's Team,95,Rico Dowdle,RB,PIT,95,Rico Dowdle,RB,PIT,EXACT_MATCH,True
+6,3,TDubs Chain Gang,94,Brock Purdy,QB,SF,94,Brock Purdy,QB,SF,EXACT_MATCH,True
+6,4,Anthony's Astounding Team,93,Alec Pierce,WR,IND,93,Alec Pierce,WR,IND,EXACT_MATCH,True
+6,5,Ben's Brilliant Team,92,Matthew Golden,WR,GB,92,Matthew Golden,WR,GB,EXACT_MATCH,True
+6,6,Derek's Dangerous Team,91,Michael Wilson,WR,ARI,91,Michael Wilson,WR,AZ,EXACT_MATCH,True
+6,7,PERFECT PERFECT,90,DK Metcalf,WR,PIT,90,DK Metcalf,WR,PIT,EXACT_MATCH,True
+6,8,Takes Money to Make Money,89,Tony Pollard,RB,TEN,89,Tony Pollard,RB,TEN,EXACT_MATCH,True
+6,9,Colety Crusaders,88,Jaxson Dart,QB,NYG,88,Jaxson Dart,QB,NYG,EXACT_MATCH,True
+6,10,Big Baller Brand,87,Patrick Mahomes,QB,KC,87,Patrick Mahomes,QB,KC,EXACT_MATCH,True
+6,11,Vini Vidi Vici,86,Stefon Diggs,WR,WSH,86,Jacardia Wright,RB,SEA,OWNER_PLACEHOLDER_FOR_MISSING_PLAYER,False
+6,12,Daejon Love 1st rd,85,Michael Pittman Jr.,WR,PIT,85,Michael Pittman,WR,PIT,EXACT_MATCH,True
+6,13,WHERES THE LAMB SAUCE,84,MarShawn Lloyd,RB,GB,84,Julius Chestnut,RB,TEN,OWNER_PLACEHOLDER_FOR_MISSING_PLAYER,False
+6,14,Derek's Rowdy Team,83,Jonathon Brooks,RB,CAR,83,Justin Shorter,TE,LV,OWNER_PLACEHOLDER_FOR_MISSING_PLAYER,False
+6,15,OBijan Kenobi,82,Trevor Lawrence,QB,JAX,82,Trevor Lawrence,QB,JAX,EXACT_MATCH,True
+6,16,Austin's Angry Team,81,Caleb Williams,QB,CHI,81,Caleb Williams,QB,CHI,EXACT_MATCH,True
+7,1,Adam's Awesome Team,97,J.K. Dobbins,RB,DEN,97,J.K. Dobbins,RB,DEN,EXACT_MATCH,True
+7,2,Casey's Team,98,Brandon Aubrey,K,DAL,98,Brian Thomas Jr.,WR,JAX,K_DST_UNREPRESENTABLE,False
+7,3,TDubs Chain Gang,99,Brian Thomas Jr.,WR,JAX,99,Jordan Mason,RB,MIN,SEARCH_FAILURE,True
+7,4,Anthony's Astounding Team,100,Jordan Mason,RB,MIN,100,Chuba Hubbard,RB,CAR,SEARCH_FAILURE,True
+7,5,Ben's Brilliant Team,101,Chuba Hubbard,RB,CAR,101,Chris Godwin Jr.,WR,TB,SEARCH_FAILURE,True
+7,6,Derek's Dangerous Team,102,Chris Godwin Jr.,WR,TB,102,Travis Kelce,TE,KC,SEARCH_FAILURE,True
+7,7,PERFECT PERFECT,103,Travis Kelce,TE,KC,103,Dallas Goedert,TE,PHI,SEARCH_FAILURE,True
+7,8,Takes Money to Make Money,104,Dallas Goedert,TE,PHI,104,Quentin Johnston,WR,LAC,SEARCH_FAILURE,True
+7,9,Colety Crusaders,105,Quentin Johnston,WR,LAC,105,Lil'Jordan Humphrey,WR,DEN,SEARCH_FAILURE,True
+7,10,Big Baller Brand,106,Josh Jacobs,RB,GB,106,Xavier Worthy,WR,KC,SEARCH_FAILURE,True
+7,11,Vini Vidi Vici,107,Xavier Worthy,WR,KC,107,Simi Fehoko,WR,AZ,SEARCH_FAILURE,True
+7,12,Daejon Love 1st rd,108,Blake Corum,RB,LAR,108,Jakobi Meyers,WR,JAX,SEARCH_FAILURE,True
+7,13,WHERES THE LAMB SAUCE,109,Jakobi Meyers,WR,JAX,109,Josh Downs,WR,IND,SEARCH_FAILURE,True
+7,14,Derek's Rowdy Team,110,Josh Downs,WR,IND,110,Jalen Moreno-Cropper,WR,NO,SEARCH_FAILURE,True
+7,15,OBijan Kenobi,111,Kyle Monangai,RB,CHI,111,Makai Lemon,WR,PHI,SEARCH_FAILURE,True
+7,16,Austin's Angry Team,112,Makai Lemon,WR,PHI,112,Trent Sherfield,WR,BUF,SEARCH_FAILURE,True
+8,1,Adam's Awesome Team,128,Terrance Ferguson,TE,LAR,128,Terrance Ferguson,TE,LA,EXACT_MATCH,True
+8,2,Casey's Team,127,Matthew Stafford,QB,LAR,127,Matthew Stafford,QB,LA,EXACT_MATCH,True
+8,3,TDubs Chain Gang,126,Tyjae Spears,RB,TEN,126,Tyjae Spears,RB,TEN,EXACT_MATCH,True
+8,4,Anthony's Astounding Team,125,Romeo Doubs,WR,NE,125,Romeo Doubs,WR,NE,EXACT_MATCH,True
+8,5,Ben's Brilliant Team,124,Khalil Shakir,WR,BUF,124,Khalil Shakir,WR,BUF,EXACT_MATCH,True
+8,6,Derek's Dangerous Team,123,Bo Nix,QB,DEN,123,Bo Nix,QB,DEN,EXACT_MATCH,True
+8,7,PERFECT PERFECT,122,Rachaad White,RB,WSH,122,Rachaad White,RB,WAS,EXACT_MATCH,True
+8,8,Takes Money to Make Money,121,Aaron Jones Sr.,RB,MIN,121,Aaron Jones,RB,MIN,EXACT_MATCH,True
+8,9,Colety Crusaders,120,Juwan Johnson,TE,NO,120,Juwan Johnson,TE,NO,EXACT_MATCH,True
+8,10,Big Baller Brand,119,Kyler Murray,QB,MIN,119,Kyler Murray,QB,MIN,EXACT_MATCH,True
+8,11,Vini Vidi Vici,118,KC Concepcion,WR,CLE,118,KC Concepcion,WR,CLE,EXACT_MATCH,True
+8,12,Daejon Love 1st rd,117,Dalton Kincaid,TE,BUF,117,Dalton Kincaid,TE,BUF,EXACT_MATCH,True
+8,13,WHERES THE LAMB SAUCE,116,RJ Harvey,RB,DEN,116,RJ Harvey,RB,DEN,EXACT_MATCH,True
+8,14,Derek's Rowdy Team,115,Isaiah Likely,TE,NYG,115,Isaiah Likely,TE,NYG,EXACT_MATCH,True
+8,15,OBijan Kenobi,114,De'Zhaun Stribling,WR,SF,114,De'Zhaun Stribling,WR,SF,EXACT_MATCH,True
+8,16,Austin's Angry Team,113,Jacory Croskey-Merritt,RB,WSH,113,Luke McCaffrey,WR,WAS,SEARCH_FAILURE,True
+9,1,Adam's Awesome Team,129,Jared Goff,QB,DET,129,Jared Goff,QB,DET,EXACT_MATCH,True
+9,2,Casey's Team,130,Mark Andrews,TE,BAL,130,Mark Andrews,TE,BAL,EXACT_MATCH,True
+9,3,TDubs Chain Gang,131,Tyler Shough,QB,NO,131,Jordyn Tyson,WR,NO,SEARCH_FAILURE,True
+9,4,Anthony's Astounding Team,132,Jordyn Tyson,WR,NO,132,Tyler Shough,QB,NO,SEARCH_FAILURE,True
+9,5,Ben's Brilliant Team,133,Texans D/ST,D/ST,HOU,133,Tyson Bagent,QB,CHI,K_DST_UNREPRESENTABLE,False
+9,6,Derek's Dangerous Team,134,T.J. Hockenson,TE,MIN,134,Ty Johnson,RB,BUF,SEARCH_FAILURE,True
+9,7,PERFECT PERFECT,135,Zach Charbonnet,RB,SEA,135,T.J. Hockenson,TE,MIN,SEARCH_FAILURE,True
+9,8,Takes Money to Make Money,136,Jayden Reed,WR,GB,136,Zach Charbonnet,RB,SEA,SEARCH_FAILURE,True
+9,9,Colety Crusaders,137,Cameron Dicker,K,LAC,137,Jayden Reed,WR,GB,K_DST_UNREPRESENTABLE,False
+9,10,Big Baller Brand,138,Tank Dell,WR,HOU,138,Gage Larvadain,WR,CLE,OWNER_PLACEHOLDER_FOR_MISSING_PLAYER,False
+9,11,Vini Vidi Vici,139,Jason Myers,K,SEA,139,Devin Duvernay,WR,AZ,K_DST_UNREPRESENTABLE,False
+9,12,Daejon Love 1st rd,140,Harrison Mevis,K,LAR,140,Thomas Fidone II,TE,NYG,K_DST_UNREPRESENTABLE,False
+9,13,WHERES THE LAMB SAUCE,141,Jalen McMillan,WR,TB,141,Jalen McMillan,WR,TB,EXACT_MATCH,True
+9,14,Derek's Rowdy Team,142,Brian Robinson Jr.,RB,ATL,142,Brian Robinson,RB,ATL,EXACT_MATCH,True
+9,15,OBijan Kenobi,143,Deebo Samuel Sr.,WR,SF,143,Carsen Ryan,TE,CLE,OWNER_PLACEHOLDER_FOR_MISSING_PLAYER,False
+9,16,Austin's Angry Team,144,Broncos D/ST,D/ST,DEN,144,Brenden Bates,TE,CLE,K_DST_UNREPRESENTABLE,False
+10,1,Adam's Awesome Team,160,Jalen Coker,WR,CAR,,,,,NO_LIVE_RECORD,True
+10,2,Casey's Team,159,Patriots D/ST,D/ST,NE,,,,,NO_LIVE_RECORD,False
+10,3,TDubs Chain Gang,158,Dalton Schultz,TE,HOU,,,,,NO_LIVE_RECORD,True
+10,4,Anthony's Astounding Team,157,Jake Bates,K,DET,157,Hunter Henry,TE,NE,K_DST_UNREPRESENTABLE,False
+10,5,Ben's Brilliant Team,156,Woody Marks,RB,HOU,156,Jaylin Lane,WR,WAS,SEARCH_FAILURE,True
+10,6,Derek's Dangerous Team,155,Eagles D/ST,D/ST,PHI,155,Malik Willis,QB,MIA,K_DST_UNREPRESENTABLE,False
+10,7,PERFECT PERFECT,154,Mike Washington Jr.,RB,LV,154,Dalton Schultz,TE,HOU,SEARCH_FAILURE,True
+10,8,Takes Money to Make Money,153,Ravens D/ST,D/ST,BAL,153,Mike Washington Jr.,RB,LV,K_DST_UNREPRESENTABLE,False
+10,9,Colety Crusaders,152,Seahawks D/ST,D/ST,SEA,152,Woody Marks,RB,HOU,K_DST_UNREPRESENTABLE,False
+10,10,Big Baller Brand,151,Tre Tucker,WR,LV,151,LaJohntay Wester,WR,BAL,SEARCH_FAILURE,True
+10,11,Vini Vidi Vici,150,Steelers D/ST,D/ST,PIT,150,Tre Tucker,WR,LV,K_DST_UNREPRESENTABLE,False
+10,12,Daejon Love 1st rd,149,Baker Mayfield,QB,TB,149,Baker Mayfield,QB,TB,EXACT_MATCH,True
+10,13,WHERES THE LAMB SAUCE,148,Rams D/ST,D/ST,LAR,148,Seydou Traore,TE,MIA,K_DST_UNREPRESENTABLE,False
+10,14,Derek's Rowdy Team,147,Tank Bigsby,RB,PHI,147,Tank Bigsby,RB,PHI,EXACT_MATCH,True
+10,15,OBijan Kenobi,146,Eddy Pineiro,K,SF,146,Kedon Slovis,QB,AZ,K_DST_UNREPRESENTABLE,False
+10,16,Austin's Angry Team,145,Ka'imi Fairbairn,K,HOU,145,Dalen Cambre,WR,NYG,K_DST_UNREPRESENTABLE,False
+11,1,Adam's Awesome Team,161,Browns D/ST,D/ST,CLE,,,,,NO_LIVE_RECORD,False
+11,2,Casey's Team,162,Isiah Pacheco,RB,DET,,,,,NO_LIVE_RECORD,True
+11,3,TDubs Chain Gang,163,Chargers D/ST,D/ST,LAC,,,,,NO_LIVE_RECORD,False
+11,4,Anthony's Astounding Team,164,Chiefs D/ST,D/ST,KC,,,,,NO_LIVE_RECORD,False
+11,5,Ben's Brilliant Team,165,Harrison Butker,K,KC,,,,,NO_LIVE_RECORD,False
+11,6,Derek's Dangerous Team,166,Cam Little,K,JAX,,,,,NO_LIVE_RECORD,False
+11,7,PERFECT PERFECT,167,Chris Boswell,K,PIT,,,,,NO_LIVE_RECORD,False
+11,8,Takes Money to Make Money,168,Tyler Loop,K,BAL,,,,,NO_LIVE_RECORD,False
+11,9,Colety Crusaders,169,Caleb Douglas,WR,MIA,,,,,NO_LIVE_RECORD,True
+11,10,Big Baller Brand,170,Lions D/ST,D/ST,DET,,,,,NO_LIVE_RECORD,False
+11,11,Vini Vidi Vici,171,Travis Hunter,WR,JAX,,,,,NO_LIVE_RECORD,False
+11,12,Daejon Love 1st rd,172,Tyler Allgeier,RB,ARI,,,,,NO_LIVE_RECORD,True
+11,13,WHERES THE LAMB SAUCE,173,Malik Willis,QB,MIA,,,,,NO_LIVE_RECORD,True
+11,14,Derek's Rowdy Team,174,Packers D/ST,D/ST,GB,,,,,NO_LIVE_RECORD,False
+11,15,OBijan Kenobi,175,Buccaneers D/ST,D/ST,TB,,,,,NO_LIVE_RECORD,False
+11,16,Austin's Angry Team,176,Keenan Allen,WR,IND,,,,,NO_LIVE_RECORD,False
+12,1,Adam's Awesome Team,192,Evan McPherson,K,CIN,,,,,NO_LIVE_RECORD,False
+12,2,Casey's Team,191,Denzel Boston,WR,CLE,,,,,NO_LIVE_RECORD,True
+12,3,TDubs Chain Gang,190,Spencer Shrader,K,IND,,,,,NO_LIVE_RECORD,False
+12,4,Anthony's Astounding Team,189,Jerry Jeudy,WR,CLE,,,,,NO_LIVE_RECORD,True
+12,5,Ben's Brilliant Team,188,Rashid Shaheed,WR,SEA,,,,,NO_LIVE_RECORD,True
+12,6,Derek's Dangerous Team,187,Malik Washington,WR,MIA,,,,,NO_LIVE_RECORD,True
+12,7,PERFECT PERFECT,186,Cowboys D/ST,D/ST,DAL,,,,,NO_LIVE_RECORD,False
+12,8,Takes Money to Make Money,185,Alvin Kamara,RB,NO,,,,,NO_LIVE_RECORD,True
+12,9,Colety Crusaders,184,Cam Ward,QB,TEN,,,,,NO_LIVE_RECORD,True
+12,10,Big Baller Brand,183,Chase McLaughlin,K,TB,,,,,NO_LIVE_RECORD,False
+12,11,Vini Vidi Vici,182,Jonah Coleman,RB,DEN,,,,,NO_LIVE_RECORD,True
+12,12,Daejon Love 1st rd,181,Jaguars D/ST,D/ST,JAX,,,,,NO_LIVE_RECORD,False
+12,13,WHERES THE LAMB SAUCE,180,Will Reichard,K,MIN,,,,,NO_LIVE_RECORD,False
+12,14,Derek's Rowdy Team,179,Tyler Bass,K,BUF,,,,,NO_LIVE_RECORD,False
+12,15,OBijan Kenobi,178,Hunter Henry,TE,NE,,,,,NO_LIVE_RECORD,True
+12,16,Austin's Angry Team,177,Ja'Kobi Lane,WR,BAL,,,,,NO_LIVE_RECORD,True

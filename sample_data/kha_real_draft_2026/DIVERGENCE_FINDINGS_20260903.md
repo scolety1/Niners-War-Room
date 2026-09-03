@@ -2,8 +2,31 @@
 
 Compiled 2026-09-03, read-only, before any replay fixture merge work. This
 documents a real discrepancy found while preparing the 192-pick historical
-replay fixture requested for the KHA 2026 High Stakes League. **Blocking a
-merged/combined fixture on this until the owner confirms what happened.**
+replay fixture requested for the KHA 2026 High Stakes League.
+
+## RESOLVED — owner explanation (2026-09-03)
+
+The divergence below is real and the measurements are correct, but the
+speculative causes listed at the bottom of this file ("draft
+reset/restart", "cross-contamination from a different draft_id") were
+**wrong**. The actual mechanism, confirmed by the owner: when a real ESPN
+pick could not be represented in NWR (missing from the player universe,
+unsearchable, K/DST with no NWR model, etc.), the operator sometimes
+entered a different, available NWR player as a placeholder just to advance
+the live draft state. Neither source was corrupted or duplicated.
+
+Resolution for downstream work:
+- `official_recap_192picks_clean.csv` is authoritative for what actually
+  happened in the real draft. Use it to build the historical replay.
+- `live_runtime_draft_board_157picks.json` remains authoritative
+  production evidence of NWR's own live behavior that night — including
+  its failures — and is **not** to be rewritten or "corrected."
+- See `RECONCILIATION_LEDGER.md` / `RECONCILIATION_LEDGER.csv` for the
+  full slot-by-slot classification this produced (built on a
+  `(round, team_slot)` join, not the pick-number join used below).
+
+The rest of this file is kept as-is, unedited, as the original read-only
+analysis that surfaced the discrepancy before the cause was known.
 
 ## Inputs compared
 
