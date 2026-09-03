@@ -68,7 +68,7 @@ export function rankingSearchRows<T>(rows: T[], depth: string, query: string): T
   return query.trim() ? rows : withDepth(rows, depth);
 }
 
-export type PickSearchAsset = { playerId: string; playerName: string; team: string; position: string; drafted?: boolean };
+export type PickSearchAsset = { playerId: string; playerName: string; team: string; position: string; drafted?: boolean; overallRank?: number };
 export type PickSearchCandidate = PickSearchAsset & { source: "NWR" | "MANUAL" };
 
 /**
@@ -82,6 +82,29 @@ export type PickSearchCandidate = PickSearchAsset & { source: "NWR" | "MANUAL" }
  * more were K/DST picks that required first switching the position filter
  * to K or DST to even see manual assets).
  */
+/**
+ * Pure keyboard-navigation step for the rapid-capture suggestion list:
+ * ArrowDown/Tab move forward, ArrowUp/Shift+Tab move backward, both
+ * wrapping around a `resultCount`-length list. Returns null for any key
+ * this box doesn't consume (Tab with no results, so focus moves on
+ * normally instead of being trapped).
+ */
+export function nextRapidCaptureIndex(
+  key: string,
+  shiftKey: boolean,
+  currentIndex: number,
+  resultCount: number,
+): number | null {
+  if (!resultCount) return null;
+  if (key === "ArrowDown" || (key === "Tab" && !shiftKey)) {
+    return (currentIndex + 1) % resultCount;
+  }
+  if (key === "ArrowUp" || (key === "Tab" && shiftKey)) {
+    return (currentIndex - 1 + resultCount) % resultCount;
+  }
+  return null;
+}
+
 export function globalPickSearchRows(
   rankedRows: PickSearchAsset[],
   manualRows: PickSearchAsset[],
@@ -137,6 +160,10 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   const [selectedTeam, setSelectedTeam] = useState(data.draftBoard?.ownerSlot ?? 9);
   const mutationInFlight = useRef(false);
   const focusAfterMutation = useRef(false);
+  const [rapidQuery, setRapidQuery] = useState("");
+  const [rapidIndex, setRapidIndex] = useState(0);
+  const rapidCaptureActive = useRef(false);
+  const rapidInputRef = useRef<HTMLInputElement>(null);
   const drafted = draftedIds(data);
   const board = data.draftBoard;
   const ownerTurn = Boolean(board?.isOwnerTurn);
@@ -151,6 +178,19 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   const globalSearchRows = trimmedQuery
     ? globalPickSearchRows(rankingRows(data) as unknown as PickSearchAsset[], (data.manualAssets ?? []) as unknown as PickSearchAsset[], drafted, query)
     : [];
+  // Persistent RECORD NEXT PICK box (independent of the Available Player
+  // Panel's browse/filter query above): global search, ignores the
+  // position filter entirely, keyboard-only happy path. See
+  // sample_data/kha_real_draft_2026/RECONCILIATION_LEDGER.md -- this is
+  // the direct fix for the 23 real SEARCH_FAILURE picks.
+  const rapidResults = globalPickSearchRows(
+    rankingRows(data) as unknown as PickSearchAsset[],
+    (data.manualAssets ?? []) as unknown as PickSearchAsset[],
+    drafted,
+    rapidQuery,
+    8,
+  );
+  const rapidActiveIndex = rapidResults.length ? Math.min(rapidIndex, rapidResults.length - 1) : 0;
   const team = board?.teams?.find((value) => value.teamSlot === selectedTeam);
   const rosterStrip = useMemo(() => {
     if (!data.activeProfile || !board) return null;
@@ -190,6 +230,7 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
   useEffect(() => {
     if (!focusAfterMutation.current) return;
     focusAfterMutation.current = false;
+    if (rapidCaptureActive.current) return; // rapid capture manages its own focus below
     window.requestAnimationFrame(() => {
       const nextAction = document.querySelector<HTMLButtonElement>("[data-draft-action]:not(:disabled)");
       const undoAction = document.querySelector<HTMLButtonElement>("[data-draft-undo]:not(:disabled)");
@@ -228,6 +269,31 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
       return;
     }
     await mutate(playerId, () => client.markDrafted(data.activeProfileId!, playerId), `Drafted ${playerName}; CPU selections advanced to your next turn.`);
+  };
+
+  const recordFromRapidCapture = async (playerId: string) => {
+    if (!canRecordPick || Boolean(working)) return;
+    rapidCaptureActive.current = true;
+    await mark(playerId);
+    rapidCaptureActive.current = false;
+    setRapidQuery("");
+    setRapidIndex(0);
+    window.requestAnimationFrame(() => rapidInputRef.current?.focus({ preventScroll: true }));
+  };
+
+  const onRapidKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const stepped = nextRapidCaptureIndex(event.key, event.shiftKey, rapidActiveIndex, rapidResults.length);
+    if (stepped !== null) {
+      event.preventDefault();
+      setRapidIndex(stepped);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const candidate = rapidResults[rapidActiveIndex];
+      if (candidate) void recordFromRapidCapture(candidate.playerId);
+    } else if (event.key === "Escape") {
+      setRapidQuery("");
+      setRapidIndex(0);
+    }
   };
 
   const undo = async () => {
@@ -280,6 +346,44 @@ export function DraftRoomPage({ client, data, onUpdate }: { client: NwrApiClient
     <Panel title={board?.configured ? "Room controls" : "Set your draft slot"} eyebrow="Deterministic local mock"><div className="draft-setup"><SelectField label="Draft mode" value={mode} onChange={(value) => setMode(value as "MOCK" | "LIVE_READ_ONLY")} options={[{ value: "MOCK", label: "Mock (CPU opponents)" }, { value: "LIVE_READ_ONLY", label: "Live (I enter every real pick)" }]} /><SelectField label="My slot" value={ownerSlot} onChange={setOwnerSlot} options={Array.from({ length: data.activeProfile.teamCount }, (_, index) => ({ value: String(index + 1), label: `Slot ${index + 1}` }))} />{mode === "MOCK" ? <SelectField label="CPU speed" value={speed} onChange={(value) => setSpeed(value as "FAST" | "NORMAL" | "STEP")} options={[{ value: "FAST", label: "Fast" }, { value: "NORMAL", label: "Normal" }, { value: "STEP", label: "Step" }]} /> : null}<Button disabled={Boolean(working)} variant={board?.configured && drafted.length > 0 ? "ghost" : "primary"} onClick={() => void start()}>{board?.configured ? "Restart draft" : "Start draft"}</Button>{board?.configured && !liveMode ? <><Button disabled={Boolean(working) || ownerTurn || board.complete} variant="secondary" onClick={() => void advance(false)}>Advance to my pick</Button><Button disabled={Boolean(working) || ownerTurn || board.complete} variant="ghost" onClick={() => void advance(true)}>One CPU pick</Button></> : null}<Button disabled={Boolean(working)} variant="secondary" onClick={() => void refreshAdp()}>{working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}</Button><Button disabled={Boolean(working)} icon="activity" variant="secondary" onClick={() => { window.location.hash = "#/adp"; }}>Paste Rankings / ADP</Button><label className="file-action">Import owner ADP CSV<input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => void importAdp(event.target.files?.[0])} type="file" /></label></div><p className="boundary-note">{board?.fallbackDisclosure ?? "ADP is optional market-timing context and never changes NWR value rank."}{board?.adp?.available ? ` ${board.adp.source} · ${board.adp.dateWindow || board.adp.sourceDate}${board.adp.sampleSize ? ` · ${board.adp.sampleSize.toLocaleString()} drafts` : ""}.${board.adp.attributionUrl ? ` Attribution: ${board.adp.attributionUrl}.` : ""}` : ""}</p><p className="boundary-note">Paste or import platform ADP from <strong>ADP Providers</strong>; it changes market timing only.</p></Panel>
     {board?.configured ? <>
       <section className="on-clock"><div><span>{board.complete ? "Draft complete" : board.isOwnerTurn ? "You are on the clock" : `Team ${board.currentTeamSlot} is on the clock`}</span><strong>{board.currentPick ? `Pick ${board.currentPick}` : "150 picks recorded"}</strong><small>{draftFormat(data.activeProfile)}</small></div><div className="clock-ring"><strong>{liveMode ? "ENTER PICK" : board.isOwnerTurn ? "YOU" : "CPU"}</strong><span>{liveMode ? "LIVE" : board.speed}</span></div><div><span>Next owner pick</span><strong>{board.nextOwnerPick ?? "—"}</strong><small>{board.positionRun?.length ? `Run: ${board.positionRun.map((run) => `${run.position} ×${run.count}`).join(", ")}` : "No active position run"}</small></div></section>
+      <Panel className="rapid-capture-panel" title="Record next pick" eyebrow={liveMode ? `Team ${board.currentTeamSlot ?? "?"} on the clock · position filter ignored` : "Position filter ignored · type, arrows/Tab to choose, Enter to record"}>
+        <div className="rapid-capture">
+          <label className="search-input rapid-capture__input">
+            <Icon name="search" size={16} />
+            <input
+              aria-activedescendant={rapidResults[rapidActiveIndex] ? `rapid-result-${rapidActiveIndex}` : undefined}
+              aria-controls="rapid-capture-results"
+              aria-label="Record next pick"
+              disabled={!canRecordPick}
+              onChange={(event) => { setRapidQuery(event.target.value); setRapidIndex(0); }}
+              onFocus={(event) => event.target.select()}
+              onKeyDown={onRapidKeyDown}
+              placeholder="Type a player, K, or D/ST…"
+              ref={rapidInputRef}
+              type="search"
+              value={rapidQuery}
+            />
+          </label>
+          <ul className="rapid-capture__results" id="rapid-capture-results" role="listbox">
+            {rapidResults.map((candidate, index) => (
+              <li
+                aria-selected={index === rapidActiveIndex}
+                className={index === rapidActiveIndex ? "rapid-capture__result--active" : ""}
+                id={`rapid-result-${index}`}
+                key={candidate.playerId}
+                onMouseDown={(event) => { event.preventDefault(); void recordFromRapidCapture(candidate.playerId); }}
+                role="option"
+              >
+                <strong>{candidate.playerName}</strong>
+                <small>{candidate.team} · {candidate.position}</small>
+                {candidate.source === "MANUAL" ? <StatusBadge tone="review" label="Manual · not modeled" /> : <span className="rapid-capture__nwr">NWR #{candidate.overallRank ?? "—"}</span>}
+              </li>
+            ))}
+            {rapidQuery.trim() && !rapidResults.length ? <li className="rapid-capture__empty">No match in the ranked universe or manual K/DST/unmodeled pool.</li> : null}
+          </ul>
+          <p className="boundary-note">{working ? "Saving…" : canRecordPick ? "Enter records for the current team; field stays focused for the next pick." : "Start the draft room to record picks here."}</p>
+        </div>
+      </Panel>
       <Panel title="Draft recommendations" eyebrow="Five distinct decision lenses"><div className="recommendation-grid">{board.recommendations?.map((card) => <article key={card.label}><span>{card.label}</span><strong>{card.playerName}</strong><small>{card.position} · NWR #{card.nwrRank} · {card.rosterFit}</small><b>{card.nwrView} · {card.draftTiming}</b><p>{card.adpExplanation || "ADP unavailable · no active match"}</p><p>{card.note}</p><Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="secondary" onClick={() => void mark(card.playerId)}>Draft</Button></article>)}</div></Panel>
       {rosterStrip ? <Panel title="My roster needs" eyebrow="Base starters, then FLEX, then bench"><div className="roster-strip">{rosterStrip.map((slot) => <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>{slot.label} {slot.have}/{slot.need}</span>)}</div></Panel> : null}
       <Panel title="Draft board" eyebrow={`${data.activeProfile.draft.rounds} rounds · click a team to inspect its roster`}><div className="draft-board-scroll"><div className="draft-board-grid" style={{ gridTemplateColumns: `38px repeat(${data.activeProfile.teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + data.activeProfile.teamCount * 109}px` }}><div className="draft-board-corner">Rd</div>{Array.from({ length: data.activeProfile.teamCount }, (_, index) => index + 1).map((slot) => <button className={slot === board.ownerSlot ? "owner-team" : ""} key={`head-${slot}`} onClick={() => setSelectedTeam(slot)}>T{slot}{slot === board.ownerSlot ? " · YOU" : ""}</button>)}{Array.from({ length: data.activeProfile.draft.rounds }, (_, index) => index + 1).flatMap((round) => [<b className="round-label" key={`round-${round}`}>{round}</b>, ...Array.from({ length: data.activeProfile!.teamCount }, (_, column) => { const slot = column + 1; const cell = board.boardCells?.find((item) => item.round === round && item.teamSlot === slot); return <article className={`${cell?.ownerPick ? "owner-pick" : ""} ${cell?.current ? "current-pick" : ""}`} key={`${round}-${slot}`}><small>{cell?.pickNumber}</small>{cell?.playerName ? <><strong>{cell.playerName}</strong><span>{cell.position} · {cell.team}</span></> : <em>Open</em>}</article>; })])}</div></div></Panel>

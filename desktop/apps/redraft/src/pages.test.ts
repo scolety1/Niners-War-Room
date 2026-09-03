@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { DRAFT_ROOM_ACCEPTANCE_LABELS, globalPickSearchRows, type PickSearchAsset, rankingSearchRows } from "./pages";
+import {
+  DRAFT_ROOM_ACCEPTANCE_LABELS,
+  globalPickSearchRows,
+  nextRapidCaptureIndex,
+  type PickSearchAsset,
+  rankingSearchRows,
+} from "./pages";
 
 // The exact 23 real KHA 2026 draft picks the live NWR capture misrecorded
 // because the correct player was ranked in NWR but wasn't the one selected
@@ -85,6 +91,83 @@ describe("global pick search (KHA reconciliation-ledger regression)", () => {
     const results = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, KHA_KDST_MANUAL_ASSETS, drafted, "e");
     expect(results.map((row) => row.playerId)).not.toContain("p-travis-kelce");
     expect(results.map((row) => row.playerId)).not.toContain("MANUAL_DST_HOU");
+  });
+});
+
+describe("rapid-capture keyboard navigation (pure step function)", () => {
+  it("ArrowDown and Tab both step forward and wrap", () => {
+    expect(nextRapidCaptureIndex("ArrowDown", false, 0, 3)).toBe(1);
+    expect(nextRapidCaptureIndex("Tab", false, 0, 3)).toBe(1);
+    expect(nextRapidCaptureIndex("ArrowDown", false, 2, 3)).toBe(0);
+  });
+
+  it("ArrowUp and Shift+Tab both step backward and wrap", () => {
+    expect(nextRapidCaptureIndex("ArrowUp", false, 1, 3)).toBe(0);
+    expect(nextRapidCaptureIndex("Tab", true, 0, 3)).toBe(2);
+  });
+
+  it("returns null (lets the key behave normally) for unrelated keys or an empty result list", () => {
+    expect(nextRapidCaptureIndex("Enter", false, 0, 3)).toBeNull();
+    expect(nextRapidCaptureIndex("Tab", false, 0, 0)).toBeNull();
+    expect(nextRapidCaptureIndex("a", false, 0, 3)).toBeNull();
+  });
+});
+
+describe("rapid capture end-to-end: exact 23 KHA SEARCH_FAILURE replay", () => {
+  it("records all 23 historical picks via type + (arrow-nav if needed) + Enter, no mouse", () => {
+    const drafted: string[] = [];
+    let totalKeystrokes = 0;
+    let arrowStepsUsed = 0;
+
+    for (const target of KHA_SEARCH_FAILURE_PLAYERS) {
+      const lastToken = target.playerName.split(" ").at(-1)!.replace(/\.$/, "");
+      const fragment = lastToken.toLowerCase();
+      let results = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, [], drafted, fragment);
+      // Simulate arrow-key stepping to the target if it isn't the first match.
+      let index = 0;
+      let stepsForThisPick = 0;
+      const targetIndex = results.findIndex((row) => row.playerId === target.playerId);
+      expect(targetIndex).toBeGreaterThanOrEqual(0); // must be findable at all
+      while (index !== targetIndex) {
+        const stepped = nextRapidCaptureIndex("ArrowDown", false, index, results.length);
+        expect(stepped).not.toBeNull();
+        index = stepped!;
+        stepsForThisPick += 1;
+      }
+      // Enter records the highlighted candidate.
+      const recorded = results[index]!;
+      expect(recorded.playerId).toBe(target.playerId);
+      drafted.push(recorded.playerId);
+      arrowStepsUsed += stepsForThisPick;
+      totalKeystrokes += fragment.length + stepsForThisPick + 1; // + Enter
+      // Re-search after "clearing" (simulating the box reset for the next pick) --
+      // the just-drafted player must no longer appear.
+      results = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, [], drafted, fragment);
+      expect(results.some((row) => row.playerId === target.playerId)).toBe(false);
+    }
+
+    expect(drafted).toHaveLength(23);
+    expect(new Set(drafted).size).toBe(23); // no duplicate recordings
+    // Interaction-count measurement (directive section 2): mostly
+    // type+Enter, arrow-nav only where a last-name fragment is ambiguous
+    // within this 23-player pool (e.g. "josh" -> Josh Jacobs / Josh Downs).
+    expect(arrowStepsUsed).toBeLessThan(23); // not every pick needs disambiguation
+    expect(totalKeystrokes).toBeLessThan(23 * 12); // bounded, not a full-name-every-time cost
+    console.info(
+      `rapid-capture 23/23 replay: ${totalKeystrokes} total keystrokes, ${arrowStepsUsed} arrow-nav steps across 23 picks (avg ${(totalKeystrokes / 23).toFixed(1)} keystrokes/pick)`,
+    );
+  });
+
+  it("K/DST manual assets are recordable the same way, no position-filter switch needed", () => {
+    const drafted: string[] = [];
+    for (const target of KHA_KDST_MANUAL_ASSETS) {
+      const fragment = target.playerName.split(" ")[0]!.toLowerCase();
+      const results = globalPickSearchRows([], KHA_KDST_MANUAL_ASSETS, drafted, fragment);
+      const targetIndex = results.findIndex((row) => row.playerId === target.playerId);
+      expect(targetIndex).toBeGreaterThanOrEqual(0);
+      drafted.push(results[targetIndex]!.playerId);
+    }
+    expect(drafted).toHaveLength(KHA_KDST_MANUAL_ASSETS.length);
   });
 });
 
