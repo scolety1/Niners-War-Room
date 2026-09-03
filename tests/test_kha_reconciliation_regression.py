@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import csv
 import json
+import re
+import unicodedata
 from pathlib import Path
 
 from src.services.redraft_draft_room_v1_service import _asset_pool
@@ -58,11 +60,20 @@ def _historical_missing_player_picks() -> list[dict[str, str]]:
     return picks
 
 
+def _normalize_command_search(value: str) -> str:
+    # Mirrors normalizeCommandSearch in desktop/packages/ui/src/components.tsx
+    # (NFKD-decompose, strip combining marks, lowercase, strip non-alnum) --
+    # globalPickSearchRows in pages.tsx now uses that same helper, so this
+    # test's predicate must match the real production behavior, not a
+    # plain .lower() substring check.
+    decomposed = unicodedata.normalize("NFKD", value)
+    stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", "", stripped.lower())
+
+
 def _matches_query(asset: dict[str, str], fragment: str) -> bool:
-    # Mirrors globalPickSearchRows' manual-asset predicate in pages.tsx:
-    # `${playerName} ${team}`.toLowerCase().includes(query).
-    haystack = f"{asset['player_name']} {asset['team']}".lower()
-    return fragment.lower() in haystack
+    haystack = _normalize_command_search(f"{asset['player_name']} {asset['team']}")
+    return _normalize_command_search(fragment) in haystack
 
 
 def test_real_manual_asset_pool_has_exactly_32_k_and_32_dst() -> None:
@@ -183,3 +194,26 @@ def test_team_code_alias_gap_is_real_not_a_test_artifact() -> None:
     manual_teams = {entry["team"] for entry in pool.values()}
     assert "LA" in manual_teams
     assert "LAR" not in manual_teams
+
+
+def test_all_14_historical_k_dst_picks_resolve_against_the_current_udk_source() -> None:
+    """Section 1B of the Saturday NWR PURE release-candidate wave: close
+    the 13/14 -> 14/14 gap using a CURRENT K/DST source
+    (udk_kdst_snapshot_20260902.csv, verified byte-identical to the
+    already-correct UDK export -- the stale entry was in the real
+    live-draft-night manual_assets file, never in this source), not by
+    hand-patching the historical evidence fixture.
+    """
+    from src.services.udk_unmodeled_skill_asset_service import parse_udk_kdst_snapshot
+
+    current_kdst = parse_udk_kdst_snapshot(FIXTURE_DIR / "udk_kdst_snapshot_20260902.csv")
+    pool = _asset_pool(_empty_ranking(), current_kdst)
+    assets = list(pool.values())
+    unresolved: list[str] = []
+    for row in _historical_kdst_picks():
+        recap_name = row["recap_player_name"]
+        fragment = recap_name.replace(" D/ST", "").split()[-1]
+        found = [asset for asset in assets if _matches_query(asset, fragment)]
+        if not found:
+            unresolved.append(recap_name)
+    assert not unresolved, f"historical K/DST picks not found in the CURRENT pool: {unresolved}"

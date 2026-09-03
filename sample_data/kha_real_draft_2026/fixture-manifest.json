@@ -9,6 +9,13 @@
   "notes": "See DIVERGENCE_FINDINGS_20260903.md (owner-resolved) and RECONCILIATION_LEDGER.md for how the live 157-pick capture and the 192-pick recap relate. Historical replay work should use official_recap_192picks_clean.csv as truth; the live board is operational/reliability evidence, not replay input.",
   "files": [
     {
+      "path": "udk_kdst_snapshot_20260902.csv",
+      "source": "C:\\NWR_DRAFT_DAY_TOOLS\\2026-09-02\\udk\\KHA_UDK_KDST_2026_SNAPSHOT.csv",
+      "sha256": "2c7f06c9585b7eb0338c5bfa4481d09befbffb950cdea1836a5e28ab7f7692ae",
+      "bytes": 8158,
+      "description": "CURRENT (not historical-evidence-frozen) UDK K/DST source, all 32 teams' K + DST, verified byte-correct UTF-8 (including diacritics -- 'Eddy Pi\u00f1eiro' decodes correctly; an earlier session doc wrongly called this mojibake, corrected in KDST_AND_UNIVERSE_GAP_EVIDENCE_20260903.md). Parsed by src/services/udk_unmodeled_skill_asset_service.py's parse_udk_kdst_snapshot(). Closes the Harrison Mevis vs. stale 'Joshua Karty' gap in live_manual_kdst_assets_64.json -- that file stays untouched as real live-draft-night evidence; this is a separate, current source for new/future drafts."
+    },
+    {
       "path": "live_runtime_draft_board_157picks.json",
       "source": "C:\\Users\\codex-agent\\AppData\\Local\\com.ninerswarroom.redraft\\state\\redraft\\draft_boards\\fb1c49402c7644a99120197d41344bbb.json",
       "sha256": "e51c0dfddea8369d35a2bf3f1e0c293fabb2c45cb9b30c0bb63495fcf3cec0e6",

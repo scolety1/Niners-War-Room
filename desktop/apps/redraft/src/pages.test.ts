@@ -79,6 +79,25 @@ describe("global pick search (KHA reconciliation-ledger regression)", () => {
     }
   });
 
+  it("finds an accented name from an unaccented query, and an unpunctuated query finds a punctuated name", () => {
+    // Real gap found building the Saturday NWR PURE K/DST fixture: the
+    // real Rams kicker is "Eddy Piñeiro" -- an operator typing the
+    // ASCII "Pineiro" (no accent) must still find him.
+    const kdstWithAccent = [
+      { playerId: "MANUAL_K_LAR", playerName: "Eddy Piñeiro", team: "LAR", position: "K" },
+    ];
+    const accentResults = globalPickSearchRows([], kdstWithAccent, [], "pineiro");
+    expect(accentResults.map((row) => row.playerId)).toContain("MANUAL_K_LAR");
+
+    // A.J. Brown / AJ Brown (section 15's own named alias example) --
+    // punctuation-insensitive for free from the same normalization.
+    const punctuated = [
+      { playerId: "p-aj-brown", playerName: "A.J. Brown", team: "PHI", position: "WR" },
+    ];
+    const punctuationResults = globalPickSearchRows(punctuated, [], [], "aj brown");
+    expect(punctuationResults.map((row) => row.playerId)).toContain("p-aj-brown");
+  });
+
   it("finds a match across ranked and manual assets in one query regardless of the other position's rows present", () => {
     const results = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, KHA_KDST_MANUAL_ASSETS, [], "texans");
     expect(results).toHaveLength(1);

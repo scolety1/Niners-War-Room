@@ -39,7 +39,7 @@ K_DST_UNREPRESENTABLE ledger row representable are present in
 | Jason Myers (K, SEA) | yes |
 | Harrison Mevis (K, LAR) | yes |
 | Jake Bates (K, DET) | yes |
-| Eddy Pineiro (K, SF) | yes, as "Eddy Pi\ufffdeiro" — mojibake, see defect below |
+| Eddy Pineiro (K, SF) | yes, as "Eddy Piñeiro" — correctly encoded, see correction below |
 | Ka'imi Fairbairn (K, HOU) | yes |
 | Texans / Broncos / Eagles / Ravens / Seahawks / Steelers / Rams D/ST | all 7 present by full team name |
 
@@ -51,11 +51,17 @@ work around silently:**
   for identity/draftability (name, position, team, `udk_position_rank` are
   intact and correct), but these fields should not be displayed as if they
   were real values.
-- "Eddy Piñeiro" is mojibake-corrupted to "Eddy Pi\ufffdeiro" (a Windows-
-  1252-as-UTF-8 decoding error on the ñ). One-character fix once someone
-  re-reads the raw source with the right encoding; flagging rather than
-  silently patching this one row, since the same bug likely affects other
-  accented names not exercised by this particular draft.
+- Earlier drafts of this doc claimed "Eddy Piñeiro" was mojibake-corrupted
+  in this source CSV. That was wrong -- verified by reading the raw bytes
+  directly: the source file correctly encodes it as UTF-8 (`\xc3\xb1` = U+00F1 "ñ").
+  The real defect was diacritic-insensitive matching in this session's own
+  search code (an operator typing "Pineiro," without the accent, found
+  nothing) -- fixed in globalPickSearchRows (pages.tsx) by switching to the
+  same normalizeCommandSearch helper the Ctrl+K command palette already
+  uses (NFKD-decompose + strip combining marks + strip punctuation), which
+  also fixes the A.J. Brown / AJ Brown class of alias for free. See
+  RECONCILIATION_LEDGER.csv's 14/14 K/DST regression
+  (test_all_14_historical_k_dst_picks_resolve_against_the_current_udk_source).
 
 **Conclusion: K/DST priority #2's acceptance criterion (all 14 historical
 K/DST picks representable) is achievable from data already on hand.** No

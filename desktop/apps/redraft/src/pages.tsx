@@ -16,6 +16,7 @@ import {
   StatusBadge,
   type TableColumn,
   formatNumber,
+  normalizeCommandSearch,
 } from "@nwr/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -112,14 +113,19 @@ export function globalPickSearchRows(
   query: string,
   limit = 20,
 ): PickSearchCandidate[] {
-  const trimmed = query.trim().toLowerCase();
+  // normalizeCommandSearch (the same helper the Ctrl+K command palette
+  // already uses) strips diacritics and punctuation before matching --
+  // real gap this closes: "Pineiro" (what an operator actually types)
+  // must find "Piñeiro", and "AJ" must find "A.J." without a bespoke
+  // alias table for every such case.
+  const trimmed = normalizeCommandSearch(query.trim());
   if (!trimmed) return [];
   const drafted = new Set(draftedIds);
   const fromRanked: PickSearchCandidate[] = rankedRows
-    .filter((row) => !drafted.has(row.playerId) && !row.drafted && row.playerName.toLowerCase().includes(trimmed))
+    .filter((row) => !drafted.has(row.playerId) && !row.drafted && normalizeCommandSearch(row.playerName).includes(trimmed))
     .map((row) => ({ ...row, source: "NWR" }));
   const fromManual: PickSearchCandidate[] = manualRows
-    .filter((row) => !drafted.has(row.playerId) && `${row.playerName} ${row.team}`.toLowerCase().includes(trimmed))
+    .filter((row) => !drafted.has(row.playerId) && normalizeCommandSearch(`${row.playerName} ${row.team}`).includes(trimmed))
     .map((row) => ({ ...row, source: "MANUAL" }));
   return [...fromRanked, ...fromManual].slice(0, limit);
 }
