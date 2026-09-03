@@ -11,7 +11,7 @@ from dataclasses import replace
 import pytest
 
 from src.services.ai_intelligence_backend_service import ImpactHypothesis
-from src.services.redraft_draft_room_v1_service import _asset_pool
+from src.services.redraft_draft_room_v1_service import AdpEntry, AdpSnapshot, _asset_pool
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -27,6 +27,7 @@ from src.services.shadow_numeric_authorities_service import (
     availability_discount_for_hypotheses,
     championship_equity,
     cost_of_waiting,
+    label_pick_decisions,
     optimal_starting_lineup_value,
     pick_score,
     roster_composition_report,
@@ -728,3 +729,77 @@ def test_evaluate_cost_of_waiting_v2_skips_candidates_with_no_alternative_to_com
     )
     # QB-0 has no other candidate to compare against; not-scored isn't in pick_scores
     assert v2 == {}
+
+
+# --- Real draft cases (section 11): "NWR likes the player" vs "spend
+# this pick" ------------------------------------------------------------
+
+
+def _market_aligned_adp(ranking: RankingResult, overrides: dict[str, float]) -> AdpSnapshot:
+    """An ADP snapshot where expected_pick tracks NWR's own overall_rank
+    for every player except the ones in `overrides` -- i.e. an
+    "efficient market" baseline with specific, deliberate divergences
+    (like the real Troy Franklin case: NWR rank 91 vs. real ESPN ADP
+    977.0 -- docs/codex/KHA_ANOMALY_INVESTIGATION_20260903.md section 9)
+    layered on top, rather than an arbitrary market."""
+    entries = tuple(
+        AdpEntry(
+            player_id=row.player_id, player=row.player_name, team=row.team,
+            position=row.position,
+            overall_adp=overrides.get(row.player_id, float(row.overall_rank)),
+            expected_pick=overrides.get(row.player_id, float(row.overall_rank)),
+            min_pick=None, max_pick=None, std_dev=None,
+        )
+        for row in ranking.rows
+    )
+    return AdpSnapshot(
+        ranking.profile.profile_id, "benchmark", "ppr", ranking.profile.team_count,
+        "2026-08-17", "2026-08-17T00:00:00+00:00", "fixture-sha", entries, (),
+    )
+
+
+def test_troy_franklin_shaped_case_is_waiver_watch_not_take_now() -> None:
+    """Real-evidence-shaped regression: a player NWR ranks reasonably
+    well (a real, positive replacement_adjusted_value -- "NWR likes this
+    player") whose real market ADP places him far past any realistic
+    redraft-league bench spot (the real Troy Franklin case: nwr_rank 91,
+    ESPN ADP 977.0, undrafted in the real 192-pick KHA recap) must not
+    be labeled a pick-now priority. A genuinely contested top pick, by
+    contrast, should be. This is the exact "NWR likes player" vs. "spend
+    this pick" distinction section 11 asks the system to make."""
+    from src.services.shadow_numeric_authorities_service import (
+        evaluate_cost_of_waiting_v2,
+        evaluate_pick_candidates,
+    )
+
+    ranking = _ranking(team_count=12, rounds=15)
+    profile = ranking.profile
+    # WR-0 stands in for the real Troy Franklin shape: a real, ranked
+    # WR (overall_rank 111 in this fixture's WR block) with an ADP so
+    # deep it is effectively off the board.
+    franklin_like = "WR-0"
+    adp = _market_aligned_adp(ranking, overrides={franklin_like: 977.0})
+    candidates = ["RB-0", "RB-1", franklin_like, "WR-5"]
+
+    scored = evaluate_pick_candidates(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, trials=3, seasons=30, base_seed=7,
+    )
+    v2 = evaluate_cost_of_waiting_v2(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, pick_scores=scored, trials=15, base_seed=7,
+    )
+    adp_by_id = {pid: entry.expected_pick for pid, entry in adp.by_player_id.items()}
+    labels = label_pick_decisions(
+        v2, adp_expected_pick_by_id=adp_by_id, current_pick_number=1, team_count=12
+    )
+
+    # The Troy-Franklin-shaped candidate is never worth a pick right now,
+    # regardless of his individually real, positive NWR value.
+    assert labels[franklin_like] == "WAIVER_WATCH"
+    assert v2[franklin_like].survival_probability > 0.9  # essentially guaranteed to still be there
+    # RB-0 (overall rank 31, ADP matches -- a real, immediately contested
+    # top pick) must be the highest-urgency candidate in this set.
+    most_urgent = max(v2, key=lambda pid: v2[pid].expected_cost)
+    assert labels[most_urgent] == "TAKE_NOW"
+    assert most_urgent != franklin_like

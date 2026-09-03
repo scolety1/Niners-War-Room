@@ -625,6 +625,76 @@ def evaluate_cost_of_waiting_v2(
     return out
 
 
+# Disclosed threshold labels -- section 11: distinguish "NWR likes this
+# player" (an individually solid replacement_adjusted_value/rank) from
+# "spend this pick on him now" (real market-survival-weighted urgency).
+# Driven entirely by already-computed cost_of_waiting_v2 fields plus real
+# ADP, RELATIVE TO THE SAME EVALUATED CANDIDATE SET -- matching Pick
+# Score's own "relative to the other candidates evaluated in this call
+# only" philosophy, not a new absolute-threshold concept, with the one
+# exception of WAIVER_WATCH (driven purely by real ADP margin: a player
+# realistically many rounds past where a redraft league's bench even
+# reaches). Thresholds are disclosed here, not hand-tuned per player.
+PICK_DECISION_LABELS = frozenset(
+    {"TAKE_NOW", "GOOD_VALUE", "WAIT", "DEEP_TARGET", "WAIVER_WATCH"}
+)
+WAIVER_WATCH_ROUNDS_PAST_CURRENT = 8.0
+DEEP_TARGET_ROUNDS_PAST_CURRENT = 2.0
+DEEP_TARGET_SURVIVAL_THRESHOLD = 0.85
+WAIT_SURVIVAL_THRESHOLD = 0.6
+TAKE_NOW_RELATIVE_COST_FRACTION = 0.5
+
+
+def label_pick_decisions(
+    results: Mapping[str, CostOfWaitingV2Result],
+    *,
+    adp_expected_pick_by_id: Mapping[str, float | None],
+    current_pick_number: int,
+    team_count: int,
+) -> dict[str, str]:
+    """Maps each evaluate_cost_of_waiting_v2() result to one of
+    PICK_DECISION_LABELS. See module comment above this constant block
+    for the exact, disclosed rule -- summarized:
+      WAIVER_WATCH: real ADP says this player is realistically more than
+        WAIVER_WATCH_ROUNDS_PAST_CURRENT rounds away (or off the board
+        entirely) -- not worth a roster spot at this point in the draft,
+        regardless of survival probability.
+      DEEP_TARGET: real ADP margin exceeds DEEP_TARGET_ROUNDS_PAST_CURRENT
+        rounds AND survival_probability is high -- safe to wait multiple
+        rounds and still land him.
+      WAIT: survival_probability alone is high enough that passing this
+        pick carries little real risk of losing the player.
+      TAKE_NOW: this candidate's expected_cost is at least
+        TAKE_NOW_RELATIVE_COST_FRACTION of the largest expected_cost in
+        this evaluated set -- real, material risk of losing real value
+        by waiting, relative to the alternatives actually on the table.
+      GOOD_VALUE: everything else -- some risk, but not the largest in
+        this set; a reasonable, non-urgent pick.
+    """
+    max_cost = max((result.expected_cost for result in results.values()), default=0.0)
+    labels: dict[str, str] = {}
+    for player_id, result in results.items():
+        adp_expected_pick = adp_expected_pick_by_id.get(player_id)
+        if adp_expected_pick is not None:
+            rounds_past_current = (adp_expected_pick - current_pick_number) / max(1, team_count)
+            if rounds_past_current > WAIVER_WATCH_ROUNDS_PAST_CURRENT:
+                labels[player_id] = "WAIVER_WATCH"
+                continue
+            if (
+                rounds_past_current > DEEP_TARGET_ROUNDS_PAST_CURRENT
+                and result.survival_probability > DEEP_TARGET_SURVIVAL_THRESHOLD
+            ):
+                labels[player_id] = "DEEP_TARGET"
+                continue
+        if result.survival_probability > WAIT_SURVIVAL_THRESHOLD:
+            labels[player_id] = "WAIT"
+        elif max_cost > 0 and result.expected_cost >= TAKE_NOW_RELATIVE_COST_FRACTION * max_cost:
+            labels[player_id] = "TAKE_NOW"
+        else:
+            labels[player_id] = "GOOD_VALUE"
+    return labels
+
+
 # --- Bounded look-ahead (section 12) ---
 # At each candidate: force it as the owner's next pick, then let the rest
 # of the draft (opponents AND the owner's own later picks) complete via
