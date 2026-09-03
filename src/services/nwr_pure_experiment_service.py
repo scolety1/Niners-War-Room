@@ -23,10 +23,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
+
+from src.services.redraft_engine_v1_service import (
+    MODEL_FAMILY,
+    REDRAFT_AUTHORITY_LABEL,
+    RankingResult,
+)
+from src.services.shadow_numeric_authorities_service import (
+    CHAMPIONSHIP_EQUITY_VERSION,
+    PICK_SCORE_VERSION,
+    TEAM_SCORE_VERSION,
+)
 
 EXPERIMENT_SCHEMA_VERSION = 1
 
@@ -77,6 +89,92 @@ class ExperimentFreezeReceipt:
 
 def build_league_profile_hash(profile_document: Mapping[str, Any]) -> str:
     return _canonical_hash(profile_document)
+
+
+def _run_git(repo_root: Path, *args: str) -> str | None:
+    """Returns stdout (stripped) on success, None if git failed or is
+    unavailable -- distinct from an empty-but-successful result (e.g. a
+    clean `git status --porcelain`), which is a real "" rather than None."""
+    try:
+        result = subprocess.run(
+            ["git", *args], cwd=repo_root, capture_output=True, text=True, check=False
+        )
+    except (FileNotFoundError, OSError):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def build_git_provenance(repo_root: str | Path) -> dict[str, str]:
+    """Real git fingerprint of the current repo state -- app_branch,
+    app_head, app_tree for ExperimentFreezeReceipt. app_tree is HEAD's
+    tree object hash, suffixed with a SHA-256 of `git status --porcelain`
+    when the working tree is dirty, so a receipt can never silently claim
+    a clean state that was not actually clean. Any field this cannot
+    determine (git unavailable, not a repository) is "UNKNOWN" -- never a
+    fabricated value."""
+    root = Path(repo_root)
+    branch = _run_git(root, "branch", "--show-current") or "UNKNOWN"
+    head = _run_git(root, "rev-parse", "HEAD") or "UNKNOWN"
+    tree_sha = _run_git(root, "rev-parse", "HEAD^{tree}")
+    porcelain = _run_git(root, "status", "--porcelain")
+    if tree_sha is None:
+        tree = "UNKNOWN"
+    elif not porcelain:
+        tree = tree_sha
+    else:
+        dirty_hash = hashlib.sha256(porcelain.encode("utf-8")).hexdigest()
+        tree = f"{tree_sha}+UNCOMMITTED_CHANGES:{dirty_hash}"
+    return {"app_branch": branch, "app_head": head, "app_tree": tree}
+
+
+def build_freeze_receipt_from_repo_state(
+    repo_root: str | Path,
+    *,
+    experiment_id: str,
+    frozen_at_utc: str,
+    ranking: RankingResult,
+    profile_document: Mapping[str, Any],
+    player_universe_sha: str,
+    player_universe_row_count: int,
+    player_universe_valid_until: str,
+    market_snapshot_sha: str = "",
+    identity_registry_sha: str = "NOT_YET_IMPLEMENTED",
+    team_score_version: str = TEAM_SCORE_VERSION,
+    championship_equity_version: str = CHAMPIONSHIP_EQUITY_VERSION,
+    pick_score_version: str = PICK_SCORE_VERSION,
+) -> ExperimentFreezeReceipt:
+    """Assembles a real ExperimentFreezeReceipt from actual repo git state
+    (build_git_provenance) plus an already-computed, already-validated
+    RankingResult/profile/player-universe approval. This function does
+    not itself validate the player universe or ranking -- that gate
+    already lives in redraft_engine_v1_service.py (install_projection_snapshot
+    / _validate_approval_receipt) and must have already passed before this
+    is ever called; it only records what the caller already validated.
+    Does not call freeze_experiment() itself -- the caller decides
+    whether and when to actually commit the freeze to disk."""
+    provenance = build_git_provenance(repo_root)
+    return ExperimentFreezeReceipt(
+        experiment_id=experiment_id,
+        frozen_at_utc=frozen_at_utc,
+        app_branch=provenance["app_branch"],
+        app_head=provenance["app_head"],
+        app_tree=provenance["app_tree"],
+        model_sha=ranking.projection_sha256,
+        player_universe_sha=player_universe_sha,
+        player_universe_row_count=player_universe_row_count,
+        player_universe_valid_until=player_universe_valid_until,
+        league_profile_hash=build_league_profile_hash(profile_document),
+        market_snapshot_sha=market_snapshot_sha,
+        identity_registry_sha=identity_registry_sha,
+        algorithm_version=MODEL_FAMILY,
+        authority_label=REDRAFT_AUTHORITY_LABEL,
+        team_score_version=team_score_version,
+        championship_equity_version=championship_equity_version,
+        pick_score_version=pick_score_version,
+        source_as_of=ranking.generated_at_utc,
+    )
 
 
 def freeze_experiment(

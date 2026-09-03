@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,8 @@ from src.services.nwr_pure_experiment_service import (
     ReceiptCorrectionRecord,
     append_correction_record,
     append_decision_receipt,
+    build_freeze_receipt_from_repo_state,
+    build_git_provenance,
     build_league_profile_hash,
     freeze_experiment,
     hash_player_universe,
@@ -19,6 +22,15 @@ from src.services.nwr_pure_experiment_service import (
     read_decision_receipts,
     run_pre_draft_check,
 )
+from src.services.redraft_engine_v1_service import (
+    DraftContext,
+    LeagueProfile,
+    RankingResult,
+    RosterSettings,
+    ScoringSettings,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _freeze_receipt(experiment_id: str = "nwr-pure-001") -> ExperimentFreezeReceipt:
@@ -222,3 +234,93 @@ def test_pre_draft_check_blocked_reports_exact_failing_reasons() -> None:
     assert result.verdict == "BLOCKED"
     assert set(result.reasons.keys()) == {"PLAYER_UNIVERSE_CURRENT"}
     assert "valid_until" in result.reasons["PLAYER_UNIVERSE_CURRENT"]
+
+
+# --- Real repo-state freeze receipt builder (section 27) -------------------
+
+
+def _init_git_repo(path: Path) -> None:
+    env_args = ["-c", "user.email=test@example.com", "-c", "user.name=Test"]
+    subprocess.run(["git", *env_args, "init", "-q"], cwd=path, check=True)
+    (path / "seed.txt").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", *env_args, "add", "seed.txt"], cwd=path, check=True)
+    subprocess.run(
+        ["git", *env_args, "commit", "-q", "-m", "seed commit"], cwd=path, check=True
+    )
+
+
+def test_build_git_provenance_against_the_real_worktree_returns_real_values() -> None:
+    provenance = build_git_provenance(REPO_ROOT)
+    assert provenance["app_branch"] != "UNKNOWN"
+    assert len(provenance["app_head"]) == 40
+    assert all(c in "0123456789abcdef" for c in provenance["app_head"])
+    # app_tree always starts with the real 40-hex-char tree object sha,
+    # optionally followed by the dirty-state marker -- both are valid
+    # depending on whether this exact test run has uncommitted changes.
+    tree_sha = provenance["app_tree"].split("+UNCOMMITTED_CHANGES:")[0]
+    assert len(tree_sha) == 40
+    assert all(c in "0123456789abcdef" for c in tree_sha)
+
+
+def test_build_git_provenance_on_a_clean_repo_has_no_dirty_marker(tmp_path: Path) -> None:
+    _init_git_repo(tmp_path)
+    provenance = build_git_provenance(tmp_path)
+    assert "+UNCOMMITTED_CHANGES:" not in provenance["app_tree"]
+    assert len(provenance["app_tree"]) == 40
+
+
+def test_build_git_provenance_on_a_dirty_repo_carries_the_dirty_marker(tmp_path: Path) -> None:
+    _init_git_repo(tmp_path)
+    (tmp_path / "seed.txt").write_text("changed\n", encoding="utf-8")
+    provenance = build_git_provenance(tmp_path)
+    assert "+UNCOMMITTED_CHANGES:" in provenance["app_tree"]
+    tree_sha, _, dirty_hash = provenance["app_tree"].partition("+UNCOMMITTED_CHANGES:")
+    assert len(tree_sha) == 40
+    assert len(dirty_hash) == 64  # sha256 hex digest
+
+
+def test_build_git_provenance_on_a_non_repo_directory_is_unknown(tmp_path: Path) -> None:
+    provenance = build_git_provenance(tmp_path / "not-a-git-repo-at-all")
+    assert provenance == {"app_branch": "UNKNOWN", "app_head": "UNKNOWN", "app_tree": "UNKNOWN"}
+
+
+def _synthetic_ranking() -> RankingResult:
+    profile = LeagueProfile(
+        "fixture-league", "Fixture League", 2026, 10,
+        RosterSettings(k=1, dst=1, bench_size=6), ScoringSettings(reception=1),
+        DraftContext(rounds=15, draft_slot=1),
+    )
+    return RankingResult(profile, (), (), (), "2026-08-17T00:00:00+00:00", "fixture-sha-abc123")
+
+
+def test_build_freeze_receipt_from_repo_state_assembles_a_real_receipt(tmp_path: Path) -> None:
+    _init_git_repo(tmp_path)
+    ranking = _synthetic_ranking()
+    profile_document = {"team_count": 10, "qb": 1}
+    receipt = build_freeze_receipt_from_repo_state(
+        tmp_path,
+        experiment_id="nwr-pure-001",
+        frozen_at_utc="2026-09-05T18:00:00+00:00",
+        ranking=ranking,
+        profile_document=profile_document,
+        player_universe_sha="e483caae" * 8,
+        player_universe_row_count=608,
+        player_universe_valid_until="2026-09-06",
+    )
+    assert receipt.experiment_id == "nwr-pure-001"
+    assert receipt.model_sha == "fixture-sha-abc123"
+    assert receipt.source_as_of == "2026-08-17T00:00:00+00:00"
+    assert receipt.league_profile_hash == build_league_profile_hash(profile_document)
+    assert receipt.algorithm_version == "R2_FLEX_AWARE_REPLACEMENT"
+    assert receipt.authority_label == "REDRAFT V1 - REVIEW"
+    assert receipt.team_score_version == "shadow-team-score-v1"
+    assert receipt.championship_equity_version == "shadow-championship-equity-v1"
+    assert receipt.pick_score_version == "shadow-pick-score-v1"
+    assert receipt.identity_registry_sha == "NOT_YET_IMPLEMENTED"
+    assert len(receipt.app_head) == 40
+    assert "+UNCOMMITTED_CHANGES:" not in receipt.app_tree  # freshly committed, clean repo
+
+    # The assembled receipt is itself a real, freezable ExperimentFreezeReceipt.
+    path = freeze_experiment(tmp_path / "store", receipt)
+    assert path.is_file()
+    assert load_freeze_receipt(tmp_path / "store", "nwr-pure-001") == receipt
