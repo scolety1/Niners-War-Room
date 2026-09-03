@@ -221,6 +221,137 @@ def validate_identity_completeness(
     )
 
 
+def find_duplicate_player_seasons(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[tuple[str, int], ...]:
+    """A real historical dataset must have at most one row per
+    (player_id, season) -- two rows for the same player-season would mean
+    an ambiguous ranking-input row (which one is authoritative?) rather
+    than a genuine second season. Returns every (player_id, season) pair
+    that appears more than once."""
+    seen: set[tuple[str, int | None]] = set()
+    duplicates: list[tuple[str, int]] = []
+    for row in rows:
+        player_id = str(row.get("player_id") or "")
+        try:
+            season = int(row.get("season"))  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            continue  # not a schema concern here -- validate_schema already covers a missing season
+        key = (player_id, season)
+        if key in seen and (player_id, season) not in duplicates:
+            duplicates.append((player_id, season))
+        seen.add(key)
+    return tuple(duplicates)
+
+
+# A real historical outcome should cover roughly a full NFL regular
+# season (17 weeks) before being treated as "the" season-Y outcome --
+# using a partial-season outcome_as_of would understate or overstate a
+# player's real full-season value depending on when the snapshot was
+# taken. 140 days is a disclosed, round-number floor (draft date to
+# ~20 weeks later), not a precisely-calibrated cutoff -- there is no
+# real historical dataset yet to calibrate it against (see the module
+# docstring); it exists so an obviously-partial outcome is flagged
+# rather than silently treated as final.
+MATURITY_MIN_DAYS_AFTER_DRAFT = 140
+
+
+def find_immature_outcome_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
+    """player_ids whose outcome_as_of is present but falls short of
+    MATURITY_MIN_DAYS_AFTER_DRAFT past draft_date -- a real but
+    not-yet-final outcome snapshot, flagged rather than used as if it
+    were the season's final word. A row with no outcome_as_of at all is
+    not flagged here (that is "no outcome recorded yet," a different,
+    unremarkable state for a pre-draft-only row)."""
+    immature: list[str] = []
+    for row in rows:
+        outcome_as_of = row.get("outcome_as_of")
+        draft_date = row.get("draft_date")
+        if not outcome_as_of or not draft_date:
+            continue
+        outcome_date = _safe_date(outcome_as_of)
+        start_date = _safe_date(draft_date)
+        if outcome_date is None or start_date is None:
+            continue
+        if (outcome_date - start_date).days < MATURITY_MIN_DAYS_AFTER_DRAFT:
+            immature.append(str(row.get("player_id") or ""))
+    return tuple(immature)
+
+
+DATASET_VALIDATION_STATUSES = frozenset(
+    {
+        "OK",
+        "BLOCKED_SCHEMA",
+        "BLOCKED_IDENTITY",
+        "BLOCKED_LEAKAGE",
+        "BLOCKED_DUPLICATE_PLAYER_SEASON",
+        "BLOCKED_IMMATURE_OUTCOME",
+    }
+)
+
+
+@dataclass(frozen=True)
+class DatasetValidationOutcome:
+    """One explicit named status (section 20) summarizing every check
+    this module runs, in a fixed priority order (schema first -- nothing
+    else is meaningful without it -- then identity, then leakage, then
+    duplicate-player-season, then outcome maturity). The full detail from
+    every check is still attached, not discarded once a status is
+    chosen, so a caller can see every real issue, not just the first."""
+
+    status: str
+    schema: SchemaValidationResult
+    leakage: LeakageValidationResult
+    identity: IdentityValidationResult | None
+    duplicate_player_seasons: tuple[tuple[str, int], ...]
+    immature_outcome_rows: tuple[str, ...]
+
+
+def validate_historical_dataset(
+    raw_rows: Sequence[Mapping[str, Any]],
+    historical_picks: Sequence[Mapping[str, Any]] | None = None,
+) -> DatasetValidationOutcome:
+    """The single entry point for "is this candidate dataset usable" --
+    runs every validator this module has and reduces them to one
+    explicit status a caller can branch on, per the directive's own
+    request for named BLOCKED_* outcomes rather than a bare boolean.
+    `historical_picks`, when supplied, gates the BLOCKED_IDENTITY check;
+    omitted, identity is simply not checked (not treated as a failure --
+    a caller validating pre-draft rows alone has nothing to check
+    identity completeness against yet)."""
+    schema = validate_schema(raw_rows)
+    leakage = validate_leakage(raw_rows)
+    duplicates = find_duplicate_player_seasons(raw_rows)
+    immature = find_immature_outcome_rows(raw_rows)
+    identity = (
+        validate_identity_completeness(historical_picks, raw_rows)
+        if historical_picks is not None
+        else None
+    )
+
+    if not schema.valid:
+        status = "BLOCKED_SCHEMA"
+    elif identity is not None and not identity.valid:
+        status = "BLOCKED_IDENTITY"
+    elif not leakage.valid:
+        status = "BLOCKED_LEAKAGE"
+    elif duplicates:
+        status = "BLOCKED_DUPLICATE_PLAYER_SEASON"
+    elif immature:
+        status = "BLOCKED_IMMATURE_OUTCOME"
+    else:
+        status = "OK"
+
+    return DatasetValidationOutcome(
+        status=status,
+        schema=schema,
+        leakage=leakage,
+        identity=identity,
+        duplicate_player_seasons=duplicates,
+        immature_outcome_rows=immature,
+    )
+
+
 @dataclass(frozen=True)
 class HistoricalReplayDataset:
     rows: tuple[HistoricalReplayRow, ...]
