@@ -205,6 +205,18 @@ from src.services.unified_research_preview_service import (
 )
 
 MODES = ("dynasty", "redraft")
+# DecisionBundle speed presets (Owner Test Candidate V1, section 11) --
+# real, measured trial/season/candidate-count values, not guesses. See
+# docs/codex/DECISION_BUNDLE_LATENCY_BENCHMARK_20260903.md /
+# scripts/run_decision_bundle_latency_benchmark_v1.py for the exact
+# benchmark these were chosen from: FAST clears the <2s interactive target
+# with real margin; STANDARD/DEEP trade latency for a larger Monte Carlo
+# sample and are available but not the live-draft default.
+DECISION_BUNDLE_SPEED_PRESETS: dict[str, dict[str, int]] = {
+    "FAST": {"trials": 2, "seasons": 20, "maxCandidates": 8},
+    "STANDARD": {"trials": 20, "seasons": 100, "maxCandidates": 10},
+    "DEEP": {"trials": 50, "seasons": 200, "maxCandidates": 12},
+}
 PLANNING_MODULE_IDS = (
     "roster",
     "picks",
@@ -2610,11 +2622,20 @@ class DesktopBackendFacade:
         return FacadePayload(data={"externalIntelligence": intel})
 
     def redraft_decision_bundle(
-        self, *, profile_id: str, max_candidates: int = 12, trials: int = 200, seasons: int = 200,
+        self, *, profile_id: str, speed: str = "FAST",
     ) -> FacadePayload:
         """Owner Test Candidate V1, section 2: the real, live DecisionBundle
         for the CURRENT draft state -- backend computes, this method never
-        substitutes a placeholder number. Raises the same
+        substitutes a placeholder number.
+
+        `speed` (section 11) selects real, benchmarked trial/season/
+        candidate-count presets --
+        docs/codex/DECISION_BUNDLE_LATENCY_BENCHMARK_20260903.md has the
+        real measured latency behind each: FAST (~0.7s cold, ~0.1-0.2s once
+        the comparable-league population is cached) is the default and the
+        only preset that comfortably clears the owner's 60-second clock
+        with margin; STANDARD (~3.8s cold) and DEEP (~9.6s cold) are
+        available but not the default for live play. Raises the same
         REDRAFT_RANKINGS_UNAVAILABLE FacadeError every other per-action
         Redraft endpoint already raises when the ranking is blocked/
         unavailable (a systemic block, not a per-pick condition); when the
@@ -2628,6 +2649,16 @@ class DesktopBackendFacade:
         ranking and the SHADOW/RESEARCH numeric authorities -- so the real
         Pick Score/Team Score/Championship Equity stay visible under NWR
         PURE exactly as they do outside it."""
+        preset = DECISION_BUNDLE_SPEED_PRESETS.get(str(speed).upper())
+        if preset is None:
+            raise FacadeError(
+                "REDRAFT_DECISION_BUNDLE_INVALID_SPEED",
+                f"Unknown DecisionBundle speed {speed!r}; expected one of "
+                f"{sorted(DECISION_BUNDLE_SPEED_PRESETS)}.",
+                status=400,
+            )
+        trials, seasons, max_candidates = preset["trials"], preset["seasons"], preset["maxCandidates"]
+
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)
         normalized = self._profile_id(profile_id)
         adp = load_adp_snapshot(self.redraft_root, profile)
@@ -2675,14 +2706,20 @@ class DesktopBackendFacade:
             comparable_leagues=comparable_leagues, provenance=provenance,
             max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
         )
+        resolved_speed = str(speed).upper()
         if isinstance(result, LiveDecisionBundleUnavailable):
             return FacadePayload(
-                data={"decisionBundle": {"available": False, "reason": result.reason}}
+                data={
+                    "decisionBundle": {
+                        "available": False, "reason": result.reason, "speed": resolved_speed,
+                    }
+                }
             )
         return FacadePayload(
             data={
                 "decisionBundle": {
-                    "available": True, **_decision_bundle_payload(result, ranking),
+                    "available": True, "speed": resolved_speed,
+                    **_decision_bundle_payload(result, ranking),
                 }
             }
         )

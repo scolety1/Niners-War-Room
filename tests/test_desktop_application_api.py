@@ -1728,12 +1728,10 @@ def test_redraft_decision_bundle_returns_a_real_bundle_for_a_started_room(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
-    result = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=5, trials=2, seasons=5,
-    )
+    result = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST")
     bundle = result.data["decisionBundle"]
     assert bundle["available"] is True
-    assert len(bundle["candidates"]) == 5
+    assert len(bundle["candidates"]) == 8  # FAST preset's maxCandidates
     for candidate in bundle["candidates"]:
         assert candidate["playerName"]
         assert candidate["position"]
@@ -1748,16 +1746,12 @@ def test_redraft_decision_bundle_never_shows_a_static_zero_it_computes_a_real_pe
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
-    result = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
-    )
+    result = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST")
     bundle = result.data["decisionBundle"]
     # Every candidate's Pick Score is independently reproducible from a
     # fresh call with the same provenance inputs (same seed/trials) -- the
     # magic number is never a random/placeholder value.
-    again = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
-    )
+    again = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST")
     again_bundle = again.data["decisionBundle"]
     first_scores = {c["playerId"]: c["pickScore"] for c in bundle["candidates"]}
     second_scores = {c["playerId"]: c["pickScore"] for c in again_bundle["candidates"]}
@@ -1769,12 +1763,12 @@ def test_redraft_decision_bundle_recomputes_after_a_pick_changes_the_roster(
 ) -> None:
     facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
     before = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+        profile_id=profile_id, speed="FAST"
     ).data["decisionBundle"]
     facade.mark_redraft_player(profile_id=profile_id, player_id="RB-0", drafted=True)
 
     after = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+        profile_id=profile_id, speed="FAST"
     ).data["decisionBundle"]
     after_ids = {c["playerId"] for c in after["candidates"]}
     # The just-drafted player can never reappear as a candidate -- proves
@@ -1811,15 +1805,13 @@ def test_redraft_decision_bundle_stays_available_across_owner_pick_and_cpu_advan
     directly at the unit level in test_decision_bundle_live_service.py."""
     facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
     first = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=1, trials=2, seasons=5,
+        profile_id=profile_id, speed="FAST"
     ).data["decisionBundle"]
     assert first["available"] is True
     available_now = first["candidates"][0]["playerId"]
     facade.mark_redraft_player(profile_id=profile_id, player_id=available_now, drafted=True)
 
-    result = facade.redraft_decision_bundle(
-        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
-    )
+    result = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST")
     bundle = result.data["decisionBundle"]
     assert bundle["available"] is True
     assert available_now not in {c["playerId"] for c in bundle["candidates"]}
