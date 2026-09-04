@@ -1815,3 +1815,76 @@ def test_redraft_decision_bundle_stays_available_across_owner_pick_and_cpu_advan
     bundle = result.data["decisionBundle"]
     assert bundle["available"] is True
     assert available_now not in {c["playerId"] for c in bundle["candidates"]}
+
+
+def test_redraft_decision_bundle_recomputes_after_a_pick_correction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Acceptance test J: a correction (replace/clear/fill-gap) must trigger
+    a fresh DecisionBundle, not a stale cached one -- section 10's "no stale
+    cached recommendation surviving a changed roster" requirement, exercised
+    end to end through the real correction facade methods rather than only
+    a plain pick."""
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    drafted_ids = {cell["playerId"] for cell in board["boardCells"] if cell["playerId"]}
+    assert "TE-29" not in drafted_ids  # lowest-ranked player in the 240-pool, safely available
+
+    before = facade.redraft_decision_bundle(
+        profile_id=profile_id, speed="FAST"
+    ).data["decisionBundle"]
+
+    facade.replace_redraft_pick(profile_id=profile_id, pick_number=1, player_id="TE-29")
+
+    after = facade.redraft_decision_bundle(
+        profile_id=profile_id, speed="FAST"
+    ).data["decisionBundle"]
+    assert after["available"] is True
+    # A correction changes the drafted-player set -- proves the bundle was
+    # rebuilt from the corrected state, not reused from before the correction.
+    assert before["provenance"]["rosterStateHash"] != after["provenance"]["rosterStateHash"]
+    assert "TE-29" not in {c["playerId"] for c in after["candidates"]}
+
+
+def test_redraft_decision_bundle_recomputes_after_catch_up_is_applied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Acceptance test K: applying a Catch-Up paste must trigger a fresh
+    DecisionBundle -- the same "no stale cached recommendation" guarantee
+    as a plain pick or a correction, proven through the real Catch-Up
+    facade methods (preview + apply) rather than only inferred. owner_slot
+    is set to the team on the throw-in pick 3 (round-1 pick order in a
+    12-team snake draft is team 1, team 2, team 3, ...) so that BEFORE the
+    catch-up it is correctly not yet the owner's turn (bundle unavailable
+    -- proves the guard reads live state, not a stale "always available"
+    default), and AFTER the two-pick catch-up (picks 1 and 2) it becomes
+    the owner's real turn with a real, freshly-computed bundle."""
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Catch-Up DecisionBundle League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    ranking = _synthetic_ranking_for(profile)
+    monkeypatch.setattr(facade, "_redraft_ranking_for_profile", lambda _pid: ranking)
+    facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=3, seed=20260817, speed="FAST", mode="LIVE_READ_ONLY"
+    )
+
+    before = facade.redraft_decision_bundle(
+        profile_id=profile_id, speed="FAST"
+    ).data["decisionBundle"]
+    assert before["available"] is False
+    assert "owner's turn" in before["reason"]
+
+    facade.apply_redraft_catch_up(profile_id=profile_id, paste="QB 0\nRB 0\n")
+
+    after = facade.redraft_decision_bundle(
+        profile_id=profile_id, speed="FAST"
+    ).data["decisionBundle"]
+    assert after["available"] is True
+    after_ids = {c["playerId"] for c in after["candidates"]}
+    assert "QB-0" not in after_ids
+    assert "RB-0" not in after_ids
