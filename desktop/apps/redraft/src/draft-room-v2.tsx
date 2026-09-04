@@ -22,6 +22,7 @@ import type {
   DecisionBundleCandidate,
   DraftBoard,
   DraftRosterPlayer,
+  KhaHistoricalReplayPreview,
   RedraftBootstrap,
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
@@ -39,11 +40,15 @@ import {
 import type { NwrApiClient } from "@nwr/api-client";
 import { useEffect, useMemo, useState } from "react";
 
-export const DRAFT_ROOM_V2_TABS = ["SUGGESTIONS", "PLAYERS", "BOARD", "MY_TEAM", "COMPARE"] as const;
+export const DRAFT_ROOM_V2_TABS = [
+  "SUGGESTIONS", "PLAYERS", "BOARD", "MY_TEAM", "COMPARE", "REPLAY",
+] as const;
 export type DraftRoomV2Tab = (typeof DRAFT_ROOM_V2_TABS)[number];
 
 export function tabLabel(tab: DraftRoomV2Tab): string {
-  return tab === "MY_TEAM" ? "My Team" : tab.charAt(0) + tab.slice(1).toLowerCase();
+  if (tab === "MY_TEAM") return "My Team";
+  if (tab === "REPLAY") return "Historical Replay";
+  return tab.charAt(0) + tab.slice(1).toLowerCase();
 }
 
 export const RESEARCH_NOT_CONNECTED = "Not connected — SHADOW/RESEARCH backend";
@@ -347,6 +352,9 @@ export function DraftRoomV2Page({
   const [decisionBundle, setDecisionBundle] = useState<DecisionBundle | null>(null);
   const [decisionBundleLoading, setDecisionBundleLoading] = useState(false);
   const [nwrPureToggling, setNwrPureToggling] = useState(false);
+  const [historicalReplay, setHistoricalReplay] = useState<KhaHistoricalReplayPreview | null>(null);
+  const [historicalReplayLoading, setHistoricalReplayLoading] = useState(false);
+  const [historicalReplayError, setHistoricalReplayError] = useState<string | null>(null);
   const board = data.draftBoard;
   const nwrPureActive = data.activeProfile?.nwrPureExperimental ?? false;
 
@@ -409,6 +417,35 @@ export function DraftRoomV2Page({
       cancelled = true;
     };
   }, [client, data.activeProfileId, rosterStateSignal]);
+
+  useEffect(() => {
+    // Lazy, tab-gated fetch: a fixed, static, non-current artifact -- no
+    // reason to load it before the owner actually opens the tab, and no
+    // reason to refetch on every draft-state change the way the live
+    // DecisionBundle does (sections 12/13 -- this never changes with the
+    // current draft, it is a historical replay).
+    if (tab !== "REPLAY" || historicalReplay || historicalReplayLoading) return;
+    let cancelled = false;
+    setHistoricalReplayLoading(true);
+    client
+      .getKhaHistoricalReplayPreview()
+      .then((response) => {
+        if (!cancelled) setHistoricalReplay(response.historicalReplay);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setHistoricalReplayError(
+            error instanceof Error ? error.message : "The historical replay preview failed to load.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setHistoricalReplayLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, tab, historicalReplay, historicalReplayLoading]);
 
   const intelById = useMemo(() => {
     const map = new Map<string, RedraftExternalIntelligenceEntry>();
@@ -519,6 +556,13 @@ export function DraftRoomV2Page({
               rows={compareRows}
               summary={compareSummary}
               onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
+            />
+          ) : null}
+          {tab === "REPLAY" ? (
+            <ReplayTab
+              replay={historicalReplay}
+              loading={historicalReplayLoading}
+              error={historicalReplayError}
             />
           ) : null}
         </div>
@@ -755,6 +799,52 @@ function CompareTab({
       </Panel>
       <Panel title="AI Compare Summary" eyebrow="Structured fields only — no invented reasoning">
         <p>{summary}</p>
+      </Panel>
+    </>
+  );
+}
+
+function ReplayTab({
+  replay,
+  loading,
+  error,
+}: {
+  replay: KhaHistoricalReplayPreview | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading) {
+    return <EmptyState icon="activity" title="Loading…" message="Fetching the historical replay preview." />;
+  }
+  if (error) {
+    return <EmptyState icon="alert" title="Historical replay unavailable" message={error} />;
+  }
+  if (!replay) {
+    return <EmptyState icon="activity" title="Historical Replay" message="Open this tab to load the KHA 2026-09-02 replay preview." />;
+  }
+  const columns: TableColumn[] = [
+    { key: "pickNumber", label: "Pick", sort: "number" },
+    { key: "round", label: "Rd", sort: "number" },
+    { key: "playerName", label: "Player", sort: "text", render: (row) => (
+      <span><strong>{String(row.playerName)}</strong> <small>{String(row.team)} · {String(row.position)}</small></span>
+    ) },
+    { key: "realNwrRankAtTimeOfPick", label: "Real NWR Rank (at pick)", sort: "number" },
+    { key: "teamScoreAfter", label: "Team Score — proxy", sort: "number", render: (row) => row.teamScoreAfter == null ? "—" : formatNumber(row.teamScoreAfter as number, 1) },
+    { key: "champEquityAfter", label: "Champ Eq — proxy", sort: "number", render: (row) => row.champEquityAfter == null ? "—" : `${formatNumber((row.champEquityAfter as number) * 100, 1)}%` },
+    { key: "topCandidateAlternatives", label: "Alternatives", sort: "text" },
+    { key: "productionNwrRecommendation", label: "NWR Recommendation", sort: "text" },
+  ];
+  return (
+    <>
+      <Panel
+        title={replay.label}
+        eyebrow="Owner-test preview only — never the current draft. Do NOT judge historical accuracy from this pass (see the owner test checklist)."
+      >
+        <p className="boundary-note">{replay.disclosedLimitations}</p>
+        <p className="boundary-note">Source: {replay.sourceRelativePath} (read-only, never regenerated by this page).</p>
+      </Panel>
+      <Panel title="Real KHA picks, with disclosed proxy values" eyebrow={`${replay.picks.length} picks`}>
+        <DataTable columns={columns} rows={replay.picks as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.pickNumber)} />
       </Panel>
     </>
   );

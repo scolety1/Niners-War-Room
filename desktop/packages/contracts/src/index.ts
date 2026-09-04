@@ -963,6 +963,40 @@ export interface RedraftDecisionBundleResponse {
   decisionBundle: DecisionBundle;
 }
 
+// Owner Test Candidate V1, sections 12/13: KHA historical replay preview --
+// a fixed, read-only, explicitly-labeled artifact, never a live DecisionBundle.
+export interface KhaShadowReplayPick {
+  pickNumber: number;
+  round: number;
+  playerName: string;
+  position: string;
+  team: string;
+  realNwrRankAtTimeOfPick: number;
+  valueProxy: string;
+  teamScoreBefore: number | null;
+  teamScoreAfter: number | null;
+  champEquityBefore: number | null;
+  champEquityAfter: number | null;
+  starterHolesBefore: string;
+  starterHolesAfter: string;
+  startingLineupValueDelta: number | null;
+  topCandidateAlternatives: string;
+  costOfWaiting: string;
+  marketStateAdp: string;
+  productionNwrRecommendation: string;
+}
+
+export interface KhaHistoricalReplayPreview {
+  label: string;
+  sourceRelativePath: string;
+  disclosedLimitations: string;
+  picks: KhaShadowReplayPick[];
+}
+
+export interface RedraftHistoricalReplayPreviewResponse {
+  historicalReplay: KhaHistoricalReplayPreview;
+}
+
 export interface CatchUpCandidate {
   playerId: string;
   playerName: string;

@@ -19,6 +19,7 @@ import {
   type RedraftCatchUpApplyResponse,
   type RedraftCatchUpPreviewResponse,
   type RedraftDecisionBundleResponse,
+  type RedraftHistoricalReplayPreviewResponse,
   type RedraftExternalIntelligenceResponse,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
@@ -399,6 +400,10 @@ export class NwrApiClient {
       method: "POST",
       body: JSON.stringify({ speed }),
     });
+  }
+
+  getKhaHistoricalReplayPreview(): Promise<RedraftHistoricalReplayPreviewResponse> {
+    return this.request("/api/v1/redraft/historical-replay/kha-2026-09-02");
   }
 
   getRedraftExternalIntelligence(profileId: string): Promise<RedraftExternalIntelligenceResponse> {

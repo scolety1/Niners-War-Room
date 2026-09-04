@@ -20,6 +20,10 @@ describe("tabLabel", () => {
     expect(tabLabel("MY_TEAM")).toBe("My Team");
     expect(tabLabel("COMPARE")).toBe("Compare");
   });
+
+  it("special-cases REPLAY to a readable label", () => {
+    expect(tabLabel("REPLAY")).toBe("Historical Replay");
+  });
 });
 
 function _candidate(overrides: Record<string, unknown> = {}) {
