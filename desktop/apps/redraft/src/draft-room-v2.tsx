@@ -333,6 +333,7 @@ export function generateCompareSummary(rows: CompareRow[], positionDepth: Record
 export function DraftRoomV2Page({
   client,
   data,
+  onUpdate,
 }: {
   client: NwrApiClient;
   data: RedraftBootstrap;
@@ -345,7 +346,23 @@ export function DraftRoomV2Page({
   const [externalIntel, setExternalIntel] = useState<RedraftExternalIntelligence | null>(null);
   const [decisionBundle, setDecisionBundle] = useState<DecisionBundle | null>(null);
   const [decisionBundleLoading, setDecisionBundleLoading] = useState(false);
+  const [nwrPureToggling, setNwrPureToggling] = useState(false);
   const board = data.draftBoard;
+  const nwrPureActive = data.activeProfile?.nwrPureExperimental ?? false;
+
+  const onToggleNwrPure = () => {
+    if (!data.activeProfileId || nwrPureToggling) return;
+    setNwrPureToggling(true);
+    client
+      .setNwrPureMode(data.activeProfileId, !nwrPureActive)
+      .then((updated) => onUpdate(updated))
+      .catch(() => {
+        // Real failures are surfaced by the standard error boundary this
+        // page's caller already installs -- this toggle simply stops
+        // spinning rather than silently pretending the switch happened.
+      })
+      .finally(() => setNwrPureToggling(false));
+  };
   // A real recomputation trigger, not a poll: updatedAtUtc changes on every
   // real draft-board mutation (pick, correction, Catch-Up, Sleeper sync),
   // so a stale DecisionBundle can never survive a changed roster/universe
@@ -452,9 +469,19 @@ export function DraftRoomV2Page({
         title={`${data.activeProfile.leagueName} — Draft Room V2`}
         description="Tabbed information architecture: Suggestions / Players / Board / My Team / Compare. Alt+click any player to add them to Compare."
         actions={
-          <Button variant="ghost" onClick={() => setSidebarVisible((value) => !value)}>
-            {sidebarVisible ? "Hide sidebar" : "Show sidebar"}
-          </Button>
+          <>
+            <Button
+              variant={nwrPureActive ? "primary" : "ghost"}
+              onClick={onToggleNwrPure}
+              disabled={nwrPureToggling}
+              title="NWR PURE — EXPERIMENTAL: when on, external expert intelligence (UDK/FantasyPros) is hidden. Platform market data, current factual news/status, and the real Pick Score/Team Score/Championship Equity stay visible -- DecisionBundle never reads external intelligence regardless of this switch."
+            >
+              {nwrPureToggling ? "NWR PURE — updating…" : nwrPureActive ? "NWR PURE — EXPERIMENTAL: ON" : "NWR PURE — EXPERIMENTAL: OFF"}
+            </Button>
+            <Button variant="ghost" onClick={() => setSidebarVisible((value) => !value)}>
+              {sidebarVisible ? "Hide sidebar" : "Show sidebar"}
+            </Button>
+          </>
         }
       />
       <div className="draft-room-v2-layout">
