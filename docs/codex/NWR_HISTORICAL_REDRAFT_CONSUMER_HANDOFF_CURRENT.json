@@ -1,0 +1,177 @@
+{
+  "handoff_version": "draft-upgrade-consumer-handoff-v1",
+  "generated_at_utc": "2026-09-03",
+  "consumer_lane": "NWR Draft Upgrade HQ",
+  "producer_lane": "NWR Historical Redraft Data",
+  "draft_upgrade_state": {
+    "worktree": "C:\\Users\\codex-agent\\orca\\workspaces\\Niners-War-Room\\draft-upgrade-hq",
+    "branch": "work/nwr-draft-upgrade-hq-v1-20260903",
+    "head": "4ae2a96bd5433597f69c53d9f78d4cd50d1ef44e",
+    "tree": "6 uncommitted paths at handoff time -- 5 pre-existing unrelated docs/model_v4/*.md diffs and 1 untracked desktop/launch-draft-upgrade-preview.bat (a prior-wave Preview launcher script, not yet committed); nothing historical-data-related is uncommitted",
+    "no_push_no_merge_no_deploy": true,
+    "relevant_current_artifacts": [
+      "src/services/historical_replay_data_adapter_service.py",
+      "src/services/historical_ranking_bridge_service.py",
+      "src/services/historical_decision_state_service.py",
+      "src/services/outcome_evaluation_framework_service.py",
+      "src/services/point_in_time_feature_store_service.py",
+      "scripts/run_historical_calibration_readiness_v1.py",
+      "docs/codex/HISTORICAL_REPLAY_DATA_CONTRACT_20260903.md",
+      "docs/codex/HISTORICAL_REPLAY_SUBSTRATE_INVENTORY_20260903.md",
+      "docs/codex/HISTORICAL_RANKINGRESULT_FIELD_MAP_20260903.md",
+      "docs/codex/HISTORICAL_ADAPTER_EXPLICIT_STATUS_CODES_20260903.md",
+      "docs/codex/HISTORICAL_REPLAY_DATA_ADAPTER_20260903.md",
+      "docs/codex/HISTORICAL_CALIBRATION_READINESS_ENTRYPOINT_20260903.md",
+      "docs/codex/HISTORICAL_CALIBRATION_READINESS_REPORT.json",
+      "sample_data/kha_real_draft_2026/ (2026 KHA fixture -- same-season postmortem evidence, NOT a leakage-safe prior-season backtest substrate)"
+    ],
+    "note": "None of the pieces below are wired to a live HTTP route or frontend page yet. They are offline research/consumer infrastructure only, verified end to end against synthetic and small real-shaped fixtures, ready to run the moment a real conformant dataset lands."
+  },
+  "current_data_contract_source_of_truth": "docs/codex/HISTORICAL_REPLAY_DATA_CONTRACT_20260903.md (requirements) + src/services/historical_replay_data_adapter_service.py (enforced schema)",
+  "tier_1_minimum_required_fields": {
+    "per_player_season_row__schema_blocking": [
+      "player_id", "player_name", "position", "team", "season",
+      "draft_date", "projection_as_of", "platform_adp", "adp_as_of",
+      "status_as_of", "scoring_format"
+    ],
+    "source": "historical_replay_data_adapter_service.REQUIRED_PRE_DRAFT_FIELDS -- validate_schema requires every field non-empty and every *_as_of/draft_date field a real parseable ISO date, or the row fails BLOCKED_SCHEMA",
+    "important_gap_not_covered_by_the_schema_check_alone": "REQUIRED_PRE_DRAFT_FIELDS does NOT include any real stat magnitude. A dataset can pass BLOCKED_SCHEMA/BLOCKED_LEAKAGE cleanly and still be USELESS to historical_ranking_bridge_service -- every player with no populated PROJECTION_STAT_FIELDS (or K/DST projected_points_override) is excluded from RankingResult scoring, and if EVERY row lacks stats the bridge raises HistoricalRankingBridgeError outright. Treat the projection-stat fields below as Tier 1 in practice for anything beyond a PLATFORM_ADP-only replay."
+    ,
+    "per_player_season_row__required_to_be_scored_by_the_ranking_bridge": {
+      "non_kdst_positions": "at least one of historical_ranking_bridge_service.PROJECTION_STAT_FIELDS populated: passing_yards, passing_tds, interceptions, rushing_yards, rushing_tds, receiving_yards, receptions, receiving_tds, passing_first_downs, rushing_first_downs, receiving_first_downs, return_yards, return_tds, fumbles_lost",
+      "k_or_dst": "projected_points_override (a single real pre-draft point total) -- these positions never use PROJECTION_STAT_FIELDS",
+      "missingness_policy": "a player missing this is EXCLUDED from the RankingResult entirely and listed in HistoricalRankingBridgeResult.excluded_players with value_status=MISSING_PROJECTION_STATS -- never scored as an implicit 0.0"
+    },
+    "for_the_optional_identity_check": {
+      "file": "historical_picks.csv (optional input to run_historical_calibration_readiness_v1.py and to validate_identity_completeness)",
+      "required": "every real historical pick resolves to exactly one player_id present in the row set, or carries an explicit identity_status (any disclosed value) -- an undisclosed gap becomes UNFLAGGED_UNRESOLVED and blocks with BLOCKED_IDENTITY"
+    }
+  },
+  "preferred_but_nonblocking_fields": [
+    {"field": "rookie", "default_if_absent": "False", "policy": "never inferred from name/round/anything else -- only ever a real disclosed value or the False default"},
+    {"field": "availability_status", "default_if_absent": "no feature value built at all (not even UNKNOWN) unless BOTH availability_status and status_as_of are present on the row", "note": "status_as_of itself IS schema-required (a date key), but the availability_status VALUE it describes is optional"},
+    {"field": "historical_picks.csv", "note": "optional -- omitting it simply skips the identity-completeness check rather than failing the run"},
+    {"field": "additional consecutive seasons beyond the schema minimum of one", "note": "preferred for a real chronological train/validate/test split per CALIBRATION_PLAN.md, not required for one season's mechanics to run"}
+  ],
+  "as_of_cutoff_semantics": {
+    "projection_as_of": "must be strictly < draft_date",
+    "adp_as_of": "must be strictly < draft_date",
+    "status_as_of": "must be <= draft_date (same-day allowed)",
+    "outcome_as_of": "must be >= draft_date, AND must be >= draft_date + 140 days (MATURITY_MIN_DAYS_AFTER_DRAFT, a disclosed round-number floor, not yet calibrated against any real dataset) or the row is BLOCKED_IMMATURE_OUTCOME -- a real but not-yet-final outcome snapshot, never silently treated as the season's final word",
+    "leakage_exclusions_hard_requirement": [
+      "realized season-Y stats or outcomes as a ranking input",
+      "injuries/depth-chart changes/trades learned after the draft date",
+      "current (present-day) NWR rankings or projections",
+      "future ADP (any ADP dated after the historical draft date)",
+      "retrospective news/analysis written after the season"
+    ],
+    "column_name_leakage_guard": "BLOCKED_FEATURE_TOKENS = adp, market, ranking, projection, fantasy_points, fantasy_points_ppr, trade_calculator, sleeper_adp -- any row key outside the declared pre-draft/outcome field set whose lowercased name contains one of these is refused outright (a deliberate literal copy of scripts/build_backtest_dataset_v0.py's own guard, not a new convention)"
+  },
+  "historical_row_to_rankingresult_bridge": {
+    "entry_point": "historical_ranking_bridge_service.build_ranking_result_from_historical_rows(rows, profile, *, generated_at_utc, source_sha256) -> HistoricalRankingBridgeResult",
+    "mechanism": "constructs a real ProjectionSnapshot from the rows and calls the real, UNMODIFIED redraft_engine_v1_service.generate_rankings() -- the exact function a live draft uses. No second scoring engine.",
+    "caller_responsibility": "profile (a real LeagueProfile) must already carry the historical league's actual scoring/roster rules for that season -- never guessed or defaulted by the bridge",
+    "output_fields": ["bridge_version", "ranking (RankingResult)", "adp (AdpSnapshot)", "feature_store (PointInTimeFeatureStore)", "included_player_ids", "excluded_players (ExcludedHistoricalPlayer: player_id, reason, value_status)"],
+    "failure_modes": [
+      "HistoricalRankingBridgeError if rows is empty",
+      "HistoricalRankingBridgeError if NOT ONE row across the whole set has usable stat components -- refuses to fabricate a RankingResult from nothing",
+      "generate_rankings()'s own pre-existing 'insufficient universe' guard still applies unchanged: a position needing N roster slots must have >= N+1 scored players or RankingResult.errors is non-empty for that historical season -- never bypassed to force a result"
+    ]
+  },
+  "historical_decision_state_requirements": {
+    "state_constructor": "historical_decision_state_service.build_historical_decision_state(bridge_result, *, season, as_of, pick_number>=1, round_number, owner_slot, rosters_by_slot, strategy_version, manual_assets=()) -> HistoricalDecisionState",
+    "caller_responsibility": "rosters_by_slot must be built by the caller using ONLY picks 1..pick_number-1 for that historical draft -- the constructor cannot verify this itself, but DOES enforce that available_player_ids never includes an already-rostered player or a bridge-excluded player",
+    "decision_bundle_producer": "historical_decision_state_service.evaluate_historical_candidates(state, *, candidate_player_ids, comparable_leagues, provenance, player_scores=None, picks_until_next_turn=1, seasons=200, base_seed=20260903) -> DecisionBundle",
+    "reuses_real_functions": ["shadow_numeric_authorities_service.team_score", "shadow_numeric_authorities_service.championship_equity", "shadow_numeric_authorities_service.pick_score"],
+    "cost_of_waiting_note": "uses a disclosed, versioned, ADP-distance survival heuristic (estimate_historical_survival_probability, SURVIVAL_HEURISTIC_VERSION=historical-adp-survival-heuristic-v1) -- NOT the live Draft Room's CPU Monte Carlo (evaluate_pick_candidates/evaluate_cost_of_waiting_v2/simulate_pick_now are deliberately NOT reused here: they depend on a separate draft_order() implementation in redraft_draft_room_v1_service, and bridging the two without dedicated alignment testing risks silent team-slot misattribution)",
+    "action_field_note": "always UNSCORED on a historical CandidateBundle -- never mislabeled with the live TAKE_NOW/GOOD_VALUE/WAIT/DEEP_TARGET/WAIVER_WATCH taxonomy, which this heuristic path does not produce",
+    "uncertainty_label": "HISTORICAL_PROXY (Championship Equity SE=..., survival heuristic historical-adp-survival-heuristic-v1)",
+    "outcome_isolation": "this module has NO realized-outcome input at all -- outcome data is attached only afterward by the outcome evaluator, never during recommendation generation"
+  },
+  "identity_requirements": {
+    "stable_player_id": "one stable player_id per real player across every row/pick for a season -- required",
+    "resolution_rule": "every real historical pick resolves to exactly one player_id in the supplied row set, or is explicitly flagged with a disclosed identity_status -- an unflagged gap is always a hard block (BLOCKED_IDENTITY), never silently dropped",
+    "convention_reused": "the same identity_status disclosure convention (e.g. UNMATCHED / K_DST_UNREPRESENTABLE-style explicit flags) already used by the live-draft identity reconciliation work elsewhere in this codebase -- not a new vocabulary invented for historical replay",
+    "team_code_aliasing": "the data contract additionally asks for any team-code aliasing a season's real platform export used (LA/LAR, AZ/ARI, JAX/JAC-style) -- not yet enforced by a dedicated validator in this lane's code, callers should resolve to one canonical team code before handoff",
+    "name_variants": "a draft-scoped alias registry per player per season is requested by the data contract (same shape as the live-draft identity work) -- not yet a separate enforced field in the adapter's schema today, player_name is a single required string"
+  },
+  "missingness_semantics": {
+    "generic_feature_value_status_vocabulary": {
+      "source": "point_in_time_feature_store_service.FEATURE_VALUE_STATUSES",
+      "values": {
+        "KNOWN": "a real value is present",
+        "UNKNOWN": "no value could be resolved -- never defaulted to zero or a guess",
+        "NOT_APPLICABLE": "the feature does not apply to this player/context at all",
+        "BLOCKED": "a value exists upstream but is blocked from use (e.g. an unmatched ADP lookup)",
+        "STALE": "a real value exists but is dated outside its point-in-time validity window"
+      },
+      "rule": "every adapter and lookup path in this module returns an explicit FeatureValue with one of these statuses -- never omits the row or defaults to 0.0"
+    },
+    "bridge_specific_exclusion_reasons": {
+      "source": "historical_ranking_bridge_service",
+      "values": {
+        "MISSING_PROJECTION_STATS": "no real stat components (or K/DST override) present -- player excluded from the RankingResult",
+        "UNAVAILABLE_HISTORICALLY": "constant defined for use when a value genuinely did not exist historically",
+        "NOT_APPLICABLE": "constant defined for a field that does not apply"
+      }
+    },
+    "dataset_level_validation_statuses": {
+      "source": "historical_replay_data_adapter_service.DATASET_VALIDATION_STATUSES",
+      "priority_order": ["BLOCKED_SCHEMA", "BLOCKED_IDENTITY", "BLOCKED_LEAKAGE", "BLOCKED_DUPLICATE_PLAYER_SEASON", "BLOCKED_IMMATURE_OUTCOME", "OK"],
+      "note": "schema checked first since nothing else is meaningful on a malformed row; every individual check's full detail is still attached to the result even after one status is chosen"
+    },
+    "readiness_report_top_level_status": {
+      "source": "scripts/run_historical_calibration_readiness_v1.py",
+      "known_values": ["PASS_READY_FOR_REPLAY", "BLOCKED_NO_DATASET_FOUND", "(plus the DATASET_VALIDATION_STATUSES above, surfaced when validation itself fails)"]
+    }
+  },
+  "minimum_outcome_substrate_for_calibration": {
+    "shared_requirement_all_four": "weekly realized fantasy production per player for the target season, scored under that historical league's REAL scoring rules (OUTCOME_ONLY_FIELDS: realized_weekly_points, outcome_as_of) -- the same rows already required by the base data contract for 'scoring the replay only,' no additional deliverable beyond what section on Tier-1/outcome fields already names",
+    "team_score_calibration": "roster_level_metrics(realized_roster, profile, replacement_points_by_position=None) in outcome_evaluation_framework_service -- realized_roster is a caller-built Sequence[RosterPlayer] whose .value is REALIZED (not projected) production; reuses the real roster_composition_report/optimal_starting_lineup_value, no second lineup algorithm",
+    "pick_score_evaluation": "pick_level_metrics(pick_number, selected_player_id, selected_realized_production, available_pool_realized_production, replacement_points=None, next_pick_available_player_ids=None) -- available_pool_realized_production must be every OTHER candidate that was ACTUALLY available at that pick (point-in-time boundary is the caller's responsibility, same discipline as everywhere else in this contract)",
+    "championship_equity_calibration": "season_level_metrics(source, regular_season_strength_percentile, simulated_playoff_rate, simulated_championship_rate, sample_size) -- source=OBSERVED forbids supplying any *_rate field (a single realized season has no observed probability); source=SIMULATED is required to report playoff/championship rates at all, and those remain labeled SIMULATED even when computed from real historical rosters -- real bracket/schedule data is NOT required for this pilot, only to ever claim source=OBSERVED, which this pass deliberately avoids per section 10's own instruction",
+    "cost_of_waiting_calibration": "player_rank_correlation(predicted_ranks, realized_ranks) [Spearman + Kendall tau] plus pick_level_metrics.made_it_back (whether the passed-on top alternative survived to the next pick) -- both computable from the same realized_weekly_points substrate already listed, no separate deliverable",
+    "framework_note": "outcome_evaluation_framework_service is pure/deterministic and reads no file/service itself -- it only transforms whatever realized production a caller supplies. All four calibration types are already implemented and unit-tested; none of them are blocked on new code, only on a real realized_weekly_points substrate arriving."
+  },
+  "accepted_input_formats": {
+    "primary_file": "<dataset-dir>/historical_replay_rows.csv -- one row per (player, season), columns = REQUIRED_PRE_DRAFT_FIELDS union OUTCOME_ONLY_FIELDS union (PROJECTION_STAT_FIELDS or projected_points_override, per the Tier-1 gap noted above -- NOT yet formally added to REQUIRED_PRE_DRAFT_FIELDS itself, a real gap worth a HISTORICAL_DATA_CONSUMER_REQUIREMENT if the producer lane wants it made schema-explicit)",
+    "optional_file": "<dataset-dir>/historical_picks.csv -- real historical pick order, for the identity-completeness check only",
+    "row_shape_note": "no fixed file format is mandated by the Python contract itself (validate_schema/validate_leakage accept any Sequence[Mapping[str, Any]]) -- CSV-with-these-column-names is simply what the one existing entrypoint script expects; a caller could also hand rows in as parsed JSON records with the same keys",
+    "encoding_and_types": "all *_as_of/draft_date fields must be ISO-8601 date strings (date.fromisoformat parseable); numeric fields (platform_adp, PROJECTION_STAT_FIELDS values, projected_points_override, realized_weekly_points) must be parseable as float; rookie is a boolean (or omitted)"
+  },
+  "calibration_entrypoint": {
+    "command": "python scripts/run_historical_calibration_readiness_v1.py --dataset-dir \"C:\\path\\to\\dataset\"",
+    "without_dataset_dir_or_missing_file": "runs the identical pipeline against a deterministic SYNTHETIC_PIPELINE_TEST_ONLY dataset instead -- every output explicitly labeled, never mistaken for a real result",
+    "always_writes": "docs/codex/HISTORICAL_CALIBRATION_READINESS_REPORT.json plus a console summary, on every run (real or synthetic)",
+    "known_stale_claim_in_that_docs_own_writeup": "HISTORICAL_CALIBRATION_READINESS_ENTRYPOINT_20260903.md (committed at 17:13 on 2026-09-03) says CHAMPIONSHIP_EQUITY_CALIBRATION/PICK_SCORE_EVALUATION/COST_OF_WAITING_CALIBRATION are blocked pending a RankingResult adapter -- that adapter (historical_ranking_bridge_service.py) was built LATER THE SAME DAY (commits at 17:39-17:50), so this specific claim in that doc is now superseded; this handoff document is the current source of truth on that point, not that entrypoint doc's own prose"
+  },
+  "invalid_package_errors_and_statuses": {
+    "dataset_validation": "DATASET_VALIDATION_STATUSES (see missingness_semantics above) -- one explicit status per validate_historical_dataset() call, full per-check detail always attached",
+    "loader": "load_historical_replay_dataset(raw_rows) returns HistoricalReplayUnavailable(reason: str) -- never raises, never fabricates -- when raw_rows is empty or fails schema/leakage",
+    "split": "chronological_split raises HistoricalReplayDataError for: overlapping season assignments, any dataset season left unassigned, or a non-strictly-chronological train/validate/test order",
+    "evaluation_runner": "run_replay_evaluation raises HistoricalReplayDataError if a season has fewer available players than team_count",
+    "ranking_bridge": "build_ranking_result_from_historical_rows raises HistoricalRankingBridgeError for empty rows or zero rows with any usable stat data; generate_rankings()'s own pre-existing insufficient-universe guard still applies and returns RankingResult.errors non-empty rather than raising",
+    "decision_state": "build_historical_decision_state raises HistoricalDecisionStateError if pick_number < 1",
+    "readiness_script_top_level": "BLOCKED_NO_DATASET_FOUND for a missing/absent dataset directory (exit code 0 -- a validation block is treated as a normal, well-formed result, not a crash)"
+  },
+  "current_admission_gates": {
+    "schema": "validate_schema -- every REQUIRED_PRE_DRAFT_FIELDS key non-empty, every *_as_of/draft_date field a parseable ISO date",
+    "identity": "validate_identity_completeness -- every historical pick resolves 1:1 to a row player_id or carries a disclosed identity_status (only run when historical_picks is supplied)",
+    "leakage": "validate_leakage -- BLOCKED_FEATURE_TOKENS column-name check plus strict as_of date ordering (see as_of_cutoff_semantics)",
+    "provenance": "source_sha256 + generated_at_utc threaded through ProjectionSnapshot/AdpSnapshot/HistoricalRankingBridgeResult, and every FeatureValue carries its own provenance_hash/source_as_of/feature_version -- the same provenance discipline the live DecisionBundle path uses (score_provenance_service.build_score_provenance), not a separate weaker standard for historical data",
+    "temporal_validity": "chronological_split's strict train < validate < test season ordering, plus find_immature_outcome_rows' 140-day outcome-maturity floor",
+    "scoring_compatibility": "the caller-supplied LeagueProfile must carry the historical league's REAL scoring/roster rules for that season (never inferred), and generate_rankings()'s pre-existing insufficient-universe guard (>= required+1 scored players per position) still applies unchanged to historical seasons",
+    "duplicate_player_season": "find_duplicate_player_seasons -- at most one row per (player_id, season)"
+  },
+  "not_required_for_first_useful_3_season_pilot": [
+    "Real bracket/schedule/playoff data -- season_level_metrics can run entirely under source=SIMULATED for playoff/championship rate; real bracket data is only needed to ever claim source=OBSERVED, which this pass deliberately avoids",
+    "Complete PROJECTION_STAT_FIELDS coverage for every player -- the bridge includes any player with at least one populated stat field (or K/DST override) and honestly excludes the rest via excluded_players; partial per-player stat coverage is acceptable as long as it is disclosed, not silently backfilled",
+    "100% resolved historical-pick identity -- an explicitly disclosed identity_status on an unresolved pick does not block the dataset; only an undisclosed gap does",
+    "Availability/injury/depth-chart status data -- availability_status is preferred-but-nonblocking; absent, the feature is simply not built rather than defaulted to a fabricated ACTIVE",
+    "A pre-built RankingResult, DecisionBundle, or any NWR scoring output -- Draft Upgrade's own code builds all of that from raw rows; the producer lane supplies rows only",
+    "More than one full past season to prove basic replay mechanics -- one season with a real full snake draft plus a genuinely-dated pre-draft board is the literal floor per the data contract; three consecutive seasons is Draft Upgrade's PREFERRED target for a real chronological train/validate/test split, not a blocking minimum for the first useful signal",
+    "A new missingness/status vocabulary -- reuse KNOWN/UNKNOWN/NOT_APPLICABLE/BLOCKED/STALE and the existing identity_status disclosure convention rather than inventing new terms",
+    "Any historical calibration/evaluation code, metric definitions, or the calibration report itself -- all already built, tested, and waiting only on real rows"
+  ],
+  "process_note_for_the_historical_data_lane": "If Draft Upgrade discovers a new data need while consuming a candidate package, it will emit a bounded HISTORICAL_DATA_CONSUMER_REQUIREMENT rather than acquiring the source itself, and will not modify the Historical Redraft Data worktree. Draft Upgrade owns validation, admission, replay, calibration, and model consequences once a candidate package arrives."
+}
