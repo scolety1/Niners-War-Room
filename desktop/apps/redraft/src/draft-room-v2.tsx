@@ -1,22 +1,25 @@
 /**
  * Draft Room V2 -- an ISOLATED candidate (sections 3-6 of the remaining-
- * overnight-runway directive). Reachable at /draft-room-v2, a distinct
+ * overnight-runway directive; Owner Test Candidate V1 wires the real
+ * DecisionBundle backend in). Reachable at /draft-room-v2, a distinct
  * route from the production Draft Room at "/" (pages.tsx#DraftRoomPage)
  * -- nothing here replaces it automatically.
  *
- * Every real data field used below already exists in the production
- * RedraftBootstrap/DraftBoard payload (board.beatAdpPool, board.recommendations,
- * board.myRoster, externalIntelligence) -- no new backend endpoint was
- * required to build this tab structure. The SHADOW/RESEARCH numeric
- * authorities (Team Score, Championship Equity, Pick Score --
- * src/services/shadow_numeric_authorities_service.py) are NOT wired to
- * any HTTP route or consumed here: those columns render an explicit
- * "not connected" placeholder rather than a fabricated number, per this
- * session's own isolation rule (SHADOW never appears production-
- * authoritative) and the section 3/10 instruction that research labels
- * must stay visible and unvalidated values must never look authoritative.
+ * Suggestions/Team Score/Championship Equity/Pick Score/Cost of Waiting/
+ * Make-It-Back are now REAL, backend-computed values from
+ * client.getRedraftDecisionBundle() (src/services/decision_bundle_live_
+ * service.py via DesktopBackendFacade.redraft_decision_bundle) -- never a
+ * fabricated or frontend-computed number. When the backend cannot
+ * compute a bundle (blocked ranking, not the owner's turn, no legal
+ * candidate), the UI renders the real `reason` string, never a
+ * placeholder score. RESEARCH_NOT_CONNECTED remains in use only for the
+ * one piece genuinely not wired this pass: the AI Explanation API
+ * (decision_bundle_explanation_service.py exists and is tested, but has
+ * no HTTP route yet -- see docs/codex/OWNER_TEST_CANDIDATE_V1_REPORT_20260903.md).
  */
 import type {
+  DecisionBundle,
+  DecisionBundleCandidate,
   DraftBoard,
   DraftRosterPlayer,
   RedraftBootstrap,
@@ -53,50 +56,67 @@ export interface SuggestionRow {
   playerName: string;
   position: string;
   team: string;
-  nwrRank: number;
+  nwrRank: number | null;
   marketExpectedPick: number | null;
-  nwrEdge: number | null;
-  nwrView: string;
-  draftTiming: string;
-  makeItBack: string;
+  playerScore: number | null;
+  // Real, backend-computed DecisionBundle fields -- never fabricated.
+  pickScore: number;
+  teamScoreAfter: number;
+  teamScoreDelta: number;
+  championshipEquityAfter: number;
+  equityGain: number;
+  costOfWaiting: number;
+  makeItBackProbability: number | null;
+  action: string;
+  warnings: string[];
+  uncertainty: string;
   alertSeverity: string | null;
   alertText: string | null;
-  // SHADOW/RESEARCH columns -- always this exact placeholder, never a number.
-  pickScore: typeof RESEARCH_NOT_CONNECTED;
-  teamScoreAfter: typeof RESEARCH_NOT_CONNECTED;
-  championshipEquityAfter: typeof RESEARCH_NOT_CONNECTED;
-  equityGain: typeof RESEARCH_NOT_CONNECTED;
-  waitCost: typeof RESEARCH_NOT_CONNECTED;
 }
 
+/**
+ * The Suggestions surface's real candidate list IS the DecisionBundle's
+ * own candidate list -- default-sorted by Pick Score descending (section
+ * 6), never re-derived from ADP-edge alone (which the directive warns
+ * can let a deep market target dominate). NWR rank / market ADP columns
+ * are enrichment looked up from the already-fetched rankings, not a
+ * second candidate-selection pass. Returns [] (never fabricated rows)
+ * when the bundle is unavailable -- the caller renders the real reason.
+ */
 export function buildSuggestionsRows(
-  board: DraftBoard | null | undefined,
+  decisionBundle: DecisionBundle | null | undefined,
+  rankings: RedraftBootstrap["rankings"],
   intelById: Map<string, RedraftExternalIntelligenceEntry>,
-  limit = 10,
 ): SuggestionRow[] {
-  const pool = board?.beatAdpPool ?? board?.decisionRows ?? [];
-  return pool.slice(0, limit).map((row) => {
-    const intel = intelById.get(row.playerId);
-    return {
-      playerId: row.playerId,
-      playerName: row.playerName,
-      position: row.position,
-      team: row.team,
-      nwrRank: row.nwrRank,
-      marketExpectedPick: row.expectedPick ?? row.overallAdp ?? null,
-      nwrEdge: row.nwrEdge ?? null,
-      nwrView: row.nwrView,
-      draftTiming: row.draftTiming,
-      makeItBack: row.makeItBackProbability != null ? formatNumber(row.makeItBackProbability, 2) : row.makeItBackMethod,
-      alertSeverity: intel?.currentAlertSeverity ?? null,
-      alertText: intel?.currentAlert ?? null,
-      pickScore: RESEARCH_NOT_CONNECTED,
-      teamScoreAfter: RESEARCH_NOT_CONNECTED,
-      championshipEquityAfter: RESEARCH_NOT_CONNECTED,
-      equityGain: RESEARCH_NOT_CONNECTED,
-      waitCost: RESEARCH_NOT_CONNECTED,
-    };
-  });
+  if (!decisionBundle || !decisionBundle.available) return [];
+  const rankingById = new Map(rankings.map((row) => [row.playerId, row]));
+  return [...decisionBundle.candidates]
+    .sort((a, b) => b.pickScore - a.pickScore)
+    .map((candidate) => {
+      const ranking = rankingById.get(candidate.playerId);
+      const intel = intelById.get(candidate.playerId);
+      return {
+        playerId: candidate.playerId,
+        playerName: candidate.playerName,
+        position: candidate.position,
+        team: ranking?.team ?? "",
+        nwrRank: ranking?.overallRank ?? null,
+        marketExpectedPick: ranking?.expectedPick ?? ranking?.overallAdp ?? null,
+        playerScore: candidate.playerScore,
+        pickScore: candidate.pickScore,
+        teamScoreAfter: candidate.teamScoreAfter,
+        teamScoreDelta: candidate.teamScoreDelta,
+        championshipEquityAfter: candidate.championshipEquityAfter,
+        equityGain: candidate.equityGain,
+        costOfWaiting: candidate.costOfWaiting,
+        makeItBackProbability: candidate.makeItBackProbability,
+        action: candidate.action,
+        warnings: candidate.warnings,
+        uncertainty: candidate.uncertainty,
+        alertSeverity: intel?.currentAlertSeverity ?? null,
+        alertText: intel?.currentAlert ?? null,
+      };
+    });
 }
 
 export interface MyTeamSummary {
@@ -160,6 +180,40 @@ export function buildUdkBadges(entry: RedraftExternalIntelligenceEntry | undefin
   return badges;
 }
 
+/**
+ * Real, backend-computed current Team Score / Championship Equity for
+ * the roster as it stands right now -- from the same DecisionBundle the
+ * Suggestions candidates come from (current_team_score/
+ * current_championship_equity are computed once per bundle, independent
+ * of which candidate is selected).
+ */
+export interface CurrentRosterScores {
+  teamScorePercentile: number | null;
+  teamScoreLabel: string | null;
+  championshipEquityWinProbability: number | null;
+  championshipEquityLabel: string | null;
+  assumedFormat: boolean;
+}
+
+export function buildCurrentRosterScores(
+  decisionBundle: DecisionBundle | null | undefined,
+): CurrentRosterScores {
+  if (!decisionBundle || !decisionBundle.available) {
+    return {
+      teamScorePercentile: null, teamScoreLabel: null,
+      championshipEquityWinProbability: null, championshipEquityLabel: null,
+      assumedFormat: false,
+    };
+  }
+  return {
+    teamScorePercentile: decisionBundle.currentTeamScore.percentile,
+    teamScoreLabel: decisionBundle.currentTeamScore.label,
+    championshipEquityWinProbability: decisionBundle.currentChampionshipEquity.winProbability,
+    championshipEquityLabel: decisionBundle.currentChampionshipEquity.label,
+    assumedFormat: decisionBundle.currentChampionshipEquity.assumedFormat,
+  };
+}
+
 export function toggleCompareSelection(
   current: string[],
   playerId: string,
@@ -178,19 +232,38 @@ export interface CompareRow {
   overallAdp: number | null;
   tier: string | null;
   status: string;
+  // Real DecisionBundle fields -- null (never fabricated) when this
+  // player is not one of the current Suggestions candidates (Compare can
+  // hold players beyond the top-N the backend evaluated this pick).
+  playerScore: number | null;
+  teamScoreDelta: number | null;
+  equityGain: number | null;
+  costOfWaiting: number | null;
+  makeItBackProbability: number | null;
+  pickScore: number | null;
+  action: string | null;
+  warnings: string[];
+  evaluated: boolean;
 }
 
 export function buildCompareRows(
   playerIds: string[],
   data: RedraftBootstrap,
   intelById: Map<string, RedraftExternalIntelligenceEntry>,
+  decisionBundle?: DecisionBundle | null,
 ): CompareRow[] {
+  const candidateById = new Map(
+    decisionBundle && decisionBundle.available
+      ? decisionBundle.candidates.map((c) => [c.playerId, c])
+      : [],
+  );
   return playerIds
     .map((playerId) => {
       const ranked = data.rankings.find((row) => row.playerId === playerId);
       const manual = data.manualAssets?.find((row) => row.playerId === playerId);
       const intel = intelById.get(playerId);
       if (!ranked && !manual) return null;
+      const candidate = candidateById.get(playerId);
       return {
         playerId,
         playerName: ranked?.playerName ?? manual?.playerName ?? playerId,
@@ -199,6 +272,15 @@ export function buildCompareRows(
         overallAdp: ranked?.overallAdp ?? manual?.overallAdp ?? null,
         tier: ranked?.overallTierLabel ?? null,
         status: intel?.currentAlert ? `Alert: ${intel.currentAlertSeverity ?? "flagged"}` : "No current alert",
+        playerScore: candidate?.playerScore ?? null,
+        teamScoreDelta: candidate?.teamScoreDelta ?? null,
+        equityGain: candidate?.equityGain ?? null,
+        costOfWaiting: candidate?.costOfWaiting ?? null,
+        makeItBackProbability: candidate?.makeItBackProbability ?? null,
+        pickScore: candidate?.pickScore ?? null,
+        action: candidate?.action ?? null,
+        warnings: candidate?.warnings ?? [],
+        evaluated: candidate !== undefined,
       };
     })
     .filter((row): row is CompareRow => row !== null);
@@ -214,8 +296,15 @@ export function buildCompareRows(
  */
 export function generateCompareSummary(rows: CompareRow[], positionDepth: Record<string, number>): string {
   if (rows.length < 2) return "Select at least two players to compare.";
-  const ranked = rows.filter((row) => row.nwrRank != null);
+  const evaluated = rows.filter((row) => row.evaluated && row.pickScore != null);
   const parts: string[] = [];
+  if (evaluated.length > 0) {
+    const bestPickScore = evaluated.reduce((a, b) => (a.pickScore! > b.pickScore! ? a : b));
+    parts.push(
+      `${bestPickScore.playerName} has the highest Pick Score — EXPERIMENTAL among the evaluated candidates in this comparison (${formatNumber(bestPickScore.pickScore!, 1)}).`,
+    );
+  }
+  const ranked = rows.filter((row) => row.nwrRank != null);
   if (ranked.length > 0) {
     const best = ranked.reduce((a, b) => (a.nwrRank! < b.nwrRank! ? a : b));
     parts.push(`${best.playerName} has the best NWR rank (#${best.nwrRank}) in this comparison.`);
@@ -254,7 +343,14 @@ export function DraftRoomV2Page({
   const [drawerPlayerId, setDrawerPlayerId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [externalIntel, setExternalIntel] = useState<RedraftExternalIntelligence | null>(null);
+  const [decisionBundle, setDecisionBundle] = useState<DecisionBundle | null>(null);
+  const [decisionBundleLoading, setDecisionBundleLoading] = useState(false);
   const board = data.draftBoard;
+  // A real recomputation trigger, not a poll: updatedAtUtc changes on every
+  // real draft-board mutation (pick, correction, Catch-Up, Sleeper sync),
+  // so a stale DecisionBundle can never survive a changed roster/universe
+  // (section 10) -- the effect below re-fetches whenever this changes.
+  const rosterStateSignal = board?.updatedAtUtc ?? "";
 
   useEffect(() => {
     if (!data.activeProfileId) return;
@@ -272,6 +368,31 @@ export function DraftRoomV2Page({
     };
   }, [client, data.activeProfileId]);
 
+  useEffect(() => {
+    if (!data.activeProfileId) return;
+    let cancelled = false;
+    setDecisionBundleLoading(true);
+    client
+      .getRedraftDecisionBundle(data.activeProfileId, "FAST")
+      .then((response) => {
+        if (!cancelled) setDecisionBundle(response.decisionBundle);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDecisionBundle({
+            available: false, speed: "FAST",
+            reason: "The DecisionBundle request failed -- backend calculation unavailable.",
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDecisionBundleLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, data.activeProfileId, rosterStateSignal]);
+
   const intelById = useMemo(() => {
     const map = new Map<string, RedraftExternalIntelligenceEntry>();
     for (const entry of externalIntel?.entries ?? []) map.set(entry.playerId, entry);
@@ -287,9 +408,16 @@ export function DraftRoomV2Page({
     return counts;
   }, [data.rankings]);
 
-  const suggestions = useMemo(() => buildSuggestionsRows(board, intelById), [board, intelById]);
+  const suggestions = useMemo(
+    () => buildSuggestionsRows(decisionBundle, data.rankings, intelById),
+    [decisionBundle, data.rankings, intelById],
+  );
   const myTeam = useMemo(() => buildMyTeamSummary(data), [data]);
-  const compareRows = useMemo(() => buildCompareRows(compareIds, data, intelById), [compareIds, data, intelById]);
+  const currentScores = useMemo(() => buildCurrentRosterScores(decisionBundle), [decisionBundle]);
+  const compareRows = useMemo(
+    () => buildCompareRows(compareIds, data, intelById, decisionBundle),
+    [compareIds, data, intelById, decisionBundle],
+  );
   const compareSummary = useMemo(() => generateCompareSummary(compareRows, positionDepth), [compareRows, positionDepth]);
 
   const onPlayerClick = (playerId: string, event: React.MouseEvent) => {
@@ -312,6 +440,10 @@ export function DraftRoomV2Page({
 
   const drawerEntry = drawerPlayerId ? intelById.get(drawerPlayerId) : undefined;
   const drawerRanking = drawerPlayerId ? data.rankings.find((row) => row.playerId === drawerPlayerId) : undefined;
+  const drawerCandidate =
+    drawerPlayerId && decisionBundle && decisionBundle.available
+      ? decisionBundle.candidates.find((c) => c.playerId === drawerPlayerId)
+      : undefined;
 
   return (
     <div className="draft-room-v2-page">
@@ -342,12 +474,19 @@ export function DraftRoomV2Page({
           </nav>
         ) : null}
         <div className="draft-room-v2-content">
-          {tab === "SUGGESTIONS" ? <SuggestionsTab rows={suggestions} onPlayerClick={onPlayerClick} /> : null}
+          {tab === "SUGGESTIONS" ? (
+            <SuggestionsTab
+              rows={suggestions}
+              onPlayerClick={onPlayerClick}
+              decisionBundle={decisionBundle}
+              loading={decisionBundleLoading}
+            />
+          ) : null}
           {tab === "PLAYERS" ? (
             <PlayersTab data={data} intelById={intelById} onPlayerClick={onPlayerClick} />
           ) : null}
           {tab === "BOARD" ? <BoardTab board={board} onPlayerClick={onPlayerClick} /> : null}
-          {tab === "MY_TEAM" ? <MyTeamTab summary={myTeam} /> : null}
+          {tab === "MY_TEAM" ? <MyTeamTab summary={myTeam} currentScores={currentScores} /> : null}
           {tab === "COMPARE" ? (
             <CompareTab
               rows={compareRows}
@@ -370,6 +509,7 @@ export function DraftRoomV2Page({
           playerId={drawerPlayerId}
           ranking={drawerRanking}
           intel={drawerEntry}
+          candidate={drawerCandidate}
           onClose={() => setDrawerPlayerId(null)}
         />
       ) : null}
@@ -380,38 +520,61 @@ export function DraftRoomV2Page({
 function SuggestionsTab({
   rows,
   onPlayerClick,
+  decisionBundle,
+  loading,
 }: {
   rows: SuggestionRow[];
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
+  decisionBundle: DecisionBundle | null;
+  loading: boolean;
 }) {
   const columns: TableColumn[] = [
+    { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => formatNumber(row.pickScore as number, 1) },
     { key: "playerName", label: "Player", sort: "text", render: (row) => (
       <span
         className="player-cell player-cell--clickable"
         onClick={(event) => onPlayerClick(String(row.playerId), event as unknown as React.MouseEvent)}
+        title="Click for Score Details / Why"
       >
         <strong>{String(row.playerName)}</strong>
         <small>{String(row.team)} · {String(row.position)}</small>
       </span>
     ) },
-    { key: "nwrRank", label: "NWR", sort: "number" },
+    { key: "nwrRank", label: "NWR", sort: "number", render: (row) => row.nwrRank == null ? "—" : String(row.nwrRank) },
     { key: "marketExpectedPick", label: "Market", sort: "number", render: (row) => row.marketExpectedPick == null ? "—" : formatNumber(row.marketExpectedPick as number, 1) },
-    { key: "nwrEdge", label: "Edge", sort: "number", render: (row) => row.nwrEdge == null ? "—" : formatNumber(row.nwrEdge as number, 1) },
-    { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "text" },
-    { key: "teamScoreAfter", label: "Team Score After — RESEARCH", sort: "text" },
-    { key: "championshipEquityAfter", label: "Champ Eq After — SIMULATED RESEARCH", sort: "text" },
-    { key: "waitCost", label: "Wait Cost", sort: "text" },
+    { key: "teamScoreAfter", label: "Team Score — RESEARCH", sort: "number", render: (row) => (
+      <span title="Before → After, see Score Details">{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
+    ) },
+    { key: "championshipEquityAfter", label: "Champ Eq — SIMULATED RESEARCH", sort: "number", render: (row) => (
+      <span>{formatNumber((row.championshipEquityAfter as number) * 100, 1)}% ({row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp)</span>
+    ) },
+    { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => formatNumber(row.costOfWaiting as number, 1) },
+    { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+    { key: "action", label: "Action", sort: "text", render: (row) => <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
     { key: "alertText", label: "Alert", sort: "text", render: (row) => row.alertText ? <span title={String(row.alertText)}><StatusBadge tone={severityToBadgeTone(row.alertSeverity as string | null)} label={String(row.alertSeverity ?? "Alert")} /></span> : "—" },
   ];
+  const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
-    <Panel title="Suggestions" eyebrow="Primary decision surface — top candidates by market-timed NWR view">
-      {rows.length === 0 ? (
-        <EmptyState icon="activity" title="No suggestions yet" message="Start the Draft Room and refresh ADP to populate this table." />
+    <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
+      {loading ? (
+        <EmptyState icon="activity" title="Computing…" message="Calculating the real DecisionBundle for this pick." />
+      ) : unavailableReason ? (
+        <EmptyState icon="alert" title="DecisionBundle unavailable" message={unavailableReason} />
+      ) : rows.length === 0 ? (
+        <EmptyState icon="activity" title="No suggestions yet" message="Start the Draft Room to populate this table." />
       ) : (
         <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
       )}
     </Panel>
   );
+}
+
+function actionToBadgeTone(action: string): BadgeTone {
+  const normalized = action.toUpperCase();
+  if (normalized === "TAKE NOW") return "blocked";
+  if (normalized === "DEEP TARGET" || normalized === "GOOD VALUE") return "ready";
+  if (normalized === "WAIVER WATCH") return "offline";
+  return "review";
 }
 
 function PlayersTab({
@@ -479,7 +642,7 @@ function BoardTab({
   );
 }
 
-function MyTeamTab({ summary }: { summary: MyTeamSummary }) {
+function MyTeamTab({ summary, currentScores }: { summary: MyTeamSummary; currentScores: CurrentRosterScores }) {
   return (
     <>
       <Panel title="My roster" eyebrow={`${summary.roster.length} players`}>
@@ -504,11 +667,22 @@ function MyTeamTab({ summary }: { summary: MyTeamSummary }) {
           ))}
         </div>
       </Panel>
-      <Panel title="Team Score — RESEARCH" eyebrow="Not connected to this UI yet">
-        <p className="boundary-note">{RESEARCH_NOT_CONNECTED}. See src/services/shadow_numeric_authorities_service.py.</p>
+      <Panel title={currentScores.teamScoreLabel ?? "Team Score — RESEARCH"} eyebrow="Current roster, real backend percentile">
+        {currentScores.teamScorePercentile == null ? (
+          <p className="boundary-note">{RESEARCH_NOT_CONNECTED}. DecisionBundle has not returned a current roster score yet.</p>
+        ) : (
+          <p className="score-headline">{formatNumber(currentScores.teamScorePercentile, 1)}</p>
+        )}
       </Panel>
-      <Panel title="Simulated Championship Equity — RESEARCH" eyebrow="Not connected to this UI yet">
-        <p className="boundary-note">{RESEARCH_NOT_CONNECTED}.</p>
+      <Panel
+        title={currentScores.championshipEquityLabel ?? "Simulated Championship Equity — RESEARCH"}
+        eyebrow={currentScores.assumedFormat ? "ASSUMED FORMAT — see simulation assumptions" : "Current roster"}
+      >
+        {currentScores.championshipEquityWinProbability == null ? (
+          <p className="boundary-note">{RESEARCH_NOT_CONNECTED}. DecisionBundle has not returned a current roster score yet.</p>
+        ) : (
+          <p className="score-headline">{formatNumber(currentScores.championshipEquityWinProbability * 100, 1)}%</p>
+        )}
       </Panel>
     </>
   );
@@ -533,11 +707,20 @@ function CompareTab({
           columns={[
             { key: "playerName", label: "Player", sort: "text" },
             { key: "position", label: "Pos", sort: "text" },
-            { key: "nwrRank", label: "NWR", sort: "number", render: (row) => row.nwrRank == null ? "—" : String(row.nwrRank) },
+            { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
             { key: "overallAdp", label: "Market", sort: "number", render: (row) => row.overallAdp == null ? "—" : formatNumber(row.overallAdp as number, 1) },
-            { key: "tier", label: "Tier", sort: "text", render: (row) => String(row.tier ?? "—") },
+            { key: "teamScoreDelta", label: "Team Score Δ — RESEARCH", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
+            { key: "equityGain", label: "Champ Eq Δ — SIMULATED RESEARCH", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
+            { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => row.costOfWaiting == null ? "—" : formatNumber(row.costOfWaiting as number, 1) },
+            { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+            { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => row.pickScore == null ? "—" : formatNumber(row.pickScore as number, 1) },
+            { key: "action", label: "Action", sort: "text", render: (row) => row.action == null ? "—" : <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
+            { key: "warnings", label: "Warnings", sort: "text", render: (row) => {
+              const warnings = row.warnings as string[];
+              return warnings.length === 0 ? "—" : <span title={warnings.join(" ")}>{warnings.length} warning{warnings.length > 1 ? "s" : ""}</span>;
+            } },
             { key: "status", label: "Status", sort: "text" },
-            { key: "action", label: "", align: "right", render: (row) => <Button variant="ghost" onClick={() => onRemove(String(row.playerId))}>Remove</Button> },
+            { key: "remove", label: "", align: "right", render: (row) => <Button variant="ghost" onClick={() => onRemove(String(row.playerId))}>Remove</Button> },
           ]}
           rows={rows as unknown as Array<Record<string, unknown>>}
           rowKey={(row) => String(row.playerId)}
@@ -554,32 +737,56 @@ function PlayerDrawer({
   playerId,
   ranking,
   intel,
+  candidate,
   onClose,
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
   intel: RedraftExternalIntelligenceEntry | undefined;
+  candidate: DecisionBundleCandidate | undefined;
   onClose: () => void;
 }) {
   return (
     <aside className="player-drawer" role="dialog" aria-label={`${ranking?.playerName ?? playerId} detail`}>
       <div className="player-drawer__header">
-        <strong>{ranking?.playerName ?? playerId}</strong>
+        <strong>{ranking?.playerName ?? candidate?.playerName ?? playerId}</strong>
         <Button variant="ghost" onClick={onClose}>Close</Button>
       </div>
       <section>
         <h3>NWR</h3>
         <p>Rank #{ranking?.overallRank ?? "—"} · {ranking?.overallTierLabel ?? "—"}</p>
-        <p>Player Score (replacement-adjusted value): {ranking ? formatNumber(ranking.replacementAdjustedValue, 1) : "—"}</p>
+        <p>Player Score: {candidate?.playerScore != null ? formatNumber(candidate.playerScore, 1) : ranking ? formatNumber(ranking.replacementAdjustedValue, 1) : "—"}</p>
       </section>
       <section>
         <h3>Draft</h3>
         <p>Market ADP: {ranking?.overallAdp != null ? formatNumber(ranking.overallAdp, 1) : "—"}</p>
         <p>Expected round: {ranking?.expectedRound ?? "—"}</p>
+        <p>Cost of Waiting: {candidate ? formatNumber(candidate.costOfWaiting, 1) : "Not evaluated as a current Suggestions candidate."}</p>
+        <p>Make-It-Back: {candidate?.makeItBackProbability != null ? `${formatNumber(candidate.makeItBackProbability * 100, 0)}%` : "UNKNOWN"}</p>
       </section>
       <section>
-        <h3>SHADOW</h3>
-        <p className="boundary-note">{RESEARCH_NOT_CONNECTED}.</p>
+        <h3>Roster Impact — Pick Score EXPERIMENTAL / Team Score &amp; Championship Equity RESEARCH</h3>
+        {candidate ? (
+          <>
+            <p>Team Score Delta: {candidate.teamScoreDelta >= 0 ? "+" : ""}{formatNumber(candidate.teamScoreDelta, 1)}</p>
+            <p>Championship Equity Gain: {candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</p>
+            <p>Pick Score — EXPERIMENTAL: {formatNumber(candidate.pickScore, 1)}</p>
+            <p>Raw Decision Utility: {formatNumber(candidate.rawDecisionUtility, 2)} (Team Score component {formatNumber(candidate.teamScoreUtilityComponent, 2)} + Equity component {formatNumber(candidate.equityUtilityComponent, 2)})</p>
+            <p>Action: <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action} /></p>
+            <p>Uncertainty: {candidate.uncertainty}</p>
+            {candidate.warnings.length > 0 ? (
+              <ul className="drawer-warnings">
+                {candidate.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+              </ul>
+            ) : null}
+          </>
+        ) : (
+          <p className="boundary-note">
+            Not among the top ranked Suggestions candidates this pick — Team Score / Championship
+            Equity impact is only computed for the actionable candidates the backend evaluated. See
+            the Suggestions tab.
+          </p>
+        )}
       </section>
       <section>
         <h3>Current</h3>

@@ -882,6 +882,87 @@ export interface RedraftExternalIntelligenceResponse {
   externalIntelligence: RedraftExternalIntelligence;
 }
 
+// Owner Test Candidate V1 -- real, backend-computed DecisionBundle
+// (Player Score / Team Score Research / Simulated Championship Equity
+// Research / Cost of Waiting V2 / Pick Score Experimental). The UI must
+// render exactly these fields; it must never compute or fabricate one.
+export interface DecisionBundleCandidate {
+  playerId: string;
+  playerName: string;
+  position: string;
+  playerScore: number | null;
+  teamScoreAfter: number;
+  teamScoreDelta: number;
+  championshipEquityAfter: number;
+  equityGain: number;
+  costOfWaiting: number;
+  makeItBackProbability: number | null;
+  rawDecisionUtility: number;
+  teamScoreUtilityComponent: number;
+  equityUtilityComponent: number;
+  pickScore: number;
+  action: string;
+  warnings: string[];
+  uncertainty: string;
+}
+
+export interface DecisionBundleTeamScore {
+  percentile: number;
+  rosterValue: number;
+  populationSize: number;
+  label: string;
+}
+
+export interface DecisionBundleChampionshipEquity {
+  winProbability: number;
+  standardError: number;
+  seasonsSimulated: number;
+  assumedFormat: boolean;
+  label: string;
+}
+
+export interface DecisionBundleProvenance {
+  leagueProfileHash: string;
+  rosterStateHash: string;
+  availablePlayerHash: string;
+  universeHash: string;
+  projectionModelVersion: string;
+  marketSnapshotHash: string;
+  featureSetVersion: string;
+  teamScoreVersion: string;
+  championshipEquityVersion: string;
+  pickScoreVersion: string;
+  optimizerVersion: string;
+  seed: number;
+  simulationCount: number;
+  timestampUtc: string;
+  bundleHash: string;
+}
+
+export interface DecisionBundleAvailable {
+  available: true;
+  speed: "FAST" | "STANDARD" | "DEEP";
+  version: string;
+  currentTeamScore: DecisionBundleTeamScore;
+  currentChampionshipEquity: DecisionBundleChampionshipEquity;
+  candidates: DecisionBundleCandidate[];
+  provenance: DecisionBundleProvenance;
+  simulationMetadata: Record<string, unknown>;
+  latencySeconds: number;
+}
+
+export interface DecisionBundleUnavailable {
+  available: false;
+  speed: "FAST" | "STANDARD" | "DEEP";
+  reason: string;
+}
+
+export type DecisionBundle = DecisionBundleAvailable | DecisionBundleUnavailable;
+
+export interface RedraftDecisionBundleResponse {
+  decisionBundle: DecisionBundle;
+}
+
 export interface CatchUpCandidate {
   playerId: string;
   playerName: string;

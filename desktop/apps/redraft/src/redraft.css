@@ -366,6 +366,7 @@
 .roster-strip { display: flex; flex-wrap: wrap; gap: 6px; }
 .roster-slot { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 9px; white-space: nowrap; }
 .roster-slot--full { border-color: rgba(211,169,84,.4); color: var(--gold-bright); }
+.score-headline { color: var(--gold-bright); font-size: 28px; font-weight: 600; margin: 6px 0 0; }
 
 .rapid-capture { display: flex; flex-direction: column; gap: 8px; }
 .rapid-capture__input { min-width: 0; width: 100%; }
@@ -397,3 +398,5 @@
 .player-drawer__header { align-items: center; display: flex; justify-content: space-between; }
 .player-drawer section h3 { color: var(--muted); font-size: 11px; margin: 0 0 4px; text-transform: uppercase; }
 .player-drawer section p { font-size: 12px; margin: 2px 0; }
+.drawer-warnings { color: var(--warn, #d3a954); font-size: 11px; margin: 6px 0 0; padding-left: 16px; }
+.drawer-warnings li { margin: 2px 0; }

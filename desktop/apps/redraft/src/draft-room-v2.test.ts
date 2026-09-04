@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCompareRows,
+  buildCurrentRosterScores,
   buildMyTeamSummary,
   buildSuggestionsRows,
   buildUdkBadges,
@@ -21,59 +22,86 @@ describe("tabLabel", () => {
   });
 });
 
-describe("buildSuggestionsRows", () => {
-  const board = {
-    beatAdpPool: [
-      {
-        playerId: "p1", playerName: "Star Runner", position: "RB", team: "SEA",
-        nwrRank: 5, expectedPick: 8, overallAdp: 8, nwrEdge: 3, nwrView: "Undervalued",
-        draftTiming: "Take now", makeItBackProbability: 0.12, makeItBackMethod: "SIMULATED",
-        confidence: "HIGH",
-      },
-      {
-        playerId: "p2", playerName: "Deep Sleeper", position: "WR", team: "DET",
-        nwrRank: 90, expectedPick: null, overallAdp: null, nwrEdge: null, nwrView: "Fair value",
-        draftTiming: "Wait", makeItBackProbability: null, makeItBackMethod: "UNAVAILABLE",
-        confidence: "LOW",
-      },
-    ],
+function _candidate(overrides: Record<string, unknown> = {}) {
+  return {
+    playerId: "p1", playerName: "Star Runner", position: "RB",
+    playerScore: 88.2, teamScoreAfter: 72.8, teamScoreDelta: 8.6,
+    championshipEquityAfter: 0.107, equityGain: 0.023, costOfWaiting: 4.1,
+    makeItBackProbability: 0.12, rawDecisionUtility: 10.9,
+    teamScoreUtilityComponent: 8.6, equityUtilityComponent: 2.3,
+    pickScore: 94.0, action: "TAKE NOW", warnings: [], uncertainty: "LOW_MODEL_UNCERTAINTY (SE=0.0100)",
+    ...overrides,
+  };
+}
+
+function _availableBundle(candidates: Array<Record<string, unknown>>) {
+  return {
+    available: true, speed: "FAST", version: "decision-bundle-live-v1",
+    currentTeamScore: { percentile: 64.2, rosterValue: 1000, populationSize: 200, label: "TEAM SCORE — RESEARCH" },
+    currentChampionshipEquity: { winProbability: 0.084, standardError: 0.01, seasonsSimulated: 200, assumedFormat: true, label: "SIMULATED CHAMPIONSHIP EQUITY — RESEARCH" },
+    candidates,
+    provenance: {}, simulationMetadata: {}, latencySeconds: 0.5,
   } as any;
+}
 
-  it("maps beatAdpPool rows into dense suggestion rows with real fields", () => {
-    const rows = buildSuggestionsRows(board, new Map());
+describe("buildSuggestionsRows", () => {
+  const rankings = [
+    { playerId: "p1", playerName: "Star Runner", position: "RB", team: "SEA", overallRank: 5, overallAdp: 8, expectedPick: 8 },
+    { playerId: "p2", playerName: "Deep Sleeper", position: "WR", team: "DET", overallRank: 90, overallAdp: null, expectedPick: null },
+  ] as any;
+
+  it("maps DecisionBundle candidates into rows, sorted by Pick Score descending", () => {
+    const bundle = _availableBundle([
+      _candidate({ playerId: "p2", playerName: "Deep Sleeper", position: "WR", pickScore: 40, makeItBackProbability: null }),
+      _candidate({ playerId: "p1", pickScore: 94 }),
+    ]);
+    const rows = buildSuggestionsRows(bundle, rankings, new Map());
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({
-      playerId: "p1", playerName: "Star Runner", nwrRank: 5, marketExpectedPick: 8, nwrEdge: 3,
-    });
+    expect(rows[0]!.playerId).toBe("p1");
+    expect(rows[0]!.pickScore).toBe(94);
+    expect(rows[1]!.playerId).toBe("p2");
   });
 
-  it("falls back to overallAdp for marketExpectedPick and the method label when probability is unavailable", () => {
-    const rows = buildSuggestionsRows(board, new Map());
-    expect(rows[1]!.marketExpectedPick).toBeNull();
-    expect(rows[1]!.makeItBack).toBe("UNAVAILABLE");
+  it("enriches candidates with real NWR rank / market data from rankings", () => {
+    const bundle = _availableBundle([_candidate()]);
+    const rows = buildSuggestionsRows(bundle, rankings, new Map());
+    expect(rows[0]).toMatchObject({ nwrRank: 5, marketExpectedPick: 8 });
   });
 
-  it("never fabricates a SHADOW/RESEARCH number -- always the disclosed placeholder", () => {
-    const rows = buildSuggestionsRows(board, new Map());
-    for (const row of rows) {
-      expect(row.pickScore).toBe("Not connected — SHADOW/RESEARCH backend");
-      expect(row.teamScoreAfter).toBe("Not connected — SHADOW/RESEARCH backend");
-      expect(row.championshipEquityAfter).toBe("Not connected — SHADOW/RESEARCH backend");
-    }
+  it("never fabricates data -- returns empty rows when the bundle is unavailable", () => {
+    expect(buildSuggestionsRows({ available: false, speed: "FAST", reason: "blocked" } as any, rankings, new Map())).toEqual([]);
+    expect(buildSuggestionsRows(null, rankings, new Map())).toEqual([]);
+    expect(buildSuggestionsRows(undefined, rankings, new Map())).toEqual([]);
   });
 
-  it("respects the limit and returns an empty array with no board", () => {
-    expect(buildSuggestionsRows(board, new Map(), 1)).toHaveLength(1);
-    expect(buildSuggestionsRows(null, new Map())).toEqual([]);
-    expect(buildSuggestionsRows(undefined, new Map())).toEqual([]);
+  it("carries make_it_back as null (never fabricated) when the backend has no real ADP for a candidate", () => {
+    const bundle = _availableBundle([_candidate({ playerId: "p2", makeItBackProbability: null })]);
+    const rows = buildSuggestionsRows(bundle, rankings, new Map());
+    expect(rows[0]!.makeItBackProbability).toBeNull();
   });
 
   it("attaches a real alert from the intel map when present", () => {
     const intel = new Map([["p1", { currentAlert: "Ankle sprain", currentAlertSeverity: "HIGH" } as any]]);
-    const rows = buildSuggestionsRows(board, intel);
+    const bundle = _availableBundle([_candidate()]);
+    const rows = buildSuggestionsRows(bundle, rankings, intel);
     expect(rows[0]!.alertText).toBe("Ankle sprain");
     expect(rows[0]!.alertSeverity).toBe("HIGH");
-    expect(rows[1]!.alertText).toBeNull();
+  });
+});
+
+describe("buildCurrentRosterScores", () => {
+  it("surfaces the real current Team Score / Championship Equity from an available bundle", () => {
+    const bundle = _availableBundle([]);
+    const scores = buildCurrentRosterScores(bundle);
+    expect(scores.teamScorePercentile).toBe(64.2);
+    expect(scores.championshipEquityWinProbability).toBe(0.084);
+    expect(scores.assumedFormat).toBe(true);
+  });
+
+  it("never fabricates a score when the bundle is unavailable", () => {
+    const scores = buildCurrentRosterScores({ available: false, speed: "FAST", reason: "blocked" } as any);
+    expect(scores.teamScorePercentile).toBeNull();
+    expect(scores.championshipEquityWinProbability).toBeNull();
   });
 });
 
@@ -160,14 +188,29 @@ describe("buildCompareRows", () => {
   it("resolves both ranked and manual players, skipping unknown ids", () => {
     const rows = buildCompareRows(["p1", "m1", "unknown"], data, new Map());
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({ playerId: "p1", nwrRank: 5, overallAdp: 8 });
-    expect(rows[1]).toMatchObject({ playerId: "m1", nwrRank: null });
+    expect(rows[0]).toMatchObject({ playerId: "p1", nwrRank: 5, overallAdp: 8, evaluated: false });
+    expect(rows[1]).toMatchObject({ playerId: "m1", nwrRank: null, evaluated: false });
   });
 
   it("surfaces a real current alert as status when present", () => {
     const intel = new Map([["p1", { currentAlert: "Trade rumor", currentAlertSeverity: "LOW" } as any]]);
     const rows = buildCompareRows(["p1"], data, intel);
     expect(rows[0]!.status).toBe("Alert: LOW");
+  });
+
+  it("attaches real DecisionBundle fields when the player is a current candidate", () => {
+    const bundle = _availableBundle([_candidate({ playerId: "p1", pickScore: 77 })]);
+    const rows = buildCompareRows(["p1"], data, new Map(), bundle);
+    expect(rows[0]!.evaluated).toBe(true);
+    expect(rows[0]!.pickScore).toBe(77);
+    expect(rows[0]!.teamScoreDelta).toBe(8.6);
+  });
+
+  it("leaves DecisionBundle fields null (never fabricated) for a non-candidate player", () => {
+    const bundle = _availableBundle([_candidate({ playerId: "someone-else" })]);
+    const rows = buildCompareRows(["p1"], data, new Map(), bundle);
+    expect(rows[0]!.evaluated).toBe(false);
+    expect(rows[0]!.pickScore).toBeNull();
   });
 });
 
@@ -178,8 +221,8 @@ describe("generateCompareSummary", () => {
 
   it("calls out the best NWR rank, the largest ADP discount, and the deepest position", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "" },
-      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "" },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the best NWR rank (#5)");
@@ -189,11 +232,20 @@ describe("generateCompareSummary", () => {
 
   it("never fabricates a claim when the underlying structured field is missing", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "" },
-      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "" },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
     ];
     const summary = generateCompareSummary(rows, {});
     expect(summary).not.toContain("best NWR rank");
     expect(summary).not.toContain("market discount");
+  });
+
+  it("cites the highest Pick Score among evaluated candidates when available", () => {
+    const rows = [
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: 50, teamScoreDelta: 2, equityGain: 0.01, costOfWaiting: 1, makeItBackProbability: 0.5, pickScore: 40, action: "WAIT", warnings: [], evaluated: true },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: 80, teamScoreDelta: 8, equityGain: 0.03, costOfWaiting: 3, makeItBackProbability: 0.2, pickScore: 90, action: "TAKE NOW", warnings: [], evaluated: true },
+    ];
+    const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
+    expect(summary).toContain("Player B has the highest Pick Score");
   });
 });

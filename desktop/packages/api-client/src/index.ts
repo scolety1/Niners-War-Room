@@ -18,6 +18,7 @@ import {
   type RedraftBootstrap,
   type RedraftCatchUpApplyResponse,
   type RedraftCatchUpPreviewResponse,
+  type RedraftDecisionBundleResponse,
   type RedraftExternalIntelligenceResponse,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
@@ -387,6 +388,16 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/catch-up/apply`, {
       method: "POST",
       body: JSON.stringify({ paste }),
+    });
+  }
+
+  getRedraftDecisionBundle(
+    profileId: string,
+    speed: "FAST" | "STANDARD" | "DEEP" = "FAST",
+  ): Promise<RedraftDecisionBundleResponse> {
+    return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/decision-bundle`, {
+      method: "POST",
+      body: JSON.stringify({ speed }),
     });
   }
 
