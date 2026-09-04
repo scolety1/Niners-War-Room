@@ -26,6 +26,7 @@ from src.services.nwr_pure_experiment_service import (
     read_decision_receipts,
 )
 from src.services.outcome_v3_display_service import load_outcome_v3_display
+from src.services.owner_test_instrumentation_service import read_owner_test_events
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -1888,3 +1889,74 @@ def test_redraft_decision_bundle_recomputes_after_catch_up_is_applied(
     after_ids = {c["playerId"] for c in after["candidates"]}
     assert "QB-0" not in after_ids
     assert "RB-0" not in after_ids
+
+
+# --- Owner Test Candidate V1, section 15: owner test instrumentation ------
+
+
+def test_owner_test_instrumentation_captures_real_decision_bundle_and_pick_events(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Local, non-sensitive product diagnostics (calc latency, selected/top
+    candidates, score changes, draft-state changes) are captured for real,
+    from real facade calls -- never a fabricated placeholder, and never as
+    a second scoring/calibration signal (this module is never imported by
+    any scoring or calibration code)."""
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+
+    bundle_result = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST")
+    bundle = bundle_result.data["decisionBundle"]
+    assert bundle["available"] is True
+    top_candidate = bundle["candidates"][0]["playerId"]
+
+    facade.mark_redraft_player(profile_id=profile_id, player_id=top_candidate, drafted=True)
+
+    events = read_owner_test_events(facade.redraft_root, profile_id)
+    calculated = [e for e in events if e["event_type"] == "DECISION_BUNDLE_CALCULATED"]
+    picks = [e for e in events if e["event_type"] == "DRAFT_STATE_CHANGED"]
+    assert len(calculated) == 1
+    assert calculated[0]["speed"] == "FAST"
+    assert calculated[0]["latency_seconds"] == bundle["latencySeconds"]
+    assert calculated[0]["selected_player_id"] == top_candidate
+    assert calculated[0]["team_score_before"] == bundle["currentTeamScore"]["percentile"]
+    assert any(
+        p["draft_state_change_kind"] == "OWNER_PICK" and p["player_id"] == top_candidate
+        for p in picks
+    )
+
+
+def test_owner_test_instrumentation_logs_nothing_for_a_systemic_ranking_block(
+    tmp_path: Path,
+) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Instrumentation Blocked League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    with pytest.raises(FacadeError):
+        facade.redraft_decision_bundle(profile_id=profile_id)
+    # The ranking-unavailable case raises before a bundle is ever attempted --
+    # no instrumentation event is expected here (nothing to log about a
+    # systemic block that never reached the live bundle builder).
+    assert read_owner_test_events(facade.redraft_root, profile_id) == []
+
+
+def test_owner_test_instrumentation_captures_correction_and_undo_events(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    board = facade.redraft_bootstrap().data["draftBoard"]
+    drafted_ids = {cell["playerId"] for cell in board["boardCells"] if cell["playerId"]}
+    assert "TE-29" not in drafted_ids
+
+    facade.replace_redraft_pick(profile_id=profile_id, pick_number=1, player_id="TE-29")
+    facade.undo_redraft_pick_correction(profile_id=profile_id)
+
+    events = read_owner_test_events(facade.redraft_root, profile_id)
+    kinds = [
+        e["draft_state_change_kind"] for e in events if e["event_type"] == "DRAFT_STATE_CHANGED"
+    ]
+    assert "CORRECTION_REPLACE" in kinds
+    assert "CORRECTION_UNDO" in kinds

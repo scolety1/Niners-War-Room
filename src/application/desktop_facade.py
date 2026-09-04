@@ -79,6 +79,12 @@ from src.services.owner_mode_view_service import (
     owner_risk,
     translate_research_tier,
 )
+from src.services.owner_test_instrumentation_service import (
+    OwnerTestDiagnosticEvent,
+    append_owner_test_event,
+    build_decision_bundle_diagnostic_event,
+    build_draft_state_change_event,
+)
 from src.services.personal_workspace_service import (
     DEFAULT_WORKSPACE_ROOT,
     WorkspaceValidationError,
@@ -164,6 +170,7 @@ from src.services.redraft_engine_v1_service import (
     save_profile,
     set_active_profile,
     undo_last_draft_pick,
+    utc_now,
 )
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
@@ -2376,6 +2383,13 @@ class DesktopBackendFacade:
         payload_data: dict[str, Any] = {"draftBoard": self._draft_board_payload(board)}
         if receipt_skipped_reason is not None:
             payload_data["nwrPureDecisionReceiptSkipped"] = receipt_skipped_reason
+        if is_owner_pick:
+            self._log_owner_test_event(
+                build_draft_state_change_event(
+                    profile_id=normalized_profile, timestamp_utc=utc_now(),
+                    change_kind="OWNER_PICK", player_id=normalized_player,
+                )
+            )
         return FacadePayload(data=payload_data)
 
     def undo_redraft_pick(self, *, profile_id: str) -> FacadePayload:
@@ -2496,6 +2510,13 @@ class DesktopBackendFacade:
             profile=profile, correction_type="REPLACE_PICK", pick_number=pick_number,
             detail={"new_player_id": normalized_player},
         )
+        self._log_owner_test_event(
+            build_draft_state_change_event(
+                profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                change_kind="CORRECTION_REPLACE", pick_number=int(pick_number),
+                player_id=normalized_player,
+            )
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def clear_redraft_pick(self, *, profile_id: str, pick_number: int) -> FacadePayload:
@@ -2512,6 +2533,12 @@ class DesktopBackendFacade:
             raise FacadeError("REDRAFT_CLEAR_PICK_FAILED", str(exc), status=409) from exc
         self._append_nwr_pure_correction_record(
             profile=profile, correction_type="CLEAR_PICK", pick_number=pick_number, detail={},
+        )
+        self._log_owner_test_event(
+            build_draft_state_change_event(
+                profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                change_kind="CORRECTION_CLEAR", pick_number=int(pick_number),
+            )
         )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
@@ -2538,6 +2565,13 @@ class DesktopBackendFacade:
             profile=profile, correction_type="FILL_GAP", pick_number=pick_number,
             detail={"filled_player_id": normalized_player},
         )
+        self._log_owner_test_event(
+            build_draft_state_change_event(
+                profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                change_kind="CORRECTION_FILL_GAP", pick_number=int(pick_number),
+                player_id=normalized_player,
+            )
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def undo_redraft_pick_correction(self, *, profile_id: str) -> FacadePayload:
@@ -2551,6 +2585,12 @@ class DesktopBackendFacade:
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_UNDO_CORRECTION_FAILED", str(exc), status=409) from exc
+        self._log_owner_test_event(
+            build_draft_state_change_event(
+                profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                change_kind="CORRECTION_UNDO",
+            )
+        )
         return FacadePayload(data={"draftBoard": self._draft_board_payload(board)})
 
     def preview_redraft_catch_up(self, *, profile_id: str, paste: str) -> FacadePayload:
@@ -2581,6 +2621,12 @@ class DesktopBackendFacade:
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError("REDRAFT_CATCH_UP_APPLY_FAILED", str(exc), status=409) from exc
+        self._log_owner_test_event(
+            build_draft_state_change_event(
+                profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                change_kind="CATCH_UP_APPLIED",
+            )
+        )
         return FacadePayload(
             data={
                 "draftBoard": self._draft_board_payload(board),
@@ -2620,6 +2666,18 @@ class DesktopBackendFacade:
             )
         intel = load_external_intelligence(ranking)
         return FacadePayload(data={"externalIntelligence": intel})
+
+    def _log_owner_test_event(self, event: OwnerTestDiagnosticEvent) -> None:
+        """Owner Test Candidate V1, section 15: best-effort, local,
+        non-sensitive product diagnostics only -- never allowed to block
+        or fail a real DecisionBundle call or draft-state mutation, so
+        every call site wraps this in a narrow except rather than letting
+        a disk/IO problem in the diagnostics log surface as a user-facing
+        error for an otherwise-successful action."""
+        try:
+            append_owner_test_event(self.redraft_root, event)
+        except OSError:
+            pass
 
     def redraft_decision_bundle(
         self, *, profile_id: str, speed: str = "FAST",
@@ -2708,6 +2766,12 @@ class DesktopBackendFacade:
         )
         resolved_speed = str(speed).upper()
         if isinstance(result, LiveDecisionBundleUnavailable):
+            self._log_owner_test_event(
+                build_decision_bundle_diagnostic_event(
+                    profile_id=normalized, timestamp_utc=utc_now(), speed=resolved_speed,
+                    bundle_available=False, blocked_reason=result.reason,
+                )
+            )
             return FacadePayload(
                 data={
                     "decisionBundle": {
@@ -2715,6 +2779,16 @@ class DesktopBackendFacade:
                     }
                 }
             )
+        self._log_owner_test_event(
+            build_decision_bundle_diagnostic_event(
+                profile_id=normalized, timestamp_utc=utc_now(), speed=resolved_speed,
+                bundle_available=True, latency_seconds=result.latency_seconds,
+                top_candidate_player_ids=tuple(c.player_id for c in result.candidates[:3]),
+                selected_player_id=(result.candidates[0].player_id if result.candidates else None),
+                team_score_before=result.current_team_score.percentile,
+                championship_equity_before=result.current_championship_equity.win_probability,
+            )
+        )
         return FacadePayload(
             data={
                 "decisionBundle": {
@@ -3022,6 +3096,13 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         state = load_room_state(self.redraft_root, profile, ranking, manual_assets)
+        if summary.get("applied"):
+            self._log_owner_test_event(
+                build_draft_state_change_event(
+                    profile_id=profile.profile_id, timestamp_utc=utc_now(),
+                    change_kind="SLEEPER_SYNC_APPLIED",
+                )
+            )
         return FacadePayload(
             data={
                 "draftBoard": build_draft_room_payload(profile, ranking, manual_assets, adp, state),
