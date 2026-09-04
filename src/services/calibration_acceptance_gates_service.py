@@ -10,9 +10,9 @@ instruction not to invent an unrealistic number just to have one.
 
 Evaluating a `GateSpec` against real results is purely mechanical
 (`evaluate_gate`) -- this module makes no promotion decision; it only
-reports PASS/FAIL/UNSCORABLE per gate, for a human (or
-`champion_challenger_registry_service.record_promotion_decision`,
-already gated behind a human identity) to act on.
+reports PASS/FAIL/UNSCORABLE per gate, for a human (or the Champion/
+Challenger registry's own promotion-decision function, already gated
+behind a human identity) to act on.
 """
 
 from __future__ import annotations

@@ -1,4 +1,15 @@
 {
+  "AI_RESEARCH_AGENT_INPUT": {
+    "known_leakage_constraints": [
+      "source_as_of < draft_date"
+    ],
+    "note": "Structured evidence only -- see FAILURE_SLICES/STRATEGY_TOURNAMENT for detail.",
+    "sample_sizes": {
+      "position": 24,
+      "season": 24,
+      "strategy": 24
+    }
+  },
   "BASELINE_RESULTS": {
     "2023:GREEDY_NWR": {
       "owner_roster_realized_production_total": 846.0,
@@ -21,12 +32,82 @@
       "picks": 24
     }
   },
+  "CALIBRATION_GATES": {
+    "TEAM_SCORE": [
+      {
+        "detail": "No threshold declared yet (no real prior basis) -- see rationale.",
+        "gate_id": "team_score.monotonic_with_realized_strength",
+        "status": "UNSCORABLE"
+      },
+      {
+        "detail": "spearman was not computed this run.",
+        "gate_id": "team_score.positive_holdout_rank_correlation",
+        "status": "UNSCORABLE"
+      },
+      {
+        "detail": "cross_slice_spearman_variance was not computed this run.",
+        "gate_id": "team_score.stability_across_seasons_formats",
+        "status": "UNSCORABLE"
+      }
+    ]
+  },
   "CHALLENGER_COMPARISON": {
     "GREEDY_NWR": 846.0,
     "PLATFORM_ADP": 1278.0
   },
   "CHAMPIONSHIP_EQUITY_CALIBRATION": {
-    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+    "2023": {
+      "candidates": [
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2023-00"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2023-04"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2023-08"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2023-02"
+        }
+      ],
+      "current_win_probability": 0.0,
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    },
+    "2024": {
+      "candidates": [
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2024-00"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2024-04"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2024-08"
+        },
+        {
+          "championship_equity_after": 0.0,
+          "equity_gain": 0.0,
+          "player_id": "SYN-2024-02"
+        }
+      ],
+      "current_win_probability": 0.0,
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    }
   },
   "CHRONOLOGICAL_SPLIT": {
     "test_seasons": [
@@ -38,7 +119,56 @@
     "validate_seasons": []
   },
   "COST_OF_WAITING_CALIBRATION": {
-    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+    "2023": {
+      "candidates": [
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.4073,
+          "player_id": "SYN-2023-00"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.7549,
+          "player_id": "SYN-2023-04"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.9325,
+          "player_id": "SYN-2023-08"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.5927,
+          "player_id": "SYN-2023-02"
+        }
+      ],
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    },
+    "2024": {
+      "candidates": [
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.4073,
+          "player_id": "SYN-2024-00"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.7549,
+          "player_id": "SYN-2024-04"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.9325,
+          "player_id": "SYN-2024-08"
+        },
+        {
+          "cost_of_waiting": 0.0,
+          "make_it_back_probability": 0.5927,
+          "player_id": "SYN-2024-02"
+        }
+      ],
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    }
   },
   "DATASET_READINESS_REPORT": {
     "duplicate_player_seasons": 0,
@@ -52,6 +182,55 @@
     ],
     "status": "PASS_READY_FOR_REPLAY"
   },
+  "FAILURE_SLICES": {
+    "position": [
+      {
+        "dimension_value": "TE",
+        "low_confidence": false,
+        "mean_outcome": 169.0,
+        "sample_size": 8
+      },
+      {
+        "dimension_value": "QB",
+        "low_confidence": false,
+        "mean_outcome": 225.0,
+        "sample_size": 16
+      }
+    ],
+    "season": [
+      {
+        "dimension_value": 2023,
+        "low_confidence": false,
+        "mean_outcome": 206.3333,
+        "sample_size": 12
+      },
+      {
+        "dimension_value": 2024,
+        "low_confidence": false,
+        "mean_outcome": 206.3333,
+        "sample_size": 12
+      }
+    ],
+    "strategy": [
+      {
+        "dimension_value": "GREEDY_NWR",
+        "low_confidence": false,
+        "mean_outcome": 199.6667,
+        "sample_size": 12
+      },
+      {
+        "dimension_value": "PLATFORM_ADP",
+        "low_confidence": false,
+        "mean_outcome": 213.0,
+        "sample_size": 12
+      }
+    ]
+  },
+  "IDENTITY_REPORT": {
+    "checked": true,
+    "resolved_pick_count": 2,
+    "unresolved_pick_count": 1
+  },
   "LEAKAGE_REPORT": {
     "blocked_column_rows": 0,
     "future_dated_rows": 0,
@@ -59,10 +238,108 @@
     "outcome_before_draft_rows": 0,
     "valid": true
   },
+  "MODEL_HEALTH_REPORT": {
+    "low_confidence_count": 1,
+    "metric_count": 1,
+    "total_sample_size": 8
+  },
+  "PICK_SCORE_CALIBRATION": {
+    "data_source": "PIPELINE_TEST_ONLY",
+    "model_version": "pick-score-calibrator-v1:PIPELINE_TEST_ONLY",
+    "sample_size": 8
+  },
   "PICK_SCORE_EVALUATION": {
-    "blocked_reason": "Needs a historical-row -> RankingResult/AdpSnapshot adapter this pass did not build -- shadow_numeric_authorities_service's team_score/championship_equity/pick_score/cost_of_waiting are real and tested, but they consume a RankingResult pool, not raw historical_replay_rows.csv rows. Building that adapter is the exact next task, not attempted here to avoid a rushed, undertested bridge."
+    "2023": {
+      "candidates": [
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2023-00",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2023-04",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2023-08",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2023-02",
+          "raw_decision_utility": 0.0
+        }
+      ],
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    },
+    "2024": {
+      "candidates": [
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2024-00",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2024-04",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2024-08",
+          "raw_decision_utility": 0.0
+        },
+        {
+          "pick_score": 50.0,
+          "player_id": "SYN-2024-02",
+          "raw_decision_utility": 0.0
+        }
+      ],
+      "label": "SYNTHETIC_PIPELINE_TEST_ONLY"
+    }
+  },
+  "STRATEGY_TOURNAMENT": {
+    "2023": [
+      {
+        "construction_failure_count": 0,
+        "final_roster_size": 6,
+        "realized_production_total": 1278.0,
+        "runtime_seconds": 0.0009,
+        "strategy_name": "PLATFORM_ADP"
+      },
+      {
+        "construction_failure_count": 0,
+        "final_roster_size": 6,
+        "realized_production_total": 1198.0,
+        "runtime_seconds": 0.0009,
+        "strategy_name": "GREEDY_NWR"
+      }
+    ],
+    "2024": [
+      {
+        "construction_failure_count": 0,
+        "final_roster_size": 6,
+        "realized_production_total": 1278.0,
+        "runtime_seconds": 0.0008,
+        "strategy_name": "PLATFORM_ADP"
+      },
+      {
+        "construction_failure_count": 0,
+        "final_roster_size": 6,
+        "realized_production_total": 1198.0,
+        "runtime_seconds": 0.001,
+        "strategy_name": "GREEDY_NWR"
+      }
+    ]
   },
   "TEAM_SCORE_CALIBRATION": {
+    "bucket_report": {
+      "monotonic": true,
+      "sample_size": 8,
+      "spearman": null
+    },
     "label": "SYNTHETIC_PIPELINE_TEST_ONLY",
     "method": "owner-roster realized production total per strategy per season (a real proxy; full Team Score percentile calibration needs the RankingResult adapter named in CHAMPIONSHIP_EQUITY_CALIBRATION below)",
     "per_strategy_mean_realized_production": {
