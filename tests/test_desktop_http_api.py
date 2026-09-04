@@ -205,6 +205,7 @@ class FakeFacade:
         profile_id: str,
         player_id: str,
         drafted: bool,
+        emergency_override: bool = False,
     ) -> FacadePayload:
         value = {"profileId": profile_id, "playerId": player_id, "drafted": drafted}
         self.calls.append(("mark", value))
@@ -213,6 +214,17 @@ class FakeFacade:
     def undo_redraft_pick(self, *, profile_id: str) -> FacadePayload:
         self.calls.append(("undo", profile_id))
         return FacadePayload(data={"profileId": profile_id})
+
+    def redraft_decision_bundle(self, *, profile_id: str, speed: str = "FAST") -> FacadePayload:
+        self.calls.append(("decision-bundle", {"profileId": profile_id, "speed": speed}))
+        return FacadePayload(
+            data={
+                "decisionBundle": {
+                    "available": True, "speed": speed,
+                    "candidates": [{"playerId": "fixture-player", "pickScore": 87.5}],
+                }
+            }
+        )
 
     def start_redraft_draft_room(self, **value: Any) -> FacadePayload:
         self.calls.append(("draft-start", value))
@@ -688,6 +700,32 @@ def test_redraft_mutation_routes_return_bootstrap_and_reject_pick_metadata() -> 
         == 1
     )
     assert ("undo", "profile-1") in facade.calls
+
+
+def test_redraft_decision_bundle_route_defaults_to_fast_and_accepts_an_explicit_speed() -> None:
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        default_speed = request(
+            server, "POST", "/api/v1/redraft/draft/profile-1/decision-bundle",
+            body={}, headers=authenticated_headers(),
+        )
+        explicit_speed = request(
+            server, "POST", "/api/v1/redraft/draft/profile-1/decision-bundle",
+            body={"speed": "DEEP"}, headers=authenticated_headers(),
+        )
+        rejected = request(
+            server, "POST", "/api/v1/redraft/draft/profile-1/decision-bundle",
+            body={"speed": "DEEP", "unknownField": True}, headers=authenticated_headers(),
+        )
+
+    assert default_speed[0] == 200
+    assert default_speed[2]["data"]["decisionBundle"]["speed"] == "FAST"
+    assert default_speed[2]["data"]["decisionBundle"]["available"] is True
+    assert explicit_speed[0] == 200
+    assert explicit_speed[2]["data"]["decisionBundle"]["speed"] == "DEEP"
+    assert rejected[0] == 400
+    assert ("decision-bundle", {"profileId": "profile-1", "speed": "FAST"}) in facade.calls
+    assert ("decision-bundle", {"profileId": "profile-1", "speed": "DEEP"}) in facade.calls
 
 
 def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:
