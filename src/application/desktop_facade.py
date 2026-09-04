@@ -58,6 +58,13 @@ from src.services.owner_asset_evidence_service import (
     compose_owner_asset_evidence,
 )
 from src.services.owner_caveat_presentation_service import owner_caveat_text
+from src.services.decision_bundle_live_service import (
+    LiveDecisionBundleUnavailable,
+    build_live_decision_bundle,
+)
+from src.services.point_in_time_feature_store_service import provenance_hash
+from src.services.score_provenance_service import build_score_provenance
+from src.services.shadow_numeric_authorities_service import simulate_comparable_leagues
 from src.services.nwr_pure_experiment_service import (
     NwrPureExperimentError,
     ReceiptCorrectionRecord,
@@ -337,6 +344,17 @@ class DesktopBackendFacade:
         self._redraft_seed_lock = threading.Lock()
         self._snapshot_key: tuple[tuple[str, int, int], ...] | None = None
         self._snapshot_value: _OwnerSnapshot | None = None
+        # DecisionBundle comparable-league Monte Carlo population cache
+        # (section 10, Owner Test Candidate V1): keyed by every piece of
+        # provenance that could make a cached population wrong to reuse --
+        # profile_id, the real universe/market hashes, and the simulation
+        # parameters. Never keyed by draft-board state, since that changes
+        # every pick; the comparable-league population itself is independent
+        # of the CURRENT roster, only of the universe/market/format it was
+        # simulated under.
+        self._comparable_leagues_lock = threading.RLock()
+        self._comparable_leagues_key: tuple[str, str, str, int, int] | None = None
+        self._comparable_leagues_value: list[Any] | None = None
 
     def bootstrap(self) -> FacadePayload:
         if self.mode == "dynasty":
@@ -2591,6 +2609,84 @@ class DesktopBackendFacade:
         intel = load_external_intelligence(ranking)
         return FacadePayload(data={"externalIntelligence": intel})
 
+    def redraft_decision_bundle(
+        self, *, profile_id: str, max_candidates: int = 12, trials: int = 200, seasons: int = 200,
+    ) -> FacadePayload:
+        """Owner Test Candidate V1, section 2: the real, live DecisionBundle
+        for the CURRENT draft state -- backend computes, this method never
+        substitutes a placeholder number. Raises the same
+        REDRAFT_RANKINGS_UNAVAILABLE FacadeError every other per-action
+        Redraft endpoint already raises when the ranking is blocked/
+        unavailable (a systemic block, not a per-pick condition); when the
+        ranking IS ready but no roster-legal candidate exists right now
+        (e.g. every open position is already at its configured maximum),
+        returns a normal 200 payload with `available: false` and a real
+        reason instead -- an expected late-draft state, not a system error.
+
+        NWR PURE — EXPERIMENTAL: unaffected. This never reads external
+        intelligence (UDK/FantasyPros) at all -- only NWR's own admitted
+        ranking and the SHADOW/RESEARCH numeric authorities -- so the real
+        Pick Score/Team Score/Championship Equity stay visible under NWR
+        PURE exactly as they do outside it."""
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        normalized = self._profile_id(profile_id)
+        adp = load_adp_snapshot(self.redraft_root, profile)
+        room_state = load_room_state(self.redraft_root, profile, ranking, manual_assets)
+
+        base_seed = 20260903
+        comparable_leagues_key = (
+            normalized, ranking.projection_sha256, adp.source_sha256, trials, base_seed,
+        )
+        with self._comparable_leagues_lock:
+            if comparable_leagues_key == self._comparable_leagues_key:
+                comparable_leagues = self._comparable_leagues_value
+            else:
+                comparable_leagues = simulate_comparable_leagues(
+                    profile, ranking, manual_assets, adp, trials=trials, base_seed=base_seed,
+                )
+                self._comparable_leagues_key = comparable_leagues_key
+                self._comparable_leagues_value = comparable_leagues
+
+        roster_state_hash = provenance_hash(
+            {"picks": [dict(p) for p in room_state.get("picks", [])]}
+        )
+        available_player_hash = provenance_hash(
+            {"drafted": sorted(str(v) for v in room_state.get("drafted", []))}
+        )
+        provenance = build_score_provenance(
+            league_profile_hash=provenance_hash(asdict(profile)),
+            roster_state_hash=roster_state_hash,
+            available_player_hash=available_player_hash,
+            universe_hash=ranking.projection_sha256,
+            projection_model_version=ranking.generated_at_utc,
+            market_snapshot_hash=adp.source_sha256,
+            feature_set_version="redraft-live-v1",
+            team_score_version="team-score-v2",
+            championship_equity_version="championship-equity-v2",
+            pick_score_version="pick-score-experimental-v1",
+            optimizer_version="decision-bundle-live-v1",
+            seed=base_seed,
+            simulation_count=trials,
+            timestamp_utc=ranking.generated_at_utc,
+        )
+
+        result = build_live_decision_bundle(
+            profile, ranking, manual_assets, adp, room_state,
+            comparable_leagues=comparable_leagues, provenance=provenance,
+            max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
+        )
+        if isinstance(result, LiveDecisionBundleUnavailable):
+            return FacadePayload(
+                data={"decisionBundle": {"available": False, "reason": result.reason}}
+            )
+        return FacadePayload(
+            data={
+                "decisionBundle": {
+                    "available": True, **_decision_bundle_payload(result, ranking),
+                }
+            }
+        )
+
     def set_redraft_nwr_pure_mode(self, *, profile_id: str, enabled: bool) -> FacadePayload:
         """Toggle NWR PURE — EXPERIMENTAL for a profile. Never affects NWR's
         own admitted ranking/Suggestions authority -- only gates whether
@@ -3783,6 +3879,74 @@ class DesktopBackendFacade:
             "lastGeneratedTimestamp": health.last_generated_timestamp,
             "messages": messages,
         }
+
+
+def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
+    """Converts a real decision_bundle_live_service DecisionBundle into the
+    camelCase JSON shape Draft Room V2 consumes (Owner Test Candidate V1,
+    section 2). Enriches each candidate with player_name/position from the
+    ranking (CandidateBundle itself only carries player_id) -- never invents
+    a value not already on the bundle or the ranking."""
+    rows_by_id = {row.player_id: row for row in ranking.rows}
+
+    def candidate_payload(candidate: Any) -> dict[str, Any]:
+        row = rows_by_id.get(candidate.player_id)
+        return {
+            "playerId": candidate.player_id,
+            "playerName": row.player_name if row is not None else candidate.player_id,
+            "position": row.position if row is not None else "",
+            "playerScore": candidate.player_score,
+            "teamScoreAfter": candidate.team_score_after,
+            "teamScoreDelta": candidate.team_score_delta,
+            "championshipEquityAfter": candidate.championship_equity_after,
+            "equityGain": candidate.equity_gain,
+            "costOfWaiting": candidate.cost_of_waiting,
+            "makeItBackProbability": candidate.make_it_back_probability,
+            "rawDecisionUtility": candidate.raw_decision_utility,
+            "teamScoreUtilityComponent": candidate.team_score_utility_component,
+            "equityUtilityComponent": candidate.equity_utility_component,
+            "pickScore": candidate.pick_score,
+            "action": candidate.action.replace("_", " "),
+            "warnings": list(candidate.warnings),
+            "uncertainty": candidate.uncertainty,
+        }
+
+    return {
+        "version": bundle.version,
+        "currentTeamScore": {
+            "percentile": bundle.current_team_score.percentile,
+            "rosterValue": bundle.current_team_score.roster_value,
+            "populationSize": bundle.current_team_score.population_size,
+            "label": bundle.current_team_score.label,
+        },
+        "currentChampionshipEquity": {
+            "winProbability": bundle.current_championship_equity.win_probability,
+            "standardError": bundle.current_championship_equity.standard_error,
+            "seasonsSimulated": bundle.current_championship_equity.seasons_simulated,
+            "assumedFormat": True,
+            "label": bundle.current_championship_equity.label,
+        },
+        "candidates": [candidate_payload(c) for c in bundle.candidates],
+        "provenance": {
+            "leagueProfileHash": bundle.provenance.league_profile_hash,
+            "rosterStateHash": bundle.provenance.roster_state_hash,
+            "availablePlayerHash": bundle.provenance.available_player_hash,
+            "universeHash": bundle.provenance.universe_hash,
+            "projectionModelVersion": bundle.provenance.projection_model_version,
+            "marketSnapshotHash": bundle.provenance.market_snapshot_hash,
+            "featureSetVersion": bundle.provenance.feature_set_version,
+            "teamScoreVersion": bundle.provenance.team_score_version,
+            "championshipEquityVersion": bundle.provenance.championship_equity_version,
+            "pickScoreVersion": bundle.provenance.pick_score_version,
+            "optimizerVersion": bundle.provenance.optimizer_version,
+            "seed": bundle.provenance.seed,
+            "simulationCount": bundle.provenance.simulation_count,
+            "timestampUtc": bundle.provenance.timestamp_utc,
+            "bundleHash": bundle.provenance.bundle_hash,
+        },
+        "simulationMetadata": bundle.simulation_metadata,
+        "latencySeconds": bundle.latency_seconds,
+    }
 
 
 def _text(value: object) -> str:

@@ -89,7 +89,11 @@ def test_build_live_decision_bundle_returns_a_real_bundle_for_a_fresh_draft() ->
 
 
 def test_build_live_decision_bundle_respects_already_drafted_players() -> None:
-    ranking = _ranking()
+    # team_count=2 snake order is [1, 2, 2, 1, 1, 2, ...]: after ONE real
+    # pick by team 1, pick #2 is genuinely team 2's turn -- owner_slot=2
+    # keeps this test's "it's actually your turn" precondition real,
+    # matching the same guard the live decision bundle enforces.
+    ranking = _ranking(team_count=2)
     profile = ranking.profile
     manual_assets = _manual_assets()
     adp = _empty_adp(profile)
@@ -101,7 +105,7 @@ def test_build_live_decision_bundle_respects_already_drafted_players() -> None:
         {"player_id": "RB-0", "team_slot": 1, "position": "RB", "player_name": "RB 0"},
     ]
     result = build_live_decision_bundle(
-        profile, ranking, manual_assets, adp, _room_state(picks=picks),
+        profile, ranking, manual_assets, adp, _room_state(owner_slot=2, picks=picks),
         comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
         trials=2, seasons=20, base_seed=5,
     )
@@ -111,8 +115,13 @@ def test_build_live_decision_bundle_respects_already_drafted_players() -> None:
 
 
 def test_build_live_decision_bundle_respects_position_maximum_legality() -> None:
-    ranking = _ranking()
-    profile = ranking.profile  # roster.qb=1 -> _roster_candidate_allowed caps QB at max(1+1,2)=2
+    # roster.qb=1 -> _roster_candidate_allowed caps QB at max(1+1, 2)=2.
+    # team_count=2 order is [1,2,2,1,1,2,...]: after 4 real picks
+    # (team1, team2, team2, team1 -- the owner's 2 real QB picks land at
+    # positions 1 and 4), pick #5 genuinely belongs to team 1 (owner)
+    # again, so this stays a real "it's your turn" case, not a skipped one.
+    ranking = _ranking(team_count=2)
+    profile = ranking.profile
     manual_assets = _manual_assets()
     adp = _empty_adp(profile)
     leagues = simulate_comparable_leagues(
@@ -121,10 +130,12 @@ def test_build_live_decision_bundle_respects_position_maximum_legality() -> None
 
     picks = [
         {"player_id": "QB-0", "team_slot": 1, "position": "QB", "player_name": "QB 0"},
+        {"player_id": "WR-0", "team_slot": 2, "position": "WR", "player_name": "WR 0"},
+        {"player_id": "WR-1", "team_slot": 2, "position": "WR", "player_name": "WR 1"},
         {"player_id": "QB-1", "team_slot": 1, "position": "QB", "player_name": "QB 1"},
     ]
     result = build_live_decision_bundle(
-        profile, ranking, manual_assets, adp, _room_state(picks=picks),
+        profile, ranking, manual_assets, adp, _room_state(owner_slot=1, picks=picks),
         comparable_leagues=leagues, provenance=_provenance(), max_candidates=40,
         trials=2, seasons=20, base_seed=9,
     )
@@ -165,3 +176,45 @@ def test_build_live_decision_bundle_reports_unavailable_when_ranking_not_ready()
     )
     assert isinstance(result, LiveDecisionBundleUnavailable)
     assert "not ready" in result.reason
+
+
+def test_build_live_decision_bundle_continues_the_real_room_not_an_empty_draft() -> None:
+    """Regression: the look-ahead simulation (evaluate_pick_candidates ->
+    simulate_pick_now) must continue from the REAL current room state, not
+    silently restart an empty draft -- otherwise it can force a candidate
+    that its own from-scratch simulation independently already "drafted"
+    for another team, crashing with 'already drafted'. Reproduced here with
+    a room that already has OTHER teams' real picks recorded (the exact
+    shape that surfaced the bug in facade-level testing)."""
+    ranking = _ranking(team_count=4)
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=11
+    )
+    # Owner drafts LAST in round 1 (slot 4), and the REAL room recorded
+    # teams 1-3 making picks that DIVERGE from what a from-scratch
+    # simulation's own deterministic-fallback CPU logic would independently
+    # choose (e.g. team 1 taking a low-ranked player instead of the real
+    # best-available QB-0) -- exactly the shape that reproduced the bug in
+    # facade-level testing: without the real from_state, the simulation's
+    # own from-empty CPU picks can collide with a candidate this function
+    # legitimately selected from the REAL available pool.
+    picks = [
+        {"player_id": "TE-7", "team_slot": 1, "position": "TE", "player_name": "TE 7"},
+        {"player_id": "WR-9", "team_slot": 2, "position": "WR", "player_name": "WR 9"},
+        {"player_id": "RB-9", "team_slot": 3, "position": "RB", "player_name": "RB 9"},
+    ]
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(owner_slot=4, picks=picks),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=11,
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable)
+    candidate_ids = {c.player_id for c in result.candidates}
+    # Already-drafted players (by other teams) must never appear, and the
+    # call must not raise -- proves the simulation is aware of the REAL
+    # room's actual history, not an independently re-simulated one.
+    assert candidate_ids.isdisjoint({"TE-7", "WR-9", "RB-9"})
+    assert "QB-0" in candidate_ids  # the real best-available player, untouched

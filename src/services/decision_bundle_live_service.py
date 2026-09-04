@@ -31,6 +31,7 @@ from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _available_ranked,
     _roster_candidate_allowed,
+    draft_order,
 )
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
 from src.services.score_provenance_service import ScoreProvenance
@@ -78,6 +79,26 @@ def build_live_decision_bundle(
     if not isinstance(owner_slot, int):
         return LiveDecisionBundleUnavailable("Owner slot is not configured for this profile.")
 
+    # The look-ahead simulation this composes (evaluate_pick_candidates ->
+    # simulate_pick_now) forces a candidate as the owner's VERY NEXT actual
+    # turn, then completes the draft from there. That is only a meaningful
+    # "if I pick X now" answer when it genuinely IS the owner's turn right
+    # now -- otherwise the intervening CPU picks (deterministic, same
+    # best-available logic driving this function's own candidate selection)
+    # can legitimately draft one of these candidates before the owner's
+    # real next turn arrives, which is a real state to report, not a crash
+    # to hide.
+    order = draft_order(profile)
+    picks_so_far = len(room_state.get("picks", []))
+    current_pick_number = picks_so_far + 1
+    current_team_slot = order[picks_so_far] if picks_so_far < len(order) else None
+    if current_team_slot != owner_slot:
+        return LiveDecisionBundleUnavailable(
+            f"It is not currently the owner's turn (pick {current_pick_number} belongs to "
+            f"team {current_team_slot}) -- DecisionBundle recommendations are only computed "
+            "for the immediate next owner pick, never a hypothetical future turn."
+        )
+
     drafted_ids = {str(value) for value in room_state.get("drafted", [])}
     current_owner_player_ids = tuple(
         str(pick["player_id"])
@@ -105,13 +126,17 @@ def build_live_decision_bundle(
     player_scores = {
         row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows
     }
-    current_pick_number = len(room_state.get("picks", [])) + 1
 
     bundle = build_decision_bundle(
         profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
         owner_slot=owner_slot, current_owner_player_ids=current_owner_player_ids,
         candidate_player_ids=candidate_player_ids, comparable_leagues=comparable_leagues,
         provenance=provenance, player_scores=player_scores,
+        # The CURRENT real draft-room state -- without this, the look-ahead
+        # simulation (evaluate_pick_candidates -> simulate_pick_now) starts
+        # from an EMPTY draft instead of continuing the real one, and can
+        # collide with players the real room has already drafted.
+        from_state=room_state,
         include_cost_of_waiting=include_cost_of_waiting,
         current_pick_number=current_pick_number, trials=trials, seasons=seasons,
         base_seed=base_seed,

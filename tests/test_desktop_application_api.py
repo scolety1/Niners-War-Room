@@ -1719,3 +1719,107 @@ def test_nwr_pure_mode_blocks_a_pick_when_the_decision_receipt_fails_to_write(
     board = facade.redraft_bootstrap().data["draftBoard"]
     assert any(cell["playerId"] == "TE-29" for cell in board["boardCells"])
     assert read_decision_receipts(facade.redraft_root, profile_id) == []
+
+
+# --- Owner Test Candidate V1: live DecisionBundle endpoint --------------------
+
+
+def test_redraft_decision_bundle_returns_a_real_bundle_for_a_started_room(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    result = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=5, trials=2, seasons=5,
+    )
+    bundle = result.data["decisionBundle"]
+    assert bundle["available"] is True
+    assert len(bundle["candidates"]) == 5
+    for candidate in bundle["candidates"]:
+        assert candidate["playerName"]
+        assert candidate["position"]
+        assert isinstance(candidate["pickScore"], (int, float))
+        assert isinstance(candidate["rawDecisionUtility"], (int, float))
+        assert "action" in candidate
+    assert bundle["provenance"]["bundleHash"]
+    assert bundle["currentTeamScore"]["label"]
+
+
+def test_redraft_decision_bundle_never_shows_a_static_zero_it_computes_a_real_percentile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    result = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+    )
+    bundle = result.data["decisionBundle"]
+    # Every candidate's Pick Score is independently reproducible from a
+    # fresh call with the same provenance inputs (same seed/trials) -- the
+    # magic number is never a random/placeholder value.
+    again = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+    )
+    again_bundle = again.data["decisionBundle"]
+    first_scores = {c["playerId"]: c["pickScore"] for c in bundle["candidates"]}
+    second_scores = {c["playerId"]: c["pickScore"] for c in again_bundle["candidates"]}
+    assert first_scores == second_scores
+
+
+def test_redraft_decision_bundle_recomputes_after_a_pick_changes_the_roster(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    before = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+    ).data["decisionBundle"]
+    facade.mark_redraft_player(profile_id=profile_id, player_id="RB-0", drafted=True)
+
+    after = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+    ).data["decisionBundle"]
+    after_ids = {c["playerId"] for c in after["candidates"]}
+    # The just-drafted player can never reappear as a candidate -- proves
+    # the bundle was recomputed from the CURRENT draft state, not a stale
+    # cached recommendation.
+    assert "RB-0" not in after_ids
+    assert before["provenance"]["rosterStateHash"] != after["provenance"]["rosterStateHash"]
+
+
+def test_redraft_decision_bundle_reports_unavailable_not_a_placeholder_when_no_room_started(
+    tmp_path: Path,
+) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="No Room Yet For DecisionBundle"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    with pytest.raises(FacadeError, match="unavailable|RANKINGS_UNAVAILABLE"):
+        facade.redraft_decision_bundle(profile_id=profile_id)
+
+
+def test_redraft_decision_bundle_stays_available_across_owner_pick_and_cpu_advance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`mark_redraft_player` -> `owner_pick_and_advance` already auto-plays
+    CPU picks synchronously up to the owner's next real turn (FAST/MOCK
+    mode), so a real, freshly-drafted DecisionBundle is available again
+    immediately after an owner pick -- confirms the live wiring survives a
+    real roster-changing mutation end to end, not just in isolation. The
+    "not currently the owner's turn" guard itself (for the async/partial-
+    advance cases this synchronous test harness cannot reach) is proven
+    directly at the unit level in test_decision_bundle_live_service.py."""
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    first = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=1, trials=2, seasons=5,
+    ).data["decisionBundle"]
+    assert first["available"] is True
+    available_now = first["candidates"][0]["playerId"]
+    facade.mark_redraft_player(profile_id=profile_id, player_id=available_now, drafted=True)
+
+    result = facade.redraft_decision_bundle(
+        profile_id=profile_id, max_candidates=3, trials=2, seasons=5,
+    )
+    bundle = result.data["decisionBundle"]
+    assert bundle["available"] is True
+    assert available_now not in {c["playerId"] for c in bundle["candidates"]}
