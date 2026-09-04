@@ -85,6 +85,11 @@ from src.services.owner_test_instrumentation_service import (
     build_decision_bundle_diagnostic_event,
     build_draft_state_change_event,
 )
+from src.services.kha_shadow_replay_reader_service import (
+    KhaShadowReplayUnavailable,
+    kha_shadow_replay_payload,
+    load_kha_shadow_replay_preview,
+)
 from src.services.personal_workspace_service import (
     DEFAULT_WORKSPACE_ROOT,
     WorkspaceValidationError,
@@ -2797,6 +2802,27 @@ class DesktopBackendFacade:
                 }
             }
         )
+
+    def redraft_historical_replay_preview(self) -> FacadePayload:
+        """Owner Test Candidate V1, section 12 (Path B) / section 13: a
+        safe, read-only owner-test preview of the real 2026 KHA draft,
+        labeled unambiguously HISTORICAL REPLAY -- 2026-09-02 -- never
+        presented as current. Reads the already-shipped, tested
+        docs/codex/KHA_SHADOW_OPTIMIZER_REPLAY.csv
+        (scripts/run_kha_shadow_optimizer_replay_v1.py's real output);
+        never regenerates it, never touches the live KHA draft board,
+        and never extends a disclosed proxy/NOT_COMPUTABLE marker into a
+        fabricated real number. Section 13's no-leakage guarantee is the
+        replay script's own (each row's comparison fields are built only
+        from picks strictly before it) -- unchanged and re-verified by
+        that script's own test suite, not re-implemented here."""
+        try:
+            preview = load_kha_shadow_replay_preview(self.repo_root)
+        except KhaShadowReplayUnavailable as exc:
+            raise FacadeError(
+                "REDRAFT_HISTORICAL_REPLAY_UNAVAILABLE", str(exc), status=409
+            ) from exc
+        return FacadePayload(data={"historicalReplay": kha_shadow_replay_payload(preview)})
 
     def set_redraft_nwr_pure_mode(self, *, profile_id: str, enabled: bool) -> FacadePayload:
         """Toggle NWR PURE — EXPERIMENTAL for a profile. Never affects NWR's

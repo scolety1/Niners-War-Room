@@ -226,6 +226,19 @@ class FakeFacade:
             }
         )
 
+    def redraft_historical_replay_preview(self) -> FacadePayload:
+        self.calls.append(("historical-replay-preview", None))
+        return FacadePayload(
+            data={
+                "historicalReplay": {
+                    "label": "HISTORICAL REPLAY — 2026-09-02",
+                    "sourceRelativePath": "docs/codex/KHA_SHADOW_OPTIMIZER_REPLAY.csv",
+                    "disclosedLimitations": "fixture limitations",
+                    "picks": [{"pickNumber": 9, "playerName": "Fixture Player"}],
+                }
+            }
+        )
+
     def start_redraft_draft_room(self, **value: Any) -> FacadePayload:
         self.calls.append(("draft-start", value))
         return FacadePayload(data=value)
@@ -726,6 +739,20 @@ def test_redraft_decision_bundle_route_defaults_to_fast_and_accepts_an_explicit_
     assert rejected[0] == 400
     assert ("decision-bundle", {"profileId": "profile-1", "speed": "FAST"}) in facade.calls
     assert ("decision-bundle", {"profileId": "profile-1", "speed": "DEEP"}) in facade.calls
+
+
+def test_kha_historical_replay_preview_route_returns_the_real_labeled_replay() -> None:
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        status, _headers, body = request(
+            server, "GET", "/api/v1/redraft/historical-replay/kha-2026-09-02",
+            headers=authenticated_headers(),
+        )
+    assert status == 200
+    replay = body["data"]["historicalReplay"]
+    assert replay["label"] == "HISTORICAL REPLAY — 2026-09-02"
+    assert len(replay["picks"]) > 0
+    assert ("historical-replay-preview", None) in facade.calls
 
 
 def test_draft_room_adp_and_read_only_sleeper_routes_are_strict() -> None:

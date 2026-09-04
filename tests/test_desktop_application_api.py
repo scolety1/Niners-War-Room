@@ -1960,3 +1960,33 @@ def test_owner_test_instrumentation_captures_correction_and_undo_events(
     ]
     assert "CORRECTION_REPLACE" in kinds
     assert "CORRECTION_UNDO" in kinds
+
+
+# --- Owner Test Candidate V1, sections 12/13: KHA historical replay preview -
+
+
+def test_redraft_historical_replay_preview_returns_the_real_labeled_kha_replay(
+    tmp_path: Path,
+) -> None:
+    """No active profile or started room is required -- this is a fixed,
+    global, read-only historical artifact, never mistaken for a current
+    draft's DecisionBundle."""
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=tmp_path)
+    result = facade.redraft_historical_replay_preview()
+    replay = result.data["historicalReplay"]
+    assert replay["label"] == "HISTORICAL REPLAY — 2026-09-02"
+    assert replay["sourceRelativePath"] == "docs/codex/KHA_SHADOW_OPTIMIZER_REPLAY.csv"
+    assert len(replay["picks"]) > 0
+    first = replay["picks"][0]
+    assert first["playerName"]
+    assert first["valueProxy"] == "RANK_DERIVED_PROXY_NOT_REAL_MAGNITUDE"
+
+
+def test_redraft_historical_replay_preview_is_explicitly_unavailable_not_faked(
+    tmp_path: Path,
+) -> None:
+    fake_repo = tmp_path / "no-csv-here"
+    fake_repo.mkdir()
+    facade = DesktopBackendFacade(repo_root=fake_repo, mode="redraft", redraft_root=tmp_path)
+    with pytest.raises(FacadeError, match="does not exist"):
+        facade.redraft_historical_replay_preview()

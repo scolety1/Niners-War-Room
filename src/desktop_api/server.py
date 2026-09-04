@@ -212,6 +212,9 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         if method == "GET" and path == "/api/v1/bootstrap":
             return self.server.facade.bootstrap()
 
+        if method == "GET" and path == "/api/v1/redraft/historical-replay/kha-2026-09-02":
+            return self.server.facade.redraft_historical_replay_preview()
+
         external_intel_match = _REDRAFT_EXTERNAL_INTELLIGENCE.fullmatch(path)
         if method == "GET" and external_intel_match:
             return self.server.facade.redraft_external_intelligence(profile_id=unquote(external_intel_match.group(1)))
