@@ -2,15 +2,11 @@
 
 **Read this first. It's short.**
 
-## ⚠️ Before you launch: one required action
+## ✅ Already handled: the approval blocker
 
-**NWR's live pick-recording is currently blocked for every league, including KHA — this must be fixed before you draft anything.**
+Last night's readiness pass found live pick-recording blocked (the 2026 projection data's governance approval was scoped only to the real 2026-09-02 KHA draft and had expired). **You explicitly authorized a new, practice-draft-scoped approval, and it's already installed and verified working** — see `docs/codex/NWR_PRACTICE_DRAFT_APPROVAL_AND_LIVE_SMOKE_TEST_20260905.md` for the full record. Nothing further needed here; a full live smoke test on the real installation passed all 15 steps, and the real KHA draft board was confirmed untouched throughout.
 
-Why: the 2026 player-projection data's governance approval is real, and was deliberately scoped to *only* the actual 2026-09-02 KHA draft ("`Use limited through completion of the 2026-09-02 draft`... `Does not authorize future/in-season use beyond this draft`"). It expired 2026-09-03. This isn't a bug — it's the system correctly refusing to use data outside its approved scope — but it means every pick-marking/recommendation call will fail right now with "The active Redraft ranking is unavailable" until a new approval covering practice-draft use is issued.
-
-**What to do**: issue a new, brief governance approval (same already-approved, unchanged player data — nothing about the actual projections needs re-review, just the scope/date). This is a real decision only you can make; nothing was fabricated on your behalf overnight. See `docs/codex/NWR_PRACTICE_DRAFT_READINESS_OVERNIGHT_V1_REPORT_20260905.md` section "Critical Finding" for the exact file to update.
-
-Everything below assumes that's done.
+**A ready-to-use practice profile is already waiting for you**: "2026 KHA High Stakes League — PRACTICE 20260905" (16 teams, full PPR, matches KHA's real format exactly). Just select it and click start — it has a few leftover picks from last night's testing, so hit "start new draft room" once before your real session to get a clean board.
 
 ## 1. What do I launch?
 
@@ -18,9 +14,9 @@ Double-click `desktop\launch-draft-upgrade-preview.bat`. It's a dev-mode build s
 
 ## 2. What league/config do I select?
 
-You have two real KHA-shaped profiles already saved:
+- **"2026 KHA High Stakes League — PRACTICE 20260905"** — use this one. Created and verified tonight.
 - **"2026 KHA High Stakes League"** — your real draft, completed 2026-09-02. **Do not use this for practice** — it has a full 192-pick board already.
-- **"2026 KHA High Stakes League — TEST"** — has some read-only Sleeper-tracking picks from Sept 2-3 on it already. If you want a truly clean practice board, duplicate it first (Profile page → Duplicate) rather than drafting on top of that history.
+- **"2026 KHA High Stakes League — TEST"** — has some read-only Sleeper-tracking picks from Sept 2-3 on it already; the PRACTICE profile above was duplicated from this one so you don't need to touch it.
 
 ## 3. Where do I enter/select my draft slot?
 
@@ -58,8 +54,8 @@ Starting a new draft room on the same profile *is* the reset — it wipes to an 
 
 ## 5-minute pre-draft checklist
 
-1. **Renew the governance approval** (see the warning at the top — nothing else works until this is done).
-2. Launch via `desktop\launch-draft-upgrade-preview.bat`.
-3. Select or duplicate the correct profile (never the real completed KHA board).
-4. Start the draft room with your real slot/seed.
-5. Make one test pick and undo it, just to confirm the loop is live before the real clock starts.
+1. Launch via `desktop\launch-draft-upgrade-preview.bat`.
+2. Select **"2026 KHA High Stakes League — PRACTICE 20260905"**.
+3. Start a new draft room to clear last night's test picks, with your real slot/seed.
+4. Make one test pick and undo it, just to confirm the loop is live before the real clock starts.
+5. If you want 2026 rookies included: 78 real rookies are currently excluded (their own data is independently stale) — this wasn't part of last night's approval and needs a separate decision if it matters for your practice session.
