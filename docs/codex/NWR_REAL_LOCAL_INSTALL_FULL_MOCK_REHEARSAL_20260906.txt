@@ -1,0 +1,80 @@
+{
+  "steps": [
+    {
+      "step": "league_config",
+      "ok": true,
+      "detail": "team_count=16, roster={'qb': 1, 'rb': 1, 'wr': 1, 'te': 1, 'flex': 2, 'superflex': 0, 'k': 1, 'dst': 1, 'bench_size': 4}"
+    },
+    {
+      "step": "round0_v1",
+      "ok": true,
+      "detail": "8 candidates"
+    },
+    {
+      "step": "round0_v2",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "step": "round0_owner_pick",
+      "ok": true,
+      "detail": "picked 00-0036223"
+    },
+    {
+      "step": "round1_v1",
+      "ok": true,
+      "detail": "8 candidates"
+    },
+    {
+      "step": "round1_v2",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "step": "round1_owner_pick",
+      "ok": true,
+      "detail": "picked 00-0037247"
+    },
+    {
+      "step": "round2_v1",
+      "ok": true,
+      "detail": "8 candidates"
+    },
+    {
+      "step": "round2_v2",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "step": "round2_owner_pick",
+      "ok": true,
+      "detail": "picked 00-0026498"
+    },
+    {
+      "step": "undo",
+      "ok": true,
+      "detail": "55 -> 54"
+    },
+    {
+      "step": "restore_practice_board",
+      "ok": true,
+      "detail": "picks restored to 8"
+    }
+  ],
+  "disagreements": [],
+  "latencies": {
+    "v1_fast": [
+      2.461,
+      1.926,
+      1.77
+    ],
+    "v2_fast": [
+      2.019,
+      1.936,
+      1.772
+    ]
+  },
+  "errors": [],
+  "prospective_log_row_count": 12,
+  "ok": true
+}
