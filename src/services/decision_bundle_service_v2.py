@@ -15,10 +15,22 @@ This is a strictly ADDITIVE, SHADOW/CHALLENGER bundle -- it does not modify,
 replace, or retune `decision_bundle_service.py`/`decision_bundle_live_service.py`,
 which remain the live, unmodified V1 authority. Pick Score / Cost of
 Waiting / Make-It-Back / Player Score are carried through UNCHANGED from
-the V1 bundle -- this program did not build (and explicitly declined to
-rush, the night before a real draft) a live, real-time Raw Action Value V2 /
-Pick Score V2 rollout pipeline; see
-docs/codex/NWR_BIG_DRAFT_READINESS_OVERNIGHT_V1_REPORT_20260906.md for why.
+the V1 bundle.
+
+NWR Final Pre-Draft Product Hardening V1: now ALSO composes the real,
+historically-validated Raw Action Value / Regret / decision-quality
+percentile pipeline (`raw_action_value_live_service.py`, an exact,
+unmodified live wiring of `decision_engine_v2_contracts_service.py` --
+see that module's own docstring for the full trace back to the research
+branch's final 2025 holdout methodology). This is genuinely new,
+additional Monte Carlo work (real bounded-look-ahead rollouts per
+candidate), applied only to the top `max_rav_candidates` candidates for
+cost control, disclosed explicitly via `raw_action_value_status` --
+never silently skipped and never a fabricated number when unavailable.
+`current_pick_score`/V1's own Pick Score formula is NEVER modified by
+this -- see docs/codex/NWR_FINAL_PRE_DRAFT_PRODUCT_HARDENING_V1_REPORT_
+20260906.md for the full parity trace and why V1 Pick Score is
+deliberately left untouched.
 
 Graceful degradation (directive section 11): if Team Score V2 or
 Championship Equity V2 raises for ANY reason (e.g. an unsupported
@@ -40,6 +52,14 @@ from src.services.championship_equity_v2_multi_league_service import (
     evaluate_candidate_equity,
 )
 from src.services.decision_bundle_service import DecisionBundle, build_decision_bundle
+from src.services.raw_action_value_live_service import (
+    DEFAULT_MAX_RAV_CANDIDATES,
+    DEFAULT_RAV_TRIALS,
+    evaluate_raw_action_value_live,
+)
+from src.services.raw_action_value_live_service import (
+    MODEL_VERSION as RAW_ACTION_VALUE_LIVE_MODEL_VERSION,
+)
 from src.services.redraft_draft_room_v1_service import AdpSnapshot, _asset_pool
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult, RosterSettings
 from src.services.score_provenance_service import ScoreProvenance
@@ -136,6 +156,15 @@ class CandidateBundleV2:
     team_score_v2: dict[str, Any] | None
     championship_equity_v2: dict[str, Any] | None
     v2_status: str  # "OK" | "DEGRADED: <reason>"
+    raw_action_value: dict[str, Any] | None = None
+    expected_regret: float | None = None
+    decision_quality_percentile: float | None = None
+    # "OK" | "UNAVAILABLE: <reason>" | "SKIPPED_TOP_N_ONLY" -- distinct
+    # from v2_status: a candidate can have a fully OK Team Score V2 /
+    # Equity V2 while its Raw Action Value was never computed at all
+    # (outside max_rav_candidates), which must never read as "OK" or
+    # silently show as null with no explanation.
+    raw_action_value_status: str = "SKIPPED_TOP_N_ONLY"
 
 
 @dataclass(frozen=True)
@@ -168,6 +197,9 @@ def build_decision_bundle_v2(
     trials: int = 200,
     seasons: int = 200,
     base_seed: int = 20260903,
+    include_raw_action_value: bool = True,
+    max_rav_candidates: int = DEFAULT_MAX_RAV_CANDIDATES,
+    rav_trials: int = DEFAULT_RAV_TRIALS,
 ) -> DecisionBundleV2:
     """Builds the V1 bundle exactly as today (unchanged call), then
     augments it with Team Score V2 / Championship Equity V2. Never
@@ -332,6 +364,59 @@ def build_decision_bundle_v2(
                     v2_status=f"DEGRADED: {exc}",
                 )
             )
+
+    if include_raw_action_value and candidates:
+        try:
+            rav_by_player = evaluate_raw_action_value_live(
+                profile,
+                ranking,
+                manual_assets,
+                adp,
+                owner_slot=owner_slot,
+                candidate_player_ids=list(candidate_player_ids),
+                from_state=from_state,
+                comparable_leagues=comparable_leagues,
+                state_id=f"{profile.profile_id}-pick{current_pick_number}",
+                max_rav_candidates=max_rav_candidates,
+                rav_trials=rav_trials,
+                base_seed=base_seed,
+            )
+        except Exception as exc:  # noqa: BLE001 -- RAV must never take down the rest of the bundle
+            rav_by_player = {}
+            warnings.append(f"Raw Action Value unavailable this call: {exc}")
+
+        def _rav_payload(outcome: Any) -> dict[str, Any] | None:
+            if outcome.raw_action_value is None:
+                return None
+            rav = outcome.raw_action_value
+            return {
+                "expected_terminal_value": rav.expected_terminal_value,
+                "terminal_value_stdev": rav.terminal_value_stdev,
+                "terminal_objective_name": rav.terminal_objective_name,
+                "lookahead_depth": rav.lookahead_depth,
+                "rollout_count": rav.rollout_count,
+                "model_version": RAW_ACTION_VALUE_LIVE_MODEL_VERSION,
+            }
+
+        merged: list[CandidateBundleV2] = []
+        for candidate in candidates:
+            rav_outcome = rav_by_player.get(candidate.player_id)
+            if rav_outcome is None:
+                merged.append(candidate)
+                continue
+            merged.append(
+                CandidateBundleV2(
+                    player_id=candidate.player_id,
+                    team_score_v2=candidate.team_score_v2,
+                    championship_equity_v2=candidate.championship_equity_v2,
+                    v2_status=candidate.v2_status,
+                    raw_action_value=_rav_payload(rav_outcome),
+                    expected_regret=rav_outcome.expected_regret,
+                    decision_quality_percentile=rav_outcome.decision_quality_percentile,
+                    raw_action_value_status=rav_outcome.status,
+                )
+            )
+        candidates = merged
 
     return DecisionBundleV2(
         version=DECISION_BUNDLE_V2_VERSION,

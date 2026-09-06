@@ -4226,6 +4226,10 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
             "teamScoreV2": candidate.team_score_v2,
             "championshipEquityV2": candidate.championship_equity_v2,
             "pickScore": v1_candidate.pick_score if v1_candidate is not None else None,
+            "rawActionValue": candidate.raw_action_value,
+            "expectedRegret": candidate.expected_regret,
+            "decisionQualityPercentile": candidate.decision_quality_percentile,
+            "rawActionValueStatus": candidate.raw_action_value_status,
         }
 
     return {

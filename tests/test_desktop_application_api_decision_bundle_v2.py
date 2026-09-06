@@ -73,6 +73,20 @@ def test_redraft_decision_bundle_v2_returns_a_real_challenger_bundle(
     assert bundle["v1"]["candidates"]
     assert len(bundle["v1"]["candidates"]) == 8
 
+    # Raw Action Value / expected regret / decision-quality percentile
+    # reach the real HTTP-facing JSON for the top candidates (top-N cost
+    # control -- not every one of the 8 candidates is expected to have it).
+    with_rav = [c for c in bundle["candidates"] if c["rawActionValueStatus"] == "OK"]
+    assert with_rav, "expected at least one candidate with a real Raw Action Value"
+    for candidate in with_rav:
+        assert candidate["rawActionValue"] is not None
+        objective = candidate["rawActionValue"]["terminal_objective_name"]
+        assert objective == "TERMINAL_OBJECTIVE_TEAM_SCORE"
+        assert candidate["expectedRegret"] is not None
+        assert candidate["expectedRegret"] >= 0.0
+    skipped = [c for c in bundle["candidates"] if c["rawActionValueStatus"] == "SKIPPED_TOP_N_ONLY"]
+    assert skipped, "expected some candidates beyond max_rav_candidates to be explicitly skipped"
+
 
 def test_redraft_decision_bundle_v2_degrades_gracefully_for_unsupported_team_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
