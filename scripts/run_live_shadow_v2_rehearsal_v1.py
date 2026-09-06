@@ -33,6 +33,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.services.decision_bundle_live_service_v2 import (  # noqa: E402
     build_live_decision_bundle_v2,
 )
+from src.services.prospective_decision_log_v1_service import (  # noqa: E402
+    append_prospective_decision,
+    build_candidate_snapshot_from_bundles,
+    build_owner_action_record,
+    build_recommendation_record,
+    read_prospective_decisions,
+)
 from src.services.redraft_draft_room_v1_service import (  # noqa: E402
     AdpSnapshot,
     advance_cpu_to_owner,
@@ -126,6 +133,7 @@ def rehearse_one_league(team_count: int, *, rounds: int = 5) -> dict:
         profile, ranking, manual_assets, adp, trials=2, base_seed=team_count
     )
     root = tempfile.mkdtemp(prefix=f"nwr_rehearsal_{team_count}team_")
+    prospective_log_root = tempfile.mkdtemp(prefix=f"nwr_rehearsal_prospective_{team_count}team_")
 
     result: dict = {
         "team_count": team_count,
@@ -204,8 +212,50 @@ def rehearse_one_league(team_count: int, *, rounds: int = 5) -> dict:
             if top_pick is None:
                 log(f"round{round_index}_owner_pick", False, "no candidate available")
                 break
+
+            v2_by_id = {c.player_id: c for c in bundle.candidates}
+            snapshots = [
+                build_candidate_snapshot_from_bundles(
+                    v1_candidate=c,
+                    v2_candidate=v2_by_id.get(c.player_id),
+                    position=c.player_id.split("-")[0],
+                    player_name=c.player_id,
+                )
+                for c in bundle.v1_bundle.candidates
+            ]
+            rec = build_recommendation_record(
+                profile_id=profile.profile_id,
+                timestamp_utc="2026-09-06T00:00:00Z",
+                source_as_of=SYNTHETIC_LABEL,
+                league_config_summary={"team_count": team_count},
+                pick_number=len(state["picks"]) + 1,
+                draft_slot=1,
+                owner_roster_before=[
+                    p["player_id"] for p in state.get("picks", []) if p.get("team_slot") == 1
+                ],
+                available_pool_size=len(ranking.rows),
+                candidates=snapshots,
+                model_versions={
+                    "decision_bundle_v2": bundle.version,
+                    "team_score_v2": bundle.current_team_score_v2["model_version"]
+                    if bundle.current_team_score_v2
+                    else "UNAVAILABLE",
+                },
+            )
+            append_prospective_decision(prospective_log_root, rec)
+
             state = owner_pick_and_advance(
                 root, profile, ranking, manual_assets, adp, player_id=top_pick
+            )
+            append_prospective_decision(
+                prospective_log_root,
+                build_owner_action_record(
+                    profile_id=profile.profile_id,
+                    timestamp_utc="2026-09-06T00:00:01Z",
+                    resolves_decision_id=rec.decision_id,
+                    nwr_recommended_player_id=rec.nwr_recommended_player_id,
+                    owner_actual_player_id=top_pick,
+                ),
             )
             log(f"round{round_index}_owner_pick", True, f"picked {top_pick}")
             log(
@@ -247,6 +297,9 @@ def rehearse_one_league(team_count: int, *, rounds: int = 5) -> dict:
     if latencies:
         result["latencies_seconds"]["recommendation_mean"] = round(statistics.fmean(latencies), 4)
         result["latencies_seconds"]["recommendation_max"] = round(max(latencies), 4)
+    prospective_rows = read_prospective_decisions(prospective_log_root, profile.profile_id)
+    result["prospective_log_root"] = prospective_log_root
+    result["prospective_log_row_count"] = len(prospective_rows)
     result["ok"] = not result["errors"]
     return result
 

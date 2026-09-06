@@ -1,0 +1,772 @@
+{
+  "8": {
+    "team_count": 8,
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_8team_tuyhe770",
+    "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
+    "steps": [
+      {
+        "step": "A_fresh_practice_draft_startup",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "B_set_league_config",
+        "ok": true,
+        "detail": "team_count=8, roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=5)"
+      },
+      {
+        "step": "C_set_draft_slot",
+        "ok": true,
+        "detail": "owner_slot=1"
+      },
+      {
+        "step": "round0_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round0_owner_pick",
+        "ok": true,
+        "detail": "picked QB-0"
+      },
+      {
+        "step": "round0_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=15"
+      },
+      {
+        "step": "round0_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=15"
+      },
+      {
+        "step": "round1_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round1_owner_pick",
+        "ok": true,
+        "detail": "picked QB-14"
+      },
+      {
+        "step": "round1_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=16"
+      },
+      {
+        "step": "round1_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=16"
+      },
+      {
+        "step": "round2_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round2_owner_pick",
+        "ok": true,
+        "detail": "picked RB-3"
+      },
+      {
+        "step": "round2_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=31"
+      },
+      {
+        "step": "round2_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=31"
+      },
+      {
+        "step": "round3_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round3_owner_pick",
+        "ok": true,
+        "detail": "picked RB-14"
+      },
+      {
+        "step": "round3_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=32"
+      },
+      {
+        "step": "round3_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=32"
+      },
+      {
+        "step": "round4_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round4_owner_pick",
+        "ok": true,
+        "detail": "picked RB-15"
+      },
+      {
+        "step": "round4_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=40"
+      },
+      {
+        "step": "round4_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=40"
+      },
+      {
+        "step": "N_undo_owner_pick",
+        "ok": true,
+        "detail": "40 -> 39"
+      },
+      {
+        "step": "resume_after_undo_advance_cpu_to_owner",
+        "ok": true,
+        "detail": "picks so far=40"
+      },
+      {
+        "step": "reset_draft",
+        "ok": true,
+        "detail": "picks after reset (CPU auto-advance included)=0"
+      }
+    ],
+    "latencies_seconds": {
+      "cold_start_and_cpu_advance": 0.0014,
+      "recommendation_per_pick": [
+        0.1718,
+        0.062,
+        0.1291,
+        0.0264,
+        0.0593
+      ],
+      "recommendation_mean": 0.0897,
+      "recommendation_max": 0.1718
+    },
+    "errors": [],
+    "first_bundle_v2_status": "OK",
+    "first_bundle_current_team_score_v2": {
+      "calibrated_score": 0.0,
+      "team_count": 8,
+      "model_version": "team-score-v2-multi-league-20260905",
+      "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+      "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+    },
+    "first_candidate_sample": {
+      "player_id": "QB-0",
+      "pick_score": 100.0,
+      "player_score": 399.0,
+      "team_score_v2": {
+        "candidate_player_id": "QB-0",
+        "current_team_score": 0.0,
+        "post_pick_team_score": 0.0,
+        "team_score_delta": 0.0,
+        "team_count": 8,
+        "model_version": "team-score-v2-multi-league-20260905",
+        "league_calibration": {
+          "slope": 1.0191,
+          "intercept": -0.0532
+        },
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+      },
+      "championship_equity_v2": {
+        "candidate_player_id": "QB-0",
+        "current_championship_equity": 0.0,
+        "post_pick_championship_equity": 0.0118,
+        "championship_equity_delta": 0.0118,
+        "team_count": 8,
+        "model_version": "championship-equity-v2-multi-league-20260906",
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "ranking_evidence": "NOT DECISIVE -- augmenting the raw baseline with Team Score V2 did not clearly improve ranking (Spearman) over championship_equity() alone in the historical validation. See NWR_CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE_REPORT.",
+        "calibration_evidence": "DECISIVE -- this model's calibrated probability carries 2x-5x lower absolute error against the real outcome oracle than the raw baseline alone, at every validated team_count.",
+        "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
+      }
+    },
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_8team_z6e4m0x1",
+    "prospective_log_row_count": 10,
+    "ok": true
+  },
+  "10": {
+    "team_count": 10,
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_10team_f5z7y_rj",
+    "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
+    "steps": [
+      {
+        "step": "A_fresh_practice_draft_startup",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "B_set_league_config",
+        "ok": true,
+        "detail": "team_count=10, roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=5)"
+      },
+      {
+        "step": "C_set_draft_slot",
+        "ok": true,
+        "detail": "owner_slot=1"
+      },
+      {
+        "step": "round0_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round0_owner_pick",
+        "ok": true,
+        "detail": "picked QB-4"
+      },
+      {
+        "step": "round0_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=19"
+      },
+      {
+        "step": "round0_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=19"
+      },
+      {
+        "step": "round1_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round1_owner_pick",
+        "ok": true,
+        "detail": "picked QB-17"
+      },
+      {
+        "step": "round1_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=20"
+      },
+      {
+        "step": "round1_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=20"
+      },
+      {
+        "step": "round2_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round2_owner_pick",
+        "ok": true,
+        "detail": "picked RB-4"
+      },
+      {
+        "step": "round2_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=39"
+      },
+      {
+        "step": "round2_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=39"
+      },
+      {
+        "step": "round3_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round3_owner_pick",
+        "ok": true,
+        "detail": "picked RB-19"
+      },
+      {
+        "step": "round3_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=40"
+      },
+      {
+        "step": "round3_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=40"
+      },
+      {
+        "step": "round4_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round4_owner_pick",
+        "ok": true,
+        "detail": "picked RB-20"
+      },
+      {
+        "step": "round4_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=50"
+      },
+      {
+        "step": "round4_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=50"
+      },
+      {
+        "step": "N_undo_owner_pick",
+        "ok": true,
+        "detail": "50 -> 49"
+      },
+      {
+        "step": "resume_after_undo_advance_cpu_to_owner",
+        "ok": true,
+        "detail": "picks so far=50"
+      },
+      {
+        "step": "reset_draft",
+        "ok": true,
+        "detail": "picks after reset (CPU auto-advance included)=0"
+      }
+    ],
+    "latencies_seconds": {
+      "cold_start_and_cpu_advance": 0.0031,
+      "recommendation_per_pick": [
+        0.2131,
+        0.0768,
+        0.1609,
+        0.032,
+        0.075
+      ],
+      "recommendation_mean": 0.1116,
+      "recommendation_max": 0.2131
+    },
+    "errors": [],
+    "first_bundle_v2_status": "OK",
+    "first_bundle_current_team_score_v2": {
+      "calibrated_score": 0.0,
+      "team_count": 10,
+      "model_version": "team-score-v2-multi-league-20260905",
+      "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+      "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+    },
+    "first_candidate_sample": {
+      "player_id": "QB-4",
+      "pick_score": 100.0,
+      "player_score": 395.0,
+      "team_score_v2": {
+        "candidate_player_id": "QB-0",
+        "current_team_score": 0.0,
+        "post_pick_team_score": 0.0,
+        "team_score_delta": 0.0,
+        "team_count": 10,
+        "model_version": "team-score-v2-multi-league-20260905",
+        "league_calibration": {
+          "slope": 0.9781,
+          "intercept": 0.6384
+        },
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+      },
+      "championship_equity_v2": {
+        "candidate_player_id": "QB-0",
+        "current_championship_equity": 0.0,
+        "post_pick_championship_equity": 0.0086,
+        "championship_equity_delta": 0.0086,
+        "team_count": 10,
+        "model_version": "championship-equity-v2-multi-league-20260906",
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "ranking_evidence": "NOT DECISIVE -- augmenting the raw baseline with Team Score V2 did not clearly improve ranking (Spearman) over championship_equity() alone in the historical validation. See NWR_CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE_REPORT.",
+        "calibration_evidence": "DECISIVE -- this model's calibrated probability carries 2x-5x lower absolute error against the real outcome oracle than the raw baseline alone, at every validated team_count.",
+        "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
+      }
+    },
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_10team_rn317vwg",
+    "prospective_log_row_count": 10,
+    "ok": true
+  },
+  "12": {
+    "team_count": 12,
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_12team_qb301ns9",
+    "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
+    "steps": [
+      {
+        "step": "A_fresh_practice_draft_startup",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "B_set_league_config",
+        "ok": true,
+        "detail": "team_count=12, roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=5)"
+      },
+      {
+        "step": "C_set_draft_slot",
+        "ok": true,
+        "detail": "owner_slot=1"
+      },
+      {
+        "step": "round0_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round0_owner_pick",
+        "ok": true,
+        "detail": "picked QB-3"
+      },
+      {
+        "step": "round0_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=23"
+      },
+      {
+        "step": "round0_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=23"
+      },
+      {
+        "step": "round1_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round1_owner_pick",
+        "ok": true,
+        "detail": "picked QB-17"
+      },
+      {
+        "step": "round1_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=24"
+      },
+      {
+        "step": "round1_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=24"
+      },
+      {
+        "step": "round2_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round2_owner_pick",
+        "ok": true,
+        "detail": "picked RB-5"
+      },
+      {
+        "step": "round2_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=47"
+      },
+      {
+        "step": "round2_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=47"
+      },
+      {
+        "step": "round3_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round3_owner_pick",
+        "ok": true,
+        "detail": "picked RB-21"
+      },
+      {
+        "step": "round3_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=48"
+      },
+      {
+        "step": "round3_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=48"
+      },
+      {
+        "step": "round4_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round4_owner_pick",
+        "ok": true,
+        "detail": "picked RB-23"
+      },
+      {
+        "step": "round4_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=60"
+      },
+      {
+        "step": "round4_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=60"
+      },
+      {
+        "step": "N_undo_owner_pick",
+        "ok": true,
+        "detail": "60 -> 59"
+      },
+      {
+        "step": "resume_after_undo_advance_cpu_to_owner",
+        "ok": true,
+        "detail": "picks so far=60"
+      },
+      {
+        "step": "reset_draft",
+        "ok": true,
+        "detail": "picks after reset (CPU auto-advance included)=0"
+      }
+    ],
+    "latencies_seconds": {
+      "cold_start_and_cpu_advance": 0.0027,
+      "recommendation_per_pick": [
+        0.2623,
+        0.0927,
+        0.1945,
+        0.0379,
+        0.0899
+      ],
+      "recommendation_mean": 0.1355,
+      "recommendation_max": 0.2623
+    },
+    "errors": [],
+    "first_bundle_v2_status": "OK",
+    "first_bundle_current_team_score_v2": {
+      "calibrated_score": 0.0,
+      "team_count": 12,
+      "model_version": "team-score-v2-multi-league-20260905",
+      "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+      "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+    },
+    "first_candidate_sample": {
+      "player_id": "QB-3",
+      "pick_score": 100.0,
+      "player_score": 396.0,
+      "team_score_v2": {
+        "candidate_player_id": "QB-0",
+        "current_team_score": 0.0,
+        "post_pick_team_score": 0.0,
+        "team_score_delta": 0.0,
+        "team_count": 12,
+        "model_version": "team-score-v2-multi-league-20260905",
+        "league_calibration": {
+          "slope": 1.0312,
+          "intercept": -2.2712
+        },
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+      },
+      "championship_equity_v2": {
+        "candidate_player_id": "QB-0",
+        "current_championship_equity": 0.0005,
+        "post_pick_championship_equity": 0.0038,
+        "championship_equity_delta": 0.0033,
+        "team_count": 12,
+        "model_version": "championship-equity-v2-multi-league-20260906",
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "ranking_evidence": "NOT DECISIVE -- augmenting the raw baseline with Team Score V2 did not clearly improve ranking (Spearman) over championship_equity() alone in the historical validation. See NWR_CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE_REPORT.",
+        "calibration_evidence": "DECISIVE -- this model's calibrated probability carries 2x-5x lower absolute error against the real outcome oracle than the raw baseline alone, at every validated team_count.",
+        "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
+      }
+    },
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_12team_wn16tdhj",
+    "prospective_log_row_count": 10,
+    "ok": true
+  },
+  "16": {
+    "team_count": 16,
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_16team_l1ainuh7",
+    "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
+    "steps": [
+      {
+        "step": "A_fresh_practice_draft_startup",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "B_set_league_config",
+        "ok": true,
+        "detail": "team_count=16, roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=5)"
+      },
+      {
+        "step": "C_set_draft_slot",
+        "ok": true,
+        "detail": "owner_slot=1"
+      },
+      {
+        "step": "round0_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round0_owner_pick",
+        "ok": true,
+        "detail": "picked QB-0"
+      },
+      {
+        "step": "round0_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=31"
+      },
+      {
+        "step": "round0_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=31"
+      },
+      {
+        "step": "round1_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round1_owner_pick",
+        "ok": true,
+        "detail": "picked QB-20"
+      },
+      {
+        "step": "round1_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=32"
+      },
+      {
+        "step": "round1_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=32"
+      },
+      {
+        "step": "round2_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round2_owner_pick",
+        "ok": true,
+        "detail": "picked RB-8"
+      },
+      {
+        "step": "round2_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=63"
+      },
+      {
+        "step": "round2_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=63"
+      },
+      {
+        "step": "round3_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round3_owner_pick",
+        "ok": true,
+        "detail": "picked RB-38"
+      },
+      {
+        "step": "round3_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=64"
+      },
+      {
+        "step": "round3_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=64"
+      },
+      {
+        "step": "round4_recommendation",
+        "ok": true,
+        "detail": "v2_status=OK, n_candidates=8"
+      },
+      {
+        "step": "round4_owner_pick",
+        "ok": true,
+        "detail": "picked RB-39"
+      },
+      {
+        "step": "round4_verify_candidate_disappears",
+        "ok": true,
+        "detail": "drafted count=80"
+      },
+      {
+        "step": "round4_verify_roster_update",
+        "ok": true,
+        "detail": "picks so far=80"
+      },
+      {
+        "step": "N_undo_owner_pick",
+        "ok": true,
+        "detail": "80 -> 79"
+      },
+      {
+        "step": "resume_after_undo_advance_cpu_to_owner",
+        "ok": true,
+        "detail": "picks so far=80"
+      },
+      {
+        "step": "reset_draft",
+        "ok": true,
+        "detail": "picks after reset (CPU auto-advance included)=0"
+      }
+    ],
+    "latencies_seconds": {
+      "cold_start_and_cpu_advance": 0.0026,
+      "recommendation_per_pick": [
+        0.364,
+        0.1237,
+        0.2599,
+        0.0476,
+        0.1153
+      ],
+      "recommendation_mean": 0.1821,
+      "recommendation_max": 0.364
+    },
+    "errors": [],
+    "first_bundle_v2_status": "OK",
+    "first_bundle_current_team_score_v2": {
+      "calibrated_score": 0.0,
+      "team_count": 16,
+      "model_version": "team-score-v2-multi-league-20260905",
+      "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+      "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+    },
+    "first_candidate_sample": {
+      "player_id": "QB-0",
+      "pick_score": 50.0,
+      "player_score": 399.0,
+      "team_score_v2": {
+        "candidate_player_id": "QB-0",
+        "current_team_score": 0.0,
+        "post_pick_team_score": 0.0,
+        "team_score_delta": 0.0,
+        "team_count": 16,
+        "model_version": "team-score-v2-multi-league-20260905",
+        "league_calibration": {
+          "slope": 0.912,
+          "intercept": 3.7288
+        },
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
+      },
+      "championship_equity_v2": {
+        "candidate_player_id": "QB-0",
+        "current_championship_equity": 0.0,
+        "post_pick_championship_equity": 0.0,
+        "championship_equity_delta": 0.0,
+        "team_count": 16,
+        "model_version": "championship-equity-v2-multi-league-20260906",
+        "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
+        "ranking_evidence": "NOT DECISIVE -- augmenting the raw baseline with Team Score V2 did not clearly improve ranking (Spearman) over championship_equity() alone in the historical validation. See NWR_CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE_REPORT.",
+        "calibration_evidence": "DECISIVE -- this model's calibrated probability carries 2x-5x lower absolute error against the real outcome oracle than the raw baseline alone, at every validated team_count.",
+        "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
+      }
+    },
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_16team_wcmicqfe",
+    "prospective_log_row_count": 10,
+    "ok": true
+  }
+}
+
+OVERALL: GREEN_ALL_LEAGUE_SIZES_REHEARSED_CLEAN

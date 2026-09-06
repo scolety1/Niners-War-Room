@@ -1,0 +1,28 @@
+{
+  "algorithm_parameters": {},
+  "calibration_dataset_sha": "",
+  "challenger_id": "decision-bundle-v2-team-score-championship-equity-v1",
+  "challenger_module": "src.services.decision_bundle_service_v2",
+  "challenger_name": "DECISION_BUNDLE_V2_MULTI_LEAGUE_CHALLENGER_V1",
+  "champion_name": "decision_bundle_service.build_decision_bundle (V1: shadow_numeric_authorities_service.team_score/championship_equity)",
+  "code_sha": "406fe2236e3dccf0ffc9c5bf88c8a1cb56c66b81a443a45c4a8334940826e462+880fa80cbf4eeca0d2a18bb479ce0a555a02276767330d4cfbd01de85b5d1c00",
+  "evaluation_dataset_sha": "",
+  "evaluation_summary": {
+    "championship_equity_v2_2025_holdout_brier_skill_score": 0.0087,
+    "championship_equity_v2_2025_holdout_spearman": 0.223,
+    "final_holdout_commit": "33327ee3fb96840e3e47fc4ca09405f9941d121e",
+    "frozen_candidate_commit": "d55bab2c14591172f662a09c627d90af551fa38a",
+    "known_limitation": "Championship Equity V2 ranking evidence is NOT_DECISIVE per its own frozen report -- calibration evidence is decisive, ranking evidence is not. Real owner leagues will report TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED (not HISTORICALLY_VALIDATED), since no real league matches the thin roster shape the multi-league historical corpus validated against.",
+    "source_report": "docs/codex/NWR_FINAL_2025_HOLDOUT_EVALUATION_V1_RESULT_20260906.md",
+    "team_score_v2_2025_holdout_pearson": 0.765,
+    "team_score_v2_2025_holdout_spearman": 0.764,
+    "verdict": "GREEN_2025_FINAL_HOLDOUT_PASSED"
+  },
+  "feature_set_sha": "",
+  "hypothesis": "Team Score V2 (league-size-generalized, multi-league-transport-validated) and Championship Equity V2 (compositional recalibration on top of V1 win probability + Team Score V2) produce a more decisively-validated roster-strength and title-odds signal than the live V1 shadow_numeric_authorities_service.team_score()/championship_equity() pair, specifically because V2 was independently evaluated against the real, sealed, one-time 2025 historical holdout (never previously exposed to any model-selection decision in this program), whereas V1 has no equivalent sealed-holdout evidence of its own.",
+  "parent": null,
+  "registered_at_utc": "2026-09-06T00:00:00Z",
+  "registered_by": "Claude Sonnet 5 (NWR Big-Draft Readiness Overnight V1, autonomous overnight session)",
+  "schema_version": 1,
+  "training_dataset_sha": ""
+}
