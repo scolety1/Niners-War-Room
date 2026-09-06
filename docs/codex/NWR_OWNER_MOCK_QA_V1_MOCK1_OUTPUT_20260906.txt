@@ -1,0 +1,335 @@
+{
+  "mock": "1_normal",
+  "profile_id": "4b4a990faf124ce7a5d612537ba5943b",
+  "picks": [
+    {
+      "round": 0,
+      "top_recommendation": {
+        "playerId": "00-0033280",
+        "playerName": "Christian McCaffrey",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0036223",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0039139",
+          "pickScore": 25.0
+        },
+        {
+          "playerId": "00-0037248",
+          "pickScore": 0.0
+        }
+      ],
+      "current_team_score": 0.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 100.0,
+      "championship_equity_after_top": 0.45,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 0.0,
+      "evidence": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "latency_seconds": 2.042
+    },
+    {
+      "round": 1,
+      "top_recommendation": {
+        "playerId": "00-0032764",
+        "playerName": "Derrick Henry",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0036971",
+          "pickScore": 25.0
+        },
+        {
+          "playerId": "00-0034857",
+          "pickScore": 0.0
+        },
+        {
+          "playerId": "00-0037840",
+          "pickScore": 0.0
+        }
+      ],
+      "current_team_score": 0.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 100.0,
+      "championship_equity_after_top": 0.45,
+      "cost_of_waiting_top": 5.0,
+      "make_it_back_top": 0.5,
+      "evidence": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "latency_seconds": 1.721
+    },
+    {
+      "round": 2,
+      "top_recommendation": {
+        "playerId": "00-0034857",
+        "playerName": "Josh Allen",
+        "position": "QB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0037840",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0026498",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0036971",
+          "pickScore": 100.0
+        }
+      ],
+      "current_team_score": 0.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 100.0,
+      "championship_equity_after_top": 0.45,
+      "cost_of_waiting_top": 10.0,
+      "make_it_back_top": 0.0,
+      "evidence": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "latency_seconds": 1.709
+    },
+    {
+      "round": 3,
+      "top_recommendation": {
+        "playerId": "00-0037840",
+        "playerName": "Kyren Williams",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0026498",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0039851",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0036971",
+          "pickScore": 100.0
+        }
+      ],
+      "current_team_score": 35.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 65.0,
+      "championship_equity_after_top": 0.45,
+      "cost_of_waiting_top": 10.0,
+      "make_it_back_top": 0.0,
+      "evidence": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "latency_seconds": 1.598
+    },
+    {
+      "round": 4,
+      "top_recommendation": {
+        "playerId": "00-0036139",
+        "playerName": "Rico Dowdle",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0037228",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0026498",
+          "pickScore": 0.0
+        },
+        {
+          "playerId": "00-0036971",
+          "pickScore": 0.0
+        }
+      ],
+      "current_team_score": 75.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 25.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 1.0,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.0671)",
+      "latency_seconds": 1.546
+    },
+    {
+      "round": 5,
+      "top_recommendation": {
+        "playerId": "00-0026498",
+        "playerName": "Matthew Stafford",
+        "position": "QB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0036971",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0039918",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0033077",
+          "pickScore": 100.0
+        }
+      ],
+      "current_team_score": 75.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 25.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 1.0,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.0671)",
+      "latency_seconds": 1.375
+    },
+    {
+      "round": 6,
+      "top_recommendation": {
+        "playerId": "00-0037228",
+        "playerName": "Jaylen Warren",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0034348",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0038559",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0039165",
+          "pickScore": 33.3
+        }
+      ],
+      "current_team_score": 75.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 25.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 1.0,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.0671)",
+      "latency_seconds": 1.286
+    },
+    {
+      "round": 7,
+      "top_recommendation": {
+        "playerId": "00-0034348",
+        "playerName": "Courtland Sutton",
+        "position": "WR",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0038559",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0037664",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0039165",
+          "pickScore": 33.3
+        }
+      ],
+      "current_team_score": 75.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 25.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 0.5,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.0671)",
+      "latency_seconds": 1.115
+    },
+    {
+      "round": 8,
+      "top_recommendation": {
+        "playerId": "00-0037664",
+        "playerName": "Alec Pierce",
+        "position": "WR",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0040730",
+          "pickScore": 0.0
+        },
+        {
+          "playerId": "00-0039165",
+          "pickScore": 0.0
+        },
+        {
+          "playerId": "00-0035261",
+          "pickScore": 0.0
+        }
+      ],
+      "current_team_score": 90.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 10.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 0.0,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.0798)",
+      "latency_seconds": 1.049
+    },
+    {
+      "round": 9,
+      "top_recommendation": {
+        "playerId": "00-0040730",
+        "playerName": "RJ Harvey",
+        "position": "RB",
+        "pickScore": 100.0
+      },
+      "alternatives": [
+        {
+          "playerId": "00-0039165",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0040242",
+          "pickScore": 100.0
+        },
+        {
+          "playerId": "00-0034351",
+          "pickScore": 100.0
+        }
+      ],
+      "current_team_score": 90.0,
+      "team_score_after_top": 100.0,
+      "team_score_delta_top": 10.0,
+      "championship_equity_after_top": 0.55,
+      "cost_of_waiting_top": 0.0,
+      "make_it_back_top": 0.0,
+      "evidence": "HIGH_MODEL_UNCERTAINTY (SE=0.1025)",
+      "latency_seconds": 0.84
+    }
+  ],
+  "flags": [],
+  "latencies": [
+    2.042,
+    1.721,
+    1.709,
+    1.598,
+    1.546,
+    1.375,
+    1.286,
+    1.115,
+    1.049,
+    0.84
+  ],
+  "prospective_log_row_count": 40,
+  "latency_summary": {
+    "min": 0.84,
+    "max": 2.042,
+    "mean": 1.428
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "mock": "2_stress",
+  "flags": [],
+  "checks": [
+    {
+      "check": "data_limited_rookies_visible_on_board",
+      "ok": false,
+      "detail": "0 found"
+    },
+    {
+      "check": "manual_k_dst_visible_on_board",
+      "ok": false,
+      "detail": "0 found (K+DST)"
+    },
+    {
+      "check": "early_qb_available_in_top8",
+      "ok": false,
+      "detail": "no QB in FAST top-8 candidates"
+    },
+    {
+      "check": "rb_run_did_not_produce_pathological_hoarding",
+      "ok": true,
+      "detail": "max RB count reached: 6"
+    },
+    {
+      "check": "no_duplicate_players_on_roster",
+      "ok": true,
+      "detail": "6 picks"
+    },
+    {
+      "check": "undo_after_wrong_pick_restores_exact_state",
+      "ok": false,
+      "detail": "62 -> 76"
+    },
+    {
+      "check": "undone_player_no_longer_drafted",
+      "ok": false,
+      "detail": "00-0039165"
+    },
+    {
+      "check": "repeated_undo_never_crashes_even_past_pick_zero",
+      "ok": true,
+      "detail": "['ok', 'ok', 'ok']"
+    },
+    {
+      "check": "reset_produces_clean_state",
+      "ok": true,
+      "detail": "start_redraft_draft_room re-ran without error"
+    }
+  ],
+  "latencies": [
+    2.105,
+    1.64,
+    1.891,
+    1.347,
+    1.471,
+    1.109
+  ],
+  "rb_run_position_counts_over_time": [
+    {
+      "RB": 2
+    },
+    {
+      "RB": 3
+    },
+    {
+      "RB": 4
+    },
+    {
+      "RB": 5
+    },
+    {
+      "RB": 6
+    }
+  ],
+  "latency_summary": {
+    "min": 1.109,
+    "max": 2.105,
+    "mean": 1.594,
+    "count_over_2s": 1
+  }
+}
