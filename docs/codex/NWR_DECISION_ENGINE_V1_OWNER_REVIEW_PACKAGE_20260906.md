@@ -1,5 +1,7 @@
 # NWR DECISION ENGINE V1 — OWNER REVIEW PACKAGE
 
+> **Before reading further, see `NWR_BIG_DRAFT_FINAL_RUNBOOK_20260907.md` first** — a real, important finding: neither of your two real non-completed leagues is actually scheduled for "tomorrow" (KHA already drafted; Fantasy Gamers Sleeper draft is real but scheduled 2026-09-09).
+
 **For Spencer Colety's review. This package explains what has been validated, exactly how it would enter the live Draft Room if adopted, and what it does NOT change today. No production promotion has occurred.**
 
 ## 1. What "historically validated" means here
