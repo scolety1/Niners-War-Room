@@ -3,20 +3,6 @@
   "approval_status": "APPROVED_FOR_REDRAFT_V1",
   "approved_at_utc": "2026-08-09T01:52:00-06:00",
   "approved_by": "NWR Owner",
-  "renewal_record": {
-    "renewed_at_utc": "2026-09-06T00:00:00+00:00",
-    "renewed_by": "Spencer Colety, explicit in-session authorization, 2026-09-06",
-    "renewal_reason": "The prior receipt (valid_from 2026-08-09, valid_until 2026-08-29) had expired -- found during a real mock-draft QA pass, confirmed as the root cause of a real pre-existing test failure (test_validate_admitted_redraft_2026_combined.py::test_combined_governed_snapshot_installs_and_validates). Renewed for the limited, explicit purpose of: practice/mock drafting, preparing for the upcoming 403 N 18th and friends ESPN draft (2026-09-07), current governed recommendation generation, and prospective decision logging.",
-    "renewal_conditions": [
-      "No projection value, formula, or model weight changed -- source_sha256/finalization_contract/player_counts below are byte-identical to the prior (expired) receipt",
-      "The prior expired receipt is preserved unedited at archive_20260829_expired_governance_receipt/NWR_DATA_GOVERNANCE.json, not deleted",
-      "Uses the same real governance mechanism (install_projection_snapshot) already used for the local install's own practice-approval renewal earlier this program -- no bypass",
-      "Does not authorize model retraining, retuning, or any historical holdout access"
-    ],
-    "prior_valid_from": "2026-08-09",
-    "prior_valid_until": "2026-08-29",
-    "prior_receipt_archive_path": "archive_20260829_expired_governance_receipt/NWR_DATA_GOVERNANCE.json"
-  },
   "approved_candidate_sha256": "c62a47ffa3ed8746675225225be473da0dbe7f1313842c769dafbcd6709499bc",
   "approved_combined_review_sha256": "218eb5068b30e4441ae6426967f7ea5ce2a47ed3c81686663d5bd155bc45e31f",
   "approved_veteran_sha256": "6ee6dbff41e238fb925c8d8d4b5e5079f48de71b132888e5c75fea34e9831c63",
@@ -82,5 +68,5 @@
   "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V1",
   "source_sha256": "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25",
   "valid_from": "2026-08-09",
-  "valid_until": "2026-09-09"
+  "valid_until": "2026-08-29"
 }
