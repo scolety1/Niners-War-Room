@@ -62,6 +62,7 @@ from src.services.decision_bundle_live_service import (
     LiveDecisionBundleUnavailable,
     build_live_decision_bundle,
 )
+from src.services.decision_bundle_live_service_v2 import build_live_decision_bundle_v2
 from src.services.point_in_time_feature_store_service import provenance_hash
 from src.services.score_provenance_service import build_score_provenance
 from src.services.shadow_numeric_authorities_service import simulate_comparable_leagues
@@ -2803,6 +2804,97 @@ class DesktopBackendFacade:
             }
         )
 
+    def redraft_decision_bundle_v2(
+        self, *, profile_id: str, speed: str = "FAST",
+    ) -> FacadePayload:
+        """The historically-validated CHALLENGER DecisionBundle (NWR
+        Big-Draft Readiness Overnight V1) -- a SEPARATE, explicitly opt-in
+        endpoint. Composes Team Score V2 / Championship Equity V2 on top of
+        the exact same real live draft state `redraft_decision_bundle()`
+        already reads; it never modifies that method or its response, and
+        nothing calls this endpoint unless a caller deliberately requests
+        it. Degrades gracefully (never raises) for an unsupported
+        team_count or a missing frozen-model file -- the underlying V1
+        fields are always still returned. Decision Confidence is never
+        computed or exposed here (remains NOT_VALIDATED, diagnostic-only,
+        out of scope for this endpoint by design)."""
+        preset = DECISION_BUNDLE_SPEED_PRESETS.get(str(speed).upper())
+        if preset is None:
+            raise FacadeError(
+                "REDRAFT_DECISION_BUNDLE_INVALID_SPEED",
+                f"Unknown DecisionBundle speed {speed!r}; expected one of "
+                f"{sorted(DECISION_BUNDLE_SPEED_PRESETS)}.",
+                status=400,
+            )
+        trials = preset["trials"]
+        seasons = preset["seasons"]
+        max_candidates = preset["maxCandidates"]
+
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        normalized = self._profile_id(profile_id)
+        adp = load_adp_snapshot(self.redraft_root, profile)
+        room_state = load_room_state(self.redraft_root, profile, ranking, manual_assets)
+
+        base_seed = 20260903
+        comparable_leagues_key = (
+            normalized, ranking.projection_sha256, adp.source_sha256, trials, base_seed,
+        )
+        with self._comparable_leagues_lock:
+            if comparable_leagues_key == self._comparable_leagues_key:
+                comparable_leagues = self._comparable_leagues_value
+            else:
+                comparable_leagues = simulate_comparable_leagues(
+                    profile, ranking, manual_assets, adp, trials=trials, base_seed=base_seed,
+                )
+                self._comparable_leagues_key = comparable_leagues_key
+                self._comparable_leagues_value = comparable_leagues
+
+        roster_state_hash = provenance_hash(
+            {"picks": [dict(p) for p in room_state.get("picks", [])]}
+        )
+        available_player_hash = provenance_hash(
+            {"drafted": sorted(str(v) for v in room_state.get("drafted", []))}
+        )
+        provenance = build_score_provenance(
+            league_profile_hash=provenance_hash(asdict(profile)),
+            roster_state_hash=roster_state_hash,
+            available_player_hash=available_player_hash,
+            universe_hash=ranking.projection_sha256,
+            projection_model_version=ranking.generated_at_utc,
+            market_snapshot_hash=adp.source_sha256,
+            feature_set_version="redraft-live-v1",
+            team_score_version="team-score-v2-multi-league-20260905",
+            championship_equity_version="championship-equity-v2-multi-league-20260906",
+            pick_score_version="pick-score-experimental-v1",
+            optimizer_version="decision-bundle-live-v2-challenger-v1",
+            seed=base_seed,
+            simulation_count=trials,
+            timestamp_utc=ranking.generated_at_utc,
+        )
+
+        result = build_live_decision_bundle_v2(
+            profile, ranking, manual_assets, adp, room_state,
+            comparable_leagues=comparable_leagues, provenance=provenance,
+            max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
+        )
+        resolved_speed = str(speed).upper()
+        if isinstance(result, LiveDecisionBundleUnavailable):
+            return FacadePayload(
+                data={
+                    "decisionBundleV2": {
+                        "available": False, "reason": result.reason, "speed": resolved_speed,
+                    }
+                }
+            )
+        return FacadePayload(
+            data={
+                "decisionBundleV2": {
+                    "available": True, "speed": resolved_speed,
+                    **_decision_bundle_v2_payload(result, ranking),
+                }
+            }
+        )
+
     def redraft_historical_replay_preview(self) -> FacadePayload:
         """Owner Test Candidate V1, section 12 (Path B) / section 13: a
         safe, read-only owner-test preview of the real 2026 KHA draft,
@@ -4090,6 +4182,37 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
         },
         "simulationMetadata": bundle.simulation_metadata,
         "latencySeconds": bundle.latency_seconds,
+    }
+
+
+def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
+    """Converts a real `decision_bundle_service_v2.DecisionBundleV2` into
+    the camelCase JSON shape a future Draft Room UI toggle would consume.
+    Nests the complete, unmodified V1 payload under `v1` so a caller (or a
+    future UI) can render V1 exactly as it already does today, plus the
+    additive `teamScoreV2`/`championshipEquityV2` fields per candidate --
+    never replaces or reorders anything V1 already returns."""
+    v1_by_id = {c.player_id: c for c in bundle_v2.v1_bundle.candidates}
+
+    def candidate_v2_payload(candidate: Any) -> dict[str, Any]:
+        v1_candidate = v1_by_id.get(candidate.player_id)
+        return {
+            "playerId": candidate.player_id,
+            "v2Status": candidate.v2_status,
+            "teamScoreV2": candidate.team_score_v2,
+            "championshipEquityV2": candidate.championship_equity_v2,
+            "pickScore": v1_candidate.pick_score if v1_candidate is not None else None,
+        }
+
+    return {
+        "version": bundle_v2.version,
+        "v2Status": bundle_v2.v2_status,
+        "teamCount": bundle_v2.team_count,
+        "evidenceContext": bundle_v2.evidence_context,
+        "currentTeamScoreV2": bundle_v2.current_team_score_v2,
+        "candidates": [candidate_v2_payload(c) for c in bundle_v2.candidates],
+        "warnings": list(bundle_v2.warnings),
+        "v1": _decision_bundle_payload(bundle_v2.v1_bundle, ranking),
     }
 
 

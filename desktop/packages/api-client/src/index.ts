@@ -36,6 +36,34 @@ import {
 const REQUEST_TIMEOUT_MS = 20_000;
 const STARTUP_RETRY_DELAYS_MS = [0, 160, 320, 640, 1_000, 1_600] as const;
 
+// NWR Big-Draft Readiness Overnight V1: declared locally (not yet added to
+// @nwr/contracts) to keep this an additive, low-risk client change. The
+// full `v1` field is the exact same shape as `RedraftDecisionBundleResponse`
+// (imported above) minus its own `available`/`speed` wrapper.
+export interface RedraftDecisionBundleV2CandidateResponse {
+  playerId: string;
+  v2Status: string;
+  teamScoreV2: Record<string, unknown> | null;
+  championshipEquityV2: Record<string, unknown> | null;
+  pickScore: number | null;
+}
+
+export interface RedraftDecisionBundleV2Response {
+  decisionBundleV2: {
+    available: boolean;
+    speed: "FAST" | "STANDARD" | "DEEP";
+    reason?: string;
+    version?: string;
+    v2Status?: string;
+    teamCount?: number;
+    evidenceContext?: Record<string, unknown>;
+    currentTeamScoreV2?: Record<string, unknown> | null;
+    candidates?: RedraftDecisionBundleV2CandidateResponse[];
+    warnings?: string[];
+    v1?: RedraftDecisionBundleResponse["decisionBundle"];
+  };
+}
+
 export class NwrApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -400,6 +428,28 @@ export class NwrApiClient {
       method: "POST",
       body: JSON.stringify({ speed }),
     });
+  }
+
+  // NWR Big-Draft Readiness Overnight V1: the historically-validated
+  // CHALLENGER DecisionBundle (Team Score V2 / Championship Equity V2 on
+  // top of the exact same live state, unmodified V1 fields nested under
+  // `v1`). Separate, additive endpoint -- calling this changes nothing
+  // about `getRedraftDecisionBundle()` above. No UI currently calls this;
+  // it exists so a future, explicit "VALIDATED ENGINE V2 -- SHADOW"
+  // toggle can be wired in without any backend work remaining. NOT YET
+  // build-verified against @nwr/contracts' real response typing in this
+  // session (no network access to install this package's dependencies)
+  // -- treat the return shape as unverified until a real `tsc`/build
+  // pass confirms it, even though the backend route itself is real and
+  // tested (see decision_bundle_service_v2.py).
+  getRedraftDecisionBundleV2(
+    profileId: string,
+    speed: "FAST" | "STANDARD" | "DEEP" = "FAST",
+  ): Promise<RedraftDecisionBundleV2Response> {
+    return this.request(
+      `/api/v1/redraft/draft/${encodeURIComponent(profileId)}/decision-bundle-v2`,
+      { method: "POST", body: JSON.stringify({ speed }) },
+    );
   }
 
   getKhaHistoricalReplayPreview(): Promise<RedraftHistoricalReplayPreviewResponse> {

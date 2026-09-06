@@ -52,6 +52,7 @@ _REDRAFT_PICK_FILL_GAP = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/fill-g
 _REDRAFT_PICK_CORRECTION_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick/undo-correction$")
 _REDRAFT_EXTERNAL_INTELLIGENCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/external-intelligence$")
 _REDRAFT_DECISION_BUNDLE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/decision-bundle$")
+_REDRAFT_DECISION_BUNDLE_V2 = re.compile(r"^/api/v1/redraft/draft/([^/]+)/decision-bundle-v2$")
 _REDRAFT_CATCH_UP_PREVIEW = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/preview$")
 _REDRAFT_CATCH_UP_APPLY = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/apply$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
@@ -228,6 +229,17 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 raise self._invalid_body("speed must be a string when supplied.")
             return self.server.facade.redraft_decision_bundle(
                 profile_id=unquote(decision_bundle_match.group(1)), speed=speed,
+            )
+
+        decision_bundle_v2_match = _REDRAFT_DECISION_BUNDLE_V2.fullmatch(path)
+        if method == "POST" and decision_bundle_v2_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, {"speed"})
+            speed = body.get("speed", "FAST")
+            if not isinstance(speed, str):
+                raise self._invalid_body("speed must be a string when supplied.")
+            return self.server.facade.redraft_decision_bundle_v2(
+                profile_id=unquote(decision_bundle_v2_match.group(1)), speed=speed,
             )
 
         if method == "GET" and path == "/api/v1/dynasty/trades":
