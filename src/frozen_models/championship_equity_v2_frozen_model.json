@@ -1,0 +1,74 @@
+{
+  "feature_names": [
+    "projected_win_probability",
+    "team_score_v2_calibrated",
+    "team_count"
+  ],
+  "feature_means": {
+    "projected_win_probability": 0.13176384096024005,
+    "team_score_v2_calibrated": 38.30094324533735,
+    "team_count": 11.245311327831958
+  },
+  "feature_stdevs": {
+    "projected_win_probability": 0.24863917287391094,
+    "team_score_v2_calibrated": 27.841626193088626,
+    "team_count": 2.8385915164564515
+  },
+  "weights": {
+    "projected_win_probability": 0.03036254983509115,
+    "team_score_v2_calibrated": 0.006134383076831047,
+    "team_count": -0.0007916255850322572
+  },
+  "intercept": 0.017489047261815452,
+  "alpha": 1.0,
+  "training_example_count": 1333,
+  "calibration_by_team_count": {
+    "8": {
+      "slope": 1.23521,
+      "intercept": -0.003215,
+      "n": 352
+    },
+    "10": {
+      "slope": 0.772674,
+      "intercept": -0.000346,
+      "n": 355
+    },
+    "12": {
+      "slope": 0.272651,
+      "intercept": 0.002473,
+      "n": 348
+    },
+    "16": {
+      "slope": 1.24469,
+      "intercept": 0.00319,
+      "n": 278
+    }
+  },
+  "training_seasons": [
+    2012,
+    2013,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "training_team_counts": [
+    8,
+    10,
+    12,
+    16
+  ],
+  "sealed_seasons_never_touched": [
+    2025
+  ],
+  "burned_seasons_used_only_as_development": [
+    2016,
+    2024
+  ],
+  "architecture": "SHARED_EQUITY_PLUS_LEAGUE_CALIBRATION: one shared ridge model on raw (projected_win_probability, team_score_v2_calibrated, team_count) -> oracle_win_probability directly, plus a light per-team_count linear recalibration. Validated via leave-one-season-out AND leave-one-team-count-out transport (see run_championship_equity_v2_model_ladder_v1.py output / NWR_CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE_REPORT).",
+  "depends_on_team_score_v2_model_version": "team-score-v2-multi-league-20260905",
+  "note": "Team Score V2's contribution to this model is DECISIVE FOR CALIBRATION (MAE reduced ~2x-5x vs. championship_equity() alone at every team_count) but NOT clearly decisive for RANKING (Spearman roughly ties the baseline alone) -- both findings reported honestly, not just the favorable one."
+}

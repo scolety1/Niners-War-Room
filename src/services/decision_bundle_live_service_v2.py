@@ -1,0 +1,131 @@
+"""Live DecisionBundle V2 -- the historically-validated CHALLENGER layer,
+bridged into the real live Draft Room state (NWR Big-Draft Readiness
+Overnight V1).
+
+Mirrors `decision_bundle_live_service.build_live_decision_bundle()` exactly
+(same room-state bridging, same real production candidate-legality and
+availability filters), but calls `decision_bundle_service_v2.
+build_decision_bundle_v2()` instead of the V1 composer. This file changes
+NOTHING about the live V1 path -- `decision_bundle_live_service.py` and
+`decision_bundle_service.py` are untouched and remain the default,
+unmodified authority. This is purely an additional, explicitly-opt-in
+CHALLENGER surface a caller must deliberately choose to use.
+"""
+
+from __future__ import annotations
+
+from collections import Counter
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from src.services.decision_bundle_live_service import (
+    LiveDecisionBundleError,
+    LiveDecisionBundleUnavailable,
+)
+from src.services.decision_bundle_service_v2 import DecisionBundleV2, build_decision_bundle_v2
+from src.services.redraft_draft_room_v1_service import (
+    AdpSnapshot,
+    _available_ranked,
+    _roster_candidate_allowed,
+    draft_order,
+)
+from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
+from src.services.score_provenance_service import ScoreProvenance
+from src.services.shadow_numeric_authorities_service import RosterPlayer
+
+LIVE_DECISION_BUNDLE_V2_VERSION = "decision-bundle-live-v2-challenger-v1"
+DEFAULT_MAX_CANDIDATES = 12
+
+
+def build_live_decision_bundle_v2(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    room_state: Mapping[str, Any],
+    *,
+    comparable_leagues: Sequence[dict[int, list[RosterPlayer]]],
+    provenance: ScoreProvenance,
+    max_candidates: int = DEFAULT_MAX_CANDIDATES,
+    include_cost_of_waiting: bool = True,
+    trials: int = 200,
+    seasons: int = 200,
+    base_seed: int = 20260903,
+) -> DecisionBundleV2 | LiveDecisionBundleUnavailable:
+    """Identical real-state bridging logic to
+    `build_live_decision_bundle()` -- deliberately duplicated rather than
+    imported-and-wrapped, so this challenger surface can never silently
+    drift out of sync with a private helper's signature changing
+    underneath it; both call the same real `_available_ranked` /
+    `_roster_candidate_allowed` / `draft_order` production functions."""
+    if not ranking.ready:
+        return LiveDecisionBundleUnavailable(
+            "The active Redraft ranking is not ready (blocked/errored) -- no "
+            "DecisionBundle can be computed from it."
+        )
+    owner_slot = room_state.get("owner_slot")
+    if not isinstance(owner_slot, int):
+        return LiveDecisionBundleUnavailable("Owner slot is not configured for this profile.")
+
+    order = draft_order(profile)
+    picks_so_far = len(room_state.get("picks", []))
+    current_pick_number = picks_so_far + 1
+    current_team_slot = order[picks_so_far] if picks_so_far < len(order) else None
+    if current_team_slot != owner_slot:
+        return LiveDecisionBundleUnavailable(
+            f"It is not currently the owner's turn (pick {current_pick_number} belongs to "
+            f"team {current_team_slot}) -- DecisionBundle recommendations are only computed "
+            "for the immediate next owner pick, never a hypothetical future turn."
+        )
+
+    drafted_ids = {str(value) for value in room_state.get("drafted", [])}
+    current_owner_player_ids = tuple(
+        str(pick["player_id"])
+        for pick in room_state.get("picks", [])
+        if pick.get("team_slot") == owner_slot and pick.get("player_id")
+    )
+    roster = Counter(
+        str(pick["position"])
+        for pick in room_state.get("picks", [])
+        if pick.get("team_slot") == owner_slot
+    )
+    available_rows = _available_ranked(ranking, room_state)
+    legal_rows = [
+        row
+        for row in available_rows
+        if _roster_candidate_allowed(profile, roster, {"position": row.position})
+    ]
+    if not legal_rows:
+        return LiveDecisionBundleUnavailable(
+            "No roster-legal available candidate exists at this pick (every open "
+            "position may already be at its configured maximum, or the player "
+            "universe is exhausted)."
+        )
+    candidate_rows = legal_rows[:max_candidates]
+    candidate_player_ids = [row.player_id for row in candidate_rows]
+    player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
+
+    bundle_v2 = build_decision_bundle_v2(
+        profile=profile,
+        ranking=ranking,
+        manual_assets=manual_assets,
+        adp=adp,
+        owner_slot=owner_slot,
+        current_owner_player_ids=current_owner_player_ids,
+        candidate_player_ids=candidate_player_ids,
+        comparable_leagues=comparable_leagues,
+        provenance=provenance,
+        player_scores=player_scores,
+        from_state=room_state,
+        include_cost_of_waiting=include_cost_of_waiting,
+        current_pick_number=current_pick_number,
+        trials=trials,
+        seasons=seasons,
+        base_seed=base_seed,
+    )
+    unresolved = [pid for pid in candidate_player_ids if pid in drafted_ids]
+    if unresolved:  # defensive -- should be impossible given _available_ranked's own filter
+        raise LiveDecisionBundleError(
+            f"Candidate player(s) {unresolved} are already drafted; refusing to score them."
+        )
+    return bundle_v2

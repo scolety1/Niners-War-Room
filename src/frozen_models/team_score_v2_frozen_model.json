@@ -1,0 +1,97 @@
+{
+  "feature_names": [
+    "nwr_rank_sum_pctile",
+    "optimal_lineup_pctile",
+    "all_roster_sum_pctile",
+    "market_adp_percentile_sum_pctile",
+    "team_count"
+  ],
+  "feature_means": {
+    "nwr_rank_sum_pctile": 45.02366483611795,
+    "optimal_lineup_pctile": 38.753594571299,
+    "all_roster_sum_pctile": 45.377549156618926,
+    "market_adp_percentile_sum_pctile": 45.08343518658597,
+    "team_count": 11.245311327831958
+  },
+  "feature_stdevs": {
+    "nwr_rank_sum_pctile": 30.80716419913112,
+    "optimal_lineup_pctile": 30.40649500136863,
+    "all_roster_sum_pctile": 27.04450843226319,
+    "market_adp_percentile_sum_pctile": 28.553561896574998,
+    "team_count": 2.8385915164564515
+  },
+  "weights": {
+    "nwr_rank_sum_pctile": 7.950756611507253,
+    "optimal_lineup_pctile": 18.020406896238498,
+    "all_roster_sum_pctile": -3.0212353312761113,
+    "market_adp_percentile_sum_pctile": 9.381851802755511,
+    "team_count": -0.8769586785856143
+  },
+  "intercept": 38.30822106328483,
+  "alpha": 1.0,
+  "training_example_count": 1333,
+  "calibration_by_team_count": {
+    "8": {
+      "slope": 1.0191,
+      "intercept": -0.0532,
+      "pooled_oof_spearman": 0.8577,
+      "pooled_oof_mae": 10.771,
+      "pooled_oof_rmse": 14.152,
+      "n": 352
+    },
+    "10": {
+      "slope": 0.9781,
+      "intercept": 0.6384,
+      "pooled_oof_spearman": 0.8446,
+      "pooled_oof_mae": 11.717,
+      "pooled_oof_rmse": 15.225,
+      "n": 355
+    },
+    "12": {
+      "slope": 1.0312,
+      "intercept": -2.2712,
+      "pooled_oof_spearman": 0.7774,
+      "pooled_oof_mae": 10.662,
+      "pooled_oof_rmse": 14.738,
+      "n": 348
+    },
+    "16": {
+      "slope": 0.912,
+      "intercept": 3.7288,
+      "pooled_oof_spearman": 0.6334,
+      "pooled_oof_mae": 12.273,
+      "pooled_oof_rmse": 16.863,
+      "n": 278
+    }
+  },
+  "training_seasons": [
+    2012,
+    2013,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "training_team_counts": [
+    8,
+    10,
+    12,
+    16
+  ],
+  "sealed_seasons_never_touched": [
+    "2016",
+    "2024",
+    "2025"
+  ],
+  "architecture": "B_shared_latent_model_plus_per_team_count_calibration",
+  "raw_feature_names_before_normalization": [
+    "nwr_rank_sum",
+    "optimal_lineup",
+    "all_roster_sum",
+    "market_adp_percentile_sum"
+  ],
+  "note": "features are within-(season,team_count)-population percentiles of the raw features, computed at inference time against a real simulated comparable-league population for the target league -- never the frozen training population. team_count enters as a raw, additional feature."
+}
