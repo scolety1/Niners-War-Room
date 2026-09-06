@@ -40,6 +40,67 @@ from src.services.shadow_numeric_authorities_service import RosterPlayer
 LIVE_DECISION_BUNDLE_VERSION = "decision-bundle-live-v1"
 DEFAULT_MAX_CANDIDATES = 12
 
+# Owner-test follow-up: the shortlist feeding Suggestions was a plain
+# `legal_rows[:max_candidates]` rank slice with zero positional-diversity
+# awareness -- confirmed the real cause of a real, reproduced complaint
+# (7 of 8 Suggestions candidates were QBs after an RB pick, at a rank
+# range where the ranked pool happened to cluster QB value). This is a
+# SELECTION change only: it never computes a new score, never touches
+# Team Score/Championship Equity/Pick Score/Raw Action Value/Cost of
+# Waiting, and never excludes a position that is already legal-filtered
+# out -- it only decides WHICH already-ranked legal rows are worth
+# sending into that existing, unmodified pipeline. `DIVERSITY_POSITIONS`
+# are the modeled skill positions Suggestions is meant to compare across;
+# K/DST are excluded (NWR does not rank them -- see manual assets).
+DIVERSITY_POSITIONS = ("QB", "RB", "WR", "TE")
+
+
+def diversify_candidate_shortlist(legal_rows: Sequence[Any], max_candidates: int) -> list[Any]:
+    """Selects up to `max_candidates` rows from `legal_rows` (already
+    rank-ordered, already roster-legality-filtered) such that the
+    shortlist is not dominated by one position when better-rounded
+    options exist, while never inventing a score and never discarding a
+    position that is genuinely and legitimately the strongest, deepest
+    option right now (e.g. a real run on RB can still fill most of the
+    list with RBs once every other position's pool is exhausted).
+
+    Algorithm: a position-fair round-robin. Group the already rank-
+    ordered legal rows by position; repeatedly take one row -- always
+    the single best-ranked row remaining -- from whichever position's
+    NEXT candidate currently has the best rank among positions not yet
+    visited this round, cycling through every position with rows left
+    before any position gets a second pick. This guarantees the single
+    overall-best candidate is always selected first, guarantees every
+    legally-draftable core position gets a real comparison point before
+    any position gets a second slot, and still lets one position
+    legitimately fill the remainder once the others run out -- never a
+    mechanical exact one-per-position quota. The final list is re-sorted
+    back into overall rank order (round-robin selection order is not
+    display order) so "Suggestions" still reads top-to-bottom as NWR's
+    own rank order before Pick Score's own sort is applied downstream.
+    """
+    if not legal_rows or max_candidates <= 0:
+        return []
+    rank_of = {row.player_id: index for index, row in enumerate(legal_rows)}
+    by_position: dict[str, list[Any]] = {}
+    for row in legal_rows:
+        by_position.setdefault(row.position, []).append(row)
+    selected: list[Any] = []
+    while len(selected) < max_candidates and any(by_position.values()):
+        # One full round: every position with rows remaining contributes
+        # its current best-ranked row, visited best-rank-first so a
+        # partially-filled max_candidates still favors real value.
+        round_order = sorted(
+            (position for position, rows in by_position.items() if rows),
+            key=lambda position: rank_of[by_position[position][0].player_id],
+        )
+        for position in round_order:
+            if len(selected) >= max_candidates:
+                break
+            selected.append(by_position[position].pop(0))
+    selected.sort(key=lambda row: rank_of[row.player_id])
+    return selected
+
 
 class LiveDecisionBundleError(ValueError):
     pass
@@ -121,7 +182,7 @@ def build_live_decision_bundle(
             "position may already be at its configured maximum, or the player "
             "universe is exhausted)."
         )
-    candidate_rows = legal_rows[:max_candidates]
+    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates)
     candidate_player_ids = [row.player_id for row in candidate_rows]
     player_scores = {
         row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows

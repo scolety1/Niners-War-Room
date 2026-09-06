@@ -221,12 +221,29 @@ MODES = ("dynasty", "redraft")
 # DecisionBundle speed presets (Owner Test Candidate V1, section 11) --
 # real, measured trial/season/candidate-count values, not guesses. See
 # docs/codex/DECISION_BUNDLE_LATENCY_BENCHMARK_20260903.md /
-# scripts/run_decision_bundle_latency_benchmark_v1.py for the exact
-# benchmark these were chosen from: FAST clears the <2s interactive target
-# with real margin; STANDARD/DEEP trade latency for a larger Monte Carlo
-# sample and are available but not the live-draft default.
+# scripts/run_decision_bundle_latency_benchmark_v1.py for the original
+# benchmark; re-measured 20260906 (owner-test follow-up) against the real
+# isolated install.
+#
+# FAST's original trials=2/seasons=20 gave only a 20-roster comparable
+# population (percentile steps of 5.0) and only 20 Monte Carlo seasons per
+# candidate (win-probability steps of 5%) -- confirmed (not guessed) as
+# the real cause of live Suggestions candidates collapsing to 0/50/100-
+# style Pick Score groups: `team_score()`'s percentile
+# (100*below/population_size) and `championship_equity()`'s win_probability
+# (wins/seasons) are both frozen, unmodified formulas -- this widens their
+# INPUT population/sample size only, the same category of fix as
+# raw_action_value_live_service.py's earlier percentile->roster_value fix
+# (change what feeds the frozen math, never the math itself).
+# Measured real cost of the increase (isolated install, mid-draft state):
+# comparable-league population 20->100 (trials 2->10, one-time per unique
+# board state, cached) costs ~+1.3s; championship_equity at seasons
+# 20->300 costs ~+0.1s for a full 8-candidate FAST slate (that computation
+# is cheap regardless of season count). Real end-to-end FAST latency moved
+# from ~1.5s to ~3.3s cold / ~1.4s warm (cached) in direct measurement --
+# still trivially inside the owner's real 60-second pick clock.
 DECISION_BUNDLE_SPEED_PRESETS: dict[str, dict[str, int]] = {
-    "FAST": {"trials": 2, "seasons": 20, "maxCandidates": 8},
+    "FAST": {"trials": 10, "seasons": 300, "maxCandidates": 8},
     "STANDARD": {"trials": 20, "seasons": 100, "maxCandidates": 10},
     "DEEP": {"trials": 50, "seasons": 200, "maxCandidates": 12},
 }

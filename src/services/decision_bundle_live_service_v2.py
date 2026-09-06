@@ -21,6 +21,7 @@ from typing import Any
 from src.services.decision_bundle_live_service import (
     LiveDecisionBundleError,
     LiveDecisionBundleUnavailable,
+    diversify_candidate_shortlist,
 )
 from src.services.decision_bundle_service_v2 import DecisionBundleV2, build_decision_bundle_v2
 from src.services.redraft_draft_room_v1_service import (
@@ -104,7 +105,11 @@ def build_live_decision_bundle_v2(
             "position may already be at its configured maximum, or the player "
             "universe is exhausted)."
         )
-    candidate_rows = legal_rows[:max_candidates]
+    # Reused verbatim from decision_bundle_live_service.py (owner-test
+    # follow-up) -- keeps V1 and V2 selecting the SAME real shortlist for
+    # the SAME real draft state, and applies the identical fix for the
+    # real QB-domination bug a naive rank slice reproduced here too.
+    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates)
     candidate_player_ids = [row.player_id for row in candidate_rows]
     player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
 

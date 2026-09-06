@@ -165,3 +165,51 @@ def test_cost_of_waiting_can_be_disabled_and_actions_fall_back_to_unscored() -> 
     )
     assert bundle.candidates[0].action == "UNSCORED"
     assert bundle.candidates[0].make_it_back_probability is None
+
+
+def test_team_score_delta_is_after_minus_current_never_the_raw_after_value() -> None:
+    """Owner-test follow-up: a real screenshot showed an implausibly large
+    Team Score Delta (+96.9) for a candidate against a NON-EMPTY owner
+    roster, which the owner flagged as "suspicious" and asked us to
+    verify is not the bug where `post_pick_team_score` gets displayed as
+    `team_score_delta`. Confirmed by direct code read
+    (`decision_bundle_service.py`: `team_score_delta=round(pick.team_score_after
+    - current_team.percentile, 2)`) and locked in here: with a real,
+    non-empty starting roster, team_score_delta must equal
+    team_score_after minus the bundle's own current_team_score.percentile
+    -- never merely equal team_score_after itself (the exact "after
+    displayed as delta" bug this test would catch)."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=6, base_seed=17
+    )
+
+    # A real, non-empty roster (3 players already owned) -- the exact
+    # "roster is NOT empty" condition the owner's report specifically
+    # called out.
+    current_owner_player_ids = ["RB-0", "WR-0", "TE-0"]
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=current_owner_player_ids,
+        candidate_player_ids=["RB-1", "WR-1", "QB-0", "TE-1"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        trials=6, seasons=20, base_seed=17,
+    )
+    current_percentile = bundle.current_team_score.percentile
+    for candidate in bundle.candidates:
+        expected_delta = round(candidate.team_score_after - current_percentile, 2)
+        assert candidate.team_score_delta == expected_delta, (
+            f"{candidate.player_id}: team_score_delta={candidate.team_score_delta} "
+            f"but team_score_after({candidate.team_score_after}) - current({current_percentile}) "
+            f"= {expected_delta}"
+        )
+        # The specific bug shape the owner asked us to rule out: delta
+        # silently equal to the raw after-value (which would only occur
+        # by mistaking one field for the other, not by real arithmetic --
+        # this is a real inequality assertion, not tautological, whenever
+        # current_percentile is genuinely nonzero).
+        if current_percentile != 0:
+            assert candidate.team_score_delta != candidate.team_score_after

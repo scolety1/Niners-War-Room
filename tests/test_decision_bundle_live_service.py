@@ -1,8 +1,9 @@
 from src.services.decision_bundle_live_service import (
     LiveDecisionBundleUnavailable,
     build_live_decision_bundle,
+    diversify_candidate_shortlist,
 )
-from src.services.redraft_draft_room_v1_service import AdpSnapshot
+from src.services.redraft_draft_room_v1_service import AdpSnapshot, draft_order
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -218,3 +219,115 @@ def test_build_live_decision_bundle_continues_the_real_room_not_an_empty_draft()
     # room's actual history, not an independently re-simulated one.
     assert candidate_ids.isdisjoint({"TE-7", "WR-9", "RB-9"})
     assert "QB-0" in candidate_ids  # the real best-available player, untouched
+
+
+class _Row:
+    """Minimal stand-in for a ranked-row object -- only `.player_id`/
+    `.position` are read by diversify_candidate_shortlist, so a real
+    RedraftRankingRow is unnecessary overhead for these pure-function
+    tests."""
+
+    def __init__(self, player_id: str, position: str):
+        self.player_id = player_id
+        self.position = position
+
+
+def _row_ids(rows) -> list[str]:
+    return [row.player_id for row in rows]
+
+
+def test_diversify_candidate_shortlist_breaks_up_a_qb_heavy_rank_slice() -> None:
+    # Owner-test follow-up: reproduces the real complaint verbatim -- 7 of
+    # 8 real Suggestions candidates were QBs because the top of the rank
+    # order happened to cluster QB value. This exact shape (8 QBs, THEN
+    # everything else) is what a naive legal_rows[:max_candidates] slice
+    # would return unchanged.
+    rows = [_Row(f"QB-{i}", "QB") for i in range(8)]
+    rows += [_Row(f"RB-{i}", "RB") for i in range(8)]
+    rows += [_Row(f"WR-{i}", "WR") for i in range(8)]
+    rows += [_Row(f"TE-{i}", "TE") for i in range(8)]
+    selected = diversify_candidate_shortlist(rows, max_candidates=8)
+    positions = [row.position for row in selected]
+    assert positions.count("QB") <= 3, f"expected QB coverage, not domination: {positions}"
+    assert set(positions) >= {"QB", "RB", "WR", "TE"}, "every core position should get a comparison point"
+
+
+def test_diversify_candidate_shortlist_always_keeps_the_single_best_overall_candidate() -> None:
+    rows = [_Row(f"QB-{i}", "QB") for i in range(5)]
+    selected = diversify_candidate_shortlist(rows, max_candidates=3)
+    assert selected[0].player_id == "QB-0"
+
+
+def test_diversify_candidate_shortlist_preserves_real_depth_at_one_position() -> None:
+    # A genuine run on RB (RB truly is the deepest, best-ranked position
+    # right now) must still be allowed to fill most of the slate -- this
+    # is NOT "mechanically force exactly one player per position".
+    rows = [_Row(f"RB-{i}", "RB") for i in range(6)]
+    rows += [_Row("WR-0", "WR"), _Row("QB-0", "QB"), _Row("TE-0", "TE")]
+    selected = diversify_candidate_shortlist(rows, max_candidates=6)
+    positions = [row.position for row in selected]
+    assert positions.count("RB") >= 3, f"legitimate RB depth should not be discarded: {positions}"
+    assert set(positions) >= {"RB", "WR", "QB", "TE"}
+
+
+def test_diversify_candidate_shortlist_never_invents_or_drops_a_row() -> None:
+    rows = [_Row(f"WR-{i}", "WR") for i in range(4)]
+    selected = diversify_candidate_shortlist(rows, max_candidates=10)
+    assert _row_ids(selected) == _row_ids(rows)  # fewer legal rows than the cap -> return them all, untouched
+
+
+def test_diversify_candidate_shortlist_returns_empty_for_no_legal_rows() -> None:
+    assert diversify_candidate_shortlist([], max_candidates=8) == []
+
+
+def test_build_live_decision_bundle_does_not_let_qb_dominate_suggestions_early_mid_late_draft() -> None:
+    """Owner-test follow-up, section 3: reproduces the real-world shape
+    (a QB-clustered top-of-rank-order pool, matching this fixture's own
+    `_ranking()` layout of QB ranks 1-8) across early/middle/late 1QB
+    draft states and asserts Suggestions is never QB-dominated."""
+    # team_count=6/rounds=8 (this file's own default _ranking() shape) --
+    # 48 total picks fits comfortably inside the 60-skill-player fixture
+    # pool a larger team_count x rounds combination would exhaust.
+    ranking = _ranking(team_count=6, rounds=8)
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=21)
+
+    order = draft_order(profile)
+    # Real snake order (owner_slot=1 picks FIRST, then LAST in round 2,
+    # first again in round 3, ...) -- the Nth owner turn is not simply
+    # N * team_count picks in, so find each owner-turn pick INDEX
+    # directly from the real draft_order() rather than assuming a
+    # uniform round-count offset.
+    owner_turn_indices = [index for index, slot in enumerate(order) if slot == 1]
+
+    def _picks_up_to(pick_index: int) -> list[dict]:
+        # Real picks for every pick strictly before `pick_index`: the
+        # owner's own prior turns take RB (building a real, growing
+        # roster), every other team takes WR filler -- leaving the QB
+        # pool this test cares about completely untouched.
+        picks: list[dict] = []
+        wr_index = 0
+        owner_round = 0
+        for index in range(pick_index):
+            team_slot = order[index]
+            if team_slot == 1:
+                picks.append({"player_id": f"RB-{owner_round}", "team_slot": team_slot, "position": "RB", "player_name": f"RB {owner_round}"})
+                owner_round += 1
+            else:
+                picks.append({"player_id": f"WR-{wr_index}", "team_slot": team_slot, "position": "WR", "player_name": f"WR {wr_index}"})
+                wr_index += 1
+        return picks
+
+    for label, turn in (("early", owner_turn_indices[0]), ("middle", owner_turn_indices[1]), ("late", owner_turn_indices[2])):
+        picks = _picks_up_to(turn)
+        result = build_live_decision_bundle(
+            profile, ranking, manual_assets, adp,
+            _room_state(owner_slot=1, picks=picks),
+            comparable_leagues=leagues, provenance=_provenance(), max_candidates=8,
+            trials=2, seasons=20, base_seed=21,
+        )
+        assert not isinstance(result, LiveDecisionBundleUnavailable), label
+        positions = [c.player_id.split("-")[0] for c in result.candidates]
+        assert positions.count("QB") <= 3, f"{label} draft state: QB-dominated slate {positions}"
