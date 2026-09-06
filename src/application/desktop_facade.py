@@ -2889,10 +2889,17 @@ class DesktopBackendFacade:
             timestamp_utc=ranking.generated_at_utc,
         )
 
+        # NWR Final Pre-Draft Product Hardening V1, section 9: Raw Action
+        # Value's real rollout cost scales with candidates x trials, so
+        # FAST intentionally stays tight (measured ~6s at 5 candidates x 2
+        # trials; 3 x 2 keeps FAST comfortably inside a real draft clock)
+        # while STANDARD/DEEP can afford more real evidence per pick.
+        rav_preset = {"FAST": (3, 2), "STANDARD": (5, 3), "DEEP": (8, 5)}[str(speed).upper()]
         result = build_live_decision_bundle_v2(
             profile, ranking, manual_assets, adp, room_state,
             comparable_leagues=comparable_leagues, provenance=provenance,
             max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
+            max_rav_candidates=rav_preset[0], rav_trials=rav_preset[1],
         )
         resolved_speed = str(speed).upper()
         if isinstance(result, LiveDecisionBundleUnavailable):

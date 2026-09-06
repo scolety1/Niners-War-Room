@@ -51,6 +51,9 @@ def build_live_decision_bundle_v2(
     trials: int = 200,
     seasons: int = 200,
     base_seed: int = 20260903,
+    include_raw_action_value: bool = True,
+    max_rav_candidates: int | None = None,
+    rav_trials: int | None = None,
 ) -> DecisionBundleV2 | LiveDecisionBundleUnavailable:
     """Identical real-state bridging logic to
     `build_live_decision_bundle()` -- deliberately duplicated rather than
@@ -105,6 +108,11 @@ def build_live_decision_bundle_v2(
     candidate_player_ids = [row.player_id for row in candidate_rows]
     player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
 
+    rav_kwargs: dict[str, Any] = {}
+    if max_rav_candidates is not None:
+        rav_kwargs["max_rav_candidates"] = max_rav_candidates
+    if rav_trials is not None:
+        rav_kwargs["rav_trials"] = rav_trials
     bundle_v2 = build_decision_bundle_v2(
         profile=profile,
         ranking=ranking,
@@ -122,6 +130,8 @@ def build_live_decision_bundle_v2(
         trials=trials,
         seasons=seasons,
         base_seed=base_seed,
+        include_raw_action_value=include_raw_action_value,
+        **rav_kwargs,
     )
     unresolved = [pid for pid in candidate_player_ids if pid in drafted_ids]
     if unresolved:  # defensive -- should be impossible given _available_ranked's own filter
