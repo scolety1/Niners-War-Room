@@ -1,6 +1,8 @@
 # NWR BIG-DRAFT READINESS — OVERNIGHT REPORT
 
-**Real draft tomorrow night. Verdict: `YELLOW_BIG_DRAFT_READY_WITH_KNOWN_LIMITATIONS`.**
+> **UPDATED (2026-09-06, later the same day)**: see the ADDENDUM at the bottom of this report — this session gained real access to the owner's actual local NWR installation after this was first written, and found a genuinely important schedule question (neither known real league is actually scheduled for "tomorrow"). The updated verdict is `YELLOW_TOMORROW_DRAFT_READY_WITH_KNOWN_LIMITATIONS`. Read the addendum before acting on anything below about current-data access or league config.
+
+**Real draft tomorrow night. Verdict (as originally written, sandboxed-only pass): `YELLOW_BIG_DRAFT_READY_WITH_KNOWN_LIMITATIONS`.**
 
 The existing, already-working live Draft Room (V1 DecisionBundle: Player Score, Pick Score, Team Score, Championship Equity, Cost of Waiting, Make-It-Back) is **unchanged and ready** — it was already real-data smoke-tested end-to-end on 2026-09-05 (`NWR_PRACTICE_DRAFT_APPROVAL_AND_LIVE_SMOKE_TEST_20260905.md`, `GREEN_PRACTICE_DRAFT_READY`) and nothing in it was touched tonight. Tonight added a new, historically-validated, opt-in CHALLENGER layer (Team Score V2 / Championship Equity V2) on top of it, tested thoroughly but **not yet wired into the visible UI**, plus real, disclosed blockers that need your action before a fresh practice run will work. Nothing here should stop you from drafting tomorrow using the app exactly as you already know it.
 
@@ -100,3 +102,48 @@ The practice-draft data approval on record (`docs/codex/NWR_PRACTICE_DRAFT_APPRO
 The live Draft Room the owner will actually use tomorrow is unchanged from its already-validated, already-smoke-tested state as of 2026-09-05 — nothing tonight put it at risk. Real, substantial additional engineering (the historically-validated Team Score V2 / Championship Equity V2 layer) was built, tested at every supported league size, and proven safe to add later, but was not switched on and was not tested against real 2026 data (an environment limitation, not a design flaw). The one real action item before the draft is confirming league settings (2 minutes) and, only if a fresh practice run is wanted, renewing one expired approval receipt (also an owner action, a few minutes). Nothing here is a `RED` — the existing, working system is fully intact and ready.
 
 No push. No merge. No deployment. No production promotion. No model tuning. No historical holdout touched.
+
+---
+
+## ADDENDUM (2026-09-06, later the same day): real local install access gained — findings updated
+
+Everything above this line was written believing this session had no access to the owner's real local NWR installation. That was wrong — the real installation exists at `C:\Users\<owner>\AppData\Local\com.ninerswarroom.redraft\state\redraft` (a genuine Tauri app data directory, not part of any git worktree), and this session found and used it directly, with care (backups before any mutating rehearsal step, restored after). This addendum reports what changed.
+
+### A1. Tomorrow's exact league — still not confirmable, now for a much more specific reason
+
+Five real saved profiles exist. Checked each directly:
+
+| Profile | Real status |
+|---|---|
+| 2026 KHA High Stakes League (ESPN, 16-team) | **Already drafted** — 157 real picks, completed 2026-09-03 |
+| Fantasy Gamers (Sleeper, 10-team PPR) | Checked live against Sleeper's own API: `status=pre_draft`, `last_picked=null`, real scheduled start **2026-09-09T03:30:11Z — 3 days out, not tomorrow** |
+| 2026 KHA High Stakes League — PRACTICE | Safe practice copy of KHA, used for tonight's rehearsal |
+| 2026 KHA High Stakes League — TEST | Generic test copy, not a real league |
+| 10-team 1QB Standard | Unused generic preset, `provider=None`, never a real league |
+
+**Neither real, non-completed league is actually scheduled for "tomorrow."** This is the single most important finding of this pass — flagged prominently in the new final runbook. Either a different real league (not yet set up in NWR) is happening tomorrow, or "tomorrow" was approximate and the real target is the confirmed 2026-09-09 Fantasy Gamers draft.
+
+### A2. Current data — now genuinely verified against the real install, not just the repo
+
+The real `projections/2026/current.csv` (530 ranked players, 78 blocked rookies, `veterans` source_as_of 2026-08-08, `rookies` source_as_of 2026-07-30) was independently sha256-verified byte-identical to the manifest's recorded hash before anything else was done. This is the exact same real snapshot the 2026-09-02 KHA draft and the 2026-09-05 practice session used — genuinely current as far as NWR's own admitted data goes, not stale beyond what was already known and disclosed.
+
+### A3. Governance — the expired practice approval was renewed, for real
+
+Confirmed real: the practice-draft approval had expired (`valid_until: 2026-09-05`; today 2026-09-06). Using the owner's own explicit authorization (given verbatim in this session's directive) and the real, existing, unmodified `install_projection_snapshot()` governance mechanism — same unchanged artifact, independently re-verified byte-identical before renewal — issued a new receipt, `valid_until: 2026-09-09` (covering this rehearsal and the confirmed real Fantasy Gamers draft date). Zero projection values changed. The separate, real KHA draft-day approval (already expired 2026-09-03, scoped only to that completed draft) was left untouched, per the mission's own explicit instruction not to extend it.
+
+### A4. Real end-to-end verification against real data
+
+- Real V1 `redraft_decision_bundle` call against the real KHA Practice profile: real players (Jonathan Taylor top candidate), FAST latency 1.9–2.5s across repeated real calls.
+- New: a real, separate `redraft_decision_bundle_v2` facade method + HTTP route (`/decision-bundle-v2`), backed by the exact same `decision_bundle_service_v2.py` built earlier tonight — called against the same real state: `v2_status=OK`, same top player as V1, `evidence_level=TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED` (correct — the real 16-team/PPR/K-DST league never matches the thin historically-validated shape), FAST latency 1.8–2.1s.
+- A real, 3-round full mock through the real practice board: real recommend → real pick recorded via the real facade method (`mark_redraft_player`) → real recalculation, zero V1-vs-V2 top-pick disagreements across all 3 rounds, real undo confirmed, a real prospective-decision log wrote 6 real rows to the real install's own log directory. The practice board was backed up before this and restored to its exact original 8-pick state afterward — verified byte-for-byte on disk, both immediately after and again after a second rehearsal run.
+- Full regression after all of the above: **3865 passed / 324 failed / 71 skipped** — 324 is bit-for-bit the established baseline; +3 from the new facade endpoint's own tests. Zero regressions.
+
+### A5. UI wiring — backend done, frontend deliberately not attempted
+
+The new `/decision-bundle-v2` endpoint and its TypeScript client stub (`getRedraftDecisionBundleV2()`) exist and are additive/safe, but there is still no VISIBLE toggle in Draft Room V2's UI. This sandboxed session cannot build or render the actual Tauri desktop app, so making an unverified change to `draft-room-v2.tsx` (920 lines, significant live-used structure) the night before a real draft was judged too risky — disclosed here rather than attempted and left unverified. The backend is fully ready for that wiring whenever it's done.
+
+### Updated final verdict
+
+**`YELLOW_TOMORROW_DRAFT_READY_WITH_KNOWN_LIMITATIONS`** — meaningfully stronger than the sandboxed-only pass (everything now verified against real data, real governance renewed for real, real end-to-end mock clean), but still YELLOW rather than GREEN because of exactly one real, unresolved, important question: **which real league is actually happening tomorrow night is not confirmable from any durable state this session could find.** Resolve that first; everything else checked out clean.
+
+See `NWR_BIG_DRAFT_FINAL_RUNBOOK_20260907.md` for the short version.

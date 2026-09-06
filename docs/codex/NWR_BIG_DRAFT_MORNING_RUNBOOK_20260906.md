@@ -1,5 +1,7 @@
 # NWR BIG DRAFT — MORNING RUNBOOK
 
+> **SUPERSEDED (2026-09-06, later the same day)** by `NWR_BIG_DRAFT_FINAL_RUNBOOK_20260907.md`, written after this session gained real access to your actual local NWR installation (not just the isolated sandbox this file was written against). Use the FINAL runbook — it has real findings this one couldn't see, including a real schedule question you need to answer before tomorrow. This file is preserved unedited below as the historical record of the sandboxed-only pass.
+
 Keep this open on draft night. Everything else from tonight is background reading; this is the short version.
 
 ## A. Launch
