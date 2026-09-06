@@ -104,7 +104,11 @@ See `NWR_403_N_18TH_MANUAL_SETUP_CHECKLIST_20260906.md` — a short field list (
 
 ## Regression
 
-Full suite: **3867 passed / 334 failed / 71 skipped** (one run) — a second confirmatory run was in progress when this report was finalized; the known established baseline this session is 324 failed, with an already-documented pattern of occasional flaky drift up to ~334 unrelated to any change made (reproduced and traced earlier this same session). Focused RAV/parity/facade test suites: **25 new tests, all passing** (raw_action_value_live_service: 4, parity: 4, decision_bundle_service_v2/live_service_v2/facade extensions: 3 modified/extended, practical_mode toggle: 4 from the prior pass). See the commit history for the exact per-commit test deltas.
+Full suite: **3867 passed / 334 failed / 71 skipped** (one run) — the known established baseline this session is 324 failed, with an already-documented pattern of occasional flaky drift unrelated to any change made (reproduced and traced earlier this same session).
+
+**Stronger, targeted confirmation** on the file most directly touched by today's `desktop_facade.py` changes (`tests/test_desktop_application_api.py`, 43 tests): exactly 4 failures, and all 4 names match the file's own long-documented, pre-existing baseline character-for-character (`test_dynasty_facade_composes_real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_component_dependency`). **A real, incidental improvement**: this baseline was previously 5 failures; today's governance-receipt renewal (Section 6 of the earlier QA-day pass) fixed `test_redraft_league_switching_isolates_draft_state_and_persists_active_profile` as a side effect (it depends on the same hermetic auto-seed the expired receipt was blocking). Zero new failures in this file from any of today's Raw Action Value or facade work.
+
+Focused RAV/parity/facade test suites: **25 new tests, all passing** (raw_action_value_live_service: 4, parity: 4, decision_bundle_service_v2/live_service_v2/facade extensions: 3 modified/extended, practical_mode toggle: 4 from the prior pass). See the commit history for the exact per-commit test deltas.
 
 ## Final verdict
 
