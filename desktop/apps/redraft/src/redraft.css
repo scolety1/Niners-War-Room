@@ -382,12 +382,25 @@
 /* Draft Room V2 -- isolated preview (sections 3-6) */
 .draft-room-v2-layout { display: grid; gap: 16px; grid-template-columns: 180px 1fr; }
 .draft-room-v2-sidebar { display: flex; flex-direction: column; gap: 4px; }
-.draft-room-v2-tab { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 12px; padding: 8px 10px; text-align: left; }
+.draft-room-v2-sidebar-group { color: var(--muted); font-size: 9px; letter-spacing: .1em; margin: 10px 4px 2px; text-transform: uppercase; }
+.draft-room-v2-sidebar-group:first-child { margin-top: 2px; }
+.draft-room-v2-tab { align-items: center; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--muted); cursor: pointer; display: flex; font-size: 12px; gap: 6px; justify-content: space-between; padding: 8px 10px; text-align: left; }
 .draft-room-v2-tab--active { border-color: rgba(211,169,84,.4); color: var(--gold-bright); }
+.draft-room-v2-tab__badge { background: rgba(154,108,255,.22); border-radius: 999px; color: #d7c9ff; font-size: 9px; padding: 1px 6px; }
 .draft-room-v2-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .draft-room-v2-compare-tray { align-items: center; background: rgba(154,108,255,.12); border: 1px solid rgba(154,108,255,.32); border-radius: 8px; bottom: 16px; display: flex; gap: 10px; padding: 8px 14px; position: fixed; right: 16px; z-index: 20; }
-.draft-board-v2-grid { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
-.draft-board-v2-cell { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; cursor: default; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; }
+.draft-room-v2-pick-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.draft-room-v2-position-demand { margin-top: 6px; }
+.quick-capture-panel .rapid-capture__results { max-height: 220px; }
+.rapid-capture__actions { display: flex; }
+/* Fixed team-column board grid (one column per real team, never wrapping
+   -- see the BoardTab comment in draft-room-v2.tsx for the bug this
+   replaced: repeat(auto-fill, ...) wrapped independent of team count). */
+.draft-board-v2-grid { display: grid; gap: 6px; }
+.draft-board-v2-corner, .draft-board-v2-head { color: var(--muted); font-size: 9px; letter-spacing: .06em; padding: 4px; text-align: center; text-transform: uppercase; }
+.draft-board-v2-head--owner { color: var(--gold-bright); }
+.draft-board-v2-round { align-self: center; color: var(--muted); font-size: 10px; text-align: center; }
+.draft-board-v2-cell { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; cursor: default; display: flex; flex-direction: column; gap: 2px; min-height: 40px; padding: 6px 8px; }
 .draft-board-v2-cell--owner { border-color: rgba(211,169,84,.4); }
 .draft-board-v2-cell--current { border-color: rgba(154,108,255,.5); }
 .draft-board-v2-cell__pick { color: var(--muted); font-size: 9px; }

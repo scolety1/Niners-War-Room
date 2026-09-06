@@ -4,8 +4,11 @@ import {
   buildCompareRows,
   buildCurrentRosterScores,
   buildMyTeamSummary,
+  buildPositionDemand,
+  buildRosterStrip,
   buildSuggestionsRows,
   buildUdkBadges,
+  findCloseCall,
   generateCompareSummary,
   severityToBadgeTone,
   tabLabel,
@@ -13,11 +16,15 @@ import {
 } from "./draft-room-v2";
 
 describe("tabLabel", () => {
-  it("title-cases every tab and special-cases MY_TEAM", () => {
+  // Consolidation pass: PLAYERS -> "Rankings" and MY_TEAM -> "Teams" match
+  // the directive's secondary-workspace naming (Rankings/Teams/Queue).
+  it("title-cases every tab and special-cases the renamed workspace tabs", () => {
     expect(tabLabel("SUGGESTIONS")).toBe("Suggestions");
-    expect(tabLabel("PLAYERS")).toBe("Players");
+    expect(tabLabel("CHEAT_SHEET")).toBe("Cheat Sheets");
+    expect(tabLabel("PLAYERS")).toBe("Rankings");
     expect(tabLabel("BOARD")).toBe("Board");
-    expect(tabLabel("MY_TEAM")).toBe("My Team");
+    expect(tabLabel("QUEUE")).toBe("Queue");
+    expect(tabLabel("MY_TEAM")).toBe("Teams");
     expect(tabLabel("COMPARE")).toBe("Compare");
   });
 
@@ -76,6 +83,26 @@ describe("buildSuggestionsRows", () => {
     expect(buildSuggestionsRows({ available: false, speed: "FAST", reason: "blocked" } as any, rankings, new Map())).toEqual([]);
     expect(buildSuggestionsRows(null, rankings, new Map())).toEqual([]);
     expect(buildSuggestionsRows(undefined, rankings, new Map())).toEqual([]);
+  });
+
+  it("merges real Raw Action Value (expected regret / decision-quality percentile) by playerId from the separate V2 bundle -- the fix for the Fantasy Gamers Pick-Score-collapse bug", () => {
+    const bundle = _availableBundle([_candidate({ playerId: "p1", pickScore: 50 }), _candidate({ playerId: "p2", pickScore: 50 })]);
+    const rav = new Map([
+      ["p1", { playerId: "p1", v2Status: "OK", teamScoreV2: null, championshipEquityV2: null, pickScore: 50, rawActionValue: null, expectedRegret: 0.0, decisionQualityPercentile: 100.0, rawActionValueStatus: "OK" }],
+      ["p2", { playerId: "p2", v2Status: "OK", teamScoreV2: null, championshipEquityV2: null, pickScore: 50, rawActionValue: null, expectedRegret: 29.4, decisionQualityPercentile: 12.0, rawActionValueStatus: "OK" }],
+    ]) as any;
+    const rows = buildSuggestionsRows(bundle, rankings, new Map(), rav);
+    // Both candidates legitimately tie on Pick Score (the real, disclosed,
+    // never-modified V1 formula's own behavior) -- Raw Action Value still
+    // differentiates them, which is the entire point of this fix.
+    expect(rows.find((row) => row.playerId === "p1")).toMatchObject({ pickScore: 50, expectedRegret: 0.0, decisionQualityPercentile: 100.0 });
+    expect(rows.find((row) => row.playerId === "p2")).toMatchObject({ pickScore: 50, expectedRegret: 29.4, decisionQualityPercentile: 12.0 });
+  });
+
+  it("carries RAV fields as null (never fabricated) for a candidate outside the RAV preset's top-N", () => {
+    const bundle = _availableBundle([_candidate({ playerId: "p1" })]);
+    const rows = buildSuggestionsRows(bundle, rankings, new Map());
+    expect(rows[0]).toMatchObject({ expectedRegret: null, decisionQualityPercentile: null, rawActionValueStatus: null });
   });
 
   it("carries make_it_back as null (never fabricated) when the backend has no real ADP for a candidate", () => {
@@ -251,5 +278,84 @@ describe("generateCompareSummary", () => {
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the highest Pick Score");
+  });
+});
+
+function _rosterPlayer(position: string, pickNumber = 1) {
+  return { playerId: `${position}-${pickNumber}`, playerName: `${position} Player`, position, team: "TST", pickNumber };
+}
+
+function _team(teamSlot: number, owner: boolean, roster: Array<Record<string, unknown>>) {
+  return { teamSlot, name: owner ? "My Team" : `Team ${teamSlot}`, owner, roster, picks: [] } as any;
+}
+
+describe("buildPositionDemand", () => {
+  const profile = { roster: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 0, k: 1, dst: 1, benchSize: 5 } } as any;
+
+  it("counts opponents (never the owner) who already have a full starting group at QB/TE", () => {
+    const board = {
+      teams: [
+        _team(1, true, [_rosterPlayer("QB")]), // owner -- must never be counted as an "opponent"
+        _team(2, false, [_rosterPlayer("QB")]), // filled
+        _team(3, false, [_rosterPlayer("RB")]), // not filled
+        _team(4, false, [_rosterPlayer("QB"), _rosterPlayer("TE")]), // filled QB and TE
+      ],
+    } as any;
+    const rows = buildPositionDemand(board, profile);
+    const qb = rows.find((row) => row.position === "QB")!;
+    const te = rows.find((row) => row.position === "TE")!;
+    expect(qb).toEqual({ position: "QB", filledOpponents: 2, totalOpponents: 3, requiredStarters: 1 });
+    expect(te).toEqual({ position: "TE", filledOpponents: 1, totalOpponents: 3, requiredStarters: 1 });
+  });
+
+  it("returns [] when there is no board or profile yet", () => {
+    expect(buildPositionDemand(null, profile)).toEqual([]);
+    expect(buildPositionDemand({ teams: [] } as any, null)).toEqual([]);
+  });
+});
+
+describe("buildRosterStrip", () => {
+  it("reproduces the same starter-slot accounting as the production Draft Room (FLEX overflow, capped bench)", () => {
+    const data = {
+      activeProfile: { roster: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 0, k: 1, dst: 1, benchSize: 5 } },
+      draftBoard: {
+        myRoster: [
+          _rosterPlayer("QB", 1), _rosterPlayer("RB", 2), _rosterPlayer("RB", 3), _rosterPlayer("RB", 4),
+          _rosterPlayer("WR", 5), _rosterPlayer("K", 6),
+        ],
+      },
+    } as any;
+    const strip = buildRosterStrip(data);
+    expect(strip).toEqual([
+      { label: "QB", have: 1, need: 1 }, { label: "RB", have: 2, need: 2 },
+      { label: "WR", have: 1, need: 2 }, { label: "TE", have: 0, need: 1 },
+      { label: "FLEX", have: 1, need: 1 }, { label: "K", have: 1, need: 1 },
+      { label: "DST", have: 0, need: 1 }, { label: "BN", have: 0, need: 5 },
+    ]);
+  });
+
+  it("returns [] with no active profile or board", () => {
+    expect(buildRosterStrip({ activeProfile: null, draftBoard: null } as any)).toEqual([]);
+  });
+});
+
+describe("findCloseCall", () => {
+  it("flags the top two candidates when their Pick Score is within the threshold", () => {
+    const rows = [_candidate({ playerId: "a", playerName: "A", pickScore: 90 }), _candidate({ playerId: "b", playerName: "B", pickScore: 88 })] as any;
+    const result = findCloseCall(rows, 3);
+    expect(result).not.toBeNull();
+    expect([result!.a.playerId, result!.b.playerId]).toEqual(["a", "b"]);
+  });
+
+  it("does not flag a clear leader", () => {
+    const rows = [_candidate({ playerId: "a", pickScore: 95 }), _candidate({ playerId: "b", pickScore: 60 })] as any;
+    expect(findCloseCall(rows, 3)).toBeNull();
+  });
+
+  it("never alters pickScore -- purely a read", () => {
+    const rows = [_candidate({ playerId: "a", pickScore: 90 }), _candidate({ playerId: "b", pickScore: 89 })] as any;
+    findCloseCall(rows, 3);
+    expect(rows[0].pickScore).toBe(90);
+    expect(rows[1].pickScore).toBe(89);
   });
 });

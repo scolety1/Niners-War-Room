@@ -40,12 +40,31 @@ const STARTUP_RETRY_DELAYS_MS = [0, 160, 320, 640, 1_000, 1_600] as const;
 // @nwr/contracts) to keep this an additive, low-risk client change. The
 // full `v1` field is the exact same shape as `RedraftDecisionBundleResponse`
 // (imported above) minus its own `available`/`speed` wrapper.
+export interface RedraftRawActionValueResponse {
+  expectedTerminalValue: number;
+  terminalValueStdev: number;
+  terminalObjectiveName: string;
+  lookaheadDepth: number;
+  rolloutCount: number;
+  modelVersion: string;
+}
+
 export interface RedraftDecisionBundleV2CandidateResponse {
   playerId: string;
   v2Status: string;
   teamScoreV2: Record<string, unknown> | null;
   championshipEquityV2: Record<string, unknown> | null;
   pickScore: number | null;
+  // The real, historically-validated fix for the Fantasy Gamers candidate-
+  // collapse bug (TEAM_SCORE_SATURATION -- see raw_action_value_live_service.py):
+  // rawActionValue/expectedRegret/decisionQualityPercentile differentiate
+  // candidates even when Pick Score itself legitimately ties. Declared here
+  // (previously missing from this client type even though the backend
+  // already returned them) so the consolidated Draft Room can surface them.
+  rawActionValue: RedraftRawActionValueResponse | null;
+  expectedRegret: number | null;
+  decisionQualityPercentile: number | null;
+  rawActionValueStatus: string;
 }
 
 export interface RedraftDecisionBundleV2Response {

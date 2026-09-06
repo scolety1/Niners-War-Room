@@ -23,6 +23,7 @@ import type {
   DraftBoard,
   DraftRosterPlayer,
   KhaHistoricalReplayPreview,
+  LeagueProfile,
   RedraftBootstrap,
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
@@ -31,23 +32,39 @@ import {
   Button,
   DataTable,
   EmptyState,
+  Icon,
   PageHeader,
   Panel,
+  SearchInput,
   StatusBadge,
   type TableColumn,
   formatNumber,
 } from "@nwr/ui";
-import type { NwrApiClient } from "@nwr/api-client";
-import { useEffect, useMemo, useState } from "react";
+import { NwrApiError, type NwrApiClient, type RedraftDecisionBundleV2CandidateResponse } from "@nwr/api-client";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-export const DRAFT_ROOM_V2_TABS = [
-  "SUGGESTIONS", "PLAYERS", "BOARD", "MY_TEAM", "COMPARE", "REPLAY",
-] as const;
+import { CheatSheetPage } from "./cheat-sheet";
+// Reused, not rebuilt (section 9 -- REUSE FIRST): the exact global,
+// position-filter-ignoring pick search and keyboard-navigation helpers the
+// production Draft Room (pages.tsx) already ships and that fixed 23 real
+// SEARCH_FAILURE picks in the KHA draft reconciliation ledger.
+import { globalPickSearchRows, nextRapidCaptureIndex, type PickSearchAsset, type PickSearchCandidate } from "./pages";
+
+// Primary modes (top-level, per the consolidation directive): the dense
+// actionable cockpit, the reusable Cheat Sheet, and the fixed-column board.
+export const DRAFT_ROOM_V2_PRIMARY_TABS = ["SUGGESTIONS", "CHEAT_SHEET", "BOARD"] as const;
+// Secondary workspace (Rankings/Teams/Queue, plus Compare/Replay which the
+// consolidation directive does not name but which stay reachable rather
+// than deleted -- section on routing: "do not delete" applies here too).
+export const DRAFT_ROOM_V2_SECONDARY_TABS = ["PLAYERS", "QUEUE", "MY_TEAM", "COMPARE", "REPLAY"] as const;
+export const DRAFT_ROOM_V2_TABS = [...DRAFT_ROOM_V2_PRIMARY_TABS, ...DRAFT_ROOM_V2_SECONDARY_TABS] as const;
 export type DraftRoomV2Tab = (typeof DRAFT_ROOM_V2_TABS)[number];
 
 export function tabLabel(tab: DraftRoomV2Tab): string {
-  if (tab === "MY_TEAM") return "My Team";
+  if (tab === "MY_TEAM") return "Teams";
   if (tab === "REPLAY") return "Historical Replay";
+  if (tab === "CHEAT_SHEET") return "Cheat Sheets";
+  if (tab === "PLAYERS") return "Rankings";
   return tab.charAt(0) + tab.slice(1).toLowerCase();
 }
 
@@ -77,6 +94,13 @@ export interface SuggestionRow {
   uncertainty: string;
   alertSeverity: string | null;
   alertText: string | null;
+  // Real Raw Action Value fields (see raw_action_value_live_service.py) --
+  // the fix for the Fantasy Gamers Pick-Score-collapse bug. null/
+  // "SKIPPED_TOP_N_ONLY" when this candidate was outside the RAV preset's
+  // top-N (cost-controlled), never a fabricated differentiator.
+  expectedRegret: number | null;
+  decisionQualityPercentile: number | null;
+  rawActionValueStatus: string | null;
 }
 
 /**
@@ -92,6 +116,7 @@ export function buildSuggestionsRows(
   decisionBundle: DecisionBundle | null | undefined,
   rankings: RedraftBootstrap["rankings"],
   intelById: Map<string, RedraftExternalIntelligenceEntry>,
+  rawActionValueById: Map<string, RedraftDecisionBundleV2CandidateResponse> = new Map(),
 ): SuggestionRow[] {
   if (!decisionBundle || !decisionBundle.available) return [];
   const rankingById = new Map(rankings.map((row) => [row.playerId, row]));
@@ -100,6 +125,7 @@ export function buildSuggestionsRows(
     .map((candidate) => {
       const ranking = rankingById.get(candidate.playerId);
       const intel = intelById.get(candidate.playerId);
+      const rav = rawActionValueById.get(candidate.playerId);
       return {
         playerId: candidate.playerId,
         playerName: candidate.playerName,
@@ -120,6 +146,9 @@ export function buildSuggestionsRows(
         uncertainty: candidate.uncertainty,
         alertSeverity: intel?.currentAlertSeverity ?? null,
         alertText: intel?.currentAlert ?? null,
+        expectedRegret: rav?.expectedRegret ?? null,
+        decisionQualityPercentile: rav?.decisionQualityPercentile ?? null,
+        rawActionValueStatus: rav?.rawActionValueStatus ?? null,
       };
     });
 }
@@ -217,6 +246,96 @@ export function buildCurrentRosterScores(
     championshipEquityLabel: decisionBundle.currentChampionshipEquity.label,
     assumedFormat: decisionBundle.currentChampionshipEquity.assumedFormat,
   };
+}
+
+/**
+ * Compact position-demand summary (section: "reuse the existing
+ * intelligence, don't rebuild a position-demand model" -- Make-It-Back /
+ * Cost of Waiting already fold opponent roster need into their own real
+ * Monte Carlo trials via `_roster_need_adjustment()`, confirmed by audit;
+ * this is only a UI-facing read of the same already-fetched `board.teams`
+ * roster state, for the two positions that function actually penalizes
+ * once filled: QB and TE, both typically single-starter). Counts every
+ * NON-owner team's already-filled starter slots at that position against
+ * the league's real configured requirement -- never a prediction, never a
+ * hard exclusion, just what has already, factually happened this draft.
+ */
+export interface PositionDemandRow {
+  position: string;
+  filledOpponents: number;
+  totalOpponents: number;
+  requiredStarters: number;
+}
+
+export function buildPositionDemand(
+  board: DraftBoard | null | undefined,
+  profile: LeagueProfile | null | undefined,
+): PositionDemandRow[] {
+  if (!board?.teams?.length || !profile) return [];
+  const opponents = board.teams.filter((team) => !team.owner);
+  if (!opponents.length) return [];
+  const rows: PositionDemandRow[] = [];
+  for (const [position, required] of [
+    ["QB", profile.roster.qb],
+    ["TE", profile.roster.te],
+  ] as Array<[string, number]>) {
+    if (required <= 0) continue;
+    const filledOpponents = opponents.filter(
+      (team) => team.roster.filter((player) => player.position === position).length >= required,
+    ).length;
+    rows.push({ position, filledOpponents, totalOpponents: opponents.length, requiredStarters: required });
+  }
+  return rows;
+}
+
+/**
+ * Compact owner-roster strip -- the same real starter-slot accounting
+ * pages.tsx#DraftRoomPage's "My roster needs" panel already performs
+ * (QB/RB/WR/TE/FLEX/K/DST/bench, FLEX overflow computed from RB/WR/TE
+ * surplus, bench capped at the configured bench size), reused here so
+ * Suggestions doesn't require a tab switch to see roster fit.
+ */
+export interface RosterStripSlot {
+  label: string;
+  have: number;
+  need: number;
+}
+
+export function buildRosterStrip(data: RedraftBootstrap): RosterStripSlot[] {
+  const profile = data.activeProfile;
+  const board = data.draftBoard;
+  if (!profile || !board) return [];
+  const req = profile.roster;
+  const counts: Record<string, number> = {};
+  for (const player of board.myRoster ?? []) counts[player.position] = (counts[player.position] ?? 0) + 1;
+  const capped = (pos: string, need: number) => Math.min(counts[pos] ?? 0, need);
+  const qb = capped("QB", req.qb), rb = capped("RB", req.rb), wr = capped("WR", req.wr), te = capped("TE", req.te);
+  const k = capped("K", req.k), dst = capped("DST", req.dst);
+  const flexPool = Math.max(0, (counts.RB ?? 0) - rb) + Math.max(0, (counts.WR ?? 0) - wr) + Math.max(0, (counts.TE ?? 0) - te);
+  const flex = Math.min(flexPool, req.flex);
+  const starterSlotsFilled = qb + rb + wr + te + flex + k + dst;
+  const bench = Math.min(Math.max(0, (board.myRoster?.length ?? 0) - starterSlotsFilled), req.benchSize);
+  return [
+    { label: "QB", have: qb, need: req.qb }, { label: "RB", have: rb, need: req.rb },
+    { label: "WR", have: wr, need: req.wr }, { label: "TE", have: te, need: req.te },
+    { label: "FLEX", have: flex, need: req.flex }, { label: "K", have: k, need: req.k },
+    { label: "DST", have: dst, need: req.dst }, { label: "BN", have: bench, need: req.benchSize },
+  ];
+}
+
+/**
+ * A "close call" is two or more top-ranked Suggestions candidates whose
+ * real Pick Score is nearly tied -- a real, disclosed signal that the
+ * formula genuinely cannot separate them cleanly, never a UI approximation
+ * that invents false precision. Threshold is on the same 0-100 Pick Score
+ * scale the table already renders; does not alter any score.
+ */
+export function findCloseCall(rows: SuggestionRow[], threshold = 3): { a: SuggestionRow; b: SuggestionRow } | null {
+  if (rows.length < 2) return null;
+  const sorted = [...rows].sort((x, y) => y.pickScore - x.pickScore);
+  const [a, b] = sorted;
+  if (!a || !b) return null;
+  return Math.abs(a.pickScore - b.pickScore) <= threshold ? { a, b } : null;
 }
 
 export function toggleCompareSelection(
@@ -351,12 +470,119 @@ export function DraftRoomV2Page({
   const [externalIntel, setExternalIntel] = useState<RedraftExternalIntelligence | null>(null);
   const [decisionBundle, setDecisionBundle] = useState<DecisionBundle | null>(null);
   const [decisionBundleLoading, setDecisionBundleLoading] = useState(false);
+  // Real Raw Action Value / expected regret / decision-quality percentile
+  // per candidate -- the actual, historically-validated fix for the
+  // Fantasy Gamers Pick-Score-collapse bug (see raw_action_value_live_
+  // service.py). Fetched from the SEPARATE, additive decision-bundle-v2
+  // endpoint (its `v1` field is the unmodified V1 bundle used for
+  // `decisionBundle` above); a fetch failure here degrades to no RAV
+  // columns, never to a fabricated number and never to blocking Pick Score.
+  const [rawActionValueById, setRawActionValueById] = useState<Map<string, RedraftDecisionBundleV2CandidateResponse>>(new Map());
   const [nwrPureToggling, setNwrPureToggling] = useState(false);
   const [historicalReplay, setHistoricalReplay] = useState<KhaHistoricalReplayPreview | null>(null);
   const [historicalReplayLoading, setHistoricalReplayLoading] = useState(false);
   const [historicalReplayError, setHistoricalReplayError] = useState<string | null>(null);
+  // Queue is a real, session-local watchlist -- proven absent as a backend
+  // or frontend capability by direct audit (grep across desktop/ and src/
+  // found no "queue" concept anywhere in Redraft) before adding it here,
+  // per the reuse-first/build-only-when-absent rule. It never records a
+  // pick by itself; queuing a player changes nothing about the draft board.
+  const [queuedIds, setQueuedIds] = useState<string[]>([]);
+  // Quick pick search -- reuses V1's exact globalPickSearchRows/
+  // nextRapidCaptureIndex helpers (imported from ./pages) rather than a
+  // second search implementation. Visible from every tab, not buried.
+  const [quickQuery, setQuickQuery] = useState("");
+  const [quickIndex, setQuickIndex] = useState(0);
+  const quickCaptureActive = useRef(false);
+  const quickInputRef = useRef<HTMLInputElement>(null);
+  const [working, setWorking] = useState("");
+  const [mutationError, setMutationError] = useState<NwrApiError | null>(null);
   const board = data.draftBoard;
   const nwrPureActive = data.activeProfile?.nwrPureExperimental ?? false;
+  const liveMode = board?.mode === "LIVE_READ_ONLY";
+  const ownerTurn = Boolean(board?.isOwnerTurn);
+  // Identical semantics to pages.tsx#DraftRoomPage's canRecordPick: MOCK
+  // mode only allows recording when it is genuinely the owner's turn (CPU
+  // turns advance automatically); LIVE_READ_ONLY allows recording every
+  // real pick, owner's and opponents', in sequence.
+  const canRecordPick = (liveMode ? !board?.complete : ownerTurn) && Boolean(board?.configured);
+
+  const mark = async (playerId: string) => {
+    if (!data.activeProfileId) return;
+    const playerName =
+      data.rankings.find((row) => row.playerId === playerId)?.playerName ??
+      data.manualAssets?.find((row) => row.playerId === playerId)?.playerName ??
+      "Player";
+    setWorking(playerId);
+    setMutationError(null);
+    try {
+      const next = liveMode
+        ? await client.ingestSleeperDraftPick(data.activeProfileId, playerId, (board?.drafted?.length ?? 0) + 1)
+        : await client.markDrafted(data.activeProfileId, playerId);
+      onUpdate(next);
+      setQueuedIds((current) => current.filter((id) => id !== playerId));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${playerName} could not be recorded.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
+  const toggleQueue = (playerId: string) => {
+    setQueuedIds((current) => (current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId]));
+  };
+
+  // Feature-parity gap closed: Undo (client.undoDraftPick) already exists
+  // and is exercised in the Legacy Draft Room -- reused here verbatim so
+  // the consolidated room does not require a tab switch to correct a
+  // mis-click.
+  const undo = async () => {
+    if (!data.activeProfileId) return;
+    setWorking("undo");
+    setMutationError(null);
+    try {
+      onUpdate(await client.undoDraftPick(data.activeProfileId));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError("The last pick could not be restored."));
+    } finally {
+      setWorking("");
+    }
+  };
+
+  const draftedIds = board?.drafted ?? [];
+  const quickResults = globalPickSearchRows(
+    data.rankings as unknown as PickSearchAsset[],
+    (data.manualAssets ?? []) as unknown as PickSearchAsset[],
+    draftedIds,
+    quickQuery,
+    8,
+  );
+  const quickActiveIndex = quickResults.length ? Math.min(quickIndex, quickResults.length - 1) : 0;
+
+  const recordFromQuickCapture = async (playerId: string) => {
+    if (!canRecordPick || Boolean(working)) return;
+    quickCaptureActive.current = true;
+    await mark(playerId);
+    quickCaptureActive.current = false;
+    setQuickQuery("");
+    setQuickIndex(0);
+    window.requestAnimationFrame(() => quickInputRef.current?.focus({ preventScroll: true }));
+  };
+
+  const onQuickKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const stepped = nextRapidCaptureIndex(event.key, event.shiftKey, quickActiveIndex, quickResults.length);
+    if (stepped !== null) {
+      event.preventDefault();
+      setQuickIndex(stepped);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const candidate = quickResults[quickActiveIndex];
+      if (candidate) void recordFromQuickCapture(candidate.playerId);
+    } else if (event.key === "Escape") {
+      setQuickQuery("");
+      setQuickIndex(0);
+    }
+  };
 
   const onToggleNwrPure = () => {
     if (!data.activeProfileId || nwrPureToggling) return;
@@ -419,6 +645,30 @@ export function DraftRoomV2Page({
   }, [client, data.activeProfileId, rosterStateSignal]);
 
   useEffect(() => {
+    // Separate, additive fetch (never replaces the V1 bundle above --
+    // matches the backend's own "SEPARATE, explicitly opt-in endpoint"
+    // contract). A failure here only means no RAV columns this render,
+    // never a blocked Suggestions table -- Pick Score keeps working from
+    // the V1 fetch regardless.
+    if (!data.activeProfileId) return;
+    let cancelled = false;
+    client
+      .getRedraftDecisionBundleV2(data.activeProfileId, "FAST")
+      .then((response) => {
+        if (cancelled) return;
+        const byId = new Map<string, RedraftDecisionBundleV2CandidateResponse>();
+        for (const candidate of response.decisionBundleV2.candidates ?? []) byId.set(candidate.playerId, candidate);
+        setRawActionValueById(byId);
+      })
+      .catch(() => {
+        if (!cancelled) setRawActionValueById(new Map());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, data.activeProfileId, rosterStateSignal]);
+
+  useEffect(() => {
     // Lazy, tab-gated fetch: a fixed, static, non-current artifact -- no
     // reason to load it before the owner actually opens the tab, and no
     // reason to refetch on every draft-state change the way the live
@@ -463,8 +713,8 @@ export function DraftRoomV2Page({
   }, [data.rankings]);
 
   const suggestions = useMemo(
-    () => buildSuggestionsRows(decisionBundle, data.rankings, intelById),
-    [decisionBundle, data.rankings, intelById],
+    () => buildSuggestionsRows(decisionBundle, data.rankings, intelById, rawActionValueById),
+    [decisionBundle, data.rankings, intelById, rawActionValueById],
   );
   const myTeam = useMemo(() => buildMyTeamSummary(data), [data]);
   const currentScores = useMemo(() => buildCurrentRosterScores(decisionBundle), [decisionBundle]);
@@ -473,6 +723,27 @@ export function DraftRoomV2Page({
     [compareIds, data, intelById, decisionBundle],
   );
   const compareSummary = useMemo(() => generateCompareSummary(compareRows, positionDepth), [compareRows, positionDepth]);
+  const positionDemand = useMemo(() => buildPositionDemand(board, data.activeProfile), [board, data.activeProfile]);
+  const rosterStrip = useMemo(() => buildRosterStrip(data), [data]);
+  const closeCall = useMemo(() => findCloseCall(suggestions), [suggestions]);
+  const queuedRows = useMemo(
+    () =>
+      queuedIds
+        .map((playerId) => {
+          const ranked = data.rankings.find((row) => row.playerId === playerId);
+          const manual = data.manualAssets?.find((row) => row.playerId === playerId);
+          if (!ranked && !manual) return null;
+          return {
+            playerId,
+            playerName: ranked?.playerName ?? manual?.playerName ?? playerId,
+            position: ranked?.position ?? manual?.position ?? "?",
+            team: ranked?.team ?? manual?.team ?? "",
+            nwrRank: ranked?.overallRank ?? null,
+          };
+        })
+        .filter((row): row is { playerId: string; playerName: string; position: string; team: string; nwrRank: number | null } => row !== null),
+    [queuedIds, data.rankings, data.manualAssets],
+  );
 
   const onPlayerClick = (playerId: string, event: React.MouseEvent) => {
     if (event.altKey) {
@@ -502,11 +773,14 @@ export function DraftRoomV2Page({
   return (
     <div className="draft-room-v2-page">
       <PageHeader
-        eyebrow="Isolated preview — does not affect the production Draft Room"
-        title={`${data.activeProfile.leagueName} — Draft Room V2`}
-        description="Tabbed information architecture: Suggestions / Players / Board / My Team / Compare. Alt+click any player to add them to Compare."
+        eyebrow={draftRoomV2Eyebrow(board)}
+        title={`${data.activeProfile.leagueName} — Draft Room`}
+        description="Suggestions / Cheat Sheets / Draft Board, plus Rankings, Queue, Teams, Compare and Historical Replay in the workspace. Alt+click any player to add them to Compare."
         actions={
           <>
+            <Button data-draft-undo disabled={!board?.canUndo || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>
+              {working === "undo" ? "Restoring…" : "Undo"}
+            </Button>
             <Button
               variant={nwrPureActive ? "primary" : "ghost"}
               onClick={onToggleNwrPure}
@@ -521,10 +795,63 @@ export function DraftRoomV2Page({
           </>
         }
       />
+      {mutationError ? (
+        <div className="alert-strip alert-strip--blocked" role="alert">
+          <strong>Pick could not be recorded</strong>
+          <span>{mutationError.message}</span>
+        </div>
+      ) : null}
+      {board?.configured ? (
+        <OnClockStrip board={board} />
+      ) : (
+        <p className="boundary-note">Start the draft from the Legacy Draft Room to set your slot before using this room.</p>
+      )}
+      <Panel className="quick-capture-panel" title="Quick pick" eyebrow={canRecordPick ? "Position filter ignored · type, arrows/Tab to choose, Enter to record" : "Start the draft, and wait for your turn, to record picks here"}>
+        <div className="rapid-capture">
+          <label className="search-input rapid-capture__input">
+            <Icon name="search" size={16} />
+            <input
+              aria-activedescendant={quickResults[quickActiveIndex] ? `quick-result-${quickActiveIndex}` : undefined}
+              aria-controls="quick-capture-results"
+              aria-label="Quick pick"
+              disabled={!canRecordPick}
+              onChange={(event) => { setQuickQuery(event.target.value); setQuickIndex(0); }}
+              onFocus={(event) => event.target.select()}
+              onKeyDown={onQuickKeyDown}
+              placeholder="Type a player, K, or D/ST…"
+              ref={quickInputRef}
+              type="search"
+              value={quickQuery}
+            />
+          </label>
+          <ul className="rapid-capture__results" id="quick-capture-results" role="listbox">
+            {quickResults.map((candidate, index) => (
+              <li
+                aria-selected={index === quickActiveIndex}
+                className={index === quickActiveIndex ? "rapid-capture__result--active" : ""}
+                id={`quick-result-${index}`}
+                key={candidate.playerId}
+                onMouseDown={(event) => { event.preventDefault(); void recordFromQuickCapture(candidate.playerId); }}
+                role="option"
+              >
+                <strong>{candidate.playerName}</strong>
+                <small>{candidate.team} · {candidate.position}</small>
+                <span className="rapid-capture__actions">
+                  <Button variant="ghost" onClick={(event) => { event.stopPropagation(); toggleQueue(candidate.playerId); }}>
+                    {queuedIds.includes(candidate.playerId) ? "Queued" : "Queue"}
+                  </Button>
+                </span>
+              </li>
+            ))}
+            {quickQuery.trim() && !quickResults.length ? <li className="rapid-capture__empty">No match in the ranked universe or manual K/DST/unmodeled pool.</li> : null}
+          </ul>
+        </div>
+      </Panel>
       <div className="draft-room-v2-layout">
         {sidebarVisible ? (
-          <nav className="draft-room-v2-sidebar" aria-label="Draft Room V2 tabs">
-            {DRAFT_ROOM_V2_TABS.map((value) => (
+          <nav className="draft-room-v2-sidebar" aria-label="Draft Room tabs">
+            <span className="draft-room-v2-sidebar-group">Draft Room</span>
+            {DRAFT_ROOM_V2_PRIMARY_TABS.map((value) => (
               <button
                 key={value}
                 type="button"
@@ -533,6 +860,19 @@ export function DraftRoomV2Page({
                 onClick={() => setTab(value)}
               >
                 {tabLabel(value)}
+              </button>
+            ))}
+            <span className="draft-room-v2-sidebar-group">Workspace</span>
+            {DRAFT_ROOM_V2_SECONDARY_TABS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={tab === value}
+                className={tab === value ? "draft-room-v2-tab draft-room-v2-tab--active" : "draft-room-v2-tab"}
+                onClick={() => setTab(value)}
+              >
+                {tabLabel(value)}
+                {value === "QUEUE" && queuedRows.length > 0 ? <b className="draft-room-v2-tab__badge">{queuedRows.length}</b> : null}
               </button>
             ))}
           </nav>
@@ -544,12 +884,31 @@ export function DraftRoomV2Page({
               onPlayerClick={onPlayerClick}
               decisionBundle={decisionBundle}
               loading={decisionBundleLoading}
+              rosterStrip={rosterStrip}
+              positionDemand={positionDemand}
+              closeCall={closeCall}
+              canRecordPick={canRecordPick}
+              working={working}
+              queuedIds={queuedIds}
+              onDraft={(playerId) => void mark(playerId)}
+              onQueue={toggleQueue}
+              externalIntel={externalIntel}
             />
           ) : null}
+          {tab === "CHEAT_SHEET" ? <CheatSheetPage data={data} /> : null}
           {tab === "PLAYERS" ? (
             <PlayersTab data={data} intelById={intelById} onPlayerClick={onPlayerClick} />
           ) : null}
-          {tab === "BOARD" ? <BoardTab board={board} onPlayerClick={onPlayerClick} /> : null}
+          {tab === "BOARD" ? <BoardTab board={board} profile={data.activeProfile} onPlayerClick={onPlayerClick} /> : null}
+          {tab === "QUEUE" ? (
+            <QueueTab
+              rows={queuedRows}
+              canRecordPick={canRecordPick}
+              working={working}
+              onDraft={(playerId) => void mark(playerId)}
+              onRemove={toggleQueue}
+            />
+          ) : null}
           {tab === "MY_TEAM" ? <MyTeamTab summary={myTeam} currentScores={currentScores} /> : null}
           {tab === "COMPARE" ? (
             <CompareTab
@@ -581,10 +940,45 @@ export function DraftRoomV2Page({
           ranking={drawerRanking}
           intel={drawerEntry}
           candidate={drawerCandidate}
+          staleAlertData={Boolean(externalIntel?.stale)}
           onClose={() => setDrawerPlayerId(null)}
         />
       ) : null}
     </div>
+  );
+}
+
+function draftRoomV2Eyebrow(board: DraftBoard | null | undefined): string {
+  if (!board?.configured) return "Set your draft slot from the Legacy Draft Room to begin";
+  if (board.complete) return "Draft complete";
+  return board.isOwnerTurn ? "You are on the clock" : `Team ${board.currentTeamSlot ?? "?"} is on the clock`;
+}
+
+/** Always-visible current-pick/clock context -- identical fields to
+ * pages.tsx#DraftRoomPage's ".on-clock" section (round/overall pick,
+ * on-clock team, next owner pick, picks-until-owner via the snake position
+ * run, snake direction implied by round parity), reused here rather than
+ * re-derived, so the consolidated room never requires a tab switch to see
+ * whose turn it is. */
+function OnClockStrip({ board }: { board: DraftBoard }) {
+  const picksUntilOwner = board.nextOwnerPick && board.currentPick ? Math.max(0, board.nextOwnerPick - board.currentPick) : null;
+  return (
+    <section className="on-clock">
+      <div>
+        <span>{board.complete ? "Draft complete" : board.isOwnerTurn ? "You are on the clock" : `Team ${board.currentTeamSlot ?? "?"} is on the clock`}</span>
+        <strong>{board.currentPick ? `Pick ${board.currentPick}` : "Draft complete"}</strong>
+        <small>{board.positionRun?.length ? `Run: ${board.positionRun.map((run) => `${run.position} ×${run.count}`).join(", ")}` : "No active position run"}</small>
+      </div>
+      <div className="clock-ring">
+        <strong>{board.mode === "LIVE_READ_ONLY" ? "ENTER PICK" : board.isOwnerTurn ? "YOU" : "CPU"}</strong>
+        <span>{board.mode === "LIVE_READ_ONLY" ? "LIVE" : (board.speed ?? "")}</span>
+      </div>
+      <div>
+        <span>Next owner pick</span>
+        <strong>{board.nextOwnerPick ?? "—"}</strong>
+        <small>{picksUntilOwner != null ? `${picksUntilOwner} pick${picksUntilOwner === 1 ? "" : "s"} until your turn` : ""}</small>
+      </div>
+    </section>
   );
 }
 
@@ -593,13 +987,46 @@ function SuggestionsTab({
   onPlayerClick,
   decisionBundle,
   loading,
+  rosterStrip,
+  positionDemand,
+  closeCall,
+  canRecordPick,
+  working,
+  queuedIds,
+  onDraft,
+  onQueue,
+  externalIntel,
 }: {
   rows: SuggestionRow[];
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
   decisionBundle: DecisionBundle | null;
   loading: boolean;
+  rosterStrip: RosterStripSlot[];
+  positionDemand: PositionDemandRow[];
+  closeCall: { a: SuggestionRow; b: SuggestionRow } | null;
+  canRecordPick: boolean;
+  working: string;
+  queuedIds: string[];
+  onDraft: (playerId: string) => void;
+  onQueue: (playerId: string) => void;
+  externalIntel: RedraftExternalIntelligence | null;
 }) {
   const columns: TableColumn[] = [
+    { key: "pick", label: "Pick", align: "right", render: (row) => (
+      <span className="draft-room-v2-pick-actions">
+        <Button
+          data-draft-action
+          disabled={!canRecordPick || Boolean(working)}
+          variant="primary"
+          onClick={() => onDraft(String(row.playerId))}
+        >
+          {working === String(row.playerId) ? "Saving…" : "Draft"}
+        </Button>
+        <Button variant="ghost" onClick={() => onQueue(String(row.playerId))}>
+          {queuedIds.includes(String(row.playerId)) ? "Queued" : "Queue"}
+        </Button>
+      </span>
+    ) },
     { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => formatNumber(row.pickScore as number, 1) },
     { key: "playerName", label: "Player", sort: "text", render: (row) => (
       <span
@@ -621,22 +1048,69 @@ function SuggestionsTab({
     ) },
     { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => formatNumber(row.costOfWaiting as number, 1) },
     { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+    { key: "decisionQualityPercentile", label: "Decision Quality — RAW ACTION VALUE", sort: "number", render: (row) => {
+      const status = row.rawActionValueStatus as string | null;
+      if (row.decisionQualityPercentile == null) return status === "SKIPPED_TOP_N_ONLY" ? <span title="Outside this pick's cost-controlled Raw Action Value candidate set.">n/a</span> : (status ?? "n/a");
+      return <span title={`Expected regret: ${row.expectedRegret != null ? formatNumber(row.expectedRegret as number, 1) : "—"}`}>{formatNumber(row.decisionQualityPercentile as number, 0)}</span>;
+    } },
     { key: "action", label: "Action", sort: "text", render: (row) => <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
     { key: "alertText", label: "Alert", sort: "text", render: (row) => row.alertText ? <span title={String(row.alertText)}><StatusBadge tone={severityToBadgeTone(row.alertSeverity as string | null)} label={String(row.alertSeverity ?? "Alert")} /></span> : "—" },
   ];
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
-    <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
-      {loading ? (
-        <EmptyState icon="activity" title="Computing…" message="Calculating the real DecisionBundle for this pick." />
-      ) : unavailableReason ? (
-        <EmptyState icon="alert" title="DecisionBundle unavailable" message={unavailableReason} />
-      ) : rows.length === 0 ? (
-        <EmptyState icon="activity" title="No suggestions yet" message="Start the Draft Room to populate this table." />
-      ) : (
-        <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
-      )}
-    </Panel>
+    <>
+      {(rosterStrip.length > 0 || positionDemand.length > 0) ? (
+        <Panel title="My roster & opponent demand" eyebrow="Compact context — full detail in Teams">
+          {rosterStrip.length > 0 ? (
+            <div className="roster-strip">
+              {rosterStrip.map((slot) => (
+                <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>
+                  {slot.label} {slot.have}/{slot.need}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {positionDemand.length > 0 ? (
+            <div className="roster-strip draft-room-v2-position-demand" title="Opponents who already have a full starting group at this position -- reused from the same real roster-need signal Make-It-Back/Cost of Waiting already fold into their own simulations.">
+              {positionDemand.map((row) => (
+                <span key={row.position} className="roster-slot">
+                  {row.position} demand: {row.filledOpponents}/{row.totalOpponents} opponents filled
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </Panel>
+      ) : null}
+      {externalIntel?.stale ? (
+        <div className="alert-strip" role="status">
+          <strong>STALE ALERT DATA</strong>
+          <span>
+            The current-alert snapshot is {externalIntel.snapshotAgeHours != null ? `${formatNumber(externalIntel.snapshotAgeHours, 1)}h` : "an unknown amount of time"} old
+            {externalIntel.snapshotGeneratedAtUtc ? ` (built ${externalIntel.snapshotGeneratedAtUtc})` : ""}. A quiet Alert column below may mean no current news, or it may mean this snapshot has not been refreshed since it was built -- not a confirmed absence of news.
+          </span>
+        </div>
+      ) : null}
+      {closeCall ? (
+        <div className="alert-strip" role="status">
+          <strong>CLOSE CALL</strong>
+          <span>
+            {closeCall.a.playerName} and {closeCall.b.playerName} have nearly identical Pick Score — EXPERIMENTAL
+            ({formatNumber(closeCall.a.pickScore, 1)} vs {formatNumber(closeCall.b.pickScore, 1)}). The formula cannot cleanly separate them; use roster fit, Make-It-Back, Decision Quality — RAW ACTION VALUE, and Alert context below to break the tie.
+          </span>
+        </div>
+      ) : null}
+      <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
+        {loading ? (
+          <EmptyState icon="activity" title="Computing…" message="Calculating the real DecisionBundle for this pick." />
+        ) : unavailableReason ? (
+          <EmptyState icon="alert" title="DecisionBundle unavailable" message={unavailableReason} />
+        ) : rows.length === 0 ? (
+          <EmptyState icon="activity" title="No suggestions yet" message="Start the Draft Room to populate this table." />
+        ) : (
+          <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
+        )}
+      </Panel>
+    </>
   );
 }
 
@@ -685,29 +1159,65 @@ function PlayersTab({
   );
 }
 
+/**
+ * Fixed team-column geometry (section: "one fixed column per team, not
+ * capped/wrapping"): a real, reproduced bug -- the prior grid used
+ * `repeat(auto-fill, minmax(96px, 1fr))`, which wraps to however many
+ * columns fit the viewport, completely independent of the league's real
+ * team count (the exact "wraps at 12 columns" symptom this fixed-column
+ * layout, ported directly from the already-correct pages.tsx#DraftRoomPage
+ * board, was reported to reproduce). Team columns are fixed vertically by
+ * `teamSlot` regardless of snake direction; rounds are rows; the whole
+ * grid scrolls horizontally rather than wrapping for a wide league.
+ */
 function BoardTab({
   board,
+  profile,
   onPlayerClick,
 }: {
   board: DraftBoard | null | undefined;
+  profile: LeagueProfile | null | undefined;
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
 }) {
-  if (!board?.boardCells) {
+  if (!board?.boardCells || !profile) {
     return <EmptyState icon="activity" title="No draft board yet" message="Start the Draft Room from the standard Draft Room page first." />;
   }
+  const teamCount = profile.teamCount;
+  const rounds = profile.draft.rounds;
+  const cellByRoundAndSlot = new Map(board.boardCells.map((cell) => [`${cell.round}-${cell.teamSlot}`, cell]));
   return (
-    <Panel title="Draft Board" eyebrow={`${board.boardCells.length} slots`}>
-      <div className="draft-board-v2-grid">
-        {board.boardCells.map((cell) => (
-          <article
-            key={cell.pickNumber}
-            className={`draft-board-v2-cell ${cell.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell.current ? "draft-board-v2-cell--current" : ""}`}
-            onClick={cell.playerId ? (event) => onPlayerClick(cell.playerId, event) : undefined}
-          >
-            <span className="draft-board-v2-cell__pick">#{cell.pickNumber}</span>
-            <span className="draft-board-v2-cell__player">{cell.playerName || (cell.status === "UNRESOLVED" ? "Unresolved" : "Open")}</span>
-          </article>
-        ))}
+    <Panel title="Draft Board" eyebrow={`${teamCount} teams × ${rounds} rounds — fixed columns, scroll for wide leagues`}>
+      <div className="draft-board-scroll">
+        <div
+          className="draft-board-v2-grid"
+          style={{ gridTemplateColumns: `38px repeat(${teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + teamCount * 111}px` }}
+        >
+          <div className="draft-board-v2-corner">Rd</div>
+          {Array.from({ length: teamCount }, (_, index) => index + 1).map((slot) => (
+            <div key={`head-${slot}`} className={slot === board.ownerSlot ? "draft-board-v2-head draft-board-v2-head--owner" : "draft-board-v2-head"}>
+              T{slot}{slot === board.ownerSlot ? " · YOU" : ""}
+            </div>
+          ))}
+          {Array.from({ length: rounds }, (_, index) => index + 1).flatMap((round) => [
+            <b className="draft-board-v2-round" key={`round-${round}`}>{round}</b>,
+            ...Array.from({ length: teamCount }, (_, column) => {
+              const slot = column + 1;
+              const cell = cellByRoundAndSlot.get(`${round}-${slot}`);
+              return (
+                <article
+                  key={`${round}-${slot}`}
+                  className={`draft-board-v2-cell ${cell?.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell?.current ? "draft-board-v2-cell--current" : ""}`}
+                  onClick={cell?.playerId ? (event) => onPlayerClick(cell.playerId, event) : undefined}
+                >
+                  <span className="draft-board-v2-cell__pick">{cell?.pickNumber ? `#${cell.pickNumber}` : ""}</span>
+                  <span className="draft-board-v2-cell__player">
+                    {cell?.playerName || (cell?.status === "UNRESOLVED" ? "Unresolved" : "Open")}
+                  </span>
+                </article>
+              );
+            }),
+          ])}
+        </div>
       </div>
     </Panel>
   );
@@ -850,17 +1360,78 @@ function ReplayTab({
   );
 }
 
+interface QueueRow {
+  playerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  nwrRank: number | null;
+}
+
+/** First-class Queue -- a proven-absent capability (audited before being
+ * added, see the comment on `queuedIds` in DraftRoomV2Page). Session-local
+ * only: it never mutates the draft board, and Draft here calls the same
+ * real markDrafted/ingestSleeperDraftPick path as every other Draft button
+ * in this room. */
+function QueueTab({
+  rows,
+  canRecordPick,
+  working,
+  onDraft,
+  onRemove,
+}: {
+  rows: QueueRow[];
+  canRecordPick: boolean;
+  working: string;
+  onDraft: (playerId: string) => void;
+  onRemove: (playerId: string) => void;
+}) {
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon="activity"
+        title="Queue is empty"
+        message="Queue a player from Suggestions, Rankings, or the Quick pick box above to track it here without drafting it yet."
+      />
+    );
+  }
+  return (
+    <Panel title="Queue" eyebrow={`${rows.length} queued — session-local, never affects the draft board until you Draft`}>
+      <DataTable
+        columns={[
+          { key: "nwrRank", label: "NWR", sort: "number", render: (row) => row.nwrRank == null ? "—" : String(row.nwrRank) },
+          { key: "playerName", label: "Player", sort: "text", render: (row) => (
+            <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span>
+          ) },
+          { key: "actions", label: "", align: "right", render: (row) => (
+            <span className="draft-room-v2-pick-actions">
+              <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(String(row.playerId))}>
+                {working === String(row.playerId) ? "Saving…" : "Draft"}
+              </Button>
+              <Button variant="ghost" onClick={() => onRemove(String(row.playerId))}>Remove</Button>
+            </span>
+          ) },
+        ]}
+        rows={rows as unknown as Array<Record<string, unknown>>}
+        rowKey={(row) => String(row.playerId)}
+      />
+    </Panel>
+  );
+}
+
 function PlayerDrawer({
   playerId,
   ranking,
   intel,
   candidate,
+  staleAlertData,
   onClose,
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
   intel: RedraftExternalIntelligenceEntry | undefined;
   candidate: DecisionBundleCandidate | undefined;
+  staleAlertData: boolean;
   onClose: () => void;
 }) {
   return (
@@ -910,8 +1481,9 @@ function PlayerDrawer({
         {intel?.currentAlert ? (
           <p><StatusBadge tone={severityToBadgeTone(intel.currentAlertSeverity)} label={intel.currentAlertSeverity ?? "Alert"} /> {intel.currentAlert}</p>
         ) : (
-          <p>No current alert on file.</p>
+          <p>No current alert on file.{staleAlertData ? " (Snapshot is stale -- see below. Absence of an alert here is not confirmed absence of news.)" : ""}</p>
         )}
+        {staleAlertData ? <p className="boundary-note">STALE ALERT DATA — this player's alert fields come from an aging local snapshot; treat a quiet alert as unconfirmed, not as cleared.</p> : null}
         {intel?.udkPositionRank ? <p>UDK position rank: {intel.udkPositionRank} (tier {intel.udkTier ?? "—"})</p> : null}
         {intel?.fantasyProsEcr ? <p>FantasyPros ECR: {intel.fantasyProsEcr}</p> : null}
       </section>

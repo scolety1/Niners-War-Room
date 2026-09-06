@@ -876,6 +876,13 @@ export interface RedraftExternalIntelligence {
   generatedNote: string;
   entries: RedraftExternalIntelligenceEntry[];
   hiddenByExperimentalMode?: boolean;
+  // Snapshot-age context for the underlying local cheat-sheet file (see
+  // src/services/redraft_external_intelligence_service.py) -- never
+  // changes generatedNote/entries, only labels their age so the UI can
+  // distinguish a genuinely quiet currentAlert from a stale snapshot.
+  snapshotGeneratedAtUtc?: string | null;
+  snapshotAgeHours?: number | null;
+  stale?: boolean;
 }
 
 export interface RedraftExternalIntelligenceResponse {

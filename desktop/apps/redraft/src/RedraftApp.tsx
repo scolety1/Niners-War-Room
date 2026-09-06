@@ -13,7 +13,13 @@ import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
-  { label: "Draft command", items: [{ label: "Draft Room", path: "/", icon: "draft", shortcut: "1" }, { label: "Draft Room V2 (preview)", path: "/draft-room-v2", icon: "draft" }] },
+  // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
+  // at /draft-room-v2 is now the primary "Draft Room" surface; the
+  // original single-page room stays reachable, unmodified, as the
+  // "Legacy Draft Room" fallback -- routes are intentionally unchanged
+  // ("/" still resolves to the legacy page) so no existing bookmark,
+  // keyboard shortcut, or hash link breaks the night before a real draft.
+  { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }, { label: "Legacy Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
   { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
   { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },

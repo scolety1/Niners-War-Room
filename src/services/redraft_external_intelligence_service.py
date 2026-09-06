@@ -14,10 +14,22 @@ from __future__ import annotations
 import csv
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from src.services.redraft_engine_v1_service import RankingResult
+
+# Draft-day alert data (current_alert/current_alert_severity) goes stale
+# fast -- a snapshot built for a prior draft (e.g. KHA_FINAL_CHEAT_SHEET.csv,
+# built once per real draft day) can silently carry zero fresh alerts for a
+# LATER draft with no signal to the owner that anything is wrong (see the
+# real Puka Nacua investigation: the row was present and correctly
+# identity-matched, but current_alert was empty because the file was 4 days
+# old). This threshold is a UI staleness label only -- it never hides,
+# filters, or otherwise changes any entry; the owner always sees the real
+# (possibly empty) alert fields plus this age context.
+STALE_AFTER_HOURS = 24.0
 
 DEFAULT_CHEAT_SHEET_PATH = Path(r"C:\NWR_DRAFT_DAY_TOOLS\KHA_FINAL_CHEAT_SHEET.csv")
 DEFAULT_UDK_SNAPSHOT_PATH = Path(r"C:\NWR_DRAFT_DAY_TOOLS\2026-09-02\udk\KHA_UDK_2026_SNAPSHOT.csv")
@@ -106,6 +118,17 @@ def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
     except (OSError, csv.Error):
         return {"available": False, "generatedNote": "EXTERNAL INTEL UNAVAILABLE -- file unreadable", "entries": []}
 
+    snapshot_age_hours: float | None = None
+    snapshot_generated_at_utc: str | None = None
+    try:
+        mtime = path.stat().st_mtime
+        generated_at = datetime.fromtimestamp(mtime, tz=timezone.utc)
+        snapshot_generated_at_utc = generated_at.isoformat()
+        snapshot_age_hours = (datetime.now(timezone.utc) - generated_at).total_seconds() / 3600.0
+    except OSError:
+        pass  # age context is best-effort -- never blocks the real intelligence data below
+    stale = snapshot_age_hours is not None and snapshot_age_hours > STALE_AFTER_HOURS
+
     nwr_by_key = {
         (row.position, _norm_name(row.player_name), row.team): row.player_id
         for row in ranking.rows
@@ -143,4 +166,10 @@ def load_external_intelligence(ranking: RankingResult) -> dict[str, Any]:
             f"({udk_overlay_count} with identity-resolved UDK data)"
         ),
         "entries": entries,
+        # Additive staleness context (see STALE_AFTER_HOURS above) -- never
+        # changes generatedNote/entries, only labels their age so the owner
+        # can tell a quiet current_alert apart from a stale snapshot.
+        "snapshotGeneratedAtUtc": snapshot_generated_at_utc,
+        "snapshotAgeHours": round(snapshot_age_hours, 1) if snapshot_age_hours is not None else None,
+        "stale": stale,
     }
