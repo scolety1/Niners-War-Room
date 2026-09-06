@@ -12,8 +12,10 @@ reproduces live, exactly, with zero formula changes:
    simulate_pick_now`, the same real function `evaluate_pick_candidates`
    already uses for the live V1 Pick Score), let the rest of the draft
    complete under the real market/CPU continuation policy, then score the
-   resulting TERMINAL roster with the real, frozen `team_score()`
-   percentile. This is the exact "bounded look-ahead terminal value"
+   resulting TERMINAL roster with the real, frozen `team_score()`'s raw
+   `roster_value` (NOT its bucketed `.percentile` -- see the real,
+   reproduced saturation bug this fixes, documented inline below). This
+   is the exact "bounded look-ahead terminal value"
    `compute_raw_action_value()` requires -- never invented here.
 2. Feed those real per-trial terminal values straight into
    `decision_engine_v2_contracts_service.compute_raw_action_value()`
@@ -150,7 +152,24 @@ def evaluate_raw_action_value_live(
                 manual_assets,
                 comparable_leagues=comparable_leagues,
             )
-            trial_values.append(result.percentile)
+            # Real, traced fix (NWR Draft Room Consolidation V1, section 1):
+            # `.percentile` is bucketed against the comparable-league
+            # population (population_size = trials x team_count -- only 20
+            # at the FAST preset), so many genuinely-different real
+            # terminal rosters collapse onto the exact same percentile
+            # value deep in a real draft, producing a flat, uninformative
+            # Raw Action Value/regret for every candidate (reproduced
+            # against the real "Fantasy Gamers" league: 8 different real
+            # candidates all landed on percentile=90.0). `.roster_value`
+            # is the real, continuous, un-bucketed value the percentile is
+            # itself computed from -- using it here preserves the exact
+            # same real terminal-value semantics (still real Team Score
+            # output, still fed unmodified into compute_raw_action_value())
+            # while giving genuine, real-number resolution instead of a
+            # ~20-bucket ceiling. This does not touch team_score() itself,
+            # V1's live pick_score() (deliberately left alone -- it is the
+            # explicit real-draft fallback path), or any frozen model.
+            trial_values.append(result.roster_value)
         if trial_values:
             raw_terminal_values[candidate_id] = trial_values
 

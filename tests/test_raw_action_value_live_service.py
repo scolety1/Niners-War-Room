@@ -106,3 +106,71 @@ def test_evaluate_raw_action_value_live_returns_empty_for_no_candidates() -> Non
 
 def test_default_max_rav_candidates_is_small_for_cost_control() -> None:
     assert DEFAULT_MAX_RAV_CANDIDATES <= 8
+
+
+def test_mixed_position_candidates_deep_in_a_draft_do_not_collapse_to_identical_values() -> None:
+    """Regression fixture for a real bug found and fixed via the owner's own
+    live testing (real "Fantasy Gamers" league, round 4+): 8 real, materially
+    different candidates (QB/RB/WR, different NWR ranks and ADPs) all
+    returned the exact same Raw Action Value / Team Score / Pick Score --
+    "not credible candidate-specific evaluation" in the owner's own words.
+
+    Root cause, traced: `simulate_pick_now()`'s full-draft-completion
+    rollout produces genuinely different, but similarly-strong, terminal
+    rosters for different forced candidates deep in a draft (the market/CPU
+    continuation policy "fills in" comparably either way) -- and
+    `team_score()`'s PERCENTILE (bucketed against only a ~20-roster
+    comparable-league population at the FAST preset) is far too coarse to
+    tell those genuinely-different real rosters apart, collapsing them onto
+    the same bucket. Fixed by using the real, continuous, un-bucketed
+    `.roster_value` as the RAV terminal value instead of `.percentile` --
+    this test reproduces the exact structural conditions (an existing
+    partial roster, several mixed-position candidates simultaneously) and
+    asserts real, non-identical expected_terminal_value output."""
+    ranking = _ranking(team_count=10)
+    profile = ranking.profile
+    manual_assets: list[dict] = []
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=42
+    )
+    # An owner roster already several picks deep, matching the real
+    # scenario this bug was found in (round 4+, not a fresh empty roster).
+    from_state = {
+        "schema_version": 1,
+        "profile_id": profile.profile_id,
+        "owner_slot": 1,
+        "seed": 42,
+        "speed": "FAST",
+        "mode": "MOCK",
+        "drafted": ["RB-10", "WR-15", "TE-2"],
+        "picks": [
+            {"player_id": "RB-10", "team_slot": 1, "position": "RB", "player_name": "RB 10"},
+            {"player_id": "WR-15", "team_slot": 1, "position": "WR", "player_name": "WR 15"},
+            {"player_id": "TE-2", "team_slot": 1, "position": "TE", "player_name": "TE 2"},
+        ],
+        "updated_at_utc": "",
+    }
+    mixed_candidates = ["QB-0", "QB-1", "RB-11", "WR-16", "QB-2", "RB-12", "WR-17", "RB-13"]
+
+    result = evaluate_raw_action_value_live(
+        profile, ranking, manual_assets, adp,
+        owner_slot=1, candidate_player_ids=mixed_candidates,
+        from_state=from_state, comparable_leagues=leagues, state_id="deep-draft-mixed-position",
+        max_rav_candidates=8, rav_trials=2, base_seed=42,
+    )
+
+    ok_outcomes = [o for o in result.values() if o.status == "OK"]
+    assert len(ok_outcomes) >= 4, "expected most/all candidates to evaluate successfully"
+    terminal_values = [o.raw_action_value.expected_terminal_value for o in ok_outcomes]
+    # The real bug: every candidate collapsed to the exact same value. The
+    # fix must produce genuine spread -- not necessarily every value
+    # distinct, but not a single flat value across every candidate.
+    assert len(set(terminal_values)) > 1, (
+        f"all {len(terminal_values)} candidates collapsed to identical terminal values "
+        f"{terminal_values} -- this is the exact real saturation bug, not fixed"
+    )
+    # Regret must likewise show real spread, not a flat 0 (or flat anything)
+    # for every candidate.
+    regrets = [o.expected_regret for o in ok_outcomes]
+    assert len(set(regrets)) > 1, f"regret collapsed to a single value across candidates: {regrets}"
