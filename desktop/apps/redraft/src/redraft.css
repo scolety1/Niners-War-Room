@@ -12,12 +12,19 @@
   border: 1px solid rgba(184, 146, 244, .25);
   border-radius: 12px;
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   justify-content: space-between;
   margin: 0 0 12px;
   padding: 10px 14px;
 }
 .active-league-selector > div { min-width: 0; }
+/* Owner-test follow-up: at the owner's real desktop width, the ADP/ready
+   status badges could visually collide with the Switch dropdown because
+   this row never wrapped and the badges had no minimum protected size --
+   flex-wrap plus flex-shrink:0 on the badges fixes both. */
+.active-league-adp,
+.active-league-ready { flex-shrink: 0; }
 .active-league-selector strong,
 .active-league-selector small,
 .active-league-selector > div > span { display: block; }
@@ -383,10 +390,52 @@
    primary tabs, no permanent secondary column, aggressive vertical
    compression above the Suggestions table. */
 .draft-room-v2-tab__badge { background: rgba(154,108,255,.22); border-radius: 999px; color: #d7c9ff; font-size: 9px; padding: 1px 6px; }
-.draft-room-v2-content { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.draft-room-v2-content { display: flex; flex: 1; flex-direction: column; gap: 10px; min-width: 0; }
 .draft-room-v2-compare-tray { align-items: center; background: rgba(154,108,255,.12); border: 1px solid rgba(154,108,255,.32); border-radius: 8px; bottom: 16px; display: flex; gap: 10px; padding: 8px 14px; position: fixed; right: 16px; z-index: 20; }
 .draft-room-v2-pick-actions { display: flex; gap: 6px; justify-content: flex-end; }
-.rapid-capture__actions { display: flex; }
+.rapid-capture__actions { display: flex; gap: 6px; }
+.draft-room-v2-quickpick__name { cursor: pointer; min-width: 0; }
+
+/* P0 owner-workflow rescue: two-column workspace -- a real, narrow,
+   collapsible left utility pane (Rankings/Teams/Queue) beside the main
+   Suggestions/Cheat Sheets/Draft Board content. */
+.draft-room-v2-workspace { display: flex; gap: 14px; min-height: 0; }
+.draft-room-v2-leftpane { background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; display: flex; flex: 0 0 240px; flex-direction: column; max-height: calc(100vh - 320px); overflow: hidden; }
+.draft-room-v2-leftpane__tabs { align-items: center; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; gap: 4px; padding: 8px; }
+.draft-room-v2-leftpane-collapse { background: transparent; border: 0; color: var(--muted); cursor: pointer; margin-left: auto; padding: 4px; }
+.draft-room-v2-leftpane-collapse svg { transform: rotate(180deg); }
+.draft-room-v2-leftpane__body { flex: 1; overflow-y: auto; padding: 8px; }
+.draft-room-v2-leftpane__body .panel { background: transparent; border: 0; padding: 0; }
+.draft-room-v2-leftpane__section { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.draft-room-v2-leftpane__section:last-child { margin-bottom: 0; }
+.draft-room-v2-leftpane__label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.draft-room-v2-leftpane-rail { align-items: flex-start; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; color: var(--muted); cursor: pointer; display: flex; flex: 0 0 26px; justify-content: center; padding-top: 10px; }
+.draft-room-v2-teams-list { display: flex; flex-direction: column; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.draft-room-v2-teams-list__item { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 6px; display: flex; flex-direction: column; font-size: 10.5px; gap: 1px; padding: 5px 8px; }
+.draft-room-v2-teams-list__item span { color: var(--muted); font-size: 9.5px; }
+.draft-room-v2-teams-list__item--owner { border-color: rgba(211,169,84,.4); }
+.draft-room-v2-position-filter { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+
+/* Compact self-contained draft-slot setup (never requires Legacy). */
+.draft-room-v2-setup { align-items: flex-end; display: flex; flex-wrap: wrap; gap: 12px; }
+.draft-room-v2-setup__slots { display: flex; flex-wrap: wrap; gap: 4px; max-width: 340px; }
+
+/* Compact single-row on-clock context (replaces the large hero). */
+.draft-room-v2-onclock { align-items: center; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 9px; display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 12px; }
+.draft-room-v2-onclock__pick { color: var(--gold-bright); font-size: 13px; font-weight: 700; }
+.draft-room-v2-onclock__status { color: var(--text-soft); font-size: 11px; font-weight: 650; letter-spacing: .02em; }
+.draft-room-v2-onclock__until { background: rgba(154,108,255,.16); border-radius: 999px; color: #d7c9ff; font-size: 10px; font-weight: 700; padding: 2px 8px; }
+.draft-room-v2-onclock__snake { color: var(--muted); font-size: 11px; }
+.draft-room-v2-onclock__spacer { flex: 1; }
+.draft-room-v2-onclock__confirm { align-items: center; display: flex; gap: 8px; }
+.draft-room-v2-onclock__confirm span { color: var(--muted); font-size: 11px; }
+
+/* Board-record inline panel (click an open/current pick to record it). */
+.draft-room-v2-board-record { background: rgba(255,255,255,.03); border: 1px solid rgba(211,169,84,.3); border-radius: 8px; margin-bottom: 10px; padding: 10px; }
+.draft-room-v2-board-record__header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 6px; }
+.draft-room-v2-board-record .rapid-capture__results { max-height: 220px; }
+.draft-board-v2-cell--recordable { border-color: rgba(211,169,84,.5); cursor: pointer; }
+.draft-board-v2-cell--recordable:hover { background: rgba(211,169,84,.08); }
 
 /* Quick Pick: one compact row, instructions moved to placeholder/title. */
 .draft-room-v2-quickpick { align-items: center; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 9px; display: flex; flex-wrap: wrap; gap: 8px; padding: 7px 10px; position: relative; }

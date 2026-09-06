@@ -121,8 +121,11 @@ export function globalPickSearchRows(
   const trimmed = normalizeCommandSearch(query.trim());
   if (!trimmed) return [];
   const drafted = new Set(draftedIds);
+  // Owner-test follow-up: matches player name, team, AND position (e.g.
+  // "SF" or "QB" alone) -- a real, narrow gap this closes; manual rows
+  // already matched name+team, ranked rows previously matched name only.
   const fromRanked: PickSearchCandidate[] = rankedRows
-    .filter((row) => !drafted.has(row.playerId) && !row.drafted && normalizeCommandSearch(row.playerName).includes(trimmed))
+    .filter((row) => !drafted.has(row.playerId) && !row.drafted && normalizeCommandSearch(`${row.playerName} ${row.team} ${row.position}`).includes(trimmed))
     .map((row) => ({ ...row, source: "NWR" }));
   const fromManual: PickSearchCandidate[] = manualRows
     .filter((row) => !drafted.has(row.playerId) && normalizeCommandSearch(`${row.playerName} ${row.team}`).includes(trimmed))

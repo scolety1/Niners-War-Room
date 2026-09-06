@@ -98,6 +98,17 @@ describe("global pick search (KHA reconciliation-ledger regression)", () => {
     expect(punctuationResults.map((row) => row.playerId)).toContain("p-aj-brown");
   });
 
+  it("matches ranked players by team or position, not just name (owner-test follow-up: 'search QB' or 'search SF' must work)", () => {
+    const byTeam = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, [], [], "JAX");
+    expect(byTeam.map((row) => row.playerId)).toEqual(
+      expect.arrayContaining(["p-brian-thomas-jr", "p-jakobi-meyers"]),
+    );
+    const byPosition = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, [], [], "TE");
+    expect(byPosition.map((row) => row.playerId)).toEqual(
+      expect.arrayContaining(["p-travis-kelce", "p-dallas-goedert"]),
+    );
+  });
+
   it("finds a match across ranked and manual assets in one query regardless of the other position's rows present", () => {
     const results = globalPickSearchRows(KHA_SEARCH_FAILURE_PLAYERS, KHA_KDST_MANUAL_ASSETS, [], "texans");
     expect(results).toHaveLength(1);

@@ -90,6 +90,43 @@ REM build entirely). Building the sidecar first is unnecessary for this dev
 REM preview launch and is skipped here to match the canonical Redraft dev
 REM launcher pattern used elsewhere in this project.
 
+REM --- Pre-flight: port 1422 already bound? -----------------------------------
+REM Owner-reported real failure: relaunching this shortcut while the redraft
+REM app's Vite dev server (--strictPort, port 1422 -- apps/redraft/package.json)
+REM was still bound from a prior run produced a raw npm/Vite stack trace
+REM ("Port 1422 is already in use") instead of a usable message. This never
+REM kills anything based on the port alone (a foreign, unrelated process could
+REM legitimately hold 1422) -- it only verifies whether the listener is
+REM genuinely THIS app (by asking it for its own known page title) before
+REM deciding what to tell the owner.
+netstat -ano -p TCP | findstr /C:"127.0.0.1:1422" | findstr /C:"LISTENING" >nul 2>nul
+if not errorlevel 1 (
+  echo.
+  echo Port 1422 is already bound -- checking whether it is already NWR...
+  set "NWR_PORT_CHECK="
+  for /f "delims=" %%T in ('curl -s -m 3 http://127.0.0.1:1422/ 2^>nul ^| findstr /C:"Niners War Room"') do set "NWR_PORT_CHECK=1"
+  if defined NWR_PORT_CHECK (
+    echo.
+    echo ============================================================
+    echo NWR preview is already running at http://127.0.0.1:1422/
+    echo Look for its existing window ^(check your taskbar^) instead of
+    echo launching a second copy. Close that window first if you really
+    echo need a fresh instance, then re-run this shortcut.
+    echo ============================================================
+    pause
+    exit /b 0
+  ) else (
+    echo.
+    echo ============================================================
+    echo Port 1422 is in use by something else ^(not verified as NWR^).
+    echo This launcher will not force-close it. Close whatever is using
+    echo port 1422, then re-run this shortcut.
+    echo ============================================================
+    pause
+    exit /b 1
+  )
+)
+
 cd /d "%REPO_ROOT%\desktop"
 call npm run tauri:redraft
 echo.
