@@ -22,7 +22,7 @@ describe("tabLabel", () => {
     expect(tabLabel("SUGGESTIONS")).toBe("Suggestions");
     expect(tabLabel("CHEAT_SHEET")).toBe("Cheat Sheets");
     expect(tabLabel("PLAYERS")).toBe("Rankings");
-    expect(tabLabel("BOARD")).toBe("Board");
+    expect(tabLabel("BOARD")).toBe("Draft Board");
     expect(tabLabel("QUEUE")).toBe("Queue");
     expect(tabLabel("MY_TEAM")).toBe("Teams");
     expect(tabLabel("COMPARE")).toBe("Compare");

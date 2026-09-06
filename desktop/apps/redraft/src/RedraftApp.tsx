@@ -26,12 +26,37 @@ const NAVIGATION: NavigationGroup[] = [
   { label: "System", items: [{ label: "Projection & Data Health", path: "/data-health", icon: "health" }] },
 ];
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "nwr-redraft-sidebar-collapsed";
+
+function readStoredSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "1";
+  } catch {
+    return false; // localStorage can throw (private mode, blocked storage) -- default to expanded, never crash the shell.
+  }
+}
+
 export function RedraftApp() {
   const [client, setClient] = useState<NwrApiClient | null>(null);
   const [data, setData] = useState<RedraftBootstrap | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // Global sidebar collapse (owner requirement: maximum horizontal room
+  // during a live draft). Persisted across sessions the same way any
+  // per-viewer UI preference would be -- see readStoredSidebarCollapsed.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readStoredSidebarCollapsed);
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // Best-effort persistence only -- the toggle still works this session either way.
+      }
+      return next;
+    });
+  }, []);
   const reload = useCallback(() => setAttempt((value) => value + 1), []);
   useEffect(() => {
     let active = true;
@@ -57,13 +82,13 @@ export function RedraftApp() {
   }, [data]);
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><LoadingScreen label="Opening Redraft command center" /></div>;
   if (!data || !client) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><div className="standalone-state"><ErrorState message={error?.message ?? "The governed Redraft service is unavailable."} recovery={error?.recoveryAction} onRetry={reload} /></div></div>;
-  return <AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+  return <AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
     <ActiveLeagueSelector client={client} data={data} onUpdate={update} />
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
       <Route path="/" element={<DraftRoomPage client={client} data={data} onUpdate={update} />} />
-      <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} />} />
+      <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} globalSidebarCollapsed={sidebarCollapsed} onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed} />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
       <Route path="/compare" element={<ComparePage data={data} />} />

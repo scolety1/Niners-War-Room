@@ -65,6 +65,7 @@ export function tabLabel(tab: DraftRoomV2Tab): string {
   if (tab === "REPLAY") return "Historical Replay";
   if (tab === "CHEAT_SHEET") return "Cheat Sheets";
   if (tab === "PLAYERS") return "Rankings";
+  if (tab === "BOARD") return "Draft Board";
   return tab.charAt(0) + tab.slice(1).toLowerCase();
 }
 
@@ -458,13 +459,25 @@ export function DraftRoomV2Page({
   client,
   data,
   onUpdate,
+  globalSidebarCollapsed,
+  onToggleGlobalSidebarCollapsed,
 }: {
   client: NwrApiClient;
   data: RedraftBootstrap;
   onUpdate: (data: RedraftBootstrap) => void;
+  // Owner feedback (finishing pass): "maximum horizontal room during a
+  // live draft" -- an obvious toggle for the GLOBAL NWR sidebar lives
+  // here, in the Draft Room header, even though the collapse state itself
+  // is owned by RedraftApp/AppShell (see components.tsx) so it also
+  // persists correctly if the owner leaves and returns to Draft Room.
+  globalSidebarCollapsed?: boolean;
+  onToggleGlobalSidebarCollapsed?: () => void;
 }) {
   const [tab, setTab] = useState<DraftRoomV2Tab>("SUGGESTIONS");
-  const [sidebarVisible, setSidebarVisible] = useState(true);
+  // Secondary-tools popover (Rankings/Queue/Teams/Compare/Historical
+  // Replay) -- replaces the old permanent vertical secondary column
+  // (owner feedback: "defeats the information-density goal").
+  const [secondaryMenuOpen, setSecondaryMenuOpen] = useState(false);
   const [drawerPlayerId, setDrawerPlayerId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [externalIntel, setExternalIntel] = useState<RedraftExternalIntelligence | null>(null);
@@ -775,7 +788,7 @@ export function DraftRoomV2Page({
       <PageHeader
         eyebrow={draftRoomV2Eyebrow(board)}
         title={`${data.activeProfile.leagueName} — Draft Room`}
-        description="Suggestions / Cheat Sheets / Draft Board, plus Rankings, Queue, Teams, Compare and Historical Replay in the workspace. Alt+click any player to add them to Compare."
+        description="Suggestions, Cheat Sheets, and Draft Board are the three primary modes. Alt+click any player to add them to Compare."
         actions={
           <>
             <Button data-draft-undo disabled={!board?.canUndo || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>
@@ -789,9 +802,15 @@ export function DraftRoomV2Page({
             >
               {nwrPureToggling ? "NWR PURE — updating…" : nwrPureActive ? "NWR PURE — EXPERIMENTAL: ON" : "NWR PURE — EXPERIMENTAL: OFF"}
             </Button>
-            <Button variant="ghost" onClick={() => setSidebarVisible((value) => !value)}>
-              {sidebarVisible ? "Hide sidebar" : "Show sidebar"}
-            </Button>
+            {onToggleGlobalSidebarCollapsed ? (
+              <Button
+                variant="ghost"
+                onClick={onToggleGlobalSidebarCollapsed}
+                title="Collapses the global NWR navigation to a narrow icon rail for maximum horizontal room during a live draft."
+              >
+                {globalSidebarCollapsed ? "Expand nav" : "Collapse nav"}
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -806,25 +825,27 @@ export function DraftRoomV2Page({
       ) : (
         <p className="boundary-note">Start the draft from the Legacy Draft Room to set your slot before using this room.</p>
       )}
-      <Panel className="quick-capture-panel" title="Quick pick" eyebrow={canRecordPick ? "Position filter ignored · type, arrows/Tab to choose, Enter to record" : "Start the draft, and wait for your turn, to record picks here"}>
-        <div className="rapid-capture">
-          <label className="search-input rapid-capture__input">
-            <Icon name="search" size={16} />
-            <input
-              aria-activedescendant={quickResults[quickActiveIndex] ? `quick-result-${quickActiveIndex}` : undefined}
-              aria-controls="quick-capture-results"
-              aria-label="Quick pick"
-              disabled={!canRecordPick}
-              onChange={(event) => { setQuickQuery(event.target.value); setQuickIndex(0); }}
-              onFocus={(event) => event.target.select()}
-              onKeyDown={onQuickKeyDown}
-              placeholder="Type a player, K, or D/ST…"
-              ref={quickInputRef}
-              type="search"
-              value={quickQuery}
-            />
-          </label>
-          <ul className="rapid-capture__results" id="quick-capture-results" role="listbox">
+      <div className="draft-room-v2-quickpick">
+        <span className="draft-room-v2-quickpick__label">Quick Pick</span>
+        <label className="search-input draft-room-v2-quickpick__input">
+          <Icon name="search" size={16} />
+          <input
+            aria-activedescendant={quickResults[quickActiveIndex] ? `quick-result-${quickActiveIndex}` : undefined}
+            aria-controls="quick-capture-results"
+            aria-label="Quick pick"
+            disabled={!canRecordPick}
+            onChange={(event) => { setQuickQuery(event.target.value); setQuickIndex(0); }}
+            onFocus={(event) => event.target.select()}
+            onKeyDown={onQuickKeyDown}
+            placeholder="Type a player, K, or D/ST… (position ignored · ↑↓/Tab to choose · Enter to record)"
+            ref={quickInputRef}
+            title={canRecordPick ? "Position filter ignored. Arrows/Tab to choose, Enter to record." : "Start the draft, and wait for your turn, to record picks here."}
+            type="search"
+            value={quickQuery}
+          />
+        </label>
+        {quickResults.length > 0 ? (
+          <ul className="rapid-capture__results draft-room-v2-quickpick__results" id="quick-capture-results" role="listbox">
             {quickResults.map((candidate, index) => (
               <li
                 aria-selected={index === quickActiveIndex}
@@ -843,88 +864,109 @@ export function DraftRoomV2Page({
                 </span>
               </li>
             ))}
-            {quickQuery.trim() && !quickResults.length ? <li className="rapid-capture__empty">No match in the ranked universe or manual K/DST/unmodeled pool.</li> : null}
           </ul>
-        </div>
-      </Panel>
-      <div className="draft-room-v2-layout">
-        {sidebarVisible ? (
-          <nav className="draft-room-v2-sidebar" aria-label="Draft Room tabs">
-            <span className="draft-room-v2-sidebar-group">Draft Room</span>
-            {DRAFT_ROOM_V2_PRIMARY_TABS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={tab === value}
-                className={tab === value ? "draft-room-v2-tab draft-room-v2-tab--active" : "draft-room-v2-tab"}
-                onClick={() => setTab(value)}
-              >
-                {tabLabel(value)}
-              </button>
-            ))}
-            <span className="draft-room-v2-sidebar-group">Workspace</span>
-            {DRAFT_ROOM_V2_SECONDARY_TABS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={tab === value}
-                className={tab === value ? "draft-room-v2-tab draft-room-v2-tab--active" : "draft-room-v2-tab"}
-                onClick={() => setTab(value)}
-              >
-                {tabLabel(value)}
-                {value === "QUEUE" && queuedRows.length > 0 ? <b className="draft-room-v2-tab__badge">{queuedRows.length}</b> : null}
-              </button>
-            ))}
-          </nav>
         ) : null}
-        <div className="draft-room-v2-content">
-          {tab === "SUGGESTIONS" ? (
-            <SuggestionsTab
-              rows={suggestions}
-              onPlayerClick={onPlayerClick}
-              decisionBundle={decisionBundle}
-              loading={decisionBundleLoading}
-              rosterStrip={rosterStrip}
-              positionDemand={positionDemand}
-              closeCall={closeCall}
-              canRecordPick={canRecordPick}
-              working={working}
-              queuedIds={queuedIds}
-              onDraft={(playerId) => void mark(playerId)}
-              onQueue={toggleQueue}
-              externalIntel={externalIntel}
-            />
-          ) : null}
-          {tab === "CHEAT_SHEET" ? <CheatSheetPage data={data} /> : null}
-          {tab === "PLAYERS" ? (
-            <PlayersTab data={data} intelById={intelById} onPlayerClick={onPlayerClick} />
-          ) : null}
-          {tab === "BOARD" ? <BoardTab board={board} profile={data.activeProfile} onPlayerClick={onPlayerClick} /> : null}
-          {tab === "QUEUE" ? (
-            <QueueTab
-              rows={queuedRows}
-              canRecordPick={canRecordPick}
-              working={working}
-              onDraft={(playerId) => void mark(playerId)}
-              onRemove={toggleQueue}
-            />
-          ) : null}
-          {tab === "MY_TEAM" ? <MyTeamTab summary={myTeam} currentScores={currentScores} /> : null}
-          {tab === "COMPARE" ? (
-            <CompareTab
-              rows={compareRows}
-              summary={compareSummary}
-              onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
-            />
-          ) : null}
-          {tab === "REPLAY" ? (
-            <ReplayTab
-              replay={historicalReplay}
-              loading={historicalReplayLoading}
-              error={historicalReplayError}
-            />
-          ) : null}
+        {quickQuery.trim() && !quickResults.length ? <p className="draft-room-v2-quickpick__empty">No match in the ranked universe or manual K/DST/unmodeled pool.</p> : null}
+      </div>
+      <div className="draft-room-v2-tabbar">
+        <nav className="draft-room-v2-tabbar__primary" aria-label="Draft Room modes">
+          {DRAFT_ROOM_V2_PRIMARY_TABS.map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={tab === value}
+              className={tab === value ? "draft-room-v2-htab draft-room-v2-htab--active" : "draft-room-v2-htab"}
+              onClick={() => { setTab(value); setSecondaryMenuOpen(false); }}
+            >
+              {tabLabel(value)}
+            </button>
+          ))}
+        </nav>
+        <div className="draft-room-v2-tabbar__secondary">
+          {(["PLAYERS", "QUEUE", "MY_TEAM"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={tab === value}
+              className={tab === value ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+              onClick={() => setTab(value)}
+            >
+              {tabLabel(value)}
+              {value === "QUEUE" && queuedRows.length > 0 ? <b className="draft-room-v2-tab__badge">{queuedRows.length}</b> : null}
+            </button>
+          ))}
+          <div className="draft-room-v2-more">
+            <button
+              type="button"
+              aria-expanded={secondaryMenuOpen}
+              aria-haspopup="menu"
+              className={secondaryMenuOpen || tab === "COMPARE" || tab === "REPLAY" ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+              onClick={() => setSecondaryMenuOpen((value) => !value)}
+            >
+              More
+              {compareIds.length > 0 ? <b className="draft-room-v2-tab__badge">{compareIds.length}</b> : null}
+              <Icon name="chevron" size={11} />
+            </button>
+            {secondaryMenuOpen ? (
+              <div className="draft-room-v2-more__menu" role="menu">
+                {(["COMPARE", "REPLAY"] as const).map((value) => (
+                  <button key={value} role="menuitem" type="button" onClick={() => { setTab(value); setSecondaryMenuOpen(false); }}>
+                    {tabLabel(value)}
+                    {value === "COMPARE" && compareIds.length > 0 ? <b className="draft-room-v2-tab__badge">{compareIds.length}</b> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
+      </div>
+      <div className="draft-room-v2-content">
+        {tab === "SUGGESTIONS" ? (
+          <SuggestionsTab
+            rows={suggestions}
+            onPlayerClick={onPlayerClick}
+            decisionBundle={decisionBundle}
+            loading={decisionBundleLoading}
+            rosterStrip={rosterStrip}
+            positionDemand={positionDemand}
+            closeCall={closeCall}
+            canRecordPick={canRecordPick}
+            working={working}
+            queuedIds={queuedIds}
+            onDraft={(playerId) => void mark(playerId)}
+            onQueue={toggleQueue}
+            externalIntel={externalIntel}
+          />
+        ) : null}
+        {tab === "CHEAT_SHEET" ? <CheatSheetPage data={data} /> : null}
+        {tab === "PLAYERS" ? (
+          <PlayersTab data={data} intelById={intelById} onPlayerClick={onPlayerClick} />
+        ) : null}
+        {tab === "BOARD" ? <BoardTab board={board} profile={data.activeProfile} onPlayerClick={onPlayerClick} /> : null}
+        {tab === "QUEUE" ? (
+          <QueueTab
+            rows={queuedRows}
+            canRecordPick={canRecordPick}
+            working={working}
+            onDraft={(playerId) => void mark(playerId)}
+            onRemove={toggleQueue}
+          />
+        ) : null}
+        {tab === "MY_TEAM" ? <MyTeamTab summary={myTeam} currentScores={currentScores} /> : null}
+        {tab === "COMPARE" ? (
+          <CompareTab
+            rows={compareRows}
+            summary={compareSummary}
+            onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
+          />
+        ) : null}
+        {tab === "REPLAY" ? (
+          <ReplayTab
+            replay={historicalReplay}
+            loading={historicalReplayLoading}
+            error={historicalReplayError}
+          />
+        ) : null}
       </div>
       {compareIds.length > 0 && tab !== "COMPARE" ? (
         <div className="draft-room-v2-compare-tray" role="status">
@@ -940,7 +982,9 @@ export function DraftRoomV2Page({
           ranking={drawerRanking}
           intel={drawerEntry}
           candidate={drawerCandidate}
+          currentTeamScore={decisionBundle && decisionBundle.available ? decisionBundle.currentTeamScore.percentile : null}
           staleAlertData={Boolean(externalIntel?.stale)}
+          staleAlertHours={externalIntel?.snapshotAgeHours ?? null}
           onClose={() => setDrawerPlayerId(null)}
         />
       ) : null}
@@ -1011,6 +1055,14 @@ function SuggestionsTab({
   onQueue: (playerId: string) => void;
   externalIntel: RedraftExternalIntelligence | null;
 }) {
+  const [newsDetailOpen, setNewsDetailOpen] = useState(false);
+  const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
+  // Compact primary table (owner feedback: headers must read as drafting
+  // chrome, not research-development labels). Evidence status
+  // (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH) moves to a header hover
+  // tooltip (titleHint) rather than living in the visible label -- the
+  // exact same underlying real, unmodified fields, never removed, always
+  // still one click away in the player drawer.
   const columns: TableColumn[] = [
     { key: "pick", label: "Pick", align: "right", render: (row) => (
       <span className="draft-room-v2-pick-actions">
@@ -1027,42 +1079,48 @@ function SuggestionsTab({
         </Button>
       </span>
     ) },
-    { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => formatNumber(row.pickScore as number, 1) },
     { key: "playerName", label: "Player", sort: "text", render: (row) => (
       <span
         className="player-cell player-cell--clickable"
         onClick={(event) => onPlayerClick(String(row.playerId), event as unknown as React.MouseEvent)}
         title="Click for Score Details / Why"
       >
-        <strong>{String(row.playerName)}</strong>
+        <strong>
+          {row.alertText ? (
+            <i
+              className={`draft-room-v2-alert-dot draft-room-v2-alert-dot--${severityToBadgeTone(row.alertSeverity as string | null)}`}
+              title={`${String(row.alertSeverity ?? "Alert")}: ${String(row.alertText)}`}
+            />
+          ) : null}
+          {String(row.playerName)}
+        </strong>
         <small>{String(row.team)} · {String(row.position)}</small>
       </span>
     ) },
-    { key: "nwrRank", label: "NWR", sort: "number", render: (row) => row.nwrRank == null ? "—" : String(row.nwrRank) },
-    { key: "marketExpectedPick", label: "Market", sort: "number", render: (row) => row.marketExpectedPick == null ? "—" : formatNumber(row.marketExpectedPick as number, 1) },
-    { key: "teamScoreAfter", label: "Team Score — RESEARCH", sort: "number", render: (row) => (
-      <span title="Before → After, see Score Details">{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
+    { key: "pickScore", label: "Pick Score", titleHint: "Pick Score — EXPERIMENTAL: the historically-validated but not yet independently audited combined recommendation.", sort: "number", render: (row) => formatNumber(row.pickScore as number, 1) },
+    { key: "teamScoreAfter", label: "Team After", titleHint: "Team Score — RESEARCH. 'After' projects a full-draft completion assuming this pick now; the (Δ) in parentheses reflects this pick PLUS the rest of the draft playing out, not an isolated single-pick value. See player detail for current→after.", sort: "number", render: (row) => (
+      <span>{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
     ) },
-    { key: "championshipEquityAfter", label: "Champ Eq — SIMULATED RESEARCH", sort: "number", render: (row) => (
-      <span>{formatNumber((row.championshipEquityAfter as number) * 100, 1)}% ({row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp)</span>
+    { key: "championshipEquityAfter", label: "Equity Δ", titleHint: "Championship Equity — SIMULATED RESEARCH. Percentage-point change from this pick.", sort: "number", render: (row) => (
+      <span title={`${formatNumber((row.championshipEquityAfter as number) * 100, 1)}% after this pick`}>{row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp</span>
     ) },
-    { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => formatNumber(row.costOfWaiting as number, 1) },
-    { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
-    { key: "decisionQualityPercentile", label: "Decision Quality — RAW ACTION VALUE", sort: "number", render: (row) => {
+    { key: "makeItBackProbability", label: "Make Back", titleHint: "Make-It-Back: probability this player survives to your next pick if you wait.", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+    { key: "decisionQualityPercentile", label: "DQ", titleHint: "Decision Quality — Raw Action Value: differentiates candidates even when Pick Score ties (0-100). Hover a value for expected regret.", sort: "number", render: (row) => {
       const status = row.rawActionValueStatus as string | null;
       if (row.decisionQualityPercentile == null) return status === "SKIPPED_TOP_N_ONLY" ? <span title="Outside this pick's cost-controlled Raw Action Value candidate set.">n/a</span> : (status ?? "n/a");
       return <span title={`Expected regret: ${row.expectedRegret != null ? formatNumber(row.expectedRegret as number, 1) : "—"}`}>{formatNumber(row.decisionQualityPercentile as number, 0)}</span>;
     } },
+    { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
+    { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => row.marketExpectedPick == null ? "—" : formatNumber(row.marketExpectedPick as number, 1) },
     { key: "action", label: "Action", sort: "text", render: (row) => <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
-    { key: "alertText", label: "Alert", sort: "text", render: (row) => row.alertText ? <span title={String(row.alertText)}><StatusBadge tone={severityToBadgeTone(row.alertSeverity as string | null)} label={String(row.alertSeverity ?? "Alert")} /></span> : "—" },
   ];
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
     <>
-      {(rosterStrip.length > 0 || positionDemand.length > 0) ? (
-        <Panel title="My roster & opponent demand" eyebrow="Compact context — full detail in Teams">
+      {(rosterStrip.length > 0 || positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
+        <div className="draft-room-v2-compact-context">
           {rosterStrip.length > 0 ? (
-            <div className="roster-strip">
+            <div className="draft-room-v2-compact-context__row" title="My roster — full detail in Teams">
               {rosterStrip.map((slot) => (
                 <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>
                   {slot.label} {slot.have}/{slot.need}
@@ -1071,32 +1129,51 @@ function SuggestionsTab({
             </div>
           ) : null}
           {positionDemand.length > 0 ? (
-            <div className="roster-strip draft-room-v2-position-demand" title="Opponents who already have a full starting group at this position -- reused from the same real roster-need signal Make-It-Back/Cost of Waiting already fold into their own simulations.">
+            <div
+              className="draft-room-v2-compact-context__row"
+              title="Opponents who already have a full starting group at this position -- reused from the same real roster-need signal Make-It-Back/Cost of Waiting already fold into their own simulations."
+            >
               {positionDemand.map((row) => (
                 <span key={row.position} className="roster-slot">
-                  {row.position} demand: {row.filledOpponents}/{row.totalOpponents} opponents filled
+                  {row.position} demand {row.filledOpponents}/{row.totalOpponents}
                 </span>
               ))}
             </div>
           ) : null}
-        </Panel>
-      ) : null}
-      {externalIntel?.stale ? (
-        <div className="alert-strip" role="status">
-          <strong>STALE ALERT DATA</strong>
-          <span>
-            The current-alert snapshot is {externalIntel.snapshotAgeHours != null ? `${formatNumber(externalIntel.snapshotAgeHours, 1)}h` : "an unknown amount of time"} old
-            {externalIntel.snapshotGeneratedAtUtc ? ` (built ${externalIntel.snapshotGeneratedAtUtc})` : ""}. A quiet Alert column below may mean no current news, or it may mean this snapshot has not been refreshed since it was built -- not a confirmed absence of news.
-          </span>
-        </div>
-      ) : null}
-      {closeCall ? (
-        <div className="alert-strip" role="status">
-          <strong>CLOSE CALL</strong>
-          <span>
-            {closeCall.a.playerName} and {closeCall.b.playerName} have nearly identical Pick Score — EXPERIMENTAL
-            ({formatNumber(closeCall.a.pickScore, 1)} vs {formatNumber(closeCall.b.pickScore, 1)}). The formula cannot cleanly separate them; use roster fit, Make-It-Back, Decision Quality — RAW ACTION VALUE, and Alert context below to break the tie.
-          </span>
+          {externalIntel?.stale ? (
+            <button
+              type="button"
+              className="draft-room-v2-status-chip"
+              aria-expanded={newsDetailOpen}
+              onClick={() => setNewsDetailOpen((value) => !value)}
+              title="Click for detail"
+            >
+              ⚠ News {externalIntel.snapshotAgeHours != null ? `${formatNumber(externalIntel.snapshotAgeHours, 0)}h` : "?"} stale
+            </button>
+          ) : null}
+          {closeCall ? (
+            <button
+              type="button"
+              className="draft-room-v2-status-chip"
+              aria-expanded={closeCallDetailOpen}
+              onClick={() => setCloseCallDetailOpen((value) => !value)}
+              title="Click for detail"
+            >
+              CLOSE CALL: {closeCall.a.playerName} ≈ {closeCall.b.playerName}
+            </button>
+          ) : null}
+          {newsDetailOpen && externalIntel?.stale ? (
+            <p className="draft-room-v2-compact-context__detail">
+              The current-alert snapshot is {externalIntel.snapshotAgeHours != null ? `${formatNumber(externalIntel.snapshotAgeHours, 1)}h` : "an unknown amount of time"} old
+              {externalIntel.snapshotGeneratedAtUtc ? ` (built ${externalIntel.snapshotGeneratedAtUtc})` : ""}. A quiet player below may mean no current news, or it may mean this snapshot hasn't been refreshed since it was built — not a confirmed absence of news. A player with a real current alert on file still shows the marker next to their name regardless of this global staleness.
+            </p>
+          ) : null}
+          {closeCallDetailOpen && closeCall ? (
+            <p className="draft-room-v2-compact-context__detail">
+              {closeCall.a.playerName} ({formatNumber(closeCall.a.pickScore, 1)}) and {closeCall.b.playerName} ({formatNumber(closeCall.b.pickScore, 1)}) have nearly
+              identical Pick Score — EXPERIMENTAL. The formula cannot cleanly separate them; use roster fit, Make Back, DQ, and any alert marker to break the tie.
+            </p>
+          ) : null}
         </div>
       ) : null}
       <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
@@ -1419,74 +1496,143 @@ function QueueTab({
   );
 }
 
+/** Owner-test follow-up: the drawer was too verbose/research-oriented for
+ * live use. Redesigned to a compact primary block (player, Pick Score,
+ * Team Score current->after->delta, Championship Equity, Make-It-Back,
+ * Cost of Waiting, Player Score, Market ADP, Action), with WHY/NEWS/
+ * DETAILS as collapsed-by-default sections. Research-development wording
+ * (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH, Raw Decision Utility
+ * component math) moves into DETAILS/tooltips rather than the primary
+ * view -- never removed, never hidden from the system, just not the
+ * first thing a live-draft owner has to read past. */
 function PlayerDrawer({
   playerId,
   ranking,
   intel,
   candidate,
+  currentTeamScore,
   staleAlertData,
+  staleAlertHours,
   onClose,
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
   intel: RedraftExternalIntelligenceEntry | undefined;
   candidate: DecisionBundleCandidate | undefined;
+  currentTeamScore: number | null;
   staleAlertData: boolean;
+  staleAlertHours: number | null;
   onClose: () => void;
 }) {
+  const playerScore = candidate?.playerScore ?? (ranking ? ranking.replacementAdjustedValue : null);
   return (
     <aside className="player-drawer" role="dialog" aria-label={`${ranking?.playerName ?? playerId} detail`}>
       <div className="player-drawer__header">
-        <strong>{ranking?.playerName ?? candidate?.playerName ?? playerId}</strong>
+        <div>
+          <strong>{ranking?.playerName ?? candidate?.playerName ?? playerId}</strong>
+          <small>{String(ranking?.position ?? candidate?.position ?? "")} · {String(ranking?.team ?? "")}</small>
+        </div>
         <Button variant="ghost" onClick={onClose}>Close</Button>
       </div>
-      <section>
-        <h3>NWR</h3>
-        <p>Rank #{ranking?.overallRank ?? "—"} · {ranking?.overallTierLabel ?? "—"}</p>
-        <p>Player Score: {candidate?.playerScore != null ? formatNumber(candidate.playerScore, 1) : ranking ? formatNumber(ranking.replacementAdjustedValue, 1) : "—"}</p>
-      </section>
-      <section>
-        <h3>Draft</h3>
-        <p>Market ADP: {ranking?.overallAdp != null ? formatNumber(ranking.overallAdp, 1) : "—"}</p>
-        <p>Expected round: {ranking?.expectedRound ?? "—"}</p>
-        <p>Cost of Waiting: {candidate ? formatNumber(candidate.costOfWaiting, 1) : "Not evaluated as a current Suggestions candidate."}</p>
-        <p>Make-It-Back: {candidate?.makeItBackProbability != null ? `${formatNumber(candidate.makeItBackProbability * 100, 0)}%` : "UNKNOWN"}</p>
-      </section>
-      <section>
-        <h3>Roster Impact — Pick Score EXPERIMENTAL / Team Score &amp; Championship Equity RESEARCH</h3>
-        {candidate ? (
-          <>
-            <p>Team Score Delta: {candidate.teamScoreDelta >= 0 ? "+" : ""}{formatNumber(candidate.teamScoreDelta, 1)}</p>
-            <p>Championship Equity Gain: {candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</p>
-            <p>Pick Score — EXPERIMENTAL: {formatNumber(candidate.pickScore, 1)}</p>
-            <p>Raw Decision Utility: {formatNumber(candidate.rawDecisionUtility, 2)} (Team Score component {formatNumber(candidate.teamScoreUtilityComponent, 2)} + Equity component {formatNumber(candidate.equityUtilityComponent, 2)})</p>
-            <p>Action: <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action} /></p>
-            <p>Uncertainty: {candidate.uncertainty}</p>
-            {candidate.warnings.length > 0 ? (
-              <ul className="drawer-warnings">
-                {candidate.warnings.map((warning) => <li key={warning}>{warning}</li>)}
-              </ul>
-            ) : null}
-          </>
-        ) : (
+      {candidate ? (
+        <div className="player-drawer__primary">
+          <div className="player-drawer__stat player-drawer__stat--headline" title="Pick Score — EXPERIMENTAL: historically-validated but not yet independently audited.">
+            <span>Pick Score</span>
+            <strong>{formatNumber(candidate.pickScore, 1)}</strong>
+          </div>
+          <div
+            className="player-drawer__stat"
+            title="Team Score — RESEARCH. 'After' reflects a full-draft-completion projection assuming this pick now; the delta therefore reflects this pick PLUS the rest of the draft playing out under the model's continuation policy, not an isolated single-pick value."
+          >
+            <span>Team Score</span>
+            <strong>{currentTeamScore != null ? formatNumber(currentTeamScore, 1) : "—"} → {formatNumber(candidate.teamScoreAfter, 1)}</strong>
+            <small>{candidate.teamScoreDelta >= 0 ? "+" : ""}{formatNumber(candidate.teamScoreDelta, 1)}</small>
+          </div>
+          <div className="player-drawer__stat" title="Championship Equity — SIMULATED RESEARCH.">
+            <span>Championship Equity</span>
+            <strong>{formatNumber(candidate.championshipEquityAfter * 100, 1)}%</strong>
+            <small>{candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</small>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Make-It-Back</span>
+            <strong>{candidate.makeItBackProbability != null ? `${formatNumber(candidate.makeItBackProbability * 100, 0)}%` : "UNKNOWN"}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Cost of Waiting</span>
+            <strong>{formatNumber(candidate.costOfWaiting, 1)}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Player Score</span>
+            <strong>{playerScore != null ? formatNumber(playerScore, 1) : "—"}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Market ADP</span>
+            <strong>{ranking?.overallAdp != null ? formatNumber(ranking.overallAdp, 1) : "—"}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Action</span>
+            <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action} />
+          </div>
+        </div>
+      ) : (
+        <div className="player-drawer__primary">
+          <div className="player-drawer__stat">
+            <span>Player Score</span>
+            <strong>{playerScore != null ? formatNumber(playerScore, 1) : "—"}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>Market ADP</span>
+            <strong>{ranking?.overallAdp != null ? formatNumber(ranking.overallAdp, 1) : "—"}</strong>
+          </div>
+          <div className="player-drawer__stat">
+            <span>NWR Rank</span>
+            <strong>#{ranking?.overallRank ?? "—"}</strong>
+          </div>
           <p className="boundary-note">
-            Not among the top ranked Suggestions candidates this pick — Team Score / Championship
-            Equity impact is only computed for the actionable candidates the backend evaluated. See
-            the Suggestions tab.
+            Not among this pick's evaluated Suggestions candidates — Pick Score/Team Score/Championship Equity impact is
+            only computed for the actionable candidates the backend evaluated this turn.
           </p>
-        )}
-      </section>
-      <section>
-        <h3>Current</h3>
+        </div>
+      )}
+      {candidate ? (
+        <details className="player-drawer__section">
+          <summary>Why</summary>
+          <p>Raw Decision Utility: {formatNumber(candidate.rawDecisionUtility, 2)} (Team Score component {formatNumber(candidate.teamScoreUtilityComponent, 2)} + Equity component {formatNumber(candidate.equityUtilityComponent, 2)})</p>
+          {candidate.warnings.length > 0 ? (
+            <ul className="drawer-warnings">
+              {candidate.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          ) : null}
+        </details>
+      ) : null}
+      <details className="player-drawer__section">
+        <summary>News{staleAlertData ? ` — STALE${staleAlertHours != null ? ` (${formatNumber(staleAlertHours, 0)}h)` : ""}` : ""}</summary>
         {intel?.currentAlert ? (
           <p><StatusBadge tone={severityToBadgeTone(intel.currentAlertSeverity)} label={intel.currentAlertSeverity ?? "Alert"} /> {intel.currentAlert}</p>
         ) : (
-          <p>No current alert on file.{staleAlertData ? " (Snapshot is stale -- see below. Absence of an alert here is not confirmed absence of news.)" : ""}</p>
+          <p>No current alert on file.{staleAlertData ? " This does not confirm there is no current news -- the source snapshot has not been refreshed recently (see below)." : ""}</p>
         )}
-        {staleAlertData ? <p className="boundary-note">STALE ALERT DATA — this player's alert fields come from an aging local snapshot; treat a quiet alert as unconfirmed, not as cleared.</p> : null}
+        {staleAlertData ? (
+          <p className="boundary-note">
+            NEWS DATA STALE{staleAlertHours != null ? ` — ${formatNumber(staleAlertHours, 0)}h` : ""}. This player's alert fields come from an
+            aging local snapshot; treat a quiet alert as unconfirmed, not as real-world clearance.
+          </p>
+        ) : null}
         {intel?.udkPositionRank ? <p>UDK position rank: {intel.udkPositionRank} (tier {intel.udkTier ?? "—"})</p> : null}
         {intel?.fantasyProsEcr ? <p>FantasyPros ECR: {intel.fantasyProsEcr}</p> : null}
-      </section>
+      </details>
+      <details className="player-drawer__section">
+        <summary>Details</summary>
+        <p>NWR Rank #{ranking?.overallRank ?? "—"} · {ranking?.overallTierLabel ?? "—"} · Expected round {ranking?.expectedRound ?? "—"}</p>
+        {candidate ? (
+          <>
+            <p>Pick Score is EXPERIMENTAL — historically validated but not yet independently audited. Team Score and Championship Equity are RESEARCH-labeled simulation estimates, not calibrated probabilities.</p>
+            {/* Decision Confidence/uncertainty is NOT validated (program verdict) -- the raw SE-derived tier
+                (e.g. "LOW_MODEL_UNCERTAINTY") must never be presented as an authoritative confidence claim. */}
+            <p title={candidate.uncertainty}>Uncertainty: NOT VALIDATED</p>
+          </>
+        ) : null}
+      </details>
     </aside>
   );
 }

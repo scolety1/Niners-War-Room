@@ -71,10 +71,19 @@ interface AppShellProps {
   healthLabel: string;
   profileLabel: string;
   children: ReactNode;
+  // Global sidebar collapse -- proven absent before this addition (no prior
+  // AppShell caller had any way to narrow the always-full-width global
+  // nav). Both props are optional and default to "not collapsed, no
+  // toggle rendered" so every existing caller (Dynasty, and every Redraft
+  // page besides Draft Room) renders byte-for-byte as before; only a
+  // caller that explicitly wants the affordance (Draft Room, for maximum
+  // horizontal room during a live draft) passes them.
+  sidebarCollapsed?: boolean;
+  onToggleSidebarCollapsed?: () => void;
 }
 
 export function AppShell(props: AppShellProps) {
-  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children } = props;
+  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children, sidebarCollapsed = false, onToggleSidebarCollapsed } = props;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const commandTrigger = useRef<HTMLButtonElement>(null);
@@ -98,14 +107,25 @@ export function AppShell(props: AppShellProps) {
     content.current?.scrollTo({ behavior: "auto", left: 0, top: 0 });
   }, [location.pathname, location.search]);
   useEffect(() => setMobileNavOpen(false), [location.pathname]);
-  return <div className={`app-frame app-frame--${mode}`}>
+  return <div className={`app-frame app-frame--${mode} ${sidebarCollapsed ? "app-frame--sidebar-collapsed" : ""}`}>
     <WindowChrome title={title} />
     <div aria-hidden={paletteOpen ? true : undefined} className="app-frame__body" inert={paletteOpen ? true : undefined}>
-      <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}>
+      <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""} ${sidebarCollapsed ? "sidebar--collapsed" : ""}`}>
+        {onToggleSidebarCollapsed ? (
+          <button
+            aria-expanded={!sidebarCollapsed}
+            aria-label={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+            className="sidebar__collapse-toggle"
+            onClick={onToggleSidebarCollapsed}
+            title={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+          >
+            <Icon name="chevron" size={13} />
+          </button>
+        ) : null}
         <div className="brand-lockup"><div className="brand-lockup__crest" aria-hidden="true"><span>SF</span><i /></div><div><strong>Niners War Room</strong><span>{mode}</span></div></div>
         <div className="mode-ribbon"><i /><span>{contextLabel}</span></div>
         <nav aria-label={`${title} navigation`} className="sidebar__nav">
-          {navigation.map((group) => <div className="nav-group" key={group.label}><span className="nav-group__label">{group.label}</span>{group.items.map((item) => <NavLink className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} key={item.path} to={item.path}><Icon name={item.icon} size={17} /><span>{item.label}</span>{item.shortcut ? <kbd>{item.shortcut}</kbd> : null}<Icon name="chevron" size={13} /></NavLink>)}</div>)}
+          {navigation.map((group) => <div className="nav-group" key={group.label}><span className="nav-group__label">{group.label}</span>{group.items.map((item) => <NavLink className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} key={item.path} title={sidebarCollapsed ? item.label : undefined} to={item.path}><Icon name={item.icon} size={17} /><span>{item.label}</span>{item.shortcut ? <kbd>{item.shortcut}</kbd> : null}<Icon name="chevron" size={13} /></NavLink>)}</div>)}
         </nav>
         <div className="sidebar__footer"><div className="profile-chip"><div className="profile-chip__avatar">GM</div><div><span>Active context</span><strong>{profileLabel}</strong></div></div><div className="local-lock"><Icon name="shield" size={14} /> Local only · protected session</div></div>
       </aside>
@@ -190,6 +210,11 @@ export function SegmentedControl({ label, options, value, onChange }: { label: s
 export interface TableColumn {
   key: string;
   label: string;
+  // Optional header hover text -- lets a compact column label ("Pick
+  // Score") carry a longer provenance/evidence note ("EXPERIMENTAL...")
+  // without that note living in the visible chrome. Purely additive;
+  // every existing column omits it and renders exactly as before.
+  titleHint?: string;
   align?: "left" | "right" | "center";
   width?: string;
   render?: (row: Record<string, unknown>) => ReactNode;
@@ -231,7 +256,7 @@ export function DataTable({
   };
   return <div className="data-table-wrap"><table className="data-table"><thead><tr>{columns.map((column) => {
     const direction = sort?.key === column.key ? sort.direction : undefined;
-    return <th aria-sort={column.sort ? direction ?? "none" : undefined} key={column.key} scope="col" style={{ textAlign: column.align ?? "left", width: column.width }}>{column.sort ? <button className="data-table__sort" onClick={() => toggleSort(column)} type="button"><span>{column.label}</span><span aria-hidden="true">{direction === "ascending" ? "▲" : direction === "descending" ? "▼" : "↕"}</span></button> : column.label}</th>;
+    return <th aria-sort={column.sort ? direction ?? "none" : undefined} key={column.key} scope="col" style={{ textAlign: column.align ?? "left", width: column.width }} title={column.titleHint}>{column.sort ? <button className="data-table__sort" onClick={() => toggleSort(column)} type="button"><span>{column.label}</span><span aria-hidden="true">{direction === "ascending" ? "▲" : direction === "descending" ? "▼" : "↕"}</span></button> : column.label}</th>;
   })}</tr></thead><tbody>{displayedRows.map((row) => <tr className={onRowClick ? "data-table__clickable" : ""} key={rowKey(row)} onClick={() => onRowClick?.(row)} onKeyDown={(event) => { if (onRowClick && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onRowClick(row); } }} role={onRowClick ? "link" : undefined} tabIndex={onRowClick ? 0 : undefined}>{columns.map((column) => <td key={column.key} style={{ textAlign: column.align ?? "left" }}>{column.render ? column.render(row) : String(row[column.key] ?? "—")}</td>)}</tr>)}</tbody></table>{!displayedRows.length ? <div className="data-table__empty">{emptyMessage}</div> : null}</div>;
 }
 export function ProgressBar({ value, max = 100, tone = "violet" }: { value: number; max?: number; tone?: "violet" | "crimson" | "gold" | "cyan" }) { const width = Math.max(0, Math.min(100, (value / max) * 100)); return <span aria-label={`${Math.round(width)} percent`} aria-valuemax={max} aria-valuemin={0} aria-valuenow={Math.max(0, Math.min(max, value))} className={`progress progress--${tone}`} role="progressbar"><i style={{ "--progress": `${width}%` } as CSSProperties} /></span>; }
