@@ -1,0 +1,240 @@
+{
+  "latency": {
+    "cold_FAST": 3.795,
+    "warm_FAST": 4.828,
+    "STANDARD": 19.141,
+    "top5_rav_count": 5,
+    "total_candidates": 10
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "top_pick": {
+        "playerId": "00-0033280",
+        "playerName": "Christian McCaffrey",
+        "position": "RB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 95.0,
+      "cost_of_waiting": 5.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 100.0,
+      "top2_pick_score_gap": 16.700000000000003,
+      "top2_raw_action_value_gap": 5.0,
+      "top2_team_score_gap": 5.0
+    },
+    {
+      "round": 1,
+      "top_pick": {
+        "playerId": "00-0037744",
+        "playerName": "Trey McBride",
+        "position": "TE"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 95.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 0.0,
+      "top2_pick_score_gap": 50.0,
+      "top2_raw_action_value_gap": 0.0,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 2,
+      "top_pick": {
+        "playerId": "00-0034857",
+        "playerName": "Josh Allen",
+        "position": "QB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 95.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 0.0,
+      "top2_pick_score_gap": 0.0,
+      "top2_raw_action_value_gap": 0.0,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 3,
+      "top_pick": {
+        "playerId": "00-0037840",
+        "playerName": "Kyren Williams",
+        "position": "RB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 75.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 100.0,
+      "top2_pick_score_gap": 50.0,
+      "top2_raw_action_value_gap": null,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 4,
+      "top_pick": {
+        "playerId": "00-0036275",
+        "playerName": "D'Andre Swift",
+        "position": "RB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 20.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 0.0,
+      "top2_pick_score_gap": 0.0,
+      "top2_raw_action_value_gap": null,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 5,
+      "top_pick": {
+        "playerId": "00-0026498",
+        "playerName": "Matthew Stafford",
+        "position": "QB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 10.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 0.0,
+      "top2_pick_score_gap": 0.0,
+      "top2_raw_action_value_gap": 0.0,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 6,
+      "top_pick": {
+        "playerId": "00-0037228",
+        "playerName": "Jaylen Warren",
+        "position": "RB"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 10.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 50.0,
+      "top2_pick_score_gap": 0.0,
+      "top2_raw_action_value_gap": null,
+      "top2_team_score_gap": 0.0
+    },
+    {
+      "round": 7,
+      "top_pick": {
+        "playerId": "00-0038559",
+        "playerName": "Michael Wilson",
+        "position": "WR"
+      },
+      "pick_score": 100.0,
+      "team_score_after": 95.0,
+      "team_score_delta": 10.0,
+      "cost_of_waiting": 0.0,
+      "raw_action_value_status": "OK",
+      "raw_action_value": {
+        "expected_terminal_value": 95.0,
+        "terminal_value_stdev": 0.0,
+        "terminal_objective_name": "TERMINAL_OBJECTIVE_TEAM_SCORE",
+        "lookahead_depth": 2,
+        "rollout_count": 2,
+        "model_version": "raw-action-value-live-v1-frozen-decision-engine-v2-contracts"
+      },
+      "expected_regret": 0.0,
+      "decision_quality_percentile": 0.0,
+      "top2_pick_score_gap": 0.0,
+      "top2_raw_action_value_gap": null,
+      "top2_team_score_gap": 0.0
+    }
+  ],
+  "close_call_flags": [
+    {
+      "round": 1,
+      "note": "Large Pick Score separation despite similar Team Score outcomes",
+      "top2_pick_score_gap": 50.0,
+      "top2_team_score_gap": 0.0,
+      "top2_raw_action_value_gap": 0.0
+    },
+    {
+      "round": 3,
+      "note": "Large Pick Score separation despite similar Team Score outcomes",
+      "top2_pick_score_gap": 50.0,
+      "top2_team_score_gap": 0.0,
+      "top2_raw_action_value_gap": null
+    }
+  ],
+  "undo_check": {
+    "before": 83,
+    "after": 82
+  },
+  "reset_ok": true
+}
