@@ -2191,8 +2191,22 @@ class DesktopBackendFacade:
         roster: Mapping[str, int],
         scoring: Mapping[str, float],
         draft: Mapping[str, Any],
+        practical_mode: bool | None = None,
     ) -> FacadePayload:
-        """Edit a bounded profile subset and delegate validation/persistence to Redraft V1."""
+        """Edit a bounded profile subset and delegate validation/persistence to Redraft V1.
+
+        `practical_mode` (NWR Mock-Draft QA Day, real gap found and fixed):
+        omitted/None preserves the profile's existing value unchanged --
+        fully backward compatible with every prior caller. Before this fix,
+        the ONLY place in this codebase that ever set `practical_mode=True`
+        was the Sleeper-import code path; a manually-created or manually-
+        edited profile (e.g. an ESPN league, which has no live-sync import)
+        had NO way to enable it, so rostering K/DST as real starters on such
+        a profile made ranking generation fail with an opaque
+        "REDRAFT_RANKINGS_UNAVAILABLE" error that never surfaced the real
+        cause (K/DST have zero rows in the ranked universe by design --
+        Practical Mode is what tells the replacement-level calculation to
+        stop expecting ranked K/DST rows and treat them as manual-only)."""
 
         self._require_mode("redraft")
         normalized = self._profile_id(profile_id)
@@ -2283,6 +2297,9 @@ class DesktopBackendFacade:
                 roster=replace(prior.roster, **roster_values),
                 scoring=replace(prior.scoring, **scoring_values),
                 draft=replace(prior.draft, **draft_values),
+                practical_mode=(
+                    prior.practical_mode if practical_mode is None else bool(practical_mode)
+                ),
             )
             profile = save_profile(self.redraft_root, updated)
         except (
@@ -3436,9 +3453,16 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         if ranking.errors:
+            # NWR Mock-Draft QA Day: surfaces the real, already-disclosed
+            # validation message (e.g. "Projection universe cannot support
+            # profile replacement depth: K 0/11, DST 0/11") instead of a
+            # bare, unhelpful "unavailable" -- these messages never contain
+            # a filesystem path or other sensitive detail, only a real
+            # diagnostic an owner or a future session can act on (e.g.
+            # "enable Practical Mode for a K/DST-rostering profile").
             raise FacadeError(
                 "REDRAFT_RANKINGS_UNAVAILABLE",
-                "The active Redraft ranking is unavailable.",
+                "The active Redraft ranking is unavailable: " + "; ".join(ranking.errors),
                 status=409,
             )
         return ranking
