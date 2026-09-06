@@ -194,15 +194,26 @@ def rehearse_one_league(team_count: int, *, rounds: int = 5) -> dict:
             if round_index == 0:
                 result["first_bundle_v2_status"] = bundle.v2_status
                 result["first_bundle_current_team_score_v2"] = bundle.current_team_score_v2
+                # `bundle.candidates` (V2) preserves the caller's original
+                # candidate_player_ids order; `bundle.v1_bundle.candidates`
+                # (V1) is sorted by pick_score descending -- these are NOT
+                # index-aligned, so the top V1 pick's matching V2 entry must
+                # be looked up by player_id, never by a shared index.
+                top_v1 = bundle.v1_bundle.candidates[0] if bundle.v1_bundle.candidates else None
+                top_v2 = (
+                    next((c for c in bundle.candidates if c.player_id == top_v1.player_id), None)
+                    if top_v1 is not None
+                    else None
+                )
                 result["first_candidate_sample"] = (
                     {
-                        "player_id": bundle.v1_bundle.candidates[0].player_id,
-                        "pick_score": bundle.v1_bundle.candidates[0].pick_score,
-                        "player_score": bundle.v1_bundle.candidates[0].player_score,
-                        "team_score_v2": bundle.candidates[0].team_score_v2,
-                        "championship_equity_v2": bundle.candidates[0].championship_equity_v2,
+                        "player_id": top_v1.player_id,
+                        "pick_score": top_v1.pick_score,
+                        "player_score": top_v1.player_score,
+                        "team_score_v2": top_v2.team_score_v2 if top_v2 else None,
+                        "championship_equity_v2": top_v2.championship_equity_v2 if top_v2 else None,
                     }
-                    if bundle.candidates
+                    if top_v1 is not None
                     else None
                 )
 

@@ -1,7 +1,7 @@
 {
   "8": {
     "team_count": 8,
-    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_8team_tuyhe770",
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_8team_jzo2m1w8",
     "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
     "steps": [
       {
@@ -138,14 +138,14 @@
     "latencies_seconds": {
       "cold_start_and_cpu_advance": 0.0014,
       "recommendation_per_pick": [
-        0.1718,
-        0.062,
-        0.1291,
-        0.0264,
-        0.0593
+        0.1715,
+        0.0628,
+        0.1274,
+        0.0269,
+        0.0598
       ],
       "recommendation_mean": 0.0897,
-      "recommendation_max": 0.1718
+      "recommendation_max": 0.1715
     },
     "errors": [],
     "first_bundle_v2_status": "OK",
@@ -187,13 +187,13 @@
         "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
       }
     },
-    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_8team_z6e4m0x1",
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_8team_t0lpg391",
     "prospective_log_row_count": 10,
     "ok": true
   },
   "10": {
     "team_count": 10,
-    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_10team_f5z7y_rj",
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_10team_gvg43wof",
     "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
     "steps": [
       {
@@ -328,16 +328,16 @@
       }
     ],
     "latencies_seconds": {
-      "cold_start_and_cpu_advance": 0.0031,
+      "cold_start_and_cpu_advance": 0.0026,
       "recommendation_per_pick": [
-        0.2131,
-        0.0768,
-        0.1609,
-        0.032,
-        0.075
+        0.2201,
+        0.0779,
+        0.1638,
+        0.0327,
+        0.076
       ],
-      "recommendation_mean": 0.1116,
-      "recommendation_max": 0.2131
+      "recommendation_mean": 0.1141,
+      "recommendation_max": 0.2201
     },
     "errors": [],
     "first_bundle_v2_status": "OK",
@@ -353,7 +353,7 @@
       "pick_score": 100.0,
       "player_score": 395.0,
       "team_score_v2": {
-        "candidate_player_id": "QB-0",
+        "candidate_player_id": "QB-4",
         "current_team_score": 0.0,
         "post_pick_team_score": 0.0,
         "team_score_delta": 0.0,
@@ -367,10 +367,10 @@
         "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
       },
       "championship_equity_v2": {
-        "candidate_player_id": "QB-0",
+        "candidate_player_id": "QB-4",
         "current_championship_equity": 0.0,
-        "post_pick_championship_equity": 0.0086,
-        "championship_equity_delta": 0.0086,
+        "post_pick_championship_equity": 0.0181,
+        "championship_equity_delta": 0.0181,
         "team_count": 10,
         "model_version": "championship-equity-v2-multi-league-20260906",
         "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
@@ -379,13 +379,13 @@
         "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
       }
     },
-    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_10team_rn317vwg",
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_10team_9n8v_wnk",
     "prospective_log_row_count": 10,
     "ok": true
   },
   "12": {
     "team_count": 12,
-    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_12team_qb301ns9",
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_12team_li2lo9ar",
     "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
     "steps": [
       {
@@ -520,16 +520,16 @@
       }
     ],
     "latencies_seconds": {
-      "cold_start_and_cpu_advance": 0.0027,
+      "cold_start_and_cpu_advance": 0.0012,
       "recommendation_per_pick": [
-        0.2623,
-        0.0927,
-        0.1945,
-        0.0379,
-        0.0899
+        0.2612,
+        0.0954,
+        0.1966,
+        0.0381,
+        0.0901
       ],
-      "recommendation_mean": 0.1355,
-      "recommendation_max": 0.2623
+      "recommendation_mean": 0.1363,
+      "recommendation_max": 0.2612
     },
     "errors": [],
     "first_bundle_v2_status": "OK",
@@ -545,7 +545,7 @@
       "pick_score": 100.0,
       "player_score": 396.0,
       "team_score_v2": {
-        "candidate_player_id": "QB-0",
+        "candidate_player_id": "QB-3",
         "current_team_score": 0.0,
         "post_pick_team_score": 0.0,
         "team_score_delta": 0.0,
@@ -559,10 +559,10 @@
         "label": "TEAM_SCORE_V2_MULTI_LEAGUE"
       },
       "championship_equity_v2": {
-        "candidate_player_id": "QB-0",
+        "candidate_player_id": "QB-3",
         "current_championship_equity": 0.0005,
-        "post_pick_championship_equity": 0.0038,
-        "championship_equity_delta": 0.0033,
+        "post_pick_championship_equity": 0.0055,
+        "championship_equity_delta": 0.005,
         "team_count": 12,
         "model_version": "championship-equity-v2-multi-league-20260906",
         "evidence_level": "TRANSPORT_SUPPORTED_NOT_HISTORICALLY_VALIDATED",
@@ -571,13 +571,13 @@
         "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
       }
     },
-    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_12team_wn16tdhj",
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_12team__flv4e_v",
     "prospective_log_row_count": 10,
     "ok": true
   },
   "16": {
     "team_count": 16,
-    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_16team_l1ainuh7",
+    "root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_16team_23tqshka",
     "data_label": "SYNTHETIC_FIXTURE_DATA_NOT_REAL_2026",
     "steps": [
       {
@@ -714,14 +714,14 @@
     "latencies_seconds": {
       "cold_start_and_cpu_advance": 0.0026,
       "recommendation_per_pick": [
-        0.364,
-        0.1237,
-        0.2599,
+        0.352,
+        0.1227,
+        0.2625,
         0.0476,
-        0.1153
+        0.115
       ],
-      "recommendation_mean": 0.1821,
-      "recommendation_max": 0.364
+      "recommendation_mean": 0.18,
+      "recommendation_max": 0.352
     },
     "errors": [],
     "first_bundle_v2_status": "OK",
@@ -763,7 +763,7 @@
         "label": "CHAMPIONSHIP_EQUITY_V2_MULTI_LEAGUE"
       }
     },
-    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_16team_wcmicqfe",
+    "prospective_log_root": "C:\\Users\\CODEX-~1\\AppData\\Local\\Temp\\nwr_rehearsal_prospective_16team_phci_ork",
     "prospective_log_row_count": 10,
     "ok": true
   }
