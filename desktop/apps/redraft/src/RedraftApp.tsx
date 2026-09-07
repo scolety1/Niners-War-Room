@@ -1,7 +1,7 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type { CommandItem, NavigationGroup, RedraftBootstrap } from "@nwr/contracts";
 import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
@@ -116,14 +116,42 @@ export function RedraftApp() {
 function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  // NWR DRAFT-DAY CONFIGURATION (section 12, "Fix the Switch League
+  // control"): a native <select> was the underlying problem -- its own
+  // OPEN dropdown popup sizes itself to the widest option text (a full,
+  // never-truncated league name, e.g.
+  // "TEMPORARY_QA_CONFIG_UNVERIFIED_REAL_LEAGUE_SETTINGS (10-team)") with
+  // no CSS override available in any browser, so it rendered far wider
+  // than the compact header and clipped/overflowed at the owner's real
+  // desktop width no matter how the closed control itself was bounded.
+  // Replaced with a compact button + our own bounded menu, so both the
+  // closed affordance and the open menu stay inside a fixed max-width
+  // with the league list scrolling internally instead of stretching the
+  // header.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const active = data.activeProfile;
   const switchLeague = async (profileId: string) => {
     if (!profileId || profileId === data.activeProfileId || working) return;
+    setMenuOpen(false);
     setWorking(true); setError("");
     try { onUpdate(await client.activateRedraftProfile(profileId)); }
     catch { setError("League switch could not be saved. The current workspace remains active."); }
     finally { setWorking(false); }
   };
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const onEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [menuOpen]);
   const adp = data.draftBoard?.adp;
   const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
   const projectionsLabel = data.status.sourceAsOf ? `Projections: ${data.status.sourceAsOf}` : "Projections: unavailable";
@@ -147,7 +175,39 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
       <small>{active ? leagueFormat(active, false) : "Create or import a Redraft league profile"}</small>
       {error ? <em role="status">{error}</em> : null}
     </div>
-    <label><span>Switch</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId} title={profile.leagueName}>{profile.leagueName}</option>)}</select></label>
+    <div className="active-league-selector__switch" ref={menuRef}>
+      <button
+        type="button"
+        className="active-league-selector__switch-btn"
+        disabled={working || !data.profiles.length}
+        aria-haspopup="listbox"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((open) => !open)}
+      >
+        Switch league <span aria-hidden="true">{menuOpen ? "▴" : "▾"}</span>
+      </button>
+      {menuOpen ? (
+        <ul className="active-league-selector__switch-menu" role="listbox" aria-label="Available leagues">
+          {data.profiles.map((profile) => {
+            const isActive = profile.profileId === data.activeProfileId;
+            return (
+              <li key={profile.profileId}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  className={isActive ? "active-league-selector__switch-option active-league-selector__switch-option--active" : "active-league-selector__switch-option"}
+                  title={profile.leagueName}
+                  onClick={() => void switchLeague(profile.profileId)}
+                >
+                  {profile.leagueName}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
     <div className="active-league-selector__badges">
       <span className={data.health?.playerUniverseAvailable ? "active-league-adp" : "active-league-adp active-league-adp--review"} title="Real, current-team player identity data -- separate from projections, ADP, and news freshness.">{identityLabel}</span>
       <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span>
