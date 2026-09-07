@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assignRosterSlots,
   buildCompareRows,
   buildCurrentRosterScores,
   buildMyTeamSummary,
   buildPositionDemand,
   buildRosterStrip,
+  buildRosterStripFromRoster,
   buildSuggestionsRows,
   buildUdkBadges,
   findCloseCall,
@@ -423,6 +425,59 @@ describe("buildRosterStrip", () => {
 
   it("returns [] with no active profile or board", () => {
     expect(buildRosterStrip({ activeProfile: null, draftBoard: null } as any)).toEqual([]);
+  });
+});
+
+describe("buildRosterStripFromRoster", () => {
+  it("includes a Superflex row only when the league actually configures one", () => {
+    const single = buildRosterStripFromRoster([], { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 0, k: 1, dst: 1, benchSize: 5 });
+    expect(single.some((slot) => slot.label === "SFLX")).toBe(false);
+    const superflexLeague = buildRosterStripFromRoster(
+      [_rosterPlayer("QB", 1), _rosterPlayer("QB", 2)],
+      { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 1, k: 1, dst: 1, benchSize: 5 },
+    );
+    const sflx = superflexLeague.find((slot) => slot.label === "SFLX");
+    expect(sflx).toEqual({ label: "SFLX", have: 1, need: 1 });
+  });
+});
+
+describe("assignRosterSlots", () => {
+  const req = { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 0, k: 1, dst: 1, benchSize: 6 };
+
+  it("fills required positions first, then FLEX from the real remaining FLEX-eligible players, in draft order", () => {
+    const roster = [
+      _rosterPlayer("QB", 1), _rosterPlayer("RB", 2), _rosterPlayer("RB", 3), _rosterPlayer("WR", 4),
+      _rosterPlayer("WR", 5), _rosterPlayer("TE", 6), _rosterPlayer("RB", 7), _rosterPlayer("K", 8), _rosterPlayer("DST", 9),
+    ];
+    const { starters, bench } = assignRosterSlots(roster, req);
+    expect(starters.map((slot) => slot.label)).toEqual(["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DST"]);
+    expect(starters.find((slot) => slot.label === "FLEX")?.player?.playerId).toBe("RB-7");
+    expect(bench).toEqual([]);
+  });
+
+  it("never assigns the same player into two slots (FLEX does not duplicate a starter)", () => {
+    // req.rb=2, req.flex=1: two RB starters, and the FLEX slot consumes a
+    // real, DIFFERENT extra RB rather than reusing RB-1 or RB-2 -- the
+    // player pool that would demonstrate double-assignment if it existed.
+    const roster = [_rosterPlayer("RB", 1), _rosterPlayer("RB", 2), _rosterPlayer("RB", 3), _rosterPlayer("RB", 4)];
+    const { starters, bench } = assignRosterSlots(roster, req);
+    const assignedIds = starters.filter((slot) => slot.player).map((slot) => slot.player!.playerId);
+    expect(assignedIds).toEqual(["RB-1", "RB-2", "RB-3"]);
+    expect(new Set(assignedIds).size).toBe(assignedIds.length);
+    expect(bench.map((player) => player.playerId)).toEqual(["RB-4"]);
+  });
+
+  it("leaves a slot null (Empty) rather than fabricating a player when the roster is short", () => {
+    const { starters } = assignRosterSlots([_rosterPlayer("QB", 1)], req);
+    expect(starters[0]).toEqual({ label: "QB", player: expect.objectContaining({ playerId: "QB-1" }) });
+    expect(starters[1]).toEqual({ label: "RB", player: null });
+  });
+
+  it("Superflex draws from any Superflex-eligible position (QB/RB/WR/TE), not just leftover FLEX players", () => {
+    const sflxReq = { ...req, superflex: 1 };
+    const roster = [_rosterPlayer("QB", 1), _rosterPlayer("QB", 2), _rosterPlayer("RB", 3), _rosterPlayer("WR", 4), _rosterPlayer("TE", 5)];
+    const { starters } = assignRosterSlots(roster, sflxReq);
+    expect(starters.find((slot) => slot.label === "SFLX")?.player?.playerId).toBe("QB-2");
   });
 });
 

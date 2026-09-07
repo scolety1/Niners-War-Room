@@ -21,6 +21,7 @@ import type {
   DecisionBundle,
   DecisionBundleCandidate,
   DraftBoard,
+  DraftPick,
   DraftRosterPlayer,
   DraftTeam,
   KhaHistoricalReplayPreview,
@@ -28,6 +29,7 @@ import type {
   RedraftBootstrap,
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
+  RosterSettings,
 } from "@nwr/contracts";
 import {
   Button,
@@ -343,26 +345,97 @@ export interface RosterStripSlot {
   need: number;
 }
 
-export function buildRosterStrip(data: RedraftBootstrap): RosterStripSlot[] {
-  const profile = data.activeProfile;
-  const board = data.draftBoard;
-  if (!profile || !board) return [];
-  const req = profile.roster;
+/**
+ * Roster-strip counts for an arbitrary roster against real configured
+ * requirements -- the shared core `buildRosterStrip` (my team, from
+ * `board.myRoster`) and the right-hand roster pane's per-team dropdown
+ * (any team's `team.roster`) both reuse this one function rather than
+ * two copies of the same capping arithmetic. Includes Superflex only
+ * when the league actually configures one (owner feedback section 10:
+ * "FLEX/Superflex") -- never shown as a fabricated 0/0 row for a
+ * single-QB league.
+ */
+export function buildRosterStripFromRoster(
+  roster: Pick<DraftRosterPlayer, "position">[],
+  req: RosterSettings,
+): RosterStripSlot[] {
   const counts: Record<string, number> = {};
-  for (const player of board.myRoster ?? []) counts[player.position] = (counts[player.position] ?? 0) + 1;
+  for (const player of roster) counts[player.position] = (counts[player.position] ?? 0) + 1;
   const capped = (pos: string, need: number) => Math.min(counts[pos] ?? 0, need);
   const qb = capped("QB", req.qb), rb = capped("RB", req.rb), wr = capped("WR", req.wr), te = capped("TE", req.te);
   const k = capped("K", req.k), dst = capped("DST", req.dst);
   const flexPool = Math.max(0, (counts.RB ?? 0) - rb) + Math.max(0, (counts.WR ?? 0) - wr) + Math.max(0, (counts.TE ?? 0) - te);
   const flex = Math.min(flexPool, req.flex);
-  const starterSlotsFilled = qb + rb + wr + te + flex + k + dst;
-  const bench = Math.min(Math.max(0, (board.myRoster?.length ?? 0) - starterSlotsFilled), req.benchSize);
-  return [
+  const superflexPool = Math.max(0, (counts.QB ?? 0) - qb) + Math.max(0, flexPool - flex);
+  const superflex = req.superflex > 0 ? Math.min(superflexPool, req.superflex) : 0;
+  const starterSlotsFilled = qb + rb + wr + te + flex + superflex + k + dst;
+  const bench = Math.min(Math.max(0, roster.length - starterSlotsFilled), req.benchSize);
+  const slots: RosterStripSlot[] = [
     { label: "QB", have: qb, need: req.qb }, { label: "RB", have: rb, need: req.rb },
     { label: "WR", have: wr, need: req.wr }, { label: "TE", have: te, need: req.te },
-    { label: "FLEX", have: flex, need: req.flex }, { label: "K", have: k, need: req.k },
-    { label: "DST", have: dst, need: req.dst }, { label: "BN", have: bench, need: req.benchSize },
+    { label: "FLEX", have: flex, need: req.flex },
   ];
+  if (req.superflex > 0) slots.push({ label: "SFLX", have: superflex, need: req.superflex });
+  slots.push(
+    { label: "K", have: k, need: req.k }, { label: "DST", have: dst, need: req.dst },
+    { label: "BN", have: bench, need: req.benchSize },
+  );
+  return slots;
+}
+
+export function buildRosterStrip(data: RedraftBootstrap): RosterStripSlot[] {
+  const profile = data.activeProfile;
+  const board = data.draftBoard;
+  if (!profile || !board) return [];
+  return buildRosterStripFromRoster(board.myRoster ?? [], profile.roster);
+}
+
+/**
+ * One drafted player assigned to one named starter slot (or bench) --
+ * NOT the same computation as the backend's value-optimized
+ * `_select_starting_lineup` (shadow_numeric_authorities_service.py),
+ * which needs per-player Team Score value that opponent rosters don't
+ * carry to the frontend. This is a real, legal, deterministic
+ * assignment (fills required positions first, then FLEX/Superflex from
+ * the real remaining FLEX/Superflex-eligible players, in real draft
+ * order) -- disclosed as draft-order-based, not value-optimal. FLEX and
+ * Superflex never duplicate a player into two slots. Shared by the
+ * right-hand roster pane and the Draft Board's "By Roster" view so both
+ * surfaces agree.
+ */
+export interface RosterSlotAssignment {
+  label: string;
+  player: DraftRosterPlayer | null;
+}
+
+const FLEX_ELIGIBLE = new Set(["RB", "WR", "TE"]);
+const SUPERFLEX_ELIGIBLE = new Set(["QB", "RB", "WR", "TE"]);
+
+export function assignRosterSlots(
+  roster: DraftRosterPlayer[],
+  req: RosterSettings,
+): { starters: RosterSlotAssignment[]; bench: DraftRosterPlayer[] } {
+  const ordered = [...roster].sort((a, b) => a.pickNumber - b.pickNumber);
+  const used = new Set<string>();
+  const take = (predicate: (player: DraftRosterPlayer) => boolean): DraftRosterPlayer | null => {
+    const found = ordered.find((player) => !used.has(player.playerId) && predicate(player));
+    if (found) used.add(found.playerId);
+    return found ?? null;
+  };
+  const starters: RosterSlotAssignment[] = [];
+  const fillPosition = (label: string, position: string, count: number) => {
+    for (let i = 0; i < count; i += 1) starters.push({ label, player: take((player) => player.position === position) });
+  };
+  fillPosition("QB", "QB", req.qb);
+  fillPosition("RB", "RB", req.rb);
+  fillPosition("WR", "WR", req.wr);
+  fillPosition("TE", "TE", req.te);
+  for (let i = 0; i < req.flex; i += 1) starters.push({ label: "FLEX", player: take((player) => FLEX_ELIGIBLE.has(player.position)) });
+  for (let i = 0; i < req.superflex; i += 1) starters.push({ label: "SFLX", player: take((player) => SUPERFLEX_ELIGIBLE.has(player.position)) });
+  fillPosition("K", "K", req.k);
+  fillPosition("DST", "DST", req.dst);
+  const bench = ordered.filter((player) => !used.has(player.playerId));
+  return { starters, bench };
 }
 
 /**
@@ -528,6 +601,15 @@ export function DraftRoomV2Page({
   // they render changed.
   const [leftPaneCollapsed, setLeftPaneCollapsed] = useState(false);
   const [leftPaneTab, setLeftPaneTab] = useState<"PLAYERS" | "MY_TEAM" | "QUEUE">("PLAYERS");
+  // Owner feedback closure, sections 9-10: the right-hand roster pane
+  // defaults to MY TEAM (null = owner's own team, resolved where it's
+  // rendered) and is independently collapsible from the left pane.
+  // Selecting a different team here is purely a display change -- it
+  // never touches activeProfileId, board.ownerSlot, or any recommendation
+  // call, so switching to inspect an opponent cannot alter the owner's
+  // own draft, identity, or Suggestions.
+  const [rightPaneCollapsed, setRightPaneCollapsed] = useState(false);
+  const [selectedTeamSlot, setSelectedTeamSlot] = useState<number | null>(null);
   // Owner-test follow-up, section 8: an explicit Suggestions position
   // filter re-queries the backend for REAL eligible players of that
   // position (see decision_bundle_live_service.py's position_filter),
@@ -830,7 +912,6 @@ export function DraftRoomV2Page({
   );
   const compareSummary = useMemo(() => generateCompareSummary(compareRows, positionDepth), [compareRows, positionDepth]);
   const positionDemand = useMemo(() => buildPositionDemand(board, data.activeProfile), [board, data.activeProfile]);
-  const rosterStrip = useMemo(() => buildRosterStrip(data), [data]);
   const closeCall = useMemo(() => findCloseCall(suggestions), [suggestions]);
   const queuedRows = useMemo(
     () =>
@@ -1056,6 +1137,8 @@ export function DraftRoomV2Page({
           working={working}
           onDraft={(playerId) => void mark(playerId)}
           onRemoveFromQueue={toggleQueue}
+          selectedTeamSlot={selectedTeamSlot}
+          onSelectTeam={setSelectedTeamSlot}
         />
       <div className="draft-room-v2-content">
         {tab === "SUGGESTIONS" ? (
@@ -1064,7 +1147,6 @@ export function DraftRoomV2Page({
             onPlayerClick={onPlayerClick}
             decisionBundle={decisionBundle}
             loading={decisionBundleLoading}
-            rosterStrip={rosterStrip}
             positionDemand={positionDemand}
             closeCall={closeCall}
             canRecordPick={canRecordPick}
@@ -1111,6 +1193,20 @@ export function DraftRoomV2Page({
           />
         ) : null}
       </div>
+      <RightRosterPane
+        collapsed={rightPaneCollapsed}
+        onToggleCollapsed={() => setRightPaneCollapsed((value) => !value)}
+        teams={board?.teams ?? []}
+        rosterSettings={data.activeProfile?.roster ?? null}
+        selectedTeamSlot={selectedTeamSlot}
+        onSelectTeam={setSelectedTeamSlot}
+        ownerSlot={board?.ownerSlot ?? null}
+        recentPicks={board?.recentPicks ?? []}
+        currentPick={board?.currentPick ?? null}
+        nextOwnerPick={board?.nextOwnerPick ?? null}
+        isOwnerTurn={Boolean(board?.isOwnerTurn)}
+        teamCount={data.activeProfile?.teamCount ?? null}
+      />
       </div>
       {compareIds.length > 0 && tab !== "COMPARE" ? (
         <div className="draft-room-v2-compare-tray" role="status">
@@ -1285,7 +1381,6 @@ function SuggestionsTab({
   onPlayerClick,
   decisionBundle,
   loading,
-  rosterStrip,
   positionDemand,
   closeCall,
   canRecordPick,
@@ -1304,7 +1399,6 @@ function SuggestionsTab({
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
   decisionBundle: DecisionBundle | null;
   loading: boolean;
-  rosterStrip: RosterStripSlot[];
   positionDemand: PositionDemandRow[];
   closeCall: { a: SuggestionRow; b: SuggestionRow } | null;
   canRecordPick: boolean;
@@ -1396,17 +1490,8 @@ function SuggestionsTab({
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
     <>
-      {(rosterStrip.length > 0 || positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
+      {(positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
         <div className="draft-room-v2-compact-context">
-          {rosterStrip.length > 0 ? (
-            <div className="draft-room-v2-compact-context__row" title="My roster — full detail in Teams">
-              {rosterStrip.map((slot) => (
-                <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>
-                  {slot.label} {slot.have}/{slot.need}
-                </span>
-              ))}
-            </div>
-          ) : null}
           {positionDemand.length > 0 ? (
             <div
               className="draft-room-v2-compact-context__row"
@@ -1591,6 +1676,8 @@ function LeftUtilityPane({
   working,
   onDraft,
   onRemoveFromQueue,
+  selectedTeamSlot,
+  onSelectTeam,
 }: {
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -1608,6 +1695,8 @@ function LeftUtilityPane({
   working: string;
   onDraft: (playerId: string) => void;
   onRemoveFromQueue: (playerId: string) => void;
+  selectedTeamSlot: number | null;
+  onSelectTeam: (teamSlot: number) => void;
 }) {
   if (collapsed) {
     return (
@@ -1649,9 +1738,154 @@ function LeftUtilityPane({
             onQueue={onRemoveFromQueue}
           />
         ) : null}
-        {activeTab === "MY_TEAM" ? <TeamsPaneContent teams={teams} myTeam={myTeam} currentScores={currentScores} /> : null}
+        {activeTab === "MY_TEAM" ? (
+          <TeamsPaneContent teams={teams} myTeam={myTeam} currentScores={currentScores} selectedTeamSlot={selectedTeamSlot} onSelectTeam={onSelectTeam} />
+        ) : null}
         {activeTab === "QUEUE" ? (
           <QueueTab rows={queueRows} canRecordPick={canRecordPick} working={working} onDraft={onDraft} onRemove={onRemoveFromQueue} compact />
+        ) : null}
+      </div>
+    </aside>
+  );
+}
+
+/**
+ * Owner feedback closure, sections 9-10: the right-hand contextual pane.
+ * Defaults to MY TEAM; the dropdown lets the owner inspect ANY fantasy
+ * team's real configured roster without touching the active league,
+ * owner identity, draft slot, or recommendation perspective -- inspecting
+ * an opponent is purely a read of `selectedTeamSlot` here, nothing else
+ * in DraftRoomV2Page's state changes. Below the roster: the authoritative
+ * recent-picks log (board.recentPicks, the same field Legacy's own
+ * "Recent picks" panel already reads) and the real next-owner-pick /
+ * picks-until-owner figures already computed on `board`.
+ */
+function RightRosterPane({
+  collapsed,
+  onToggleCollapsed,
+  teams,
+  rosterSettings,
+  selectedTeamSlot,
+  onSelectTeam,
+  ownerSlot,
+  recentPicks,
+  currentPick,
+  nextOwnerPick,
+  isOwnerTurn,
+  teamCount,
+}: {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  teams: DraftTeam[];
+  rosterSettings: RosterSettings | null;
+  selectedTeamSlot: number | null;
+  onSelectTeam: (teamSlot: number) => void;
+  ownerSlot: number | null;
+  recentPicks: DraftPick[];
+  currentPick: number | null;
+  nextOwnerPick: number | null;
+  isOwnerTurn: boolean;
+  teamCount: number | null;
+}) {
+  if (collapsed) {
+    return (
+      <button type="button" className="draft-room-v2-rightpane-rail" onClick={onToggleCollapsed} title="Show Team & Recent Picks">
+        <Icon name="chevron" size={13} />
+      </button>
+    );
+  }
+  const effectiveSlot = selectedTeamSlot ?? ownerSlot;
+  const team = teams.find((value) => value.teamSlot === effectiveSlot) ?? teams.find((value) => value.owner) ?? null;
+  const assignment = team && rosterSettings ? assignRosterSlots(team.roster, rosterSettings) : null;
+  const strip = team && rosterSettings ? buildRosterStripFromRoster(team.roster, rosterSettings) : [];
+  const picksUntilOwner = nextOwnerPick != null && currentPick != null ? Math.max(0, nextOwnerPick - currentPick) : null;
+  return (
+    <aside className="draft-room-v2-rightpane" aria-label="Team roster and recent picks">
+      <div className="draft-room-v2-rightpane__header">
+        <label className="draft-room-v2-rightpane__team-select">
+          <span className="draft-room-v2-leftpane__label">Roster</span>
+          <select
+            value={effectiveSlot ?? ""}
+            onChange={(event) => onSelectTeam(Number(event.target.value))}
+            aria-label="Inspect team roster"
+          >
+            {teams.map((value) => (
+              <option key={value.teamSlot} value={value.teamSlot}>
+                {value.name}{value.owner ? " (You)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="draft-room-v2-rightpane-collapse" onClick={onToggleCollapsed} title="Collapse this pane">
+          <Icon name="chevron" size={13} />
+        </button>
+      </div>
+      {strip.length > 0 ? (
+        <div className="roster-strip" title="Real configured starter slots, FLEX/Superflex, K/DST and bench for this team">
+          {strip.map((slot) => (
+            <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>
+              {slot.label} {slot.have}/{slot.need}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {assignment ? (
+        <div className="draft-room-v2-rightpane__section">
+          <ul className="draft-room-v2-roster-slots">
+            {assignment.starters.map((slot, index) => (
+              <li key={`${slot.label}-${index}`} className={slot.player ? "" : "draft-room-v2-roster-slots__empty"}>
+                <span className="draft-room-v2-roster-slots__label">{slot.label}</span>
+                {slot.player ? (
+                  <span>
+                    <strong>{slot.player.playerName}</strong>
+                    <small>{slot.player.team} · {slot.player.position}</small>
+                  </span>
+                ) : (
+                  <span className="draft-room-v2-roster-slots__placeholder">Empty</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {assignment.bench.length > 0 ? (
+            <>
+              <span className="draft-room-v2-leftpane__label">Bench ({assignment.bench.length})</span>
+              <ul className="draft-room-v2-roster-slots draft-room-v2-roster-slots--bench">
+                {assignment.bench.map((player) => (
+                  <li key={player.playerId}>
+                    <span className="draft-room-v2-roster-slots__label">BN</span>
+                    <span><strong>{player.playerName}</strong><small>{player.team} · {player.position}</small></span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+      ) : (
+        <p className="draft-room-v2-rightpane__empty">No players drafted by this team yet.</p>
+      )}
+      <div className="draft-room-v2-rightpane__section">
+        <span className="draft-room-v2-leftpane__label">Recent picks</span>
+        {recentPicks.length > 0 ? (
+          <ul className="draft-room-v2-recent-picks">
+            {[...recentPicks].reverse().map((pick) => (
+              <li key={pick.pickNumber}>
+                <span className="draft-room-v2-recent-picks__pick">{teamCount ? formatRoundPick(pick.pickNumber, teamCount) : pick.pickNumber}</span>
+                <span>
+                  <strong>{pick.playerName}</strong>
+                  <small>{pick.position} · Team {pick.teamSlot}</small>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="draft-room-v2-rightpane__empty">No picks yet.</p>
+        )}
+        {nextOwnerPick != null ? (
+          <p className="draft-room-v2-rightpane__next-turn">
+            {isOwnerTurn
+              ? "You are on the clock now."
+              : `Your next pick: ${teamCount ? formatRoundPick(nextOwnerPick, teamCount) : nextOwnerPick}${picksUntilOwner != null ? ` (${picksUntilOwner} pick${picksUntilOwner === 1 ? "" : "s"} away)` : ""}`}
+          </p>
         ) : null}
       </div>
     </aside>
@@ -1661,15 +1895,27 @@ function LeftUtilityPane({
 /** Teams pane content (section 8: "each fantasy team's compact roster,
  * positional starter fill, opponent demand/roster needs, owner
  * obvious") -- reads the same real `board.teams` roster state already
- * fetched for the board/drawer, no new backend call. */
+ * fetched for the board/drawer, no new backend call.
+ *
+ * Owner feedback closure, section 9: this list drives the SAME
+ * `selectedTeamSlot` state as the right-hand roster pane -- clicking a
+ * team here just changes what the right pane inspects, exactly like its
+ * own dropdown. It never touches the active league, owner identity,
+ * draft slot, or recommendation perspective; there is only one roster-
+ * inspection system, not two.
+ */
 function TeamsPaneContent({
   teams,
   myTeam,
   currentScores,
+  selectedTeamSlot,
+  onSelectTeam,
 }: {
   teams: DraftTeam[];
   myTeam: MyTeamSummary;
   currentScores: CurrentRosterScores;
+  selectedTeamSlot: number | null;
+  onSelectTeam: (teamSlot: number) => void;
 }) {
   return (
     <>
@@ -1684,15 +1930,26 @@ function TeamsPaneContent({
         ) : null}
       </div>
       <div className="draft-room-v2-leftpane__section">
-        <span className="draft-room-v2-leftpane__label">League teams</span>
+        <span className="draft-room-v2-leftpane__label">League teams — click to inspect in the roster pane</span>
         <ul className="draft-room-v2-teams-list">
           {teams.map((team) => {
             const counts: Record<string, number> = {};
             for (const player of team.roster) counts[player.position] = (counts[player.position] ?? 0) + 1;
+            const isSelected = (selectedTeamSlot ?? teams.find((value) => value.owner)?.teamSlot) === team.teamSlot;
             return (
-              <li key={team.teamSlot} className={team.owner ? "draft-room-v2-teams-list__item draft-room-v2-teams-list__item--owner" : "draft-room-v2-teams-list__item"}>
-                <strong>{team.name}{team.owner ? " · YOU" : ""}</strong>
-                <span>{team.roster.length} drafted{Object.entries(counts).length ? ` — ${Object.entries(counts).map(([pos, n]) => `${pos} ${n}`).join(", ")}` : ""}</span>
+              <li key={team.teamSlot}>
+                <button
+                  type="button"
+                  onClick={() => onSelectTeam(team.teamSlot)}
+                  aria-pressed={isSelected}
+                  className={
+                    (team.owner ? "draft-room-v2-teams-list__item draft-room-v2-teams-list__item--owner" : "draft-room-v2-teams-list__item") +
+                    (isSelected ? " draft-room-v2-teams-list__item--selected" : "")
+                  }
+                >
+                  <strong>{team.name}{team.owner ? " · YOU" : ""}</strong>
+                  <span>{team.roster.length} drafted{Object.entries(counts).length ? ` — ${Object.entries(counts).map(([pos, n]) => `${pos} ${n}`).join(", ")}` : ""}</span>
+                </button>
               </li>
             );
           })}
@@ -1832,6 +2089,13 @@ function BoardTab({
   // state as the main Search box (one source of truth, not a second
   // search implementation).
   const [recordingPick, setRecordingPick] = useState<number | null>(null);
+  // Owner feedback closure, section 11: By Picks (chronological, existing,
+  // owner-preferred) vs. By Roster (same fixed team columns, rows follow
+  // real roster slots via the shared assignRosterSlots -- the same
+  // deterministic legal assignment the right-hand roster pane uses, so
+  // both surfaces always agree). Purely a display toggle -- it reads
+  // `board`/`profile` and renders differently; it never calls a mutation.
+  const [boardView, setBoardView] = useState<"BY_PICKS" | "BY_ROSTER">("BY_PICKS");
   if (!board?.boardCells || !profile) {
     return <EmptyState icon="activity" title="No draft board yet" message="Choose your draft slot and click Start above." />;
   }
@@ -1840,8 +2104,31 @@ function BoardTab({
   const cellByRoundAndSlot = new Map(board.boardCells.map((cell) => [`${cell.round}-${cell.teamSlot}`, cell]));
   const openRecordable = (cell: { current?: boolean; playerId?: string } | undefined) =>
     Boolean(cell?.current && !cell.playerId && canRecordPick);
+  const teams = board.teams ?? [];
+  const assignmentsBySlot =
+    boardView === "BY_ROSTER" ? new Map(teams.map((team) => [team.teamSlot, assignRosterSlots(team.roster, profile.roster)])) : null;
+  const starterLabels = assignmentsBySlot ? assignRosterSlots([], profile.roster).starters.map((slot) => slot.label) : [];
+  const benchRows = assignmentsBySlot ? Math.max(0, ...teams.map((team) => assignmentsBySlot.get(team.teamSlot)?.bench.length ?? 0)) : 0;
   return (
-    <Panel title="Draft Board" eyebrow={`${teamCount} teams × ${rounds} rounds — fixed columns, scroll for wide leagues`}>
+    <Panel
+      title="Draft Board"
+      eyebrow={`${teamCount} teams × ${rounds} rounds — fixed columns, scroll for wide leagues`}
+      action={
+        <div className="draft-room-v2-position-filter" role="group" aria-label="Board view">
+          {(["BY_PICKS", "BY_ROSTER"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={boardView === value ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+              onClick={() => setBoardView(value)}
+              aria-pressed={boardView === value}
+            >
+              {value === "BY_PICKS" ? "By Picks" : "By Roster"}
+            </button>
+          ))}
+        </div>
+      }
+    >
       {recordingPick != null ? (
         <div className="draft-room-v2-board-record">
           <div className="draft-room-v2-board-record__header">
@@ -1875,49 +2162,112 @@ function BoardTab({
           </ul>
         </div>
       ) : null}
-      <div className="draft-board-scroll">
-        <div
-          className="draft-board-v2-grid"
-          style={{ gridTemplateColumns: `38px repeat(${teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + teamCount * 111}px` }}
-        >
-          <div className="draft-board-v2-corner">Rd</div>
-          {Array.from({ length: teamCount }, (_, index) => index + 1).map((slot) => (
-            <div key={`head-${slot}`} className={slot === board.ownerSlot ? "draft-board-v2-head draft-board-v2-head--owner" : "draft-board-v2-head"}>
-              T{slot}{slot === board.ownerSlot ? " · YOU" : ""}
-            </div>
-          ))}
-          {Array.from({ length: rounds }, (_, index) => index + 1).flatMap((round) => [
-            <b className="draft-board-v2-round" key={`round-${round}`}>{round}</b>,
-            ...Array.from({ length: teamCount }, (_, column) => {
-              const slot = column + 1;
-              const cell = cellByRoundAndSlot.get(`${round}-${slot}`);
-              const recordable = openRecordable(cell);
-              const onClick = cell?.playerId
-                ? (event: React.MouseEvent) => onPlayerClick(cell.playerId, event)
-                : recordable
-                  ? () => setRecordingPick(cell!.pickNumber)
-                  : undefined;
-              return (
-                <article
-                  key={`${round}-${slot}`}
-                  className={`draft-board-v2-cell ${cell?.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell?.current ? "draft-board-v2-cell--current" : ""} ${recordable ? "draft-board-v2-cell--recordable" : ""}`}
-                  onClick={onClick}
-                  role={onClick ? "button" : undefined}
-                  tabIndex={onClick ? 0 : undefined}
-                  title={recordable ? "Click to record this pick" : undefined}
-                >
-                  <span className="draft-board-v2-cell__pick" title={cell?.pickNumber ? `Overall pick ${cell.pickNumber}` : undefined}>
-                    {cell?.pickNumber ? formatRoundPick(cell.pickNumber, teamCount) : ""}
-                  </span>
-                  <span className="draft-board-v2-cell__player">
-                    {cell?.playerName || (cell?.status === "UNRESOLVED" ? "Unresolved" : recordable ? "Record pick" : "Open")}
-                  </span>
-                </article>
-              );
-            }),
-          ])}
+      {boardView === "BY_PICKS" ? (
+        <div className="draft-board-scroll">
+          <div
+            className="draft-board-v2-grid"
+            style={{ gridTemplateColumns: `38px repeat(${teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + teamCount * 111}px` }}
+          >
+            <div className="draft-board-v2-corner">Rd</div>
+            {Array.from({ length: teamCount }, (_, index) => index + 1).map((slot) => (
+              <div key={`head-${slot}`} className={slot === board.ownerSlot ? "draft-board-v2-head draft-board-v2-head--owner" : "draft-board-v2-head"}>
+                T{slot}{slot === board.ownerSlot ? " · YOU" : ""}
+              </div>
+            ))}
+            {Array.from({ length: rounds }, (_, index) => index + 1).flatMap((round) => [
+              <b className="draft-board-v2-round" key={`round-${round}`}>{round}</b>,
+              ...Array.from({ length: teamCount }, (_, column) => {
+                const slot = column + 1;
+                const cell = cellByRoundAndSlot.get(`${round}-${slot}`);
+                const recordable = openRecordable(cell);
+                const onClick = cell?.playerId
+                  ? (event: React.MouseEvent) => onPlayerClick(cell.playerId, event)
+                  : recordable
+                    ? () => setRecordingPick(cell!.pickNumber)
+                    : undefined;
+                return (
+                  <article
+                    key={`${round}-${slot}`}
+                    className={`draft-board-v2-cell ${cell?.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell?.current ? "draft-board-v2-cell--current" : ""} ${recordable ? "draft-board-v2-cell--recordable" : ""}`}
+                    onClick={onClick}
+                    role={onClick ? "button" : undefined}
+                    tabIndex={onClick ? 0 : undefined}
+                    title={recordable ? "Click to record this pick" : undefined}
+                  >
+                    <span className="draft-board-v2-cell__pick" title={cell?.pickNumber ? `Overall pick ${cell.pickNumber}` : undefined}>
+                      {cell?.pickNumber ? formatRoundPick(cell.pickNumber, teamCount) : ""}
+                    </span>
+                    <span className="draft-board-v2-cell__player">
+                      {cell?.playerName || (cell?.status === "UNRESOLVED" ? "Unresolved" : recordable ? "Record pick" : "Open")}
+                    </span>
+                  </article>
+                );
+              }),
+            ])}
+          </div>
         </div>
-      </div>
+      ) : (
+        // By Roster: same fixed team columns; rows follow the real,
+        // legal starter/bench slot assignment (assignRosterSlots -- the
+        // SAME function the right-hand roster pane uses, so both views
+        // always agree) instead of draft chronology. A pure read of
+        // `board.teams`/`profile.roster`; switching here never mutates
+        // the draft. FLEX/Superflex never duplicate a player -- each
+        // player is consumed exactly once inside assignRosterSlots.
+        <div className="draft-board-scroll">
+          <div
+            className="draft-board-v2-grid"
+            style={{ gridTemplateColumns: `38px repeat(${teamCount}, minmax(105px, 1fr))`, minWidth: `${38 + teamCount * 111}px` }}
+          >
+            <div className="draft-board-v2-corner">Slot</div>
+            {Array.from({ length: teamCount }, (_, index) => index + 1).map((slot) => (
+              <div key={`head-${slot}`} className={slot === board.ownerSlot ? "draft-board-v2-head draft-board-v2-head--owner" : "draft-board-v2-head"}>
+                T{slot}{slot === board.ownerSlot ? " · YOU" : ""}
+              </div>
+            ))}
+            {starterLabels.flatMap((label, rowIndex) => [
+              <b className="draft-board-v2-round" key={`slot-${rowIndex}`}>{label}</b>,
+              ...Array.from({ length: teamCount }, (_, column) => {
+                const slot = column + 1;
+                const player = assignmentsBySlot?.get(slot)?.starters[rowIndex]?.player ?? null;
+                return (
+                  <article
+                    key={`${label}-${rowIndex}-${slot}`}
+                    className={`draft-board-v2-cell ${slot === board.ownerSlot ? "draft-board-v2-cell--owner" : ""}`}
+                    onClick={player ? (event: React.MouseEvent) => onPlayerClick(player.playerId, event) : undefined}
+                    role={player ? "button" : undefined}
+                    tabIndex={player ? 0 : undefined}
+                  >
+                    <span className="draft-board-v2-cell__player">{player ? player.playerName : "Empty"}</span>
+                    {player ? <span className="draft-board-v2-cell__pick">{player.team} · {player.position}</span> : null}
+                  </article>
+                );
+              }),
+            ])}
+            {benchRows > 0
+              ? Array.from({ length: benchRows }, (_, benchIndex) => [
+                  <b className="draft-board-v2-round" key={`bench-${benchIndex}`}>BN</b>,
+                  ...Array.from({ length: teamCount }, (_, column) => {
+                    const slot = column + 1;
+                    const player = assignmentsBySlot?.get(slot)?.bench[benchIndex] ?? null;
+                    return (
+                      <article
+                        key={`bench-${benchIndex}-${slot}`}
+                        className={`draft-board-v2-cell ${slot === board.ownerSlot ? "draft-board-v2-cell--owner" : ""}`}
+                        onClick={player ? (event: React.MouseEvent) => onPlayerClick(player.playerId, event) : undefined}
+                        role={player ? "button" : undefined}
+                        tabIndex={player ? 0 : undefined}
+                      >
+                        <span className="draft-board-v2-cell__player">{player ? player.playerName : ""}</span>
+                        {player ? <span className="draft-board-v2-cell__pick">{player.team} · {player.position}</span> : null}
+                      </article>
+                    );
+                  }),
+                ]).flat()
+              : null}
+          </div>
+        </div>
+      )}
     </Panel>
   );
 }
