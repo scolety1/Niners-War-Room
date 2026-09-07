@@ -62,6 +62,12 @@ class CandidateBundle:
     equity_gain: float
     cost_of_waiting: float
     make_it_back_probability: float | None
+    # Owner-test follow-up: real trial count behind make_it_back_probability
+    # -- a candidate "surviving" 100% of a SMALL number of simulated
+    # continuations is a real, disclosed modeled estimate, not a guarantee.
+    # Additive only; None exactly when make_it_back_probability is None
+    # (no evaluated Cost-of-Waiting result for this candidate).
+    make_it_back_trials: int | None
     raw_decision_utility: float
     # The two additive components raw_decision_utility is built from, preserved
     # separately (not just the combined scalar) so historical calibration can
@@ -186,6 +192,7 @@ def build_decision_bundle(
                 make_it_back_probability=(
                     cow.survival_probability if cow is not None else None
                 ),
+                make_it_back_trials=cow.trials if cow is not None else None,
                 raw_decision_utility=round(team_score_component + equity_component, 4),
                 team_score_utility_component=team_score_component,
                 equity_utility_component=equity_component,

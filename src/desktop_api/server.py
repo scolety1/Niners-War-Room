@@ -223,12 +223,22 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         decision_bundle_match = _REDRAFT_DECISION_BUNDLE.fullmatch(path)
         if method == "POST" and decision_bundle_match:
             body = self._json_body(allow_empty=True)
-            self._reject_unknown_fields(body, {"speed"})
+            # positionFilter (owner-test follow-up, section 8): optional,
+            # additive -- when supplied, the candidate shortlist is drawn
+            # from real eligible players of THAT position specifically
+            # (never the default top-8 diversified slice re-filtered
+            # client-side, which could falsely report "no candidates" for
+            # a position that simply wasn't in that slice).
+            self._reject_unknown_fields(body, {"speed", "positionFilter"})
             speed = body.get("speed", "FAST")
             if not isinstance(speed, str):
                 raise self._invalid_body("speed must be a string when supplied.")
+            position_filter = body.get("positionFilter")
+            if position_filter is not None and not isinstance(position_filter, str):
+                raise self._invalid_body("positionFilter must be a string when supplied.")
             return self.server.facade.redraft_decision_bundle(
                 profile_id=unquote(decision_bundle_match.group(1)), speed=speed,
+                position_filter=position_filter,
             )
 
         decision_bundle_v2_match = _REDRAFT_DECISION_BUNDLE_V2.fullmatch(path)

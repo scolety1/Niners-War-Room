@@ -245,6 +245,10 @@ def evaluate_historical_candidates(
                 equity_gain=score.equity_gain,
                 cost_of_waiting=cost_of_waiting,
                 make_it_back_probability=survival,
+                # This service's survival estimate is an ADP-based heuristic,
+                # not the live Monte Carlo simulation -- no real trial count
+                # to disclose here.
+                make_it_back_trials=None,
                 raw_decision_utility=round(team_score_component + equity_component, 4),
                 team_score_utility_component=team_score_component,
                 equity_utility_component=equity_component,

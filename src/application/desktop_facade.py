@@ -2720,7 +2720,7 @@ class DesktopBackendFacade:
             pass
 
     def redraft_decision_bundle(
-        self, *, profile_id: str, speed: str = "FAST",
+        self, *, profile_id: str, speed: str = "FAST", position_filter: str | None = None,
     ) -> FacadePayload:
         """Owner Test Candidate V1, section 2: the real, live DecisionBundle
         for the CURRENT draft state -- backend computes, this method never
@@ -2803,6 +2803,7 @@ class DesktopBackendFacade:
             profile, ranking, manual_assets, adp, room_state,
             comparable_leagues=comparable_leagues, provenance=provenance,
             max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
+            position_filter=position_filter,
         )
         resolved_speed = str(speed).upper()
         if isinstance(result, LiveDecisionBundleUnavailable):
@@ -4186,6 +4187,7 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
             "equityGain": candidate.equity_gain,
             "costOfWaiting": candidate.cost_of_waiting,
             "makeItBackProbability": candidate.make_it_back_probability,
+            "makeItBackTrials": candidate.make_it_back_trials,
             "rawDecisionUtility": candidate.raw_decision_utility,
             "teamScoreUtilityComponent": candidate.team_score_utility_component,
             "equityUtilityComponent": candidate.equity_utility_component,

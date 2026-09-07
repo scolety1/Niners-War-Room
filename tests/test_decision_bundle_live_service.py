@@ -248,7 +248,14 @@ def test_diversify_candidate_shortlist_breaks_up_a_qb_heavy_rank_slice() -> None
     rows += [_Row(f"TE-{i}", "TE") for i in range(8)]
     selected = diversify_candidate_shortlist(rows, max_candidates=8)
     positions = [row.position for row in selected]
-    assert positions.count("QB") <= 3, f"expected QB coverage, not domination: {positions}"
+    # Round 2 of this fix: a hard per-position domination cap (60% of
+    # max_candidates, so 4 of 8 here) replaced the original round-robin's
+    # implicit ~2-per-position ceiling -- deliberately loosened so a
+    # genuinely deep, needed position isn't capped at exactly one extra
+    # slot (see the "superior third WR" owner complaint this same pass
+    # fixed). The real bug this guards against was 7 of 8 (87.5%); 4 of 8
+    # (50%) is a real, intentional improvement, not the original bound.
+    assert positions.count("QB") <= 4, f"expected QB coverage, not the original 7-of-8 domination: {positions}"
     assert set(positions) >= {"QB", "RB", "WR", "TE"}, "every core position should get a comparison point"
 
 
@@ -268,6 +275,38 @@ def test_diversify_candidate_shortlist_preserves_real_depth_at_one_position() ->
     positions = [row.position for row in selected]
     assert positions.count("RB") >= 3, f"legitimate RB depth should not be discarded: {positions}"
     assert set(positions) >= {"RB", "WR", "QB", "TE"}
+
+
+def test_diversify_candidate_shortlist_does_not_force_a_backup_at_an_unneeded_position() -> None:
+    # Owner-test follow-up, round 2: the real reported regression -- TE is
+    # already filled (no remaining starter/FLEX need), so a legal-but-
+    # unneeded backup TE must not be forced into the slate just to satisfy
+    # a coverage quota. QB/RB/WR are genuinely needed here and should get
+    # real coverage; TE should NOT unless it is independently top-ranked.
+    rows = [_Row("QB-0", "QB"), _Row("RB-0", "RB"), _Row("RB-1", "RB"), _Row("WR-0", "WR")]
+    rows += [_Row(f"TE-{i}", "TE") for i in range(4)]  # ranked below the needed positions
+    selected = diversify_candidate_shortlist(rows, max_candidates=4, needed_positions=frozenset({"QB", "RB", "WR"}))
+    positions = [row.position for row in selected]
+    assert "TE" not in positions, f"an unneeded backup TE should not be forced into a full slate: {positions}"
+
+
+def test_diversify_candidate_shortlist_still_allows_an_unneeded_position_if_it_independently_ranks_well() -> None:
+    # The fix is "don't force a quota slot", never "exclude a position
+    # outright" -- an unneeded TE that is still the objectively best
+    # remaining option (nothing else left to fill the slate) must appear.
+    rows = [_Row("QB-0", "QB"), _Row("TE-0", "TE"), _Row("TE-1", "TE")]
+    selected = diversify_candidate_shortlist(rows, max_candidates=3, needed_positions=frozenset({"QB"}))
+    assert {row.player_id for row in selected} == {"QB-0", "TE-0", "TE-1"}
+
+
+def test_diversify_candidate_shortlist_needed_positions_none_falls_back_to_covering_everything() -> None:
+    # Backward-compatible default (no needed_positions supplied) -- callers
+    # that haven't computed real roster need yet still get the original
+    # "cover every core position" behavior, never a crash or empty pane.
+    rows = [_Row(f"QB-{i}", "QB") for i in range(4)] + [_Row("RB-0", "RB"), _Row("WR-0", "WR"), _Row("TE-0", "TE")]
+    selected = diversify_candidate_shortlist(rows, max_candidates=4)
+    positions = {row.position for row in selected}
+    assert positions == {"QB", "RB", "WR", "TE"}
 
 
 def test_diversify_candidate_shortlist_never_invents_or_drops_a_row() -> None:
@@ -330,4 +369,54 @@ def test_build_live_decision_bundle_does_not_let_qb_dominate_suggestions_early_m
         )
         assert not isinstance(result, LiveDecisionBundleUnavailable), label
         positions = [c.player_id.split("-")[0] for c in result.candidates]
-        assert positions.count("QB") <= 3, f"{label} draft state: QB-dominated slate {positions}"
+        # See the domination-cap comment in the pure-function test above --
+        # 4 of 8 (50%) is the intentional new bound, a real improvement on
+        # the original 7-of-8 bug, not a stricter target than designed.
+        assert positions.count("QB") <= 4, f"{label} draft state: QB-dominated slate {positions}"
+
+
+def test_position_filter_returns_real_eligible_players_of_that_position_only() -> None:
+    """Owner-test follow-up, section 8: an explicit position filter must
+    draw from the REAL eligible pool of that position -- never a client-
+    side re-filter of the default top-N slice, which could falsely report
+    "no candidates" for a position simply absent from that slice. Uses
+    this file's own _ranking() fixture, where the default top-8 rank
+    slice is QB-only (ranks 1-8) -- filtering to WR here would return
+    nothing under the old "re-filter the shortlist" approach, but must
+    return real WR candidates under the fix."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=31)
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=31, position_filter="WR",
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable)
+    assert len(result.candidates) == 5
+    assert all(c.player_id.startswith("WR-") for c in result.candidates)
+
+
+def test_position_filter_of_all_behaves_like_no_filter() -> None:
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=33)
+
+    filtered = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=33, position_filter="ALL",
+    )
+    unfiltered = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=33, position_filter=None,
+    )
+    assert not isinstance(filtered, LiveDecisionBundleUnavailable)
+    assert not isinstance(unfiltered, LiveDecisionBundleUnavailable)
+    assert {c.player_id for c in filtered.candidates} == {c.player_id for c in unfiltered.candidates}

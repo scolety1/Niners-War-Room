@@ -31,6 +31,7 @@ from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _available_ranked,
     _roster_candidate_allowed,
+    _roster_need_adjustment,
     draft_order,
 )
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
@@ -55,49 +56,87 @@ DEFAULT_MAX_CANDIDATES = 12
 DIVERSITY_POSITIONS = ("QB", "RB", "WR", "TE")
 
 
-def diversify_candidate_shortlist(legal_rows: Sequence[Any], max_candidates: int) -> list[Any]:
+def diversify_candidate_shortlist(
+    legal_rows: Sequence[Any],
+    max_candidates: int,
+    needed_positions: frozenset[str] | None = None,
+) -> list[Any]:
     """Selects up to `max_candidates` rows from `legal_rows` (already
     rank-ordered, already roster-legality-filtered) such that the
     shortlist is not dominated by one position when better-rounded
     options exist, while never inventing a score and never discarding a
     position that is genuinely and legitimately the strongest, deepest
-    option right now (e.g. a real run on RB can still fill most of the
-    list with RBs once every other position's pool is exhausted).
+    option right now.
 
-    Algorithm: a position-fair round-robin. Group the already rank-
-    ordered legal rows by position; repeatedly take one row -- always
-    the single best-ranked row remaining -- from whichever position's
-    NEXT candidate currently has the best rank among positions not yet
-    visited this round, cycling through every position with rows left
-    before any position gets a second pick. This guarantees the single
-    overall-best candidate is always selected first, guarantees every
-    legally-draftable core position gets a real comparison point before
-    any position gets a second slot, and still lets one position
-    legitimately fill the remainder once the others run out -- never a
-    mechanical exact one-per-position quota. The final list is re-sorted
-    back into overall rank order (round-robin selection order is not
-    display order) so "Suggestions" still reads top-to-bottom as NWR's
-    own rank order before Pick Score's own sort is applied downstream.
+    Owner-test follow-up (round 2): the first version of this function
+    guaranteed one coverage slot per DIVERSITY_POSITION unconditionally,
+    which itself became a real, reported problem -- it could force a
+    legal-but-unneeded backup (e.g. a second TE when the starter and any
+    open FLEX are already filled) into the slate purely to satisfy a
+    quota, and it capped every position's representation at roughly
+    max_candidates / 4 even when one position was both genuinely needed
+    and genuinely deep (a real "superior third WR" could be pushed out).
+
+    Two changes fix this without touching any score:
+    1. `needed_positions` (typically computed via the same, already-real
+       `_roster_need_adjustment` signal the CPU auto-pick/Cost-of-Waiting
+       machinery already uses -- an unfilled starter slot or open FLEX
+       capacity) gates the COVERAGE pass. A position with no real
+       remaining need (its starter slot and any FLEX eligibility are
+       already filled) gets no guaranteed slot -- it can still appear if
+       it is independently one of the best-ranked remaining legal rows,
+       just never as a forced quota filler.
+    2. The FILL pass is rank order with a soft per-position cap (60% of
+       max_candidates, rounded up, minimum 2) rather than a strict
+       round-robin -- this is what stops one position's rank cluster
+       from re-dominating the slate (the original real bug: 7 of 8
+       candidates were QB) while still letting a genuinely deep, needed
+       position take 3-4 of 8 slots when it legitimately earns them,
+       rather than being capped at exactly one extra.
     """
     if not legal_rows or max_candidates <= 0:
         return []
     rank_of = {row.player_id: index for index, row in enumerate(legal_rows)}
-    by_position: dict[str, list[Any]] = {}
+    selected: list[Any] = [legal_rows[0]]
+    selected_ids = {legal_rows[0].player_id}
+    covered_positions = {legal_rows[0].position}
+    coverage_targets = needed_positions if needed_positions is not None else set(DIVERSITY_POSITIONS)
+    # Coverage pass: one best-ranked row per not-yet-covered NEEDED position only.
     for row in legal_rows:
-        by_position.setdefault(row.position, []).append(row)
-    selected: list[Any] = []
-    while len(selected) < max_candidates and any(by_position.values()):
-        # One full round: every position with rows remaining contributes
-        # its current best-ranked row, visited best-rank-first so a
-        # partially-filled max_candidates still favors real value.
-        round_order = sorted(
-            (position for position, rows in by_position.items() if rows),
-            key=lambda position: rank_of[by_position[position][0].player_id],
-        )
-        for position in round_order:
+        if len(selected) >= max_candidates:
+            break
+        if row.position not in coverage_targets or row.position in covered_positions:
+            continue
+        selected.append(row)
+        selected_ids.add(row.player_id)
+        covered_positions.add(row.position)
+    # Fill pass: next-best-ranked legal rows regardless of position, capped
+    # per position so no single position's rank cluster can re-dominate.
+    position_cap = max(2, -(-int(max_candidates * 0.6) // 1))
+    position_counts: dict[str, int] = {}
+    for row in selected:
+        position_counts[row.position] = position_counts.get(row.position, 0) + 1
+    for row in legal_rows:
+        if len(selected) >= max_candidates:
+            break
+        if row.player_id in selected_ids:
+            continue
+        if position_counts.get(row.position, 0) >= position_cap:
+            continue
+        selected.append(row)
+        selected_ids.add(row.player_id)
+        position_counts[row.position] = position_counts.get(row.position, 0) + 1
+    # If the cap left slots unfilled (every remaining legal row belonged to
+    # an already-capped position), relax the cap rather than under-filling
+    # the slate -- a real, disclosed depth-exhaustion case, not a bug.
+    if len(selected) < max_candidates:
+        for row in legal_rows:
             if len(selected) >= max_candidates:
                 break
-            selected.append(by_position[position].pop(0))
+            if row.player_id in selected_ids:
+                continue
+            selected.append(row)
+            selected_ids.add(row.player_id)
     selected.sort(key=lambda row: rank_of[row.player_id])
     return selected
 
@@ -125,6 +164,7 @@ def build_live_decision_bundle(
     trials: int = 200,
     seasons: int = 200,
     base_seed: int = 20260903,
+    position_filter: str | None = None,
 ) -> DecisionBundle | LiveDecisionBundleUnavailable:
     """`comparable_leagues` and `provenance` are caller-supplied (not
     built here) so the expensive Monte Carlo reference population can be
@@ -182,7 +222,50 @@ def build_live_decision_bundle(
             "position may already be at its configured maximum, or the player "
             "universe is exhausted)."
         )
-    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates)
+    # Owner-test follow-up, section 8: an explicit position filter draws
+    # its shortlist from the REAL eligible pool of that position (still
+    # rank-ordered, still roster-legality-filtered), never a client-side
+    # re-filter of the default top-N slice -- which could falsely report
+    # "no candidates" for a position that simply wasn't in that slice.
+    # Bypasses diversify_candidate_shortlist entirely (there is nothing to
+    # diversify across when the owner has already chosen the position).
+    if position_filter is not None:
+        normalized_filter = position_filter.strip().upper()
+        if normalized_filter and normalized_filter != "ALL":
+            position_rows = [row for row in legal_rows if row.position == normalized_filter]
+            if not position_rows:
+                return LiveDecisionBundleUnavailable(
+                    f"No roster-legal available {normalized_filter} exists at this pick."
+                )
+            candidate_ids = [row.player_id for row in position_rows[:max_candidates]]
+            player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
+            bundle = build_decision_bundle(
+                profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+                owner_slot=owner_slot, current_owner_player_ids=current_owner_player_ids,
+                candidate_player_ids=candidate_ids, comparable_leagues=comparable_leagues,
+                provenance=provenance, player_scores=player_scores, from_state=room_state,
+                include_cost_of_waiting=include_cost_of_waiting,
+                current_pick_number=current_pick_number, trials=trials, seasons=seasons,
+                base_seed=base_seed,
+            )
+            unresolved_filtered = [pid for pid in candidate_ids if pid in drafted_ids]
+            if unresolved_filtered:
+                raise LiveDecisionBundleError(
+                    f"Candidate player(s) {unresolved_filtered} are already drafted; refusing to score them."
+                )
+            return bundle
+    # Real remaining need only (unfilled starter slot or open FLEX capacity),
+    # via the same _roster_need_adjustment signal the CPU auto-pick and
+    # Cost-of-Waiting machinery already use -- never a fresh position-demand
+    # model. A position already at or above its requirement with no FLEX
+    # slack (e.g. TE filled and FLEX also filled) gets no guaranteed
+    # coverage slot in the shortlist (see diversify_candidate_shortlist).
+    round_number = (current_pick_number - 1) // max(1, profile.team_count) + 1
+    needed_positions = frozenset(
+        position for position in DIVERSITY_POSITIONS
+        if _roster_need_adjustment(profile, roster, round_number, position) < 0
+    )
+    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates, needed_positions)
     candidate_player_ids = [row.player_id for row in candidate_rows]
     player_scores = {
         row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows

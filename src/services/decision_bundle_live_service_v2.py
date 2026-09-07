@@ -19,6 +19,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from src.services.decision_bundle_live_service import (
+    DIVERSITY_POSITIONS,
     LiveDecisionBundleError,
     LiveDecisionBundleUnavailable,
     diversify_candidate_shortlist,
@@ -28,6 +29,7 @@ from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _available_ranked,
     _roster_candidate_allowed,
+    _roster_need_adjustment,
     draft_order,
 )
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
@@ -107,9 +109,15 @@ def build_live_decision_bundle_v2(
         )
     # Reused verbatim from decision_bundle_live_service.py (owner-test
     # follow-up) -- keeps V1 and V2 selecting the SAME real shortlist for
-    # the SAME real draft state, and applies the identical fix for the
-    # real QB-domination bug a naive rank slice reproduced here too.
-    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates)
+    # the SAME real draft state, including the need-aware coverage fix
+    # (a position with no real remaining starter/FLEX need gets no forced
+    # quota slot) and the domination cap.
+    round_number = (current_pick_number - 1) // max(1, profile.team_count) + 1
+    needed_positions = frozenset(
+        position for position in DIVERSITY_POSITIONS
+        if _roster_need_adjustment(profile, roster, round_number, position) < 0
+    )
+    candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates, needed_positions)
     candidate_player_ids = [row.player_id for row in candidate_rows]
     player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
 
