@@ -2687,6 +2687,13 @@ def _adp_status(snapshot: AdpSnapshot, ranking_count: int) -> dict[str, Any]:
         "authority": snapshot.authority,
         "provider": snapshot.provider,
         "source": snapshot.source,
+        # NWR DRAFT-DAY (round.pick for ADP): the source's OWN team count,
+        # never assumed to match the active room's team_count -- a
+        # round.pick conversion is only safe when they match (see
+        # formatAdpRoundPick in draft-room-v2.tsx); this is what lets the
+        # frontend refuse to "silently convert source context" instead of
+        # guessing.
+        "teamCount": snapshot.team_count,
         "sourceDate": snapshot.source_date,
         "dateWindow": snapshot.date_window,
         "importedAtUtc": snapshot.imported_at_utc,

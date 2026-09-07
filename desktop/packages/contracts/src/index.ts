@@ -698,6 +698,10 @@ export interface AdpStatus {
   available: boolean;
   provider?: string;
   source: string;
+  // The ADP source's OWN team count -- may differ from the active room's
+  // team count. A round.pick display is only computed against this, not
+  // silently against the room's own team count.
+  teamCount?: number;
   sourceDate: string;
   dateWindow?: string;
   importedAtUtc: string;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  actionToBadgeTone,
   assignRosterSlots,
   buildCompareRows,
   buildCurrentRosterScores,
@@ -11,6 +12,7 @@ import {
   buildSuggestionsRows,
   buildUdkBadges,
   findCloseCall,
+  formatAdpRoundPick,
   formatMakeItBack,
   formatPickScore,
   formatRoundPick,
@@ -523,5 +525,60 @@ describe("findCloseCall", () => {
     findCloseCall(rows, 3);
     expect(rows[0].pickScore).toBe(90);
     expect(rows[1].pickScore).toBe(89);
+  });
+});
+
+// NWR DRAFT-DAY: ADP round.pick display (owner-requested "4.12"/"7.03"
+// format) must never silently reinterpret a different-sized league's ADP
+// as this room's own rounds -- the raw decimal is preserved whenever the
+// source team count is unknown or doesn't match.
+describe("formatAdpRoundPick", () => {
+  it("converts to round.pick when the source team count matches the room", () => {
+    const result = formatAdpRoundPick(69, 10, 10);
+    expect(result.text).toBe("7.09");
+    expect(result.title).toContain("69");
+  });
+
+  it("shows the raw decimal, not a guessed conversion, when the source team count is unknown", () => {
+    const result = formatAdpRoundPick(194.4, null, 10);
+    expect(result.text).toBe("194.4");
+    expect(result.title.toLowerCase()).toContain("isn't known");
+  });
+
+  it("shows the raw decimal, not a silently-reinterpreted conversion, when the source team count differs from the room", () => {
+    const result = formatAdpRoundPick(69, 12, 10);
+    expect(result.text).toBe("69.0");
+    expect(result.title).toContain("12-team");
+    expect(result.title).toContain("10-team");
+  });
+
+  it("handles a missing ADP value honestly", () => {
+    expect(formatAdpRoundPick(null, 10, 10).text).toBe("—");
+  });
+});
+
+// NWR DRAFT-DAY: the owner's explicit 3-tier action-color mapping (Pick
+// Now/Take Now = GREEN; Consider = AMBER; Wait/Queue Later = MUTED RED).
+// "ready"/"review"/"deprioritized" are the tone names that resolve to
+// those three colors -- see redraft.css and packages/ui/src/styles.css.
+describe("actionToBadgeTone", () => {
+  it("maps Take Now to the GREEN tone, not the RED 'blocked' tone", () => {
+    expect(actionToBadgeTone("TAKE NOW")).toBe("ready");
+    expect(actionToBadgeTone("TAKE_NOW")).toBe("ready");
+  });
+
+  it("maps Good Value to the AMBER 'review' tone", () => {
+    expect(actionToBadgeTone("GOOD VALUE")).toBe("review");
+  });
+
+  it("maps Wait/Deep Target/Waiver Watch to the muted-red 'deprioritized' tone", () => {
+    expect(actionToBadgeTone("WAIT")).toBe("deprioritized");
+    expect(actionToBadgeTone("DEEP TARGET")).toBe("deprioritized");
+    expect(actionToBadgeTone("WAIVER WATCH")).toBe("deprioritized");
+    expect(actionToBadgeTone("WAIVER_WATCH")).toBe("deprioritized");
+  });
+
+  it("never silently reuses another action's tone for an unrecognized label", () => {
+    expect(actionToBadgeTone("UNSCORED")).toBe("review");
   });
 });

@@ -198,7 +198,7 @@ export function buildMyTeamSummary(data: RedraftBootstrap): MyTeamSummary {
 // StatusBadge's own tone union (packages/ui) -- "safe" plus the shared
 // HealthTone set. Reused directly rather than inventing a parallel tone
 // vocabulary.
-export type BadgeTone = "safe" | "review" | "blocked" | "ready" | "offline";
+export type BadgeTone = "safe" | "review" | "blocked" | "ready" | "offline" | "deprioritized";
 
 export interface UdkBadge {
   key: string;
@@ -228,6 +228,40 @@ export function formatRoundPick(overallPick: number, teamCount: number): string 
   const round = Math.floor((overallPick - 1) / n) + 1;
   const pickInRound = ((overallPick - 1) % n) + 1;
   return `${round}.${String(pickInRound).padStart(2, "0")}`;
+}
+
+/**
+ * NWR DRAFT-DAY (ADP round.pick display, owner-requested "4.12"/"7.03"
+ * format): the exact raw numeric ADP value is ALWAYS preserved (in the
+ * tooltip, and untouched wherever the caller sorts/computes on it) --
+ * this only changes what's DISPLAYED. A round.pick conversion is only
+ * computed when the ADP source's own reported team count (`sourceTeamCount`,
+ * e.g. a 12-team consensus) matches the room's actual team count; when it
+ * doesn't (or isn't known), the raw decimal is shown instead of silently
+ * reinterpreting a different-sized league's pick numbers as this room's
+ * own rounds -- the exact "never parse notation as a decimal or silently
+ * convert source context" the owner's directive names.
+ */
+export function formatAdpRoundPick(
+  overallAdp: number | null,
+  sourceTeamCount: number | null | undefined,
+  roomTeamCount: number | null,
+): { text: string; title: string } {
+  if (overallAdp == null) return { text: "—", title: "No market ADP available." };
+  const raw = formatNumber(overallAdp, 1);
+  if (sourceTeamCount == null || roomTeamCount == null || sourceTeamCount !== roomTeamCount) {
+    const mismatch = sourceTeamCount != null && roomTeamCount != null;
+    return {
+      text: raw,
+      title: mismatch
+        ? `Raw overall ADP ${raw} from a ${sourceTeamCount}-team source -- this room is ${roomTeamCount}-team, so round.pick is not shown here rather than silently reinterpreted.`
+        : `Raw overall ADP ${raw} -- the source's own team count isn't known, so round.pick is not shown here rather than guessed.`,
+    };
+  }
+  return {
+    text: formatRoundPick(overallAdp, roomTeamCount),
+    title: `Raw overall ADP ${raw} (${sourceTeamCount}-team source, matches this room).`,
+  };
 }
 
 /**
@@ -1347,6 +1381,7 @@ export function DraftRoomV2Page({
             manualAssets={data.manualAssets ?? []}
             currentPick={board?.currentPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
+            adpTeamCount={board?.adp?.teamCount ?? null}
             superflex={data.activeProfile?.roster.superflex ?? 0}
           />
         ) : null}
@@ -1385,6 +1420,7 @@ export function DraftRoomV2Page({
             onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
             currentPick={board?.currentPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
+            adpTeamCount={board?.adp?.teamCount ?? null}
           />
         ) : null}
         {tab === "REPLAY" ? (
@@ -1493,8 +1529,30 @@ function CompactOnClockRow({
       <span className="draft-room-v2-onclock__status">
         {board.complete ? "Draft complete" : board.isOwnerTurn ? "YOU ARE ON THE CLOCK" : `On clock: Team ${board.currentTeamSlot ?? "?"}`}
       </span>
-      {!board.isOwnerTurn && picksUntilOwner != null && !board.complete ? (
-        <span className="draft-room-v2-onclock__until">YOU IN {picksUntilOwner} PICK{picksUntilOwner === 1 ? "" : "S"}</span>
+      {/* NWR DRAFT-DAY (Section E, Make-It-Back interpretation): this
+          previously only rendered when it was NOT the owner's turn, so
+          while actually deciding THIS pick -- exactly when "how much
+          real risk is there in waiting" matters most -- nothing showed
+          at all. `nextOwnerPick` already searches strictly AFTER
+          `currentPick`, so when it IS the owner's turn this now shows
+          their real horizon to the turn AFTER this one; a gap of exactly
+          1 (the very next pick is also theirs, the real snake-adjacent-
+          turn case) reads as an explicit "again immediately" rather than
+          a technically-correct but easy-to-misread "1 PICK". */}
+      {picksUntilOwner != null && !board.complete ? (
+        board.isOwnerTurn ? (
+          picksUntilOwner <= 1 ? (
+            <span className="draft-room-v2-onclock__until" title="No opponent selections between this pick and your next one.">
+              YOU PICK AGAIN IMMEDIATELY
+            </span>
+          ) : (
+            <span className="draft-room-v2-onclock__until" title="Opponent picks between this one and your next turn.">
+              {picksUntilOwner - 1} PICK{picksUntilOwner - 1 === 1 ? "" : "S"} UNTIL YOUR NEXT TURN
+            </span>
+          )
+        ) : (
+          <span className="draft-room-v2-onclock__until">YOU IN {picksUntilOwner} PICK{picksUntilOwner === 1 ? "" : "S"}</span>
+        )
       ) : null}
       <span className="draft-room-v2-onclock__snake" title={snakeForward ? "Odd rounds run 1→N" : "Even rounds run N→1"}>
         {snakeForward ? "1→N" : "N→1"}
@@ -1660,6 +1718,7 @@ function SuggestionsTab({
   manualAssets,
   currentPick,
   teamCount,
+  adpTeamCount,
   superflex,
 }: {
   rows: SuggestionRow[];
@@ -1679,6 +1738,7 @@ function SuggestionsTab({
   manualAssets: RedraftBootstrap["manualAssets"];
   currentPick: number | null;
   teamCount: number | null;
+  adpTeamCount: number | null;
   superflex: number;
 }) {
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
@@ -1748,7 +1808,10 @@ function SuggestionsTab({
       return <span title={`Expected regret: ${row.expectedRegret != null ? formatNumber(row.expectedRegret as number, 1) : "—"}`}>{formatNumber(row.decisionQualityPercentile as number, 0)}</span>;
     } },
     { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
-    { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => row.marketExpectedPick == null ? "—" : formatNumber(row.marketExpectedPick as number, 1) },
+    { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => {
+      const adp = formatAdpRoundPick(row.marketExpectedPick as number | null, adpTeamCount, teamCount);
+      return <span title={adp.title}>{adp.text}</span>;
+    } },
     { key: "action", label: "Action", titleHint: "What to do -- reuses the existing real Cost-of-Waiting/ADP-timing labels, split from Value below.", sort: "text", render: (row) => {
       const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
       return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
@@ -1871,11 +1934,24 @@ function SuggestionsTab({
   );
 }
 
-function actionToBadgeTone(action: string): BadgeTone {
-  const normalized = action.toUpperCase();
-  if (normalized === "TAKE NOW") return "blocked";
-  if (normalized === "DEEP TARGET" || normalized === "GOOD VALUE") return "ready";
-  if (normalized === "WAIVER WATCH") return "offline";
+/**
+ * NWR DRAFT-DAY: the owner's explicit 3-tier mapping (Pick Now/Take Now =
+ * GREEN; Consider/Close Call = AMBER; Wait/Queue Later = MUTED RED) --
+ * this previously mapped TAKE_NOW to "blocked" (a vivid alarm RED, the
+ * exact opposite of the requested color) and had no muted-red tier at
+ * all (WAIT/WAIVER_WATCH fell through to the same amber "review" as
+ * GOOD_VALUE). Every real label_pick_decisions() value is covered
+ * explicitly, not by a catch-all default, so a genuinely new/renamed
+ * label surfaces as visibly "review" (unknown) rather than silently
+ * inheriting whichever tone happened to be last in the chain.
+ */
+export function actionToBadgeTone(action: string): BadgeTone {
+  const normalized = action.toUpperCase().replace(/_/g, " ");
+  if (normalized === "TAKE NOW") return "ready"; // GREEN
+  if (normalized === "GOOD VALUE") return "review"; // AMBER -- "Consider now"
+  if (normalized === "WAIT" || normalized === "DEEP TARGET" || normalized === "WAIVER WATCH") {
+    return "deprioritized"; // MUTED RED -- the action right now is to not take him
+  }
   return "review";
 }
 
@@ -2072,22 +2148,35 @@ function RightRosterPane({
   }
   const effectiveSlot = selectedTeamSlot ?? ownerSlot;
   const team = teams.find((value) => value.teamSlot === effectiveSlot) ?? teams.find((value) => value.owner) ?? null;
+  const ownerTeam = teams.find((value) => value.owner) ?? null;
+  // NWR DRAFT-DAY (Section D: "inspecting Team 3 must never look like
+  // the owner is drafting from Team 3"): the underlying state was already
+  // correctly separated (inspecting a team never touches owner_slot/
+  // recommendations -- see this component's own doc comment above), but
+  // the header never SAID which team is actually controlled versus which
+  // one is merely being looked at. Two explicit, always-visible labels
+  // instead of one ambiguous "Roster" dropdown.
+  const inspectingOther = ownerTeam != null && effectiveSlot !== ownerTeam.teamSlot;
   const assignment = team && rosterSettings ? assignRosterSlots(team.roster, rosterSettings) : null;
   const strip = team && rosterSettings ? buildRosterStripFromRoster(team.roster, rosterSettings) : [];
   const picksUntilOwner = nextOwnerPick != null && currentPick != null ? Math.max(0, nextOwnerPick - currentPick) : null;
   return (
     <aside className="draft-room-v2-rightpane" aria-label="Team roster and recent picks">
       <div className="draft-room-v2-rightpane__header">
+        <div className="draft-room-v2-rightpane__identity">
+          <span className="draft-room-v2-leftpane__label">Drafting as</span>
+          <strong>{ownerTeam ? ownerTeam.name : `Team ${ownerSlot ?? "?"}`}</strong>
+        </div>
         <label className="draft-room-v2-rightpane__team-select">
-          <span className="draft-room-v2-leftpane__label">Roster</span>
+          <span className="draft-room-v2-leftpane__label">Viewing</span>
           <select
             value={effectiveSlot ?? ""}
             onChange={(event) => onSelectTeam(Number(event.target.value))}
-            aria-label="Inspect team roster"
+            aria-label="Viewing team (does not change who you are drafting as)"
           >
             {teams.map((value) => (
               <option key={value.teamSlot} value={value.teamSlot}>
-                {value.name}{value.owner ? " (You)" : ""}
+                {value.name}{value.owner ? " (you draft as this team)" : ""}
               </option>
             ))}
           </select>
@@ -2096,57 +2185,71 @@ function RightRosterPane({
           <Icon name="chevron" size={13} />
         </button>
       </div>
-      {strip.length > 0 ? (
-        <div className="roster-strip" title="Real configured starter slots, FLEX/Superflex, K/DST and bench for this team">
-          {strip.map((slot) => {
-            const overflow = slot.need > 0 && slot.have > slot.need;
-            const full = slot.need > 0 && slot.have === slot.need;
-            return (
-              <span
-                key={slot.label}
-                className={`roster-slot ${full ? "roster-slot--full" : ""} ${overflow ? "roster-slot--overflow" : ""}`}
-                title={overflow ? `Over the configured ${slot.label} capacity of ${slot.need} -- a real roster validation issue, not a display error.` : undefined}
-              >
-                {slot.label} {slot.have}/{slot.need}
-              </span>
-            );
-          })}
-        </div>
+      {inspectingOther ? (
+        <p className="draft-room-v2-rightpane__inspecting" role="status">
+          Inspecting {team?.name ?? "another team"} -- you are still drafting as {ownerTeam ? ownerTeam.name : `Team ${ownerSlot ?? "?"}`}.
+        </p>
       ) : null}
-      {assignment ? (
-        <div className="draft-room-v2-rightpane__section">
-          <ul className="draft-room-v2-roster-slots">
-            {assignment.starters.map((slot, index) => (
-              <li key={`${slot.label}-${index}`} className={slot.player ? "" : "draft-room-v2-roster-slots__empty"}>
-                <span className="draft-room-v2-roster-slots__label">{slot.label}</span>
-                {slot.player ? (
-                  <span>
-                    <strong>{slot.player.playerName}</strong>
-                    <small>{slot.player.team} · {slot.player.position}</small>
-                  </span>
-                ) : (
-                  <span className="draft-room-v2-roster-slots__placeholder">Empty</span>
-                )}
-              </li>
-            ))}
-          </ul>
-          {assignment.bench.length > 0 ? (
-            <>
-              <span className="draft-room-v2-leftpane__label">Bench ({assignment.bench.length})</span>
-              <ul className="draft-room-v2-roster-slots draft-room-v2-roster-slots--bench">
-                {assignment.bench.map((player) => (
-                  <li key={player.playerId}>
-                    <span className="draft-room-v2-roster-slots__label">BN</span>
-                    <span><strong>{player.playerName}</strong><small>{player.team} · {player.position}</small></span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </div>
-      ) : (
-        <p className="draft-room-v2-rightpane__empty">No players drafted by this team yet.</p>
-      )}
+      {/* NWR DRAFT-DAY (Section C): this pane used to scroll as ONE unit,
+          so reaching Recent Picks meant scrolling past the entire
+          starters+bench list first, and a long bench could push the
+          team-select header itself out of view. The header above stays
+          fixed; only the roster content below gets its own bounded,
+          independently-scrollable area, so Recent Picks stays reachable
+          with a short, separate scroll of its own. */}
+      <div className="draft-room-v2-rightpane__roster-scroll">
+        {strip.length > 0 ? (
+          <div className="roster-strip" title="Real configured starter slots, FLEX/Superflex, K/DST and bench for this team">
+            {strip.map((slot) => {
+              const overflow = slot.need > 0 && slot.have > slot.need;
+              const full = slot.need > 0 && slot.have === slot.need;
+              return (
+                <span
+                  key={slot.label}
+                  className={`roster-slot ${full ? "roster-slot--full" : ""} ${overflow ? "roster-slot--overflow" : ""}`}
+                  title={overflow ? `Over the configured ${slot.label} capacity of ${slot.need} -- a real roster validation issue, not a display error.` : undefined}
+                >
+                  {slot.label} {slot.have}/{slot.need}
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
+        {assignment ? (
+          <div className="draft-room-v2-rightpane__section">
+            <ul className="draft-room-v2-roster-slots">
+              {assignment.starters.map((slot, index) => (
+                <li key={`${slot.label}-${index}`} className={slot.player ? "" : "draft-room-v2-roster-slots__empty"}>
+                  <span className="draft-room-v2-roster-slots__label">{slot.label}</span>
+                  {slot.player ? (
+                    <span>
+                      <strong>{slot.player.playerName}</strong>
+                      <small>{slot.player.team} · {slot.player.position}</small>
+                    </span>
+                  ) : (
+                    <span className="draft-room-v2-roster-slots__placeholder">Empty</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {assignment.bench.length > 0 ? (
+              <>
+                <span className="draft-room-v2-leftpane__label">Bench ({assignment.bench.length})</span>
+                <ul className="draft-room-v2-roster-slots draft-room-v2-roster-slots--bench">
+                  {assignment.bench.map((player) => (
+                    <li key={player.playerId}>
+                      <span className="draft-room-v2-roster-slots__label">BN</span>
+                      <span><strong>{player.playerName}</strong><small>{player.team} · {player.position}</small></span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
+        ) : (
+          <p className="draft-room-v2-rightpane__empty">No players drafted by this team yet.</p>
+        )}
+      </div>
       <div className="draft-room-v2-rightpane__section">
         <span className="draft-room-v2-leftpane__label">Recent picks</span>
         {recentPicks.length > 0 ? (
@@ -2294,7 +2397,10 @@ function PlayersTab({
             <small>{String(row.team)} · {String(row.position)}</small>
           </span>
         ) },
-        { key: "overallAdp", label: "ADP", sort: "number", render: (row) => row.overallAdp == null ? "—" : formatNumber(row.overallAdp as number, 1) },
+        { key: "overallAdp", label: "ADP", sort: "number", render: (row) => {
+          const adp = formatAdpRoundPick(row.overallAdp as number | null, data.draftBoard?.adp?.teamCount, data.activeProfile?.teamCount ?? null);
+          return <span title={adp.title}>{adp.text}</span>;
+        } },
         { key: "badges", label: "UDK", sort: "text", render: (row) => (
           <span className="udk-badge-row">
             {buildUdkBadges(intelById.get(String(row.playerId))).map((badge) => (
@@ -2713,12 +2819,14 @@ function CompareTab({
   onRemove,
   currentPick,
   teamCount,
+  adpTeamCount,
 }: {
   rows: CompareRow[];
   summary: string;
   onRemove: (playerId: string) => void;
   currentPick: number | null;
   teamCount: number | null;
+  adpTeamCount: number | null;
 }) {
   if (rows.length === 0) {
     return <EmptyState icon="activity" title="Nothing selected" message="Alt+click a player anywhere in Draft Room V2 to add them here." />;
@@ -2731,7 +2839,10 @@ function CompareTab({
             { key: "playerName", label: "Player", sort: "text" },
             { key: "position", label: "Pos", sort: "text" },
             { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
-            { key: "overallAdp", label: "Market", sort: "number", render: (row) => row.overallAdp == null ? "—" : formatNumber(row.overallAdp as number, 1) },
+            { key: "overallAdp", label: "Market", sort: "number", render: (row) => {
+              const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, teamCount);
+              return <span title={adp.title}>{adp.text}</span>;
+            } },
             { key: "teamScoreDelta", label: "Team Score Δ — RESEARCH", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
             { key: "equityGain", label: "Champ Eq Δ — SIMULATED RESEARCH", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
             { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => {

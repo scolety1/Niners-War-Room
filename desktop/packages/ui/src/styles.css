@@ -128,6 +128,11 @@ kbd { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08)
 .status-badge--review { background: var(--gold-dim); border-color: rgba(212,170,85,.25); color: #e5c475; }
 .status-badge--blocked { background: var(--crimson-dim); border-color: rgba(225,72,87,.25); color: #ee7581; }
 .status-badge--offline { background: rgba(120,115,128,.12); border-color: rgba(140,135,148,.2); color: #a39ca9; }
+/* NWR DRAFT-DAY: a distinct, deliberately MUTED red for "Wait / Queue
+   Later" actions -- desaturated/lower-contrast than --blocked's vivid
+   alarm red (a real error/blocked state elsewhere in the app), so the
+   two severities never look identical. Text stays fully legible. */
+.status-badge--deprioritized { background: rgba(196,120,112,.14); border-color: rgba(196,120,112,.24); color: #c9908a; }
 @keyframes status-pulse { 0%,100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; } 50% { box-shadow: 0 0 0 4px transparent; opacity: .7; } }
 .workspace__content { flex: 1; overflow: auto; padding: 25px clamp(20px, 2.5vw, 38px) 46px; scroll-behavior: smooth; }
 .workspace__content > * { margin-left: auto; margin-right: auto; max-width: 1540px; }
