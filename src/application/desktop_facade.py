@@ -4216,6 +4216,7 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
             "teamScoreUtilityComponent": candidate.team_score_utility_component,
             "equityUtilityComponent": candidate.equity_utility_component,
             "pickScore": candidate.pick_score,
+            "pickScoreTiedNoSpread": candidate.pick_score_tied_no_spread,
             "action": candidate.action.replace("_", " "),
             "warnings": list(candidate.warnings),
             "uncertainty": candidate.uncertainty,

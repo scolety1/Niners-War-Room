@@ -91,7 +91,20 @@ export function CheatSheetPage({
     key: "cheatSheetActions", label: "", align: "right",
     render: (row) => {
       const playerId = String(row.playerId ?? "");
-      if (!playerId) return null;
+      if (!playerId) {
+        // UDK-specific: a real source row the importer could not safely
+        // match to a canonical NWR player ID (e.g. not in NWR's admitted
+        // ranking pool at all) -- preserved and shown with the exact
+        // reason, never silently dropped and never force-matched.
+        if (row.matchStatus === "UNMATCHED") {
+          return (
+            <span title="This UDK row could not be safely matched to a real NWR-ranked player (not present in NWR's admitted current-season ranking pool) -- shown for reference only, not draftable from here.">
+              <StatusBadge tone="review" label="Not in NWR pool" />
+            </span>
+          );
+        }
+        return null;
+      }
       const isDrafted = draftedIds.has(playerId) || Boolean(row.drafted);
       if (isDrafted) return <StatusBadge tone="review" label="Drafted" />;
       const isQueued = queuedIds.includes(playerId);

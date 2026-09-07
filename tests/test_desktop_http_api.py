@@ -215,8 +215,8 @@ class FakeFacade:
         self.calls.append(("undo", profile_id))
         return FacadePayload(data={"profileId": profile_id})
 
-    def redraft_decision_bundle(self, *, profile_id: str, speed: str = "FAST") -> FacadePayload:
-        self.calls.append(("decision-bundle", {"profileId": profile_id, "speed": speed}))
+    def redraft_decision_bundle(self, *, profile_id: str, speed: str = "FAST", position_filter: str | None = None) -> FacadePayload:
+        self.calls.append(("decision-bundle", {"profileId": profile_id, "speed": speed, "positionFilter": position_filter}))
         return FacadePayload(
             data={
                 "decisionBundle": {
@@ -737,8 +737,8 @@ def test_redraft_decision_bundle_route_defaults_to_fast_and_accepts_an_explicit_
     assert explicit_speed[0] == 200
     assert explicit_speed[2]["data"]["decisionBundle"]["speed"] == "DEEP"
     assert rejected[0] == 400
-    assert ("decision-bundle", {"profileId": "profile-1", "speed": "FAST"}) in facade.calls
-    assert ("decision-bundle", {"profileId": "profile-1", "speed": "DEEP"}) in facade.calls
+    assert ("decision-bundle", {"profileId": "profile-1", "speed": "FAST", "positionFilter": None}) in facade.calls
+    assert ("decision-bundle", {"profileId": "profile-1", "speed": "DEEP", "positionFilter": None}) in facade.calls
 
 
 def test_kha_historical_replay_preview_route_returns_the_real_labeled_replay() -> None:

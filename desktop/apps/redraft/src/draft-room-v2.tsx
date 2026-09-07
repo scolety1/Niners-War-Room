@@ -89,6 +89,7 @@ export interface SuggestionRow {
   playerScore: number | null;
   // Real, backend-computed DecisionBundle fields -- never fabricated.
   pickScore: number;
+  pickScoreTiedNoSpread: boolean;
   teamScoreAfter: number;
   teamScoreDelta: number;
   championshipEquityAfter: number;
@@ -142,6 +143,7 @@ export function buildSuggestionsRows(
         marketExpectedPick: ranking?.expectedPick ?? ranking?.overallAdp ?? null,
         playerScore: candidate.playerScore,
         pickScore: candidate.pickScore,
+        pickScoreTiedNoSpread: candidate.pickScoreTiedNoSpread,
         teamScoreAfter: candidate.teamScoreAfter,
         teamScoreDelta: candidate.teamScoreDelta,
         championshipEquityAfter: candidate.championshipEquityAfter,
@@ -234,6 +236,26 @@ export function formatMakeItBack(probability: number | null, trials: number | nu
     return { text: `${pct}%*`, title: `Survived all ${trials} simulated continuations -- a real modeled estimate, not a guarantee of real-world availability.` };
   }
   return { text: `${pct}%`, title: `Modeled estimate across ${trials} simulated continuations.` };
+}
+
+/**
+ * Owner feedback closure (result-status taxonomy): a bare 50.0 Pick
+ * Score is indistinguishable from a placeholder or an unevaluated cell
+ * on sight. When the backend discloses pickScoreTiedNoSpread (every
+ * candidate in this evaluated set shared the same real Championship
+ * Equity, so the frozen formula has no spread to work with), the UI
+ * marks it "(tied)" with a tooltip explaining that this is a genuine,
+ * computed result -- the model cannot distinguish these actions on this
+ * signal -- never a fabricated or missing value.
+ */
+export function formatPickScore(score: number | null, tiedNoSpread: boolean): { text: string; title: string } {
+  if (score == null) return { text: "—", title: "Not evaluated for this candidate." };
+  const base = formatNumber(score, 1);
+  if (!tiedNoSpread) return { text: base, title: "Pick Score — EXPERIMENTAL, relative to the other candidates evaluated alongside this one." };
+  return {
+    text: `${base} (tied)`,
+    title: "Every candidate evaluated alongside this one shares the same real Championship Equity -- the model genuinely cannot distinguish them on this signal (not an unevaluated or placeholder value).",
+  };
 }
 
 export function severityToBadgeTone(severity: string | null | undefined): BadgeTone {
@@ -482,6 +504,7 @@ export interface CompareRow {
   makeItBackProbability: number | null;
   makeItBackTrials: number | null;
   pickScore: number | null;
+  pickScoreTiedNoSpread: boolean;
   action: string | null;
   warnings: string[];
   evaluated: boolean;
@@ -520,6 +543,7 @@ export function buildCompareRows(
         makeItBackProbability: candidate?.makeItBackProbability ?? null,
         makeItBackTrials: candidate?.makeItBackTrials ?? null,
         pickScore: candidate?.pickScore ?? null,
+        pickScoreTiedNoSpread: candidate?.pickScoreTiedNoSpread ?? false,
         action: candidate?.action ?? null,
         warnings: candidate?.warnings ?? [],
         evaluated: candidate !== undefined,
@@ -1589,7 +1613,10 @@ function SuggestionsTab({
         <small>{String(row.team)} · {String(row.position)}</small>
       </span>
     ) },
-    { key: "pickScore", label: "Pick Score", titleHint: "Pick Score — EXPERIMENTAL: the historically-validated but not yet independently audited combined recommendation.", sort: "number", render: (row) => formatNumber(row.pickScore as number, 1) },
+    { key: "pickScore", label: "Pick Score", titleHint: "Pick Score — EXPERIMENTAL: the historically-validated but not yet independently audited combined recommendation.", sort: "number", render: (row) => {
+      const ps = formatPickScore(row.pickScore as number, Boolean(row.pickScoreTiedNoSpread));
+      return <span title={ps.title}>{ps.text}</span>;
+    } },
     { key: "teamScoreAfter", label: "Team After", titleHint: "Team Score — RESEARCH. 'After' projects a full-draft completion assuming this pick now; the (Δ) in parentheses reflects this pick PLUS the rest of the draft playing out, not an isolated single-pick value. See player detail for current→after.", sort: "number", render: (row) => (
       <span>{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
     ) },
@@ -2484,7 +2511,10 @@ function CompareTab({
               const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
               return <span title={mib.title}>{mib.text}</span>;
             } },
-            { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => row.pickScore == null ? "—" : formatNumber(row.pickScore as number, 1) },
+            { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => {
+              const ps = formatPickScore(row.pickScore as number | null, Boolean(row.pickScoreTiedNoSpread));
+              return <span title={ps.title}>{ps.text}</span>;
+            } },
             { key: "action", label: "Action", titleHint: "What to do -- split from Value below; reuses the existing real Cost-of-Waiting/ADP-timing labels.", sort: "text", render: (row) => {
               if (row.action == null) return "—";
               const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.overallAdp as number | null, currentPick, teamCount);

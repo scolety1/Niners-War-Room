@@ -426,6 +426,16 @@ class PickScoreResult:
     equity_gain: float  # vs. doing nothing (best remaining alternative left for the room)
     cost_of_waiting: float  # expected loss from passing this candidate now
     label: str = PICK_SCORE_LABEL
+    # Owner feedback closure: a purely additive disclosure flag -- never
+    # changes relative_score's own value or the frozen formula above.
+    # True exactly when every candidate in THIS evaluated set shares the
+    # same championship_equity win_probability (spread <= 0), the real
+    # condition that forces every relative_score in the set to the same
+    # 50.0 midpoint. Lets the UI say "the model cannot distinguish these
+    # candidates on this signal" instead of presenting a bare 50.0 that
+    # looks identical to (and is easily confused with) an unevaluated or
+    # placeholder value.
+    tied_no_spread: bool = False
 
 
 def cost_of_waiting(
@@ -459,6 +469,7 @@ def pick_score(
     best_equity = max(equities.values())
     worst_equity = min(equities.values())
     spread = best_equity - worst_equity
+    tied_no_spread = spread <= 0
     out: dict[str, PickScoreResult] = {}
     for player_id, (team, equity) in candidate_results.items():
         others = [value for pid, value in team_scores.items() if pid != player_id]
@@ -470,6 +481,7 @@ def pick_score(
             championship_equity_after=equity.win_probability,
             equity_gain=round(equity.win_probability - worst_equity, 4),
             cost_of_waiting=cost_of_waiting(team.percentile, best_alternative),
+            tied_no_spread=tied_no_spread,
         )
     return out
 

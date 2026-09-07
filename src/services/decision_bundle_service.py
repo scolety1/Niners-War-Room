@@ -75,6 +75,14 @@ class CandidateBundle:
     team_score_utility_component: float
     equity_utility_component: float
     pick_score: float
+    # Owner feedback closure (result-status taxonomy): True exactly when
+    # every candidate evaluated alongside this one shared the same
+    # championship-equity win_probability -- pick_score is a genuine,
+    # honest 50.0 (or every score in the set collapses to the same
+    # value) because the frozen formula has no spread to work with, not
+    # because this candidate was skipped or unevaluated. Additive only;
+    # never changes pick_score's own value.
+    pick_score_tied_no_spread: bool
     action: str
     warnings: tuple[str, ...]
     uncertainty: str
@@ -197,6 +205,7 @@ def build_decision_bundle(
                 team_score_utility_component=team_score_component,
                 equity_utility_component=equity_component,
                 pick_score=pick.relative_score,
+                pick_score_tied_no_spread=pick.tied_no_spread,
                 action=actions.get(player_id, "UNSCORED"),
                 warnings=tuple(warnings),
                 uncertainty=_uncertainty_label(current_equity),

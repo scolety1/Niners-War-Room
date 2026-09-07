@@ -253,6 +253,7 @@ def evaluate_historical_candidates(
                 team_score_utility_component=team_score_component,
                 equity_utility_component=equity_component,
                 pick_score=score.relative_score,
+                pick_score_tied_no_spread=score.tied_no_spread,
                 action="UNSCORED",  # historical Cost-of-Waiting is a disclosed heuristic, not
                 # the live Draft Room's labeled decision taxonomy -- never mislabeled as one.
                 warnings=tuple(warnings),

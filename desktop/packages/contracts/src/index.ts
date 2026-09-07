@@ -914,6 +914,13 @@ export interface DecisionBundleCandidate {
   teamScoreUtilityComponent: number;
   equityUtilityComponent: number;
   pickScore: number;
+  // Owner feedback closure (result-status taxonomy): true exactly when
+  // every candidate evaluated alongside this one shared the same
+  // championship-equity win_probability -- pickScore is a genuine,
+  // honest 50.0 because the frozen formula found no real spread to
+  // work with, not because this candidate was skipped or unevaluated.
+  // Never changes pickScore's own value.
+  pickScoreTiedNoSpread: boolean;
   action: string;
   warnings: string[];
   uncertainty: string;

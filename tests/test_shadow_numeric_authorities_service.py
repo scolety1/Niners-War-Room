@@ -470,6 +470,38 @@ def test_pick_score_ranks_candidates_relative_to_each_other_only() -> None:
     # cost_of_waiting for the best candidate is its edge over the next-best alternative
     assert scored["best"].cost_of_waiting == pytest.approx(90.0 - 60.0)
     assert scored["worst"].cost_of_waiting == 0.0  # not the best -> no positive edge to lose
+    # A real spread exists here -- never disclosed as a tie.
+    assert all(result.tied_no_spread is False for result in scored.values())
+
+
+def test_pick_score_discloses_a_genuine_tie_when_every_candidate_shares_the_same_equity() -> None:
+    """Owner feedback closure (result-status taxonomy): when every
+    candidate's championship_equity win_probability is identical, the
+    frozen formula's own `else 50.0` branch fires for all of them --
+    tied_no_spread must disclose this as a real, computed tie, not leave
+    the UI to guess whether 50.0 means "unevaluated"."""
+    from src.services.shadow_numeric_authorities_service import (
+        ChampionshipEquityResult,
+        TeamScoreResult,
+    )
+
+    def _team(percentile: float) -> TeamScoreResult:
+        return TeamScoreResult(
+            percentile=percentile, roster_value=100, population_size=10,
+            population_mean=50, population_median=50, population_stdev=5,
+        )
+
+    def _equity() -> ChampionshipEquityResult:
+        return ChampionshipEquityResult(
+            win_probability=0.10, standard_error=0.01, seasons_simulated=100, league_size=10,
+        )
+
+    candidates = {"a": (_team(90.0), _equity()), "b": (_team(30.0), _equity())}
+    scored = pick_score(candidates)
+    assert scored["a"].relative_score == 50.0
+    assert scored["b"].relative_score == 50.0
+    assert scored["a"].tied_no_spread is True
+    assert scored["b"].tied_no_spread is True
 
 
 def test_pick_score_handles_a_single_candidate_without_dividing_by_zero() -> None:
