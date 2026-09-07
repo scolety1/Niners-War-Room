@@ -681,6 +681,125 @@ def test_candidate_survival_probability_reflects_how_contested_the_position_is()
     assert uncontested > contested
 
 
+def test_candidate_survival_probability_responds_to_real_opponent_position_caps() -> None:
+    """Owner feedback closure (Make-It-Back sensitivity audit): the real,
+    already-existing position-cap legality check (_roster_candidate_allowed
+    -- a team may hold at most max(req.qb + 1, 2) = 2 QBs at the 1QB
+    default) genuinely gates CPU pick behavior, not just a cosmetic
+    label. A mid-tier QB drafted by NO opponent yet is a live target for
+    every team still needing a starter or legal backup; the same
+    candidate, once every opponent already holds their legal maximum of
+    2 QBs, is structurally impossible for any of them to draft."""
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+
+    def _state_with_opponent_qbs(qbs_per_team: int) -> dict:
+        picks = []
+        drafted = []
+        qb_index = 3  # leave QB-0 (alternative) and QB-2 (candidate) untouched
+        for team_slot in range(1, profile.team_count + 1):
+            if team_slot == 1:  # owner
+                continue
+            for _ in range(qbs_per_team):
+                pid = f"QB-{qb_index}"
+                qb_index += 1
+                picks.append({
+                    "pick_number": len(picks) + 1, "round": 1, "team_slot": team_slot,
+                    "player_id": pid, "player_name": pid, "position": "QB", "team": "TST",
+                    "actor": "CPU", "selection_behavior": "FIXTURE_SETUP",
+                    "nwr_rank": None, "picked_at_utc": "",
+                })
+                drafted.append(pid)
+        return {
+            "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": 1,
+            "seed": 1, "speed": "FAST", "mode": "MOCK", "drafted": drafted, "picks": picks,
+            "updated_at_utc": "",
+        }
+
+    uncapped = candidate_survival_probability(
+        profile, ranking, [], adp, _state_with_opponent_qbs(0),
+        owner_slot=1, candidate_player_id="QB-2", alternative_player_id="QB-0",
+        trials=40, base_seed=1,
+    )
+    capped = candidate_survival_probability(
+        profile, ranking, [], adp, _state_with_opponent_qbs(2),
+        owner_slot=1, candidate_player_id="QB-2", alternative_player_id="QB-0",
+        trials=40, base_seed=1,
+    )
+    assert uncapped < capped
+    assert capped == 1.0  # every opponent is structurally incapable of taking another QB
+
+
+def test_candidate_survival_probability_responds_to_intervening_pick_count() -> None:
+    """A consecutive-snake-turn owner (zero real intervening opponent
+    picks between this turn and the next) must show materially higher
+    survival than an owner with many intervening picks, for the exact
+    same candidate/alternative/league -- the literal number of chances
+    for opponents to draft the candidate away is the direct mechanism
+    Make-It-Back claims to model."""
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+
+    def _fresh(owner_slot: int) -> dict:
+        return {
+            "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": owner_slot,
+            "seed": 1, "speed": "FAST", "mode": "MOCK", "drafted": [], "picks": [],
+            "updated_at_utc": "",
+        }
+
+    many_intervening = candidate_survival_probability(
+        profile, ranking, [], adp, _fresh(1),
+        owner_slot=1, candidate_player_id="QB-15", alternative_player_id="QB-0",
+        trials=60, base_seed=1,
+    )
+    # Slot `team_count` picks last in round 1 and first in round 2 (snake) --
+    # zero real opponent picks intervene between those two turns.
+    zero_intervening = candidate_survival_probability(
+        profile, ranking, [], adp, _fresh(profile.team_count),
+        owner_slot=profile.team_count, candidate_player_id="QB-15", alternative_player_id="QB-0",
+        trials=60, base_seed=1,
+    )
+    assert zero_intervening > many_intervening
+    assert zero_intervening == 1.0
+
+
+def test_candidate_survival_probability_seeds_and_trials_are_genuinely_consumed() -> None:
+    """Owner feedback closure: 'more nominal trials should not be called
+    better evidence if the code repeats the same deterministic path.'
+    Verify real Monte Carlo variation actually exists -- different base
+    seeds at the same trial count must be able to produce different
+    survival estimates for a genuinely contested mid-tier candidate
+    (not a floor/ceiling-locked one)."""
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    state = {
+        "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": 1,
+        "seed": 1, "speed": "FAST", "mode": "MOCK", "drafted": [], "picks": [],
+        "updated_at_utc": "",
+    }
+    results = {
+        seed: candidate_survival_probability(
+            profile, ranking, [], adp, state,
+            owner_slot=1, candidate_player_id="QB-15", alternative_player_id="QB-0",
+            trials=30, base_seed=seed,
+        )
+        for seed in (1, 999, 54321)
+    }
+    # At least one pair of distinct seeds must disagree -- proof the trial
+    # loop is not silently repeating one deterministic outcome regardless
+    # of how the seed/trial-count knobs are turned.
+    assert len(set(results.values())) > 1, results
+
+
 def test_candidate_survival_probability_is_one_for_unavailable_inputs() -> None:
     from src.services.shadow_numeric_authorities_service import candidate_survival_probability
 
