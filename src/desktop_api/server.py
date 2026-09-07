@@ -38,6 +38,7 @@ _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
 _REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
 _REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
 _REDRAFT_ADP_REFRESH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/refresh$")
+_REDRAFT_UDK_IMPORT = re.compile(r"^/api/v1/redraft/udk/([^/]+)/import$")
 _REDRAFT_PASTE_ADP_PREVIEW = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/preview$")
 _REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$")
 _REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
@@ -609,6 +610,17 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             self._reject_unknown_fields(body, set())
             self.server.facade.refresh_redraft_adp(
                 profile_id=unquote(adp_refresh_match.group(1)),
+            )
+            return self.server.facade.redraft_bootstrap()
+        udk_import_match = _REDRAFT_UDK_IMPORT.fullmatch(path)
+        if method == "POST" and udk_import_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"csvText"})
+            if not isinstance(body.get("csvText"), str):
+                raise self._invalid_body("csvText must be a string.")
+            self.server.facade.import_udk_rankings(
+                profile_id=unquote(udk_import_match.group(1)),
+                csv_text=body["csvText"],
             )
             return self.server.facade.redraft_bootstrap()
         paste_preview_match = _REDRAFT_PASTE_ADP_PREVIEW.fullmatch(path)

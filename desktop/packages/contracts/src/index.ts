@@ -1049,6 +1049,47 @@ export interface RedraftCatchUpApplyResponse {
   catchUpApplied: CatchUpAppliedRow[];
 }
 
+// Owner feedback closure, section 7: the owner's real UDK ("Position
+// Rankings -- Fantasy Footballers Podcast") CSV export -- a real
+// subscriber source, distinct from NWR's own rankings, never a
+// replacement for them. A single export may legitimately cover only one
+// position (the owner's real file is 36 rows, all QB) -- `positions`
+// only ever contains keys the owner has actually imported.
+export interface UdkPlayerEntry {
+  playerId: string | null;
+  playerName: string;
+  team: string;
+  position: string;
+  byeWeek: string;
+  rank: number | null;
+  points: number | null;
+  risk: number | null;
+  upside: number | null;
+  // Preserved exactly as the source printed it (e.g. "2.06") -- UDK's
+  // own round.pick-style notation from an unverified/unknown source
+  // team count. Never parsed as a number, never reinterpreted as this
+  // league's own round.pick.
+  adpRaw: string;
+  tier: number | null;
+  outlook: string;
+  // True when the Dynasty column is locked upsell text ("Unlock with
+  // the 2026 UDK+..."), never a numeric rating invented from it.
+  dynastyLocked: boolean;
+  matchStatus: "MATCHED" | "UNMATCHED";
+}
+
+export interface UdkPositionSnapshot {
+  entries: UdkPlayerEntry[];
+  provider: string;
+  importedAtUtc: string;
+  sourceSha256: string;
+  sourceRows: number;
+}
+
+export interface UdkRankings {
+  positions: Record<string, UdkPositionSnapshot>;
+}
+
 export interface RedraftBootstrap {
   product: {
     title: string;
@@ -1065,6 +1106,7 @@ export interface RedraftBootstrap {
   draftBoard: DraftBoard | null;
   ownerPlatformSnapshot?: OwnerPlatformSnapshotStatus;
   manualAssets?: ManualDraftAsset[];
+  udkRankings?: UdkRankings;
   externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;
   notices: Notice[];

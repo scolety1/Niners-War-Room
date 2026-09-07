@@ -375,6 +375,13 @@ export class NwrApiClient {
     });
   }
 
+  importUdkRankings(profileId: string, csvText: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/udk/${encodeURIComponent(profileId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ csvText }),
+    });
+  }
+
   previewRedraftPasteAdp(profileId: string, pasteText: string, selectedSource: PasteAdpPreview["selectedSource"]): Promise<{ pastePreview: PasteAdpPreview }> {
     return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/preview`, {
       method: "POST", body: JSON.stringify({ pasteText, selectedSource }),

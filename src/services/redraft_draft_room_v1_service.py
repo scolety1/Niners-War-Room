@@ -816,6 +816,178 @@ def _match_adp_player(
     return None, "", "", "NO_SAFE_IDENTITY_MATCH" if not core_matches else "AMBIGUOUS_NAME"
 
 
+_UDK_REQUIRED_COLUMNS = (
+    "Name", "Position", "Team", "Bye Week", "Rank", "Points", "Risk", "Upside",
+    "ADP", "Tier", "Outlook", "Dynasty", "Markers",
+)
+_UDK_SUPPORTED_POSITIONS = frozenset({"QB", "RB", "WR", "TE", "K", "DST"})
+
+
+def _udk_number(value: str) -> float | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _udk_dynasty_locked(value: str) -> bool:
+    text = str(value or "")
+    return "unlock" in text.lower() or "udk+" in text.lower()
+
+
+def parse_udk_position_csv(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    csv_text: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Parse the owner's real UDK ("Position Rankings — Fantasy Footballers
+    Podcast") CSV export -- a genuine, documented schema (Name, Position,
+    Team, Bye Week, Rank, Points, Risk, Upside, ADP, Tier, Outlook,
+    Dynasty, Markers), NOT a full-position provider: a single export may
+    legitimately cover only one position (the owner's own file is 36
+    rows, all QB). Positions actually present are read from each row's
+    own Position column, never assumed or invented for positions the
+    file does not contain.
+
+    Reuses the exact existing owner-paste matching machinery
+    (_matching_assets / _match_adp_player) to attach real canonical NWR
+    player IDs so Draft/Queue works directly from a UDK row -- never a
+    second, disconnected identity space.
+
+    ADP is preserved as an OPAQUE STRING, never parsed as a number or
+    reinterpreted as this league's own round.pick: the source file
+    discloses no team count, and values like "2.06" are UDK's own
+    round.pick-style notation from an unknown/unverified source league
+    size (never our own conversion, never sorted numerically).
+
+    `Dynasty` is detected as locked upsell text ("Unlock with the 2026
+    UDK+...") and stored as dynasty_locked=True with no numeric rating
+    invented from it. `Markers` (Mark Drafted / Mark Keeper / Mark
+    Favorite / Mark Watchlist / Mark Avoid) is UI action text, not player
+    state -- it is discarded entirely, never ingested as a boolean flag.
+    """
+    if not csv_text.strip() or len(csv_text.encode("utf-8")) > 4_000_000:
+        raise RedraftValidationError("UDK CSV must be non-empty and no larger than 4 MB.")
+    try:
+        reader = csv.DictReader(io.StringIO(csv_text))
+        rows = list(reader)
+    except csv.Error as exc:
+        raise RedraftValidationError("UDK CSV could not be parsed.") from exc
+    if reader.fieldnames is None or set(_UDK_REQUIRED_COLUMNS) - set(reader.fieldnames):
+        raise RedraftValidationError(
+            "UDK CSV is missing required columns "
+            f"({', '.join(_UDK_REQUIRED_COLUMNS)})."
+        )
+    assets = _matching_assets(ranking, manual_assets)
+    by_position: dict[str, list[dict[str, Any]]] = {}
+    unmatched: list[str] = []
+    warnings: list[str] = []
+    matched_count = 0
+    for source_index, row in enumerate(rows, start=1):
+        player = str(row.get("Name") or "").strip()
+        position = _normalized_position(str(row.get("Position") or ""))
+        team = _normalized_team(str(row.get("Team") or ""))
+        if not player or position not in _UDK_SUPPORTED_POSITIONS:
+            warnings.append(f"row {source_index}: missing or unsupported position ({row.get('Position')!r})")
+            continue
+        matched, method, confidence, reason = _match_adp_player(player, position, team, assets)
+        entry = {
+            "playerId": str(matched["player_id"]) if matched else None,
+            "playerName": str(matched["player_name"]) if matched else player,
+            "team": str(matched["team"]) if matched else team,
+            "position": position,
+            "byeWeek": str(row.get("Bye Week") or ""),
+            "rank": int(_udk_number(row.get("Rank", "")) or 0) or None,
+            "points": _udk_number(row.get("Points", "")),
+            "risk": _udk_number(row.get("Risk", "")),
+            "upside": _udk_number(row.get("Upside", "")),
+            "adpRaw": str(row.get("ADP") or ""),
+            "tier": int(_udk_number(row.get("Tier", "")) or 0) or None,
+            "outlook": str(row.get("Outlook") or ""),
+            "dynastyLocked": _udk_dynasty_locked(str(row.get("Dynasty") or "")),
+            "matchStatus": "MATCHED" if matched else "UNMATCHED",
+            "matchMethod": method if matched else "",
+            "matchConfidence": confidence if matched else "",
+        }
+        by_position.setdefault(position, []).append(entry)
+        if matched:
+            matched_count += 1
+        else:
+            unmatched.append(f"row {source_index}: {player} ({position}) — {reason}")
+            warnings.append(f"row {source_index}: {player} not safely matched to an NWR player ({reason})")
+    if not by_position:
+        raise RedraftValidationError(
+            "No UDK rows matched a supported position. Check the CSV's Position column."
+        )
+    return {
+        "positions": by_position,
+        "sourceRows": len(rows),
+        "matchedRows": matched_count,
+        "unmatched": unmatched,
+        "warnings": warnings,
+        "sourceSha256": hashlib.sha256(csv_text.encode("utf-8")).hexdigest(),
+    }
+
+
+def save_udk_position_rankings(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    csv_text: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Parse + persist a UDK CSV import, merging additively into any prior
+    import for this profile so importing a QB-only file does not erase a
+    previously-imported RB file. Provenance (provider, imported_at,
+    source hash) travels with every position bucket so the UI can always
+    disclose "UDK, imported <time>" distinct from NWR's own rankings."""
+    preview = parse_udk_position_csv(profile, ranking, csv_text, manual_assets)
+    path = _udk_rankings_path(root, profile.profile_id)
+    existing: dict[str, Any] = {}
+    try:
+        if path.exists():
+            existing = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        existing = {}
+    positions = dict(existing.get("positions") or {})
+    imported_at = datetime.now(UTC).isoformat()
+    for position, entries in preview["positions"].items():
+        positions[position] = {
+            "entries": entries,
+            "provider": "Fantasy Footballers Podcast UDK",
+            "importedAtUtc": imported_at,
+            "sourceSha256": preview["sourceSha256"],
+            "sourceRows": len(entries),
+        }
+    document = {"profileId": profile.profile_id, "positions": positions}
+    try:
+        _atomic_json(path, document)
+    except OSError as exc:
+        raise RedraftPersistenceError("UDK rankings could not be saved.") from exc
+    return {
+        "positions": sorted(preview["positions"].keys()),
+        "sourceRows": preview["sourceRows"],
+        "matchedRows": preview["matchedRows"],
+        "unmatched": preview["unmatched"],
+        "warnings": preview["warnings"],
+        "importedAtUtc": imported_at,
+    }
+
+
+def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
+    path = _udk_rankings_path(root, profile_id)
+    if not path.exists():
+        return {"positions": {}}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {"positions": {}}
+
+
 def _match_report_row(
     source_id: str,
     player: str,
@@ -2520,6 +2692,10 @@ def _owner_paste_adp_path(root: str | Path, profile_id: str) -> Path:
 
 def _owner_paste_raw_path(root: str | Path, profile_id: str) -> Path:
     return Path(root) / "adp_provider_cache" / "owner_paste" / f"{profile_id}.md"
+
+
+def _udk_rankings_path(root: str | Path, profile_id: str) -> Path:
+    return Path(root) / "udk_provider_cache" / f"{profile_id}.json"
 
 
 def _owner_platform_snapshot_path(root: str | Path) -> Path:

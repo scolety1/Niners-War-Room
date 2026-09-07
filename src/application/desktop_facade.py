@@ -129,6 +129,8 @@ from src.services.redraft_draft_room_v1_service import (
     apply_catch_up_paste,
     build_draft_room_payload,
     import_owner_adp_csv,
+    load_udk_rankings,
+    save_udk_position_rankings,
     preview_catch_up_paste,
     preview_owner_paste_adp,
     approve_owner_platform_manual_match,
@@ -1903,6 +1905,7 @@ class DesktopBackendFacade:
                     }
                     for asset in manual_assets
                 ],
+                "udkRankings": load_udk_rankings(self.redraft_root, selected.profile_id) if selected else {"positions": {}},
                 "externalConsensus": {
                     "authority": fantasypros_status.authority,
                     "configured": fantasypros_status.configured,
@@ -3063,6 +3066,27 @@ class DesktopBackendFacade:
                 }
             }
         )
+
+    def import_udk_rankings(self, *, profile_id: str, csv_text: str) -> FacadePayload:
+        """Owner feedback closure, section 7: the owner's real UDK
+        ("Position Rankings -- Fantasy Footballers Podcast") CSV export.
+        Reuses the exact existing owner-paste identity matching; never
+        replaces NWR's own rankings, only adds a separately-attributed
+        UDK lane. A single export may legitimately cover only one
+        position (the owner's real file is 36 QB rows) -- positions are
+        read from the file itself, never assumed."""
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            result = save_udk_position_rankings(
+                self.redraft_root, profile, ranking, csv_text, manual_assets,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_UDK_IMPORT_FAILED",
+                "The UDK CSV was rejected without changing NWR rankings.",
+                status=409,
+            ) from exc
+        return FacadePayload(data={"udk": result})
 
     def refresh_redraft_adp(self, *, profile_id: str) -> FacadePayload:
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)

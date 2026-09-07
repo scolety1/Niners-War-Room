@@ -733,6 +733,24 @@ export function DraftRoomV2Page({
     }
   };
 
+  // Owner feedback closure, section 7: the owner's own real UDK CSV,
+  // imported through the app (never committed to source control, never
+  // read from a fabricated "ChatGPT sandbox path") -- reuses the exact
+  // same import-CSV pattern as ADP above.
+  const importUdk = async (file: File | undefined) => {
+    if (!file || !data.activeProfileId) return;
+    setWorking("udk-import");
+    setMutationError(null);
+    try {
+      const csvText = await file.text();
+      onUpdate(await client.importUdkRankings(data.activeProfileId, csvText));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${file.name} could not be imported.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
   // P0 owner-workflow rescue: the Legacy Draft Room's own start/restart
   // control (client.startDraftRoom), ported here verbatim -- same call,
   // same semantics, so the consolidated room is self-contained and never
@@ -1207,7 +1225,18 @@ export function DraftRoomV2Page({
             teamCount={data.activeProfile?.teamCount ?? null}
           />
         ) : null}
-        {tab === "CHEAT_SHEET" ? <CheatSheetPage data={data} /> : null}
+        {tab === "CHEAT_SHEET" ? (
+          <CheatSheetPage
+            data={data}
+            canRecordPick={canRecordPick}
+            working={working}
+            queuedIds={queuedIds}
+            onDraft={(playerId) => void mark(playerId)}
+            onQueue={toggleQueue}
+            onPlayerClick={onPlayerClick}
+            onImportUdk={(file) => void importUdk(file)}
+          />
+        ) : null}
         {tab === "BOARD" ? (
           <BoardTab
             board={board}

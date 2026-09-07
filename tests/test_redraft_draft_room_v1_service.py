@@ -24,6 +24,7 @@ from src.services.redraft_draft_room_v1_service import (
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
+    load_udk_rankings,
     owner_pick_and_advance,
     preview_catch_up_paste,
     record_catch_up_pick,
@@ -32,6 +33,7 @@ from src.services.redraft_draft_room_v1_service import (
     replace_pick,
     run_complete_mock,
     save_owner_paste_adp,
+    save_udk_position_rankings,
     set_owner_platform_selection,
     start_draft_room,
     sync_read_only_sleeper_picks,
@@ -979,3 +981,83 @@ def test_record_catch_up_pick_rejects_out_of_order_pick_number(tmp_path) -> None
         record_catch_up_pick(
             tmp_path, ranking.profile, ranking, _manual_assets(), player_id="QB-0", pick_number=2
         )
+
+
+def _udk_csv(rows: list[tuple[str, str, str, str]]) -> str:
+    """rows: (name, team, adp_raw, dynasty_cell) -- Position is always QB
+    here, matching the owner's real file (36 QB rows)."""
+    header = "Name,Position,Team,Bye Week,Rank,Points,Risk,Upside,ADP,Tier,Outlook,Dynasty,Markers"
+    lines = [header]
+    for index, (name, team, adp_raw, dynasty_cell) in enumerate(rows, start=1):
+        lines.append(
+            f'"{name}","QB","{team}","7","{index}","300.0","4.0","8.0","{adp_raw}","1",'
+            f'"Some real outlook text.","{dynasty_cell}","Mark Drafted Mark Keeper Mark Favorite Mark Watchlist Mark Avoid"'
+        )
+    return "\r\n".join(lines) + "\r\n"
+
+
+def test_parse_udk_position_csv_matches_real_players_and_preserves_opaque_adp(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = _udk_csv([
+        ("QB 0", "TST", "2.06", "Unlock with the 2026 UDK+. Get the UDK+."),
+        ("QB 1", "TST", "2.16", "Unlock with the 2026 UDK+. Get the UDK+."),
+    ])
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    assert result["positions"] == ["QB"]
+    assert result["sourceRows"] == 2
+    assert result["matchedRows"] == 2
+    assert result["unmatched"] == []
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    entries = loaded["positions"]["QB"]["entries"]
+    assert entries[0]["playerId"] == "QB-0"
+    assert entries[0]["playerName"] == "QB 0"
+    # ADP is preserved as the literal source string -- never parsed as a
+    # number or reinterpreted as this league's own round.pick (the CSV
+    # discloses no source team count).
+    assert entries[0]["adpRaw"] == "2.06"
+    assert isinstance(entries[0]["adpRaw"], str)
+    assert entries[0]["dynastyLocked"] is True
+    assert loaded["positions"]["QB"]["provider"] == "Fantasy Footballers Podcast UDK"
+
+
+def test_parse_udk_position_csv_flags_unmatched_player_without_dropping_the_import(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = _udk_csv([
+        ("QB 0", "TST", "2.06", "locked"),
+        ("A Totally Unknown Player", "ZZZ", "9.09", "locked"),
+    ])
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    assert result["matchedRows"] == 1
+    assert len(result["unmatched"]) == 1
+    assert "A Totally Unknown Player" in result["unmatched"][0]
+
+
+def test_parse_udk_position_csv_rejects_missing_required_columns(tmp_path) -> None:
+    ranking = _ranking()
+    with pytest.raises(RedraftValidationError, match="required columns"):
+        save_udk_position_rankings(
+            tmp_path, ranking.profile, ranking, "Name,Position\r\nQB 0,QB\r\n", _manual_assets(),
+        )
+
+
+def test_udk_markers_column_is_never_ingested_as_player_state(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    entry = loaded["positions"]["QB"]["entries"][0]
+    assert "markers" not in {key.lower() for key in entry}
+
+
+def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path) -> None:
+    ranking = _ranking()
+    qb_csv = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, qb_csv, _manual_assets())
+    rb_header = "Name,Position,Team,Bye Week,Rank,Points,Risk,Upside,ADP,Tier,Outlook,Dynasty,Markers"
+    rb_csv = f'{rb_header}\r\n"RB 0","RB","TST","7","1","280.0","3.0","7.0","1.03","1","Outlook.","locked","Mark Drafted"\r\n'
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, rb_csv, _manual_assets())
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    # A later RB-only import must not erase the earlier QB import.
+    assert set(loaded["positions"]) == {"QB", "RB"}
+    assert loaded["positions"]["QB"]["entries"][0]["playerId"] == "QB-0"
+    assert loaded["positions"]["RB"]["entries"][0]["playerId"] == "RB-0"
