@@ -249,9 +249,18 @@ MODES = ("dynasty", "redraft")
 # from ~1.5s to ~3.3s cold / ~1.4s warm (cached) in direct measurement --
 # still trivially inside the owner's real 60-second pick clock.
 DECISION_BUNDLE_SPEED_PRESETS: dict[str, dict[str, int]] = {
-    "FAST": {"trials": 10, "seasons": 300, "maxCandidates": 8},
-    "STANDARD": {"trials": 20, "seasons": 100, "maxCandidates": 10},
-    "DEEP": {"trials": 50, "seasons": 200, "maxCandidates": 12},
+    # `continuationSeeds` (NWR OVERNIGHT -- Team-After saturation): each
+    # candidate's full-draft-completion look-ahead re-runs this many times
+    # (different continuation seeds), averaging Team Score/win_probability
+    # -- see evaluate_pick_candidates' own docstring for why a single fixed
+    # seed can make very different candidates converge to a near-identical
+    # simulated final roster. 3 measured at ~1.6x FAST's own prior latency
+    # in a real practice-profile timing check (docs/codex/
+    # NWR_OVERNIGHT_CONTINUATION_SEEDS_LATENCY_20260907.md) -- comfortably
+    # inside the owner's 60-second draft clock.
+    "FAST": {"trials": 10, "seasons": 300, "maxCandidates": 8, "continuationSeeds": 3},
+    "STANDARD": {"trials": 20, "seasons": 100, "maxCandidates": 10, "continuationSeeds": 3},
+    "DEEP": {"trials": 50, "seasons": 200, "maxCandidates": 12, "continuationSeeds": 5},
 }
 PLANNING_MODULE_IDS = (
     "roster",
@@ -2800,6 +2809,7 @@ class DesktopBackendFacade:
                 status=400,
             )
         trials, seasons, max_candidates = preset["trials"], preset["seasons"], preset["maxCandidates"]
+        continuation_seeds = preset.get("continuationSeeds", 1)
 
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)
         normalized = self._profile_id(profile_id)
@@ -2847,7 +2857,7 @@ class DesktopBackendFacade:
             profile, ranking, manual_assets, adp, room_state,
             comparable_leagues=comparable_leagues, provenance=provenance,
             max_candidates=max_candidates, trials=trials, seasons=seasons, base_seed=base_seed,
-            position_filter=position_filter,
+            position_filter=position_filter, continuation_seeds=continuation_seeds,
         )
         resolved_speed = str(speed).upper()
         if isinstance(result, LiveDecisionBundleUnavailable):
@@ -2878,7 +2888,7 @@ class DesktopBackendFacade:
             data={
                 "decisionBundle": {
                     "available": True, "speed": resolved_speed,
-                    **_decision_bundle_payload(result, ranking),
+                    **_decision_bundle_payload(result, ranking, manual_assets),
                 }
             }
         )
@@ -4234,13 +4244,25 @@ class DesktopBackendFacade:
         }
 
 
-def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
+def _decision_bundle_payload(
+    bundle: Any, ranking: Any, manual_assets: Sequence[Mapping[str, Any]] = ()
+) -> dict[str, Any]:
     """Converts a real decision_bundle_live_service DecisionBundle into the
     camelCase JSON shape Draft Room V2 consumes (Owner Test Candidate V1,
     section 2). Enriches each candidate with player_name/position from the
     ranking (CandidateBundle itself only carries player_id) -- never invents
-    a value not already on the bundle or the ranking."""
+    a value not already on the bundle or the ranking.
+
+    NWR OVERNIGHT (K/DST completion): a manual-only candidate (K/DST, now
+    a real Suggestions candidate when genuinely needed) has no `ranking`
+    row -- without this, the payload fell back to the raw internal
+    player_id (e.g. "manual:K:11533") as the displayed name and a blank
+    position. Falls back to the real manual_assets entry instead; only
+    the raw id itself is a last resort if even that's missing."""
     rows_by_id = {row.player_id: row for row in ranking.rows}
+    manual_by_id = {
+        str(asset.get("player_id") or ""): asset for asset in manual_assets
+    }
 
     def metric_status_payload(status: Any) -> dict[str, Any]:
         return {
@@ -4254,10 +4276,17 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
 
     def candidate_payload(candidate: Any) -> dict[str, Any]:
         row = rows_by_id.get(candidate.player_id)
+        manual = manual_by_id.get(candidate.player_id)
+        fallback_name = (
+            str(manual.get("player_name") or manual.get("playerName") or "")
+            if manual is not None
+            else ""
+        ) or candidate.player_id
+        fallback_position = str(manual.get("position") or "") if manual is not None else ""
         return {
             "playerId": candidate.player_id,
-            "playerName": row.player_name if row is not None else candidate.player_id,
-            "position": row.position if row is not None else "",
+            "playerName": row.player_name if row is not None else fallback_name,
+            "position": row.position if row is not None else fallback_position,
             "playerScore": candidate.player_score,
             "teamScoreAfter": candidate.team_score_after,
             "teamScoreDelta": candidate.team_score_delta,

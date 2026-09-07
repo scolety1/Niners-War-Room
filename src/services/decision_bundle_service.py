@@ -145,11 +145,16 @@ def build_decision_bundle(
     trials: int = 200,
     seasons: int = 200,
     base_seed: int = 20260903,
+    continuation_seeds: int = 1,
 ) -> DecisionBundle:
     """Builds one DecisionBundle for the pick described by `current_owner_player_ids`
     (the owner's roster BEFORE this pick) and `candidate_player_ids` (the
     actionable candidates being compared, already legality-filtered by the
     caller -- this function does not re-derive roster-legal candidates).
+
+    `continuation_seeds`: passed straight through to
+    `evaluate_pick_candidates` (see its own docstring for the real, traced
+    reason this exists). Default 1 is byte-identical to every prior caller.
     """
     start = time.perf_counter()
     player_scores = player_scores or {}
@@ -172,6 +177,7 @@ def build_decision_bundle(
         owner_slot=owner_slot, candidate_player_ids=candidate_player_ids,
         from_state=from_state, comparable_leagues=comparable_leagues,
         trials=trials, seasons=seasons, base_seed=base_seed,
+        continuation_seeds=continuation_seeds,
     )
 
     cost_of_waiting_results: dict[str, CostOfWaitingV2Result] = {}

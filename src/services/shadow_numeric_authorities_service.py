@@ -799,6 +799,7 @@ def evaluate_pick_candidates(
     trials: int = DEFAULT_TRIALS,
     seasons: int = 200,
     base_seed: int = DEFAULT_SEED,
+    continuation_seeds: int = 1,
 ) -> dict[str, PickScoreResult]:
     """The full look-ahead pipeline for one pick: for every candidate,
     simulate_pick_now() to get a completed final roster, score it with
@@ -807,39 +808,82 @@ def evaluate_pick_candidates(
     the 'cache/precompute reusable components' the brief allows when full
     per-candidate resimulation would be too slow), then rank all
     candidates against each other with pick_score().
-    """
+
+    `continuation_seeds` (NWR OVERNIGHT -- Team-After saturation, traced
+    not assumed): `simulate_pick_now`'s continuation (every pick after
+    this one, for every team) is 100% deterministic given `base_seed` --
+    CPU picks use ADP + a seeded jitter, and the owner's own OWNER_AUTO_TEST
+    continuation is a pure deterministic greedy sort. With
+    `continuation_seeds=1` (the unchanged default -- every existing caller
+    is byte-identical), two very different candidates at a pick with a
+    nearby deadline-forced need (e.g. QB due next round regardless) can
+    genuinely converge to a near-identical simulated final roster, because
+    the SAME deterministic fill policy absorbs the difference either way --
+    a real, disclosed, and now measurably reduced source of the "everyone
+    ties at 50/99" pattern, not something a '(tied)' label alone fixes.
+    `continuation_seeds > 1` reruns the continuation across that many
+    seeds (base_seed, base_seed+1, ...) per candidate and averages the
+    resulting Team Score / win_probability -- widening the SAMPLED
+    population the look-ahead draws from, never touching team_score()'s or
+    championship_equity()'s own frozen formulas."""
     leagues = comparable_leagues or simulate_comparable_leagues(
         profile, ranking, manual_assets, adp, trials=trials, base_seed=base_seed
     )
     results: dict[str, tuple[TeamScoreResult, ChampionshipEquityResult]] = {}
+    seed_count = max(1, continuation_seeds)
     for candidate in candidate_player_ids:
-        final_state = simulate_pick_now(
-            profile,
-            ranking,
-            manual_assets,
-            adp,
-            owner_slot=owner_slot,
-            candidate_player_id=candidate,
-            seed=base_seed,
-            from_state=from_state,
+        teams: list[TeamScoreResult] = []
+        equities: list[ChampionshipEquityResult] = []
+        for offset in range(seed_count):
+            continuation_seed = base_seed + offset
+            final_state = simulate_pick_now(
+                profile,
+                ranking,
+                manual_assets,
+                adp,
+                owner_slot=owner_slot,
+                candidate_player_id=candidate,
+                seed=continuation_seed,
+                from_state=from_state,
+            )
+            owner_player_ids = [
+                str(pick["player_id"])
+                for pick in final_state["picks"]
+                if int(pick["team_slot"]) == owner_slot and pick.get("player_id")
+            ]
+            teams.append(
+                team_score(
+                    owner_player_ids, profile, ranking, manual_assets, comparable_leagues=leagues
+                )
+            )
+            equities.append(
+                championship_equity(
+                    owner_player_ids,
+                    profile,
+                    ranking,
+                    manual_assets,
+                    comparable_league=leagues[0],
+                    target_team_slot=(
+                        owner_slot if owner_slot in leagues[0] else next(iter(leagues[0]))
+                    ),
+                    seasons=seasons,
+                    base_seed=continuation_seed,
+                )
+            )
+        # Only the headline scalars are averaged across continuation
+        # seeds; every other diagnostic field (population stats, standard
+        # error) is seed-1's own real value, not a fabricated composite --
+        # population stats are identical across seeds anyway (same shared
+        # `leagues`), and standard_error already discloses seed-1's own
+        # Monte Carlo uncertainty.
+        team = replace(
+            teams[0],
+            percentile=round(statistics.fmean(t.percentile for t in teams), 1),
+            roster_value=round(statistics.fmean(t.roster_value for t in teams), 2),
         )
-        owner_player_ids = [
-            str(pick["player_id"])
-            for pick in final_state["picks"]
-            if int(pick["team_slot"]) == owner_slot and pick.get("player_id")
-        ]
-        team = team_score(
-            owner_player_ids, profile, ranking, manual_assets, comparable_leagues=leagues
-        )
-        equity = championship_equity(
-            owner_player_ids,
-            profile,
-            ranking,
-            manual_assets,
-            comparable_league=leagues[0],
-            target_team_slot=owner_slot if owner_slot in leagues[0] else next(iter(leagues[0])),
-            seasons=seasons,
-            base_seed=base_seed,
+        equity = replace(
+            equities[0],
+            win_probability=round(statistics.fmean(e.win_probability for e in equities), 4),
         )
         results[candidate] = (team, equity)
     return pick_score(results)

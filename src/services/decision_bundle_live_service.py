@@ -212,6 +212,7 @@ def build_live_decision_bundle(
     seasons: int = 200,
     base_seed: int = 20260903,
     position_filter: str | None = None,
+    continuation_seeds: int = 1,
 ) -> DecisionBundle | LiveDecisionBundleUnavailable:
     """`comparable_leagues` and `provenance` are caller-supplied (not
     built here) so the expensive Monte Carlo reference population can be
@@ -330,7 +331,7 @@ def build_live_decision_bundle(
                 provenance=provenance, player_scores=player_scores, from_state=room_state,
                 include_cost_of_waiting=include_cost_of_waiting,
                 current_pick_number=current_pick_number, trials=trials, seasons=seasons,
-                base_seed=base_seed,
+                base_seed=base_seed, continuation_seeds=continuation_seeds,
             )
             unresolved_filtered = [pid for pid in candidate_ids if pid in drafted_ids]
             if unresolved_filtered:
@@ -383,7 +384,7 @@ def build_live_decision_bundle(
         from_state=room_state,
         include_cost_of_waiting=include_cost_of_waiting,
         current_pick_number=current_pick_number, trials=trials, seasons=seasons,
-        base_seed=base_seed,
+        base_seed=base_seed, continuation_seeds=continuation_seeds,
     )
     unresolved = [pid for pid in candidate_player_ids if pid in drafted_ids]
     if unresolved:  # defensive -- should be impossible given _available_ranked's own filter

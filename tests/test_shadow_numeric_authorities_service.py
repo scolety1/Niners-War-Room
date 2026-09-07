@@ -864,6 +864,90 @@ def test_candidate_survival_probability_is_one_for_unavailable_inputs() -> None:
     )
 
 
+def test_continuation_seeds_default_is_byte_identical_to_the_prior_behavior() -> None:
+    """NWR OVERNIGHT (Team-After saturation): continuation_seeds=1 (the
+    default, unchanged) must reproduce the exact prior single-seed
+    behavior for every existing caller -- this asserts it directly rather
+    than assuming it from the diff."""
+    from src.services.shadow_numeric_authorities_service import evaluate_pick_candidates
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    candidates = ["QB-0", "QB-1", "RB-0"]
+    default_call = evaluate_pick_candidates(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, trials=2, seasons=20, base_seed=7,
+    )
+    explicit_one = evaluate_pick_candidates(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=1, candidate_player_ids=candidates, trials=2, seasons=20, base_seed=7,
+        continuation_seeds=1,
+    )
+    assert default_call == explicit_one
+
+
+def test_continuation_seeds_averages_across_real_seeds_not_just_the_first() -> None:
+    """A real, direct proof this widens the sampled continuation rather
+    than just relabeling the same single-seed result: with
+    continuation_seeds=3, the averaged Team Score must differ from running
+    any ONE of those three seeds alone (extraordinarily unlikely to be
+    identical by chance across a real Monte Carlo continuation), and must
+    equal the real arithmetic mean of the three per-seed values."""
+    import statistics
+
+    from src.services.shadow_numeric_authorities_service import (
+        championship_equity,
+        evaluate_pick_candidates,
+        simulate_comparable_leagues,
+        simulate_pick_now,
+        team_score,
+    )
+
+    ranking = _ranking(team_count=10, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    manual_assets = _manual_assets()
+    candidates = ["QB-0", "RB-0"]
+    base_seed = 11
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=base_seed
+    )
+
+    averaged = evaluate_pick_candidates(
+        profile, ranking, manual_assets, adp,
+        owner_slot=1, candidate_player_ids=candidates, comparable_leagues=leagues,
+        trials=2, seasons=20, base_seed=base_seed, continuation_seeds=3,
+    )
+
+    for candidate in candidates:
+        per_seed_percentiles = []
+        for offset in range(3):
+            final_state = simulate_pick_now(
+                profile, ranking, manual_assets, adp,
+                owner_slot=1, candidate_player_id=candidate, seed=base_seed + offset,
+            )
+            owner_ids = [
+                str(p["player_id"]) for p in final_state["picks"]
+                if int(p["team_slot"]) == 1 and p.get("player_id")
+            ]
+            per_seed_percentiles.append(
+                team_score(
+                    owner_ids, profile, ranking, manual_assets, comparable_leagues=leagues
+                ).percentile
+            )
+        expected_mean = round(statistics.fmean(per_seed_percentiles), 1)
+        assert averaged[candidate].team_score_after == expected_mean
+        # Real evidence this actually averaged rather than just reusing
+        # seed 1 alone -- the three per-seed values are not all identical
+        # (a genuine Monte Carlo continuation), so the mean provably
+        # differs from at least one of them.
+        assert len(set(per_seed_percentiles)) > 1, (
+            "fixture produced identical results across all 3 seeds -- "
+            "cannot prove averaging happened; adjust the fixture"
+        )
+
+
 def test_evaluate_cost_of_waiting_v2_layers_survival_onto_pick_score() -> None:
     from src.services.shadow_numeric_authorities_service import (
         evaluate_cost_of_waiting_v2,
