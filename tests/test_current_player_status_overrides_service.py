@@ -40,8 +40,27 @@ def test_load_status_overrides_reads_the_real_committed_file() -> None:
     kinds = {o.player_id: o.kind for o in overrides}
     assert kinds.get("00-0040130") == "SEASON_OUT"
     assert kinds.get("00-0038608") == "TEAM_CORRECTION"
+    # RELEASE-BLOCKER ADDENDUM: Elijah Mitchell -- released, not currently
+    # on any NFL roster (a real, distinct NOT_WITH_TEAM reason, never
+    # mislabeled as an injury).
+    assert kinds.get("00-0036567") == "NOT_WITH_TEAM"
     for override in overrides:
         assert override.sources, f"{override.player_id} has no cited source"
+
+
+def test_not_with_team_override_zeros_value_same_as_season_out() -> None:
+    ranking = _ranking()
+    overrides = (
+        StatusOverride(
+            player_id="B", player_name="Player B", kind="NOT_WITH_TEAM",
+            reason="released, unsigned", effective_date="2026-08-01",
+            verified_at_utc="2026-09-07T00:00:00Z", sources=("https://example.test/source",),
+        ),
+    )
+    corrected = apply_status_overrides_to_ranking(ranking, overrides)
+    row = next(r for r in corrected.rows if r.player_id == "B")
+    assert row.replacement_adjusted_value == 0.0
+    assert row.player_name == "Player B"
 
 
 def test_season_out_override_zeros_value_but_keeps_player_searchable() -> None:

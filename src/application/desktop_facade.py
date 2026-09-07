@@ -14,6 +14,10 @@ from uuid import uuid4
 
 import pandas as pd
 
+from src.services.current_kdst_eligibility_service import (
+    filter_current_kdst_assets,
+    load_nflverse_status_by_name,
+)
 from src.services.current_player_status_overrides_service import (
     apply_status_overrides_to_ranking,
     load_status_overrides,
@@ -2053,6 +2057,19 @@ class DesktopBackendFacade:
                 )
             assets = manual_kdst_assets_from_sleeper_players(
                 SleeperHttpClient().get_json("players/nfl")
+            )
+            # RELEASE-BLOCKER FIX: Sleeper's own `active`/`team` fields can be
+            # stale (live-confirmed: a real cut kicker still reported
+            # active=true, team=<his old team> by Sleeper's public players
+            # endpoint). Cross-checked here against NWR's own already-
+            # admitted nflverse players snapshot -- the same real, more
+            # authoritative identity source, not a re-fetch -- and only
+            # excludes a K whose cross-referenced status is unambiguously
+            # non-current (cut/released/retired/not-with-team/inactive);
+            # never for an injury-adjacent status, never by player name.
+            status_by_name = load_nflverse_status_by_name()
+            assets, _kdst_eligibility_counts = filter_current_kdst_assets(
+                assets, status_by_name
             )
             if not any(item["position"] == "K" for item in assets) or not any(
                 item["position"] == "DST" for item in assets

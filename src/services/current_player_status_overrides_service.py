@@ -18,15 +18,22 @@ a 2016-2024 historical evaluation. Every live consumer downstream of
 decision-bundle scoring) reads the corrected rows automatically, since
 they all resolve players from this same `RankingResult`.
 
-Two kinds of override, and only these two:
+Three kinds of override, and only these three:
 
-- `SEASON_OUT`: the player's ORIGINAL projected value is left completely
-  intact (the frozen projection is never altered), but the value this
-  module surfaces for automatic recommendation/CPU-selection/roster-
-  completion purposes is zero -- he cannot become an automatic top
-  suggestion, CPU pick, or count toward a "complete" roster. He is never
-  removed from the pool: still searchable, still directly draftable with
-  an explicit override so an owner can record a real external pick.
+- `SEASON_OUT`: a real, current-team INJURY designation (e.g. a season-
+  ending ACL tear while still rostered). The player's ORIGINAL projected
+  value is left completely intact (the frozen projection is never
+  altered), but the value this module surfaces for automatic
+  recommendation/CPU-selection/roster-completion purposes is zero -- he
+  cannot become an automatic top suggestion, CPU pick, or count toward a
+  "complete" roster. He is never removed from the pool: still searchable,
+  still directly draftable with an explicit override so an owner can
+  record a real external pick.
+- `NOT_WITH_TEAM`: the same zero-value effect as `SEASON_OUT`, for a
+  DIFFERENT real reason -- released/unsigned, not currently on any NFL
+  roster at all. Kept as a distinct kind rather than folded into
+  `SEASON_OUT` so the disclosed reason never mislabels "unsigned" as
+  "injured" or vice versa.
 - `TEAM_CORRECTION`: only the `team` field is replaced; nothing about the
   player's value, identity, or projection changes.
 
@@ -55,12 +62,19 @@ OVERRIDES_RELATIVE_PATH = Path("config/nwr_verified_current_player_status_overri
 class StatusOverride:
     player_id: str
     player_name: str
-    kind: str  # "SEASON_OUT" | "TEAM_CORRECTION"
+    kind: str  # "SEASON_OUT" | "NOT_WITH_TEAM" | "TEAM_CORRECTION"
     reason: str
     effective_date: str
     verified_at_utc: str
     sources: tuple[str, ...]
     corrected_team: str = ""
+
+
+# Zero-value kinds: distinct, honestly-labeled REASONS (injury vs. simply
+# unsigned/released), but the same real effect on automatic-recommendation
+# value -- neither implies the other, and the UI/report text must not
+# collapse "not with any team" into "injured."
+ZERO_VALUE_KINDS = frozenset({"SEASON_OUT", "NOT_WITH_TEAM"})
 
 
 def load_status_overrides(repo_root: str | Path) -> tuple[StatusOverride, ...]:
@@ -78,7 +92,7 @@ def load_status_overrides(repo_root: str | Path) -> tuple[StatusOverride, ...]:
             continue
         player_id = str(entry.get("player_id") or "")
         kind = str(entry.get("kind") or "")
-        if not player_id or kind not in {"SEASON_OUT", "TEAM_CORRECTION"}:
+        if not player_id or kind not in (ZERO_VALUE_KINDS | {"TEAM_CORRECTION"}):
             continue
         result.append(
             StatusOverride(
@@ -133,7 +147,7 @@ def apply_status_overrides_to_ranking(
         changed = True
         if override.kind == "TEAM_CORRECTION" and override.corrected_team:
             updated_rows.append(replace(row, team=override.corrected_team))
-        elif override.kind == "SEASON_OUT":
+        elif override.kind in ZERO_VALUE_KINDS:
             updated_rows.append(replace(row, replacement_adjusted_value=0.0, starter_gap=0.0))
         else:
             updated_rows.append(row)

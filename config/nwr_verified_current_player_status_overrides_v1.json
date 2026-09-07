@@ -18,6 +18,19 @@
       ]
     },
     {
+      "player_id": "00-0036567",
+      "player_name": "Elijah Mitchell",
+      "kind": "NOT_WITH_TEAM",
+      "effective_date": "2026-08-01",
+      "verified_at_utc": "2026-09-07T00:00:00Z",
+      "reason": "Released by New England (April 2026); later released by Philadelphia with an injury settlement after an August training-camp injury. Not currently on any NFL roster -- unsigned, not a current-team injury designation.",
+      "sources": [
+        "https://985thesportshub.com/2026/04/28/patriots-continue-post-nfl-draft-releases-by-cutting-running-back-elijah-mitchell/",
+        "https://sports.yahoo.com/articles/eagles-release-rb-elijah-mitchell-213915299.html",
+        "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/patriots-cut-elijah-mitchell"
+      ]
+    },
+    {
       "player_id": "00-0038608",
       "player_name": "Kayshon Boutte",
       "kind": "TEAM_CORRECTION",
