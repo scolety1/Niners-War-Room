@@ -1141,11 +1141,25 @@ same pre-existing, untouched dirty state from session start.
 - Frontend: desktop-wide typecheck clean, 125/125 vitest.
 - Live HTTP-level verification of the new `metricStatus` payload performed and torn down cleanly
   (see section 4 above) -- FUNCTIONAL_DOM/HTTP_VERIFIED, not a native-process or visual check.
-- **No native Tauri process/window re-launch performed this pass** -- the launcher/process-spawn
-  code itself is untouched since the prior pass's real process-level verification (recorded above,
-  same continuation); only backend Python content changed this pass, and that was verified through
-  the isolated HTTP harness instead. Visual/pixel confirmation remains the owner's own, for the
+- Backend content verified through the isolated HTTP harness (above), not a fresh native Tauri
+  launch by this pass's own commands. Visual/pixel confirmation remains the owner's own, for the
   reasons already recorded (structural tooling ceiling in this environment).
+- **Final port/process sweep found and corrected a real gap in the prior pass's own cleanup
+  claim**: `netstat` at the end of this pass showed port 1422 still LISTENING. Traced by command
+  line (never by port number alone): a real `nwr-redraft-war-room.exe` dev-mode window (PID 3740)
+  and its Vite dev server (`--port 1422 --strictPort`, PID 5436) had been running since **10:50 PM
+  this session** -- alongside three further batches of orphaned `msedgewebview2.exe` processes
+  under the same `com.ninerswarroom.redraft` user-data directory, dated 9/5 1:53 AM, 9/5 4:00 AM,
+  and 9/6 9:51 PM, none attached to a live parent app process. None of this was started by an
+  explicit command in this pass's own log. All of it was confirmed real (real `ninerswarroom`
+  user-data-dir command-line evidence) and stopped; a large batch of unrelated `msedgewebview2`
+  processes that spawned seconds later was checked by command line and confirmed to be Windows'
+  own Widgets/Web-Experience component (`MicrosoftWindows.Client.WebExperience`, zero
+  `ninerswarroom` references) -- left untouched, per the standing rule against touching processes
+  that cannot be positively attributed to this mission. Ports 1422 and 18742 both confirmed
+  LISTENER-free after this cleanup. **This means the prior pass's "cleanly, completely torn down"
+  claim (8 explicitly-identified PIDs) did not in fact fully clear every NWR process this
+  session** -- recorded here as a real correction, not repeated as fact.
 - No push, merge, deploy, or model retraining performed. No receipt renewed, no timestamp altered,
   no new source silently admitted. All work is in local commits on
   `work/nwr-draft-upgrade-hq-v1-20260903`.
