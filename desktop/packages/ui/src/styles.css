@@ -73,27 +73,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .sidebar { background: linear-gradient(180deg, rgba(15,13,22,.98), rgba(9,8,14,.99)); border-right: 1px solid var(--line); display: flex; flex: 0 0 var(--sidebar-width); flex-direction: column; height: 100%; overflow: hidden; position: relative; z-index: 10; }
 /* Global sidebar collapse (opt-in via AppShell's sidebarCollapsed prop --
    see the component comment; every other AppShell caller is unaffected).
-   Collapsed leaves a narrow icon-only rail rather than reclaiming the
-   space entirely, matching this app's existing "narrow rail" convention
-   (draft-room-v2's own secondary sidebar hides completely instead --
-   the global shell keeps a rail so navigation/back-out is never lost). */
-.app-frame--sidebar-collapsed { --sidebar-width: 56px; }
-.sidebar--collapsed { overflow: visible; }
-.sidebar--collapsed .brand-lockup div,
-.sidebar--collapsed .mode-ribbon span,
-.sidebar--collapsed .nav-group__label,
-.sidebar--collapsed .nav-item span,
-.sidebar--collapsed .nav-item kbd,
-.sidebar--collapsed .nav-item > .nwr-icon:last-child,
-.sidebar--collapsed .profile-chip div,
-.sidebar--collapsed .local-lock span { display: none; }
-.sidebar--collapsed .brand-lockup { justify-content: center; padding-inline: 0; }
-.sidebar--collapsed .mode-ribbon { justify-content: center; margin-inline: 6px; padding-inline: 0; }
-.sidebar--collapsed .nav-item { grid-template-columns: 1fr; justify-content: center; padding-inline: 0; }
-.sidebar--collapsed .nav-item--active::before { display: none; }
-.sidebar--collapsed .profile-chip { justify-content: center; }
-.sidebar--collapsed .local-lock { justify-content: center; }
-.sidebar__collapse-toggle { align-items: center; background: var(--bg-1); border: 1px solid var(--line-strong); border-radius: 50%; color: var(--muted); cursor: pointer; display: flex; height: 22px; justify-content: center; position: absolute; right: -11px; top: 26px; transition: transform .16s ease, color .16s ease; width: 22px; z-index: 11; }
+   Owner-test follow-up: collapsed now means FULLY retracted against the
+   left edge -- no permanent wide icon rail, no reserved column, no
+   local-only footer consuming space -- not the narrow icon-only rail an
+   earlier pass used. A small discoverable edge arrow (fixed to the
+   window's left edge, always visible) expands it back. */
+.app-frame--sidebar-collapsed { --sidebar-width: 0px; }
+.sidebar--collapsed { border-right: 0; overflow: visible; padding: 0; width: 0; }
+.sidebar--collapsed > *:not(.sidebar__collapse-toggle) { display: none; }
+.sidebar__collapse-toggle { align-items: center; background: var(--bg-1); border: 1px solid var(--line-strong); border-radius: 0 6px 6px 0; color: var(--muted); cursor: pointer; display: flex; height: 34px; justify-content: center; position: absolute; left: 0; top: 26px; transition: color .16s ease; width: 16px; z-index: 11; }
+.sidebar--collapsed .sidebar__collapse-toggle { border-left: 0; }
 .sidebar__collapse-toggle:hover { color: var(--text); }
 .sidebar--collapsed .sidebar__collapse-toggle svg { transform: rotate(180deg); }
 .sidebar::before { background: linear-gradient(90deg, var(--crimson), var(--gold) 48%, var(--violet)); content: ""; height: 2px; left: 0; opacity: .7; position: absolute; right: 0; top: 0; }

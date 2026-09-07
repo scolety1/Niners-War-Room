@@ -92,6 +92,7 @@ export interface SuggestionRow {
   equityGain: number;
   costOfWaiting: number;
   makeItBackProbability: number | null;
+  makeItBackTrials: number | null;
   action: string;
   warnings: string[];
   uncertainty: string;
@@ -144,6 +145,7 @@ export function buildSuggestionsRows(
         equityGain: candidate.equityGain,
         costOfWaiting: candidate.costOfWaiting,
         makeItBackProbability: candidate.makeItBackProbability,
+        makeItBackTrials: candidate.makeItBackTrials,
         action: candidate.action,
         warnings: candidate.warnings,
         uncertainty: candidate.uncertainty,
@@ -192,6 +194,43 @@ export interface UdkBadge {
   label: string;
   tone: BadgeTone;
   title?: string;
+}
+
+/**
+ * Owner-test follow-up, section 3: Make-It-Back's real trial count is a
+ * SMALL Monte Carlo sample (the FAST preset's `trials`) -- a candidate
+ * "surviving" every simulated continuation shows a real, correctly
+ * computed 100%, but that is a modeled estimate over N runs, never a
+ * guarantee of real-world availability. This never changes the number;
+ * it only labels what a bare "100%" would otherwise overstate.
+ */
+/**
+ * Owner-test follow-up, section 12: round.pick display (e.g. "7.09")
+ * instead of a bare overall pick number, throughout the current-pick
+ * context, board cells, and recent picks. Overall pick numbers are never
+ * discarded -- callers keep them for sorting/tooltips; this is display
+ * only. `pickInRound` is zero-padded to two digits per the owner's own
+ * examples ("4.11", not "4.1").
+ */
+export function formatRoundPick(overallPick: number, teamCount: number): string {
+  const n = Math.max(1, teamCount);
+  const round = Math.floor((overallPick - 1) / n) + 1;
+  const pickInRound = ((overallPick - 1) % n) + 1;
+  return `${round}.${String(pickInRound).padStart(2, "0")}`;
+}
+
+export function formatMakeItBack(probability: number | null, trials: number | null): { text: string; title: string } {
+  if (probability == null) {
+    return { text: "UNKNOWN", title: "Not evaluated -- no real market ADP or simulation available for this candidate." };
+  }
+  const pct = formatNumber(probability * 100, 0);
+  if (trials == null) {
+    return { text: `${pct}%`, title: "Modeled estimate; trial count not available for this source." };
+  }
+  if (probability >= 0.999) {
+    return { text: `${pct}%*`, title: `Survived all ${trials} simulated continuations -- a real modeled estimate, not a guarantee of real-world availability.` };
+  }
+  return { text: `${pct}%`, title: `Modeled estimate across ${trials} simulated continuations.` };
 }
 
 export function severityToBadgeTone(severity: string | null | undefined): BadgeTone {
@@ -367,6 +406,7 @@ export interface CompareRow {
   equityGain: number | null;
   costOfWaiting: number | null;
   makeItBackProbability: number | null;
+  makeItBackTrials: number | null;
   pickScore: number | null;
   action: string | null;
   warnings: string[];
@@ -404,6 +444,7 @@ export function buildCompareRows(
         equityGain: candidate?.equityGain ?? null,
         costOfWaiting: candidate?.costOfWaiting ?? null,
         makeItBackProbability: candidate?.makeItBackProbability ?? null,
+        makeItBackTrials: candidate?.makeItBackTrials ?? null,
         pickScore: candidate?.pickScore ?? null,
         action: candidate?.action ?? null,
         warnings: candidate?.warnings ?? [],
@@ -487,6 +528,11 @@ export function DraftRoomV2Page({
   // they render changed.
   const [leftPaneCollapsed, setLeftPaneCollapsed] = useState(false);
   const [leftPaneTab, setLeftPaneTab] = useState<"PLAYERS" | "MY_TEAM" | "QUEUE">("PLAYERS");
+  // Owner-test follow-up, section 8: an explicit Suggestions position
+  // filter re-queries the backend for REAL eligible players of that
+  // position (see decision_bundle_live_service.py's position_filter),
+  // never a client-side re-filter of the default top-8 slice.
+  const [suggestionsPositionFilter, setSuggestionsPositionFilter] = useState("ALL");
   const [drawerPlayerId, setDrawerPlayerId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [externalIntel, setExternalIntel] = useState<RedraftExternalIntelligence | null>(null);
@@ -684,7 +730,7 @@ export function DraftRoomV2Page({
     let cancelled = false;
     setDecisionBundleLoading(true);
     client
-      .getRedraftDecisionBundle(data.activeProfileId, "FAST")
+      .getRedraftDecisionBundle(data.activeProfileId, "FAST", suggestionsPositionFilter === "ALL" ? undefined : suggestionsPositionFilter)
       .then((response) => {
         if (!cancelled) setDecisionBundle(response.decisionBundle);
       })
@@ -702,7 +748,7 @@ export function DraftRoomV2Page({
     return () => {
       cancelled = true;
     };
-  }, [client, data.activeProfileId, rosterStateSignal]);
+  }, [client, data.activeProfileId, rosterStateSignal, suggestionsPositionFilter]);
 
   useEffect(() => {
     // Separate, additive fetch (never replaces the V1 bundle above --
@@ -1027,6 +1073,11 @@ export function DraftRoomV2Page({
             onDraft={(playerId) => void mark(playerId)}
             onQueue={toggleQueue}
             externalIntel={externalIntel}
+            positionFilter={suggestionsPositionFilter}
+            onPositionFilterChange={setSuggestionsPositionFilter}
+            manualAssets={data.manualAssets ?? []}
+            currentPick={board?.currentPick ?? null}
+            teamCount={data.activeProfile?.teamCount ?? null}
           />
         ) : null}
         {tab === "CHEAT_SHEET" ? <CheatSheetPage data={data} /> : null}
@@ -1048,6 +1099,8 @@ export function DraftRoomV2Page({
             rows={compareRows}
             summary={compareSummary}
             onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
+            currentPick={board?.currentPick ?? null}
+            teamCount={data.activeProfile?.teamCount ?? null}
           />
         ) : null}
         {tab === "REPLAY" ? (
@@ -1076,6 +1129,11 @@ export function DraftRoomV2Page({
           currentTeamScore={decisionBundle && decisionBundle.available ? decisionBundle.currentTeamScore.percentile : null}
           staleAlertData={Boolean(externalIntel?.stale)}
           staleAlertHours={externalIntel?.snapshotAgeHours ?? null}
+          canRecordPick={canRecordPick}
+          working={working}
+          isQueued={queuedIds.includes(drawerPlayerId)}
+          onDraft={(id) => void mark(id)}
+          onQueue={toggleQueue}
           onClose={() => setDrawerPlayerId(null)}
         />
       ) : null}
@@ -1125,8 +1183,8 @@ function CompactOnClockRow({
   const snakeForward = round == null ? true : round % 2 === 1;
   return (
     <section className="draft-room-v2-onclock" aria-label="Current pick context">
-      <span className="draft-room-v2-onclock__pick">
-        {round != null ? `R${round} · Pick ${board.currentPick}` : "Draft complete"}
+      <span className="draft-room-v2-onclock__pick" title={board.currentPick ? `Overall pick ${board.currentPick}` : undefined}>
+        {board.currentPick != null ? formatRoundPick(board.currentPick, teamCount) : "Draft complete"}
       </span>
       <span className="draft-room-v2-onclock__status">
         {board.complete ? "Draft complete" : board.isOwnerTurn ? "YOU ARE ON THE CLOCK" : `On clock: Team ${board.currentTeamSlot ?? "?"}`}
@@ -1236,6 +1294,11 @@ function SuggestionsTab({
   onDraft,
   onQueue,
   externalIntel,
+  positionFilter,
+  onPositionFilterChange,
+  manualAssets,
+  currentPick,
+  teamCount,
 }: {
   rows: SuggestionRow[];
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
@@ -1250,9 +1313,18 @@ function SuggestionsTab({
   onDraft: (playerId: string) => void;
   onQueue: (playerId: string) => void;
   externalIntel: RedraftExternalIntelligence | null;
+  positionFilter: string;
+  onPositionFilterChange: (value: string) => void;
+  manualAssets: RedraftBootstrap["manualAssets"];
+  currentPick: number | null;
+  teamCount: number | null;
 }) {
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
+  const isManualPosition = positionFilter === "K" || positionFilter === "DST";
+  const manualRows = isManualPosition
+    ? (manualAssets ?? []).filter((row) => row.position === positionFilter)
+    : [];
   // Compact primary table (owner feedback: headers must read as drafting
   // chrome, not research-development labels). Evidence status
   // (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH) moves to a header hover
@@ -1300,7 +1372,10 @@ function SuggestionsTab({
     { key: "championshipEquityAfter", label: "Equity Δ", titleHint: "Championship Equity — SIMULATED RESEARCH. Percentage-point change from this pick.", sort: "number", render: (row) => (
       <span title={`${formatNumber((row.championshipEquityAfter as number) * 100, 1)}% after this pick`}>{row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp</span>
     ) },
-    { key: "makeItBackProbability", label: "Make Back", titleHint: "Make-It-Back: probability this player survives to your next pick if you wait.", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+    { key: "makeItBackProbability", label: "Make Back", titleHint: "Make-It-Back: modeled probability this player survives to your next pick if you wait. 100%* means it survived every simulated continuation -- a real estimate, not a guarantee.", sort: "number", render: (row) => {
+      const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
+      return <span title={mib.title}>{mib.text}</span>;
+    } },
     { key: "decisionQualityPercentile", label: "DQ", titleHint: "Decision Quality — Raw Action Value: differentiates candidates even when Pick Score ties (0-100). Hover a value for expected regret.", sort: "number", render: (row) => {
       const status = row.rawActionValueStatus as string | null;
       if (row.decisionQualityPercentile == null) return status === "SKIPPED_TOP_N_ONLY" ? <span title="Outside this pick's cost-controlled Raw Action Value candidate set.">n/a</span> : (status ?? "n/a");
@@ -1308,7 +1383,15 @@ function SuggestionsTab({
     } },
     { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
     { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => row.marketExpectedPick == null ? "—" : formatNumber(row.marketExpectedPick as number, 1) },
-    { key: "action", label: "Action", sort: "text", render: (row) => <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
+    { key: "action", label: "Action", titleHint: "What to do -- reuses the existing real Cost-of-Waiting/ADP-timing labels, split from Value below.", sort: "text", render: (row) => {
+      const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+      return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
+    } },
+    { key: "value", label: "Value", titleHint: "How the market sees this player right now (Falling/Reach = real-time draft behavior vs. cited ADP; Value = NWR ranks them meaningfully ahead of ADP; Unknown when ADP is unavailable).", sort: "text", render: (row) => {
+      const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+      const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
+      return <span title={title}>{split.value}</span>;
+    } },
   ];
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
@@ -1373,7 +1456,47 @@ function SuggestionsTab({
         </div>
       ) : null}
       <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
-        {loading ? (
+        <div className="draft-room-v2-position-filter">
+          {["ALL", "QB", "RB", "WR", "TE", "K", "DST"].map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={positionFilter === value}
+              className={positionFilter === value ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+              onClick={() => onPositionFilterChange(value)}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+        {isManualPosition ? (
+          // NWR does not model K/DST -- never routed through DecisionBundle/
+          // Team Score/Equity/Pick Score. A real, honest listing of the
+          // manual asset pool with the same Draft/Queue actions instead of
+          // a fabricated advanced score.
+          manualRows.length === 0 ? (
+            <EmptyState icon="activity" title={`No available ${positionFilter}`} message="Every manual asset at this position has already been drafted." />
+          ) : (
+            <DataTable
+              columns={[
+                { key: "playerName", label: "Player", sort: "text", render: (row) => (
+                  <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span>
+                ) },
+                { key: "authority", label: "Status", sort: "text", render: () => <StatusBadge tone="review" label="Manual · not modeled" /> },
+                { key: "actions", label: "", align: "right", render: (row) => (
+                  <span className="draft-room-v2-pick-actions">
+                    <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(String(row.playerId))}>
+                      {working === String(row.playerId) ? "Saving…" : "Draft"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => onQueue(String(row.playerId))}>{queuedIds.includes(String(row.playerId)) ? "Queued" : "Queue"}</Button>
+                  </span>
+                ) },
+              ]}
+              rows={manualRows as unknown as Array<Record<string, unknown>>}
+              rowKey={(row) => String(row.playerId)}
+            />
+          )
+        ) : loading ? (
           <EmptyState icon="activity" title="Computing…" message="Calculating the real DecisionBundle for this pick." />
         ) : unavailableReason ? (
           <EmptyState icon="alert" title="DecisionBundle unavailable" message={unavailableReason} />
@@ -1393,6 +1516,57 @@ function actionToBadgeTone(action: string): BadgeTone {
   if (normalized === "DEEP TARGET" || normalized === "GOOD VALUE") return "ready";
   if (normalized === "WAIVER WATCH") return "offline";
   return "review";
+}
+
+/**
+ * Owner-test follow-up, section 7: "Action" (what to do) and "Value"
+ * (how the market sees this player right now) were conflated into one
+ * label that described the player without telling the owner what to do.
+ * Reuses the EXACT existing evidence -- the real `action` string
+ * (label_pick_decisions -- never recomputed here) and the real NWR
+ * rank / market ADP already on the row -- rather than a second scoring
+ * system. Missing/stale ADP never produces a confident market label
+ * (real disclosed limitation, not silently guessed).
+ */
+export interface ActionValueSplit {
+  action: string;
+  value: string;
+  gapPicks: number | null;
+}
+
+export function splitActionValue(
+  action: string,
+  nwrRank: number | null,
+  marketExpectedPick: number | null,
+  currentPick: number | null,
+  teamCount: number | null,
+): ActionValueSplit {
+  const normalized = action.toUpperCase().replace(/_/g, " ");
+  const actionLabel =
+    normalized === "TAKE NOW" ? "Pick now"
+    : normalized === "GOOD VALUE" ? "Consider now"
+    : normalized === "DEEP TARGET" ? "Queue for later"
+    : normalized === "WAIT" ? "Wait until next turn"
+    : normalized === "WAIVER WATCH" ? "Review data"
+    : "Review data";
+  if (marketExpectedPick == null || currentPick == null || teamCount == null || teamCount <= 0) {
+    return { action: actionLabel, value: "Unknown", gapPicks: null };
+  }
+  const gapPicks = Math.round(marketExpectedPick - currentPick);
+  // "Falling" / "Reach" describe THIS draft's real-time behavior (has this
+  // player actually gone later/earlier than their own cited ADP so far),
+  // never the NWR-vs-market rank gap -- that discount is "Value" instead,
+  // a distinct, disclosed signal per the owner's own requested split.
+  // gapPicks = marketExpectedPick - currentPick: very negative means the
+  // player's own cited ADP has already passed and they are still on the
+  // board (Falling); very positive means we are being asked to take them
+  // well before their own cited ADP (Reach).
+  if (-gapPicks >= teamCount) return { action: actionLabel, value: "Falling", gapPicks };
+  if (gapPicks >= teamCount) return { action: actionLabel, value: "Reach", gapPicks };
+  if (nwrRank != null && marketExpectedPick - nwrRank >= 10) {
+    return { action: actionLabel, value: "Value", gapPicks };
+  }
+  return { action: actionLabel, value: "Fair", gapPicks };
 }
 
 /** P0 owner-workflow rescue, section 8: a real, narrow, collapsible
@@ -1671,7 +1845,7 @@ function BoardTab({
       {recordingPick != null ? (
         <div className="draft-room-v2-board-record">
           <div className="draft-room-v2-board-record__header">
-            <strong>Record pick #{recordingPick}</strong>
+            <strong>Record pick {recordingPick != null ? formatRoundPick(recordingPick, teamCount) : ""}</strong>
             <Button variant="ghost" onClick={() => setRecordingPick(null)}>Close</Button>
           </div>
           <label className="search-input">
@@ -1732,7 +1906,9 @@ function BoardTab({
                   tabIndex={onClick ? 0 : undefined}
                   title={recordable ? "Click to record this pick" : undefined}
                 >
-                  <span className="draft-board-v2-cell__pick">{cell?.pickNumber ? `#${cell.pickNumber}` : ""}</span>
+                  <span className="draft-board-v2-cell__pick" title={cell?.pickNumber ? `Overall pick ${cell.pickNumber}` : undefined}>
+                    {cell?.pickNumber ? formatRoundPick(cell.pickNumber, teamCount) : ""}
+                  </span>
                   <span className="draft-board-v2-cell__player">
                     {cell?.playerName || (cell?.status === "UNRESOLVED" ? "Unresolved" : recordable ? "Record pick" : "Open")}
                   </span>
@@ -1796,10 +1972,14 @@ function CompareTab({
   rows,
   summary,
   onRemove,
+  currentPick,
+  teamCount,
 }: {
   rows: CompareRow[];
   summary: string;
   onRemove: (playerId: string) => void;
+  currentPick: number | null;
+  teamCount: number | null;
 }) {
   if (rows.length === 0) {
     return <EmptyState icon="activity" title="Nothing selected" message="Alt+click a player anywhere in Draft Room V2 to add them here." />;
@@ -1816,9 +1996,22 @@ function CompareTab({
             { key: "teamScoreDelta", label: "Team Score Δ — RESEARCH", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
             { key: "equityGain", label: "Champ Eq Δ — SIMULATED RESEARCH", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
             { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => row.costOfWaiting == null ? "—" : formatNumber(row.costOfWaiting as number, 1) },
-            { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => row.makeItBackProbability == null ? "UNKNOWN" : `${formatNumber((row.makeItBackProbability as number) * 100, 0)}%` },
+            { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => {
+              const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
+              return <span title={mib.title}>{mib.text}</span>;
+            } },
             { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => row.pickScore == null ? "—" : formatNumber(row.pickScore as number, 1) },
-            { key: "action", label: "Action", sort: "text", render: (row) => row.action == null ? "—" : <StatusBadge tone={actionToBadgeTone(String(row.action))} label={String(row.action)} /> },
+            { key: "action", label: "Action", titleHint: "What to do -- split from Value below; reuses the existing real Cost-of-Waiting/ADP-timing labels.", sort: "text", render: (row) => {
+              if (row.action == null) return "—";
+              const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.overallAdp as number | null, currentPick, teamCount);
+              return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
+            } },
+            { key: "value", label: "Value", titleHint: "How the market sees this player right now (Falling/Reach = real-time draft behavior vs. cited ADP; Value = NWR ranks them meaningfully ahead of ADP; Unknown when ADP is unavailable).", sort: "text", render: (row) => {
+              if (row.action == null) return "—";
+              const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.overallAdp as number | null, currentPick, teamCount);
+              const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
+              return <span title={title}>{split.value}</span>;
+            } },
             { key: "warnings", label: "Warnings", sort: "text", render: (row) => {
               const warnings = row.warnings as string[];
               return warnings.length === 0 ? "—" : <span title={warnings.join(" ")}>{warnings.length} warning{warnings.length > 1 ? "s" : ""}</span>;
@@ -1966,6 +2159,11 @@ function PlayerDrawer({
   currentTeamScore,
   staleAlertData,
   staleAlertHours,
+  canRecordPick,
+  working,
+  isQueued,
+  onDraft,
+  onQueue,
   onClose,
 }: {
   playerId: string;
@@ -1975,6 +2173,15 @@ function PlayerDrawer({
   currentTeamScore: number | null;
   staleAlertData: boolean;
   staleAlertHours: number | null;
+  // Owner-test follow-up, section 16: the player popup MUST have an
+  // obvious Draft button -- every other player surface already reuses
+  // this exact same mark()/toggleQueue() pair; the drawer was the one
+  // real gap.
+  canRecordPick: boolean;
+  working: string;
+  isQueued: boolean;
+  onDraft: (playerId: string) => void;
+  onQueue: (playerId: string) => void;
   onClose: () => void;
 }) {
   const playerScore = candidate?.playerScore ?? (ranking ? ranking.replacementAdjustedValue : null);
@@ -1986,6 +2193,18 @@ function PlayerDrawer({
           <small>{String(ranking?.position ?? candidate?.position ?? "")} · {String(ranking?.team ?? "")}</small>
         </div>
         <Button variant="ghost" onClick={onClose}>Close</Button>
+      </div>
+      <div className="player-drawer__actions">
+        <Button
+          data-draft-action
+          disabled={!canRecordPick || Boolean(working)}
+          variant="primary"
+          onClick={() => onDraft(playerId)}
+          title={canRecordPick ? "Records this pick for whichever team is currently on the clock." : "Start the draft, and wait for your turn, to record picks here."}
+        >
+          {working === playerId ? "Saving…" : "Draft"}
+        </Button>
+        <Button variant="ghost" onClick={() => onQueue(playerId)}>{isQueued ? "Queued" : "Queue"}</Button>
       </div>
       {candidate ? (
         <div className="player-drawer__primary">
@@ -2006,9 +2225,9 @@ function PlayerDrawer({
             <strong>{formatNumber(candidate.championshipEquityAfter * 100, 1)}%</strong>
             <small>{candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</small>
           </div>
-          <div className="player-drawer__stat">
+          <div className="player-drawer__stat" title={formatMakeItBack(candidate.makeItBackProbability, candidate.makeItBackTrials).title}>
             <span>Make-It-Back</span>
-            <strong>{candidate.makeItBackProbability != null ? `${formatNumber(candidate.makeItBackProbability * 100, 0)}%` : "UNKNOWN"}</strong>
+            <strong>{formatMakeItBack(candidate.makeItBackProbability, candidate.makeItBackTrials).text}</strong>
           </div>
           <div className="player-drawer__stat">
             <span>Cost of Waiting</span>

@@ -904,6 +904,12 @@ export interface DecisionBundleCandidate {
   equityGain: number;
   costOfWaiting: number;
   makeItBackProbability: number | null;
+  // Owner-test follow-up: the real trial count behind makeItBackProbability
+  // -- a candidate showing 100% survival across a SMALL trial count is a
+  // real, disclosed modeled estimate, never a guarantee. null exactly when
+  // makeItBackProbability is null, or when the source is a non-Monte-Carlo
+  // heuristic (e.g. historical replay) with no trial count to report.
+  makeItBackTrials: number | null;
   rawDecisionUtility: number;
   teamScoreUtilityComponent: number;
   equityUtilityComponent: number;

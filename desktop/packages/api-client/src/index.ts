@@ -442,10 +442,11 @@ export class NwrApiClient {
   getRedraftDecisionBundle(
     profileId: string,
     speed: "FAST" | "STANDARD" | "DEEP" = "FAST",
+    positionFilter?: string,
   ): Promise<RedraftDecisionBundleResponse> {
     return this.request(`/api/v1/redraft/draft/${encodeURIComponent(profileId)}/decision-bundle`, {
       method: "POST",
-      body: JSON.stringify({ speed }),
+      body: JSON.stringify(positionFilter ? { speed, positionFilter } : { speed }),
     });
   }
 

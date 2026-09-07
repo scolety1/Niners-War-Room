@@ -9,11 +9,98 @@ import {
   buildSuggestionsRows,
   buildUdkBadges,
   findCloseCall,
+  formatMakeItBack,
+  formatRoundPick,
   generateCompareSummary,
   severityToBadgeTone,
+  splitActionValue,
   tabLabel,
   toggleCompareSelection,
 } from "./draft-room-v2";
+
+describe("formatRoundPick", () => {
+  // Owner-test follow-up, section 12 -- the owner's own worked examples.
+  it("matches the owner's exact worked examples", () => {
+    expect(formatRoundPick(69, 10)).toBe("7.09");
+    expect(formatRoundPick(47, 12)).toBe("4.11");
+  });
+
+  it("zero-pads the pick-in-round to two digits", () => {
+    expect(formatRoundPick(1, 10)).toBe("1.01");
+    expect(formatRoundPick(10, 10)).toBe("1.10");
+  });
+
+  it("rolls over correctly at round boundaries", () => {
+    expect(formatRoundPick(10, 10)).toBe("1.10");
+    expect(formatRoundPick(11, 10)).toBe("2.01");
+  });
+});
+
+describe("formatMakeItBack", () => {
+  it("labels a literal 100% as a modeled estimate over the real trial count, not a guarantee", () => {
+    const result = formatMakeItBack(1.0, 10);
+    expect(result.text).toBe("100%*");
+    expect(result.title).toContain("10 simulated continuations");
+    expect(result.title).toContain("not a guarantee");
+  });
+
+  it("never fabricates a value when the probability is null", () => {
+    expect(formatMakeItBack(null, null).text).toBe("UNKNOWN");
+  });
+
+  it("renders a normal percentage without the asterisk when not a literal 100%", () => {
+    expect(formatMakeItBack(0.4, 10).text).toBe("40%");
+  });
+});
+
+describe("splitActionValue", () => {
+  // Owner-test section 7: split "what to do" from "how the market sees
+  // this player right now" -- both reuse existing evidence (the real
+  // action string, real NWR rank, real market ADP/expected pick) rather
+  // than a second scoring system.
+  it("maps every existing action string to a distinct owner-facing verb", () => {
+    expect(splitActionValue("TAKE_NOW", 5, 5, 69, 10).action).toBe("Pick now");
+    expect(splitActionValue("GOOD_VALUE", 5, 5, 69, 10).action).toBe("Consider now");
+    expect(splitActionValue("DEEP_TARGET", 5, 5, 69, 10).action).toBe("Queue for later");
+    expect(splitActionValue("WAIT", 5, 5, 69, 10).action).toBe("Wait until next turn");
+    expect(splitActionValue("WAIVER_WATCH", 5, 5, 69, 10).action).toBe("Review data");
+    expect(splitActionValue("UNSCORED", 5, 5, 69, 10).action).toBe("Review data");
+  });
+
+  it("never produces a confident market label when ADP/current pick evidence is missing", () => {
+    expect(splitActionValue("TAKE_NOW", 5, null, 69, 10)).toEqual({ action: "Pick now", value: "Unknown", gapPicks: null });
+    expect(splitActionValue("TAKE_NOW", 5, 60, null, 10).value).toBe("Unknown");
+    expect(splitActionValue("TAKE_NOW", 5, 60, 69, null).value).toBe("Unknown");
+    expect(splitActionValue("TAKE_NOW", 5, 60, 69, 0).value).toBe("Unknown");
+  });
+
+  it("labels a player who has actually gone later than their own cited ADP as Falling", () => {
+    // Expected pick 50, we're on the clock at 70 (a full team-count of
+    // picks past their own ADP) and they are STILL on the board.
+    const result = splitActionValue("WAIT", 20, 50, 70, 10);
+    expect(result.value).toBe("Falling");
+    expect(result.gapPicks).toBe(-20);
+  });
+
+  it("labels a player being drafted well ahead of their own cited ADP as a Reach", () => {
+    const result = splitActionValue("TAKE_NOW", 20, 90, 70, 10);
+    expect(result.value).toBe("Reach");
+    expect(result.gapPicks).toBe(20);
+  });
+
+  it("labels a real NWR-vs-market discount as Value, distinct from real-time Falling/Reach behavior", () => {
+    // NWR has them ranked #10 while the market doesn't expect them until
+    // pick 25 -- a real >=10-spot discount -- but the current pick (24) is
+    // still inside one team-count of their own ADP, so it is not "Falling".
+    const result = splitActionValue("GOOD_VALUE", 10, 25, 24, 10);
+    expect(result.value).toBe("Value");
+  });
+
+  it("labels an ordinary in-range player as Fair rather than manufacturing separation", () => {
+    const result = splitActionValue("GOOD_VALUE", 22, 25, 24, 10);
+    expect(result.value).toBe("Fair");
+  });
+});
 
 describe("tabLabel", () => {
   // Consolidation pass: PLAYERS -> "Rankings" and MY_TEAM -> "Teams" match
@@ -38,7 +125,7 @@ function _candidate(overrides: Record<string, unknown> = {}) {
     playerId: "p1", playerName: "Star Runner", position: "RB",
     playerScore: 88.2, teamScoreAfter: 72.8, teamScoreDelta: 8.6,
     championshipEquityAfter: 0.107, equityGain: 0.023, costOfWaiting: 4.1,
-    makeItBackProbability: 0.12, rawDecisionUtility: 10.9,
+    makeItBackProbability: 0.12, makeItBackTrials: 10, rawDecisionUtility: 10.9,
     teamScoreUtilityComponent: 8.6, equityUtilityComponent: 2.3,
     pickScore: 94.0, action: "TAKE NOW", warnings: [], uncertainty: "LOW_MODEL_UNCERTAINTY (SE=0.0100)",
     ...overrides,
@@ -252,8 +339,8 @@ describe("generateCompareSummary", () => {
 
   it("calls out the best NWR rank, the largest ADP discount, and the deepest position", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
-      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, action: null, warnings: [], evaluated: false },
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the best NWR rank (#5)");
@@ -263,8 +350,8 @@ describe("generateCompareSummary", () => {
 
   it("never fabricates a claim when the underlying structured field is missing", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
-      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, action: null, warnings: [], evaluated: false },
+      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, action: null, warnings: [], evaluated: false },
     ];
     const summary = generateCompareSummary(rows, {});
     expect(summary).not.toContain("best NWR rank");
@@ -273,8 +360,8 @@ describe("generateCompareSummary", () => {
 
   it("cites the highest Pick Score among evaluated candidates when available", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: 50, teamScoreDelta: 2, equityGain: 0.01, costOfWaiting: 1, makeItBackProbability: 0.5, pickScore: 40, action: "WAIT", warnings: [], evaluated: true },
-      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: 80, teamScoreDelta: 8, equityGain: 0.03, costOfWaiting: 3, makeItBackProbability: 0.2, pickScore: 90, action: "TAKE NOW", warnings: [], evaluated: true },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: 50, teamScoreDelta: 2, equityGain: 0.01, costOfWaiting: 1, makeItBackProbability: 0.5, makeItBackTrials: 10, pickScore: 40, action: "WAIT", warnings: [], evaluated: true },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: 80, teamScoreDelta: 8, equityGain: 0.03, costOfWaiting: 3, makeItBackProbability: 0.2, makeItBackTrials: 10, pickScore: 90, action: "TAKE NOW", warnings: [], evaluated: true },
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the highest Pick Score");
