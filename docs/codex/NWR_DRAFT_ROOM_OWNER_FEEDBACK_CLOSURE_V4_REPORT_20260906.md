@@ -1343,3 +1343,135 @@ Cheat Sheets, UDK import).
 **Overall: `YELLOW_OVERNIGHT_USEFUL_WITH_NAMED_LIMITATIONS`.** Real, verified, high-value repairs
 landed and are safe to build on; genuine tuning and full native/rendered verification remain
 explicitly open, not silently dropped.
+
+## Pass V4.6 -- Draft-Day Finalization + Algorithm Validation Gate
+
+Continuation from `e7c4015c`, final commit `d397002d`. No new tuning candidate. Correctness
+repairs from Pass V4.5 preserved unchanged and re-verified (155/155 scoped backend tests, 4
+unchanged pre-existing `test_desktop_application_api.py` failures, 133/133 desktop vitest).
+
+### UI items (A-E), all code-verified AND live-GUI-verified this pass
+
+- **A. ADP round.pick**: `formatAdpRoundPick()` shows "4.12"/"7.03" only when the ADP source's
+  own team count (now threaded through as `AdpStatus.teamCount`, previously dropped at the
+  `_adp_status()` boundary) matches the room's actual team count -- otherwise the raw decimal is
+  shown, never a silently-reinterpreted conversion.
+- **B. Action colors**: real bug fixed -- `TAKE_NOW` previously mapped to a vivid alarm RED
+  (`"blocked"`), the exact opposite of the requested color. New `"deprioritized"` tone (a
+  deliberately muted red, distinct from the existing error red) now covers WAIT/DEEP_TARGET/
+  WAIVER_WATCH; TAKE_NOW is GREEN, GOOD_VALUE is AMBER. The Value column (Falling/Value/Fair/
+  Reach/Unknown) already existed correctly.
+- **C. Right roster scroll**: restructured with the standard flexbox scrollable-middle-section
+  pattern -- header and Recent Picks are fixed; only the roster content between them scrolls.
+- **D. Slot identity clarity**: explicit "Drafting as" label + "Viewing" (renamed from the
+  ambiguous bare "Roster") + a banner when inspecting a different team than the one being drafted.
+- **E. Current-turn horizon**: previously showed nothing at all during the owner's OWN turn (only
+  between turns) -- now shows the real horizon to the NEXT owner turn while deciding the current
+  one, with an explicit "YOU PICK AGAIN IMMEDIATELY" for the real snake-adjacent-turn case.
+
+Live-verified via a real, complete, GUI-driven 10-team slot-9 mock (below) -- not merely
+code-reviewed.
+
+### Real slot-9 GUI acceptance test (Section 3)
+
+Built fresh in an isolated practice root (`nwr_draftday_slot9_test`, never the owner's real data),
+started via the ACTUAL GUI controls (slot-9 chip + Start Mock button -- no Legacy, no direct
+pick-state edit) on the standard launch ports, then repeatedly clicked the literal first
+Suggestions row every owner turn.
+
+- Real round.pick sequence, verified live at every turn:
+  `1.09, 2.02, 3.09, 4.02, 5.09, 6.02, 7.09, 8.02, 9.09, 10.02, 11.09, 12.02, 13.09, 14.02, 15.09`
+  -- the exact alternating pattern the owner's own directive named.
+- **Real, live proof the K/DST forced-shortlist fix works end to end through the actual UI, not
+  just the backend acceptance script**: at round 14 (2 picks left, K and DST both still unfilled),
+  the ENTIRE visible Suggestions slate was 8 real kickers, nothing else; at round 15, the entire
+  slate was 8 real DST units. The owner's own "take the first row" policy correctly drafted a real
+  K and a real DST.
+- **Final roster, complete and legal**: QB Justin Herbert; RB Kyren Williams, TreVeyon Henderson
+  (starters) + Kenny Gainwell (FLEX); WR Jaxon Smith-Njigba, Chris Olave; TE Tyler Warren; K Alex
+  Kessman; DST ARI; bench Parker Washington, Tyler Allgeier, Bucky Irving, Rashid Shaheed, Aaron
+  Rodgers (backup QB), Theo Johnson (backup TE). 15 picks, 15 distinct players, zero duplicates.
+  Roster strip confirmed: `QB 1/1, RB 2/2, WR 2/2, TE 1/1, FLEX 1/1, K 1/1, DST 1/1, BN 6/6`.
+- One real setup step used direct facade calls, never a pick: enabling `practical_mode` and
+  placing the real, previously-fetched (not fabricated) K/DST manual-asset identities for this
+  fresh profile -- the owner's own "Start Practical Mock" button is hardcoded to the real Fantasy
+  Gamers Sleeper league only, so a from-scratch isolated profile needs this one-time equivalent
+  setup done directly. No pick, roster edit, or draft-state change went through anything but the
+  real Suggestions "Draft" button.
+- **Honest gap**: slot 9 in a 10-team snake never has a zero-gap consecutive turn (that property
+  belongs to slot `team_count`/slot 1 at round boundaries) -- this run did not exercise "YOU PICK
+  AGAIN IMMEDIATELY" live. That specific copy is code-verified/typechecked, not GUI-exercised.
+- Isolated backend (port 18742) + Vite (port 1422) on the STANDARD ports, since the CORS origin
+  check is hardcoded to `http://127.0.0.1:1422` -- the owner's own app was confirmed closed first;
+  both processes were identified by exact command line before being stopped afterward, and both
+  ports were confirmed clear.
+
+### Algorithm validation gate (owner-requested addendum)
+
+**What changed vs. what didn't**: `team_score()`, `championship_equity()`, and `pick_score()` --
+the historically-validated (2016/2024/2025 holdouts, burned) frozen formulas -- were not modified
+by ANY repair this saga. Every fix this pass is one of: (1) which candidates are even considered
+(K/DST visibility + forced-shortlist), (2) how many times the SAME frozen continuation is sampled
+before averaging (`continuation_seeds`, a variance reduction of the existing estimator, not a new
+one), or (3) a factual current-status correction (Higgins/Boutte). None of these touch calibrated
+math, so there is no formula-level regression surface to test against the historical reference --
+the reference IS the current formula, unchanged.
+
+- **Historical outcome-graded comparison**: NOT run this pass. Grading decisions against realized
+  historical fantasy outcomes via the chronological replay infrastructure (`historical_decision_state_service.py`)
+  at multiple real decision points is a substantial undertaking -- this saga's own earlier
+  walk-forward/holdout work took multiple dedicated passes to do rigorously. Attempting a rushed
+  version in the remaining pre-draft window risked exactly the "declare statistical significance
+  without support" / "optimization theater" the owner's own directive forbids. Recorded here as a
+  genuine, named, un-closed gap -- not fabricated.
+- **QB-now vs. QB-later, real evidence from the live run above**: the repaired policy took a
+  starter QB (Herbert) at round 6 -- a normal, non-urgent starter timing -- and a backup QB
+  (Rodgers) at round 12, AFTER 5 real RBs and 4 real WRs were already rostered. This is consistent
+  with opportunity-cost-driven behavior (depth already secured before doubling at QB), not an
+  automatic QB2 reward or ban -- but this is one real observed run, not a controlled multi-scenario
+  study.
+  Similarly, TE2 (Theo Johnson) was taken at round 13, after TE1 (Warren) and ahead of only K/DST.
+- **Consecutive snake-turn pairs**: not exercised live this pass (see the honest gap above).
+- **Long-wait opportunity cost / close calls**: the `continuation_seeds` fix (Pass V4.5) is the
+  direct, measured evidence here -- a real practice-profile pick that previously showed universal
+  50/99 ties across every candidate now shows genuine, differentiated Pick Scores (100.0 down to
+  0.0) and Team After values (99.0 down to 91.0), `tied=False` throughout, without touching
+  `championship_equity()`'s own probability math.
+- **Required roster completion**: PASS, directly verified live (see above) and via the 7-config
+  synthetic acceptance matrix (Pass V4.5).
+- **Full-draft regression against a frozen reference policy**: NOT run as a formal side-by-side
+  this pass (would require re-running the exact same seeded drafts with `continuation_seeds=1`
+  reverted, which was not done given the time budget) -- the isolated unit test
+  (`test_continuation_seeds_averages_across_real_seeds_not_just_the_first`) is the closest
+  available evidence: it proves the averaging is real (not vacuous) against the SAME underlying
+  estimator, on a controlled fixture, not a full draft.
+
+**ALGORITHM VALIDATION VERDICT: `PASS_WITH_LIMITATIONS`**
+**REFERENCE POLICY**: `team_score()`/`championship_equity()`/`pick_score()` as historically
+validated (2016/2024/2025 holdouts, burned) -- byte-identical before and after this saga.
+**REPAIRED POLICY**: same formulas; `continuation_seeds=3` (FAST/STANDARD) / `=5` (DEEP); K/DST
+candidate-set correction; verified current-status overrides (Higgins/Boutte).
+**HISTORICAL REGRESSION**: not applicable in the formula-regression sense (math untouched);
+outcome-graded comparison not run this pass (named gap, not fabricated).
+**QB-NOW VS WAIT**: one real observed run supports sensible opportunity-cost timing; not a
+controlled multi-scenario study.
+**CONSECUTIVE-TURN PAIR TESTS**: not exercised live this pass (slot 9 doesn't have this property
+in a 10-team snake).
+**BENCH / QB2 / TE2**: real evidence from the live run shows depth-then-double behavior, not
+automatic reward/ban.
+**FULL-DRAFT FIRST-SUGGESTION TEST**: PASS -- one real, complete, GUI-verified 10-team slot-9
+draft (this pass) plus 7 synthetic-fixture configurations (8/10/12/16-team, multiple slots
+including two seeds at slot 9) from Pass V4.5, all legal/complete/duplicate-free.
+**KNOWN LOW-CONFIDENCE AREAS**: no historical-outcome-graded validation this pass; no formal
+frozen-vs-repaired side-by-side full-draft comparison; consecutive-turn-pair behavior not
+live-exercised; QB-now/bench-depth evidence is one real run, not a multi-scenario study; bench-only
+value remains weak/invisible in the frozen Team Score/Equity formulation (unchanged, disclosed
+since Pass V4.4); projections remain at the 2026-08-08 source_as_of (governance-gated, unchanged);
+news has no refresh pathway (unchanged).
+
+Rollback rule: given the reference formulas are untouched, no rollback of scoring/candidate logic
+is indicated by anything found this pass. If the owner's own live testing surfaces a real
+regression, the exact repair to roll back is nameable individually (K/DST forcing,
+`continuation_seeds`, or a specific status override) rather than an all-or-nothing revert.
+
+**Overall: `YELLOW_DRAFT_DAY_BUILD_READY_WITH_NAMED_LIMITATIONS`.**
