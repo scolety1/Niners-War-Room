@@ -1734,3 +1734,190 @@ the SAME shared enum as the other 6 metrics would require either inventing a syn
 backend does not compute (prohibited) or a backend contract change (outside "frontend/presentation
 only" and risking the "DO NOT change recommendation policy" boundary, since RAV/regret feed
 Decision Quality). Flagged as `INTENTIONALLY_DEFERRED_WITH_EXACT_REASON`, not silently dropped.
+
+---
+
+## V7 -- Final Pre-Draft Gap Closure (20260907)
+
+**Directive**: "NWR FINAL PRE-DRAFT GAP CLOSURE -- DO NOT REOPEN COMPLETED WORK." Close exactly
+four remaining gaps from V6: (1) the 8-team GUI mock used a K:0/DST:0 profile instead of tonight's
+real 9-starter/7-bench/16-round shape; (2) Metric Status Consistency was explicitly still open;
+(3) Action-color rendering needed explicit pixel verification; (4) Show Ballers field coverage
+needed a real schema audit. This pass, UNLIKE V5/V6, made real backend changes -- explicitly
+authorized by this directive's own carve-out ("minimal backend metadata/status-contract wiring...
+provided no scoring formula changes, no recommendation-order changes, no model/data changes, tests
+prove numerical outputs are byte/semantically unchanged"). Both real backend changes are additive
+metadata/routing only, proven unchanged by new tests (below), never touching a scoring formula,
+candidate ordering, or admission rule.
+
+### 2. Metric Status Consistency -- CLOSED (real, tested, additive backend + frontend wiring)
+
+**Audit finding**: `metric_status_contract_service.py` already contained a complete
+`raw_action_value_status()` mapper -- built for exactly this purpose -- but it was dead code,
+never called anywhere in the live pipeline. RAV/expected-regret/Decision-Quality was the ONE
+metric family still carrying only a bare `"OK"`/`"UNAVAILABLE: <reason>"`/`"SKIPPED_TOP_N_ONLY"`
+string, handled by ad hoc frontend string-matching instead of the shared EVALUATED/PENDING/
+BUDGET_LIMITED/UNSUPPORTED/MISSING_INPUT/ERROR taxonomy every other metric (Player Score, Team
+Score, Championship Equity, Cost of Waiting, Make-It-Back, Pick Score) already carries.
+
+**Fix**: wired the existing, unmodified mapper into `_decision_bundle_v2_payload()`
+(`desktop_facade.py`) -- computes `source_as_of` the exact same way `decision_bundle_service.py`
+already does (`ranking.rows[0].source_as_of`), calls `raw_action_value_status(candidate.
+raw_action_value_status, candidate.decision_quality_percentile, source_as_of=...)`, and adds one
+new field, `decisionQualityStatus`, to the V2 candidate payload. Every existing field
+(`rawActionValueStatus`, `rawActionValue`, `expectedRegret`, `decisionQualityPercentile`) is
+returned byte-identical. Hoisted the JSON-shape converter (`metric_status_payload`) from a nested
+closure in `_decision_bundle_payload` to a module-level `_metric_status_payload()` so both V1 and
+V2 payload builders share the exact same real conversion -- zero duplicated logic.
+
+Frontend: added `decisionQualityStatus: MetricStatus` to `RedraftDecisionBundleV2CandidateResponse`
+(api-client), threaded it through `buildSuggestionsRows` into `SuggestionRow.decisionQualityStatus`,
+and rewired the Suggestions table's DQ column to render via the same `formatMetricStatus()` helper
+every other metric's tooltip already uses -- a missing DQ value now shows its real
+`computationState` (e.g. "Skipped" for `BUDGET_LIMITED`) instead of an ad hoc `"n/a"` string match.
+
+**New test**: `test_redraft_decision_bundle_v2_carries_a_real_decision_quality_status`
+(`tests/test_desktop_application_api_decision_bundle_v2.py`) -- asserts `EVALUATED` for real
+top-N candidates and `BUDGET_LIMITED` for top-N-skipped candidates, with the correct
+`validationDomain`/`genuineZero`/`dataCoverage`, while the sibling test in the same file
+independently confirms the underlying numeric fields are unchanged. 4/4 passed. Full desktop test
+suite (`test_desktop_application_api.py`, 39/43, same 4 pre-existing baseline failures),
+`test_desktop_http_api.py` (34/34), and the redraft/decision-bundle/metric-status-filtered
+full-suite run (197/201, same 4 pre-existing unrelated data-freshness failures) all re-confirmed
+clean.
+
+### 4. Show Ballers -- real UDK schema audit + a real wiring-defect fix
+
+**Audit method**: read `parse_udk_position_csv()`'s own docstring and implementation
+(`redraft_draft_room_v1_service.py`) -- the one real, authoritative source of what the owner's UDK
+CSV export actually contains and what NWR actually imports from it.
+
+**SOURCE FIELDS AVAILABLE** (real UDK CSV schema, from the parser's own docstring): Name, Position,
+Team, Bye Week, Rank, Points, Risk, Upside, ADP, Tier, Outlook, Dynasty, Markers.
+
+**FIELDS CURRENTLY IMPORTED**: all of the above except two, each excluded for a real, documented
+reason rather than an oversight -- `Markers` (Mark Drafted/Keeper/Favorite/Watchlist/Avoid) is
+UI-action text from the source tool, not player state, and is deliberately discarded; `Dynasty` is
+reduced to a boolean `dynastyLocked` (true when the column is locked upsell text), never a numeric
+rating invented from it. Every other field (byeWeek, rank, points, risk, upside, adpRaw, tier,
+outlook) is imported into `UdkPlayerEntry`.
+
+**REAL DEFECT FOUND**: the "Show Ballers" column (Suggestions tab) was reading `externalIntel`,
+which is sourced from `redraft_external_intelligence_service.DEFAULT_UDK_SNAPSHOT_PATH` -- a FIXED
+local file path to a past session's snapshot (`KHA_UDK_2026_SNAPSHOT.csv`), completely disconnected
+from the owner's own live "Import UDK CSV" upload that Cheat Sheets already correctly reads via
+`data.udkRankings`. Importing a fresh UDK file tonight would never have changed what Show Ballers
+displayed -- a real, confirmed wiring defect, not a data/admission change (the underlying import
+pipeline, matching, and persistence are all untouched).
+
+**Fix**: rewired Show Ballers to read `data.udkRankings` -- the SAME real, already-tested source
+Cheat Sheets uses. Strictly more complete than before: the column/tooltip now surfaces rank, tier,
+ADP, risk, upside, projected points, bye week, dynasty-locked status, and outlook (truncated) --
+every real imported field except the deliberately-discarded `Markers`.
+
+**FIELDS DISPLAYED** (after this fix): rank, tier (inline); ADP, risk, upside, projected points,
+bye week, dynasty-locked flag, outlook (tooltip). **FIELDS NOT DISPLAYED**: `Markers` only, and
+only because it is source-tool UI-action text with no player-state meaning (documented reason,
+not an oversight).
+
+**Known related, NOT fixed this pass**: the Player Drawer's "News" section still reads the same
+stale `externalIntel`-sourced UDK fields (`udkPositionRank`/`udkTier` only) for its own small
+supplementary display. Disclosed as a real, related, lower-priority gap rather than silently left
+inconsistent -- out of scope for this pass (a secondary display, not the "Show Ballers" feature
+this directive named), but the exact same fix pattern would apply if reopened.
+
+### 1. Exact 8-team/16-round GUI mock at tonight's real roster shape
+
+**Real roster shape used** (matches the directive's exact spec): 8 teams, PPR, 1QB, 2RB, 2WR, 1TE,
+1FLEX, 1K, 1DST, 7 bench = 16 roster spots / 16 draft rounds. Set via the real, existing Profile &
+Scoring editor (`ProfilePage`'s roster-edit form, not a synthetic backdoor) -- confirmed live via
+the Draft Setup surface's own "Scoring & roster summary": "Standard - 1QB - QB 1 - RB 2 - WR 2 -
+TE 1 - FLEX 1 - K 1 - DST 1 - Bench 7".
+
+**Real gap found and fixed while setting this up**: enabling K/DST roster slots on any
+manually-configured profile (not imported from the owner's real Sleeper league) failed with
+"Projection universe cannot support profile replacement depth: K 0/9, DST 0/9" -- Practical Mode
+(which tells replacement-level calculation to stop expecting ranked K/DST rows) has existed on the
+facade since an earlier pass, but no HTTP route ever accepted `practicalMode`, so a manually-edited
+league with real K/DST slots (**exactly tonight's real ESPN league's own shape**) had no
+owner-facing way to enable it at all. Fixed: the `/api/v1/redraft/profiles/{id}/edit` route now
+accepts an optional `practicalMode` boolean (omitted preserves the profile's existing value,
+unchanged for every prior caller); a new checkbox in the Profile & Scoring editor (shown only when
+the roster carries a K or DST slot) sets it through the existing real
+`client.updateRedraftProfile` call. New HTTP-layer tests
+(`test_redraft_profile_edit_route_accepts_practical_mode`, plus an added assertion on the existing
+strict-fields test) confirm both the accept-and-forward and reject-non-boolean paths; `test_
+desktop_http_api.py` 34/34. Verified live: toggling it flipped the header from "PROJECTIONS
+BLOCKED" to "DRAFT BOARD READY" in real time.
+
+**GUI mock result**: ran 14 of 16 rounds via "take the first visible actionable Suggestion every
+owner turn," zero manual rescue. Confirmed live and DOM-verified throughout:
+- All 7 non-K/DST starter slots filled legally and in the correct order (QB round 3, RB rounds
+  1+4, WR rounds 2+5, TE round 2 (tied pick), FLEX round 6) -- `_forced_position`'s real
+  roster-need-aware shortlisting visibly steered each pick, never requiring a manual override.
+- Bench filled 7/7 by round 14, zero duplicates, correct round.pick throughout (1.05 through
+  14.05, verified via the on-clock indicator and Recent Picks at every step).
+- Real Action-badge variety observed across real drafted rows: "Pick now" (green), "Consider now"
+  (amber), "Wait until next turn" (muted red, see section 3 below) -- all three states occurring
+  naturally as the draft progressed, not staged.
+- Real close-call detection fired mid-draft ("CLOSE CALL: Christian McCaffrey ~ Jonathan Taylor").
+
+**Where it stopped, and why (a real, honestly-disclosed limitation, not a defect)**: at pick
+15.01, with K and DST both "required and due now," the Suggestions panel correctly showed
+"DecisionBundle unavailable -- K is required and due now, but no K asset remains available," and
+the K/DST position filters independently confirmed "No available K"/"No available DST -- every
+manual asset at this position has already been drafted." This is this LOCAL, SYNTHETIC test
+profile's finite manual K/DST seed (never connected to a real Sleeper/ESPN import) being fully
+consumed across 8 simulated teams' worth of forced K/DST demand by round 15 -- the system refused
+to fabricate a candidate or silently skip the requirement, which is the CORRECT behavior (matches
+`_forced_position`'s own "never a fabricated differentiator" design throughout this codebase), it
+simply means this specific isolated profile's pool ran out before the owner's forced pick arrived.
+Searching for "K" by name in the same session confirmed zero remaining K-position rows anywhere in
+the profile's data, ruling out a UI-side filtering bug. **This is not expected to recur with
+tonight's real ESPN league**, whose K/DST pool is real, current-season, Sleeper-cross-referenced
+data (all 32 NFL teams' kickers and defenses) -- many times deeper than the 8 minimum this test
+needed and far deeper than this synthetic local profile's seed. No code change was made to "fix"
+this (fabricating additional synthetic K/DST rows would violate the explicit "never invent a
+value" constraint that governs this entire codebase); it is reported here exactly as observed.
+
+**Final roster reached (14 of 16 picks)**: QB Matthew Stafford; RB Christian McCaffrey, Jaylen
+Warren (+ Kenny Gainwell FLEX); WR Davante Adams, Courtland Sutton; TE Trey McBride; bench Jacory
+Croskey-Merritt (RB), Emeka Egbuka (WR), Jauan Jennings (WR), Jordan Mason (RB), Rachaad White
+(RB), Rome Odunze (WR), Jacoby Brissett (QB) -- 7/7 bench. K and DST unfilled (pool exhausted, see
+above). `QB 1/1, RB 2/2, WR 2/2, TE 1/1, FLEX 1/1, BN 7/7, K 0/1, DST 0/1` -- legal at every
+starter/bench slot reached, zero duplicates, zero illegal states.
+
+### 3. Action colors -- explicit pixel/computed-style verification
+
+Read real computed CSS on live drafted rows (not asserted from memory or from CSS source alone):
+`"Pick now"` -> class `status-badge--ready`, `color: rgb(121, 220, 180)` (green) on a green-tinted
+background; `"Consider now"` -> class `status-badge--review`, `color: rgb(229, 196, 117)` (amber)
+on an amber-tinted background. `"Wait until next turn"` was visually confirmed as a distinct muted
+dark-red/maroon tone via a real screenshot earlier in this same overall session (V5 pass, same
+unmodified `actionToBadgeTone`/CSS, re-observed live again this pass on real drafted-state rows
+during the 14-round mock above). All three occurred on real Suggestions rows produced by the
+live DecisionBundle, not fixtures. Not independently re-screenshotted this pass inside Compare or
+the Player Drawer specifically (both reuse the exact same `StatusBadge`/`actionToBadgeTone`
+component and CSS classes already verified here and in V5/V6 -- no separate color logic exists for
+those surfaces to diverge).
+
+### 5. Final owner-request audit -- remaining non-CLOSED rows, verbatim
+
+Re-read the V6 table. Every row is `VERIFIED_FIXED` or `VERIFIED_ALREADY_WORKING` except:
+
+- **Item 8, Metric Status Consistency**: now `VERIFIED_FIXED` (was `INTENTIONALLY_DEFERRED`) --
+  closed this pass, see above.
+- **Items K, M, N (Cheat Sheets/Player-drawer/instructional-clutter full re-audit)**: still
+  `DEFERRED_WITH_OWNER-VISIBLE_REASON` from V6 -- Cheat Sheets' FLEX/SFLX gap specifically was
+  closed in V6; a full field-by-field re-audit of the entire drawer and every instructional string
+  was never requested again in this V7 directive's explicit 4-item scope, so it was not reopened,
+  per "DO NOT REOPEN COMPLETED WORK."
+- **Item F, exact Action-badge on-screen colors in Compare/Player Drawer specifically**: addressed
+  above (same component/CSS, not independently re-screenshotted in those two surfaces this pass).
+- **The Show Ballers Player-Drawer secondary display** (this pass's own new finding): disclosed,
+  not fixed -- see section 4 above.
+- **The 8-team/16-round mock's final 2 rounds (K/DST)**: disclosed, not artificially forced closed
+  -- see section 1 above; a genuine local-test-data-depth limitation, not a code defect.
+
+No other row in the V5/V6 tables was found to still read `PARTIALLY_VERIFIED`, `NOT_
+RESCREENSHOTTED`, or `NOT_TESTED` for an owner-requested Draft Room behavior.

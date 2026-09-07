@@ -32,6 +32,7 @@ import type {
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
   RosterSettings,
+  UdkPlayerEntry,
 } from "@nwr/contracts";
 import {
   Button,
@@ -111,6 +112,13 @@ export interface SuggestionRow {
   expectedRegret: number | null;
   decisionQualityPercentile: number | null;
   rawActionValueStatus: string | null;
+  // NWR FINAL PRE-DRAFT GAP CLOSURE (section 2): the same shared
+  // MetricStatus taxonomy every other metric already carries, sourced
+  // from the real `decisionQualityStatus` the V2 endpoint now returns --
+  // null only when this candidate was never in the RAV/DQ payload at all
+  // (rare; the backend always includes it for top-N candidates and
+  // skipped ones alike).
+  decisionQualityStatus: MetricStatus | null;
   // Owner feedback closure (shared cross-metric result-status contract):
   // the same metricStatus map the DecisionBundle candidate carries,
   // passed through unmodified.
@@ -165,6 +173,7 @@ export function buildSuggestionsRows(
         expectedRegret: rav?.expectedRegret ?? null,
         decisionQualityPercentile: rav?.decisionQualityPercentile ?? null,
         rawActionValueStatus: rav?.rawActionValueStatus ?? null,
+        decisionQualityStatus: rav?.decisionQualityStatus ?? null,
         metricStatus: candidate.metricStatus,
       };
     });
@@ -1430,6 +1439,7 @@ export function DraftRoomV2Page({
             onDraft={(playerId) => void mark(playerId)}
             onQueue={toggleQueue}
             externalIntel={externalIntel}
+            udkRankings={data.udkRankings}
             positionFilter={suggestionsPositionFilter}
             onPositionFilterChange={setSuggestionsPositionFilter}
             manualAssets={data.manualAssets ?? []}
@@ -1830,6 +1840,7 @@ function SuggestionsTab({
   onDraft,
   onQueue,
   externalIntel,
+  udkRankings,
   positionFilter,
   onPositionFilterChange,
   manualAssets,
@@ -1850,6 +1861,7 @@ function SuggestionsTab({
   onDraft: (playerId: string) => void;
   onQueue: (playerId: string) => void;
   externalIntel: RedraftExternalIntelligence | null;
+  udkRankings: RedraftBootstrap["udkRankings"];
   positionFilter: string;
   onPositionFilterChange: (value: string) => void;
   manualAssets: RedraftBootstrap["manualAssets"];
@@ -1860,27 +1872,35 @@ function SuggestionsTab({
 }) {
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
-  // NWR FINAL OWNER-FEEDBACK RECONCILIATION (P1, new item "Show Ballers"):
-  // an explicit, off-by-default toggle surfacing the owner's already-
-  // imported UDK/Fantasy Footballers ("Ballers") fields directly on the
-  // primary Suggestions table -- previously this real data only reached
-  // Suggestions as the stale-news banner and the alert dot; every other
-  // UDK field (position rank, tier, ADP, risk, upside) was reachable only
-  // via the Rankings tab's own "UDK" column or one click into the player
-  // drawer. No new acquisition system, no blending into NWR scoring --
-  // this only renders fields that already exist on `externalIntel`, with
-  // an honest "Not loaded"/"No Ballers data" fallback rather than ever
-  // inventing a value.
+  // NWR FINAL PRE-DRAFT GAP CLOSURE (section 4, "Show Ballers -- audit
+  // the real imported fields"): the audit found this column was reading
+  // `externalIntel`, which is sourced from a FIXED local snapshot path
+  // (`redraft_external_intelligence_service.DEFAULT_UDK_SNAPSHOT_PATH`,
+  // a past session's file) -- NOT the owner's own live "Import UDK CSV"
+  // upload that Cheat Sheets already reads correctly via
+  // `data.udkRankings`. A real, confirmed wiring defect: importing a
+  // fresh CSV tonight would never have changed what Show Ballers
+  // displayed. Rewired to the SAME real, already-tested
+  // `data.udkRankings` source Cheat Sheets uses -- strictly more
+  // complete too (adds byeWeek/outlook/dynastyLocked, which
+  // `externalIntel` never carried). No new acquisition system, no
+  // blending into NWR scoring, honest "Not loaded"/"No Ballers data"
+  // fallback preserved.
   const [showBallers, setShowBallers] = useState(false);
   const isManualPosition = positionFilter === "K" || positionFilter === "DST";
   const manualRows = isManualPosition
     ? (manualAssets ?? []).filter((row) => row.position === positionFilter)
     : [];
+  const udkImported = (udkRankings?.positions?.length ?? 0) > 0;
   const ballersById = useMemo(() => {
-    const map = new Map<string, RedraftExternalIntelligenceEntry>();
-    for (const entry of externalIntel?.entries ?? []) map.set(entry.playerId, entry);
+    const map = new Map<string, UdkPlayerEntry>();
+    for (const position of udkRankings?.positions ?? []) {
+      for (const entry of position.entries) {
+        if (entry.playerId) map.set(entry.playerId, entry);
+      }
+    }
     return map;
-  }, [externalIntel]);
+  }, [udkRankings]);
   // Compact primary table (owner feedback: headers must read as drafting
   // chrome, not research-development labels). Evidence status
   // (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH) moves to a header hover
@@ -1983,11 +2003,30 @@ function SuggestionsTab({
       const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
       return <span title={mib.title}>{mib.text}</span>;
     } },
-    { key: "decisionQualityPercentile", label: "DQ", titleHint: "Decision Quality — Raw Action Value: differentiates candidates even when Pick Score ties (0-100). Hover a value for expected regret.", sort: "number", render: (row) => {
-      const status = row.rawActionValueStatus as string | null;
-      if (row.decisionQualityPercentile == null) return status === "SKIPPED_TOP_N_ONLY" ? <span title="Outside this pick's cost-controlled Raw Action Value candidate set.">n/a</span> : (status ?? "n/a");
-      return <span title={`Expected regret: ${row.expectedRegret != null ? formatNumber(row.expectedRegret as number, 1) : "—"}`}>{formatNumber(row.decisionQualityPercentile as number, 0)}</span>;
-    } },
+    {
+      // NWR FINAL PRE-DRAFT GAP CLOSURE (section 2, "Metric Status
+      // Consistency"): DQ now reads the same shared MetricStatus a
+      // missing value carries every other metric (EVALUATED/
+      // BUDGET_LIMITED/UNSUPPORTED/...) instead of ad hoc string-
+      // matching against the raw `rawActionValueStatus`. A missing
+      // value is never rendered as a bare "n/a" with no explanation --
+      // the real computation_state/data_coverage from the backend
+      // status object is always in the tooltip.
+      key: "decisionQualityPercentile", label: "DQ",
+      titleHint: "Decision Quality — Raw Action Value: differentiates candidates even when Pick Score ties (0-100). Hover a value for expected regret and evaluation status.",
+      sort: "number", render: (row) => {
+        const dqStatus = row.decisionQualityStatus as MetricStatus | null;
+        if (row.decisionQualityPercentile == null) {
+          const label = dqStatus?.computationState === "BUDGET_LIMITED" ? "Skipped" : dqStatus?.computationState ?? "n/a";
+          return <span title={formatMetricStatus(dqStatus ?? undefined, "Outside this pick's cost-controlled Raw Action Value candidate set.")}>{label}</span>;
+        }
+        return (
+          <span title={`Expected regret: ${row.expectedRegret != null ? formatNumber(row.expectedRegret as number, 1) : "—"} — ${formatMetricStatus(dqStatus ?? undefined, "")}`.trim()}>
+            {formatNumber(row.decisionQualityPercentile as number, 0)}
+          </span>
+        );
+      },
+    },
     { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
     { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => {
       const adp = formatAdpRoundPick(row.marketExpectedPick as number | null, adpTeamCount, teamCount);
@@ -1995,20 +2034,27 @@ function SuggestionsTab({
     } },
     ...(showBallers ? [{
       key: "ballers", label: "Ballers", sort: "text" as const,
-      titleHint: "Fantasy Footballers Ultimate Draft Kit (UDK) -- the owner's own imported CSV. Never blended into NWR rank/score.",
+      titleHint: "Fantasy Footballers Ultimate Draft Kit (UDK) -- the owner's own imported CSV (same file/source Cheat Sheets reads). Never blended into NWR rank/score.",
       render: (row: Record<string, unknown>) => {
-        if (!externalIntel?.available) return <span title="No UDK/Fantasy Footballers file has been imported for this profile.">Not loaded</span>;
+        if (!udkImported) return <span title="No UDK/Fantasy Footballers file has been imported for this profile yet -- use Cheat Sheets' Import UDK CSV.">Not loaded</span>;
         const entry = ballersById.get(String(row.playerId));
         const fields = [
-          entry?.udkPositionRank ? `#${entry.udkPositionRank}` : null,
-          entry?.udkTier ? `Tier ${entry.udkTier}` : null,
+          entry?.rank != null ? `#${entry.rank}` : null,
+          entry?.tier != null ? `Tier ${entry.tier}` : null,
         ].filter((value): value is string => value != null);
-        if (!entry || fields.length === 0) return <span title="This player has no Ballers/Fantasy Footballers fields in the imported file.">No Ballers data</span>;
+        if (!entry || fields.length === 0) return <span title="This player has no Ballers/Fantasy Footballers row in the imported file (only positions actually present in the file are covered).">No Ballers data</span>;
+        // Every real field the UDK CSV schema carries and NWR actually
+        // imports (Name/Position/Team already identify the row; Markers
+        // is deliberately discarded UI-action text, not player state --
+        // see parse_udk_position_csv's own docstring).
         const detail = [
-          entry.udkAdp ? `ADP ${entry.udkAdp}` : null,
-          entry.udkRisk ? `Risk ${entry.udkRisk}` : null,
-          entry.udkUpside ? `Upside ${entry.udkUpside}` : null,
-          entry.udkProjectedPoints ? `Proj ${entry.udkProjectedPoints}` : null,
+          entry.adpRaw ? `ADP ${entry.adpRaw}` : null,
+          entry.risk != null ? `Risk ${formatNumber(entry.risk, 1)}` : null,
+          entry.upside != null ? `Upside ${formatNumber(entry.upside, 1)}` : null,
+          entry.points != null ? `Proj ${formatNumber(entry.points, 1)}` : null,
+          entry.byeWeek ? `Bye ${entry.byeWeek}` : null,
+          entry.dynastyLocked ? "Dynasty: locked (UDK+ upsell)" : null,
+          entry.outlook ? `Outlook: ${entry.outlook}` : null,
         ].filter(Boolean).join(" · ");
         return <span title={detail || "Ballers/Fantasy Footballers data"}>{fields.join(" · ")}</span>;
       },

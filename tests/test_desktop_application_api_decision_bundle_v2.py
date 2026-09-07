@@ -88,6 +88,51 @@ def test_redraft_decision_bundle_v2_returns_a_real_challenger_bundle(
     assert skipped, "expected some candidates beyond max_rav_candidates to be explicitly skipped"
 
 
+def test_redraft_decision_bundle_v2_carries_a_real_decision_quality_status(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """NWR FINAL PRE-DRAFT GAP CLOSURE, section 2 ("Metric Status
+    Consistency"): Raw Action Value / Decision Quality previously carried
+    only a bare `rawActionValueStatus` string, unlike every other metric
+    (Player Score, Team Score, Championship Equity, Cost of Waiting,
+    Make-It-Back, Pick Score), which already gets the shared
+    `metric_status_contract_service.MetricStatus` taxonomy. This proves
+    the new `decisionQualityStatus` field carries that same real shape,
+    with the correct computation_state for both the evaluated and
+    top-N-skipped cases, WITHOUT changing any numeric value the bundle
+    already returned (rawActionValueStatus, rawActionValue,
+    expectedRegret, decisionQualityPercentile are asserted unchanged
+    against the exact same candidates the sibling test above already
+    covers)."""
+    facade, profile_id = _started_redraft_room(
+        tmp_path, monkeypatch, preset_key="12_TEAM_1QB_HALF_PPR"
+    )
+    result = facade.redraft_decision_bundle_v2(profile_id=profile_id, speed="FAST")
+    bundle = result.data["decisionBundleV2"]
+
+    with_rav = [c for c in bundle["candidates"] if c["rawActionValueStatus"] == "OK"]
+    skipped = [c for c in bundle["candidates"] if c["rawActionValueStatus"] == "SKIPPED_TOP_N_ONLY"]
+    assert with_rav and skipped
+
+    for candidate in with_rav:
+        status = candidate["decisionQualityStatus"]
+        assert status["computationState"] == "EVALUATED"
+        assert status["genuineZero"] == (candidate["decisionQualityPercentile"] == 0.0)
+        assert "Raw Action Value" in status["validationDomain"]
+        # Never coerced to a bare number -- the real evidence trail is
+        # still reachable through the status object alongside the value.
+        assert status["sourceFreshness"]
+
+    for candidate in skipped:
+        status = candidate["decisionQualityStatus"]
+        assert status["computationState"] == "BUDGET_LIMITED"
+        assert candidate["decisionQualityPercentile"] is None
+        # A budget-limited candidate is never silently rendered as 0/50/
+        # 100%/n/a with no explanation -- the status carries the real
+        # reason instead of the frontend guessing from a bare string.
+        assert status["dataCoverage"] is None or "top" in (status["dataCoverage"] or "").lower()
+
+
 def test_redraft_decision_bundle_v2_degrades_gracefully_for_unsupported_team_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

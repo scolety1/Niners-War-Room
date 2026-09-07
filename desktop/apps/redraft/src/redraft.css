@@ -169,6 +169,12 @@
 .adp-details dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
 .adp-details dd { font-size: 11px; line-height: 1.35; margin: 5px 0 0; }
 .profile-edit-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+/* NWR FINAL PRE-DRAFT GAP CLOSURE: the Practical Mode toggle is a real
+   checkbox-plus-explanation, not a numeric field -- spans the full grid
+   row and lays out horizontally instead of `.form-field`'s default
+   stacked label-above-input grid. */
+.profile-edit-grid .form-field--checkbox { align-items: center; display: flex; gap: 8px; grid-column: 1 / -1; }
+.profile-edit-grid .form-field--checkbox span { color: var(--text-soft, var(--text)); font-size: 11px; font-weight: 500; letter-spacing: normal; text-transform: none; }
 .profile-edit-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .roster-slots { display: flex; flex-wrap: wrap; gap: 7px; }
 .roster-slots span { align-items: center; background: rgba(255, 255, 255, .025); border: 1px solid rgba(255, 255, 255, .065); border-radius: 8px; color: var(--muted); display: flex; font-size: 7px; gap: 5px; padding: 7px 9px; }

@@ -570,6 +570,15 @@ export interface RedraftProfileUpdateInput {
   >;
   scoring: Pick<ScoringSettings, "reception" | "passingTd" | "interception" | "tePremium">;
   draft: Pick<DraftContext, "rounds" | "draftSlot" | "replacementMethod">;
+  // NWR FINAL PRE-DRAFT GAP CLOSURE: optional and omittable -- omitting
+  // preserves the profile's existing value (the real backend semantics,
+  // unchanged). When set, enables/disables Practical Mode, which is what
+  // ranking generation needs to stop expecting ranked K/DST rows (they
+  // have none by design) and treat K/DST as manual-only. Previously the
+  // ONLY caller that could ever set this was the Sleeper-import path --
+  // a manually-configured league with real K/DST roster slots (e.g. an
+  // ESPN league) had no owner-facing way to enable it at all.
+  practicalMode?: boolean;
 }
 
 export interface RedraftRanking {

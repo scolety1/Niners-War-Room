@@ -519,13 +519,26 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             body = self._json_body()
             self._reject_unknown_fields(
                 body,
-                {"leagueName", "teamCount", "roster", "scoring", "draft"},
+                {"leagueName", "teamCount", "roster", "scoring", "draft", "practicalMode"},
             )
             league_name = body.get("leagueName")
             team_count = body.get("teamCount")
             roster = body.get("roster")
             scoring = body.get("scoring")
             draft = body.get("draft")
+            # NWR FINAL PRE-DRAFT GAP CLOSURE: the facade's own
+            # `practical_mode` parameter already existed (fixed for the
+            # Sleeper-import-only gap in an earlier pass), but no HTTP
+            # route ever accepted it, so a manually-configured league
+            # (e.g. an ESPN league with real K/DST roster slots -- exactly
+            # tonight's real shape) had no way to enable it and Practical
+            # Mode-gated ranking generation failed opaquely. Optional and
+            # omittable: omitting the field preserves the profile's
+            # existing value, unchanged from every prior caller's
+            # behavior.
+            practical_mode = body.get("practicalMode")
+            if practical_mode is not None and not isinstance(practical_mode, bool):
+                raise self._invalid_body("practicalMode must be a boolean or omitted.")
             if not isinstance(league_name, str):
                 raise self._invalid_body("leagueName must be a string.")
             if type(team_count) is not int:
@@ -564,6 +577,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 roster=roster,
                 scoring=scoring,
                 draft=draft,
+                practical_mode=practical_mode,
             )
             return self.server.facade.redraft_bootstrap()
         start_match = _REDRAFT_DRAFT_START.fullmatch(path)

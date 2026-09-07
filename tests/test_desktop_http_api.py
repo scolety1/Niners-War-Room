@@ -891,6 +891,41 @@ def test_redraft_profile_duplicate_and_edit_routes_are_strict() -> None:
     assert unknown[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
     assert invalid_nested[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
     assert sum(call[0] == "edit" for call in facade.calls) == 1
+    # NWR FINAL PRE-DRAFT GAP CLOSURE: `edit` (without practicalMode)
+    # forwards `practical_mode=None` (preserve the profile's existing
+    # value) -- confirms this pass's real gap (a K/DST-rostered league
+    # imported/edited outside Sleeper had no way to enable Practical
+    # Mode at all) is genuinely closed, not merely accepted-and-ignored.
+    edit_call = next(call for call in facade.calls if call[0] == "edit")
+    assert edit_call[1]["practical_mode"] is None
+
+
+def test_redraft_profile_edit_route_accepts_practical_mode() -> None:
+    facade = FakeFacade("redraft")
+    edit = {
+        "leagueName": "K/DST League",
+        "teamCount": 8,
+        "roster": {
+            "qb": 1, "rb": 2, "wr": 2, "te": 1, "flex": 1, "superflex": 0,
+            "k": 1, "dst": 1, "benchSize": 7,
+        },
+        "scoring": {"reception": 1.0, "passingTd": 4.0, "interception": -2.0, "tePremium": 0.0},
+        "draft": {"rounds": 16, "draftSlot": 5, "replacementMethod": "expected_available"},
+    }
+    with running_server(facade) as server:
+        enabled = request(
+            server, "POST", "/api/v1/redraft/profiles/profile-1/edit",
+            body={**edit, "practicalMode": True}, headers=authenticated_headers(),
+        )
+        invalid = request(
+            server, "POST", "/api/v1/redraft/profiles/profile-1/edit",
+            body={**edit, "practicalMode": "yes"}, headers=authenticated_headers(),
+        )
+    assert enabled[0] == 200
+    edit_calls = [call for call in facade.calls if call[0] == "edit"]
+    assert edit_calls[-1][1]["practical_mode"] is True
+    assert invalid[0] == 400
+    assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
 
 
 def test_internal_errors_are_sanitized() -> None:

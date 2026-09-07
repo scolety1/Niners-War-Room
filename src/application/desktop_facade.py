@@ -72,6 +72,7 @@ from src.services.decision_bundle_live_service import (
 )
 from src.services.decision_bundle_live_service_v2 import build_live_decision_bundle_v2
 from src.services.point_in_time_feature_store_service import provenance_hash
+from src.services.metric_status_contract_service import raw_action_value_status
 from src.services.score_provenance_service import build_score_provenance
 from src.services.shadow_numeric_authorities_service import simulate_comparable_leagues
 from src.services.nwr_pure_experiment_service import (
@@ -4261,6 +4262,25 @@ class DesktopBackendFacade:
         }
 
 
+def _metric_status_payload(status: Any) -> dict[str, Any]:
+    """Shared camelCase JSON shape for any `metric_status_contract_service.
+    MetricStatus` -- previously duplicated as a nested closure inside
+    `_decision_bundle_payload` alone; hoisted to module scope (NWR FINAL
+    PRE-DRAFT GAP CLOSURE, section 2) so `_decision_bundle_v2_payload` can
+    reuse the exact same real conversion for Raw Action Value / Decision
+    Quality's status, instead of leaving RAV/DQ as the one metric with no
+    shared-taxonomy disclosure. Pure presentation -- never touches a
+    metric's own computed value."""
+    return {
+        "computationState": status.computation_state,
+        "genuineZero": status.genuine_zero,
+        "tiedNoSpread": status.tied_no_spread,
+        "validationDomain": status.validation_domain,
+        "sourceFreshness": status.source_freshness,
+        "dataCoverage": status.data_coverage,
+    }
+
+
 def _decision_bundle_payload(
     bundle: Any, ranking: Any, manual_assets: Sequence[Mapping[str, Any]] = ()
 ) -> dict[str, Any]:
@@ -4280,16 +4300,7 @@ def _decision_bundle_payload(
     manual_by_id = {
         str(asset.get("player_id") or ""): asset for asset in manual_assets
     }
-
-    def metric_status_payload(status: Any) -> dict[str, Any]:
-        return {
-            "computationState": status.computation_state,
-            "genuineZero": status.genuine_zero,
-            "tiedNoSpread": status.tied_no_spread,
-            "validationDomain": status.validation_domain,
-            "sourceFreshness": status.source_freshness,
-            "dataCoverage": status.data_coverage,
-        }
+    metric_status_payload = _metric_status_payload
 
     def candidate_payload(candidate: Any) -> dict[str, Any]:
         row = rows_by_id.get(candidate.player_id)
@@ -4372,9 +4383,27 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
     additive `teamScoreV2`/`championshipEquityV2` fields per candidate --
     never replaces or reorders anything V1 already returns."""
     v1_by_id = {c.player_id: c for c in bundle_v2.v1_bundle.candidates}
+    # NWR FINAL PRE-DRAFT GAP CLOSURE (section 2, "Metric Status
+    # Consistency"): Raw Action Value / expected regret / Decision
+    # Quality were the one metric family with no shared-taxonomy status --
+    # only a bare "OK"/"UNAVAILABLE: <reason>"/"SKIPPED_TOP_N_ONLY" string,
+    # handled by ad hoc frontend string-matching instead of the same
+    # EVALUATED/BUDGET_LIMITED/UNSUPPORTED/... vocabulary every other
+    # metric already gets. `raw_action_value_status()` already existed in
+    # metric_status_contract_service.py (built for exactly this mapping)
+    # but was never actually called anywhere in the live pipeline -- real,
+    # additive wiring only: reads the SAME `raw_action_value_status`/
+    # `decision_quality_percentile` fields this payload already returns,
+    # computes zero new values, and changes no candidate ordering.
+    source_as_of = ranking.rows[0].source_as_of if ranking.rows else ""
 
     def candidate_v2_payload(candidate: Any) -> dict[str, Any]:
         v1_candidate = v1_by_id.get(candidate.player_id)
+        dq_status = raw_action_value_status(
+            candidate.raw_action_value_status,
+            candidate.decision_quality_percentile,
+            source_as_of=source_as_of,
+        )
         return {
             "playerId": candidate.player_id,
             "v2Status": candidate.v2_status,
@@ -4385,6 +4414,7 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
             "expectedRegret": candidate.expected_regret,
             "decisionQualityPercentile": candidate.decision_quality_percentile,
             "rawActionValueStatus": candidate.raw_action_value_status,
+            "decisionQualityStatus": _metric_status_payload(dq_status),
         }
 
     return {

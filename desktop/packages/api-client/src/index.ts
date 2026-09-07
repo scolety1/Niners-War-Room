@@ -8,6 +8,7 @@ import {
   type DynastyComparison,
   type DynastyWorkspace,
   type KdstStreamerResult,
+  type MetricStatus,
   type OwnerDecisionInput,
   type PersonalBoardInput,
   type PlayerDetail,
@@ -65,6 +66,15 @@ export interface RedraftDecisionBundleV2CandidateResponse {
   expectedRegret: number | null;
   decisionQualityPercentile: number | null;
   rawActionValueStatus: string;
+  // NWR FINAL PRE-DRAFT GAP CLOSURE (section 2, "Metric Status
+  // Consistency"): the same shared EVALUATED/BUDGET_LIMITED/UNSUPPORTED/...
+  // taxonomy every other metric (Player Score, Team Score, Championship
+  // Equity, Cost of Waiting, Make-It-Back, Pick Score) already carries --
+  // previously RAV/DQ had only the bare `rawActionValueStatus` string
+  // above, handled by ad hoc frontend string-matching. Additive only:
+  // `rawActionValueStatus`/`decisionQualityPercentile` above are
+  // unchanged.
+  decisionQualityStatus: MetricStatus;
 }
 
 export interface RedraftDecisionBundleV2Response {
