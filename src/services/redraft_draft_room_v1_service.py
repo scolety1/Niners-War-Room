@@ -2397,6 +2397,25 @@ def _asset_pool(
 
 
 def _forced_position(profile: LeagueProfile, roster: Counter[str], round_number: int) -> str | None:
+    # NWR OVERNIGHT (K/DST completion, Section 3): a general feasibility
+    # check, not a second hardcoded round number -- when the picks actually
+    # remaining in this draft for this team are down to (or below) the
+    # count of still-required-but-unfilled positions, force one now,
+    # regardless of which position or how many rounds that is from the
+    # end. Reuses roster/profile.roster the exact same way every other
+    # branch here already does; derives urgency from the real remaining
+    # choices, not a fixed "round 15" assumption that a shorter or
+    # differently-sized bench could invalidate.
+    picks_remaining = max(0, profile.draft.rounds - round_number + 1)
+    still_required = [
+        position
+        for position in ("QB", "RB", "WR", "TE", "K", "DST")
+        if roster[position]
+        < int(getattr(profile.roster, position.lower(), 0))
+        + (profile.roster.superflex if position == "QB" else 0)
+    ]
+    if still_required and picks_remaining <= len(still_required):
+        return still_required[0]
     if round_number >= max(1, profile.draft.rounds - 1):
         if roster["K"] < profile.roster.k:
             return "K"
@@ -2476,7 +2495,14 @@ def _roster_need_adjustment(
     position: str,
 ) -> float:
     required = int(getattr(profile.roster, position.lower(), 0))
-    if position in {"QB", "RB", "WR", "TE"} and roster[position] < required:
+    # NWR OVERNIGHT (K/DST completion): K/DST get the exact same real
+    # under-required urgency signal QB/RB/WR/TE already had -- previously
+    # excluded from this branch, K/DST could never outrank a low-value
+    # skill-position depth pick even with zero rostered and one required,
+    # the precisely-traced root cause of K/DST finishing 0/1 in a real
+    # top-suggestion mock. K/DST have no FLEX-slot slack, so this is their
+    # only need signal (no second branch below applies to them).
+    if position in {"QB", "RB", "WR", "TE", "K", "DST"} and roster[position] < required:
         return -10.0 - round_number
     if position in {"RB", "WR", "TE"}:
         flex_have = sum(roster[value] for value in ("RB", "WR", "TE"))

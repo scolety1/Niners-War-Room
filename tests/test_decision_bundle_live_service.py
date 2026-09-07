@@ -87,8 +87,28 @@ def test_build_live_decision_bundle_returns_a_real_bundle_for_a_fresh_draft() ->
         trials=2, seasons=20, base_seed=3,
     )
     assert not isinstance(result, LiveDecisionBundleUnavailable)
-    assert len(result.candidates) == 5
-    assert all(c.player_score is not None for c in result.candidates)
+    # NWR OVERNIGHT (K/DST completion): on a fresh (empty) roster, K and
+    # DST are both genuinely needed (0 rostered, 1 required each) --
+    # `max_candidates` bounds the ranked skill-position shortlist, but a
+    # real, honestly-labeled K/DST candidate is ADDED on top rather than
+    # silently excluded, so the real candidate count can legitimately
+    # exceed max_candidates when a required manual-only position is due.
+    assert len(result.candidates) >= 5
+    manual_positions = {
+        str(c.player_id).split(":")[1]
+        for c in result.candidates
+        if c.player_id.startswith("manual:")
+    }
+    assert "K" in manual_positions
+    assert "DST" in manual_positions
+    ranked_candidates = [c for c in result.candidates if not c.player_id.startswith("manual:")]
+    assert len(ranked_candidates) == 5
+    assert all(c.player_score is not None for c in ranked_candidates)
+    manual_candidates = [c for c in result.candidates if c.player_id.startswith("manual:")]
+    # Never a fabricated K/DST score -- the honest absence of a Player
+    # Score is preserved exactly as it already was for any other
+    # unmodeled manual asset.
+    assert all(c.player_score is None for c in manual_candidates)
 
 
 def test_build_live_decision_bundle_respects_already_drafted_players() -> None:
@@ -400,6 +420,30 @@ def test_position_filter_returns_real_eligible_players_of_that_position_only() -
     assert not isinstance(result, LiveDecisionBundleUnavailable)
     assert len(result.candidates) == 5
     assert all(c.player_id.startswith("WR-") for c in result.candidates)
+
+
+def test_position_filter_of_k_returns_real_manual_candidates_not_empty() -> None:
+    """NWR OVERNIGHT (K/DST completion): before this fix, an explicit K or
+    DST filter always reported "no candidates" -- `legal_rows` is built
+    from `ranking.rows`, which structurally never contains K/DST (they
+    exist only in `manual_assets`, NWR has no model for them). The filter
+    must draw from the real manual pool instead."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=41)
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=41, position_filter="K",
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable)
+    assert len(result.candidates) > 0
+    assert all(c.player_id.startswith("manual:K:") for c in result.candidates)
+    # Never a fabricated NWR score for an unmodeled position.
+    assert all(c.player_score is None for c in result.candidates)
 
 
 def test_position_filter_of_all_behaves_like_no_filter() -> None:

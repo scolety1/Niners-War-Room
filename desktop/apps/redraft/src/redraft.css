@@ -373,6 +373,12 @@
 .roster-strip { display: flex; flex-wrap: wrap; gap: 6px; }
 .roster-slot { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 9px; white-space: nowrap; }
 .roster-slot--full { border-color: rgba(211,169,84,.4); color: var(--gold-bright); }
+/* NWR OVERNIGHT: over the configured position/bench capacity is a real
+   roster validation issue (owner-reported BN 6/6-vs-BENCH(9) mismatch),
+   never silently clamped away -- a distinct, more urgent style than
+   --full so the owner can tell "exactly at capacity" apart from "over
+   capacity, something needs fixing." */
+.roster-slot--overflow { border-color: rgba(224,110,90,.55); color: #e06e5a; }
 .score-headline { color: var(--gold-bright); font-size: 28px; font-weight: 600; margin: 6px 0 0; }
 
 .rapid-capture { display: flex; flex-direction: column; gap: 8px; }

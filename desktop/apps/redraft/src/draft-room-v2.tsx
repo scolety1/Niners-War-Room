@@ -420,7 +420,15 @@ export function buildRosterStripFromRoster(
   const superflexPool = Math.max(0, (counts.QB ?? 0) - qb) + Math.max(0, flexPool - flex);
   const superflex = req.superflex > 0 ? Math.min(superflexPool, req.superflex) : 0;
   const starterSlotsFilled = qb + rb + wr + te + flex + superflex + k + dst;
-  const bench = Math.min(Math.max(0, roster.length - starterSlotsFilled), req.benchSize);
+  // NWR OVERNIGHT (owner-reported roster-count mismatch): this used to
+  // clamp `have` to `req.benchSize`, which meant the header pill could
+  // read "BN 6/6" while the actual bench list below it -- built without
+  // this clamp -- genuinely held 9 players. "Never hide bench overflow
+  // with min(actual, capacity); show the actual count." -- the real,
+  // unclamped count is what both this pill and the roster-section header
+  // must agree on; `have > need` is the real overflow signal the UI now
+  // renders instead of silently disappearing.
+  const bench = Math.max(0, roster.length - starterSlotsFilled);
   const slots: RosterStripSlot[] = [
     { label: "QB", have: qb, need: req.qb }, { label: "RB", have: rb, need: req.rb },
     { label: "WR", have: wr, need: req.wr }, { label: "TE", have: te, need: req.te },
@@ -2065,11 +2073,19 @@ function RightRosterPane({
       </div>
       {strip.length > 0 ? (
         <div className="roster-strip" title="Real configured starter slots, FLEX/Superflex, K/DST and bench for this team">
-          {strip.map((slot) => (
-            <span key={slot.label} className={`roster-slot ${slot.have >= slot.need && slot.need > 0 ? "roster-slot--full" : ""}`}>
-              {slot.label} {slot.have}/{slot.need}
-            </span>
-          ))}
+          {strip.map((slot) => {
+            const overflow = slot.need > 0 && slot.have > slot.need;
+            const full = slot.need > 0 && slot.have === slot.need;
+            return (
+              <span
+                key={slot.label}
+                className={`roster-slot ${full ? "roster-slot--full" : ""} ${overflow ? "roster-slot--overflow" : ""}`}
+                title={overflow ? `Over the configured ${slot.label} capacity of ${slot.need} -- a real roster validation issue, not a display error.` : undefined}
+              >
+                {slot.label} {slot.have}/{slot.need}
+              </span>
+            );
+          })}
         </div>
       ) : null}
       {assignment ? (

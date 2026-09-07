@@ -1125,3 +1125,40 @@ def test_roster_candidate_allowed_raises_the_real_qb_cap_for_superflex() -> None
     # Superflex league: legal up to 3 (QB1 + Superflex + 1 backup).
     assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 2}), asset) is True
     assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 3}), asset) is False
+
+
+def test_roster_need_adjustment_now_signals_real_need_for_under_filled_kdst() -> None:
+    """NWR OVERNIGHT (K/DST completion): K/DST previously fell entirely
+    outside the strong under-required need branch (`{"QB","RB","WR","TE"}`
+    only), so a K/DST that was 0/1 rostered never got the same -10.0-
+    round_number urgency signal a 0/1 QB/RB/WR/TE gets -- the precisely
+    traced reason K/DST could finish a real mock at 0/1 despite being
+    configured-required."""
+    ranking = _ranking()
+    profile = ranking.profile
+    assert _roster_need_adjustment(profile, Counter(), round_number=10, position="K") == -20.0
+    assert _roster_need_adjustment(profile, Counter(), round_number=10, position="DST") == -20.0
+    # Already filled -- no lingering need signal.
+    assert _roster_need_adjustment(profile, Counter({"K": 1}), round_number=10, position="K") != -20.0
+
+
+def test_forced_position_is_feasibility_driven_not_a_fixed_round_number() -> None:
+    """NWR OVERNIGHT (Section 3, K/DST completion): a real top-suggestion
+    mock finished with K 0/1, DST 0/1 in a 16-round draft whose starters +
+    bench totaled only 15 -- one round short of what the old fixed
+    "rounds - 1" K/DST deadline assumed. The general feasibility check
+    (remaining picks <= remaining required-but-unfilled positions) must
+    force a still-needed position as soon as picks genuinely run out,
+    regardless of round count, not only in the second-to-last round."""
+    ranking = _ranking()
+    profile = ranking.profile  # rounds=15, 9 starters + 6 bench = 15 (consistent)
+    # Round 15 of 15: exactly one pick left, K and DST both still needed
+    # (2 unfilled required positions) -- must force one of them now, well
+    # before the old fixed "rounds - 1" == round 14 rule alone would have
+    # (it would only have caught K/DST at round 14, one round earlier than
+    # this test's own last-pick feasibility edge).
+    roster_starters_full_no_kdst = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "FLEX": 0})
+    forced = _forced_position(profile, roster_starters_full_no_kdst, round_number=15)
+    assert forced in ("K", "DST")
+    # Plenty of picks remaining relative to what's still required -- not forced.
+    assert _forced_position(profile, Counter(), round_number=1) is None

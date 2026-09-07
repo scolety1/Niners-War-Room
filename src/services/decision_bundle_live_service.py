@@ -141,6 +141,53 @@ def diversify_candidate_shortlist(
     return selected
 
 
+# NWR OVERNIGHT (K/DST completion): DIVERSITY_POSITIONS/legal_rows are built
+# purely from `ranking.rows`, which never contains K/DST (NWR has no model
+# for them -- they exist only in `manual_assets`, see _asset_pool). That
+# meant K/DST could NEVER appear as a Suggestions candidate at any point in
+# a real draft, no matter how late or how urgently required -- the precisely
+# traced root cause of a real top-suggestion mock finishing K 0/1, DST 0/1.
+# This is the honestly-labeled market-fallback candidate source the owner's
+# directive asks for: manual K/DST assets, ordered by real market ADP where
+# available (never a fabricated NWR score), surfaced ONLY when
+# `_roster_need_adjustment` reports genuine remaining need for that
+# position -- never unconditionally, never crowding out a skill-position
+# pick that isn't actually needed yet.
+MANUAL_FALLBACK_POSITIONS = ("K", "DST")
+
+
+def _needed_manual_candidates(
+    manual_assets: Sequence[Mapping[str, Any]],
+    *,
+    profile: LeagueProfile,
+    roster: Counter[str],
+    round_number: int,
+    drafted_ids: set[str],
+    adp: AdpSnapshot,
+    positions: Sequence[str] = MANUAL_FALLBACK_POSITIONS,
+    per_position: int = 2,
+) -> list[dict[str, Any]]:
+    adp_by_id = adp.by_player_id if adp.available else {}
+    out: list[dict[str, Any]] = []
+    for position in positions:
+        if _roster_need_adjustment(profile, roster, round_number, position) >= 0:
+            continue  # not genuinely needed right now -- never force it into view
+        candidates = [
+            asset for asset in manual_assets
+            if str(asset.get("position") or "").upper() == position
+            and str(asset.get("player_id") or "") not in drafted_ids
+        ]
+
+        def _order_key(asset: Mapping[str, Any]) -> tuple[float, str]:
+            entry = adp_by_id.get(str(asset.get("player_id") or ""))
+            expected_pick = entry.expected_pick if entry is not None else float("inf")
+            return (expected_pick, str(asset.get("player_name") or ""))
+
+        candidates.sort(key=_order_key)
+        out.extend(candidates[:per_position])
+    return out
+
+
 class LiveDecisionBundleError(ValueError):
     pass
 
@@ -243,16 +290,38 @@ def build_live_decision_bundle(
             if normalized_filter == "FLEX":
                 eligible_positions = frozenset({"RB", "WR", "TE"})
                 position_rows = [row for row in legal_rows if row.position in eligible_positions]
+                candidate_ids = [row.player_id for row in position_rows[:max_candidates]]
             elif normalized_filter == "SFLX" and profile.roster.superflex > 0:
                 eligible_positions = frozenset({"QB", "RB", "WR", "TE"})
                 position_rows = [row for row in legal_rows if row.position in eligible_positions]
+                candidate_ids = [row.player_id for row in position_rows[:max_candidates]]
+            elif normalized_filter in MANUAL_FALLBACK_POSITIONS:
+                # NWR OVERNIGHT: K/DST are never in `ranking.rows`/`legal_rows`
+                # (unmodeled, manual-only) -- an explicit K or DST filter must
+                # draw from the real manual pool, ordered by market ADP, not
+                # from a ranked-row list that structurally can never contain
+                # them (the prior code path always returned "no candidates").
+                candidate_ids = [
+                    str(asset.get("player_id"))
+                    for asset in _needed_manual_candidates(
+                        manual_assets, profile=profile, roster=roster,
+                        round_number=(current_pick_number - 1) // max(1, profile.team_count) + 1,
+                        drafted_ids=drafted_ids, adp=adp,
+                        positions=(normalized_filter,), per_position=max_candidates,
+                    )
+                ] or [
+                    str(asset.get("player_id"))
+                    for asset in manual_assets
+                    if str(asset.get("position") or "").upper() == normalized_filter
+                    and str(asset.get("player_id") or "") not in drafted_ids
+                ][:max_candidates]
             else:
                 position_rows = [row for row in legal_rows if row.position == normalized_filter]
-            if not position_rows:
+                candidate_ids = [row.player_id for row in position_rows[:max_candidates]]
+            if not candidate_ids:
                 return LiveDecisionBundleUnavailable(
                     f"No roster-legal available {normalized_filter} exists at this pick."
                 )
-            candidate_ids = [row.player_id for row in position_rows[:max_candidates]]
             player_scores = {row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows}
             bundle = build_decision_bundle(
                 profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
@@ -282,6 +351,22 @@ def build_live_decision_bundle(
     )
     candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates, needed_positions)
     candidate_player_ids = [row.player_id for row in candidate_rows]
+    # NWR OVERNIGHT (K/DST completion): K/DST are structurally absent from
+    # `legal_rows`/`diversify_candidate_shortlist` above (unmodeled, manual
+    # pool only) -- append them here, honestly-labeled-market-ordered, ONLY
+    # when `_roster_need_adjustment` reports genuine remaining need. This is
+    # additive to the existing shortlist (never removes a skill-position
+    # candidate to make room), so a required K/DST becomes a real,
+    # selectable Suggestions row exactly when it is genuinely needed,
+    # without ever crowding out an unrelated pick before that.
+    needed_manual = _needed_manual_candidates(
+        manual_assets, profile=profile, roster=roster, round_number=round_number,
+        drafted_ids=drafted_ids, adp=adp,
+    )
+    for asset in needed_manual:
+        player_id = str(asset.get("player_id"))
+        if player_id not in candidate_player_ids:
+            candidate_player_ids.append(player_id)
     player_scores = {
         row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows
     }

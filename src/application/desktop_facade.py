@@ -14,6 +14,10 @@ from uuid import uuid4
 
 import pandas as pd
 
+from src.services.current_player_status_overrides_service import (
+    apply_status_overrides_to_ranking,
+    load_status_overrides,
+)
 from src.services.draft_day_app_v1_service import (
     DYNASTY_BOARD_FILE_NAME,
     EXPECTED_DYNASTY_RANKINGS_HASH,
@@ -1684,6 +1688,9 @@ class DesktopBackendFacade:
                     require_manifest=True,
                 )
                 ranking = generate_rankings(selected, snapshot)
+                ranking = apply_status_overrides_to_ranking(
+                    ranking, load_status_overrides(self.repo_root)
+                )
             except (OSError, RedraftPersistenceError, RedraftValidationError):
                 snapshot = None
                 ranking = None
@@ -1830,6 +1837,40 @@ class DesktopBackendFacade:
                             "NWR models the major QB/RB/WR/TE scoring rules for Fantasy "
                             "Gamers. Five uncommon scoring events are not included. Kicker "
                             "and DST are manual/unmodeled."
+                        ),
+                    }
+                )
+            # NWR OVERNIGHT (roster-completion correctness, Section 3): a
+            # real top-suggestion mock finished with the bench header
+            # showing "6/6" but a true bench of 9 -- traced to this exact
+            # kind of mismatch (this profile's own starters + bench_size
+            # do not equal its configured draft rounds, so the draft asks
+            # for more picks than the roster has real slots for). This is
+            # disclosed here, non-blocking (an already-running/owner-active
+            # profile is never silently rejected or auto-corrected), while
+            # the actual bench count display itself is now never clamped
+            # to hide the resulting overflow.
+            starter_slots = (
+                selected.roster.qb + selected.roster.rb + selected.roster.wr
+                + selected.roster.te + selected.roster.flex + selected.roster.superflex
+                + selected.roster.k + selected.roster.dst
+            )
+            total_capacity = starter_slots + selected.roster.bench_size
+            if selected.draft.rounds != total_capacity:
+                notices.append(
+                    {
+                        "tone": "review",
+                        "title": "Draft rounds do not match roster capacity",
+                        "message": (
+                            f"This profile is configured for {selected.draft.rounds} rounds "
+                            f"but {starter_slots} starters + {selected.roster.bench_size} bench "
+                            f"= {total_capacity} real roster slots. "
+                            + (
+                                "A completed draft will roster more players than fit -- the real "
+                                "count is shown, never clamped to look correct."
+                                if selected.draft.rounds > total_capacity
+                                else "Some rounds will draft players with no starter/bench slot to fill."
+                            )
                         ),
                     }
                 )
@@ -3495,6 +3536,9 @@ class DesktopBackendFacade:
                 require_manifest=True,
             )
             ranking = generate_rankings(profile, snapshot)
+            ranking = apply_status_overrides_to_ranking(
+                ranking, load_status_overrides(self.repo_root)
+            )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
                 "REDRAFT_RANKINGS_UNAVAILABLE",
