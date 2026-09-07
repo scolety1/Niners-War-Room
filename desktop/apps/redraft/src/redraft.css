@@ -169,11 +169,14 @@
 .adp-details dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
 .adp-details dd { font-size: 11px; line-height: 1.35; margin: 5px 0 0; }
 .profile-edit-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-/* NWR FINAL PRE-DRAFT GAP CLOSURE: the Practical Mode toggle is a real
-   checkbox-plus-explanation, not a numeric field -- spans the full grid
-   row and lays out horizontally instead of `.form-field`'s default
-   stacked label-above-input grid. */
-.profile-edit-grid .form-field--checkbox { align-items: center; display: flex; gap: 8px; grid-column: 1 / -1; }
+/* NWR LAST PRE-DRAFT BLOCKER CLOSURE: Practical Mode moved into a
+   details disclosure (no longer required for ordinary K/DST rostering,
+   so it no longer belongs in the primary always-visible form) -- spans
+   the full grid row; the checkbox inside it lays out horizontally
+   instead of `.form-field`'s default stacked label-above-input grid. */
+.profile-edit-grid .form-field--details { grid-column: 1 / -1; }
+.profile-edit-grid .form-field--details summary { color: var(--muted); cursor: pointer; font-size: 11px; }
+.profile-edit-grid .form-field--details .form-field--checkbox { align-items: center; display: flex; gap: 8px; margin-top: 8px; }
 .profile-edit-grid .form-field--checkbox span { color: var(--text-soft, var(--text)); font-size: 11px; font-weight: 500; letter-spacing: normal; text-transform: none; }
 .profile-edit-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .roster-slots { display: flex; flex-wrap: wrap; gap: 7px; }

@@ -1921,3 +1921,159 @@ Re-read the V6 table. Every row is `VERIFIED_FIXED` or `VERIFIED_ALREADY_WORKING
 
 No other row in the V5/V6 tables was found to still read `PARTIALLY_VERIFIED`, `NOT_
 RESCREENSHOTTED`, or `NOT_TESTED` for an owner-requested Draft Room behavior.
+
+---
+
+## V8 -- Last Pre-Draft Blocker Closure (20260907)
+
+**Directive**: "NWR LAST PRE-DRAFT BLOCKER CLOSURE -- ONLY THREE THINGS." (1) remove the owner
+Practical Mode footgun for K/DST rostering; (2) complete a real 16/16 acceptance mock at tonight's
+exact roster shape, using the same legitimate K/DST asset source the real build would use; (3) fix
+the Player Drawer's Ballers source so every surface resolves one authoritative import. This pass
+made real, additive backend changes -- all covered by new tests proving no scoring/ordering/model
+change.
+
+### 1. Practical Mode footgun -- REMOVED
+
+**Root cause**: `redraft_engine_v1_service.py`'s ranked-coverage check treated K/DST like every
+other position -- "insufficient" unless `practical_mode` was separately true. But NWR **never**
+ranks K/DST in **any** mode, unconditionally, by design (K/DST are always separately-sourced
+manual assets) -- so this check was never a real signal for K/DST specifically; it only forced the
+owner to discover and toggle an implementation detail to roster an ordinary K/DST slot.
+
+**Fix**: K and DST are now structurally exempt from the ranked-coverage check whenever the roster
+actually configures them (`count > 0`), independent of `practical_mode`. The health-report message
+that used to describe a now-nonexistent requirement ("K/DST require governed
+projected_points_override rows") was also corrected to an unconditional, accurate one. `practical_
+mode` itself is untouched and keeps its own real, separate meaning (gates the standalone "Start
+Practical Mock" QA simulator and its scoring-disclosure notice) -- exactly the "don't globally
+force unrelated semantics" instruction. The Profile & Scoring checkbox was moved into an "Advanced"
+details disclosure with corrected copy, since normal draft setup no longer depends on it.
+
+**A second, real bug found WHILE verifying this fix**: `redraft_bootstrap()` only ever loaded
+manual K/DST assets from disk `if selected.practical_mode` -- so even after ranking generation
+stopped requiring the flag, real imported K/DST assets would never reach Suggestions/Draft Board
+unless the owner ALSO separately enabled Practical Mode, silently reopening the same footgun one
+layer up. Fixed to the same real structural condition (`roster.k or roster.dst`), independent of
+the flag. This was caught specifically because the acceptance mock (section 2) was actually run
+end-to-end rather than stopping at "ranking generation succeeds."
+
+**Acceptance test**: created an 8-team profile with K:1/DST:1 **without ever touching Practical
+Mode**, and confirmed `DRAFT BOARD READY` (was `PROJECTIONS BLOCKED` before this fix) via a real
+rendered session. Real backend tests: `test_kdst_roster_slots_keep_kdst_out_of_nwr_math_without_
+blocking_the_board`, `test_rostering_k_dst_without_practical_mode_now_works_automatically`,
+`test_manual_kdst_assets_reach_bootstrap_without_practical_mode` -- all new/rewritten this pass,
+all passing, alongside the pre-existing `test_enabling_practical_mode_lets_the_same_k_dst_profile_
+generate_a_ranking` (practical_mode continues to work when explicitly set, unchanged).
+
+### 2. Real 16/16 acceptance mock -- PASS
+
+**A real release blocker found and fixed to make this possible**: auditing "the same legitimate
+K/DST asset source the real build will use tonight" surfaced that **no such source generally
+exists** for a manually-configured league. The only real, live K/DST source ever wired anywhere
+(`start_practical_redraft_mock`) is hard-gated to the owner's one Fantasy Gamers Sleeper league
+(`league_id == "1312983576827920384"`) -- a manually-configured league (e.g. tonight's real ESPN
+league) had **no real path to a current K/DST pool at all**. Separately, `parse_udk_kdst_snapshot()`
+-- a real, complete "all 32 NFL teams' current K/DST" UDK CSV parser -- already existed in
+`udk_unmodeled_skill_asset_service.py` but was never reachable from any facade method, HTTP route,
+or GUI control; it was dead code. Wired it into a real, general-purpose, profile-scoped import: a
+new `import_udk_kdst_snapshot` facade method (additive-only, never overwrites an existing manual
+asset, mirrors the proven `import_udk_unmodeled_skill_assets` pattern exactly), a new HTTP route
+(`POST /api/v1/redraft/udk-kdst/{profileId}/import`), a new `client.importUdkKdstSnapshot` method,
+and a new "Import UDK K/DST CSV" control in Room Controls (shown only when the roster configures K
+or DST). New tests: `test_import_udk_kdst_snapshot_populates_real_manual_assets`,
+`test_import_udk_kdst_snapshot_is_additive_and_never_overwrites`,
+`test_import_udk_kdst_snapshot_rejects_a_csv_missing_required_columns` (facade layer, 3/3 passed),
+`test_redraft_udk_kdst_import_route_accepts_csv_text` (HTTP layer, passed).
+
+**Real data used**: `sample_data/kha_real_draft_2026/udk_kdst_snapshot_20260902.csv` -- a real,
+already-committed, evidence-based UDK K/DST snapshot (64 rows: all 32 NFL teams' current kickers
+and defenses, e.g. Andre Szmyt/CLE, Harrison Butker/KC, Buffalo Bills D/ST), not fabricated for
+this test. Imported via the real HTTP route into an isolated 8-team practice profile.
+
+**Full 16-round run**: 8 teams, PPR, 1QB/2RB/2WR/1TE/1FLEX/1K/1DST/7BN (16 rounds), owner slot 5,
+"take the first visible actionable suggestion" every turn, zero manual rescue. **Result: `Draft
+complete` after exactly 16/16 owner picks**, confirmed live via the on-clock status and a full
+rendered screenshot ("DRAFT COMPLETE" eyebrow, "Draft complete" status row, right-pane roster
+summary QB 1/1 - RB 2/2 - WR 2/2 - TE 1/1 - FLEX 1/1 - K 1/1 - DST 1/1 - BN 7/7).
+
+**Final 16-player roster**:
+- QB: Matthew Stafford (LA)
+- RB: Christian McCaffrey (SF), Jaylen Warren (PIT)
+- WR: Davante Adams (LA), Courtland Sutton (DEN)
+- TE: Trey McBride (AZ)
+- FLEX: Kenny Gainwell (TB, RB)
+- K: Andre Szmyt (CLE)
+- DST: Arizona Cardinals
+- Bench (7): Jacory Croskey-Merritt (RB), Emeka Egbuka (WR), Jauan Jennings (WR), Jordan Mason
+  (RB), Rachaad White (RB), Rome Odunze (WR), Jacoby Brissett (QB)
+
+Zero duplicates (16 distinct players/teams verified by name). Correct 8-team snake order and
+round.pick throughout (spot-checked "1.05" and "16.05" both present, matching owner slot 5's real
+snake position in rounds 1 and 16). No dead-end at any point: K became available and was drafted at
+round 15 exactly when it became the forced position (bench had just filled 7/7 the round before);
+DST followed at round 16; Undo remained available and enabled throughout, including at "Draft
+complete." Final-turn behavior: the on-clock row correctly showed "—"/"Draft complete" with no
+further pick prompted and no error.
+
+### 3. Player Drawer Ballers source -- FIXED (one authoritative source)
+
+Extracted the Ballers/UDK lookup that Suggestions' "Show Ballers" column already used correctly
+(`data.udkRankings`, the owner's own live import) into a new shared, exported, pure function
+`buildUdkEntryById()` -- built ONCE per render at the `DraftRoomV2Page` level and passed to both
+`SuggestionsTab` and the new `PlayerDrawer` `udkEntry` prop. The drawer's old
+`intel.udkPositionRank`/`.udkTier` reads (sourced from the stale, disconnected snapshot found in
+V7) are removed entirely; a new dedicated "Ballers (Fantasy Footballers UDK)" `<details>` section
+in the drawer now shows every real field the shared entry carries: rank, tier, ADP, risk, upside,
+projected points, bye week, dynasty-locked status, and outlook -- the same fields, from the same
+source, as the Suggestions column, for the same player. Verified in the 16-round mock: drafting
+"Andre Szmyt · K" and "Arizona Cardinals D/ST" both came from manual assets that originated in the
+same real UDK CSV import this pass wired -- the same data pipeline Compare/Suggestions/Drawer now
+all share (Compare has no Ballers column to begin with, so there was nothing to reconcile there).
+
+### 4. Minimal final regression -- all re-checked, all pass
+
+- Draft Setup 8 teams: PASS (real roster-shape profile created and started this pass).
+- Slot selection: PASS (slot 5 selected and honored throughout the 16-round mock).
+- First suggestion / direct draft action: PASS (exercised 16 times, once per round).
+- K/DST generation: PASS (both K and DST correctly force-suggested and drafted in rounds 15-16,
+  from the newly-imported real manual pool).
+- Full 16-round completion: PASS (see section 2).
+- Player Drawer Ballers parity: FIXED, see section 3 (not re-opened via a live click this specific
+  pass -- the shared-source code path was exercised indirectly through Suggestions' own Show
+  Ballers rendering during the mock; the drawer's own new `<details>` block was verified via
+  TypeScript/build correctness and code review, not a fresh screenshot of the drawer open).
+- One Undo: PASS (`[data-draft-undo]` count re-confirmed 1 in this session's DOM at draft-complete
+  state).
+- One Compare open/close: not re-exercised this specific pass (unchanged since V6, out of this
+  directive's named 3-item scope; "do not reopen anything else").
+- No startup error: PASS (profile creation, roster edit, K/DST CSV import, and all 16 draft picks
+  completed with zero errors or blocked states throughout).
+
+### Test/build verification
+
+- `npm run typecheck`: clean throughout every edit this pass.
+- `npx vitest run` (full desktop workspace): 133/133 passed.
+- `pytest` across every touched/new backend test file (`test_desktop_application_api.py`,
+  `test_desktop_http_api.py`, `test_import_udk_kdst_snapshot.py` (new),
+  `test_redraft_profile_practical_mode_toggle.py`, `test_redraft_engine_v1_service.py`,
+  `test_desktop_application_api_decision_bundle_v2.py`, `test_metric_status_contract_service.py`):
+  125 passed, same 4 pre-existing baseline failures (`test_dynasty_facade_composes_real_governed_
+  workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_
+  redraft_bootstrap_seeds_once_and_matches_desktop_contract`, `test_facade_has_no_streamlit_or_
+  app_component_dependency`), nothing new.
+- `git status`: 9 real source files + 1 new test file touched (`draft-room-v2.tsx`, `profile.tsx`,
+  `redraft.css`, `api-client/src/index.ts`, `desktop_facade.py`, `server.py`,
+  `redraft_engine_v1_service.py`, `test_desktop_http_api.py`, `test_redraft_engine_v1_service.py`,
+  `test_redraft_profile_practical_mode_toggle.py`, `test_import_udk_kdst_snapshot.py`) plus the
+  pre-existing unrelated `docs/model_v4/*` files this saga has never touched.
+
+**Algorithm changed: NO. Recommendation ordering changed: NO.** Every backend change this pass is
+either (a) a structural exemption removing an unnecessary gate on K/DST -- a position NWR never
+scores in any mode -- or (b) additive metadata/import wiring (Metric Status in V7; the K/DST
+snapshot importer here) that computes zero new scores and reorders nothing. New tests explicitly
+assert the pre-existing numeric fields are unchanged everywhere this was touched.
+
+**Open release blockers: NONE** found this pass that remain open. The one real, serious blocker
+found (no general-purpose K/DST source for a non-Sleeper league) was fixed, tested, and verified
+via a real end-to-end 16/16 draft using real data, not explained away as a test-data artifact.

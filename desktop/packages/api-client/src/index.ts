@@ -392,6 +392,19 @@ export class NwrApiClient {
     });
   }
 
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): the real "all 32
+  // teams' current K/DST" UDK snapshot importer -- the only real, live
+  // K/DST source that ever existed was hard-gated to the owner's one
+  // Fantasy Gamers Sleeper league; a manually-configured league (e.g.
+  // tonight's real ESPN league) had no path to a current K/DST pool at
+  // all until this route was wired.
+  importUdkKdstSnapshot(profileId: string, csvText: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/udk-kdst/${encodeURIComponent(profileId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ csvText }),
+    });
+  }
+
   previewRedraftPasteAdp(profileId: string, pasteText: string, selectedSource: PasteAdpPreview["selectedSource"]): Promise<{ pastePreview: PasteAdpPreview }> {
     return this.request(`/api/v1/redraft/adp/${encodeURIComponent(profileId)}/paste/preview`, {
       method: "POST", body: JSON.stringify({ pasteText, selectedSource }),

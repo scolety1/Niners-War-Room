@@ -251,6 +251,10 @@ class FakeFacade:
         self.calls.append(("adp-import", value))
         return FacadePayload(data=value)
 
+    def import_udk_kdst_snapshot(self, **value: Any) -> FacadePayload:
+        self.calls.append(("udk-kdst-import", value))
+        return FacadePayload(data=value)
+
     def refresh_redraft_adp(self, **value: Any) -> FacadePayload:
         self.calls.append(("adp-refresh", value))
         return FacadePayload(data=value)
@@ -924,6 +928,32 @@ def test_redraft_profile_edit_route_accepts_practical_mode() -> None:
     assert enabled[0] == 200
     edit_calls = [call for call in facade.calls if call[0] == "edit"]
     assert edit_calls[-1][1]["practical_mode"] is True
+    assert invalid[0] == 400
+    assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
+
+
+def test_redraft_udk_kdst_import_route_accepts_csv_text() -> None:
+    """NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): the real "all 32
+    teams' current K/DST" UDK snapshot importer had no HTTP route at all
+    before this pass -- confirms the route now exists, forwards csvText
+    to the facade, and rejects a non-string/missing body the same way
+    every other CSV-import route already does."""
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        ok = request(
+            server, "POST", "/api/v1/redraft/udk-kdst/profile-1/import",
+            body={"csvText": "player_name_raw,position,team_name_raw,team_raw\n"},
+            headers=authenticated_headers(),
+        )
+        invalid = request(
+            server, "POST", "/api/v1/redraft/udk-kdst/profile-1/import",
+            body={"csvText": 123}, headers=authenticated_headers(),
+        )
+    assert ok[0] == 200
+    import_calls = [call for call in facade.calls if call[0] == "udk-kdst-import"]
+    assert len(import_calls) == 1
+    assert import_calls[0][1]["profile_id"] == "profile-1"
+    assert import_calls[0][1]["csv_text"].startswith("player_name_raw")
     assert invalid[0] == 400
     assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
 

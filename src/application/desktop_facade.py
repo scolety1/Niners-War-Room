@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import threading
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
@@ -214,8 +215,10 @@ from src.services.trade_brief_export_service import (
     build_trade_brief,
 )
 from src.services.udk_unmodeled_skill_asset_service import (
+    UdkKdstSnapshotError,
     UdkUnmodeledSkillAssetError,
     merge_manual_assets,
+    parse_udk_kdst_snapshot,
     parse_udk_unmatched_skill_assets,
     write_manual_assets_file,
 )
@@ -1712,12 +1715,23 @@ class DesktopBackendFacade:
                     "The active Redraft projection snapshot is unavailable; "
                     "rankings remain blocked."
                 )
-            if selected.practical_mode:
+            # NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 1, real gap found
+            # while completing this same closure pass): this used to load
+            # manual K/DST assets ONLY `if selected.practical_mode` --
+            # since K/DST rostering no longer REQUIRES practical_mode at
+            # all (see the real fix in redraft_engine_v1_service.py), a
+            # league with K/DST slots and real imported manual assets
+            # would never actually see them in Suggestions/Draft Board
+            # unless practical_mode was ALSO separately enabled, silently
+            # reopening the same footgun this pass exists to close. Tied
+            # to the real structural condition instead (the roster
+            # actually configures K or DST), independent of the flag.
+            if selected.roster.k or selected.roster.dst:
                 manual_assets = self._manual_assets_for_profile(selected.profile_id)
                 if not manual_assets:
                     warnings.append(
-                        "Practical Mode has no local K/DST manual assets. Start Practical "
-                        "Mock to refresh Sleeper identities."
+                        "This league rosters K and/or DST, but no manual K/DST assets are "
+                        "loaded yet. Import a UDK K/DST snapshot from Room Controls."
                     )
             if ranking is not None:
                 try:
@@ -2144,6 +2158,62 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "UDK_SKILL_ASSET_WRITE_FAILED",
                 "Could not save the unmodeled skill player assets.",
+                status=409,
+            ) from exc
+        return FacadePayload(
+            data={
+                "profileId": normalized,
+                "manualAssets": merged,
+                "addedCount": len(merged) - len(existing),
+            }
+        )
+
+    def import_udk_kdst_snapshot(self, *, profile_id: str, csv_text: str) -> FacadePayload:
+        """NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2, real release-
+        blocker found while building the exact 16-round acceptance mock):
+        `parse_udk_kdst_snapshot()` (all 32 real NFL teams' current K/DST,
+        an owner-authorized UDK CSV export -- see its own docstring) has
+        existed in this codebase but was never reachable from any facade
+        method, HTTP route, or GUI control. The ONLY real, live K/DST
+        source ever wired anywhere (`start_practical_redraft_mock`) is
+        hard-gated to the owner's one real Fantasy Gamers Sleeper league
+        -- a manually-configured league (e.g. tonight's real ESPN league)
+        had NO real path to a current K/DST pool at all. Wires this real,
+        already-existing, already-tested parser (unmodified -- it reads a
+        file path, so the browser-uploaded text is staged to a private
+        temp file first, exactly the same "additive, never overwrites an
+        existing manual asset" contract `import_udk_unmodeled_skill_assets`
+        already proved for skill positions) into a normal profile-scoped
+        import reachable from any profile/league. Never assigns an NWR
+        score to K/DST; positions stay EXTERNAL_UDK_UNMODELED_BY_NWR."""
+
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        try:
+            load_profile(self.redraft_root, normalized)
+        except RedraftPersistenceError as exc:
+            raise FacadeError("REDRAFT_PROFILE_NOT_FOUND", str(exc), status=404) from exc
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", encoding="utf-8", delete=False
+            ) as handle:
+                handle.write(csv_text)
+                staged_path = Path(handle.name)
+            try:
+                new_rows = parse_udk_kdst_snapshot(staged_path)
+            finally:
+                staged_path.unlink(missing_ok=True)
+        except UdkKdstSnapshotError as exc:
+            raise FacadeError("UDK_KDST_SNAPSHOT_INVALID", str(exc), status=422) from exc
+        existing = self._manual_assets_for_profile(normalized)
+        merged = merge_manual_assets(existing, new_rows)
+        manual_path = self.redraft_root / "manual_assets" / f"{normalized}.json"
+        try:
+            write_manual_assets_file(manual_path, profile_id=normalized, assets=merged)
+        except OSError as exc:
+            raise FacadeError(
+                "UDK_KDST_ASSET_WRITE_FAILED",
+                "Could not save the K/DST manual assets.",
                 status=409,
             ) from exc
         return FacadePayload(

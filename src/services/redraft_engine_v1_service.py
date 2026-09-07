@@ -1142,12 +1142,27 @@ def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> R
         for position in SUPPORTED_POSITIONS
     }
     required = _required_position_counts(profile)
+    # NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 1, "remove the owner
+    # Practical Mode footgun"): K and DST are NEVER present in
+    # `snapshot.players` -- NWR does not project them at all, by design,
+    # in every mode, unconditionally (they are always separately-sourced
+    # manual assets; see every "K/DST are manual and unmodeled" comment
+    # throughout this codebase). This ranked-coverage check was therefore
+    # never a real signal for K/DST specifically -- it always failed
+    # unless `practical_mode` separately opted the league out, forcing
+    # the owner to know about and toggle an implementation detail just to
+    # roster a real, ordinary K/DST slot. K/DST are now structurally
+    # exempt here whenever the profile actually configures them (`count
+    # > 0`, checked above), independent of `practical_mode` -- the flag
+    # keeps its own, separate, real meaning everywhere else it is read
+    # (the "PRACTICAL SCORING" disclosure notice, the manual-asset-
+    # refresh warning) and is untouched.
     insufficient = [
         f"{position} {counts[position]}/{count + 1}"
         for position, count in required.items()
         if count > 0
         and counts[position] < count + 1
-        and not (profile.practical_mode and position in {"K", "DST"})
+        and position not in {"K", "DST"}
     ]
     if insufficient:
         return RankingResult(
@@ -1529,11 +1544,13 @@ def build_health_report(
         messages.append("Governed granular current-season projections are missing or blocked.")
     replacement_valid = bool(ranking and ranking.replacement_levels and not ranking.errors)
     if profile and (profile.roster.k or profile.roster.dst):
-        messages.append(
-            "K/DST are manual and unmodeled in Practical Mode."
-            if profile.practical_mode
-            else "K/DST require governed projected_points_override rows."
-        )
+        # NWR LAST PRE-DRAFT BLOCKER CLOSURE: this used to branch on
+        # `practical_mode`, claiming K/DST "require governed
+        # projected_points_override rows" when it was off -- no longer
+        # true (K/DST are unconditionally manual/unmodeled now, see the
+        # real fix above), so the message is unconditional too rather
+        # than describing a requirement that no longer exists.
+        messages.append("K/DST are manual and unmodeled -- not part of NWR's own ranking.")
     ranked = len(ranking.rows) if ranking else 0
     blocked = len(snapshot.blocked_rows) if snapshot else 0
     if not profile_valid:

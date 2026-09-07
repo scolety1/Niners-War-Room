@@ -39,6 +39,10 @@ _REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
 _REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
 _REDRAFT_ADP_REFRESH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/refresh$")
 _REDRAFT_UDK_IMPORT = re.compile(r"^/api/v1/redraft/udk/([^/]+)/import$")
+# NWR LAST PRE-DRAFT BLOCKER CLOSURE: the real "all 32 teams' current
+# K/DST" UDK snapshot importer, separate from the skill-position rankings
+# route above -- previously wired nowhere.
+_REDRAFT_UDK_KDST_IMPORT = re.compile(r"^/api/v1/redraft/udk-kdst/([^/]+)/import$")
 _REDRAFT_PASTE_ADP_PREVIEW = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/preview$")
 _REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$")
 _REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
@@ -634,6 +638,17 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 raise self._invalid_body("csvText must be a string.")
             self.server.facade.import_udk_rankings(
                 profile_id=unquote(udk_import_match.group(1)),
+                csv_text=body["csvText"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        udk_kdst_import_match = _REDRAFT_UDK_KDST_IMPORT.fullmatch(path)
+        if method == "POST" and udk_kdst_import_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"csvText"})
+            if not isinstance(body.get("csvText"), str):
+                raise self._invalid_body("csvText must be a string.")
+            self.server.facade.import_udk_kdst_snapshot(
+                profile_id=unquote(udk_kdst_import_match.group(1)),
                 csv_text=body["csvText"],
             )
             return self.server.facade.redraft_bootstrap()

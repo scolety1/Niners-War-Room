@@ -457,18 +457,30 @@ def test_tiers_are_deep_bounded_and_position_specific(snapshot) -> None:
         assert all(row.position_tier_label.startswith(f"{position} Tier ") for row in rows)
 
 
-def test_practical_mode_keeps_kdst_out_of_nwr_math_without_blocking_supported_board(
+def test_kdst_roster_slots_keep_kdst_out_of_nwr_math_without_blocking_the_board(
     snapshot,
 ) -> None:
+    """NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 1, "remove the owner
+    Practical Mode footgun"): this used to require `practical_mode=True`
+    to avoid a blocked ranking -- a real, confirmed footgun, since K/DST
+    are never part of the ranked universe in ANY mode. K/DST roster slots
+    now work unconditionally; `practical_mode` itself is untouched and
+    keeps its own separate meaning elsewhere (gating the standalone
+    Practical Mock QA simulator)."""
     exact = replace(_profile(), roster=replace(_profile().roster, k=1, dst=1))
-    assert generate_rankings(exact, snapshot).errors
-    practical = replace(exact, practical_mode=True)
-    ranking = generate_rankings(practical, snapshot)
+    ranking = generate_rankings(exact, snapshot)
+    assert not ranking.errors
     assert ranking.ready
     assert {row.position for row in ranking.rows} == {"QB", "RB", "WR", "TE"}
     assert "manual and unmodeled" in " ".join(
-        build_health_report(practical, snapshot, ranking).messages
+        build_health_report(exact, snapshot, ranking).messages
     )
+    # practical_mode remains a real, independent flag -- explicitly
+    # enabling it changes nothing about whether K/DST rostering succeeds.
+    practical = replace(exact, practical_mode=True)
+    practical_ranking = generate_rankings(practical, snapshot)
+    assert not practical_ranking.errors
+    assert practical_ranking.ready
 
 
 def test_superflex_materially_increases_qb_value_and_rank(snapshot) -> None:

@@ -354,6 +354,28 @@ export function buildUdkBadges(entry: RedraftExternalIntelligenceEntry | undefin
 }
 
 /**
+ * NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3, "one authoritative
+ * imported Ballers/UDK data source"): the ONE real place any surface
+ * (Suggestions' "Show Ballers" column, the Player Drawer) resolves a
+ * player's UDK/Fantasy Footballers data. Built once from `data.
+ * udkRankings` -- the owner's own live "Import UDK CSV" upload, the same
+ * real source Cheat Sheets already reads -- and shared, never
+ * re-derived per surface, so every surface resolves the same player to
+ * the exact same imported values.
+ */
+export function buildUdkEntryById(
+  udkRankings: RedraftBootstrap["udkRankings"],
+): Map<string, UdkPlayerEntry> {
+  const map = new Map<string, UdkPlayerEntry>();
+  for (const position of udkRankings?.positions ?? []) {
+    for (const entry of position.entries) {
+      if (entry.playerId) map.set(entry.playerId, entry);
+    }
+  }
+  return map;
+}
+
+/**
  * Real, backend-computed current Team Score / Championship Equity for
  * the roster as it stands right now -- from the same DecisionBundle the
  * Suggestions candidates come from (current_team_score/
@@ -908,6 +930,28 @@ export function DraftRoomV2Page({
     }
   };
 
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): a real gap found
+  // while building the exact 16-round acceptance mock -- the only real,
+  // live K/DST source ever wired anywhere was hard-gated to the owner's
+  // one Fantasy Gamers Sleeper league, so a manually-configured league
+  // (e.g. tonight's real ESPN league) had no owner-facing way to load a
+  // current K/DST pool at all. Reuses the exact same import-CSV pattern
+  // as `importUdk` above -- additive only, never overwrites an existing
+  // manual asset, never assigns an NWR score to K/DST.
+  const importUdkKdst = async (file: File | undefined) => {
+    if (!file || !data.activeProfileId) return;
+    setWorking("udk-kdst-import");
+    setMutationError(null);
+    try {
+      const csvText = await file.text();
+      onUpdate(await client.importUdkKdstSnapshot(data.activeProfileId, csvText));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${file.name} could not be imported.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
   // P0 owner-workflow rescue: the Legacy Draft Room's own start/restart
   // control (client.startDraftRoom), ported here verbatim -- same call,
   // same semantics, so the consolidated room is self-contained and never
@@ -1141,6 +1185,12 @@ export function DraftRoomV2Page({
     for (const entry of externalIntel?.entries ?? []) map.set(entry.playerId, entry);
     return map;
   }, [externalIntel]);
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3): the ONE shared
+  // Ballers/UDK lookup, built once here and passed to every surface that
+  // needs it (Suggestions' "Show Ballers" column, the Player Drawer) --
+  // never re-derived per surface, so they always resolve the same player
+  // to the same imported values.
+  const udkById = useMemo(() => buildUdkEntryById(data.udkRankings), [data.udkRankings]);
 
   const positionDepth = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1202,6 +1252,12 @@ export function DraftRoomV2Page({
   }
 
   const drawerEntry = drawerPlayerId ? intelById.get(drawerPlayerId) : undefined;
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3): the Player Drawer's
+  // own small Ballers display previously read `drawerEntry.udkPositionRank`/
+  // `.udkTier` -- the SAME stale, disconnected snapshot `intelById`
+  // itself is sourced from (see the comment on `buildUdkEntryById`).
+  // Resolves from the one shared, correctly-sourced map instead.
+  const drawerUdkEntry = drawerPlayerId ? udkById.get(drawerPlayerId) : undefined;
   const drawerRanking = drawerPlayerId ? data.rankings.find((row) => row.playerId === drawerPlayerId) : undefined;
   const drawerCandidate =
     drawerPlayerId && decisionBundle && decisionBundle.available
@@ -1286,6 +1342,8 @@ export function DraftRoomV2Page({
           working={working}
           onRefreshAdp={() => void refreshAdp()}
           onImportAdp={(file) => void importAdp(file)}
+          needsKdstImport={Boolean((data.activeProfile?.roster.k ?? 0) > 0 || (data.activeProfile?.roster.dst ?? 0) > 0)}
+          onImportUdkKdst={(file) => void importUdkKdst(file)}
         />
       ) : null}
       <div className="draft-room-v2-quickpick">
@@ -1528,6 +1586,7 @@ export function DraftRoomV2Page({
           playerId={drawerPlayerId}
           ranking={drawerRanking}
           intel={drawerEntry}
+          udkEntry={drawerUdkEntry}
           candidate={drawerCandidate}
           currentTeamScore={decisionBundle && decisionBundle.available ? decisionBundle.currentTeamScore.percentile : null}
           staleAlertData={Boolean(externalIntel?.stale)}
@@ -1654,6 +1713,8 @@ function RoomControls({
   working,
   onRefreshAdp,
   onImportAdp,
+  needsKdstImport,
+  onImportUdkKdst,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -1661,6 +1722,13 @@ function RoomControls({
   working: string;
   onRefreshAdp: () => void;
   onImportAdp: (file: File | undefined) => void;
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): shown only when the
+  // active league's roster actually configures a K or DST slot -- this
+  // real, evidence-based "all 32 teams' current K/DST" import is the
+  // ONLY general-purpose K/DST source any manually-configured (non-
+  // Fantasy-Gamers-Sleeper) league has ever had access to.
+  needsKdstImport: boolean;
+  onImportUdkKdst: (file: File | undefined) => void;
 }) {
   return (
     <section className="draft-room-v2-room-controls">
@@ -1692,6 +1760,19 @@ function RoomControls({
               ? `${adp.source} · ${adp.dateWindow || adp.sourceDate}${adp.sampleSize ? ` · ${adp.sampleSize.toLocaleString()} drafts` : ""}. ADP is market-timing context only -- it never changes NWR rank.`
               : "No market ADP loaded yet. ADP is optional market-timing context and never changes NWR value rank."}
           </p>
+          {needsKdstImport ? (
+            <>
+              <label className="file-action">
+                Import UDK K/DST CSV
+                <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportUdkKdst(event.target.files?.[0])} type="file" />
+              </label>
+              <p className="boundary-note">
+                This league rosters K and/or DST. NWR does not score K/DST -- import a real UDK K/DST
+                snapshot (all 32 current NFL teams' kickers and defenses) to draft them here. Never
+                blended into NWR rank/score.
+              </p>
+            </>
+          ) : null}
         </div>
       ) : null}
     </section>
@@ -1892,15 +1973,7 @@ function SuggestionsTab({
     ? (manualAssets ?? []).filter((row) => row.position === positionFilter)
     : [];
   const udkImported = (udkRankings?.positions?.length ?? 0) > 0;
-  const ballersById = useMemo(() => {
-    const map = new Map<string, UdkPlayerEntry>();
-    for (const position of udkRankings?.positions ?? []) {
-      for (const entry of position.entries) {
-        if (entry.playerId) map.set(entry.playerId, entry);
-      }
-    }
-    return map;
-  }, [udkRankings]);
+  const ballersById = useMemo(() => buildUdkEntryById(udkRankings), [udkRankings]);
   // Compact primary table (owner feedback: headers must read as drafting
   // chrome, not research-development labels). Evidence status
   // (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH) moves to a header hover
@@ -3354,6 +3427,7 @@ function PlayerDrawer({
   playerId,
   ranking,
   intel,
+  udkEntry,
   candidate,
   currentTeamScore,
   staleAlertData,
@@ -3368,6 +3442,11 @@ function PlayerDrawer({
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
   intel: RedraftExternalIntelligenceEntry | undefined;
+  // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3): the one authoritative
+  // Ballers/UDK source (see `buildUdkEntryById`) -- replaces the drawer's
+  // old `intel.udkPositionRank`/`.udkTier` reads, which resolved from a
+  // stale, disconnected snapshot never tied to the owner's live import.
+  udkEntry: UdkPlayerEntry | undefined;
   candidate: DecisionBundleCandidate | undefined;
   currentTeamScore: number | null;
   staleAlertData: boolean;
@@ -3495,9 +3574,27 @@ function PlayerDrawer({
             aging local snapshot; treat a quiet alert as unconfirmed, not as real-world clearance.
           </p>
         ) : null}
-        {intel?.udkPositionRank ? <p>UDK position rank: {intel.udkPositionRank} (tier {intel.udkTier ?? "—"})</p> : null}
         {intel?.fantasyProsEcr ? <p>FantasyPros ECR: {intel.fantasyProsEcr}</p> : null}
       </details>
+      {udkEntry ? (
+        // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3): a real,
+        // dedicated Ballers section -- every field the owner's imported
+        // UDK CSV actually carries for this player, resolved from the
+        // one shared, correctly-sourced map (`udkById`/`buildUdkEntryById`),
+        // the exact same source and values Suggestions' "Show Ballers"
+        // column already shows for this same player.
+        <details className="player-drawer__section">
+          <summary>Ballers (Fantasy Footballers UDK)</summary>
+          <p>Rank #{udkEntry.rank ?? "—"} · Tier {udkEntry.tier ?? "—"}</p>
+          {udkEntry.adpRaw ? <p>ADP: {udkEntry.adpRaw}</p> : null}
+          {udkEntry.risk != null ? <p>Risk: {formatNumber(udkEntry.risk, 1)}</p> : null}
+          {udkEntry.upside != null ? <p>Upside: {formatNumber(udkEntry.upside, 1)}</p> : null}
+          {udkEntry.points != null ? <p>Projected points: {formatNumber(udkEntry.points, 1)}</p> : null}
+          {udkEntry.byeWeek ? <p>Bye week: {udkEntry.byeWeek}</p> : null}
+          {udkEntry.dynastyLocked ? <p>Dynasty: locked (UDK+ upsell) -- no rating imported.</p> : null}
+          {udkEntry.outlook ? <p>Outlook: {udkEntry.outlook}</p> : null}
+        </details>
+      ) : null}
       <details className="player-drawer__section">
         <summary>Details</summary>
         <p>NWR Rank #{ranking?.overallRank ?? "—"} · {ranking?.overallTierLabel ?? "—"} · Expected round {ranking?.expectedRound ?? "—"}</p>

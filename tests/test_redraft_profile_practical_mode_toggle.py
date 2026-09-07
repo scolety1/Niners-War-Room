@@ -10,7 +10,7 @@ ranking generation failed with an opaque, unhelpful error."""
 import json
 from pathlib import Path
 
-from src.application.desktop_facade import DesktopBackendFacade, FacadeError
+from src.application.desktop_facade import DesktopBackendFacade
 from src.services.redraft_engine_v1_service import install_projection_snapshot
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -104,13 +104,51 @@ def test_update_redraft_profile_can_now_enable_practical_mode(tmp_path: Path) ->
     assert reverted.data["profile"]["practicalMode"] is False
 
 
-def test_rostering_k_dst_without_practical_mode_raises_a_real_diagnostic_message(
+def test_rostering_k_dst_without_practical_mode_now_works_automatically(
     tmp_path: Path,
 ) -> None:
-    """Before enabling Practical Mode, a profile that rosters K/DST as real
-    starters cannot generate a ranking (K/DST are never part of the ranked
-    universe by design) -- the error message must now say why, not just
-    that it's "unavailable."""
+    """NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 1, "remove the owner
+    Practical Mode footgun"): this test used to assert the OPPOSITE --
+    that rostering K/DST without first opting into Practical Mode raised
+    a diagnostic error. That was a real, confirmed footgun: K/DST are
+    NEVER part of the ranked universe in ANY mode (they are always
+    separately-sourced manual assets, unconditionally, by design), so the
+    old ranked-coverage check was never a meaningful signal for K/DST
+    specifically -- it only forced the owner to discover and toggle an
+    implementation detail to roster an ordinary K/DST slot. K/DST are now
+    structurally exempt from that check whenever the roster actually
+    configures them, independent of `practical_mode` -- confirmed here by
+    calling `update_redraft_profile` WITHOUT `practical_mode` at all and
+    still reaching a fully configured draft room."""
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=tmp_path)
+    created = facade.create_redraft_profile(preset_key="12_TEAM_1QB_HALF_PPR", league_name="L")
+    profile_id = created.data["profile"]["profileId"]
+    updated = facade.update_redraft_profile(
+        profile_id, league_name="L", team_count=12,
+        roster=_roster(1, 1), scoring=_scoring(), draft=_draft(),
+    )
+    assert updated.data["profile"]["practicalMode"] is False
+    facade.activate_redraft_profile(profile_id)
+    _install_fresh_test_snapshot(tmp_path)
+
+    state = facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=1, seed=1, speed="FAST", mode="MOCK"
+    )
+    assert state.data["draftBoard"]["configured"] is True
+
+
+def test_manual_kdst_assets_reach_bootstrap_without_practical_mode(
+    tmp_path: Path,
+) -> None:
+    """NWR LAST PRE-DRAFT BLOCKER CLOSURE: a real, distinct bug found
+    WHILE verifying the footgun-removal fix above -- `redraft_bootstrap()`
+    only ever loaded manual K/DST assets from disk `if selected.
+    practical_mode`, so even after K/DST rostering stopped requiring the
+    flag, real imported manual K/DST assets would still never reach
+    Suggestions/Draft Board unless the owner ALSO separately enabled
+    Practical Mode -- silently reopening the same footgun. Fixed to the
+    real structural condition (the roster configures K or DST),
+    independent of the flag."""
     facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=tmp_path)
     created = facade.create_redraft_profile(preset_key="12_TEAM_1QB_HALF_PPR", league_name="L")
     profile_id = created.data["profile"]["profileId"]
@@ -118,19 +156,22 @@ def test_rostering_k_dst_without_practical_mode_raises_a_real_diagnostic_message
         profile_id, league_name="L", team_count=12,
         roster=_roster(1, 1), scoring=_scoring(), draft=_draft(),
     )
+    facade.import_udk_kdst_snapshot(
+        profile_id=profile_id,
+        csv_text=(
+            "player_name_raw,position,team_name_raw,team_raw\n"
+            "Test Kicker,K,,BUF\n"
+            ",DST,Buffalo Bills,\n"
+        ),
+    )
     facade.activate_redraft_profile(profile_id)
     _install_fresh_test_snapshot(tmp_path)
 
-    try:
-        facade.start_redraft_draft_room(
-            profile_id=profile_id, owner_slot=1, seed=1, speed="FAST", mode="MOCK"
-        )
-        raised = False
-    except FacadeError as exc:
-        raised = True
-        assert "K" in exc.message and "DST" in exc.message
-        assert exc.message != "The active Redraft ranking is unavailable."
-    assert raised, "expected a real REDRAFT_RANKINGS_UNAVAILABLE error"
+    bootstrap = facade.redraft_bootstrap()
+    manual_assets = bootstrap.data["manualAssets"]
+    assert {row["position"] for row in manual_assets} == {"K", "DST"}
+    assert len(manual_assets) == 2
+    assert bootstrap.data["activeProfile"]["practicalMode"] is False
 
 
 def test_enabling_practical_mode_lets_the_same_k_dst_profile_generate_a_ranking(

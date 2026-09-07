@@ -163,18 +163,24 @@ function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working 
       <label className="form-field"><span>Teams</span><input disabled={disabled} min={2} max={32} type="number" value={edit.teamCount} onChange={(event) => onChange({ ...edit, teamCount: number(event.target.value) })} /></label>
       {rosterField("qb", "QB")}{rosterField("rb", "RB")}{rosterField("wr", "WR")}{rosterField("te", "TE")}{rosterField("flex", "Flex")}{rosterField("superflex", "Superflex")}{rosterField("k", "K")}{rosterField("dst", "DST")}{rosterField("benchSize", "Bench")}
       {(edit.roster.k > 0 || edit.roster.dst > 0) ? (
-        // NWR FINAL PRE-DRAFT GAP CLOSURE: the ONE owner-facing control
-        // for a real, previously-unreachable-outside-Sleeper-import
-        // toggle. NWR does not model K/DST scoring; Practical Mode tells
-        // ranking generation to stop expecting ranked K/DST rows (there
-        // are none, by design) and treat K/DST as separate manual assets
-        // instead of failing replacement-level calculation outright.
-        // Shown only when the roster actually carries a K or DST slot --
-        // it has no effect otherwise.
-        <label className="form-field form-field--checkbox" title="NWR does not calculate a K/DST score. Practical Mode lets a league with real K/DST roster slots (e.g. most ESPN/Yahoo leagues) generate rankings anyway, treating K/DST as manual, unmodeled assets -- exactly like the owner's real Fantasy Gamers league already does.">
-          <input disabled={disabled} type="checkbox" checked={edit.practicalMode ?? false} onChange={(event) => onChange({ ...edit, practicalMode: event.target.checked })} />
-          <span>Practical Mode (required for real K/DST roster slots -- NWR does not score K/DST)</span>
-        </label>
+        // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 1, "remove the
+        // owner Practical Mode footgun"): a K/DST roster slot now works
+        // automatically -- ranking generation no longer requires this
+        // flag at all (see the real fix in redraft_engine_v1_service.py:
+        // K/DST are structurally exempt from the ranked-coverage check
+        // whenever the roster configures them, unconditionally). This
+        // toggle keeps its own real, separate, narrower meaning (gates
+        // the standalone "Start Practical Mock" QA simulator below, and
+        // the "PRACTICAL SCORING" disclosure notice) -- moved into a
+        // details disclosure, off the primary form, since normal draft
+        // setup no longer depends on it.
+        <details className="form-field form-field--details">
+          <summary>Advanced: Practical Mock settings</summary>
+          <label className="form-field form-field--checkbox" title="K/DST roster slots already work without this. This only affects the separate 'Start Practical Mock' QA simulator below and its scoring disclosure -- not live Draft Room ranking or Suggestions.">
+            <input disabled={disabled} type="checkbox" checked={edit.practicalMode ?? false} onChange={(event) => onChange({ ...edit, practicalMode: event.target.checked })} />
+            <span>Practical Mode (only affects the separate Practical Mock QA simulator -- K/DST already draft normally without this)</span>
+          </label>
+        </details>
       ) : null}
       {scoringField("reception", "Reception")}{scoringField("passingTd", "Passing TD")}{scoringField("interception", "Interception")}{scoringField("tePremium", "TE premium")}
       <label className="form-field"><span>Draft rounds</span><input disabled={disabled} min={1} max={40} type="number" value={edit.draft.rounds} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, rounds: number(event.target.value) } })} /></label>
