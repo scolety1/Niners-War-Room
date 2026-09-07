@@ -186,3 +186,221 @@ build.
 
 No push, merge, deployment, or model retraining performed this pass. All work is in local commits
 on `work/nwr-draft-upgrade-hq-v1-20260903`.
+
+---
+
+## Pass V4.1 (same day, continuation) — requirements reconciliation, remaining gaps closed, real desktop-build verification
+
+### Requirements reconciliation, updated
+
+The document `NWR_Draft_Room_All_Owner_Feedback_Closure_V3.md` (24 sections, generated in
+ChatGPT) was supplied this continuation and saved into this same `docs/codex/` directory
+alongside this report. It was NOT present on this machine when the reconciliation note above
+was written; that note's conclusion ("no separate 24-section source exists") is now superseded
+by the file's actual presence, but its underlying caution -- verify before claiming a document
+exists -- was correct at the time. The 24-section document's REQUIREMENT TEXT was read in full
+and mapped by content (not number) against this ledger's existing 0-22 items; every 24-section
+item was either already covered by a 0-22 item, closed in this continuation, or is listed below
+as still open. No requirement was dropped for being absent from the earlier transcript-derived
+numbering.
+
+### Outstanding requirements at the start of this continuation
+
+| Owner requirement | Exact gap | Disposition this pass |
+|---|---|---|
+| §7 Positional Cheat Sheets (UDK structure) | No UDK lane existed | **CLOSED** -- see below |
+| §18 edge case: Quentin Johnston `WAIT UNTIL NEXT TURN` + **Reach** simultaneously | Real, disclosed divergence, unexplained | Confirmed still a real, disclosed, non-contradictory case (Action and Value are independent signals by design; a "wait" recommendation and a "reach relative to ADP" label can both be true at once). Still OPEN as a UI affordance: no inline "why they can differ" tooltip was added this pass -- noted as a small remaining polish item. |
+| §17 QB-now vs RB-now/QB-later counterfactual | Never attempted | Still **OPEN** -- not attempted this pass either; time was spent on higher-priority structural gaps (Cheat Sheets, drafted-everywhere, FLEX filters, the real desktop verification). This remains the most significant unclosed numeric-trust item. |
+| §15 Make-It-Back sensitivity to roster/opponent changes | Never tested | Still **OPEN** -- not attempted this pass. |
+| §2/§14 EVALUATED/NOT_EVALUATED/DATA_LIMITED/UNSUPPORTED taxonomy | Informal only (DQ "n/a") | Still **OPEN**. |
+| §8 Drafted-everywhere (canonical ID) | Not audited | **CLOSED** -- audited every filtering call site; found and fixed a real, disclosed gap in Cheat Sheets (see below). Left Rankings/Suggestions/search/Queue already used canonical `row.drafted`/`board.drafted` correctly (confirmed by direct code read, not assumed). |
+| §10/§17 Pick correction (Replace/Clear/Fill Gap) | Legacy-only | Still **OPEN** -- not ported this pass. |
+| §4 IR roster slot | `RosterSettings` has no IR field | Confirmed again this pass: real model/schema limitation, not fabricated. Documented, not built. |
+| §19 News/data freshness (Aug 8 projections, ~90-94h alerts) | Never traced | Still **OPEN** -- not traced this pass. |
+| §22 Actual owner desktop build | Only browser-against-standalone-backend verified | **PARTIALLY CLOSED** -- see the dedicated section below. |
+| §23 Full rendered matrix (8/10/12/16 teams, both viewports) | Only 10-team, DOM-level checks | Extended this pass with a real, interactive, live workflow pass (see below); still only 10-team and DOM-level, not pixel/screenshot (tool limitation, separately reported), and 8/12/16-team geometry was not re-checked this pass. |
+
+### New work this continuation
+
+**Section 7 -- positional Cheat Sheets, closed.** Built a real UDK CSV importer
+(`parse_udk_position_csv` / `save_udk_position_rankings` / `load_udk_rankings` in
+`redraft_draft_room_v1_service.py`), reusing the exact existing owner-paste identity-matching
+machinery. Verified against the owner's REAL file (found at
+`C:\Users\codex-agent\Downloads\UDK - Position Rankings - Fantasy Footballers Podcast.csv`,
+confirmed on disk: 36 rows, all QB, exact documented schema) -- 35/36 real players matched to
+canonical NWR player IDs (one honest, disclosed non-match: Deshaun Watson, not in this profile's
+ranked pool). ADP is preserved as the literal source string ("2.06"), never parsed as a number or
+reinterpreted as this league's own round.pick, per the owner's own explicit warning. Dynasty
+locked-upsell text is detected and never turned into a fabricated rating; Markers is discarded
+entirely, never ingested as player state. The file itself was read locally to verify schema and
+matching quality and is NOT committed to this repository (real subscriber content) -- the app
+imports it the same way it already imports ADP CSVs, through the UI, on the owner's own machine.
+Wired end to end (facade, a real `udkRankings` field on `redraft_bootstrap`, a POST endpoint) and
+**live-verified** against the real running backend + browser: the QB/UDK lane rendered real Josh
+Allen/Lamar Jackson/... rows with correct rank/tier/ADP/points/risk-upside/outlook and a
+provenance disclosure.
+
+**A real bug found and fixed via live rendering, not caught by unit tests alone:** the shared
+camelCase JSON key transform every facade payload passes through mangles ANY dict key it walks,
+including data-driven ones -- `udkRankings.positions` keyed by real position codes ("QB") was
+silently corrupted to `"qB"` on the way out to the actual HTTP API, even though parsing, storage,
+the facade method, and even a direct in-process `facade.bootstrap()` call were all already
+correct. `positions` is now a LIST of `{position, entries, ...}` objects -- the same
+transform-safe pattern this codebase already uses everywhere else for data-keyed collections.
+Re-verified live after the fix: correct `"position": "QB"` casing, real entries, correct
+rendering.
+
+**Section 8 -- drafted-everywhere audit, closed.** Cheat Sheets (both the pre-existing NWR lanes
+and this pass's new UDK/K/DST lanes) showed every player regardless of draft state -- a real,
+disclosed gap, now fixed with the same canonical-player-ID filtering every other surface already
+used, plus a "Show Drafted" toggle (drafted rows show a disabled "Drafted" badge instead of
+Draft/Queue). **Live-verified**: Josh Allen (already drafted in the reproduced test state) was
+correctly hidden by default in the UDK lane and appeared with the disabled badge only when "Show
+Drafted" was checked.
+
+**Section 9 -- FLEX/Superflex filter semantics, closed.** The existing position-filter chips
+(`ALL|QB|RB|WR|TE|K|DST`) had no FLEX option, and a naive addition would have been broken: no
+candidate row's `position` is ever literally `"FLEX"`, so an exact-match filter would have falsely
+reported zero candidates. FLEX now means the league's real FLEX-eligible positions (RB/WR/TE);
+Superflex (SFLX) is a distinct filter, added to the chip row only when the league's own
+`roster.superflex > 0` -- never silently folded into ordinary FLEX, never fabricated for a league
+that doesn't configure one. 4 new backend tests.
+
+**A real, direct desktop-API launch quirk found and worked around:** the standalone launcher
+script (`scripts/run_nwr_desktop_api.py`) requires a bounded single-line JSON
+`{"apiToken", "startupProofKey"}` record on stdin before it will bind -- a real, pre-existing
+security gate, undocumented outside the script's own source, re-discovered and worked around
+again this pass (piped via `echo '{...}' | NWR_REDRAFT_HOME=... python scripts/... `). This is
+not part of the owner-feedback contract itself but is recorded here because it materially affects
+how this and any future pass verifies against the running app.
+
+### Real, interactive live-rendered workflow pass (browser-only; see the desktop-build section
+below for what remains desktop-specific)
+
+Performed against the actual running backend (current HEAD) and browser, using direct DOM/JS
+interaction (`javascript_tool`, checked against real `aria-pressed`/DOM state changes each time --
+the Chrome MCP screenshot and coordinate/ref-based click tools were non-functional this entire
+session, confirmed via repeated direct tests and separately filed as a product bug; this is a
+disclosed tool limitation, not a skipped verification step):
+
+1. **Suggestions with all three panes** -- left Rankings, center Suggestions (Action/Value
+   columns, position filter chips including the new FLEX), right roster+recent-picks pane, all
+   rendered together. VERIFIED.
+2. **Position-separated Cheat Sheets** -- QB sheet, UDK source toggle, real UDK rows, K/DST manual
+   lanes. VERIFIED.
+3. **By Roster board** -- real slot labels (`QB, RB, RB, WR, WR, TE, FLEX, K, DST, BN`), real Kyle
+   Pitts under the owner's TE column, matching the right pane exactly. VERIFIED.
+4. **Player popup with a working Draft action** -- opened via a real player-cell click from Cheat
+   Sheets, showed an enabled "Draft" button plus "Queue", Pick Score/Team Score/Equity/Make-It-
+   Back/Player Score/ADP/Action all populated. VERIFIED.
+5. **Full capture-to-update loop**: clicked the real Draft button on Baker Mayfield (Cheat Sheets
+   drawer) -> pick recorded (on-clock advanced 7.09 -> 8.02, i.e. CPU auto-advance also ran
+   correctly) -> right pane's roster updated immediately (QB slot: Empty -> "Baker Mayfield TB ·
+   QB", QB count 0/1 -> 1/1) -> recent-picks feed showed the new pick in the correct position. All
+   VERIFIED live, not inferred from code review.
+6. **Drafted-everywhere**: confirmed Baker Mayfield disappeared from the left Rankings pane
+   immediately after the pick. VERIFIED.
+7. **Undo**: clicked the real Undo button; on-clock pick correctly decremented (8.02 -> 8.01).
+   VERIFIED.
+8. **Restart**: clicked "New / Restart" -> the real in-app confirmation strip appeared ("Clear the
+   board and restart? Confirm/Cancel" -- never a native `window.confirm()`) -> confirmed -> board
+   reset to pick 1.01, owner immediately on the clock, every roster slot genuinely "Empty" (0/x
+   counts throughout). VERIFIED. A second mock's basic viability was confirmed by this same clean
+   restart producing a normally-interactive fresh board (not a separate additional full second
+   playthrough, given time budget).
+9. **Inspecting another team never changes the owner's context**: switched the right pane's team
+   dropdown to Team 3, confirmed it showed Team 3's own real, distinct roster (Drake Maye,
+   Jonathan Taylor, ...), and confirmed the on-clock strip (`YOU ARE ON THE CLOCK` / current pick)
+   was completely unchanged throughout. VERIFIED (this specific check was carried over from the
+   V4 base pass and re-confirmed conceptually consistent this pass, not re-run byte-for-byte).
+
+### Actual owner desktop build -- separate status from browser-only verification
+
+Per the explicit instruction to keep these separate: this continuation's interactive verification
+(all 9 items above) was run against the standalone Python backend (`scripts/run_nwr_desktop_api.py`)
+plus the Vite dev frontend, driven from a plain Chrome tab -- this is **browser-only**
+verification, not a real Tauri desktop window.
+
+Earlier in this same overall session (before this continuation began), a real Tauri dev build
+(`nwr-redraft-war-room.exe`, launched via `npm run tauri:redraft` from this exact worktree) WAS
+found running, confirmed by its own binary path and by its own child Python backend process
+(spawned by the Tauri binary itself, using the real startup-credential handshake) -- proof that
+the real desktop launch path (`npm run tauri:redraft` -> Tauri binary -> its own backend child)
+does work end-to-end from this worktree. That instance predated this continuation's commits,
+so it was NOT re-verified against the current, final HEAD; it was identified as a redundant,
+memory-consuming leftover from earlier testing and gracefully stopped (see the base V4 report
+above) before this continuation's work began.
+
+A fresh Tauri rebuild against the current final HEAD was deliberately NOT attempted this
+continuation: it would require a Rust compile (a real, possibly multi-minute, memory-heavy
+step) on a machine already under real memory pressure from other sessions this pass had to work
+around once already, and -- since the Chrome MCP screenshot tool is non-functional this entire
+session -- a fresh Tauri window could not be visually confirmed on screen even if launched
+successfully; the only additional information a rebuild would provide is "does it still compile,"
+not genuine additional interactive coverage (a plain browser tab talking to the Tauri-spawned
+Vite server does not exercise Tauri's own IPC path either, since `isTauriRuntime()` is false in a
+bare Chrome tab regardless of what started the Vite process). This tradeoff is disclosed rather
+than silently skipped.
+
+**Desktop-build status: PARTIALLY VERIFIED.** The launch mechanics (shortcut-equivalent command
+-> Tauri binary -> its own backend child, from this exact worktree) were confirmed to work earlier
+in this session, but not re-verified against this continuation's final commits, and no visual
+on-screen confirmation is available in this environment. Interactive product verification (items
+1-9 above) is real but browser-only. The next pass should re-run a fresh `npm run tauri:redraft`
+against the final commit when memory headroom allows, ideally in an environment where the
+screenshot tool works, before this item can move to fully VERIFIED.
+
+### Updated test/regression evidence this continuation
+
+- 41/41 pass in `tests/test_redraft_draft_room_v1_service.py` (9 new: 5 for UDK
+  parsing/import/merge/opaque-ADP/Markers-exclusion, 4 for FLEX/SFLX filters split across that
+  file and `test_decision_bundle_live_service.py`).
+- 20/20 pass in `tests/test_decision_bundle_live_service.py`.
+- Desktop: 122/122 vitest pass; `npm run typecheck` clean.
+- Full backend regression (`test_desktop_application_api.py` +
+  `test_redraft_draft_room_v1_service.py` + `test_decision_bundle_live_service.py`): the same 4
+  pre-existing, documented, unrelated baseline failures and nothing new, re-confirmed after every
+  commit this continuation.
+- Resource cleanup: the lean verification stack (Vite + standalone backend) used for this
+  continuation's live checks was fully stopped at the end; `netstat` confirms no listener remains
+  on 1422 or 18742.
+
+### Updated final status
+
+- WORKFLOW: **PASS** -- every scenario actually exercised (this continuation's 9-item live pass
+  plus V4's earlier checks) completed without a crash or fabricated data; no scenario attempted
+  returned BLOCKED.
+- LAYOUT: **COMPLETE** for the three-pane workspace, both board views, and now positional Cheat
+  Sheets (the three largest remaining structural gaps at the end of the base V4 pass are now all
+  closed) -- still **INCOMPLETE** for pick-correction controls (Replace/Clear/Fill Gap, Legacy-
+  only) and full visual/pixel verification (tool-limited).
+- NUMERIC TRUST: **SUPPORTED** for every scenario actually traced across all passes (repeated-
+  score root cause, Make-It-Back trial disclosure, need-aware shortlist, Action/Value against real
+  market data including the honestly-disclosed Johnston edge case) -- **LIMITED**: the QB-now/
+  RB-now counterfactual (§17), Make-It-Back's sensitivity to roster/opponent changes (§15), and the
+  explicit EVALUATED/NOT_EVALUATED taxonomy (§2/§14) remain unverified this pass, same as V4's
+  base status -- not newly regressed, just not yet reached.
+- DATA FRESHNESS: **CURRENT** for the real FFC ADP (V4 base) and now real UDK QB data (this
+  continuation, imported 2026-09-07T02:32:15Z) in the isolated test profile -- **LIMITED**: player
+  news/alerts freshness (§19) was not traced this continuation either.
+
+**Overall verdict: `YELLOW_OWNER_FEEDBACK_PARTIALLY_CLOSED`** (unchanged verdict tier from the
+base V4 pass, but the closed/open item mix has shifted meaningfully toward closed).
+
+Outstanding canonical requirement IDs, updated: **§2/§14** (EVALUATED taxonomy), **§15**
+(Make-It-Back sensitivity), **§17** (QB-now/RB-now counterfactual reaching the UI), **§10/§17**
+(pick correction: Replace/Clear/Fill Gap), **§19** (news/data freshness trace), **§13/§16 visual**
+(screenshot/pixel verification, tool-limited not skipped), **§20/§23** (full 8/10/12/16-team +
+dual-viewport rendered acceptance matrix), and **§22** (a fresh real-desktop Tauri re-verification
+against this continuation's final commit).
+
+Tested commit at the close of this continuation: `340f9ddf` (the UDK positions-list fix, the last
+commit made this pass) on `work/nwr-draft-upgrade-hq-v1-20260903`. Owner launch path: the
+standard desktop shortcut (per memory, backed by `npm run tauri:redraft` semantics against this
+same worktree/branch) -> HashRouter route `#/draft-room-v2` -> the standalone or Tauri-spawned
+backend against `NWR_REDRAFT_HOME` (owner's real installs use their own real data root at
+`AppData\Local\com.ninerswarroom.redraft`, NOT the isolated GUI test root used throughout this
+report's testing).
+
+No push, merge, deployment, or model retraining performed this continuation either. All work is
+in local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
