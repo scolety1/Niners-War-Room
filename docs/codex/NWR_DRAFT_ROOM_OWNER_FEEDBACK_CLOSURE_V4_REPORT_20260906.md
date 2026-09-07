@@ -1475,3 +1475,72 @@ regression, the exact repair to roll back is nameable individually (K/DST forcin
 `continuation_seeds`, or a specific status override) rather than an all-or-nothing revert.
 
 **Overall: `YELLOW_DRAFT_DAY_BUILD_READY_WITH_NAMED_LIMITATIONS`.**
+
+## Pass V4.7 -- Release-blocker: systemic current-eligibility gate for K/DST
+
+Continuation from `d397002d`, final commit `adfe1072`. Triggered by a real, owner-reported finding
+against the Pass V4.6 slot-9 acceptance roster: the drafted K, Alex Kessman, is not currently on
+any NFL roster.
+
+**Root cause, traced precisely, not patched by name**: `manual_kdst_assets_from_sleeper_players`
+(the only source of K/DST candidates -- K/DST are never in the ranked/admitted projection universe)
+trusts Sleeper's own `active`/`team` fields alone. Live re-fetch this pass confirms Sleeper's public
+`players/nfl` endpoint still reports this exact player `active: true`, `team: "CAR"` (even his own
+`hashtag` field still says `NFL-CAR-19`) -- stale relative to NWR's own already-admitted nflverse
+`players` snapshot, whose `status` field for the same player already says `CUT`, in both the July 30
+and September 7 pulls. Nothing was ever cross-checking the manual K/DST pool against that
+already-admitted, more authoritative source, because K/DST structurally never go through the same
+admission pipeline skill positions do.
+
+**Eligibility source and as-of**: nflverse `players` snapshot, `20260907T034013Z-8016e96a5623`
+(the same current-status source Pass V4.5's Higgins/Boutte overrides use), cross-referenced against
+a live Sleeper `players/nfl` fetch this pass (`retrieved` 2026-09-07) for K/DST identities and
+against the admitted ranking's own `player_id` (gsis_id) for QB/RB/WR/TE.
+
+**Fix**: new `current_kdst_eligibility_service.py`. `classify_status()` maps nflverse's real status
+vocabulary into six categories; a K is excluded from normal auto-recommendation ONLY for an
+unambiguously structural status (CUT/RET/NWT/RLS/INA) -- never for an injury-adjacent one
+(RES/PUP/SUS/DEV), which stays eligible and disclosed, matching the existing Higgins/Dell
+precedent of never treating every IR-adjacent case alike. Applied by STATUS, never by name, at the
+one real production entry point (`start_practical_redraft_mock`).
+
+**Full current-pool audit, real counts**:
+- **K** (70-asset live Sleeper pool): 32 `ACTIVE_ELIGIBLE`, 5 `TEMPORARILY_LIMITED_BUT_ELIGIBLE`,
+  **1 `NOT_WITH_TEAM` (excluded)**, 0 `UNKNOWN`.
+- **DST**: 32 real, distinct, current NFL team abbreviations -- no defect found.
+- **QB** (74 ranked rows): 66 `ACTIVE_ELIGIBLE`, 8 `TEMPORARILY_LIMITED_BUT_ELIGIBLE`, 0 other.
+- **RB** (128 ranked rows): 93 `ACTIVE_ELIGIBLE`, 34 `TEMPORARILY_LIMITED_BUT_ELIGIBLE`,
+  **1 `NOT_WITH_TEAM`** -- Elijah Mitchell, independently confirmed released by New England (April
+  2026) then released by Philadelphia with an injury settlement (August 2026); added to the
+  existing verified-override file.
+- **WR** (207 ranked rows): 155 `ACTIVE_ELIGIBLE`, 51 `TEMPORARILY_LIMITED_BUT_ELIGIBLE`,
+  1 `SEASON_OUT` (Jayden Higgins, the existing Pass V4.5 override, correctly still classified).
+- **TE** (121 ranked rows): 97 `ACTIVE_ELIGIBLE`, 24 `TEMPORARILY_LIMITED_BUT_ELIGIBLE`, 0 other.
+- **0 `UNKNOWN`** across all 530 ranked rows (gsis_id join) and all 70 K/DST assets (name join) --
+  every candidate resolved to a real, current nflverse status.
+
+`current_player_status_overrides_service.py` extended from two override kinds to three:
+`SEASON_OUT` (a real current-team injury designation) and the new `NOT_WITH_TEAM` (released/
+unsigned, not on any roster) are kept honestly distinct -- neither is relabeled as the other --
+both zero the value for automatic recommendation while preserving the frozen projection and
+keeping the player searchable/directly draftable.
+
+**Re-verification**: re-ran the exact slot-9 GUI acceptance test end to end (using the "New /
+Restart" flow -- itself the Pass V4.6 fix, exercised again as a real regression check) with the
+corrected K/DST pool. At the same forced K round, the entire visible slate changed (the excluded
+player's absence shifted the alphabetical list) and contained 8 different real, current kickers.
+
+**New slot-9 final roster** (identical to Pass V4.6's except the K slot):
+QB Justin Herbert; RB Kyren Williams, TreVeyon Henderson (+ Kenny Gainwell FLEX); WR Jaxon
+Smith-Njigba, Chris Olave; TE Tyler Warren; **K Andre Szmyt** (real, current, ACTIVE_ELIGIBLE);
+DST ARI; bench Parker Washington, Tyler Allgeier, Bucky Irving, Rashid Shaheed, Aaron Rodgers,
+Theo Johnson. `QB 1/1, RB 2/2, WR 2/2, TE 1/1, FLEX 1/1, K 1/1, DST 1/1, BN 6/6` -- legal,
+complete, zero duplicates, correct round.pick sequence throughout (`1.09` through `15.09`).
+
+Tests: 6 new (`current_kdst_eligibility_service`), 2 new/updated (the third override kind). Scoped
+suite green (91/91); `desktop_application_api` baseline re-checked unchanged (39 passed, same 4
+pre-existing failures). Isolated test ports (1422/18742) confirmed clear after teardown.
+
+**Overall: `GREEN_DRAFT_DAY_BUILD_READY_FOR_OWNER_RESTART`.** The specific release-blocker is
+closed with a systemic, name-blind fix, verified against the full current candidate pool, not just
+the one reported case.
