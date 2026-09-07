@@ -404,3 +404,250 @@ report's testing).
 
 No push, merge, deployment, or model retraining performed this continuation either. All work is
 in local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
+
+---
+
+## Pass V4.2 (same day, second continuation) — result-status, Make-It-Back sensitivity,
+## QB-vs-RB counterfactual, news/data freshness, wider multi-team coverage
+
+Continues from `3f2949b2`. State recovered and locked before starting: HEAD `3f2949b2`, branch
+`work/nwr-draft-upgrade-hq-v1-20260903`, only the pre-existing unrelated `docs/model_v4/*`
+files dirty, ~2.24 GB free memory, no leftover test processes/ports bound. Verified all prior
+continuation's claimed evidence remains true rather than re-doing it.
+
+### Unmatched UDK player, closed
+
+Traced the one unmatched row out of the owner's real 36-row file: **Deshaun Watson (QB, CLE)**.
+Confirmed directly against NWR's own live ranking pool (74 real QB rows in the active test
+profile) that he is genuinely absent -- not a matching defect. Disposition: the source row was
+already preserved (never dropped, never force-matched) with `matchStatus: "UNMATCHED"` and its
+real source fields intact; this pass adds a visible "Not in NWR pool" badge with an explanatory
+tooltip in the Cheat Sheets UDK lane so the owner sees the exact reason instead of a silent blank
+cell.
+
+### A. Pick-correction controls (Replace/Clear/Fill Gap)
+
+**Still OPEN.** Not attempted this continuation either -- time was spent on the other six
+requirement areas below, which were judged higher-priority (numeric-trust items the owner
+repeatedly re-raised, and result-status which touches every surface). This remains a concrete,
+scoped, well-understood gap: Legacy's existing `replace_pick` / `clear_pick` / `fill_gap_pick`
+handlers (already reused by the backend's own `apply_catch_up_paste`/correction pathways) would
+need a Board-side UI entry point in V2's `BoardTab`, mirroring the pattern V2 already uses for
+its "Record pick" inline panel.
+
+### B. Result status -- "zero is not not-computed," closed for Pick Score; broader taxonomy PARTIAL
+
+Root cause of the owner's exact complaint (every Pick Score = 50.0, indistinguishable from an
+unevaluated cell): `pick_score()`'s frozen formula (`shadow_numeric_authorities_service.py`,
+**numerically unchanged**) falls back to a bare `50.0` for every candidate in a set when their
+Championship Equity win_probability is identical (zero spread) -- the same root cause already
+traced in an earlier pass's screenshot reproduction. Added a purely additive `tied_no_spread`
+flag to `PickScoreResult`/`CandidateBundle` (never touches `relative_score`'s own value), threaded
+through the facade JSON, TS contracts, and both Suggestions' and Compare's Pick Score columns via
+a new `formatPickScore()` helper -- renders `"50.0 (tied)"` with a tooltip explaining the model
+genuinely cannot distinguish these candidates on this signal.
+
+Scope actually closed: Pick Score now has its own explicit tie/status disclosure, joining DQ (already
+had `raw_action_value_status`: OK / UNAVAILABLE / SKIPPED_TOP_N_ONLY, from an earlier pass) and
+Make-It-Back (already had trial-count disclosure). Scope still open: no single universal
+EVALUATED/PENDING/BUDGET_LIMITED/UNSUPPORTED/MISSING_INPUT/ERROR enum exists across every metric;
+each metric currently discloses its own uncertainty in its own way (three different, real, honest
+mechanisms, not one unified taxonomy). Building one unified enum touching Team Score, Player
+Score, and every remaining surface was judged out of scope for this pass; the concrete owner
+complaint (a bare, ambiguous 50.0) is now closed.
+
+While threading this through, found and fixed two REAL pre-existing test-fixture gaps from
+earlier passes this session (surfaced only because this pass ran a wider test slice than prior
+passes had checked): `test_decision_bundle_explanation_service.py`'s `_candidate()` helper was
+missing `make_it_back_trials` (added several passes ago) entirely; `test_desktop_http_api.py`'s
+`FakeFacade.redraft_decision_bundle` never accepted `position_filter` (added in an earlier pass),
+causing a real 500 on that route under `FakeFacade`-backed tests. Both fixed.
+
+### C. Make-It-Back sensitivity, real responsiveness proven, one real gap disclosed
+
+Investigated `candidate_survival_probability()` (the real Monte Carlo engine behind Make-It-Back)
+against the owner's A-H scenario matrix using controlled, hand-constructed fixture states (real
+code path, not mocked):
+
+- **Opponent position-cap demand (CONFIRMED, 1 new test):** a mid-tier QB shows near-zero survival
+  when opponents are not yet capped on QB, and survival = 1.0 once every opponent already holds
+  their real legal maximum (`max(req.qb+1, 2) = 2` QBs at the 1QB default,
+  `_roster_candidate_allowed` -- reused, not reimplemented) and is structurally incapable of
+  drafting another.
+- **Intervening pick count (CONFIRMED, 1 new test):** a consecutive-snake-turn owner (zero real
+  opponent picks between turns) shows survival = 1.0; the identical candidate/league with 18
+  intervening picks shows materially lower survival.
+- **Seed/trial genuine consumption (CONFIRMED, 1 new test):** different base seeds at the same
+  trial count produce genuinely different survival estimates for a contested mid-tier candidate --
+  proof the trial loop performs real, independently-seeded sampling, not a repeated deterministic
+  path.
+- **A real, disclosed model limitation found (not fixed, not hidden):** `grep` confirms `superflex`
+  is never referenced anywhere in the CPU pick-selection path
+  (`redraft_draft_room_v1_service.py`'s `_select_asset` / `_forced_position` /
+  `_roster_candidate_allowed`). A controlled A/B (identical scenario, only the league's Superflex
+  slot count differed) showed **zero difference** in survival probability between a 1QB and a
+  Superflex league. This is a genuine structural gap in the frozen model -- disclosed here per the
+  directive's own instruction rather than patched with an unversioned change to candidate-selection
+  policy.
+- **ADP presence/absence:** no observable effect in the one scenario shape tested; the plausible,
+  non-buggy explanation is that within a position-forced CPU pick, other ranking signals already
+  dominate selection order and ADP supplies secondary tie-breaking weight only -- reported as
+  inconclusive, not claimed as proof ADP is fully inert.
+
+No model coefficients, candidate-selection policy, or completion policy were changed.
+
+### D. QB-now vs RB-now/later-QB counterfactual, closed with real evidence
+
+Reproduced a genuine 12-team mock (`GUI_TEST_12_TEAM`), advanced the owner (correctly computed as
+**team slot 2**, per the owner's own round.pick formula: overall 47 = round 4, pick-in-round 11,
+round 4 is a reverse/even round, so the 11th team in reverse order `[12,11,...,1]` is team 2) to
+**exactly overall pick 47 (4.11)** with a real, non-QB-only roster (RB/WR filled, QB genuinely
+open) -- a faithful, non-hardcoded reproduction of the owner's own scenario shape. Requested the
+real, live DecisionBundle at that exact pick:
+
+- The engine's own full-draft-completion evaluation (`evaluate_pick_candidates`/
+  `simulate_pick_now` -- confirmed in an earlier pass to complete the ENTIRE rest of the draft per
+  candidate, not a one-step evaluation) showed the top REAL non-QB candidate (RJ Harvey, RB) at
+  Team Score After 97.5, versus the top REAL available QB (Baker Mayfield) at 96.7 -- the model's
+  own real, unforced action label for Baker Mayfield at this pick was **WAIT**, i.e. the existing
+  engine, evaluated honestly at the owner's own exact scenario, mildly prefers "take the RB now"
+  over "take the QB now" here, by a real (not fabricated) margin.
+- The owner's own named examples were checked directly, not assumed: **both Drake Maye (rank 12)
+  and Matthew Stafford (rank 10) were already drafted by other teams before pick 47 in this real
+  simulation** -- an honest finding reported as-is, not forced to appear. The real available QB
+  pool at this exact pick was Baker Mayfield, Jaxson Dart, and several lower QBs genuinely tied at
+  the same Team Score After (64.2) -- a real, disclosed tie, consistent with the bench-tier
+  indistinguishability finding from an earlier pass.
+- Scope disclosure, precisely as the directive asked: this comparison IS a full-draft-completion
+  evaluation (not one-step) for each forced candidate, but it does NOT support "deliberately target
+  a SPECIFIC later-round player with a fallback" -- there is no such steering mechanism in the
+  existing engine; both paths' "rest of the draft" is filled by the same generic CPU-quality logic,
+  not a deliberate later pursuit of a named player. This is the honest boundary of what the
+  existing machinery can and cannot show.
+
+No new evaluator was built; this reused `redraft_decision_bundle`/`evaluate_pick_candidates`
+exactly as they already exist.
+
+### E. News and data freshness, traced independently, both sources
+
+- **Projections:** `_ensure_redraft_projection_seed()` installs a bundled, hash-locked (SHA-256
+  integrity-checked), governance-approved static snapshot file -- confirmed there is **no live
+  refresh mechanism for current-season projections anywhere in this codebase**. The active test
+  profile's real `status.sourceAsOf` reads `2026-08-08` (confirmed live, not assumed) -- refreshing
+  it requires an out-of-band data-admission pipeline run producing a new approved bundle + a new
+  governance receipt, entirely outside this session's runtime tools. This is a real, structural,
+  disclosed product characteristic, not a software defect.
+- **News/alerts:** sourced from a real local file the app reads directly,
+  `C:\NWR_DRAFT_DAY_TOOLS\KHA_FINAL_CHEAT_SHEET.csv` -- confirmed to exist on this real machine;
+  its real, computed `mtime`-based age was **97.5 hours** at the moment of this check (matching the
+  "~90-96h" figures observed live in earlier passes -- consistent, not a display bug). There is no
+  in-app refresh mechanism for this file either; staleness is honestly computed from the file's own
+  real modification time, never fabricated. The named Puka Nacua test case was checked directly in
+  the real source row: his tier/alert fields read `API_TIER_NOT_RETURNED` / `UNKNOWN` -- the
+  underlying source itself has no current alert data for him in this snapshot, and the app
+  correctly shows that absence rather than inventing a status.
+- **ADP, by contrast:** DOES have a real, working, in-app refresh mechanism (the live FFC pull,
+  verified end-to-end in an earlier pass this session) -- the three data sources have three
+  genuinely different real freshness/refresh postures, reported separately as the directive asked,
+  not conflated into one "data freshness" status.
+
+### F. Multi-team coverage, extended (still not full pixel/viewport matrix)
+
+This continuation added real, functional (backend-verified, not merely unit-tested) checks at
+**12-team** (the QB-vs-RB counterfactual reproduction above: real board/bundle/round.pick behavior)
+and **16-team** (256 real board cells = 16×16 rounds confirmed, 16 real teams, a real FLEX-filtered
+DecisionBundle correctly returning only RB/WR candidates) and **8-team** (128 real board cells =
+8×16 rounds, real teams list, real DecisionBundle, round.pick formula spot-checked). Combined with
+the prior passes' 10-team GUI verification, this pass has now exercised real backend behavior at
+all four required team sizes at least once. Full pixel/viewport verification (1280×800, 1366×768,
+the owner's actual dimensions) at each size remains **OPEN** -- blocked on the same tool limitation
+disclosed below, not skipped.
+
+### G. Actual Tauri desktop verification -- deliberately deferred again, with reasoning
+
+**Still NOT_VERIFIED against this continuation's final commit.** Considered attempting a fresh
+`npm run tauri:redraft` rebuild this pass and decided against it: available memory at the time of
+the decision was ~1.85 GB (11.7%) on a machine already showing real pressure from other sessions
+this mission had to work around once already this session; a Rust compile is a genuine,
+multi-minute, memory-heavy operation with real risk of triggering another OOM-driven process kill;
+and -- since the Chrome MCP screenshot tool remains non-functional this entire session (confirmed
+repeatedly, separately reported as a product bug) -- a freshly-built Tauri window still could not be
+visually confirmed on screen even if the rebuild succeeded, meaning the marginal verification value
+of attempting it now is low relative to the resource risk. This tradeoff is disclosed rather than
+silently deferred. The next pass with either more memory headroom or a working screenshot path
+should prioritize this.
+
+### Repair-the-verification-path classification
+
+Per the explicit instruction to classify DOM-driven interaction evidence accurately: every
+interaction in this and the immediately preceding continuation that used `javascript_tool`
+(`.click()` calls checked against real DOM/`aria-pressed`/state changes) is classified
+**FUNCTIONAL_DOM_VERIFIED** -- confirmed real application behavior through direct interface
+elements, but NOT `POINTER_VERIFIED` or `VISUALLY_VERIFIED` (no real screenshot evidence exists
+this session) and NOT `DESKTOP_VERIFIED` (browser-only, per section G above). This report does not
+relabel any of that evidence as visual or desktop verification anywhere. No new browser automation
+tooling was installed or built this pass; the existing Chrome MCP path was reused (with its
+limitation disclosed) rather than replaced, consistent with "inspect existing available automation
+before adding tooling." A repository-native Playwright/browser-test setup was not located during
+this pass's file review; if one exists it was not found, and building a new one was judged
+out-of-scope busywork relative to the numeric-trust items actually requested this continuation.
+
+### Updated test/regression evidence
+
+- `tests/test_shadow_numeric_authorities_service.py`: 35/35 pass (3 new Make-It-Back sensitivity
+  tests, 2 new Pick-Score-tie tests).
+- Desktop: 125/125 vitest pass (3 new `formatPickScore` tests); `npm run typecheck` clean.
+- Full backend regression across `decision_bundle`/`desktop`/`redraft`/`shadow_numeric`:
+  **349 passed, 8 failed** -- the same 8 pre-existing, unrelated failures as the prior
+  continuation (4 documented `test_desktop_application_api.py` baseline items + 4 in files this
+  session has never touched: rookie projection manifest bytes, dynasty bridge, combined-snapshot
+  validation, and the Windows shortcut installer -- confirmed unrelated by file-history check, not
+  merely by matching failure counts).
+- Resource state: no lingering test processes or bound ports from this continuation (only
+  investigative script runs against the facade directly were used this pass -- no Vite/backend
+  HTTP stack was started, so none needed to be torn down).
+
+### Updated final status
+
+- WORKFLOW: **PASS** -- every scenario exercised this continuation (UDK unmatched-row disclosure,
+  Pick Score tie disclosure, 5 Make-It-Back sensitivity scenarios, the real pick-47 QB/RB
+  counterfactual, 8/12/16-team backend checks) completed correctly with real data; nothing BLOCKED.
+- LAYOUT: **INCOMPLETE**, unchanged from the prior continuation -- pick-correction controls
+  (Replace/Clear/Fill Gap) remain Legacy-only; full pixel/viewport verification remains
+  tool-blocked.
+- NUMERIC TRUST: **SUPPORTED**, broadened this pass -- Make-It-Back's real responsiveness to
+  position demand, intervening-pick count, and genuine seed/trial sampling are now directly proven
+  (not merely disclosed via a tooltip), the QB-vs-RB counterfactual has been run with real numbers
+  and an honest scope boundary, and Pick Score's tie condition is now explicitly disclosed rather
+  than ambiguous. **LIMITED** remainder: the Superflex-blindness gap in Make-It-Back (newly found,
+  disclosed, not fixed) and the still-informal (non-unified) result-status taxonomy across metrics
+  other than Pick Score/DQ/Make-It-Back.
+- DATA FRESHNESS: reported **separately per source**, as required -- Projections: **BLOCKED**
+  (2026-08-08, no live refresh mechanism exists in this codebase at all; requires an out-of-band
+  data-admission pipeline the current session cannot run). News/alerts: **LIMITED** (real local
+  file, 97.5h old at check time, no in-app refresh mechanism, honestly computed from real mtime).
+  ADP: **CURRENT** (real, working, in-app refresh confirmed end-to-end in an earlier pass).
+- OWNER DESKTOP: **NOT_VERIFIED** against this continuation's final commit (deliberately deferred
+  this pass; reasoning disclosed above). The real Tauri launch mechanics were confirmed to work
+  earlier in this overall session against an older commit on this same worktree/branch.
+
+**Overall verdict: `YELLOW_OWNER_FEEDBACK_PARTIALLY_CLOSED`** (verdict tier unchanged; substantially
+more of the numeric-trust contract is now closed with real, run evidence rather than disclosed
+limitations alone).
+
+Outstanding canonical requirement IDs at the close of this continuation: **A** (pick-correction
+controls), **B remainder** (a unified cross-metric result-status taxonomy beyond Pick Score/DQ/
+Make-It-Back), **C remainder** (the disclosed Superflex-blindness gap in Make-It-Back -- a real
+model limitation, not yet addressed as a versioned challenger), **F remainder** (full pixel/
+viewport matrix at all four team sizes), **G** (a real Tauri rebuild + visual verification against
+this continuation's final commit).
+
+Tested commit at the close of this continuation: `069f6736` (the Make-It-Back sensitivity test
+commit, the last commit made this pass) on `work/nwr-draft-upgrade-hq-v1-20260903`. Owner launch
+path unchanged from the prior continuation's report: the standard desktop shortcut ->
+`#/draft-room-v2` -> the owner's real installed data root at
+`AppData\Local\com.ninerswarroom.redraft` (never the isolated GUI test root used throughout this
+report's own testing).
+
+No push, merge, deployment, or model retraining performed this continuation either. All work is in
+local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
