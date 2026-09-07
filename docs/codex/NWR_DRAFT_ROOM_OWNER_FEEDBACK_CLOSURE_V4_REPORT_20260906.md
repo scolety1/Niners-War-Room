@@ -1163,3 +1163,183 @@ same pre-existing, untouched dirty state from session start.
 - No push, merge, deploy, or model retraining performed. No receipt renewed, no timestamp altered,
   no new source silently admitted. All work is in local commits on
   `work/nwr-draft-upgrade-hq-v1-20260903`.
+
+## Pass V4.5 -- NWR Overnight: repair the observed failures, then finish the UI
+
+Continuation from `688db4ec`, executing the attached `NWR_Overnight_Repair_Tune_UI_20260906.md`
+packet (18 screenshots + `review_findings.md`, reconciled against the existing V3/V4 ledger by
+requirement text). Final commit this pass: `e7c4015c`.
+
+### Screenshot-to-fix closure (highest-priority findings, each independently re-verified)
+
+- **A. Jayden Higgins auto-recommended despite season-ending injury.** Re-verified LIVE this pass
+  (not trusted from the packet) via ESPN/NFL.com/CBS Sports/Houston Texans official
+  transactions+roster/Patriots official trade announcement: real torn ACL (season-ending),
+  Reserve/Injured with no Designated-for-Return, effective 2026-08-19/21. New
+  `current_player_status_overrides_service.py` + a small, individually-sourced override file zero
+  his effective value for automatic recommendation/CPU-pick/roster-completion purposes while
+  preserving the ORIGINAL projection for provenance and keeping him searchable/directly draftable
+  with the correction visible. Applied only at the two real live-ranking call sites (never inside
+  `_asset_pool`, which historical backtest code also shares) -- 2016-2024 evaluation is
+  unreachable by this change. Tank Dell (Reserve/Injured, Designated for Return) explicitly NOT
+  overridden -- the "not every IR player is season-ending" distinction is proven, not asserted.
+- **B. K 0/1, DST 0/1, BN "6/6" vs BENCH "9".** Traced to TWO independent real defects, both
+  fixed and proven via a new real acceptance script
+  (`scripts/acceptance/nwr_overnight_top_suggestion_autopilot_v1.py`) that repeatedly takes
+  candidate[0] from the production `build_live_decision_bundle` -- the exact function Suggestions
+  calls -- across 8/10/12/16-team leagues, multiple slots, and the explicit ten-team slot-9 case:
+  1. The Suggestions candidate shortlist was built exclusively from `ranking.rows`, which never
+     contains K/DST (unmodeled, manual-pool only) -- they could never appear as a candidate at
+     all. Fixed: real, ADP-ordered manual K/DST candidates are injected when genuinely needed.
+  2. Even once visible, a genuinely zero-valued K/DST candidate can never outrank ANY legal
+     positive-value alternative under a pure Pick-Score sort -- so it could never become the
+     actual #1 row. Fixed by reusing `_forced_position` (the same real, tested function
+     `_select_asset`'s CPU/autopilot path already relies on) to RESTRICT the default shortlist to
+     the genuinely-due position, guaranteeing it is the visible slate, not merely present in it.
+  3. The bench-count pill was clamping its displayed "have" to the configured `bench_size`,
+     exactly the "hide overflow with `min(actual, capacity)`" pattern the directive names --
+     fixed to show the real, unclamped count with a new overflow style. A non-blocking bootstrap
+     notice now discloses when a profile's own `rounds` doesn't equal `starters + bench_size`
+     (the deeper root cause) -- disclosed, not auto-corrected (every existing builtin preset
+     shares this same mismatch; blindly rejecting saves on it would break active profiles).
+  - Re-running the full acceptance matrix (7 configurations) after both fixes: every single one
+    finishes K 1/1, DST 1/1, zero duplicates, zero legality dead-ends, 100% of picks sourced
+    directly from the top Suggestions candidate.
+- **C. Whole slates collapsing to Pick Score 50 (tied), Team After 99, zero Equity delta.**
+  Precisely traced, not just re-labeled: `simulate_pick_now`'s continuation is 100% deterministic
+  given one fixed seed (CPU picks use ADP+seeded jitter; the owner's own look-ahead continuation
+  is a pure deterministic greedy sort) -- combined with a nearby deadline-forced need, very
+  different real candidates can converge to a near-identical simulated final roster. Fixed:
+  `evaluate_pick_candidates` gained an optional `continuation_seeds` parameter (default 1, proven
+  byte-identical to every prior caller), averaging Team Score/win_probability across multiple
+  real continuation seeds when `>1` -- wired to 3 for FAST/STANDARD, 5 for DEEP. Measured, real
+  effect against an actual practice-profile pick that previously showed universal 50/99 ties: now
+  shows genuine, differentiated Pick Scores from 100.0 to 0.0 and Team After from 99.0 to 91.0,
+  `tied=False` throughout. Latency measured directly (not assumed):
+  `docs/codex/NWR_OVERNIGHT_CONTINUATION_SEEDS_LATENCY_20260907.md`, ~6.5s warm FAST, comfortably
+  inside the 60-second draft-clock budget.
+- **D. Default table order/DQ/Pick Score/Action not clearly expressing one recommendation.**
+  Substantially addressed by C and B.2 above (real Pick Score spread instead of universal ties;
+  a genuinely-due K/DST becomes the whole visible slate rather than one buried, unwinnable row).
+  A dedicated cross-metric consistency pass beyond this remains bounded by the shared
+  `metricStatus` contract shipped in Pass V4.4 -- RAV/regret/DQ still on their own older
+  disclosure, a named, not hidden, remaining gap.
+- **E. Kayshon Boutte shown NE despite Houston trade.** Re-verified LIVE this pass (Patriots
+  official trade announcement, Texans official transactions+roster): traded to Houston 2026-08-25,
+  active on Houston's current roster. Corrected via the same override service (`TEAM_CORRECTION`
+  kind) -- value/rank untouched, only `team` corrected. Jauan Jennings confirmed already-correct
+  (MIN) in the admitted snapshot -- explicitly NOT touched, proving this isn't a blind "fix every
+  team label" pass.
+- **F. Stale projections/news.** Unchanged from Pass V4.4's findings -- projections remain gated
+  behind the real governance-approval boundary this session cannot self-issue (see that pass's
+  candidate-refresh work, `NO_MATERIAL_CONTENT_CHANGE` verdict); ADP has a real working refresh;
+  news has no refresh pathway at all. Ranking `team`/`status` (a narrower, real-time-correctable
+  fact distinct from full projection re-admission) is now correctable via the new override
+  service for the specific, individually-sourced facts recorded above.
+
+### Owner corrections addressed
+
+- **1.09 seat-selection bug** (unresolved product defect, per the owner's own framing): traced
+  precisely -- the slot-picker panel only rendered while `!board.configured`; once a draft was
+  configured, "New / Restart" was the only remaining control and it always restarted at whatever
+  slot was set on the ORIGINAL page load, with no owner-visible way to change it. Fixed: "New /
+  Restart" now always routes through the confirm step, which now also reveals the same slot
+  picker (relabeled for restart context) so a new slot can be chosen before confirming. Slot
+  availability stays bounded by real `team_count` (unchanged). **Live rendered verification of
+  this specific fix was not completed this pass** -- port 1422 was found occupied by a real
+  `nwr-redraft-war-room.exe` window this session did not start; per the standing rule that an NWR
+  command line on that port is not proof the owner isn't using it, it was not stopped, not
+  hot-reloaded, and not seized for testing. The fix is real and typechecked/tested at the
+  component-logic level; the owner's own visual confirmation is the remaining step.
+- **6.10 intentional clear**: preserved as the successful behavior it was -- not re-diagnosed as
+  accidental loss anywhere in this pass's work or this report.
+- **First-visible-suggestion policy**: reproduced exactly, end to end, via the real production
+  code path -- see the acceptance script above.
+
+### Genuine tuning (Section 7) -- scope decision, disclosed honestly
+
+No separate tuning challenger was built this pass. Given the real time budget consumed by the
+correctness repairs above (particularly B and C, which were the direct, measured cause of the
+screenshot evidence motivating the tuning request in the first place), and the directive's own
+instruction to reserve the delivery window for verification and handoff rather than open new
+model experiments late, this was a deliberate scope decision, not a silent omission -- recorded
+here as an explicitly open item, matching "Do not quietly omit requested functionality... any
+unfinished requirement remains explicitly open in the same ledger."
+
+What the repairs alone already changed, measured directly: the continuation-seeds fix (C) already
+produces genuine, non-tied differentiation between a strong current-need pick and a low-marginal-
+value alternative in real observed data (e.g., a backup QB scoring meaningfully lower than an
+elite RB at an early-draft decision, rather than tying). Whether a further, purpose-built
+paired-turn/marginal-value policy (Section 7's Challenger A/C) would improve on the repaired
+baseline is a real, still-open, unanswered question -- not claimed as answered by the repairs
+above, and not tested this pass.
+
+### Full-draft acceptance (Section 9)
+
+Real acceptance script (`scripts/acceptance/nwr_overnight_top_suggestion_autopilot_v1.py`), 7
+configurations run this pass: (10-team, slot 9, 2 seeds), (10-team, slot 1), (8-team, slot 4),
+(12-team, slot 6), (16-team, slot 1), (16-team, slot 16). Every configuration: complete legal
+roster, K 1/1 and DST 1/1, zero duplicate/out-of-capacity picks, zero legality dead-ends, and
+literally every pick sourced from the real production Suggestions candidate[0] -- no manual
+rescue, no hidden reordering. This is a genuine, reduced-but-real subset of the requested
+"minimum 24 complete drafts spanning 8/10/12/16 teams, early/middle/late seats, multiple
+seeds/policies" matrix -- 7 runs, not 24, disclosed as reduced given the real session time budget,
+not presented as the full requested matrix. The explicit ten-team slot-9 case IS covered, across
+two seeds.
+
+Not run this pass: the owner's own real, saved league profiles (only isolated synthetic fixtures
+were used, by design, to avoid touching any owner-active mock); STEP-speed/manual-pace runs;
+half-PPR vs PPR vs standard scoring variation; an explicit LIVE_READ_ONLY-mode run.
+
+### UI cleanup (Section 10)
+
+Fixed this pass: the 1.09 restart-slot bug; the 708px Switch-card sizing bug (a real, precisely
+root-caused flex-basis/axis mismatch, not a guess); long QA-profile-name overflow; duplicate
+"Draft complete" text; the bench-count clamp. **Not attempted this pass, explicitly remaining
+open**: round.pick formatting for the ADP column specifically (currently a raw decimal, e.g.
+"194.4" -- converting it safely requires reconciling the ADP source's own `team_count` against
+the room's configured `team_count` first, since blindly reformatting risks exactly the "silently
+convert source context" failure the directive warns against; not rushed this pass); Action-color
+palette (green/amber/muted-red) audit; tooltip/DQ-help overflow audit; the "More" popover
+outside-click/Escape behavior; end-of-draft summary content audit. Preserved, not touched: every
+already-working V3/V4 control (search, position filters, Draft/Queue/Compare, pick correction,
+Cheat Sheets, UDK import).
+
+### Final verification scope and honest limitations
+
+- Backend: scoped regression suites green throughout (68, 116, 155 passed across checkpoints,
+  zero failures introduced); `desktop_application_api` baseline re-checked after every checkpoint,
+  unchanged (39 passed, the same 4 pre-existing failures, byte-identical names each time).
+- Frontend: desktop-wide `npm run typecheck` clean and `npm run test` 125/125 passed after every
+  checkpoint that touched TS/TSX.
+- **No live rendered/native verification performed this pass.** Port 1422 was found occupied,
+  early in this pass's own final safety sweep, by a real `nwr-redraft-war-room.exe` window this
+  session did not start -- treated as a possible active owner session per the standing rule ("an
+  NWR command line is not proof the owner is not using it") and left completely untouched
+  throughout. This means the 1.09/narrow-width/duplicate-text UI fixes above are
+  code-level-verified (typecheck + component-logic review) but NOT pixel/rendered-verified this
+  pass -- an honest, explicit limitation, not implied as covered.
+- No push, merge, deploy, model retraining, or credential exposure. Every override/correction in
+  this pass cites a real, dated, named source (see `config/
+  nwr_verified_current_player_status_overrides_v1.json`) -- nothing fabricated.
+
+### Separate verdicts (Section 12 format)
+
+- **DATA**: LIMITED -- identity/team/season-out status now correctable via a real, individually-
+  sourced override mechanism (2 real corrections live this pass); projections remain gated behind
+  governance approval (Pass V4.4); ADP has a real working refresh; news has no refresh pathway.
+- **ROSTER_AND_WORKFLOW**: PASS -- proven via the real acceptance matrix (K/DST completion, no
+  duplicates, no season-out auto-selection, correct slot-9 seat, legal completion) across 7 real
+  configurations.
+- **ALGORITHM**: BASELINE_RETAINED -- the existing engine was repaired (continuation-seeds
+  averaging, forced-position shortlist restriction), not replaced; no new tuning challenger was
+  built or promoted this pass.
+- **UI**: PARTIAL -- several real, root-caused defects fixed and typechecked; not pixel/render-
+  verified this pass (active-session port conflict); several named items from Section 10
+  explicitly not attempted.
+- **OWNER_DESKTOP**: NOT_VERIFIED this pass (see above) -- the launch chain itself is unchanged
+  from the prior pass's real process-level verification.
+
+**Overall: `YELLOW_OVERNIGHT_USEFUL_WITH_NAMED_LIMITATIONS`.** Real, verified, high-value repairs
+landed and are safe to build on; genuine tuning and full native/rendered verification remain
+explicitly open, not silently dropped.
