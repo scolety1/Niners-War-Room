@@ -50,6 +50,7 @@ import { NwrApiError, type NwrApiClient, type RedraftDecisionBundleV2CandidateRe
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CheatSheetPage } from "./cheat-sheet";
+import { rosterFormat, scoringFormat } from "./league-context";
 // Reused, not rebuilt (section 9 -- REUSE FIRST): the exact global,
 // position-filter-ignoring pick search and keyboard-navigation helpers the
 // production Draft Room (pages.tsx) already ships and that fixed 23 real
@@ -642,7 +643,10 @@ export function generateCompareSummary(rows: CompareRow[], positionDepth: Record
   if (evaluated.length > 0) {
     const bestPickScore = evaluated.reduce((a, b) => (a.pickScore! > b.pickScore! ? a : b));
     parts.push(
-      `${bestPickScore.playerName} has the highest Pick Score — EXPERIMENTAL among the evaluated candidates in this comparison (${formatNumber(bestPickScore.pickScore!, 1)}).`,
+      // NWR FINAL OWNER-FEEDBACK RECONCILIATION: "EXPERIMENTAL" dropped
+      // from this owner-facing sentence -- the same disclosure is always
+      // one hover away on the table's Pick Score column header/cells.
+      `${bestPickScore.playerName} has the highest Pick Score among the evaluated candidates in this comparison (${formatNumber(bestPickScore.pickScore!, 1)}).`,
     );
   }
   const ranked = rows.filter((row) => row.nwrRank != null);
@@ -907,7 +911,25 @@ export function DraftRoomV2Page({
   const [setupSlot, setSetupSlot] = useState(String(data.activeProfile?.draft.draftSlot ?? 1));
   const [setupMode, setSetupMode] = useState<"MOCK" | "LIVE_READ_ONLY">("MOCK");
   const [setupSpeed, setSetupSpeed] = useState<"FAST" | "NORMAL" | "STEP">("NORMAL");
-  const [restartConfirming, setRestartConfirming] = useState(false);
+  const [setupTeamCount, setSetupTeamCount] = useState(data.activeProfile?.teamCount ?? 10);
+  // NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0): `setupOpen` replaces the
+  // old "always show the giant slot panel once unconfigured, otherwise
+  // only the confirm strip" split -- there is now exactly one surface and
+  // exactly one boolean (plus `setupConfirming` for its single in-surface
+  // confirmation) governing whether it is visible.
+  const [setupOpen, setSetupOpen] = useState(!board?.configured);
+  const [setupConfirming, setSetupConfirming] = useState(false);
+
+  const openSetup = () => {
+    // Reopening always reloads the CURRENT profile/board values -- an
+    // owner who opens the surface, changes nothing, and cancels must see
+    // the real current state next time, never a stale edit from a
+    // previous open.
+    setSetupSlot(String(board?.ownerSlot ?? data.activeProfile?.draft.draftSlot ?? 1));
+    setSetupTeamCount(data.activeProfile?.teamCount ?? 10);
+    setSetupConfirming(false);
+    setSetupOpen((value) => (board?.configured ? !value : true));
+  };
 
   const startOrRestart = async () => {
     if (!data.activeProfileId) return;
@@ -915,8 +937,35 @@ export function DraftRoomV2Page({
     setWorking("start");
     setMutationError(null);
     try {
+      // Team count is a profile-level setting, not a draft-room-start
+      // parameter -- persist it (and only it; every other roster/scoring
+      // field is passed through byte-for-byte unchanged) through the same
+      // real `updateRedraftProfile` call the Profile page already uses,
+      // THEN (re)start the draft room, which is the one real place snake
+      // order, valid slots, board columns, and round.pick notation are
+      // ever rebuilt for the new team count.
+      let profile = data.activeProfile;
+      if (profile && setupTeamCount !== profile.teamCount) {
+        const updated = await client.updateRedraftProfile(data.activeProfileId, {
+          leagueName: profile.leagueName,
+          teamCount: setupTeamCount,
+          roster: {
+            qb: profile.roster.qb, rb: profile.roster.rb, wr: profile.roster.wr, te: profile.roster.te,
+            flex: profile.roster.flex, superflex: profile.roster.superflex, k: profile.roster.k,
+            dst: profile.roster.dst, benchSize: profile.roster.benchSize,
+          },
+          scoring: {
+            reception: profile.scoring.reception, passingTd: profile.scoring.passingTd,
+            interception: profile.scoring.interception, tePremium: profile.scoring.tePremium,
+          },
+          draft: { rounds: profile.draft.rounds, draftSlot: slot, replacementMethod: profile.draft.replacementMethod },
+        });
+        onUpdate(updated);
+        profile = updated.activeProfile;
+      }
       onUpdate(await client.startDraftRoom(data.activeProfileId, slot, setupSpeed, 20260817, setupMode));
-      setRestartConfirming(false);
+      setSetupConfirming(false);
+      setSetupOpen(false);
     } catch (reason) {
       setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError("The draft could not be started."));
     } finally {
@@ -924,22 +973,10 @@ export function DraftRoomV2Page({
     }
   };
 
-  const onRestartClick = () => {
-    // NWR OVERNIGHT (owner-reported: no working path to draft from 1.09):
-    // the slot picker below (DraftSetupPanel) only rendered while
-    // `!board.configured` -- once a draft is configured/started, "New /
-    // Restart" is the ONLY control left, and it always restarted at
-    // whatever slot was set at the ORIGINAL page load, with no owner-
-    // visible way to change it first. Always routing through the confirm
-    // step (not only when draftedCount > 0) means the slot picker -- now
-    // also shown whenever restartConfirming is true, see below -- is
-    // reachable through this one real button every time, not only when
-    // picks already exist.
-    if (!restartConfirming) {
-      setRestartConfirming(true);
-      return;
-    }
-    void startOrRestart();
+  const onRequestRestart = () => setSetupConfirming(true);
+  const onCancelSetup = () => {
+    setSetupConfirming(false);
+    setSetupOpen(false);
   };
 
   const draftedIds = board?.drafted ?? [];
@@ -1166,13 +1203,17 @@ export function DraftRoomV2Page({
     <div className="draft-room-v2-page">
       <PageHeader
         eyebrow={draftRoomV2Eyebrow(board)}
-        title={`${data.activeProfile.leagueName} — Draft Room`}
+        // NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Active League
+        // header cleanup" / duplicate title): this page previously
+        // repeated the full league name plus a static "— Draft Room"
+        // suffix here -- the owner already knows he's in the Draft Room,
+        // and the Active League header above already shows the league
+        // name. Left empty (CSS collapses an empty <h1> to reclaim the
+        // vertical space) so prime space goes to draft information.
+        title=""
         description=""
         actions={
           <>
-            <Button data-draft-undo disabled={!board?.canUndo || Boolean(working)} icon="undo" variant="secondary" onClick={() => void undo()}>
-              {working === "undo" ? "Restoring…" : "Undo"}
-            </Button>
             <Button
               variant={nwrPureActive ? "primary" : "ghost"}
               onClick={onToggleNwrPure}
@@ -1205,11 +1246,27 @@ export function DraftRoomV2Page({
           teamCount={data.activeProfile.teamCount}
           onUndo={() => void undo()}
           undoWorking={working === "undo"}
-          onRestartClick={onRestartClick}
-          restartConfirming={restartConfirming}
-          onConfirmRestart={() => void startOrRestart()}
-          onCancelRestart={() => setRestartConfirming(false)}
-          restartWorking={working === "start"}
+          onOpenSetup={openSetup}
+          setupOpen={setupOpen}
+        />
+      ) : null}
+      {setupOpen ? (
+        <DraftSetupSurface
+          profile={data.activeProfile}
+          teamCount={setupTeamCount}
+          onTeamCountChange={setSetupTeamCount}
+          slot={setupSlot}
+          onSlotChange={setSetupSlot}
+          mode={setupMode}
+          onModeChange={setSetupMode}
+          speed={setupSpeed}
+          onSpeedChange={setSetupSpeed}
+          configured={Boolean(board?.configured)}
+          confirming={setupConfirming}
+          onRequestRestart={onRequestRestart}
+          onConfirm={() => void startOrRestart()}
+          onCancel={onCancelSetup}
+          working={working === "start"}
         />
       ) : null}
       {board?.configured ? (
@@ -1220,24 +1277,6 @@ export function DraftRoomV2Page({
           working={working}
           onRefreshAdp={() => void refreshAdp()}
           onImportAdp={(file) => void importAdp(file)}
-        />
-      ) : null}
-      {!board?.configured || restartConfirming ? (
-        <DraftSetupPanel
-          teamCount={data.activeProfile.teamCount}
-          slot={setupSlot}
-          onSlotChange={setSetupSlot}
-          mode={setupMode}
-          onModeChange={setSetupMode}
-          speed={setupSpeed}
-          onSpeedChange={setSetupSpeed}
-          onStart={() => void startOrRestart()}
-          working={working === "start"}
-          // NWR OVERNIGHT: this is the ONLY place the owner can change
-          // seat/mode/speed before a restart, since the setup panel is
-          // otherwise hidden once a draft is configured -- label it
-          // accordingly so "Restart" and "Start" don't look identical.
-          restarting={Boolean(board?.configured)}
         />
       ) : null}
       <div className="draft-room-v2-quickpick">
@@ -1315,16 +1354,32 @@ export function DraftRoomV2Page({
           ))}
         </nav>
         <div className="draft-room-v2-tabbar__secondary">
+          {/* NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Compare easy
+              entry/exit"): the owner's screenshot showed a cryptic "More 4"
+              -- the player-compare count sitting next to an unrelated
+              overflow-menu label. Compare now gets its own explicit,
+              always-visible "Compare (N)" entry point (one click, straight
+              into the tab) whenever anything is queued for comparison; the
+              generic "More" trigger (Replay) never carries that number. */}
+          {compareIds.length > 0 ? (
+            <button
+              type="button"
+              aria-pressed={tab === "COMPARE"}
+              className={tab === "COMPARE" ? "draft-room-v2-htab draft-room-v2-htab--active" : "draft-room-v2-htab"}
+              onClick={() => { setTab("COMPARE"); setSecondaryMenuOpen(false); }}
+            >
+              Compare ({compareIds.length})
+            </button>
+          ) : null}
           <div className="draft-room-v2-more">
             <button
               type="button"
               aria-expanded={secondaryMenuOpen}
               aria-haspopup="menu"
-              className={secondaryMenuOpen || tab === "COMPARE" || tab === "REPLAY" ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+              className={secondaryMenuOpen || tab === "REPLAY" || (tab === "COMPARE" && compareIds.length === 0) ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
               onClick={() => setSecondaryMenuOpen((value) => !value)}
             >
               More
-              {compareIds.length > 0 ? <b className="draft-room-v2-tab__badge">{compareIds.length}</b> : null}
               <Icon name="chevron" size={11} />
             </button>
             {secondaryMenuOpen ? (
@@ -1332,7 +1387,6 @@ export function DraftRoomV2Page({
                 {(["COMPARE", "REPLAY"] as const).map((value) => (
                   <button key={value} role="menuitem" type="button" onClick={() => { setTab(value); setSecondaryMenuOpen(false); }}>
                     {tabLabel(value)}
-                    {value === "COMPARE" && compareIds.length > 0 ? <b className="draft-room-v2-tab__badge">{compareIds.length}</b> : null}
                   </button>
                 ))}
               </div>
@@ -1418,6 +1472,11 @@ export function DraftRoomV2Page({
             rows={compareRows}
             summary={compareSummary}
             onRemove={(playerId) => setCompareIds((current) => current.filter((id) => id !== playerId))}
+            onAdd={(playerId) => setCompareIds((current) => toggleCompareSelection(current, playerId))}
+            onClearAll={() => setCompareIds([])}
+            onClose={() => setTab("SUGGESTIONS")}
+            rankings={data.rankings as unknown as PickSearchAsset[]}
+            manualAssets={(data.manualAssets ?? []) as unknown as PickSearchAsset[]}
             currentPick={board?.currentPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
             adpTeamCount={board?.adp?.teamCount ?? null}
@@ -1496,21 +1555,15 @@ function CompactOnClockRow({
   teamCount,
   onUndo,
   undoWorking,
-  onRestartClick,
-  restartConfirming,
-  onConfirmRestart,
-  onCancelRestart,
-  restartWorking,
+  onOpenSetup,
+  setupOpen,
 }: {
   board: DraftBoard;
   teamCount: number;
   onUndo: () => void;
   undoWorking: boolean;
-  onRestartClick: () => void;
-  restartConfirming: boolean;
-  onConfirmRestart: () => void;
-  onCancelRestart: () => void;
-  restartWorking: boolean;
+  onOpenSetup: () => void;
+  setupOpen: boolean;
 }) {
   const picksUntilOwner = board.nextOwnerPick && board.currentPick ? Math.max(0, board.nextOwnerPick - board.currentPick) : null;
   const round = board.currentPick ? Math.ceil(board.currentPick / Math.max(1, teamCount)) : null;
@@ -1558,20 +1611,18 @@ function CompactOnClockRow({
         {snakeForward ? "1→N" : "N→1"}
       </span>
       <span className="draft-room-v2-onclock__spacer" />
-      {restartConfirming ? (
-        <span className="draft-room-v2-onclock__confirm">
-          <span>Clear the board and restart?</span>
-          <Button variant="danger" disabled={restartWorking} onClick={onConfirmRestart}>{restartWorking ? "Restarting…" : "Confirm"}</Button>
-          <Button variant="ghost" onClick={onCancelRestart}>Cancel</Button>
-        </span>
-      ) : (
-        <>
-          <Button data-draft-undo disabled={!board.canUndo || undoWorking} icon="undo" variant="secondary" onClick={onUndo}>
-            {undoWorking ? "Restoring…" : "Undo"}
-          </Button>
-          <Button variant="ghost" onClick={onRestartClick}>New / Restart</Button>
-        </>
-      )}
+      {/* NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Remove duplicate
+          Undo"): this is now the ONE authoritative Undo control in the
+          app -- the PageHeader's former second `data-draft-undo` button
+          was removed, not merely hidden. "New / Restart" plus its own
+          inline confirmation strip is gone too -- both now live inside
+          the single Draft Setup surface (DraftSetupSurface), which also
+          owns team count, mode, and slot, so there is exactly one place
+          to start or restart a draft, not four stacked pieces. */}
+      <Button data-draft-undo disabled={!board.canUndo || undoWorking} icon="undo" variant="secondary" onClick={onUndo}>
+        {undoWorking ? "Restoring…" : "Undo"}
+      </Button>
+      <Button variant={setupOpen ? "primary" : "ghost"} onClick={onOpenSetup}>Draft Setup</Button>
     </section>
   );
 }
@@ -1603,8 +1654,16 @@ function RoomControls({
 }) {
   return (
     <section className="draft-room-v2-room-controls">
+      {/* NWR FINAL OWNER-FEEDBACK RECONCILIATION: renamed from "Room
+          Controls" -- the owner's own complaint used that exact phrase for
+          the WHOLE broken start/restart flow (now DraftSetupSurface,
+          reached via the "Draft Setup" button), which was visually
+          stacked directly above/below this unrelated ADP-refresh/import
+          panel. Same component, same real client.refreshRedraftAdp /
+          client.importRedraftAdp calls -- label only, so the two surfaces
+          are never conflated again. */}
       <button type="button" className="draft-room-v2-room-controls__toggle" onClick={onToggle} aria-expanded={open}>
-        Room Controls <Icon name="chevron" size={11} />
+        Market Data / ADP <Icon name="chevron" size={11} />
       </button>
       {open ? (
         <div className="draft-room-v2-room-controls__body">
@@ -1629,61 +1688,102 @@ function RoomControls({
   );
 }
 
-/** P0 owner-workflow rescue, sections 1+3: a real, self-contained
- * draft-slot/mode setup control -- the consolidated room must never say
- * "go to Legacy" to start or restart a mock. Ported from pages.tsx#
- * DraftRoomPage's own "Set your draft slot" panel (same
- * client.startDraftRoom call, same MOCK/LIVE_READ_ONLY/speed options),
- * not rebuilt. Shown instead of a dead Suggestions panel whenever the
- * board is not yet configured. */
-function DraftSetupPanel({
+/** NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Replace Room
+ * Controls/Restart UX"): the owner reported the prior flow -- Room
+ * Controls -> New/Restart -> a separate confirmation strip -> a giant
+ * "Pick a new slot" panel -> another Restart button -- as four different
+ * stacked UI pieces that read as one broken flow. This is now the ONE
+ * compact Draft Setup surface for the whole start/restart/team-count
+ * workflow, reusing the exact same real state/calls that already existed
+ * (client.startDraftRoom, client.updateRedraftProfile) -- no new settings
+ * system. Team count (8/10/12/16) is real and wired: `update_redraft_profile`
+ * already accepted `team_count` (see desktop_facade.py) but no GUI control
+ * ever exposed it -- changing it here persists the profile first, then
+ * (re)starts the draft room, which is the ONE real place snake order,
+ * board columns, valid slots, and round.pick notation are ever rebuilt.
+ * Unrelated roster/scoring fields are always passed through unchanged. */
+function DraftSetupSurface({
+  profile,
   teamCount,
+  onTeamCountChange,
   slot,
   onSlotChange,
   mode,
   onModeChange,
   speed,
   onSpeedChange,
-  onStart,
+  configured,
+  confirming,
+  onRequestRestart,
+  onConfirm,
+  onCancel,
   working,
-  restarting = false,
 }: {
+  profile: LeagueProfile;
   teamCount: number;
+  onTeamCountChange: (value: number) => void;
   slot: string;
   onSlotChange: (value: string) => void;
   mode: "MOCK" | "LIVE_READ_ONLY";
   onModeChange: (value: "MOCK" | "LIVE_READ_ONLY") => void;
   speed: "FAST" | "NORMAL" | "STEP";
   onSpeedChange: (value: "FAST" | "NORMAL" | "STEP") => void;
-  onStart: () => void;
+  configured: boolean;
+  confirming: boolean;
+  onRequestRestart: () => void;
+  onConfirm: () => void;
+  onCancel: () => void;
   working: boolean;
-  restarting?: boolean;
 }) {
+  const roster = profile.roster;
   return (
     <Panel
-      title={restarting ? "Change your draft slot before restarting" : "Your draft slot"}
-      eyebrow={restarting ? "Pick a new slot, then confirm below to clear the board and restart" : "Choose a slot and start -- no other setup required"}
+      className="draft-room-v2-draftsetup"
+      title="Draft Setup"
+      eyebrow={configured ? "Change team count, mode, or slot -- restart applies them" : "Choose your team count and slot, then start -- no other setup required"}
+      action={configured ? <Button variant="ghost" onClick={onCancel}>Cancel</Button> : null}
     >
       <div className="draft-room-v2-setup">
-        <div className="draft-room-v2-setup__slots">
-          {Array.from({ length: teamCount }, (_, index) => index + 1).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={slot === String(value)}
-              className={slot === String(value) ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
-              onClick={() => onSlotChange(String(value))}
-            >
-              {value}
-            </button>
-          ))}
+        <div className="draft-room-v2-setup__row">
+          <span className="draft-room-v2-setup__label">League / Profile</span>
+          <strong className="draft-room-v2-setup__value" title={profile.leagueName}>{profile.leagueName}</strong>
         </div>
+        <SelectField
+          label="Teams"
+          value={String(teamCount)}
+          onChange={(value) => {
+            const next = Number(value);
+            onTeamCountChange(next);
+            // A team-count change can orphan the currently-selected slot
+            // (e.g. slot 10 no longer exists at 8 teams) -- clamp it into
+            // range immediately so the slot control below never offers an
+            // invalid selection.
+            if (Number(slot) > next) onSlotChange("1");
+          }}
+          options={[8, 10, 12, 16].map((value) => ({ value: String(value), label: `${value} teams` }))}
+        />
         <SelectField
           label="Draft mode"
           value={mode}
           onChange={(value) => onModeChange(value as "MOCK" | "LIVE_READ_ONLY")}
           options={[{ value: "MOCK", label: "Practice mock (CPU opponents)" }, { value: "LIVE_READ_ONLY", label: "Live (I enter every real pick)" }]}
         />
+        <div className="draft-room-v2-setup__slotgroup">
+          <span className="draft-room-v2-setup__label">My draft slot</span>
+          <div className="draft-room-v2-setup__slots">
+            {Array.from({ length: teamCount }, (_, index) => index + 1).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={slot === String(value)}
+                className={slot === String(value) ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
+                onClick={() => onSlotChange(String(value))}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+        </div>
         {mode === "MOCK" ? (
           <SelectField
             label="CPU speed"
@@ -1692,9 +1792,26 @@ function DraftSetupPanel({
             options={[{ value: "FAST", label: "Fast" }, { value: "NORMAL", label: "Normal" }, { value: "STEP", label: "Step" }]}
           />
         ) : null}
-        <Button disabled={working} variant="primary" onClick={onStart}>
-          {working ? "Starting…" : restarting ? "Restart at this slot" : "Start Mock"}
-        </Button>
+        <details className="draft-room-v2-setup__summary">
+          <summary>Scoring &amp; roster summary</summary>
+          <p>
+            {scoringFormat(profile)} · {rosterFormat(profile)} · QB {roster.qb} · RB {roster.rb} · WR {roster.wr} · TE {roster.te} · FLEX {roster.flex}
+            {roster.superflex ? ` · SUPERFLEX ${roster.superflex}` : ""} · K {roster.k} · DST {roster.dst} · Bench {roster.benchSize}
+          </p>
+        </details>
+        {confirming ? (
+          <div className="draft-room-v2-setup__confirm">
+            <span>Restart this draft with: {teamCount} teams · Slot {slot} · {mode === "MOCK" ? "Mock" : "Live"} mode?</span>
+            <Button variant="danger" disabled={working} onClick={onConfirm}>{working ? "Restarting…" : "Restart"}</Button>
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          </div>
+        ) : configured ? (
+          <Button variant="danger" onClick={onRequestRestart}>Restart Draft</Button>
+        ) : (
+          <Button disabled={working} variant="primary" onClick={onConfirm}>
+            {working ? "Starting…" : "Start Draft"}
+          </Button>
+        )}
       </div>
     </Panel>
   );
@@ -1743,10 +1860,27 @@ function SuggestionsTab({
 }) {
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
+  // NWR FINAL OWNER-FEEDBACK RECONCILIATION (P1, new item "Show Ballers"):
+  // an explicit, off-by-default toggle surfacing the owner's already-
+  // imported UDK/Fantasy Footballers ("Ballers") fields directly on the
+  // primary Suggestions table -- previously this real data only reached
+  // Suggestions as the stale-news banner and the alert dot; every other
+  // UDK field (position rank, tier, ADP, risk, upside) was reachable only
+  // via the Rankings tab's own "UDK" column or one click into the player
+  // drawer. No new acquisition system, no blending into NWR scoring --
+  // this only renders fields that already exist on `externalIntel`, with
+  // an honest "Not loaded"/"No Ballers data" fallback rather than ever
+  // inventing a value.
+  const [showBallers, setShowBallers] = useState(false);
   const isManualPosition = positionFilter === "K" || positionFilter === "DST";
   const manualRows = isManualPosition
     ? (manualAssets ?? []).filter((row) => row.position === positionFilter)
     : [];
+  const ballersById = useMemo(() => {
+    const map = new Map<string, RedraftExternalIntelligenceEntry>();
+    for (const entry of externalIntel?.entries ?? []) map.set(entry.playerId, entry);
+    return map;
+  }, [externalIntel]);
   // Compact primary table (owner feedback: headers must read as drafting
   // chrome, not research-development labels). Evidence status
   // (EXPERIMENTAL/RESEARCH/SIMULATED RESEARCH) moves to a header hover
@@ -1821,6 +1955,26 @@ function SuggestionsTab({
       const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
       return <span title={title}>{split.value}</span>;
     } },
+    ...(showBallers ? [{
+      key: "ballers", label: "Ballers", sort: "text" as const,
+      titleHint: "Fantasy Footballers Ultimate Draft Kit (UDK) -- the owner's own imported CSV. Never blended into NWR rank/score.",
+      render: (row: Record<string, unknown>) => {
+        if (!externalIntel?.available) return <span title="No UDK/Fantasy Footballers file has been imported for this profile.">Not loaded</span>;
+        const entry = ballersById.get(String(row.playerId));
+        const fields = [
+          entry?.udkPositionRank ? `#${entry.udkPositionRank}` : null,
+          entry?.udkTier ? `Tier ${entry.udkTier}` : null,
+        ].filter((value): value is string => value != null);
+        if (!entry || fields.length === 0) return <span title="This player has no Ballers/Fantasy Footballers fields in the imported file.">No Ballers data</span>;
+        const detail = [
+          entry.udkAdp ? `ADP ${entry.udkAdp}` : null,
+          entry.udkRisk ? `Risk ${entry.udkRisk}` : null,
+          entry.udkUpside ? `Upside ${entry.udkUpside}` : null,
+          entry.udkProjectedPoints ? `Proj ${entry.udkProjectedPoints}` : null,
+        ].filter(Boolean).join(" · ");
+        return <span title={detail || "Ballers/Fantasy Footballers data"}>{fields.join(" · ")}</span>;
+      },
+    }] : []),
   ];
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
@@ -1875,7 +2029,22 @@ function SuggestionsTab({
           ) : null}
         </div>
       ) : null}
-      <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
+      <Panel
+        title="Suggestions"
+        // NWR FINAL OWNER-FEEDBACK RECONCILIATION: "Real DecisionBundle
+        // candidates" was backend-module terminology living in prime UI --
+        // the underlying data/sort order is unchanged, only the label.
+        eyebrow="Default sorted by Pick Score, descending"
+        action={
+          <Button
+            variant={showBallers ? "primary" : "ghost"}
+            onClick={() => setShowBallers((value) => !value)}
+            title="Adds a Ballers (Fantasy Footballers UDK) column from the owner's own imported file. Never blended into NWR rank or score."
+          >
+            {showBallers ? "Hide Ballers" : "Show Ballers"}
+          </Button>
+        }
+      >
         <div className="draft-room-v2-position-filter">
           {(superflex > 0
             ? ["ALL", "QB", "RB", "WR", "TE", "FLEX", "SFLX", "K", "DST"]
@@ -2792,31 +2961,63 @@ function MyTeamTab({ summary, currentScores }: { summary: MyTeamSummary; current
           ))}
         </div>
       </Panel>
-      <Panel title={currentScores.teamScoreLabel ?? "Team Score — RESEARCH"} eyebrow="Current roster, real backend percentile">
+      {/* NWR FINAL OWNER-FEEDBACK RECONCILIATION ("Remove developer/
+          research copy from prime UI"): the backend's own raw label
+          (e.g. "Team Score — RESEARCH") is real provenance data, not
+          fabricated -- but it read as an internal QA tag when used
+          directly as this panel's visible heading. The clean owner-facing
+          title is now static; the backend's exact label text (when
+          present) moves to a hover tooltip via `title`, never dropped. */}
+      <Panel title="Team Score" eyebrow="Current roster, real backend percentile">
         {currentScores.teamScorePercentile == null ? (
           <p className="boundary-note">{RESEARCH_NOT_CONNECTED}. DecisionBundle has not returned a current roster score yet.</p>
         ) : (
-          <p className="score-headline">{formatNumber(currentScores.teamScorePercentile, 1)}</p>
+          <p className="score-headline" title={currentScores.teamScoreLabel ?? undefined}>{formatNumber(currentScores.teamScorePercentile, 1)}</p>
         )}
       </Panel>
       <Panel
-        title={currentScores.championshipEquityLabel ?? "Simulated Championship Equity — RESEARCH"}
-        eyebrow={currentScores.assumedFormat ? "ASSUMED FORMAT — see simulation assumptions" : "Current roster"}
+        title="Championship Equity"
+        eyebrow={currentScores.assumedFormat ? "Assumed format — see simulation assumptions" : "Current roster"}
       >
         {currentScores.championshipEquityWinProbability == null ? (
           <p className="boundary-note">{RESEARCH_NOT_CONNECTED}. DecisionBundle has not returned a current roster score yet.</p>
         ) : (
-          <p className="score-headline">{formatNumber(currentScores.championshipEquityWinProbability * 100, 1)}%</p>
+          <p className="score-headline" title={currentScores.championshipEquityLabel ?? undefined}>{formatNumber(currentScores.championshipEquityWinProbability * 100, 1)}%</p>
         )}
       </Panel>
     </>
   );
 }
 
+/** NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Compare easy entry/exit"
+ * + "Fix Compare data presentation" + "Remove developer/research copy
+ * from prime UI"): rebuilt header ("Compare Players (N)" with an explicit
+ * per-player remove chip, Clear all, Close, and an Add Player search all
+ * inside Compare -- the owner must never be forced out of this surface to
+ * add, remove, replace, or start a new comparison), an added "NWR Rank"
+ * column and reordered columns to match the owner's exact requested list
+ * (Player, Pos, NWR Rank, Player Score, Pick Score, Action, Value,
+ * Market/ADP, Team outcome, Championship Equity outcome, Make-It-
+ * Back/Wait context, status), and every provenance label ("— RESEARCH",
+ * "— SIMULATED RESEARCH", "— EXPERIMENTAL") moved from the visible header
+ * text into a header-hover tooltip via `titleHint` -- the exact same
+ * real, unmodified fields, never removed. Every numeric cell already
+ * routed through `formatNumber`/the shared formatters below, which round
+ * to a fixed decimal count -- there was no unformatted raw float in this
+ * table's own render path; this pass keeps that guarantee explicit for
+ * every cell (see the per-column render fns) rather than assuming it.
+ * "Close" returns to Suggestions without clearing `compareIds` (owned by
+ * the parent, DraftRoomV2Page) -- the comparison is preserved exactly as
+ * the owner specified, never lost on a simple close. */
 function CompareTab({
   rows,
   summary,
   onRemove,
+  onAdd,
+  onClearAll,
+  onClose,
+  rankings,
+  manualAssets,
   currentPick,
   teamCount,
   adpTeamCount,
@@ -2824,37 +3025,78 @@ function CompareTab({
   rows: CompareRow[];
   summary: string;
   onRemove: (playerId: string) => void;
+  onAdd: (playerId: string) => void;
+  onClearAll: () => void;
+  onClose: () => void;
+  rankings: PickSearchAsset[];
+  manualAssets: PickSearchAsset[];
   currentPick: number | null;
   teamCount: number | null;
   adpTeamCount: number | null;
 }) {
+  const [addQuery, setAddQuery] = useState("");
+  const existingIds = rows.map((row) => row.playerId);
+  const addResults = addQuery.trim()
+    ? globalPickSearchRows(rankings, manualAssets, existingIds, addQuery, 6)
+    : [];
+  const header = (
+    <Panel
+      className="draft-room-v2-compare-header"
+      title={`Compare Players (${rows.length})`}
+      eyebrow={`${rows.length} of ${COMPARE_MAX_PLAYERS} players -- Alt+click any player elsewhere in Draft Room V2 to add`}
+      action={
+        <span className="draft-room-v2-compare-header__actions">
+          <Button variant="ghost" disabled={rows.length === 0} onClick={onClearAll}>Clear all</Button>
+          <Button variant="ghost" icon="close" onClick={onClose}>Close</Button>
+        </span>
+      }
+    >
+      <div className="draft-room-v2-compare-chips">
+        {rows.map((row) => (
+          <span key={row.playerId} className="draft-room-v2-chip draft-room-v2-chip--active">
+            {row.playerName}
+            <button type="button" aria-label={`Remove ${row.playerName} from Compare`} onClick={() => onRemove(row.playerId)}>×</button>
+          </span>
+        ))}
+        {rows.length < COMPARE_MAX_PLAYERS ? (
+          <span className="draft-room-v2-compare-add">
+            <SearchInput value={addQuery} onChange={setAddQuery} placeholder="Add player to Compare…" />
+            {addResults.length > 0 ? (
+              <ul className="draft-room-v2-compare-add__results" role="listbox">
+                {addResults.map((candidate) => (
+                  <li key={candidate.playerId}>
+                    <button type="button" onClick={() => { onAdd(candidate.playerId); setAddQuery(""); }}>
+                      <strong>{candidate.playerName}</strong>
+                      <small>{candidate.team} · {candidate.position}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+    </Panel>
+  );
   if (rows.length === 0) {
-    return <EmptyState icon="activity" title="Nothing selected" message="Alt+click a player anywhere in Draft Room V2 to add them here." />;
+    return (
+      <>
+        {header}
+        <EmptyState icon="activity" title="Nothing selected" message="Alt+click a player anywhere in Draft Room V2, or use Add Player above, to start a comparison." />
+      </>
+    );
   }
   return (
     <>
-      <Panel title="Compare" eyebrow={`${rows.length} of ${COMPARE_MAX_PLAYERS} players`}>
+      {header}
+      <Panel title="Comparison">
         <DataTable
           columns={[
             { key: "playerName", label: "Player", sort: "text" },
             { key: "position", label: "Pos", sort: "text" },
+            { key: "nwrRank", label: "NWR Rank", sort: "number", render: (row) => row.nwrRank == null ? "—" : `#${row.nwrRank}` },
             { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
-            { key: "overallAdp", label: "Market", sort: "number", render: (row) => {
-              const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, teamCount);
-              return <span title={adp.title}>{adp.text}</span>;
-            } },
-            { key: "teamScoreDelta", label: "Team Score Δ — RESEARCH", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
-            { key: "equityGain", label: "Champ Eq Δ — SIMULATED RESEARCH", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
-            { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => {
-              if (row.costOfWaiting == null) return "—";
-              const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.costOfWaiting;
-              return <span title={formatMetricStatus(status, "")}>{formatNumber(row.costOfWaiting as number, 1)}</span>;
-            } },
-            { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => {
-              const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
-              return <span title={mib.title}>{mib.text}</span>;
-            } },
-            { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => {
+            { key: "pickScore", label: "Pick Score", titleHint: "EXPERIMENTAL -- see the player drawer for full evidence/status detail.", sort: "number", render: (row) => {
               const ps = formatPickScore(row.pickScore as number | null, Boolean(row.pickScoreTiedNoSpread));
               const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.pickScore;
               return <span title={`${ps.title} ${formatMetricStatus(status, "")}`.trim()}>{ps.text}</span>;
@@ -2870,6 +3112,21 @@ function CompareTab({
               const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
               return <span title={title}>{split.value}</span>;
             } },
+            { key: "overallAdp", label: "Market / ADP", sort: "number", render: (row) => {
+              const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, teamCount);
+              return <span title={adp.title}>{adp.text}</span>;
+            } },
+            { key: "teamScoreDelta", label: "Team", titleHint: "Team Score Δ -- research-grade simulation, not a calibrated production score.", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
+            { key: "equityGain", label: "Championship", titleHint: "Championship Equity Δ -- simulated research estimate.", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
+            { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => {
+              const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
+              return <span title={mib.title}>{mib.text}</span>;
+            } },
+            { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => {
+              if (row.costOfWaiting == null) return "—";
+              const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.costOfWaiting;
+              return <span title={formatMetricStatus(status, "")}>{formatNumber(row.costOfWaiting as number, 1)}</span>;
+            } },
             { key: "warnings", label: "Warnings", sort: "text", render: (row) => {
               const warnings = row.warnings as string[];
               return warnings.length === 0 ? "—" : <span title={warnings.join(" ")}>{warnings.length} warning{warnings.length > 1 ? "s" : ""}</span>;
@@ -2881,7 +3138,7 @@ function CompareTab({
           rowKey={(row) => String(row.playerId)}
         />
       </Panel>
-      <Panel title="AI Compare Summary" eyebrow="Structured fields only — no invented reasoning">
+      <Panel title="NWR Comparison" eyebrow="Evidence-based summary -- built only from the structured fields in the table above">
         <p>{summary}</p>
       </Panel>
     </>

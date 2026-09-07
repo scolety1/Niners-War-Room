@@ -102,6 +102,17 @@ export function RedraftApp() {
   </AppShell>;
 }
 
+/** NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Active League header
+ * cleanup"): the owner's screenshot showed a broken box -- the full
+ * league/profile name repeated (once as a large heading, again inside the
+ * Switch selector's own selected-option text), an ADP badge overlapping
+ * the Switch control, no Projections freshness (shown elsewhere, in the
+ * window title bar only), and a "Draft board ready" badge that was
+ * HARD-CODED to always read ready regardless of real status. This is now
+ * the one compact row the owner specified: League/Practice Name (ellipsis
+ * + full-name tooltip, never a raw technical ID in prime text) · compact
+ * league format · Switch · ADP status · Projections status · real
+ * draft-board-ready status. */
 function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
@@ -115,9 +126,20 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
   };
   const adp = data.draftBoard?.adp;
   const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
+  const projectionsLabel = data.status.sourceAsOf ? `Projections: ${data.status.sourceAsOf}` : "Projections: unavailable";
+  const readyLabel = data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required";
   return <section className="active-league-selector" aria-label="Active League">
-    <div><span>Active League</span><strong>{active?.leagueName ?? "Choose a league"}</strong><small>{active ? leagueFormat(active) : "Create or import a Redraft league profile"}</small>{error ? <em role="status">{error}</em> : null}</div>
-    <label><span>Switch</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.leagueName} — {leagueFormat(profile)}</option>)}</select></label>
-    <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span><span className="active-league-ready">Draft board ready</span>
+    <div className="active-league-selector__identity">
+      <span>Active League</span>
+      <strong title={active?.leagueName ?? undefined}>{active?.leagueName ?? "Choose a league"}</strong>
+      <small>{active ? leagueFormat(active, false) : "Create or import a Redraft league profile"}</small>
+      {error ? <em role="status">{error}</em> : null}
+    </div>
+    <label><span>Switch</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId} title={profile.leagueName}>{profile.leagueName}</option>)}</select></label>
+    <div className="active-league-selector__badges">
+      <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span>
+      <span className="active-league-adp">{projectionsLabel}</span>
+      <span className={data.status.ready ? "active-league-ready" : "active-league-adp active-league-adp--review"}>{readyLabel}</span>
+    </div>
   </section>;
 }

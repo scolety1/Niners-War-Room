@@ -1544,3 +1544,116 @@ pre-existing failures). Isolated test ports (1422/18742) confirmed clear after t
 **Overall: `GREEN_DRAFT_DAY_BUILD_READY_FOR_OWNER_RESTART`.** The specific release-blocker is
 closed with a systemic, name-blind fix, verified against the full current candidate pool, not just
 the one reported case.
+
+---
+
+## V5 -- Final Owner-Feedback Reconciliation (20260907)
+
+**Directive**: "NWR FINAL OWNER-FEEDBACK RECONCILIATION -- COMPLETE THE MISSED UI/UX WORK -- DO NOT
+TOUCH THE STABILIZED ALGORITHM." Owner's explicit complaint: "too many previous minor complaints
+were marked complete or ignored while only the headline issues were fixed." Baseline preserved:
+commit `8828b024`. This pass made **zero backend/Python changes** -- `git status` confirms only 4
+frontend files touched (`RedraftApp.tsx`, `draft-room-v2.tsx`, `redraft.css`,
+`packages/ui/src/styles.css`); no scoring formula, admission rule, K/DST eligibility logic, or
+status-override behavior was read, let alone modified.
+
+### Real, end-to-end GUI verification performed this pass
+
+Ran the real standalone backend (`scripts/run_nwr_desktop_api.py`, isolated `NWR_REDRAFT_HOME`,
+standard ports 1422/18742, same pattern as V4's continuation) plus the real Vite dev frontend,
+driven from Chrome via the `claude-in-chrome` MCP tools, at a real rendered viewport (1424x771 --
+`resize_window` was unreliable at first, as previously logged, but a fresh tab picked up a usable
+wide viewport; disclosed honestly, not claimed as the owner's exact monitor resolution). Created a
+real 10-team profile, then used the new Draft Setup surface to change it to 8 teams and restart --
+this is real rendered-pixel verification, not a unit test standing in for one. Screenshots taken at
+each step (available in this session's transcript) confirmed: no overlapping elements, no
+duplicated controls, real 8-column snake board, real round.pick sequence, real Compare add/remove/
+clear/close flow, real "Show Ballers" data, and no raw floating-point leakage anywhere inspected.
+
+### Closure table
+
+| OWNER REQUIREMENT | SOURCE / ORIGINAL REQUEST | IMPLEMENTATION | VISUAL VERIFICATION | STATUS |
+|---|---|---|---|---|
+| 8-team Room Controls (local/practice config only, never an external league board) | P0, tonight's real 8-team league | `DraftSetupSurface`'s new TEAMS select (8/10/12/16) persists `team_count` via the existing `client.updateRedraftProfile` (already-supported backend field, never previously exposed in any GUI control), then `startDraftRoom` rebuilds the board -- the one real place snake order/valid slots/columns/round.pick are derived from team count. Slot auto-clamps into range on a team-count change. `desktop_facade.py` untouched. | VERIFIED live: created a 10-team profile, changed TEAMS to 8, confirmed slot chips became exactly 1-8, started the draft, and the Draft Board tab rendered "8 TEAMS x 16 ROUNDS" with correct snake order (round 2 ran 2.08->2.01). | VERIFIED_FIXED |
+| Replace Room Controls/Restart UX with ONE compact Draft Setup surface (League/Profile, Teams, Draft Mode, My Slot, CPU Speed, compact Scoring/Roster summary; Save/Apply, Restart Draft, Cancel; one in-surface confirmation only) | P0 | New `DraftSetupSurface` component replaces the old 4-piece stack (`PageHeader` Undo/title + `CompactOnClockRow`'s inline confirm strip + `DraftSetupPanel`'s giant always-shown slot picker). "New/Restart" renamed "Draft Setup", opens the same surface prefilled with live values. Configured-draft case shows exactly one inline confirmation: "Restart this draft with: N teams - Slot S - Mode?" (Restart/Cancel). Not-yet-configured case shows a single "Start Draft" action, no restart wording. Cancel closes without any backend call. | VERIFIED live: opened Draft Setup mid-draft (prefilled with real current values), clicked Restart Draft, saw the exact confirmation sentence, clicked its Cancel (returned to editable state, draft untouched), then closed via top Cancel (draft state -- pick 1.05, recent picks -- byte-identical to before opening). | VERIFIED_FIXED |
+| Remove duplicate Undo (exactly one, in the compact draft-turn/control bar) | P0 | Removed the second `data-draft-undo` `Button` from `PageHeader`'s `actions`. The sole remaining Undo lives in `CompactOnClockRow`. | VERIFIED via DOM query (`document.querySelectorAll('[data-draft-undo]').length === 1`) against the live rendered page, plus visual confirmation in every screenshot this pass. | VERIFIED_FIXED |
+| Active League header cleanup: one compact row (name / format / Switch / ADP / Projections / draft-board-ready), no giant internal config IDs, ellipsis truncation, no badge overlap | P0 | `ActiveLeagueSelector` rebuilt: name truncates with CSS ellipsis + a `title` tooltip carrying the full string (never fabricated shorter); Switch options show name only (no duplicated format suffix); added a real "Projections: <date>" badge (previously shown only in the separate window title bar); "Draft board ready" badge was hard-coded true regardless of real status -- now bound to `data.status.ready/tone`. New `__identity`/`__badges` CSS groups with bounded flex-basis so the row wraps as a whole instead of individual controls overlapping. | VERIFIED live at 1424px width: "10-team 1QB Standard / 2026 - 10-Team Standard - 1QB / [Switch v] / ADP: unavailable / Projections: 2026-08-08 / Draft board ready" all on one row, no overlap. Also re-verified after the 8-team restart (format text correctly updated to "8-Team Standard"). | VERIFIED_FIXED |
+| Remove the giant duplicated "{leagueName} -- Draft Room" title | P0 | `PageHeader`'s `title` prop is now `""` on this page; new shared CSS (`packages/ui/src/styles.css`) collapses an empty `<h1>` and its reserved `min-height` only when the title is empty -- scoped so no other page (none of which pass an empty title) is affected. | VERIFIED live: no large duplicated title renders; the compact eyebrow ("YOU ARE ON THE CLOCK") sits directly under the Active League row. | VERIFIED_FIXED |
+| Compare easy entry/exit: explicit "Compare Players (N)", per-player remove chip, Clear all, Close (preserves comparison), Add Player search inside Compare | P0 | Rebuilt `CompareTab` header: `Compare Players (N)` title, one `[x]`-chip per player, "Clear all" and "Close" buttons, and an inline "Add player to Compare..." search (reuses the existing `globalPickSearchRows` helper, not a new search system) that adds via the existing `toggleCompareSelection`. "Close" calls `setTab("SUGGESTIONS")` only -- `compareIds` lives in the parent and is never cleared by Close. | VERIFIED live end-to-end: alt-clicked 2 players, opened Compare, saw "Compare Players (2)" + both chips; typed "Puka" in Add Player, saw a real result, clicked it (became "Compare (3)"); clicked a chip's remove; clicked Close (returned to Suggestions, "Compare (3)" tab and the floating tray both still showed 3, confirming preservation). One real bug found and fixed during this verification: the Add Player results dropdown was invisibly clipped by `Panel`'s `overflow:hidden` (a real CSS defect introduced this pass, caught by the required rendered check, not by typecheck/unit tests) -- fixed by making the results list flow in-place instead of absolutely positioned. | VERIFIED_FIXED |
+| Cryptic "More 4" -> explicit "Compare (N)" | P0 | The secondary-tab overflow trigger no longer carries the Compare count. A separate, always-visible "Compare (N)" quick-entry button appears next to "More" whenever anything is queued for comparison; "More" (Replay + Compare-when-empty) never carries that badge again. | VERIFIED live: with 2 players queued, the tabbar showed a distinct "Compare (2)" button beside a plain "More" button (no shared badge). | VERIFIED_FIXED |
+| Fix Compare's raw floating-point leakage; add the missing Pick Score column; add remaining requested columns (Player, Pos, NWR Rank, Player Score, Pick Score, Action, Value, Market/ADP, Team, Championship Equity, Make-It-Back/Wait, status) | P0 | A Pick Score column already existed in the current worktree (likely added in an earlier V4.x checkpoint after the owner's screenshot was taken) but was labeled "Pick Score -- EXPERIMENTAL" in prime text; relabeled to "Pick Score" with the disclosure moved to `titleHint`. Added the previously-missing **NWR Rank** column. Reordered columns to match the owner's exact list. Audited every numeric cell: all route through `formatNumber(value, fixedDecimals)`, which was already true before this pass and remains true -- no unformatted raw float exists in this table's render path. | VERIFIED live: rendered values were 194.4 / 169.1 / 148.6 / 100.0 / 28.1 / 21.9 / 0% / 27.0 / 0.0 across three real players -- no long decimal anywhere. Column order confirmed via a DOM header query: Player, Pos, NWR Rank, Player Score, Pick Score, Action, Value, Market/ADP, Team, Championship, Make It Back, Wait Cost, Warnings, Status, Remove. | VERIFIED_FIXED |
+| Remove developer/research copy from prime UI ("-- RESEARCH", "-- SIMULATED RESEARCH", "STRUCTURED FIELDS ONLY..."); AI summary presented as "NWR Comparison" | P0 | Suggestions table headers were already tooltip-only for this disclosure (pre-existing, re-confirmed, not re-touched). Fixed three real remaining instances found this pass: (1) the My-Team tab's Team Score / Championship Equity panel titles, previously falling back to raw backend labels like "Team Score -- RESEARCH" when a real label existed -- now static clean titles with the raw label moved to a `title` tooltip; (2) the Suggestions panel eyebrow "Real DecisionBundle candidates..." (backend-module jargon) -> "Default sorted by Pick Score, descending"; (3) Compare's own panel, "AI Compare Summary"/"Structured fields only -- no invented reasoning" -> "NWR Comparison"/an evidence-based eyebrow, and the generated summary sentence itself dropped an inline "-- EXPERIMENTAL". The Suggestions tab's click-to-reveal "CLOSE CALL" detail keeps one EXPERIMENTAL mention -- left as-is since it is already gated behind a click (matches the tooltip/details pattern), not permanently visible. | VERIFIED live: My Team panels read "Team Score" / "Championship Equity"; Suggestions eyebrow reads "DEFAULT SORTED BY PICK SCORE, DESCENDING"; Compare panel reads "NWR Comparison" / "Evidence-based summary..."; the generated sentence read "...has the highest Pick Score among the evaluated candidates..." with no EXPERIMENTAL tag. | VERIFIED_FIXED |
+| Show Ballers toggle (new item L): surfaces already-imported UDK/Fantasy Footballers fields, labeled "Ballers", never blended into NWR scoring, honest "Not loaded"/"No Ballers data" fallback, no new acquisition system | P1, new | Added an off-by-default "Show Ballers" button to the Suggestions panel header. When on, adds a "Ballers" column rendering only real `RedraftExternalIntelligenceEntry.udk*` fields already reachable via the existing import pipeline (`client.importUdkRankings`) -- no new field, no new import path. `"Not loaded"` when no file has been imported at all; `"No Ballers data"` per-row when a player has no UDK fields; never invents a value. Purely a display column -- does not touch `ranking.rows`/pool-building/sorting. | VERIFIED live: clicked "Show Ballers" (became primary/"Hide Ballers"), confirmed the new "Ballers" column header via DOM query, and confirmed real per-player values ("#2 - Tier 1", "#12 - Tier 6", etc.) rendered from the profile's already-imported UDK data. | VERIFIED_FIXED |
+| A. Global navigation collapsible | P1 (prior ledger) | Pre-existing (`onToggleGlobalSidebarCollapsed`/"Collapse nav"), not modified this pass. | Observed live in every screenshot this pass ("Collapse nav" control present in the header actions). | VERIFIED_ALREADY_WORKING |
+| B. Three-pane layout | P1 (prior ledger) | Pre-existing (`LeftUtilityPane` / center tabs / `RightRosterPane`), not modified this pass except the Compare header living inside the center pane. | Observed live: left Rankings/Teams/Queue pane, center Suggestions/Board/Compare, right roster pane all present simultaneously at 1424px width. | VERIFIED_ALREADY_WORKING |
+| C. Right roster pane single scroll container | P1 (prior ledger) | Pre-existing `.draft-room-v2-rightpane__roster-scroll`, not modified this pass. | Observed live: roster slots + Recent Picks scrolled together in the right pane without a second nested scrollbar. | VERIFIED_ALREADY_WORKING |
+| D. Drafting-As vs Viewing split | P1 (prior ledger) | Pre-existing, not modified this pass. | Observed live: "DRAFTING AS / My Team" and "VIEWING / My Team (you draft a...)" both rendered in the right pane. | VERIFIED_ALREADY_WORKING |
+| E. Compact turn info | P1 (prior ledger) | Pre-existing `CompactOnClockRow`, extended this pass only to remove the duplicate Undo/restart controls (see above); the pick/status/snake-direction info itself is unchanged. | Observed live: "1.05 - YOU ARE ON THE CLOCK - 6 PICKS UNTIL YOUR NEXT TURN - 1->N" on one compact row. | VERIFIED_ALREADY_WORKING |
+| F. Action-vs-Value split + non-red TAKE_NOW colors | P1 (prior ledger) | Pre-existing `actionToBadgeTone`/`splitActionValue`, not modified this pass. | Not re-inspected pixel-by-pixel for color this pass (table was visible but the Action/Value columns were scrolled out of the captured frame at the widths used); carried forward from the prior pass's explicit fix and re-confirmed present in the column list via DOM query. | VERIFIED_ALREADY_WORKING (color not re-screenshotted this pass) |
+| G. Round.pick display everywhere | P1 (prior ledger) | Pre-existing `formatRoundPick`/`formatAdpRoundPick`, exercised this pass by the 8-team restart (which changes the divisor). | VERIFIED live: on-clock row read "1.05" and the Draft Board showed correct 1.01-1.05.../2.08-2.01... sequences for 8 teams specifically (not just carried over from the 10-team case). | VERIFIED_FIXED (re-verified at a new team count, not just carried over) |
+| H. Draft Board fixed columns, scroll for wide leagues | P1 (prior ledger) | Pre-existing, exercised this pass at 8 teams. | VERIFIED live: "8 TEAMS x 16 ROUNDS -- FIXED COLUMNS, SCROLL FOR WIDE LEAGUES" eyebrow, 8-team grid rendered correctly. | VERIFIED_FIXED (re-verified at 8 teams) |
+| I. Search | P1 (prior ledger) | Pre-existing quick-pick search plus Compare's new Add-Player search (this pass, see above). | VERIFIED live for the new Compare search; the global quick-pick search bar was visible but not separately exercised this pass. | VERIFIED_ALREADY_WORKING |
+| J. Direct draft actions everywhere | P1 (prior ledger) | Pre-existing Draft/Queue buttons on every player row, not modified this pass. | Observed live in Suggestions and Draft Board. | VERIFIED_ALREADY_WORKING |
+| K. Cheat Sheets | P1 (prior ledger) | Pre-existing `CheatSheetPage`, not modified or re-opened this pass. | Not re-rendered this pass. | DEFERRED_WITH_OWNER-VISIBLE_REASON (not re-verified this pass; no code path touched, low risk) |
+| L. Show Ballers toggle | P1, new | See above. | See above. | VERIFIED_FIXED |
+| M. Player details drawer (no clipping) | P1 (prior ledger) | Pre-existing `PlayerDrawer`, not modified this pass except that its EXPERIMENTAL/RESEARCH stat tooltips were re-confirmed still tooltip-only (see the developer-copy row above). | Drawer itself not re-opened/re-screenshotted this pass. | DEFERRED_WITH_OWNER-VISIBLE_REASON (not re-verified this pass; no code path touched) |
+| N. Instructional clutter removal | P1 (prior ledger) | Pre-existing, not modified this pass. | Not specifically re-audited this pass. | DEFERRED_WITH_OWNER-VISIBLE_REASON |
+| O. Freshness statuses kept separate | P1 (prior ledger) | Pre-existing (ADP freshness vs. Projections freshness vs. news staleness remain distinct fields), extended this pass only by surfacing Projections freshness in the Active League row alongside the pre-existing ADP freshness badge -- the two remain visually and semantically distinct, never merged. | VERIFIED live: "ADP: unavailable" and "Projections: 2026-08-08" render as two separate badges. | VERIFIED_ALREADY_WORKING |
+| P. Metric status non-coercion | P1 (prior ledger) | Pre-existing `formatMetricStatus`/`MetricStatus` contract, not modified this pass. | Tooltips observed present (title attributes) but not individually re-audited for every metric this pass. | VERIFIED_ALREADY_WORKING |
+| Q. Pick correction/recovery preservation (incl. 6.10 intentional-clear precedent) | P1 (prior ledger) | Pre-existing Board-tab correction flow, not modified this pass. Undo/Restart specifically re-verified this pass (see P0 rows above). | Undo and Restart re-verified live; the Board-tab cell-correction UI itself was not re-opened this pass. | VERIFIED_ALREADY_WORKING (Undo/Restart re-verified; cell-correction UI not re-opened) |
+| R. No horizontal owner-facing data garbage | P1 (prior ledger) | Pre-existing Draft Board `overflow-x` pattern (explicitly accepted by the owner's own wording "scroll for wide leagues"). One real regression was introduced and fixed this pass: the new Draft Setup surface's "My draft slot" chip group lacked `min-width:0`, which (only at an artificially narrow ~560px test width) caused the whole row to overflow horizontally instead of wrapping -- fixed with an explicit CSS rule; at the real ~1424px verification width there was zero horizontal overflow (`document.documentElement.scrollWidth === window.innerWidth`). | VERIFIED live via `scrollWidth`/`innerWidth` equality check and visual screenshot at 1424px. | VERIFIED_FIXED |
+
+### Tonight's 8-team owner acceptance test -- scope actually run this pass
+
+Ran, in the isolated local practice profile only (never the owner's real Sleeper "Fantasy Gamers"
+league board): created a profile, changed it to 8 teams via the new Draft Setup surface, confirmed
+the single restart confirmation, started the mock at slot 5, confirmed 8 columns/slots 1-8/correct
+snake order, changed the draft setup again (open/prefill/cancel), confirmed exactly one Undo,
+exercised Compare's full open/add/remove/clear/close cycle, exercised Show Ballers, confirmed no
+raw floats and no overlapping controls at the rendered width available. **Not run this pass**:
+drafting enough real picks to populate a full bench/roster-complete state, a live "restart with an
+active draft already deep in the board" stress case beyond pick 1.05, and K/DST-specific picks in
+this fresh isolated profile (the K/DST eligibility fix itself was verified in an earlier pass
+against the owner's real league and is explicitly out of scope for retesting here, per the
+directive's protection list).
+
+### Visual QA disclosure (explicit, per the "NOT OPTIONAL" instruction)
+
+`resize_window` did not reliably resize the FIRST tab in this session (as previously logged in this
+same saga); a freshly created tab, however, rendered at a real, usable 1424x771 viewport, and every
+screenshot in the "real, end-to-end GUI verification" section above was taken through that tab at
+that width using the `computer` screenshot action (real rendered pixels, not a DOM/unit-test
+proxy). This is close to but not a byte-exact match for the owner's actual monitor resolution,
+which this session cannot query directly. One real defect (the Compare Add-Player dropdown being
+invisibly clipped by `Panel`'s `overflow:hidden`) was caught specifically because a rendered
+screenshot was taken and inspected, not by typecheck or the Vitest suite -- both passed the whole
+time that defect was live, which is the exact failure mode the "not unit-test-alone" instruction
+warns about.
+
+### Test/build verification
+
+- `npm run typecheck` (dynasty + redraft): clean, 0 errors, both before and after every edit in
+  this pass.
+- `npx vitest run` (full desktop workspace): 133/133 passed (16 files), including the 94 in
+  `apps/redraft` + `packages/ui` most relevant to this pass's changes.
+- `git status`: confirms exactly 4 frontend files touched
+  (`RedraftApp.tsx`, `draft-room-v2.tsx`, `redraft.css`, `packages/ui/src/styles.css`); zero
+  Python files touched, so the pre-existing `test_desktop_application_api.py` baseline and every
+  scoring/eligibility/override test suite were not re-run this pass (nothing they cover changed).
+
+### Remaining owner-feedback items NOT closed this pass
+
+- Items **K, M, N** above (Cheat Sheets, Player details drawer clipping, instructional-clutter
+  removal): not re-opened or re-audited this pass; no code path touched, carried forward from the
+  prior pass's verified state, flagged `DEFERRED_WITH_OWNER-VISIBLE_REASON` rather than silently
+  marked complete.
+- Item **F**'s exact on-screen Action badge colors were not re-screenshotted this pass (the column
+  was off the right edge of the captured frame at the widths used); the underlying
+  `actionToBadgeTone` mapping itself was not touched.
+- A full, exhaustive re-audit of every prior V3/V4.x item beyond A-R (e.g. every individual
+  metric-status tooltip, every drawer field) was not re-performed line-by-line this pass -- this
+  pass targeted the owner's explicit P0 list plus the new Show Ballers item, then closed every
+  additional real defect found *while doing that rendered verification* (the two CSS bugs above),
+  rather than opening a second, separate full-surface audit.
+- The 8-team acceptance test did not include drafting deep enough to populate a full bench, nor a
+  restart-mid-deep-draft stress case, nor any K/DST pick in the fresh isolated profile.
