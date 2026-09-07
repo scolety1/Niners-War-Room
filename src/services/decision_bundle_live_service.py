@@ -232,7 +232,22 @@ def build_live_decision_bundle(
     if position_filter is not None:
         normalized_filter = position_filter.strip().upper()
         if normalized_filter and normalized_filter != "ALL":
-            position_rows = [row for row in legal_rows if row.position == normalized_filter]
+            # Owner feedback closure, section 9: FLEX means the league's
+            # REAL configured FLEX-eligible positions (RB/WR/TE), never a
+            # literal "FLEX" position value (no candidate row ever has
+            # that as its position, so a naive exact match would falsely
+            # report zero candidates). Superflex is a distinct, separate
+            # filter (adds QB) -- never silently folded into ordinary
+            # FLEX, and only offered at all when the league actually
+            # configures a Superflex slot.
+            if normalized_filter == "FLEX":
+                eligible_positions = frozenset({"RB", "WR", "TE"})
+                position_rows = [row for row in legal_rows if row.position in eligible_positions]
+            elif normalized_filter == "SFLX" and profile.roster.superflex > 0:
+                eligible_positions = frozenset({"QB", "RB", "WR", "TE"})
+                position_rows = [row for row in legal_rows if row.position in eligible_positions]
+            else:
+                position_rows = [row for row in legal_rows if row.position == normalized_filter]
             if not position_rows:
                 return LiveDecisionBundleUnavailable(
                     f"No roster-legal available {normalized_filter} exists at this pick."

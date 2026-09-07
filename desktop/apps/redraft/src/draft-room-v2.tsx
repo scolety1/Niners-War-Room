@@ -1223,6 +1223,7 @@ export function DraftRoomV2Page({
             manualAssets={data.manualAssets ?? []}
             currentPick={board?.currentPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
+            superflex={data.activeProfile?.roster.superflex ?? 0}
           />
         ) : null}
         {tab === "CHEAT_SHEET" ? (
@@ -1521,6 +1522,7 @@ function SuggestionsTab({
   manualAssets,
   currentPick,
   teamCount,
+  superflex,
 }: {
   rows: SuggestionRow[];
   onPlayerClick: (playerId: string, event: React.MouseEvent) => void;
@@ -1539,6 +1541,7 @@ function SuggestionsTab({
   manualAssets: RedraftBootstrap["manualAssets"];
   currentPick: number | null;
   teamCount: number | null;
+  superflex: number;
 }) {
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
@@ -1669,13 +1672,17 @@ function SuggestionsTab({
       ) : null}
       <Panel title="Suggestions" eyebrow="Real DecisionBundle candidates — default sorted by Pick Score, descending">
         <div className="draft-room-v2-position-filter">
-          {["ALL", "QB", "RB", "WR", "TE", "K", "DST"].map((value) => (
+          {(superflex > 0
+            ? ["ALL", "QB", "RB", "WR", "TE", "FLEX", "SFLX", "K", "DST"]
+            : ["ALL", "QB", "RB", "WR", "TE", "FLEX", "K", "DST"]
+          ).map((value) => (
             <button
               key={value}
               type="button"
               aria-pressed={positionFilter === value}
               className={positionFilter === value ? "draft-room-v2-chip draft-room-v2-chip--active" : "draft-room-v2-chip"}
               onClick={() => onPositionFilterChange(value)}
+              title={value === "FLEX" ? "Real FLEX-eligible positions (RB/WR/TE)" : value === "SFLX" ? "Real Superflex-eligible positions (QB/RB/WR/TE)" : undefined}
             >
               {value}
             </button>

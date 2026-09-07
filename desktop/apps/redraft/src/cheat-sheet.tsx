@@ -55,16 +55,29 @@ export function CheatSheetPage({
   // imported real UDK data for (the owner's real file is QB-only) --
   // never fabricated for RB/WR/TE/K/DST from nothing.
   const [source, setSource] = useState<"NWR" | "UDK">("NWR");
+  // Owner feedback closure, section 8: drafted players disappear
+  // immediately by default from every lane here too (Cheat Sheets was a
+  // real, disclosed gap -- previously showed every player regardless of
+  // draft state). Uses the canonical player-ID drafted list
+  // (board.drafted), never a display-name comparison; a "Show Drafted"
+  // toggle stays available for the owner to review history.
+  const [showDrafted, setShowDrafted] = useState(false);
+  const draftedIds = useMemo(() => new Set(data.draftBoard?.drafted ?? []), [data.draftBoard?.drafted]);
   const udkForSheet = data.udkRankings?.positions?.[sheet];
   const manualRows = useMemo(
-    () => (data.manualAssets ?? []).filter((row) => row.position === sheet),
-    [data.manualAssets, sheet],
+    () => (data.manualAssets ?? []).filter((row) => row.position === sheet && (showDrafted || !draftedIds.has(row.playerId))),
+    [data.manualAssets, sheet, showDrafted, draftedIds],
   );
   const rows = useMemo(
-    () => sheet === "Overall" || sheet === "Tiers" || MANUAL_POSITIONS.has(sheet)
+    () => (sheet === "Overall" || sheet === "Tiers" || MANUAL_POSITIONS.has(sheet)
       ? data.rankings
-      : data.rankings.filter((row) => row.position === sheet),
-    [data.rankings, sheet],
+      : data.rankings.filter((row) => row.position === sheet)
+    ).filter((row) => showDrafted || !row.drafted),
+    [data.rankings, sheet, showDrafted],
+  );
+  const udkVisibleEntries = useMemo(
+    () => (udkForSheet?.entries ?? []).filter((row) => showDrafted || !row.playerId || !draftedIds.has(row.playerId)),
+    [udkForSheet, showDrafted, draftedIds],
   );
   if (!data.activeProfile) return <><PageHeader eyebrow="Draft prep · Current season" title="Cheat Sheet" description="Activate a league profile to build its printable current-season board." /><EmptyState icon="profile" title="No active league profile" message="Cheat sheets are profile-specific and stay inside Redraft." action={<Button onClick={() => { window.location.hash = "#/profile"; }}>Open profile manager</Button>} /></>;
   const exportCsv = () => {
@@ -79,6 +92,8 @@ export function CheatSheetPage({
     render: (row) => {
       const playerId = String(row.playerId ?? "");
       if (!playerId) return null;
+      const isDrafted = draftedIds.has(playerId) || Boolean(row.drafted);
+      if (isDrafted) return <StatusBadge tone="review" label="Drafted" />;
       const isQueued = queuedIds.includes(playerId);
       return (
         <span className="draft-room-v2-pick-actions">
@@ -98,7 +113,7 @@ export function CheatSheetPage({
         eyebrow="Draft prep · Profile specific"
         title="Cheat Sheet"
         description="A printable and exportable board built from the active league's governed current-season rankings."
-        status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : visible.length} players`} /></>}
+        status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : udkForSheet && source === "UDK" ? udkVisibleEntries.length : visible.length} players`} /></>}
         actions={
           <>
             <label className="file-action">
@@ -120,6 +135,10 @@ export function CheatSheetPage({
               onChange={(value) => setSource(value as "NWR" | "UDK")}
             />
           ) : null}
+          <label className="toolbar__toggle">
+            <input type="checkbox" checked={showDrafted} onChange={(event) => setShowDrafted(event.target.checked)} />
+            Show Drafted
+          </label>
         </div>
         {isManual ? (
           <DataTable
@@ -150,7 +169,7 @@ export function CheatSheetPage({
                 { key: "outlook", label: "Outlook", render: (row) => <span title={String(row.outlook || "")}>{String(row.outlook || "").slice(0, 80)}{String(row.outlook || "").length > 80 ? "…" : ""}</span> },
                 draftActionColumn,
               ]}
-              rows={udkForSheet.entries.map((row) => ({ ...row, playerId: row.playerId ?? "" }))}
+              rows={udkVisibleEntries.map((row) => ({ ...row, playerId: row.playerId ?? "" }))}
               rowKey={(row) => String(row.playerId || `unmatched-${String(row.playerName)}-${String(row.rank)}`)}
             />
           </>

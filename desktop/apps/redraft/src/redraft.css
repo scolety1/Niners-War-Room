@@ -416,6 +416,7 @@
 .draft-room-v2-teams-list__item--owner { border-color: rgba(211,169,84,.4); }
 .draft-room-v2-teams-list__item--selected { background: rgba(154,108,255,.14); border-color: rgba(154,108,255,.5); }
 .draft-room-v2-position-filter { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+.toolbar__toggle { align-items: center; color: var(--muted); display: flex; font-size: 11px; gap: 5px; }
 
 /* Owner feedback closure, section 17: one compact "Room Controls"
    expansion for less-frequent controls (ADP refresh/paste/import) so

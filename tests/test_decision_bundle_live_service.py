@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from src.services.decision_bundle_live_service import (
     LiveDecisionBundleUnavailable,
     build_live_decision_bundle,
@@ -420,3 +422,61 @@ def test_position_filter_of_all_behaves_like_no_filter() -> None:
     assert not isinstance(filtered, LiveDecisionBundleUnavailable)
     assert not isinstance(unfiltered, LiveDecisionBundleUnavailable)
     assert {c.player_id for c in filtered.candidates} == {c.player_id for c in unfiltered.candidates}
+
+
+def test_position_filter_flex_returns_real_flex_eligible_positions_only() -> None:
+    """Owner feedback closure, section 9: FLEX means the league's real
+    FLEX-eligible positions (RB/WR/TE) -- no candidate row's `position`
+    is ever literally "FLEX", so a naive exact-match filter would falsely
+    report zero candidates for a real, legal request."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=41)
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=41, position_filter="FLEX",
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable)
+    assert len(result.candidates) == 5
+    assert all(c.player_id.split("-")[0] in {"RB", "WR", "TE"} for c in result.candidates)
+
+
+def test_position_filter_sflx_unavailable_without_a_configured_superflex_slot() -> None:
+    """A league that does not configure Superflex must never silently
+    treat an SFLX request as ordinary FLEX or fabricate candidates for a
+    slot the league does not have."""
+    ranking = _ranking()
+    profile = ranking.profile
+    assert profile.roster.superflex == 0
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=43)
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=43, position_filter="SFLX",
+    )
+    assert isinstance(result, LiveDecisionBundleUnavailable)
+
+
+def test_position_filter_sflx_returns_real_superflex_eligible_positions_when_configured() -> None:
+    ranking = _ranking()
+    profile = replace(ranking.profile, roster=replace(ranking.profile.roster, superflex=1))
+    ranking = replace(ranking, profile=profile)
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, manual_assets, adp, trials=2, base_seed=47)
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, _room_state(),
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=5,
+        trials=2, seasons=20, base_seed=47, position_filter="SFLX",
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable)
+    assert len(result.candidates) == 5
+    assert all(c.player_id.split("-")[0] in {"QB", "RB", "WR", "TE"} for c in result.candidates)
