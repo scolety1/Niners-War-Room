@@ -724,6 +724,51 @@ export function DraftRoomV2Page({
     }
   };
 
+  // Owner feedback closure, section 2A: pick correction, ported from
+  // Legacy verbatim -- the exact same real client.replaceDraftPick /
+  // clearDraftPick / fillDraftPickGap calls, the same event-sourced
+  // guarantee (pick_number/round/team never change; every later pick is
+  // untouched, enforced server-side in redraft_draft_room_v1_service.py),
+  // never a second correction implementation. `working` is scoped per
+  // pick ("replace-47"/"clear-47"/"fill-47") so BoardTab can disable
+  // only the in-flight control.
+  const doReplace = async (pickNumber: number, playerId: string) => {
+    if (!data.activeProfileId) return;
+    setWorking(`replace-${pickNumber}`);
+    setMutationError(null);
+    try {
+      onUpdate(await client.replaceDraftPick(data.activeProfileId, pickNumber, playerId));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`Pick ${pickNumber} could not be replaced.`));
+    } finally {
+      setWorking("");
+    }
+  };
+  const doClear = async (pickNumber: number) => {
+    if (!data.activeProfileId) return;
+    setWorking(`clear-${pickNumber}`);
+    setMutationError(null);
+    try {
+      onUpdate(await client.clearDraftPick(data.activeProfileId, pickNumber));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`Pick ${pickNumber} could not be cleared.`));
+    } finally {
+      setWorking("");
+    }
+  };
+  const doFillGap = async (pickNumber: number, playerId: string) => {
+    if (!data.activeProfileId) return;
+    setWorking(`fill-${pickNumber}`);
+    setMutationError(null);
+    try {
+      onUpdate(await client.fillDraftPickGap(data.activeProfileId, pickNumber, playerId));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`Pick ${pickNumber} could not be filled.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
   // Owner feedback closure, section 17: the exact same real,
   // already-working ADP controls Legacy's Room Controls panel calls
   // (client.refreshRedraftAdp / client.importRedraftAdp) -- ported
@@ -1273,6 +1318,9 @@ export function DraftRoomV2Page({
             quickQuery={quickQuery}
             onQuickQueryChange={(value) => { setQuickQuery(value); setQuickIndex(0); }}
             quickResults={quickResults}
+            onReplace={(pickNumber, playerId) => void doReplace(pickNumber, playerId)}
+            onClear={(pickNumber) => void doClear(pickNumber)}
+            onFillGap={(pickNumber, playerId) => void doFillGap(pickNumber, playerId)}
           />
         ) : null}
         {tab === "COMPARE" ? (
@@ -2234,6 +2282,9 @@ function BoardTab({
   quickQuery,
   onQuickQueryChange,
   quickResults,
+  onReplace,
+  onClear,
+  onFillGap,
 }: {
   board: DraftBoard | null | undefined;
   profile: LeagueProfile | null | undefined;
@@ -2244,12 +2295,36 @@ function BoardTab({
   quickQuery: string;
   onQuickQueryChange: (value: string) => void;
   quickResults: PickSearchCandidate[];
+  onReplace: (pickNumber: number, playerId: string) => void;
+  onClear: (pickNumber: number) => void;
+  onFillGap: (pickNumber: number, playerId: string) => void;
 }) {
   // P0 owner-workflow rescue, section 13: click the current/open pick to
   // record it directly from the board, reusing the exact same search
   // state as the main Search box (one source of truth, not a second
   // search implementation).
   const [recordingPick, setRecordingPick] = useState<number | null>(null);
+  // Owner feedback closure, section 2A: pick correction (Replace/Clear/
+  // Fill Gap), ported from Legacy verbatim -- the same real
+  // client.replaceDraftPick/clearDraftPick/fillDraftPickGap calls and
+  // the same event-sourced guarantee (pick_number/round/team never
+  // change; every later pick is untouched, enforced server-side).
+  // Click a completed pick to Replace/Clear it; click an unresolved
+  // pick to Fill Gap directly -- exactly Legacy's own interaction.
+  const [correctionPickNumber, setCorrectionPickNumber] = useState<number | null>(null);
+  const [correctionMode, setCorrectionMode] = useState<"MENU" | "REPLACE" | "FILL_GAP">("MENU");
+  const openCorrection = (cell: { pickNumber: number; status?: string } | undefined) => {
+    if (!cell?.pickNumber || cell.status === "OPEN") return;
+    setRecordingPick(null);
+    setCorrectionPickNumber(cell.pickNumber);
+    setCorrectionMode(cell.status === "UNRESOLVED" ? "FILL_GAP" : "MENU");
+    onQuickQueryChange("");
+  };
+  const closeCorrection = () => {
+    setCorrectionPickNumber(null);
+    setCorrectionMode("MENU");
+    onQuickQueryChange("");
+  };
   // Owner feedback closure, section 11: By Picks (chronological, existing,
   // owner-preferred) vs. By Roster (same fixed team columns, rows follow
   // real roster slots via the shared assignRosterSlots -- the same
@@ -2265,6 +2340,11 @@ function BoardTab({
   const cellByRoundAndSlot = new Map(board.boardCells.map((cell) => [`${cell.round}-${cell.teamSlot}`, cell]));
   const openRecordable = (cell: { current?: boolean; playerId?: string } | undefined) =>
     Boolean(cell?.current && !cell.playerId && canRecordPick);
+  // A completed or unresolved pick is correctable; an OPEN (not-yet-
+  // reached) pick is not -- matching Legacy's own exact rule.
+  const isCorrectable = (cell: { status?: string } | undefined) =>
+    Boolean(cell?.status && cell.status !== "OPEN");
+  const correctionCell = board.boardCells.find((cell) => cell.pickNumber === correctionPickNumber) ?? null;
   const teams = board.teams ?? [];
   const assignmentsBySlot =
     boardView === "BY_ROSTER" ? new Map(teams.map((team) => [team.teamSlot, assignRosterSlots(team.roster, profile.roster)])) : null;
@@ -2323,6 +2403,62 @@ function BoardTab({
           </ul>
         </div>
       ) : null}
+      {correctionCell ? (
+        <div className="draft-room-v2-board-record">
+          <div className="draft-room-v2-board-record__header">
+            <strong>
+              {correctionMode === "FILL_GAP" ? "Fill unresolved pick " : correctionCell.playerName ? `Correct: ${correctionCell.playerName} — ` : "Correct pick "}
+              {formatRoundPick(correctionCell.pickNumber, teamCount)}
+            </strong>
+            <Button variant="ghost" onClick={closeCorrection}>Cancel</Button>
+          </div>
+          <p className="boundary-note">
+            {correctionMode === "MENU" ? "Later picks are never affected by a correction here." : "Search ignores the position filter, same as rapid capture."}
+          </p>
+          {correctionMode === "MENU" ? (
+            <div className="toolbar">
+              <Button variant="secondary" onClick={() => setCorrectionMode("REPLACE")}>Replace</Button>
+              <Button variant="danger" disabled={working === `clear-${correctionCell.pickNumber}`} onClick={() => { onClear(correctionCell.pickNumber); closeCorrection(); }}>
+                {working === `clear-${correctionCell.pickNumber}` ? "Clearing…" : "Clear"}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <label className="search-input">
+                <Icon name="search" size={16} />
+                <input
+                  autoFocus
+                  aria-label={correctionMode === "FILL_GAP" ? "Fill gap search" : "Replacement search"}
+                  onChange={(event) => onQuickQueryChange(event.target.value)}
+                  placeholder="Type a player, K, or D/ST…"
+                  type="search"
+                  value={quickQuery}
+                />
+              </label>
+              <ul className="rapid-capture__results">
+                {quickResults.map((candidate) => (
+                  <li key={candidate.playerId}>
+                    <span><strong>{candidate.playerName}</strong> <small>{candidate.team} · {candidate.position}</small></span>
+                    <Button
+                      data-draft-action
+                      disabled={Boolean(working)}
+                      variant="primary"
+                      onClick={() => {
+                        if (correctionMode === "FILL_GAP") onFillGap(correctionCell.pickNumber, candidate.playerId);
+                        else onReplace(correctionCell.pickNumber, candidate.playerId);
+                        closeCorrection();
+                      }}
+                    >
+                      {working === `replace-${correctionCell.pickNumber}` || working === `fill-${correctionCell.pickNumber}` ? "Saving…" : correctionMode === "FILL_GAP" ? "Fill" : "Replace"}
+                    </Button>
+                  </li>
+                ))}
+                {quickQuery.trim() && !quickResults.length ? <li className="rapid-capture__empty">No match.</li> : null}
+              </ul>
+            </>
+          )}
+        </div>
+      ) : null}
       {boardView === "BY_PICKS" ? (
         <div className="draft-board-scroll">
           <div
@@ -2341,19 +2477,26 @@ function BoardTab({
                 const slot = column + 1;
                 const cell = cellByRoundAndSlot.get(`${round}-${slot}`);
                 const recordable = openRecordable(cell);
+                const correctable = isCorrectable(cell);
+                // Filled cells keep their existing, useful "click to view
+                // detail" behavior; correction is a small, explicit,
+                // separate control (not overloaded onto the same click)
+                // so neither capability silently replaces the other.
                 const onClick = cell?.playerId
                   ? (event: React.MouseEvent) => onPlayerClick(cell.playerId, event)
                   : recordable
                     ? () => setRecordingPick(cell!.pickNumber)
-                    : undefined;
+                    : correctable
+                      ? () => openCorrection(cell)
+                      : undefined;
                 return (
                   <article
                     key={`${round}-${slot}`}
-                    className={`draft-board-v2-cell ${cell?.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell?.current ? "draft-board-v2-cell--current" : ""} ${recordable ? "draft-board-v2-cell--recordable" : ""}`}
+                    className={`draft-board-v2-cell ${cell?.ownerPick ? "draft-board-v2-cell--owner" : ""} ${cell?.current ? "draft-board-v2-cell--current" : ""} ${recordable ? "draft-board-v2-cell--recordable" : ""} ${correctable ? "draft-board-v2-cell--correctable" : ""}`}
                     onClick={onClick}
                     role={onClick ? "button" : undefined}
                     tabIndex={onClick ? 0 : undefined}
-                    title={recordable ? "Click to record this pick" : undefined}
+                    title={recordable ? "Click to record this pick" : cell?.status === "UNRESOLVED" ? "Click to fill this gap" : undefined}
                   >
                     <span className="draft-board-v2-cell__pick" title={cell?.pickNumber ? `Overall pick ${cell.pickNumber}` : undefined}>
                       {cell?.pickNumber ? formatRoundPick(cell.pickNumber, teamCount) : ""}
@@ -2361,6 +2504,16 @@ function BoardTab({
                     <span className="draft-board-v2-cell__player">
                       {cell?.playerName || (cell?.status === "UNRESOLVED" ? "Unresolved" : recordable ? "Record pick" : "Open")}
                     </span>
+                    {correctable && cell?.playerId ? (
+                      <button
+                        type="button"
+                        className="draft-board-v2-cell__correct"
+                        title={`Correct pick ${formatRoundPick(cell.pickNumber, teamCount)}`}
+                        onClick={(event) => { event.stopPropagation(); openCorrection(cell); }}
+                      >
+                        Fix
+                      </button>
+                    ) : null}
                   </article>
                 );
               }),

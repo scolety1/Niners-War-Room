@@ -522,9 +522,17 @@
 .draft-board-v2-corner, .draft-board-v2-head { color: var(--muted); font-size: 9px; letter-spacing: .06em; padding: 4px; text-align: center; text-transform: uppercase; }
 .draft-board-v2-head--owner { color: var(--gold-bright); }
 .draft-board-v2-round { align-self: center; color: var(--muted); font-size: 10px; text-align: center; }
-.draft-board-v2-cell { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; cursor: default; display: flex; flex-direction: column; gap: 2px; min-height: 40px; padding: 6px 8px; }
+.draft-board-v2-cell { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; cursor: default; display: flex; flex-direction: column; gap: 2px; min-height: 40px; padding: 6px 8px; position: relative; }
 .draft-board-v2-cell--owner { border-color: rgba(211,169,84,.4); }
 .draft-board-v2-cell--current { border-color: rgba(154,108,255,.5); }
+/* Owner feedback closure, section 2A: pick correction -- a small,
+   separate control so it never overloads the existing "click a filled
+   cell to view detail" behavior. Only visible on hover/focus to avoid
+   cluttering a dense fixed-column board. */
+.draft-board-v2-cell--correctable:hover .draft-board-v2-cell__correct,
+.draft-board-v2-cell__correct:focus-visible { opacity: 1; }
+.draft-board-v2-cell__correct { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 8.5px; opacity: 0; padding: 1px 4px; position: absolute; right: 4px; top: 4px; }
+.draft-board-v2-cell__correct:hover { background: rgba(255,255,255,.12); color: var(--text); }
 .draft-board-v2-cell__pick { color: var(--muted); font-size: 9px; }
 .draft-board-v2-cell__player { font-size: 11px; }
 .player-cell--clickable { cursor: pointer; }
