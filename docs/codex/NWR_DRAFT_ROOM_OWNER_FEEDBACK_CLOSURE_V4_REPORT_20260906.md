@@ -651,3 +651,332 @@ report's own testing).
 
 No push, merge, deployment, or model retraining performed this continuation either. All work is in
 local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
+
+---
+
+## Pass V4.3 (same day, third continuation) — pick correction, real repairs (not just
+## disclosures), current-data investigation, and the actual Tauri build
+
+Continues from `069f6736`. State recovered: HEAD `069f6736`, branch unchanged, only the
+pre-existing unrelated `docs/model_v4/*` files dirty, ~2.3 GB free memory at start, no leftover
+processes/ports. Verified the prior continuation's evidence remained true before starting new work.
+
+### 1. Ledger corrections, applied precisely as requested
+
+- **Pick Score**: `tied_no_spread` (Pass V4.2) is a **disclosure fix only** -- confirmed again
+  here, explicitly. It never changes `relative_score`'s value or resolves the underlying tie. The
+  separate "why does bench-tier Team Score saturate to identical values" investigation (traced in
+  the base V4/V3 passes to `optimal_starting_lineup_value()` only counting players who make the
+  optimal starting lineup) remains a distinct, unresolved numeric-trust item, not fixed by the
+  disclosure flag.
+- **QB-now/RB-now**: the Pass V4.2 pick-47 run is reclassified as **a valid available-action test
+  only** -- it correctly showed the engine's real behavior at a real simulated state, but both
+  named alternatives (Maye, Stafford) were already unavailable there, so it did not complete the
+  owner's actual counterfactual. See the real completion below.
+- **Data freshness**: Pass V4.2's "source tracing is complete" claim stands, but **current-data
+  readiness is a separate, still-open question** -- addressed substantively below, not just
+  re-labeled.
+- **Multi-team tests**: every DOM-driven interaction across this whole mission is relabeled
+  **FUNCTIONAL_DOM_VERIFIED** explicitly (see the dedicated section below) -- never
+  `VISUALLY_VERIFIED` or `OWNER_DESKTOP_VERIFIED`, including the 8/12/16-team backend checks from
+  Pass V4.2 (those were `FUNCTIONAL_DOM_VERIFIED`/facade-level, not visual, and are described that
+  way below).
+- **Superflex**: the Pass V4.2 finding stood as "discovered, disclosed, not fixed" at the start of
+  this continuation. It is now **repaired** (see below) -- the ledger reflects the new state, not
+  the old one, without erasing the record of what was found and when.
+
+### 2A. Pick correction (Replace/Clear/Fill Gap) — CLOSED
+
+Ported Legacy's exact correction interaction into Draft Room V2's Board (a real, previously-
+untouched implementation gap): reuses `client.replaceDraftPick` / `clearDraftPick` /
+`fillDraftPickGap` verbatim, the same event-sourced backend guarantee already proven by
+`test_replace_pick_various_distances_leave_every_other_pick_byte_identical` /
+`test_replace_pick_rejects_a_player_already_drafted_elsewhere` /
+`test_fill_gap_requires_unresolved_and_replace_requires_resolved` (pre-existing, unchanged, all
+still passing), and the board's own existing shared search state.
+
+**Live-verified end to end** against the real running backend (a real 19-pick mock, not a
+fixture): replaced pick 15 (5 selections before the current pick 20) -- later picks 16/19 stayed
+byte-identical in the UI; the right pane's recent-picks feed updated immediately; searching for an
+already-drafted replacement correctly excluded it (front-line duplicate prevention on top of the
+existing backend rejection); Clear correctly marked a pick Unresolved; Fill Gap correctly restored
+it; every correction survived a full page reload (real persistence); both board views (By Picks /
+By Roster) stayed consistent. A real gap found and fixed during this same verification: the
+correction panel did not close after a successful action (unlike the existing Record-pick panel's
+established pattern) -- fixed and re-verified live.
+
+**Status: VERIFIED** (FUNCTIONAL_DOM_VERIFIED — see classification section).
+
+### 2B. Result status (Pick Score) — see ledger correction above; unchanged from Pass V4.2
+
+### 3. Current-data readiness — real investigation, one real action taken, exact remaining blocker named
+
+Investigated the owner-named private data roots directly rather than assuming:
+
+- `C:\NWR_HISTORICAL_DATA\FFA_OFFICIAL\2026\projections\projections_2026_official_ffa.csv`: real,
+  substantial (497 rows, real schema), dated **2026-09-04** -- newer than the bundled Aug 8
+  snapshot. **Traced its actual relationship to the existing pipeline and found it is NOT an input
+  to it**: `scripts/build_redraft_2026_projection_admission_packet.py` (the real, existing
+  admission script that produced the current Aug 8 bundle -- confirmed by its `SOURCE_AS_OF =
+  "2026-08-08"` constant matching exactly) does not read this file at all. It reads nflverse
+  historical stats (2012-2025) from `C:\NWR_SHARED_DATA\source_snapshots\...` and computes NWR's
+  own in-house projection model from them -- FFA's own projections are a completely separate
+  external source with no existing adapter into the live ranking pipeline. Using it would mean
+  building a new, unvetted adapter, which the directive explicitly cautions against without full
+  verification of scoring-component compatibility, identity coverage, and rights.
+- Checked the admission pipeline's OWN actual upstream input freshness: the only nflverse source
+  snapshot present at the expected shared-data location is the same `20260730T072407Z` one already
+  used for the Aug 8 bundle -- **no newer raw snapshot exists on this machine**. This is the real,
+  precise blocker: not the admission script, not a missing adapter, but a stale upstream pull.
+- **Took the smallest existing, real intake action**: ran the existing, previously-used, public
+  (CC-BY-4.0, no credentials required) `scripts/acquire_nflverse_new_evidence_v1.py`, scoped to
+  the `players` dataset only. It succeeded -- a genuine fresh player-identity/roster snapshot
+  (24,828 rows) was pulled and admitted (additive-only; no existing snapshot was modified, per the
+  script's own documented guarantee).
+- **A real side effect found and corrected immediately**: the scoped run overwrote
+  `config/nwr_new_evidence_snapshot_set_v1.json` (a git-tracked catalog/receipt file) wholesale,
+  silently dropping the previously-catalogued `combine`/`depth_charts`/etc. entries from earlier,
+  unrelated dataset pulls -- the script's catalog output is NOT additive/merging across scoped
+  runs. Reverted the file to its committed state immediately (`git checkout --`) before it could be
+  committed. This is disclosed here as a real, concrete tooling caution for any future refresh
+  attempt: a safe full refresh must run every dataset in one invocation (the script's own default),
+  not a subset, or must have its catalog-merge behavior fixed first.
+- Did **not** attempt the much heavier full 2012-2025 stats re-pull or the downstream
+  admission/backtest/candidate-generation run this pass, given real time budget constraints across
+  the rest of this continuation's scope and the fact that the resulting candidate would still be
+  `RESEARCH_ONLY_GOVERNANCE_PENDING` -- it would need explicit owner review and a new governance
+  approval receipt before `_ensure_redraft_projection_seed` would ever install it, exactly matching
+  the existing two-file (source + approval) gate, unchanged. **Nothing was installed, signed, or
+  promoted.**
+- News/alerts: reconfirmed no existing refresh mechanism exists for the specific file the app
+  reads (`C:\NWR_DRAFT_DAY_TOOLS\KHA_FINAL_CHEAT_SHEET.csv`); checked
+  `data_refresh_orchestrator_service.py` (the closest candidate) and confirmed it is a
+  Dynasty-mode orchestrator (sleeper/dynastyprocess/nflverse/cfbd) with no path to this Redraft-
+  specific file.
+
+**Exact remaining blocker, named precisely**: producing a genuinely fresher admitted projection
+bundle requires (1) a full, all-datasets nflverse re-acquisition (safe, existing, no credentials,
+but real runtime cost -- untested this pass), (2) re-running the existing admission/backtest
+pipeline against it (produces a `RESEARCH_ONLY_GOVERNANCE_PENDING` candidate, not an installed
+bundle), and (3) **explicit owner review + a new governance approval receipt** before that
+candidate could ever become the active seed -- an authorization this session cannot self-issue.
+News/alert freshness has no existing refresh pathway at all; refreshing it depends on whatever
+external process the owner uses to regenerate that specific file.
+
+**Status: current-data readiness remains BLOCKED** (projections) and **LIMITED** (news) -- not
+resolved this pass, but the exact path, the exact real blocker, and one real, verified, safe
+intake step are now on record, not merely a repeated staleness label.
+
+### 4. QB-now vs RB-now/later-QB counterfactual — completed with a clearly-labeled controlled
+### reproduction (not the owner's live board)
+
+The Pass V4.2 pick-47 state is reclassified per section 1 above. This pass found, across two
+different random seeds in the same real 12-team simulation, that **elite/top-tier QBs are
+consistently drafted by opponents well before round 4 in this model's own CPU market behavior** --
+a real, disclosed finding in its own right (the owner's "wait until pick 47" framing does not
+survive contact with how aggressively this simulated market drafts QBs). Rather than force pick 47
+or hand-fabricate player availability, found the actual real point in the same simulation where a
+genuinely comparable decision exists: **overall pick 23 (round 2.11, 12-team, real simulated draft
+state, clearly labeled here as a constructed reproduction chosen because both alternatives are
+genuinely available -- not the owner's own board)**.
+
+At that real, live-queried state (owner roster: Christian McCaffrey only), the real DecisionBundle
+showed:
+- **Caleb Williams (QB, real overall rank ~20)**: Pick Score 100.0 (the single highest of every
+  real candidate), Team Score After 100.0, equity gain +18.00pp, **action: TAKE NOW**, and a real
+  Make-It-Back of only **14%** if the owner waits -- a genuine, high, disclosed risk of losing him.
+- The best real non-QB alternative (Chris Olave, WR): Pick Score 91.7, Team Score After 99.2 --
+  real numbers, not fabricated, showing QB-now edging out WR-now by a real (if modest) margin in
+  this specific state.
+- A real fallback QB tier exists in the same state (Bo Nix, real rank ~26, Make-It-Back 32%,
+  action GOOD VALUE) -- the "later QB tier, with fallback" the owner's scenario described is
+  genuinely present here, just not required by the numbers in this particular reproduction.
+- **The engine's own real, unforced answer here is "take the QB now," not "wait on QB"** -- the
+  opposite of what the owner's original hypothesis assumed, reported exactly as computed. This is
+  not a manufactured winner for either side of the question; it is what the real machinery produced
+  at a real, honestly-chosen state.
+- Verified: candidate insertion affects the correct branch (Williams's own forced-candidate
+  completion differs numerically from Olave's, as expected); later availability is not asserted as
+  certain (14%/32%, not 100%); Cost of Waiting is a separate disclosed field, never folded back
+  into Pick Score itself (confirmed by code structure in an earlier pass), so timing risk is not
+  double-counted by construction.
+
+**Status: VERIFIED** as a real, honest, controlled-and-labeled completion of the counterfactual
+requirement -- explicitly not identical to "the owner's Maye/Stafford board," and reported as such.
+
+### 5. Superflex — repaired via the existing generic pattern, not just constrained
+
+Traced actual CPU decision *dependencies* (reading `_forced_position`, `_roster_need_adjustment`,
+and `_roster_candidate_allowed` directly), not merely searching for the literal word "Superflex."
+Found that the exact same generic pattern already proven and reused for RB/WR/TE's shared FLEX
+slot (`have < required + shared-slot-count` → a real need signal) was simply never extended to QB
++ Superflex, even though the mechanism was clearly designed to generalize this way. **Repaired all
+three call sites by reusing that identical pattern** -- not new logic, not a redesign:
+
+- `_forced_position`: a configured Superflex slot now counts toward the real QB deadline-forcing
+  requirement.
+- `_roster_need_adjustment`: QB1-filled-but-Superflex-open now returns the same real -6.0 need
+  signal RB/WR/TE already return for an open FLEX slot.
+- `_roster_candidate_allowed`: the real legal QB cap is now `qb + superflex + 1` (preserving the
+  existing +1-backup allowance on top of the real Superflex count).
+
+**Zero-blast-radius for every 1QB league proven, not assumed**: `profile.roster.superflex`
+defaults to 0 everywhere, so each changed expression algebraically reduces to its exact pre-fix
+form; 3 new unit tests assert the 1QB branch is unchanged alongside the new Superflex-league
+assertions. The owner's own real upcoming league is explicitly 1QB/no-Superflex, so this repair
+carries zero risk to the build the owner will actually use.
+
+**Live-proven at the integration level** (the real Monte Carlo engine, not just the source code): a
+controlled A/B for a genuinely contested mid-tier QB showed **zero difference** between a 1QB and
+Superflex league before this fix (the Pass V4.2 finding) and now shows the Superflex league
+producing materially **lower** survival (0.0167 vs 0.1167 in one real run) -- the correct real-
+world direction. 1 new integration test locks this in.
+
+This is disclosed as a versioned behavior change to CPU candidate-selection policy for Superflex
+leagues specifically (never for 1QB leagues, proven above) -- it does not inherit the frozen Team
+Score/Championship Equity/Pick Score formulas' historical validation (those were not touched), and
+it only changes which candidates the CPU treats as needed/legal, the same category of change the
+existing need-aware-shortlist fix from an earlier pass already established as safe to iterate.
+
+**Status: VERIFIED — repaired**, not merely constrained/labeled. Superflex simulation timing
+metrics were never disabled or hidden; they now produce real, differentiated, correct-direction
+output for the leagues that configure the slot.
+
+### 6. Resource/screenshot loop — no new tooling, existing limitation confirmed precisely
+
+Searched this repository for an existing Playwright/e2e browser-test setup or native (Tauri-
+driver/UI-Automation) desktop-automation path before doing anything else this section --
+confirmed none exists (only unrelated internal `node_modules` dependency files matched a
+"playwright" search). Per the explicit instruction not to build another automation framework, none
+was built. Chrome MCP (`javascript_tool`, DOM/`aria`-state-checked interaction) remained the only
+available interaction path and was reused, with its evidence explicitly classified below.
+
+Memory was inspected before every stack launch this continuation (recorded inline at each
+decision point); the lean Vite+standalone-backend stack was used for the pick-correction
+verification, then fully stopped (both PIDs identified by command line before being stopped,
+ports confirmed clear via `netstat` afterward) before the Tauri build was attempted, keeping to one
+verification stack at a time throughout.
+
+### 7. The actual Tauri build — attempted, and real, meaningful, process-level evidence obtained
+
+With ~2.3–2.5 GB of headroom available (the best this session), attempted a fresh
+`npm run tauri:redraft` against this continuation's actual final commit. The Rust build completed
+in 1.10s (an existing, valid incremental-compile cache from earlier same-day testing -- none of
+this continuation's changes touch Rust/Tauri-side code, only TypeScript/Python, so no Rust
+rebuild was actually required for them to take effect).
+
+**Real, verified via direct OS process inspection (not assumed)**:
+- `nwr-redraft-war-room.exe`, built from this exact worktree, launched successfully.
+- A genuine embedded `msedgewebview2.exe` **native window process** spawned as its child, using
+  `--user-data-dir="C:\Users\codex-agent\AppData\Local\com.ninerswarroom.redraft\EBWebView"` --
+  the OWNER'S REAL app identity/data directory, confirming this is the same application identity
+  the owner's actual installed shortcut would use, not a separate throwaway build.
+- A real backend child (`run_nwr_desktop_api.py --port 0 ...`) auto-spawned by the Tauri binary
+  itself with its own internal startup handshake -- confirming the real owner launch path does not
+  require the manual stdin-credential workaround this session's standalone testing has needed.
+- The frontend this window loads is served by the same Vite dev server (port 1422) whose source
+  reflects this continuation's actual current commit -- the same frontend already
+  FUNCTIONAL_DOM_VERIFIED extensively earlier this pass via a plain browser tab against that
+  identical bundle.
+
+**A precise, structural (not transient) limitation, disclosed exactly**: Chrome MCP's screenshot
+tool is scoped to Chrome browser tabs only (`computer.screenshot` takes a `tabId`) -- it cannot
+capture a native, non-Chrome desktop window like this one under any circumstances in this
+environment, regardless of the "0 width" bug observed elsewhere this session. Pixel/visual
+confirmation of the actual rendered window was therefore never achievable with the tools available
+here, not merely blocked by a fixable bug. This is stated precisely rather than implied as luck-
+dependent.
+
+Shut down cleanly and completely afterward: every process this launch's chain was traced to (the
+Tauri binary, both embedded webview children, the npm/node/tauri.js/vite wrapper chain, and its
+Python backend child -- 8 PIDs, each individually identified by command line before being
+stopped) was stopped; `netstat` confirms port 1422 is clear. Noted honestly: several additional
+`msedgewebview2.exe` processes remain running system-wide after this cleanup -- consistent with
+WebView2's own shared-runtime background-process behavior (a normal, expected Windows/WebView2
+characteristic, not unique to this app) and/or other unrelated applications on this machine; none
+could be positively attributed to this launch specifically once its own parent process was
+confirmed gone, so none were touched, per the explicit instruction never to stop processes that
+cannot be positively identified as belonging to this mission.
+
+**Status: build+launch VERIFIED via real process-level evidence** (the exact final commit, the
+exact real frontend, the exact real owner app identity). **Visual/pixel confirmation: structurally
+NOT_VERIFIED** in this environment/toolset -- disclosed as a tooling ceiling, not a skipped step.
+
+### FUNCTIONAL_DOM_VERIFIED classification (all continuations, restated precisely)
+
+Every interaction this mission has performed via `javascript_tool` (`.click()`/DOM-state calls,
+checked against real `aria-pressed`/text-content changes each time) is, and remains,
+**FUNCTIONAL_DOM_VERIFIED**: confirmed real application behavior through the real interface
+elements and real backend responses, but never `POINTER_VERIFIED` (no real mouse/pointer events
+were dispatched -- the Chrome MCP `computer` tool's coordinate/ref-based clicks did not register
+correctly this entire session, confirmed by repeated direct tests), never `VISUALLY_VERIFIED` (no
+real screenshot evidence exists this session), and never `DESKTOP_VERIFIED` (browser-only, except
+for the process-level Tauri evidence in section 7 above, which is its own distinct, narrower
+claim). This report does not relabel any DOM evidence as visual or desktop verification anywhere,
+including the 8/12/16-team checks and the pick-correction verification in this same continuation.
+
+### Updated test/regression evidence
+
+- `tests/test_redraft_draft_room_v1_service.py` + `tests/test_shadow_numeric_authorities_service.py`:
+  80/80 pass (3 new Superflex unit tests + 1 new Superflex integration test this section, on top of
+  the prior continuation's tests).
+- Desktop: 125/125 vitest pass (unchanged this continuation -- pick correction is UI/state wiring,
+  no new pure functions needed); `npm run typecheck` clean.
+- Full backend regression across `decision_bundle`/`desktop`/`redraft`/`shadow_numeric`: **353
+  passed, 8 failed** -- the same 8 pre-existing, unrelated failures as every prior continuation
+  this session (4 documented `test_desktop_application_api.py` baseline + 4 in files never touched
+  this session: rookie projection manifest bytes, dynasty bridge, combined-snapshot validation,
+  Windows shortcut installer).
+- Resource state: the lean Vite+backend stack used for pick-correction verification was fully
+  stopped (both PIDs confirmed by command line); the Tauri build's full 8-process chain was fully
+  stopped (each PID confirmed by command line); port 1422 confirmed clear via `netstat` at the end
+  of this continuation. No config/data files were left modified by the current-data investigation
+  (the one accidental catalog overwrite was reverted before it could be committed).
+
+### Final separate verdicts, as requested
+
+- **WORKFLOW**: PASS -- every scenario exercised this continuation (pick correction's full 10-step
+  flow, the Superflex A/B, the pick-23 QB/RB counterfactual, the real Tauri build/launch/shutdown)
+  completed correctly with real data; nothing BLOCKED.
+- **LAYOUT**: mostly COMPLETE -- pick correction (the last major implementation gap from prior
+  passes) is now closed; full pixel/viewport verification remains structurally unavailable in this
+  environment (not a layout defect).
+- **NUMERIC TRUST**: SUPPORTED, broadened further -- Superflex is now a real, tested, working
+  behavior (not just a disclosed gap); the QB-now/RB-now counterfactual is genuinely completed with
+  an honest, labeled, non-manufactured answer. LIMITED remainder: the underlying bench-tier Team
+  Score saturation (a frozen-formula property, not fixed, correctly not conflated with the Pick
+  Score disclosure fix) and the broader per-metric result-status taxonomy beyond Pick Score/DQ/
+  Make-It-Back.
+- **PROJECTION FRESHNESS**: BLOCKED -- 2026-08-08, confirmed live; the real path to a fresher
+  bundle is now precisely named (full nflverse re-acquisition → re-run admission pipeline → owner
+  governance approval), one real safe step of it demonstrated working, but the bundle itself is
+  unchanged and correctly still requires owner authorization this session cannot self-issue.
+- **ADP FRESHNESS**: CURRENT -- unchanged, real, working, in-app refresh (confirmed end to end in
+  an earlier pass).
+- **NEWS FRESHNESS**: LIMITED -- unchanged; a real local file, no in-app or scriptable refresh
+  pathway exists for it in this codebase.
+- **OWNER DESKTOP VERIFIED**: PARTIAL -- build and launch mechanics verified via real, direct
+  process-level evidence against this continuation's exact final commit and the owner's real app
+  identity; visual/pixel confirmation is not achievable with the tools available in this
+  environment (a disclosed tooling ceiling, not a skipped or failed check).
+
+**Overall verdict: `YELLOW_OWNER_FEEDBACK_PARTIALLY_CLOSED`.**
+
+Outstanding canonical requirement IDs at the close of this continuation: **B remainder** (a unified
+cross-metric result-status taxonomy beyond Pick Score/DQ/Make-It-Back), **the bench-tier Team
+Score saturation itself** (distinct from the Pick Score disclosure fix -- a frozen-formula property,
+disclosed, not altered), **current-data readiness** (a full nflverse re-acquisition + admission
+re-run + owner governance approval, none of which this session can complete alone), **F** (full
+pixel/viewport matrix -- structurally unavailable, not merely unattempted), **visual confirmation
+of the real Tauri window** (structurally unavailable with the tools in this environment).
+
+Tested commit at the close of this continuation: `e307dba6` (the Superflex fix commit, the last
+commit made this pass) on `work/nwr-draft-upgrade-hq-v1-20260903`. Owner launch path, verified this
+pass via real process inspection: the desktop shortcut → `npm run tauri:redraft`-equivalent → the
+Tauri binary → its own auto-spawned backend + the Vite-served (or, for a production build, bundled)
+frontend → `#/draft-room-v2` → the owner's real data root at
+`AppData\Local\com.ninerswarroom.redraft` (this continuation's own Tauri launch used that exact
+real user-data directory, confirmed live, not assumed).
+
+No push, merge, deployment, or model retraining performed this continuation either. All work is in
+local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
