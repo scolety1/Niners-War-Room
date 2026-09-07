@@ -996,6 +996,10 @@ def _udk_csv(rows: list[tuple[str, str, str, str]]) -> str:
     return "\r\n".join(lines) + "\r\n"
 
 
+def _udk_position(loaded: dict, position: str) -> dict:
+    return next(row for row in loaded["positions"] if row["position"] == position)
+
+
 def test_parse_udk_position_csv_matches_real_players_and_preserves_opaque_adp(tmp_path) -> None:
     ranking = _ranking()
     csv_text = _udk_csv([
@@ -1008,7 +1012,14 @@ def test_parse_udk_position_csv_matches_real_players_and_preserves_opaque_adp(tm
     assert result["matchedRows"] == 2
     assert result["unmatched"] == []
     loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
-    entries = loaded["positions"]["QB"]["entries"]
+    # `positions` is a LIST of {position, entries, ...} -- never a dict
+    # keyed by the real position string, which the shared camelCase JSON
+    # key transform (public_json_value) would silently mangle ("QB" ->
+    # "qB") on the way out to the actual HTTP API. Caught live against
+    # the running desktop API, not merely by a unit test.
+    assert isinstance(loaded["positions"], list)
+    qb = _udk_position(loaded, "QB")
+    entries = qb["entries"]
     assert entries[0]["playerId"] == "QB-0"
     assert entries[0]["playerName"] == "QB 0"
     # ADP is preserved as the literal source string -- never parsed as a
@@ -1017,7 +1028,7 @@ def test_parse_udk_position_csv_matches_real_players_and_preserves_opaque_adp(tm
     assert entries[0]["adpRaw"] == "2.06"
     assert isinstance(entries[0]["adpRaw"], str)
     assert entries[0]["dynastyLocked"] is True
-    assert loaded["positions"]["QB"]["provider"] == "Fantasy Footballers Podcast UDK"
+    assert qb["provider"] == "Fantasy Footballers Podcast UDK"
 
 
 def test_parse_udk_position_csv_flags_unmatched_player_without_dropping_the_import(tmp_path) -> None:
@@ -1045,7 +1056,7 @@ def test_udk_markers_column_is_never_ingested_as_player_state(tmp_path) -> None:
     csv_text = _udk_csv([("QB 0", "TST", "2.06", "locked")])
     save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
     loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
-    entry = loaded["positions"]["QB"]["entries"][0]
+    entry = _udk_position(loaded, "QB")["entries"][0]
     assert "markers" not in {key.lower() for key in entry}
 
 
@@ -1058,6 +1069,6 @@ def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path)
     save_udk_position_rankings(tmp_path, ranking.profile, ranking, rb_csv, _manual_assets())
     loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
     # A later RB-only import must not erase the earlier QB import.
-    assert set(loaded["positions"]) == {"QB", "RB"}
-    assert loaded["positions"]["QB"]["entries"][0]["playerId"] == "QB-0"
-    assert loaded["positions"]["RB"]["entries"][0]["playerId"] == "RB-0"
+    assert {row["position"] for row in loaded["positions"]} == {"QB", "RB"}
+    assert _udk_position(loaded, "QB")["entries"][0]["playerId"] == "QB-0"
+    assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"

@@ -63,7 +63,7 @@ export function CheatSheetPage({
   // toggle stays available for the owner to review history.
   const [showDrafted, setShowDrafted] = useState(false);
   const draftedIds = useMemo(() => new Set(data.draftBoard?.drafted ?? []), [data.draftBoard?.drafted]);
-  const udkForSheet = data.udkRankings?.positions?.[sheet];
+  const udkForSheet = data.udkRankings?.positions?.find((row) => row.position === sheet);
   const manualRows = useMemo(
     () => (data.manualAssets ?? []).filter((row) => row.position === sheet && (showDrafted || !draftedIds.has(row.playerId))),
     [data.manualAssets, sheet, showDrafted, draftedIds],

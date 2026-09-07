@@ -979,13 +979,30 @@ def save_udk_position_rankings(
 
 
 def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
+    """Returns `positions` as a LIST of `{position, entries, ...}` objects
+    -- never a dict keyed by position string. A dict keyed by real
+    position codes ("QB", "RB") would be silently mangled by the shared
+    camelCase JSON key transform every facade payload passes through
+    (public_json_value(), which camelCases every dict key it sees,
+    turning "QB" into "qB") -- a real, verified bug caught by rendering
+    this against the live desktop API, not merely unit-tested. The
+    on-disk cache file itself is still stored keyed by position (an
+    internal convenience for additive merge-on-import in
+    save_udk_position_rankings); this function is the one conversion
+    point to the list shape every consumer actually reads."""
     path = _udk_rankings_path(root, profile_id)
-    if not path.exists():
-        return {"positions": {}}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError, json.JSONDecodeError):
-        return {"positions": {}}
+    positions_by_key: dict[str, Any] = {}
+    if path.exists():
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+            positions_by_key = dict(document.get("positions") or {})
+        except (OSError, ValueError, json.JSONDecodeError):
+            positions_by_key = {}
+    positions = [
+        {"position": position, **snapshot}
+        for position, snapshot in sorted(positions_by_key.items())
+    ]
+    return {"positions": positions}
 
 
 def _match_report_row(

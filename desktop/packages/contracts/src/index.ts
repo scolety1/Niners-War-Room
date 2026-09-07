@@ -1079,6 +1079,7 @@ export interface UdkPlayerEntry {
 }
 
 export interface UdkPositionSnapshot {
+  position: string;
   entries: UdkPlayerEntry[];
   provider: string;
   importedAtUtc: string;
@@ -1087,7 +1088,12 @@ export interface UdkPositionSnapshot {
 }
 
 export interface UdkRankings {
-  positions: Record<string, UdkPositionSnapshot>;
+  // A LIST, never a dict keyed by position string -- a real position
+  // code like "QB" used as a JSON object key gets silently mangled to
+  // "qB" by the shared camelCase key transform every facade payload
+  // passes through server-side. Verified live against the running
+  // desktop API, not merely assumed.
+  positions: UdkPositionSnapshot[];
 }
 
 export interface RedraftBootstrap {
