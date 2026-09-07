@@ -9,7 +9,14 @@ import { useMemo, useState } from "react";
 // separately-sourced manual assets, unmodeled by NWR) -- shown here from
 // the exact same `manualAssets` list Suggestions' position filter and
 // search already use, never a fabricated advanced score.
-const SHEETS = ["Overall", "QB", "RB", "WR", "TE", "K", "DST", "Tiers"];
+// NWR FINAL OWNER-FEEDBACK CLOSURE (section A, "FLEX = actual RB/WR/TE
+// eligibility... Superflex only where configured"): FLEX and Superflex
+// lanes were entirely absent from Cheat Sheets (present on Suggestions,
+// missing here) -- added using the same real position-eligibility rule
+// Suggestions already uses, never a new/different definition.
+const BASE_SHEETS = ["Overall", "QB", "RB", "WR", "TE", "FLEX", "K", "DST", "Tiers"];
+const FLEX_ELIGIBLE = new Set(["RB", "WR", "TE"]);
+const SUPERFLEX_ELIGIBLE = new Set(["QB", "RB", "WR", "TE"]);
 const MANUAL_POSITIONS = new Set(["K", "DST"]);
 
 function csvCell(value: unknown): string {
@@ -71,10 +78,20 @@ export function CheatSheetPage({
   const rows = useMemo(
     () => (sheet === "Overall" || sheet === "Tiers" || MANUAL_POSITIONS.has(sheet)
       ? data.rankings
-      : data.rankings.filter((row) => row.position === sheet)
+      : sheet === "FLEX"
+        ? data.rankings.filter((row) => FLEX_ELIGIBLE.has(row.position))
+        : sheet === "SFLX"
+          ? data.rankings.filter((row) => SUPERFLEX_ELIGIBLE.has(row.position))
+          : data.rankings.filter((row) => row.position === sheet)
     ).filter((row) => showDrafted || !row.drafted),
     [data.rankings, sheet, showDrafted],
   );
+  // Superflex lane only where the active league is actually configured
+  // for it -- never shown for a 1QB league (matches the exact real
+  // Suggestions position-filter behavior, not a separate new rule).
+  const SHEETS = (data.activeProfile?.roster.superflex ?? 0) > 0
+    ? [...BASE_SHEETS.slice(0, 6), "SFLX", ...BASE_SHEETS.slice(6)]
+    : BASE_SHEETS;
   const udkVisibleEntries = useMemo(
     () => (udkForSheet?.entries ?? []).filter((row) => showDrafted || !row.playerId || !draftedIds.has(row.playerId)),
     [udkForSheet, showDrafted, draftedIds],

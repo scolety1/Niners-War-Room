@@ -1926,12 +1926,59 @@ function SuggestionsTab({
       const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.pickScore;
       return <span title={`${ps.title} ${formatMetricStatus(status, "")}`.trim()}>{ps.text}</span>;
     } },
-    { key: "teamScoreAfter", label: "Team After", titleHint: "Team Score — RESEARCH. 'After' projects a full-draft completion assuming this pick now; the (Δ) in parentheses reflects this pick PLUS the rest of the draft playing out, not an isolated single-pick value. See player detail for current→after.", sort: "number", render: (row) => (
-      <span>{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
-    ) },
-    { key: "championshipEquityAfter", label: "Equity Δ", titleHint: "Championship Equity — SIMULATED RESEARCH. Percentage-point change from this pick.", sort: "number", render: (row) => (
-      <span title={`${formatNumber((row.championshipEquityAfter as number) * 100, 1)}% after this pick`}>{row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp</span>
-    ) },
+    {
+      // NWR FINAL OWNER-FEEDBACK CLOSURE (section 13, "Action + Value
+      // must be usable without horizontal hunting"): Action/Value are
+      // the owner's actual decision -- they were the 10th/11th of 12
+      // columns, reliably scrolled off-screen at a normal desktop width.
+      // Moved immediately after Pick Score (the other primary decision
+      // signal); every secondary analytics column (Team/Championship
+      // full-draft projection, Make-It-Back, DQ, Player Score, ADP) now
+      // sorts after them, reachable by scrolling, but never blocking the
+      // primary WHO/WHAT-TO-DO answer.
+      key: "action", label: "Action", titleHint: "What to do -- reuses the existing real Cost-of-Waiting/ADP-timing labels, split from Value below.", sort: "text", render: (row) => {
+        const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+        return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
+      },
+    },
+    {
+      key: "value", label: "Value", titleHint: "How the market sees this player right now (Falling/Reach = real-time draft behavior vs. cited ADP; Value = NWR ranks them meaningfully ahead of ADP; Unknown when ADP is unavailable).", sort: "text", render: (row) => {
+        const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+        const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
+        return <span title={title}>{split.value}</span>;
+      },
+    },
+    {
+      // NWR FINAL OWNER-FEEDBACK CLOSURE (section 7, "Team Score / Champ
+      // display semantics"): the owner's screenshots read "Team After 98
+      // (+98)" as though +98 were this single pick's isolated
+      // contribution. Both the "before" and "after" values are the SAME
+      // horizon (a full-draft-completion projection under the model's
+      // continuation policy), so the delta IS a valid same-horizon
+      // number -- the fix is presentation-only: the visible label and
+      // cell text now say "full draft" explicitly instead of relying on
+      // a hover-only disclosure, and the delta is visually
+      // de-emphasized (smaller, muted) rather than reading as the
+      // headline figure.
+      key: "teamScoreAfter", label: "Team (Full Draft)",
+      titleHint: "Team Score — RESEARCH. Projects a full-draft completion assuming this pick now. The Δ compares that SAME full-draft-completion projection with vs. without this pick -- both sides use the identical horizon, never an isolated single-pick value. See player detail for current→after.",
+      sort: "number", render: (row) => (
+        <span>
+          {formatNumber(row.teamScoreAfter as number, 1)}
+          <small className="draft-room-v2-delta-note"> Δ full draft {row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)}</small>
+        </span>
+      ),
+    },
+    {
+      key: "championshipEquityAfter", label: "Championship (Full Draft)",
+      titleHint: "Championship Equity — SIMULATED RESEARCH. Percentage-point change between the same full-draft-completion projection with vs. without this pick.",
+      sort: "number", render: (row) => (
+        <span title={`${formatNumber((row.championshipEquityAfter as number) * 100, 1)}% win probability, full-draft projection, with this pick`}>
+          <small className="draft-room-v2-delta-note">Δ full draft </small>
+          {row.equityGain as number >= 0 ? "+" : ""}{formatNumber((row.equityGain as number) * 100, 1)} pp
+        </span>
+      ),
+    },
     { key: "makeItBackProbability", label: "Make Back", titleHint: "Make-It-Back: modeled probability this player survives to your next pick if you wait. 100%* means it survived every simulated continuation -- a real estimate, not a guarantee.", sort: "number", render: (row) => {
       const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
       return <span title={mib.title}>{mib.text}</span>;
@@ -1945,15 +1992,6 @@ function SuggestionsTab({
     { key: "marketExpectedPick", label: "ADP", sort: "number", render: (row) => {
       const adp = formatAdpRoundPick(row.marketExpectedPick as number | null, adpTeamCount, teamCount);
       return <span title={adp.title}>{adp.text}</span>;
-    } },
-    { key: "action", label: "Action", titleHint: "What to do -- reuses the existing real Cost-of-Waiting/ADP-timing labels, split from Value below.", sort: "text", render: (row) => {
-      const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
-      return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
-    } },
-    { key: "value", label: "Value", titleHint: "How the market sees this player right now (Falling/Reach = real-time draft behavior vs. cited ADP; Value = NWR ranks them meaningfully ahead of ADP; Unknown when ADP is unavailable).", sort: "text", render: (row) => {
-      const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
-      const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
-      return <span title={title}>{split.value}</span>;
     } },
     ...(showBallers ? [{
       key: "ballers", label: "Ballers", sort: "text" as const,
@@ -3321,6 +3359,12 @@ function PlayerDrawer({
         </Button>
         <Button variant="ghost" onClick={() => onQueue(playerId)}>{isQueued ? "Queued" : "Queue"}</Button>
       </div>
+      {/* NWR FINAL OWNER-FEEDBACK CLOSURE (section B): this is now the
+          ONLY scrolling region in the drawer -- the header and actions
+          above are outside it, in normal flow, so they can never scroll
+          out of view regardless of how far the owner scrolls into the
+          stats/News/Details sections below. */}
+      <div className="player-drawer__body">
       {candidate ? (
         <div className="player-drawer__primary">
           <div className="player-drawer__stat player-drawer__stat--headline" title={formatMetricStatus(candidate.metricStatus?.pickScore, "Pick Score — EXPERIMENTAL: historically-validated but not yet independently audited.")}>
@@ -3329,14 +3373,14 @@ function PlayerDrawer({
           </div>
           <div
             className="player-drawer__stat"
-            title={formatMetricStatus(candidate.metricStatus?.teamScore, "Team Score — RESEARCH. 'After' reflects a full-draft-completion projection assuming this pick now; the delta therefore reflects this pick PLUS the rest of the draft playing out under the model's continuation policy, not an isolated single-pick value.")}
+            title={formatMetricStatus(candidate.metricStatus?.teamScore, "Team Score — RESEARCH. 'After' reflects a full-draft-completion projection assuming this pick now; the delta compares that SAME full-draft-completion horizon with vs. without this pick, never an isolated single-pick value. Known limitation: bench-only improvements are not modeled by this score -- only the projected optimal starting lineup counts.")}
           >
-            <span>Team Score</span>
+            <span>Team Score (Full Draft)</span>
             <strong>{currentTeamScore != null ? formatNumber(currentTeamScore, 1) : "—"} → {formatNumber(candidate.teamScoreAfter, 1)}</strong>
             <small>{candidate.teamScoreDelta >= 0 ? "+" : ""}{formatNumber(candidate.teamScoreDelta, 1)}</small>
           </div>
-          <div className="player-drawer__stat" title={formatMetricStatus(candidate.metricStatus?.championshipEquity, "Championship Equity — SIMULATED RESEARCH.")}>
-            <span>Championship Equity</span>
+          <div className="player-drawer__stat" title={formatMetricStatus(candidate.metricStatus?.championshipEquity, "Championship Equity — SIMULATED RESEARCH. Same full-draft-completion horizon as Team Score above. Known limitation: bench-only improvements are not modeled -- only the projected optimal starting lineup counts.")}>
+            <span>Championship Equity (Full Draft)</span>
             <strong>{formatNumber(candidate.championshipEquityAfter * 100, 1)}%</strong>
             <small>{candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</small>
           </div>
@@ -3420,6 +3464,7 @@ function PlayerDrawer({
           </>
         ) : null}
       </details>
+      </div>
     </aside>
   );
 }

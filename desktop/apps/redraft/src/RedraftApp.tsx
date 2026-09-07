@@ -128,6 +128,18 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
   const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
   const projectionsLabel = data.status.sourceAsOf ? `Projections: ${data.status.sourceAsOf}` : "Projections: unavailable";
   const readyLabel = data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required";
+  // NWR FINAL OWNER-FEEDBACK CLOSURE (section 9, "Freshness -- all four
+  // categories"): Identity/Team is a REAL, already-computed signal
+  // (`health.playerUniverseAvailable` + `health.lastGeneratedTimestamp`)
+  // that previously had no owner-facing surface at all -- never
+  // fabricated, never merged with Projections (a separate, independently
+  // stale/fresh field). News/status freshness already has its own real,
+  // separate surface (the "News Nh stale" chip in Suggestions) -- kept
+  // there rather than duplicated here, so this row stays compact instead
+  // of growing back into the giant box the owner already rejected.
+  const identityLabel = data.health?.playerUniverseAvailable
+    ? `Identity: ${data.health.lastGeneratedTimestamp || "current"}`
+    : "Identity: unavailable";
   return <section className="active-league-selector" aria-label="Active League">
     <div className="active-league-selector__identity">
       <span>Active League</span>
@@ -137,6 +149,7 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
     </div>
     <label><span>Switch</span><select aria-label="Switch active league" disabled={working || !data.profiles.length} value={data.activeProfileId ?? ""} onChange={(event) => void switchLeague(event.target.value)}>{!data.activeProfileId ? <option value="">Choose a league</option> : null}{data.profiles.map((profile) => <option key={profile.profileId} value={profile.profileId} title={profile.leagueName}>{profile.leagueName}</option>)}</select></label>
     <div className="active-league-selector__badges">
+      <span className={data.health?.playerUniverseAvailable ? "active-league-adp" : "active-league-adp active-league-adp--review"} title="Real, current-team player identity data -- separate from projections, ADP, and news freshness.">{identityLabel}</span>
       <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span>
       <span className="active-league-adp">{projectionsLabel}</span>
       <span className={data.status.ready ? "active-league-ready" : "active-league-adp active-league-adp--review"}>{readyLabel}</span>
