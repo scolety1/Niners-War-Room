@@ -2405,6 +2405,14 @@ def _forced_position(profile: LeagueProfile, roster: Counter[str], round_number:
     deadlines = (("QB", 8), ("TE", 10), ("RB", 12), ("WR", 12))
     for position, deadline in deadlines:
         required = int(getattr(profile.roster, position.lower()))
+        # Owner feedback closure (Superflex disposition): a Superflex slot
+        # is real, real QB demand -- a team with one configured needs a
+        # deadline-forced QB just as much as one filling its starter QB1,
+        # never treated as if the slot doesn't exist. Zero-blast-radius
+        # for every 1QB league (profile.roster.superflex defaults to 0,
+        # so `required` is unchanged from the frozen behavior above).
+        if position == "QB":
+            required += profile.roster.superflex
         if round_number >= deadline and roster[position] < required:
             return position
     return None
@@ -2422,7 +2430,13 @@ def _roster_candidate_allowed(
     if position in {"K", "DST"}:
         return roster[position] < int(getattr(profile.roster, position.lower()))
     if position == "QB":
-        return roster[position] < max(profile.roster.qb + 1, 2)
+        # Owner feedback closure (Superflex disposition): a Superflex
+        # slot is a second real starter-eligible QB use, not just "QB1 +
+        # one legal backup" -- the same +1-backup allowance the 1QB case
+        # already gets is preserved on top of the real Superflex count.
+        # Zero-blast-radius for every 1QB league (superflex defaults to
+        # 0, reproducing max(profile.roster.qb + 1, 2) exactly).
+        return roster[position] < max(profile.roster.qb + profile.roster.superflex + 1, 2)
     if position == "TE":
         return roster[position] < max(profile.roster.te + 1, 2)
     return roster[position] < profile.draft.rounds
@@ -2468,6 +2482,17 @@ def _roster_need_adjustment(
         flex_have = sum(roster[value] for value in ("RB", "WR", "TE"))
         flex_need = profile.roster.rb + profile.roster.wr + profile.roster.te + profile.roster.flex
         if flex_have < flex_need:
+            return -6.0
+    # Owner feedback closure (Superflex disposition): the exact same
+    # real-slack pattern immediately above (RB/WR/TE counting toward the
+    # shared FLEX slot) applied to QB counting toward a real Superflex
+    # slot -- reused, not reinvented. Zero-blast-radius for every 1QB
+    # league: profile.roster.superflex defaults to 0, so this branch
+    # never fires when QB1 is already satisfied (roster[QB] >= required
+    # == profile.roster.qb == qb_need).
+    if position == "QB" and profile.roster.superflex > 0:
+        qb_need = profile.roster.qb + profile.roster.superflex
+        if roster["QB"] < qb_need:
             return -6.0
     if position in {"QB", "TE"} and roster[position] > required:
         return 18.0

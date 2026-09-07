@@ -800,6 +800,43 @@ def test_candidate_survival_probability_seeds_and_trials_are_genuinely_consumed(
     assert len(set(results.values())) > 1, results
 
 
+def test_candidate_survival_probability_now_responds_to_superflex_demand() -> None:
+    """Owner feedback closure (Superflex disposition, repaired -- not just
+    labeled): a prior pass found and disclosed that Make-It-Back's CPU
+    simulation was Superflex-blind (a controlled A/B showed zero
+    difference). redraft_draft_room_v1_service.py's _forced_position /
+    _roster_need_adjustment / _roster_candidate_allowed now count a real
+    Superflex slot as real QB demand, reusing the exact pattern already
+    proven for RB/WR/TE/FLEX. This test proves the repair actually
+    changed the observable, real Monte Carlo outcome -- not just the
+    source code -- for a genuinely contested mid-tier QB."""
+    from src.services.shadow_numeric_authorities_service import candidate_survival_probability
+
+    ranking_1qb = _ranking(team_count=10, rounds=15)
+    sflx_profile = replace(ranking_1qb.profile, roster=replace(ranking_1qb.profile.roster, superflex=1))
+    ranking_sflx = replace(ranking_1qb, profile=sflx_profile)
+    adp = _empty_adp(ranking_1qb.profile)
+
+    def _fresh(profile) -> dict:
+        return {
+            "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": 1,
+            "seed": 1, "speed": "FAST", "mode": "MOCK", "drafted": [], "picks": [],
+            "updated_at_utc": "",
+        }
+
+    survival_1qb = candidate_survival_probability(
+        ranking_1qb.profile, ranking_1qb, [], adp, _fresh(ranking_1qb.profile),
+        owner_slot=1, candidate_player_id="QB-15", alternative_player_id="QB-0",
+        trials=60, base_seed=1,
+    )
+    survival_sflx = candidate_survival_probability(
+        sflx_profile, ranking_sflx, [], adp, _fresh(sflx_profile),
+        owner_slot=1, candidate_player_id="QB-15", alternative_player_id="QB-0",
+        trials=60, base_seed=1,
+    )
+    assert survival_sflx < survival_1qb, (survival_sflx, survival_1qb)
+
+
 def test_candidate_survival_probability_is_one_for_unavailable_inputs() -> None:
     from src.services.shadow_numeric_authorities_service import candidate_survival_probability
 

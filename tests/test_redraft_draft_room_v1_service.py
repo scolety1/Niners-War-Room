@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
@@ -15,8 +16,11 @@ from src.services.redraft_draft_room_v1_service import (
     fill_gap_pick,
     _adp_explanation,
     _asset_pool,
+    _forced_position,
     _freshness_label,
     _owner_platform_rows,
+    _roster_candidate_allowed,
+    _roster_need_adjustment,
     _recommendations,
     _save_room_state,
     build_draft_room_payload,
@@ -1072,3 +1076,52 @@ def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path)
     assert {row["position"] for row in loaded["positions"]} == {"QB", "RB"}
     assert _udk_position(loaded, "QB")["entries"][0]["playerId"] == "QB-0"
     assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"
+
+
+def test_forced_position_forces_qb_for_a_real_superflex_slot_not_just_qb1() -> None:
+    """Owner feedback closure (Superflex disposition): the deadline-forced-
+    position mechanism (already reused for K/DST/TE/RB/WR) must count a
+    real configured Superflex slot as real QB demand -- a team whose QB1
+    is filled but whose Superflex slot is still open must still be
+    forced into QB by the same deadline, never treated as if that slot
+    doesn't exist. Zero-blast-radius for 1QB leagues (asserted below)."""
+    ranking = _ranking()
+    sflx_profile = replace(ranking.profile, roster=replace(ranking.profile.roster, superflex=1))
+    roster_qb1_only = Counter({"QB": 1})
+    # QB1 filled, Superflex still open -- must be forced (round 8, the
+    # existing real QB deadline).
+    assert _forced_position(sflx_profile, roster_qb1_only, round_number=8) == "QB"
+    # Both real QB slots filled -- no longer forced.
+    roster_both_filled = Counter({"QB": 2})
+    assert _forced_position(sflx_profile, roster_both_filled, round_number=8) != "QB"
+    # A real 1QB league (superflex=0) is byte-identical to the pre-fix
+    # behavior: QB1 filled means no forced QB, ever.
+    assert _forced_position(ranking.profile, roster_qb1_only, round_number=8) != "QB"
+
+
+def test_roster_need_adjustment_treats_a_superflex_slot_like_real_qb_demand() -> None:
+    """Reuses the exact existing pattern RB/WR/TE already use for FLEX
+    (roster need < required-plus-shared-slot -> a real negative/need
+    adjustment) -- applied to QB/Superflex for the first time."""
+    ranking = _ranking()
+    sflx_profile = replace(ranking.profile, roster=replace(ranking.profile.roster, superflex=1))
+    # QB1 filled, Superflex still open -- real, moderate need signal
+    # (matching FLEX's own -6.0 weight exactly).
+    assert _roster_need_adjustment(sflx_profile, Counter({"QB": 1}), round_number=1, position="QB") == -6.0
+    # Both real slots filled -- no longer a need signal.
+    assert _roster_need_adjustment(sflx_profile, Counter({"QB": 2}), round_number=1, position="QB") != -6.0
+    # A real 1QB league is unaffected: QB1 filled means no lingering need.
+    assert _roster_need_adjustment(ranking.profile, Counter({"QB": 1}), round_number=1, position="QB") != -6.0
+
+
+def test_roster_candidate_allowed_raises_the_real_qb_cap_for_superflex() -> None:
+    """The existing +1-legal-backup allowance is preserved on top of the
+    real Superflex count, not replaced by it."""
+    ranking = _ranking()
+    sflx_profile = replace(ranking.profile, roster=replace(ranking.profile.roster, superflex=1))
+    asset = {"position": "QB"}
+    # 1QB league: legal up to 2 (QB1 + 1 backup) -- unchanged, pre-fix behavior.
+    assert _roster_candidate_allowed(ranking.profile, Counter({"QB": 2}), asset) is False
+    # Superflex league: legal up to 3 (QB1 + Superflex + 1 backup).
+    assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 2}), asset) is True
+    assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 3}), asset) is False
