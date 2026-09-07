@@ -422,6 +422,71 @@ def test_position_filter_returns_real_eligible_players_of_that_position_only() -
     assert all(c.player_id.startswith("WR-") for c in result.candidates)
 
 
+def test_default_shortlist_is_restricted_to_a_genuinely_forced_kdst_position() -> None:
+    """NWR OVERNIGHT (Section 5/9): proven necessary by a real top-
+    suggestion-autopilot acceptance run -- an 8-team mock finished 15/15
+    picks with K 0/1, DST 0/1 even with K/DST visible-when-needed in the
+    shortlist (checkpoint 1's fix), because a genuinely zero-valued K/DST
+    candidate can never outrank ANY legal positive-value skill-position
+    alternative under a pure Pick-Score sort. When `_forced_position`
+    (the same function `_select_asset`'s CPU/autopilot path already uses)
+    reports a position is truly due now, the DEFAULT (unfiltered)
+    Suggestions shortlist must be restricted to that position -- not
+    merely include it among others."""
+    ranking = _ranking(team_count=2, rounds=8)
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    order = draft_order(profile)
+    # Team 1's starter slots (QB1/RB2/WR2/TE1/FLEX-via-extra-RB) filled by
+    # its own first 7 picks -- K and DST are both still 0/1, and with
+    # rounds=8 only one pick remains: exactly the feasibility-forced case.
+    team1_players = ["QB-0", "RB-0", "RB-1", "RB-2", "WR-0", "WR-1", "TE-0"]
+    picks = []
+    t1_index = 0
+    pick_number = 0
+    while t1_index < len(team1_players):
+        team_slot = order[pick_number]
+        pick_number += 1
+        if team_slot == 1:
+            player_id = team1_players[t1_index]
+            t1_index += 1
+        else:
+            player_id = f"WR-{10 + pick_number}"
+        picks.append(
+            {"pickNumber": pick_number, "teamSlot": team_slot, "team_slot": team_slot,
+             "playerId": player_id, "player_id": player_id,
+             "position": player_id.split("-")[0]}
+        )
+    # Consume any remaining non-owner turns before the owner's own next
+    # turn genuinely arrives (snake order can give a team two turns in a
+    # row across a round boundary) -- never leave the fixture claiming a
+    # turn that isn't really next.
+    while order[pick_number] != 1:
+        pick_number += 1
+        filler = f"WR-{10 + pick_number}"
+        picks.append(
+            {"pickNumber": pick_number, "teamSlot": order[pick_number - 1],
+             "team_slot": order[pick_number - 1], "playerId": filler, "player_id": filler,
+             "position": "WR"}
+        )
+    room_state = _room_state(owner_slot=1, picks=picks)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=17
+    )
+
+    result = build_live_decision_bundle(
+        profile, ranking, manual_assets, adp, room_state,
+        comparable_leagues=leagues, provenance=_provenance(), max_candidates=8,
+        trials=2, seasons=20, base_seed=17,
+    )
+    assert not isinstance(result, LiveDecisionBundleUnavailable), result
+    assert len(result.candidates) > 0
+    # Every candidate is K -- the forced position -- never a skill-position
+    # row still legal-and-visible but not what's actually due right now.
+    assert all(c.player_id.startswith("manual:K:") for c in result.candidates)
+
+
 def test_position_filter_of_k_returns_real_manual_candidates_not_empty() -> None:
     """NWR OVERNIGHT (K/DST completion): before this fix, an explicit K or
     DST filter always reported "no candidates" -- `legal_rows` is built
