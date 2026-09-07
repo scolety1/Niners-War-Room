@@ -417,6 +417,15 @@
 .draft-room-v2-teams-list__item--selected { background: rgba(154,108,255,.14); border-color: rgba(154,108,255,.5); }
 .draft-room-v2-position-filter { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
 
+/* Owner feedback closure, section 17: one compact "Room Controls"
+   expansion for less-frequent controls (ADP refresh/paste/import) so
+   they never require a trip to Legacy but also never consume permanent
+   header space. */
+.draft-room-v2-room-controls { display: flex; flex-direction: column; }
+.draft-room-v2-room-controls__toggle { align-items: center; align-self: flex-start; background: transparent; border: 1px solid rgba(255,255,255,.1); border-radius: 6px; color: var(--muted); cursor: pointer; display: flex; font-size: 10.5px; gap: 5px; padding: 4px 8px; }
+.draft-room-v2-room-controls__body { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; }
+.draft-room-v2-room-controls__body .boundary-note { flex-basis: 100%; margin: 2px 0 0; }
+
 /* Owner feedback closure, sections 9-10: the right-hand roster +
    recent-picks pane -- mirrors the left utility pane's collapse pattern
    (a thin rail with an edge arrow, never a permanent wide gutter) so the

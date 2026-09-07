@@ -18,6 +18,7 @@
  * no HTTP route yet -- see docs/codex/OWNER_TEST_CANDIDATE_V1_REPORT_20260903.md).
  */
 import type {
+  AdpStatus,
   DecisionBundle,
   DecisionBundleCandidate,
   DraftBoard,
@@ -699,6 +700,39 @@ export function DraftRoomV2Page({
     }
   };
 
+  // Owner feedback closure, section 17: the exact same real,
+  // already-working ADP controls Legacy's Room Controls panel calls
+  // (client.refreshRedraftAdp / client.importRedraftAdp) -- ported
+  // verbatim so ordinary mock setup or market import never requires a
+  // trip to Legacy. Refreshing/importing ADP is market-timing context
+  // only; it never changes NWR's own rank (same disclosure Legacy shows).
+  const [roomControlsOpen, setRoomControlsOpen] = useState(false);
+  const refreshAdp = async () => {
+    if (!data.activeProfileId) return;
+    setWorking("adp-refresh");
+    setMutationError(null);
+    try {
+      onUpdate(await client.refreshRedraftAdp(data.activeProfileId));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError("Fantasy Football Calculator ADP could not be refreshed."));
+    } finally {
+      setWorking("");
+    }
+  };
+  const importAdp = async (file: File | undefined) => {
+    if (!file || !data.activeProfileId) return;
+    setWorking("adp-import");
+    setMutationError(null);
+    try {
+      const csvText = await file.text();
+      onUpdate(await client.importRedraftAdp(data.activeProfileId, csvText));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${file.name} could not be imported.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
   // P0 owner-workflow rescue: the Legacy Draft Room's own start/restart
   // control (client.startDraftRoom), ported here verbatim -- same call,
   // same semantics, so the consolidated room is self-contained and never
@@ -1006,7 +1040,18 @@ export function DraftRoomV2Page({
           onCancelRestart={() => setRestartConfirming(false)}
           restartWorking={working === "start"}
         />
-      ) : (
+      ) : null}
+      {board?.configured ? (
+        <RoomControls
+          open={roomControlsOpen}
+          onToggle={() => setRoomControlsOpen((value) => !value)}
+          adp={board.adp}
+          working={working}
+          onRefreshAdp={() => void refreshAdp()}
+          onImportAdp={(file) => void importAdp(file)}
+        />
+      ) : null}
+      {!board?.configured ? (
         <DraftSetupPanel
           teamCount={data.activeProfile.teamCount}
           slot={setupSlot}
@@ -1018,7 +1063,7 @@ export function DraftRoomV2Page({
           onStart={() => void startOrRestart()}
           working={working === "start"}
         />
-      )}
+      ) : null}
       <div className="draft-room-v2-quickpick">
         <span className="draft-room-v2-quickpick__label">Search</span>
         <label className="search-input draft-room-v2-quickpick__input">
@@ -1306,6 +1351,59 @@ function CompactOnClockRow({
           <Button variant="ghost" onClick={onRestartClick}>New / Restart</Button>
         </>
       )}
+    </section>
+  );
+}
+
+/**
+ * Owner feedback closure, section 17: "keep all proven room controls...
+ * do not require Legacy for ordinary mock setup or market import." This
+ * is the exact real, working refresh/import pathway Legacy's own Room
+ * Controls panel already calls (client.refreshRedraftAdp /
+ * client.importRedraftAdp -- verified live against the real Fantasy
+ * Football Calculator API, not a stub); ported verbatim, not
+ * reimplemented. Less-frequent than Undo/Restart, so it lives in one
+ * compact expansion rather than permanent header space.
+ */
+function RoomControls({
+  open,
+  onToggle,
+  adp,
+  working,
+  onRefreshAdp,
+  onImportAdp,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  adp: AdpStatus | undefined;
+  working: string;
+  onRefreshAdp: () => void;
+  onImportAdp: (file: File | undefined) => void;
+}) {
+  return (
+    <section className="draft-room-v2-room-controls">
+      <button type="button" className="draft-room-v2-room-controls__toggle" onClick={onToggle} aria-expanded={open}>
+        Room Controls <Icon name="chevron" size={11} />
+      </button>
+      {open ? (
+        <div className="draft-room-v2-room-controls__body">
+          <Button disabled={Boolean(working)} variant="secondary" onClick={onRefreshAdp}>
+            {working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}
+          </Button>
+          <Button variant="secondary" onClick={() => { window.location.hash = "#/adp"; }}>
+            Paste Rankings / ADP
+          </Button>
+          <label className="file-action">
+            Import owner ADP CSV
+            <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportAdp(event.target.files?.[0])} type="file" />
+          </label>
+          <p className="boundary-note">
+            {adp?.available
+              ? `${adp.source} · ${adp.dateWindow || adp.sourceDate}${adp.sampleSize ? ` · ${adp.sampleSize.toLocaleString()} drafts` : ""}. ADP is market-timing context only -- it never changes NWR rank.`
+              : "No market ADP loaded yet. ADP is optional market-timing context and never changes NWR value rank."}
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
