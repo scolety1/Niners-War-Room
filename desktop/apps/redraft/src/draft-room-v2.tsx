@@ -874,7 +874,6 @@ export function DraftRoomV2Page({
   const [setupMode, setSetupMode] = useState<"MOCK" | "LIVE_READ_ONLY">("MOCK");
   const [setupSpeed, setSetupSpeed] = useState<"FAST" | "NORMAL" | "STEP">("NORMAL");
   const [restartConfirming, setRestartConfirming] = useState(false);
-  const draftedCount = board?.drafted?.length ?? 0;
 
   const startOrRestart = async () => {
     if (!data.activeProfileId) return;
@@ -892,7 +891,17 @@ export function DraftRoomV2Page({
   };
 
   const onRestartClick = () => {
-    if (draftedCount > 0 && !restartConfirming) {
+    // NWR OVERNIGHT (owner-reported: no working path to draft from 1.09):
+    // the slot picker below (DraftSetupPanel) only rendered while
+    // `!board.configured` -- once a draft is configured/started, "New /
+    // Restart" is the ONLY control left, and it always restarted at
+    // whatever slot was set at the ORIGINAL page load, with no owner-
+    // visible way to change it first. Always routing through the confirm
+    // step (not only when draftedCount > 0) means the slot picker -- now
+    // also shown whenever restartConfirming is true, see below -- is
+    // reachable through this one real button every time, not only when
+    // picks already exist.
+    if (!restartConfirming) {
       setRestartConfirming(true);
       return;
     }
@@ -1179,7 +1188,7 @@ export function DraftRoomV2Page({
           onImportAdp={(file) => void importAdp(file)}
         />
       ) : null}
-      {!board?.configured ? (
+      {!board?.configured || restartConfirming ? (
         <DraftSetupPanel
           teamCount={data.activeProfile.teamCount}
           slot={setupSlot}
@@ -1190,6 +1199,11 @@ export function DraftRoomV2Page({
           onSpeedChange={setSetupSpeed}
           onStart={() => void startOrRestart()}
           working={working === "start"}
+          // NWR OVERNIGHT: this is the ONLY place the owner can change
+          // seat/mode/speed before a restart, since the setup panel is
+          // otherwise hidden once a draft is configured -- label it
+          // accordingly so "Restart" and "Start" don't look identical.
+          restarting={Boolean(board?.configured)}
         />
       ) : null}
       <div className="draft-room-v2-quickpick">
@@ -1467,8 +1481,14 @@ function CompactOnClockRow({
   const snakeForward = round == null ? true : round % 2 === 1;
   return (
     <section className="draft-room-v2-onclock" aria-label="Current pick context">
-      <span className="draft-room-v2-onclock__pick" title={board.currentPick ? `Overall pick ${board.currentPick}` : undefined}>
-        {board.currentPick != null ? formatRoundPick(board.currentPick, teamCount) : "Draft complete"}
+      {/* NWR OVERNIGHT (owner-reported: "Draft complete" shown twice at
+          narrow width): this pick-number indicator used the same literal
+          text as the status span right after it whenever the draft was
+          done -- two different fields, but reading as one accidental
+          duplicate. A dash reads as "no current pick" without repeating
+          the status message the next span already carries. */}
+      <span className="draft-room-v2-onclock__pick" title={board.currentPick ? `Overall pick ${board.currentPick}` : "Draft complete"}>
+        {board.currentPick != null ? formatRoundPick(board.currentPick, teamCount) : "—"}
       </span>
       <span className="draft-room-v2-onclock__status">
         {board.complete ? "Draft complete" : board.isOwnerTurn ? "YOU ARE ON THE CLOCK" : `On clock: Team ${board.currentTeamSlot ?? "?"}`}
@@ -1568,6 +1588,7 @@ function DraftSetupPanel({
   onSpeedChange,
   onStart,
   working,
+  restarting = false,
 }: {
   teamCount: number;
   slot: string;
@@ -1578,9 +1599,13 @@ function DraftSetupPanel({
   onSpeedChange: (value: "FAST" | "NORMAL" | "STEP") => void;
   onStart: () => void;
   working: boolean;
+  restarting?: boolean;
 }) {
   return (
-    <Panel title="Your draft slot" eyebrow="Choose a slot and start -- no other setup required">
+    <Panel
+      title={restarting ? "Change your draft slot before restarting" : "Your draft slot"}
+      eyebrow={restarting ? "Pick a new slot, then confirm below to clear the board and restart" : "Choose a slot and start -- no other setup required"}
+    >
       <div className="draft-room-v2-setup">
         <div className="draft-room-v2-setup__slots">
           {Array.from({ length: teamCount }, (_, index) => index + 1).map((value) => (
@@ -1610,7 +1635,7 @@ function DraftSetupPanel({
           />
         ) : null}
         <Button disabled={working} variant="primary" onClick={onStart}>
-          {working ? "Starting…" : "Start Mock"}
+          {working ? "Starting…" : restarting ? "Restart at this slot" : "Start Mock"}
         </Button>
       </div>
     </Panel>
