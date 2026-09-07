@@ -980,3 +980,172 @@ real user-data directory, confirmed live, not assumed).
 
 No push, merge, deployment, or model retraining performed this continuation either. All work is in
 local commits on `work/nwr-draft-upgrade-hq-v1-20260903`.
+
+## Pass V4.4 -- controlled projection refresh, cross-metric status contract, bench/news precision
+
+Continuation from `9dfc2f78`, under a narrow owner authorization to acquire-and-build a candidate
+(never install), finish the shared status requirement, and disclose bench/news precisely.
+
+### 1-3. Controlled candidate refresh (acquire -> build -> compare, nothing installed)
+
+Used the **existing** tooling only, against a **separate candidate location** the whole way --
+never the git-tracked catalog, never `C:\NWR_SHARED_DATA\source_snapshots` for the build output,
+never the active bundle at `docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809`.
+
+- **Acquisition**: `acquire_nflverse_new_evidence_v1.py --datasets player_stats_seasonal
+  --skip-client-archive --snapshot-root <isolated temp root> --catalog-output <isolated temp
+  catalog>` (never the tracked `config/nwr_new_evidence_snapshot_set_v1.json` -- avoids the
+  previously-found scoped-catalog-overwrite bug by construction, not by care). Result: a real new
+  snapshot, `20260907T042341Z-b4cb36c421e9`, 14/14 seasons (2012-2025) admitted.
+- **Builder parameterized, not redesigned**: `build_redraft_2026_projection_admission_packet.py`
+  hardcoded its two input snapshot directories inline. Added optional
+  `--player-snapshot-dir`/`--stats-snapshot-dir` overrides (default = the exact existing
+  2026-08-08 literals) so the **same, unchanged** feature engineering / temporal backtest /
+  candidate-construction code can run against a different snapshot. Verified the default path is
+  still byte-identical (two default-args runs differ only in `generated_at`/output-dir-name
+  fields, confirmed field-by-field).
+- **Real bug found and fixed in passing**: the packet's own `PROJECTION_SHA256.json` /
+  `NWR_DATA_GOVERNANCE.json` recorded `snapshot_aggregate_sha256`/`retrieved_at_utc` as **hardcoded
+  literals** matching the 2026-08-08 snapshot regardless of which snapshot directory was actually
+  loaded -- so pointing the builder at a different snapshot (exactly what this pass does) would
+  have silently mis-reported its own provenance. Fixed by reading each snapshot's own real
+  `COMPLETION_MANIFEST.json` instead (every acquired snapshot carries one); proven byte-identical
+  for the default/unchanged case by directly comparing to the literals it replaced.
+- **Old-vs-new comparison** (baseline = builder run against the existing 2026-08-08 snapshot pair;
+  candidate = same builder against the new stats snapshot, same players snapshot):
+  - Baseline: 530 ranked rows. Candidate: 532 ranked rows.
+  - **529 of 530 shared players: byte-for-byte identical `projected_points`.**
+  - **1 changed**: Caleb Williams, QB, 315.18 -> 315.68 (+0.5 pts).
+  - **2 added**: Bo Melton, Jack Westover -- both depth-only, `GOVERNANCE_PENDING`/
+    `MODEL_VALIDATED_REVIEW_ONLY` like every other row, not top-of-market movers.
+  - Blocked-row count: 380 -> 378 (exactly the 2 newly-admitted players).
+  - `PROJECTION_VALIDATION.csv` (temporal backtest): every metric shifted by tiny amounts (max
+    observed: 0.24 MAE points on one position/season cell, `player_count` off by 1 in one cell) --
+    consistent with 2 more rows entering some season's backtest cohort, not a methodology change.
+  - Rookie coverage: 0 in both (this veteran-only builder never covers rookies; unaffected either
+    way -- that lane is the separate rookie pipeline, untouched this pass).
+  - Identity coverage: unchanged (910 rows) -- expected, since only the stats snapshot was
+    swapped, not the players/identity snapshot.
+  - **Verdict: `NO_MATERIAL_CONTENT_CHANGE`.** The fresher stats pull does not move a single
+    top-of-market projection; this is not being presented as a refreshed player outlook.
+- **Candidate artifact**: `CANDIDATE_PROJECTION_SNAPSHOT.csv`,
+  sha256 `07d379dc5b2fa5c1056b8d07b92fdfb1c7a23732227db34bef5a7aaa960ece03`, held only in an isolated
+  temp directory (`%LOCALAPPDATA%\Temp\nwr_candidate_refresh_20260907\packet_candidate_new_20260907`),
+  never copied into the repo or the active bundle location.
+- **Installation boundary, proven empirically, not just asserted**: ran the real engine loader
+  (`load_projection_snapshot`) directly against this candidate CSV. Every one of its 532 rows
+  carries `source_status=GOVERNANCE_PENDING`, which is not in `ADMITTED_SOURCE_STATUSES` --
+  the loader reports zero rankable rows for this candidate (and, confirmed identically, for a
+  fresh rebuild of the CURRENT baseline through the same raw path). This candidate **cannot** be
+  installed or rendered anywhere without a real governance status-elevation + the separate
+  rookie-combine step that produced the active `GOVERNED_COMBINED_608...` bundle -- out of this
+  pass's narrow authorization, and not attempted. No approval receipt was fabricated, renewed, or
+  reused.
+- **The FFA candidate** (`C:\NWR_HISTORICAL_DATA\FFA_OFFICIAL\...`): untouched this pass, not read,
+  not referenced by the builder. Remains exactly what it was: an available separate-source lead,
+  not an admitted replacement.
+
+### 4. Shared cross-metric result-status contract -- real, additive, tested
+
+New `src/services/metric_status_contract_service.py`: one `MetricStatus` type
+(`computation_state` in EVALUATED/PENDING/BUDGET_LIMITED/UNSUPPORTED/MISSING_INPUT/ERROR;
+`genuine_zero`; `tied_no_spread` (nullable); `validation_domain`; `source_freshness`;
+`data_coverage`) -- three independent axes, never collapsed into one label. Wired into **both** real
+`CandidateBundle` construction sites (`decision_bundle_service.py`'s live path,
+`historical_decision_state_service.py`'s replay path), through `desktop_facade.py`'s
+`_decision_bundle_payload` (`metricStatus` per candidate, camelCase-safe -- keyed by fixed field
+names, not data values, so the known `public_json_value` key-mangling footgun does not apply), the
+`@nwr/contracts` TS interface, and into the frontend: `PlayerDrawer`'s six primary stat tooltips,
+and the Suggestions/Compare tables' Pick Score and Cost-of-Waiting cells.
+
+- **Covers 6 of 8 named metrics** with the full three-axis contract: Player Score, Team Score,
+  Championship Equity, Cost of Waiting, Make-It-Back, Pick Score.
+- **Real, previously-silent distinction surfaced**: Cost of Waiting silently falls back to the
+  plainer Pick-Score-embedded estimate whenever the richer per-candidate V2 evaluation doesn't
+  cover a candidate (its own documented "no other candidate to compare against" skip condition) --
+  proven live via the real HTTP decision-bundle endpoint (see below) and now disclosed via
+  `dataCoverage: "Full Cost-of-Waiting-V2 evaluation"` vs `"Fallback: ..."` instead of looking
+  identical either way.
+- **Remaining, precisely-named gap**: Raw Action Value / expected regret / decision-quality
+  percentile (`decision_bundle_service_v2.py`) already have their own real, non-coerced
+  `"OK"`/`"UNAVAILABLE: <reason>"` disclosure -- **not yet** mapped into this shared vocabulary.
+  This is a real time-boxing gap in this pass, not a missing-evidence gap; the underlying
+  disclosure already exists and is genuine, just not unified with the other six yet.
+- **Result properties never coerced**: a missing Player Score is `MISSING_INPUT`, never a silent 0;
+  a real computed 0 is `EVALUATED` with `genuine_zero=true`; `tied_no_spread` reuses the exact same
+  fact the earlier Pick Score fix already computes, never a second independently-derived flag.
+- **Tests**: 12 new unit tests (`test_metric_status_contract_service.py`), 5 new integration tests
+  in `test_decision_bundle_service.py` (multi-axis independence, missing-input non-coercion, the
+  Cost-of-Waiting fallback distinction, tied-flag parity with the existing disclosure). All 68
+  pass; the pre-existing 4-file/8-test unrelated baseline re-checked and unchanged (93 passed, the
+  same 8 named failures, byte-identical to the documented baseline).
+- **Verified through the real rendered/HTTP path, not just unit tests**: started the standalone
+  backend against the existing isolated practice root (`nwr_gui_test_root`, port 18742, real
+  `X-NWR-Desktop-Token` auth), called the live `POST
+  /api/v1/redraft/draft/<profileId>/decision-bundle` endpoint against a real in-progress practice
+  draft (pick 23, owner's turn), and confirmed `metricStatus` renders correctly end to end --
+  `EVALUATED`/`source_as_of=2026-08-08`/the real Cost-of-Waiting evidence-quality note all present
+  in the actual JSON response. Backend cleanly stopped afterward; port 18742 confirmed clear (only
+  transient `TIME_WAIT` entries from the curl calls, no listener).
+- Frontend: desktop-wide `npm run typecheck` clean, `npm run test` 125/125 passed (no regression
+  from the prior 125-test baseline).
+
+### 5. Bench-tier Team Score saturation -- precisely traced, not assumed, not retuned
+
+Traced the **actual active computation**, not one starter-only feature in isolation:
+`team_score()` (V1, live), `team_score_v2_multi_league_service.py` (V2), and
+`championship_equity()` all call the same `optimal_starting_lineup_value()` for **both** the
+target roster and every comparable/opponent roster in their population. That function sums
+`p.value` for only the players `_select_starting_lineup` actually selects as starters -- a
+rostered bench player who is not selected contributes **exactly 0** to the value being compared.
+This means bench depth is invisible to **all three** of Team Score V1, Team Score V2, and
+Championship Equity alike, by the same shared root cause, not three separate gaps.
+
+A different, real function -- `roster_composition_report()` / its `bench_contingency_value` field
+-- **does** compute real bench value today. Confirmed by direct grep: it is **not called from
+`desktop_facade.py` or any frontend file** -- it exists in the service layer only and is not
+rendered anywhere in the live product. So today the owner has zero live visibility into bench
+depth value anywhere in Draft Room V2, not merely a saturation ceiling on one visible metric.
+
+This is recorded as a real, frozen-formula limitation in the ledger (item 2, unchanged from the
+prior pass) -- not retuned, not patched with an invented bench bonus.
+
+### 6. News freshness -- precisely restated
+
+Active artifact: local file at `C:\NWR_DRAFT_DAY_TOOLS\KHA_FINAL_CHEAT_SHEET.csv` (overridable via
+`NWR_KHA_CHEAT_SHEET_PATH`). Confirmed directly: the CSV carries `current_alert`/
+`current_alert_severity` columns per player but **no per-row/per-alert timestamp column at all** --
+the file's own mtime is the *only* freshness signal that exists (`snapshotGeneratedAtUtc`/
+`snapshotAgeHours`, `STALE_AFTER_HOURS=24.0`). As of this pass, that file is **~99 hours old**
+(stale). "Existing way to select/import a replacement" is precisely: replace the file at that path,
+or point `NWR_KHA_CHEAT_SHEET_PATH` at a different one before launch -- there is no in-app picker or
+import flow for this source, and none was added. An absent alert in this snapshot is not evidence
+of no real news; the UI's stale-badge already says so and this pass did not change that wording.
+
+### 7-8. Final build and handoff for this pass
+
+Application code changes this pass: `scripts/build_redraft_2026_projection_admission_packet.py`
+(parameterized + provenance fix), `src/services/metric_status_contract_service.py` (new),
+`src/services/decision_bundle_service.py`, `src/services/historical_decision_state_service.py`,
+`src/application/desktop_facade.py`, `desktop/packages/contracts/src/index.ts`,
+`desktop/apps/redraft/src/draft-room-v2.tsx`, plus new/updated tests. `docs/model_v4/*` remains the
+same pre-existing, untouched dirty state from session start.
+
+- Backend: scoped baseline re-check 93 passed / 8 pre-existing unrelated failures (identical names
+  to the documented baseline); new/changed test files (`test_decision_bundle_service.py`,
+  `test_historical_decision_state_service.py`, `test_desktop_http_api.py`,
+  `test_decision_bundle_explanation_service.py`, `test_metric_status_contract_service.py`) all
+  green, 68/68. A full unscoped `tests/` run was started, then deliberately stopped as
+  disproportionate to what changed this pass (per the owner's own instruction against repetitive
+  full-suite reruns) once the scoped, relevant evidence above was in hand.
+- Frontend: desktop-wide typecheck clean, 125/125 vitest.
+- Live HTTP-level verification of the new `metricStatus` payload performed and torn down cleanly
+  (see section 4 above) -- FUNCTIONAL_DOM/HTTP_VERIFIED, not a native-process or visual check.
+- **No native Tauri process/window re-launch performed this pass** -- the launcher/process-spawn
+  code itself is untouched since the prior pass's real process-level verification (recorded above,
+  same continuation); only backend Python content changed this pass, and that was verified through
+  the isolated HTTP harness instead. Visual/pixel confirmation remains the owner's own, for the
+  reasons already recorded (structural tooling ceiling in this environment).
+- No push, merge, deploy, or model retraining performed. No receipt renewed, no timestamp altered,
+  no new source silently admitted. All work is in local commits on
+  `work/nwr-draft-upgrade-hq-v1-20260903`.

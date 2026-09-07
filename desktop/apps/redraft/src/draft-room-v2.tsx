@@ -27,6 +27,7 @@ import type {
   DraftTeam,
   KhaHistoricalReplayPreview,
   LeagueProfile,
+  MetricStatus,
   RedraftBootstrap,
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
@@ -109,6 +110,10 @@ export interface SuggestionRow {
   expectedRegret: number | null;
   decisionQualityPercentile: number | null;
   rawActionValueStatus: string | null;
+  // Owner feedback closure (shared cross-metric result-status contract):
+  // the same metricStatus map the DecisionBundle candidate carries,
+  // passed through unmodified.
+  metricStatus: Record<string, MetricStatus>;
 }
 
 /**
@@ -159,6 +164,7 @@ export function buildSuggestionsRows(
         expectedRegret: rav?.expectedRegret ?? null,
         decisionQualityPercentile: rav?.decisionQualityPercentile ?? null,
         rawActionValueStatus: rav?.rawActionValueStatus ?? null,
+        metricStatus: candidate.metricStatus,
       };
     });
 }
@@ -222,6 +228,28 @@ export function formatRoundPick(overallPick: number, teamCount: number): string 
   const round = Math.floor((overallPick - 1) / n) + 1;
   const pickInRound = ((overallPick - 1) % n) + 1;
   return `${round}.${String(pickInRound).padStart(2, "0")}`;
+}
+
+/**
+ * Owner feedback closure (shared cross-metric result-status contract):
+ * one readable tooltip for any metric's MetricStatus, reused everywhere a
+ * metric cell already has a `title` -- never a second, competing status
+ * surface. Composes computation state + why (if not evaluated) + the
+ * evidence facts (validation domain, source freshness, data coverage);
+ * never coerces a missing/limited state into looking like a plain number.
+ */
+export function formatMetricStatus(status: MetricStatus | undefined, fallback: string): string {
+  if (!status) return fallback;
+  const parts: string[] = [];
+  if (status.computationState !== "EVALUATED") {
+    parts.push(`${status.computationState}${status.dataCoverage ? `: ${status.dataCoverage}` : ""}`);
+  } else if (status.dataCoverage) {
+    parts.push(status.dataCoverage);
+  }
+  if (status.tiedNoSpread) parts.push("genuine tie (no spread)");
+  parts.push(status.validationDomain);
+  parts.push(status.sourceFreshness);
+  return parts.join(" · ");
 }
 
 export function formatMakeItBack(probability: number | null, trials: number | null): { text: string; title: string } {
@@ -508,6 +536,10 @@ export interface CompareRow {
   action: string | null;
   warnings: string[];
   evaluated: boolean;
+  // Owner feedback closure (shared cross-metric result-status contract):
+  // {} (never a fabricated status) when this player is not one of the
+  // current DecisionBundle candidates -- matches `evaluated: false`.
+  metricStatus: Record<string, MetricStatus>;
 }
 
 export function buildCompareRows(
@@ -547,6 +579,7 @@ export function buildCompareRows(
         action: candidate?.action ?? null,
         warnings: candidate?.warnings ?? [],
         evaluated: candidate !== undefined,
+        metricStatus: candidate?.metricStatus ?? {},
       };
     })
     .filter((row): row is CompareRow => row !== null);
@@ -1663,7 +1696,8 @@ function SuggestionsTab({
     ) },
     { key: "pickScore", label: "Pick Score", titleHint: "Pick Score — EXPERIMENTAL: the historically-validated but not yet independently audited combined recommendation.", sort: "number", render: (row) => {
       const ps = formatPickScore(row.pickScore as number, Boolean(row.pickScoreTiedNoSpread));
-      return <span title={ps.title}>{ps.text}</span>;
+      const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.pickScore;
+      return <span title={`${ps.title} ${formatMetricStatus(status, "")}`.trim()}>{ps.text}</span>;
     } },
     { key: "teamScoreAfter", label: "Team After", titleHint: "Team Score — RESEARCH. 'After' projects a full-draft completion assuming this pick now; the (Δ) in parentheses reflects this pick PLUS the rest of the draft playing out, not an isolated single-pick value. See player detail for current→after.", sort: "number", render: (row) => (
       <span>{formatNumber(row.teamScoreAfter as number, 1)} ({row.teamScoreDelta as number >= 0 ? "+" : ""}{formatNumber(row.teamScoreDelta as number, 1)})</span>
@@ -2659,14 +2693,19 @@ function CompareTab({
             { key: "overallAdp", label: "Market", sort: "number", render: (row) => row.overallAdp == null ? "—" : formatNumber(row.overallAdp as number, 1) },
             { key: "teamScoreDelta", label: "Team Score Δ — RESEARCH", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
             { key: "equityGain", label: "Champ Eq Δ — SIMULATED RESEARCH", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
-            { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => row.costOfWaiting == null ? "—" : formatNumber(row.costOfWaiting as number, 1) },
+            { key: "costOfWaiting", label: "Wait Cost", sort: "number", render: (row) => {
+              if (row.costOfWaiting == null) return "—";
+              const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.costOfWaiting;
+              return <span title={formatMetricStatus(status, "")}>{formatNumber(row.costOfWaiting as number, 1)}</span>;
+            } },
             { key: "makeItBackProbability", label: "Make It Back", sort: "number", render: (row) => {
               const mib = formatMakeItBack(row.makeItBackProbability as number | null, row.makeItBackTrials as number | null);
               return <span title={mib.title}>{mib.text}</span>;
             } },
             { key: "pickScore", label: "Pick Score — EXPERIMENTAL", sort: "number", render: (row) => {
               const ps = formatPickScore(row.pickScore as number | null, Boolean(row.pickScoreTiedNoSpread));
-              return <span title={ps.title}>{ps.text}</span>;
+              const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.pickScore;
+              return <span title={`${ps.title} ${formatMetricStatus(status, "")}`.trim()}>{ps.text}</span>;
             } },
             { key: "action", label: "Action", titleHint: "What to do -- split from Value below; reuses the existing real Cost-of-Waiting/ADP-timing labels.", sort: "text", render: (row) => {
               if (row.action == null) return "—";
@@ -2875,32 +2914,32 @@ function PlayerDrawer({
       </div>
       {candidate ? (
         <div className="player-drawer__primary">
-          <div className="player-drawer__stat player-drawer__stat--headline" title="Pick Score — EXPERIMENTAL: historically-validated but not yet independently audited.">
+          <div className="player-drawer__stat player-drawer__stat--headline" title={formatMetricStatus(candidate.metricStatus?.pickScore, "Pick Score — EXPERIMENTAL: historically-validated but not yet independently audited.")}>
             <span>Pick Score</span>
             <strong>{formatNumber(candidate.pickScore, 1)}</strong>
           </div>
           <div
             className="player-drawer__stat"
-            title="Team Score — RESEARCH. 'After' reflects a full-draft-completion projection assuming this pick now; the delta therefore reflects this pick PLUS the rest of the draft playing out under the model's continuation policy, not an isolated single-pick value."
+            title={formatMetricStatus(candidate.metricStatus?.teamScore, "Team Score — RESEARCH. 'After' reflects a full-draft-completion projection assuming this pick now; the delta therefore reflects this pick PLUS the rest of the draft playing out under the model's continuation policy, not an isolated single-pick value.")}
           >
             <span>Team Score</span>
             <strong>{currentTeamScore != null ? formatNumber(currentTeamScore, 1) : "—"} → {formatNumber(candidate.teamScoreAfter, 1)}</strong>
             <small>{candidate.teamScoreDelta >= 0 ? "+" : ""}{formatNumber(candidate.teamScoreDelta, 1)}</small>
           </div>
-          <div className="player-drawer__stat" title="Championship Equity — SIMULATED RESEARCH.">
+          <div className="player-drawer__stat" title={formatMetricStatus(candidate.metricStatus?.championshipEquity, "Championship Equity — SIMULATED RESEARCH.")}>
             <span>Championship Equity</span>
             <strong>{formatNumber(candidate.championshipEquityAfter * 100, 1)}%</strong>
             <small>{candidate.equityGain >= 0 ? "+" : ""}{formatNumber(candidate.equityGain * 100, 2)} pp</small>
           </div>
-          <div className="player-drawer__stat" title={formatMakeItBack(candidate.makeItBackProbability, candidate.makeItBackTrials).title}>
+          <div className="player-drawer__stat" title={`${formatMakeItBack(candidate.makeItBackProbability, candidate.makeItBackTrials).title} ${formatMetricStatus(candidate.metricStatus?.makeItBack, "")}`.trim()}>
             <span>Make-It-Back</span>
             <strong>{formatMakeItBack(candidate.makeItBackProbability, candidate.makeItBackTrials).text}</strong>
           </div>
-          <div className="player-drawer__stat">
+          <div className="player-drawer__stat" title={formatMetricStatus(candidate.metricStatus?.costOfWaiting, "Cost of Waiting.")}>
             <span>Cost of Waiting</span>
             <strong>{formatNumber(candidate.costOfWaiting, 1)}</strong>
           </div>
-          <div className="player-drawer__stat">
+          <div className="player-drawer__stat" title={formatMetricStatus(candidate.metricStatus?.playerScore, "Player Score.")}>
             <span>Player Score</span>
             <strong>{playerScore != null ? formatNumber(playerScore, 1) : "—"}</strong>
           </div>

@@ -21,9 +21,18 @@ from __future__ import annotations
 
 import time
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from src.services.metric_status_contract_service import (
+    MetricStatus,
+    championship_equity_status,
+    cost_of_waiting_status,
+    make_it_back_status,
+    pick_score_status,
+    player_score_status,
+    team_score_status,
+)
 from src.services.redraft_draft_room_v1_service import AdpSnapshot
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
 from src.services.score_provenance_service import ScoreProvenance
@@ -86,6 +95,14 @@ class CandidateBundle:
     action: str
     warnings: tuple[str, ...]
     uncertainty: str
+    # Owner feedback closure (shared cross-metric result-status contract):
+    # one MetricStatus per metric family, keyed by the same short name the
+    # camelCase JSON payload uses. Additive only -- every field above keeps
+    # its own already-computed value; this only labels it. Defaults to empty
+    # so any older/test construction site that predates this field still
+    # builds; both real construction sites (this module and
+    # historical_decision_state_service.py) always pass a populated dict.
+    metric_status: Mapping[str, MetricStatus] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -176,6 +193,8 @@ def build_decision_bundle(
             team_count=profile.team_count,
         )
 
+    source_as_of = ranking.rows[0].source_as_of if ranking.rows else ""
+
     candidates: list[CandidateBundle] = []
     for player_id, pick in pick_scores.items():
         warnings: list[str] = []
@@ -188,6 +207,31 @@ def build_decision_bundle(
             * (pick.championship_equity_after - current_equity.win_probability),
             4,
         )
+        cow_value = cow.expected_cost if cow is not None else pick.cost_of_waiting
+        mib_probability = cow.survival_probability if cow is not None else None
+        mib_trials = cow.trials if cow is not None else None
+        metric_status = {
+            "playerScore": player_score_status(
+                player_scores.get(player_id), source_as_of=source_as_of
+            ),
+            "teamScore": team_score_status(pick.team_score_after, source_as_of=source_as_of),
+            "championshipEquity": championship_equity_status(
+                pick.championship_equity_after,
+                standard_error=current_equity.standard_error,
+                source_as_of=source_as_of,
+            ),
+            "costOfWaiting": cost_of_waiting_status(
+                cow_value, from_v2_evaluation=cow is not None, source_as_of=source_as_of
+            ),
+            "makeItBack": make_it_back_status(
+                mib_probability, mib_trials, source_as_of=source_as_of
+            ),
+            "pickScore": pick_score_status(
+                pick.relative_score,
+                tied_no_spread=pick.tied_no_spread,
+                source_as_of=source_as_of,
+            ),
+        }
         candidates.append(
             CandidateBundle(
                 player_id=player_id,
@@ -196,11 +240,9 @@ def build_decision_bundle(
                 team_score_delta=round(pick.team_score_after - current_team.percentile, 2),
                 championship_equity_after=pick.championship_equity_after,
                 equity_gain=pick.equity_gain,
-                cost_of_waiting=cow.expected_cost if cow is not None else pick.cost_of_waiting,
-                make_it_back_probability=(
-                    cow.survival_probability if cow is not None else None
-                ),
-                make_it_back_trials=cow.trials if cow is not None else None,
+                cost_of_waiting=cow_value,
+                make_it_back_probability=mib_probability,
+                make_it_back_trials=mib_trials,
                 raw_decision_utility=round(team_score_component + equity_component, 4),
                 team_score_utility_component=team_score_component,
                 equity_utility_component=equity_component,
@@ -209,6 +251,7 @@ def build_decision_bundle(
                 action=actions.get(player_id, "UNSCORED"),
                 warnings=tuple(warnings),
                 uncertainty=_uncertainty_label(current_equity),
+                metric_status=metric_status,
             )
         )
     candidates.sort(key=lambda c: c.pick_score, reverse=True)

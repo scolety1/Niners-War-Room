@@ -50,6 +50,15 @@ from src.services.historical_ranking_bridge_service import (
     ExcludedHistoricalPlayer,
     HistoricalRankingBridgeResult,
 )
+from src.services.metric_status_contract_service import (
+    MAKE_IT_BACK_VALIDATION_DOMAIN,
+    MetricStatus,
+    championship_equity_status,
+    cost_of_waiting_status,
+    pick_score_status,
+    player_score_status,
+    team_score_status,
+)
 from src.services.point_in_time_feature_store_service import PointInTimeFeatureStore
 from src.services.redraft_draft_room_v1_service import AdpSnapshot
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
@@ -235,6 +244,52 @@ def evaluate_historical_candidates(
             * (score.championship_equity_after - current_equity.win_probability),
             4,
         )
+        source_as_of = state.ranking.rows[0].source_as_of if state.ranking.rows else ""
+        metric_status: dict[str, MetricStatus] = {
+            "playerScore": player_score_status(
+                player_scores.get(player_id), source_as_of=source_as_of
+            ),
+            "teamScore": team_score_status(score.team_score_after, source_as_of=source_as_of),
+            "championshipEquity": championship_equity_status(
+                score.championship_equity_after,
+                standard_error=current_equity.standard_error,
+                source_as_of=source_as_of,
+            ),
+            "costOfWaiting": cost_of_waiting_status(
+                cost_of_waiting, from_v2_evaluation=False, source_as_of=source_as_of
+            ),
+            "makeItBack": (
+                MetricStatus(
+                    computation_state="EVALUATED",
+                    genuine_zero=survival == 0.0,
+                    tied_no_spread=None,
+                    validation_domain=MAKE_IT_BACK_VALIDATION_DOMAIN,
+                    source_freshness=f"Projection snapshot source_as_of={source_as_of}"
+                    if source_as_of
+                    else "UNKNOWN",
+                    data_coverage=(
+                        f"ADP-based heuristic (historical replay, {SURVIVAL_HEURISTIC_VERSION}"
+                        "), not the live Monte Carlo simulation"
+                    ),
+                )
+                if survival is not None
+                else MetricStatus(
+                    computation_state="MISSING_INPUT",
+                    genuine_zero=False,
+                    tied_no_spread=None,
+                    validation_domain=MAKE_IT_BACK_VALIDATION_DOMAIN,
+                    source_freshness=f"Projection snapshot source_as_of={source_as_of}"
+                    if source_as_of
+                    else "UNKNOWN",
+                    data_coverage="No real market ADP for this player",
+                )
+            ),
+            "pickScore": pick_score_status(
+                score.relative_score,
+                tied_no_spread=score.tied_no_spread,
+                source_as_of=source_as_of,
+            ),
+        }
         candidates.append(
             CandidateBundle(
                 player_id=player_id,
@@ -257,6 +312,7 @@ def evaluate_historical_candidates(
                 action="UNSCORED",  # historical Cost-of-Waiting is a disclosed heuristic, not
                 # the live Draft Room's labeled decision taxonomy -- never mislabeled as one.
                 warnings=tuple(warnings),
+                metric_status=metric_status,
                 uncertainty=(
                     "HISTORICAL_PROXY (Championship Equity SE="
                     f"{current_equity.standard_error:.4f}, "

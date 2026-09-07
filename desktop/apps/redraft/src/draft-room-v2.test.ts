@@ -365,8 +365,8 @@ describe("generateCompareSummary", () => {
 
   it("calls out the best NWR rank, the largest ADP discount, and the deepest position", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false },
-      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false, metricStatus: {} },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false, metricStatus: {} },
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the best NWR rank (#5)");
@@ -376,8 +376,8 @@ describe("generateCompareSummary", () => {
 
   it("never fabricates a claim when the underlying structured field is missing", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false },
-      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false, metricStatus: {} },
+      { playerId: "b", playerName: "Player B", position: "QB", nwrRank: null, overallAdp: null, tier: null, status: "", playerScore: null, teamScoreDelta: null, equityGain: null, costOfWaiting: null, makeItBackProbability: null, makeItBackTrials: null, pickScore: null, pickScoreTiedNoSpread: false, action: null, warnings: [], evaluated: false, metricStatus: {} },
     ];
     const summary = generateCompareSummary(rows, {});
     expect(summary).not.toContain("best NWR rank");
@@ -386,8 +386,8 @@ describe("generateCompareSummary", () => {
 
   it("cites the highest Pick Score among evaluated candidates when available", () => {
     const rows = [
-      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: 50, teamScoreDelta: 2, equityGain: 0.01, costOfWaiting: 1, makeItBackProbability: 0.5, makeItBackTrials: 10, pickScore: 40, pickScoreTiedNoSpread: false, action: "WAIT", warnings: [], evaluated: true },
-      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: 80, teamScoreDelta: 8, equityGain: 0.03, costOfWaiting: 3, makeItBackProbability: 0.2, makeItBackTrials: 10, pickScore: 90, pickScoreTiedNoSpread: false, action: "TAKE NOW", warnings: [], evaluated: true },
+      { playerId: "a", playerName: "Player A", position: "QB", nwrRank: 20, overallAdp: 25, tier: null, status: "", playerScore: 50, teamScoreDelta: 2, equityGain: 0.01, costOfWaiting: 1, makeItBackProbability: 0.5, makeItBackTrials: 10, pickScore: 40, pickScoreTiedNoSpread: false, action: "WAIT", warnings: [], evaluated: true, metricStatus: {} },
+      { playerId: "b", playerName: "Player B", position: "RB", nwrRank: 5, overallAdp: 40, tier: null, status: "", playerScore: 80, teamScoreDelta: 8, equityGain: 0.03, costOfWaiting: 3, makeItBackProbability: 0.2, makeItBackTrials: 10, pickScore: 90, pickScoreTiedNoSpread: false, action: "TAKE NOW", warnings: [], evaluated: true, metricStatus: {} },
     ];
     const summary = generateCompareSummary(rows, { QB: 10, RB: 30 });
     expect(summary).toContain("Player B has the highest Pick Score");

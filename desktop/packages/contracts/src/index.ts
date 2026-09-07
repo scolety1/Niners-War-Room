@@ -924,6 +924,28 @@ export interface DecisionBundleCandidate {
   action: string;
   warnings: string[];
   uncertainty: string;
+  // Owner feedback closure (shared cross-metric result-status contract):
+  // one status per metric family, keyed exactly as this interface's own
+  // field names (playerScore/teamScore/championshipEquity/costOfWaiting/
+  // makeItBack/pickScore). Additive only -- the metric's own value above
+  // never changes because of this; this only labels it.
+  metricStatus: Record<string, MetricStatus>;
+}
+
+export interface MetricStatus {
+  computationState:
+    | "EVALUATED"
+    | "PENDING"
+    | "BUDGET_LIMITED"
+    | "UNSUPPORTED"
+    | "MISSING_INPUT"
+    | "ERROR";
+  genuineZero: boolean;
+  // null where a "tie" has no meaning for this metric (e.g. Player Score).
+  tiedNoSpread: boolean | null;
+  validationDomain: string;
+  sourceFreshness: string;
+  dataCoverage: string | null;
 }
 
 export interface DecisionBundleTeamScore {

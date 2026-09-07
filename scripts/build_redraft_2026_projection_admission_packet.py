@@ -48,6 +48,28 @@ def write_csv(path: Path, frame: pd.DataFrame) -> None:
     frame.to_csv(path, index=False, lineterminator="\n", float_format="%.4f")
 
 
+def _snapshot_provenance(snapshot_dir: Path) -> dict[str, str]:
+    """Read the real aggregate hash + retrieval time off the snapshot's own receipt.
+
+    Every snapshot acquired by `acquire_nflverse_new_evidence_v1.py` carries a
+    `COMPLETION_MANIFEST.json` with its own `aggregate_sha256`/`retrieved_at_utc`.
+    Reading it here (instead of a literal baked to the 2026-08-08 admitted
+    snapshot) means this provenance record stays accurate for whichever snapshot
+    directory was actually loaded -- including a candidate override -- and is
+    proven byte-identical to the prior literals for the unchanged default path.
+    """
+
+    manifest_path = snapshot_dir / "COMPLETION_MANIFEST.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return {
+            "snapshot_aggregate_sha256": str(manifest["aggregate_sha256"]),
+            "retrieved_at_utc": str(manifest["retrieved_at_utc"]),
+        }
+    except (OSError, KeyError, ValueError):
+        return {"snapshot_aggregate_sha256": "", "retrieved_at_utc": ""}
+
+
 def projection_snapshot(frame: pd.DataFrame, path: Path) -> ProjectionSnapshot:
     players: list[ProjectionPlayer] = []
     for row in frame.to_dict("records"):
@@ -197,13 +219,33 @@ def settings_sanity(results: dict[str, Any], snapshot: ProjectionSnapshot) -> pd
     return pd.DataFrame(rows)
 
 
-def build_packet(repo_root: Path, shared_root: Path, output: Path) -> None:
+DEFAULT_PLAYER_SNAPSHOT = "source_snapshots/nflverse/players/20260730T072407Z-42af9666ac84"
+DEFAULT_STATS_SNAPSHOT = (
+    "source_snapshots/nflverse/player_stats_seasonal/20260730T072407Z-a5b2304f0132"
+)
+
+
+def build_packet(
+    repo_root: Path,
+    shared_root: Path,
+    output: Path,
+    *,
+    player_snapshot_dir: Path | None = None,
+    stats_snapshot_dir: Path | None = None,
+    source_as_of: str = SOURCE_AS_OF,
+) -> None:
+    """Build the veteran projection admission packet.
+
+    `player_snapshot_dir`/`stats_snapshot_dir` default to the exact admitted
+    2026-08-08 snapshot directories -- passing them explicitly (e.g. to point at
+    a freshly acquired candidate snapshot elsewhere) is the only way this
+    function's inputs change; the feature engineering / backtest / candidate
+    construction logic below is unchanged either way.
+    """
+
     generated_at = datetime.now(UTC).isoformat(timespec="seconds")
-    player_root = shared_root / "source_snapshots/nflverse/players/20260730T072407Z-42af9666ac84"
-    stats_root = (
-        shared_root / "source_snapshots/nflverse/player_stats_seasonal/"
-        "20260730T072407Z-a5b2304f0132"
-    )
+    player_root = player_snapshot_dir or (shared_root / DEFAULT_PLAYER_SNAPSHOT)
+    stats_root = stats_snapshot_dir or (shared_root / DEFAULT_STATS_SNAPSHOT)
     player_path = player_root / "raw/players.parquet"
     stats_raw = stats_root / "raw"
     players = pd.read_parquet(player_path)
@@ -214,7 +256,7 @@ def build_packet(repo_root: Path, shared_root: Path, output: Path) -> None:
         players,
         history,
         season=SEASON,
-        source_as_of=SOURCE_AS_OF,
+        source_as_of=source_as_of,
         uncertainty_by_position=uncertainty,
     )
     output.mkdir(parents=True, exist_ok=True)
@@ -301,18 +343,12 @@ def build_packet(repo_root: Path, shared_root: Path, output: Path) -> None:
         "players": {
             "path": str(player_path),
             "sha256": sha256(player_path),
-            "snapshot_aggregate_sha256": (
-                "42af9666ac84e6fc7700010719775538c993fb4a8067bd4cb54fda760ebacde5"
-            ),
-            "retrieved_at_utc": "2026-07-30T07:24:07Z",
+            **_snapshot_provenance(player_root),
         },
         "seasonal_stats": {
             "path": str(stats_raw / "player_stats_seasonal_2025.parquet"),
             "sha256": sha256(stats_raw / "player_stats_seasonal_2025.parquet"),
-            "snapshot_aggregate_sha256": (
-                "a5b2304f0132512a705f4565d683c619ffadfdd29085e8b0b5ba2110142b08aa"
-            ),
-            "retrieved_at_utc": "2026-07-30T07:24:07Z",
+            **_snapshot_provenance(stats_root),
         },
     }
     governance = {
@@ -787,12 +823,37 @@ def main() -> None:
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--shared-root", type=Path, default=Path(r"C:\NWR_SHARED_DATA"))
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--player-snapshot-dir",
+        type=Path,
+        default=None,
+        help="Override the players snapshot directory (defaults to the admitted 2026-08-08 one).",
+    )
+    parser.add_argument(
+        "--stats-snapshot-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override the player_stats_seasonal snapshot directory "
+            "(defaults to the admitted 2026-08-08 one)."
+        ),
+    )
     args = parser.parse_args()
     repo_root = args.repo_root.resolve()
     output = args.output or (
         repo_root / "docs/hq/model/nwr_redraft_2026_projection_admission_v1_20260808"
     )
-    build_packet(repo_root, args.shared_root.resolve(), output.resolve())
+    build_packet(
+        repo_root,
+        args.shared_root.resolve(),
+        output.resolve(),
+        player_snapshot_dir=(
+            args.player_snapshot_dir.resolve() if args.player_snapshot_dir else None
+        ),
+        stats_snapshot_dir=(
+            args.stats_snapshot_dir.resolve() if args.stats_snapshot_dir else None
+        ),
+    )
 
 
 if __name__ == "__main__":

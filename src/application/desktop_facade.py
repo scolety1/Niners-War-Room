@@ -4198,6 +4198,16 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
     a value not already on the bundle or the ranking."""
     rows_by_id = {row.player_id: row for row in ranking.rows}
 
+    def metric_status_payload(status: Any) -> dict[str, Any]:
+        return {
+            "computationState": status.computation_state,
+            "genuineZero": status.genuine_zero,
+            "tiedNoSpread": status.tied_no_spread,
+            "validationDomain": status.validation_domain,
+            "sourceFreshness": status.source_freshness,
+            "dataCoverage": status.data_coverage,
+        }
+
     def candidate_payload(candidate: Any) -> dict[str, Any]:
         row = rows_by_id.get(candidate.player_id)
         return {
@@ -4220,6 +4230,10 @@ def _decision_bundle_payload(bundle: Any, ranking: Any) -> dict[str, Any]:
             "action": candidate.action.replace("_", " "),
             "warnings": list(candidate.warnings),
             "uncertainty": candidate.uncertainty,
+            "metricStatus": {
+                key: metric_status_payload(status)
+                for key, status in candidate.metric_status.items()
+            },
         }
 
     return {

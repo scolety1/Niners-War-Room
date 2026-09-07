@@ -1,4 +1,5 @@
 from src.services.decision_bundle_service import DECISION_BUNDLE_VERSION, build_decision_bundle
+from src.services.metric_status_contract_service import COMPUTATION_STATES
 from src.services.redraft_draft_room_v1_service import AdpSnapshot
 from src.services.redraft_engine_v1_service import (
     DraftContext,
@@ -213,3 +214,156 @@ def test_team_score_delta_is_after_minus_current_never_the_raw_after_value() -> 
         # current_percentile is genuinely nonzero).
         if current_percentile != 0:
             assert candidate.team_score_delta != candidate.team_score_after
+
+
+def test_every_candidate_carries_a_populated_metric_status_for_every_covered_metric() -> None:
+    """Owner feedback closure (shared cross-metric result-status contract):
+    every CandidateBundle must carry a real MetricStatus for every metric
+    this bundle covers, keyed exactly as the JSON payload keys it."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=21
+    )
+
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0", "RB-1"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        player_scores={"RB-1": 88.0},
+        trials=2, seasons=20, base_seed=21,
+    )
+    expected_keys = {
+        "playerScore", "teamScore", "championshipEquity",
+        "costOfWaiting", "makeItBack", "pickScore",
+    }
+    for candidate in bundle.candidates:
+        assert set(candidate.metric_status) == expected_keys
+        for status in candidate.metric_status.values():
+            assert status.computation_state in COMPUTATION_STATES
+            # No metric status is ever left with an unpopulated freshness/
+            # domain fact -- the "evidence" axis is never silently blank.
+            assert status.validation_domain
+            assert status.source_freshness
+
+
+def test_a_missing_player_score_is_missing_input_never_a_coerced_zero() -> None:
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=23
+    )
+
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        trials=2, seasons=20, base_seed=23,
+    )
+    candidate = bundle.candidates[0]
+    status = candidate.metric_status["playerScore"]
+    assert candidate.player_score is None
+    assert status.computation_state == "MISSING_INPUT"
+    assert status.genuine_zero is False
+
+
+def test_pick_score_status_carries_the_real_tied_no_spread_flag_not_a_separate_fact() -> None:
+    """The shared contract must not duplicate/contradict the existing,
+    already-tested tied_no_spread disclosure -- it labels the exact same
+    fact, not a second independently-derived one."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=29
+    )
+
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0", "RB-1", "WR-0"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        trials=2, seasons=20, base_seed=29,
+    )
+    for candidate in bundle.candidates:
+        assert (
+            candidate.metric_status["pickScore"].tied_no_spread
+            == candidate.pick_score_tied_no_spread
+        )
+
+
+def test_result_can_be_evaluated_and_tied_and_the_axes_stay_independent() -> None:
+    """A result being EVALUATED, genuinely tied, and resting on a given
+    source freshness are three separate facts -- none of them may be forced
+    into a single mutually-exclusive label."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=31
+    )
+
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0", "RB-1"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        trials=2, seasons=20, base_seed=31,
+    )
+    for candidate in bundle.candidates:
+        pick_status = candidate.metric_status["pickScore"]
+        assert pick_status.computation_state == "EVALUATED"
+        # tied_no_spread and source_freshness are populated independently of
+        # computation_state -- being EVALUATED never blanks out the other axes.
+        assert pick_status.tied_no_spread in (True, False)
+        assert pick_status.source_freshness
+
+
+def test_cost_of_waiting_discloses_whether_it_used_the_full_v2_evaluation() -> None:
+    """A real, previously-silent evidence-quality distinction: cost_of_waiting
+    falls back to the plainer Pick-Score-embedded estimate whenever the
+    richer per-candidate V2 evaluation is disabled for this bundle -- now
+    disclosed via data_coverage instead of looking identical either way."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=37
+    )
+
+    # evaluate_cost_of_waiting_v2 needs at least one OTHER evaluated
+    # candidate to compare against (its own documented skip condition), so
+    # this fixture uses two real candidates -- a single-candidate fixture
+    # would legitimately fall back for both runs and prove nothing.
+    bundle_with_v2 = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0", "RB-1"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        include_cost_of_waiting=True,
+        trials=2, seasons=20, base_seed=37,
+    )
+    bundle_without_v2 = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=[],
+        candidate_player_ids=["RB-0", "RB-1"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        include_cost_of_waiting=False,
+        trials=2, seasons=20, base_seed=37,
+    )
+    with_v2_coverage = bundle_with_v2.candidates[0].metric_status["costOfWaiting"].data_coverage
+    without_v2_coverage = (
+        bundle_without_v2.candidates[0].metric_status["costOfWaiting"].data_coverage
+    )
+    assert with_v2_coverage != without_v2_coverage
+    assert "Full" in with_v2_coverage
+    assert "Fallback" in without_v2_coverage
