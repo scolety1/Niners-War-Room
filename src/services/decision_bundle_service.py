@@ -127,6 +127,28 @@ def _uncertainty_label(equity: ChampionshipEquityResult) -> str:
     return f"LOW_MODEL_UNCERTAINTY (SE={equity.standard_error:.4f})"
 
 
+def _candidate_sort_key(candidate: "CandidateBundle") -> tuple[float, float, str]:
+    """NWR post-draft overnight, section 19: `pick_score` is a genuine but
+    DELIBERATELY LOSSY signal -- a per-call 0-100 min-max normalization
+    across only the candidates evaluated together (see `pick_score()`'s
+    own docstring in shadow_numeric_authorities_service.py). Two
+    candidates can land on the exact same rounded pick_score while still
+    differing in the real, full-precision, non-normalized signal it was
+    compressed FROM. Before this, a plain single-key sort left ties in
+    whatever order `candidates` happened to be built in -- an unexamined,
+    non-evidence-backed accident of iteration order, not a real tie-break
+    decision.
+
+    Secondary key: `raw_decision_utility`, the actual pre-normalization
+    utility `pick_score` is built from (already computed for every real
+    candidate, never None) -- a real, evidence-backed comparator, not an
+    invented one. Tertiary key: `player_id`, purely for full determinism
+    (guarantees the sort's result never depends on residual list-order
+    accidents even in the genuine double-tie case both real signals
+    agree on)."""
+    return (-candidate.pick_score, -candidate.raw_decision_utility, candidate.player_id)
+
+
 def build_decision_bundle(
     *,
     profile: LeagueProfile,
@@ -260,7 +282,7 @@ def build_decision_bundle(
                 metric_status=metric_status,
             )
         )
-    candidates.sort(key=lambda c: c.pick_score, reverse=True)
+    candidates.sort(key=_candidate_sort_key)
 
     elapsed = time.perf_counter() - start
     return DecisionBundle(

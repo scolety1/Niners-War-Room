@@ -1,4 +1,9 @@
-from src.services.decision_bundle_service import DECISION_BUNDLE_VERSION, build_decision_bundle
+from src.services.decision_bundle_service import (
+    DECISION_BUNDLE_VERSION,
+    CandidateBundle,
+    _candidate_sort_key,
+    build_decision_bundle,
+)
 from src.services.metric_status_contract_service import COMPUTATION_STATES
 from src.services.redraft_draft_room_v1_service import AdpSnapshot
 from src.services.redraft_engine_v1_service import (
@@ -367,3 +372,51 @@ def test_cost_of_waiting_discloses_whether_it_used_the_full_v2_evaluation() -> N
     assert with_v2_coverage != without_v2_coverage
     assert "Full" in with_v2_coverage
     assert "Fallback" in without_v2_coverage
+
+
+# --- _candidate_sort_key: real, deterministic Pick Score tie-order (NWR
+# post-draft overnight, section 19) --------------------------------------
+
+
+def _candidate(player_id: str, pick_score: float, raw_decision_utility: float) -> CandidateBundle:
+    return CandidateBundle(
+        player_id=player_id, player_score=None, team_score_after=0.0, team_score_delta=0.0,
+        championship_equity_after=0.0, equity_gain=0.0, cost_of_waiting=0.0,
+        make_it_back_probability=None, make_it_back_trials=None,
+        raw_decision_utility=raw_decision_utility, team_score_utility_component=0.0,
+        equity_utility_component=0.0, pick_score=pick_score, pick_score_tied_no_spread=False,
+        action="WAIT", warnings=(), uncertainty="",
+    )
+
+
+def test_candidate_sort_key_orders_by_pick_score_first() -> None:
+    high = _candidate("A", pick_score=80.0, raw_decision_utility=1.0)
+    low = _candidate("B", pick_score=20.0, raw_decision_utility=99.0)
+    assert sorted([low, high], key=_candidate_sort_key) == [high, low]
+
+
+def test_candidate_sort_key_breaks_a_real_pick_score_tie_by_raw_decision_utility() -> None:
+    """The real, disclosed scenario this closes: pick_score is a lossy,
+    per-call 0-100 normalization -- two candidates can land on the exact
+    same pick_score while still differing in the real, full-precision
+    signal it was compressed from. The higher raw_decision_utility must
+    win the tie, not whatever order the candidates happened to be built
+    in."""
+    tied_low_utility = _candidate("A", pick_score=50.0, raw_decision_utility=1.5)
+    tied_high_utility = _candidate("B", pick_score=50.0, raw_decision_utility=3.2)
+    # Deliberately built in the "wrong" order -- proves the sort itself
+    # does the work, not accidental input ordering.
+    ordered = sorted([tied_low_utility, tied_high_utility], key=_candidate_sort_key)
+    assert ordered == [tied_high_utility, tied_low_utility]
+
+
+def test_candidate_sort_key_breaks_a_full_double_tie_deterministically_by_player_id() -> None:
+    """When both real signals agree (genuine double tie), the sort still
+    resolves to one deterministic order (player_id) rather than leaving
+    it to Python's stable-sort input-order accident -- proven by sorting
+    the same two candidates in both possible input orders and getting
+    the identical result either way."""
+    a = _candidate("AAA", pick_score=50.0, raw_decision_utility=2.0)
+    b = _candidate("BBB", pick_score=50.0, raw_decision_utility=2.0)
+    assert sorted([a, b], key=_candidate_sort_key) == [a, b]
+    assert sorted([b, a], key=_candidate_sort_key) == [a, b]
