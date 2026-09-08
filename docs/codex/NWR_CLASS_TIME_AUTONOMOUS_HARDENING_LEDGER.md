@@ -210,6 +210,18 @@ Already completed as Section 4c (`NWR_TOP250_COVERAGE_RERUN_V1_20260908.md`) -- 
 both Diggs-class and Brooks-class fixes, per the directive's own instruction to do this
 "after both fixes" rather than waiting for a separately-numbered section. Not repeated here.
 
-## Section 16 — Real 403 draft replay with all accepted fixes
+## Section 16 — Real 403 draft replay with all accepted fixes (DONE)
+
+Full evidence: `docs/codex/NWR_403_REPLAY_WITH_ACCEPTED_FIXES_V1_20260908.md`. Real board
+(403, owner_slot 8, 118 picks), real 14 owner picks. Scoped as a real current-status/coverage
+replay (not a full old-vs-new DecisionBundle Monte Carlo replay -- disclosed, judged too
+compute-expensive for remaining budget). **13/14 real owner picks FULLY_MODELED today**
+(Kenny Gainwell and Jadarian Price real, direct confirmations of Sections 4a/4b/13's own
+findings). Highlighted-player search across the full 118-pick board: McBride/Caleb/Stafford
+are the owner's own real picks; Pitts/Jacobs/Judkins drafted by other real teams; "Brooks" hit
+is Jalen Brooks (Jonathon Brooks never drafted in this board); Lawrence/Diggs never drafted in
+this board. No code change; no hindsight grading.
+
+## Section 17 — Multi-league final battery
 
 (next)
