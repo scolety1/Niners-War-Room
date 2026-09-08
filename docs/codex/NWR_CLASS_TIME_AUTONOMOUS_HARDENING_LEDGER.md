@@ -37,6 +37,24 @@ new tests (true-positive, true-negative, unwidened-slice-untouched, missing-cove
 pass; full 77-test regression across the 3 touched files clean. Both real boards re-verified
 byte-identical.
 
-## Section 4b — Brooks-class fix (existing-infrastructure reuse for insufficient-history players)
+## Section 4b — Brooks-class fix (DONE, this commit)
+
+Full evidence: `docs/codex/NWR_BROOKS_CLASS_SOURCE_GAP_FIX_V1_20260908.md`. Reuse-first search
+found `redraft_2026_rookie_projection_model_service.py`'s already-validated position+round
+rookie-year cohort model (previously scoped only to the current draft class); renamed its two
+private helpers (`cohort_projection`, `median_stats`) to public and added
+`build_insufficient_history_fallback_candidate()` reusing them for the general "current, active,
+real draft capital, insufficient own history" category (real count: 173 blocked, 66 with real
+draft capital, 38 from 2023-2025 classes). Real historical spot-check (168 real cases, real
+sophomore outcomes): **honest negative result** -- the cohort-median challenger LOSES to a naive
+zero baseline on aggregate MAE (16.79 vs 9.80, wins 28/168) because the real zero-rookie-games
+population is bust-dominated. Per "if weak, say so": **not promoted as a calibrated point
+estimate**; kept strictly additive/review-only, solving real invisibility (Top-250
+coverage/search/compare) rather than claiming point-accuracy. Never wired into Pick
+Score/RAV/ordering. 4 new tests pass; full regression across both touched files (18 tests) clean
+(1 known pre-existing unrelated manifest-hash failure confirmed present on unmodified HEAD too).
+Both real boards re-verified byte-identical.
+
+## Section 5 — Judkins/role-change blind-spot experiment
 
 (next)

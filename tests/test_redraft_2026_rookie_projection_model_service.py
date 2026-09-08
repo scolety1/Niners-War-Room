@@ -6,10 +6,12 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.redraft_2026_rookie_projection_model_service import (
+    INSUFFICIENT_HISTORY_FALLBACK_MODEL_ID,
     MODEL_STAT_COLUMNS,
     aggregate_backtest,
     attach_exact_identities,
     build_current_rookie_candidate,
+    build_insufficient_history_fallback_candidate,
     normalize_name,
     score_half_ppr,
     temporal_backtest,
@@ -191,3 +193,139 @@ def test_committed_rookie_scores_are_nonnegative_and_inside_bounds() -> None:
     assert central.ge(0).all()
     assert candidates["projection_low"].le(central).all()
     assert candidates["projection_high"].ge(central).all()
+
+
+def _blocked_row(
+    player_id: str,
+    name: str,
+    position: str,
+    *,
+    reason: str,
+) -> dict[str, object]:
+    return {
+        "player_id": player_id,
+        "player_name": name,
+        "position": position,
+        "team": "NEW",
+        "rookie": False,
+        "reason": reason,
+    }
+
+
+def test_insufficient_history_fallback_admits_a_brooks_class_player_with_draft_capital() -> None:
+    """A current, active player (blocked by the veteran model for having no usable own
+    prior-season stat line) with a real 1st-round draft record must be admitted here via
+    the real, already-validated position+round rookie-year cohort median -- the Brooks-
+    class gap this fallback exists to fix."""
+    blocked = pd.DataFrame(
+        [
+            _blocked_row(
+                "2024-injured",
+                "Injured Sophomore",
+                "RB",
+                reason="no prior-season NFL stat line; persistence forecast blocked",
+            )
+        ]
+    )
+    draft = pd.DataFrame(
+        [{"season": 2024, "round": 1, "pick": 1, "gsis_id": "2024-injured", "position": "RB"}]
+    )
+    result = build_insufficient_history_fallback_candidate(
+        blocked,
+        draft,
+        _history(),
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"RB": 50.0},
+    )
+    assert result.projections["player_id"].tolist() == ["2024-injured"]
+    assert result.projections.iloc[0]["source_id"] == INSUFFICIENT_HISTORY_FALLBACK_MODEL_ID
+    # Real historical round-1 RB rookie-year cohort median from _history() (9 rows: 8 from
+    # 2012-2015 plus the 2016 target row): 600 rushing yards, 5 TDs = 90.0 half-PPR points
+    # -- the same real cohort a true rookie at the same slot would receive, never a
+    # fabricated stat line for this specific player.
+    assert score_half_ppr(result.projections.iloc[0]) == 90.0
+
+
+def test_insufficient_history_fallback_ignores_true_rookie_blocked_rows() -> None:
+    """A row blocked for being an ungoverned 2026 rookie (a different, dedicated lane)
+    must never be picked up here -- only the two real 'no usable own history' reasons."""
+    blocked = pd.DataFrame(
+        [
+            _blocked_row(
+                "rookie-id",
+                "True Rookie",
+                "RB",
+                reason="2026 rookie workload is not governed; no NFL-history projection generated",
+            )
+        ]
+    )
+    draft = pd.DataFrame(
+        [{"season": 2026, "round": 1, "pick": 1, "gsis_id": "rookie-id", "position": "RB"}]
+    )
+    result = build_insufficient_history_fallback_candidate(
+        blocked,
+        draft,
+        _history(),
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"RB": 50.0},
+    )
+    assert result.projections.empty
+    assert result.blocked.empty
+    assert result.identity.empty
+
+
+def test_insufficient_history_fallback_leaves_undrafted_players_genuinely_unprojectable() -> None:
+    """No real NFL draft-capital record means no fabricated stat line -- the player stays
+    blocked with an honest reason instead of being silently dropped or guessed at."""
+    blocked = pd.DataFrame(
+        [
+            _blocked_row(
+                "undrafted-id",
+                "Undrafted Player",
+                "WR",
+                reason="prior-season games are zero; persistence forecast blocked",
+            )
+        ]
+    )
+    draft = pd.DataFrame(
+        [{"season": 2024, "round": 1, "pick": 1, "gsis_id": "some-other-id", "position": "WR"}]
+    )
+    result = build_insufficient_history_fallback_candidate(
+        blocked,
+        draft,
+        _history(),
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"WR": 50.0},
+    )
+    assert result.projections.empty
+    assert result.blocked.iloc[0]["player_id"] == "undrafted-id"
+    assert "no real NFL draft-capital record" in result.blocked.iloc[0]["block_reason"]
+
+
+def test_insufficient_history_fallback_blocks_a_real_position_conflict() -> None:
+    blocked = pd.DataFrame(
+        [
+            _blocked_row(
+                "conflict-id",
+                "Position Conflict",
+                "TE",
+                reason="no prior-season NFL stat line; persistence forecast blocked",
+            )
+        ]
+    )
+    draft = pd.DataFrame(
+        [{"season": 2024, "round": 3, "pick": 70, "gsis_id": "conflict-id", "position": "WR"}]
+    )
+    result = build_insufficient_history_fallback_candidate(
+        blocked,
+        draft,
+        _history(),
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"TE": 50.0},
+    )
+    assert result.projections.empty
+    assert "position conflicts" in result.blocked.iloc[0]["block_reason"]

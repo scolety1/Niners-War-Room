@@ -15,6 +15,25 @@ from src.services.redraft_2026_projection_model_service import (
 
 MODEL_ID = "NWR_REDRAFT_2026_ROOKIE_POSITION_ROUND_MEDIAN_V1"
 MODEL_POSITIONS = ("QB", "RB", "WR", "TE")
+# NWR class-time hardening, Brooks-class source-gap fix (real, root-caused:
+# docs/codex/NWR_BROOKS_DIGGS_JUDKINS_ROOT_CAUSE_V1_20260908.md). A current,
+# active NFL player with real draft capital (e.g. a 2024 2nd-rounder who
+# tore an ACL and recorded ~0 rookie-year games) is functionally in the same
+# position as a true rookie: no usable own prior-season stat line for the
+# persistence model to project from. `INSUFFICIENT_HISTORY_FALLBACK_MODEL_ID`
+# reuses the exact same real position+round rookie-year cohort methodology
+# already validated for true rookies below (cohort_projection/median_stats)
+# -- no fabricated stat line for the specific player, only a real median of
+# OTHER real players' real rookie-year outcomes at the same draft slot.
+INSUFFICIENT_HISTORY_FALLBACK_MODEL_ID = (
+    "NWR_REDRAFT_2026_INSUFFICIENT_HISTORY_DRAFT_CAPITAL_COHORT_FALLBACK_V1"
+)
+INSUFFICIENT_HISTORY_BLOCK_REASONS = frozenset(
+    {
+        "no prior-season NFL stat line; persistence forecast blocked",
+        "prior-season games are zero; persistence forecast blocked",
+    }
+)
 MIN_COHORT_ROWS = 8
 SOURCE_STAT_COLUMNS = {
     "games": "games",
@@ -175,10 +194,10 @@ def temporal_backtest(
         for record in actuals.to_dict("records"):
             position = str(record["position"])
             round_number = int(record["round"])
-            model_row, model_scope, cohort_rows = _cohort_projection(
+            model_row, model_scope, cohort_rows = cohort_projection(
                 training, position=position, round_number=round_number
             )
-            baseline_row = _median_stats(training[training["position"].eq(position)])
+            baseline_row = median_stats(training[training["position"].eq(position)])
             predicted_points = score_half_ppr(model_row)
             baseline_points = score_half_ppr(baseline_row)
             actual_points = score_half_ppr(record)
@@ -282,7 +301,7 @@ def build_current_rookie_candidate(
         if reason:
             blocked_rows.append(identity_rows[-1])
             continue
-        model_row, cohort_scope, cohort_rows = _cohort_projection(
+        model_row, cohort_scope, cohort_rows = cohort_projection(
             history,
             position=str(record["position"]),
             round_number=int(record["round"]),
@@ -342,6 +361,148 @@ def build_current_rookie_candidate(
         ),
         blocked=pd.DataFrame(blocked_rows).sort_values("draft_pick", kind="stable"),
         identity=pd.DataFrame(identity_rows).sort_values("draft_pick", kind="stable"),
+    )
+
+
+def build_insufficient_history_fallback_candidate(
+    blocked: pd.DataFrame,
+    draft: pd.DataFrame,
+    rookie_outcome_history: pd.DataFrame,
+    *,
+    season: int,
+    source_as_of: str,
+    uncertainty_by_position: dict[str, float],
+) -> RookieProjectionBuildResult:
+    """Brooks-class fallback for a current, active NFL player with real draft capital
+    but insufficient own prior-season production for the veteran persistence model.
+
+    `blocked` is `build_current_projection_candidate(...).blocked` from the veteran
+    persistence model (redraft_2026_projection_model_service.py) -- reused as-is so
+    eligibility (current ACT/RES status, current position, admitted universe) is never
+    re-derived or duplicated. Only rows whose block reason is a genuine "no usable own
+    prior-season stat line" (`INSUFFICIENT_HISTORY_BLOCK_REASONS`) are considered here;
+    a true 2026 rookie (blocked for a different reason) has its own dedicated lane in
+    `build_current_rookie_candidate` and is never touched by this function.
+
+    `draft` is real NFL draft-pick evidence (`load_draft_evidence`, any historical
+    seasons) -- a player with no real draft record (undrafted) is left genuinely
+    unprojectable here, not guessed at. `rookie_outcome_history` is the same real
+    rookie-year outcome frame (`load_rookie_outcome_frame`) already used to train the
+    true-rookie cohort model; no separate training pool is built for this fallback.
+    """
+    candidates = blocked[blocked["reason"].isin(INSUFFICIENT_HISTORY_BLOCK_REASONS)].copy()
+    draft_by_gsis = (
+        draft[draft["gsis_id"].notna()]
+        .sort_values(["season", "gsis_id"], kind="stable")
+        .drop_duplicates("gsis_id", keep="last")
+        .set_index("gsis_id")
+    )
+    projection_rows: list[dict[str, object]] = []
+    blocked_rows: list[dict[str, object]] = []
+    identity_rows: list[dict[str, object]] = []
+    for record in candidates.sort_values("player_id", kind="stable").to_dict("records"):
+        player_id = str(record["player_id"])
+        position = str(record["position"])
+        draft_row = draft_by_gsis.loc[player_id] if player_id in draft_by_gsis.index else None
+        reason = ""
+        if draft_row is None:
+            reason = "no real NFL draft-capital record; insufficient-history fallback not applicable"
+        elif str(draft_row["position"]) != position:
+            reason = "draft-record position conflicts with current factual registry position"
+        identity_rows.append(
+            {
+                "player_id": player_id,
+                "player_name": record["player_name"],
+                "position": position,
+                "team": record["team"],
+                "draft_season": "" if draft_row is None else int(draft_row["season"]),
+                "draft_round": "" if draft_row is None else int(draft_row["round"]),
+                "draft_pick": "" if draft_row is None else int(draft_row["pick"]),
+                "projection_status": "BLOCKED" if reason else "ELIGIBLE",
+                "block_reason": reason,
+            }
+        )
+        if reason:
+            blocked_rows.append(identity_rows[-1])
+            continue
+        model_row, cohort_scope, cohort_rows = cohort_projection(
+            rookie_outcome_history, position=position, round_number=int(draft_row["round"])
+        )
+        points = score_half_ppr(model_row)
+        uncertainty = float(uncertainty_by_position.get(position, max(25.0, 0.40 * points)))
+        output: dict[str, object] = {
+            "player_id": player_id,
+            "player_name": record["player_name"],
+            "position": position,
+            "team": record["team"],
+            "season": season,
+            "source_id": INSUFFICIENT_HISTORY_FALLBACK_MODEL_ID,
+            "source_as_of": source_as_of,
+            "source_status": "GOVERNANCE_PENDING",
+            "evidence_status": "MODEL_VALIDATED_REVIEW_ONLY",
+            "provenance": (
+                f"real draft round {int(draft_row['round'])} (drafted season "
+                f"{int(draft_row['season'])}); position+round rookie-year outcome cohort "
+                "median from OTHER real players -- no fabricated stat line for this player"
+            ),
+            "rookie": False,
+        }
+        output.update(model_row)
+        output["projection_low"] = round(max(0.0, points - uncertainty), 4)
+        output["projection_high"] = round(points + uncertainty, 4)
+        output["availability_probability"] = round(float(output["games"]) / 17.0, 4)
+        output["_draft_round"] = int(draft_row["round"])
+        output["_draft_pick"] = int(draft_row["pick"])
+        output["_draft_season"] = int(draft_row["season"])
+        output["_cohort_scope"] = cohort_scope
+        output["_cohort_rows"] = cohort_rows
+        projection_rows.append(output)
+    projection_frame = pd.DataFrame(projection_rows)
+    stable_columns = [
+        "player_id",
+        "player_name",
+        "position",
+        "team",
+        "season",
+        "source_id",
+        "source_as_of",
+        "source_status",
+        "evidence_status",
+        "provenance",
+        "rookie",
+        *MODEL_STAT_COLUMNS,
+        "projection_low",
+        "projection_high",
+        "availability_probability",
+        "_draft_round",
+        "_draft_pick",
+        "_draft_season",
+        "_cohort_scope",
+        "_cohort_rows",
+    ]
+    identity_columns = [
+        "player_id",
+        "player_name",
+        "position",
+        "team",
+        "draft_season",
+        "draft_round",
+        "draft_pick",
+        "projection_status",
+        "block_reason",
+    ]
+    return RookieProjectionBuildResult(
+        projections=projection_frame.reindex(columns=stable_columns).sort_values(
+            ["_draft_pick"], kind="stable"
+        )
+        if projection_rows
+        else pd.DataFrame(columns=stable_columns),
+        blocked=pd.DataFrame(blocked_rows, columns=identity_columns).sort_values(
+            "player_id", kind="stable"
+        ),
+        identity=pd.DataFrame(identity_rows, columns=identity_columns).sort_values(
+            "player_id", kind="stable"
+        ),
     )
 
 
@@ -446,7 +607,7 @@ def normalize_name(value: object) -> str:
     return re.sub(r"[^a-z0-9]", "", text)
 
 
-def _cohort_projection(
+def cohort_projection(
     training: pd.DataFrame,
     *,
     position: str,
@@ -460,10 +621,10 @@ def _cohort_projection(
         scope = "POSITION_FALLBACK"
     if cohort.empty:
         raise ValueError(f"No historical rookie cohort for {position} round {round_number}.")
-    return _median_stats(cohort), scope, len(cohort)
+    return median_stats(cohort), scope, len(cohort)
 
 
-def _median_stats(frame: pd.DataFrame) -> dict[str, float]:
+def median_stats(frame: pd.DataFrame) -> dict[str, float]:
     row = {
         column: round(float(pd.to_numeric(frame[column], errors="coerce").fillna(0.0).median()), 4)
         for column in MODEL_STAT_COLUMNS
