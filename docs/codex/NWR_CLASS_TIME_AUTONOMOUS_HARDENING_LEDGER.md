@@ -222,6 +222,16 @@ are the owner's own real picks; Pitts/Jacobs/Judkins drafted by other real teams
 is Jalen Brooks (Jonathon Brooks never drafted in this board); Lawrence/Diggs never drafted in
 this board. No code change; no hindsight grading.
 
-## Section 17 — Multi-league final battery
+## Section 17 — Multi-league final battery (DONE, 6/6 legal)
+
+Full evidence: `docs/codex/NWR_MULTI_LEAGUE_FINAL_BATTERY_V1_20260908.md`. 6 real complete
+mock drafts (8/10/12/16-team 1QB + 12-team Superflex + a seed-stability rerun). **All 6 legal
+complete**, K/DST timing correctly scales with round count in every case (cross-validates
+Section 10 under a real completed draft, not just isolated calls). One naive hoarding flag
+(Superflex QB=3) explained as legitimate real roster construction, not a defect. DQ
+coverage/tie count/pair-plan invocation not measured this pass (compute cost disclosed,
+judged disproportionate given the primary question was decisively answered). No code change.
+
+## Section 18 — Owner-draft-runtime acceptance
 
 (next)
