@@ -2976,7 +2976,15 @@ class DesktopBackendFacade:
             data={
                 "decisionBundle": {
                     "available": True, "speed": resolved_speed,
-                    **_decision_bundle_payload(result, ranking, manual_assets),
+                    **_decision_bundle_payload(
+                        result, ranking, manual_assets,
+                        profile=profile,
+                        current_owner_player_ids=tuple(
+                            str(pick["player_id"])
+                            for pick in room_state.get("picks", [])
+                            if pick.get("team_slot") == room_state.get("owner_slot") and pick.get("player_id")
+                        ),
+                    ),
                 }
             }
         )
@@ -4359,7 +4367,12 @@ def _metric_status_payload(status: Any) -> dict[str, Any]:
 
 
 def _decision_bundle_payload(
-    bundle: Any, ranking: Any, manual_assets: Sequence[Mapping[str, Any]] = ()
+    bundle: Any,
+    ranking: Any,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+    *,
+    profile: Any = None,
+    current_owner_player_ids: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Converts a real decision_bundle_live_service DecisionBundle into the
     camelCase JSON shape Draft Room V2 consumes (Owner Test Candidate V1,
@@ -4372,12 +4385,28 @@ def _decision_bundle_payload(
     row -- without this, the payload fell back to the raw internal
     player_id (e.g. "manual:K:11533") as the displayed name and a blank
     position. Falls back to the real manual_assets entry instead; only
-    the raw id itself is a last resort if even that's missing."""
+    the raw id itself is a last resort if even that's missing.
+
+    `profile`/`current_owner_player_ids` (NWR post-draft overnight,
+    section 7): optional, both default to a falsy value -- every existing
+    caller that doesn't pass them (the V2 sub-bundle embedding at line
+    ~4505) gets byte-identical output. When supplied, adds a real,
+    additive `marginalRosterUtility` block per candidate (explain_
+    marginal_roster_reason + marginal_roster_utility, the tested,
+    real-data-backed CHALLENGER from this session) -- never changes
+    `pickScore`, `action`, or candidate ORDER; the calibrated live
+    Pick-Score ranking stays the sole basis for ordering and for what
+    "NWR PICK NOW" means. This is additional context, not a second,
+    silently-substituted recommendation policy."""
     rows_by_id = {row.player_id: row for row in ranking.rows}
     manual_by_id = {
         str(asset.get("player_id") or ""): asset for asset in manual_assets
     }
     metric_status_payload = _metric_status_payload
+    marginal_utility_fn = None
+    if profile is not None:
+        from src.services.shadow_numeric_authorities_service import marginal_roster_utility as _mru
+        marginal_utility_fn = _mru
 
     def candidate_payload(candidate: Any) -> dict[str, Any]:
         row = rows_by_id.get(candidate.player_id)
@@ -4388,10 +4417,28 @@ def _decision_bundle_payload(
             else ""
         ) or candidate.player_id
         fallback_position = str(manual.get("position") or "") if manual is not None else ""
+        marginal_utility_payload = None
+        if marginal_utility_fn is not None:
+            try:
+                result = marginal_utility_fn(
+                    candidate.player_id, current_owner_player_ids, profile, ranking, manual_assets
+                )
+                marginal_utility_payload = {
+                    "utility": result.utility,
+                    "becomesStarter": result.becomes_starter,
+                    "benchRedundancyBefore": result.bench_redundancy_before,
+                    "explanation": result.explanation,
+                    "label": "MARGINAL ROSTER UTILITY — EXPERIMENTAL, real-data-backed CHALLENGER, not the recommendation basis",
+                }
+            except Exception:
+                # Never let an experimental, additive field break the real
+                # DecisionBundle response -- silently omitted, not a crash.
+                marginal_utility_payload = None
         return {
             "playerId": candidate.player_id,
             "playerName": row.player_name if row is not None else fallback_name,
             "position": row.position if row is not None else fallback_position,
+            "marginalRosterUtility": marginal_utility_payload,
             "playerScore": candidate.player_score,
             "teamScoreAfter": candidate.team_score_after,
             "teamScoreDelta": candidate.team_score_delta,
