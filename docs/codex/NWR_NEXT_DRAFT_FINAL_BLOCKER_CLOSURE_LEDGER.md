@@ -83,6 +83,18 @@ unmodified admission-build script -- NOT installed (real governance approval req
 self-issuable, consistent with established project policy already baked into that script's
 own EXECUTIVE_VERDICT.md). Real, disclosed action items recorded for the owner.
 
-## Section 7 — One more safe latency profiling pass
+## Section 7 — One more safe latency profiling pass (DONE, no new optimization, STOP)
+
+Full evidence: `docs/codex/NWR_NEXT_DRAFT_LATENCY_FINAL_PASS_V1_20260908.md`. Two fresh, real
+cProfile passes (heavy synthetic + FAST-preset-matched) both confirm the identical hot-path
+signature already found and disclosed in the prior class-time run: `_seeded_unit`'s real
+cryptographic jitter cost (untouchable, per instruction) plus two already-disclosed,
+already-assessed-as-too-risky structural issues (roster Counter rebuild, pool iteration).
+Reviewed `_seeded_unit` directly for a safe micro-optimization; found none (already minimal;
+a cross-trial memoization would be pure overhead given real Monte Carlo seed variance). No new
+safe optimization exists. Per the directive's own explicit rule, STOPPED. ~5.8-6.95s remains
+the accepted next-draft latency. No code change.
+
+## Section 8 — Status/Ballers UI (bounded)
 
 (next)
