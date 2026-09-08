@@ -36,6 +36,7 @@ from src.services.redraft_draft_room_v1_service import (
     refresh_fantasy_football_calculator_adp,
     preview_owner_paste_adp,
     replace_pick,
+    rollback_udk_position_rankings,
     run_complete_mock,
     save_owner_paste_adp,
     save_udk_position_pdf_rankings,
@@ -1078,6 +1079,79 @@ def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path)
     assert {row["position"] for row in loaded["positions"]} == {"QB", "RB"}
     assert _udk_position(loaded, "QB")["entries"][0]["playerId"] == "QB-0"
     assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"
+
+
+# --- NWR class-time hardening, section 7: versioning/rollback and preview
+# enrichment (perPositionCounts, duplicateRows). ---
+
+
+def test_save_udk_position_rankings_reports_per_position_counts_and_duplicates(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = _udk_csv(
+        [
+            ("QB 0", "TST", "2.06", "locked"),
+            ("QB 1", "TST", "2.16", "locked"),
+            ("QB 0", "TST", "2.06", "locked"),  # real duplicate: same real player twice
+        ]
+    )
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    assert result["perPositionCounts"] == {"QB": 3}
+    assert len(result["duplicateRows"]) == 1
+    assert "QB 0" in result["duplicateRows"][0]
+    assert "appears 2 times" in result["duplicateRows"][0]
+
+
+def test_re_import_versions_the_prior_snapshot_instead_of_discarding_it(tmp_path) -> None:
+    ranking = _ranking()
+    first_csv = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, first_csv, _manual_assets())
+    second_csv = _udk_csv([("QB 1", "TST", "2.16", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, second_csv, _manual_assets())
+
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    qb = _udk_position(loaded, "QB")
+    # The active version is the SECOND real import -- never silently kept
+    # as the first.
+    assert qb["entries"][0]["playerId"] == "QB-1"
+    # The live payload exposes a real count, never the full prior
+    # snapshot's entries (no consumer needs that on every load).
+    assert qb["historyCount"] == 1
+    assert "history" not in qb
+
+
+def test_rollback_restores_the_real_prior_version_for_one_position_only(tmp_path) -> None:
+    ranking = _ranking()
+    qb_v1 = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, qb_v1, _manual_assets())
+    rb_header = "Name,Position,Team,Bye Week,Rank,Points,Risk,Upside,ADP,Tier,Outlook,Dynasty,Markers"
+    rb_csv = f'{rb_header}\r\n"RB 0","RB","TST","7","1","280.0","3.0","7.0","1.03","1","Outlook.","locked","Mark Drafted"\r\n'
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, rb_csv, _manual_assets())
+    qb_v2 = _udk_csv([("QB 1", "TST", "2.16", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, qb_v2, _manual_assets())
+
+    result = rollback_udk_position_rankings(tmp_path, ranking.profile.profile_id, "QB")
+    assert result["position"] == "QB"
+    assert result["remainingHistoryCount"] == 0
+
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    qb = _udk_position(loaded, "QB")
+    assert qb["entries"][0]["playerId"] == "QB-0"  # real, restored v1
+    # RB, never touched by a QB rollback, is unaffected.
+    assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"
+
+
+def test_rollback_rejects_a_position_with_no_earlier_version(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    with pytest.raises(RedraftValidationError, match="No earlier UDK version"):
+        rollback_udk_position_rankings(tmp_path, ranking.profile.profile_id, "QB")
+
+
+def test_rollback_rejects_a_position_with_no_import_at_all(tmp_path) -> None:
+    ranking = _ranking()
+    with pytest.raises(RedraftValidationError, match="No UDK import exists"):
+        rollback_udk_position_rankings(tmp_path, ranking.profile.profile_id, "QB")
 
 
 # --- parse_udk_position_pdf / save_udk_position_pdf_rankings (NWR

@@ -145,6 +145,8 @@ from src.services.redraft_draft_room_v1_service import (
     build_draft_room_payload,
     import_owner_adp_csv,
     load_udk_rankings,
+    rollback_udk_position_rankings,
+    save_udk_position_pdf_rankings,
     save_udk_position_rankings,
     preview_catch_up_paste,
     preview_owner_paste_adp,
@@ -3341,6 +3343,59 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         return FacadePayload(data={"udk": result})
+
+    def import_udk_pdf_rankings(self, *, profile_id: str, pdf_path: str) -> FacadePayload:
+        """NWR class-time autonomous hardening, section 7: `parse_udk_
+        position_pdf`/`save_udk_position_pdf_rankings` have existed since
+        the post-draft overnight repair (real, fixture-tested, real-
+        sample structural fidelity BLOCKED_PENDING_OWNER_SAMPLE -- see
+        docs/codex/NWR_PROSPECTIVE_2026_FREEZE_V2_20260908.md) but were
+        never reachable from any facade method -- CSV was the only real
+        owner-facing UDK import path. This closes that gap: same file-
+        path convention as `import_udk_unmodeled_skill_assets` (the
+        frontend stages the owner's picked file to a local path first),
+        same shared persistence/versioning as the CSV path
+        (`_persist_udk_preview`), same identity-matching rules -- no
+        second, parallel PDF-specific matching implementation."""
+        self._require_mode("redraft")
+        try:
+            pdf_bytes = Path(pdf_path).read_bytes()
+        except OSError as exc:
+            raise FacadeError(
+                "REDRAFT_UDK_PDF_UNREADABLE", f"Could not read the UDK PDF file: {exc}", status=400
+            ) from exc
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            result = save_udk_position_pdf_rankings(
+                self.redraft_root, profile, ranking, pdf_bytes, manual_assets,
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError(
+                "REDRAFT_UDK_IMPORT_FAILED",
+                "The UDK PDF was rejected without changing NWR rankings.",
+                status=409,
+            ) from exc
+        return FacadePayload(data={"udk": result})
+
+    def rollback_udk_position_rankings(self, *, profile_id: str, position: str) -> FacadePayload:
+        """NWR class-time autonomous hardening, section 7: the directive's
+        real "allow rollback to previous version" requirement -- restores
+        the most recent prior UDK import for ONE position (CSV or PDF,
+        whichever was previously active), leaving every other position's
+        active version untouched. A position with no earlier version to
+        roll back to is a real, disclosed rejection
+        (`REDRAFT_UDK_ROLLBACK_UNAVAILABLE`), never a silent no-op."""
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        try:
+            load_profile(self.redraft_root, normalized)
+        except RedraftPersistenceError as exc:
+            raise FacadeError("REDRAFT_PROFILE_NOT_FOUND", str(exc), status=404) from exc
+        try:
+            result = rollback_udk_position_rankings(self.redraft_root, normalized, position)
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            raise FacadeError("REDRAFT_UDK_ROLLBACK_UNAVAILABLE", str(exc), status=409) from exc
+        return FacadePayload(data={"rollback": result})
 
     def refresh_redraft_adp(self, *, profile_id: str) -> FacadePayload:
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)

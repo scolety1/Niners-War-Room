@@ -94,6 +94,36 @@ fabricated kinds). 5 new tests pass (isolated fixture config, never the real com
 22-test regression across related files clean; known 5-test baseline unchanged. Compact
 frontend form flagged as the remaining step, not built this pass (time budget).
 
-## Section 7 — Ballers import workflow (owner-ready pipeline)
+## RESUME STATE (checkpoint after section 6, before starting section 7)
+
+- Branch: `work/nwr-draft-upgrade-hq-v1-20260903`. HEAD: `e336e7ce`. Worktree:
+  `C:\Users\codex-agent\orca\workspaces\Niners-War-Room\draft-upgrade-hq`.
+- Dirty (pre-existing, NOT this session's work, left untouched throughout): 5 files under
+  `docs/model_v4/*.md` (already modified at session start, unrelated to this directive).
+- Sections 1-6 DONE and committed (`4ba8ce00`, `40a84565`, `37ddf29f`, `1b65517e`,
+  `4031a021`, `e336e7ce`). Both real boards (403 `4b4a990faf124ce7a5d612537ba5943b` sha256
+  `ba106a0c...`, Fantasy Gamers `4c5f04762921420595e4d8c7cda76582` sha256 `9a2af611...`)
+  reverified byte-identical after every commit.
+- Known, unchanged baseline: `test_desktop_application_api.py` has exactly 5 pre-existing
+  failures (see `nwr-draft-upgrade-hq-baseline-failures` memory); do not treat as new
+  regressions.
+- Next exact command: begin Section 7 (Ballers import workflow) by searching existing
+  repo infrastructure for a Ballers PDF/CSV parser (per earlier-session "Ballers PDF
+  pipeline" work referenced in project memory) before building anything new.
+- No push/merge/deploy/destructive-real-board operation performed or planned.
+
+## Section 7 — Ballers import workflow (DONE, backend; frontend flagged remaining)
+
+Full evidence: `docs/codex/NWR_BALLERS_IMPORT_WORKFLOW_V1_20260908.md`. Found substantial
+existing infra (CSV+PDF parsers, additive per-position persistence, single load point already
+used by all consumers). Closed real gaps: wired PDF import to the facade (previously
+unreachable), added real per-position version history + rollback (previously nonexistent),
+enriched preview with perPositionCounts/duplicateRows. Found+disclosed (not fixed, out of
+scope) a real pre-existing, unrelated fixture-drift bug: the bundled governed-snapshot test
+fixture other tests already depend on now fails with "no rankable player rows" even
+unmodified, likely a source_as_of freshness-window drift as simulated "today" advances. 10 new
+tests pass; 65-test regression across 3 files clean; known 5-test baseline unchanged.
+
+## Section 8 — Ballers K/DST pipeline readiness
 
 (next)

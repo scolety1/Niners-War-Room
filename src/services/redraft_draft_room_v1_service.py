@@ -923,6 +923,28 @@ def parse_udk_position_csv(
         raise RedraftValidationError(
             "No UDK rows matched a supported position. Check the CSV's Position column."
         )
+    # NWR class-time hardening, section 7: the directive's own required preview
+    # fields (per-position counts, duplicate detection) alongside the pre-
+    # existing matched/unmatched/warnings -- a duplicate is two source rows in
+    # THIS SAME import resolving to the same real NWR playerId (a real, owner-
+    # visible data-quality signal the prior preview never surfaced).
+    per_position_counts = {position: len(entries) for position, entries in by_position.items()}
+    duplicate_rows: list[str] = []
+    for position, entries in by_position.items():
+        first_name_by_id: dict[str, str] = {}
+        occurrences: dict[str, int] = {}
+        for entry in entries:
+            player_id = entry.get("playerId")
+            if not player_id:
+                continue
+            occurrences[player_id] = occurrences.get(player_id, 0) + 1
+            first_name_by_id.setdefault(player_id, entry["playerName"])
+        for player_id, count in occurrences.items():
+            if count > 1:
+                duplicate_rows.append(
+                    f"{position}: {first_name_by_id[player_id]} (playerId={player_id}) "
+                    f"appears {count} times in this import"
+                )
     return {
         "positions": by_position,
         "sourceRows": len(rows),
@@ -930,6 +952,8 @@ def parse_udk_position_csv(
         "unmatched": unmatched,
         "warnings": warnings,
         "sourceSha256": hashlib.sha256(csv_text.encode("utf-8")).hexdigest(),
+        "perPositionCounts": per_position_counts,
+        "duplicateRows": duplicate_rows,
     }
 
 
@@ -1029,6 +1053,9 @@ def parse_udk_position_pdf(
     return result
 
 
+UDK_MAX_HISTORY_VERSIONS = 5
+
+
 def _persist_udk_preview(
     root: str | Path, profile: LeagueProfile, preview: dict[str, Any]
 ) -> dict[str, Any]:
@@ -1037,7 +1064,17 @@ def _persist_udk_preview(
     importing a QB-only file does not erase a previously-imported RB
     file. Provenance (provider, imported_at, source hash, source format)
     travels with every position bucket so the UI can always disclose
-    "UDK, imported <time>" distinct from NWR's own rankings."""
+    "UDK, imported <time>" distinct from NWR's own rankings.
+
+    NWR class-time hardening, section 7: activation now keeps a real,
+    bounded version history PER POSITION (the directive's own "versioned
+    local/private artifact... allow rollback" requirement) -- before a
+    position's active snapshot is overwritten, it is pushed onto that
+    position's own `history` list (newest first, capped at
+    `UDK_MAX_HISTORY_VERSIONS`), so `rollback_udk_position_rankings` can
+    restore it. A position with no prior import has no history to push;
+    the first real activation for a position never has anything to roll
+    back to, which is the correct, honest behavior."""
     path = _udk_rankings_path(root, profile.profile_id)
     existing: dict[str, Any] = {}
     try:
@@ -1048,6 +1085,11 @@ def _persist_udk_preview(
     positions = dict(existing.get("positions") or {})
     imported_at = datetime.now(UTC).isoformat()
     for position, entries in preview["positions"].items():
+        previous = positions.get(position)
+        history = list(previous.get("history") or []) if previous else []
+        if previous is not None:
+            previous_without_history = {k: v for k, v in previous.items() if k != "history"}
+            history = ([previous_without_history] + history)[:UDK_MAX_HISTORY_VERSIONS]
         positions[position] = {
             "entries": entries,
             "provider": "Fantasy Footballers Podcast UDK",
@@ -1055,6 +1097,7 @@ def _persist_udk_preview(
             "sourceSha256": preview["sourceSha256"],
             "sourceFormat": preview.get("sourceFormat", "CSV"),
             "sourceRows": len(entries),
+            "history": history,
         }
     document = {"profileId": profile.profile_id, "positions": positions}
     try:
@@ -1068,6 +1111,46 @@ def _persist_udk_preview(
         "unmatched": preview["unmatched"],
         "warnings": preview["warnings"],
         "importedAtUtc": imported_at,
+        "perPositionCounts": preview.get("perPositionCounts", {}),
+        "duplicateRows": preview.get("duplicateRows", []),
+    }
+
+
+def rollback_udk_position_rankings(
+    root: str | Path, profile_id: str, position: str
+) -> dict[str, Any]:
+    """Restores the most recent prior version of ONE position's UDK
+    import, per the directive's real "allow rollback to previous
+    version" requirement. Raises `RedraftValidationError` (never
+    silently no-ops) if that position has no import at all, or has no
+    history to roll back to (e.g. its only real import so far)."""
+    normalized_position = _normalized_position(position)
+    path = _udk_rankings_path(root, profile_id)
+    try:
+        document = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise RedraftPersistenceError("UDK rankings could not be read.") from exc
+    positions = dict(document.get("positions") or {})
+    current = positions.get(normalized_position)
+    if current is None:
+        raise RedraftValidationError(f"No UDK import exists for position {normalized_position!r}.")
+    history = list(current.get("history") or [])
+    if not history:
+        raise RedraftValidationError(
+            f"No earlier UDK version exists for position {normalized_position!r} to roll back to."
+        )
+    restored, remaining_history = history[0], history[1:]
+    positions[normalized_position] = {**restored, "history": remaining_history}
+    document = {"profileId": profile_id, "positions": positions}
+    try:
+        _atomic_json(path, document)
+    except OSError as exc:
+        raise RedraftPersistenceError("UDK rankings could not be saved.") from exc
+    return {
+        "position": normalized_position,
+        "restoredImportedAtUtc": restored.get("importedAtUtc", ""),
+        "restoredSourceSha256": restored.get("sourceSha256", ""),
+        "remainingHistoryCount": len(remaining_history),
     }
 
 
@@ -1110,7 +1193,16 @@ def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
     on-disk cache file itself is still stored keyed by position (an
     internal convenience for additive merge-on-import in
     save_udk_position_rankings); this function is the one conversion
-    point to the list shape every consumer actually reads."""
+    point to the list shape every consumer actually reads.
+
+    NWR class-time hardening, section 7: each position's real, on-disk
+    `history` (full prior snapshots, each with its own `entries`) is
+    deliberately NOT included in this payload -- every live consumer
+    (Suggestions/Rankings/Cheat Sheets/Compare/Player Drawer/K-DST
+    fallback) only ever needs the CURRENT active version, and shipping
+    every prior version's full entry list on every load would bloat the
+    payload for no consumer that reads it. Only a real `historyCount`
+    (how many versions are available to roll back to) is exposed."""
     path = _udk_rankings_path(root, profile_id)
     positions_by_key: dict[str, Any] = {}
     if path.exists():
@@ -1120,7 +1212,11 @@ def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
         except (OSError, ValueError, json.JSONDecodeError):
             positions_by_key = {}
     positions = [
-        {"position": position, **snapshot}
+        {
+            "position": position,
+            **{k: v for k, v in snapshot.items() if k != "history"},
+            "historyCount": len(snapshot.get("history") or ()),
+        }
         for position, snapshot in sorted(positions_by_key.items())
     ]
     return {"positions": positions}
