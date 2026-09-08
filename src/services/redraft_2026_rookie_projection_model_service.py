@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.services.redraft_2026_projection_model_service import (
+    CURRENTLY_ROSTERED_STATUSES,
     MODEL_STAT_COLUMNS,
     score_half_ppr,
 )
@@ -276,8 +277,15 @@ def build_current_rookie_candidate(
             reason = "exact identity absent from current registry"
         elif int(record.get("current_rookie_season") or 0) != season:
             reason = "current registry does not classify player as a 2026 rookie"
-        elif str(record.get("current_status")) not in {"ACT", "RES"}:
-            reason = "current factual roster status is not ACT or RES"
+        elif str(record.get("current_status")) not in CURRENTLY_ROSTERED_STATUSES:
+            # NWR next-draft rookie/insufficient-history closure (2026-09-08):
+            # same real, owner-approved distinction now applied to veterans
+            # (redraft_2026_projection_model_service.py) -- PLAYER UNIVERSE
+            # ELIGIBILITY is separate from FANTASY AVAILABILITY/RISK. A real
+            # rookie on EXE/RSR/PUP remains on an NFL roster and realistically
+            # startable later in the season; DEV (practice squad) and a
+            # genuine departure (RET/INA/CUT/SUS/NWT/RLS) do not.
+            reason = "current factual roster status is not a currently-rostered status"
         elif str(record.get("current_position")) != str(record["position"]):
             reason = "draft position conflicts with current factual registry position"
         identity_rows.append(
@@ -308,6 +316,23 @@ def build_current_rookie_candidate(
         )
         points = score_half_ppr(model_row)
         uncertainty = float(uncertainty_by_position[str(record["position"])])
+        current_status = str(record.get("current_status") or "")
+        provenance = (
+            "nflverse 2012-2025 rookie outcomes by position+draft round; "
+            "2026 draft capital; current exact GSIS registry status/team"
+        )
+        if current_status not in {"ACT", "RES"}:
+            # Real, exact status preserved (not discarded) for a currently-
+            # rostered-but-not-ACT/RES player -- deliberately NOT expressed as
+            # a projection-value or availability_probability discount (no
+            # validated calibration exists for this; availability_probability
+            # is already known, from prior real research, to be a mechanical
+            # restatement of `games` with no event-specific signal -- see
+            # score_projection_availability_adjusted's own docstring in
+            # redraft_engine_v1_service.py). Visible here as real, disclosed
+            # provenance text; a live, scoring-neutral status/risk UI signal
+            # for this is a real, disclosed follow-up, not built this pass.
+            provenance = f"{provenance}; current NFL roster status: {current_status}"
         output: dict[str, object] = {
             "player_id": record["player_id"],
             "player_name": record["current_name"],
@@ -318,10 +343,7 @@ def build_current_rookie_candidate(
             "source_as_of": source_as_of,
             "source_status": "GOVERNANCE_PENDING",
             "evidence_status": "MODEL_VALIDATED_REVIEW_ONLY",
-            "provenance": (
-                "nflverse 2012-2025 rookie outcomes by position+draft round; "
-                "2026 draft capital; current exact GSIS registry status/team"
-            ),
+            "provenance": provenance,
             "rookie": True,
         }
         output.update(model_row)

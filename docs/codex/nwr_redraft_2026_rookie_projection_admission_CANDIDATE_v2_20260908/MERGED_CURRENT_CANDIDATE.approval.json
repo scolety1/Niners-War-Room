@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "authority": "NWR_DATA_GOVERNANCE",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "season": 2026,
+  "source_sha256": "b87c7296647b83a6103209a2995827766b7957a35270edb1624d7a61102929f4",
+  "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V2",
+  "approved_by": "Spencer Colety (owner, explicit chat authorization, 2026-09-08, 'NWR NEXT-DRAFT ROOKIE / INSUFFICIENT-HISTORY CLOSURE' directive)",
+  "approved_at_utc": "2026-09-08T23:15:00Z",
+  "valid_until": "2026-10-08",
+  "admission_scope": "NWR_REDRAFT_2026_LIVE",
+  "component_sources_as_of": {
+    "veterans": "2026-09-08 (unchanged from a1505742 -- veteran admission not reopened)",
+    "rookies": "2026-09-08 (fresh, same players registry pull as the veteran admission)"
+  },
+  "limitations": [
+    "K and DST remain manual/unmodeled (Practical Mode), unchanged",
+    "Brooks-class insufficient-history fallback remains review-only reference data -- not merged into this governed ranking universe",
+    "The rookie candidate's own admitted-status widening (EXE/RSR/PUP added; DEV, RSN, and every other non-currently-rostered code stay excluded) mirrors the veteran fix exactly -- real status preserved in each affected row's own provenance text, never expressed as a fabricated projection-value or availability_probability discount",
+    "5 rookies (Anthony Smith, Emmanuel Henderson Jr., Jam Miller, Joe Royer, Lewis Bond) dropped from the prior 78-row set on this fresh registry pull -- 4 real DEV/practice-squad transitions plus one pre-existing, unrelated identity-resolution gap (Jam Miller); individually verified, not a defect"
+  ],
+  "reason": "Real, fresh, governed rookie admission superseding the 2026-07-30/2026-09-06 rookie receipt (independently stale -- 40+ days old). Built through the existing rookie admission pathway (build_current_rookie_candidate, all 9 real promotion gates PASS) using the same fresh players registry already pulled for the veteran admission (a1505742). Combined with the frozen, unmodified 491-row veteran governed snapshot from a1505742 -- veteran projection admission was not reopened."
+}

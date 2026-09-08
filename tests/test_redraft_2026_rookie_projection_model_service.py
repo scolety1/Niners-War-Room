@@ -146,6 +146,54 @@ def test_current_position_conflict_blocks_instead_of_coercing_projection() -> No
     assert "position conflicts" in result.blocked.iloc[0]["block_reason"]
 
 
+def test_currently_rostered_statuses_admit_exe_but_exclude_dev_and_preserve_status() -> None:
+    """NWR next-draft rookie/insufficient-history closure (2026-09-08): the
+    true-rookie pipeline gets the same real, owner-approved status widening
+    as the veteran pipeline (PLAYER UNIVERSE ELIGIBILITY is separate from
+    FANTASY AVAILABILITY/RISK). A real rookie on EXE/RSR/PUP is admitted;
+    DEV (practice squad) stays excluded. The exact real status is preserved
+    in `provenance`, never silently discarded, and never expressed as a
+    fabricated projection-value or availability_probability discount."""
+    draft = pd.DataFrame(
+        [
+            {
+                "season": 2026, "round": 1, "pick": 1, "team": "MIN",
+                "gsis_id": None, "pfr_player_id": "ExeRo00", "pfr_player_name": "Exe Rookie",
+                "position": "RB", "college": "State", "age": 21,
+            },
+            {
+                "season": 2026, "round": 3, "pick": 80, "team": "MIN",
+                "gsis_id": None, "pfr_player_id": "DevRo00", "pfr_player_name": "Dev Rookie",
+                "position": "RB", "college": "State", "age": 21,
+            },
+        ]
+    )
+    players = pd.DataFrame(
+        [
+            {
+                "gsis_id": "00-exe-rookie", "display_name": "Exe Rookie", "pfr_id": "ExeRo00",
+                "position": "RB", "latest_team": "MIN", "status": "EXE",
+                "rookie_season": 2026, "last_season": 2026,
+            },
+            {
+                "gsis_id": "00-dev-rookie", "display_name": "Dev Rookie", "pfr_id": "DevRo00",
+                "position": "RB", "latest_team": "MIN", "status": "DEV",
+                "rookie_season": 2026, "last_season": 2026,
+            },
+        ]
+    )
+    result = build_current_rookie_candidate(
+        draft, players, _history(), season=2026, source_as_of="2026-09-08",
+        uncertainty_by_position={"RB": 20.0},
+    )
+    admitted = set(result.projections["player_id"])
+    assert admitted == {"00-exe-rookie"}
+    provenance = result.projections.iloc[0]["provenance"]
+    assert "current NFL roster status: EXE" in provenance
+    assert result.blocked.iloc[0]["player_id"] == "00-dev-rookie"
+    assert result.blocked.iloc[0]["block_reason"] == "current factual roster status is not a currently-rostered status"
+
+
 def test_uncertainty_and_aggregate_are_position_specific() -> None:
     predictions, _ = temporal_backtest(_history(), seasons=[2016])
     uncertainty = uncertainty_from_predictions(predictions)
