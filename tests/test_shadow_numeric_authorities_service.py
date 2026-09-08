@@ -778,6 +778,100 @@ def test_simulate_pick_now_rejects_an_already_drafted_candidate() -> None:
         )
 
 
+def test_simulate_pick_pair_now_forces_both_picks_of_a_back_to_back_turn() -> None:
+    """NWR post-draft overnight (phase 16): a genuine back-to-back turn
+    (slot 8 of 8, 1.08 -> 2.01) forces the owner's SAME two picks in a
+    row -- must not let the deterministic auto-fill policy choose the
+    second half instead of the specific candidate under test."""
+    from src.services.shadow_numeric_authorities_service import simulate_pick_pair_now
+
+    ranking = _ranking(team_count=8, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    # Slot 8 of an 8-team snake league genuinely picks back-to-back at
+    # 1.08 -> 2.01 (pick_number 8 then 9) -- construct a from_state with
+    # the 7 prior (other-team) picks already recorded so pick 8 actually
+    # falls to team 8, the same real shape the live 403 profile has.
+    filler_picks = [
+        {
+            "pick_number": i, "round": 1, "team_slot": i,
+            "player_id": f"WR-{i}", "player_name": f"WR {i}", "position": "WR", "team": "TST",
+            "actor": "CPU", "selection_behavior": "TEST", "nwr_rank": 100 + i, "picked_at_utc": "",
+        }
+        for i in range(1, 8)
+    ]
+    partial = {
+        "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": 8,
+        "seed": 5, "speed": "FAST", "mode": "MOCK",
+        "drafted": [p["player_id"] for p in filler_picks], "picks": filler_picks,
+        "updated_at_utc": "",
+    }
+    final_state = simulate_pick_pair_now(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=8, first_candidate_id="RB-0", second_candidate_id="RB-1", seed=5,
+        from_state=partial,
+    )
+    owner_picks = [p for p in final_state["picks"] if p["team_slot"] == 8]
+    owner_player_ids = {p["player_id"] for p in owner_picks}
+    assert "RB-0" in owner_player_ids
+    assert "RB-1" in owner_player_ids
+    # RB-0 must be the actual 1.08 pick (pick_number 8) and RB-1 the
+    # actual 2.01 pick (pick_number 9) -- not merely "somewhere on roster".
+    assert next(p for p in owner_picks if p["player_id"] == "RB-0")["pick_number"] == 8
+    assert next(p for p in owner_picks if p["player_id"] == "RB-1")["pick_number"] == 9
+
+
+def test_simulate_pick_pair_now_rejects_an_already_drafted_first_candidate() -> None:
+    from src.services.shadow_numeric_authorities_service import simulate_pick_pair_now
+
+    ranking = _ranking(team_count=8, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    partial = {
+        "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": 8,
+        "seed": 1, "speed": "FAST", "mode": "MOCK", "drafted": ["RB-0"],
+        "picks": [{
+            "pick_number": 1, "round": 1, "team_slot": 1, "player_id": "RB-0",
+            "player_name": "RB 0", "position": "RB", "team": "TST", "actor": "CPU",
+            "selection_behavior": "TEST", "nwr_rank": 2, "picked_at_utc": "",
+        }],
+        "updated_at_utc": "",
+    }
+    with pytest.raises(ValueError, match="already drafted"):
+        simulate_pick_pair_now(
+            profile, ranking, _manual_assets(), adp,
+            owner_slot=8, first_candidate_id="RB-0", second_candidate_id="RB-1",
+            seed=1, from_state=partial,
+        )
+
+
+def test_evaluate_pick_pairs_is_order_invariant_for_a_true_back_to_back_turn() -> None:
+    """Real, structural finding (NWR post-draft overnight, phase 16):
+    for a genuine back-to-back turn (zero opponents intervening), which
+    order the two picks happen in cannot change the final roster -- both
+    players end up on the same team either way, and no rival team ever
+    gets a chance to take either between them. evaluate_pick_pairs must
+    surface this as a real, checkable equality, not assume it."""
+    from src.services.shadow_numeric_authorities_service import (
+        evaluate_pick_pairs, simulate_comparable_leagues,
+    )
+
+    ranking = _ranking(team_count=8, rounds=15)
+    profile = ranking.profile
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(profile, ranking, _manual_assets(), adp, trials=2, base_seed=1)
+    results = evaluate_pick_pairs(
+        profile, ranking, _manual_assets(), adp,
+        owner_slot=8, candidate_player_ids=["RB-0", "RB-1"],
+        comparable_leagues=leagues, seasons=10, base_seed=1,
+    )
+    assert set(results.keys()) == {("RB-0", "RB-1"), ("RB-1", "RB-0")}
+    forward = results[("RB-0", "RB-1")]
+    backward = results[("RB-1", "RB-0")]
+    assert forward.team_score_result.percentile == backward.team_score_result.percentile
+    assert forward.championship_equity_result.win_probability == backward.championship_equity_result.win_probability
+
+
 def test_evaluate_pick_candidates_ranks_a_realistic_candidate_set(tmp_path) -> None:
     from src.services.shadow_numeric_authorities_service import evaluate_pick_candidates
 

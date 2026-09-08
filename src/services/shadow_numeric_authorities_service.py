@@ -979,6 +979,127 @@ def simulate_pick_now(
     return state
 
 
+def simulate_pick_pair_now(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    *,
+    owner_slot: int,
+    first_candidate_id: str,
+    second_candidate_id: str,
+    seed: int = DEFAULT_SEED,
+    from_state: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """NWR post-draft overnight, phase 16 (pair-pick optimizer). Forces
+    BOTH real picks of a genuine back-to-back turn (zero opponents
+    intervening -- e.g. slot 8 of 8, 1.08 then 2.01) in the given order,
+    then completes the rest of the draft normally -- the real answer to
+    "does pick order matter for this exact pair", not two independent
+    simulate_pick_now() calls (which would let the deterministic auto-
+    fill policy choose the SECOND half of the turn for the owner instead
+    of the specific second candidate being tested, silently answering a
+    different question).
+
+    Reuses `_record_pick` to record the first pick exactly once (a real
+    draft-state mutation, never resimulated), then hands off to the
+    existing, unmodified `simulate_pick_now` for the second forced pick
+    and the rest of the draft -- no new draft-completion algorithm.
+    Raises the same real errors `simulate_pick_now` does if either
+    candidate is unknown or already drafted; the caller is responsible
+    for confirming (e.g. via a real DecisionBundle) that the state
+    actually represents a back-to-back turn before comparing orderings."""
+    from src.services.redraft_draft_room_v1_service import _record_pick
+
+    pool = _asset_pool(ranking, manual_assets)
+    first_asset = pool.get(first_candidate_id)
+    if first_asset is None:
+        raise ValueError(f"{first_candidate_id!r} is not a draftable asset.")
+    state: dict[str, Any] = (
+        dict(from_state)
+        if from_state is not None
+        else {
+            "schema_version": 1, "profile_id": profile.profile_id, "owner_slot": owner_slot,
+            "seed": seed, "speed": "FAST", "mode": "MOCK", "drafted": [], "picks": [],
+            "updated_at_utc": "",
+        }
+    )
+    if first_candidate_id in state.get("drafted", []):
+        raise ValueError(f"{first_candidate_id!r} is already drafted.")
+    state = _record_pick(
+        profile, state, first_asset, actor="PAIR_PICK_LOOKAHEAD", behavior="FORCED_CANDIDATE"
+    )
+    return simulate_pick_now(
+        profile, ranking, manual_assets, adp,
+        owner_slot=owner_slot, candidate_player_id=second_candidate_id,
+        seed=seed, from_state=state,
+    )
+
+
+@dataclass(frozen=True)
+class PairPickResult:
+    ordering: tuple[str, str]
+    team_score_result: TeamScoreResult
+    championship_equity_result: ChampionshipEquityResult
+
+
+def evaluate_pick_pairs(
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: AdpSnapshot,
+    *,
+    owner_slot: int,
+    candidate_player_ids: Sequence[str],
+    comparable_leagues: Sequence[dict[int, list[RosterPlayer]]],
+    seasons: int = 300,
+    base_seed: int = DEFAULT_SEED,
+    from_state: Mapping[str, Any] | None = None,
+) -> dict[tuple[str, str], PairPickResult]:
+    """Evaluates every ordered pair drawn from `candidate_player_ids` (a
+    caller-supplied, already-legality-filtered shortlist -- this does not
+    re-derive candidates) for a genuine back-to-back turn, scoring each
+    resulting roster with the exact same team_score()/championship_equity()
+    every other real decision surface uses. Ordered (not just unordered)
+    so "does the order matter" is a real, checkable question, not assumed
+    either way -- results for (A, B) and (B, A) can differ if the
+    deterministic downstream continuation happens to treat them
+    differently, which this function surfaces rather than papers over.
+    Quadratic in candidate count by design -- callers must pass a bounded
+    shortlist (e.g. the same handful of top DecisionBundle candidates),
+    never the full available pool."""
+    results: dict[tuple[str, str], PairPickResult] = {}
+    default_slot = next(iter(comparable_leagues[0]))
+    target_slot = owner_slot if owner_slot in comparable_leagues[0] else default_slot
+    for first_id in candidate_player_ids:
+        for second_id in candidate_player_ids:
+            if first_id == second_id:
+                continue
+            final_state = simulate_pick_pair_now(
+                profile, ranking, manual_assets, adp,
+                owner_slot=owner_slot, first_candidate_id=first_id, second_candidate_id=second_id,
+                seed=base_seed, from_state=from_state,
+            )
+            owner_player_ids = [
+                str(pick["player_id"]) for pick in final_state["picks"]
+                if int(pick["team_slot"]) == owner_slot and pick.get("player_id")
+            ]
+            team = team_score(
+                owner_player_ids, profile, ranking, manual_assets,
+                comparable_leagues=comparable_leagues,
+            )
+            equity = championship_equity(
+                owner_player_ids, profile, ranking, manual_assets,
+                comparable_league=comparable_leagues[0], target_team_slot=target_slot,
+                seasons=seasons, base_seed=base_seed,
+            )
+            results[(first_id, second_id)] = PairPickResult(
+                ordering=(first_id, second_id), team_score_result=team,
+                championship_equity_result=equity,
+            )
+    return results
+
+
 @dataclass(frozen=True)
 class CandidateEvaluation:
     player_id: str
