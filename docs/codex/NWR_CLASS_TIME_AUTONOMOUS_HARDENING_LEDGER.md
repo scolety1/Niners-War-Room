@@ -193,6 +193,23 @@ Also found a real, concrete confirmation of Section 4b's disclosed weak fallback
 (Deshaun Watson ranked 87th via round-1 draft-capital cohort despite real injury history). No
 code change.
 
-## Section 14 — Rookie-specific subgroup follow-up
+## Section 14 — Rookie-specific subgroup follow-up (DONE, no challenger built)
+
+Full evidence: `docs/codex/NWR_ROOKIE_BIAS_SUBGROUP_FOLLOWUP_V1_20260908.md`. Extended the
+prior rookie bias study (796 real rookie-seasons, 2016-2025) with season-stability, pick-
+quartile, predicted-workload-quartile, within-round-half, and position-x-pick-quartile
+breakdowns. Decisive finding: every single-dimension bucket-to-bucket spread is under 25% of
+the real per-rookie noise (STD 53.04) -- the -16.7pt/season bias is real, pervasive, and
+decade-stable across nearly every rookie, not concentrated in any coherent subgroup. Per the
+directive's own rule ("only if a coherent subgroup pattern exists... no global rookie bump"):
+no calibration challenger built. No code change.
+
+## Section 15 — Top-250 coverage rerun
+
+Already completed as Section 4c (`NWR_TOP250_COVERAGE_RERUN_V1_20260908.md`) -- rerun after
+both Diggs-class and Brooks-class fixes, per the directive's own instruction to do this
+"after both fixes" rather than waiting for a separately-numbered section. Not repeated here.
+
+## Section 16 — Real 403 draft replay with all accepted fixes
 
 (next)
