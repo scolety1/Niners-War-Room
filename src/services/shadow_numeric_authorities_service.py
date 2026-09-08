@@ -188,6 +188,96 @@ def roster_composition_report(
     )
 
 
+@dataclass(frozen=True)
+class MarginalRosterReason:
+    """NWR post-draft overnight, phase 3/21 -- the real, root-caused fix
+    for the QB2/QB3 'hoarding' complaint. Live-traced cause: adding a
+    higher-value QB in a 1QB league doesn't add a bench QB, it makes
+    `_select_starting_lineup`'s greedy best-by-value selection swap that
+    QB IN as starter and bench the previously-starting QB -- a real,
+    legitimate Team Score increase (trading up at a scarce position) that
+    Suggestions never explained. This function makes that mechanism
+    explicit and inspectable: it names which starter (if any) gets
+    displaced, and reports the real, already-computed value delta -- never
+    an invented narrative."""
+
+    becomes_starter: bool
+    displaces_player_id: str | None
+    displaces_player_position: str | None
+    starter_value_delta: float
+    bench_slots_after: int
+    summary: str
+
+
+def explain_marginal_roster_reason(
+    candidate_id: str,
+    current_player_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> MarginalRosterReason:
+    pool = _asset_pool(ranking, manual_assets)
+    current_players = _roster_players(current_player_ids, pool)
+    candidate_players = _roster_players([candidate_id], pool)
+    if not candidate_players:
+        return MarginalRosterReason(
+            becomes_starter=False, displaces_player_id=None, displaces_player_position=None,
+            starter_value_delta=0.0, bench_slots_after=0,
+            summary="Candidate has no known value (unmodeled asset) -- cannot assess roster impact.",
+        )
+    candidate = candidate_players[0]
+
+    before_starters, _ = _select_starting_lineup(current_players, profile)
+    before_ids = {p.player_id for p in before_starters}
+    before_value = sum(p.value for p in before_starters)
+
+    after_starters, _ = _select_starting_lineup([*current_players, candidate], profile)
+    after_ids = {p.player_id for p in after_starters}
+    after_value = sum(p.value for p in after_starters)
+
+    becomes_starter = candidate_id in after_ids
+    # A player who WAS starting and is NOT among the new starters, at the
+    # same position the candidate plays (the only way this greedy
+    # selection displaces someone) -- real, not inferred from position
+    # counts alone, since FLEX/superflex can shuffle multiple slots at once.
+    displaced = [
+        p for p in before_starters
+        if p.player_id not in after_ids and p.position == candidate.position
+    ]
+    displaces = displaced[0] if displaced else None
+
+    roster_after_size = len(current_players) + 1
+    bench_slots_after = max(0, roster_after_size - len(after_starters))
+
+    if not becomes_starter:
+        summary = (
+            f"{candidate.position} stays on the bench -- does not improve the optimal "
+            f"starting lineup (adds bench depth/contingency value only, "
+            f"+{round(candidate.value, 1)} bench value)."
+        )
+    elif displaces is not None:
+        summary = (
+            f"Upgrades your starting {candidate.position} "
+            f"(+{round(after_value - before_value, 1)} starting-lineup value) but benches "
+            f"{displaces.player_id} ({round(displaces.value, 1)} value) and consumes one "
+            f"bench slot ({bench_slots_after} bench slots remain)."
+        )
+    else:
+        summary = (
+            f"Fills an open {candidate.position} starter slot "
+            f"(+{round(after_value - before_value, 1)} starting-lineup value), no one benched."
+        )
+
+    return MarginalRosterReason(
+        becomes_starter=becomes_starter,
+        displaces_player_id=displaces.player_id if displaces else None,
+        displaces_player_position=displaces.position if displaces else None,
+        starter_value_delta=round(after_value - before_value, 2),
+        bench_slots_after=bench_slots_after,
+        summary=summary,
+    )
+
+
 def availability_discount_for_hypotheses(
     player_id: str, impact_hypotheses: Sequence[ImpactHypothesis]
 ) -> float:

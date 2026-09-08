@@ -27,6 +27,7 @@ from src.services.shadow_numeric_authorities_service import (
     availability_discount_for_hypotheses,
     championship_equity,
     cost_of_waiting,
+    explain_marginal_roster_reason,
     label_pick_decisions,
     optimal_starting_lineup_value,
     pick_score,
@@ -241,6 +242,49 @@ def test_roster_composition_report_computes_bench_and_redundancy() -> None:
     assert report.position_redundancy["RB"] == 0  # rb3 fills the FLEX slot
     assert report.position_redundancy["WR"] == 0
     assert report.position_redundancy["TE"] == 0
+
+
+def test_explain_marginal_roster_reason_names_the_displaced_starter_on_a_real_upgrade() -> None:
+    """NWR post-draft overnight (phase 3/21): the exact real scenario
+    reproduced against the live 403 draft (Caleb Williams QB1 rostered,
+    Trevor Lawrence recommended as a higher-value QB) -- this is the
+    missing explanation, built from the same greedy selection Team Score
+    itself already uses, not a new narrative generator."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=3),
+    )
+    # QB-0 has the highest fixture value (rank 1); QB-1 is next-best.
+    reason = explain_marginal_roster_reason("QB-1", ["QB-0"], profile, ranking, _manual_assets())
+    assert reason.becomes_starter is False  # QB-0 already the better starter; QB-1 stays bench
+    assert "bench" in reason.summary.lower()
+
+    # The inverse: a genuinely BETTER QB than the current starter swaps in.
+    reason2 = explain_marginal_roster_reason("QB-0", ["QB-1"], profile, ranking, _manual_assets())
+    assert reason2.becomes_starter is True
+    assert reason2.displaces_player_id == "QB-1"
+    assert reason2.starter_value_delta > 0
+
+
+def test_explain_marginal_roster_reason_fills_an_open_slot_without_displacing_anyone() -> None:
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=2, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=3),
+    )
+    reason = explain_marginal_roster_reason("WR-0", ["QB-0"], profile, ranking, _manual_assets())
+    assert reason.becomes_starter is True
+    assert reason.displaces_player_id is None
+    assert "no one benched" in reason.summary.lower()
+
+
+def test_explain_marginal_roster_reason_handles_an_unmodeled_candidate() -> None:
+    ranking = _ranking()
+    profile = ranking.profile
+    reason = explain_marginal_roster_reason("does-not-exist", ["QB-0"], profile, ranking, _manual_assets())
+    assert reason.becomes_starter is False
+    assert reason.starter_value_delta == 0.0
 
 
 def _hypothesis(player_id: str, *, direction: str, confidence: str) -> ImpactHypothesis:
