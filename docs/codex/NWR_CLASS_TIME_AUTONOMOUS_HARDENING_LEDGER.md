@@ -146,6 +146,19 @@ last year's total** -- real, weak, consistent (low per-season variance) signal. 
 say so": NOT promoted; Ballers/UDK remains the valid K/DST source. Real missing-features list
 disclosed for a future session.
 
-## Section 10 — K/DST timing dynamic-policy stress test
+## Section 10 — K/DST timing dynamic-policy stress test (DONE, no code change)
+
+Full evidence: `docs/codex/NWR_KDST_TIMING_STRESS_TEST_V1_20260908.md`. Ran all 8 directive-
+named scenarios via direct `_forced_position`/`_roster_candidate_allowed` calls. Confirmed:
+deadline scales correctly with real round count regardless of team count/bench depth; K/DST
+never forced early just because starters finished early; K2/DST2 structurally impossible
+outside an explicit experimental multi-K/DST format; a real market-ADP pathway exists for
+K/DST to rationally move earlier, correctly labeled MANUAL_UNMODELED. Two real, honest
+findings disclosed (not fixed, not bugs against documented design): opponent/pool-scarcity
+signals have zero effect on this team's own timing (per-team policy only); under extreme
+multi-position scarcity, skill-position priority can sacrifice K/DST entirely even on the
+literal last pick.
+
+## Section 11 — Pick Score secondary sort external validation
 
 (next)
