@@ -1534,6 +1534,7 @@ export function DraftRoomV2Page({
             onPositionFilterChange={setSuggestionsPositionFilter}
             manualAssets={data.manualAssets ?? []}
             currentPick={board?.currentPick ?? null}
+            nextOwnerPick={board?.nextOwnerPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
             adpTeamCount={board?.adp?.teamCount ?? null}
             superflex={data.activeProfile?.roster.superflex ?? 0}
@@ -1959,6 +1960,7 @@ function SuggestionsTab({
   onPositionFilterChange,
   manualAssets,
   currentPick,
+  nextOwnerPick,
   teamCount,
   adpTeamCount,
   superflex,
@@ -1981,10 +1983,17 @@ function SuggestionsTab({
   onPositionFilterChange: (value: string) => void;
   manualAssets: RedraftBootstrap["manualAssets"];
   currentPick: number | null;
+  nextOwnerPick: number | null;
   teamCount: number | null;
   adpTeamCount: number | null;
   superflex: number;
 }) {
+  // NWR DRAFT-DAY WAR ROOM (slot-8 consecutive-turn fix): true exactly
+  // when zero opponents pick between the owner's current turn and their
+  // own next turn (e.g. slot 8 of 8: 1.08 -> 2.01) -- a real, computable
+  // fact from the same currentPick/nextOwnerPick the on-clock header
+  // already surfaces, never a new simulation.
+  const isBackToBackTurn = currentPick != null && nextOwnerPick != null && nextOwnerPick - currentPick === 1;
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
   // NWR FINAL PRE-DRAFT GAP CLOSURE (section 4, "Show Ballers -- audit
@@ -2064,13 +2073,15 @@ function SuggestionsTab({
       // sorts after them, reachable by scrolling, but never blocking the
       // primary WHO/WHAT-TO-DO answer.
       key: "action", label: "Action", titleHint: "What to do -- reuses the existing real Cost-of-Waiting/ADP-timing labels, split from Value below.", sort: "text", render: (row) => {
-        const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
-        return <StatusBadge tone={actionToBadgeTone(String(row.action))} label={split.action} />;
+        const effectiveAction = resolveDisplayAction(String(row.action), row.playerId === pickNow?.row.playerId, isBackToBackTurn);
+        const split = splitActionValue(effectiveAction, row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+        return <StatusBadge tone={actionToBadgeTone(effectiveAction)} label={split.action} />;
       },
     },
     {
       key: "value", label: "Value", titleHint: "How the market sees this player right now (Falling/Reach = real-time draft behavior vs. cited ADP; Value = NWR ranks them meaningfully ahead of ADP; Unknown when ADP is unavailable).", sort: "text", render: (row) => {
-        const split = splitActionValue(String(row.action), row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
+        const effectiveAction = resolveDisplayAction(String(row.action), row.playerId === pickNow?.row.playerId, isBackToBackTurn);
+        const split = splitActionValue(effectiveAction, row.nwrRank as number | null, row.marketExpectedPick as number | null, currentPick, teamCount);
         const title = split.gapPicks != null ? `${split.gapPicks >= 0 ? "+" : ""}${split.gapPicks} picks vs. cited ADP` : "No real market ADP for this player.";
         return <span title={title}>{split.value}</span>;
       },
@@ -2177,6 +2188,14 @@ function SuggestionsTab({
         >
           <strong>{pickNow.label}:</strong> {pickNow.row.playerName} ({pickNow.row.position})
           {pickNow.runnerUp ? <span> — vs. {pickNow.runnerUp.playerName}</span> : null}
+          {isBackToBackTurn ? (
+            <span
+              className="draft-room-v2-pick-now__back-to-back"
+              title="Zero opponents pick between this turn and your own next turn -- your next selection is immediate, not N picks away."
+            >
+              {" "}· YOU PICK AGAIN IMMEDIATELY
+            </span>
+          ) : null}
         </div>
       ) : null}
       {(positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
@@ -2314,6 +2333,33 @@ function SuggestionsTab({
  * label surfaces as visibly "review" (unknown) rather than silently
  * inheriting whichever tone happened to be last in the chain.
  */
+/** NWR DRAFT-DAY WAR ROOM (slot-8 consecutive-turn fix): the real,
+ * reported contradiction was a MUTED-RED "Wait until next turn" badge on
+ * the exact same candidate a green "NWR PICK NOW" banner names as the
+ * current recommendation -- both true statements about the same
+ * `action` string, read together as nonsense. `label_pick_decisions`
+ * only ever asks "does this candidate survive to my next pick?", never
+ * "is this the one I'm telling the owner to draft right now?" -- those
+ * differ exactly on a back-to-back snake turn (zero opponents between
+ * this pick and the owner's own next one), where "survives to next
+ * turn" is real, honest, and simultaneously irrelevant to what to do
+ * THIS pick. Substitutes the row's own already-computed action string
+ * with "TAKE_NOW" (an existing, real label -- never invented) for ONLY
+ * the exact row-1 candidate on a back-to-back turn, so the same
+ * splitActionValue/actionToBadgeTone functions that already handle
+ * TAKE_NOW render both a consistent label and a consistent (green)
+ * tone -- no new formula, no new label string, no change to any other
+ * row (they keep whatever real action they were already given). */
+export function resolveDisplayAction(
+  action: string,
+  isPickNowCandidate: boolean,
+  isBackToBackTurn: boolean,
+): string {
+  if (!isPickNowCandidate || !isBackToBackTurn) return action;
+  const normalized = action.toUpperCase().replace(/_/g, " ");
+  return normalized === "TAKE NOW" ? action : "TAKE_NOW";
+}
+
 export function actionToBadgeTone(action: string): BadgeTone {
   const normalized = action.toUpperCase().replace(/_/g, " ");
   if (normalized === "TAKE NOW") return "ready"; // GREEN

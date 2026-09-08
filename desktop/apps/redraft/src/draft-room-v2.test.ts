@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   actionToBadgeTone,
+  resolveDisplayAction,
   assignRosterSlots,
   buildCompareRows,
   buildCurrentRosterScores,
@@ -627,5 +628,24 @@ describe("actionToBadgeTone", () => {
 
   it("never silently reuses another action's tone for an unrecognized label", () => {
     expect(actionToBadgeTone("UNSCORED")).toBe("review");
+  });
+});
+
+describe("resolveDisplayAction", () => {
+  it("overrides a WAIT-family action to TAKE_NOW for the pick-now row on a back-to-back turn", () => {
+    expect(resolveDisplayAction("WAIT", true, true)).toBe("TAKE_NOW");
+    expect(resolveDisplayAction("DEEP_TARGET", true, true)).toBe("TAKE_NOW");
+  });
+
+  it("leaves TAKE_NOW itself unchanged (no-op, already consistent)", () => {
+    expect(resolveDisplayAction("TAKE_NOW", true, true)).toBe("TAKE_NOW");
+  });
+
+  it("never overrides a row that is not the chosen pick-now candidate", () => {
+    expect(resolveDisplayAction("WAIT", false, true)).toBe("WAIT");
+  });
+
+  it("never overrides when it is not a back-to-back turn -- other rows may still say Wait until 2.01", () => {
+    expect(resolveDisplayAction("WAIT", true, false)).toBe("WAIT");
   });
 });
