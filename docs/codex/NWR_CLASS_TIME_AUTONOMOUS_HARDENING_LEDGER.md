@@ -55,6 +55,18 @@ Score/RAV/ordering. 4 new tests pass; full regression across both touched files 
 (1 known pre-existing unrelated manifest-hash failure confirmed present on unmodified HEAD too).
 Both real boards re-verified byte-identical.
 
+## Section 4c — Top-250/real-market coverage rerun (DONE)
+
+Full evidence: `docs/codex/NWR_TOP250_COVERAGE_RERUN_V1_20260908.md`. Owner's local ADP
+snapshot proved unsuitable (league-specific, pre-matched, doesn't contain Diggs/Brooks at
+all); used the real, already-admitted FFA 2026 market pack instead (220 real QB/RB/WR/TE
+rows). **Result: 216/220 (98.2%) FULLY_MODELED**, every previously-identified SOURCE_GAP name
+now covered. 4 remaining real gaps individually root-caused: Marvin Harrison Jr. is a
+diagnostic-script-only false negative (real production pipeline resolves him correctly via
+PFR-ID bridge); Kenneth/Kenny Gainwell and Chigoziem/Chig Okonkwo are real nickname-vs-
+registry-name variants (players ARE in the universe under their registry name); Joe Mixon is
+a real, deliberately-unopened `RSN` status-code exclusion. No code change this unit.
+
 ## Section 5 — Judkins/role-change blind-spot experiment
 
 (next)
