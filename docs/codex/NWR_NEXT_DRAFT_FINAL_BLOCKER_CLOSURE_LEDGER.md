@@ -133,3 +133,10 @@ traced exactly to K/DST's own permanent unmodeled-by-NWR design boundary, not a 
 tie frequency (0/48, disclosed as a synthetic-fixture artifact -- the fixture's smooth
 monotonic ranking makes a genuine tie very unlikely regardless of real engine behavior). No
 code change; both real boards and the real owner `current.csv` hash re-verified unchanged.
+
+## Section 10 — Final next-draft freeze (DONE)
+
+Cut `docs/codex/NWR_PROSPECTIVE_2026_FREEZE_V5_20260908.md` at HEAD `eaef1a47` -- the real,
+single, deliberately deferred freeze this directive's own Section 3 decided to cut at its
+natural completion point rather than mid-directive. Does not overwrite V1-V4. Full closing
+report delivered to the owner in this directive's final response.
