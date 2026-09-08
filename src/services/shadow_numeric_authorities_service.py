@@ -291,32 +291,62 @@ def explain_marginal_roster_reason(
 # NWR post-draft overnight, phase 1/2 (v2 -- real historical measurement,
 # not an arbitrary constant): the FIRST bench slot's decay base is no
 # longer a single universal 0.5 for every position -- it is measured
-# directly from real nflverse `load_snap_counts` data (seasons 2022-2024,
-# 96 team-seasons per position). Methodology: rank each team's players at
-# a position by WEEK-1 snap share (the real preseason depth chart
-# outcome, not season-total, which would conflate a true bench backup
-# with a midseason starter who took over after an injury and racked up
-# snaps for the rest of the year -- an earlier version of this same
-# measurement made exactly that mistake and was corrected before use).
-# For the week-1 DEPTH-2 player at each position, the real, computed
-# fraction of team-seasons where that player EVER reached starter-level
-# usage (>=60% offensive snap share) in some LATER week that season:
-#   QB 12.5% (n=96; only 22/96 team-seasons even had a QB2 log ANY week-1
-#     snap at all -- QB is structurally the most winner-take-all position,
-#     most backups never touch the field absent an injury)
-#   RB 54.2% (n=96)
-#   WR 97.9% (n=96 -- modern 3-WR personnel groupings mean a "WR2" by
-#     week-1 snap share is very often close to a full-time starter)
-#   TE 72.9% (n=96)
+# directly from real nflverse `load_snap_counts` data. Methodology: rank
+# each team's players at a position by WEEK-1 snap share (the real
+# preseason depth chart outcome, not season-total, which would conflate
+# a true bench backup with a midseason starter who took over after an
+# injury and racked up snaps for the rest of the year -- an earlier
+# version of this same measurement made exactly that mistake and was
+# corrected before use). For the week-1 DEPTH-2 player at each position,
+# the real, computed fraction of team-seasons where that player EVER
+# reached starter-level usage (>=60% offensive snap share) in some LATER
+# week that season, CONDITIONAL on him having logged a real week-1 snap
+# at all (i.e. `ever_started / n_players`, where `n_players` is that
+# position's OWN real count of week-1 depth-2 players who appear in the
+# data at all -- the same formula for every position, no special-cased
+# denominator).
+#
+# CORRECTED (owner-flagged, 2026-09-08): the original QB=0.125 figure
+# here was wrong -- verified by rerunning the cited reproduction script
+# (scratchpad `historical_backup_utility_v2.py`) verbatim. That script's
+# own real output for QB is n_players=22 (most teams' real backup QB
+# logs ZERO week-1 offensive snaps and never enters the ranked pool at
+# all -- QB genuinely is the most winner-take-all position, that part
+# was correct) and ever_rate=0.545 (of the 22 who DID log a real week-1
+# snap, just over half later reached starter-level usage) -- NOT 0.125.
+# 12/96=0.125 was computed using RB/WR/TE's own n=96 as QB's denominator
+# instead of QB's real n=22 (12/22=0.545) -- a real arithmetic error, not
+# a deliberate, disclosed methodological choice; RB/WR/TE's own real
+# n_players already happens to be ~96 (virtually every team has a real
+# RB2/WR2/TE2), so the bug was invisible for those three. This also
+# meant the original promotion's walk-forward evaluation (commit
+# `c318a10c`) used the same fixed 2022-2024-derived rates for real
+# 2020-2023 evaluation seasons -- a real, separately-flagged temporal-
+# leakage gap. Both issues were verified together and a corrected,
+# leakage-safe, per-fold-rate rerun still passed all 3 preregistered
+# gates (mean_delta +92.49 vs the original +74.65, wins 32/48 unchanged)
+# -- see docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md's
+# TEMPORAL-LEAKAGE VERIFICATION addendum for the full evidence. The
+# values below are the real, corrected, most-current non-leaky window
+# for a live 2026 draft (2023-2025, the same conditional formula for
+# every position):
+#   QB 55.6% (n=22 of week-1 depth-2 QBs who logged a real snap at all)
+#   RB 48.4%
+#   WR 96.9% (modern 3-WR personnel groupings mean a "WR2" by week-1
+#     snap share is very often close to a full-time starter)
+#   TE 70.8%
 # These real rates -- not a guessed "QB penalty"/"TE penalty" -- are why
-# a first bench QB is worth far less real contingency value than a first
-# bench RB/WR/TE. Reproduction script:
-# scratchpad `historical_backup_utility_v2.py`, this session.
+# a first bench QB still gets a real, but now correctly-computed, real
+# contingency discount. Reproduction script:
+# docs/codex/nwr_marginal_utility_walk_forward_promotion_v1_20260908/
+# leakage_verification_addendum/run_leakage_safe_rerun.py
+# (compute_backup_utility_rate; call with [2023, 2024, 2025] for these
+# exact values).
 POSITION_BACKUP_UTILITY_RATE: dict[str, float] = {
-    "QB": 0.125,
-    "RB": 0.542,
-    "WR": 0.979,
-    "TE": 0.729,
+    "QB": 0.5556,
+    "RB": 0.4842,
+    "WR": 0.9688,
+    "TE": 0.7083,
 }
 # Positions with no real measurement above (K/DST -- snap-share isn't a
 # meaningful concept for either) fall back to the original universal

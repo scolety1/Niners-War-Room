@@ -281,13 +281,16 @@ def test_explain_marginal_roster_reason_fills_an_open_slot_without_displacing_an
 
 def test_marginal_roster_utility_decays_geometrically_for_repeated_bench_adds() -> None:
     """NWR post-draft overnight (phase 3, refined phase 1/2 with real
-    historical data): the QB2/QB3/QB4 diminishing-returns shape emerges
-    from real bench redundancy compounding the position's own REAL,
-    measured historical backup-startability rate (QB=12.5%, nflverse
-    2022-2024 week-1 depth data -- see POSITION_BACKUP_UTILITY_RATE's own
-    docstring for the full methodology), not a hardcoded position
-    penalty and not a single universal constant applied to every
-    position identically."""
+    historical data, corrected 2026-09-08 -- see
+    POSITION_BACKUP_UTILITY_RATE's own docstring for the real, verified
+    QB-formula bug found and fixed, and the leakage-safe reproduction
+    script): the QB2/QB3/QB4 diminishing-returns shape emerges from real
+    bench redundancy compounding the position's own REAL, measured
+    historical backup-startability rate (read directly from
+    POSITION_BACKUP_UTILITY_RATE below, not hardcoded here, so this test
+    never silently drifts from the real live constant), not a hardcoded
+    position penalty and not a single universal constant applied to
+    every position identically."""
     ranking = _ranking()
     profile = replace(
         ranking.profile,
@@ -348,21 +351,39 @@ def test_marginal_roster_utility_te2_stays_full_value_via_flex_not_bench_decay()
 
 
 def test_position_backup_utility_rates_are_real_measured_values_not_arbitrary() -> None:
-    """Locks in the real, cited nflverse 2022-2024 measurement
-    (scratchpad historical_backup_utility_v2.py, this session) --
-    WR/TE backups are real, materially more likely to see meaningful
-    later-season usage than QB, RB in between. A regression here means
-    someone replaced the real numbers with a guess."""
+    """Locks in the real, cited nflverse measurement (real, most-current
+    non-leaky window as of the correction below) -- WR/TE backups are
+    real, materially more likely to see meaningful later-season usage
+    than QB/RB. A regression here means someone replaced the real
+    numbers with a guess.
+
+    CORRECTED 2026-09-08 (owner-flagged real bug, verified by rerunning
+    the cited reproduction script verbatim): the original QB=0.125 value
+    here did not match that script's own real output for QB (0.545,
+    n=22) -- 0.125 was computed using RB/WR/TE's own n=96 as QB's
+    denominator instead of QB's real n=22, a real arithmetic error, not
+    a deliberate choice (RB/WR/TE's real n_players already happens to be
+    ~96, so the bug was invisible for those three). See
+    POSITION_BACKUP_UTILITY_RATE's own docstring for the full writeup.
+    A real, secondary consequence: with the corrected, consistent
+    formula, QB is NO LONGER the position with the single lowest
+    conditional backup-startability rate -- RB is (a real, genuine
+    result of this specific 3-year window, not assumed) -- the old
+    'QB < RB < TE < WR' ordering claim below is corrected accordingly.
+    QB's real, still-true distinguishing fact is its much SMALLER real
+    population (n=22 vs ~96 for the others -- most teams' real backup QB
+    never logs a meaningful snap at all), not the lowest conditional
+    rate among those who do."""
     from src.services.shadow_numeric_authorities_service import POSITION_BACKUP_UTILITY_RATE
 
-    assert POSITION_BACKUP_UTILITY_RATE["QB"] == 0.125
-    assert POSITION_BACKUP_UTILITY_RATE["RB"] == 0.542
-    assert POSITION_BACKUP_UTILITY_RATE["WR"] == 0.979
-    assert POSITION_BACKUP_UTILITY_RATE["TE"] == 0.729
-    # The real, ordered relationship the whole fix depends on.
+    assert POSITION_BACKUP_UTILITY_RATE["QB"] == 0.5556
+    assert POSITION_BACKUP_UTILITY_RATE["RB"] == 0.4842
+    assert POSITION_BACKUP_UTILITY_RATE["WR"] == 0.9688
+    assert POSITION_BACKUP_UTILITY_RATE["TE"] == 0.7083
+    # The real, corrected ordered relationship this specific window shows.
     assert (
-        POSITION_BACKUP_UTILITY_RATE["QB"]
-        < POSITION_BACKUP_UTILITY_RATE["RB"]
+        POSITION_BACKUP_UTILITY_RATE["RB"]
+        < POSITION_BACKUP_UTILITY_RATE["QB"]
         < POSITION_BACKUP_UTILITY_RATE["TE"]
         < POSITION_BACKUP_UTILITY_RATE["WR"]
     )
@@ -370,11 +391,15 @@ def test_position_backup_utility_rates_are_real_measured_values_not_arbitrary() 
 
 def test_marginal_roster_utility_first_backup_is_not_full_value_for_low_startability_positions() -> None:
     """The real fix for the 12.01 Caleb-Williams-then-Lawrence-family
-    scenario: even the FIRST bench QB is not full value (12.5% of
-    standalone, not 100%) -- the old universal-decay version gave a
-    first bench QB the same undiscounted value as a first bench WR,
-    which is what let a marginal starter-swap be under-penalized
-    relative to genuine bench value."""
+    scenario: even the FIRST bench QB is not full value (a real,
+    measured fraction of standalone -- see POSITION_BACKUP_UTILITY_RATE
+    -- not 100%) -- the old universal-decay version gave a first bench
+    QB the same undiscounted value as a first bench WR, which is what
+    let a marginal starter-swap be under-penalized relative to genuine
+    bench value. QB's real discount is still materially larger than
+    WR's (asserted below via the live rates, not a hardcoded number, so
+    this never silently drifts from whatever POSITION_BACKUP_UTILITY_RATE
+    actually contains)."""
     ranking = _ranking()
     profile = replace(
         ranking.profile,

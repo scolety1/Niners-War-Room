@@ -4,6 +4,8 @@
 **Directive:** owner-requested — "Run the full historical walk-forward evaluation of the marginal-roster-utility engine and, if it passes, actually promote it into the live Pick Score/RAV recommendation path."
 **Result: PASSED all 3 preregistered gates. PROMOTED.** `marginal_roster_utility` is now the primary candidate-ordering signal in `build_decision_bundle()` — the actual live recommendation basis, not just a display field.
 
+**UPDATE (2026-09-08, same day):** the owner correctly flagged a real temporal-leakage gap in the evaluation below, and a second, independent QB-rate computation bug was found while investigating it. Both were verified, a corrected leakage-safe rerun still passes all 3 gates (promotion **KEPT**), and the live `POSITION_BACKUP_UTILITY_RATE` constant was corrected. **See section 8, "TEMPORAL-LEAKAGE VERIFICATION ADDENDUM," for the full, authoritative correction — sections 1-7 below are the original evaluation as first run and are superseded by section 8 wherever they conflict.** Evidence label for both the original and corrected runs: `LEAKAGE-CLEAN_WALK_FORWARD_DEVELOPMENT_VALIDATION`, not a pristine historical holdout.
+
 ## 1. Why this couldn't reuse the prior historical-tuning corpus
 
 This engine's prior historical validation program (Team Score V1, Player Score, Pick Score) sealed and burned three holdout seasons — **2016, 2024, 2025 — which are never reopened for any component, including this one** (see `nwr-team-score-v1-frozen-2016-burned.md`, `nwr-2025-final-holdout-passed-program-complete.md`). That program's own real replay corpus (the "9 development seasons x 7 strategies" tournament, `draft_strategy_framework_service.py`) lives in a separate worktree not accessible from here, and its materialized point-in-time feature store data was not found in this checkout.
@@ -67,6 +69,67 @@ Full script + the exact real seasonal-stats data it ran against: `docs/codex/nwr
 - 2016/2024/2025 remain permanently excluded from all future evaluation of this engine, this component included.
 - This does not validate Team Score, Championship Equity, or Pick Score's own underlying formulas — those are unchanged and were not re-evaluated here.
 
-## 8. Verification
+## 8. TEMPORAL-LEAKAGE VERIFICATION ADDENDUM (2026-09-08, owner-flagged)
+
+The owner correctly flagged a real methodological gap: the walk-forward run above (section 3) used `marginal_roster_utility()` with its live `POSITION_BACKUP_UTILITY_RATE` constant — at the time, a SINGLE FIXED value derived from nflverse 2022-2024 — for ALL FOUR evaluation seasons (2020/2021/2022/2023). For 2020/2021 this uses real information from 1-4 years in the future; for 2022/2023 it still includes real future seasons (2023/2024 relative to 2022; 2024 relative to 2023).
+
+**TEMPORAL_LEAKAGE: YES, confirmed.**
+
+**Rate sources by fold (as originally run):**
+
+| Evaluation season | Rate source used | Leakage |
+|---|---|---|
+| 2020 | nflverse 2022-2024 (fixed) | Full — 2, 3, 4 years in the future |
+| 2021 | nflverse 2022-2024 (fixed) | Full — 1, 2, 3 years in the future |
+| 2022 | nflverse 2022-2024 (fixed) | Partial — includes the evaluation season itself plus 2023/2024 future |
+| 2023 | nflverse 2022-2024 (fixed) | Partial — includes 2024, 1 year future; overlaps 2022 (prior) |
+
+### A second, separately-verified real bug found while investigating
+
+Rebuilding the per-fold rates surfaced an independent issue: the live `POSITION_BACKUP_UTILITY_RATE["QB"]` constant (0.125) did not match the real, reproducible output of its own cited source script (`historical_backup_utility_v2.py`) run verbatim — that script gives **QB=0.545 (n=22)**, not 0.125; RB/WR/TE (0.542/0.979/0.729) matched exactly. Root cause: the script's real formula is `ever_started / n_players` (a per-position CONDITIONAL rate); for RB/WR/TE, `n_players` is ~96 (virtually every team has a real RB2/WR2/TE2), so this coincides with the population size, but for QB `n_players` is only 22 (most teams' real backup QB logs zero week-1 offensive snaps and never enters the ranked pool at all). The original 0.125 = 12/96 — using RB/WR/TE's own population size as QB's denominator instead of QB's real 22 (12/22 = 0.545) — a real, verified arithmetic error, not a deliberate, disclosed choice.
+
+### Corrected, leakage-safe rerun
+
+For each evaluation season S, `POSITION_BACKUP_UTILITY_RATE` was rebuilt using ONLY real nflverse snap-count data strictly before S (a 3-season window S-3..S-1), via the same real, corrected conditional formula for every position, applied consistently in-process (temporary monkeypatch, never touching the shipped source during the test itself).
+
+**Rate sources by fold (corrected):**
+
+| Evaluation season | Rate window | QB | RB | WR | TE |
+|---|---|---|---|---|---|
+| 2020 | 2017-2019 | 0.619 | 0.532 | 0.947 | 0.699 |
+| 2021 | 2018-2020 | 0.571 | 0.547 | 0.927 | 0.642 |
+| 2022 | 2019-2021 | 0.591 | 0.526 | 0.938 | 0.632 |
+| 2023 | 2020-2022 | 0.474 | 0.516 | 0.969 | 0.635 |
+
+**Corrected walk-forward result (same preregistered simulation structure and gates, unchanged):**
+
+| Metric | Original (leaky) | Leakage-safe (corrected) |
+|---|---|---|
+| n | 48 | 48 |
+| Mean delta | +74.65 | **+92.49** |
+| Median delta | +66.74 | **+100.59** |
+| Wins | 32/48 (67%) | 32/48 (67%) |
+| 2020 season delta | +5.9% | +6.1% |
+| 2021 season delta | +7.1% | +9.2% |
+| 2022 season delta | +10.6% | +13.6% |
+| 2023 season delta | -1.4% | -1.4% |
+| Largest positive case | season 2021 slot 6, +619.9 | season 2021 slot 6, +653.7 |
+| Largest negative case | season 2023 slot 10, -264.8 | season 2023 slot 10, -264.8 |
+| Result with largest positive outlier removed | mean +63.05, wins 31/47 (66%) | mean +80.55, wins 31/47 (66%) |
+| Gate (a) mean ≥ 0 | PASS | **PASS** |
+| Gate (b) wins ≥ 25/48 | PASS | **PASS** |
+| Gate (c) no season < -5% | PASS | **PASS** |
+
+**All three preregistered gates still pass — the corrected result is, if anything, slightly stronger than the original.** Full script + real reproducible output: `docs/codex/nwr_marginal_utility_walk_forward_promotion_v1_20260908/leakage_verification_addendum/` (`run_leakage_safe_rerun.py`, `RUN_OUTPUT.txt`).
+
+### Live engine correction
+
+The QB-formula bug was independently real (not merely a leakage artifact) and was fixed in the shipped source: `POSITION_BACKUP_UTILITY_RATE` in `shadow_numeric_authorities_service.py` now uses the real, corrected, most-current non-leaky window for a live 2026 draft (2023-2025): `{"QB": 0.5556, "RB": 0.4842, "WR": 0.9688, "TE": 0.7083}`. A real, honest secondary consequence: with the corrected formula, QB is no longer the position with the single lowest conditional backup-startability rate — RB is, in this specific window. QB's real, still-true distinguishing fact is its much smaller real population (n=22 vs ~96 for the others), not the lowest conditional rate among those who do get real snaps. Tests updated accordingly (`tests/test_shadow_numeric_authorities_service.py`).
+
+**PROMOTION: KEPT.** The corrected, leakage-safe evidence still passes every preregistered gate; the promotion (commit `c318a10c`) stands.
+
+**EVIDENCE_LABEL (corrected, per owner instruction):** this evaluation — both the original and the leakage-safe rerun — is `LEAKAGE-CLEAN_WALK_FORWARD_DEVELOPMENT_VALIDATION`, not a pristine historical holdout validation. 2020-2023 are development/replay evidence. The next independent proof remains prospective 2026 — the first genuinely out-of-sample test of this promoted, now-corrected engine.
+
+## 9. Verification
 
 Both real boards (403 N 18th `4b4a990faf124ce7a5d612537ba5943b`, Fantasy Gamers `4c5f04762921420595e4d8c7cda76582`) re-verified byte-identical (pick counts, `updated_at_utc`) before and after this entire evaluation and promotion — no real board was ever touched; all simulation ran against real historical nflverse data in an isolated, disposable synthetic league.
