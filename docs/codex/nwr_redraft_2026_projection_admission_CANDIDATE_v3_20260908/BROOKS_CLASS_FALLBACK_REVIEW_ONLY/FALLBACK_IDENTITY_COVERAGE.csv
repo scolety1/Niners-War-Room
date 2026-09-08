@@ -1,0 +1,65 @@
+player_id,player_name,position,team,draft_season,draft_round,draft_pick,projection_status,block_reason
+00-0028986,Case Keenum,QB,CHI,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0031235,Odell Beckham Jr.,WR,NYG,2014,1,12,ELIGIBLE,
+00-0032436,Jeff Driskel,QB,WAS,2016,6,207,ELIGIBLE,
+00-0033292,Trent Taylor,WR,SF,2017,5,177,ELIGIBLE,
+00-0033537,Deshaun Watson,QB,CLE,2017,1,12,ELIGIBLE,
+00-0034972,Alexander Mattison,RB,MIA,2019,3,102,ELIGIBLE,
+00-0035045,D.J. Montgomery,WR,IND,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0035329,Donald Parham,TE,PIT,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0035356,Tyree Jackson,TE,WAS,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0035973,Patrick Taylor,RB,SF,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0036556,Brevin Jordan,TE,HOU,2021,5,147,ELIGIBLE,
+00-0036670,Jermar Jefferson,RB,MIN,2021,7,257,ELIGIBLE,
+00-0036879,Sam Ehlinger,QB,DEN,2021,6,218,ELIGIBLE,
+00-0036936,Rondale Moore,WR,MIN,2021,2,49,ELIGIBLE,
+00-0037077,Sam Howell,QB,DAL,2022,5,144,ELIGIBLE,
+00-0037078,Cole Turner,TE,MIA,2022,5,149,ELIGIBLE,
+00-0037091,Bo Melton,WR,GB,2022,7,229,ELIGIBLE,
+00-0037156,Irvin Charles,WR,SEA,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0037299,Keaontay Ingram,RB,KC,2022,6,201,ELIGIBLE,
+00-0037327,Skylar Thompson,QB,BAL,2022,7,247,ELIGIBLE,
+00-0038476,Tommy DeVito,QB,NE,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0038477,Bryce Ford-Wheaton,WR,NYG,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0038518,Deneric Prince,RB,NE,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0038636,Kenny McIntosh,RB,SEA,2023,7,237,ELIGIBLE,
+00-0038977,Tank Dell,WR,HOU,2023,3,69,ELIGIBLE,
+00-0039107,Stetson Bennett,QB,LA,2023,4,128,ELIGIBLE,
+00-0039152,Will Levis,QB,TEN,2023,2,33,ELIGIBLE,
+00-0039236,Johnny Wilson,WR,PHI,2024,6,185,ELIGIBLE,
+00-0039244,Chris Collier,RB,LV,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039259,Dayton Wade,WR,BAL,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039263,McCallan Castles,TE,GB,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039331,Emory Jones,QB,ATL,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039344,Jonathon Brooks,RB,CAR,2024,2,46,ELIGIBLE,
+00-0039365,Jacob Cowing,WR,SF,2024,4,135,ELIGIBLE,
+00-0039386,Bub Means,WR,NO,2024,5,170,ELIGIBLE,
+00-0039397,Tejhaun Palmer,WR,ARI,2024,6,191,ELIGIBLE,
+00-0039552,Joshua Cephus,WR,JAX,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039626,Cole Burgess,WR,PIT,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039702,Mason Pline,TE,NO,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0039811,MarShawn Lloyd,RB,GB,2024,3,88,ELIGIBLE,
+00-0039814,Erick All,TE,CIN,2024,4,115,ELIGIBLE,
+00-0039907,Ja'Lynn Polk,WR,NO,2024,2,37,ELIGIBLE,
+00-0039936,Thomas Yassmin,TE,GB,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040014,Kyle McCord,QB,MIA,2025,6,181,ELIGIBLE,
+00-0040081,Jake Briningstool,TE,KC,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040120,Jimmy Holiday,WR,KC,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040177,Jordan James,RB,SF,2025,5,147,ELIGIBLE,
+00-0040203,Will Howard,QB,PIT,2025,6,185,ELIGIBLE,
+00-0040211,Graham Mertz,QB,HOU,2025,6,197,ELIGIBLE,
+00-0040215,Gavin Bartholomew,TE,MIN,2025,6,202,ELIGIBLE,
+00-0040240,Caleb Lohner,TE,DEN,2025,7,241,ELIGIBLE,
+00-0040272,Deion Hankins,RB,CHI,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040301,Jalin Conyers,TE,MIA,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040390,Jackson Meeks,WR,DET,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040393,Kye Robichaux,RB,DET,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040400,Donovan Edwards,RB,MIA,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040456,Da'Quan Felton,WR,NYG,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040504,Bryson Nesbit,TE,MIN,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040567,Brock Lampe,RB,NE,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040570,Jeremiah Webb,WR,NE,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040589,Kurtis Rourke,QB,SF,2025,7,227,ELIGIBLE,
+00-0040598,Mark Redman,TE,GB,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040621,Montorie Foster Jr,WR,SEA,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable
+00-0040769,Jaden Smith,WR,TB,,,,BLOCKED,no real NFL draft-capital record; insufficient-history fallback not applicable

@@ -25,6 +25,24 @@ MODEL_POSITIONS = ("QB", "RB", "WR", "TE")
 # Garoppolo, Deebo Samuel Sr.) shows ACT/RES. These three real statuses
 # are the ones that mean "not actually on an NFL roster" for our purpose.
 NOT_CURRENTLY_ROSTERED_STATUSES = frozenset({"INA", "RET", "CUT"})
+# NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (fresh admission, owner-approved
+# widening, 2026-09-08): a real, fresh players-registry pull (retrieved
+# 2026-09-08, post-roster-cutdown) surfaced a real, distinct gap from the
+# Diggs-class one above -- 8 real, previously-admitted, currently
+# fantasy-relevant players (verified individually: Josh Jacobs, James
+# Conner, Zach Charbonnet, Tank Dell, Trevor Etienne, Isaac Guerendo,
+# Savion Williams, Dillon Gabriel among the broader sample) carry a real
+# NFL roster status other than ACT/RES -- EXE (Commissioner Exempt), RSR,
+# or PUP (Physically Unable to Perform) -- despite genuinely remaining on
+# an NFL roster and being realistically startable later in a redraft
+# season. The stale 2026-07-30 registry had these same players still
+# marked ACT (pre-cutdown), which is why this gap was invisible before a
+# fresh pull. DEV (practice squad -- real, verified as NOT on the active/
+# 53-man roster, not realistically startable) is deliberately excluded
+# from this widening; SUS/NWT/RLS/CUT/RET/INA all deliberately remain
+# excluded too (each represents a real, genuine departure/unavailability,
+# not a roster technicality). Owner-approved in-session, 2026-09-08.
+CURRENTLY_ROSTERED_STATUSES = frozenset({"ACT", "RES", "EXE", "RSR", "PUP"})
 MODEL_STAT_COLUMNS = (
     "games",
     "attempts",
@@ -175,18 +193,19 @@ def build_current_projection_candidate(
     #
     # Minimum safe widening: accept `last_season` one real season
     # earlier too (`season - 1`), STILL gated by the real
-    # `status.isin(("ACT","RES"))` check -- that status check is the
-    # real safety valve against flooding the universe with retired/
-    # inactive players (a retired player's real status is RET/INA/CUT/
-    # etc., never ACT/RES, regardless of how recent his `last_season`
-    # is). A genuinely stale historical player (`last_season` 2+ years
-    # back) is still excluded either way. Verified via a real, direct
-    # before/after audit against the real nflverse snapshot this build
-    # actually reads -- see the fix's own test for the exact real counts.
+    # `status.isin(CURRENTLY_ROSTERED_STATUSES)` check -- that status
+    # check is the real safety valve against flooding the universe with
+    # retired/inactive players (a retired player's real status is
+    # RET/INA/CUT/etc., never one of the currently-rostered statuses,
+    # regardless of how recent his `last_season` is). A genuinely stale
+    # historical player (`last_season` 2+ years back) is still excluded
+    # either way. Verified via a real, direct before/after audit against
+    # the real nflverse snapshot this build actually reads -- see the
+    # fix's own test for the exact real counts.
     universe = players[
         players["last_season"].between(season - 1, season)
         & players["position"].isin(MODEL_POSITIONS)
-        & players["status"].isin(("ACT", "RES"))
+        & players["status"].isin(CURRENTLY_ROSTERED_STATUSES)
     ].copy()
     if roster_status_by_gsis_id:
         # Real false-positive guard (see NOT_CURRENTLY_ROSTERED_STATUSES above):

@@ -146,6 +146,48 @@ def test_last_season_one_year_widening_admits_a_real_active_player_diggs_class()
     assert result.projections["player_id"].tolist() == ["00-1"]
 
 
+def test_currently_rostered_statuses_admit_exe_rsr_pup_but_not_dev() -> None:
+    """NWR next-draft final blocker closure, fresh admission (owner-approved
+    widening, 2026-09-08): a real, fresh players-registry pull surfaced 8 real,
+    previously-admitted, currently-relevant players (Josh Jacobs, James Conner,
+    et al.) carrying a real NFL roster status other than ACT/RES -- EXE
+    (Commissioner Exempt), RSR, or PUP (Physically Unable to Perform) -- despite
+    genuinely remaining on an NFL roster. These must still be admitted. DEV
+    (practice squad -- not on the active/53-man roster) must remain excluded,
+    same as a genuine departure (RET/INA/CUT)."""
+    history = pd.DataFrame(
+        [
+            _history_row("00-exe", "Exempt Veteran", "RB", 2025, rushing_yards=900),
+            _history_row("00-rsr", "Reserve Veteran", "RB", 2025, rushing_yards=800),
+            _history_row("00-pup", "Pup Veteran", "RB", 2025, rushing_yards=700),
+            _history_row("00-dev", "Practice Squad Veteran", "RB", 2025, rushing_yards=600),
+        ]
+    )
+    players = pd.DataFrame(
+        [
+            _player("00-exe", "Exempt Veteran", "RB", rookie_season=2019, status="EXE"),
+            _player("00-rsr", "Reserve Veteran", "RB", rookie_season=2020, status="RSR"),
+            _player("00-pup", "Pup Veteran", "RB", rookie_season=2021, status="PUP"),
+            _player("00-dev", "Practice Squad Veteran", "RB", rookie_season=2022, status="DEV"),
+        ]
+    )
+    result = build_current_projection_candidate(
+        players,
+        history,
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"RB": 50.0},
+    )
+    admitted = set(result.projections["player_id"])
+    assert admitted == {"00-exe", "00-rsr", "00-pup"}
+    # DEV never enters the universe at all (excluded at the status filter,
+    # same as a genuine RET/INA/CUT departure) -- absent from every output,
+    # not merely blocked-with-a-reason.
+    assert "00-dev" not in result.projections["player_id"].tolist()
+    assert "00-dev" not in result.blocked["player_id"].tolist()
+    assert "00-dev" not in result.identity["player_id"].tolist()
+
+
 def test_roster_status_cross_check_excludes_a_real_retired_player_rivers_class() -> None:
     """The nflverse player-registry `status` field alone does not reliably flag real
     retirement (a real, verified case: Philip Rivers/Russell Wilson both still show

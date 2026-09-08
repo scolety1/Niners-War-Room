@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "authority": "NWR_DATA_GOVERNANCE",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "season": 2026,
+  "source_sha256": "6916ba3ea8564bd212cbc90fd019cd9944b224beec907058547db09d981120bc",
+  "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V1",
+  "approved_by": "Spencer Colety (owner, explicit chat authorization, 2026-09-08, 'NWR OWNER AUTHORIZATION -- FRESH PROJECTION ADMISSION + COVERAGE FIX INSTALL' directive)",
+  "approved_at_utc": "2026-09-08T22:30:00Z",
+  "valid_until": "2026-10-08",
+  "admission_scope": "NWR_REDRAFT_2026_LIVE",
+  "component_sources_as_of": {
+    "veterans": "2026-09-08",
+    "rookies": "2026-07-30 (unchanged, independently excluded by its own 30-day freshness check -- not renewed by this receipt)"
+  },
+  "limitations": [
+    "78 real 2026 rookie rows remain excluded from the ranking universe (independently over their own 30-day freshness window; this approval does not bypass that separate, per-row check, and no new rookie-freshness override was requested or issued -- unchanged from the prior 2026-09-06 practice-draft renewal's own disclosed limitation)",
+    "K and DST remain manual/unmodeled (Practical Mode), unchanged from the prior approval",
+    "Brooks-class insufficient-history fallback candidates were refreshed and staged (see BROOKS_CLASS_FALLBACK_REVIEW_ONLY/) but remain review-only reference data -- not merged into this governed ranking universe, since evidence_status other than AVAILABLE/ADMITTED_CURRENT_SEASON is not admitted by the engine at all, and review-only data must never be upgraded to fully-modeled status",
+    "The admitted-status widening (EXE/RSR/PUP added; DEV intentionally excluded) applies only to the veteran persistence-model pipeline (redraft_2026_projection_model_service.py) -- the separate true-rookie pipeline's own ACT/RES-only status check (redraft_2026_rookie_projection_model_service.py) was deliberately left untouched, out of this fix's approved, narrow scope"
+  ],
+  "reason": "Fresh, real governed admission superseding the 2026-08-08 veteran admission: a real players-registry pull retrieved 2026-09-08T21:54:00Z, combined with the already-code-complete Diggs-class last_season widening fix (unmodified) and a new, real, owner-approved widening of the admitted-status set (CURRENTLY_ROSTERED_STATUSES = ACT, RES, EXE, RSR, PUP; DEV intentionally excluded) after the fresh registry pull was found, mid-build, to newly exclude 8 real, previously-admitted, currently-relevant players (Josh Jacobs, James Conner, Zach Charbonnet, Trevor Etienne, Isaac Guerendo, Savion Williams, and others) due to real post-roster-cutdown status codes the engine's prior ACT/RES-only filter did not recognize. Verified via direct spot-checks against the real fresh registry before the widening was approved and applied. The 78 rookie rows are carried forward byte-identical from the ORIGINAL currently-installed current.csv (pre-this-session, unchanged, not re-approved, remain correctly excluded by their own freshness window)."
+}

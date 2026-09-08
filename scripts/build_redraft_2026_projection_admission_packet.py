@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 from dataclasses import asdict, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,7 @@ from src.services.redraft_2026_projection_model_service import (
     uncertainty_from_backtest,
 )
 from src.services.redraft_engine_v1_service import (
+    MAX_PROJECTION_AGE_DAYS,
     PROJECTION_NUMERIC_COLUMNS,
     ProjectionPlayer,
     ProjectionSnapshot,
@@ -70,7 +71,7 @@ def _snapshot_provenance(snapshot_dir: Path) -> dict[str, str]:
         return {"snapshot_aggregate_sha256": "", "retrieved_at_utc": ""}
 
 
-def projection_snapshot(frame: pd.DataFrame, path: Path) -> ProjectionSnapshot:
+def projection_snapshot(frame: pd.DataFrame, path: Path, *, source_as_of: str) -> ProjectionSnapshot:
     players: list[ProjectionPlayer] = []
     for row in frame.to_dict("records"):
         stats = {
@@ -98,7 +99,7 @@ def projection_snapshot(frame: pd.DataFrame, path: Path) -> ProjectionSnapshot:
         players=tuple(players),
         blocked_rows=(),
         errors=(),
-        source_as_of=SOURCE_AS_OF,
+        source_as_of=source_as_of,
     )
 
 
@@ -248,6 +249,8 @@ def build_packet(
     """
 
     generated_at = datetime.now(UTC).isoformat(timespec="seconds")
+    today = datetime.now(UTC).date()
+    valid_until = (date.fromisoformat(source_as_of) + timedelta(days=MAX_PROJECTION_AGE_DAYS)).isoformat()
     player_root = player_snapshot_dir or (shared_root / DEFAULT_PLAYER_SNAPSHOT)
     stats_root = stats_snapshot_dir or (shared_root / DEFAULT_STATS_SNAPSHOT)
     roster_root = roster_snapshot_dir or (shared_root / DEFAULT_ROSTER_SNAPSHOT)
@@ -286,7 +289,7 @@ def build_packet(
     write_csv(output / "BLOCKED_PLAYER_ROWS.csv", candidate.blocked)
     write_csv(output / "IDENTITY_COVERAGE.csv", candidate.identity)
     write_csv(output / "PROJECTION_VALIDATION.csv", validation)
-    snapshot = projection_snapshot(candidate.projections, candidate_path)
+    snapshot = projection_snapshot(candidate.projections, candidate_path, source_as_of=source_as_of)
     results = {
         profile.preset_key: generate_rankings(profile, snapshot) for profile in builtin_presets()
     }
@@ -356,6 +359,13 @@ def build_packet(
     rookie_review.insert(0, "review_status", "BLOCKED_NO_GOVERNED_2026_WORKLOAD")
     write_csv(output / "ROOKIE_REDRAFT_REVIEW.csv", rookie_review)
     counts = candidate.projections.groupby("position").size().to_dict()
+    player_retrieved_at_utc = _snapshot_provenance(player_root).get("retrieved_at_utc", "")
+    if player_retrieved_at_utc:
+        player_registry_age_days = (today - datetime.fromisoformat(
+            player_retrieved_at_utc.replace("Z", "+00:00")
+        ).astimezone(UTC).date()).days
+    else:
+        player_registry_age_days = "unknown"
     source_files = {
         "players": {
             "path": str(player_path),
@@ -378,9 +388,16 @@ def build_packet(
         "source_authority": "NWR-derived model from admitted nflverse CC-BY-4.0 inputs",
         "source_sha256": candidate_sha,
         "generated_at": generated_at,
-        "source_as_of": SOURCE_AS_OF,
-        "valid_from": SOURCE_AS_OF,
-        "valid_until": "2026-09-07",
+        "source_as_of": source_as_of,
+        "valid_from": source_as_of,
+        # NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (fresh admission): real,
+        # computed expiry -- source_as_of + the engine's own real
+        # MAX_PROJECTION_AGE_DAYS constant, never a hand-typed literal
+        # that silently goes stale the day after whoever wrote it ran
+        # this script (the prior "2026-09-07" literal was exactly that:
+        # 2026-08-08 + 30 days, baked in as a string, already expired by
+        # the time this fresh admission ran on 2026-09-08).
+        "valid_until": valid_until,
         "identity_contract": "EXACT GSIS ID only; no fuzzy joins or aliases used",
         "player_counts": {
             **{key: int(value) for key, value in counts.items()},
@@ -497,8 +514,8 @@ def build_packet(
                 MODEL_ID,
                 "Local deterministic build",
                 "nflverse CC-BY-4.0 with attribution",
-                SOURCE_AS_OF,
-                "530 QB/RB/WR/TE persistence forecasts",
+                source_as_of,
+                f"{len(candidate.projections)} QB/RB/WR/TE persistence forecasts",
                 "OWNER_APPROVAL_REQUIRED",
             ],
         ],
@@ -574,11 +591,11 @@ ranking was accessed.
         output / "FRESHNESS_REPORT.md",
         f"""# Freshness report
 
-- Evaluation date: {SOURCE_AS_OF}
-- Current player registry retrieved: 2026-07-30T07:24:07Z (9 days old)
-- Candidate generated/source_as_of: {SOURCE_AS_OF} (0 days old)
-- Contract window: 30 days
-- Valid through: 2026-09-07
+- Evaluation date: {source_as_of}
+- Current player registry retrieved: {player_retrieved_at_utc or "unknown"} ({player_registry_age_days} days old)
+- Candidate generated/source_as_of: {source_as_of} ({(today - date.fromisoformat(source_as_of)).days} days old)
+- Contract window: {MAX_PROJECTION_AGE_DAYS} days
+- Valid through: {valid_until}
 - Result: **PASS for candidate review; production remains approval-blocked.**
 
 The 2025 production input is a completed-season historical fact, not misrepresented as current
@@ -696,7 +713,7 @@ before admission.
                 "G13",
                 "current projection freshness",
                 "PASS_CANDIDATE",
-                "Generated 2026-08-08 from registry retrieved 2026-07-30",
+                f"Generated {source_as_of} from registry retrieved {player_retrieved_at_utc or 'unknown'}",
             ],
             ["G14", "current projection depth", "PASS_CANDIDATE", str(counts)],
             [

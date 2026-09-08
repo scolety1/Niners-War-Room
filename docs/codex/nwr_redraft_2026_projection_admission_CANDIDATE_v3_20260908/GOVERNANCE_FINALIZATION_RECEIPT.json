@@ -1,0 +1,16 @@
+{
+  "approved_candidate_sha256": "cad28b9090181daeaa7aadb6b0804967e299c6c547378142436b1fb889f49578",
+  "changed_cells": 982,
+  "changed_columns": [
+    "source_status",
+    "evidence_status"
+  ],
+  "governed_projection_sha256": "29f3c2e8c1b8d96867dc89695726968de72bbae21155a97acc5e9bb92b910235",
+  "k_dst_rows": 0,
+  "other_changed_cells": 0,
+  "owner_approval_sha256": "4cc9a6ba47a17e0a8497819cc2d547b4416e9bb938e7b47df4e1ecff581ef291",
+  "rookie_rows": 0,
+  "row_count": 491,
+  "schema_version": 1,
+  "status": "DETERMINISTIC_OWNER_AUTHORIZED_GOVERNANCE_FINALIZATION"
+}

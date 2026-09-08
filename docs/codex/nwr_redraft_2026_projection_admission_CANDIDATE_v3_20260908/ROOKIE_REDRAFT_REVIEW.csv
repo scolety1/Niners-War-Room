@@ -1,0 +1,96 @@
+review_status,player_id,player_name,position,team,rookie,reason
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040891,Cole Payton,QB,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040906,Garrett Nussmeier,QB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040981,Joe Fagnano,QB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041056,Cade Klubnik,QB,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041092,Taylen Green,QB,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041117,Athan Kaliakmanis,QB,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041123,Behren Morton,QB,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041149,Haynes King,QB,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041194,Jack Strand,QB,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041251,Jalon Daniels,QB,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041414,Matthew Caldwell,QB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041561,Carson Beck,QB,ARI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041562,Fernando Mendoza,QB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041565,Drew Allar,QB,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041568,Ty Simpson,QB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040878,Mike Washington Jr.,RB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040886,Nicholas Singleton,RB,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040888,Adam Randall,RB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041013,Emmett Johnson,RB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041027,Jeremiyah Love,RB,ARI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041052,Kaelon Black,RB,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041081,Max Bredeson,RB,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041096,Kaytron Allen,RB,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041104,Demond Claiborne,RB,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041125,Seth McGowan,RB,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041239,Chip Trayanum,RB,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041323,Myles Montgomery,RB,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041436,DJ Herman,RB,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041490,Eli Heidenreich,RB,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041496,Jonah Coleman,RB,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041512,Jadarian Price,RB,SEA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040853,Carson Towt,TE,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040879,Matthew Hibner,TE,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040887,Josh Cuevas,TE,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040901,Jaren Kanak,TE,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040938,DJ Rogers,TE,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040955,John Michael Gyllenborg,TE,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041032,Kenyon Sadiq,TE,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041041,Oscar Delp,TE,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041077,Justin Joly,TE,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041084,Tanner Koziol,TE,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041094,Bauer Sharp,TE,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041116,Jack Endries,TE,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041131,Carsen Ryan,TE,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041133,Dallen Bentley,TE,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041170,Hayden Large,TE,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041180,Quentin Moore,TE,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041314,Tanner Arkin,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041366,Jameson Geers,TE,ARI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041395,Eli Raridon,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041472,Marlin Klein,TE,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041483,Eli Stowers,TE,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041503,Nate Boerkircher,TE,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041510,Max Klare,TE,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041524,Will Kacmarek,TE,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041558,Sam Roush,TE,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041579,Seydou Traore,TE,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040785,Dohnte Meyers,WR,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040867,Makai Lemon,WR,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040870,Ja'Kobi Lane,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040876,Elijah Sarratt,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040890,Cyrus Allen,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040894,Malik Benson,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040930,Camden Brown,WR,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040948,J. Michael Sturdivant,WR,GB,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0040953,Jeff Caldwell,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041005,Corey Rucker,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041029,Jordyn Tyson,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041035,De'Zhaun Stribling,WR,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041037,Denzel Boston,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041040,Antonio Williams,WR,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041042,Malachi Fields,WR,NYG,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041044,Zachariah Branch,WR,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041047,Chris Brazzell II,WR,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041048,Ted Hurst III,WR,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041051,Zavion Thomas,WR,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041067,Bryce Lance,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041069,Colbie Young,WR,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041070,Reggie Virgil,WR,ARI,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041099,Barion Brown,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041100,Josh Cameron,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041106,C.J. Williams,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041132,Deion Burks,WR,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041397,Kaden Wetjen,WR,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041399,CJ Daniels,WR,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041438,Carnell Tate,WR,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041443,Skyler Bell,WR,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041446,Kendrick Law,WR,DET,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041489,Germie Bernard,WR,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041511,Omar Cooper Jr.,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041523,Caleb Douglas,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041525,Chris Bell,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041529,Kevin Coleman Jr.,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041547,KC Concepcion,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+BLOCKED_NO_GOVERNED_2026_WORKLOAD,00-0041550,Brenen Thompson,WR,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated

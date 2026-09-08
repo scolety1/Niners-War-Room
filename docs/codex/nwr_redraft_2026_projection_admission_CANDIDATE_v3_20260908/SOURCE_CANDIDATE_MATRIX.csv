@@ -1,0 +1,6 @@
+source,access_method,license_terms,recency,coverage_fields,recommendation
+nflverse FF rankings,Public download,CC-BY repo; underlying FantasyPros ranks,Current rankings only,"Ranks, not stat projections",REJECT
+FantasyPros API,API key,"Personal non-commercial, non-transferable, non-competing",Current,Potential data; license incompatible,REJECT
+Sleeper API,Free read-only API,Public docs,Current player/league data,No projections endpoint,REJECT
+FantasyFootballAnalytics ffanalytics,Open-source R package,Package code public; inputs scraped from third parties,Provider dependent,Scraping workflow; terms not source-admissible,REJECT
+NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1,Local deterministic build,nflverse CC-BY-4.0 with attribution,2026-09-08,491 QB/RB/WR/TE persistence forecasts,OWNER_APPROVAL_REQUIRED

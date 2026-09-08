@@ -1,0 +1,70 @@
+{
+  "admission_scope": "REDRAFT_2026_VETERAN_PROJECTIONS",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "approved_at_utc": "2026-09-08T22:30:00Z",
+  "approved_by": "NWR Owner",
+  "approved_candidate_sha256": "cad28b9090181daeaa7aadb6b0804967e299c6c547378142436b1fb889f49578",
+  "approver_identity": "NWR Owner",
+  "authority": "NWR_DATA_GOVERNANCE",
+  "coverage": {
+    "blocked_rows": 159,
+    "candidate_rows": 491,
+    "current_registry_rows": 650,
+    "unresolved_identity_rows": 0
+  },
+  "engine_contract_scope": "REDRAFT_2026_PROJECTIONS",
+  "finalization_contract": {
+    "changed_cells": 982,
+    "changed_columns": [
+      "source_status",
+      "evidence_status"
+    ],
+    "evidence_status_transform": "MODEL_VALIDATED_REVIEW_ONLY -> ADMITTED_CURRENT_SEASON",
+    "input_sha256": "cad28b9090181daeaa7aadb6b0804967e299c6c547378142436b1fb889f49578",
+    "other_changed_cells": 0,
+    "output_sha256": "29f3c2e8c1b8d96867dc89695726968de72bbae21155a97acc5e9bb92b910235",
+    "row_count": 491,
+    "source_status_transform": "GOVERNANCE_PENDING -> GOVERNED"
+  },
+  "generated_at": "2026-08-09T05:53:00Z",
+  "identity_contract": "EXACT GSIS ID only; no fuzzy joins or aliases used",
+  "limitations": [
+    "Veteran-only prior-season persistence forecast.",
+    "All rookies remain blocked pending separate governed workload admission.",
+    "K and DST remain blocked.",
+    "No dynasty, scheduled refresh, provider/API, or proprietary-source use."
+  ],
+  "permitted_uses": [
+    "NWR Redraft V1 current-season veteran ranking",
+    "NWR Redraft V1 scoring",
+    "NWR Redraft V1 replacement-level calculation",
+    "NWR Redraft V1 tier calculation",
+    "NWR Redraft V1 Player Compare calculation",
+    "NWR Redraft V1 Draft Cockpit calculation",
+    "NWR Redraft V1 cheat-sheet calculation"
+  ],
+  "player_counts": {
+    "QB": 69,
+    "RB": 118,
+    "TE": 118,
+    "WR": 186,
+    "total": 491
+  },
+  "prohibited_uses": [
+    "dynasty ranking changes",
+    "rookie projection invention",
+    "K/DST projections",
+    "proprietary-source use",
+    "scheduled refresh",
+    "provider/API calls",
+    "use outside the Redraft engine"
+  ],
+  "schema_version": 1,
+  "season": 2026,
+  "source_as_of": "2026-09-08",
+  "source_authority": "NWR-derived model from admitted nflverse CC-BY-4.0 inputs",
+  "source_id": "NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1",
+  "source_sha256": "29f3c2e8c1b8d96867dc89695726968de72bbae21155a97acc5e9bb92b910235",
+  "valid_from": "2026-09-08",
+  "valid_until": "2026-10-08"
+}

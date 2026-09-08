@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "authority": "NWR Owner",
+  "approval_timestamp": "2026-09-08T22:30:00Z",
+  "approved_candidate_sha256": "cad28b9090181daeaa7aadb6b0804967e299c6c547378142436b1fb889f49578",
+  "source_as_of": "2026-09-08",
+  "approval_scope": "REDRAFT_2026_VETERAN_PROJECTIONS",
+  "approved_use": [
+    "NWR Redraft V1 current-season veteran ranking",
+    "NWR Redraft V1 scoring",
+    "NWR Redraft V1 replacement-level calculation",
+    "NWR Redraft V1 tier calculation",
+    "NWR Redraft V1 Player Compare calculation",
+    "NWR Redraft V1 Draft Cockpit calculation",
+    "NWR Redraft V1 cheat-sheet calculation"
+  ],
+  "prohibited_use": [
+    "dynasty ranking changes",
+    "rookie projection invention",
+    "K/DST projections",
+    "proprietary-source use",
+    "scheduled refresh",
+    "provider/API calls",
+    "use outside the Redraft engine"
+  ],
+  "rookie_policy": "Rookies without separately governed 2026 workload projections remain blocked. This approval does not touch or renew the separate rookie packet's own freshness -- see the combined-manifest install step for that disclosed limitation.",
+  "approval_source": "Spencer Colety (owner), explicit chat authorization, 2026-09-08 -- 'NWR OWNER AUTHORIZATION -- FRESH PROJECTION ADMISSION + COVERAGE FIX INSTALL' directive, sections 1-2, plus a real, in-session follow-up approval widening the admitted-status set to include EXE/RSR/PUP (not DEV) after a real regression was found and disclosed mid-build (8 real, previously-admitted players -- Josh Jacobs, James Conner, et al. -- would otherwise have newly disappeared). Supersedes the 2026-08-08 veteran admission with a real, fresh players-registry pull (retrieved 2026-09-08T21:54:00Z; see PROJECTION_SHA256.json for the exact bound source snapshot), the already-code-complete Diggs-class last_season widening fix (unmodified), and the new, owner-approved CURRENTLY_ROSTERED_STATUSES widening in redraft_2026_projection_model_service.py."
+}

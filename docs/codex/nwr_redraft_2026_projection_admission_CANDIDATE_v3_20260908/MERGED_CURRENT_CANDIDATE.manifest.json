@@ -1,0 +1,17 @@
+{
+  "admission_policy": "GOVERNED_CURRENT_SEASON_V1",
+  "approval_authority": "NWR_DATA_GOVERNANCE",
+  "approval_receipt_sha256": "2944d7d9da8a3ea61bb7657ef0ff107533dd84abed101bd86c95a3508867963d",
+  "approval_source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V1",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "approved_at_utc": "2026-09-08T22:30:00Z",
+  "approved_by": "Spencer Colety (owner, explicit chat authorization, 2026-09-08, 'NWR OWNER AUTHORIZATION -- FRESH PROJECTION ADMISSION + COVERAGE FIX INSTALL' directive)",
+  "blocked_rows": 78,
+  "installed_at_utc": "2026-09-08T22:30:00Z",
+  "player_rows": 491,
+  "schema_version": 1,
+  "season": 2026,
+  "source_filename": "current.csv",
+  "source_sha256": "6916ba3ea8564bd212cbc90fd019cd9944b224beec907058547db09d981120bc",
+  "valid_until": "2026-10-08"
+}

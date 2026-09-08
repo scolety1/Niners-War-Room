@@ -1,0 +1,37 @@
+{
+  "candidate_sha256": "cad28b9090181daeaa7aadb6b0804967e299c6c547378142436b1fb889f49578",
+  "extra_files": [
+    "CANDIDATE_PROJECTION_SNAPSHOT.csv",
+    "BLOCKED_PLAYER_ROWS.csv",
+    "CURRENT_RANKING_SANITY.csv",
+    "PROJECTION_SCHEMA.csv"
+  ],
+  "generated_at_utc": "2026-09-08T22:37:14+00:00",
+  "packet": "nwr_redraft_2026_projection_admission_v1_20260808",
+  "required_files": [
+    "EXECUTIVE_VERDICT.md",
+    "PROJECTION_SCHEMA.md",
+    "EXISTING_EVIDENCE_INVENTORY.csv",
+    "EXTERNAL_SOURCE_RESEARCH.md",
+    "SOURCE_CANDIDATE_MATRIX.csv",
+    "IDENTITY_COVERAGE.csv",
+    "FRESHNESS_REPORT.md",
+    "POSITIONAL_DEPTH_REPORT.md",
+    "PROJECTION_MODEL_REPORT.md",
+    "PROJECTION_VALIDATION.csv",
+    "NWR_DATA_GOVERNANCE.json",
+    "PROJECTION_SHA256.json",
+    "DEFAULT_PROFILE_RANKINGS.csv",
+    "SUPERFLEX_PROFILE_RANKINGS.csv",
+    "SETTINGS_SANITY_RESULTS.csv",
+    "ROOKIE_REDRAFT_REVIEW.csv",
+    "PROMOTION_GATE_RESULTS.csv",
+    "BROWSER_RESULTS.csv",
+    "DYNASTY_PRESERVATION.md",
+    "VALIDATION_RESULTS.md",
+    "NEXT_ACTION.md",
+    "MANIFEST.json"
+  ],
+  "schema_version": 1,
+  "verdict": "GREEN_NWR_REDRAFT_2026_ENGINE_READY_FOR_OWNER_GOVERNANCE_APPROVAL"
+}
