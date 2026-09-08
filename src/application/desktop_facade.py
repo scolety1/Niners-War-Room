@@ -75,7 +75,10 @@ from src.services.decision_bundle_live_service_v2 import build_live_decision_bun
 from src.services.point_in_time_feature_store_service import provenance_hash
 from src.services.metric_status_contract_service import raw_action_value_status
 from src.services.score_provenance_service import build_score_provenance
-from src.services.shadow_numeric_authorities_service import simulate_comparable_leagues
+from src.services.shadow_numeric_authorities_service import (
+    evaluate_pick_pairs,
+    simulate_comparable_leagues,
+)
 from src.services.nwr_pure_experiment_service import (
     NwrPureExperimentError,
     ReceiptCorrectionRecord,
@@ -146,6 +149,7 @@ from src.services.redraft_draft_room_v1_service import (
     approve_owner_platform_manual_match,
     clear_owner_platform_manual_match,
     clear_pick,
+    draft_order,
     fill_gap_pick,
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
@@ -2976,6 +2980,10 @@ class DesktopBackendFacade:
             data={
                 "decisionBundle": {
                     "available": True, "speed": resolved_speed,
+                    "bestTurnPlan": _best_turn_plan_payload(
+                        profile, ranking, manual_assets, adp, room_state,
+                        comparable_leagues, result, base_seed,
+                    ),
                     **_decision_bundle_payload(
                         result, ranking, manual_assets,
                         profile=profile,
@@ -4364,6 +4372,81 @@ def _metric_status_payload(status: Any) -> dict[str, Any]:
         "sourceFreshness": status.source_freshness,
         "dataCoverage": status.data_coverage,
     }
+
+
+def _best_turn_plan_payload(
+    profile: Any,
+    ranking: Any,
+    manual_assets: Sequence[Mapping[str, Any]],
+    adp: Any,
+    room_state: Mapping[str, Any],
+    comparable_leagues: Any,
+    result: Any,
+    base_seed: int,
+) -> dict[str, Any] | None:
+    """NWR post-draft overnight, section 18: wires the real, tested
+    pair-pick optimizer (`evaluate_pick_pairs`,
+    shadow_numeric_authorities_service.py) into the live DecisionBundle
+    payload as an additive "BEST TURN PLAN" -- ONLY computed for a
+    genuine back-to-back turn (this pick and the owner's immediately
+    next pick, zero opponent picks between, the exact real scenario
+    `evaluate_pick_pairs`'s own docstring requires), and ONLY across the
+    top few candidates the DecisionBundle already computed (never a
+    second, unbounded search). Returns None for any non-back-to-back
+    turn, fewer than 2 real candidates, or any failure -- this never
+    changes `pickScore`/`action`/candidate order; it is additional,
+    owner-visible context about the specific NEXT-TWO-PICKS pair, not a
+    replacement for the per-pick recommendation `evaluate_pick_pairs`
+    (RESEARCH_ONLY, quadratic-by-design) itself already discloses."""
+    try:
+        owner_slot = room_state.get("owner_slot")
+        if not isinstance(owner_slot, int):
+            return None
+        order = draft_order(profile)
+        picks_so_far = len(room_state.get("picks", []))
+        if picks_so_far >= len(order) or order[picks_so_far] != owner_slot:
+            return None  # not actually the owner's turn right now
+        if picks_so_far + 1 >= len(order) or order[picks_so_far + 1] != owner_slot:
+            return None  # not a genuine back-to-back turn
+        shortlist = [c.player_id for c in result.candidates[:3]]
+        if len(shortlist) < 2:
+            return None
+        pair_results = evaluate_pick_pairs(
+            profile, ranking, manual_assets, adp,
+            owner_slot=owner_slot, candidate_player_ids=shortlist,
+            comparable_leagues=comparable_leagues, seasons=100, base_seed=base_seed,
+            from_state=room_state,
+        )
+        if not pair_results:
+            return None
+        best_ordering, best = max(
+            pair_results.items(),
+            key=lambda item: item[1].championship_equity_result.win_probability,
+        )
+        rows_by_id = {row.player_id: row for row in ranking.rows}
+
+        def _name(player_id: str) -> str:
+            row = rows_by_id.get(player_id)
+            return row.player_name if row is not None else player_id
+
+        return {
+            "firstPickPlayerId": best_ordering[0],
+            "firstPickPlayerName": _name(best_ordering[0]),
+            "secondPickPlayerId": best_ordering[1],
+            "secondPickPlayerName": _name(best_ordering[1]),
+            "projectedTeamScorePercentile": best.team_score_result.percentile,
+            "projectedWinProbability": best.championship_equity_result.win_probability,
+            "candidatesConsidered": len(shortlist),
+            "label": (
+                "BEST TURN PLAN — EXPERIMENTAL: the best evaluated order for your "
+                "NEXT TWO immediate picks (a genuine back-to-back turn, zero opponent "
+                "picks between) -- does not change this pick's own recommendation."
+            ),
+        }
+    except Exception:
+        # Never let an experimental, additive field break the real
+        # DecisionBundle response -- silently omitted, not a crash.
+        return None
 
 
 def _decision_bundle_payload(

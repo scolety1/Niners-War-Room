@@ -1893,6 +1893,59 @@ def test_redraft_decision_bundle_recomputes_after_catch_up_is_applied(
     assert "RB-0" not in after_ids
 
 
+def test_redraft_decision_bundle_wires_a_best_turn_plan_for_a_real_back_to_back_turn(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """NWR post-draft overnight, section 18: the last slot in a 12-team
+    snake draft (owner_slot=12) is a genuine back-to-back turn at every
+    round boundary (pick 12 then immediately pick 13, zero opponent
+    picks between) -- the real pair-pick optimizer (evaluate_pick_pairs)
+    must be wired into the live bundle as an additive bestTurnPlan for
+    exactly this real scenario, never changing pickScore/action/order."""
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="Back-To-Back BestTurnPlan League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    monkeypatch.setattr(
+        facade, "_redraft_ranking_for_profile", lambda _pid: _synthetic_ranking_for(profile)
+    )
+    facade.start_redraft_draft_room(
+        profile_id=profile_id, owner_slot=12, seed=20260817, speed="FAST", mode="MOCK"
+    )
+    bundle = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST").data["decisionBundle"]
+    assert bundle["available"] is True
+
+    before_ids = [c["playerId"] for c in bundle["candidates"]]
+    before_scores = [c["pickScore"] for c in bundle["candidates"]]
+
+    plan = bundle["bestTurnPlan"]
+    assert plan is not None
+    assert plan["firstPickPlayerId"] in before_ids
+    assert plan["firstPickPlayerId"] != plan["secondPickPlayerId"]
+    assert isinstance(plan["projectedWinProbability"], float)
+    assert "BEST TURN PLAN" in plan["label"]
+    # Purely additive -- the real per-pick recommendation basis is untouched.
+    assert [c["playerId"] for c in bundle["candidates"]] == before_ids
+    assert [c["pickScore"] for c in bundle["candidates"]] == before_scores
+
+
+def test_redraft_decision_bundle_best_turn_plan_is_none_for_a_normal_non_consecutive_turn(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A middle draft slot (owner_slot=9 of 12) never gets two consecutive
+    picks with zero opponents between -- bestTurnPlan must stay None
+    rather than compute a plan for a turn that isn't genuinely
+    back-to-back."""
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+    bundle = facade.redraft_decision_bundle(profile_id=profile_id, speed="FAST").data["decisionBundle"]
+    assert bundle["available"] is True
+    assert bundle["bestTurnPlan"] is None
+
+
 # --- Owner Test Candidate V1, section 15: owner test instrumentation ------
 
 
