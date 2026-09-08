@@ -67,6 +67,20 @@ PFR-ID bridge); Kenneth/Kenny Gainwell and Chigoziem/Chig Okonkwo are real nickn
 registry-name variants (players ARE in the universe under their registry name); Joe Mixon is
 a real, deliberately-unopened `RSN` status-code exclusion. No code change this unit.
 
-## Section 5 — Judkins/role-change blind-spot experiment
+## Section 5 — Judkins/role-change blind-spot experiment (DONE, reference-only)
+
+Full evidence: `docs/codex/NWR_JUDKINS_ROLE_CHANGE_BLIND_SPOT_V1_20260908.md`. Judkins never
+manually changed. Real finding: he's already FULLY_MODELED with substantial real 2025
+rookie-year volume (230 carries, 827 yards, 14 games); NWR projects 154.8 pts vs FFA's real
+185.0 (~16.7% gap). Root mechanism verified: `_project_persistence` carries the player's own
+prior-season real games total verbatim (14) rather than assuming a healthy 17-game season --
+a real games-availability artifact, not clearly a role-change-specific signal. No real current
+2026 preseason depth-chart/role source is available yet (season hasn't started) to build and
+calibrate the directive's proposed role-disagreement feature without effectively substituting
+market ADP as the answer target (explicitly disallowed). Per the directive's own sanctioned
+fallback: left REFERENCE-ONLY, no code change, Player/Team Score/Pick Score untouched. The
+real, distinct games-persistence question surfaced is flagged as a separate future follow-up.
+
+## Section 6 — Status/risk live intake path
 
 (next)
