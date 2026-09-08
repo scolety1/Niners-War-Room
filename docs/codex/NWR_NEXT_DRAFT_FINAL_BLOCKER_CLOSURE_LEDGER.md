@@ -44,6 +44,19 @@ making V4 now stale. Per the directive's own rule, not rewriting V4 -- deferring
 single V5 freeze to this directive's own section 10 (its natural, final completion point),
 since cutting one now would go stale again at the next executable change in sections 4-9.
 
-## Section 4 — Real ESPN Top-250 coverage audit
+## Section 4 — Real ESPN Top-250 coverage audit (DONE, corrected methodology)
+
+Full evidence: `docs/codex/NWR_ESPN_TOP250_COVERAGE_AUDIT_V2_20260908.md`. Corrected an earlier
+mistake: used the owner's real ESPN ADP snapshot's full 294-row match_report (not just the
+276-row pre-matched `entries` subset, which silently excluded 18 real ADP-importer-rejected
+players including Brooks/Diggs). Real result: 241/250 raw FULLY_MODELED_FOR_RECOMMENDATION
+(before: 235/250), corrected to 243/250 (97.2%) after fixing 2 diagnostic-script-only nickname
+misses (Kenny Gainwell, Cam Ward -- both already real, confirmed FULLY_MODELED in production).
+5 of the +6 gain directly attributed to this session's Diggs-class fix. 6 real
+VISIBLE_REVIEW_ONLY (correctly excluded from the recommendation count) + 1 real, genuine
+SOURCE_GAP (Travis Hunter, absent from the registry snapshot) -- every remaining gap
+individually named. No code change.
+
+## Section 5 — Close the 403 13/14 gap
 
 (next)
