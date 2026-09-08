@@ -133,6 +133,19 @@ tested, storage fully additive and never overwrites canonical state) plus this s
 Section 7 additions (which apply generically, no K/DST-specific path). Added 1 confirming test
 proving K/DST get the full schema + versioning/rollback automatically. No new production code.
 
-## Section 9 — K/DST direct model research baseline
+## Section 9 — K/DST direct model research baseline (DONE, NOT promoted)
+
+Full evidence: `docs/codex/NWR_KDST_DIRECT_MODEL_RESEARCH_V1_20260908.md`. Built real,
+disclosed K/DST scoring formulas (nflverse computes neither) and real walk-forward-evaluated
+OLS baselines from real weekly FG/PAT and defensive-event + schedule data. Caught and fixed a
+real methodology bug in the first pass (regressing a season's score on that same season's own
+concurrent stats -- trivially near-perfect, not a real prediction test); corrected to real
+prior-season -> next-season framing. **Honest result: both K and DST direct models beat a
+naive persistence baseline on MAE but are WORSE rankers (lower Spearman) than just repeating
+last year's total** -- real, weak, consistent (low per-season variance) signal. Per "if weak,
+say so": NOT promoted; Ballers/UDK remains the valid K/DST source. Real missing-features list
+disclosed for a future session.
+
+## Section 10 — K/DST timing dynamic-policy stress test
 
 (next)
