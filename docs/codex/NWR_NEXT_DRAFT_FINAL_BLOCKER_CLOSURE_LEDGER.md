@@ -57,6 +57,16 @@ VISIBLE_REVIEW_ONLY (correctly excluded from the recommendation count) + 1 real,
 SOURCE_GAP (Travis Hunter, absent from the registry snapshot) -- every remaining gap
 individually named. No code change.
 
-## Section 5 — Close the 403 13/14 gap
+## Section 5 — Close the 403 13/14 gap (DONE, legitimately unmodeled)
+
+Full evidence: `docs/codex/NWR_403_14TH_PICK_GAP_CLOSURE_V1_20260908.md`. The real 14th pick
+is HOU D/ST (real round 14, `player_id=manual:DST:HOU`). Identity/projection/status/market/
+fallback all individually checked and ruled out as the cause -- the real reason is category
+OTHER: K/DST are a permanent, project-wide design boundary (never NWR-scored), already
+re-confirmed weak and correctly not promoted this same session (K/DST direct-model research).
+13/14 is the real, legitimate ceiling for this roster; not fixed, per the directive's own
+explicit "do not fabricate a model" instruction. No code change.
+
+## Section 6 — Verify Brooks/Diggs fixes are actually live
 
 (next)
