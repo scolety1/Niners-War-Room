@@ -278,6 +278,69 @@ def explain_marginal_roster_reason(
     )
 
 
+# NWR post-draft overnight, phase 3: CHALLENGER, not wired into the live
+# Pick Score / DecisionBundle path. Reuses explain_marginal_roster_reason
+# (itself reusing Team Score's own _select_starting_lineup -- no new
+# selection algorithm) plus roster_composition_report's real
+# position_redundancy signal. The whole point of this challenger is that
+# it needs NO position-specific magic constant ("QB2 penalty", "TE2
+# penalty") to reproduce the diminishing-returns shape the owner expected:
+# a starter/FLEX upgrade always keeps its full real value (net of who it
+# benches); a pure bench add's contingency value decays by the SAME
+# universal geometric rate for every position, based only on how much
+# real bench redundancy already exists there. A third player at a
+# position with no starter/FLEX/bench use left over is discovered to be
+# low-value by this rule, not told so by a hardcoded round number or
+# position name.
+BENCH_REDUNDANCY_DECAY = 0.5
+
+
+@dataclass(frozen=True)
+class MarginalRosterUtility:
+    utility: float
+    becomes_starter: bool
+    bench_redundancy_before: int | None
+    explanation: str
+
+
+def marginal_roster_utility(
+    candidate_id: str,
+    current_player_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> MarginalRosterUtility:
+    reason = explain_marginal_roster_reason(candidate_id, current_player_ids, profile, ranking, manual_assets)
+    if reason.becomes_starter:
+        return MarginalRosterUtility(
+            utility=reason.starter_value_delta, becomes_starter=True,
+            bench_redundancy_before=None, explanation=reason.summary,
+        )
+    pool = _asset_pool(ranking, manual_assets)
+    candidate_players = _roster_players([candidate_id], pool)
+    if not candidate_players:
+        return MarginalRosterUtility(
+            utility=0.0, becomes_starter=False, bench_redundancy_before=None,
+            explanation="Candidate has no known value (unmodeled asset).",
+        )
+    candidate = candidate_players[0]
+    current_players = _roster_players(current_player_ids, pool)
+    report_before = roster_composition_report(current_players, profile)
+    redundancy_before = report_before.position_redundancy.get(candidate.position, 0)
+    decay = BENCH_REDUNDANCY_DECAY**redundancy_before
+    utility = round(candidate.value * decay, 2)
+    explanation = (
+        f"Bench depth at {candidate.position} -- {redundancy_before} real bench-redundant "
+        f"{candidate.position}(s) already rostered, so this one's real injury/bye contingency "
+        f"value is discounted to {decay:.0%} of its standalone value "
+        f"({round(candidate.value, 1)} -> {utility})."
+    )
+    return MarginalRosterUtility(
+        utility=utility, becomes_starter=False,
+        bench_redundancy_before=redundancy_before, explanation=explanation,
+    )
+
+
 def availability_discount_for_hypotheses(
     player_id: str, impact_hypotheses: Sequence[ImpactHypothesis]
 ) -> float:

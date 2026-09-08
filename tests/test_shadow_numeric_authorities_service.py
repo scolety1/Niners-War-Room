@@ -279,6 +279,66 @@ def test_explain_marginal_roster_reason_fills_an_open_slot_without_displacing_an
     assert "no one benched" in reason.summary.lower()
 
 
+def test_marginal_roster_utility_decays_geometrically_for_repeated_bench_adds() -> None:
+    """NWR post-draft overnight (phase 3): the QB2/QB3/QB4 diminishing-
+    returns shape must emerge from real bench redundancy, not a
+    hardcoded position penalty -- same decay rate (0.5 per already-
+    rostered bench-redundant player) applies uniformly to any position."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
+    )
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility
+
+    # QB-0 starts (fills the 1 real starter slot).
+    r0 = marginal_roster_utility("QB-0", [], profile, ranking, _manual_assets())
+    assert r0.becomes_starter is True
+
+    # QB-1 is the first real bench backup -- full undiscounted value.
+    r1 = marginal_roster_utility("QB-1", ["QB-0"], profile, ranking, _manual_assets())
+    assert r1.becomes_starter is False
+    assert r1.bench_redundancy_before == 0
+    qb1_value = next(r for r in ranking.rows if r.player_id == "QB-1").replacement_adjusted_value
+    assert r1.utility == round(qb1_value, 2)
+
+    # QB-2 is the SECOND bench backup -- discounted to 50% of standalone value.
+    r2 = marginal_roster_utility("QB-2", ["QB-0", "QB-1"], profile, ranking, _manual_assets())
+    assert r2.becomes_starter is False
+    assert r2.bench_redundancy_before == 1
+    qb2_value = next(r for r in ranking.rows if r.player_id == "QB-2").replacement_adjusted_value
+    assert r2.utility == round(qb2_value * 0.5, 2)
+
+    # QB-3 is the THIRD bench backup -- discounted to 25%.
+    r3 = marginal_roster_utility("QB-3", ["QB-0", "QB-1", "QB-2"], profile, ranking, _manual_assets())
+    assert r3.bench_redundancy_before == 2
+    qb3_value = next(r for r in ranking.rows if r.player_id == "QB-3").replacement_adjusted_value
+    assert r3.utility == round(qb3_value * 0.25, 2)
+
+    # Monotonically decreasing utility -- the real diminishing-returns shape.
+    assert r1.utility > r2.utility > r3.utility
+
+
+def test_marginal_roster_utility_te2_stays_full_value_via_flex_not_bench_decay() -> None:
+    """The real, reproduced difference from QB: a 2nd TE in a league with
+    an open FLEX slot becomes a real starter (FLEX-eligible), so it must
+    NOT be bench-decayed the way a 2nd QB (no FLEX eligibility) is."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=0, rb=0, wr=0, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=5),
+    )
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility
+
+    te_rows = sorted((r for r in ranking.rows if r.position == "TE"), key=lambda r: r.overall_rank)
+    te0, te1 = te_rows[0], te_rows[1]
+    r0 = marginal_roster_utility(te0.player_id, [], profile, ranking, _manual_assets())
+    assert r0.becomes_starter is True  # fills TE1
+    r1 = marginal_roster_utility(te1.player_id, [te0.player_id], profile, ranking, _manual_assets())
+    assert r1.becomes_starter is True  # fills the open FLEX slot -- full value, no decay
+    assert r1.utility == round(te1.replacement_adjusted_value, 2)
+
+
 def test_explain_marginal_roster_reason_handles_an_unmodeled_candidate() -> None:
     ranking = _ranking()
     profile = ranking.profile
