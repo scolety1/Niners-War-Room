@@ -254,6 +254,13 @@ Ballers wiring, K/DST research+timing, tie-order/pair-turn validation, rookie bi
 result, 403 replay, multi-league battery, the real crash fix) plus honest known limitations
 carried forward.
 
-## Section 20 — Final delivery window
+## Section 20 — Final delivery window (DONE, ALL 20 SECTIONS COMPLETE)
 
-(next)
+Full evidence: `docs/codex/NWR_CLASS_TIME_FINAL_DELIVERY_WINDOW_V1_20260908.md`. Ran the full
+final checklist: targeted backend tests (211/211 across every touched file), full backend
+suite (4004 passed, 324 failed -- consistent with the known ~323 pre-existing baseline,
+verified unrelated by file history), frontend typecheck (clean), frontend tests (142/142),
+dev server/process/temp-directory cleanup, final board verification (both unchanged from the
+very first checkpoint). Working tree clean except the 5 pre-existing docs/model_v4 files never
+touched this run. **All 20 sections of the class-time autonomous hardening directive are now
+complete.**
