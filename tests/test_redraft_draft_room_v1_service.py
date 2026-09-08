@@ -1329,3 +1329,40 @@ def test_forced_position_is_feasibility_driven_not_a_fixed_round_number() -> Non
     assert forced in ("K", "DST")
     # Plenty of picks remaining relative to what's still required -- not forced.
     assert _forced_position(profile, Counter(), round_number=1) is None
+
+
+def test_forced_position_still_prioritizes_a_real_unmet_skill_need_over_kdst() -> None:
+    """NWR post-draft overnight, section 17: real counterexample proving
+    the observed "K/DST always at rounds 15/16" pattern is not a blind
+    K/DST-specific override -- a genuinely unmet skill position (WR here)
+    still wins over K/DST even deep into a 16-round draft, because the
+    general feasibility check (any position, priority-ordered) runs
+    BEFORE the K/DST-specific last-2-rounds backstop and returns first."""
+    profile = LeagueProfile(
+        "t", "probe", 2026, 10, RosterSettings(wr=3, k=1, dst=1, bench_size=7),
+        ScoringSettings(), DraftContext(rounds=16),
+    )
+    roster = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 0, "DST": 0})  # WR short by 1
+    for round_number in (13, 14, 15, 16):
+        assert _forced_position(profile, roster, round_number) == "WR"
+
+
+def test_forced_position_kdst_hard_backstop_fires_independently_of_the_dynamic_check() -> None:
+    """NWR post-draft overnight, section 17: isolates the real, explicit
+    K/DST-specific `round_number >= rounds - 1` backstop from the general
+    dynamic feasibility check -- with only K unmet (DST already filled),
+    the dynamic check's own math (picks_remaining=2 <= still_required=1)
+    is FALSE at round 15, so it does not fire; rounds 13-14 correctly
+    force nothing. Only the explicit backstop, not tied to a fixed
+    "round 15" constant (it's `profile.draft.rounds - 1`), forces K at
+    rounds 15-16 -- proving this is a real, independently-firing rule,
+    not redundant/dead code."""
+    profile = LeagueProfile(
+        "t", "probe", 2026, 10, RosterSettings(k=1, dst=1, bench_size=7),
+        ScoringSettings(), DraftContext(rounds=16),
+    )
+    roster = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 0, "DST": 1})  # only K unmet
+    assert _forced_position(profile, roster, round_number=13) is None
+    assert _forced_position(profile, roster, round_number=14) is None
+    assert _forced_position(profile, roster, round_number=15) == "K"
+    assert _forced_position(profile, roster, round_number=16) == "K"
