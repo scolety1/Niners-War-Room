@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, replace
+from datetime import date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -107,6 +108,123 @@ def load_status_overrides(repo_root: str | Path) -> tuple[StatusOverride, ...]:
             )
         )
     return tuple(result)
+
+
+class StatusOverrideIntakeError(ValueError):
+    """A real event/status intake rejection (NWR post-draft overnight,
+    section 13) -- distinguishes a REFUSED submission (missing citation,
+    bad kind, malformed date, conflicting duplicate) from any other
+    ValueError, so a future UI/facade caller can surface the real reason
+    to the owner rather than a generic failure."""
+
+
+def add_verified_status_override(
+    repo_root: str | Path,
+    *,
+    player_id: str,
+    player_name: str,
+    kind: str,
+    reason: str,
+    effective_date: str,
+    verified_at_utc: str,
+    sources: tuple[str, ...],
+    corrected_team: str = "",
+) -> StatusOverride:
+    """The real intake contract this module previously lacked: every
+    existing override in the committed file was added by hand, outside
+    any validated path. This is the one place a NEW real, individually-
+    verified status event enters the system -- and it enforces the same
+    discipline the module's own docstring already promises for the
+    hand-authored entries: never a fabricated event, never a blanket
+    rule, never a mislabeled reason.
+
+    Rejects (raises `StatusOverrideIntakeError`, never silently drops or
+    guesses a fix) rather than accepting:
+    - a `kind` outside the three real, disclosed kinds
+    - zero cited `sources` -- an override with no verifiable source is
+      exactly the "fabricated event" this contract exists to refuse
+    - a `TEAM_CORRECTION` with no `corrected_team`, or a non-
+      `TEAM_CORRECTION` that supplies one (keeps each kind's real effect
+      unambiguous -- see `apply_status_overrides_to_ranking`)
+    - an `effective_date` or `verified_at_utc` that doesn't parse as a
+      real date/timestamp (never accepts a free-text non-date string)
+    - a `player_id` that already has an override on file -- a real status
+      change to an already-overridden player must be a deliberate
+      correction to the existing entry, not a second, silently-stacked
+      one this module would then have to arbitrate between
+
+    On success, appends the new entry to the real committed config file
+    and returns the `StatusOverride` that was written -- this function
+    performs the write; it is the caller's responsibility to only invoke
+    it with a real, sourced event (this contract enforces citation, not
+    truth -- it cannot verify a URL actually supports the claim, only
+    that one was provided)."""
+    kind = str(kind)
+    if kind not in (ZERO_VALUE_KINDS | {"TEAM_CORRECTION"}):
+        raise StatusOverrideIntakeError(
+            f"kind must be one of SEASON_OUT, NOT_WITH_TEAM, TEAM_CORRECTION -- got {kind!r}"
+        )
+    if not player_id:
+        raise StatusOverrideIntakeError("player_id is required")
+    cleaned_sources = tuple(str(url).strip() for url in sources if str(url).strip())
+    if not cleaned_sources:
+        raise StatusOverrideIntakeError(
+            "at least one real, cited source URL is required -- an uncited event is "
+            "exactly what this intake contract exists to refuse"
+        )
+    if not reason or not str(reason).strip():
+        raise StatusOverrideIntakeError("reason is required")
+    for label, value in (("effective_date", effective_date), ("verified_at_utc", verified_at_utc)):
+        try:
+            if label == "effective_date":
+                date.fromisoformat(str(value))
+            else:
+                datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise StatusOverrideIntakeError(f"{label} is not a real ISO date/timestamp: {value!r}") from exc
+    corrected_team = str(corrected_team or "").strip()
+    if kind == "TEAM_CORRECTION" and not corrected_team:
+        raise StatusOverrideIntakeError("TEAM_CORRECTION requires corrected_team")
+    if kind != "TEAM_CORRECTION" and corrected_team:
+        raise StatusOverrideIntakeError(f"corrected_team is only valid for TEAM_CORRECTION, not {kind}")
+
+    path = Path(repo_root) / OVERRIDES_RELATIVE_PATH
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise StatusOverrideIntakeError(f"could not read the existing overrides file: {exc}") from exc
+    existing_overrides = raw.get("overrides") if isinstance(raw, dict) else None
+    if not isinstance(existing_overrides, list):
+        raise StatusOverrideIntakeError("the overrides file's 'overrides' field is missing or malformed")
+    if any(str(entry.get("player_id")) == player_id for entry in existing_overrides if isinstance(entry, dict)):
+        raise StatusOverrideIntakeError(
+            f"player_id {player_id!r} already has an override on file -- edit that entry "
+            "directly rather than adding a second, conflicting one"
+        )
+
+    new_entry: dict[str, object] = {
+        "player_id": player_id,
+        "player_name": str(player_name or ""),
+        "kind": kind,
+        "effective_date": str(effective_date),
+        "verified_at_utc": str(verified_at_utc),
+        "reason": str(reason),
+        "sources": list(cleaned_sources),
+    }
+    if corrected_team:
+        new_entry["corrected_team"] = corrected_team
+    existing_overrides.append(new_entry)
+    path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+    return StatusOverride(
+        player_id=player_id,
+        player_name=str(player_name or ""),
+        kind=kind,
+        reason=str(reason),
+        effective_date=str(effective_date),
+        verified_at_utc=str(verified_at_utc),
+        sources=cleaned_sources,
+        corrected_team=corrected_team,
+    )
 
 
 def apply_status_overrides_to_ranking(

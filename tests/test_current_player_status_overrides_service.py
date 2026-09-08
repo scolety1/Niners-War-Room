@@ -1,7 +1,14 @@
+import json
 from dataclasses import replace
+from pathlib import Path
+
+import pytest
 
 from src.services.current_player_status_overrides_service import (
+    OVERRIDES_RELATIVE_PATH,
     StatusOverride,
+    StatusOverrideIntakeError,
+    add_verified_status_override,
     apply_status_overrides_to_ranking,
     load_status_overrides,
 )
@@ -114,3 +121,96 @@ def test_no_matching_override_leaves_ranking_byte_identical() -> None:
 def test_empty_overrides_is_a_true_no_op() -> None:
     ranking = _ranking()
     assert apply_status_overrides_to_ranking(ranking, ()) is ranking
+
+
+# --- add_verified_status_override: the real intake contract (NWR
+# post-draft overnight, section 13) -- always exercised against a
+# disposable tmp_path copy of the config file, never the real committed
+# one.
+
+
+def _fixture_repo_root(tmp_path: Path) -> Path:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / OVERRIDES_RELATIVE_PATH.name).write_text(
+        json.dumps({"schema_version": 1, "overrides": []}), encoding="utf-8"
+    )
+    return tmp_path
+
+
+_VALID_KWARGS = dict(
+    player_id="00-0099999",
+    player_name="Test Player",
+    kind="SEASON_OUT",
+    reason="Real, specific, verifiable reason.",
+    effective_date="2026-09-01",
+    verified_at_utc="2026-09-08T00:00:00Z",
+    sources=("https://example.test/real-source",),
+)
+
+
+def test_add_verified_status_override_accepts_a_real_cited_event(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    result = add_verified_status_override(root, **_VALID_KWARGS)
+    assert result.player_id == "00-0099999"
+    assert result.sources == ("https://example.test/real-source",)
+    # Real write: load_status_overrides sees it back immediately.
+    reloaded = load_status_overrides(root)
+    assert any(o.player_id == "00-0099999" and o.kind == "SEASON_OUT" for o in reloaded)
+
+
+def test_add_verified_status_override_rejects_an_uncited_event(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "sources": ()}
+    with pytest.raises(StatusOverrideIntakeError, match="cited source"):
+        add_verified_status_override(root, **kwargs)
+    # Refused, not silently dropped or partially written.
+    assert load_status_overrides(root) == ()
+
+
+def test_add_verified_status_override_rejects_an_invalid_kind(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "kind": "RUMORED_INJURY"}
+    with pytest.raises(StatusOverrideIntakeError, match="kind must be one of"):
+        add_verified_status_override(root, **kwargs)
+
+
+def test_add_verified_status_override_rejects_malformed_dates(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "effective_date": "sometime last week"}
+    with pytest.raises(StatusOverrideIntakeError, match="effective_date"):
+        add_verified_status_override(root, **kwargs)
+
+
+def test_add_verified_status_override_requires_corrected_team_for_team_correction(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "kind": "TEAM_CORRECTION", "corrected_team": ""}
+    with pytest.raises(StatusOverrideIntakeError, match="TEAM_CORRECTION requires corrected_team"):
+        add_verified_status_override(root, **kwargs)
+
+
+def test_add_verified_status_override_rejects_corrected_team_on_non_team_correction(
+    tmp_path: Path,
+) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "corrected_team": "HOU"}
+    with pytest.raises(StatusOverrideIntakeError, match="only valid for TEAM_CORRECTION"):
+        add_verified_status_override(root, **kwargs)
+
+
+def test_add_verified_status_override_rejects_a_duplicate_player_id(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    add_verified_status_override(root, **_VALID_KWARGS)
+    with pytest.raises(StatusOverrideIntakeError, match="already has an override"):
+        add_verified_status_override(root, **_VALID_KWARGS)
+
+
+def test_add_verified_status_override_team_correction_accepted(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "kind": "TEAM_CORRECTION", "corrected_team": "HOU"}
+    result = add_verified_status_override(root, **kwargs)
+    assert result.corrected_team == "HOU"
+    reloaded = load_status_overrides(root)
+    assert next(o for o in reloaded if o.player_id == "00-0099999").corrected_team == "HOU"
