@@ -710,6 +710,53 @@ def _load_draft_day_authorization(snapshot_dir: Path, *, source_sha256: str) -> 
     return frozenset(str(value) for value in player_ids)
 
 
+def _draft_day_authorization_status(snapshot_dir: Path, *, source_sha256: str) -> str:
+    """Real, human-readable status of any `DRAFT_DAY_AUTHORIZATION.json` found
+    next to a projection snapshot -- used ONLY to build an honest, actionable
+    diagnostic message when the real freshness gate blocks every row (see the
+    `not players and not errors` branch below). Never used to change admission
+    behavior itself -- `_load_draft_day_authorization` remains the one real
+    gate that decides which rows are actually let through, unchanged by this
+    function. NWR next-draft final blocker closure, section 1: the prior
+    message ("no rankable player rows") was real but unhelpfully vague --
+    it did not say WHY (freshness) or WHAT real action would fix it."""
+    path = snapshot_dir / DRAFT_DAY_AUTHORIZATION_FILENAME
+    if not path.is_file():
+        return "no draft-day authorization file is present"
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return "a draft-day authorization file is present but unreadable"
+    if not isinstance(document, dict):
+        return "a draft-day authorization file is present but malformed"
+    label = str(document.get("label") or "")
+    if not label.startswith(DRAFT_DAY_AUTHORIZATION_LABEL_PREFIX):
+        return (
+            f"a draft-day authorization file is present but its label {label!r} "
+            "is not a recognized owner-approval label"
+        )
+    bound = str(document.get("bound_source_sha256") or "")
+    if bound != source_sha256:
+        return (
+            "a draft-day authorization file is present but is bound to a different "
+            "projection artifact hash than the one currently loaded"
+        )
+    try:
+        expires_at = datetime.fromisoformat(
+            str(document.get("expires_at_utc") or "").replace("Z", "+00:00")
+        )
+    except ValueError:
+        return "a draft-day authorization file is present but its expires_at_utc is invalid"
+    if expires_at.tzinfo is None:
+        return "a draft-day authorization file is present but its expires_at_utc has no timezone"
+    if datetime.now(UTC) > expires_at.astimezone(UTC):
+        return (
+            "a draft-day authorization file is present but expired at "
+            f"{expires_at.astimezone(UTC).isoformat()}"
+        )
+    return "a draft-day authorization is currently active but does not cover the blocked rows"
+
+
 def load_projection_snapshot(
     path: str | Path,
     *,
@@ -838,7 +885,26 @@ def load_projection_snapshot(
                 "Projection universe is below minimum admitted depth: " + ", ".join(short)
             )
     if not players and not errors:
-        errors.append("Projection snapshot has no rankable player rows.")
+        freshness_blocked = [
+            row for row in blocked if row["reason"].endswith("freshness window")
+        ]
+        if blocked and len(freshness_blocked) == len(blocked):
+            # NWR next-draft final blocker closure, section 1: real, honest,
+            # actionable diagnostic -- every row is blocked for the SAME real
+            # reason (the row-level freshness gate), not a generic "no
+            # rankable rows" message that gives no hint what to actually do.
+            # The real admission/blocking LOGIC above is completely
+            # unchanged; only this top-level message is more specific.
+            status = _draft_day_authorization_status(source_path.parent, source_sha256=digest)
+            errors.append(
+                f"All {len(blocked)} projection rows are blocked because source_as_of "
+                f"exceeds the {MAX_PROJECTION_AGE_DAYS}-day freshness window, and {status}. "
+                "A new governed admission with a current source_as_of, or an owner-issued "
+                "draft-day authorization bound to this exact snapshot hash, is required "
+                "before ranking can proceed."
+            )
+        else:
+            errors.append("Projection snapshot has no rankable player rows.")
     if require_manifest and not errors:
         errors.extend(
             _projection_manifest_errors(
