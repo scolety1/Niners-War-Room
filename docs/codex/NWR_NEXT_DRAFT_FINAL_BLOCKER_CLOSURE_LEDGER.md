@@ -114,3 +114,22 @@ since the real backend contract has no such field (already-known gap, not invent
 Typecheck clean, 142/142 frontend tests, 2 new + 48 total backend HTTP/facade tests passed, 5/46
 unchanged pre-existing baseline failures in `test_desktop_application_api.py`. Both real boards
 and the real owner `current.csv` hash re-verified unchanged.
+
+## Section 9 — Next-draft full mock battery (DONE)
+
+Full evidence: `docs/codex/NWR_NEXT_DRAFT_FULL_MOCK_BATTERY_V1_20260908.md`. Real, current
+owner profiles confirmed "Fantasy Gamers" (Sleeper, 10-team 1QB, drafts 2026-09-09) is the
+real next-draft-relevant league -- gave it two real slots/seeds per the directive. Isolated,
+in-memory, dynamically-dated synthetic fixture (never real owner data -- the real snapshot is
+itself still blocked by section 1's freshness gate). Re-ran the prior class-time session's own
+multi-league battery methodology (`run_complete_mock`) across 8/10(x2)/12/16-team 1QB +
+12-team Superflex -- **6/6 legally complete**, K/DST timing correctly scaling with round count
+in every case, independently reconfirming the prior finding a second time. Closed that prior
+battery's own disclosed gap: added real `build_live_decision_bundle()` sampling (3 real,
+progressively-later draft states per case) for DecisionBundle latency (0.94s-3.19s, scales
+with team_count, explicitly NOT compared to section 7's own 5.8-6.95s production figure --
+different harness scale, disclosed), DQ coverage (276/288, 95.8%, identical in every case --
+traced exactly to K/DST's own permanent unmodeled-by-NWR design boundary, not a new gap), and
+tie frequency (0/48, disclosed as a synthetic-fixture artifact -- the fixture's smooth
+monotonic ranking makes a genuine tie very unlikely regardless of real engine behavior). No
+code change; both real boards and the real owner `current.csv` hash re-verified unchanged.
