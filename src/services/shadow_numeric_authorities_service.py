@@ -345,17 +345,42 @@ def availability_discount_for_hypotheses(
     player_id: str, impact_hypotheses: Sequence[ImpactHypothesis]
 ) -> float:
     """A value multiplier in [0.0, 1.0] driven ONLY by an existing
-    HIGH-confidence NEGATIVE Impact Analyst hypothesis about this exact
-    player (ai_intelligence_backend_service.py's own disclosed rule
-    table -- not a new invented severity model). Anything else (MEDIUM/
-    LOW confidence, UNCERTAIN direction, or no hypothesis at all) returns
-    1.0 -- no discount without a real, already-computed, high-confidence
-    structural signal."""
+    Impact Analyst hypothesis about this exact player
+    (ai_intelligence_backend_service.py's own disclosed rule table -- not
+    a new invented severity model). Anything else (MEDIUM/LOW confidence,
+    or no hypothesis at all) returns 1.0 -- no discount without a real,
+    already-computed, high-confidence structural signal.
+
+    Two real, distinct discount tiers (NWR post-draft overnight, phase 10
+    added the second):
+      - HIGH-confidence NEGATIVE (a confirmed event with a known negative
+        outcome, e.g. IR/PUP-NFI/a served SUSPENSION): 0.0 -- treat as
+        unavailable.
+      - HIGH-confidence, IMMEDIATE-horizon UNCERTAIN (currently only
+        ADMINISTRATIVE_EXEMPT produces this exact combination -- a real,
+        elevated-risk situation with NO announced outcome yet, such as an
+        active legal/disciplinary proceeding): 0.5. This is NOT a guess at
+        the eventual outcome or a specific missed-game count -- it is a
+        disclosed, deliberately partial discount representing "something
+        real and material is genuinely uncertain here," distinct from both
+        "confirmed unavailable" (0.0) and "no real signal" (1.0, the
+        default). The `horizon == "IMMEDIATE"` guard specifically excludes
+        REST_OF_SEASON/LONG_TERM UNCERTAIN hypotheses like ROLE_CHANGE --
+        "direction of fantasy impact still depends on which player is
+        affected" is uncertainty about USAGE, not about whether the
+        player takes the field at all, and could just as easily be
+        positive (a promotion) as negative; discounting it here would be
+        a real, wrong assumption this function must not make.
+    """
     for hypothesis in impact_hypotheses:
         if hypothesis.subject_player_id != player_id:
             continue
-        if hypothesis.direction == "NEGATIVE" and hypothesis.confidence == "HIGH":
+        if hypothesis.confidence != "HIGH":
+            continue
+        if hypothesis.direction == "NEGATIVE":
             return 0.0
+        if hypothesis.direction == "UNCERTAIN" and hypothesis.horizon == "IMMEDIATE":
+            return 0.5
     return 1.0
 
 

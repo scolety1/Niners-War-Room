@@ -347,7 +347,9 @@ def test_explain_marginal_roster_reason_handles_an_unmodeled_candidate() -> None
     assert reason.starter_value_delta == 0.0
 
 
-def _hypothesis(player_id: str, *, direction: str, confidence: str) -> ImpactHypothesis:
+def _hypothesis(
+    player_id: str, *, direction: str, confidence: str, horizon: str = "REST_OF_SEASON"
+) -> ImpactHypothesis:
     return ImpactHypothesis(
         hypothesis_id=f"h:{player_id}",
         subject_player_id=player_id,
@@ -357,6 +359,7 @@ def _hypothesis(player_id: str, *, direction: str, confidence: str) -> ImpactHyp
         evidence_event_ids=("evt-1",),
         requires_owner_review=False,
         generated_at_utc="2026-08-16T12:05:00+00:00",
+        horizon=horizon,
     )
 
 
@@ -374,6 +377,28 @@ def test_availability_discount_zeroes_only_high_confidence_negative_hypotheses()
     assert availability_discount_for_hypotheses(
         "p1", [_hypothesis("p2", direction="NEGATIVE", confidence="HIGH")]
     ) == 1.0  # a hypothesis about a different player never affects this one
+
+
+def test_availability_discount_partially_discounts_immediate_uncertain_high_confidence() -> None:
+    """NWR post-draft overnight (phase 10): a real, distinct third tier --
+    e.g. ADMINISTRATIVE_EXEMPT (Commissioner's Exempt List / an open legal
+    proceeding with no announced outcome) -- gets a disclosed PARTIAL
+    discount (0.5), never the full 0.0 a confirmed NEGATIVE event gets,
+    and never silently ignored (1.0) either."""
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p1", direction="UNCERTAIN", confidence="HIGH", horizon="IMMEDIATE")]
+    ) == 0.5
+
+
+def test_availability_discount_never_discounts_a_rest_of_season_role_change_uncertainty() -> None:
+    """A HIGH-confidence UNCERTAIN hypothesis whose horizon is NOT
+    IMMEDIATE (e.g. ROLE_CHANGE's real REST_OF_SEASON rule -- "direction
+    of fantasy impact still depends on which player is affected", which
+    could be a promotion, not a demotion) must NOT be discounted -- only
+    the specific IMMEDIATE-horizon uncertainty case is."""
+    assert availability_discount_for_hypotheses(
+        "p1", [_hypothesis("p1", direction="UNCERTAIN", confidence="HIGH", horizon="REST_OF_SEASON")]
+    ) == 1.0
 
 
 def test_availability_adjusted_players_zeroes_the_affected_player_only() -> None:

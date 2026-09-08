@@ -110,6 +110,44 @@ def test_generate_direct_impact_hypothesis_rejects_a_malformed_event() -> None:
         generate_direct_impact_hypothesis(_event(event_type="NOT_REAL"))
 
 
+# NWR post-draft overnight (phase 6/10): three real, distinct status
+# categories the directive named explicitly that previously had no
+# event_type at all (they degraded to the generic OTHER catch-all).
+def test_pup_nfi_is_a_confirmed_high_confidence_negative_not_a_guessed_duration() -> None:
+    hypothesis = generate_direct_impact_hypothesis(_event(event_type="PUP_NFI", severity="HIGH"))
+    assert hypothesis.direction == "NEGATIVE"
+    assert hypothesis.confidence == "HIGH"
+    assert hypothesis.horizon == "IMMEDIATE"
+    assert "4 regular-season games" in hypothesis.hypothesis_text  # the real, rule-based minimum
+    assert "not yet known" in hypothesis.hypothesis_text  # never guesses beyond that
+    assert hypothesis.requires_owner_review is False
+
+
+def test_administrative_exempt_is_uncertain_never_a_confident_negative() -> None:
+    """The real, deliberate distinction from SUSPENSION (a confirmed,
+    already-imposed penalty): an Exempt-list placement or open legal/
+    disciplinary proceeding has no announced outcome, so this must never
+    be treated as a confident NEGATIVE the way SUSPENSION is."""
+    hypothesis = generate_direct_impact_hypothesis(_event(event_type="ADMINISTRATIVE_EXEMPT", severity="HIGH"))
+    assert hypothesis.direction == "UNCERTAIN"
+    assert hypothesis.confidence == "HIGH"
+    assert hypothesis.horizon == "IMMEDIATE"
+    assert hypothesis.requires_owner_review is True  # UNCERTAIN direction always forces review
+    assert "not yet been announced" in hypothesis.hypothesis_text
+    # Never states or implies a specific missed-game count/duration (no
+    # digit anywhere in the text -- contrast with PUP_NFI's real "4
+    # regular-season games", a genuine rule-based minimum).
+    assert not any(char.isdigit() for char in hypothesis.hypothesis_text)
+
+
+def test_released_is_a_confirmed_high_confidence_negative() -> None:
+    hypothesis = generate_direct_impact_hypothesis(_event(event_type="RELEASED", severity="HIGH"))
+    assert hypothesis.direction == "NEGATIVE"
+    assert hypothesis.confidence == "HIGH"
+    assert "no NFL roster" in hypothesis.hypothesis_text
+    assert "not yet known" in hypothesis.hypothesis_text  # never guesses who signs him
+
+
 def test_generate_beneficiary_hypotheses_for_a_high_severity_injury() -> None:
     teammates = [("p2", "Backup Runner"), ("p3", "Third String Runner")]
     hypotheses = generate_beneficiary_hypotheses(

@@ -43,6 +43,24 @@ NEWS_EVENT_TYPES = frozenset(
         "RETIREMENT",
         "COACHING_CHANGE",
         "ROLE_CHANGE",
+        # NWR post-draft overnight (phase 6/10): the directive's own status
+        # taxonomy (IR/PUP/NFI/Commissioner's Exempt/suspension/released/
+        # free agent) named three real, structurally distinct categories
+        # that had no event_type at all before this pass -- everything
+        # non-INJURY/SUSPENSION/IR degraded to the generic OTHER catch-all,
+        # which has no rule in _DIRECT_IMPACT_RULES and so always fell
+        # through to UNCERTAIN/LOW ("degrades... forces owner review rather
+        # than guessing"). Added as real, distinct types with their own
+        # rules below, each one still never guessing a specific duration:
+        "PUP_NFI",  # Physically Unable to Perform / Non-Football Injury --
+        # a real, well-defined NFL roster designation (a confirmed
+        # multi-game absence by rule), distinct from a plain INJURY report.
+        "ADMINISTRATIVE_EXEMPT",  # Commissioner's Exempt List or an active
+        # legal/disciplinary proceeding with no announced outcome yet --
+        # genuinely uncertain, deliberately never treated as a confident
+        # NEGATIVE the way a real SUSPENSION already is.
+        "RELEASED",  # cut/waived -- an immediate real absence from any
+        # roster; whether/where the player signs next is unknown.
         "OTHER",
     }
 )
@@ -215,6 +233,43 @@ _DIRECT_IMPACT_RULES: dict[tuple[str, str], tuple[str, str, str, str]] = {
     ("COACHING_CHANGE", "LOW"): (
         "UNCERTAIN", "LOW", "LONG_TERM",
         "{player} (coaching change on team) -- long-horizon signal, no immediate action implied.",
+    ),
+    # NWR post-draft overnight (phase 6/10): three new, real, structurally
+    # distinct status categories the directive named explicitly. Each
+    # still follows the exact same disclosed principle as every rule
+    # above -- a real, ingested (event_type, severity) pair, never a
+    # guessed specific duration, never a player-name-specific rule.
+    ("PUP_NFI", "HIGH"): (
+        "NEGATIVE", "HIGH", "IMMEDIATE",
+        "{player} placed on PUP/NFI -- a confirmed absence for at least the "
+        "first 4 regular-season games by rule; return timing beyond that is "
+        "not yet known.",
+    ),
+    ("ADMINISTRATIVE_EXEMPT", "HIGH"): (
+        # Deliberately UNCERTAIN, not NEGATIVE, even at HIGH confidence --
+        # unlike SUSPENSION (a confirmed penalty already imposed), an
+        # Exempt-list placement or open legal/disciplinary proceeding has
+        # NO announced outcome yet; treating it as a confident NEGATIVE
+        # would be guessing the eventual result. Marking it UNCERTAIN
+        # here (not a special case) already makes
+        # generate_direct_impact_hypothesis's existing
+        # `requires_owner_review = confidence != "HIGH" or direction ==
+        # "UNCERTAIN"` rule force owner review regardless of severity.
+        "UNCERTAIN", "HIGH", "IMMEDIATE",
+        "{player} (administrative/exempt-list status, {severity} severity) -- "
+        "expected availability is materially uncertain pending an outcome "
+        "that has not yet been announced; do not assume a specific missed-"
+        "game count.",
+    ),
+    ("ADMINISTRATIVE_EXEMPT", "MEDIUM"): (
+        "UNCERTAIN", "MEDIUM", "IMMEDIATE",
+        "{player} (administrative/exempt-list status reported, {severity} "
+        "severity) -- monitor; outcome and duration not yet known.",
+    ),
+    ("RELEASED", "HIGH"): (
+        "NEGATIVE", "HIGH", "IMMEDIATE",
+        "{player} (released/waived) -- currently on no NFL roster; whether "
+        "and where he signs next is not yet known.",
     ),
 }
 
