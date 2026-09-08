@@ -1319,6 +1319,47 @@ def test_parse_udk_position_csv_matches_k_by_name(tmp_path) -> None:
     assert entry["playerName"] == "K 5"
 
 
+def test_udk_kdst_rows_get_the_full_real_ballers_schema_and_versioning(tmp_path) -> None:
+    """NWR class-time autonomous hardening, section 8: confirms K/DST rows
+    flow through the exact same rich schema (rank/points/risk/upside/adp/
+    tier/outlook/bye) and this session's new versioning/rollback/preview
+    enrichment (section 7) as any skill position -- no K/DST-specific
+    code path exists to silently diverge from those real guarantees.
+    Labeled "Fantasy Footballers Podcast UDK", never as an NWR score --
+    K/DST positions are always MANUAL/unmodeled by NWR design."""
+    ranking = _ranking()
+    csv_v1 = (
+        f'{_UDK_HEADER}\r\n'
+        f'"K 5","K","T5","7","3","95.0","2.0","4.0","15.10","4","Real outlook.","locked","Mark Drafted"\r\n'
+        f'"Some Team Nickname D/ST","DST","T3","9","1","110.0","3.0","5.0","14.05","3","Real outlook.","locked","Mark Drafted"\r\n'
+    )
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_v1, _manual_assets())
+    assert result["perPositionCounts"] == {"K": 1, "DST": 1}
+    assert result["duplicateRows"] == []
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    k_entry = _udk_position(loaded, "K")["entries"][0]
+    assert k_entry["byeWeek"] == "7"
+    assert k_entry["tier"] == 4
+    assert k_entry["adpRaw"] == "15.10"
+    dst_entry = _udk_position(loaded, "DST")["entries"][0]
+    assert dst_entry["byeWeek"] == "9"
+    for position in ("K", "DST"):
+        assert _udk_position(loaded, position)["provider"] == "Fantasy Footballers Podcast UDK"
+
+    # Real re-import versions K/DST the same as any other position.
+    csv_v2 = (
+        f'{_UDK_HEADER}\r\n'
+        f'"K 6","K","T6","7","2","90.0","2.0","4.0","16.10","4","Real outlook.","locked","Mark Drafted"\r\n'
+    )
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_v2, _manual_assets())
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    assert _udk_position(loaded, "K")["historyCount"] == 1
+    rollback = rollback_udk_position_rankings(tmp_path, ranking.profile.profile_id, "K")
+    assert rollback["position"] == "K"
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    assert _udk_position(loaded, "K")["entries"][0]["playerId"] == "manual:K:5"
+
+
 def test_forced_position_forces_qb_for_a_real_superflex_slot_not_just_qb1() -> None:
     """Owner feedback closure (Superflex disposition): the deadline-forced-
     position mechanism (already reused for K/DST/TE/RB/WR) must count a

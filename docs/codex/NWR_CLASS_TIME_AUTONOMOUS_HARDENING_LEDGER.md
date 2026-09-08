@@ -124,6 +124,15 @@ fixture other tests already depend on now fails with "no rankable player rows" e
 unmodified, likely a source_as_of freshness-window drift as simulated "today" advances. 10 new
 tests pass; 65-test regression across 3 files clean; known 5-test baseline unchanged.
 
-## Section 8 — Ballers K/DST pipeline readiness
+## Section 8 — Ballers K/DST pipeline readiness (DONE, verification only)
+
+Full evidence: `docs/codex/NWR_BALLERS_KDST_READINESS_V1_20260908.md`. Found the directive's
+schema/matching/labeling requirements were already satisfied by existing infra (K/DST are
+first-class positions in the rich UDK schema, DST-team/K-identity matching already real and
+tested, storage fully additive and never overwrites canonical state) plus this session's own
+Section 7 additions (which apply generically, no K/DST-specific path). Added 1 confirming test
+proving K/DST get the full schema + versioning/rollback automatically. No new production code.
+
+## Section 9 — K/DST direct model research baseline
 
 (next)
