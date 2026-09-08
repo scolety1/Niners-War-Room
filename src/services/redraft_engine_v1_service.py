@@ -655,6 +655,19 @@ def install_projection_snapshot(
 
 DRAFT_DAY_AUTHORIZATION_FILENAME = "DRAFT_DAY_AUTHORIZATION.json"
 DRAFT_DAY_AUTHORIZATION_LABEL = "OWNER_DRAFT_DAY_APPROVAL_2026_KHA"
+# NWR EMERGENCY RECOMMENDATION REPAIR (2026-09-07): the loader below used to
+# exact-match DRAFT_DAY_AUTHORIZATION_LABEL, a single constant hardcoded to
+# the 2026-09-02 KHA draft specifically -- a real, previously-undiscovered
+# limitation that made this "tonight" mechanism (per its own docstring)
+# usable for exactly one past event and silently inert (never an error) for
+# any other league's real draft day, including tonight's real 403 N 18th
+# draft. Generalized to a stable per-event label PREFIX so a new,
+# distinctly-labeled authorization (e.g. for 403 N 18th) is accepted without
+# retiring the exact KHA label, which already satisfies this prefix and
+# keeps working unchanged. This only widens which owner-authorized,
+# artifact-hash-bound, self-expiring file the loader will read -- it does
+# not touch projection values, scoring, ranking, or recommendation code.
+DRAFT_DAY_AUTHORIZATION_LABEL_PREFIX = "OWNER_DRAFT_DAY_APPROVAL_2026_"
 
 
 def _load_draft_day_authorization(snapshot_dir: Path, *, source_sha256: str) -> frozenset[str]:
@@ -681,7 +694,7 @@ def _load_draft_day_authorization(snapshot_dir: Path, *, source_sha256: str) -> 
         return frozenset()
     if not isinstance(document, dict):
         return frozenset()
-    if document.get("label") != DRAFT_DAY_AUTHORIZATION_LABEL:
+    if not str(document.get("label") or "").startswith(DRAFT_DAY_AUTHORIZATION_LABEL_PREFIX):
         return frozenset()
     if str(document.get("bound_source_sha256") or "") != source_sha256:
         return frozenset()

@@ -12,6 +12,7 @@ import {
   buildSuggestionsRows,
   buildUdkBadges,
   findCloseCall,
+  findPickNow,
   formatAdpRoundPick,
   formatMakeItBack,
   formatPickScore,
@@ -525,6 +526,52 @@ describe("findCloseCall", () => {
     findCloseCall(rows, 3);
     expect(rows[0].pickScore).toBe(90);
     expect(rows[1].pickScore).toBe(89);
+  });
+});
+
+describe("findPickNow", () => {
+  it("labels a clear leader NWR PICK NOW", () => {
+    const rows = [
+      _candidate({ playerId: "a", playerName: "A", pickScore: 95, pickScoreTiedNoSpread: false }),
+      _candidate({ playerId: "b", playerName: "B", pickScore: 60, pickScoreTiedNoSpread: false }),
+    ] as any;
+    const result = findPickNow(rows, 3);
+    expect(result?.label).toBe("NWR PICK NOW");
+    expect(result?.row.playerId).toBe("a");
+    expect(result?.runnerUp).toBeNull();
+  });
+
+  it("labels a genuine near-tie CLOSE CALL and surfaces the runner-up", () => {
+    const rows = [
+      _candidate({ playerId: "a", playerName: "A", pickScore: 90, pickScoreTiedNoSpread: false }),
+      _candidate({ playerId: "b", playerName: "B", pickScore: 88, pickScoreTiedNoSpread: false }),
+    ] as any;
+    const result = findPickNow(rows, 3);
+    expect(result?.label).toBe("BEST CURRENT PICK — CLOSE CALL");
+    expect(result?.row.playerId).toBe("a");
+    expect(result?.runnerUp?.playerId).toBe("b");
+  });
+
+  it("labels a genuine tied/no-spread Pick Score NO SMASH VALUE rather than fabricating separation", () => {
+    const rows = [
+      _candidate({ playerId: "a", playerName: "A", pickScore: 50, pickScoreTiedNoSpread: true }),
+      _candidate({ playerId: "b", playerName: "B", pickScore: 50, pickScoreTiedNoSpread: true }),
+    ] as any;
+    const result = findPickNow(rows, 3);
+    expect(result?.label).toBe("BEST CURRENT PICK — NO SMASH VALUE");
+  });
+
+  it("returns null with no candidates -- never fabricates a pick", () => {
+    expect(findPickNow([])).toBeNull();
+  });
+
+  it("always picks the same row-1 candidate the Pick-Score-sorted table already leads with", () => {
+    const rows = [
+      _candidate({ playerId: "a", pickScore: 40 }),
+      _candidate({ playerId: "b", pickScore: 99 }),
+      _candidate({ playerId: "c", pickScore: 70 }),
+    ] as any;
+    expect(findPickNow(rows, 3)?.row.playerId).toBe("b");
   });
 });
 

@@ -578,6 +578,36 @@ export function findCloseCall(rows: SuggestionRow[], threshold = 3): { a: Sugges
   return Math.abs(a.pickScore - b.pickScore) <= threshold ? { a, b } : null;
 }
 
+/** NWR DRAFT-DAY WAR ROOM (section 1, "Suggestions must make a forced
+ * current decision"): the owner's real complaint was never that NWR lacked
+ * a top pick -- `candidates`/`suggestions` were already Pick-Score-sorted,
+ * row 1 already WAS the system's actual best current choice -- it was that
+ * nothing on screen SAID so plainly while a wall of "Wait"/"Queue" actions
+ * sat below it. This surfaces the exact same row-1 candidate the table
+ * already leads with under one explicit banner, in the three honest states
+ * the directive asks for -- never invents confidence a tied/no-spread
+ * Pick Score doesn't have. */
+export interface PickNowBanner {
+  row: SuggestionRow;
+  runnerUp: SuggestionRow | null;
+  label: "NWR PICK NOW" | "BEST CURRENT PICK — CLOSE CALL" | "BEST CURRENT PICK — NO SMASH VALUE";
+}
+
+export function findPickNow(rows: SuggestionRow[], closeCallThreshold = 3): PickNowBanner | null {
+  if (rows.length === 0) return null;
+  const sorted = [...rows].sort((x, y) => y.pickScore - x.pickScore);
+  const top = sorted[0];
+  const runnerUp = sorted[1] ?? null;
+  if (!top) return null;
+  const isCloseCall = runnerUp != null && Math.abs(top.pickScore - runnerUp.pickScore) <= closeCallThreshold;
+  const label = top.pickScoreTiedNoSpread
+    ? "BEST CURRENT PICK — NO SMASH VALUE"
+    : isCloseCall
+      ? "BEST CURRENT PICK — CLOSE CALL"
+      : "NWR PICK NOW";
+  return { row: top, runnerUp: isCloseCall ? runnerUp : null, label };
+}
+
 export function toggleCompareSelection(
   current: string[],
   playerId: string,
@@ -1214,6 +1244,7 @@ export function DraftRoomV2Page({
   const compareSummary = useMemo(() => generateCompareSummary(compareRows, positionDepth), [compareRows, positionDepth]);
   const positionDemand = useMemo(() => buildPositionDemand(board, data.activeProfile), [board, data.activeProfile]);
   const closeCall = useMemo(() => findCloseCall(suggestions), [suggestions]);
+  const pickNow = useMemo(() => findPickNow(suggestions), [suggestions]);
   const queuedRows = useMemo(
     () =>
       queuedIds
@@ -1491,6 +1522,7 @@ export function DraftRoomV2Page({
             loading={decisionBundleLoading}
             positionDemand={positionDemand}
             closeCall={closeCall}
+            pickNow={pickNow}
             canRecordPick={canRecordPick}
             working={working}
             queuedIds={queuedIds}
@@ -1915,6 +1947,7 @@ function SuggestionsTab({
   loading,
   positionDemand,
   closeCall,
+  pickNow,
   canRecordPick,
   working,
   queuedIds,
@@ -1936,6 +1969,7 @@ function SuggestionsTab({
   loading: boolean;
   positionDemand: PositionDemandRow[];
   closeCall: { a: SuggestionRow; b: SuggestionRow } | null;
+  pickNow: PickNowBanner | null;
   canRecordPick: boolean;
   working: string;
   queuedIds: string[];
@@ -2136,6 +2170,15 @@ function SuggestionsTab({
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
   return (
     <>
+      {pickNow ? (
+        <div
+          className={pickNow.label === "NWR PICK NOW" ? "draft-room-v2-pick-now" : "draft-room-v2-pick-now draft-room-v2-pick-now--close"}
+          title="The same row-1 candidate the table below already leads with, by Pick Score -- never a second, hidden policy."
+        >
+          <strong>{pickNow.label}:</strong> {pickNow.row.playerName} ({pickNow.row.position})
+          {pickNow.runnerUp ? <span> — vs. {pickNow.runnerUp.playerName}</span> : null}
+        </div>
+      ) : null}
       {(positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
         <div className="draft-room-v2-compact-context">
           {positionDemand.length > 0 ? (

@@ -311,15 +311,30 @@ def build_live_decision_bundle(
                 base_seed=base_seed, continuation_seeds=continuation_seeds,
             )
             return bundle
-        # A forced skill position (QB/TE deadline etc.) -- restrict the
-        # normal ranked shortlist to that position, same principle,
-        # reusing the existing ranked-row pipeline unmodified otherwise.
+        # A forced SKILL position (QB/TE/RB/WR deadline) used to restrict the
+        # entire shortlist to that one position -- a real, reproduced bug
+        # (NWR emergency recommendation repair, 2026-09-07): `_forced_position`'s
+        # soft deadline table (QB@8, TE@10, RB@12, WR@12) fires as a rank-and-
+        # file "you should really get one of these soon" nudge, not a hard
+        # feasibility wall (that harder case -- picks_remaining <= count of
+        # still-required positions -- is a separate, earlier check inside
+        # `_forced_position` itself). Exclusively restricting `legal_rows` to
+        # ONE position for every soft-deadline hit collapsed the entire
+        # Suggestions candidate universe to that position alone (confirmed:
+        # a real round-8 QB deadline on a 1-QB league produced a 12-of-12
+        # QB shortlist, zero RB/WR/TE, with every candidate landing on a
+        # tied/near-tied Pick Score since a 60th-ranked replacement QB has
+        # nothing left to differentiate it from a 20th-ranked one). The
+        # forced position still gets a GUARANTEED shortlist slot below via
+        # `needed_positions` (unioned with `forced_position` so this stays
+        # true even in the rarer case `_roster_need_adjustment` and
+        # `_forced_position` disagree) -- it is surfaced prominently, not
+        # hidden, without silently discarding every other legal candidate.
 
     available_rows = _available_ranked(ranking, room_state)
     legal_rows = [
         row for row in available_rows
         if _roster_candidate_allowed(profile, roster, {"position": row.position})
-        and (forced_position is None or position_filter is not None or row.position == forced_position)
     ]
     if not legal_rows:
         return LiveDecisionBundleUnavailable(
@@ -407,6 +422,12 @@ def build_live_decision_bundle(
         position for position in DIVERSITY_POSITIONS
         if _roster_need_adjustment(profile, roster, round_number, position) < 0
     )
+    # A forced SKILL position (see the long comment above) is guaranteed a
+    # shortlist slot even on the rare chance it disagrees with
+    # `_roster_need_adjustment` -- union, never a replacement of the real
+    # need signal.
+    if forced_position is not None and forced_position in DIVERSITY_POSITIONS:
+        needed_positions = needed_positions | {forced_position}
     candidate_rows = diversify_candidate_shortlist(legal_rows, max_candidates, needed_positions)
     candidate_player_ids = [row.player_id for row in candidate_rows]
     # NWR OVERNIGHT (K/DST completion): K/DST are structurally absent from

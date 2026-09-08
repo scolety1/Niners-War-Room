@@ -19,7 +19,12 @@ const NAVIGATION: NavigationGroup[] = [
   // "Legacy Draft Room" fallback -- routes are intentionally unchanged
   // ("/" still resolves to the legacy page) so no existing bookmark,
   // keyboard shortcut, or hash link breaks the night before a real draft.
-  { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }, { label: "Legacy Draft Room", path: "/", icon: "draft", shortcut: "1" }] },
+  // NWR DRAFT-DAY WAR ROOM (section 13): removed from normal navigation
+  // and the Ctrl+K command palette (both are built from this array) --
+  // the owner should never be steered to Legacy tonight. The route and
+  // component are untouched, so "/" (a direct URL/bookmark) still works
+  // as a dormant emergency rollback.
+  { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
   { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
   { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
