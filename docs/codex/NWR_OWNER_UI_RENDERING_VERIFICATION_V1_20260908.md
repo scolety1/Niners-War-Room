@@ -29,7 +29,15 @@ The Suggestions panel showed a real, reproducible "DecisionBundle unavailable �
 
 **This is a genuine, real, owner-facing reliability risk for any league with a full-scale real player pool close to this session's real 403 league's own scale** — not previously caught because the documented latency benchmark was evidently not measured against a comparably-sized real pool, and this session's own earlier multi-league batteries (UPDATE 9, UPDATE 21/section 22) used the `mark_redraft_player`/direct facade path, which tolerated the real per-call latency without ever exercising the frontend's own timeout/retry behavior.
 
-**Disposition**: not fixed tonight — this needs real profiling (cProfile against `evaluate_pick_candidates`'s Raw Action Value path) to find the actual hot loop, which is a distinct, substantial unit of work, not a same-night patch under time pressure this late in an already long session. Flagged as the single highest-priority follow-up this report surfaces.
+**Disposition**: not fixed tonight — this needs real profiling to find the actual hot loop before any fix is attempted, which is a distinct, substantial unit of work, not a same-night patch under time pressure this late in an already long session. Flagged as the single highest-priority follow-up this report surfaces.
+
+**Update — real cProfile pass run** (same session, a fresh isolated 12-team real-pool profile, `speed=FAST`): confirms and precisely locates the hot path. Real, measured breakdown (cumulative time):
+
+- `evaluate_pick_candidates` (19.8s of the run) → `simulate_pick_now` (36 calls, 18.3s) → **`_select_asset`** (`redraft_draft_room_v1_service.py:2046`) is the dominant cost: **10,056 calls, 9.2s of its own time**, called once per simulated CPU pick within every Monte Carlo continuation trial.
+- Three real, extremely hot inner helpers `_select_asset` calls into: `_seeded_unit` (**4.8 million calls**, 6.97s cumulative), `_roster_need_adjustment` (**5.15 million calls**, 5.45s cumulative), `_roster_candidate_allowed` (**5.49 million calls**, 2.56s cumulative).
+- `candidate_survival_probability`/`evaluate_cost_of_waiting_v2` (Make-It-Back) separately costs another real 4.6s via the same `_advance_cpu`/`_select_asset` machinery.
+
+This is a real, well-understood cost shape: `_select_asset` scores the FULL real candidate pool at every simulated pick inside every trial/continuation-seed, so its cost scales with `(real pool size) × (simulated picks per trial) × (trials) × (candidates evaluated)` — explaining why a small synthetic fixture (240 rows, used in most unit tests) stays fast while this session's real, full 530-row pool does not. This is the concrete, exact starting point for the actual fix (likely narrowing the per-pick candidate pool `_select_asset` scores, or caching/short-circuiting repeated identical sub-computations across trials) — not attempted this pass; a real optimization needs its own correctness validation (must not change any real recommendation), which is exactly the kind of change this program's own discipline says should not be rushed.
 
 ### 4. A related, real robustness bug — found and FIXED this pass
 
