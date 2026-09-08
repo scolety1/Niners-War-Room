@@ -11,8 +11,14 @@ dependencies = [
   "nflreadpy==0.1.5",
   "numpy",
   "pandas",
+  "pdfplumber",
   "pydantic",
   "streamlit",
+]
+
+[project.optional-dependencies]
+dev = [
+  "reportlab",
 ]
 
 [tool.pytest.ini_options]

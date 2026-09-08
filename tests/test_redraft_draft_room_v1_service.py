@@ -30,6 +30,7 @@ from src.services.redraft_draft_room_v1_service import (
     load_room_state,
     load_udk_rankings,
     owner_pick_and_advance,
+    parse_udk_position_pdf,
     preview_catch_up_paste,
     record_catch_up_pick,
     refresh_fantasy_football_calculator_adp,
@@ -37,6 +38,7 @@ from src.services.redraft_draft_room_v1_service import (
     replace_pick,
     run_complete_mock,
     save_owner_paste_adp,
+    save_udk_position_pdf_rankings,
     save_udk_position_rankings,
     set_owner_platform_selection,
     start_draft_room,
@@ -1076,6 +1078,123 @@ def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path)
     assert {row["position"] for row in loaded["positions"]} == {"QB", "RB"}
     assert _udk_position(loaded, "QB")["entries"][0]["playerId"] == "QB-0"
     assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"
+
+
+# --- parse_udk_position_pdf / save_udk_position_pdf_rankings (NWR
+# post-draft overnight, section 14). No real Ballers/UDK PDF sample has
+# ever been seen by this pipeline -- these tests build and validate the
+# PDF-table-extraction step against a representative FIXTURE this
+# session generates with reportlab, using the exact same documented
+# column schema the real CSV path already requires. The gap this can
+# NOT close is validated below as its own, explicitly-skipped,
+# BLOCKED_PENDING_OWNER_SAMPLE test -- the parser itself is fully built
+# and tested, only a real-sample structural-fidelity check is missing.
+
+
+def _udk_fixture_pdf_bytes(rows: list[tuple[str, str, str, str]]) -> bytes:
+    """A representative fixture UDK PDF -- one table, the documented
+    real header row, same cell content shape as `_udk_csv` above. This
+    is this session's own best-effort reconstruction of a plausible UDK
+    PDF export, NOT a verified copy of the real product's actual layout."""
+    import io as _io
+
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
+    header = [
+        "Name", "Position", "Team", "Bye Week", "Rank", "Points", "Risk",
+        "Upside", "ADP", "Tier", "Outlook", "Dynasty", "Markers",
+    ]
+    data = [header]
+    for index, (name, team, adp_raw, dynasty_cell) in enumerate(rows, start=1):
+        data.append([
+            name, "QB", team, "7", str(index), "300.0", "4.0", "8.0", adp_raw,
+            "1", "Some real outlook text.", dynasty_cell,
+            "Mark Drafted Mark Keeper Mark Favorite Mark Watchlist Mark Avoid",
+        ])
+    buffer = _io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=(1400, 400))
+    # Real UDK PDF exports are visibly gridded tables (like the real CSV's
+    # own tabular structure) -- a visible grid is also what pdfplumber's
+    # default line-based table-detection strategy actually looks for.
+    table = Table(data)
+    table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.black)]))
+    doc.build([table])
+    return buffer.getvalue()
+
+
+def test_parse_udk_position_pdf_extracts_the_same_rows_a_csv_import_would(tmp_path) -> None:
+    ranking = _ranking()
+    pdf_bytes = _udk_fixture_pdf_bytes([
+        ("QB 0", "TST", "2.06", "Unlock with the 2026 UDK+. Get the UDK+."),
+        ("QB 1", "TST", "2.16", "Unlock with the 2026 UDK+. Get the UDK+."),
+    ])
+    result = save_udk_position_pdf_rankings(
+        tmp_path, ranking.profile, ranking, pdf_bytes, _manual_assets()
+    )
+    assert result["positions"] == ["QB"]
+    assert result["sourceRows"] == 2
+    assert result["matchedRows"] == 2
+    assert result["unmatched"] == []
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    qb = _udk_position(loaded, "QB")
+    entries = qb["entries"]
+    assert entries[0]["playerId"] == "QB-0"
+    assert entries[0]["playerName"] == "QB 0"
+    # Same real rules as the CSV path (delegated, not reimplemented):
+    # ADP stays an opaque string, Dynasty-locked text is detected.
+    assert entries[0]["adpRaw"] == "2.06"
+    assert isinstance(entries[0]["adpRaw"], str)
+    assert entries[0]["dynastyLocked"] is True
+    assert qb["provider"] == "Fantasy Footballers Podcast UDK"
+    assert qb["sourceFormat"] == "PDF"
+    # Real provenance: hashes the actual PDF bytes, not the derived CSV text.
+    import hashlib as _hashlib
+    assert qb["sourceSha256"] == _hashlib.sha256(pdf_bytes).hexdigest()
+
+
+def test_parse_udk_position_pdf_rejects_an_empty_file() -> None:
+    ranking = _ranking()
+    with pytest.raises(RedraftValidationError, match="non-empty"):
+        parse_udk_position_pdf(ranking.profile, ranking, b"", _manual_assets())
+
+
+def test_parse_udk_position_pdf_rejects_a_non_pdf_file() -> None:
+    ranking = _ranking()
+    with pytest.raises(RedraftValidationError, match="could not be read"):
+        parse_udk_position_pdf(ranking.profile, ranking, b"not a real pdf", _manual_assets())
+
+
+def test_parse_udk_position_pdf_rejects_a_pdf_with_no_table() -> None:
+    ranking = _ranking()
+    import io as _io
+
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import Paragraph, SimpleDocTemplate
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    buffer = _io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    doc.build([Paragraph("Just some prose, no table.", getSampleStyleSheet()["Normal"])])
+    with pytest.raises(RedraftValidationError, match="No table was found"):
+        parse_udk_position_pdf(ranking.profile, ranking, buffer.getvalue(), _manual_assets())
+
+
+@pytest.mark.skip(
+    reason=(
+        "BLOCKED_PENDING_OWNER_SAMPLE: no real Ballers/Fantasy Footballers "
+        "UDK PDF export has ever been provided to this pipeline. "
+        "parse_udk_position_pdf() is fully built and tested against a "
+        "representative fixture (see the tests above) -- what remains "
+        "unverified is real-layout fidelity (column order, page breaks, "
+        "header/footer noise, multi-table splits), which cannot be tested "
+        "without a real sample. Provide one real UDK PDF export to convert "
+        "this test into a real assertion; do not fabricate one."
+    )
+)
+def test_parse_udk_position_pdf_against_a_real_owner_sample() -> None:
+    raise AssertionError("no real owner PDF sample available")
 
 
 def test_forced_position_forces_qb_for_a_real_superflex_slot_not_just_qb1() -> None:

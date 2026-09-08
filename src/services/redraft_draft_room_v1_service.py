@@ -933,19 +933,111 @@ def parse_udk_position_csv(
     }
 
 
-def save_udk_position_rankings(
-    root: str | Path,
+def parse_udk_position_pdf(
     profile: LeagueProfile,
     ranking: RankingResult,
-    csv_text: str,
+    pdf_bytes: bytes,
     manual_assets: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
-    """Parse + persist a UDK CSV import, merging additively into any prior
-    import for this profile so importing a QB-only file does not erase a
-    previously-imported RB file. Provenance (provider, imported_at,
-    source hash) travels with every position bucket so the UI can always
-    disclose "UDK, imported <time>" distinct from NWR's own rankings."""
-    preview = parse_udk_position_csv(profile, ranking, csv_text, manual_assets)
+    """Parse a PDF export of the owner's UDK ("Position Rankings — Fantasy
+    Footballers Podcast") product -- the Fantasy Footballers sell the same
+    Ultimate Draft Kit data in both CSV and PDF form; only the CSV path
+    has ever been exercised against a real owner file (`parse_udk_position_csv`,
+    the owner's real 36-row QB file). NWR post-draft overnight, section 14.
+
+    NO REAL BALLERS/UDK PDF SAMPLE HAS EVER BEEN SEEN BY THIS PIPELINE.
+    This function's PDF-table-extraction step is built and tested against
+    a representative FIXTURE PDF this session generated (same documented
+    column schema as the real CSV: Name, Position, Team, Bye Week, Rank,
+    Points, Risk, Upside, ADP, Tier, Outlook, Dynasty, Markers) -- a
+    reasonable assumption given it is the same underlying UDK dataset in
+    a different export format, but NOT a verified match to the real
+    product's actual PDF layout (column order, page breaks, header/footer
+    noise, multi-table-per-page splits are all real unknowns until an
+    actual owner PDF is seen). See
+    `test_parse_udk_position_pdf_against_a_real_owner_sample` in the
+    paired test file for the one test explicitly marked
+    BLOCKED_PENDING_OWNER_SAMPLE -- that gap is in the SAMPLE, not in
+    this function, which is otherwise fully built and tested.
+
+    Design: extracts each page's table(s) via pdfplumber, re-serializes
+    them as CSV text using the exact same header contract
+    `parse_udk_position_csv` already requires, and delegates every real
+    parsing/matching/validation rule (position support, ADP-as-opaque-
+    string, Dynasty-locked detection, Markers-discarded, owner-identity
+    matching) to that already-tested function -- this file adds ONLY the
+    PDF-to-table-text extraction step, never a second, parallel matching
+    implementation that could silently drift from the CSV path's rules.
+    """
+    if not pdf_bytes:
+        raise RedraftValidationError("UDK PDF must be non-empty.")
+    if len(pdf_bytes) > 20_000_000:
+        raise RedraftValidationError("UDK PDF must be no larger than 20 MB.")
+    try:
+        import pdfplumber
+    except ImportError as exc:  # pragma: no cover -- pdfplumber is a real, pinned dependency
+        raise RedraftValidationError(
+            "UDK PDF import requires the pdfplumber dependency, which is not installed."
+        ) from exc
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            tables: list[list[list[str | None]]] = []
+            for page in pdf.pages:
+                tables.extend(page.extract_tables())
+    except Exception as exc:
+        raise RedraftValidationError(f"UDK PDF could not be read: {exc}") from exc
+    if not tables:
+        raise RedraftValidationError(
+            "No table was found in the UDK PDF. This parser expects a real, "
+            "extractable table (the same rows a real Fantasy Footballers UDK PDF "
+            "export carries) -- an image-only/scanned PDF is not supported."
+        )
+    header: list[str] | None = None
+    body_rows: list[list[str]] = []
+    for table in tables:
+        if not table:
+            continue
+        candidate_header = [str(cell or "").strip() for cell in table[0]]
+        if set(_UDK_REQUIRED_COLUMNS) <= set(candidate_header):
+            if header is None:
+                header = candidate_header
+            elif header != candidate_header:
+                # A later page repeats the header row (common in multi-page
+                # PDF exports) -- reuse the first header, skip the repeat.
+                pass
+            body_rows.extend([str(cell or "") for cell in row] for row in table[1:])
+        elif header is not None:
+            # A continuation table on a later page with no repeated header
+            # row -- assume it's more body rows in the same column order.
+            body_rows.extend([str(cell or "") for cell in row] for row in table)
+    if header is None:
+        raise RedraftValidationError(
+            "UDK PDF is missing required columns "
+            f"({', '.join(_UDK_REQUIRED_COLUMNS)}) -- no table header matched the "
+            "known UDK schema."
+        )
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(header)
+    writer.writerows(body_rows)
+    csv_text = buffer.getvalue()
+    result = parse_udk_position_csv(profile, ranking, csv_text, manual_assets)
+    # Real provenance: hash the actual PDF bytes the owner uploaded, not
+    # the intermediate CSV text this function derived from them.
+    result["sourceSha256"] = hashlib.sha256(pdf_bytes).hexdigest()
+    result["sourceFormat"] = "PDF"
+    return result
+
+
+def _persist_udk_preview(
+    root: str | Path, profile: LeagueProfile, preview: dict[str, Any]
+) -> dict[str, Any]:
+    """Shared persistence for a UDK preview, however it was parsed (CSV or
+    PDF) -- merges additively into any prior import for this profile so
+    importing a QB-only file does not erase a previously-imported RB
+    file. Provenance (provider, imported_at, source hash, source format)
+    travels with every position bucket so the UI can always disclose
+    "UDK, imported <time>" distinct from NWR's own rankings."""
     path = _udk_rankings_path(root, profile.profile_id)
     existing: dict[str, Any] = {}
     try:
@@ -961,6 +1053,7 @@ def save_udk_position_rankings(
             "provider": "Fantasy Footballers Podcast UDK",
             "importedAtUtc": imported_at,
             "sourceSha256": preview["sourceSha256"],
+            "sourceFormat": preview.get("sourceFormat", "CSV"),
             "sourceRows": len(entries),
         }
     document = {"profileId": profile.profile_id, "positions": positions}
@@ -976,6 +1069,34 @@ def save_udk_position_rankings(
         "warnings": preview["warnings"],
         "importedAtUtc": imported_at,
     }
+
+
+def save_udk_position_rankings(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    csv_text: str,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Parse + persist a UDK CSV import -- see `_persist_udk_preview`."""
+    preview = parse_udk_position_csv(profile, ranking, csv_text, manual_assets)
+    return _persist_udk_preview(root, profile, preview)
+
+
+def save_udk_position_pdf_rankings(
+    root: str | Path,
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    pdf_bytes: bytes,
+    manual_assets: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Parse + persist a UDK PDF import -- see `parse_udk_position_pdf`'s
+    docstring for the real, disclosed BLOCKED_PENDING_OWNER_SAMPLE
+    limitation, and `_persist_udk_preview` for the shared persistence
+    this shares with the CSV path (same storage, same merge behavior,
+    same UI-facing shape)."""
+    preview = parse_udk_position_pdf(profile, ranking, pdf_bytes, manual_assets)
+    return _persist_udk_preview(root, profile, preview)
 
 
 def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
