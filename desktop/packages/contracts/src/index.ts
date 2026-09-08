@@ -969,6 +969,23 @@ export interface MarginalRosterUtility {
   label: string;
 }
 
+// NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/risk
+// intake contract (current_player_status_overrides_service.py) has only
+// three real kinds -- no "end date" field exists in the real backend
+// (a richer taxonomy was assumed in earlier planning but never actually
+// built; see docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md).
+// This mirrors the real backend shape exactly, not an aspirational one.
+export interface PlayerStatusOverride {
+  playerId: string;
+  playerName: string;
+  kind: "SEASON_OUT" | "NOT_WITH_TEAM" | "TEAM_CORRECTION";
+  reason: string;
+  effectiveDate: string;
+  verifiedAtUtc: string;
+  sources: string[];
+  correctedTeam: string;
+}
+
 export interface MetricStatus {
   computationState:
     | "EVALUATED"

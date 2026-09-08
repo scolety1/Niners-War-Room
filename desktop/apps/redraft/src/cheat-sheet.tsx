@@ -47,6 +47,11 @@ export function CheatSheetPage({
   onQueue = () => {},
   onPlayerClick = () => {},
   onImportUdk,
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll back
+  // to the previous version" facade capability existed but had no UI --
+  // optional/defaulted so the standalone "#/cheat-sheet" route (which has
+  // no live mutation plumbing today) keeps working unchanged.
+  onRollbackUdk,
 }: {
   data: RedraftBootstrap;
   canRecordPick?: boolean;
@@ -56,6 +61,7 @@ export function CheatSheetPage({
   onQueue?: (playerId: string) => void;
   onPlayerClick?: (playerId: string, event: React.MouseEvent) => void;
   onImportUdk: (file: File | undefined) => void;
+  onRollbackUdk?: (position: string) => void;
 }) {
   const [sheet, setSheet] = useState("Overall");
   // "Source" only ever offers UDK for a position the owner has actually
@@ -187,6 +193,18 @@ export function CheatSheetPage({
               UDK's own position rank/tier — NOT NWR's overall rank, and its Risk/Upside/ADP are provider
               context, not NWR calibrated confidence. ADP is shown exactly as UDK printed it (source team
               count unknown) — never reinterpreted as this league's own round.pick.
+              {onRollbackUdk ? (
+                <>
+                  {" "}
+                  <Button
+                    variant="ghost"
+                    disabled={Boolean(working)}
+                    onClick={() => onRollbackUdk(sheet)}
+                  >
+                    Roll back {sheet} to previous import
+                  </Button>
+                </>
+              ) : null}
             </p>
             <DataTable
               columns={[

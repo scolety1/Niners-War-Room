@@ -12,6 +12,7 @@ import {
   type OwnerDecisionInput,
   type PersonalBoardInput,
   type PlayerDetail,
+  type PlayerStatusOverride,
   type PlanningModuleId,
   type PlanningModuleInput,
   type PlanningWorkspace,
@@ -402,6 +403,50 @@ export class NwrApiClient {
     return this.request(`/api/v1/redraft/udk-kdst/${encodeURIComponent(profileId)}/import`, {
       method: "POST",
       body: JSON.stringify({ csvText }),
+    });
+  }
+
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll back
+  // one position's UDK import to its previous version" facade method
+  // existed since the prior class-time session but had no HTTP route.
+  // Takes no file -- just the position to restore.
+  rollbackUdkPositionRankings(profileId: string, position: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/udk/${encodeURIComponent(profileId)}/rollback`, {
+      method: "POST",
+      body: JSON.stringify({ position }),
+    });
+  }
+
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
+  // risk intake read/write paths existed since the post-draft overnight
+  // repair but had no HTTP route -- the only way to add or see a real
+  // verified event was to hand-edit the committed JSON file.
+  listPlayerStatusOverrides(): Promise<{ overrides: PlayerStatusOverride[] }> {
+    return this.request("/api/v1/redraft/status-overrides");
+  }
+
+  submitPlayerStatusOverride(input: {
+    playerId: string;
+    playerName: string;
+    kind: PlayerStatusOverride["kind"];
+    reason: string;
+    effectiveDate: string;
+    verifiedAtUtc: string;
+    sources: string[];
+    correctedTeam?: string;
+  }): Promise<PlayerStatusOverride> {
+    return this.request("/api/v1/redraft/status-overrides", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: input.playerId,
+        playerName: input.playerName,
+        kind: input.kind,
+        reason: input.reason,
+        effectiveDate: input.effectiveDate,
+        verifiedAtUtc: input.verifiedAtUtc,
+        sources: input.sources,
+        correctedTeam: input.correctedTeam ?? "",
+      }),
     });
   }
 

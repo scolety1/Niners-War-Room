@@ -258,6 +258,18 @@ class FakeFacade:
         self.calls.append(("udk-kdst-import", value))
         return FacadePayload(data=value)
 
+    def rollback_udk_position_rankings(self, **value: Any) -> FacadePayload:
+        self.calls.append(("udk-rollback", value))
+        return FacadePayload(data=value)
+
+    def list_player_status_overrides(self) -> FacadePayload:
+        self.calls.append(("status-overrides-list", None))
+        return FacadePayload(data={"overrides": [{"playerId": "fixture-1", "playerName": "Fixture Player", "kind": "SEASON_OUT", "reason": "fixture", "effectiveDate": "2026-09-08", "verifiedAtUtc": "2026-09-08T00:00:00+00:00", "sources": ["fixture"], "correctedTeam": ""}]})
+
+    def submit_player_status_override(self, **value: Any) -> FacadePayload:
+        self.calls.append(("status-override-submit", value))
+        return FacadePayload(data=value)
+
     def refresh_redraft_adp(self, **value: Any) -> FacadePayload:
         self.calls.append(("adp-refresh", value))
         return FacadePayload(data=value)
@@ -959,6 +971,79 @@ def test_redraft_udk_kdst_import_route_accepts_csv_text() -> None:
     assert import_calls[0][1]["csv_text"].startswith("player_name_raw")
     assert invalid[0] == 400
     assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
+
+
+def test_redraft_udk_rollback_route_accepts_a_position() -> None:
+    """NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll
+    back one position's UDK import" facade method had no HTTP route at
+    all before this pass -- confirms the route now exists, forwards
+    position to the facade, and rejects a non-string/missing body."""
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        ok = request(
+            server, "POST", "/api/v1/redraft/udk/profile-1/rollback",
+            body={"position": "QB"}, headers=authenticated_headers(),
+        )
+        invalid = request(
+            server, "POST", "/api/v1/redraft/udk/profile-1/rollback",
+            body={"position": 123}, headers=authenticated_headers(),
+        )
+    assert ok[0] == 200
+    rollback_calls = [call for call in facade.calls if call[0] == "udk-rollback"]
+    assert len(rollback_calls) == 1
+    assert rollback_calls[0][1]["profile_id"] == "profile-1"
+    assert rollback_calls[0][1]["position"] == "QB"
+    assert invalid[0] == 400
+    assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
+
+
+def test_status_overrides_routes_list_and_submit() -> None:
+    """NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
+    risk intake read/write contracts existed since the post-draft
+    overnight repair but had no HTTP route -- confirms both the GET list
+    and POST submit routes now exist and forward real, validated fields
+    to the facade (never a partial/unknown-field body)."""
+    facade = FakeFacade("redraft")
+    with running_server(facade) as server:
+        listing = request(server, "GET", "/api/v1/redraft/status-overrides", headers=authenticated_headers())
+        ok = request(
+            server, "POST", "/api/v1/redraft/status-overrides",
+            body={
+                "playerId": "player-1", "playerName": "Fixture Player", "kind": "SEASON_OUT",
+                "reason": "ACL tear", "effectiveDate": "2026-09-08", "verifiedAtUtc": "2026-09-08T00:00:00+00:00",
+                "sources": ["ESPN"], "correctedTeam": "",
+            },
+            headers=authenticated_headers(),
+        )
+        invalid_sources_type = request(
+            server, "POST", "/api/v1/redraft/status-overrides",
+            body={
+                "playerId": "player-1", "playerName": "Fixture Player", "kind": "SEASON_OUT",
+                "reason": "ACL tear", "effectiveDate": "2026-09-08", "verifiedAtUtc": "2026-09-08T00:00:00+00:00",
+                "sources": "ESPN",
+            },
+            headers=authenticated_headers(),
+        )
+        unknown_field = request(
+            server, "POST", "/api/v1/redraft/status-overrides",
+            body={
+                "playerId": "player-1", "playerName": "Fixture Player", "kind": "SEASON_OUT",
+                "reason": "ACL tear", "effectiveDate": "2026-09-08", "verifiedAtUtc": "2026-09-08T00:00:00+00:00",
+                "sources": ["ESPN"], "endDate": "2026-12-01",
+            },
+            headers=authenticated_headers(),
+        )
+    assert listing[0] == 200
+    assert listing[2]["data"]["overrides"][0]["playerId"] == "fixture-1"
+    assert ok[0] == 200
+    submit_calls = [call for call in facade.calls if call[0] == "status-override-submit"]
+    assert len(submit_calls) == 1
+    assert submit_calls[0][1]["player_id"] == "player-1"
+    assert submit_calls[0][1]["sources"] == ["ESPN"]
+    assert invalid_sources_type[0] == 400
+    assert invalid_sources_type[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
+    assert unknown_field[0] == 400
+    assert unknown_field[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
 
 
 def test_internal_errors_are_sanitized() -> None:

@@ -95,6 +95,22 @@ a cross-trial memoization would be pure overhead given real Monte Carlo seed var
 safe optimization exists. Per the directive's own explicit rule, STOPPED. ~5.8-6.95s remains
 the accepted next-draft latency. No code change.
 
-## Section 8 — Status/Ballers UI (bounded)
+## Section 8 — Status/Ballers UI (bounded) (DONE)
 
-(next)
+Full evidence: `docs/codex/NWR_SECTION8_STATUS_BALLERS_UI_V1_20260908.md`. Found FOUR real
+facade methods (`import_udk_pdf_rankings`, `rollback_udk_position_rankings`,
+`submit_player_status_override`, `list_player_status_overrides`) with zero HTTP route or UI.
+Real finding: the PDF path's own docstring claimed to follow `import_udk_unmodeled_skill_
+assets`'s file-path convention, but that method itself has zero real callers anywhere -- no
+Tauri file-dialog precedent exists in this product at all. Built, full-stack, tested: UDK
+rollback-one-position (no file needed -- a button in Cheat Sheets) and status/risk intake read
++ write (a new Player Drawer "Status / Risk" section, closing section 2's disclosed read-side
+gap too). Deliberately left the Ballers PDF import UI backend-ready-only (no route added either
+-- an unconsumed route is not "ready", it's untested surface) with a documented manual
+workaround (existing CSV lane, or direct facade invocation), per the directive's own escape
+valve -- adding the missing Tauri dialog-plugin infrastructure from scratch is not small/bounded.
+Also disclosed: the shipped status form omits the directive's literal "optional end date" field
+since the real backend contract has no such field (already-known gap, not invented here).
+Typecheck clean, 142/142 frontend tests, 2 new + 48 total backend HTTP/facade tests passed, 5/46
+unchanged pre-existing baseline failures in `test_desktop_application_api.py`. Both real boards
+and the real owner `current.csv` hash re-verified unchanged.

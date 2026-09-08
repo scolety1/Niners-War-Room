@@ -28,6 +28,7 @@ import type {
   KhaHistoricalReplayPreview,
   LeagueProfile,
   MetricStatus,
+  PlayerStatusOverride,
   RedraftBootstrap,
   RedraftExternalIntelligence,
   RedraftExternalIntelligenceEntry,
@@ -812,6 +813,10 @@ export function DraftRoomV2Page({
   const quickInputRef = useRef<HTMLInputElement>(null);
   const [working, setWorking] = useState("");
   const [mutationError, setMutationError] = useState<NwrApiError | null>(null);
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
+  // risk overrides list -- a real, disclosed gap since section 2 (write
+  // path already wired into live ranking; read side had zero UI anywhere).
+  const [statusOverrides, setStatusOverrides] = useState<PlayerStatusOverride[]>([]);
   const board = data.draftBoard;
   const nwrPureActive = data.activeProfile?.nwrPureExperimental ?? false;
   const liveMode = board?.mode === "LIVE_READ_ONLY";
@@ -955,6 +960,57 @@ export function DraftRoomV2Page({
       onUpdate(await client.importUdkRankings(data.activeProfileId, csvText));
     } catch (reason) {
       setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${file.name} could not be imported.`));
+    } finally {
+      setWorking("");
+    }
+  };
+
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
+  // risk intake WRITE path existed since the post-draft overnight repair
+  // but had no HTTP route or UI -- the only way to add a real, verified
+  // event was hand-editing the committed JSON file, bypassing its own
+  // real validation (kind/source/date rules) entirely. Real fields only
+  // (player, event type, date, reason, sources, optional corrected
+  // team) -- no "end date" field exists in the real backend contract.
+  const submitStatusOverride = async (input: {
+    playerId: string;
+    playerName: string;
+    kind: PlayerStatusOverride["kind"];
+    reason: string;
+    effectiveDate: string;
+    sources: string[];
+    correctedTeam?: string;
+  }) => {
+    setWorking("status-override");
+    setMutationError(null);
+    try {
+      await client.submitPlayerStatusOverride({
+        ...input,
+        verifiedAtUtc: new Date().toISOString(),
+      });
+      setStatusOverridesReloadKey((key) => key + 1);
+      // Effective on the NEXT live ranking build automatically (the real
+      // backend re-reads the same committed file at both live ranking
+      // call sites) -- this drawer's own Suggestions/DecisionBundle view
+      // picks it up at the next natural pick/undo/refresh, same as every
+      // other out-of-band ranking input (ADP refresh, UDK import).
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError("Status override could not be submitted."));
+    } finally {
+      setWorking("");
+    }
+  };
+
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll back
+  // one position's UDK import" facade capability existed but had no UI.
+  const rollbackUdk = async (position: string) => {
+    if (!data.activeProfileId) return;
+    setWorking("udk-rollback");
+    setMutationError(null);
+    try {
+      onUpdate(await client.rollbackUdkPositionRankings(data.activeProfileId, position));
+    } catch (reason) {
+      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${position} could not be rolled back.`));
     } finally {
       setWorking("");
     }
@@ -1180,6 +1236,27 @@ export function DraftRoomV2Page({
       cancelled = true;
     };
   }, [client, data.activeProfileId, rosterStateSignal]);
+
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): loads the real
+  // status/risk overrides list (not profile-scoped -- the real backend
+  // contract stores one shared, repo-committed list) so the Player
+  // Drawer can show whether a currently-viewed player has an active
+  // real, verified override. Reloaded after every real submit below.
+  const [statusOverridesReloadKey, setStatusOverridesReloadKey] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    client
+      .listPlayerStatusOverrides()
+      .then((response) => {
+        if (!cancelled) setStatusOverrides(response.overrides);
+      })
+      .catch(() => {
+        if (!cancelled) setStatusOverrides([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, statusOverridesReloadKey]);
 
   useEffect(() => {
     // Lazy, tab-gated fetch: a fixed, static, non-current artifact -- no
@@ -1550,6 +1627,7 @@ export function DraftRoomV2Page({
             onQueue={toggleQueue}
             onPlayerClick={onPlayerClick}
             onImportUdk={(file) => void importUdk(file)}
+            onRollbackUdk={(position) => void rollbackUdk(position)}
           />
         ) : null}
         {tab === "BOARD" ? (
@@ -1630,6 +1708,8 @@ export function DraftRoomV2Page({
           onDraft={(id) => void mark(id)}
           onQueue={toggleQueue}
           onClose={() => setDrawerPlayerId(null)}
+          statusOverrides={statusOverrides}
+          onSubmitStatusOverride={(input) => void submitStatusOverride(input)}
         />
       ) : null}
     </div>
@@ -3527,6 +3607,11 @@ function PlayerDrawer({
   onDraft,
   onQueue,
   onClose,
+  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): real status/risk
+  // read (a disclosed section-2 gap) + write (existed backend-only since
+  // the post-draft overnight repair) now both reachable from here.
+  statusOverrides = [],
+  onSubmitStatusOverride,
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
@@ -3550,8 +3635,22 @@ function PlayerDrawer({
   onDraft: (playerId: string) => void;
   onQueue: (playerId: string) => void;
   onClose: () => void;
+  statusOverrides?: PlayerStatusOverride[];
+  onSubmitStatusOverride?: (input: {
+    playerId: string;
+    playerName: string;
+    kind: PlayerStatusOverride["kind"];
+    reason: string;
+    effectiveDate: string;
+    sources: string[];
+    correctedTeam?: string;
+  }) => void;
 }) {
   const playerScore = candidate?.playerScore ?? (ranking ? ranking.replacementAdjustedValue : null);
+  const activeStatusOverrides = useMemo(
+    () => statusOverrides.filter((override) => override.playerId === playerId),
+    [statusOverrides, playerId],
+  );
   return (
     <aside className="player-drawer" role="dialog" aria-label={`${ranking?.playerName ?? playerId} detail`}>
       <div className="player-drawer__header">
@@ -3708,7 +3807,120 @@ function PlayerDrawer({
           </>
         ) : null}
       </details>
+      {onSubmitStatusOverride ? (
+        <details className="player-drawer__section">
+          <summary>Status / Risk{activeStatusOverrides.length > 0 ? ` — ${activeStatusOverrides.length} active` : ""}</summary>
+          {activeStatusOverrides.length > 0 ? (
+            <ul className="drawer-warnings">
+              {activeStatusOverrides.map((override) => (
+                <li key={`${override.playerId}-${override.effectiveDate}-${override.kind}`}>
+                  <strong>{override.kind}</strong> effective {override.effectiveDate}
+                  {override.kind === "TEAM_CORRECTION" && override.correctedTeam ? ` → ${override.correctedTeam}` : ""}
+                  {" — "}{override.reason} (source{override.sources.length === 1 ? "" : "s"}: {override.sources.join(", ") || "—"})
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No real, verified status/risk override is currently on file for this player.</p>
+          )}
+          <StatusOverrideForm
+            playerId={playerId}
+            playerName={ranking?.playerName ?? candidate?.playerName ?? playerId}
+            working={working === "status-override"}
+            onSubmit={onSubmitStatusOverride}
+          />
+        </details>
+      ) : null}
       </div>
     </aside>
+  );
+}
+
+/** NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/risk
+ * intake form -- fields limited to exactly what the real backend contract
+ * (`add_verified_status_override`) accepts: player (fixed to the drawer's
+ * own player, never free text), event type, effective date, reason,
+ * source(s). No "end date" field is rendered -- the real backend has no
+ * such field (a richer taxonomy was assumed in earlier planning but never
+ * actually built; see docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md).
+ * `correctedTeam` only appears for TEAM_CORRECTION, matching the real
+ * backend's own real validation rule. */
+function StatusOverrideForm({
+  playerId,
+  playerName,
+  working,
+  onSubmit,
+}: {
+  playerId: string;
+  playerName: string;
+  working: boolean;
+  onSubmit: (input: {
+    playerId: string;
+    playerName: string;
+    kind: PlayerStatusOverride["kind"];
+    reason: string;
+    effectiveDate: string;
+    sources: string[];
+    correctedTeam?: string;
+  }) => void;
+}) {
+  const [kind, setKind] = useState<PlayerStatusOverride["kind"]>("SEASON_OUT");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [reason, setReason] = useState("");
+  const [sourcesText, setSourcesText] = useState("");
+  const [correctedTeam, setCorrectedTeam] = useState("");
+  const sources = sourcesText.split(",").map((source) => source.trim()).filter(Boolean);
+  const canSubmit = Boolean(effectiveDate) && Boolean(reason.trim()) && sources.length > 0
+    && (kind !== "TEAM_CORRECTION" || Boolean(correctedTeam.trim()));
+  return (
+    <form
+      className="status-override-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!canSubmit) return;
+        onSubmit({
+          playerId,
+          playerName,
+          kind,
+          reason: reason.trim(),
+          effectiveDate,
+          sources,
+          ...(kind === "TEAM_CORRECTION" ? { correctedTeam: correctedTeam.trim() } : {}),
+        });
+        setReason("");
+        setSourcesText("");
+        setCorrectedTeam("");
+      }}
+    >
+      <label>
+        Event type
+        <select value={kind} onChange={(event) => setKind(event.target.value as PlayerStatusOverride["kind"])}>
+          <option value="SEASON_OUT">Season out (injury)</option>
+          <option value="NOT_WITH_TEAM">Not with team (unsigned)</option>
+          <option value="TEAM_CORRECTION">Team correction</option>
+        </select>
+      </label>
+      <label>
+        Date
+        <input type="date" value={effectiveDate} onChange={(event) => setEffectiveDate(event.target.value)} required />
+      </label>
+      {kind === "TEAM_CORRECTION" ? (
+        <label>
+          Corrected team
+          <input type="text" value={correctedTeam} onChange={(event) => setCorrectedTeam(event.target.value)} placeholder="e.g. KC" required />
+        </label>
+      ) : null}
+      <label>
+        Source(s)
+        <input type="text" value={sourcesText} onChange={(event) => setSourcesText(event.target.value)} placeholder="e.g. ESPN, Rotoworld" required />
+      </label>
+      <label>
+        Reason
+        <input type="text" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="e.g. ACL tear, placed on IR" required />
+      </label>
+      <Button type="submit" variant="ghost" disabled={!canSubmit || working}>
+        {working ? "Saving…" : "Submit override"}
+      </Button>
+    </form>
   );
 }

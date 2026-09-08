@@ -43,6 +43,14 @@ _REDRAFT_UDK_IMPORT = re.compile(r"^/api/v1/redraft/udk/([^/]+)/import$")
 # K/DST" UDK snapshot importer, separate from the skill-position rankings
 # route above -- previously wired nowhere.
 _REDRAFT_UDK_KDST_IMPORT = re.compile(r"^/api/v1/redraft/udk-kdst/([^/]+)/import$")
+# NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real UDK
+# rollback-one-position facade method (`rollback_udk_position_rankings`)
+# and the real status/risk intake contract (`submit_player_status_
+# override` / `list_player_status_overrides`) have existed since the
+# prior class-time session but were never reachable from any HTTP route.
+# Neither needs a local file path -- both take plain JSON fields.
+_REDRAFT_UDK_ROLLBACK = re.compile(r"^/api/v1/redraft/udk/([^/]+)/rollback$")
+_REDRAFT_STATUS_OVERRIDES = "/api/v1/redraft/status-overrides"
 _REDRAFT_PASTE_ADP_PREVIEW = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/preview$")
 _REDRAFT_PASTE_ADP_SAVE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/save$")
 _REDRAFT_PASTE_ADP_ACTIVATE = re.compile(r"^/api/v1/redraft/adp/([^/]+)/paste/activate$")
@@ -652,6 +660,46 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 csv_text=body["csvText"],
             )
             return self.server.facade.redraft_bootstrap()
+        udk_rollback_match = _REDRAFT_UDK_ROLLBACK.fullmatch(path)
+        if method == "POST" and udk_rollback_match:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"position"})
+            if not isinstance(body.get("position"), str):
+                raise self._invalid_body("position must be a string.")
+            self.server.facade.rollback_udk_position_rankings(
+                profile_id=unquote(udk_rollback_match.group(1)),
+                position=body["position"],
+            )
+            return self.server.facade.redraft_bootstrap()
+        if method == "GET" and path == _REDRAFT_STATUS_OVERRIDES:
+            return self.server.facade.list_player_status_overrides()
+        if method == "POST" and path == _REDRAFT_STATUS_OVERRIDES:
+            body = self._json_body()
+            allowed = {
+                "playerId", "playerName", "kind", "reason", "effectiveDate",
+                "verifiedAtUtc", "sources", "correctedTeam",
+            }
+            self._reject_unknown_fields(body, allowed)
+            required_strings = ("playerId", "playerName", "kind", "reason", "effectiveDate", "verifiedAtUtc")
+            for field in required_strings:
+                if not isinstance(body.get(field), str):
+                    raise self._invalid_body(f"{field} must be a string.")
+            sources = body.get("sources")
+            if not isinstance(sources, list) or not all(isinstance(item, str) for item in sources):
+                raise self._invalid_body("sources must be a list of strings.")
+            corrected_team = body.get("correctedTeam", "")
+            if not isinstance(corrected_team, str):
+                raise self._invalid_body("correctedTeam must be a string when supplied.")
+            return self.server.facade.submit_player_status_override(
+                player_id=body["playerId"],
+                player_name=body["playerName"],
+                kind=body["kind"],
+                reason=body["reason"],
+                effective_date=body["effectiveDate"],
+                verified_at_utc=body["verifiedAtUtc"],
+                sources=sources,
+                corrected_team=corrected_team,
+            )
         paste_preview_match = _REDRAFT_PASTE_ADP_PREVIEW.fullmatch(path)
         if method == "POST" and paste_preview_match:
             body = self._json_body()
