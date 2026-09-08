@@ -46,6 +46,7 @@ from src.services.shadow_numeric_authorities_service import (
     evaluate_cost_of_waiting_v2,
     evaluate_pick_candidates,
     label_pick_decisions,
+    marginal_roster_utility,
     team_score,
 )
 
@@ -103,6 +104,15 @@ class CandidateBundle:
     # builds; both real construction sites (this module and
     # historical_decision_state_service.py) always pass a populated dict.
     metric_status: Mapping[str, MetricStatus] = field(default_factory=dict)
+    # NWR post-draft overnight, marginal-roster-utility PROMOTION (real,
+    # preregistered walk-forward evaluation, 4 seasons x 12 draft slots,
+    # PASSED all 3 gates -- see
+    # docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md).
+    # Additive: None for any candidate this couldn't be computed for
+    # (never blocks the rest of the bundle); used as the PRIMARY sort key
+    # in `_candidate_sort_key` -- see that function's own docstring for
+    # why. pick_score itself is completely unchanged.
+    marginal_utility: float | None = None
 
 
 @dataclass(frozen=True)
@@ -127,26 +137,53 @@ def _uncertainty_label(equity: ChampionshipEquityResult) -> str:
     return f"LOW_MODEL_UNCERTAINTY (SE={equity.standard_error:.4f})"
 
 
-def _candidate_sort_key(candidate: "CandidateBundle") -> tuple[float, float, str]:
-    """NWR post-draft overnight, section 19: `pick_score` is a genuine but
-    DELIBERATELY LOSSY signal -- a per-call 0-100 min-max normalization
-    across only the candidates evaluated together (see `pick_score()`'s
-    own docstring in shadow_numeric_authorities_service.py). Two
-    candidates can land on the exact same rounded pick_score while still
-    differing in the real, full-precision, non-normalized signal it was
-    compressed FROM. Before this, a plain single-key sort left ties in
-    whatever order `candidates` happened to be built in -- an unexamined,
-    non-evidence-backed accident of iteration order, not a real tie-break
-    decision.
+def _candidate_sort_key(candidate: "CandidateBundle") -> tuple[int, float, float, float, str]:
+    """PRIMARY key: `marginal_utility` -- PROMOTED (real, preregistered
+    walk-forward evaluation across 4 real historical seasons x 12 real
+    draft slots, using real leakage-safe projections and real realized
+    outcomes; ALL THREE preregistered gates passed: mean_delta=+74.65,
+    CHALLENGER won 32/48 (67%) of paired observations, no season
+    regressed by more than 5%, worst case -1.4%; see
+    docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md for the
+    full protocol, gates, and results). A `None` marginal_utility (should
+    not happen in practice -- computed for every real candidate in
+    `build_decision_bundle` -- but never assumed) sorts strictly last
+    rather than crashing or silently defaulting to 0, so a real
+    computation failure is visible in ordering, not hidden.
 
-    Secondary key: `raw_decision_utility`, the actual pre-normalization
-    utility `pick_score` is built from (already computed for every real
-    candidate, never None) -- a real, evidence-backed comparator, not an
-    invented one. Tertiary key: `player_id`, purely for full determinism
-    (guarantees the sort's result never depends on residual list-order
-    accidents even in the genuine double-tie case both real signals
-    agree on)."""
-    return (-candidate.pick_score, -candidate.raw_decision_utility, candidate.player_id)
+    Everything below marginal_utility is preserved EXACTLY as before
+    promotion, now purely as tie-breaks: `pick_score` (still the real,
+    calibrated, historically-validated composite -- unchanged in value),
+    then `raw_decision_utility` (the pre-normalization signal pick_score
+    is built from), then `player_id` for full determinism."""
+    has_utility = candidate.marginal_utility is not None
+    return (
+        0 if has_utility else 1,
+        -(candidate.marginal_utility or 0.0),
+        -candidate.pick_score,
+        -candidate.raw_decision_utility,
+        candidate.player_id,
+    )
+
+
+def _safe_marginal_utility(
+    player_id: str,
+    current_owner_player_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> float | None:
+    """Wraps the real, promoted `marginal_roster_utility()` defensively --
+    an experimental-turned-promoted signal must never be allowed to crash
+    the real DecisionBundle response; any failure here means this
+    candidate falls back to pick_score ordering (see
+    `_candidate_sort_key`), never a crash or a fabricated value."""
+    try:
+        return marginal_roster_utility(
+            player_id, current_owner_player_ids, profile, ranking, manual_assets,
+        ).utility
+    except Exception:
+        return None
 
 
 def build_decision_bundle(
@@ -280,6 +317,9 @@ def build_decision_bundle(
                 warnings=tuple(warnings),
                 uncertainty=_uncertainty_label(current_equity),
                 metric_status=metric_status,
+                marginal_utility=_safe_marginal_utility(
+                    player_id, current_owner_player_ids, profile, ranking, manual_assets,
+                ),
             )
         )
     candidates.sort(key=_candidate_sort_key)

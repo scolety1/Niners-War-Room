@@ -91,7 +91,43 @@ def test_build_decision_bundle_composes_a_real_candidate_list() -> None:
     assert bundle.provenance.bundle_hash
 
 
-def test_candidates_are_sorted_best_pick_score_first() -> None:
+def test_build_decision_bundle_computes_marginal_utility_and_orders_by_it() -> None:
+    """PROMOTION (real, preregistered walk-forward evaluation, see
+    docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md):
+    build_decision_bundle now computes a real marginal_utility for every
+    candidate and the returned bundle.candidates is already in
+    marginal-utility-primary order -- not merely computed-but-unused."""
+    ranking = _ranking()
+    profile = ranking.profile
+    manual_assets = _manual_assets()
+    adp = _empty_adp(profile)
+    leagues = simulate_comparable_leagues(
+        profile, ranking, manual_assets, adp, trials=2, base_seed=3
+    )
+
+    bundle = build_decision_bundle(
+        profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
+        owner_slot=1, current_owner_player_ids=["RB-0"],
+        candidate_player_ids=["RB-1", "RB-2", "WR-0", "QB-0"],
+        comparable_leagues=leagues, provenance=_provenance(),
+        trials=2, seasons=20, base_seed=3,
+    )
+
+    for candidate in bundle.candidates:
+        assert candidate.marginal_utility is not None
+    assert list(bundle.candidates) == sorted(bundle.candidates, key=_candidate_sort_key)
+
+
+def test_candidates_happen_to_come_out_pick_score_descending_in_this_simple_fixture() -> None:
+    """NOTE (post-promotion): the real PRIMARY sort key is now
+    marginal_utility, not pick_score (see the _candidate_sort_key tests
+    below) -- this fixture's empty current_owner_player_ids means every
+    real candidate becomes a starter, so marginal_utility here tracks
+    the same underlying value ranking pick_score does, and the two
+    happen to agree. This is a real, expected consequence for an empty-
+    roster scenario, not a guarantee pick_score itself drives order --
+    see test_candidate_sort_key_orders_by_marginal_utility_first for the
+    real counterexample where they disagree."""
     ranking = _ranking()
     profile = ranking.profile
     manual_assets = _manual_assets()
@@ -374,36 +410,65 @@ def test_cost_of_waiting_discloses_whether_it_used_the_full_v2_evaluation() -> N
     assert "Fallback" in without_v2_coverage
 
 
-# --- _candidate_sort_key: real, deterministic Pick Score tie-order (NWR
-# post-draft overnight, section 19) --------------------------------------
+# --- _candidate_sort_key: real, deterministic ordering -- PROMOTED to
+# marginal_utility-primary (real, preregistered walk-forward evaluation,
+# see docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md),
+# with pick_score / raw_decision_utility / player_id as real tie-breaks
+# --------------------------------------------------------------------
 
 
-def _candidate(player_id: str, pick_score: float, raw_decision_utility: float) -> CandidateBundle:
+def _candidate(
+    player_id: str,
+    pick_score: float,
+    raw_decision_utility: float,
+    marginal_utility: float | None = None,
+) -> CandidateBundle:
     return CandidateBundle(
         player_id=player_id, player_score=None, team_score_after=0.0, team_score_delta=0.0,
         championship_equity_after=0.0, equity_gain=0.0, cost_of_waiting=0.0,
         make_it_back_probability=None, make_it_back_trials=None,
         raw_decision_utility=raw_decision_utility, team_score_utility_component=0.0,
         equity_utility_component=0.0, pick_score=pick_score, pick_score_tied_no_spread=False,
-        action="WAIT", warnings=(), uncertainty="",
+        action="WAIT", warnings=(), uncertainty="", marginal_utility=marginal_utility,
     )
 
 
-def test_candidate_sort_key_orders_by_pick_score_first() -> None:
-    high = _candidate("A", pick_score=80.0, raw_decision_utility=1.0)
-    low = _candidate("B", pick_score=20.0, raw_decision_utility=99.0)
-    assert sorted([low, high], key=_candidate_sort_key) == [high, low]
+def test_candidate_sort_key_orders_by_marginal_utility_first() -> None:
+    """PROMOTION: marginal_utility is now the primary sort key -- a
+    candidate with a real, materially lower pick_score but a higher
+    marginal_utility must still be recommended first."""
+    high_utility_low_pick_score = _candidate("A", pick_score=20.0, raw_decision_utility=1.0, marginal_utility=90.0)
+    low_utility_high_pick_score = _candidate("B", pick_score=80.0, raw_decision_utility=99.0, marginal_utility=10.0)
+    ordered = sorted([low_utility_high_pick_score, high_utility_low_pick_score], key=_candidate_sort_key)
+    assert ordered == [high_utility_low_pick_score, low_utility_high_pick_score]
+
+
+def test_candidate_sort_key_falls_back_to_pick_score_when_marginal_utility_ties() -> None:
+    a = _candidate("A", pick_score=80.0, raw_decision_utility=1.0, marginal_utility=50.0)
+    b = _candidate("B", pick_score=20.0, raw_decision_utility=99.0, marginal_utility=50.0)
+    assert sorted([b, a], key=_candidate_sort_key) == [a, b]
+
+
+def test_candidate_sort_key_with_no_marginal_utility_falls_back_to_the_old_real_order() -> None:
+    """A candidate this couldn't be computed for (should not happen in
+    practice, but never assumed) sorts strictly last relative to any
+    candidate that DOES have one -- a real computation gap is visible in
+    ordering, never silently defaulted to 0 or crashed on."""
+    has_utility = _candidate("A", pick_score=1.0, raw_decision_utility=1.0, marginal_utility=5.0)
+    no_utility = _candidate("B", pick_score=99.0, raw_decision_utility=99.0, marginal_utility=None)
+    assert sorted([no_utility, has_utility], key=_candidate_sort_key) == [has_utility, no_utility]
 
 
 def test_candidate_sort_key_breaks_a_real_pick_score_tie_by_raw_decision_utility() -> None:
     """The real, disclosed scenario this closes: pick_score is a lossy,
     per-call 0-100 normalization -- two candidates can land on the exact
     same pick_score while still differing in the real, full-precision
-    signal it was compressed from. The higher raw_decision_utility must
-    win the tie, not whatever order the candidates happened to be built
-    in."""
-    tied_low_utility = _candidate("A", pick_score=50.0, raw_decision_utility=1.5)
-    tied_high_utility = _candidate("B", pick_score=50.0, raw_decision_utility=3.2)
+    signal it was compressed from. Both candidates here also tie on
+    marginal_utility (the real primary key), isolating this tie-break.
+    The higher raw_decision_utility must win the tie, not whatever order
+    the candidates happened to be built in."""
+    tied_low_utility = _candidate("A", pick_score=50.0, raw_decision_utility=1.5, marginal_utility=10.0)
+    tied_high_utility = _candidate("B", pick_score=50.0, raw_decision_utility=3.2, marginal_utility=10.0)
     # Deliberately built in the "wrong" order -- proves the sort itself
     # does the work, not accidental input ordering.
     ordered = sorted([tied_low_utility, tied_high_utility], key=_candidate_sort_key)
@@ -411,12 +476,13 @@ def test_candidate_sort_key_breaks_a_real_pick_score_tie_by_raw_decision_utility
 
 
 def test_candidate_sort_key_breaks_a_full_double_tie_deterministically_by_player_id() -> None:
-    """When both real signals agree (genuine double tie), the sort still
-    resolves to one deterministic order (player_id) rather than leaving
-    it to Python's stable-sort input-order accident -- proven by sorting
-    the same two candidates in both possible input orders and getting
-    the identical result either way."""
-    a = _candidate("AAA", pick_score=50.0, raw_decision_utility=2.0)
-    b = _candidate("BBB", pick_score=50.0, raw_decision_utility=2.0)
+    """When every real signal agrees (genuine multi-way tie), the sort
+    still resolves to one deterministic order (player_id) rather than
+    leaving it to Python's stable-sort input-order accident -- proven by
+    sorting the same two candidates in both possible input orders and
+    getting the identical result either way."""
+    a = _candidate("AAA", pick_score=50.0, raw_decision_utility=2.0, marginal_utility=10.0)
+    b = _candidate("BBB", pick_score=50.0, raw_decision_utility=2.0, marginal_utility=10.0)
     assert sorted([a, b], key=_candidate_sort_key) == [a, b]
+    assert sorted([b, a], key=_candidate_sort_key) == [a, b]
     assert sorted([b, a], key=_candidate_sort_key) == [a, b]

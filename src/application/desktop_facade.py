@@ -4474,13 +4474,21 @@ def _decision_bundle_payload(
     section 7): optional, both default to a falsy value -- every existing
     caller that doesn't pass them (the V2 sub-bundle embedding at line
     ~4505) gets byte-identical output. When supplied, adds a real,
-    additive `marginalRosterUtility` block per candidate (explain_
-    marginal_roster_reason + marginal_roster_utility, the tested,
-    real-data-backed CHALLENGER from this session) -- never changes
-    `pickScore`, `action`, or candidate ORDER; the calibrated live
-    Pick-Score ranking stays the sole basis for ordering and for what
-    "NWR PICK NOW" means. This is additional context, not a second,
-    silently-substituted recommendation policy."""
+    additive `marginalRosterUtility` explanation block per candidate
+    (explain_marginal_roster_reason + marginal_roster_utility).
+
+    PROMOTION UPDATE: marginal_roster_utility passed its real,
+    preregistered walk-forward evaluation (4 real historical seasons x
+    12 real draft slots; see
+    docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md) and is
+    now the PRIMARY candidate ORDER (`_candidate_sort_key` in
+    decision_bundle_service.py) -- `bundle.candidates` already arrives
+    here in marginal-utility order, this function does not re-sort.
+    `pickScore`'s own VALUE is completely unchanged; only which
+    candidate is first/what "NWR PICK NOW" means was promoted. This
+    block remains additional, disclosed context (the full explanation,
+    not just the sort-driving number), not a second, undisclosed
+    policy."""
     rows_by_id = {row.player_id: row for row in ranking.rows}
     manual_by_id = {
         str(asset.get("player_id") or ""): asset for asset in manual_assets
@@ -4511,7 +4519,7 @@ def _decision_bundle_payload(
                     "becomesStarter": result.becomes_starter,
                     "benchRedundancyBefore": result.bench_redundancy_before,
                     "explanation": result.explanation,
-                    "label": "MARGINAL ROSTER UTILITY — EXPERIMENTAL, real-data-backed CHALLENGER, not the recommendation basis",
+                    "label": "MARGINAL ROSTER UTILITY — PROMOTED: the real, walk-forward-validated basis for this recommendation's order",
                 }
             except Exception:
                 # Never let an experimental, additive field break the real
@@ -4522,6 +4530,13 @@ def _decision_bundle_payload(
             "playerName": row.player_name if row is not None else fallback_name,
             "position": row.position if row is not None else fallback_position,
             "marginalRosterUtility": marginal_utility_payload,
+            # The exact raw number _candidate_sort_key actually sorted by
+            # (computed once in build_decision_bundle) -- distinct from
+            # marginalRosterUtility.utility above, which is a separate,
+            # independent recomputation for the richer explanation block;
+            # both call the same real function with the same real inputs
+            # and will always agree numerically.
+            "marginalUtility": candidate.marginal_utility,
             "playerScore": candidate.player_score,
             "teamScoreAfter": candidate.team_score_after,
             "teamScoreDelta": candidate.team_score_delta,
