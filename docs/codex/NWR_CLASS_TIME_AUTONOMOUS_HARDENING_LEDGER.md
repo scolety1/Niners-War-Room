@@ -181,6 +181,18 @@ that could mean genuine unsafe win-probability-only optimization or Monte Carlo 
 trial count; the small sample can't distinguish which. Per "if not [safe], keep it
 informational": NOT promoted. No code change.
 
-## Section 13 — FFA Sept-4 outlier/role audit
+## Section 13 — FFA/ESPN outlier/role audit (DONE)
+
+Full evidence: `docs/codex/NWR_FFA_OUTLIER_ROLE_AUDIT_V1_20260908.md`. Real disagreement audit
+NWR vs FFA (216 matched) and NWR vs ESPN ADP (276 matched); Ballers comparison skipped (no
+real market-wide Ballers export exists, disclosed not fabricated). Classified top-40 largest
+disagreements: 35 VALID_MODEL_DISAGREEMENT, 5 PERSISTENCE_BLIND_SPOT, **zero
+CURRENT_ROLE_CHANGE** -- real, independent evidence supporting Section 5's reference-only
+disposition (no distinguishable role-change signal exists in the real disagreement pattern).
+Also found a real, concrete confirmation of Section 4b's disclosed weak fallback accuracy
+(Deshaun Watson ranked 87th via round-1 draft-capital cohort despite real injury history). No
+code change.
+
+## Section 14 — Rookie-specific subgroup follow-up
 
 (next)
