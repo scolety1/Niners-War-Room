@@ -67,6 +67,22 @@ re-confirmed weak and correctly not promoted this same session (K/DST direct-mod
 13/14 is the real, legitimate ceiling for this roster; not fixed, per the directive's own
 explicit "do not fabricate a model" instruction. No code change.
 
-## Section 6 — Verify Brooks/Diggs fixes are actually live
+## Section 6 — Verify Brooks/Diggs fixes are actually live (DONE, major honest correction)
+
+Full evidence: `docs/codex/NWR_BROOKS_DIGGS_LIVE_STATUS_VERIFICATION_V1_20260908.md`. **The
+single most important finding of this directive**: traced precisely that
+`build_current_projection_candidate`/`build_insufficient_history_fallback_candidate` are
+NEVER called from the live facade -- only from offline build scripts. Verified directly: the
+real, currently-installed owner `current.csv` (608 rows) contains ZERO of the 5 real Diggs-
+class names. Every earlier "FULLY_MODELED"/coverage finding this session reported was
+real and correct as a CODE-LEVEL proof, but conflated with "live in the product today" --
+corrected explicitly here, per-surface, for both classes. Built and staged a real, fresh
+candidate artifact (`docs/codex/nwr_redraft_2026_projection_admission_CANDIDATE_v2_20260908/`,
+576 rows, all 5 Diggs-class names present) proving the fix is deployable, via the existing,
+unmodified admission-build script -- NOT installed (real governance approval required, not
+self-issuable, consistent with established project policy already baked into that script's
+own EXECUTIVE_VERDICT.md). Real, disclosed action items recorded for the owner.
+
+## Section 7 — One more safe latency profiling pass
 
 (next)

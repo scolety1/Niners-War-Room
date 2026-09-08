@@ -1,0 +1,398 @@
+player_id,player_name,position,team,rookie,reason
+00-0028986,Case Keenum,QB,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0032156,Trevor Siemian,QB,ATL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0032436,Jeff Driskel,QB,WAS,False,no prior-season NFL stat line; persistence forecast blocked
+00-0033537,Deshaun Watson,QB,CLE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035282,Easton Stick,QB,IND,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036879,Sam Ehlinger,QB,DEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037077,Sam Howell,QB,DAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037327,Skylar Thompson,QB,BAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038108,Bailey Zappe,QB,NYJ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038391,Sean Clifford,QB,CIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038476,Tommy DeVito,QB,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038550,Hendon Hooker,QB,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039107,Stetson Bennett,QB,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039152,Will Levis,QB,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039331,Emory Jones,QB,ATL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039534,Carter Bradley,QB,JAX,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039677,Sam Hartman,QB,WAS,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040014,Kyle McCord,QB,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040203,Will Howard,QB,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040211,Graham Mertz,QB,HOU,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040222,Cam Miller,QB,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040415,Connor Bazelak,QB,TB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040464,DJ Uiagalelei,QB,LAC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040589,Kurtis Rourke,QB,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040656,Hunter Dekkers,QB,NO,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040891,Cole Payton,QB,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040906,Garrett Nussmeier,QB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040942,Kyron Drones,QB,GB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040981,Joe Fagnano,QB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040996,Jacob Clark,QB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041056,Cade Klubnik,QB,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041092,Taylen Green,QB,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041117,Athan Kaliakmanis,QB,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041123,Behren Morton,QB,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041149,Haynes King,QB,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041156,Mark Gronowski,QB,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041172,Miller Moss,QB,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041194,Jack Strand,QB,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041203,Joey Aguilar,QB,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041251,Jalon Daniels,QB,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041414,Matthew Caldwell,QB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041453,Luke Altmyer,QB,DET,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041561,Carson Beck,QB,AZ,True,2026 rookie workload is not governed; no NFL-history projection generated
+ALL015451,Drew Allar,QB,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+MEN516487,Fernando Mendoza,QB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+SIM639376,Ty Simpson,QB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0034972,Alexander Mattison,RB,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035973,Patrick Taylor,RB,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036020,Salvon Ahmed,RB,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037299,Keaontay Ingram,RB,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037509,Sincere McCormick,RB,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038098,Pierre Strong,RB,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038389,Israel Abanikanda,RB,DAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038489,Ben VanSumeren,RB,BUF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038518,Deneric Prince,RB,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038636,Kenny McIntosh,RB,SEA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038930,Carlos Washington,RB,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039230,Dante Miller,RB,NYG,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039244,Chris Collier,RB,LV,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039325,Carson Steele,RB,PHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039344,Jonathon Brooks,RB,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039466,Ian Wheeler,RB,BUF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039471,Frank Gore Jr.,RB,BUF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039652,Jabari Small,RB,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039703,Cody Schrader,RB,DEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039811,MarShawn Lloyd,RB,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040177,Jordan James,RB,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040260,Ahmani Marshall,RB,CLE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040272,Deion Hankins,RB,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040393,Kye Robichaux,RB,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040394,Anthony Tyus III,RB,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040400,Donovan Edwards,RB,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040567,Brock Lampe,RB,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040568,Lan Larison,RB,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040601,Jordan Waters,RB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040618,Max Hurleman,RB,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040637,Lucas Scott,RB,BAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040651,Damien Martinez,RB,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040692,Jarquez Hunter,RB,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040878,Mike Washington Jr.,RB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040886,Nicholas Singleton,RB,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040888,Adam Randall,RB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040937,Dominic Richardson,RB,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040946,Jaden Nixon,RB,GB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040959,Jaydn Ott,RB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040964,EJ Smith,RB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040984,Dontae McMillan,RB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040991,Elijah Tau-Tolliver,RB,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040998,Roman Hemby,RB,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041013,Emmett Johnson,RB,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041027,Jeremiyah Love,RB,AZ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041052,Kaelon Black,RB,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041081,Max Bredeson,RB,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041096,Kaytron Allen,RB,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041104,Demond Claiborne,RB,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041125,Seth McGowan,RB,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041129,Jam Miller,RB,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041139,Damon Bankston,RB,NYG,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041157,Anthony Hankerson,RB,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041165,Coleman Bennett,RB,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041178,Robert Henry Jr.,RB,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041191,Cash Jones,RB,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041200,Sam Scott,RB,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041217,J'Mari Taylor,RB,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041221,Jackson Acker,RB,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041239,Chip Trayanum,RB,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041241,Kentrel Bullock,RB,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041244,Jamal Haynes,RB,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041277,Davon Booth,RB,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041281,TJ Harden,RB,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041307,Joshua Pitsenberger,RB,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041312,Noah Whittington,RB,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041323,Myles Montgomery,RB,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041326,CJ Donaldson,RB,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041350,Kejon Owens,RB,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041376,Gregory Desrosiers,RB,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041415,Dean Connors,RB,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041433,Kadarius Calloway,RB,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041436,DJ Herman,RB,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041485,Miles Davis,RB,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041486,Anderson Castle,RB,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041490,Eli Heidenreich,RB,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041496,Jonah Coleman,RB,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041512,Jadarian Price,RB,SEA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0032394,Nick Vannett,TE,SEA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035039,Stephen Carlson,TE,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035329,Donald Parham,TE,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035356,Tyree Jackson,TE,WAS,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036032,Sean McKeon,TE,IND,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036145,Lawrence Cager,TE,WAS,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036510,Kenny Yeboah,TE,AZ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036556,Brevin Jordan,TE,HOU,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037078,Cole Turner,TE,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039023,Joel Wilson,TE,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039275,Messiah Swinson,TE,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039305,Jack Westover,TE,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039399,Tanner McLachlan,TE,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039420,Jaheim Bell,TE,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039518,Treyton Welch,TE,NO,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039702,Mason Pline,TE,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039814,Erick All,TE,CIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039843,Qadir Ismail,TE,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039936,Thomas Yassmin,TE,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040046,Rivaldo Fairweather,TE,AZ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040060,Marshall Lang,TE,MIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040081,Jake Briningstool,TE,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040094,Tre Watson,TE,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040215,Gavin Bartholomew,TE,MIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040240,Caleb Lohner,TE,DEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040250,Luke Lachey,TE,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040301,Jalin Conyers,TE,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040331,Patrick Herbert,TE,JAX,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040387,Zach Horton,TE,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040392,Caden Prieskorn,TE,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040504,Bryson Nesbit,TE,MIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040528,JJ Galbreath,TE,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040552,Joshua Simon,TE,ATL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040566,CJ Dippre,TE,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040598,Mark Redman,TE,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040697,Thomas Gordon,TE,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040702,Mitch Van Vooren,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040792,Layne Pryor,TE,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040853,Carson Towt,TE,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040879,Matthew Hibner,TE,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040887,Josh Cuevas,TE,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040901,Jaren Kanak,TE,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040927,Dae'Quan Wright,TE,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040938,DJ Rogers,TE,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040939,Michael Trigg,TE,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040945,RJ Maryland,TE,GB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040955,John Michael Gyllenborg,TE,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040974,Lance Mason,TE,SEA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040986,Ty Pezza,TE,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041016,Patrick Gurd,TE,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041032,Kenyon Sadiq,TE,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041041,Oscar Delp,TE,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041077,Justin Joly,TE,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041084,Tanner Koziol,TE,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041087,Joe Royer,TE,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041094,Bauer Sharp,TE,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041116,Jack Endries,TE,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041131,Carsen Ryan,TE,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041133,Dallen Bentley,TE,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041170,Hayden Large,TE,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041180,Quentin Moore,TE,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041195,Jack Velling,TE,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041207,Ethan Conner,TE,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041237,Chase Curtis,TE,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041246,Josh Kattus,TE,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041252,Kenny Fletcher Jr.,TE,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041263,Lake McRee,TE,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041314,Tanner Arkin,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041327,Cody Hardy,TE,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041366,Jameson Geers,TE,AZ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041373,Jerand Bradley,TE,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041384,Evan Svoboda,TE,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041395,Eli Raridon,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041403,Rohan Jones,TE,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041422,Dan Villari,TE,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041452,Johnny Pascuzzi,TE,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041457,Miles Kitselman,TE,DET,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041472,Marlin Klein,TE,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041483,Eli Stowers,TE,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041503,Nate Boerkircher,TE,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041510,Max Klare,TE,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041524,Will Kacmarek,TE,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041535,Louis Hansen,TE,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041558,Sam Roush,TE,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+FRA459207,Jeremiah Franklin,TE,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+TRA291459,Seydou Traore,TE,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0031235,Odell Beckham Jr.,WR,NYG,False,no prior-season NFL stat line; persistence forecast blocked
+00-0032208,Phillip Dorsett,WR,LV,False,no prior-season NFL stat line; persistence forecast blocked
+00-0033292,Trent Taylor,WR,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035045,D.J. Montgomery,WR,IND,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035529,Hakeem Butler,WR,DEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0035976,Dan Chisena,WR,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036255,Denzel Mims,WR,DAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036271,Quez Watkins,WR,PHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036345,K.J. Osborn,WR,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036387,Jalen Reagor,WR,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036491,Tarik Black,WR,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036635,Ihmir Smith-Marsette,WR,AZ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036775,Brandon Smith,WR,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036936,Rondale Moore,WR,MIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0036955,Terrace Marshall Jr.,WR,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037055,Lance McCutcheon,WR,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037091,Bo Melton,WR,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037156,Irvin Charles,WR,SEA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037382,Brandon Johnson,WR,LV,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037387,Jalen Virgil,WR,BUF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037422,Kendric Pryor,WR,CIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037570,Dennis Houston,WR,TB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037708,Maurice Alexander,WR,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0037828,Danny Gray,WR,PHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038092,Erik Ezukanma,WR,PHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038181,Lucky Jackson,WR,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038477,Bryce Ford-Wheaton,WR,NYG,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038612,A.T. Perry,WR,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038632,Colton Dowell,WR,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038941,Tyler Scott,WR,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0038977,Tank Dell,WR,HOU,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039052,Trey Palmer,WR,NO,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039236,Johnny Wilson,WR,PHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039259,Dayton Wade,WR,BAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039365,Jacob Cowing,WR,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039386,Bub Means,WR,NO,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039392,Jha'Quan Jackson,WR,HOU,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039397,Tejhaun Palmer,WR,AZ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039415,Brenden Rice,WR,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039437,Cornelius Johnson,WR,BAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039473,Xavier Johnson,WR,CIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039474,Lawrence Keys,WR,DET,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0039552,Joshua Cephus,WR,JAX,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039626,Cole Burgess,WR,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039679,Ben Nikkel,WR,IND,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039722,JaQuae Jackson,WR,LAC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039747,Ainias Smith,WR,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0039907,Ja'Lynn Polk,WR,NO,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040048,Traeshon Holden,WR,DAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040049,Josh Kelly,WR,HOU,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040086,Mac Dalena,WR,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040099,Xavier Guillory,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040120,Jimmy Holiday,WR,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040247,Junior Bergen,WR,SF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040265,Ja'Seem Reed,WR,CAR,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040275,JP Richardson,WR,CHI,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040298,Andrew Armstrong,WR,KC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040302,A.J. Henning,WR,MIA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040323,Chandler Brayboy,WR,JAX,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040337,Eli Pancol,WR,IND,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040361,Stephen Gosnell,WR,BUF,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040375,Jordan Moore,WR,CIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040383,Bryson Green,WR,AZ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040390,Jackson Meeks,WR,DET,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040405,Jamaal Pritchett,WR,NYJ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040419,Garrett Greene,WR,TB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040438,Antwane Wells Jr.,WR,ATL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040443,Joaquin Davis,WR,PIT,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040445,Courtney Jackson,WR,TEN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040456,Da'Quan Felton,WR,NYG,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040461,Luke Grimm,WR,LAC,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040498,Dontae Fleming,WR,MIN,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040551,Nick Nash,WR,WAS,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040558,Isaiah Neyor,WR,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040570,Jeremiah Webb,WR,NE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040571,Gee Scott Jr.,WR,NYJ,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040597,Brennan Presley,WR,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040603,Mario Williams,WR,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040609,Tru Edwards,WR,LA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040617,Luke Floriea,WR,CLE,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040621,Montorie Foster Jr,WR,SEA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040653,Ricky White III,WR,SEA,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040753,Will Sheppard,WR,GB,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040769,Jaden Smith,WR,DAL,False,no prior-season NFL stat line; persistence forecast blocked
+00-0040785,Dohnte Meyers,WR,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040867,Makai Lemon,WR,PHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040870,Ja'Kobi Lane,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040876,Elijah Sarratt,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040890,Cyrus Allen,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040894,Malik Benson,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040895,Emmanuel Henderson Jr.,WR,SEA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040900,Anthony Smith,WR,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040912,Hank Beatty,WR,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040919,Tyren Montgomery,WR,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040930,Camden Brown,WR,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040934,Jordan Hudson,WR,DAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040948,J. Michael Sturdivant,WR,GB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040953,Jeff Caldwell,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040954,Omari Evans,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040967,Jacob De Jesus,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040970,Michael Briscoe,WR,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040976,Levi Wentz,WR,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040977,Cortez Braham,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0040989,Octavian Smith,WR,BAL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041004,Chase Roberts,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041011,E.J. Williams Jr.,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041020,Xavier Loyd,WR,KC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041029,Jordyn Tyson,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041035,De'Zhaun Stribling,WR,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041037,Denzel Boston,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041040,Antonio Williams,WR,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041042,Malachi Fields,WR,NYG,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041044,Zachariah Branch,WR,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041047,Chris Brazzell II,WR,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041048,Ted Hurst III,WR,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041051,Zavion Thomas,WR,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041067,Bryce Lance,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041069,Colbie Young,WR,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041070,Reggie Virgil,WR,AZ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041099,Barion Brown,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041100,Josh Cameron,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041106,C.J. Williams,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041132,Deion Burks,WR,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041152,Kobe Prentice,WR,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041158,Donaven McCulley,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041168,Omari Kelly,WR,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041176,Jaden Bradley,WR,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041179,Chris Hilton Jr.,WR,WAS,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041185,Vinny Anthony II,WR,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041187,Le'Meke Brockington,WR,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041199,Caullin Lacy,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041201,DT Sheffield,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041205,Brady Boyd,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041215,Ben Patterson,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041216,Trebor Pena,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041220,Michael Wortham,WR,JAX,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041228,Sahmir Hagans,WR,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041229,E.J. Horton,WR,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041233,Raylen Sharpe,WR,IND,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041248,Noah Thomas,WR,CIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041257,Eric Rivers Jr.,WR,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041266,Keelan Marion,WR,ATL,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041267,Malik McClain,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041272,Ja'Mori Maclin,WR,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041274,Max Tomczak,WR,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041287,Kole Wilson,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041292,Kolbe Katsis,WR,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041293,Dane Key,WR,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041294,Joseph Manjack,WR,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041299,Cameron Ross,WR,DEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041308,Treyvhon Saunders,WR,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041309,Daniel Sobkowicz,WR,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041311,Jalen Walthall,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041317,Nick DeGennaro,WR,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041318,Kyle Dixon,WR,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041319,Cameron Dorner,WR,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041322,Jimmy Kibble,WR,NE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041342,Dillon Bell,WR,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041352,Marcus Sanders Jr.,WR,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041359,Wesley Grimes,WR,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041361,Will Pauling,WR,SF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041368,Harrison Wallace III,WR,AZ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041374,Sincere Brown,WR,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041380,Devonte Ross,WR,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041397,Kaden Wetjen,WR,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041399,CJ Daniels,WR,LA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041407,Kyron Hudson,WR,CHI,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041435,Dean Patterson,WR,TB,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041438,Carnell Tate,WR,TEN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041443,Skyler Bell,WR,BUF,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041451,Brock Rechsteiner,WR,NO,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041467,Lewis Bond,WR,HOU,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041474,Mante Morrow,WR,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041475,Trayvon Rudolph,WR,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041476,Rashad Rochelle,WR,SEA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041481,Terrill Davis,WR,MIN,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041489,Germie Bernard,WR,PIT,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041491,Aaron Anderson,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041511,Omar Cooper Jr.,WR,NYJ,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041523,Caleb Douglas,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041525,Chris Bell,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041529,Kevin Coleman Jr.,WR,MIA,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041542,Malick Meiga,WR,CAR,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041547,KC Concepcion,WR,CLE,True,2026 rookie workload is not governed; no NFL-history projection generated
+00-0041550,Brenen Thompson,WR,LAC,True,2026 rookie workload is not governed; no NFL-history projection generated
+LAW090280,Kendrick Law,WR,DET,True,2026 rookie workload is not governed; no NFL-history projection generated
+RUC514959,Corey Rucker,WR,LV,True,2026 rookie workload is not governed; no NFL-history projection generated

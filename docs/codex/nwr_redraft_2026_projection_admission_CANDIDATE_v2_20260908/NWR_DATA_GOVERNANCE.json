@@ -1,0 +1,47 @@
+{
+  "admission_scope": "REDRAFT_2026_PROJECTIONS",
+  "approval_status": "READY_FOR_OWNER_GOVERNANCE_APPROVAL",
+  "approved_at_utc": null,
+  "approved_by": null,
+  "approver_identity": "OWNER_REQUIRED",
+  "authority": "NWR_DATA_GOVERNANCE",
+  "coverage": {
+    "blocked_rows": 397,
+    "candidate_rows": 576,
+    "current_registry_rows": 973,
+    "unresolved_identity_rows": 0
+  },
+  "generated_at": "2026-09-08T21:00:38+00:00",
+  "identity_contract": "EXACT GSIS ID only; no fuzzy joins or aliases used",
+  "limitations": [
+    "Central forecast persists the prior-season stat line; it does not predict role growth, decline, or team-context effects.",
+    "All 2026 rookies are blocked because no governed current workload evidence exists.",
+    "Veterans without a 2025 stat line are blocked.",
+    "K and DST are absent because no governed projected_points_override exists."
+  ],
+  "permitted_uses": [
+    "Owner governance review",
+    "Research-only scoring, replacement, and settings-sensitivity validation"
+  ],
+  "player_counts": {
+    "QB": 76,
+    "RB": 141,
+    "TE": 132,
+    "WR": 227,
+    "total": 576
+  },
+  "prohibited_uses": [
+    "Production Redraft installation before owner approval",
+    "Representation as proprietary consensus or expert rankings",
+    "Dynasty ranking conversion",
+    "Silent rookie workload imputation"
+  ],
+  "schema_version": 1,
+  "season": 2026,
+  "source_as_of": "2026-08-08",
+  "source_authority": "NWR-derived model from admitted nflverse CC-BY-4.0 inputs",
+  "source_id": "NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1",
+  "source_sha256": "15001fc47cc0d039a3ffdd8211f16aae44ca5bb1136fa9e9919ef6ab4309d1c9",
+  "valid_from": "2026-08-08",
+  "valid_until": "2026-09-07"
+}
