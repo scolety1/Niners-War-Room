@@ -244,6 +244,48 @@ def test_roster_composition_report_computes_bench_and_redundancy() -> None:
     assert report.position_redundancy["TE"] == 0
 
 
+def test_roster_composition_report_shares_flex_capacity_across_positions() -> None:
+    """NWR class-time hardening, section 2: real, previously-reproduced
+    bug (docs/codex/NWR_MARGINAL_UTILITY_TE2_REPRODUCTION_AND_ADOPTION_V1_20260907.md)
+    -- the OLD formula credited each FLEX-eligible position its own
+    independent '+flex_needed' allowance, so a 2nd TE was counted as
+    'not redundant' (0) purely because TE's own usable-capacity math
+    included the shared FLEX slot, even when that real FLEX slot was
+    ALREADY won by a real, better RB. This roster forces exactly that
+    real contention: 3 RB (1 more than required), 2 WR (exactly
+    required), 2 TE (1 more than required), 1 real shared FLEX slot --
+    the 3rd RB's real value is engineered to beat the 2nd TE's, so the
+    real greedy selection gives FLEX to the RB, leaving the 2nd TE
+    genuinely benched. The OLD formula would have reported TE
+    redundancy=0 here (wrong); the fix reports 1 (correct, and derived
+    directly from the real starter assignment, not a second formula
+    that could disagree with it)."""
+    profile = replace(
+        _ranking().profile,
+        roster=RosterSettings(
+            qb=0, rb=2, wr=2, te=1, flex=1, superflex=0, k=0, dst=0, bench_size=3
+        ),
+    )
+    players = [
+        RosterPlayer("rb1", "RB", 40.0),
+        RosterPlayer("rb2", "RB", 35.0),
+        RosterPlayer("rb3", "RB", 15.0),  # 3rd RB -- real value engineered to beat te2
+        RosterPlayer("wr1", "WR", 30.0),
+        RosterPlayer("wr2", "WR", 25.0),
+        RosterPlayer("te1", "TE", 20.0),
+        RosterPlayer("te2", "TE", 10.0),  # 2nd TE -- real value below rb3, loses the real FLEX contest
+    ]
+    report = roster_composition_report(players, profile)
+    assert report.starter_holes == ()
+    # starters: rb1, rb2, wr1, wr2, te1, + FLEX(rb3, 15.0 > te2's 10.0)
+    assert report.starting_lineup_value == pytest.approx(40.0 + 35.0 + 30.0 + 25.0 + 20.0 + 15.0)
+    assert report.position_redundancy["RB"] == 0  # all 3 RB started (2 required + FLEX)
+    assert report.position_redundancy["WR"] == 0
+    # The real, corrected result: te2 genuinely lost the shared FLEX
+    # slot to rb3 and is a real bench-redundant TE.
+    assert report.position_redundancy["TE"] == 1
+
+
 def test_explain_marginal_roster_reason_names_the_displaced_starter_on_a_real_upgrade() -> None:
     """NWR post-draft overnight (phase 3/21): the exact real scenario
     reproduced against the live 403 draft (Caleb Williams QB1 rostered,

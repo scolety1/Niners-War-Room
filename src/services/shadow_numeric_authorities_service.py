@@ -162,23 +162,38 @@ def roster_composition_report(
     bench = sorted(
         (p for p in players if p.player_id not in starter_ids), key=lambda p: -p.value
     )[: max(0, profile.roster.bench_size)]
-    flex_needed = profile.roster.flex
-    superflex_needed = profile.roster.superflex
-    position_starter_slots = {
-        "QB": profile.roster.qb,
-        "RB": profile.roster.rb,
-        "WR": profile.roster.wr,
-        "TE": profile.roster.te,
-    }
+    # NWR post-draft overnight, shared-FLEX fix (section 2 of the
+    # class-time hardening run): the PRIOR formula credited each
+    # FLEX-eligible position its OWN independent "+flex_needed" capacity
+    # allowance -- correct only when a single FLEX-eligible position
+    # exists in isolation, but WRONG whenever multiple FLEX-eligible
+    # positions have real, simultaneous bench depth: the real FLEX slot
+    # is ONE shared slot, not one slot per position, so summing an
+    # independent allowance per position double- (or triple-, for
+    # RB+WR+TE) counts the same real capacity. Reproduced directly
+    # against the real 403 roster (5 rostered RB, 5 rostered WR, 1 FLEX):
+    # the old formula gave RB redundancy=2 AND WR redundancy=2
+    # independently (crediting FLEX to both), when only ONE of those
+    # positions' extra player can actually occupy the real, single FLEX
+    # slot.
+    #
+    # Real, principled fix -- no new formula, no magic per-position
+    # bonus: `starters` above is already the REAL output of the shared,
+    # single `_select_starting_lineup` greedy assignment, which already
+    # resolves FLEX contention correctly (whichever position's marginal
+    # player has the higher real value wins the shared slot). Deriving
+    # redundancy directly from "rostered at this position minus how many
+    # of them actually became a real starter" is lossless and always
+    # agrees with the real selection outcome, by construction -- it
+    # cannot double-count a shared slot because the slot was only
+    # assigned to one real player to begin with.
+    starters_by_position: dict[str, int] = {}
+    for starter in starters:
+        starters_by_position[starter.position] = starters_by_position.get(starter.position, 0) + 1
     redundancy: dict[str, int] = {}
-    for position, required in position_starter_slots.items():
+    for position in ("QB", "RB", "WR", "TE"):
         rostered = sum(1 for p in players if p.position == position)
-        usable = required
-        if position in FLEX_ELIGIBLE:
-            usable += flex_needed
-        if position in FLEX_ELIGIBLE | {"QB"}:
-            usable += superflex_needed
-        redundancy[position] = max(0, rostered - usable)
+        redundancy[position] = max(0, rostered - starters_by_position.get(position, 0))
     return RosterCompositionReport(
         starter_holes=holes,
         starting_lineup_value=round(sum(p.value for p in starters), 2),
