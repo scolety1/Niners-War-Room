@@ -6,8 +6,10 @@ import json
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
+from email.message import Message
 from http.client import HTTPConnection
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from urllib.parse import quote
 
@@ -18,6 +20,7 @@ from src.desktop_api.server import (
     BODY_LIMIT_BYTES,
     STARTUP_CHALLENGE_HEADER,
     STARTUP_PROTOCOL,
+    DesktopApiRequestHandler,
     DesktopApiServer,
     create_desktop_api_server,
     validate_bind_host,
@@ -980,6 +983,59 @@ def test_internal_errors_are_sanitized() -> None:
     ]
     assert "private" not in encoded.casefold()
     assert "C:\\" not in encoded
+
+
+class _RaisingWfile:
+    """A minimal writable that raises exactly like a socket write does
+    once the peer has aborted the connection."""
+
+    def __init__(self, exc: BaseException) -> None:
+        self._exc = exc
+
+    def write(self, _data: bytes) -> int:
+        raise self._exc
+
+    def flush(self) -> None:
+        pass
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ConnectionAbortedError("[WinError 10053] An established connection was aborted"),
+        BrokenPipeError("[Errno 32] Broken pipe"),
+        ConnectionResetError("[WinError 10054] An existing connection was forcibly closed"),
+    ],
+)
+def test_write_json_swallows_a_client_disconnect_instead_of_crashing(
+    exc: BaseException,
+) -> None:
+    """NWR post-draft overnight, section 24 -- a real bug found through
+    actual Chrome-rendered UI verification (not code review alone): a
+    browser aborting a slower in-flight request (e.g. React StrictMode's
+    dev-only double-invoke superseding a still-running fetch with a
+    fresh one) raised ConnectionAbortedError/BrokenPipeError while
+    _write_json was still writing the (by-then-moot) response body --
+    real, reproducible server-log tracebacks for an entirely expected
+    client behavior, unlike every OTHER failure path in this file, which
+    _dispatch already converts into a clean response.
+
+    Exercises the real `_write_json` method directly (not a redundant
+    real-socket reimplementation of send_response/send_header/
+    end_headers) with a wfile that deterministically raises exactly the
+    way an aborted connection does -- the only real assertion that
+    matters is that this doesn't propagate."""
+    handler = DesktopApiRequestHandler.__new__(DesktopApiRequestHandler)
+    handler.request_version = "HTTP/1.1"
+    handler.requestline = "GET /api/v1/bootstrap HTTP/1.1"
+    handler.close_connection = True
+    handler.client_address = ("127.0.0.1", 0)
+    handler._headers_buffer = []
+    handler.headers = Message()
+    handler.server = SimpleNamespace(allowed_origins=frozenset())
+    handler.wfile = _RaisingWfile(exc)
+
+    handler._write_json(200, {"ok": True})  # must not raise
 
 
 def test_oversized_json_body_is_rejected_before_reading() -> None:

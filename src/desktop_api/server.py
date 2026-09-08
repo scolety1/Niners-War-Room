@@ -939,12 +939,30 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             allow_nan=False,
             separators=(",", ":"),
         ).encode("utf-8")
-        self.send_response(int(status))
-        self._security_headers(content_length=len(body))
-        self._cors_headers()
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(body)
+        # NWR post-draft overnight, section 24 (real Chrome-rendered UI
+        # verification): a real, reproducible client-disconnect crash --
+        # a browser aborting a slower in-flight request (e.g. React
+        # StrictMode's dev-only double-invoke superseding a still-running
+        # DecisionBundle fetch with a fresh one) raises
+        # ConnectionAbortedError/BrokenPipeError while this handler is
+        # still writing the (by-then-moot) response, which propagated as
+        # an unhandled traceback in this connection's own thread --
+        # ThreadingHTTPServer keeps serving other connections regardless,
+        # but the crash is real, ugly server-log noise for an entirely
+        # expected client behavior, unlike every OTHER failure path in
+        # this file, which already converts into a clean response via
+        # _dispatch's own try/except. There is no one left to respond to
+        # at this point, so silently swallowing (not logging a stack
+        # trace, not re-raising) is the correct, matching discipline.
+        try:
+            self.send_response(int(status))
+            self._security_headers(content_length=len(body))
+            self._cors_headers()
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, BrokenPipeError, ConnectionResetError, OSError):
+            pass
 
     def _security_headers(self, *, content_length: int) -> None:
         self.send_header("Content-Length", str(content_length))
