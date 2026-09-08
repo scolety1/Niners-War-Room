@@ -7,7 +7,7 @@ import math
 import os
 import re
 import shutil
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -1014,6 +1014,58 @@ def score_projection(player: ProjectionPlayer, scoring: ScoringSettings) -> floa
     return round(value, 4)
 
 
+AVAILABILITY_ADJUSTED_SCORER_VERSION = "redraft-availability-adjusted-scorer-challenger-v1"
+
+
+def score_projection_availability_adjusted(
+    player: ProjectionPlayer, scoring: ScoringSettings
+) -> float:
+    """CHALLENGER (NWR post-draft overnight, phase 6) -- NOT recommended
+    for adoption as written; kept as a tested, disclosed negative result,
+    not wired into generate_rankings' default call anywhere.
+
+    Original hypothesis: the governed 2026 snapshot carries a per-row
+    `availability_probability` (e.g. Josh Jacobs 0.8824 vs Trevor
+    Lawrence's 1.0) that `_confidence()` reads (only to downgrade a
+    confidence LABEL) but `score_projection` never applies to points --
+    live-traced as a real, measured cost: with that gap, Jacobs (RB rank
+    24, no discount applied to value) was NWR's #1 recommendation for 5
+    consecutive real owner turns in the actual 403 draft (rounds 5-10)
+    despite the owner correctly never drafting him.
+
+    FOLLOW-UP FINDING that changes the fix (same session, before this was
+    adopted): `availability_probability` is not an independent risk
+    signal -- for every player checked across the snapshot it equals
+    exactly `games / 17` (0.8235=14/17, 0.8824=15/17, 0.9412=16/17, seen
+    on ~530 of 608 rows, including players with no real-world risk at all
+    -- Aaron Rodgers, Josh Allen). It is a MECHANICAL restatement of the
+    same `games` figure already used to scale that player's raw stat line
+    (Jacobs' own `rushing_yards=929` already assumes only games=15, not a
+    full 17 -- confirmed by comparing a backup, Brandon Allen, whose
+    `games=1` stat line is ALREADY tiny and whose availability=0.0588
+    would additionally crush an already-correct near-zero score).
+    Multiplying by it AGAIN, as this function does, double-counts a
+    discount `score_projection` already receives through `games` on every
+    row where the two aren't independent -- which appears to be nearly
+    every row in this snapshot. This function is left here, tested, and
+    exercised (see the accompanying test) as a documented, working, but
+    NOT-adopted experiment -- the real remaining gap this does NOT close
+    is that neither `games` nor `availability_probability` appears to
+    encode anything event-specific (a current suspension, legal
+    proceeding, Commissioner's Exempt placement); both look like generic
+    actuarial buckets by player archetype, uniform across players with no
+    real-world risk at all. A genuine fix needs a distinct, event-specific
+    status signal (see phase 10/11 status taxonomy), not a second
+    multiplication of the same games-based discount."""
+    base = score_projection(player, scoring)
+    if player.position in {"K", "DST"}:
+        return base
+    availability = player.stats.get("availability_probability")
+    if availability is None:
+        return base
+    return round(base * float(availability), 4)
+
+
 def _required_position_counts(profile: LeagueProfile) -> dict[str, int]:
     return {
         "QB": profile.team_count * profile.roster.qb,
@@ -1137,7 +1189,20 @@ def _next_available_points(
     return 0.0
 
 
-def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> RankingResult:
+def generate_rankings(
+    profile: LeagueProfile,
+    snapshot: ProjectionSnapshot,
+    *,
+    scorer: Callable[[ProjectionPlayer, ScoringSettings], float] = score_projection,
+) -> RankingResult:
+    """`scorer` (NWR post-draft overnight, phase 6): optional, defaults to
+    the exact unmodified `score_projection` -- every existing call site
+    that doesn't pass it gets byte-identical behavior to before this
+    parameter existed. Exists so a challenger scorer (e.g.
+    `score_projection_availability_adjusted`) can be evaluated by calling
+    `generate_rankings(profile, snapshot, scorer=challenger)` directly,
+    without forking this ~150-line function or touching the production
+    default path at all."""
     validate_profile(profile)
     generated = utc_now()
     if snapshot.errors:
@@ -1190,7 +1255,7 @@ def generate_rankings(profile: LeagueProfile, snapshot: ProjectionSnapshot) -> R
                 + ", ".join(insufficient),
             ),
         )
-    scored = [(player, score_projection(player, profile.scoring)) for player in snapshot.players]
+    scored = [(player, scorer(player, profile.scoring)) for player in snapshot.players]
     replacements = calculate_replacement_levels(profile, scored)
     replacement_by_position = {row.position: row for row in replacements}
     allowed_positions = {

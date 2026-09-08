@@ -39,6 +39,7 @@ from src.services.redraft_engine_v1_service import (
     restore_profile,
     save_profile,
     score_projection,
+    score_projection_availability_adjusted,
     set_active_profile,
     undo_last_draft_pick,
 )
@@ -666,3 +667,59 @@ def test_profile_validation_rejects_unsupported_bonus() -> None:
             profile,
             load_projection_snapshot(Path("missing.csv"), season=2026),
         )
+
+
+# NWR post-draft overnight (phase 6): score_projection_availability_adjusted
+# is a documented, tested, NOT-adopted challenger -- see its own docstring
+# for the real double-counting finding that disqualified it as written.
+# Constructed directly (no CSV/freshness fixture) so this stays independent
+# of the unrelated, environmental source_as_of date-cliff affecting this
+# file's other fixtures.
+def _projection_player(**overrides: object) -> ProjectionPlayer:
+    base = dict(
+        player_id="P1", player_name="Test Player", position="RB", team="TST",
+        season=2026, source_status="GOVERNED", evidence_status="ADMITTED_CURRENT_SEASON",
+        stats={"rushing_yards": 1000.0, "rushing_tds": 8.0},
+    )
+    base.update(overrides)
+    return ProjectionPlayer(**base)  # type: ignore[arg-type]
+
+
+def test_availability_adjusted_scorer_is_a_no_op_when_fully_available() -> None:
+    player = _projection_player(stats={"rushing_yards": 1000.0, "availability_probability": 1.0})
+    scoring = ScoringSettings()
+    assert score_projection_availability_adjusted(player, scoring) == score_projection(player, scoring)
+
+
+def test_availability_adjusted_scorer_is_a_no_op_when_availability_missing() -> None:
+    player = _projection_player(stats={"rushing_yards": 1000.0})
+    scoring = ScoringSettings()
+    assert score_projection_availability_adjusted(player, scoring) == score_projection(player, scoring)
+
+
+def test_availability_adjusted_scorer_discounts_reduced_availability() -> None:
+    player = _projection_player(stats={"rushing_yards": 1000.0, "availability_probability": 0.8824})
+    scoring = ScoringSettings()
+    base = score_projection(player, scoring)
+    adjusted = score_projection_availability_adjusted(player, scoring)
+    assert adjusted == round(base * 0.8824, 4)
+    assert adjusted < base
+
+
+def test_availability_adjusted_scorer_never_touches_kdst_governed_override() -> None:
+    """K/DST use a flat governed override, not a decomposed stat line --
+    the challenger must never apply a second discount on top of it."""
+    player = _projection_player(
+        position="K", stats={"projected_points_override": 120.0, "availability_probability": 0.5},
+    )
+    scoring = ScoringSettings()
+    assert score_projection_availability_adjusted(player, scoring) == score_projection(player, scoring) == 120.0
+
+
+def test_generate_rankings_scorer_parameter_defaults_to_byte_identical_behavior(snapshot) -> None:
+    """The new optional `scorer` parameter on generate_rankings must be a
+    pure additive no-op for every existing caller that doesn't pass it."""
+    profile = _profile()
+    without_param = generate_rankings(profile, snapshot)
+    with_default = generate_rankings(profile, snapshot, scorer=score_projection)
+    assert without_param.rows == with_default.rows

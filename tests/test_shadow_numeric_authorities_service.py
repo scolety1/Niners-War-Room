@@ -316,6 +316,46 @@ def test_team_score_percentile_is_consistent_with_a_synthetic_population() -> No
     assert pool  # sanity: pool actually built
 
 
+def test_team_score_impact_hypotheses_parameter_is_a_no_op_by_default() -> None:
+    """NWR post-draft overnight (phase 6): team_score's new optional
+    `impact_hypotheses` parameter defaults to `()` -- every existing
+    caller must be byte-identical to before this parameter existed."""
+    ranking = _ranking()
+    profile = ranking.profile
+    comparable = [{1: [RosterPlayer("a", "QB", 100.0)], 2: [RosterPlayer("b", "QB", 50.0)]}]
+    thin_profile = replace(
+        profile, roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, k=0, dst=0, bench_size=0)
+    )
+    without_param = team_score(["QB-0"], thin_profile, ranking, _manual_assets(), comparable_leagues=comparable)
+    with_default = team_score(
+        ["QB-0"], thin_profile, ranking, _manual_assets(),
+        comparable_leagues=comparable, impact_hypotheses=(),
+    )
+    assert without_param == with_default
+
+
+def test_team_score_applies_a_real_high_confidence_negative_impact_hypothesis() -> None:
+    """The previously fully-built-but-never-called
+    availability_adjusted_players mechanism now actually reaches
+    team_score when a caller opts in -- confirmed by an end-to-end drop
+    in the resulting roster's simulated strength, not just the standalone
+    helper functions this already had unit coverage for."""
+    ranking = _ranking()
+    profile = ranking.profile
+    comparable = [{1: [RosterPlayer("a", "QB", 100.0)], 2: [RosterPlayer("b", "QB", 50.0)]}]
+    thin_profile = replace(
+        profile, roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, k=0, dst=0, bench_size=0)
+    )
+    baseline = team_score(["QB-0"], thin_profile, ranking, _manual_assets(), comparable_leagues=comparable)
+    discounted = team_score(
+        ["QB-0"], thin_profile, ranking, _manual_assets(), comparable_leagues=comparable,
+        impact_hypotheses=[_hypothesis("QB-0", direction="NEGATIVE", confidence="HIGH")],
+    )
+    assert discounted.roster_value == 0.0
+    assert discounted.roster_value < baseline.roster_value
+    assert discounted.percentile <= baseline.percentile
+
+
 def test_team_score_from_a_real_simulated_population_is_a_real_percentile(tmp_path) -> None:
     ranking = _ranking(team_count=10, rounds=15)
     profile = ranking.profile

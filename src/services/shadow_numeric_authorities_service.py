@@ -281,6 +281,7 @@ def team_score(
     manual_assets: Sequence[Mapping[str, Any]],
     *,
     comparable_leagues: Sequence[dict[int, list[RosterPlayer]]],
+    impact_hypotheses: Sequence[ImpactHypothesis] = (),
 ) -> TeamScoreResult:
     """Percentile strength of `target_player_ids`'s optimal starting
     lineup relative to every team's optimal starting lineup across
@@ -289,9 +290,23 @@ def team_score(
     modeled strength is in the middle of the simulated distribution for
     this format, by construction of the population rather than by a
     hand-picked normalization constant.
-    """
+
+    `impact_hypotheses` (NWR post-draft overnight, phase 6): optional,
+    defaults to `()` -- every existing caller that doesn't pass it is
+    byte-identical to before this parameter existed. When supplied, real
+    HIGH-confidence NEGATIVE hypotheses (the existing, previously fully
+    built but never-called `availability_adjusted_players`/
+    `availability_discount_for_hypotheses` from this same module) zero out
+    that player's contribution to the optimal starting lineup, the same
+    real mechanism `roster_composition_report` already documented as the
+    intended integration point. Still requires a real NewsEvent to be
+    ingested first (see `ai_intelligence_backend_service.append_news_event`
+    -- there is currently no facade/UI path that calls it at all, a
+    separate, real, disclosed gap this parameter does not itself close)."""
     pool = _asset_pool(ranking, manual_assets)
     target_players = _roster_players(target_player_ids, pool)
+    if impact_hypotheses:
+        target_players = availability_adjusted_players(target_players, impact_hypotheses)
     roster_value = optimal_starting_lineup_value(target_players, profile)
     population = [
         optimal_starting_lineup_value(roster, profile)
@@ -380,16 +395,23 @@ def championship_equity(
     seasons: int = 300,
     base_seed: int = DEFAULT_SEED,
     assumptions: ChampionshipEquityAssumptions | None = None,
+    impact_hypotheses: Sequence[ImpactHypothesis] = (),
 ) -> ChampionshipEquityResult:
     """P(win this league) for `target_player_ids`, inserted at
     `target_team_slot` into one real simulated `comparable_league` (the
     other team_count-1 rosters, from simulate_comparable_leagues), with
     the rest of that league's draft outcome held fixed and only the
     weekly/playoff simulation randomized across `seasons` trials.
-    """
+
+    `impact_hypotheses`: see `team_score`'s own docstring -- same optional,
+    additive, default-`()`-is-a-no-op parameter and mechanism, applied only
+    to the target roster (not the other simulated comparable-league teams,
+    which have no real news events tied to them)."""
     assumptions = assumptions or ChampionshipEquityAssumptions()
     pool = _asset_pool(ranking, manual_assets)
     target_players = _roster_players(target_player_ids, pool)
+    if impact_hypotheses:
+        target_players = availability_adjusted_players(target_players, impact_hypotheses)
     target_value = optimal_starting_lineup_value(target_players, profile)
     weekly_means: dict[int, float] = {
         target_team_slot: target_value / max(1, assumptions.regular_season_weeks)
