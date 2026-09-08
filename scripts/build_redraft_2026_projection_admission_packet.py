@@ -223,6 +223,9 @@ DEFAULT_PLAYER_SNAPSHOT = "source_snapshots/nflverse/players/20260730T072407Z-42
 DEFAULT_STATS_SNAPSHOT = (
     "source_snapshots/nflverse/player_stats_seasonal/20260730T072407Z-a5b2304f0132"
 )
+DEFAULT_ROSTER_SNAPSHOT = (
+    "source_snapshots/nflverse/seasonal_rosters/20260730T072407Z-e550f5d52c60"
+)
 
 
 def build_packet(
@@ -232,12 +235,13 @@ def build_packet(
     *,
     player_snapshot_dir: Path | None = None,
     stats_snapshot_dir: Path | None = None,
+    roster_snapshot_dir: Path | None = None,
     source_as_of: str = SOURCE_AS_OF,
 ) -> None:
     """Build the veteran projection admission packet.
 
-    `player_snapshot_dir`/`stats_snapshot_dir` default to the exact admitted
-    2026-08-08 snapshot directories -- passing them explicitly (e.g. to point at
+    `player_snapshot_dir`/`stats_snapshot_dir`/`roster_snapshot_dir` default to the exact
+    admitted 2026-08-08 snapshot directories -- passing them explicitly (e.g. to point at
     a freshly acquired candidate snapshot elsewhere) is the only way this
     function's inputs change; the feature engineering / backtest / candidate
     construction logic below is unchanged either way.
@@ -246,18 +250,31 @@ def build_packet(
     generated_at = datetime.now(UTC).isoformat(timespec="seconds")
     player_root = player_snapshot_dir or (shared_root / DEFAULT_PLAYER_SNAPSHOT)
     stats_root = stats_snapshot_dir or (shared_root / DEFAULT_STATS_SNAPSHOT)
+    roster_root = roster_snapshot_dir or (shared_root / DEFAULT_ROSTER_SNAPSHOT)
     player_path = player_root / "raw/players.parquet"
     stats_raw = stats_root / "raw"
+    roster_path = roster_root / f"raw/seasonal_rosters_{SEASON - 1}.parquet"
     players = pd.read_parquet(player_path)
     history = load_seasonal_history(stats_raw, range(2012, 2026))
     validation = temporal_backtest(history, seasons=range(2016, 2026))
     uncertainty = uncertainty_from_backtest(validation)
+    # Real seasonal-rosters snapshot (same 2026-07-30 acquisition batch), keyed by the
+    # same canonical gsis_id identity -- see NOT_CURRENTLY_ROSTERED_STATUSES in
+    # redraft_2026_projection_model_service.py for why this cross-check exists.
+    roster_status_by_gsis_id: dict[str, str] = {}
+    if roster_path.exists():
+        roster_frame = pd.read_parquet(roster_path, columns=["gsis_id", "status"])
+        roster_frame = roster_frame.dropna(subset=["gsis_id"])
+        roster_status_by_gsis_id = dict(
+            zip(roster_frame["gsis_id"].astype(str), roster_frame["status"].astype(str))
+        )
     candidate = build_current_projection_candidate(
         players,
         history,
         season=SEASON,
         source_as_of=source_as_of,
         uncertainty_by_position=uncertainty,
+        roster_status_by_gsis_id=roster_status_by_gsis_id,
     )
     output.mkdir(parents=True, exist_ok=True)
     candidate_path = output / "CANDIDATE_PROJECTION_SNAPSHOT.csv"

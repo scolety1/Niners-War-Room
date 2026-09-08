@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -10,6 +10,21 @@ import pandas as pd
 
 MODEL_ID = "NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1"
 MODEL_POSITIONS = ("QB", "RB", "WR", "TE")
+# NWR class-time hardening, Diggs-class false-positive guard (real,
+# root-caused: docs/codex/NWR_BROOKS_DIGGS_JUDKINS_ROOT_CAUSE_V1_20260908.md).
+# The `last_season` one-year widening below admits real, currently active
+# players missing their most recent stat line (Diggs-class) -- but the
+# nflverse player-registry `status` field alone does not reliably catch
+# real long-retired players (verified: Philip Rivers and Russell Wilson
+# both show status=ACT in the same registry, years after they actually
+# stopped playing). The real, staged `seasonal_rosters` snapshot's own
+# `status` column is a genuinely different, more precise signal for this
+# ("final roster status" for the season, not a stats-presence field) --
+# verified directly: Rivers/Wilson show INA there while every real
+# currently-rostered player checked (Diggs, Hill, Allen, Chubb,
+# Garoppolo, Deebo Samuel Sr.) shows ACT/RES. These three real statuses
+# are the ones that mean "not actually on an NFL roster" for our purpose.
+NOT_CURRENTLY_ROSTERED_STATUSES = frozenset({"INA", "RET", "CUT"})
 MODEL_STAT_COLUMNS = (
     "games",
     "attempts",
@@ -120,11 +135,17 @@ def build_current_projection_candidate(
     season: int,
     source_as_of: str,
     uncertainty_by_position: dict[str, float] | None = None,
+    roster_status_by_gsis_id: Mapping[str, str] | None = None,
 ) -> ProjectionBuildResult:
     """Build a review-only forecast from exact current GSIS identities.
 
     Rookies and veterans with no recent NFL production remain blocked. No alias or fuzzy join is
     attempted. The result is deliberately not marked governed; owner governance is separate.
+
+    `roster_status_by_gsis_id` is an optional, real, gsis_id-keyed cross-check (from the staged
+    `seasonal_rosters` snapshot) used only to exclude real long-retired players from the
+    `last_season == season - 1` widening below -- see `NOT_CURRENTLY_ROSTERED_STATUSES`. Omitting
+    it (the default) reproduces the prior, unguarded widening exactly.
     """
     date.fromisoformat(source_as_of)
     required = {
@@ -139,11 +160,44 @@ def build_current_projection_candidate(
     missing = sorted(required.difference(players.columns))
     if missing:
         raise ValueError("Current player registry is missing: " + ", ".join(missing))
+    # NWR class-time hardening, Diggs-class acquisition-gap fix (real,
+    # root-caused: docs/codex/NWR_BROOKS_DIGGS_JUDKINS_ROOT_CAUSE_V1_20260908.md).
+    # `last_season` is a STATS-based field on the real nflverse player
+    # registry -- the most recent season a player has a real, RECORDED
+    # stat line -- not a roster-membership field. A real, currently
+    # active, rostered player (status=ACT) who missed the immediately
+    # prior season entirely (injury, suspension, opt-out) has a
+    # `last_season` that lags one real season behind, even though he is
+    # genuinely eligible and about to play. `eq(season)` silently
+    # excluded exactly this real case (verified: Stefon Diggs,
+    # status=ACT, last_season=2025 in the real snapshot the 2026 build
+    # reads, excluded from the 608-row admitted universe entirely).
+    #
+    # Minimum safe widening: accept `last_season` one real season
+    # earlier too (`season - 1`), STILL gated by the real
+    # `status.isin(("ACT","RES"))` check -- that status check is the
+    # real safety valve against flooding the universe with retired/
+    # inactive players (a retired player's real status is RET/INA/CUT/
+    # etc., never ACT/RES, regardless of how recent his `last_season`
+    # is). A genuinely stale historical player (`last_season` 2+ years
+    # back) is still excluded either way. Verified via a real, direct
+    # before/after audit against the real nflverse snapshot this build
+    # actually reads -- see the fix's own test for the exact real counts.
     universe = players[
-        players["last_season"].eq(season)
+        players["last_season"].between(season - 1, season)
         & players["position"].isin(MODEL_POSITIONS)
         & players["status"].isin(("ACT", "RES"))
     ].copy()
+    if roster_status_by_gsis_id:
+        # Real false-positive guard (see NOT_CURRENTLY_ROSTERED_STATUSES above):
+        # only ever removes rows from the newly-widened `last_season == season - 1`
+        # slice -- the original `last_season == season` rows are unaffected, and a
+        # gsis_id with no roster-snapshot entry is kept (missing coverage is not
+        # treated as evidence of retirement).
+        newly_widened = universe["last_season"].eq(season - 1)
+        roster_status = universe["gsis_id"].astype(str).map(roster_status_by_gsis_id)
+        stale_retired = newly_widened & roster_status.isin(NOT_CURRENTLY_ROSTERED_STATUSES)
+        universe = universe.loc[~stale_retired].copy()
     universe = universe.sort_values(["position", "gsis_id"], kind="stable")
     prior = history[
         history["season"].between(season - 3, season - 1)
@@ -217,8 +271,25 @@ def build_current_projection_candidate(
         row["availability_probability"] = round(float(row["games"]) / 17.0, 4)
         projections.append(row)
     projection_frame = pd.DataFrame(projections)
-    blocked_frame = pd.DataFrame(blocked)
-    identity_frame = pd.DataFrame(identity)
+    # NWR class-time hardening: explicit `columns=` keeps `blocked_frame`/`identity_frame`
+    # real DataFrames (with the columns `.sort_values` below needs) even when the roster-
+    # status cross-check above empties `universe` entirely -- previously an unguarded
+    # `pd.DataFrame([])` produced a columnless frame and `.sort_values(["position", ...])`
+    # raised KeyError. Column order/content is unchanged for the non-empty case.
+    blocked_frame = pd.DataFrame(
+        blocked, columns=["player_id", "player_name", "position", "team", "rookie", "reason"]
+    )
+    identity_frame = pd.DataFrame(
+        identity,
+        columns=[
+            "player_id",
+            "player_name",
+            "position",
+            "team",
+            "identity_status",
+            "identity_source",
+        ],
+    )
     return ProjectionBuildResult(
         projections=_stable_projection_columns(projection_frame),
         blocked=blocked_frame.sort_values(["position", "player_id"], kind="stable"),

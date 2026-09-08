@@ -57,15 +57,17 @@ def _player(
     position: str,
     *,
     rookie_season: int,
+    last_season: int = 2026,
+    status: str = "ACT",
 ) -> dict[str, object]:
     return {
         "gsis_id": player_id,
         "display_name": name,
         "position": position,
         "latest_team": "NEW",
-        "status": "ACT",
+        "status": status,
         "rookie_season": rookie_season,
-        "last_season": 2026,
+        "last_season": last_season,
     }
 
 
@@ -122,6 +124,93 @@ def test_rookie_workload_is_fail_closed_even_when_history_name_collides() -> Non
     assert result.projections.empty
     assert result.blocked.iloc[0]["player_id"] == "rookie-id"
     assert "rookie workload" in result.blocked.iloc[0]["reason"]
+
+
+def test_last_season_one_year_widening_admits_a_real_active_player_diggs_class() -> None:
+    """A real, currently active player (status=ACT) whose most recent recorded stat
+    line lags one season behind (`last_season == season - 1`) must still be admitted --
+    the Diggs-class gap this widening exists to fix."""
+    history = pd.DataFrame(
+        [_history_row("00-1", "Missed A Season", "WR", 2025, receiving_yards=900, receptions=70)]
+    )
+    players = pd.DataFrame(
+        [_player("00-1", "Missed A Season", "WR", rookie_season=2018, last_season=2025)]
+    )
+    result = build_current_projection_candidate(
+        players,
+        history,
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"WR": 50.0},
+    )
+    assert result.projections["player_id"].tolist() == ["00-1"]
+
+
+def test_roster_status_cross_check_excludes_a_real_retired_player_rivers_class() -> None:
+    """The nflverse player-registry `status` field alone does not reliably flag real
+    retirement (a real, verified case: Philip Rivers/Russell Wilson both still show
+    status=ACT years after they stopped playing). When a real, gsis_id-keyed
+    seasonal-rosters cross-check is supplied and shows the player is no longer
+    actually rostered (INA/RET/CUT), the widened slice must exclude them."""
+    history = pd.DataFrame(
+        [_history_row("00-retired", "Long Retired", "QB", 2020, passing_yards=4000)]
+    )
+    players = pd.DataFrame(
+        [_player("00-retired", "Long Retired", "QB", rookie_season=2004, last_season=2025)]
+    )
+    result = build_current_projection_candidate(
+        players,
+        history,
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"QB": 50.0},
+        roster_status_by_gsis_id={"00-retired": "INA"},
+    )
+    assert result.projections.empty
+    assert result.blocked.empty
+    assert result.identity.empty
+
+
+def test_roster_status_cross_check_never_touches_the_unwidened_current_season_slice() -> None:
+    """The cross-check only removes rows from the newly-widened `last_season ==
+    season - 1` slice -- a real player whose `last_season == season` (the original,
+    unwidened admission rule) must be unaffected even if a (deliberately wrong, here)
+    roster status would otherwise exclude them."""
+    history = pd.DataFrame(
+        [_history_row("00-current", "Current Season", "RB", 2025, rushing_yards=1000)]
+    )
+    players = pd.DataFrame(
+        [_player("00-current", "Current Season", "RB", rookie_season=2021, last_season=2026)]
+    )
+    result = build_current_projection_candidate(
+        players,
+        history,
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"RB": 50.0},
+        roster_status_by_gsis_id={"00-current": "INA"},
+    )
+    assert result.projections["player_id"].tolist() == ["00-current"]
+
+
+def test_roster_status_cross_check_keeps_players_with_no_roster_snapshot_entry() -> None:
+    """Missing coverage in the roster snapshot is not treated as evidence of
+    retirement -- a gsis_id absent from `roster_status_by_gsis_id` is kept."""
+    history = pd.DataFrame(
+        [_history_row("00-uncovered", "Not In Roster Snapshot", "TE", 2025, receiving_yards=500)]
+    )
+    players = pd.DataFrame(
+        [_player("00-uncovered", "Not In Roster Snapshot", "TE", rookie_season=2019, last_season=2025)]
+    )
+    result = build_current_projection_candidate(
+        players,
+        history,
+        season=2026,
+        source_as_of="2026-08-08",
+        uncertainty_by_position={"TE": 50.0},
+        roster_status_by_gsis_id={"some-other-id": "INA"},
+    )
+    assert result.projections["player_id"].tolist() == ["00-uncovered"]
 
 
 def test_temporal_backtest_uses_prior_season_persistence() -> None:
