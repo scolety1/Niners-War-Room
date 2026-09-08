@@ -20,6 +20,8 @@ from src.services.current_kdst_eligibility_service import (
     load_nflverse_status_by_name,
 )
 from src.services.current_player_status_overrides_service import (
+    StatusOverrideIntakeError,
+    add_verified_status_override,
     apply_status_overrides_to_ranking,
     load_status_overrides,
 )
@@ -2225,6 +2227,96 @@ class DesktopBackendFacade:
                 "profileId": normalized,
                 "manualAssets": merged,
                 "addedCount": len(merged) - len(existing),
+            }
+        )
+
+    def list_player_status_overrides(self) -> FacadePayload:
+        """NWR class-time autonomous hardening, section 6: the real, live
+        status/risk READ path (`load_status_overrides` +
+        `apply_status_overrides_to_ranking`) has been wired into both live
+        ranking call sites all along -- what was missing was any way to
+        SEE the currently-active overrides without opening the committed
+        JSON file by hand. A thin, read-only listing, not a control panel.
+        """
+        overrides = load_status_overrides(self.repo_root)
+        return FacadePayload(
+            data={
+                "overrides": [
+                    {
+                        "playerId": override.player_id,
+                        "playerName": override.player_name,
+                        "kind": override.kind,
+                        "reason": override.reason,
+                        "effectiveDate": override.effective_date,
+                        "verifiedAtUtc": override.verified_at_utc,
+                        "sources": list(override.sources),
+                        "correctedTeam": override.corrected_team,
+                    }
+                    for override in overrides
+                ]
+            }
+        )
+
+    def submit_player_status_override(
+        self,
+        *,
+        player_id: str,
+        player_name: str,
+        kind: str,
+        reason: str,
+        effective_date: str,
+        verified_at_utc: str,
+        sources: list[str],
+        corrected_team: str = "",
+    ) -> FacadePayload:
+        """NWR class-time autonomous hardening, section 6: the real status/
+        risk intake CONTRACT (`add_verified_status_override`,
+        current_player_status_overrides_service.py) has existed since the
+        post-draft overnight repair, with real validation (kind must be
+        one of the three real, disclosed kinds; at least one cited source;
+        real ISO dates; no silently-stacked duplicate) -- but was never
+        reachable from any facade method, HTTP route, or GUI control. The
+        only way to add a new real, verified event was to hand-edit the
+        committed JSON file directly, bypassing that validation entirely.
+        This wires the existing, already-tested contract as-is: no new
+        event kinds invented here (the real taxonomy is SEASON_OUT /
+        NOT_WITH_TEAM / TEAM_CORRECTION -- see
+        docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md for why this
+        differs from a richer taxonomy that was assumed but never actually
+        built). A rejected submission surfaces the real, specific reason
+        (`StatusOverrideIntakeError`) rather than a generic failure, so an
+        owner-facing caller can show it directly.
+
+        Once written, the override takes effect on the NEXT live ranking
+        build automatically (`apply_status_overrides_to_ranking` already
+        reads the same committed file at both live call sites) -- this
+        method does not need to, and does not, touch the ranking itself.
+        """
+        self._require_mode("redraft")
+        try:
+            override = add_verified_status_override(
+                self.repo_root,
+                player_id=player_id,
+                player_name=player_name,
+                kind=kind,
+                reason=reason,
+                effective_date=effective_date,
+                verified_at_utc=verified_at_utc,
+                sources=tuple(sources),
+                corrected_team=corrected_team,
+            )
+        except StatusOverrideIntakeError as exc:
+            raise FacadeError("STATUS_OVERRIDE_REJECTED", str(exc), status=422) from exc
+        return FacadePayload(
+            data={
+                "playerId": override.player_id,
+                "playerName": override.player_name,
+                "kind": override.kind,
+                "reason": override.reason,
+                "effectiveDate": override.effective_date,
+                "verifiedAtUtc": override.verified_at_utc,
+                "sources": list(override.sources),
+                "correctedTeam": override.corrected_team,
             }
         )
 

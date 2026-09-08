@@ -81,6 +81,19 @@ market ADP as the answer target (explicitly disallowed). Per the directive's own
 fallback: left REFERENCE-ONLY, no code change, Player/Team Score/Pick Score untouched. The
 real, distinct games-persistence question surfaced is flagged as a separate future follow-up.
 
-## Section 6 — Status/risk live intake path
+## Section 6 — Status/risk live intake path (DONE, backend; frontend flagged remaining)
+
+Full evidence: `docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md`. Real gap: the intake
+CONTRACT (`add_verified_status_override`) and its READ side were both already real and
+already wired live, but the WRITE side had no facade/HTTP/GUI entry point -- only a hand-edit
+of the committed JSON file. Added `list_player_status_overrides()` and
+`submit_player_status_override(...)` to `DesktopBackendFacade`, wrapping the existing
+contract as-is (honest note: the real taxonomy is SEASON_OUT/NOT_WITH_TEAM/TEAM_CORRECTION,
+not the richer 9-value list the directive's own text assumed -- built on the real one, no
+fabricated kinds). 5 new tests pass (isolated fixture config, never the real committed file);
+22-test regression across related files clean; known 5-test baseline unchanged. Compact
+frontend form flagged as the remaining step, not built this pass (time budget).
+
+## Section 7 — Ballers import workflow (owner-ready pipeline)
 
 (next)
