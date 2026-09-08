@@ -170,6 +170,17 @@ documented purpose, not a defect). Marginal-utility promotion (this session's ow
 work) changed row-1 in 2/3 cases, corroborating the walk-forward promotion evidence. No harm
 found; no adjustment made.
 
-## Section 12 — Pair-turn planner GREEDY vs JOINT decision analysis
+## Section 12 — Pair-turn planner GREEDY vs JOINT decision analysis (DONE, kept informational)
+
+Full evidence: `docs/codex/NWR_PAIR_TURN_PLANNER_GREEDY_VS_JOINT_V1_20260908.md`. Compared
+real GREEDY (sequential top-1 x2) vs real JOINT (evaluate_pick_pairs) at the 3 directive-named
+turn slots, starting from real valid partial-mock states. Pair composition differed in 1/3
+cases; in that case JOINT improved win probability (+0.025) but team_score percentile
+collapsed 90.0->28.3 -- a real, concerning disagreement between the two real scoring metrics
+that could mean genuine unsafe win-probability-only optimization or Monte Carlo noise at this
+trial count; the small sample can't distinguish which. Per "if not [safe], keep it
+informational": NOT promoted. No code change.
+
+## Section 13 — FFA Sept-4 outlier/role audit
 
 (next)
