@@ -1197,6 +1197,54 @@ def test_parse_udk_position_pdf_against_a_real_owner_sample() -> None:
     raise AssertionError("no real owner PDF sample available")
 
 
+# --- K/DST readiness through the Ballers/UDK import path (NWR
+# post-draft overnight, section 15). K/DST are always MANUAL assets in
+# NWR (no model); this proves the generic UDK import path -- shared
+# with QB/RB/WR/TE above, no K/DST-specific code was added -- really
+# does resolve them correctly through the same `_matching_assets`/
+# `_match_adp_player` machinery every other ADP/paste import already
+# uses (DST matched by TEAM, never by name; K matched by name, same as
+# any skill position).
+_UDK_HEADER = "Name,Position,Team,Bye Week,Rank,Points,Risk,Upside,ADP,Tier,Outlook,Dynasty,Markers"
+
+
+def test_parse_udk_position_csv_matches_dst_by_team_not_name(tmp_path) -> None:
+    ranking = _ranking()
+    # A real UDK DST row's "Name" cell (team nickname text) never matches
+    # the manual asset's own player_name -- DST resolution is team-only.
+    csv_text = (
+        f'{_UDK_HEADER}\r\n'
+        f'"Some Team Nickname D/ST","DST","T3","7","1","110.0","3.0","5.0","14.05","3",'
+        f'"Real outlook.","locked","Mark Drafted"\r\n'
+    )
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    assert result["positions"] == ["DST"]
+    assert result["matchedRows"] == 1
+    assert result["unmatched"] == []
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    entry = _udk_position(loaded, "DST")["entries"][0]
+    assert entry["playerId"] == "manual:DST:3"
+    # The real matched asset's own name is used, not the UDK row's text.
+    assert entry["playerName"] == "DST 3"
+
+
+def test_parse_udk_position_csv_matches_k_by_name(tmp_path) -> None:
+    ranking = _ranking()
+    csv_text = (
+        f'{_UDK_HEADER}\r\n'
+        f'"K 5","K","T5","7","1","95.0","2.0","4.0","15.10","4",'
+        f'"Real outlook.","locked","Mark Drafted"\r\n'
+    )
+    result = save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    assert result["positions"] == ["K"]
+    assert result["matchedRows"] == 1
+    assert result["unmatched"] == []
+    loaded = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    entry = _udk_position(loaded, "K")["entries"][0]
+    assert entry["playerId"] == "manual:K:5"
+    assert entry["playerName"] == "K 5"
+
+
 def test_forced_position_forces_qb_for_a_real_superflex_slot_not_just_qb1() -> None:
     """Owner feedback closure (Superflex disposition): the deadline-forced-
     position mechanism (already reused for K/DST/TE/RB/WR) must count a
