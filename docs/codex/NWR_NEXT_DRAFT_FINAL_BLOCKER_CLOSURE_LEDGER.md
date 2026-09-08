@@ -19,6 +19,21 @@ cause and real required action explicit, traced end-to-end through to the real
 scenarios). No governance semantics changed. Real owner data read-only (isolated copy for the
 facade trace); verified untouched via final hash check.
 
-## Section 2 — Full owner runtime acceptance after freshness fix
+## Section 2 — Full owner runtime acceptance after freshness fix (DONE)
+
+Full evidence: `docs/codex/NWR_NEXT_DRAFT_OWNER_RUNTIME_ACCEPTANCE_V1_20260908.md`. Real,
+isolated Chrome walkthrough (test-only fixture, dynamically-dated, never real owner data) of
+the complete owner workflow: launch/select league/Draft Setup/mock/Suggestions/Compare/Cheat
+Sheets/Show Ballers/Search/Queue/Draft/Undo/Player Drawer/Roster/Recent Picks -- all real,
+working, zero console errors at every step. **Real fix**: `marginalRosterUtility` (the real
+primary ordering signal) had ZERO frontend consumer anywhere (verified by source grep) --
+added the TS contract fields + one Player Drawer line rendering the backend's own real label/
+explanation; verified live. **Two real, disclosed gaps left open** (also zero frontend
+consumers, verified by grep): `bestTurnPlan` (no UI panel at all) and status/risk display
+(read side; write side already known) -- deferred, the latter to section 8's own explicit
+scope. Frontend typecheck + 142 tests clean. Both real boards and the real owner data hash
+re-verified unchanged.
+
+## Section 3 — Reconcile Freeze V4 with final HEAD
 
 (next)

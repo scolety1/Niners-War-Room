@@ -943,6 +943,30 @@ export interface DecisionBundleCandidate {
   // makeItBack/pickScore). Additive only -- the metric's own value above
   // never changes because of this; this only labels it.
   metricStatus: Record<string, MetricStatus>;
+  // NWR next-draft final blocker closure, section 2: marginal_roster_utility
+  // is the real, walk-forward-validated PRIMARY candidate-ordering signal
+  // (see decision_bundle_service.py's _candidate_sort_key) -- these two
+  // fields have existed on the real backend payload since that promotion
+  // but were never declared here or rendered anywhere in the UI. Both null
+  // exactly when the backend's own computation legitimately failed for this
+  // candidate (never a fabricated fallback) or when the caller didn't
+  // request the richer explanation.
+  marginalUtility: number | null;
+  marginalRosterUtility: MarginalRosterUtility | null;
+}
+
+// NWR next-draft final blocker closure, section 2: the real, additive
+// explanation block behind marginalUtility above -- see
+// _safe_marginal_utility/explain_marginal_roster_reason
+// (shadow_numeric_authorities_service.py). `label` is the real, current
+// disclosure string the backend sends (has read "PROMOTED..." since the
+// walk-forward adoption); never hardcode or duplicate it client-side.
+export interface MarginalRosterUtility {
+  utility: number;
+  becomesStarter: boolean;
+  benchRedundancyBefore: number;
+  explanation: string;
+  label: string;
 }
 
 export interface MetricStatus {

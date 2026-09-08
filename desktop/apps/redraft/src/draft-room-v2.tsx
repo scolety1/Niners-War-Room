@@ -3643,6 +3643,18 @@ function PlayerDrawer({
         <details className="player-drawer__section">
           <summary>Why</summary>
           <p>Raw Decision Utility: {formatNumber(candidate.rawDecisionUtility, 2)} (Team Score component {formatNumber(candidate.teamScoreUtilityComponent, 2)} + Equity component {formatNumber(candidate.equityUtilityComponent, 2)})</p>
+          {candidate.marginalRosterUtility ? (
+            // NWR next-draft final blocker closure, section 2: real,
+            // walk-forward-validated PRIMARY ordering signal -- previously
+            // computed on the backend with zero owner-visible explanation
+            // anywhere in the UI. Renders the backend's own real label/
+            // explanation verbatim; never recomputes or paraphrases it.
+            <p className="marginal-roster-utility">
+              {candidate.marginalRosterUtility.label}: {formatNumber(candidate.marginalRosterUtility.utility, 2)}
+              {" — "}
+              {candidate.marginalRosterUtility.explanation}
+            </p>
+          ) : null}
           {candidate.warnings.length > 0 ? (
             <ul className="drawer-warnings">
               {candidate.warnings.map((warning) => <li key={warning}>{warning}</li>)}
