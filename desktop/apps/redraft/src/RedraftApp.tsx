@@ -8,22 +8,22 @@ import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
-import { ComparePage, DataHealthPage, DraftRoomPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { ComparePage, DataHealthPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
   // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
-  // at /draft-room-v2 is now the primary "Draft Room" surface; the
-  // original single-page room stays reachable, unmodified, as the
-  // "Legacy Draft Room" fallback -- routes are intentionally unchanged
-  // ("/" still resolves to the legacy page) so no existing bookmark,
-  // keyboard shortcut, or hash link breaks the night before a real draft.
-  // NWR DRAFT-DAY WAR ROOM (section 13): removed from normal navigation
-  // and the Ctrl+K command palette (both are built from this array) --
-  // the owner should never be steered to Legacy tonight. The route and
-  // component are untouched, so "/" (a direct URL/bookmark) still works
-  // as a dormant emergency rollback.
+  // at /draft-room-v2 is the "Draft Room" surface. It originally existed
+  // alongside an older single-page "Legacy Draft Room", hidden from this
+  // nav/command-palette array (and thus the Ctrl+K palette, both built
+  // from it) once the owner started using the new room for a real draft,
+  // then kept dormant at "/" as an emergency rollback through that draft.
+  // NWR post-draft overnight (phase 23, "remove Legacy for real"): the
+  // real draft is complete, capability parity was confirmed (Draft Setup/
+  // slot/restart/Refresh FFC ADP/Paste Rankings-ADP/Import owner ADP CSV
+  // all already exist here), and the Legacy component itself is now
+  // removed from pages.tsx -- "/" redirects to this room instead.
   { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
   { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
@@ -92,7 +92,15 @@ export function RedraftApp() {
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
-      <Route path="/" element={<DraftRoomPage client={client} data={data} onUpdate={update} />} />
+      {/* NWR post-draft overnight (phase 23, "remove Legacy for real"): the
+          owner has now used the consolidated Draft Room V2 through a real
+          draft and considers it the product. Confirmed capability parity
+          first (Draft Setup/slot/restart, Refresh FFC ADP, Paste Rankings/
+          ADP, Import owner ADP CSV all already exist in DraftRoomV2Page) --
+          the Legacy DraftRoomPage component itself is removed from
+          pages.tsx (git history is the rollback path). "/" now redirects
+          to the real room instead of 404ing or resurrecting Legacy. */}
+      <Route path="/" element={<Navigate replace to="/draft-room-v2" />} />
       <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} globalSidebarCollapsed={sidebarCollapsed} onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed} />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
