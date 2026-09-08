@@ -826,6 +826,27 @@ def test_dynasty_trade_scenarios_save_reopen_update_and_export(
     assert exported["missingData"] == []
 
 
+def test_redraft_bootstrap_udk_rankings_is_a_list_with_no_active_profile(
+    tmp_path: Path,
+) -> None:
+    """NWR class-time autonomous hardening, section 18: a real, reproducible
+    first-load CRASH found via real Chrome rendering. `redraft_bootstrap`'s
+    no-active-profile fallback used `{"positions": {}}` (an object) while
+    `load_udk_rankings` always returns `{"positions": [...]}` (a list) --
+    the frontend's `buildUdkEntryById` does `for (const position of
+    udkRankings?.positions ?? [])`, and `for...of` over a plain object
+    throws "object is not iterable", crashing the entire Draft Room on
+    first load whenever no profile is active yet (a real, fresh-install
+    state). Proves the real, consistent list contract holds even with no
+    active profile."""
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    result = facade.redraft_bootstrap()
+    assert result.data["activeProfileId"] is None
+    assert isinstance(result.data["udkRankings"]["positions"], list)
+    assert result.data["udkRankings"]["positions"] == []
+
+
 def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     tmp_path: Path,
 ) -> None:

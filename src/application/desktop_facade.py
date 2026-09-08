@@ -1982,7 +1982,19 @@ class DesktopBackendFacade:
                     }
                     for asset in manual_assets
                 ],
-                "udkRankings": load_udk_rankings(self.redraft_root, selected.profile_id) if selected else {"positions": {}},
+                # NWR class-time hardening, section 18 (real owner-runtime
+                # acceptance crash, found via real Chrome rendering): the
+                # no-active-profile fallback used `{"positions": {}}` (an
+                # object) while `load_udk_rankings` always returns
+                # `{"positions": [...]}` (a list) -- the frontend's
+                # `buildUdkEntryById` does `for (const position of
+                # udkRankings?.positions ?? [])`, and `for...of` over a
+                # plain object throws "object is not iterable", crashing
+                # the ENTIRE Draft Room on first load whenever no profile
+                # is active yet (a real, fresh-install, first-run state).
+                # Matches the real, consistent list contract every other
+                # caller already relies on.
+                "udkRankings": load_udk_rankings(self.redraft_root, selected.profile_id) if selected else {"positions": []},
                 "externalConsensus": {
                     "authority": fantasypros_status.authority,
                     "configured": fantasypros_status.configured,

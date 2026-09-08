@@ -232,6 +232,19 @@ Section 10 under a real completed draft, not just isolated calls). One naive hoa
 coverage/tie count/pair-plan invocation not measured this pass (compute cost disclosed,
 judged disproportionate given the primary question was decisively answered). No code change.
 
-## Section 18 — Owner-draft-runtime acceptance
+## Section 18 — Owner-draft-runtime acceptance (DONE, real crash found+fixed)
+
+Full evidence: `docs/codex/NWR_OWNER_RUNTIME_ACCEPTANCE_V1_20260908.md`. Stood up a real
+isolated Chrome-rendered dev environment (backend on 18742, Vite frontend on 1422, isolated
+local_exports store, never a real board). **Found and fixed a real, universal first-load
+crash**: the no-active-profile bootstrap fallback used `{"positions": {}}` (object) while
+`load_udk_rankings` always returns a list; the frontend's `for...of` over that object threw
+"object is not iterable", crashing the entire Draft Room on every fresh install. Fixed to
+`{"positions": []}`; verified zero console errors on reload. 1 new regression test; known
+5-test baseline unchanged. Deeper-screen testing blocked by the already-known,
+previously-disclosed (Section 7) projection-freshness bug -- not reopened. Dev servers and
+temp local_exports cleaned up. Both real boards re-verified byte-identical.
+
+## Section 19 — Freeze the next-draft build (V4)
 
 (next)
