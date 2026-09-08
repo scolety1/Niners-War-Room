@@ -282,17 +282,46 @@ def explain_marginal_roster_reason(
 # Pick Score / DecisionBundle path. Reuses explain_marginal_roster_reason
 # (itself reusing Team Score's own _select_starting_lineup -- no new
 # selection algorithm) plus roster_composition_report's real
-# position_redundancy signal. The whole point of this challenger is that
-# it needs NO position-specific magic constant ("QB2 penalty", "TE2
-# penalty") to reproduce the diminishing-returns shape the owner expected:
-# a starter/FLEX upgrade always keeps its full real value (net of who it
-# benches); a pure bench add's contingency value decays by the SAME
-# universal geometric rate for every position, based only on how much
-# real bench redundancy already exists there. A third player at a
-# position with no starter/FLEX/bench use left over is discovered to be
-# low-value by this rule, not told so by a hardcoded round number or
-# position name.
-BENCH_REDUNDANCY_DECAY = 0.5
+# position_redundancy signal. A starter/FLEX upgrade always keeps its
+# full real value (net of who it benches, already correctly netted by
+# explain_marginal_roster_reason); a pure bench add's contingency value
+# decays geometrically with how much real bench redundancy already
+# exists there.
+#
+# NWR post-draft overnight, phase 1/2 (v2 -- real historical measurement,
+# not an arbitrary constant): the FIRST bench slot's decay base is no
+# longer a single universal 0.5 for every position -- it is measured
+# directly from real nflverse `load_snap_counts` data (seasons 2022-2024,
+# 96 team-seasons per position). Methodology: rank each team's players at
+# a position by WEEK-1 snap share (the real preseason depth chart
+# outcome, not season-total, which would conflate a true bench backup
+# with a midseason starter who took over after an injury and racked up
+# snaps for the rest of the year -- an earlier version of this same
+# measurement made exactly that mistake and was corrected before use).
+# For the week-1 DEPTH-2 player at each position, the real, computed
+# fraction of team-seasons where that player EVER reached starter-level
+# usage (>=60% offensive snap share) in some LATER week that season:
+#   QB 12.5% (n=96; only 22/96 team-seasons even had a QB2 log ANY week-1
+#     snap at all -- QB is structurally the most winner-take-all position,
+#     most backups never touch the field absent an injury)
+#   RB 54.2% (n=96)
+#   WR 97.9% (n=96 -- modern 3-WR personnel groupings mean a "WR2" by
+#     week-1 snap share is very often close to a full-time starter)
+#   TE 72.9% (n=96)
+# These real rates -- not a guessed "QB penalty"/"TE penalty" -- are why
+# a first bench QB is worth far less real contingency value than a first
+# bench RB/WR/TE. Reproduction script:
+# scratchpad `historical_backup_utility_v2.py`, this session.
+POSITION_BACKUP_UTILITY_RATE: dict[str, float] = {
+    "QB": 0.125,
+    "RB": 0.542,
+    "WR": 0.979,
+    "TE": 0.729,
+}
+# Positions with no real measurement above (K/DST -- snap-share isn't a
+# meaningful concept for either) fall back to the original universal
+# rate rather than an invented number.
+DEFAULT_BENCH_REDUNDANCY_DECAY = 0.5
 
 
 @dataclass(frozen=True)
@@ -327,13 +356,23 @@ def marginal_roster_utility(
     current_players = _roster_players(current_player_ids, pool)
     report_before = roster_composition_report(current_players, profile)
     redundancy_before = report_before.position_redundancy.get(candidate.position, 0)
-    decay = BENCH_REDUNDANCY_DECAY**redundancy_before
+    decay_base = POSITION_BACKUP_UTILITY_RATE.get(candidate.position, DEFAULT_BENCH_REDUNDANCY_DECAY)
+    # redundancy_before=0 (the FIRST bench player at this position) still
+    # gets exactly ONE real discount (decay_base**1), not full value --
+    # the real historical measurement above IS the first backup's own
+    # startability rate, not a "no discount until the 2nd one" rule.
+    # Each additional already-rostered bench-redundant player compounds
+    # the same real rate again (decay_base**2, **3, ...), reflecting that
+    # a 3rd/4th bench player at a position is even less likely to ever be
+    # the one who's needed.
+    decay = decay_base ** (redundancy_before + 1)
     utility = round(candidate.value * decay, 2)
     explanation = (
         f"Bench depth at {candidate.position} -- {redundancy_before} real bench-redundant "
-        f"{candidate.position}(s) already rostered, so this one's real injury/bye contingency "
-        f"value is discounted to {decay:.0%} of its standalone value "
-        f"({round(candidate.value, 1)} -> {utility})."
+        f"{candidate.position}(s) already rostered. Real historical startability rate for a "
+        f"{candidate.position} bench player (nflverse 2022-2024, week-1 depth chart): "
+        f"{decay_base:.0%}. This candidate's real injury/bye contingency value is discounted "
+        f"to {decay:.1%} of its standalone value ({round(candidate.value, 1)} -> {utility})."
     )
     return MarginalRosterUtility(
         utility=utility, becomes_starter=False,

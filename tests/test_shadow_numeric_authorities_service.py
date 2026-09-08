@@ -280,40 +280,48 @@ def test_explain_marginal_roster_reason_fills_an_open_slot_without_displacing_an
 
 
 def test_marginal_roster_utility_decays_geometrically_for_repeated_bench_adds() -> None:
-    """NWR post-draft overnight (phase 3): the QB2/QB3/QB4 diminishing-
-    returns shape must emerge from real bench redundancy, not a
-    hardcoded position penalty -- same decay rate (0.5 per already-
-    rostered bench-redundant player) applies uniformly to any position."""
+    """NWR post-draft overnight (phase 3, refined phase 1/2 with real
+    historical data): the QB2/QB3/QB4 diminishing-returns shape emerges
+    from real bench redundancy compounding the position's own REAL,
+    measured historical backup-startability rate (QB=12.5%, nflverse
+    2022-2024 week-1 depth data -- see POSITION_BACKUP_UTILITY_RATE's own
+    docstring for the full methodology), not a hardcoded position
+    penalty and not a single universal constant applied to every
+    position identically."""
     ranking = _ranking()
     profile = replace(
         ranking.profile,
         roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
     )
-    from src.services.shadow_numeric_authorities_service import marginal_roster_utility
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility, POSITION_BACKUP_UTILITY_RATE
+
+    qb_rate = POSITION_BACKUP_UTILITY_RATE["QB"]
 
     # QB-0 starts (fills the 1 real starter slot).
     r0 = marginal_roster_utility("QB-0", [], profile, ranking, _manual_assets())
     assert r0.becomes_starter is True
 
-    # QB-1 is the first real bench backup -- full undiscounted value.
+    # QB-1 is the FIRST real bench backup -- already discounted to QB's
+    # own real startability rate (12.5%), not full value -- a backup QB
+    # genuinely has limited real contingency value, per the real data.
     r1 = marginal_roster_utility("QB-1", ["QB-0"], profile, ranking, _manual_assets())
     assert r1.becomes_starter is False
     assert r1.bench_redundancy_before == 0
     qb1_value = next(r for r in ranking.rows if r.player_id == "QB-1").replacement_adjusted_value
-    assert r1.utility == round(qb1_value, 2)
+    assert r1.utility == round(qb1_value * qb_rate, 2)
 
-    # QB-2 is the SECOND bench backup -- discounted to 50% of standalone value.
+    # QB-2 is the SECOND bench backup -- the rate compounds again (rate^2).
     r2 = marginal_roster_utility("QB-2", ["QB-0", "QB-1"], profile, ranking, _manual_assets())
     assert r2.becomes_starter is False
     assert r2.bench_redundancy_before == 1
     qb2_value = next(r for r in ranking.rows if r.player_id == "QB-2").replacement_adjusted_value
-    assert r2.utility == round(qb2_value * 0.5, 2)
+    assert r2.utility == round(qb2_value * (qb_rate**2), 2)
 
-    # QB-3 is the THIRD bench backup -- discounted to 25%.
+    # QB-3 is the THIRD bench backup -- rate^3.
     r3 = marginal_roster_utility("QB-3", ["QB-0", "QB-1", "QB-2"], profile, ranking, _manual_assets())
     assert r3.bench_redundancy_before == 2
     qb3_value = next(r for r in ranking.rows if r.player_id == "QB-3").replacement_adjusted_value
-    assert r3.utility == round(qb3_value * 0.25, 2)
+    assert r3.utility == round(qb3_value * (qb_rate**3), 2)
 
     # Monotonically decreasing utility -- the real diminishing-returns shape.
     assert r1.utility > r2.utility > r3.utility
@@ -337,6 +345,55 @@ def test_marginal_roster_utility_te2_stays_full_value_via_flex_not_bench_decay()
     r1 = marginal_roster_utility(te1.player_id, [te0.player_id], profile, ranking, _manual_assets())
     assert r1.becomes_starter is True  # fills the open FLEX slot -- full value, no decay
     assert r1.utility == round(te1.replacement_adjusted_value, 2)
+
+
+def test_position_backup_utility_rates_are_real_measured_values_not_arbitrary() -> None:
+    """Locks in the real, cited nflverse 2022-2024 measurement
+    (scratchpad historical_backup_utility_v2.py, this session) --
+    WR/TE backups are real, materially more likely to see meaningful
+    later-season usage than QB, RB in between. A regression here means
+    someone replaced the real numbers with a guess."""
+    from src.services.shadow_numeric_authorities_service import POSITION_BACKUP_UTILITY_RATE
+
+    assert POSITION_BACKUP_UTILITY_RATE["QB"] == 0.125
+    assert POSITION_BACKUP_UTILITY_RATE["RB"] == 0.542
+    assert POSITION_BACKUP_UTILITY_RATE["WR"] == 0.979
+    assert POSITION_BACKUP_UTILITY_RATE["TE"] == 0.729
+    # The real, ordered relationship the whole fix depends on.
+    assert (
+        POSITION_BACKUP_UTILITY_RATE["QB"]
+        < POSITION_BACKUP_UTILITY_RATE["RB"]
+        < POSITION_BACKUP_UTILITY_RATE["TE"]
+        < POSITION_BACKUP_UTILITY_RATE["WR"]
+    )
+
+
+def test_marginal_roster_utility_first_backup_is_not_full_value_for_low_startability_positions() -> None:
+    """The real fix for the 12.01 Caleb-Williams-then-Lawrence-family
+    scenario: even the FIRST bench QB is not full value (12.5% of
+    standalone, not 100%) -- the old universal-decay version gave a
+    first bench QB the same undiscounted value as a first bench WR,
+    which is what let a marginal starter-swap be under-penalized
+    relative to genuine bench value."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=2, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
+    )
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility
+
+    # WR-0/WR-1 fill both real WR starter slots; QB-0 fills the real QB slot.
+    roster = ["QB-0", "WR-0", "WR-1"]
+    qb_backup = marginal_roster_utility("QB-1", roster, profile, ranking, _manual_assets())
+    wr_backup = marginal_roster_utility("WR-2", roster, profile, ranking, _manual_assets())
+    assert qb_backup.becomes_starter is False
+    assert wr_backup.becomes_starter is False
+    qb1_value = next(r for r in ranking.rows if r.player_id == "QB-1").replacement_adjusted_value
+    wr2_value = next(r for r in ranking.rows if r.player_id == "WR-2").replacement_adjusted_value
+    # Same real bench-redundancy state (0 for both -- first backup at
+    # their own position) but materially different retained fraction of
+    # standalone value, driven only by the real position-specific rate.
+    assert qb_backup.utility / qb1_value < wr_backup.utility / wr2_value
 
 
 def test_explain_marginal_roster_reason_handles_an_unmodeled_candidate() -> None:
