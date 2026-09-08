@@ -34,6 +34,16 @@ consumers, verified by grep): `bestTurnPlan` (no UI panel at all) and status/ris
 scope. Frontend typecheck + 142 tests clean. Both real boards and the real owner data hash
 re-verified unchanged.
 
-## Section 3 — Reconcile Freeze V4 with final HEAD
+## Section 3 — Reconcile Freeze V4 with final HEAD (DONE)
+
+Full evidence: `docs/codex/NWR_NEXT_DRAFT_FREEZE_RECONCILIATION_V1_20260908.md`. Real diff
+proof: V4's own HEAD (26c455d9) vs the prior session's reported final commit (d00f51dd)
+differ only by 2 docs-only commits -- V4 remains accurate through that point. This
+directive's own sections 1-2 (80a28ffc, e2041107) DID change real executable code since,
+making V4 now stale. Per the directive's own rule, not rewriting V4 -- deferring a real,
+single V5 freeze to this directive's own section 10 (its natural, final completion point),
+since cutting one now would go stale again at the next executable change in sections 4-9.
+
+## Section 4 — Real ESPN Top-250 coverage audit
 
 (next)
