@@ -119,6 +119,24 @@ class TeamScoreV2Result:
     label: str = TEAM_SCORE_V2_LABEL
 
 
+def _pool_value(entry: Mapping[str, object]) -> float:
+    """NWR post-draft overnight (phase 1): a manual/unmodeled asset (K/DST,
+    or a skill-position player NWR's ranking excluded but still keeps
+    searchable/draftable via the manual pool) has `replacement_adjusted_value
+    = None` by design -- there is no fabricated fallback score for them.
+    Reuses the EXACT same semantic V1's `_roster_players`
+    (shadow_numeric_authorities_service.py) already established for this
+    same real gap: an unmodeled asset contributes 0.0 to a roster-value
+    sum, never a crash, never an invented nonzero value. Team Score V2's
+    raw-features builder previously had no such guard at all and raised
+    `TypeError: float() argument must be a string or a real number, not
+    'NoneType'` for any roster containing one -- reproduced live while
+    running the RAV/DQ candidate-budget study (redraft_decision_bundle_v2
+    against a real, already-manual-K/DST-carrying 403 roster)."""
+    value = entry.get("replacement_adjusted_value")
+    return float(value) if value is not None else 0.0
+
+
 def _raw_features_for_roster(
     roster_player_ids: Sequence[str],
     pool: Mapping[str, Mapping[str, object]],
@@ -126,14 +144,12 @@ def _raw_features_for_roster(
     adp_percentile_by_player: Mapping[str, float],
 ) -> dict[str, float]:
     projected_players = [
-        RosterPlayer(
-            pid, str(pool[pid]["position"]), float(pool[pid]["replacement_adjusted_value"])
-        )
+        RosterPlayer(pid, str(pool[pid]["position"]), _pool_value(pool[pid]))
         for pid in roster_player_ids if pid in pool
     ]
     optimal_lineup = optimal_starting_lineup_value(projected_players, profile)
     all_roster_sum = sum(
-        float(pool[pid]["replacement_adjusted_value"]) for pid in roster_player_ids if pid in pool
+        _pool_value(pool[pid]) for pid in roster_player_ids if pid in pool
     )
     nwr_rank_sum = sum(
         float(pool[pid]["nwr_rank"]) for pid in roster_player_ids

@@ -3049,12 +3049,19 @@ class DesktopBackendFacade:
             timestamp_utc=ranking.generated_at_utc,
         )
 
-        # NWR Final Pre-Draft Product Hardening V1, section 9: Raw Action
-        # Value's real rollout cost scales with candidates x trials, so
-        # FAST intentionally stays tight (measured ~6s at 5 candidates x 2
-        # trials; 3 x 2 keeps FAST comfortably inside a real draft clock)
-        # while STANDARD/DEEP can afford more real evidence per pick.
-        rav_preset = {"FAST": (3, 2), "STANDARD": (5, 3), "DEEP": (8, 5)}[str(speed).upper()]
+        # NWR Final Pre-Draft Product Hardening V1, section 9 (original):
+        # FAST's RAV budget was 3 candidates x 2 trials ("measured ~6s at 5
+        # x 2"). NWR post-draft overnight, phase 2: re-measured live against
+        # the real 403 profile after fixing the None-value crash that had
+        # been blocking this study -- budget 8 (== max_candidates, full DQ
+        # coverage) x 5 trials (DEEP's own trial count) now measures 4.15s
+        # wall, not the ~6s the old comment cited even at a smaller budget.
+        # The prior FAST budget of 3 left 5 of 8 Suggestions rows with no
+        # DQ/RAV at all (a real, owner-reported "DQ is always Skipped"
+        # complaint) for a latency saving of under 2 real seconds against a
+        # 90-second pick clock -- not a defensible trade. FAST now computes
+        # DQ for every candidate it shows.
+        rav_preset = {"FAST": (8, 3), "STANDARD": (10, 4), "DEEP": (12, 5)}[str(speed).upper()]
         result = build_live_decision_bundle_v2(
             profile, ranking, manual_assets, adp, room_state,
             comparable_leagues=comparable_leagues, provenance=provenance,
