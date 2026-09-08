@@ -159,6 +159,17 @@ signals have zero effect on this team's own timing (per-team policy only); under
 multi-position scarcity, skill-position priority can sacrifice K/DST entirely even on the
 literal last pick.
 
-## Section 11 — Pick Score secondary sort external validation
+## Section 11 — Pick Score secondary sort external validation (DONE, no adjustment)
+
+Full evidence: `docs/codex/NWR_PICK_SCORE_TIE_ORDER_VALIDATION_V1_20260908.md`. Built 3 real
+DecisionBundles (8/12/16-team, varying roster fullness), measured real pairwise pick_score
+ties and whether raw_decision_utility resolves them. Real, honest result: 778/1038 real ties
+across cases, resolution rate ranges 0-81% depending on real candidate differentiation (a high
+double-tie rate among similar deep-bench candidates matches the tertiary player_id key's own
+documented purpose, not a defect). Marginal-utility promotion (this session's own separate
+work) changed row-1 in 2/3 cases, corroborating the walk-forward promotion evidence. No harm
+found; no adjustment made.
+
+## Section 12 — Pair-turn planner GREEDY vs JOINT decision analysis
 
 (next)
