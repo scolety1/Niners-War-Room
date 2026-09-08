@@ -245,6 +245,15 @@ crash**: the no-active-profile bootstrap fallback used `{"positions": {}}` (obje
 previously-disclosed (Section 7) projection-freshness bug -- not reopened. Dev servers and
 temp local_exports cleaned up. Both real boards re-verified byte-identical.
 
-## Section 19 — Freeze the next-draft build (V4)
+## Section 19 — Freeze the next-draft build V4 (DONE)
+
+Full evidence: `docs/codex/NWR_PROSPECTIVE_2026_FREEZE_V4_20260908.md`. Real, complete freeze
+covering all Sections 1-18 of this run, HEAD `26c455d9`. Does not overwrite V1/V2/V3. Records
+every real delta (latency, FLEX fix, Diggs/Brooks fixes, coverage counts, status/risk and
+Ballers wiring, K/DST research+timing, tie-order/pair-turn validation, rookie bias subgroup
+result, 403 replay, multi-league battery, the real crash fix) plus honest known limitations
+carried forward.
+
+## Section 20 — Final delivery window
 
 (next)
