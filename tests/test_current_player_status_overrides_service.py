@@ -70,6 +70,29 @@ def test_not_with_team_override_zeros_value_same_as_season_out() -> None:
     assert row.player_name == "Player B"
 
 
+def test_administrative_exempt_override_zeros_value_same_as_season_out() -> None:
+    """NWR OVERNIGHT V3 (Lane 1, item 1.12): a real, evidenced taxonomy
+    gap -- a player carrying a real, current, sourced roster-status code
+    that is neither an injury nor a release (e.g. Commissioner Exempt)
+    fit none of the pre-existing three kinds. This is a general kind,
+    not scoped to any one player."""
+    ranking = _ranking()
+    overrides = (
+        StatusOverride(
+            player_id="C", player_name="Player C", kind="ADMINISTRATIVE_EXEMPT",
+            reason="Commissioner Exempt list, still rostered but not practicing/eligible.",
+            effective_date="2026-09-08", verified_at_utc="2026-09-08T21:54:00Z",
+            sources=("https://example.test/source",),
+        ),
+    )
+    corrected = apply_status_overrides_to_ranking(ranking, overrides)
+    row = next(r for r in corrected.rows if r.player_id == "C")
+    assert row.replacement_adjusted_value == 0.0
+    # Never removed, original projection untouched, distinct reason preserved.
+    assert row.player_name == "Player C"
+    assert {r.player_id for r in corrected.rows} == {"A", "B", "C"}
+
+
 def test_season_out_override_zeros_value_but_keeps_player_searchable() -> None:
     ranking = _ranking()
     overrides = (
@@ -157,6 +180,15 @@ def test_add_verified_status_override_accepts_a_real_cited_event(tmp_path: Path)
     # Real write: load_status_overrides sees it back immediately.
     reloaded = load_status_overrides(root)
     assert any(o.player_id == "00-0099999" and o.kind == "SEASON_OUT" for o in reloaded)
+
+
+def test_add_verified_status_override_accepts_administrative_exempt(tmp_path: Path) -> None:
+    root = _fixture_repo_root(tmp_path)
+    kwargs = {**_VALID_KWARGS, "kind": "ADMINISTRATIVE_EXEMPT"}
+    result = add_verified_status_override(root, **kwargs)
+    assert result.kind == "ADMINISTRATIVE_EXEMPT"
+    reloaded = load_status_overrides(root)
+    assert any(o.player_id == "00-0099999" and o.kind == "ADMINISTRATIVE_EXEMPT" for o in reloaded)
 
 
 def test_add_verified_status_override_rejects_an_uncited_event(tmp_path: Path) -> None:

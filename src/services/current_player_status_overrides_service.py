@@ -18,7 +18,7 @@ a 2016-2024 historical evaluation. Every live consumer downstream of
 decision-bundle scoring) reads the corrected rows automatically, since
 they all resolve players from this same `RankingResult`.
 
-Three kinds of override, and only these three:
+Four kinds of override, and only these four:
 
 - `SEASON_OUT`: a real, current-team INJURY designation (e.g. a season-
   ending ACL tear while still rostered). The player's ORIGINAL projected
@@ -34,6 +34,23 @@ Three kinds of override, and only these three:
   roster at all. Kept as a distinct kind rather than folded into
   `SEASON_OUT` so the disclosed reason never mislabels "unsigned" as
   "injured" or vice versa.
+- `ADMINISTRATIVE_EXEMPT`: NWR OVERNIGHT V3 (Lane 1, item 1.12) -- a real,
+  evidenced taxonomy gap this closes. A player can carry a real, current,
+  sourced NFL roster-status code (e.g. Commissioner Exempt / "Ex/Comm.
+  Perm.") that is neither an injury nor a release: he remains on an NFL
+  roster in a formal sense but is not currently practicing or eligible to
+  play. Before this kind existed, no diligent human could file a
+  compliant override for that state -- it fit none of the other three.
+  Same zero-value effect as `SEASON_OUT`/`NOT_WITH_TEAM` for automatic-
+  recommendation purposes (he is not currently available to help a
+  fantasy roster), same "never altered original projection, never
+  removed from the pool" guarantee, kept as its own distinct kind for the
+  same disclosure reason as `NOT_WITH_TEAM` -- an administrative-exempt
+  reason must never be silently relabeled as an injury. This kind exists
+  for any player who is genuinely in this real, sourced status; it is not
+  scoped to any one named player, and adding this kind does not itself
+  add or imply any specific player's override -- each still requires its
+  own individually verified, cited entry via `add_verified_status_override`.
 - `TEAM_CORRECTION`: only the `team` field is replaced; nothing about the
   player's value, identity, or projection changes.
 
@@ -63,7 +80,7 @@ OVERRIDES_RELATIVE_PATH = Path("config/nwr_verified_current_player_status_overri
 class StatusOverride:
     player_id: str
     player_name: str
-    kind: str  # "SEASON_OUT" | "NOT_WITH_TEAM" | "TEAM_CORRECTION"
+    kind: str  # "SEASON_OUT" | "NOT_WITH_TEAM" | "ADMINISTRATIVE_EXEMPT" | "TEAM_CORRECTION"
     reason: str
     effective_date: str
     verified_at_utc: str
@@ -72,10 +89,11 @@ class StatusOverride:
 
 
 # Zero-value kinds: distinct, honestly-labeled REASONS (injury vs. simply
-# unsigned/released), but the same real effect on automatic-recommendation
-# value -- neither implies the other, and the UI/report text must not
-# collapse "not with any team" into "injured."
-ZERO_VALUE_KINDS = frozenset({"SEASON_OUT", "NOT_WITH_TEAM"})
+# unsigned/released vs. a real administrative-exempt roster status), but
+# the same real effect on automatic-recommendation value -- none of these
+# implies another, and the UI/report text must not collapse "not with any
+# team" or "administratively exempt" into "injured."
+ZERO_VALUE_KINDS = frozenset({"SEASON_OUT", "NOT_WITH_TEAM", "ADMINISTRATIVE_EXEMPT"})
 
 
 def load_status_overrides(repo_root: str | Path) -> tuple[StatusOverride, ...]:
@@ -140,7 +158,7 @@ def add_verified_status_override(
 
     Rejects (raises `StatusOverrideIntakeError`, never silently drops or
     guesses a fix) rather than accepting:
-    - a `kind` outside the three real, disclosed kinds
+    - a `kind` outside the four real, disclosed kinds
     - zero cited `sources` -- an override with no verifiable source is
       exactly the "fabricated event" this contract exists to refuse
     - a `TEAM_CORRECTION` with no `corrected_team`, or a non-
@@ -162,7 +180,8 @@ def add_verified_status_override(
     kind = str(kind)
     if kind not in (ZERO_VALUE_KINDS | {"TEAM_CORRECTION"}):
         raise StatusOverrideIntakeError(
-            f"kind must be one of SEASON_OUT, NOT_WITH_TEAM, TEAM_CORRECTION -- got {kind!r}"
+            "kind must be one of SEASON_OUT, NOT_WITH_TEAM, ADMINISTRATIVE_EXEMPT, "
+            f"TEAM_CORRECTION -- got {kind!r}"
         )
     if not player_id:
         raise StatusOverrideIntakeError("player_id is required")
