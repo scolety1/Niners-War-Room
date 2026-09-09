@@ -2100,7 +2100,10 @@ function SuggestionsTab({
   const [showBallers, setShowBallers] = useState(false);
   const isManualPosition = positionFilter === "K" || positionFilter === "DST";
   const manualRows = isManualPosition
-    ? (manualAssets ?? []).filter((row) => row.position === positionFilter)
+    ? (manualAssets ?? []).filter((row) => {
+        const legality = row as typeof row & { rosterLegal?: boolean };
+        return row.position === positionFilter && legality.rosterLegal !== false;
+      })
     : [];
   const udkImported = (udkRankings?.positions?.length ?? 0) > 0;
   const ballersById = useMemo(() => buildUdkEntryById(udkRankings), [udkRankings]);
