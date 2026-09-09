@@ -374,6 +374,16 @@
 .file-action { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 7px; color: var(--text); cursor: pointer; font-size: 11px; padding: 9px 12px; }
 .file-action input { display: none; }
 .boundary-note { color: var(--muted); font-size: 11px; margin: 10px 0 0; }
+/* NWR 15-MINUTE CHEAT SHEET HOTFIX (2026-09-08, directive section 2):
+   the compact ~2-row Cheat Sheet header -- league identity, then
+   status + a small Export control -- replacing a large PageHeader +
+   separate Panel title that consumed far more vertical space. */
+.cheat-sheet-compact-header { margin-bottom: 8px; }
+.cheat-sheet-compact-header strong { display: block; font-size: 13px; }
+.cheat-sheet-compact-header .boundary-note { margin: 2px 0 0; }
+.cheat-sheet-compact-header__row { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.cheat-sheet-view-select { align-items: center; color: var(--muted); display: flex; font-size: 11px; gap: 5px; }
+.cheat-sheet-view-select select { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-size: 11px; padding: 5px 6px; }
 .draft-board-scroll { overflow-x: auto; padding-bottom: 5px; }
 .draft-board-grid { display: grid; gap: 4px; grid-template-columns: 38px repeat(10, minmax(105px, 1fr)); min-width: 1160px; }
 .draft-board-grid > button,

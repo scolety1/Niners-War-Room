@@ -99,13 +99,13 @@ export function CheatSheetPage({
   onPlayerClick?: (playerId: string, event: React.MouseEvent) => void;
 }) {
   const [sheet, setSheet] = useState("Overall");
-  // NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
-  // directive section 1): Combined is now the default -- NWR rank, the
-  // active league's own routed market ADP, and the owner's imported
-  // Ballers/UDK data side by side in one row, so the owner never has to
-  // switch tabs mid-draft just to compare sources. "Ballers" (previously
-  // "UDK") only ever offers data for a position the owner has actually
-  // imported real Ballers rows for -- never fabricated from nothing.
+  // NWR 15-MINUTE CHEAT SHEET HOTFIX (2026-09-08, directive section 1):
+  // Combined is the Cheat Sheet itself, visible on first open with no
+  // extra click -- not a mode the owner has to choose. NWR-only/Ballers-
+  // only stay reachable as a small "View" dropdown (moved out of the
+  // primary toolbar below), never a prominent Source control. "Ballers"
+  // only ever offers data for a position the owner has actually imported
+  // real Ballers rows for -- never fabricated from nothing.
   const [source, setSource] = useState<"COMBINED" | "NWR" | "BALLERS">("COMBINED");
   // Owner feedback closure, section 8: drafted players disappear
   // immediately by default from every lane here too (Cheat Sheets was a
@@ -193,45 +193,60 @@ export function CheatSheetPage({
   // as this league's own rounds.
   const adpTeamCount = data.draftBoard?.adp?.teamCount ?? null;
   const roomTeamCount = data.activeProfile.teamCount ?? null;
+  const playerCount = isManual ? manualRows.length : udkForSheet && source === "BALLERS" ? udkVisibleEntries.length : visible.length;
   return (
     <>
-      <PageHeader
-        eyebrow="Draft prep · Profile specific"
-        title="Cheat Sheet"
-        description="A printable and exportable board built from the active league's governed current-season rankings."
-        status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : udkForSheet && source === "BALLERS" ? udkVisibleEntries.length : visible.length} players`} /></>}
-        actions={<Button icon="board" onClick={exportCsv}>Export NWR Cheat Sheet CSV</Button>}
-      />
-      {/* NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08): Cheat
-          Sheets consumes active data, it does not manage the source --
-          Import UDK CSV/rollback moved to Market Data / ADP (single
-          control-center, directive section 2). This status line links
-          there instead of duplicating any import control here. */}
-      <p className="boundary-note">
-        {ballersStatusText(data)} · {marketStatusText(data)} ·{" "}
-        <a href="#/adp">Manage in Market Data / ADP</a>
-      </p>
-      <Panel title={`${data.activeProfile.leagueName} · ${data.activeProfile.season}`} eyebrow={`${data.activeProfile.teamCount} teams · ${data.activeProfile.scoring.reception} PPR · ${data.activeProfile.scoring.tePremium} TE premium`}>
+      {/* NWR 15-MINUTE CHEAT SHEET HOTFIX (2026-09-08, directive section
+          2): the prior PageHeader + separate Panel title consumed ~6
+          rows of vertical space (eyebrow, title, description, league/
+          player-count badges, a giant Export button) before the owner
+          ever saw a player. Collapsed to two compact rows -- league
+          identity, then Ballers/Market status + a small Export control --
+          so the table (the whole point of this page) starts immediately
+          below. Export behavior itself is unchanged, just the button. */}
+      <div className="cheat-sheet-compact-header">
+        <strong>
+          Cheat Sheet · {data.activeProfile.leagueName} · {data.activeProfile.teamCount}-team{" "}
+          {data.activeProfile.scoring.reception} PPR{data.activeProfile.scoring.tePremium ? ` · ${data.activeProfile.scoring.tePremium} TE premium` : ""}
+          {" · "}{playerCount} players
+        </strong>
+        <div className="cheat-sheet-compact-header__row">
+          <p className="boundary-note">
+            {ballersStatusText(data)} · {marketStatusText(data)} ·{" "}
+            <a href="#/adp">Manage in Market Data / ADP</a>
+          </p>
+          <Button variant="secondary" icon="board" onClick={exportCsv}>Export CSV</Button>
+        </div>
+      </div>
+      <Panel>
         <div className="toolbar">
           <SegmentedControl label="Sheet" options={SHEETS} value={sheet} onChange={(value) => { setSheet(value); setSource("COMBINED"); }} />
-          {/* NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW
-              (2026-09-08, directive section 1): Combined is the default
-              side-by-side reference; NWR/Ballers stay available as focused
-              single-source modes. Hidden for K/DST -- NWR has no score for
-              those positions (unmodeled), so there is only one honest table
-              for them (below), not three source variants of the same data. */}
-          {!isManual ? (
-            <SegmentedControl
-              label="Source"
-              options={udkForSheet ? ["COMBINED", "NWR", "BALLERS"] : ["COMBINED", "NWR"]}
-              value={source}
-              onChange={(value) => setSource(value as "COMBINED" | "NWR" | "BALLERS")}
-            />
-          ) : null}
           <label className="toolbar__toggle">
             <input type="checkbox" checked={showDrafted} onChange={(event) => setShowDrafted(event.target.checked)} />
             Show Drafted
           </label>
+          {/* NWR 15-MINUTE CHEAT SHEET HOTFIX (2026-09-08, directive
+              section 1): the owner does not want to choose "Combined" --
+              it IS the Cheat Sheet, visible with no extra click (default
+              state above). NWR-only/Ballers-only moved out of the
+              prominent Source control into this small "View" dropdown,
+              still reachable but no longer competing for primary space.
+              Hidden for K/DST -- NWR has no score for those positions
+              (unmodeled), so there is only one honest table for them
+              (below), not multiple source variants of the same data. */}
+          {!isManual ? (
+            <label className="cheat-sheet-view-select">
+              <span>View</span>
+              <select
+                value={source}
+                onChange={(event) => setSource(event.target.value as "COMBINED" | "NWR" | "BALLERS")}
+              >
+                <option value="COMBINED">Combined</option>
+                <option value="NWR">NWR only</option>
+                {udkForSheet ? <option value="BALLERS">Ballers only</option> : null}
+              </select>
+            </label>
+          ) : null}
         </div>
         {isManual ? (
           <>
