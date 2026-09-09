@@ -46,6 +46,23 @@ TEST18_R14_AVAILABLE = (
     ("legal-te", "Legal Tight End", "TE"),
 )
 
+TEST18_MANUAL_ASSETS = (
+    {
+        "player_id": "ravens-dst",
+        "player_name": "Ravens D/ST",
+        "position": "DST",
+        "team": "BAL",
+        "authority": "MANUAL — NOT MODELED BY NWR",
+    },
+    {
+        "player_id": "kaimi-fairbairn",
+        "player_name": "Ka'imi Fairbairn",
+        "position": "K",
+        "team": "HOU",
+        "authority": "MANUAL — NOT MODELED BY NWR",
+    },
+)
+
 
 def make_test18_profile(*, wr_maximum: int | None) -> LeagueProfile:
     limits = {} if wr_maximum is None else {"WR": wr_maximum}
@@ -157,6 +174,61 @@ def make_test18_room_state_at_14_06() -> dict[str, object]:
         "picks": picks,
         "updated_at_utc": "2026-09-09T00:00:00-06:00",
     }
+
+
+def _append_until(
+    state: dict[str, object],
+    *,
+    next_owner_player: tuple[str, str, str],
+    stop_after_pick: int,
+) -> dict[str, object]:
+    picks = [dict(pick) for pick in state["picks"]]  # type: ignore[index]
+    profile = make_test18_profile(wr_maximum=TEST18_WR_MAXIMUM)
+    order = draft_order(profile)
+    while len(picks) < stop_after_pick:
+        pick_number = len(picks) + 1
+        team_slot = order[pick_number - 1]
+        round_number = ((pick_number - 1) // profile.team_count) + 1
+        if team_slot == TEST18_OWNER_SLOT:
+            player_id, player_name, position = next_owner_player
+        else:
+            player_id = f"opponent-{pick_number}"
+            player_name = f"Opponent Pick {pick_number}"
+            position = "RB"
+        picks.append(
+            {
+                "pick_number": pick_number,
+                "round": round_number,
+                "team_slot": team_slot,
+                "player_id": player_id,
+                "player_name": player_name,
+                "position": position,
+                "team": "TST",
+            }
+        )
+    return {
+        **state,
+        "drafted": [pick["player_id"] for pick in picks],
+        "picks": picks,
+    }
+
+
+def make_test18_room_state_at_15_05() -> dict[str, object]:
+    """Return the state after Kyler at 14.06, before overall pick 145."""
+    return _append_until(
+        make_test18_room_state_at_14_06(),
+        next_owner_player=("kyler-murray", "Kyler Murray", "QB"),
+        stop_after_pick=144,
+    )
+
+
+def make_test18_room_state_at_16_06() -> dict[str, object]:
+    """Return the state after Ravens D/ST at 15.05, before pick 156."""
+    return _append_until(
+        make_test18_room_state_at_15_05(),
+        next_owner_player=("ravens-dst", "Ravens D/ST", "DST"),
+        stop_after_pick=155,
+    )
 
 
 def captured_candidate_bundle(candidate_ids: list[str]) -> SimpleNamespace:

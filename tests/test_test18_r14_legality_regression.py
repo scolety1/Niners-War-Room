@@ -8,12 +8,15 @@ from src.services import decision_bundle_live_service
 from src.services.decision_bundle_live_service import build_live_decision_bundle
 from src.services.score_provenance_service import build_score_provenance
 from tests.fixtures.test18_redraft_fixture import (
+    TEST18_MANUAL_ASSETS,
     TEST18_WR_MAXIMUM,
     captured_candidate_bundle,
     make_test18_adp,
     make_test18_profile,
     make_test18_ranking,
     make_test18_room_state_at_14_06,
+    make_test18_room_state_at_15_05,
+    make_test18_room_state_at_16_06,
 )
 
 
@@ -36,7 +39,13 @@ def _provenance():
     )
 
 
-def _capture_live_candidates(monkeypatch: pytest.MonkeyPatch, profile):
+def _capture_live_candidates(
+    monkeypatch: pytest.MonkeyPatch,
+    profile,
+    *,
+    state=None,
+    manual_assets=(),
+):
     ranking = make_test18_ranking(profile)
     captured: list[str] = []
 
@@ -52,9 +61,9 @@ def _capture_live_candidates(monkeypatch: pytest.MonkeyPatch, profile):
     build_live_decision_bundle(
         profile,
         ranking,
-        [],
+        manual_assets,
         make_test18_adp(profile),
-        make_test18_room_state_at_14_06(),
+        state or make_test18_room_state_at_14_06(),
         comparable_leagues=[],
         provenance=_provenance(),
         max_candidates=5,
@@ -99,3 +108,27 @@ def test_r14_acceptance_excludes_franklin_and_doubs_at_wr_eight_of_eight(
     assert "romeo-doubs" not in candidates
     assert candidates
     assert candidates[0] == "kyler-murray"
+
+
+def test_test18_kdst_downstream_legality_after_kyler_and_ravens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The actual forced-off-algorithm chain leaves only K/DST at R15,
+    then only K after Ravens D/ST is recorded."""
+    profile = make_test18_profile(wr_maximum=TEST18_WR_MAXIMUM)
+
+    round_15 = _capture_live_candidates(
+        monkeypatch,
+        profile,
+        state=make_test18_room_state_at_15_05(),
+        manual_assets=TEST18_MANUAL_ASSETS,
+    )
+    assert set(round_15) == {"ravens-dst", "kaimi-fairbairn"}
+
+    round_16 = _capture_live_candidates(
+        monkeypatch,
+        profile,
+        state=make_test18_room_state_at_16_06(),
+        manual_assets=TEST18_MANUAL_ASSETS,
+    )
+    assert round_16 == ["kaimi-fairbairn"]
