@@ -1238,7 +1238,13 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
     assert edited.data["profile"]["leagueName"] == "Restart League Updated"
     assert edited.data["profile"]["teamCount"] == 10
     assert edited.data["profile"]["scoring"]["reception"] == 1.0
-    assert edited.data["profile"]["draft"]["rosterLimits"] == {"QB": 4, "WR": 8}
+    # rosterLimits is a LIST of {position, maximum} on the response side,
+    # never an object keyed by the literal position code -- a real
+    # camelCase-key serialization bug ("WR" -> "wR") found and fixed this
+    # session, see _profile_payload's own comment.
+    assert edited.data["profile"]["draft"]["rosterLimits"] == [
+        {"position": "QB", "maximum": 4}, {"position": "WR", "maximum": 8},
+    ]
     assert duplicate_id != profile_id
     assert duplicated_bootstrap.data["activeProfileId"] == duplicate_id
     assert duplicated_bootstrap.data["draftBoard"]["drafted"] == []
@@ -1252,7 +1258,9 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
     assert restarted.data["activeProfileId"] == profile_id
     assert restarted.data["activeProfile"]["leagueName"] == "Restart League Updated"
     assert restarted.data["activeProfile"]["draft"]["draftSlot"] == 4
-    assert restarted.data["activeProfile"]["draft"]["rosterLimits"] == {"QB": 4, "WR": 8}
+    assert restarted.data["activeProfile"]["draft"]["rosterLimits"] == [
+        {"position": "QB", "maximum": 4}, {"position": "WR", "maximum": 8},
+    ]
     assert restarted.data["draftBoard"]["drafted"] == drafted
 
     with pytest.raises(FacadeError, match="Roster settings must use integers"):

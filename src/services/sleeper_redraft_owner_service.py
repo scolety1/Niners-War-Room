@@ -132,6 +132,21 @@ def import_sleeper_redraft_profile(
     if existing is None:
         profile = create_profile(redraft_root, template, league_name=league_name)
     else:
+        # Preserve the profile CONTRACT on re-import/resync: `roster_limits`
+        # must not be silently clobbered. K/DST are refreshed from the real,
+        # just-read Sleeper roster settings (the trustworthy source), but any
+        # OTHER position maximum the owner manually entered in Profile &
+        # Scoring (e.g. a real platform QB/TE cap this import path has no
+        # way to discover) is merged in, not discarded -- a real gap found
+        # and fixed here (Overnight V3 retry-queue follow-up, roster_limits
+        # plumbing pass): before this fix, every resync fully replaced
+        # `draft=template.draft`, silently resetting any owner-entered
+        # position maximum back to K/DST-only.
+        merged_roster_limits = {
+            **existing.draft.roster_limits,
+            **template.draft.roster_limits,
+        }
+        merged_draft = replace(template.draft, roster_limits=merged_roster_limits)
         profile = save_profile(
             redraft_root,
             replace(
@@ -141,7 +156,7 @@ def import_sleeper_redraft_profile(
                 team_count=template.team_count,
                 roster=template.roster,
                 scoring=template.scoring,
-                draft=template.draft,
+                draft=merged_draft,
                 archived=False,
                 provider="sleeper",
                 provider_league_id=normalized_league_id,

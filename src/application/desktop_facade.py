@@ -4259,7 +4259,25 @@ class DesktopBackendFacade:
                 "rounds": profile.draft.rounds,
                 "keeperCount": profile.draft.keeper_count,
                 "auctionBudget": profile.draft.auction_budget,
-                "rosterLimits": dict(profile.draft.roster_limits),
+                # A LIST of {position, maximum} -- never an object keyed by
+                # the literal position code. Real, live-reproduced bug found
+                # and fixed here (NWR Overnight V3 retry-queue follow-up):
+                # the shared desktop API camelCase key transform
+                # (`public_json_value`/`camel_case_key` in
+                # src/application/contracts.py) silently mangles an
+                # all-uppercase single-word dict key ("WR" -> "wR"), the
+                # exact same class of bug already documented and worked
+                # around this way for UDK position rankings (see
+                # `redraft_draft_room_v1_service.load_udk_rankings`'s own
+                # docstring). Caught live: Profile & Scoring's own
+                # "Position maximums" editor silently showed every
+                # just-saved limit as "Not configured" again after a
+                # save-and-reload round trip, even though the saved profile
+                # file on disk was correct.
+                "rosterLimits": [
+                    {"position": position, "maximum": maximum}
+                    for position, maximum in sorted(profile.draft.roster_limits.items())
+                ],
                 "adpContextEnabled": profile.draft.adp_context_enabled,
                 "replacementMethod": profile.draft.replacement_method,
             },

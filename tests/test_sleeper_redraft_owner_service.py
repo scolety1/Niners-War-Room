@@ -170,3 +170,48 @@ def test_resync_rejects_a_non_sleeper_profile(tmp_path) -> None:
             profile_id=local_profile.profile_id, redraft_root=tmp_path,
             client=ResyncFakeSleeperClient(),
         )
+
+
+# --- NWR Overnight V3 retry-queue follow-up: roster_limits contract fix.
+# Before this fix, `resync`/re-import fully replaced `draft=template.draft`,
+# silently discarding any position maximum the owner had manually entered in
+# Profile & Scoring for a position Sleeper's own settings don't expose a
+# real maximum for (e.g. QB in a non-Superflex league). Real known K/DST
+# maxima must still refresh from the live Sleeper read on every resync.
+
+
+def test_resync_preserves_owner_entered_roster_limits_while_refreshing_kdst(tmp_path) -> None:
+    from dataclasses import replace as dataclass_replace
+
+    from src.services.redraft_engine_v1_service import load_profile, save_profile
+
+    imported = import_sleeper_redraft_profile(
+        league_id="league-1", username="scolety", redraft_root=tmp_path,
+        client=ResyncFakeSleeperClient(roster_players=["p1"]),
+    )
+    profile_id = imported.profile.profile_id
+    assert imported.profile.draft.roster_limits == {"K": 1, "DST": 1}
+
+    # Owner manually enters a real, platform-confirmed QB maximum this
+    # import path has no way to discover on its own (Profile & Scoring UI).
+    stored = load_profile(tmp_path, profile_id)
+    owner_edited = save_profile(
+        tmp_path,
+        dataclass_replace(
+            stored,
+            draft=dataclass_replace(
+                stored.draft, roster_limits={**stored.draft.roster_limits, "QB": 3},
+            ),
+        ),
+    )
+    assert owner_edited.draft.roster_limits == {"K": 1, "DST": 1, "QB": 3}
+
+    result = resync_sleeper_redraft_profile(
+        profile_id=profile_id, redraft_root=tmp_path,
+        client=ResyncFakeSleeperClient(roster_players=["p1", "p2"]),
+    )
+
+    # QB=3 (owner-entered, no real Sleeper source) survives the resync;
+    # K/DST are refreshed from the real, just-read Sleeper roster settings
+    # (unchanged here, but sourced fresh, not merely carried over).
+    assert result.profile.draft.roster_limits == {"K": 1, "DST": 1, "QB": 3}

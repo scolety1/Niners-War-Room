@@ -538,7 +538,17 @@ export interface DraftContext {
   rounds: number;
   keeperCount: number;
   auctionBudget: number | null;
-  rosterLimits: Record<string, number>;
+  // A LIST of {position, maximum} pairs -- never an object keyed by the
+  // literal position code ("QB", "WR", ...). NWR Overnight V3 retry-queue
+  // follow-up: a real, live-reproduced bug -- the shared desktop API
+  // camelCase key transform (`public_json_value`) mangles an all-uppercase
+  // single-word dict key ("WR" -> "wR"), the exact same class of bug
+  // already documented and worked around this way for UDK position rankings
+  // (`redraft_draft_room_v1_service.load_udk_rankings`'s own docstring).
+  // The `RedraftProfileUpdateInput.draft.rosterLimits` REQUEST shape below
+  // is unaffected (plain JSON parse, no camelCase transform applied to
+  // request bodies) and deliberately stays `Record<string, number>`.
+  rosterLimits: { position: string; maximum: number }[];
   adpContextEnabled: boolean;
   replacementMethod: "starter_cutoff" | "expected_available";
 }

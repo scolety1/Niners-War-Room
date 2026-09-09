@@ -34,7 +34,14 @@ function editableProfile(profile: LeagueProfile): EditableProfile {
       rounds: profile.draft.rounds,
       draftSlot: profile.draft.draftSlot,
       replacementMethod: profile.draft.replacementMethod,
-      rosterLimits: { ...profile.draft.rosterLimits },
+      // The wire shape is a LIST of {position, maximum} (never an object
+      // keyed by the literal position code -- see DraftContext.rosterLimits'
+      // own comment in @nwr/contracts for the real camelCase-key
+      // serialization bug this avoids). Converted to a Record here purely
+      // for this editor's own convenient internal state; the save call
+      // below sends the Record form straight back, which the update
+      // REQUEST body already expects unchanged.
+      rosterLimits: Object.fromEntries(profile.draft.rosterLimits.map((entry) => [entry.position, entry.maximum])),
     },
     practicalMode: profile.practicalMode,
   };
@@ -207,6 +214,23 @@ function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working 
       <label className="form-field"><span>Draft rounds</span><input disabled={disabled} min={1} max={40} type="number" value={edit.draft.rounds} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, rounds: number(event.target.value) } })} /></label>
       <label className="form-field"><span>Draft slot</span><input disabled={disabled} min={1} max={edit.teamCount} placeholder="Optional" type="number" value={edit.draft.draftSlot ?? ""} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, draftSlot: event.target.value ? number(event.target.value) : null } })} /></label>
       <label className="form-field"><span>Replacement method</span><select disabled={disabled} value={edit.draft.replacementMethod} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, replacementMethod: event.target.value as RedraftProfileUpdateInput["draft"]["replacementMethod"] } })}><option value="expected_available">Expected available</option><option value="starter_cutoff">Starter cutoff</option></select></label>
+      {(() => {
+        const positions = ["QB", "RB", "WR", "TE", "K", "DST"];
+        const unsupplied = positions.filter((position) => edit.draft.rosterLimits?.[position] === undefined);
+        // Visible without expanding the details below -- an unconfigured
+        // position has NO invented hard maximum; legality falls back to
+        // total roster capacity and required-slot feasibility only, and
+        // NWR's strategic marginal-value signal (not a fabricated legal
+        // cap) is what actually discourages over-drafting that position.
+        return (
+          <div className="form-field form-field--full">
+            <StatusBadge
+              tone={unsupplied.length ? "review" : "safe"}
+              label={unsupplied.length ? `Position maximums: Not supplied (${unsupplied.join(", ")})` : "Position maximums: All supplied"}
+            />
+          </div>
+        );
+      })()}
       <details className="form-field form-field--details">
         <summary>League position maxima</summary>
         <p>Enter the draft platform's actual limits. Blank means unknown; NWR will not invent one.</p>

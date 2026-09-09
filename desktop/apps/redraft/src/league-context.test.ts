@@ -9,7 +9,7 @@ const fantasyGamers = {
   teamCount: 10,
   roster: { qb: 1, rb: 2, wr: 2, te: 1, flex: 1, superflex: 0, k: 1, dst: 1, benchSize: 6 },
   scoring: { passingYards: 0.04, passingTd: 4, interception: -2, rushingYards: 0.1, rushingTd: 6, receivingYards: 0.1, reception: 1, receivingTd: 6, passingFirstDown: 0, rushingFirstDown: 0, receivingFirstDown: 0, returnYards: 0, returnTd: 0, fumbleLost: -2, tePremium: 0, bonuses: {} },
-  draft: { draftType: "snake" as const, draftSlot: 5, rounds: 15, keeperCount: 0, auctionBudget: null, rosterLimits: { K: 1, DST: 1 }, adpContextEnabled: false, replacementMethod: "expected_available" as const },
+  draft: { draftType: "snake" as const, draftSlot: 5, rounds: 15, keeperCount: 0, auctionBudget: null, rosterLimits: [{ position: "K", maximum: 1 }, { position: "DST", maximum: 1 }], adpContextEnabled: false, replacementMethod: "expected_available" as const },
   presetKey: null,
   archived: false,
   createdAtUtc: "",
