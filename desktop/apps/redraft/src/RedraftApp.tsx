@@ -1,5 +1,5 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, NavigationGroup, RedraftBootstrap } from "@nwr/contracts";
+import type { CommandItem, KhaHistoricalReplayPreview, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
 import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
@@ -49,6 +49,14 @@ export function RedraftApp() {
   const [error, setError] = useState<NwrApiError | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // These artifacts are global rather than league-scoped. Keep them
+  // above the keyed Draft Room route so a league switch cannot clear a
+  // shared override list or the fixed historical replay cache.
+  const [statusOverrides, setStatusOverrides] = useState<PlayerStatusOverride[]>([]);
+  const [statusOverridesReloadKey, setStatusOverridesReloadKey] = useState(0);
+  const [historicalReplay, setHistoricalReplay] = useState<KhaHistoricalReplayPreview | null>(null);
+  const [historicalReplayLoading, setHistoricalReplayLoading] = useState(false);
+  const [historicalReplayError, setHistoricalReplayError] = useState<string | null>(null);
   // Global sidebar collapse (owner requirement: maximum horizontal room
   // during a live draft). Persisted across sessions the same way any
   // per-viewer UI preference would be -- see readStoredSidebarCollapsed.
@@ -81,7 +89,21 @@ export function RedraftApp() {
     });
     return () => { active = false; };
   }, [attempt]);
+  useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
+    client
+      .listPlayerStatusOverrides()
+      .then((response) => {
+        if (!cancelled) setStatusOverrides(response.overrides);
+      })
+      .catch(() => {
+        if (!cancelled) setStatusOverrides([]);
+      });
+    return () => { cancelled = true; };
+  }, [client, statusOverridesReloadKey]);
   const update = useCallback((next: RedraftBootstrap) => setData(next), []);
+  const reloadStatusOverrides = useCallback(() => setStatusOverridesReloadKey((key) => key + 1), []);
   const commands = useMemo<CommandItem[]>(() => {
     const tools = NAVIGATION.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
     const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position, row.team, `tier ${row.tier}`] }));
@@ -105,7 +127,22 @@ export function RedraftApp() {
       <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/draft-room-v2" : "/leagues"} />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
       <Route path="/draft-room-v2" element={data.activeProfileId
-        ? <DraftRoomV2Page client={client} data={data} onUpdate={update} globalSidebarCollapsed={sidebarCollapsed} onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed} />
+        ? <DraftRoomV2Page
+            key={data.activeProfileId}
+            client={client}
+            data={data}
+            onUpdate={update}
+            globalSidebarCollapsed={sidebarCollapsed}
+            onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed}
+            statusOverrides={statusOverrides}
+            onStatusOverridesChanged={reloadStatusOverrides}
+            historicalReplay={historicalReplay}
+            setHistoricalReplay={setHistoricalReplay}
+            historicalReplayLoading={historicalReplayLoading}
+            setHistoricalReplayLoading={setHistoricalReplayLoading}
+            historicalReplayError={historicalReplayError}
+            setHistoricalReplayError={setHistoricalReplayError}
+          />
         : <Navigate replace to="/leagues" />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
