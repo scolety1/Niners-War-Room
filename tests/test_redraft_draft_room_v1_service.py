@@ -651,27 +651,41 @@ def _seeded_completed_room(tmp_path):
     return ranking, state
 
 
-def _first_undrafted(ranking, state) -> str:
+def _first_undrafted(ranking, state, *, position: str | None = None) -> str:
     pool = _asset_pool(ranking, _manual_assets())
     drafted = set(state["drafted"])
-    return next(asset["player_id"] for asset in pool.values() if asset["player_id"] not in drafted)
+    return next(
+        asset["player_id"]
+        for asset in pool.values()
+        if asset["player_id"] not in drafted
+        and (position is None or asset["position"] == position)
+    )
 
 
 def test_replace_pick_various_distances_leave_every_other_pick_byte_identical(tmp_path) -> None:
     ranking, seeded = _seeded_completed_room(tmp_path)
     total = len(seeded["picks"])
+    correction_assets = list(_manual_assets())
     # one pick ago, one round ago (10 picks), five rounds ago (50 picks), and
     # Round 1 (pick 1) corrected late in a fully completed 150-pick draft.
     targets = [total, total - 10, total - 50, 1]
     for pick_number in targets:
-        before = load_room_state(tmp_path, ranking.profile, ranking, _manual_assets())
+        before = load_room_state(tmp_path, ranking.profile, ranking, correction_assets)
         old_entry = dict(before["picks"][pick_number - 1])
         untouched_snapshot = [
             dict(p) for i, p in enumerate(before["picks"]) if i != pick_number - 1
         ]
-        replacement_id = _first_undrafted(ranking, before)
+        replacement_id = f"correction-{pick_number}"
+        correction_assets.append(
+            {
+                "player_id": replacement_id,
+                "player_name": f"Correction {pick_number}",
+                "position": str(old_entry["position"]),
+                "team": "TST",
+            }
+        )
         updated = replace_pick(
-            tmp_path, ranking.profile, ranking, _manual_assets(),
+            tmp_path, ranking.profile, ranking, correction_assets,
             pick_number=pick_number, player_id=replacement_id,
         )
         assert len(updated["picks"]) == total  # no renumbering, no growth/shrink

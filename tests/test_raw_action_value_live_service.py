@@ -2,7 +2,7 @@ from src.services.raw_action_value_live_service import (
     DEFAULT_MAX_RAV_CANDIDATES,
     evaluate_raw_action_value_live,
 )
-from src.services.redraft_draft_room_v1_service import AdpSnapshot
+from src.services.redraft_draft_room_v1_service import AdpSnapshot, draft_order
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -136,6 +136,28 @@ def test_mixed_position_candidates_deep_in_a_draft_do_not_collapse_to_identical_
     )
     # An owner roster already several picks deep, matching the real
     # scenario this bug was found in (round 4+, not a fresh empty roster).
+    owner_picks = {
+        1: ("RB-10", "RB"),
+        20: ("WR-15", "WR"),
+        21: ("TE-2", "TE"),
+    }
+    picks = []
+    opponent_index = 20
+    for pick_number, team_slot in enumerate(draft_order(profile)[:39], start=1):
+        if pick_number in owner_picks:
+            player_id, position = owner_picks[pick_number]
+        else:
+            player_id, position = f"WR-{opponent_index}", "WR"
+            opponent_index += 1
+        picks.append(
+            {
+                "pick_number": pick_number,
+                "player_id": player_id,
+                "team_slot": team_slot,
+                "position": position,
+                "player_name": player_id,
+            }
+        )
     from_state = {
         "schema_version": 1,
         "profile_id": profile.profile_id,
@@ -143,12 +165,8 @@ def test_mixed_position_candidates_deep_in_a_draft_do_not_collapse_to_identical_
         "seed": 42,
         "speed": "FAST",
         "mode": "MOCK",
-        "drafted": ["RB-10", "WR-15", "TE-2"],
-        "picks": [
-            {"player_id": "RB-10", "team_slot": 1, "position": "RB", "player_name": "RB 10"},
-            {"player_id": "WR-15", "team_slot": 1, "position": "WR", "player_name": "WR 15"},
-            {"player_id": "TE-2", "team_slot": 1, "position": "TE", "player_name": "TE 2"},
-        ],
+        "drafted": [pick["player_id"] for pick in picks],
+        "picks": picks,
         "updated_at_utc": "",
     }
     mixed_candidates = ["QB-0", "QB-1", "RB-11", "WR-16", "QB-2", "RB-12", "WR-17", "RB-13"]
