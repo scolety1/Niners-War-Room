@@ -50,7 +50,7 @@ import {
   formatNumber,
 } from "@nwr/ui";
 import { NwrApiError, type NwrApiClient, type RedraftDecisionBundleV2CandidateResponse } from "@nwr/api-client";
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 
 import { CheatSheetPage } from "./cheat-sheet";
 import { detectedPlatform } from "./adp-providers";
@@ -84,6 +84,20 @@ export function tabLabel(tab: DraftRoomV2Tab): string {
 
 export const RESEARCH_NOT_CONNECTED = "Not connected — SHADOW/RESEARCH backend";
 export const COMPARE_MAX_PLAYERS = 4;
+
+export function shouldFocusSearchShortcut(event: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "defaultPrevented" | "key" | "metaKey" | "shiftKey" | "target">): boolean {
+  const target = event.target as { isContentEditable?: boolean; tagName?: string } | null;
+  const tagName = target?.tagName?.toUpperCase() ?? "";
+  return event.key === "/"
+    && !event.defaultPrevented
+    && !event.altKey
+    && !event.ctrlKey
+    && !event.metaKey
+    && !event.shiftKey
+    && tagName !== "INPUT"
+    && tagName !== "TEXTAREA"
+    && !target?.isContentEditable;
+}
 
 // --- Pure data-preparation functions (unit-tested in draft-room-v2.test.ts) --
 
@@ -790,6 +804,7 @@ export function DraftRoomV2Page({
   const [quickIndex, setQuickIndex] = useState(0);
   const quickCaptureActive = useRef(false);
   const quickInputRef = useRef<HTMLInputElement>(null);
+  const compareInputRef = useRef<HTMLInputElement>(null);
   const [working, setWorking] = useState("");
   const [mutationError, setMutationError] = useState<NwrApiError | null>(null);
   // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
@@ -804,6 +819,20 @@ export function DraftRoomV2Page({
   // turns advance automatically); LIVE_READ_ONLY allows recording every
   // real pick, owner's and opponents', in sequence.
   const canRecordPick = (liveMode ? !board?.complete : ownerTurn) && Boolean(board?.configured);
+
+  useEffect(() => {
+    const onSlash = (event: KeyboardEvent) => {
+      if (!shouldFocusSearchShortcut(event)) return;
+      const primaryInput = tab === "COMPARE" && compareIds.length < COMPARE_MAX_PLAYERS
+        ? compareInputRef.current
+        : quickInputRef.current;
+      if (!primaryInput || primaryInput.disabled) return;
+      event.preventDefault();
+      primaryInput.focus();
+    };
+    window.addEventListener("keydown", onSlash);
+    return () => window.removeEventListener("keydown", onSlash);
+  }, [compareIds.length, tab]);
 
   const mark = async (playerId: string) => {
     if (!data.activeProfileId) return;
@@ -1616,6 +1645,7 @@ export function DraftRoomV2Page({
             teamCount={data.activeProfile?.teamCount ?? null}
             adpTeamCount={board?.adp?.teamCount ?? null}
             udkById={udkById}
+            addInputRef={compareInputRef}
           />
         ) : null}
         {tab === "REPLAY" ? (
@@ -3335,6 +3365,7 @@ function CompareTab({
   teamCount,
   adpTeamCount,
   udkById,
+  addInputRef,
 }: {
   rows: CompareRow[];
   summary: string;
@@ -3353,6 +3384,7 @@ function CompareTab({
   // already resolves from. Reference only -- never blended into NWR Rank/
   // Player Score/Pick Score/etc. above.
   udkById?: Map<string, UdkPlayerEntry>;
+  addInputRef: RefObject<HTMLInputElement | null>;
 }) {
   const [addQuery, setAddQuery] = useState("");
   const existingIds = rows.map((row) => row.playerId);
@@ -3380,7 +3412,7 @@ function CompareTab({
         ))}
         {rows.length < COMPARE_MAX_PLAYERS ? (
           <span className="draft-room-v2-compare-add">
-            <SearchInput value={addQuery} onChange={setAddQuery} placeholder="Add player to Compare…" />
+            <SearchInput value={addQuery} onChange={setAddQuery} placeholder="Add player to Compare…" inputRef={addInputRef} />
             {addResults.length > 0 ? (
               <ul className="draft-room-v2-compare-add__results" role="listbox">
                 {addResults.map((candidate) => (
