@@ -12,6 +12,7 @@ import {
   buildRosterStripFromRoster,
   buildSuggestionsRows,
   buildUdkBadges,
+  buildUdkEntryById,
   findCloseCall,
   findPickNow,
   formatAdpRoundPick,
@@ -20,6 +21,7 @@ import {
   formatRoundPick,
   generateCompareSummary,
   severityToBadgeTone,
+  shouldFocusSearchShortcut,
   splitActionValue,
   tabLabel,
   toggleCompareSelection,
@@ -324,6 +326,60 @@ describe("buildUdkBadges", () => {
   it("omits a badge for a field that is not present", () => {
     const badges = buildUdkBadges({ udkPositionRank: null, udkTier: null, currentAlert: null } as any);
     expect(badges).toEqual([]);
+  });
+});
+
+describe("shared Ballers lookup", () => {
+  it("indexes the current imported UDK snapshot by matched player id", () => {
+    const current = {
+      playerId: "player:puka-nacua",
+      playerName: "Puka Nacua",
+      team: "LAR",
+      position: "WR",
+      byeWeek: "8",
+      rank: 7,
+      points: 301.2,
+      risk: 2,
+      upside: 9,
+      adpRaw: "1.08",
+      tier: 1,
+      outlook: "Current import",
+      dynastyLocked: false,
+      matchStatus: "MATCHED" as const,
+    };
+    const byId = buildUdkEntryById({
+      positions: [{ position: "WR", entries: [current], provider: "Ballers", importedAtUtc: "2026-09-09T00:00:00Z", sourceSha256: "current", sourceRows: 1 }],
+    });
+    expect(byId.get("player:puka-nacua")).toBe(current);
+  });
+});
+
+describe("slash search shortcut", () => {
+  const event = (target: { tagName?: string; isContentEditable?: boolean } | null, overrides: Record<string, unknown> = {}) => ({
+    key: "/",
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    defaultPrevented: false,
+    target,
+    ...overrides,
+  } as unknown as KeyboardEvent);
+
+  it("focuses search for an unmodified slash outside text entry", () => {
+    expect(shouldFocusSearchShortcut(event({ tagName: "DIV" }))).toBe(true);
+  });
+
+  it("does not hijack typing in inputs, textareas, or editable content", () => {
+    expect(shouldFocusSearchShortcut(event({ tagName: "INPUT" }))).toBe(false);
+    expect(shouldFocusSearchShortcut(event({ tagName: "TEXTAREA" }))).toBe(false);
+    expect(shouldFocusSearchShortcut(event({ tagName: "DIV", isContentEditable: true }))).toBe(false);
+  });
+
+  it("ignores modified, handled, and non-slash key presses", () => {
+    expect(shouldFocusSearchShortcut(event({ tagName: "DIV" }, { ctrlKey: true }))).toBe(false);
+    expect(shouldFocusSearchShortcut(event({ tagName: "DIV" }, { defaultPrevented: true }))).toBe(false);
+    expect(shouldFocusSearchShortcut(event({ tagName: "DIV" }, { key: "?" }))).toBe(false);
   });
 });
 

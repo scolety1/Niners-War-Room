@@ -50,7 +50,7 @@ import {
   formatNumber,
 } from "@nwr/ui";
 import { NwrApiError, type NwrApiClient, type RedraftDecisionBundleV2CandidateResponse } from "@nwr/api-client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 
 import { CheatSheetPage } from "./cheat-sheet";
 import { detectedPlatform } from "./adp-providers";
@@ -84,6 +84,20 @@ export function tabLabel(tab: DraftRoomV2Tab): string {
 
 export const RESEARCH_NOT_CONNECTED = "Not connected — SHADOW/RESEARCH backend";
 export const COMPARE_MAX_PLAYERS = 4;
+
+export function shouldFocusSearchShortcut(event: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "defaultPrevented" | "key" | "metaKey" | "shiftKey" | "target">): boolean {
+  const target = event.target as { isContentEditable?: boolean; tagName?: string } | null;
+  const tagName = target?.tagName?.toUpperCase() ?? "";
+  return event.key === "/"
+    && !event.defaultPrevented
+    && !event.altKey
+    && !event.ctrlKey
+    && !event.metaKey
+    && !event.shiftKey
+    && tagName !== "INPUT"
+    && tagName !== "TEXTAREA"
+    && !target?.isContentEditable;
+}
 
 // --- Pure data-preparation functions (unit-tested in draft-room-v2.test.ts) --
 
@@ -711,6 +725,14 @@ export function DraftRoomV2Page({
   onUpdate,
   globalSidebarCollapsed,
   onToggleGlobalSidebarCollapsed,
+  statusOverrides,
+  onStatusOverridesChanged,
+  historicalReplay,
+  setHistoricalReplay,
+  historicalReplayLoading,
+  setHistoricalReplayLoading,
+  historicalReplayError,
+  setHistoricalReplayError,
 }: {
   client: NwrApiClient;
   data: RedraftBootstrap;
@@ -722,6 +744,14 @@ export function DraftRoomV2Page({
   // persists correctly if the owner leaves and returns to Draft Room.
   globalSidebarCollapsed?: boolean;
   onToggleGlobalSidebarCollapsed?: () => void;
+  statusOverrides: PlayerStatusOverride[];
+  onStatusOverridesChanged: () => void;
+  historicalReplay: KhaHistoricalReplayPreview | null;
+  setHistoricalReplay: Dispatch<SetStateAction<KhaHistoricalReplayPreview | null>>;
+  historicalReplayLoading: boolean;
+  setHistoricalReplayLoading: Dispatch<SetStateAction<boolean>>;
+  historicalReplayError: string | null;
+  setHistoricalReplayError: Dispatch<SetStateAction<string | null>>;
 }) {
   const [tab, setTab] = useState<DraftRoomV2Tab>("SUGGESTIONS");
   // Secondary-tools popover (Rankings/Queue/Teams/Compare/Historical
@@ -763,9 +793,6 @@ export function DraftRoomV2Page({
   // columns, never to a fabricated number and never to blocking Pick Score.
   const [rawActionValueById, setRawActionValueById] = useState<Map<string, RedraftDecisionBundleV2CandidateResponse>>(new Map());
   const [nwrPureToggling, setNwrPureToggling] = useState(false);
-  const [historicalReplay, setHistoricalReplay] = useState<KhaHistoricalReplayPreview | null>(null);
-  const [historicalReplayLoading, setHistoricalReplayLoading] = useState(false);
-  const [historicalReplayError, setHistoricalReplayError] = useState<string | null>(null);
   // Queue is a real, session-local watchlist -- proven absent as a backend
   // or frontend capability by direct audit (grep across desktop/ and src/
   // found no "queue" concept anywhere in Redraft) before adding it here,
@@ -779,12 +806,12 @@ export function DraftRoomV2Page({
   const [quickIndex, setQuickIndex] = useState(0);
   const quickCaptureActive = useRef(false);
   const quickInputRef = useRef<HTMLInputElement>(null);
+  const compareInputRef = useRef<HTMLInputElement>(null);
   const [working, setWorking] = useState("");
   const [mutationError, setMutationError] = useState<NwrApiError | null>(null);
   // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real status/
   // risk overrides list -- a real, disclosed gap since section 2 (write
   // path already wired into live ranking; read side had zero UI anywhere).
-  const [statusOverrides, setStatusOverrides] = useState<PlayerStatusOverride[]>([]);
   const board = data.draftBoard;
   const nwrPureActive = data.activeProfile?.nwrPureExperimental ?? false;
   const liveMode = board?.mode === "LIVE_READ_ONLY";
@@ -794,6 +821,20 @@ export function DraftRoomV2Page({
   // turns advance automatically); LIVE_READ_ONLY allows recording every
   // real pick, owner's and opponents', in sequence.
   const canRecordPick = (liveMode ? !board?.complete : ownerTurn) && Boolean(board?.configured);
+
+  useEffect(() => {
+    const onSlash = (event: KeyboardEvent) => {
+      if (!shouldFocusSearchShortcut(event)) return;
+      const primaryInput = tab === "COMPARE" && compareIds.length < COMPARE_MAX_PLAYERS
+        ? compareInputRef.current
+        : quickInputRef.current;
+      if (!primaryInput || primaryInput.disabled) return;
+      event.preventDefault();
+      primaryInput.focus();
+    };
+    window.addEventListener("keydown", onSlash);
+    return () => window.removeEventListener("keydown", onSlash);
+  }, [compareIds.length, tab]);
 
   const mark = async (playerId: string) => {
     if (!data.activeProfileId) return;
@@ -964,7 +1005,7 @@ export function DraftRoomV2Page({
         ...input,
         verifiedAtUtc: new Date().toISOString(),
       });
-      setStatusOverridesReloadKey((key) => key + 1);
+      onStatusOverridesChanged();
       // Effective on the NEXT live ranking build automatically (the real
       // backend re-reads the same committed file at both live ranking
       // call sites) -- this drawer's own Suggestions/DecisionBundle view
@@ -1205,27 +1246,6 @@ export function DraftRoomV2Page({
     };
   }, [client, data.activeProfileId, rosterStateSignal]);
 
-  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): loads the real
-  // status/risk overrides list (not profile-scoped -- the real backend
-  // contract stores one shared, repo-committed list) so the Player
-  // Drawer can show whether a currently-viewed player has an active
-  // real, verified override. Reloaded after every real submit below.
-  const [statusOverridesReloadKey, setStatusOverridesReloadKey] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    client
-      .listPlayerStatusOverrides()
-      .then((response) => {
-        if (!cancelled) setStatusOverrides(response.overrides);
-      })
-      .catch(() => {
-        if (!cancelled) setStatusOverrides([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [client, statusOverridesReloadKey]);
-
   useEffect(() => {
     // Lazy, tab-gated fetch: a fixed, static, non-current artifact -- no
     // reason to load it before the owner actually opens the tab, and no
@@ -1247,9 +1267,10 @@ export function DraftRoomV2Page({
           );
         }
       })
-      .finally(() => {
-        if (!cancelled) setHistoricalReplayLoading(false);
-      });
+      // Loading belongs to the unkeyed global cache. Always release it
+      // after a league switch cancels this consumer so the newly-mounted
+      // league can request the same static artifact if it still needs it.
+      .finally(() => setHistoricalReplayLoading(false));
     return () => {
       cancelled = true;
     };
@@ -1634,6 +1655,7 @@ export function DraftRoomV2Page({
             teamCount={data.activeProfile?.teamCount ?? null}
             adpTeamCount={board?.adp?.teamCount ?? null}
             udkById={udkById}
+            addInputRef={compareInputRef}
           />
         ) : null}
         {tab === "REPLAY" ? (
@@ -3369,6 +3391,7 @@ function CompareTab({
   teamCount,
   adpTeamCount,
   udkById,
+  addInputRef,
 }: {
   rows: CompareRow[];
   summary: string;
@@ -3387,6 +3410,7 @@ function CompareTab({
   // already resolves from. Reference only -- never blended into NWR Rank/
   // Player Score/Pick Score/etc. above.
   udkById?: Map<string, UdkPlayerEntry>;
+  addInputRef: RefObject<HTMLInputElement | null>;
 }) {
   const [addQuery, setAddQuery] = useState("");
   const existingIds = rows.map((row) => row.playerId);
@@ -3414,7 +3438,7 @@ function CompareTab({
         ))}
         {rows.length < COMPARE_MAX_PLAYERS ? (
           <span className="draft-room-v2-compare-add">
-            <SearchInput value={addQuery} onChange={setAddQuery} placeholder="Add player to Compare…" />
+            <SearchInput value={addQuery} onChange={setAddQuery} placeholder="Add player to Compare…" inputRef={addInputRef} />
             {addResults.length > 0 ? (
               <ul className="draft-room-v2-compare-add__results" role="listbox">
                 {addResults.map((candidate) => (

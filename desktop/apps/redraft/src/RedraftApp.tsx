@@ -1,13 +1,14 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, NavigationGroup, RedraftBootstrap } from "@nwr/contracts";
+import type { CommandItem, KhaHistoricalReplayPreview, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
 import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
+import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
@@ -42,11 +43,20 @@ function readStoredSidebarCollapsed(): boolean {
 }
 
 export function RedraftApp() {
+  const location = useLocation();
   const [client, setClient] = useState<NwrApiClient | null>(null);
   const [data, setData] = useState<RedraftBootstrap | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // These artifacts are global rather than league-scoped. Keep them
+  // above the keyed Draft Room route so a league switch cannot clear a
+  // shared override list or the fixed historical replay cache.
+  const [statusOverrides, setStatusOverrides] = useState<PlayerStatusOverride[]>([]);
+  const [statusOverridesReloadKey, setStatusOverridesReloadKey] = useState(0);
+  const [historicalReplay, setHistoricalReplay] = useState<KhaHistoricalReplayPreview | null>(null);
+  const [historicalReplayLoading, setHistoricalReplayLoading] = useState(false);
+  const [historicalReplayError, setHistoricalReplayError] = useState<string | null>(null);
   // Global sidebar collapse (owner requirement: maximum horizontal room
   // during a live draft). Persisted across sessions the same way any
   // per-viewer UI preference would be -- see readStoredSidebarCollapsed.
@@ -79,7 +89,21 @@ export function RedraftApp() {
     });
     return () => { active = false; };
   }, [attempt]);
+  useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
+    client
+      .listPlayerStatusOverrides()
+      .then((response) => {
+        if (!cancelled) setStatusOverrides(response.overrides);
+      })
+      .catch(() => {
+        if (!cancelled) setStatusOverrides([]);
+      });
+    return () => { cancelled = true; };
+  }, [client, statusOverridesReloadKey]);
   const update = useCallback((next: RedraftBootstrap) => setData(next), []);
+  const reloadStatusOverrides = useCallback(() => setStatusOverridesReloadKey((key) => key + 1), []);
   const commands = useMemo<CommandItem[]>(() => {
     const tools = NAVIGATION.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
     const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position, row.team, `tier ${row.tier}`] }));
@@ -88,7 +112,7 @@ export function RedraftApp() {
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><LoadingScreen label="Opening Redraft command center" /></div>;
   if (!data || !client) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><div className="standalone-state"><ErrorState message={error?.message ?? "The governed Redraft service is unavailable."} recovery={error?.recoveryAction} onRetry={reload} /></div></div>;
   return <AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
-    <ActiveLeagueSelector client={client} data={data} onUpdate={update} />
+    {location.pathname === "/leagues" ? null : <ActiveLeagueSelector client={client} data={data} onUpdate={update} />}
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
@@ -99,9 +123,27 @@ export function RedraftApp() {
           ADP, Import owner ADP CSV all already exist in DraftRoomV2Page) --
           the Legacy DraftRoomPage component itself is removed from
           pages.tsx (git history is the rollback path). "/" now redirects
-          to the real room instead of 404ing or resurrecting Legacy. */}
-      <Route path="/" element={<Navigate replace to="/draft-room-v2" />} />
-      <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} globalSidebarCollapsed={sidebarCollapsed} onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed} />} />
+          to the chooser until a league is active, then to the real room. */}
+      <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/draft-room-v2" : "/leagues"} />} />
+      <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
+      <Route path="/draft-room-v2" element={data.activeProfileId
+        ? <DraftRoomV2Page
+            key={data.activeProfileId}
+            client={client}
+            data={data}
+            onUpdate={update}
+            globalSidebarCollapsed={sidebarCollapsed}
+            onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed}
+            statusOverrides={statusOverrides}
+            onStatusOverridesChanged={reloadStatusOverrides}
+            historicalReplay={historicalReplay}
+            setHistoricalReplay={setHistoricalReplay}
+            historicalReplayLoading={historicalReplayLoading}
+            setHistoricalReplayLoading={setHistoricalReplayLoading}
+            historicalReplayError={historicalReplayError}
+            setHistoricalReplayError={setHistoricalReplayError}
+          />
+        : <Navigate replace to="/leagues" />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
       <Route path="/compare" element={<ComparePage data={data} />} />
@@ -184,7 +226,9 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
   return <section className="active-league-selector" aria-label="Active League">
     <div className="active-league-selector__identity">
       <span>Active League</span>
-      <strong title={active?.leagueName ?? undefined}>{active?.leagueName ?? "Choose a league"}</strong>
+      <Link className="active-league-selector__chooser-link" title="Open league chooser" to="/leagues">
+        <strong title={active?.leagueName ?? undefined}>{active?.leagueName ?? "Choose a league"}</strong>
+      </Link>
       <small>{active ? leagueFormat(active, false) : "Create or import a Redraft league profile"}</small>
       {error ? <em role="status">{error}</em> : null}
     </div>
