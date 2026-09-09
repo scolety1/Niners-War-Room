@@ -54,6 +54,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CheatSheetPage } from "./cheat-sheet";
 import { detectedPlatform } from "./adp-providers";
+import { formatRoundPick, formatAdpRoundPick } from "./adp-format";
+import { buildUdkEntryById } from "./ballers-shared";
 import { rosterFormat, scoringFormat } from "./league-context";
 // Reused, not rebuilt (section 9 -- REUSE FIRST): the exact global,
 // position-filter-ignoring pick search and keyboard-navigation helpers the
@@ -236,46 +238,14 @@ export interface UdkBadge {
  * only. `pickInRound` is zero-padded to two digits per the owner's own
  * examples ("4.11", not "4.1").
  */
-export function formatRoundPick(overallPick: number, teamCount: number): string {
-  const n = Math.max(1, teamCount);
-  const round = Math.floor((overallPick - 1) / n) + 1;
-  const pickInRound = ((overallPick - 1) % n) + 1;
-  return `${round}.${String(pickInRound).padStart(2, "0")}`;
-}
-
-/**
- * NWR DRAFT-DAY (ADP round.pick display, owner-requested "4.12"/"7.03"
- * format): the exact raw numeric ADP value is ALWAYS preserved (in the
- * tooltip, and untouched wherever the caller sorts/computes on it) --
- * this only changes what's DISPLAYED. A round.pick conversion is only
- * computed when the ADP source's own reported team count (`sourceTeamCount`,
- * e.g. a 12-team consensus) matches the room's actual team count; when it
- * doesn't (or isn't known), the raw decimal is shown instead of silently
- * reinterpreting a different-sized league's pick numbers as this room's
- * own rounds -- the exact "never parse notation as a decimal or silently
- * convert source context" the owner's directive names.
- */
-export function formatAdpRoundPick(
-  overallAdp: number | null,
-  sourceTeamCount: number | null | undefined,
-  roomTeamCount: number | null,
-): { text: string; title: string } {
-  if (overallAdp == null) return { text: "—", title: "No market ADP available." };
-  const raw = formatNumber(overallAdp, 1);
-  if (sourceTeamCount == null || roomTeamCount == null || sourceTeamCount !== roomTeamCount) {
-    const mismatch = sourceTeamCount != null && roomTeamCount != null;
-    return {
-      text: raw,
-      title: mismatch
-        ? `Raw overall ADP ${raw} from a ${sourceTeamCount}-team source -- this room is ${roomTeamCount}-team, so round.pick is not shown here rather than silently reinterpreted.`
-        : `Raw overall ADP ${raw} -- the source's own team count isn't known, so round.pick is not shown here rather than guessed.`,
-    };
-  }
-  return {
-    text: formatRoundPick(overallAdp, roomTeamCount),
-    title: `Raw overall ADP ${raw} (${sourceTeamCount}-team source, matches this room).`,
-  };
-}
+// NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
+// directive section 10): moved to adp-format.ts, unchanged, so Cheat
+// Sheets' new Combined view can reuse the exact same safe round.pick
+// formatting instead of a second, divergent implementation. Re-exported
+// here (not just imported) so every existing caller in this file, and the
+// existing test suite (draft-room-v2.test.ts imports both by name from
+// "./draft-room-v2"), keeps working unchanged.
+export { formatRoundPick, formatAdpRoundPick } from "./adp-format";
 
 /**
  * Owner feedback closure (shared cross-metric result-status contract):
@@ -366,17 +336,11 @@ export function buildUdkBadges(entry: RedraftExternalIntelligenceEntry | undefin
  * re-derived per surface, so every surface resolves the same player to
  * the exact same imported values.
  */
-export function buildUdkEntryById(
-  udkRankings: RedraftBootstrap["udkRankings"],
-): Map<string, UdkPlayerEntry> {
-  const map = new Map<string, UdkPlayerEntry>();
-  for (const position of udkRankings?.positions ?? []) {
-    for (const entry of position.entries) {
-      if (entry.playerId) map.set(entry.playerId, entry);
-    }
-  }
-  return map;
-}
+// NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08):
+// moved to ballers-shared.ts, unchanged (see that file's header comment).
+// Re-exported (not just imported) so every existing caller in this file
+// keeps working unchanged.
+export { buildUdkEntryById } from "./ballers-shared";
 
 /**
  * Real, backend-computed current Team Score / Championship Equity for

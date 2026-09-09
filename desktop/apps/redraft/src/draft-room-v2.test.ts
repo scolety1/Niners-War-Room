@@ -41,6 +41,25 @@ describe("formatRoundPick", () => {
     expect(formatRoundPick(10, 10)).toBe("1.10");
     expect(formatRoundPick(11, 10)).toBe("2.01");
   });
+
+  // NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
+  // directive section 10): a real, live bug found and fixed while building
+  // Cheat Sheets' Combined view -- a fractional overall ADP (real market
+  // data is frequently not a whole number, e.g. a consensus/averaged
+  // 13.3, or Sleeper's own 168.6) previously leaked raw floating-point
+  // error into the displayed round.pick string (e.g. "2.3.3000000000000007"
+  // instead of "2.03"). Reproduced exactly the owner's quoted examples
+  // before this fix.
+  it("never leaks floating-point error for a fractional overall ADP", () => {
+    expect(formatRoundPick(13.3, 10)).toBe("2.03");
+    expect(formatRoundPick(23.3, 10)).toBe("3.03");
+    expect(formatRoundPick(15.6, 10)).toBe("2.06");
+    expect(formatRoundPick(22.8, 10)).toBe("3.03");
+    for (const [pick, teamCount] of [[13.3, 10], [23.3, 10], [15.6, 10], [22.8, 10], [168.6, 10]] as const) {
+      expect(formatRoundPick(pick, teamCount)).not.toMatch(/\.\d+\./);
+      expect(formatRoundPick(pick, teamCount)).toMatch(/^\d+\.\d{2}$/);
+    }
+  });
 });
 
 describe("formatMakeItBack", () => {

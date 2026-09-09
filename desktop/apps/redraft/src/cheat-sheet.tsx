@@ -1,6 +1,8 @@
 import type { ManualDraftAsset, RedraftBootstrap, RedraftRanking, UdkPlayerEntry } from "@nwr/contracts";
 import { Button, DataTable, EmptyState, PageHeader, Panel, SegmentedControl, StatusBadge, type TableColumn, formatNumber } from "@nwr/ui";
 import { useMemo, useState } from "react";
+import { formatAdpRoundPick } from "./adp-format";
+import { buildUdkEntryById } from "./ballers-shared";
 
 // Owner feedback closure, section 8/9: positional lanes now include K/DST
 // (previously Overall/QB/RB/WR/TE/Tiers only -- K/DST are real, legal,
@@ -53,6 +55,27 @@ export function marketStatusText(data: RedraftBootstrap): string {
   return `Market: ${provider} · ${date}`;
 }
 
+// NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
+// directive sections 4-6): the Combined table's compact "Ballers Rank" /
+// "Ballers Tier" cells stay narrow on purpose (section 9, "the owner
+// should not have to scroll sideways") -- every OTHER real field the
+// active Ballers row actually carries (its own Ballers ADP, distinct from
+// active-league Market ADP; Risk/Upside already have dedicated columns so
+// are omitted here to avoid repeating them; projected points; bye week;
+// outlook) goes into this hover tooltip instead of a wider table, and the
+// full detail is always one click away in the Player Drawer's own
+// "Ballers" section. Never invents a field the source file didn't have.
+function ballersDetailTitle(entry: UdkPlayerEntry | undefined): string {
+  if (!entry) return "No Ballers/Fantasy Footballers row for this player in the imported file.";
+  return [
+    entry.adpRaw ? `Ballers ADP ${entry.adpRaw}` : null,
+    entry.points != null ? `Proj ${formatNumber(entry.points, 1)}` : null,
+    entry.byeWeek ? `Bye ${entry.byeWeek}` : null,
+    entry.dynastyLocked ? "Dynasty: locked (UDK+ upsell)" : null,
+    entry.outlook ? `Outlook: ${entry.outlook}` : null,
+  ].filter(Boolean).join(" · ") || "Ballers/Fantasy Footballers data";
+}
+
 export function CheatSheetPage({
   data,
   // Optional, defaulted: the standalone "#/cheat-sheet" browse/export
@@ -76,10 +99,14 @@ export function CheatSheetPage({
   onPlayerClick?: (playerId: string, event: React.MouseEvent) => void;
 }) {
   const [sheet, setSheet] = useState("Overall");
-  // "Source" only ever offers UDK for a position the owner has actually
-  // imported real UDK data for (the owner's real file is QB-only) --
-  // never fabricated for RB/WR/TE/K/DST from nothing.
-  const [source, setSource] = useState<"NWR" | "UDK">("NWR");
+  // NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
+  // directive section 1): Combined is now the default -- NWR rank, the
+  // active league's own routed market ADP, and the owner's imported
+  // Ballers/UDK data side by side in one row, so the owner never has to
+  // switch tabs mid-draft just to compare sources. "Ballers" (previously
+  // "UDK") only ever offers data for a position the owner has actually
+  // imported real Ballers rows for -- never fabricated from nothing.
+  const [source, setSource] = useState<"COMBINED" | "NWR" | "BALLERS">("COMBINED");
   // Owner feedback closure, section 8: drafted players disappear
   // immediately by default from every lane here too (Cheat Sheets was a
   // real, disclosed gap -- previously showed every player regardless of
@@ -155,13 +182,24 @@ export function CheatSheetPage({
   };
   const isManual = MANUAL_POSITIONS.has(sheet);
   const visible = isManual ? [] : sheet === "Tiers" ? rows.slice().sort((left, right) => left.tier - right.tier || left.overallRank - right.overallRank) : rows;
+  // NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08):
+  // the ONE shared Ballers/UDK lookup, same real source and values every
+  // other surface (Suggestions' "Show Ballers" column, the Player Drawer)
+  // already resolves through -- never a second, divergently-built map.
+  const udkById = useMemo(() => buildUdkEntryById(data.udkRankings), [data.udkRankings]);
+  // The ADP source's OWN team count (may differ from the room's) -- the
+  // exact guard formatAdpRoundPick already uses everywhere else, so a
+  // different-sized source's pick numbers are never silently reinterpreted
+  // as this league's own rounds.
+  const adpTeamCount = data.draftBoard?.adp?.teamCount ?? null;
+  const roomTeamCount = data.activeProfile.teamCount ?? null;
   return (
     <>
       <PageHeader
         eyebrow="Draft prep · Profile specific"
         title="Cheat Sheet"
         description="A printable and exportable board built from the active league's governed current-season rankings."
-        status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : udkForSheet && source === "UDK" ? udkVisibleEntries.length : visible.length} players`} /></>}
+        status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : udkForSheet && source === "BALLERS" ? udkVisibleEntries.length : visible.length} players`} /></>}
         actions={<Button icon="board" onClick={exportCsv}>Export NWR Cheat Sheet CSV</Button>}
       />
       {/* NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08): Cheat
@@ -175,13 +213,19 @@ export function CheatSheetPage({
       </p>
       <Panel title={`${data.activeProfile.leagueName} · ${data.activeProfile.season}`} eyebrow={`${data.activeProfile.teamCount} teams · ${data.activeProfile.scoring.reception} PPR · ${data.activeProfile.scoring.tePremium} TE premium`}>
         <div className="toolbar">
-          <SegmentedControl label="Sheet" options={SHEETS} value={sheet} onChange={(value) => { setSheet(value); setSource("NWR"); }} />
-          {udkForSheet ? (
+          <SegmentedControl label="Sheet" options={SHEETS} value={sheet} onChange={(value) => { setSheet(value); setSource("COMBINED"); }} />
+          {/* NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW
+              (2026-09-08, directive section 1): Combined is the default
+              side-by-side reference; NWR/Ballers stay available as focused
+              single-source modes. Hidden for K/DST -- NWR has no score for
+              those positions (unmodeled), so there is only one honest table
+              for them (below), not three source variants of the same data. */}
+          {!isManual ? (
             <SegmentedControl
               label="Source"
-              options={["NWR", "UDK"]}
+              options={udkForSheet ? ["COMBINED", "NWR", "BALLERS"] : ["COMBINED", "NWR"]}
               value={source}
-              onChange={(value) => setSource(value as "NWR" | "UDK")}
+              onChange={(value) => setSource(value as "COMBINED" | "NWR" | "BALLERS")}
             />
           ) : null}
           <label className="toolbar__toggle">
@@ -190,37 +234,156 @@ export function CheatSheetPage({
           </label>
         </div>
         {isManual ? (
-          <DataTable
-            columns={[
-              { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
-              { key: "authority", label: "Status", sort: "text", render: () => <StatusBadge tone="review" label="Manual · not modeled by NWR" /> },
-              draftActionColumn,
-            ]}
-            rows={manualRows.map((row: ManualDraftAsset) => ({ ...row }))}
-            rowKey={(row) => String(row.playerId)}
-          />
-        ) : udkForSheet && source === "UDK" ? (
+          <>
+            {/* NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW
+                (2026-09-08, directive section 7): K/DST are real, legal,
+                draftable positions NWR does not score (unmodeled, not a
+                bug) -- an honest layout leads with the real Ballers
+                reference ranking when the owner's imported file covers it,
+                names the active source plainly, and never fabricates an
+                NWR Player Score for these rows. */}
+            <p className="boundary-note">
+              NWR does not score K/DST — never blended into NWR rank/score. Ballers/Fantasy Footballers
+              rankings are shown as the reference when the owner's imported file covers this position;
+              otherwise these are manual, unranked reference rows.
+            </p>
+            <DataTable
+              columns={[
+                {
+                  key: "ballersRank", label: "Ballers Rank", sort: "number", width: "96px",
+                  sortValue: (row) => udkById.get(String(row.playerId))?.rank ?? null,
+                  render: (row) => {
+                    const entry = udkById.get(String(row.playerId));
+                    return <span title={ballersDetailTitle(entry)}>{entry?.rank ?? "—"}</span>;
+                  },
+                },
+                { key: "playerName", label: "Team / Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
+                {
+                  key: "activeSource", label: "Active Source",
+                  render: (row) => udkById.get(String(row.playerId))
+                    ? <StatusBadge tone="safe" label="Ballers rankings" />
+                    : <StatusBadge tone="review" label="Manual · not modeled by NWR" />,
+                },
+                {
+                  key: "overallAdp", label: "ADP", sort: "number",
+                  render: (row) => {
+                    const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, roomTeamCount);
+                    return <span title={adp.title}>{adp.text}</span>;
+                  },
+                },
+                draftActionColumn,
+              ]}
+              rows={manualRows.map((row: ManualDraftAsset) => ({ ...row }))}
+              rowKey={(row) => String(row.playerId)}
+            />
+          </>
+        ) : udkForSheet && source === "BALLERS" ? (
           <>
             <p className="boundary-note">
               {udkForSheet.provider} · imported {udkForSheet.importedAtUtc} · {udkForSheet.sourceRows} rows.
-              UDK's own position rank/tier — NOT NWR's overall rank, and its Risk/Upside/ADP are provider
-              context, not NWR calibrated confidence. ADP is shown exactly as UDK printed it (source team
+              Ballers' own position rank/tier — NOT NWR's overall rank, and its Risk/Upside/ADP are provider
+              context, not NWR calibrated confidence. ADP is shown exactly as Ballers printed it (source team
               count unknown) — never reinterpreted as this league's own round.pick.
               {" "}Rollback moved to <a href="#/adp">Market Data / ADP</a>.
             </p>
             <DataTable
               columns={[
-                { key: "rank", label: "UDK Rank", sort: "number", width: "72px" },
+                { key: "rank", label: "Ballers Rank", sort: "number", width: "72px" },
                 { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · Bye {String((row as unknown as UdkPlayerEntry).byeWeek || "—")}</small></span> },
                 { key: "tier", label: "Tier", sort: "number", render: (row) => row.tier == null ? "—" : String(row.tier) },
-                { key: "adpRaw", label: "UDK ADP", sort: "text", render: (row) => (row.adpRaw as string) || "—" },
+                { key: "adpRaw", label: "Ballers ADP", sort: "text", render: (row) => (row.adpRaw as string) || "—" },
                 { key: "points", label: "Proj pts", align: "right", sort: "number", render: (row) => row.points == null ? "—" : formatNumber(row.points as number, 1) },
-                { key: "riskUpside", label: "Risk / Upside", align: "right", render: (row) => `${row.risk == null ? "—" : formatNumber(row.risk as number, 1)} / ${row.upside == null ? "—" : formatNumber(row.upside as number, 1)}` },
+                { key: "riskUpside", label: "Ballers Risk / Upside", align: "right", render: (row) => `${row.risk == null ? "—" : formatNumber(row.risk as number, 1)} / ${row.upside == null ? "—" : formatNumber(row.upside as number, 1)}` },
                 { key: "outlook", label: "Outlook", render: (row) => <span title={String(row.outlook || "")}>{String(row.outlook || "").slice(0, 80)}{String(row.outlook || "").length > 80 ? "…" : ""}</span> },
                 draftActionColumn,
               ]}
               rows={udkVisibleEntries.map((row) => ({ ...row, playerId: row.playerId ?? "" }))}
               rowKey={(row) => String(row.playerId || `unmatched-${String(row.playerName)}-${String(row.rank)}`)}
+            />
+          </>
+        ) : source === "COMBINED" ? (
+          <>
+            {/* NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW
+                (2026-09-08, directive sections 2/9): the owner's requested
+                default -- NWR rank, this league's own routed market ADP
+                (the exact same `overallAdp` field Suggestions/Compare/the
+                Player Drawer already read, never a second computation),
+                and the owner's imported Ballers row side by side. Kept to
+                8 visible columns at normal desktop width per the owner's
+                own "no horizontal hunting" instruction; NWR Tier rides
+                inline in the Player cell, and every other real Ballers
+                field (its own ADP, projected points, bye, outlook) is one
+                hover or one Player Drawer click away -- never invented
+                when the source file doesn't have it. */}
+            <p className="boundary-note">
+              Ballers Risk/Upside and Ballers ADP are the Fantasy Footballers Podcast UDK's own values —
+              provider context, not NWR calibrated confidence, and never blended into NWR rank/score.
+            </p>
+            <DataTable
+              columns={[
+                {
+                  key: "overallRank", label: "NWR Rank", width: "64px", sort: "number",
+                  render: (row) => (
+                    <span title={`Proj ${formatNumber(row.projectedPoints as number, 1)} pts · Value over replacement ${formatNumber(row.replacementAdjustedValue as number, 1)} · Confidence ${String(row.confidence)}`}>
+                      {String(row.overallRank)}
+                    </span>
+                  ),
+                },
+                {
+                  key: "playerName", label: "Player", sort: "text",
+                  render: (row) => (
+                    <span
+                      className="player-cell player-cell--clickable"
+                      onClick={(event) => onPlayerClick(String(row.playerId), event as unknown as React.MouseEvent)}
+                    >
+                      <strong>{String(row.playerName)}</strong>
+                      <small>{String(row.team)} · {String(row.position)}{String(row.positionRank)} · Tier {String(row.tier)}</small>
+                    </span>
+                  ),
+                },
+                {
+                  key: "overallAdp", label: "Market ADP", sort: "number",
+                  render: (row) => {
+                    const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, roomTeamCount);
+                    return <span title={adp.title}>{adp.text}</span>;
+                  },
+                },
+                {
+                  key: "ballersRank", label: "Ballers Rank", sort: "number",
+                  sortValue: (row) => udkById.get(String(row.playerId))?.rank ?? null,
+                  render: (row) => {
+                    const entry = udkById.get(String(row.playerId));
+                    return <span title={ballersDetailTitle(entry)}>{entry?.rank ?? "—"}</span>;
+                  },
+                },
+                {
+                  key: "ballersTier", label: "Ballers Tier", sort: "number",
+                  sortValue: (row) => udkById.get(String(row.playerId))?.tier ?? null,
+                  render: (row) => {
+                    const entry = udkById.get(String(row.playerId));
+                    return <span title={ballersDetailTitle(entry)}>{entry?.tier ?? "—"}</span>;
+                  },
+                },
+                {
+                  key: "ballersRisk", label: "Ballers Risk", align: "right", sort: "number",
+                  sortValue: (row) => udkById.get(String(row.playerId))?.risk ?? null,
+                  render: (row) => {
+                    const entry = udkById.get(String(row.playerId));
+                    return entry?.risk == null ? "—" : formatNumber(entry.risk, 1);
+                  },
+                },
+                {
+                  key: "ballersUpside", label: "Ballers Upside", align: "right", sort: "number",
+                  sortValue: (row) => udkById.get(String(row.playerId))?.upside ?? null,
+                  render: (row) => {
+                    const entry = udkById.get(String(row.playerId));
+                    return entry?.upside == null ? "—" : formatNumber(entry.upside, 1);
+                  },
+                },
+                draftActionColumn,
+              ]}
+              rows={visible.map((row) => ({ ...row }))}
+              rowKey={(row) => String(row.playerId)}
             />
           </>
         ) : (
