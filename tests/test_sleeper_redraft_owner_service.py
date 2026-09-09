@@ -8,6 +8,7 @@ from src.services.sleeper_redraft_owner_service import (
     SleeperRedraftImportError,
     import_sleeper_redraft_profile,
     load_sleeper_draft_picks,
+    resync_sleeper_redraft_profile,
 )
 
 
@@ -88,3 +89,84 @@ def test_import_rejects_malformed_and_ambiguous_sleeper_responses(tmp_path) -> N
 
 def test_live_companion_read_is_pick_only() -> None:
     assert load_sleeper_draft_picks(draft_id="draft-2026", client=FakeSleeperClient()) == ({"pick_no": 1, "player_id": "p1"},)
+
+
+# --- NWR Overnight V3, Lane 2: recurring (not one-shot) Sleeper resync.
+
+
+class ResyncFakeSleeperClient(FakeSleeperClient):
+    """Same league as FakeSleeperClient, plus a `players/nfl` endpoint and a
+    roster that can be mutated between the initial import and a resync call
+    -- proves a real second read, not a replay of the first one."""
+
+    def __init__(self, *, roster_players: list[str] | None = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.roster_players = roster_players if roster_players is not None else []
+
+    def get_json(self, path: str):
+        if path == "players/nfl":
+            return {
+                "p1": {"full_name": "Roster Player One", "position": "WR", "team": "SF", "active": True},
+                "p2": {"full_name": "Roster Player Two", "position": "RB", "team": "DAL", "active": True},
+            }
+        if path == f"league/{self.league_id}/rosters":
+            return [{"roster_id": 9, "owner_id": "owner-9", "keepers": [], "players": list(self.roster_players)}]
+        return super().get_json(path)
+
+
+def test_resync_refreshes_the_stored_roster_snapshot_without_any_sleeper_write(tmp_path) -> None:
+    initial_client = ResyncFakeSleeperClient(roster_players=["p1"])
+    imported = import_sleeper_redraft_profile(
+        league_id="league-1", username="scolety", redraft_root=tmp_path, client=initial_client,
+    )
+    profile_id = imported.profile.profile_id
+
+    resynced_client = ResyncFakeSleeperClient(roster_players=["p1", "p2"])
+    result = resync_sleeper_redraft_profile(
+        profile_id=profile_id, redraft_root=tmp_path, client=resynced_client,
+        synced_at_utc="2026-09-09T00:00:00+00:00",
+    )
+
+    snapshot = result.receipt["roster_snapshot"]
+    assert snapshot["synced_at_utc"] == "2026-09-09T00:00:00+00:00"
+    assert {row["player_name"] for row in snapshot["players"]} == {"Roster Player One", "Roster Player Two"}
+    assert snapshot["unresolved_sleeper_player_ids"] == []
+
+    persisted = json.loads((tmp_path / "sleeper_imports" / f"{profile_id}.json").read_text())
+    assert persisted["roster_snapshot"]["players"] == snapshot["players"]
+    assert persisted["write_behavior"] == "NO_SLEEPER_WRITES"
+
+
+def test_resync_records_unresolved_players_without_dropping_them(tmp_path) -> None:
+    imported = import_sleeper_redraft_profile(
+        league_id="league-1", username="scolety", redraft_root=tmp_path,
+        client=ResyncFakeSleeperClient(roster_players=[]),
+    )
+    result = resync_sleeper_redraft_profile(
+        profile_id=imported.profile.profile_id, redraft_root=tmp_path,
+        client=ResyncFakeSleeperClient(roster_players=["p1", "unresolved-id"]),
+    )
+    snapshot = result.receipt["roster_snapshot"]
+    assert snapshot["unresolved_sleeper_player_ids"] == ["unresolved-id"]
+    assert {row["player_name"] for row in snapshot["players"]} == {"Roster Player One"}
+
+
+def test_resync_rejects_a_non_sleeper_profile(tmp_path) -> None:
+    from src.services.redraft_engine_v1_service import (
+        DraftContext, LeagueProfile, RosterSettings, ScoringSettings, create_profile,
+    )
+
+    local_profile = create_profile(
+        tmp_path,
+        LeagueProfile(
+            profile_id="local-only", league_name="Local League", season=2026, team_count=10,
+            roster=RosterSettings(), scoring=ScoringSettings(), draft=DraftContext(rounds=15),
+            provider="local",
+        ),
+        league_name="Local League",
+    )
+    with pytest.raises(SleeperRedraftImportError, match="Sleeper-imported"):
+        resync_sleeper_redraft_profile(
+            profile_id=local_profile.profile_id, redraft_root=tmp_path,
+            client=ResyncFakeSleeperClient(),
+        )

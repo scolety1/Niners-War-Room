@@ -24,6 +24,8 @@ import {
   type RedraftDecisionBundleResponse,
   type RedraftHistoricalReplayPreviewResponse,
   type RedraftExternalIntelligenceResponse,
+  type RedraftFreeAgentsResult,
+  type RedraftOpponentRostersResult,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
   type RuntimeDescriptor,
@@ -277,6 +279,21 @@ export class NwrApiClient {
       method: "POST",
       body: JSON.stringify({ leagueId, username }),
     });
+  }
+
+  resyncSleeperRedraftProfile(profileId: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/profiles/${encodeURIComponent(profileId)}/sleeper-resync`, {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  redraftFreeAgents(): Promise<RedraftFreeAgentsResult> {
+    return this.request("/api/v1/redraft/free-agents");
+  }
+
+  redraftOpponentRosters(): Promise<RedraftOpponentRostersResult> {
+    return this.request("/api/v1/redraft/opponent-rosters");
   }
 
   activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {

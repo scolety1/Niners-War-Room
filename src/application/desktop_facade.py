@@ -46,6 +46,8 @@ from src.services.draft_day_trade_lab_service import (
 from src.services.fantasypros_kdst_consensus_service import (
     FantasyProsConsensusClient,
     FantasyProsProviderError,
+    sleeper_free_agent_pool,
+    sleeper_opponent_rosters,
     sleeper_streamer_actions,
 )
 from src.services.fantasypros_kdst_consensus_service import (
@@ -225,6 +227,7 @@ from src.services.sleeper_redraft_owner_service import (
     load_sleeper_draft_picks,
     load_sleeper_import_receipt,
     manual_kdst_assets_from_sleeper_players,
+    resync_sleeper_redraft_profile,
 )
 from src.services.trade_brief_export_service import (
     TradeBriefValidationError,
@@ -2110,6 +2113,43 @@ class DesktopBackendFacade:
             }
         )
 
+    def redraft_sleeper_resync(self, *, profile_id: str) -> FacadePayload:
+        """Refresh one stored Sleeper profile and its durable owner roster snapshot."""
+
+        self._require_mode("redraft")
+        normalized = self._profile_id(profile_id)
+        try:
+            imported = resync_sleeper_redraft_profile(
+                profile_id=normalized,
+                redraft_root=self.redraft_root,
+            )
+        except (
+            OSError,
+            SleeperRedraftImportError,
+            RedraftPersistenceError,
+            RedraftValidationError,
+        ) as exc:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_RESYNC_FAILED",
+                "Only a valid Sleeper-imported profile can be refreshed. No Sleeper data was changed.",
+                status=409,
+            ) from exc
+        snapshot = imported.receipt.get("roster_snapshot") or {}
+        return FacadePayload(
+            data={
+                "profile": self._profile_payload(imported.profile),
+                "rosterSnapshot": {
+                    "syncedAtUtc": snapshot.get("synced_at_utc"),
+                    "rosterId": snapshot.get("roster_id"),
+                    "playerCount": len(snapshot.get("players") or []),
+                    "unresolvedSleeperPlayerIds": list(
+                        snapshot.get("unresolved_sleeper_player_ids") or []
+                    ),
+                },
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
     def start_practical_redraft_mock(self, *, profile_id: str) -> FacadePayload:
         """Owner-authorized local practical mode; never changes a Sleeper league."""
 
@@ -2447,6 +2487,77 @@ class DesktopBackendFacade:
                 "positions": positions,
                 "unmatchedSleeperPlayerIds": unmatched,
                 "writeBehavior": "NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES",
+            }
+        )
+
+    def redraft_free_agents(self) -> FacadePayload:
+        """Return every currently unrostered Sleeper fantasy player."""
+
+        self._require_mode("redraft")
+        selected, league_id, _owner_user_id = self._active_sleeper_context()
+        ranking_warning = ""
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+            ranking_warning = (
+                "NWR rankings are unavailable for this profile; live free agents are shown "
+                "as explicitly unranked."
+            )
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+            free_agents = sleeper_free_agent_pool(
+                rosters=rosters,
+                players=players,
+                rankings=ranking_rows,
+            )
+        except (FantasyProsProviderError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "REDRAFT_FREE_AGENTS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state was changed.",
+                status=503,
+            ) from exc
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "freeAgents": list(free_agents),
+                "rankingWarning": ranking_warning,
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_opponent_rosters(self) -> FacadePayload:
+        """Return every non-owner roster for the active Sleeper league."""
+
+        self._require_mode("redraft")
+        _selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            users = sleeper.get_json(f"league/{league_id}/users")
+            players = sleeper.get_json("players/nfl")
+            opponents = sleeper_opponent_rosters(
+                rosters=rosters,
+                users=users,
+                players=players,
+                owner_user_id=owner_user_id,
+            )
+        except (FantasyProsProviderError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "REDRAFT_OPPONENT_ROSTERS_READ_FAILED",
+                "Sleeper opponent rosters could not be read. No local or remote state was changed.",
+                status=503,
+            ) from exc
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "opponents": list(opponents),
+                "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
 
@@ -3946,6 +4057,32 @@ class DesktopBackendFacade:
         if local_candidate.is_file():
             return local_candidate
         return (self.repo_root / FROZEN_DYNASTY_BOARD_RELATIVE).resolve()
+
+    def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
+        selected = active_profile(self.redraft_root)
+        if selected is None or selected.provider != "sleeper" or not selected.provider_league_id:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        receipt = load_sleeper_import_receipt(self.redraft_root, selected.profile_id)
+        try:
+            league_id = str((receipt or {})["league"]["league_id"])
+            owner_user_id = str((receipt or {})["owner"]["user_id"])
+        except (KeyError, TypeError) as exc:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_CONTEXT_REQUIRED",
+                "The active Sleeper profile has no valid import receipt. Re-import it first.",
+                status=409,
+            ) from exc
+        if league_id != selected.provider_league_id or not owner_user_id:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_CONTEXT_REQUIRED",
+                "The active Sleeper profile receipt does not match the selected league.",
+                status=409,
+            )
+        return selected, league_id, owner_user_id
 
     def _redraft_ranking_for_profile(self, profile_id: str):
         try:

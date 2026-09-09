@@ -35,9 +35,12 @@ _PROFILE_ACTIVATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/activate$")
 _PROFILE_DUPLICATE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/duplicate$")
 _PROFILE_EDIT = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/edit$")
 _SLEEPER_REDRAFT_IMPORT = "/api/v1/redraft/sleeper/import"
+_SLEEPER_REDRAFT_RESYNC = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/sleeper-resync$")
 _PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical-mock$")
 _REDRAFT_NWR_PURE_MODE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/nwr-pure-mode$")
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
+_REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
+_REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
@@ -233,6 +236,12 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             )
         if method == "GET" and path == "/api/v1/bootstrap":
             return self.server.facade.bootstrap()
+
+        if method == "GET" and path == _REDRAFT_FREE_AGENTS:
+            return self.server.facade.redraft_free_agents()
+
+        if method == "GET" and path == _REDRAFT_OPPONENT_ROSTERS:
+            return self.server.facade.redraft_opponent_rosters()
 
         if method == "GET" and path == "/api/v1/redraft/historical-replay/kha-2026-09-02":
             return self.server.facade.redraft_historical_replay_preview()
@@ -487,6 +496,14 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             self.server.facade.import_sleeper_redraft_profile(
                 league_id=league_id,
                 username=username,
+            )
+            return self.server.facade.redraft_bootstrap()
+        sleeper_resync_match = _SLEEPER_REDRAFT_RESYNC.fullmatch(path)
+        if method == "POST" and sleeper_resync_match:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            self.server.facade.redraft_sleeper_resync(
+                profile_id=unquote(sleeper_resync_match.group(1))
             )
             return self.server.facade.redraft_bootstrap()
         if method == "POST" and path == _KDST_STREAMER:

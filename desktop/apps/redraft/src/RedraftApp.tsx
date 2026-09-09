@@ -9,11 +9,12 @@ import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
 import { LeaguesPage } from "./leagues";
-import { ComparePage, DataHealthPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { ComparePage, DataHealthPage, FreeAgentsPage, LeagueHomePage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
+  { label: "League workspace", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }, { label: "Free Agents", path: "/free-agents", icon: "players" }, { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" }] },
   // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
   // at /draft-room-v2 is the "Draft Room" surface. It originally existed
   // alongside an older single-page "Legacy Draft Room", hidden from this
@@ -123,9 +124,15 @@ export function RedraftApp() {
           ADP, Import owner ADP CSV all already exist in DraftRoomV2Page) --
           the Legacy DraftRoomPage component itself is removed from
           pages.tsx (git history is the rollback path). "/" now redirects
-          to the chooser until a league is active, then to the real room. */}
-      <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/draft-room-v2" : "/leagues"} />} />
+          to the chooser until a league is active; once active, "/" lands on
+          the real Weekly League Home (NWR Overnight V3, Lane 2/3 merge:
+          previously the room itself, now an honest weekly landing page --
+          the room stays one click away via nav). */}
+      <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/league-home" : "/leagues"} />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
+      <Route path="/league-home" element={<LeagueHomePage client={client} data={data} />} />
+      <Route path="/free-agents" element={<FreeAgentsPage client={client} data={data} />} />
+      <Route path="/opponent-rosters" element={<OpponentRostersPage client={client} data={data} />} />
       <Route path="/draft-room-v2" element={data.activeProfileId
         ? <DraftRoomV2Page
             key={data.activeProfileId}

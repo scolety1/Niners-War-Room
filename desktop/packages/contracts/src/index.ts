@@ -858,6 +858,61 @@ export interface KdstStreamerResult {
   writeBehavior: string;
 }
 
+export interface RedraftFreeAgent {
+  sleeperPlayerId: string;
+  playerId: string;
+  playerName: string;
+  position: "QB" | "RB" | "WR" | "TE" | "K" | "DST";
+  team: string;
+  overallRank: number | null;
+  positionRank: number | null;
+  projectedPoints: number | null;
+  replacementAdjustedValue: number | null;
+  valueLabel: string;
+  rankingAuthority: "NWR REDRAFT RANKING" | "UNRANKED";
+  rosterStatus: "AVAILABLE";
+}
+
+export interface RedraftFreeAgentsResult {
+  leagueId: string;
+  freeAgents: RedraftFreeAgent[];
+  rankingWarning: string;
+  writeBehavior: string;
+}
+
+export interface RedraftOpponentPlayer {
+  sleeperPlayerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  starter: boolean;
+}
+
+export interface RedraftOpponentRoster {
+  rosterId: string;
+  ownerUserId: string;
+  teamName: string;
+  players: RedraftOpponentPlayer[];
+  unresolvedSleeperPlayerIds: string[];
+}
+
+export interface RedraftOpponentRostersResult {
+  leagueId: string;
+  opponents: RedraftOpponentRoster[];
+  writeBehavior: string;
+}
+
+export interface RedraftSleeperResyncResult {
+  profile: LeagueProfile;
+  rosterSnapshot: {
+    syncedAtUtc: string;
+    rosterId: string | number;
+    playerCount: number;
+    unresolvedSleeperPlayerIds: string[];
+  };
+  writeBehavior: "NO_SLEEPER_WRITES";
+}
+
 export interface SleeperAutoSyncConflict {
   pickNumber: number;
   reason: "OUT_OF_ORDER" | "UNKNOWN_SLEEPER_PLAYER" | "UNRESOLVED_LOCAL_IDENTITY";

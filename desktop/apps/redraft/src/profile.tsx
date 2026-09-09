@@ -103,6 +103,15 @@ export function ProfilePage({
     } catch (reason) { fail(reason, "Sleeper league could not be imported."); }
     finally { setWorking(""); }
   };
+  const refreshSleeper = async () => {
+    if (!data.activeProfile || data.activeProfile.provider !== "sleeper" || working) return;
+    setWorking("sleeper-resync"); setError(null); setMessage("");
+    try {
+      onUpdate(await client.resyncSleeperRedraftProfile(data.activeProfile.profileId));
+      setMessage("Sleeper league settings and your current roster were refreshed locally. No Sleeper data was changed.");
+    } catch (reason) { fail(reason, "Sleeper league could not be refreshed."); }
+    finally { setWorking(""); }
+  };
   const save = async () => {
     if (!data.activeProfile || !edit || working) return;
     setWorking("save"); setError(null); setMessage("");
@@ -134,6 +143,7 @@ export function ProfilePage({
           {data.profiles.map((profile) => <button className={profile.profileId === data.activeProfileId ? "active" : ""} disabled={Boolean(working)} key={profile.profileId} onClick={() => void activate(profile)}><span><Icon name="trophy" /></span><div><strong>{profile.leagueName}</strong><small>{leagueFormat(profile)}</small><small>{leagueIdentityFormat(profile)}</small></div>{profile.profileId === data.activeProfileId ? <em>Active</em> : <Icon name="chevron" size={13} />}</button>)}
           {!data.profiles.length ? <p className="copy-muted">No profile exists yet. Create one from a validated preset.</p> : null}
         </div>
+        {data.activeProfile?.provider === "sleeper" ? <div className="profile-create-footer"><p>Refresh league settings and your stored roster from Sleeper's read-only API.</p><Button disabled={Boolean(working)} icon="activity" onClick={() => void refreshSleeper()}>{working === "sleeper-resync" ? "Refreshing…" : "Refresh from Sleeper"}</Button></div> : null}
       </Panel>
       <Panel title="Create from preset" eyebrow="Fast setup">
         <div className="form-grid">
