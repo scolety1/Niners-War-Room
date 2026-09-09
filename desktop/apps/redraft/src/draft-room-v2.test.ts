@@ -13,6 +13,7 @@ import {
   buildSuggestionsRows,
   buildUdkBadges,
   buildUdkEntryById,
+  buildScarcityCounterfactual,
   findCloseCall,
   findPickNow,
   formatAdpRoundPick,
@@ -648,6 +649,52 @@ describe("findPickNow", () => {
       _candidate({ playerId: "c", pickScore: 70 }),
     ] as any;
     expect(findPickNow(rows, 3)?.row.playerId).toBe("a");
+  });
+});
+
+describe("buildScarcityCounterfactual", () => {
+  it("picks the position with the lowest real Make-It-Back probability as the scarce path, compared against the actual #1 recommendation", () => {
+    const rows = [
+      _candidate({ playerId: "rb1", playerName: "RB One", position: "RB", pickScore: 90, teamScoreAfter: 70, costOfWaiting: 2.0, makeItBackProbability: 0.7, makeItBackTrials: 200 }),
+      _candidate({ playerId: "qb1", playerName: "QB One", position: "QB", pickScore: 88, teamScoreAfter: 68, costOfWaiting: 6.5, makeItBackProbability: 0.15, makeItBackTrials: 200 }),
+    ] as any;
+    const result = buildScarcityCounterfactual(rows);
+    expect(result).not.toBeNull();
+    expect(result!.scarce.playerId).toBe("qb1");
+    expect(result!.alternative.playerId).toBe("rb1");
+    expect(result!.survivalProbabilityIfWait).toBe(0.15);
+    expect(result!.expectedCostIfWait).toBe(6.5);
+  });
+
+  it("compares against the next-best position when the scarce candidate is itself the #1 recommendation", () => {
+    const rows = [
+      _candidate({ playerId: "qb1", playerName: "QB One", position: "QB", pickScore: 95, makeItBackProbability: 0.1, makeItBackTrials: 200 }),
+      _candidate({ playerId: "rb1", playerName: "RB One", position: "RB", pickScore: 80, makeItBackProbability: 0.8, makeItBackTrials: 200 }),
+    ] as any;
+    const result = buildScarcityCounterfactual(rows);
+    expect(result?.scarce.playerId).toBe("qb1");
+    expect(result?.alternative.playerId).toBe("rb1");
+  });
+
+  it("returns null rather than fabricating a comparison when only one position is on the board", () => {
+    const rows = [
+      _candidate({ playerId: "rb1", position: "RB" }),
+      _candidate({ playerId: "rb2", position: "RB" }),
+    ] as any;
+    expect(buildScarcityCounterfactual(rows)).toBeNull();
+  });
+
+  it("returns null when no candidate has a real Make-It-Back evaluation", () => {
+    const rows = [
+      _candidate({ playerId: "qb1", position: "QB", makeItBackProbability: null }),
+      _candidate({ playerId: "rb1", position: "RB", makeItBackProbability: null }),
+    ] as any;
+    expect(buildScarcityCounterfactual(rows)).toBeNull();
+  });
+
+  it("returns null with fewer than two rows", () => {
+    expect(buildScarcityCounterfactual([])).toBeNull();
+    expect(buildScarcityCounterfactual([_candidate()] as any)).toBeNull();
   });
 });
 

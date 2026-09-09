@@ -586,6 +586,56 @@ export function findPickNow(rows: SuggestionRow[], closeCallThreshold = 3): Pick
   return { row: top, runnerUp: isCloseCall ? runnerUp : null, label };
 }
 
+/** NWR OVERNIGHT V3 (lane 6, "RB-now / wait-on-QB counterfactual"): a
+ * compact, position-agnostic scarcity comparison built ENTIRELY from
+ * already-computed DecisionBundle fields already flowing through
+ * `SuggestionRow` (pickScore, teamScoreAfter, costOfWaiting,
+ * makeItBackProbability) -- no new modeling, no new backend simulation.
+ * Generalizes beyond QB: it finds whichever position among the current
+ * legal candidates is genuinely most at risk of disappearing before the
+ * owner's next turn (lowest real Make-It-Back probability among each
+ * position's own best-ranked candidate) and compares taking that
+ * candidate NOW against taking the system's actual #1 recommendation now
+ * and hoping the scarce one survives. Returns null -- never a fabricated
+ * comparison -- when there are fewer than two distinct positions on the
+ * board or the scarce candidate has no real Make-It-Back evaluation. */
+export interface ScarcityCounterfactual {
+  scarce: SuggestionRow;
+  alternative: SuggestionRow;
+  survivalProbabilityIfWait: number;
+  trials: number | null;
+  expectedCostIfWait: number;
+}
+
+export function buildScarcityCounterfactual(rows: SuggestionRow[]): ScarcityCounterfactual | null {
+  if (rows.length < 2) return null;
+  const bestByPosition = new Map<string, SuggestionRow>();
+  for (const row of rows) {
+    if (!bestByPosition.has(row.position)) bestByPosition.set(row.position, row);
+  }
+  if (bestByPosition.size < 2) return null;
+  let scarce: SuggestionRow | null = null;
+  for (const candidate of bestByPosition.values()) {
+    if (candidate.makeItBackProbability == null) continue;
+    if (scarce == null || candidate.makeItBackProbability < scarce.makeItBackProbability!) {
+      scarce = candidate;
+    }
+  }
+  if (scarce == null) return null; // no real Make-It-Back data -- say nothing rather than guess
+  const topOverall = rows[0];
+  const alternative = topOverall && topOverall.playerId !== scarce.playerId
+    ? topOverall
+    : [...bestByPosition.values()].find((row) => row.playerId !== scarce!.playerId) ?? null;
+  if (alternative == null) return null;
+  return {
+    scarce,
+    alternative,
+    survivalProbabilityIfWait: scarce.makeItBackProbability!,
+    trials: scarce.makeItBackTrials,
+    expectedCostIfWait: scarce.costOfWaiting,
+  };
+}
+
 export function toggleCompareSelection(
   current: string[],
   playerId: string,
@@ -1311,6 +1361,7 @@ export function DraftRoomV2Page({
   const positionDemand = useMemo(() => buildPositionDemand(board, data.activeProfile), [board, data.activeProfile]);
   const closeCall = useMemo(() => findCloseCall(suggestions), [suggestions]);
   const pickNow = useMemo(() => findPickNow(suggestions), [suggestions]);
+  const scarcityCounterfactual = useMemo(() => buildScarcityCounterfactual(suggestions), [suggestions]);
   const queuedRows = useMemo(
     () =>
       queuedIds
@@ -1597,6 +1648,7 @@ export function DraftRoomV2Page({
             positionDemand={positionDemand}
             closeCall={closeCall}
             pickNow={pickNow}
+            scarcityCounterfactual={scarcityCounterfactual}
             canRecordPick={canRecordPick}
             working={working}
             queuedIds={queuedIds}
@@ -2058,6 +2110,7 @@ function SuggestionsTab({
   positionDemand,
   closeCall,
   pickNow,
+  scarcityCounterfactual,
   canRecordPick,
   working,
   queuedIds,
@@ -2081,6 +2134,7 @@ function SuggestionsTab({
   positionDemand: PositionDemandRow[];
   closeCall: { a: SuggestionRow; b: SuggestionRow } | null;
   pickNow: PickNowBanner | null;
+  scarcityCounterfactual: ScarcityCounterfactual | null;
   canRecordPick: boolean;
   working: string;
   queuedIds: string[];
@@ -2105,6 +2159,7 @@ function SuggestionsTab({
   const isBackToBackTurn = currentPick != null && nextOwnerPick != null && nextOwnerPick - currentPick === 1;
   const [newsDetailOpen, setNewsDetailOpen] = useState(false);
   const [closeCallDetailOpen, setCloseCallDetailOpen] = useState(false);
+  const [counterfactualDetailOpen, setCounterfactualDetailOpen] = useState(false);
   // NWR FINAL PRE-DRAFT GAP CLOSURE (section 4, "Show Ballers -- audit
   // the real imported fields"): the audit found this column was reading
   // `externalIntel`, which is sourced from a FIXED local snapshot path
@@ -2310,7 +2365,7 @@ function SuggestionsTab({
           ) : null}
         </div>
       ) : null}
-      {(positionDemand.length > 0 || externalIntel?.stale || closeCall) ? (
+      {(positionDemand.length > 0 || externalIntel?.stale || closeCall || scarcityCounterfactual) ? (
         <div className="draft-room-v2-compact-context">
           {positionDemand.length > 0 ? (
             <div
@@ -2346,6 +2401,17 @@ function SuggestionsTab({
               CLOSE CALL: {closeCall.a.playerName} ≈ {closeCall.b.playerName}
             </button>
           ) : null}
+          {scarcityCounterfactual ? (
+            <button
+              type="button"
+              className="draft-room-v2-status-chip"
+              aria-expanded={counterfactualDetailOpen}
+              onClick={() => setCounterfactualDetailOpen((value) => !value)}
+              title="Click for detail"
+            >
+              SCARCITY: {scarcityCounterfactual.scarce.position} · {formatMakeItBack(scarcityCounterfactual.survivalProbabilityIfWait, scarcityCounterfactual.trials).text} to make it back
+            </button>
+          ) : null}
           {newsDetailOpen && externalIntel?.stale ? (
             <p className="draft-room-v2-compact-context__detail">
               The current-alert snapshot is {externalIntel.snapshotAgeHours != null ? `${formatNumber(externalIntel.snapshotAgeHours, 1)}h` : "an unknown amount of time"} old
@@ -2356,6 +2422,12 @@ function SuggestionsTab({
             <p className="draft-room-v2-compact-context__detail">
               {closeCall.a.playerName} ({formatNumber(closeCall.a.pickScore, 1)}) and {closeCall.b.playerName} ({formatNumber(closeCall.b.pickScore, 1)}) have nearly
               identical Pick Score — EXPERIMENTAL. The formula cannot cleanly separate them; use roster fit, Make Back, DQ, and any alert marker to break the tie.
+            </p>
+          ) : null}
+          {counterfactualDetailOpen && scarcityCounterfactual ? (
+            <p className="draft-room-v2-compact-context__detail">
+              PATH A — take {scarcityCounterfactual.scarce.playerName} ({scarcityCounterfactual.scarce.position}) now: locks in Team Score {formatNumber(scarcityCounterfactual.scarce.teamScoreAfter, 1)}, no waiting risk.
+              {" "}PATH B — take {scarcityCounterfactual.alternative.playerName} ({scarcityCounterfactual.alternative.position}) now instead: {scarcityCounterfactual.scarce.playerName} has a modeled {formatMakeItBack(scarcityCounterfactual.survivalProbabilityIfWait, scarcityCounterfactual.trials).text} chance of surviving to your next pick; if not, the real expected cost of waiting is {formatNumber(scarcityCounterfactual.expectedCostIfWait, 2)} Team Score points. Built entirely from each candidate's own already-computed Pick Score / Team Score / Make-It-Back fields — no new modeling.
             </p>
           ) : null}
         </div>
