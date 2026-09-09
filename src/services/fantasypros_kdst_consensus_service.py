@@ -1,6 +1,8 @@
-"""Authorized FantasyPros ECR boundary for K/DST only.
+"""Authorized FantasyPros ECR boundary and Sleeper roster availability.
 
-This is intentionally external consensus context, never an NWR model score.
+FantasyPros access remains intentionally limited to K/DST and is external
+consensus context, never an NWR model score.  Sleeper roster membership is a
+separate, position-agnostic concern used by the Redraft free-agent surfaces.
 No credentials are stored and no HTML is scraped.
 """
 
@@ -17,6 +19,7 @@ from urllib.request import Request, urlopen
 FANTASYPROS_AUTHORITY = "EXTERNAL CONSENSUS — FANTASYPROS"
 FANTASYPROS_API_BASE = "https://api.fantasypros.com/public/v2/json"
 SUPPORTED_POSITIONS = frozenset({"K", "DST"})
+SLEEPER_FANTASY_POSITIONS = frozenset({"QB", "RB", "WR", "TE", "K", "DST"})
 
 
 class FantasyProsProviderError(RuntimeError):
@@ -179,6 +182,159 @@ def sleeper_streamer_actions(
     )
 
 
+def sleeper_rostered_player_ids(rosters: object) -> set[str]:
+    """Return every rostered Sleeper player ID across fantasy positions.
+
+    This deliberately uses Sleeper's shared identifiers instead of fuzzy
+    cross-provider matching.  It is the general rostered-set primitive used by
+    free agents; K/DST consensus continues to perform its stricter identity
+    bridge above because FantasyPros IDs are unrelated to Sleeper IDs.
+    """
+
+    if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+        raise FantasyProsProviderError("Sleeper roster response is malformed.")
+    return {
+        str(sleeper_id)
+        for roster in rosters
+        for sleeper_id in (roster.get("players") or [])
+        if str(sleeper_id).strip()
+    }
+
+
+def sleeper_free_agent_pool(
+    *,
+    rosters: object,
+    players: object,
+    rankings: tuple[Mapping[str, Any], ...] | list[Mapping[str, Any]],
+) -> tuple[dict[str, Any], ...]:
+    """Build the live unrostered pool and attach only existing NWR values."""
+
+    rostered = sleeper_rostered_player_ids(rosters)
+    if not isinstance(players, Mapping):
+        raise FantasyProsProviderError("Sleeper player response is malformed.")
+    ranking_by_identity = {
+        _identity(row.get("playerName"), row.get("position"), row.get("team"),
+                  allowed_positions=SLEEPER_FANTASY_POSITIONS): row
+        for row in rankings
+    }
+    ranking_by_identity.pop(("", "", ""), None)
+    output: list[dict[str, Any]] = []
+    for raw_id, raw in players.items():
+        sleeper_id = str(raw_id).strip()
+        if not sleeper_id or sleeper_id in rostered or not isinstance(raw, Mapping):
+            continue
+        position = _sleeper_position(raw.get("position"))
+        if position not in SLEEPER_FANTASY_POSITIONS or raw.get("active") is False:
+            continue
+        team = str(raw.get("team") or "").upper().strip()
+        name = str(raw.get("full_name") or raw.get("search_full_name") or "").strip()
+        if position == "DST" and not name and team:
+            name = f"{team} D/ST"
+        if not name or not team:
+            continue
+        ranking = ranking_by_identity.get(
+            _identity(name, position, team, allowed_positions=SLEEPER_FANTASY_POSITIONS)
+        )
+        output.append(
+            {
+                "sleeperPlayerId": sleeper_id,
+                "playerId": str(ranking.get("playerId") or "") if ranking else "",
+                "playerName": name,
+                "position": position,
+                "team": team,
+                "overallRank": ranking.get("overallRank") if ranking else None,
+                "positionRank": ranking.get("positionRank") if ranking else None,
+                "projectedPoints": ranking.get("projectedPoints") if ranking else None,
+                "replacementAdjustedValue": (
+                    ranking.get("replacementAdjustedValue") if ranking else None
+                ),
+                "valueLabel": str(ranking.get("valueLabel") or "") if ranking else "",
+                "rankingAuthority": "NWR REDRAFT RANKING" if ranking else "UNRANKED",
+                "rosterStatus": "AVAILABLE",
+            }
+        )
+    return tuple(
+        sorted(
+            output,
+            key=lambda row: (
+                row["overallRank"] is None,
+                row["overallRank"] if row["overallRank"] is not None else 10**9,
+                row["position"],
+                row["playerName"].casefold(),
+                row["sleeperPlayerId"],
+            ),
+        )
+    )
+
+
+def sleeper_opponent_rosters(
+    *,
+    rosters: object,
+    users: object,
+    players: object,
+    owner_user_id: str,
+) -> tuple[dict[str, Any], ...]:
+    """Return current non-owner Sleeper rosters with public team identity."""
+
+    if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+        raise FantasyProsProviderError("Sleeper roster response is malformed.")
+    if not isinstance(users, list) or not all(isinstance(value, Mapping) for value in users):
+        raise FantasyProsProviderError("Sleeper users response is malformed.")
+    if not isinstance(players, Mapping):
+        raise FantasyProsProviderError("Sleeper player response is malformed.")
+    user_by_id = {str(value.get("user_id") or ""): value for value in users}
+    output: list[dict[str, Any]] = []
+    for roster in rosters:
+        roster_owner_id = str(roster.get("owner_id") or "")
+        if roster_owner_id == str(owner_user_id):
+            continue
+        roster_id = str(roster.get("roster_id") or "")
+        user = user_by_id.get(roster_owner_id, {})
+        metadata = user.get("metadata") if isinstance(user.get("metadata"), Mapping) else {}
+        team_name = str(
+            metadata.get("team_name")
+            or user.get("display_name")
+            or user.get("username")
+            or f"Roster {roster_id}"
+        ).strip()
+        starter_ids = {str(value) for value in roster.get("starters") or []}
+        roster_players: list[dict[str, Any]] = []
+        unresolved: list[str] = []
+        for raw_id in roster.get("players") or []:
+            sleeper_id = str(raw_id)
+            raw = players.get(sleeper_id)
+            if not isinstance(raw, Mapping):
+                unresolved.append(sleeper_id)
+                continue
+            position = _sleeper_position(raw.get("position"))
+            name = str(raw.get("full_name") or raw.get("search_full_name") or "").strip()
+            team = str(raw.get("team") or "").upper().strip()
+            if position == "DST" and not name and team:
+                name = f"{team} D/ST"
+            roster_players.append(
+                {
+                    "sleeperPlayerId": sleeper_id,
+                    "playerName": name or "Unresolved Sleeper player",
+                    "position": position or "UNKNOWN",
+                    "team": team,
+                    "starter": sleeper_id in starter_ids,
+                }
+            )
+        roster_players.sort(
+            key=lambda row: (not row["starter"], row["position"], row["playerName"].casefold())
+        )
+        output.append(
+            {
+                "rosterId": roster_id,
+                "ownerUserId": roster_owner_id,
+                "teamName": team_name,
+                "players": roster_players,
+                "unresolvedSleeperPlayerIds": sorted(unresolved),
+            }
+        )
+    return tuple(sorted(output, key=lambda row: (row["teamName"].casefold(), row["rosterId"])))
+
+
 def _parse_consensus(payload: object, *, season: int, week: int, position: str) -> tuple[ConsensusRow, ...]:
     if not isinstance(payload, Mapping) or not isinstance(payload.get("players"), list):
         raise FantasyProsProviderError("FantasyPros consensus response is malformed.")
@@ -216,10 +372,16 @@ def _sleeper_position(value: object) -> str:
     return "DST" if position == "DEF" else position
 
 
-def _identity(name: object, position: object, team: object) -> tuple[str, str, str]:
+def _identity(
+    name: object,
+    position: object,
+    team: object,
+    *,
+    allowed_positions: frozenset[str] = SUPPORTED_POSITIONS,
+) -> tuple[str, str, str]:
     normalized_name = "".join(character for character in str(name or "").casefold() if character.isalnum())
     normalized_position = _sleeper_position(position)
     normalized_team = str(team or "").upper().strip()
-    if not normalized_name or normalized_position not in SUPPORTED_POSITIONS or not normalized_team:
+    if not normalized_name or normalized_position not in allowed_positions or not normalized_team:
         return ("", "", "")
     return normalized_name, normalized_position, normalized_team

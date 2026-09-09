@@ -8,11 +8,12 @@ import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
-import { ComparePage, DataHealthPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { ComparePage, DataHealthPage, FreeAgentsPage, LeagueHomePage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
+  { label: "League workspace", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }, { label: "Free Agents", path: "/free-agents", icon: "players" }, { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" }] },
   // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
   // at /draft-room-v2 is the "Draft Room" surface. It originally existed
   // alongside an older single-page "Legacy Draft Room", hidden from this
@@ -100,7 +101,10 @@ export function RedraftApp() {
           the Legacy DraftRoomPage component itself is removed from
           pages.tsx (git history is the rollback path). "/" now redirects
           to the real room instead of 404ing or resurrecting Legacy. */}
-      <Route path="/" element={<Navigate replace to="/draft-room-v2" />} />
+      <Route path="/" element={<Navigate replace to="/league-home" />} />
+      <Route path="/league-home" element={<LeagueHomePage client={client} data={data} />} />
+      <Route path="/free-agents" element={<FreeAgentsPage client={client} data={data} />} />
+      <Route path="/opponent-rosters" element={<OpponentRostersPage client={client} data={data} />} />
       <Route path="/draft-room-v2" element={<DraftRoomV2Page client={client} data={data} onUpdate={update} globalSidebarCollapsed={sidebarCollapsed} onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed} />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import asdict, dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -19,6 +20,7 @@ from src.services.redraft_engine_v1_service import (
     RosterSettings,
     ScoringSettings,
     create_profile,
+    load_profile,
     list_profiles,
     reconcile_sleeper_profile_identities,
     save_profile,
@@ -132,7 +134,18 @@ def import_sleeper_redraft_profile(
     else:
         profile = save_profile(
             redraft_root,
-            replace(template, profile_id=existing.profile_id, archived=False),
+            replace(
+                existing,
+                league_name=template.league_name,
+                season=template.season,
+                team_count=template.team_count,
+                roster=template.roster,
+                scoring=template.scoring,
+                draft=template.draft,
+                archived=False,
+                provider="sleeper",
+                provider_league_id=normalized_league_id,
+            ),
         )
     receipt = {
         "schema_version": 1,
@@ -149,6 +162,93 @@ def import_sleeper_redraft_profile(
     }
     _write_receipt(Path(redraft_root), profile.profile_id, receipt)
     return SleeperRedraftImport(profile=profile, receipt=receipt, unsupported_scoring=tuple(unsupported_scoring))
+
+
+def resync_sleeper_redraft_profile(
+    *,
+    profile_id: str,
+    redraft_root: str | Path,
+    client: SleeperHttpClient | None = None,
+    synced_at_utc: str | None = None,
+) -> SleeperRedraftImport:
+    """Refresh a Sleeper profile and persist its current owner roster snapshot.
+
+    The operation is read-only against Sleeper.  League rules flow through the
+    same validated import path as initial setup; current roster identities are
+    added to the local receipt so the refresh is durable rather than discarded.
+    """
+
+    normalized_profile_id = _identifier(profile_id, "profile id")
+    profile = load_profile(redraft_root, normalized_profile_id)
+    if profile.provider != "sleeper" or not profile.provider_league_id:
+        raise SleeperRedraftImportError(
+            "Only a Sleeper-imported Redraft profile can be refreshed from Sleeper."
+        )
+    prior_receipt = load_sleeper_import_receipt(redraft_root, normalized_profile_id)
+    try:
+        username = _identifier((prior_receipt or {})["owner"]["username"], "username")
+    except (KeyError, TypeError) as exc:
+        raise SleeperRedraftImportError(
+            "The Sleeper import receipt has no valid owner username. Re-import the league."
+        ) from exc
+    http = client or SleeperHttpClient()
+    imported = import_sleeper_redraft_profile(
+        league_id=profile.provider_league_id,
+        username=username,
+        redraft_root=redraft_root,
+        client=http,
+    )
+    players = _object(http.get_json("players/nfl"), "players")
+    rosters = _objects(
+        http.get_json(f"league/{profile.provider_league_id}/rosters"), "rosters"
+    )
+    owner_user_id = str(imported.receipt["owner"]["user_id"])
+    owner_roster = next(
+        (value for value in rosters if str(value.get("owner_id") or "") == owner_user_id),
+        None,
+    )
+    if owner_roster is None:
+        raise SleeperRedraftImportError("Sleeper no longer reports an owner roster for this profile.")
+    starter_ids = {str(value) for value in owner_roster.get("starters") or []}
+    roster_players: list[dict[str, Any]] = []
+    unresolved: list[str] = []
+    for raw_id in owner_roster.get("players") or []:
+        sleeper_id = str(raw_id)
+        raw = players.get(sleeper_id)
+        if not isinstance(raw, Mapping):
+            unresolved.append(sleeper_id)
+            continue
+        position = str(raw.get("position") or "").upper()
+        position = "DST" if position == "DEF" else position
+        team = str(raw.get("team") or "").upper().strip()
+        name = str(raw.get("full_name") or raw.get("search_full_name") or "").strip()
+        if position == "DST" and not name and team:
+            name = f"{team} D/ST"
+        roster_players.append(
+            {
+                "sleeper_player_id": sleeper_id,
+                "player_name": name,
+                "position": position,
+                "team": team,
+                "starter": sleeper_id in starter_ids,
+            }
+        )
+    roster_players.sort(
+        key=lambda row: (not row["starter"], row["position"], row["player_name"].casefold())
+    )
+    receipt = dict(imported.receipt)
+    receipt["roster_snapshot"] = {
+        "synced_at_utc": synced_at_utc or datetime.now(UTC).isoformat(),
+        "roster_id": owner_roster.get("roster_id"),
+        "players": roster_players,
+        "unresolved_sleeper_player_ids": sorted(unresolved),
+    }
+    _write_receipt(Path(redraft_root), imported.profile.profile_id, receipt)
+    return SleeperRedraftImport(
+        profile=imported.profile,
+        receipt=receipt,
+        unsupported_scoring=imported.unsupported_scoring,
+    )
 
 
 def load_sleeper_draft_picks(*, draft_id: str, client: SleeperHttpClient | None = None) -> tuple[dict[str, Any], ...]:
