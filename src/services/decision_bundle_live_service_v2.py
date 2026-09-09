@@ -28,11 +28,11 @@ from src.services.decision_bundle_service_v2 import DecisionBundleV2, build_deci
 from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _available_ranked,
-    _roster_candidate_allowed,
     _roster_need_adjustment,
     draft_order,
 )
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 from src.services.score_provenance_service import ScoreProvenance
 from src.services.shadow_numeric_authorities_service import RosterPlayer
 
@@ -99,7 +99,7 @@ def build_live_decision_bundle_v2(
     legal_rows = [
         row
         for row in available_rows
-        if _roster_candidate_allowed(profile, roster, {"position": row.position})
+        if evaluate_draft_pick_legality(profile, roster, row.position).allowed
     ]
     if not legal_rows:
         return LiveDecisionBundleUnavailable(

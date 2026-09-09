@@ -8,6 +8,7 @@ import json
 import os
 import tempfile
 import threading
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
@@ -179,6 +180,7 @@ from src.services.redraft_draft_room_v1_service import (
 from src.services.redraft_external_intelligence_service import load_external_intelligence
 from src.services.redraft_engine_v1_service import (
     LeagueProfile,
+    SUPPORTED_POSITIONS,
     RedraftPersistenceError,
     RedraftValidationError,
     active_profile,
@@ -203,6 +205,7 @@ from src.services.redraft_engine_v1_service import (
     undo_last_draft_pick,
     utc_now,
 )
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -1710,6 +1713,7 @@ class DesktopBackendFacade:
         manual_assets: list[dict[str, str]] = []
         snapshot = None
         ranking = None
+        legality_by_position: dict[str, Any] = {}
         if selected is not None:
             try:
                 snapshot = load_projection_snapshot(
@@ -1762,6 +1766,20 @@ class DesktopBackendFacade:
                         adp_snapshot,
                         room_state,
                     )
+                    current_team_slot = draft_board.get("currentTeamSlot")
+                    if isinstance(current_team_slot, int):
+                        current_roster = Counter(
+                            str(pick.get("position") or "")
+                            for pick in room_state.get("picks", [])
+                            if int(pick.get("team_slot") or 0) == current_team_slot
+                            and pick.get("player_id")
+                        )
+                        legality_by_position = {
+                            position: evaluate_draft_pick_legality(
+                                selected, current_roster, position
+                            )
+                            for position in SUPPORTED_POSITIONS
+                        }
                     for asset in manual_assets:
                         entry = adp_snapshot.by_player_id.get(str(asset.get("player_id") or ""))
                         asset["overallAdp"] = entry.overall_adp if entry else None  # type: ignore[assignment]
@@ -1774,6 +1792,7 @@ class DesktopBackendFacade:
                     ranking,
                     draft_board,
                     adp_snapshot,
+                    legality_by_position,
                 )
                 replacement_levels = [
                     {
@@ -1993,6 +2012,15 @@ class DesktopBackendFacade:
                         "expectedPick": asset.get("expectedPick"),
                         "expectedRound": asset.get("expectedRound"),
                         "adpSource": asset.get("adpSource"),
+                        "rosterLegal": legality_by_position.get(
+                            str(asset.get("position") or "")
+                        ).allowed if str(asset.get("position") or "") in legality_by_position else True,
+                        "legalityCode": legality_by_position.get(
+                            str(asset.get("position") or "")
+                        ).code if str(asset.get("position") or "") in legality_by_position else "NO_ACTIVE_PICK",
+                        "legalityReason": legality_by_position.get(
+                            str(asset.get("position") or "")
+                        ).reason if str(asset.get("position") or "") in legality_by_position else "No active pick is configured.",
                     }
                     for asset in manual_assets
                 ],
@@ -2510,7 +2538,8 @@ class DesktopBackendFacade:
             "benchSize",
         }
         expected_scoring = {"reception", "passingTd", "interception", "tePremium"}
-        expected_draft = {"rounds", "draftSlot", "replacementMethod"}
+        required_draft = {"rounds", "draftSlot", "replacementMethod"}
+        allowed_draft = required_draft | {"rosterLimits"}
         if set(roster) != expected_roster:
             raise FacadeError(
                 "REDRAFT_PROFILE_ROSTER_INVALID",
@@ -2521,7 +2550,7 @@ class DesktopBackendFacade:
                 "REDRAFT_PROFILE_SCORING_INVALID",
                 "Scoring settings are incomplete or contain unsupported fields.",
             )
-        if set(draft) != expected_draft:
+        if not required_draft.issubset(draft) or not set(draft).issubset(allowed_draft):
             raise FacadeError(
                 "REDRAFT_PROFILE_DRAFT_INVALID",
                 "Draft settings are incomplete or contain unsupported fields.",
@@ -2557,6 +2586,24 @@ class DesktopBackendFacade:
                 "REDRAFT_PROFILE_DRAFT_INVALID",
                 "Replacement method must be a supported option.",
             )
+        roster_limits = draft.get("rosterLimits")
+        if roster_limits is not None:
+            if not isinstance(roster_limits, Mapping):
+                raise FacadeError(
+                    "REDRAFT_PROFILE_DRAFT_INVALID",
+                    "Roster limits must be a position-to-maximum mapping.",
+                )
+            supported_positions = {"QB", "RB", "WR", "TE", "K", "DST"}
+            if any(str(position).strip().upper() not in supported_positions for position in roster_limits):
+                raise FacadeError(
+                    "REDRAFT_PROFILE_DRAFT_INVALID",
+                    "Roster limits contain an unsupported position.",
+                )
+            if any(type(limit) is not int or limit < 0 for limit in roster_limits.values()):
+                raise FacadeError(
+                    "REDRAFT_PROFILE_DRAFT_INVALID",
+                    "Roster limits must be non-negative integers.",
+                )
         try:
             prior = load_profile(self.redraft_root, normalized)
             roster_values = {key: value for key, value in roster.items() if key != "benchSize"}
@@ -2571,6 +2618,12 @@ class DesktopBackendFacade:
                 "rounds": draft["rounds"],
                 "draft_slot": draft["draftSlot"],
                 "replacement_method": draft["replacementMethod"],
+                "roster_limits": {
+                    str(position).strip().upper(): int(limit)
+                    for position, limit in dict(
+                        draft.get("rosterLimits", prior.draft.roster_limits)
+                    ).items()
+                },
             }
             updated = replace(
                 prior,
@@ -4500,6 +4553,7 @@ class DesktopBackendFacade:
         ranking: Any,
         draft_board: Mapping[str, Any] | None,
         adp_snapshot: Any | None = None,
+        legality_by_position: Mapping[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         drafted = [str(value) for value in (draft_board or {}).get("drafted", [])]
         pick_number = {player_id: index for index, player_id in enumerate(drafted, start=1)}
@@ -4509,6 +4563,7 @@ class DesktopBackendFacade:
             for value in (draft_board or {}).get("decisionRows", [])
             if isinstance(value, Mapping)
         }
+        legality_by_position = legality_by_position or {}
         return [
             {
                 "overallRank": row.overall_rank,
@@ -4553,6 +4608,21 @@ class DesktopBackendFacade:
                 "drafted": row.player_id in pick_number,
                 "draftedBy": "",
                 "pickNumber": pick_number.get(row.player_id),
+                "rosterLegal": (
+                    legality_by_position[row.position].allowed
+                    if row.position in legality_by_position
+                    else True
+                ),
+                "legalityCode": (
+                    legality_by_position[row.position].code
+                    if row.position in legality_by_position
+                    else "NO_ACTIVE_PICK"
+                ),
+                "legalityReason": (
+                    legality_by_position[row.position].reason
+                    if row.position in legality_by_position
+                    else "No active pick is configured."
+                ),
             }
             for row in ranking.rows
         ]

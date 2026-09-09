@@ -69,7 +69,7 @@ export function rankingSearchRows<T>(rows: T[], depth: string, query: string): T
   return query.trim() ? rows : withDepth(rows, depth);
 }
 
-export type PickSearchAsset = { playerId: string; playerName: string; team: string; position: string; drafted?: boolean; overallRank?: number };
+export type PickSearchAsset = { playerId: string; playerName: string; team: string; position: string; drafted?: boolean; overallRank?: number; rosterLegal?: boolean; legalityCode?: string; legalityReason?: string };
 export type PickSearchCandidate = PickSearchAsset & { source: "NWR" | "MANUAL" };
 
 /**

@@ -49,6 +49,7 @@ from src.services.redraft_draft_room_v1_service import (
     undo_room_pick,
     validate_complete_mock,
 )
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -170,7 +171,12 @@ def test_full_150_pick_mock_is_unique_legal_and_deterministic(slot: int) -> None
 
 def test_room_starts_at_owner_persists_advances_and_undoes(tmp_path) -> None:
     ranking = _ranking()
-    adp = _empty_adp(ranking.profile)
+    profile = replace(
+        ranking.profile,
+        draft=replace(ranking.profile.draft, roster_limits={"QB": 2}),
+    )
+    ranking = replace(ranking, profile=profile)
+    adp = _empty_adp(profile)
     state = start_draft_room(
         tmp_path,
         ranking.profile,
@@ -565,10 +571,13 @@ def test_suggestions_exclude_a_position_already_at_its_league_maximum() -> None:
     _ranking() stays the top-ranked player overall, so this proves the
     exclusion is the position-max filter, not a coincidence of rank."""
     ranking = _ranking()
-    adp = _empty_adp(ranking.profile)
+    profile = replace(
+        ranking.profile,
+        draft=replace(ranking.profile.draft, roster_limits={"QB": 2}),
+    )
+    ranking = replace(ranking, profile=profile)
+    adp = _empty_adp(profile)
     owner_slot = 9
-    # Heuristic QB cap with no explicit roster_limits configured is
-    # max(profile.roster.qb + 1, 2) = max(1 + 1, 2) = 2.
     state = {
         "owner_slot": owner_slot,
         "picks": [
@@ -577,7 +586,7 @@ def test_suggestions_exclude_a_position_already_at_its_league_maximum() -> None:
         ],
     }
     result = _recommendations(
-        ranking.profile, ranking, adp, state, current_pick=3, next_owner_pick=None
+        profile, ranking, adp, state, current_pick=3, next_owner_pick=None
     )
     card_positions = {card["position"] for card in result["cards"]}
     assert "QB" not in card_positions, (
@@ -1469,17 +1478,18 @@ def test_roster_need_adjustment_treats_a_superflex_slot_like_real_qb_demand() ->
     assert _roster_need_adjustment(ranking.profile, Counter({"QB": 1}), round_number=1, position="QB") != -6.0
 
 
-def test_roster_candidate_allowed_raises_the_real_qb_cap_for_superflex() -> None:
-    """The existing +1-legal-backup allowance is preserved on top of the
-    real Superflex count, not replaced by it."""
+def test_roster_candidate_allowed_uses_configured_max_not_lineup_heuristics() -> None:
+    """A starter/Superflex count is demand, not a platform maximum."""
     ranking = _ranking()
     sflx_profile = replace(ranking.profile, roster=replace(ranking.profile.roster, superflex=1))
     asset = {"position": "QB"}
-    # 1QB league: legal up to 2 (QB1 + 1 backup) -- unchanged, pre-fix behavior.
-    assert _roster_candidate_allowed(ranking.profile, Counter({"QB": 2}), asset) is False
-    # Superflex league: legal up to 3 (QB1 + Superflex + 1 backup).
+    assert _roster_candidate_allowed(ranking.profile, Counter({"QB": 2}), asset) is True
     assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 2}), asset) is True
-    assert _roster_candidate_allowed(sflx_profile, Counter({"QB": 3}), asset) is False
+    capped = replace(
+        sflx_profile,
+        draft=replace(sflx_profile.draft, roster_limits={"QB": 3}),
+    )
+    assert _roster_candidate_allowed(capped, Counter({"QB": 3}), asset) is False
 
 
 def test_roster_need_adjustment_now_signals_real_need_for_under_filled_kdst() -> None:
@@ -1497,26 +1507,13 @@ def test_roster_need_adjustment_now_signals_real_need_for_under_filled_kdst() ->
     assert _roster_need_adjustment(profile, Counter({"K": 1}), round_number=10, position="K") != -20.0
 
 
-def test_forced_position_is_feasibility_driven_not_a_fixed_round_number() -> None:
-    """NWR OVERNIGHT (Section 3, K/DST completion): a real top-suggestion
-    mock finished with K 0/1, DST 0/1 in a 16-round draft whose starters +
-    bench totaled only 15 -- one round short of what the old fixed
-    "rounds - 1" K/DST deadline assumed. The general feasibility check
-    (remaining picks <= remaining required-but-unfilled positions) must
-    force a still-needed position as soon as picks genuinely run out,
-    regardless of round count, not only in the second-to-last round."""
+def test_kdst_feasibility_is_canonical_not_a_forced_position_deadline() -> None:
     ranking = _ranking()
-    profile = ranking.profile  # rounds=15, 9 starters + 6 bench = 15 (consistent)
-    # Round 15 of 15: exactly one pick left, K and DST both still needed
-    # (2 unfilled required positions) -- must force one of them now, well
-    # before the old fixed "rounds - 1" == round 14 rule alone would have
-    # (it would only have caught K/DST at round 14, one round earlier than
-    # this test's own last-pick feasibility edge).
-    roster_starters_full_no_kdst = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "FLEX": 0})
-    forced = _forced_position(profile, roster_starters_full_no_kdst, round_number=15)
-    assert forced in ("K", "DST")
-    # Plenty of picks remaining relative to what's still required -- not forced.
-    assert _forced_position(profile, Counter(), round_number=1) is None
+    profile = ranking.profile
+    roster = Counter({"QB": 2, "RB": 6, "WR": 3, "TE": 2, "K": 1, "DST": 0})
+    assert _forced_position(profile, roster, round_number=15) is None
+    assert evaluate_draft_pick_legality(profile, roster, "WR").allowed is False
+    assert evaluate_draft_pick_legality(profile, roster, "DST").allowed is True
 
 
 def test_forced_position_still_prioritizes_a_real_unmet_skill_need_over_kdst() -> None:
@@ -1535,22 +1532,13 @@ def test_forced_position_still_prioritizes_a_real_unmet_skill_need_over_kdst() -
         assert _forced_position(profile, roster, round_number) == "WR"
 
 
-def test_forced_position_kdst_hard_backstop_fires_independently_of_the_dynamic_check() -> None:
-    """NWR post-draft overnight, section 17: isolates the real, explicit
-    K/DST-specific `round_number >= rounds - 1` backstop from the general
-    dynamic feasibility check -- with only K unmet (DST already filled),
-    the dynamic check's own math (picks_remaining=2 <= still_required=1)
-    is FALSE at round 15, so it does not fire; rounds 13-14 correctly
-    force nothing. Only the explicit backstop, not tied to a fixed
-    "round 15" constant (it's `profile.draft.rounds - 1`), forces K at
-    rounds 15-16 -- proving this is a real, independently-firing rule,
-    not redundant/dead code."""
+def test_forced_position_has_no_kdst_round_backstop() -> None:
     profile = LeagueProfile(
         "t", "probe", 2026, 10, RosterSettings(k=1, dst=1, bench_size=7),
         ScoringSettings(), DraftContext(rounds=16),
     )
-    roster = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 0, "DST": 1})  # only K unmet
+    roster = Counter({"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 0, "DST": 1})
     assert _forced_position(profile, roster, round_number=13) is None
     assert _forced_position(profile, roster, round_number=14) is None
-    assert _forced_position(profile, roster, round_number=15) == "K"
-    assert _forced_position(profile, roster, round_number=16) == "K"
+    assert _forced_position(profile, roster, round_number=15) is None
+    assert _forced_position(profile, roster, round_number=16) is None

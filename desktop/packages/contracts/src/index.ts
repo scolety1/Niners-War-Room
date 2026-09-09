@@ -569,7 +569,11 @@ export interface RedraftProfileUpdateInput {
     "qb" | "rb" | "wr" | "te" | "flex" | "superflex" | "k" | "dst" | "benchSize"
   >;
   scoring: Pick<ScoringSettings, "reception" | "passingTd" | "interception" | "tePremium">;
-  draft: Pick<DraftContext, "rounds" | "draftSlot" | "replacementMethod">;
+  draft: Pick<DraftContext, "rounds" | "draftSlot" | "replacementMethod"> & {
+    /** League/platform position maxima. Empty means the rule is unknown,
+     * never that the UI should invent a strategy cap. */
+    rosterLimits?: Record<string, number>;
+  };
   // NWR FINAL PRE-DRAFT GAP CLOSURE: optional and omittable -- omitting
   // preserves the profile's existing value (the real backend semantics,
   // unchanged). When set, enables/disables Practical Mode, which is what
@@ -610,6 +614,10 @@ export interface RedraftRanking {
   drafted: boolean;
   draftedBy: string;
   pickNumber: number | null;
+  /** Canonical backend result for the team currently on the clock. */
+  rosterLegal: boolean;
+  legalityCode: string;
+  legalityReason: string;
 }
 
 export interface ReplacementLevel {
@@ -817,6 +825,9 @@ export interface ManualDraftAsset {
   expectedPick?: number | null;
   expectedRound?: number | null;
   adpSource?: string;
+  rosterLegal: boolean;
+  legalityCode: string;
+  legalityReason: string;
 }
 
 export interface ExternalConsensusStatus {

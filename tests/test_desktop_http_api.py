@@ -867,6 +867,7 @@ def test_redraft_profile_duplicate_and_edit_routes_are_strict() -> None:
             "rounds": 16,
             "draftSlot": 4,
             "replacementMethod": "expected_available",
+            "rosterLimits": {"WR": 8},
         },
     }
     with running_server(facade) as server:
@@ -906,6 +907,10 @@ def test_redraft_profile_duplicate_and_edit_routes_are_strict() -> None:
         {"profileId": "profile-1", "leagueName": "Sunday League Copy"},
     ) in facade.calls
     assert any(call[0] == "edit" and call[1]["team_count"] == 10 for call in facade.calls)
+    assert any(
+        call[0] == "edit" and call[1]["draft"]["rosterLimits"] == {"WR": 8}
+        for call in facade.calls
+    )
     assert unknown[0] == invalid_nested[0] == 400
     assert unknown[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
     assert invalid_nested[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"

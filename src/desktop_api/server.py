@@ -577,7 +577,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             )
             self._reject_unknown_fields(
                 draft,
-                {"rounds", "draftSlot", "replacementMethod"},
+                {"rounds", "draftSlot", "replacementMethod", "rosterLimits"},
             )
             if any(type(value) is not int for value in roster.values()):
                 raise self._invalid_body("Roster values must be integers.")
@@ -590,6 +590,15 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 raise self._invalid_body("Draft slot must be an integer or null.")
             if not isinstance(draft.get("replacementMethod"), str):
                 raise self._invalid_body("replacementMethod must be a string.")
+            roster_limits = draft.get("rosterLimits")
+            if roster_limits is not None:
+                if not isinstance(roster_limits, dict):
+                    raise self._invalid_body("rosterLimits must be an object or omitted.")
+                supported_positions = {"QB", "RB", "WR", "TE", "K", "DST"}
+                if any(str(key).strip().upper() not in supported_positions for key in roster_limits):
+                    raise self._invalid_body("rosterLimits contains an unsupported position.")
+                if any(type(value) is not int or value < 0 for value in roster_limits.values()):
+                    raise self._invalid_body("rosterLimits values must be non-negative integers.")
             self.server.facade.update_redraft_profile(
                 unquote(edit_match.group(1)),
                 league_name=league_name,

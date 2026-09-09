@@ -169,12 +169,18 @@ export function CheatSheetPage({
       }
       const isDrafted = draftedIds.has(playerId) || Boolean(row.drafted);
       if (isDrafted) return <StatusBadge tone="review" label="Drafted" />;
+      const canonical = data.rankings.find((entry) => entry.playerId === playerId)
+        ?? data.manualAssets?.find((entry) => entry.playerId === playerId);
+      const legality = canonical as ({ rosterLegal?: boolean; legalityReason?: string } | undefined);
+      const rosterLegal = legality?.rosterLegal !== false;
+      const legalityReason = legality?.legalityReason ?? "Roster legality is unavailable.";
       const isQueued = queuedIds.includes(playerId);
       return (
         <span className="draft-room-v2-pick-actions">
-          <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(playerId)}>
+          <Button data-draft-action disabled={!canRecordPick || Boolean(working) || !rosterLegal} title={rosterLegal ? "Draft this player." : legalityReason} variant="primary" onClick={() => onDraft(playerId)}>
             {working === playerId ? "Saving…" : "Draft"}
           </Button>
+          {!rosterLegal ? <StatusBadge tone="blocked" label="Illegal" /> : null}
           <Button variant="ghost" onClick={() => onQueue(playerId)}>{isQueued ? "Queued" : "Queue"}</Button>
         </span>
       );

@@ -33,6 +33,7 @@ from src.services.redraft_engine_v1_service import (
     load_draft_board,
     utc_now,
 )
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 
 ROOM_SCHEMA_VERSION = 1
 ADP_SCHEMA_VERSION = 2
@@ -1437,6 +1438,7 @@ def _pick_slot_or_raise(state: Mapping[str, Any], pick_number: int) -> dict[str,
 
 
 def _apply_pick_correction(
+    profile: LeagueProfile,
     state: Mapping[str, Any],
     *,
     pick_number: int,
@@ -1468,6 +1470,16 @@ def _apply_pick_correction(
                 f"{asset.get('player_name', player_id)} is already drafted at pick "
                 f"{collision['pick_number']}."
             )
+        roster = Counter(
+            str(pick.get("position") or "")
+            for i, pick in enumerate(picks)
+            if i != index
+            and int(pick.get("team_slot") or 0) == int(previous_snapshot["team_slot"])
+            and pick.get("player_id")
+        )
+        legality = evaluate_draft_pick_legality(profile, roster, asset["position"])
+        if not legality.allowed:
+            raise RedraftValidationError(legality.reason)
         new_entry = {
             **previous_snapshot,
             "player_id": player_id,
@@ -1526,7 +1538,7 @@ def replace_pick(
     if asset is None:
         raise RedraftValidationError("The selected replacement player is unavailable.")
     state = _apply_pick_correction(
-        state, pick_number=pick_number, asset=asset, action="REPLACE_PICK"
+        profile, state, pick_number=pick_number, asset=asset, action="REPLACE_PICK"
     )
     _save_room_state(root, state)
     return state
@@ -1547,7 +1559,9 @@ def clear_pick(
     target = _pick_slot_or_raise(state, pick_number)
     if not target.get("player_id"):
         raise RedraftValidationError(f"Pick {pick_number} is already unresolved.")
-    state = _apply_pick_correction(state, pick_number=pick_number, asset=None, action="CLEAR_PICK")
+    state = _apply_pick_correction(
+        profile, state, pick_number=pick_number, asset=None, action="CLEAR_PICK"
+    )
     _save_room_state(root, state)
     return state
 
@@ -1572,7 +1586,9 @@ def fill_gap_pick(
     asset = _asset_pool(ranking, manual_assets).get(player_id)
     if asset is None:
         raise RedraftValidationError("The selected player is unavailable.")
-    state = _apply_pick_correction(state, pick_number=pick_number, asset=asset, action="FILL_GAP")
+    state = _apply_pick_correction(
+        profile, state, pick_number=pick_number, asset=asset, action="FILL_GAP"
+    )
     _save_room_state(root, state)
     return state
 
@@ -2176,10 +2192,7 @@ def _select_asset(
     )
     current_pick = len(state.get("picks", [])) + 1
     round_number = ((current_pick - 1) // profile.team_count) + 1
-    forced = _forced_position(profile, roster, round_number)
-    candidates = [asset for asset in available if forced is None or asset["position"] == forced]
-    if not candidates:
-        candidates = available
+    candidates = available
     # NWR post-draft overnight, DecisionBundle latency repair (real
     # cProfile evidence: `_roster_candidate_allowed`/`_roster_need_
     # adjustment` were called once PER CANDIDATE -- ~5M times combined
@@ -2199,7 +2212,9 @@ def _select_asset(
         position = str(asset["position"])
         cached = allowed_cache.get(position)
         if cached is None:
-            cached = _roster_candidate_allowed(profile, roster, asset)
+            cached = evaluate_draft_pick_legality(
+                profile, roster, asset["position"]
+            ).allowed
             allowed_cache[position] = cached
         return cached
 
@@ -2212,7 +2227,9 @@ def _select_asset(
 
     candidates = [asset for asset in candidates if _cached_roster_candidate_allowed(asset)]
     if not candidates:
-        candidates = available
+        raise RedraftValidationError(
+            "No legal Draft Room asset remains for this team's roster state."
+        )
     if actor == "OWNER_AUTO_TEST":
         candidates.sort(
             key=lambda asset: (
@@ -2296,6 +2313,14 @@ def _record_pick(
         raise RedraftValidationError("The Draft Room player is already drafted.")
     round_number = ((pick_number - 1) // profile.team_count) + 1
     team_slot = order[pick_number - 1]
+    roster = Counter(
+        str(pick.get("position") or "")
+        for pick in updated["picks"]
+        if int(pick.get("team_slot") or 0) == team_slot and pick.get("player_id")
+    )
+    legality = evaluate_draft_pick_legality(profile, roster, asset["position"])
+    if not legality.allowed:
+        raise RedraftValidationError(legality.reason)
     updated["picks"].append(
         {
             "pick_number": pick_number,
@@ -2347,7 +2372,11 @@ def _recommendations(
     # time) is dropped from the actionable candidate set below. The player
     # stays fully visible/searchable elsewhere (PLAYERS panel, beat_pool,
     # allRows) -- this only narrows what gets *recommended*.
-    eligible = [row for row in enriched if _roster_candidate_allowed(profile, roster, row)]
+    eligible = [
+        row
+        for row in enriched
+        if evaluate_draft_pick_legality(profile, roster, row["position"]).allowed
+    ]
     cards: list[dict[str, Any]] = []
     used_player_ids: set[str] = set()
 
@@ -2660,30 +2689,8 @@ def _asset_pool(
 
 
 def _forced_position(profile: LeagueProfile, roster: Counter[str], round_number: int) -> str | None:
-    # NWR OVERNIGHT (K/DST completion, Section 3): a general feasibility
-    # check, not a second hardcoded round number -- when the picks actually
-    # remaining in this draft for this team are down to (or below) the
-    # count of still-required-but-unfilled positions, force one now,
-    # regardless of which position or how many rounds that is from the
-    # end. Reuses roster/profile.roster the exact same way every other
-    # branch here already does; derives urgency from the real remaining
-    # choices, not a fixed "round 15" assumption that a shorter or
-    # differently-sized bench could invalidate.
-    picks_remaining = max(0, profile.draft.rounds - round_number + 1)
-    still_required = [
-        position
-        for position in ("QB", "RB", "WR", "TE", "K", "DST")
-        if roster[position]
-        < int(getattr(profile.roster, position.lower(), 0))
-        + (profile.roster.superflex if position == "QB" else 0)
-    ]
-    if still_required and picks_remaining <= len(still_required):
-        return still_required[0]
-    if round_number >= max(1, profile.draft.rounds - 1):
-        if roster["K"] < profile.roster.k:
-            return "K"
-        if roster["DST"] < profile.roster.dst:
-            return "DST"
+    # This is a shortlist strategy hint only. Hard feasibility and position
+    # maxima belong exclusively to evaluate_draft_pick_legality().
     deadlines = (("QB", 8), ("TE", 10), ("RB", 12), ("WR", 12))
     for position, deadline in deadlines:
         required = int(getattr(profile.roster, position.lower()))
@@ -2705,23 +2712,8 @@ def _roster_candidate_allowed(
     roster: Counter[str],
     asset: Mapping[str, Any],
 ) -> bool:
-    position = str(asset["position"])
-    explicit_limit = profile.draft.roster_limits.get(position)
-    if explicit_limit is not None:
-        return roster[position] < int(explicit_limit)
-    if position in {"K", "DST"}:
-        return roster[position] < int(getattr(profile.roster, position.lower()))
-    if position == "QB":
-        # Owner feedback closure (Superflex disposition): a Superflex
-        # slot is a second real starter-eligible QB use, not just "QB1 +
-        # one legal backup" -- the same +1-backup allowance the 1QB case
-        # already gets is preserved on top of the real Superflex count.
-        # Zero-blast-radius for every 1QB league (superflex defaults to
-        # 0, reproducing max(profile.roster.qb + 1, 2) exactly).
-        return roster[position] < max(profile.roster.qb + profile.roster.superflex + 1, 2)
-    if position == "TE":
-        return roster[position] < max(profile.roster.te + 1, 2)
-    return roster[position] < profile.draft.rounds
+    """Compatibility shim; all legality is owned by the canonical service."""
+    return evaluate_draft_pick_legality(profile, roster, asset["position"]).allowed
 
 
 def _roster_limit_violation(
@@ -2739,16 +2731,10 @@ def _roster_limit_violation(
         for pick in state.get("picks", [])
         if int(pick["team_slot"]) == team_slot
     )
-    if _roster_candidate_allowed(profile, roster, asset):
+    legality = evaluate_draft_pick_legality(profile, roster, asset["position"])
+    if legality.allowed:
         return None
-    position = str(asset["position"])
-    explicit_limit = profile.draft.roster_limits.get(position)
-    limit = (
-        int(explicit_limit)
-        if explicit_limit is not None
-        else roster[position]  # heuristic cap already reached; report the count as the limit
-    )
-    return f"Drafting this {position} would exceed the league position maximum of {limit}."
+    return legality.reason
 
 
 def _roster_need_adjustment(

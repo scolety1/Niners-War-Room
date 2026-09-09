@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 
 import { leagueFormat, leagueIdentityFormat } from "./league-context";
 
-function editableProfile(profile: LeagueProfile): RedraftProfileUpdateInput {
+type EditableProfile = Omit<RedraftProfileUpdateInput, "draft"> & {
+  draft: RedraftProfileUpdateInput["draft"] & { rosterLimits?: Record<string, number> };
+};
+
+function editableProfile(profile: LeagueProfile): EditableProfile {
   return {
     leagueName: profile.leagueName,
     teamCount: profile.teamCount,
@@ -30,6 +34,7 @@ function editableProfile(profile: LeagueProfile): RedraftProfileUpdateInput {
       rounds: profile.draft.rounds,
       draftSlot: profile.draft.draftSlot,
       replacementMethod: profile.draft.replacementMethod,
+      rosterLimits: { ...profile.draft.rosterLimits },
     },
     practicalMode: profile.practicalMode,
   };
@@ -46,7 +51,7 @@ export function ProfilePage({
 }) {
   const [preset, setPreset] = useState(data.presets[0]?.presetKey ?? "");
   const [name, setName] = useState(data.presets[0]?.leagueName ?? "My Redraft League");
-  const [edit, setEdit] = useState<RedraftProfileUpdateInput | null>(
+  const [edit, setEdit] = useState<EditableProfile | null>(
     data.activeProfile ? editableProfile(data.activeProfile) : null,
   );
   const [working, setWorking] = useState("");
@@ -153,10 +158,16 @@ export function ProfilePage({
   </>;
 }
 
-function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working }: { edit: RedraftProfileUpdateInput; disabled: boolean; onChange: (value: RedraftProfileUpdateInput) => void; onDuplicate: () => void; onSave: () => void; working: string }) {
+function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working }: { edit: EditableProfile; disabled: boolean; onChange: (value: EditableProfile) => void; onDuplicate: () => void; onSave: () => void; working: string }) {
   const number = (value: string) => Number(value);
   const rosterField = (key: keyof RedraftProfileUpdateInput["roster"], label: string) => <label className="form-field"><span>{label}</span><input disabled={disabled} min={0} max={40} type="number" value={edit.roster[key]} onChange={(event) => onChange({ ...edit, roster: { ...edit.roster, [key]: number(event.target.value) } })} /></label>;
   const scoringField = (key: keyof RedraftProfileUpdateInput["scoring"], label: string, step = 0.5) => <label className="form-field"><span>{label}</span><input disabled={disabled} step={step} type="number" value={edit.scoring[key]} onChange={(event) => onChange({ ...edit, scoring: { ...edit.scoring, [key]: number(event.target.value) } })} /></label>;
+  const rosterLimitField = (position: string) => <label className="form-field" key={`max-${position}`}><span>{position} maximum</span><input disabled={disabled} min={0} max={40} placeholder="Not configured" type="number" value={edit.draft.rosterLimits?.[position] ?? ""} onChange={(event) => {
+    const limits = { ...(edit.draft.rosterLimits ?? {}) };
+    if (event.target.value === "") delete limits[position];
+    else limits[position] = number(event.target.value);
+    onChange({ ...edit, draft: { ...edit.draft, rosterLimits: limits } });
+  }} /></label>;
   return <Panel title="Edit active profile" eyebrow="Validated scoring · roster · draft settings">
     <div className="profile-edit-grid">
       <label className="form-field"><span>League name</span><input disabled={disabled} maxLength={120} value={edit.leagueName} onChange={(event) => onChange({ ...edit, leagueName: event.target.value })} /></label>
@@ -186,6 +197,13 @@ function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working 
       <label className="form-field"><span>Draft rounds</span><input disabled={disabled} min={1} max={40} type="number" value={edit.draft.rounds} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, rounds: number(event.target.value) } })} /></label>
       <label className="form-field"><span>Draft slot</span><input disabled={disabled} min={1} max={edit.teamCount} placeholder="Optional" type="number" value={edit.draft.draftSlot ?? ""} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, draftSlot: event.target.value ? number(event.target.value) : null } })} /></label>
       <label className="form-field"><span>Replacement method</span><select disabled={disabled} value={edit.draft.replacementMethod} onChange={(event) => onChange({ ...edit, draft: { ...edit.draft, replacementMethod: event.target.value as RedraftProfileUpdateInput["draft"]["replacementMethod"] } })}><option value="expected_available">Expected available</option><option value="starter_cutoff">Starter cutoff</option></select></label>
+      <details className="form-field form-field--details">
+        <summary>League position maxima</summary>
+        <p>Enter the draft platform's actual limits. Blank means unknown; NWR will not invent one.</p>
+        <div className="profile-edit-grid">
+          {["QB", "RB", "WR", "TE", "K", "DST"].map(rosterLimitField)}
+        </div>
+      </details>
     </div>
     <div className="profile-edit-actions"><Button disabled={disabled || !edit.leagueName.trim()} icon="check" onClick={onSave}>{working === "save" ? "Saving…" : "Save & refresh rankings"}</Button><Button disabled={disabled} icon="layers" onClick={onDuplicate} variant="secondary">{working === "duplicate" ? "Duplicating…" : "Duplicate profile"}</Button></div>
   </Panel>;

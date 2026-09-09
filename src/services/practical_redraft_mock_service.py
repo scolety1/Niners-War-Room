@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Sequence
 
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 
 
 @dataclass(frozen=True)
@@ -83,30 +84,17 @@ def run_practical_mock(
 
 
 def _select_asset(profile: LeagueProfile, *, round_number: int, roster: Counter[str], available: dict[str, dict[str, str]]) -> dict[str, str] | None:
-    # K/DST are deterministic completion behavior, deliberately unranked.
-    if round_number >= max(1, profile.draft.rounds - 1):
-        for position in ("K", "DST"):
-            if roster[position] < getattr(profile.roster, position.lower()):
-                return _first(available, position, kind="MANUAL_UNMODELED")
-    # Make fundamental starters legal before late manual completion.
-    deadlines = {"QB": 8, "RB": 12, "WR": 12, "TE": 11}
-    for position, deadline in deadlines.items():
-        if round_number >= deadline and roster[position] < getattr(profile.roster, position.lower()):
-            candidate = _first(available, position, kind="NWR_RANKED")
-            if candidate is not None:
-                return candidate
-    # Do not exhaust draft capital with duplicate QBs/TEs before required starters.
-    for asset in available.values():
-        if asset["kind"] != "NWR_RANKED":
-            continue
-        position = asset["position"]
-        if position == "QB" and roster[position] >= max(profile.roster.qb + 1, 2):
-            continue
-        if position == "TE" and roster[position] >= max(profile.roster.te + 1, 2):
-            continue
-        return asset
-    return _first(available, "K", kind="MANUAL_UNMODELED") or _first(available, "DST", kind="MANUAL_UNMODELED")
-
-
-def _first(available: dict[str, dict[str, str]], position: str, *, kind: str) -> dict[str, str] | None:
-    return next((row for row in available.values() if row["position"] == position and row["kind"] == kind), None)
+    del round_number  # legality derives remaining capacity from roster size
+    legal_assets = [
+        asset
+        for asset in available.values()
+        if evaluate_draft_pick_legality(profile, roster, asset["position"]).allowed
+    ]
+    # Preserve the caller's deterministic ranking/manual order. Canonical
+    # remaining-slot feasibility naturally leaves only mandatory K/DST (or
+    # another unfilled starter) when the draft reaches its final capacity;
+    # there is no separate late-round legality rule here.
+    return next(
+        (asset for asset in legal_assets if asset["kind"] == "NWR_RANKED"),
+        legal_assets[0] if legal_assets else None,
+    )

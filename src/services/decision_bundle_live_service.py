@@ -31,11 +31,11 @@ from src.services.redraft_draft_room_v1_service import (
     AdpSnapshot,
     _available_ranked,
     _forced_position,
-    _roster_candidate_allowed,
     _roster_need_adjustment,
     draft_order,
 )
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
+from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 from src.services.score_provenance_service import ScoreProvenance
 from src.services.shadow_numeric_authorities_service import RosterPlayer
 
@@ -177,6 +177,7 @@ def _needed_manual_candidates(
             asset for asset in manual_assets
             if str(asset.get("position") or "").upper() == position
             and str(asset.get("player_id") or "") not in drafted_ids
+            and evaluate_draft_pick_legality(profile, roster, position).allowed
         ]
 
         def _order_key(asset: Mapping[str, Any]) -> tuple[float, str]:
@@ -261,87 +262,16 @@ def build_live_decision_bundle(
         if pick.get("team_slot") == owner_slot
     )
     round_number = (current_pick_number - 1) // max(1, profile.team_count) + 1
-    # NWR OVERNIGHT (Section 5/9 -- "same candidate authority in API and
-    # UI", proven necessary by a real top-suggestion-autopilot acceptance
-    # run: an 8-team mock finished 15/15 picks with K 0/1, DST 0/1,
-    # despite the K/DST need-signal injection above already making them
-    # VISIBLE candidates). Root cause: K/DST always carry a real, honest
-    # zero valuation (no NWR model for them) -- under a pure Pick-Score
-    # sort, a genuinely zero-value candidate can NEVER outrank ANY
-    # legal positive-value alternative, no matter how late the draft
-    # gets, so being merely visible in the shortlist is not enough to
-    # ever make them the actual #1 row. `_forced_position` (the same
-    # real, tested, feasibility-driven function `_select_asset`'s
-    # CPU/autopilot path already uses to guarantee legal completion) is
-    # reused here, not reinvented: when it reports a position is
-    # genuinely forced right now, this default (unfiltered) Suggestions
-    # view is restricted to that one position -- guaranteeing the forced
-    # position IS the visible slate, not merely present somewhere in it.
-    # An explicit owner position_filter always overrides this (handled
-    # below, before this restriction would ever apply).
+    # `_forced_position` is a soft shortlist-diversity hint only. Canonical
+    # legality below is the sole authority for hard maxima and the ability
+    # to complete all mandatory slots with the picks remaining.
     forced_position = _forced_position(profile, roster, round_number)
-    if forced_position is not None and position_filter is None:
-        if forced_position in MANUAL_FALLBACK_POSITIONS:
-            forced_candidates = [
-                str(asset.get("player_id"))
-                for asset in _needed_manual_candidates(
-                    manual_assets, profile=profile, roster=roster, round_number=round_number,
-                    drafted_ids=drafted_ids, adp=adp,
-                    positions=(forced_position,), per_position=max_candidates,
-                )
-            ]
-            if not forced_candidates:
-                # No real K/DST asset left at all -- a genuine data/config
-                # blocker, not silently downgraded back to skill-position
-                # picks (which would recreate the exact bug this fixes).
-                return LiveDecisionBundleUnavailable(
-                    f"{forced_position} is required and due now, but no {forced_position} "
-                    "asset remains available -- add one via the manual-asset pathway."
-                )
-            player_scores = {
-                row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows
-            }
-            bundle = build_decision_bundle(
-                profile=profile, ranking=ranking, manual_assets=manual_assets, adp=adp,
-                owner_slot=owner_slot, current_owner_player_ids=current_owner_player_ids,
-                candidate_player_ids=forced_candidates, comparable_leagues=comparable_leagues,
-                provenance=provenance, player_scores=player_scores, from_state=room_state,
-                include_cost_of_waiting=include_cost_of_waiting,
-                current_pick_number=current_pick_number, trials=trials, seasons=seasons,
-                base_seed=base_seed, continuation_seeds=continuation_seeds,
-            )
-            return bundle
-        # A forced SKILL position (QB/TE/RB/WR deadline) used to restrict the
-        # entire shortlist to that one position -- a real, reproduced bug
-        # (NWR emergency recommendation repair, 2026-09-07): `_forced_position`'s
-        # soft deadline table (QB@8, TE@10, RB@12, WR@12) fires as a rank-and-
-        # file "you should really get one of these soon" nudge, not a hard
-        # feasibility wall (that harder case -- picks_remaining <= count of
-        # still-required positions -- is a separate, earlier check inside
-        # `_forced_position` itself). Exclusively restricting `legal_rows` to
-        # ONE position for every soft-deadline hit collapsed the entire
-        # Suggestions candidate universe to that position alone (confirmed:
-        # a real round-8 QB deadline on a 1-QB league produced a 12-of-12
-        # QB shortlist, zero RB/WR/TE, with every candidate landing on a
-        # tied/near-tied Pick Score since a 60th-ranked replacement QB has
-        # nothing left to differentiate it from a 20th-ranked one). The
-        # forced position still gets a GUARANTEED shortlist slot below via
-        # `needed_positions` (unioned with `forced_position` so this stays
-        # true even in the rarer case `_roster_need_adjustment` and
-        # `_forced_position` disagree) -- it is surfaced prominently, not
-        # hidden, without silently discarding every other legal candidate.
 
     available_rows = _available_ranked(ranking, room_state)
     legal_rows = [
         row for row in available_rows
-        if _roster_candidate_allowed(profile, roster, {"position": row.position})
+        if evaluate_draft_pick_legality(profile, roster, row.position).allowed
     ]
-    if not legal_rows:
-        return LiveDecisionBundleUnavailable(
-            "No roster-legal available candidate exists at this pick (every open "
-            "position may already be at its configured maximum, or the player "
-            "universe is exhausted)."
-        )
     # Owner-test follow-up, section 8: an explicit position filter draws
     # its shortlist from the REAL eligible pool of that position (still
     # rank-ordered, still roster-legality-filtered), never a client-side
@@ -387,6 +317,9 @@ def build_live_decision_bundle(
                     for asset in manual_assets
                     if str(asset.get("position") or "").upper() == normalized_filter
                     and str(asset.get("player_id") or "") not in drafted_ids
+                    and evaluate_draft_pick_legality(
+                        profile, roster, normalized_filter
+                    ).allowed
                 ][:max_candidates]
             else:
                 position_rows = [row for row in legal_rows if row.position == normalized_filter]
@@ -446,6 +379,12 @@ def build_live_decision_bundle(
         player_id = str(asset.get("player_id"))
         if player_id not in candidate_player_ids:
             candidate_player_ids.append(player_id)
+    if not candidate_player_ids:
+        return LiveDecisionBundleUnavailable(
+            "No roster-legal available candidate exists at this pick (every open "
+            "position may already be at its configured maximum, required manual "
+            "K/DST data may be missing, or the player universe is exhausted)."
+        )
     player_scores = {
         row.player_id: float(row.replacement_adjusted_value) for row in ranking.rows
     }

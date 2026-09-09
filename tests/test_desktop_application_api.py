@@ -1228,6 +1228,7 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
             "rounds": 16,
             "draftSlot": 4,
             "replacementMethod": "expected_available",
+            "rosterLimits": {"qb": 4, "wr": 8},
         },
     )
     duplicate = facade.duplicate_redraft_profile(profile_id)
@@ -1237,6 +1238,7 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
     assert edited.data["profile"]["leagueName"] == "Restart League Updated"
     assert edited.data["profile"]["teamCount"] == 10
     assert edited.data["profile"]["scoring"]["reception"] == 1.0
+    assert edited.data["profile"]["draft"]["rosterLimits"] == {"QB": 4, "WR": 8}
     assert duplicate_id != profile_id
     assert duplicated_bootstrap.data["activeProfileId"] == duplicate_id
     assert duplicated_bootstrap.data["draftBoard"]["drafted"] == []
@@ -1250,6 +1252,7 @@ def test_redraft_profile_edit_duplicate_and_restart_persist(tmp_path: Path) -> N
     assert restarted.data["activeProfileId"] == profile_id
     assert restarted.data["activeProfile"]["leagueName"] == "Restart League Updated"
     assert restarted.data["activeProfile"]["draft"]["draftSlot"] == 4
+    assert restarted.data["activeProfile"]["draft"]["rosterLimits"] == {"QB": 4, "WR": 8}
     assert restarted.data["draftBoard"]["drafted"] == drafted
 
     with pytest.raises(FacadeError, match="Roster settings must use integers"):

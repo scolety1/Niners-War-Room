@@ -1,4 +1,7 @@
 from dataclasses import replace
+from types import SimpleNamespace
+
+import pytest
 
 from src.services.decision_bundle_live_service import (
     LiveDecisionBundleUnavailable,
@@ -138,13 +141,18 @@ def test_build_live_decision_bundle_respects_already_drafted_players() -> None:
 
 
 def test_build_live_decision_bundle_respects_position_maximum_legality() -> None:
-    # roster.qb=1 -> _roster_candidate_allowed caps QB at max(1+1, 2)=2.
+    # The league explicitly configures QB max 2; legality never invents a
+    # strategy cap from the number of starting slots.
     # team_count=2 order is [1,2,2,1,1,2,...]: after 4 real picks
     # (team1, team2, team2, team1 -- the owner's 2 real QB picks land at
     # positions 1 and 4), pick #5 genuinely belongs to team 1 (owner)
     # again, so this stays a real "it's your turn" case, not a skipped one.
     ranking = _ranking(team_count=2)
-    profile = ranking.profile
+    profile = replace(
+        ranking.profile,
+        draft=replace(ranking.profile.draft, roster_limits={"QB": 2}),
+    )
+    ranking = replace(ranking, profile=profile)
     manual_assets = _manual_assets()
     adp = _empty_adp(profile)
     leagues = simulate_comparable_leagues(
@@ -422,25 +430,21 @@ def test_position_filter_returns_real_eligible_players_of_that_position_only() -
     assert all(c.player_id.startswith("WR-") for c in result.candidates)
 
 
-def test_default_shortlist_is_restricted_to_a_genuinely_forced_kdst_position() -> None:
-    """NWR OVERNIGHT (Section 5/9): proven necessary by a real top-
-    suggestion-autopilot acceptance run -- an 8-team mock finished 15/15
-    picks with K 0/1, DST 0/1 even with K/DST visible-when-needed in the
-    shortlist (checkpoint 1's fix), because a genuinely zero-valued K/DST
-    candidate can never outrank ANY legal positive-value skill-position
-    alternative under a pure Pick-Score sort. When `_forced_position`
-    (the same function `_select_asset`'s CPU/autopilot path already uses)
-    reports a position is truly due now, the DEFAULT (unfiltered)
-    Suggestions shortlist must be restricted to that position -- not
-    merely include it among others."""
-    ranking = _ranking(team_count=2, rounds=8)
+def test_default_shortlist_uses_canonical_feasibility_for_kdst_completion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When two picks remain and K/DST are the only missing mandatory slots,
+    the canonical service excludes every skill player while keeping both
+    honest manual choices. No fixed-round or arbitrary K-before-DST rule is
+    involved."""
+    ranking = _ranking(team_count=2, rounds=9)
     profile = ranking.profile
     manual_assets = _manual_assets()
     adp = _empty_adp(profile)
     order = draft_order(profile)
     # Team 1's starter slots (QB1/RB2/WR2/TE1/FLEX-via-extra-RB) filled by
-    # its own first 7 picks -- K and DST are both still 0/1, and with
-    # rounds=8 only one pick remains: exactly the feasibility-forced case.
+    # its own first 7 picks -- K and DST are both still 0/1, with exactly
+    # two picks remaining.
     team1_players = ["QB-0", "RB-0", "RB-1", "RB-2", "WR-0", "WR-1", "TE-0"]
     picks = []
     t1_index = 0
@@ -471,20 +475,35 @@ def test_default_shortlist_is_restricted_to_a_genuinely_forced_kdst_position() -
              "position": "WR"}
         )
     room_state = _room_state(owner_slot=1, picks=picks)
-    leagues = simulate_comparable_leagues(
-        profile, ranking, manual_assets, adp, trials=2, base_seed=17
+    positions_by_id = {
+        str(asset["player_id"]): str(asset["position"])
+        for asset in manual_assets
+    }
+
+    def capture_candidates(**kwargs: object) -> SimpleNamespace:
+        candidate_ids = kwargs["candidate_player_ids"]
+        assert isinstance(candidate_ids, list)
+        return SimpleNamespace(
+            candidates=tuple(
+                SimpleNamespace(player_id=player_id, position=positions_by_id[player_id])
+                for player_id in candidate_ids
+            )
+        )
+
+    monkeypatch.setattr(
+        "src.services.decision_bundle_live_service.build_decision_bundle",
+        capture_candidates,
     )
 
     result = build_live_decision_bundle(
         profile, ranking, manual_assets, adp, room_state,
-        comparable_leagues=leagues, provenance=_provenance(), max_candidates=8,
+        comparable_leagues=(), provenance=_provenance(), max_candidates=8,
         trials=2, seasons=20, base_seed=17,
     )
     assert not isinstance(result, LiveDecisionBundleUnavailable), result
     assert len(result.candidates) > 0
-    # Every candidate is K -- the forced position -- never a skill-position
-    # row still legal-and-visible but not what's actually due right now.
-    assert all(c.player_id.startswith("manual:K:") for c in result.candidates)
+    positions = {c.position for c in result.candidates}
+    assert positions == {"K", "DST"}
 
 
 def test_position_filter_of_k_returns_real_manual_candidates_not_empty() -> None:

@@ -593,6 +593,8 @@ export interface CompareRow {
   overallAdp: number | null;
   tier: string | null;
   status: string;
+  rosterLegal?: boolean;
+  legalityReason?: string;
   // Real DecisionBundle fields -- null (never fabricated) when this
   // player is not one of the current Suggestions candidates (Compare can
   // hold players beyond the top-N the backend evaluated this pick).
@@ -631,6 +633,7 @@ export function buildCompareRows(
       const intel = intelById.get(playerId);
       if (!ranked && !manual) return null;
       const candidate = candidateById.get(playerId);
+      const legality = (ranked ?? manual) as ({ rosterLegal?: boolean; legalityReason?: string } | undefined);
       return {
         playerId,
         playerName: ranked?.playerName ?? manual?.playerName ?? playerId,
@@ -639,6 +642,8 @@ export function buildCompareRows(
         overallAdp: ranked?.overallAdp ?? manual?.overallAdp ?? null,
         tier: ranked?.overallTierLabel ?? null,
         status: intel?.currentAlert ? `Alert: ${intel.currentAlertSeverity ?? "flagged"}` : "No current alert",
+        rosterLegal: legality?.rosterLegal !== false,
+        legalityReason: legality?.legalityReason ?? "Roster legality is unavailable.",
         playerScore: candidate?.playerScore ?? null,
         teamScoreDelta: candidate?.teamScoreDelta ?? null,
         equityGain: candidate?.equityGain ?? null,
@@ -653,7 +658,7 @@ export function buildCompareRows(
         metricStatus: candidate?.metricStatus ?? {},
       };
     })
-    .filter((row): row is CompareRow => row !== null);
+    .filter((row) => row !== null);
 }
 
 /**
@@ -1093,6 +1098,8 @@ export function DraftRoomV2Page({
   const quickActiveIndex = quickResults.length ? Math.min(quickIndex, quickResults.length - 1) : 0;
 
   const recordFromQuickCapture = async (playerId: string) => {
+    const candidate = quickResults.find((row) => row.playerId === playerId);
+    if (candidate?.rosterLegal === false) return;
     if (!canRecordPick || Boolean(working)) return;
     quickCaptureActive.current = true;
     await mark(playerId);
@@ -1293,15 +1300,18 @@ export function DraftRoomV2Page({
           const ranked = data.rankings.find((row) => row.playerId === playerId);
           const manual = data.manualAssets?.find((row) => row.playerId === playerId);
           if (!ranked && !manual) return null;
+          const legality = (ranked ?? manual) as ({ rosterLegal?: boolean; legalityReason?: string } | undefined);
           return {
             playerId,
             playerName: ranked?.playerName ?? manual?.playerName ?? playerId,
             position: ranked?.position ?? manual?.position ?? "?",
             team: ranked?.team ?? manual?.team ?? "",
             nwrRank: ranked?.overallRank ?? null,
+            rosterLegal: legality?.rosterLegal !== false,
+            legalityReason: legality?.legalityReason ?? "Roster legality is unavailable.",
           };
         })
-        .filter((row): row is { playerId: string; playerName: string; position: string; team: string; nwrRank: number | null } => row !== null),
+        .filter((row): row is { playerId: string; playerName: string; position: string; team: string; nwrRank: number | null; rosterLegal: boolean; legalityReason: string } => row !== null),
     [queuedIds, data.rankings, data.manualAssets],
   );
 
@@ -1331,6 +1341,7 @@ export function DraftRoomV2Page({
   // Resolves from the one shared, correctly-sourced map instead.
   const drawerUdkEntry = drawerPlayerId ? udkById.get(drawerPlayerId) : undefined;
   const drawerRanking = drawerPlayerId ? data.rankings.find((row) => row.playerId === drawerPlayerId) : undefined;
+  const drawerAsset = drawerRanking ?? (drawerPlayerId ? data.manualAssets?.find((row) => row.playerId === drawerPlayerId) : undefined);
   const drawerCandidate =
     drawerPlayerId && decisionBundle && decisionBundle.available
       ? decisionBundle.candidates.find((c) => c.playerId === drawerPlayerId)
@@ -1455,6 +1466,7 @@ export function DraftRoomV2Page({
                   title="Click for player detail"
                 >
                   <strong>{candidate.playerName}</strong>
+                  {candidate.rosterLegal === false ? <small title={candidate.legalityReason}>Illegal for roster</small> : null}
                   <small>{candidate.team} · {candidate.position}</small>
                 </span>
                 {/* P0 owner-workflow rescue, section 4/11: explicit
@@ -1464,7 +1476,8 @@ export function DraftRoomV2Page({
                 <span className="rapid-capture__actions">
                   <Button
                     data-draft-action
-                    disabled={!canRecordPick || Boolean(working)}
+                    disabled={!canRecordPick || Boolean(working) || candidate.rosterLegal === false}
+                    title={candidate.rosterLegal === false ? candidate.legalityReason : "Record this pick."}
                     variant="primary"
                     onClick={() => void recordFromQuickCapture(candidate.playerId)}
                   >
@@ -1661,6 +1674,8 @@ export function DraftRoomV2Page({
         <PlayerDrawer
           playerId={drawerPlayerId}
           ranking={drawerRanking}
+          rosterLegal={(drawerAsset as ({ rosterLegal?: boolean } | undefined))?.rosterLegal !== false}
+          legalityReason={(drawerAsset as ({ legalityReason?: string } | undefined))?.legalityReason ?? "Roster legality is unavailable."}
           intel={drawerEntry}
           udkEntry={drawerUdkEntry}
           candidate={drawerCandidate}
@@ -2532,7 +2547,7 @@ function LeftUtilityPane({
   myTeam: MyTeamSummary;
   currentScores: CurrentRosterScores;
   teams: DraftTeam[];
-  queueRows: Array<{ playerId: string; playerName: string; position: string; team: string; nwrRank: number | null }>;
+  queueRows: QueueRow[];
   canRecordPick: boolean;
   working: string;
   onDraft: (playerId: string) => void;
@@ -2869,7 +2884,7 @@ function PlayersTab({
         ) },
         ...(onDraft ? [{ key: "actions", label: "", align: "right" as const, render: (row: Record<string, unknown>) => (
           <span className="draft-room-v2-pick-actions">
-            <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(String(row.playerId))}>
+            <Button data-draft-action disabled={!canRecordPick || Boolean(working) || row.rosterLegal === false} title={row.rosterLegal === false ? String(row.legalityReason) : "Draft this player."} variant="primary" onClick={() => onDraft(String(row.playerId))}>
               {working === String(row.playerId) ? "…" : "Draft"}
             </Button>
             {onQueue ? <Button variant="ghost" onClick={() => onQueue(String(row.playerId))}>{queuedIds.includes(String(row.playerId)) ? "✓" : "Q"}</Button> : null}
@@ -2900,7 +2915,7 @@ function PlayersTab({
         ) },
         ...(onDraft ? [{ key: "actions", label: "", align: "right" as const, render: (row: Record<string, unknown>) => (
           <span className="draft-room-v2-pick-actions">
-            <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(String(row.playerId))}>
+            <Button data-draft-action disabled={!canRecordPick || Boolean(working) || row.rosterLegal === false} title={row.rosterLegal === false ? String(row.legalityReason) : "Draft this player."} variant="primary" onClick={() => onDraft(String(row.playerId))}>
               {working === String(row.playerId) ? "Saving…" : "Draft"}
             </Button>
             {onQueue ? <Button variant="ghost" onClick={() => onQueue(String(row.playerId))}>{queuedIds.includes(String(row.playerId)) ? "Queued" : "Queue"}</Button> : null}
@@ -3422,6 +3437,7 @@ function CompareTab({
           columns={[
             { key: "playerName", label: "Player", sort: "text" },
             { key: "position", label: "Pos", sort: "text" },
+            { key: "rosterLegal", label: "Legal", sort: "text", render: (row) => row.rosterLegal === false ? <span title={String(row.legalityReason)}><StatusBadge tone="blocked" label="No" /></span> : <StatusBadge tone="safe" label="Yes" /> },
             { key: "nwrRank", label: "NWR Rank", sort: "number", render: (row) => row.nwrRank == null ? "—" : `#${row.nwrRank}` },
             { key: "playerScore", label: "Player Score", sort: "number", render: (row) => row.playerScore == null ? "—" : formatNumber(row.playerScore as number, 1) },
             { key: "pickScore", label: "Pick Score", titleHint: "EXPERIMENTAL -- see the player drawer for full evidence/status detail.", sort: "number", render: (row) => {
@@ -3530,6 +3546,8 @@ interface QueueRow {
   position: string;
   team: string;
   nwrRank: number | null;
+  rosterLegal: boolean;
+  legalityReason: string;
 }
 
 /** First-class Queue -- a proven-absent capability (audited before being
@@ -3570,7 +3588,7 @@ function QueueTab({
         ) },
         { key: "actions", label: "", align: "right", render: (row) => (
           <span className="draft-room-v2-pick-actions">
-            <Button data-draft-action disabled={!canRecordPick || Boolean(working)} variant="primary" onClick={() => onDraft(String(row.playerId))}>
+            <Button data-draft-action disabled={!canRecordPick || Boolean(working) || row.rosterLegal === false} title={row.rosterLegal === false ? String(row.legalityReason) : "Draft this player."} variant="primary" onClick={() => onDraft(String(row.playerId))}>
               {working === String(row.playerId) ? "…" : "Draft"}
             </Button>
             <Button variant="ghost" onClick={() => onRemove(String(row.playerId))}>{compact ? "✕" : "Remove"}</Button>
@@ -3602,6 +3620,8 @@ function QueueTab({
 function PlayerDrawer({
   playerId,
   ranking,
+  rosterLegal,
+  legalityReason,
   intel,
   udkEntry,
   candidate,
@@ -3623,6 +3643,8 @@ function PlayerDrawer({
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
+  rosterLegal: boolean;
+  legalityReason: string;
   intel: RedraftExternalIntelligenceEntry | undefined;
   // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 3): the one authoritative
   // Ballers/UDK source (see `buildUdkEntryById`) -- replaces the drawer's
@@ -3672,13 +3694,14 @@ function PlayerDrawer({
       <div className="player-drawer__actions">
         <Button
           data-draft-action
-          disabled={!canRecordPick || Boolean(working)}
+          disabled={!canRecordPick || Boolean(working) || !rosterLegal}
           variant="primary"
           onClick={() => onDraft(playerId)}
-          title={canRecordPick ? "Records this pick for whichever team is currently on the clock." : "Start the draft, and wait for your turn, to record picks here."}
+          title={!rosterLegal ? legalityReason : canRecordPick ? "Records this pick for whichever team is currently on the clock." : "Start the draft, and wait for your turn, to record picks here."}
         >
           {working === playerId ? "Saving…" : "Draft"}
         </Button>
+        {!rosterLegal ? <StatusBadge tone="blocked" label="Illegal for roster" /> : null}
         <Button variant="ghost" onClick={() => onQueue(playerId)}>{isQueued ? "Queued" : "Queue"}</Button>
       </div>
       {/* NWR FINAL OWNER-FEEDBACK CLOSURE (section B): this is now the
