@@ -2329,17 +2329,19 @@ class DesktopBackendFacade:
         risk intake CONTRACT (`add_verified_status_override`,
         current_player_status_overrides_service.py) has existed since the
         post-draft overnight repair, with real validation (kind must be
-        one of the three real, disclosed kinds; at least one cited source;
+        one of the real, disclosed kinds; at least one cited source;
         real ISO dates; no silently-stacked duplicate) -- but was never
         reachable from any facade method, HTTP route, or GUI control. The
         only way to add a new real, verified event was to hand-edit the
         committed JSON file directly, bypassing that validation entirely.
-        This wires the existing, already-tested contract as-is: no new
-        event kinds invented here (the real taxonomy is SEASON_OUT /
-        NOT_WITH_TEAM / TEAM_CORRECTION -- see
-        docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md for why this
-        differs from a richer taxonomy that was assumed but never actually
-        built). A rejected submission surfaces the real, specific reason
+        This wires the existing, already-tested contract as-is (the real
+        taxonomy was originally SEASON_OUT / NOT_WITH_TEAM /
+        TEAM_CORRECTION -- see docs/codex/NWR_STATUS_RISK_INTAKE_PATH_V1_20260908.md
+        for why this differs from a richer taxonomy that was assumed but
+        never actually built; NWR Overnight V3 Lane 1 later closed one
+        real, evidenced gap in it by adding ADMINISTRATIVE_EXEMPT, still
+        following this same intake contract -- no other kinds invented
+        here). A rejected submission surfaces the real, specific reason
         (`StatusOverrideIntakeError`) rather than a generic failure, so an
         owner-facing caller can show it directly.
 

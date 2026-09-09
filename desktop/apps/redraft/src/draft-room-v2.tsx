@@ -2340,10 +2340,21 @@ function SuggestionsTab({
       ) : null}
       <Panel
         title="Suggestions"
-        // NWR FINAL OWNER-FEEDBACK RECONCILIATION: "Real DecisionBundle
-        // candidates" was backend-module terminology living in prime UI --
-        // the underlying data/sort order is unchanged, only the label.
-        eyebrow="Default sorted by Pick Score, descending"
+        // NWR OVERNIGHT V3 (Lane 1, Pick Score ordering trace): this label
+        // was stale. Since the marginal-roster-utility walk-forward
+        // promotion (docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md),
+        // `_candidate_sort_key` in decision_bundle_service.py sorts
+        // PRIMARILY by marginal_utility, with pick_score only a tiebreak
+        // (see that function's docstring). This label still claimed "Default
+        // sorted by Pick Score" -- honest and true before the promotion,
+        // false afterward. A genuine no-spread Pick Score cluster (many rows
+        // at 50.0, disclosed via pickScoreTiedNoSpread) is real and expected,
+        // but the rows are NOT in arbitrary order within that cluster --
+        // they're still ordered by the real marginal-utility signal. The old
+        // label made that real ordering look arbitrary. buildSuggestionsRows
+        // itself was already correct (no client-side re-sort -- see its own
+        // docstring above); this was a labeling bug, not a sort bug.
+        eyebrow="Default sorted by NWR's roster-value ranking (Pick Score shown as the tiebreak)"
         action={
           <Button
             variant={showBallers ? "primary" : "ghost"}
@@ -3942,6 +3953,7 @@ function StatusOverrideForm({
         <select value={kind} onChange={(event) => setKind(event.target.value as PlayerStatusOverride["kind"])}>
           <option value="SEASON_OUT">Season out (injury)</option>
           <option value="NOT_WITH_TEAM">Not with team (unsigned)</option>
+          <option value="ADMINISTRATIVE_EXEMPT">Administrative exempt (e.g. Commissioner Exempt list)</option>
           <option value="TEAM_CORRECTION">Team correction</option>
         </select>
       </label>

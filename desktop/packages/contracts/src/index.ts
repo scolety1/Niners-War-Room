@@ -996,7 +996,7 @@ export interface MarginalRosterUtility {
 export interface PlayerStatusOverride {
   playerId: string;
   playerName: string;
-  kind: "SEASON_OUT" | "NOT_WITH_TEAM" | "TEAM_CORRECTION";
+  kind: "SEASON_OUT" | "NOT_WITH_TEAM" | "ADMINISTRATIVE_EXEMPT" | "TEAM_CORRECTION";
   reason: string;
   effectiveDate: string;
   verifiedAtUtc: string;
