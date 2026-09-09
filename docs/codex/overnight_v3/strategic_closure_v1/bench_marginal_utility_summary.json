@@ -1,0 +1,694 @@
+{
+  "seasons": [
+    2019,
+    2021,
+    2022,
+    2023
+  ],
+  "configs": {
+    "8team": {
+      "team_count": 8,
+      "superflex": false,
+      "replacement_rank": {
+        "QB": 8,
+        "RB": 20,
+        "WR": 20,
+        "TE": 8
+      },
+      "replacement_level": {
+        "2019_QB": 285.3,
+        "2019_RB": 197.6,
+        "2019_WR": 219.8,
+        "2019_TE": 160.4,
+        "2021_QB": 314.2,
+        "2021_RB": 195.1,
+        "2021_WR": 231.8,
+        "2021_TE": 165.0,
+        "2022_QB": 291.6,
+        "2022_RB": 196.3,
+        "2022_WR": 216.5,
+        "2022_TE": 147.3,
+        "2023_QB": 280.2,
+        "2023_RB": 199.3,
+        "2023_WR": 227.0,
+        "2023_TE": 181.1
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -230.43,
+          "mean_flex_worthy_week_rate": 0.1206,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -94.33,
+          "mean_flex_worthy_week_rate": 0.235,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.1016
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -154.6,
+          "mean_flex_worthy_week_rate": 0.0796,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -167.52,
+          "mean_flex_worthy_week_rate": 0.0524,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -75.94,
+          "mean_flex_worthy_week_rate": 0.3215,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.1875
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -126.0,
+          "mean_flex_worthy_week_rate": 0.1794,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.0469
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -168.88,
+          "mean_flex_worthy_week_rate": 0.0863,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0079
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -191.94,
+          "mean_flex_worthy_week_rate": 0.0518,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -198.26,
+          "mean_flex_worthy_week_rate": 0.0355,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -114.73,
+          "mean_flex_worthy_week_rate": 0.1052,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0157
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -139.56,
+          "mean_flex_worthy_week_rate": 0.0462,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -153.06,
+          "mean_flex_worthy_week_rate": 0.0253,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    },
+    "10team": {
+      "team_count": 10,
+      "superflex": false,
+      "replacement_rank": {
+        "QB": 10,
+        "RB": 25,
+        "WR": 24,
+        "TE": 10
+      },
+      "replacement_level": {
+        "2019_QB": 275.9,
+        "2019_RB": 167.2,
+        "2019_WR": 212.7,
+        "2019_TE": 144.7,
+        "2021_QB": 300.5,
+        "2021_RB": 173.6,
+        "2021_WR": 219.1,
+        "2021_TE": 164.3,
+        "2022_QB": 284.3,
+        "2022_RB": 168.3,
+        "2022_WR": 199.1,
+        "2022_TE": 142.7,
+        "2023_QB": 274.1,
+        "2023_RB": 187.0,
+        "2023_WR": 218.6,
+        "2023_TE": 150.5
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -221.25,
+          "mean_flex_worthy_week_rate": 0.1287,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -71.28,
+          "mean_flex_worthy_week_rate": 0.2772,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.1406
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -131.52,
+          "mean_flex_worthy_week_rate": 0.1016,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0085
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -142.35,
+          "mean_flex_worthy_week_rate": 0.0625,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -64.53,
+          "mean_flex_worthy_week_rate": 0.3428,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.2188
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -114.59,
+          "mean_flex_worthy_week_rate": 0.1996,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.0859
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -157.41,
+          "mean_flex_worthy_week_rate": 0.0983,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0079
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -180.45,
+          "mean_flex_worthy_week_rate": 0.0573,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -186.36,
+          "mean_flex_worthy_week_rate": 0.0396,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -101.86,
+          "mean_flex_worthy_week_rate": 0.1258,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0236
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -126.11,
+          "mean_flex_worthy_week_rate": 0.0635,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -141.12,
+          "mean_flex_worthy_week_rate": 0.0426,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    },
+    "12team": {
+      "team_count": 12,
+      "superflex": false,
+      "replacement_rank": {
+        "QB": 12,
+        "RB": 30,
+        "WR": 29,
+        "TE": 13
+      },
+      "replacement_level": {
+        "2019_QB": 263.7,
+        "2019_RB": 153.2,
+        "2019_WR": 191.9,
+        "2019_TE": 123.7,
+        "2021_QB": 268.4,
+        "2021_RB": 148.6,
+        "2021_WR": 186.3,
+        "2021_TE": 151.7,
+        "2022_QB": 271.7,
+        "2022_RB": 158.5,
+        "2022_WR": 180.7,
+        "2022_TE": 139.5,
+        "2023_QB": 262.5,
+        "2023_RB": 174.5,
+        "2023_WR": 208.8,
+        "2023_TE": 137.3
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -204.02,
+          "mean_flex_worthy_week_rate": 0.134,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -55.95,
+          "mean_flex_worthy_week_rate": 0.3122,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.2031
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -116.16,
+          "mean_flex_worthy_week_rate": 0.1177,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0339
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -126.85,
+          "mean_flex_worthy_week_rate": 0.0795,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -44.09,
+          "mean_flex_worthy_week_rate": 0.383,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.2969
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -94.14,
+          "mean_flex_worthy_week_rate": 0.2322,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.1016
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -136.88,
+          "mean_flex_worthy_week_rate": 0.1176,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0159
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -160.01,
+          "mean_flex_worthy_week_rate": 0.0715,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -165.61,
+          "mean_flex_worthy_week_rate": 0.049,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -89.42,
+          "mean_flex_worthy_week_rate": 0.1531,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0472
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -113.94,
+          "mean_flex_worthy_week_rate": 0.0798,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -128.49,
+          "mean_flex_worthy_week_rate": 0.0498,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    },
+    "16team": {
+      "team_count": 16,
+      "superflex": false,
+      "replacement_rank": {
+        "QB": 16,
+        "RB": 40,
+        "WR": 39,
+        "TE": 17
+      },
+      "replacement_level": {
+        "2019_QB": 244.4,
+        "2019_RB": 121.9,
+        "2019_WR": 165.1,
+        "2019_TE": 110.1,
+        "2021_QB": 240.0,
+        "2021_RB": 124.1,
+        "2021_WR": 159.3,
+        "2021_TE": 133.5,
+        "2022_QB": 225.8,
+        "2022_RB": 126.0,
+        "2022_WR": 167.1,
+        "2022_TE": 122.6,
+        "2023_QB": 241.1,
+        "2023_RB": 121.3,
+        "2023_WR": 165.0,
+        "2023_TE": 124.2
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -176.61,
+          "mean_flex_worthy_week_rate": 0.1824,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -20.58,
+          "mean_flex_worthy_week_rate": 0.4063,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.3125
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -80.9,
+          "mean_flex_worthy_week_rate": 0.1602,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0847
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -94.48,
+          "mean_flex_worthy_week_rate": 0.1141,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -16.29,
+          "mean_flex_worthy_week_rate": 0.4492,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.4062
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -66.34,
+          "mean_flex_worthy_week_rate": 0.2827,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.1641
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -109.2,
+          "mean_flex_worthy_week_rate": 0.1648,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0317
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -132.2,
+          "mean_flex_worthy_week_rate": 0.0846,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -138.89,
+          "mean_flex_worthy_week_rate": 0.0521,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -73.96,
+          "mean_flex_worthy_week_rate": 0.182,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0472
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -98.51,
+          "mean_flex_worthy_week_rate": 0.0974,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -112.59,
+          "mean_flex_worthy_week_rate": 0.0498,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    },
+    "10team_SFLX": {
+      "team_count": 10,
+      "superflex": true,
+      "replacement_rank": {
+        "QB": 17,
+        "RB": 25,
+        "WR": 24,
+        "TE": 10
+      },
+      "replacement_level": {
+        "2019_QB": 241.5,
+        "2019_RB": 167.2,
+        "2019_WR": 212.7,
+        "2019_TE": 144.7,
+        "2021_QB": 227.5,
+        "2021_RB": 173.6,
+        "2021_WR": 219.1,
+        "2021_TE": 164.3,
+        "2022_QB": 219.1,
+        "2022_RB": 168.3,
+        "2022_WR": 199.1,
+        "2022_TE": 142.7,
+        "2023_QB": 234.2,
+        "2023_RB": 187.0,
+        "2023_WR": 218.6,
+        "2023_TE": 150.5
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -169.33,
+          "mean_flex_worthy_week_rate": 0.1844,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -71.28,
+          "mean_flex_worthy_week_rate": 0.2772,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.1406
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -131.52,
+          "mean_flex_worthy_week_rate": 0.1016,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0085
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -142.35,
+          "mean_flex_worthy_week_rate": 0.0625,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -64.53,
+          "mean_flex_worthy_week_rate": 0.3428,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.2188
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -114.59,
+          "mean_flex_worthy_week_rate": 0.1996,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.0859
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -157.41,
+          "mean_flex_worthy_week_rate": 0.0983,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0079
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -180.45,
+          "mean_flex_worthy_week_rate": 0.0573,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -186.36,
+          "mean_flex_worthy_week_rate": 0.0396,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -101.86,
+          "mean_flex_worthy_week_rate": 0.1258,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0236
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -126.11,
+          "mean_flex_worthy_week_rate": 0.0635,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -141.12,
+          "mean_flex_worthy_week_rate": 0.0426,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    },
+    "12team_SFLX": {
+      "team_count": 12,
+      "superflex": true,
+      "replacement_rank": {
+        "QB": 20,
+        "RB": 30,
+        "WR": 29,
+        "TE": 13
+      },
+      "replacement_level": {
+        "2019_QB": 229.2,
+        "2019_RB": 153.2,
+        "2019_WR": 191.9,
+        "2019_TE": 123.7,
+        "2021_QB": 222.9,
+        "2021_RB": 148.6,
+        "2021_WR": 186.3,
+        "2021_TE": 151.7,
+        "2022_QB": 196.6,
+        "2022_RB": 158.5,
+        "2022_WR": 180.7,
+        "2022_TE": 139.5,
+        "2023_QB": 200.7,
+        "2023_RB": 174.5,
+        "2023_WR": 208.8,
+        "2023_TE": 137.3
+      },
+      "summary": {
+        "QB2": {
+          "n": 31,
+          "mean_incremental_season_pts": -150.88,
+          "mean_flex_worthy_week_rate": 0.2111,
+          "mean_weeks_played": 7.71,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "RB2": {
+          "n": 128,
+          "mean_incremental_season_pts": -55.95,
+          "mean_flex_worthy_week_rate": 0.3122,
+          "mean_weeks_played": 13.03,
+          "pct_team_seasons_incremental_positive": 0.2031
+        },
+        "RB3": {
+          "n": 118,
+          "mean_incremental_season_pts": -116.16,
+          "mean_flex_worthy_week_rate": 0.1177,
+          "mean_weeks_played": 10.03,
+          "pct_team_seasons_incremental_positive": 0.0339
+        },
+        "RB4": {
+          "n": 26,
+          "mean_incremental_season_pts": -126.85,
+          "mean_flex_worthy_week_rate": 0.0795,
+          "mean_weeks_played": 9.12,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "WR2": {
+          "n": 128,
+          "mean_incremental_season_pts": -44.09,
+          "mean_flex_worthy_week_rate": 0.383,
+          "mean_weeks_played": 13.7,
+          "pct_team_seasons_incremental_positive": 0.2969
+        },
+        "WR3": {
+          "n": 128,
+          "mean_incremental_season_pts": -94.14,
+          "mean_flex_worthy_week_rate": 0.2322,
+          "mean_weeks_played": 12.98,
+          "pct_team_seasons_incremental_positive": 0.1016
+        },
+        "WR4": {
+          "n": 126,
+          "mean_incremental_season_pts": -136.88,
+          "mean_flex_worthy_week_rate": 0.1176,
+          "mean_weeks_played": 10.88,
+          "pct_team_seasons_incremental_positive": 0.0159
+        },
+        "WR5": {
+          "n": 114,
+          "mean_incremental_season_pts": -160.01,
+          "mean_flex_worthy_week_rate": 0.0715,
+          "mean_weeks_played": 10.38,
+          "pct_team_seasons_incremental_positive": 0.0088
+        },
+        "WR6": {
+          "n": 27,
+          "mean_incremental_season_pts": -165.61,
+          "mean_flex_worthy_week_rate": 0.049,
+          "mean_weeks_played": 10.19,
+          "pct_team_seasons_incremental_positive": 0.0
+        },
+        "TE2": {
+          "n": 127,
+          "mean_incremental_season_pts": -89.42,
+          "mean_flex_worthy_week_rate": 0.1531,
+          "mean_weeks_played": 10.97,
+          "pct_team_seasons_incremental_positive": 0.0472
+        },
+        "TE3": {
+          "n": 98,
+          "mean_incremental_season_pts": -113.94,
+          "mean_flex_worthy_week_rate": 0.0798,
+          "mean_weeks_played": 8.29,
+          "pct_team_seasons_incremental_positive": 0.0102
+        },
+        "TE4": {
+          "n": 14,
+          "mean_incremental_season_pts": -128.49,
+          "mean_flex_worthy_week_rate": 0.0498,
+          "mean_weeks_played": 5.93,
+          "pct_team_seasons_incremental_positive": 0.0
+        }
+      }
+    }
+  }
+}

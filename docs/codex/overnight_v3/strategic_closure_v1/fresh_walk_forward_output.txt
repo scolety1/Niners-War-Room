@@ -1,0 +1,22 @@
+=== FRESH WALK-FORWARD V1: REFERENCE vs CHALLENGER (real nflverse outcomes) ===
+
+draft=2018->eval=2019 slot= 1  REF starting-lineup-value= 1510.9 {'QB': 2, 'WR': 8, 'TE': 3, 'RB': 3}  CHAL starting-lineup-value= 1642.0 {'QB': 1, 'WR': 7, 'TE': 3, 'RB': 5}  delta= +131.1
+draft=2018->eval=2019 slot= 5  REF starting-lineup-value= 1681.7 {'QB': 2, 'WR': 8, 'RB': 3, 'TE': 3}  CHAL starting-lineup-value= 1855.4 {'QB': 1, 'WR': 7, 'RB': 5, 'TE': 3}  delta= +173.7
+draft=2018->eval=2019 slot=10  REF starting-lineup-value= 1449.5 {'QB': 2, 'WR': 8, 'TE': 3, 'RB': 3}  CHAL starting-lineup-value= 1546.5 {'QB': 1, 'WR': 6, 'TE': 4, 'RB': 5}  delta=  +97.0
+draft=2021->eval=2022 slot= 1  REF starting-lineup-value= 1783.2 {'WR': 8, 'QB': 2, 'RB': 3, 'TE': 3}  CHAL starting-lineup-value= 1810.9 {'WR': 7, 'QB': 1, 'RB': 5, 'TE': 3}  delta=  +27.7
+draft=2021->eval=2022 slot= 5  REF starting-lineup-value= 1526.8 {'RB': 3, 'WR': 8, 'QB': 2, 'TE': 3}  CHAL starting-lineup-value= 1387.1 {'RB': 5, 'WR': 7, 'QB': 1, 'TE': 3}  delta= -139.6
+draft=2021->eval=2022 slot=10  REF starting-lineup-value= 1801.4 {'QB': 2, 'WR': 8, 'RB': 3, 'TE': 3}  CHAL starting-lineup-value= 1744.7 {'QB': 1, 'WR': 7, 'RB': 5, 'TE': 3}  delta=  -56.8
+draft=2022->eval=2023 slot= 1  REF starting-lineup-value= 1670.6 {'QB': 2, 'RB': 3, 'WR': 8, 'TE': 3}  CHAL starting-lineup-value= 1461.0 {'QB': 1, 'RB': 5, 'WR': 7, 'TE': 3}  delta= -209.6
+draft=2022->eval=2023 slot= 5  REF starting-lineup-value= 1658.8 {'WR': 8, 'QB': 2, 'RB': 3, 'TE': 3}  CHAL starting-lineup-value= 1353.1 {'WR': 7, 'QB': 1, 'RB': 5, 'TE': 3}  delta= -305.7
+draft=2022->eval=2023 slot=10  REF starting-lineup-value= 1521.3 {'RB': 3, 'WR': 8, 'QB': 2, 'TE': 3}  CHAL starting-lineup-value= 1582.4 {'RB': 6, 'WR': 6, 'QB': 1, 'TE': 3}  delta=  +61.1
+
+=== SUMMARY (n=9 paired observations) ===
+mean_delta (CHALLENGER - REFERENCE starting-lineup value) = -24.56
+CHALLENGER wins=5  losses=4  ties=0
+REFERENCE position-hoarding rate (max position count >=7): 100.0%
+CHALLENGER position-hoarding rate (max position count >=7): 77.8%
+
+Per draft-year mean delta:
+  2018->2019: mean_delta=+133.93  ref_mean=1547.4  chal_mean=1681.3
+  2021->2022: mean_delta=-56.24  ref_mean=1703.8  chal_mean=1647.6
+  2022->2023: mean_delta=-151.37  ref_mean=1616.9  chal_mean=1465.5

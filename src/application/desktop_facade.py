@@ -2055,7 +2055,25 @@ class DesktopBackendFacade:
             warnings=normalized_warnings,
         )
 
-    def create_redraft_profile(self, *, preset_key: str, league_name: str | None) -> FacadePayload:
+    def create_redraft_profile(
+        self,
+        *,
+        preset_key: str,
+        league_name: str | None,
+        roster_limits: Mapping[str, object] | None = None,
+    ) -> FacadePayload:
+        """NWR overnight V3 strategic closure (section 10, "create_profile
+        roster_limits at creation time"): `roster_limits` is optional and
+        plumbing-only -- omitted or None leaves the preset template's own
+        roster_limits exactly as before (unknown stays unknown, no
+        behavior change for any existing caller). When a real caller
+        (platform import wiring, or an owner-authored manual profile)
+        supplies real limits, they are validated with the SAME rules
+        `update_redraft_profile` already applies (shared via
+        `_validate_roster_limits_payload`, not a second, drifting
+        validator) and persisted immediately -- no create-then-
+        immediately-edit round trip is required just to establish real
+        draft legality on a fresh profile."""
         self._require_mode("redraft")
         requested = str(preset_key or "").strip()
         template = next(
@@ -2070,11 +2088,13 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "REDRAFT_PRESET_NOT_FOUND", "The requested Redraft preset was not found."
             )
+        normalized_roster_limits = self._validate_roster_limits_payload(roster_limits)
         try:
             profile = create_profile(
                 self.redraft_root,
                 template,
                 league_name=(str(league_name).strip() if league_name is not None else None),
+                roster_limits=normalized_roster_limits,
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             raise FacadeError(
@@ -2605,6 +2625,36 @@ class DesktopBackendFacade:
             ) from exc
         return FacadePayload(data={"profile": self._profile_payload(profile)})
 
+    @staticmethod
+    def _validate_roster_limits_payload(roster_limits: Any) -> dict[str, int] | None:
+        """Shared validation for the owner-supplied position-maximum map
+        (`rosterLimits`) -- used identically at both profile UPDATE (the
+        original call site) and profile CREATE time (NWR overnight V3
+        strategic closure, section 10: creation previously had no way to
+        set this at all, forcing a create-then-immediately-edit round
+        trip just to establish real legality on a fresh profile). Returns
+        None when the caller supplied nothing at all -- stays unknown,
+        never invented -- else a normalized {POSITION: int} map."""
+        if roster_limits is None:
+            return None
+        if not isinstance(roster_limits, Mapping):
+            raise FacadeError(
+                "REDRAFT_PROFILE_DRAFT_INVALID",
+                "Roster limits must be a position-to-maximum mapping.",
+            )
+        supported_positions = {"QB", "RB", "WR", "TE", "K", "DST"}
+        if any(str(position).strip().upper() not in supported_positions for position in roster_limits):
+            raise FacadeError(
+                "REDRAFT_PROFILE_DRAFT_INVALID",
+                "Roster limits contain an unsupported position.",
+            )
+        if any(type(limit) is not int or limit < 0 for limit in roster_limits.values()):
+            raise FacadeError(
+                "REDRAFT_PROFILE_DRAFT_INVALID",
+                "Roster limits must be non-negative integers.",
+            )
+        return {str(position).strip().upper(): int(limit) for position, limit in roster_limits.items()}
+
     def update_redraft_profile(
         self,
         profile_id: str,
@@ -2699,24 +2749,7 @@ class DesktopBackendFacade:
                 "REDRAFT_PROFILE_DRAFT_INVALID",
                 "Replacement method must be a supported option.",
             )
-        roster_limits = draft.get("rosterLimits")
-        if roster_limits is not None:
-            if not isinstance(roster_limits, Mapping):
-                raise FacadeError(
-                    "REDRAFT_PROFILE_DRAFT_INVALID",
-                    "Roster limits must be a position-to-maximum mapping.",
-                )
-            supported_positions = {"QB", "RB", "WR", "TE", "K", "DST"}
-            if any(str(position).strip().upper() not in supported_positions for position in roster_limits):
-                raise FacadeError(
-                    "REDRAFT_PROFILE_DRAFT_INVALID",
-                    "Roster limits contain an unsupported position.",
-                )
-            if any(type(limit) is not int or limit < 0 for limit in roster_limits.values()):
-                raise FacadeError(
-                    "REDRAFT_PROFILE_DRAFT_INVALID",
-                    "Roster limits must be non-negative integers.",
-                )
+        self._validate_roster_limits_payload(draft.get("rosterLimits"))
         try:
             prior = load_profile(self.redraft_root, normalized)
             roster_values = {key: value for key, value in roster.items() if key != "benchSize"}

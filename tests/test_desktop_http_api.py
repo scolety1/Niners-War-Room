@@ -156,8 +156,10 @@ class FakeFacade:
         self.calls.append(("planning", value))
         return FacadePayload(data={"storeStatus": "loaded", "modules": [value]})
 
-    def create_redraft_profile(self, *, preset_key: str, league_name: str | None) -> FacadePayload:
-        value = {"presetKey": preset_key, "leagueName": league_name}
+    def create_redraft_profile(
+        self, *, preset_key: str, league_name: str | None, roster_limits: object | None = None
+    ) -> FacadePayload:
+        value = {"presetKey": preset_key, "leagueName": league_name, "rosterLimits": roster_limits}
         self.calls.append(("create", value))
         return FacadePayload(data={"profile": {"profileId": "created-profile"}})
 
@@ -711,7 +713,7 @@ def test_redraft_mutation_routes_return_bootstrap_and_reject_pick_metadata() -> 
     assert created[0] == activated[0] == marked[0] == undone[0] == 200
     assert created[2]["data"]["activeProfileId"] == "created-profile"
     assert facade.calls[:2] == [
-        ("create", {"presetKey": "12_TEAM_PPR", "leagueName": "Fixture"}),
+        ("create", {"presetKey": "12_TEAM_PPR", "leagueName": "Fixture", "rosterLimits": None}),
         ("activate", "created-profile"),
     ]
     assert rejected[0] == 400

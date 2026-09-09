@@ -1,0 +1,29 @@
+created profile 72f844349f6443ac9f390b1dcd31c099
+scoring/roster updated
+skill manual assets: 14 added, total 14
+kdst manual assets: 64 added, total 78
+draft room started
+TURN 0: PICK NOW = Jahmyr Gibbs (RB)  latency=6.561s  legal=None
+TURN 1: PICK NOW = Josh Allen (QB)  latency=4.910s  legal=None
+TURN 2: PICK NOW = Zay Flowers (WR)  latency=4.757s  legal=None
+TURN 3: PICK NOW = Jameson Williams (WR)  latency=4.204s  legal=None
+TURN 4: PICK NOW = Breece Hall (RB)  latency=4.128s  legal=None
+TURN 5: PICK NOW = DeVonta Smith (WR)  latency=3.600s  legal=None
+TURN 6: PICK NOW = Deebo Samuel Sr. (WR)  latency=3.525s  legal=None
+TURN 7: PICK NOW = Jakobi Meyers (WR)  latency=3.061s  legal=None
+TURN 8: PICK NOW = DJ Moore (WR)  latency=2.997s  legal=None
+TURN 9: PICK NOW = Rashid Shaheed (WR)  latency=2.545s  legal=None
+TURN 10: PICK NOW = Makai Lemon (WR)  latency=2.412s  legal=None
+TURN 11: PICK NOW = Jacoby Brissett (QB)  latency=1.902s  legal=None
+TURN 12: PICK NOW = Mark Andrews (TE)  latency=1.819s  legal=None
+TURN 13: PICK NOW = Theo Johnson (TE)  latency=1.098s  legal=None
+TURN 14: PICK NOW = Atlanta Falcons D/ST (DST)  latency=0.256s  legal=None
+TURN 15: PICK NOW = Andre Szmyt (K)  latency=0.102s  legal=None
+TURN 16: decision bundle unavailable: It is not currently the owner's turn (pick 161 belongs to team None) -- DecisionBundle recommendations are only computed for the immediate next owner pick, never a hypothetical future turn.
+
+=== 16 owner picks recorded ===
+Position counts: {'RB': 2, 'QB': 2, 'WR': 8, 'TE': 2, 'DST': 1, 'K': 1}
+Illegal top-candidate turns: 0
+Illegal-in-top-5 turns: 0
+Latency: n=16  mean=2.992s  median=3.061s  p95=6.561s  min=0.102s  max=6.561s  first(cold)=6.561s
+wrote C:/Users/CODEX-~1/AppData/Local/Temp/claude/C--NWR-Niners-War-Room/73e6052b-0875-45e0-8c65-6e7ac0e890f3/scratchpad/live_blind_draft_trace.json

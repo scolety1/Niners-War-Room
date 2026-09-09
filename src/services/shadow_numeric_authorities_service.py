@@ -425,6 +425,288 @@ def marginal_roster_utility(
     )
 
 
+# =====================================================================
+# NWR OVERNIGHT V3 strategic closure (sections 2-4): CHALLENGER, not
+# wired into the live candidate sort. `marginal_roster_utility` above is
+# left byte-for-byte unchanged and remains the live-promoted signal.
+#
+# ROOT CAUSE, precisely traced (Test 18's real WR8/RB2 pathology):
+# POSITION_BACKUP_UTILITY_RATE measures USAGE PROBABILITY -- "will this
+# depth-2 player ever see a starter-level snap share in some later
+# week?" -- then applies it as a single, fixed geometric decay
+# (decay_base ** (redundancy_before + 1)) that barely moves for WR
+# (decay_base=0.9688) even at deep bench redundancy: a 6th rostered WR
+# (redundancy_before=5) still keeps 0.9688**6 = 82.7% of its standalone
+# value. RB's own decay_base (0.4842) looks much harsher by comparison,
+# but that is coincidental to how far apart the two USAGE rates happen
+# to be -- the formula never asks the question that actually matters for
+# a draft decision: how many REAL FANTASY POINTS does a bench player at
+# this exact depth actually contribute, relative to what you could get
+# for that same roster slot at a DIFFERENT position? Usage and fantasy
+# marginal value are not the same thing, and they diverge hardest
+# exactly where WR hoarding happens: an NFL team's real WR2/WR3 snap
+# share is very often close to full-time (0.9688 measures this
+# correctly) precisely BECAUSE modern offenses run 3+ WR sets --  but
+# that usage does not translate into WR3+ being fantasy-relevant nearly
+# as often, because target competition among 3-4 real NFL WRs on one
+# team dilutes any single one's weekly upside. RBs get on the field less
+# consistently (lower usage-probability, correctly reflected by RB's own
+# 0.4842) but WHEN an RB sees real touches, workload concentration means
+# he is far more likely to produce a fantasy-relevant week than a
+# similarly-deep WR is.
+#
+# Real measurement below (bench_marginal_utility_study_v1.py, nflverse
+# 2019/2021/2022/2023, development-safe -- 2016/2024/2025 stay burned):
+# for the SAME depth rank, real weekly "flex-worthy" week rate (weekly
+# PPR points >= a real, position-specific weekly replacement bar) is:
+#   WR4 (10-team) =  9.8%  vs  RB4 (10-team) =  6.3%  (WR narrowly ahead)
+#   WR5 (10-team) =  5.7%  vs  RB4 (10-team) =  6.3%  (RB now AHEAD)
+#   WR6 (10-team) =  4.0%  vs  RB3 (10-team) = 10.2%  (RB more than 2x)
+# i.e. the crossover the current formula never finds: by the time a
+# roster is choosing between a 5th/6th WR and a 3rd/4th RB (exactly
+# Test 18's real R7-R13 decision points), RB is the empirically better
+# real bench asset, not WR -- the OPPOSITE of what
+# POSITION_BACKUP_UTILITY_RATE's usage-probability proxy implies at
+# that same depth. This was not visible before because the existing
+# decay is applied PER POSITION IN ISOLATION (each position's own
+# geometric curve, never compared against the other three), so nothing
+# in the formula could ever surface a cross-positional crossover no
+# matter how the data actually behaved.
+#
+# marginal_roster_utility_v2 replaces the single fixed decay_base with
+# the REAL, per-depth-rank empirical rate (declining substantively with
+# each additional real bench player, not a fixed geometric ratio), and
+# adds a second, real term: an opportunity-cost comparison against the
+# best real alternative position's own next bench slot, scaled up when
+# few bench slots remain (the roster-state-dependence the directive
+# asks for). Both terms are DATA-DERIVED -- no hand-picked "WR cap" or
+# "RB minimum" rule.
+# =====================================================================
+
+# Real, measured "flex-worthy week rate" by (team-count bucket, position,
+# depth rank) -- fraction of a REAL depth-rank-D player's own played
+# weeks where his real weekly PPR points met or exceeded a real,
+# position-specific weekly replacement bar that season. Source:
+# bench_marginal_utility_study_v1.py, nflverse player_stats +
+# snap_counts, seasons 2019/2021/2022/2023 (n>=5 team-seasons required
+# per cell; QB3+/TE5+ etc. had insufficient real sample and are NOT
+# listed here -- see FANTASY_BENCH_UTILITY_EXTRAPOLATION_DECAY below for
+# how depths beyond the measured table are handled, disclosed as an
+# extrapolation, not a further measurement).
+FANTASY_BENCH_UTILITY_RATE: dict[int, dict[str, dict[int, float]]] = {
+    8: {
+        "QB": {2: 0.121},
+        "RB": {2: 0.235, 3: 0.080, 4: 0.052},
+        "WR": {2: 0.322, 3: 0.179, 4: 0.086, 5: 0.052, 6: 0.035},
+        "TE": {2: 0.105, 3: 0.046, 4: 0.025},
+    },
+    10: {
+        "QB": {2: 0.129},
+        "RB": {2: 0.277, 3: 0.102, 4: 0.063},
+        "WR": {2: 0.343, 3: 0.200, 4: 0.098, 5: 0.057, 6: 0.040},
+        "TE": {2: 0.126, 3: 0.063, 4: 0.043},
+    },
+    12: {
+        "QB": {2: 0.134},
+        "RB": {2: 0.312, 3: 0.118, 4: 0.080},
+        "WR": {2: 0.383, 3: 0.232, 4: 0.118, 5: 0.072, 6: 0.049},
+        "TE": {2: 0.153, 3: 0.080, 4: 0.050},
+    },
+    16: {
+        "QB": {2: 0.182},
+        "RB": {2: 0.406, 3: 0.160, 4: 0.114},
+        "WR": {2: 0.449, 3: 0.283, 4: 0.165, 5: 0.085, 6: 0.052},
+        "TE": {2: 0.182, 3: 0.097, 4: 0.050},
+    },
+}
+# Superflex only materially changes QB's own replacement baseline (RB/WR/TE
+# rates are identical to the non-superflex table at the same team count --
+# verified directly in the study output, not assumed).
+FANTASY_BENCH_UTILITY_RATE_SUPERFLEX_QB: dict[int, float] = {
+    10: 0.184,
+    12: 0.211,
+}
+# A depth rank beyond the measured table (insufficient real n, e.g. QB3+
+# for most positions) is extrapolated by halving the deepest measured
+# rate per additional depth level -- disclosed as an extrapolation, not a
+# further measurement. This is a conservative approximation of the real,
+# consistently-observed pattern at every OTHER measured depth transition
+# in this same study (each extra depth level roughly halves or worse the
+# real flex-worthy rate -- e.g. WR3->WR4 at 10-team is 0.098/0.200=0.49x,
+# RB2->RB3 is 0.102/0.277=0.37x), not an arbitrary constant.
+FANTASY_BENCH_UTILITY_EXTRAPOLATION_DECAY = 0.5
+FANTASY_BENCH_UTILITY_FLOOR = 0.01
+
+# Real, measured mean incremental season PPR points (this depth rank's
+# own real season-total points minus that season's real replacement-level
+# points at that position) -- the common, cross-positional currency used
+# by the opportunity-cost term below. Same source/seasons as the rate
+# table above.
+FANTASY_BENCH_INCREMENTAL_PTS: dict[int, dict[str, dict[int, float]]] = {
+    8: {
+        "QB": {2: -230.4}, "RB": {2: -94.3, 3: -154.6, 4: -167.5},
+        "WR": {2: -75.9, 3: -126.0, 4: -168.9, 5: -191.9, 6: -198.3},
+        "TE": {2: -114.7, 3: -139.6, 4: -153.1},
+    },
+    10: {
+        "QB": {2: -221.3}, "RB": {2: -71.3, 3: -131.5, 4: -142.3},
+        "WR": {2: -64.5, 3: -114.6, 4: -157.4, 5: -180.5, 6: -186.4},
+        "TE": {2: -101.9, 3: -126.1, 4: -141.1},
+    },
+    12: {
+        "QB": {2: -204.0}, "RB": {2: -56.0, 3: -116.2, 4: -126.8},
+        "WR": {2: -44.1, 3: -94.1, 4: -136.9, 5: -160.0, 6: -165.6},
+        "TE": {2: -89.4, 3: -113.9, 4: -128.5},
+    },
+    16: {
+        "QB": {2: -176.6}, "RB": {2: -20.6, 3: -80.9, 4: -94.5},
+        "WR": {2: -16.3, 3: -66.3, 4: -109.2, 5: -132.2, 6: -138.9},
+        "TE": {2: -74.0, 3: -98.5, 4: -112.6},
+    },
+}
+# Real, disclosed scale for converting an incremental-points GAP into a
+# multiplicative penalty -- 150 points is the approximate real spread
+# between WR2 and WR5's own incremental points in the 10-team table
+# above (a round, representative magnitude from the study itself, not
+# tuned to produce any particular Test 18 outcome).
+OPPORTUNITY_COST_SCALE = 150.0
+OPPORTUNITY_COST_FLOOR = 0.4
+# Bench slots remaining at/below this count means opportunity cost of a
+# weak positional add is treated as fully real (multiplier 1.0x on the
+# gap); above it, the gap's effect is linearly tapered toward zero --
+# early in a draft, with many bench slots still open, a below-average
+# depth add costs comparatively little (there is time to fix it later).
+BENCH_SCARCITY_THRESHOLD = 3
+
+
+def _nearest_team_count_bucket(team_count: int) -> int:
+    buckets = sorted(FANTASY_BENCH_UTILITY_RATE.keys())
+    return min(buckets, key=lambda b: abs(b - team_count))
+
+
+def _fantasy_bench_utility_rate(position: str, depth: int, team_count: int, superflex: bool) -> float:
+    bucket = _nearest_team_count_bucket(team_count)
+    if position == "QB" and superflex and bucket in FANTASY_BENCH_UTILITY_RATE_SUPERFLEX_QB and depth == 2:
+        return FANTASY_BENCH_UTILITY_RATE_SUPERFLEX_QB[bucket]
+    table = FANTASY_BENCH_UTILITY_RATE.get(bucket, {}).get(position, {})
+    if not table:
+        return DEFAULT_BENCH_REDUNDANCY_DECAY ** depth
+    max_measured = max(table.keys())
+    if depth in table:
+        return table[depth]
+    if depth < min(table.keys()):
+        return table[min(table.keys())]
+    extra_levels = depth - max_measured
+    return max(FANTASY_BENCH_UTILITY_FLOOR, table[max_measured] * (FANTASY_BENCH_UTILITY_EXTRAPOLATION_DECAY ** extra_levels))
+
+
+def _fantasy_bench_incremental_pts(position: str, depth: int, team_count: int) -> float:
+    bucket = _nearest_team_count_bucket(team_count)
+    table = FANTASY_BENCH_INCREMENTAL_PTS.get(bucket, {}).get(position, {})
+    if not table:
+        return -9999.0
+    max_measured = max(table.keys())
+    if depth in table:
+        return table[depth]
+    if depth < min(table.keys()):
+        return table[min(table.keys())]
+    # Deeper than measured: keep getting worse by the same real per-level
+    # gap the last two measured levels show (never invented from zero).
+    sorted_depths = sorted(table.keys())
+    last_gap = table[sorted_depths[-1]] - table[sorted_depths[-2]] if len(sorted_depths) >= 2 else 0.0
+    return table[max_measured] + last_gap * (depth - max_measured)
+
+
+def marginal_roster_utility_v2(
+    candidate_id: str,
+    current_player_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> MarginalRosterUtility:
+    """CHALLENGER to `marginal_roster_utility` -- see the module comment
+    block immediately above for the full root-cause writeup and data
+    source. Starter/FLEX-upgrade handling is byte-for-byte identical to
+    v1 (reuses the same `explain_marginal_roster_reason` -- no change to
+    how a starter-improving pick is valued, only to pure bench adds)."""
+    reason = explain_marginal_roster_reason(candidate_id, current_player_ids, profile, ranking, manual_assets)
+    if reason.becomes_starter:
+        return MarginalRosterUtility(
+            utility=reason.starter_value_delta, becomes_starter=True,
+            bench_redundancy_before=None, explanation=reason.summary,
+        )
+    pool = _asset_pool(ranking, manual_assets)
+    candidate_players = _roster_players([candidate_id], pool)
+    if not candidate_players:
+        return MarginalRosterUtility(
+            utility=0.0, becomes_starter=False, bench_redundancy_before=None,
+            explanation="Candidate has no known value (unmodeled asset).",
+        )
+    candidate = candidate_players[0]
+    current_players = _roster_players(current_player_ids, pool)
+    report_before = roster_composition_report(current_players, profile)
+    redundancy_before = report_before.position_redundancy.get(candidate.position, 0)
+    depth = redundancy_before + 1
+    team_count = max(1, profile.team_count)
+    superflex = profile.roster.superflex > 0
+    rate = _fantasy_bench_utility_rate(candidate.position, depth, team_count, superflex)
+
+    # Opportunity cost: compare this position's own real incremental
+    # points at this exact depth against the BEST real incremental
+    # points any of the other three skill positions offers at ITS OWN
+    # current next depth (redundancy_before+1 for that position too).
+    # Does not filter by legality/roster caps -- a real, disclosed
+    # simplification; legality itself is independently enforced
+    # elsewhere and already gates the candidate set before this ever
+    # runs, so this term only ever measures relative attractiveness
+    # among whatever is already a legal candidate.
+    own_incremental = _fantasy_bench_incremental_pts(candidate.position, depth, team_count)
+    # Only compare against a position this league actually rosters at all
+    # (a real starter requirement, or FLEX/superflex eligibility) -- a
+    # position with zero real roster room (e.g. a 0-RB league) is not a
+    # genuine alternative use of this bench slot and must not distort the
+    # comparison via a phantom "depth 1" lookup.
+    position_has_real_room = {
+        "QB": profile.roster.qb > 0 or profile.roster.superflex > 0,
+        "RB": profile.roster.rb > 0 or profile.roster.flex > 0,
+        "WR": profile.roster.wr > 0 or profile.roster.flex > 0,
+        "TE": profile.roster.te > 0 or profile.roster.flex > 0,
+    }
+    alt_positions = [p for p in ("QB", "RB", "WR", "TE") if p != candidate.position and position_has_real_room.get(p, False)]
+    alt_incrementals = [
+        _fantasy_bench_incremental_pts(p, report_before.position_redundancy.get(p, 0) + 1, team_count)
+        for p in alt_positions
+    ]
+    best_alt = max(alt_incrementals) if alt_incrementals else own_incremental
+    gap = min(0.0, own_incremental - best_alt)  # <=0; 0 when this position is already the best real option
+
+    bench_occupied = sum(report_before.position_redundancy.values())
+    bench_remaining = max(0, profile.roster.bench_size - bench_occupied)
+    if bench_remaining <= BENCH_SCARCITY_THRESHOLD:
+        scarcity_weight = 1.0
+    else:
+        # Linearly taper toward 0 as bench slots go from THRESHOLD+1 up to
+        # a fully-open bench (bench_size) -- real, bounded, monotonic, no
+        # discontinuity at the threshold itself.
+        span = max(1, profile.roster.bench_size - BENCH_SCARCITY_THRESHOLD)
+        scarcity_weight = max(0.0, 1.0 - (bench_remaining - BENCH_SCARCITY_THRESHOLD) / span)
+    opportunity_multiplier = max(OPPORTUNITY_COST_FLOOR, 1.0 + (gap * scarcity_weight) / OPPORTUNITY_COST_SCALE)
+
+    utility = round(candidate.value * rate * opportunity_multiplier, 2)
+    explanation = (
+        f"[v2 challenger] Bench depth at {candidate.position} (would become real depth rank "
+        f"{depth}) -- real, measured flex-worthy-week rate for this exact depth "
+        f"(nflverse {team_count}-team bucket, 2019/2021/2022/2023): {rate:.1%}. Opportunity-cost "
+        f"vs. the best alternative position's own next bench slot: {gap:+.1f} incremental PPR pts "
+        f"(scarcity weight {scarcity_weight:.2f}, {bench_remaining} bench slots remain) -> "
+        f"{opportunity_multiplier:.2f}x. Standalone value {round(candidate.value, 1)} -> {utility}."
+    )
+    return MarginalRosterUtility(
+        utility=utility, becomes_starter=False,
+        bench_redundancy_before=redundancy_before, explanation=explanation,
+    )
+
+
 def availability_discount_for_hypotheses(
     player_id: str, impact_hypotheses: Sequence[ImpactHypothesis]
 ) -> float:

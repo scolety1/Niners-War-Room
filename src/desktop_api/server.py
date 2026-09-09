@@ -465,16 +465,25 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "POST" and path == "/api/v1/redraft/profiles":
             body = self._json_body()
-            self._reject_unknown_fields(body, {"presetKey", "leagueName"})
+            self._reject_unknown_fields(body, {"presetKey", "leagueName", "rosterLimits"})
             preset_key = body.get("presetKey")
             league_name = body.get("leagueName")
+            roster_limits = body.get("rosterLimits")
             if not isinstance(preset_key, str):
                 raise self._invalid_body("presetKey must be a string.")
             if league_name is not None and not isinstance(league_name, str):
                 raise self._invalid_body("leagueName must be a string when supplied.")
+            # NWR overnight V3 strategic closure (section 10): optional --
+            # facade._validate_roster_limits_payload is the real validator
+            # (shape/position/non-negative-int checks); this route only
+            # rejects the one thing the facade cannot: a non-mapping type
+            # would otherwise surface as a generic 500 deeper in the call.
+            if roster_limits is not None and not isinstance(roster_limits, dict):
+                raise self._invalid_body("rosterLimits must be a position-to-maximum mapping when supplied.")
             created = self.server.facade.create_redraft_profile(
                 preset_key=preset_key,
                 league_name=league_name,
+                roster_limits=roster_limits,
             )
             profile = created.data.get("profile")
             profile_id = profile.get("profileId") if isinstance(profile, dict) else None

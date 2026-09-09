@@ -471,6 +471,171 @@ def test_explain_marginal_roster_reason_handles_an_unmodeled_candidate() -> None
     assert reason.starter_value_delta == 0.0
 
 
+# =====================================================================
+# NWR OVERNIGHT V3 strategic closure -- marginal_roster_utility_v2
+# (CHALLENGER; marginal_roster_utility itself is untouched -- see its
+# own tests above, all still passing unmodified).
+# =====================================================================
+
+
+def test_marginal_roster_utility_v2_starter_path_matches_v1_exactly() -> None:
+    """A starter/FLEX-improving pick is valued identically to v1 -- v2
+    only changes pure bench-add valuation."""
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility, marginal_roster_utility_v2
+
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
+    )
+    v1 = marginal_roster_utility("QB-0", [], profile, ranking, _manual_assets())
+    v2 = marginal_roster_utility_v2("QB-0", [], profile, ranking, _manual_assets())
+    assert v1.becomes_starter is True and v2.becomes_starter is True
+    assert v1.utility == v2.utility
+
+
+def test_marginal_roster_utility_v2_first_bench_wr_uses_real_measured_10team_rate() -> None:
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility_v2, FANTASY_BENCH_UTILITY_RATE
+
+    ranking = _ranking(team_count=10)
+    profile = replace(
+        ranking.profile,
+        team_count=10,
+        roster=RosterSettings(qb=0, rb=0, wr=1, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
+    )
+    roster = ["WR-0"]  # fills the single WR starter slot
+    result = marginal_roster_utility_v2("WR-1", roster, profile, ranking, _manual_assets())
+    assert result.becomes_starter is False
+    assert result.bench_redundancy_before == 0
+    wr1_value = next(r for r in ranking.rows if r.player_id == "WR-1").replacement_adjusted_value
+    rate = FANTASY_BENCH_UTILITY_RATE[10]["WR"][2]  # depth rank 2 -- WR-1 is the first real bench WR
+    assert rate == 0.343
+    # No opportunity-cost penalty possible here -- WR is the only position
+    # with any roster/room, so gap == 0 and the multiplier is exactly 1.0x.
+    assert result.utility == round(wr1_value * rate, 2)
+
+
+def test_marginal_roster_utility_v2_wr_decays_faster_with_depth_than_the_live_usage_proxy_implies() -> None:
+    """The real, root-caused fix: under v1's usage-probability decay, a
+    deep WR bench add barely loses value (0.9688**6 ~= 83% retained).
+    Under v2's real fantasy-outcome measurement, WR's own real
+    flex-worthy rate collapses much faster with depth (34.3% -> 4.0% from
+    depth 2 to depth 6 at 10-team) -- this test locks in that the v2
+    retained fraction at deep WR bench is materially lower than v1's."""
+    from src.services.shadow_numeric_authorities_service import (
+        marginal_roster_utility, marginal_roster_utility_v2, POSITION_BACKUP_UTILITY_RATE,
+    )
+
+    ranking = _ranking(team_count=10)
+    profile = replace(
+        ranking.profile,
+        team_count=10,
+        # No FLEX (flex=0) -- RB/TE genuinely have zero real roster room
+        # in this league, so the opportunity-cost term below has nothing
+        # to compare against and stays a no-op (gap=0), isolating the
+        # rate-lookup change from the opportunity-cost term for this test.
+        roster=RosterSettings(qb=0, rb=0, wr=2, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=7),
+    )
+    # WR-0..WR-6 already rostered (2 starters + 5 bench-redundant) --
+    # WR-7 would become the real depth-rank-6 WR.
+    roster = [f"WR-{i}" for i in range(7)]
+    v1 = marginal_roster_utility("WR-7", roster, profile, ranking, _manual_assets())
+    v2 = marginal_roster_utility_v2("WR-7", roster, profile, ranking, _manual_assets())
+    assert v1.becomes_starter is False and v2.becomes_starter is False
+    assert v1.bench_redundancy_before == 5 and v2.bench_redundancy_before == 5  # depth rank 6
+    wr7_value = next(r for r in ranking.rows if r.player_id == "WR-7").replacement_adjusted_value
+    v1_fraction = v1.utility / wr7_value
+    v2_fraction = v2.utility / wr7_value
+    assert v1_fraction == pytest.approx(POSITION_BACKUP_UTILITY_RATE["WR"] ** 6, abs=1e-4)
+    assert v2_fraction < v1_fraction
+    assert v2_fraction == pytest.approx(0.040, abs=1e-3)  # real measured WR depth-6 rate
+
+
+def test_fantasy_bench_incremental_pts_shows_the_real_crossover_wr_hoarding_missed() -> None:
+    """The real, empirically-grounded WR-hoarding root cause, locked in
+    directly against the study's own constants: at the exact depth ranks
+    where Test 18's real pathology occurred (WR5-WR8 kept beating RB3-
+    RB5), real fantasy outcomes show the OPPOSITE ordering -- RB3 is a
+    materially better real bench asset than WR6, at 10-team. This is the
+    reverse of what a naive usage-probability read of
+    POSITION_BACKUP_UTILITY_RATE (WR 0.9688 >> RB 0.4842) implies, and a
+    real, measured result, not an asserted rule."""
+    from src.services.shadow_numeric_authorities_service import (
+        _fantasy_bench_incremental_pts, _fantasy_bench_utility_rate,
+    )
+
+    rb3 = _fantasy_bench_incremental_pts("RB", 3, 10)
+    wr6 = _fantasy_bench_incremental_pts("WR", 6, 10)
+    assert rb3 > wr6  # RB3 loses materially less value relative to replacement than WR6
+
+    rb3_rate = _fantasy_bench_utility_rate("RB", 3, 10, superflex=False)
+    wr6_rate = _fantasy_bench_utility_rate("WR", 6, 10, superflex=False)
+    assert rb3_rate > wr6_rate
+    assert rb3_rate == pytest.approx(0.102, abs=1e-6)
+    assert wr6_rate == pytest.approx(0.040, abs=1e-6)
+
+    # And the real, disclosed WR4-vs-RB4 crossover point itself: by the
+    # time a roster is choosing a 4th WR vs a 4th RB, RB is already the
+    # better real bench asset at 10-team.
+    assert _fantasy_bench_incremental_pts("RB", 4, 10) > _fantasy_bench_incremental_pts("WR", 4, 10)
+
+
+def test_fantasy_bench_utility_rate_extrapolates_conservatively_beyond_the_measured_table() -> None:
+    """QB3+ has insufficient real sample size in the study (most teams'
+    real QB3 never logs a meaningful stat line) -- v2 must not silently
+    treat it as full value or crash; it extrapolates by halving the
+    deepest measured rate per extra depth level, disclosed as such."""
+    from src.services.shadow_numeric_authorities_service import _fantasy_bench_utility_rate, FANTASY_BENCH_UTILITY_RATE
+
+    qb2_rate = FANTASY_BENCH_UTILITY_RATE[10]["QB"][2]
+    qb3_rate = _fantasy_bench_utility_rate("QB", 3, 10, superflex=False)
+    qb4_rate = _fantasy_bench_utility_rate("QB", 4, 10, superflex=False)
+    assert qb3_rate == pytest.approx(qb2_rate * 0.5, rel=1e-6)
+    assert qb4_rate == pytest.approx(qb2_rate * 0.25, rel=1e-6)
+    assert qb4_rate < qb3_rate < qb2_rate  # still monotonically decreasing through the extrapolated region
+
+
+def test_fantasy_bench_utility_rate_nearest_team_count_bucket() -> None:
+    from src.services.shadow_numeric_authorities_service import _fantasy_bench_utility_rate, FANTASY_BENCH_UTILITY_RATE
+
+    # team_count=13 is nearer to the 12-team bucket than the 16-team one.
+    assert _fantasy_bench_utility_rate("WR", 3, 13, superflex=False) == FANTASY_BENCH_UTILITY_RATE[12]["WR"][3]
+    # Superflex QB uses its own real, separately-measured replacement baseline.
+    from src.services.shadow_numeric_authorities_service import FANTASY_BENCH_UTILITY_RATE_SUPERFLEX_QB
+    assert _fantasy_bench_utility_rate("QB", 2, 10, superflex=True) == FANTASY_BENCH_UTILITY_RATE_SUPERFLEX_QB[10]
+    assert _fantasy_bench_utility_rate("QB", 2, 10, superflex=True) != FANTASY_BENCH_UTILITY_RATE[10]["QB"][2]
+
+
+def test_marginal_roster_utility_v2_opportunity_cost_tapers_off_with_an_open_bench() -> None:
+    """Same weak positional add (deep WR bench), but with a wide-open
+    bench (far above the scarcity threshold) -- the opportunity-cost
+    penalty must be materially smaller than the scarce-bench case above,
+    monotonic in bench_remaining as the directive requires."""
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility_v2
+
+    ranking = _ranking(team_count=10)
+    scarce_profile = replace(
+        ranking.profile,
+        team_count=10,
+        roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, superflex=0, k=1, dst=1, bench_size=7),
+    )
+    open_profile = replace(scarce_profile, roster=replace(scarce_profile.roster, bench_size=20))
+    roster = ["QB-0", "RB-0", "RB-1", *[f"WR-{i}" for i in range(5)], "TE-0"]
+    scarce = marginal_roster_utility_v2("WR-5", roster, scarce_profile, ranking, _manual_assets())
+    open_ = marginal_roster_utility_v2("WR-5", roster, open_profile, ranking, _manual_assets())
+    assert open_.utility > scarce.utility
+
+
+def test_marginal_roster_utility_v2_handles_an_unmodeled_candidate() -> None:
+    from src.services.shadow_numeric_authorities_service import marginal_roster_utility_v2
+
+    ranking = _ranking()
+    profile = ranking.profile
+    result = marginal_roster_utility_v2("does-not-exist", ["QB-0"], profile, ranking, _manual_assets())
+    assert result.becomes_starter is False
+    assert result.utility == 0.0
+
+
 def _hypothesis(
     player_id: str, *, direction: str, confidence: str, horizon: str = "REST_OF_SEASON"
 ) -> ImpactHypothesis:

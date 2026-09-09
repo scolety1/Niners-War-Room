@@ -1,0 +1,34 @@
+Real 2023 player pool built: 290 rows
+
+=== ROUND-BY-ROUND: REFERENCE vs CHALLENGER vs ACTUAL ===
+ Rd | REFERENCE pick               | CHALLENGER pick              | ACTUAL pick             
+  1 | Jalen Hurts (QB)             | Jalen Hurts (QB)             | Jalen Hurts (QB)        
+  2 | Mike Evans (WR)              | Mike Evans (WR)              | Trey McBride (TE)       
+  3 | Raheem Mostert (RB)          | Raheem Mostert (RB)          | Chris Olave (WR)        
+  4 | Derrick Henry (RB)           | Derrick Henry (RB)           | Zay Flowers (WR)        
+  5 | James Cook (RB)              | James Cook (RB)              | Josh Jacobs (RB)        
+  6 | Jordan Addison (WR)          | Jordan Addison (WR)          | Amari Cooper (WR)       
+  7 | Rashee Rice (WR)             | George Kittle (TE)           | Michael Wilson (WR)     
+  8 | David Njoku (TE)             | Jaylen Waddle (WR)           | Wan'Dale Robinson (WR)  
+  9 | Courtland Sutton (WR)        | Courtland Sutton (WR)        | Courtland Sutton (WR)   
+ 10 | Romeo Doubs (WR)             | Ezekiel Elliott (RB)         | Desmond Ridder (QB)     
+ 11 | Rashid Shaheed (WR)          | Jonathan Taylor (RB)         | Cooper Kupp (WR)        
+ 12 | Jaxon Smith-Njigba (WR)      | Jaxon Smith-Njigba (WR)      | Dalton Kincaid (TE)     
+ 13 | Tee Higgins (WR)             | Kyle Pitts (TE)              | Jauan Jennings (WR)     
+ 14 | Logan Thomas (TE)            | Logan Thomas (TE)            | Alexander Mattison (RB) 
+
+=== FINAL POSITION COUNTS ===
+REFERENCE: {'QB': 1, 'WR': 8, 'RB': 3, 'TE': 2}
+CHALLENGER: {'QB': 1, 'WR': 5, 'RB': 5, 'TE': 3}
+ACTUAL:     {'QB': 2, 'TE': 2, 'WR': 8, 'RB': 2}
+
+=== ROSTER-BEFORE STATE AT KEY ROUNDS (R6-R14) ===
+R6: roster_before={'QB': 1, 'WR': 1, 'RB': 3}  CHALLENGER->Jordan Addison(WR)  REFERENCE->Jordan Addison(WR)
+R7: roster_before={'QB': 1, 'WR': 2, 'RB': 3}  CHALLENGER->George Kittle(TE)  REFERENCE->Rashee Rice(WR)
+R8: roster_before={'QB': 1, 'WR': 2, 'RB': 3, 'TE': 1}  CHALLENGER->Jaylen Waddle(WR)  REFERENCE->David Njoku(TE)
+R9: roster_before={'QB': 1, 'WR': 3, 'RB': 3, 'TE': 1}  CHALLENGER->Courtland Sutton(WR)  REFERENCE->Courtland Sutton(WR)
+R10: roster_before={'QB': 1, 'WR': 4, 'RB': 3, 'TE': 1}  CHALLENGER->Ezekiel Elliott(RB)  REFERENCE->Romeo Doubs(WR)
+R11: roster_before={'QB': 1, 'WR': 4, 'RB': 4, 'TE': 1}  CHALLENGER->Jonathan Taylor(RB)  REFERENCE->Rashid Shaheed(WR)
+R12: roster_before={'QB': 1, 'WR': 4, 'RB': 5, 'TE': 1}  CHALLENGER->Jaxon Smith-Njigba(WR)  REFERENCE->Jaxon Smith-Njigba(WR)
+R13: roster_before={'QB': 1, 'WR': 5, 'RB': 5, 'TE': 1}  CHALLENGER->Kyle Pitts(TE)  REFERENCE->Tee Higgins(WR)
+R14: roster_before={'QB': 1, 'WR': 5, 'RB': 5, 'TE': 2}  CHALLENGER->Logan Thomas(TE)  REFERENCE->Logan Thomas(TE)

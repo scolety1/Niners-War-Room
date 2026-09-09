@@ -767,7 +767,31 @@ describe("resolveDisplayAction", () => {
     expect(resolveDisplayAction("WAIT", false, true)).toBe("WAIT");
   });
 
-  it("never overrides when it is not a back-to-back turn -- other rows may still say Wait until 2.01", () => {
-    expect(resolveDisplayAction("WAIT", true, false)).toBe("WAIT");
+  // NWR OVERNIGHT V3 strategic closure: the real, reproduced banner/badge
+  // mismatch. The pick-now row must ALWAYS read TAKE_NOW -- not only on a
+  // back-to-back turn -- so the row directly under a green "NWR PICK NOW"
+  // banner can never itself show a muted-red WAIT/DEEP_TARGET action.
+  it("overrides the pick-now row to TAKE_NOW even off a back-to-back turn -- the real banner/badge mismatch", () => {
+    expect(resolveDisplayAction("WAIT", true, false)).toBe("TAKE_NOW");
+    expect(resolveDisplayAction("DEEP_TARGET", true, false)).toBe("TAKE_NOW");
+  });
+
+  // The other real half of the mismatch: a DIFFERENT candidate's own
+  // independent cost-of-waiting label can also compute TAKE_NOW. That must
+  // never render as a second, competing green "PICK NOW" badge -- there is
+  // exactly one canonical current-pick authority (the banner/row-1
+  // candidate). Downgraded to the existing, real GOOD_VALUE label, not a
+  // new invented one; the real urgency signal is still surfaced separately
+  // via the SCARCITY chip.
+  it("downgrades a non-pick-now row's own TAKE_NOW label to GOOD_VALUE -- never a second green PICK NOW badge", () => {
+    expect(resolveDisplayAction("TAKE_NOW", false, true)).toBe("GOOD_VALUE");
+    expect(resolveDisplayAction("TAKE_NOW", false, false)).toBe("GOOD_VALUE");
+  });
+
+  it("leaves a non-pick-now row's WAIT/GOOD_VALUE/DEEP_TARGET/WAIVER_WATCH labels untouched -- only TAKE_NOW is ever downgraded", () => {
+    expect(resolveDisplayAction("WAIT", false, false)).toBe("WAIT");
+    expect(resolveDisplayAction("GOOD_VALUE", false, true)).toBe("GOOD_VALUE");
+    expect(resolveDisplayAction("DEEP_TARGET", false, true)).toBe("DEEP_TARGET");
+    expect(resolveDisplayAction("WAIVER_WATCH", false, true)).toBe("WAIVER_WATCH");
   });
 });

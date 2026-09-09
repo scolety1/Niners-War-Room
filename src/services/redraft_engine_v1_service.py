@@ -441,7 +441,17 @@ def create_profile(
     template: LeagueProfile,
     *,
     league_name: str | None = None,
+    roster_limits: Mapping[str, int] | None = None,
 ) -> LeagueProfile:
+    """NWR overnight V3 strategic closure (section 10): `roster_limits`
+    is optional plumbing only -- omitted/None keeps the template's own
+    roster_limits exactly as before (usually `{}`, i.e. unconfigured;
+    see `evaluate_draft_pick_legality`'s own docstring for what that
+    means at legality-check time). When supplied, it overrides the
+    template's roster_limits immediately at creation, so a real caller
+    (a platform import that knows real limits, or an owner-authored
+    manual profile) never needs a create-then-immediately-edit round
+    trip just to establish legality on a fresh profile."""
     now = utc_now()
     profile = replace(
         template,
@@ -450,6 +460,11 @@ def create_profile(
         archived=False,
         created_at_utc=now,
         updated_at_utc=now,
+        draft=(
+            template.draft
+            if roster_limits is None
+            else replace(template.draft, roster_limits=dict(roster_limits))
+        ),
     )
     profile = _normalized_profile(profile)
     validate_profile(profile)

@@ -1,0 +1,1452 @@
+{
+  "owner_picks": [
+    {
+      "playerId": "00-0039139",
+      "playerName": "Jahmyr Gibbs",
+      "position": "RB",
+      "marginalRosterUtility": {
+        "utility": 249.0,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open RB starter slot (+249.0 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 249.0,
+      "playerScore": 249.0,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.1622,
+      "costOfWaiting": 2.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 100.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "TAKE NOW",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0034857",
+      "playerName": "Josh Allen",
+      "position": "QB",
+      "marginalRosterUtility": {
+        "utility": 154.08,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open QB starter slot (+154.1 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 154.08,
+      "playerScore": 154.08,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.1544,
+      "costOfWaiting": 8.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 100.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "TAKE NOW",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0039064",
+      "playerName": "Zay Flowers",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 126.6,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open WR starter slot (+126.6 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 126.6,
+      "playerScore": 126.6,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.1411,
+      "costOfWaiting": 5.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 100.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "TAKE NOW",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0037240",
+      "playerName": "Jameson Williams",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 103.2,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open WR starter slot (+103.2 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 103.2,
+      "playerScore": 103.2,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.1155,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 93.7,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0038120",
+      "playerName": "Breece Hall",
+      "position": "RB",
+      "marginalRosterUtility": {
+        "utility": 89.76,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open RB starter slot (+89.8 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 89.76,
+      "playerScore": 89.76,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.0922,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 84.7,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0036912",
+      "playerName": "DeVonta Smith",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 85.1,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open WR starter slot (+85.1 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 85.1,
+      "playerScore": 85.1,
+      "teamScoreAfter": 86.0,
+      "teamScoreDelta": 86.0,
+      "championshipEquityAfter": 0.1622,
+      "equityGain": 0.0744,
+      "costOfWaiting": 1.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 102.22,
+      "teamScoreUtilityComponent": 86.0,
+      "equityUtilityComponent": 16.22,
+      "pickScore": 100.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "TAKE NOW",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0000)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0000"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0035719",
+      "playerName": "Deebo Samuel Sr.",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 69.27,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 0,
+        "explanation": "Bench depth at WR -- 0 real bench-redundant WR(s) already rostered. Real historical startability rate for a WR bench player (nflverse 2022-2024, week-1 depth chart): 97%. This candidate's real injury/bye contingency value is discounted to 96.9% of its standalone value (71.5 -> 69.27).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 69.27,
+      "playerScore": 71.5,
+      "teamScoreAfter": 83.0,
+      "teamScoreDelta": 65.0,
+      "championshipEquityAfter": 0.1467,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 76.67,
+      "teamScoreUtilityComponent": 65.0,
+      "equityUtilityComponent": 11.67,
+      "pickScore": 0.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0034960",
+      "playerName": "Jakobi Meyers",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 55.47,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 1,
+        "explanation": "Bench depth at WR -- 1 real bench-redundant WR(s) already rostered. Real historical startability rate for a WR bench player (nflverse 2022-2024, week-1 depth chart): 97%. This candidate's real injury/bye contingency value is discounted to 93.9% of its standalone value (59.1 -> 55.47).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 55.47,
+      "playerScore": 59.1,
+      "teamScoreAfter": 66.0,
+      "teamScoreDelta": 48.0,
+      "championshipEquityAfter": 0.1022,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 55.22,
+      "teamScoreUtilityComponent": 48.0,
+      "equityUtilityComponent": 7.22,
+      "pickScore": 0.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0034827",
+      "playerName": "DJ Moore",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 48.63,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 2,
+        "explanation": "Bench depth at WR -- 2 real bench-redundant WR(s) already rostered. Real historical startability rate for a WR bench player (nflverse 2022-2024, week-1 depth chart): 97%. This candidate's real injury/bye contingency value is discounted to 90.9% of its standalone value (53.5 -> 48.63).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 48.63,
+      "playerScore": 53.48,
+      "teamScoreAfter": 40.0,
+      "teamScoreDelta": 22.0,
+      "championshipEquityAfter": 0.0533,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 24.33,
+      "teamScoreUtilityComponent": 22.0,
+      "equityUtilityComponent": 2.33,
+      "pickScore": 0.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0037545",
+      "playerName": "Rashid Shaheed",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 35.15,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 3,
+        "explanation": "Bench depth at WR -- 3 real bench-redundant WR(s) already rostered. Real historical startability rate for a WR bench player (nflverse 2022-2024, week-1 depth chart): 97%. This candidate's real injury/bye contingency value is discounted to 88.1% of its standalone value (39.9 -> 35.15).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 35.15,
+      "playerScore": 39.9,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 6.0,
+      "championshipEquityAfter": 0.0256,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 5.56,
+      "teamScoreUtilityComponent": 6.0,
+      "equityUtilityComponent": -0.44,
+      "pickScore": 0.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0040867",
+      "playerName": "Makai Lemon",
+      "position": "WR",
+      "marginalRosterUtility": {
+        "utility": 19.03,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 4,
+        "explanation": "Bench depth at WR -- 4 real bench-redundant WR(s) already rostered. Real historical startability rate for a WR bench player (nflverse 2022-2024, week-1 depth chart): 97%. This candidate's real injury/bye contingency value is discounted to 85.3% of its standalone value (22.3 -> 19.03).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 19.03,
+      "playerScore": 22.3,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 6.0,
+      "championshipEquityAfter": 0.0256,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 5.56,
+      "teamScoreUtilityComponent": 6.0,
+      "equityUtilityComponent": -0.44,
+      "pickScore": 50.0,
+      "pickScoreTiedNoSpread": true,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": true,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0033119",
+      "playerName": "Jacoby Brissett",
+      "position": "QB",
+      "marginalRosterUtility": {
+        "utility": 9.39,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 0,
+        "explanation": "Bench depth at QB -- 0 real bench-redundant QB(s) already rostered. Real historical startability rate for a QB bench player (nflverse 2022-2024, week-1 depth chart): 56%. This candidate's real injury/bye contingency value is discounted to 55.6% of its standalone value (16.9 -> 9.39).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 9.39,
+      "playerScore": 16.9,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 6.0,
+      "championshipEquityAfter": 0.0244,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 5.44,
+      "teamScoreUtilityComponent": 6.0,
+      "equityUtilityComponent": -0.56,
+      "pickScore": 0.0,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0034753",
+      "playerName": "Mark Andrews",
+      "position": "TE",
+      "marginalRosterUtility": {
+        "utility": 7.0,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open TE starter slot (+7.0 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 7.0,
+      "playerScore": 7.0,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 6.0,
+      "championshipEquityAfter": 0.0244,
+      "equityGain": 0.0011,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.0,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": 5.44,
+      "teamScoreUtilityComponent": 6.0,
+      "equityUtilityComponent": -0.56,
+      "pickScore": 91.7,
+      "pickScoreTiedNoSpread": false,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0098)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0098"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": false,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "00-0039847",
+      "playerName": "Theo Johnson",
+      "position": "TE",
+      "marginalRosterUtility": {
+        "utility": 2.69,
+        "becomesStarter": false,
+        "benchRedundancyBefore": 0,
+        "explanation": "Bench depth at TE -- 0 real bench-redundant TE(s) already rostered. Real historical startability rate for a TE bench player (nflverse 2022-2024, week-1 depth chart): 71%. This candidate's real injury/bye contingency value is discounted to 70.8% of its standalone value (3.8 -> 2.69).",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 2.69,
+      "playerScore": 3.8,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 0.0,
+      "championshipEquityAfter": 0.0244,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.6,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": -1.23,
+      "teamScoreUtilityComponent": 0.0,
+      "equityUtilityComponent": -1.23,
+      "pickScore": 50.0,
+      "pickScoreTiedNoSpread": true,
+      "action": "GOOD VALUE",
+      "warnings": [],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0109)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0109"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": true,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "manual:DST:ATL",
+      "playerName": "Atlanta Falcons D/ST",
+      "position": "DST",
+      "marginalRosterUtility": {
+        "utility": 0.0,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open DST starter slot (+0.0 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 0.0,
+      "playerScore": null,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 0.0,
+      "championshipEquityAfter": 0.0244,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.8,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": -1.23,
+      "teamScoreUtilityComponent": 0.0,
+      "equityUtilityComponent": -1.23,
+      "pickScore": 50.0,
+      "pickScoreTiedNoSpread": true,
+      "action": "WAIT",
+      "warnings": [
+        "No standalone Player Score supplied for this candidate."
+      ],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0109)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "MISSING_INPUT",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0109"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": true,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    },
+    {
+      "playerId": "manual:K:CLE",
+      "playerName": "Andre Szmyt",
+      "position": "K",
+      "marginalRosterUtility": {
+        "utility": 0.0,
+        "becomesStarter": true,
+        "benchRedundancyBefore": null,
+        "explanation": "Fills an open K starter slot (+0.0 starting-lineup value), no one benched.",
+        "label": "MARGINAL ROSTER UTILITY \u2014 PROMOTED: the real, walk-forward-validated basis for this recommendation's order"
+      },
+      "marginalUtility": 0.0,
+      "playerScore": null,
+      "teamScoreAfter": 24.0,
+      "teamScoreDelta": 0.0,
+      "championshipEquityAfter": 0.0244,
+      "equityGain": 0.0,
+      "costOfWaiting": 0.0,
+      "makeItBackProbability": 0.8,
+      "makeItBackTrials": 10,
+      "rawDecisionUtility": -1.23,
+      "teamScoreUtilityComponent": 0.0,
+      "equityUtilityComponent": -1.23,
+      "pickScore": 50.0,
+      "pickScoreTiedNoSpread": true,
+      "action": "WAIT",
+      "warnings": [
+        "No standalone Player Score supplied for this candidate."
+      ],
+      "uncertainty": "LOW_MODEL_UNCERTAINTY (SE=0.0109)",
+      "metricStatus": {
+        "playerScore": {
+          "computationState": "MISSING_INPUT",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Walk-forward validated against ADP (beat ADP 9/9 seasons); weaker at QB and at the very top of the market -- see the walk-forward findings.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "teamScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "TEAM SCORE \u2014 RESEARCH. Frozen formula; historically backtested against 2016, 2024, and 2025 holdouts, all now burned. No live/blind holdout remains.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        },
+        "championshipEquity": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "CHAMPIONSHIP EQUITY \u2014 SIMULATED RESEARCH. Monte Carlo simulation over Team Score/ADP inputs; no independent historical holdout backs this metric.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Monte Carlo standard error=0.0109"
+        },
+        "costOfWaiting": {
+          "computationState": "EVALUATED",
+          "genuineZero": true,
+          "tiedNoSpread": null,
+          "validationDomain": "Derived from the same Championship Equity Monte Carlo engine; inherits its NOT independently historically validated status.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "Full Cost-of-Waiting-V2 evaluation"
+        },
+        "makeItBack": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": null,
+          "validationDomain": "Monte Carlo survival probability; sensitivity-tested (opponent position caps, intervening-pick count, seed/trial consumption) but not an independent historical holdout.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": "10 simulated continuations"
+        },
+        "pickScore": {
+          "computationState": "EVALUATED",
+          "genuineZero": false,
+          "tiedNoSpread": true,
+          "validationDomain": "RESEARCH_ONLY_PICK_SCORE. Composite of Team Score + Championship Equity; Decision Confidence is a standing NOT_VALIDATED program verdict.",
+          "sourceFreshness": "Projection snapshot source_as_of=2026-09-08",
+          "dataCoverage": null
+        }
+      }
+    }
+  ],
+  "turn_traces": [
+    {
+      "turn": 0,
+      "player_id": "00-0039139",
+      "player_name": "Jahmyr Gibbs",
+      "position": "RB",
+      "latency_s": 6.561,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 1,
+      "player_id": "00-0034857",
+      "player_name": "Josh Allen",
+      "position": "QB",
+      "latency_s": 4.91,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 2,
+      "player_id": "00-0039064",
+      "player_name": "Zay Flowers",
+      "position": "WR",
+      "latency_s": 4.757,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 3,
+      "player_id": "00-0037240",
+      "player_name": "Jameson Williams",
+      "position": "WR",
+      "latency_s": 4.204,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 4,
+      "player_id": "00-0038120",
+      "player_name": "Breece Hall",
+      "position": "RB",
+      "latency_s": 4.128,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 5,
+      "player_id": "00-0036912",
+      "player_name": "DeVonta Smith",
+      "position": "WR",
+      "latency_s": 3.6,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 6,
+      "player_id": "00-0035719",
+      "player_name": "Deebo Samuel Sr.",
+      "position": "WR",
+      "latency_s": 3.525,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 7,
+      "player_id": "00-0034960",
+      "player_name": "Jakobi Meyers",
+      "position": "WR",
+      "latency_s": 3.061,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 8,
+      "player_id": "00-0034827",
+      "player_name": "DJ Moore",
+      "position": "WR",
+      "latency_s": 2.997,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 9,
+      "player_id": "00-0037545",
+      "player_name": "Rashid Shaheed",
+      "position": "WR",
+      "latency_s": 2.545,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 10,
+      "player_id": "00-0040867",
+      "player_name": "Makai Lemon",
+      "position": "WR",
+      "latency_s": 2.412,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 11,
+      "player_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB",
+      "latency_s": 1.902,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 12,
+      "player_id": "00-0034753",
+      "player_name": "Mark Andrews",
+      "position": "TE",
+      "latency_s": 1.819,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 13,
+      "player_id": "00-0039847",
+      "player_name": "Theo Johnson",
+      "position": "TE",
+      "latency_s": 1.098,
+      "n_candidates": 12,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 14,
+      "player_id": "manual:DST:ATL",
+      "player_name": "Atlanta Falcons D/ST",
+      "position": "DST",
+      "latency_s": 0.256,
+      "n_candidates": 4,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    },
+    {
+      "turn": 15,
+      "player_id": "manual:K:CLE",
+      "player_name": "Andre Szmyt",
+      "position": "K",
+      "latency_s": 0.102,
+      "n_candidates": 2,
+      "top_candidate_illegal": false,
+      "any_illegal_in_top5": false
+    }
+  ],
+  "latencies": [
+    6.561366199995973,
+    4.909777300003043,
+    4.756821399998444,
+    4.204097200003162,
+    4.127533899998525,
+    3.5995942000008654,
+    3.5252955999967526,
+    3.061380899998767,
+    2.997350200006622,
+    2.545272000003024,
+    2.4123188000012306,
+    1.90199500000017,
+    1.8193037999953958,
+    1.0975127999990946,
+    0.2561490000007325,
+    0.10217820000252686
+  ]
+}

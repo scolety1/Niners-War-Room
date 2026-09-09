@@ -2528,31 +2528,47 @@ function SuggestionsTab({
  * label surfaces as visibly "review" (unknown) rather than silently
  * inheriting whichever tone happened to be last in the chain.
  */
-/** NWR DRAFT-DAY WAR ROOM (slot-8 consecutive-turn fix): the real,
- * reported contradiction was a MUTED-RED "Wait until next turn" badge on
- * the exact same candidate a green "NWR PICK NOW" banner names as the
- * current recommendation -- both true statements about the same
- * `action` string, read together as nonsense. `label_pick_decisions`
- * only ever asks "does this candidate survive to my next pick?", never
- * "is this the one I'm telling the owner to draft right now?" -- those
- * differ exactly on a back-to-back snake turn (zero opponents between
- * this pick and the owner's own next one), where "survives to next
- * turn" is real, honest, and simultaneously irrelevant to what to do
- * THIS pick. Substitutes the row's own already-computed action string
- * with "TAKE_NOW" (an existing, real label -- never invented) for ONLY
- * the exact row-1 candidate on a back-to-back turn, so the same
- * splitActionValue/actionToBadgeTone functions that already handle
- * TAKE_NOW render both a consistent label and a consistent (green)
- * tone -- no new formula, no new label string, no change to any other
- * row (they keep whatever real action they were already given). */
+/** NWR OVERNIGHT V3 (strategic closure, section 1, "one canonical
+ * current-pick authority"): the real, reproduced bug was broader than
+ * the earlier slot-8 fix covered. `findPickNow`/the banner and CPU
+ * auto-pick (`redraft_draft_room_v1_service.py`) both key off the SAME
+ * backend-sorted `candidates[0]` -- that part was already single-
+ * authority. But this row's OWN `action` string comes from a totally
+ * DIFFERENT backend signal (`label_pick_decisions`'s cost-of-waiting
+ * urgency, "will this candidate still be here next turn?"), computed
+ * independently per candidate with no reference to which one is
+ * `candidates[0]`. Two concrete, real contradictions followed:
+ *   1. The exact candidate the banner names could itself carry a
+ *      MUTED-RED "Wait"/"Deep Target" action underneath a green "NWR
+ *      PICK NOW" banner -- the previous fix only patched this for a
+ *      back-to-back turn; it reproduces on ANY turn, since
+ *      label_pick_decisions never looks at candidates[0] at all.
+ *   2. A DIFFERENT candidate -- one whose own expected_cost happens to
+ *      be within TAKE_NOW_RELATIVE_COST_FRACTION of the set's max --
+ *      independently earns the same green "TAKE_NOW" tone. With no
+ *      further rule, that candidate's row displays the identical
+ *      green "PICK NOW"-styled badge as the banner's own candidate, so
+ *      a screenshot reads as "the banner says A, the green badge is on
+ *      B" even though nothing recorded an actual pick for B.
+ * Fix: the pick-now row is now UNCONDITIONALLY shown as TAKE_NOW
+ * (matching the banner, back-to-back or not -- isBackToBackTurn is
+ * kept only for call-site/signature stability, it no longer gates this
+ * branch). Any OTHER row whose own real cost-of-waiting label is
+ * TAKE_NOW is downgraded to the existing, real GOOD_VALUE label (amber,
+ * not invented) rather than green -- there is exactly one canonical
+ * "take this now" badge on screen at a time, matching the banner and
+ * row 1. The underlying real urgency signal for that other candidate is
+ * not discarded -- it is exactly what the separate SCARCITY chip
+ * (buildScarcityCounterfactual) already surfaces on its own terms. */
 export function resolveDisplayAction(
   action: string,
   isPickNowCandidate: boolean,
   isBackToBackTurn: boolean,
 ): string {
-  if (!isPickNowCandidate || !isBackToBackTurn) return action;
+  void isBackToBackTurn; // kept for signature stability; no longer gates the override -- see comment above.
+  if (isPickNowCandidate) return "TAKE_NOW";
   const normalized = action.toUpperCase().replace(/_/g, " ");
-  return normalized === "TAKE NOW" ? action : "TAKE_NOW";
+  return normalized === "TAKE NOW" ? "GOOD_VALUE" : action;
 }
 
 export function actionToBadgeTone(action: string): BadgeTone {

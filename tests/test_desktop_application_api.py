@@ -1414,6 +1414,46 @@ def _synthetic_ranking_for(profile: LeagueProfile) -> RankingResult:
     return RankingResult(profile, tuple(rows), (), (), "2026-08-17T00:00:00+00:00", "fixture")
 
 
+def test_create_redraft_profile_accepts_roster_limits_at_creation(tmp_path: Path) -> None:
+    """NWR overnight V3 strategic closure (section 10): a caller can
+    establish real draft legality on a FRESH profile without a
+    create-then-immediately-edit round trip -- plumbing only, no model
+    change."""
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR",
+        league_name="Limits At Creation",
+        roster_limits={"wr": 8, "rb": 6},
+    )
+    assert {row["position"]: row["maximum"] for row in created.data["profile"]["draft"]["rosterLimits"]} == {
+        "WR": 8, "RB": 6,
+    }
+    profile_id = created.data["profile"]["profileId"]
+    persisted = load_profile(store, profile_id)
+    assert persisted.draft.roster_limits == {"WR": 8, "RB": 6}
+
+
+def test_create_redraft_profile_rejects_an_invalid_roster_limits_position(tmp_path: Path) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    with pytest.raises(FacadeError, match="unsupported position"):
+        facade.create_redraft_profile(
+            preset_key="12_TEAM_1QB_HALF_PPR",
+            league_name="Bad Limits",
+            roster_limits={"FLEX": 3},
+        )
+
+
+def test_create_redraft_profile_omitted_roster_limits_keeps_preset_default(tmp_path: Path) -> None:
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="No Limits Given"
+    )
+    assert created.data["profile"]["draft"]["rosterLimits"] == []
+
+
 def _started_redraft_room(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     store = tmp_path / "redraft-store"
     facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)

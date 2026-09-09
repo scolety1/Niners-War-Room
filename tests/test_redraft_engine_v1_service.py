@@ -645,6 +645,28 @@ def test_profile_roster_limits_are_normalized_on_save(tmp_path: Path) -> None:
     assert updated.draft.roster_limits == {"QB": 2, "WR": 6}
 
 
+def test_create_profile_accepts_roster_limits_at_creation_time(tmp_path: Path) -> None:
+    """NWR overnight V3 strategic closure (section 10): a real caller can
+    now establish real draft legality on a FRESH profile without a
+    create-then-immediately-edit round trip."""
+    created = create_profile(
+        tmp_path, builtin_presets()[0], league_name="Fresh With Limits",
+        roster_limits={"WR": 8, "RB": 6},
+    )
+    assert created.draft.roster_limits == {"WR": 8, "RB": 6}
+    # Persisted, not just returned in-memory.
+    assert load_profile(tmp_path, created.profile_id).draft.roster_limits == {"WR": 8, "RB": 6}
+
+
+def test_create_profile_omitted_roster_limits_keeps_template_default(tmp_path: Path) -> None:
+    """Unknown stays unknown -- omitting roster_limits at creation must
+    not invent a value; it keeps the preset template's own default
+    (usually {}, i.e. unconfigured) exactly as before this change."""
+    preset = builtin_presets()[0]
+    created = create_profile(tmp_path, preset, league_name="No Limits Supplied")
+    assert created.draft.roster_limits == preset.draft.roster_limits
+
+
 def test_health_distinguishes_optional_blocked_rows_from_total_failure(snapshot) -> None:
     profile = _profile()
     ranking = generate_rankings(profile, snapshot)
