@@ -30,6 +30,7 @@ from src.services.redraft_draft_room_v1_service import (
     load_room_state,
     load_udk_rankings,
     owner_pick_and_advance,
+    owner_platform_provider_breakdown,
     parse_udk_position_pdf,
     preview_catch_up_paste,
     record_catch_up_pick,
@@ -408,6 +409,56 @@ def test_owner_platform_snapshot_serves_profiles_and_uses_platform_fallbacks(tmp
     })
     assert room["adp"]["source"] == "Owner-imported Sleeper ADP — Owner platform"
     assert any(item["playerId"] == "RB-0" and item["overallAdp"] == 2.2 for item in room["decisionRows"])
+
+
+def test_owner_platform_csv_multi_platform_parser(tmp_path) -> None:
+    """NWR DATA-IMPORT UX FIX (2026-09-08): the real owner multi-platform ADP
+    export is a genuine comma-delimited CSV, not a markdown/plain-text paste
+    -- reproduces and fixes the real "owner-supplied ADP CSV was rejected"
+    failure. Same real header shape as the owner's actual file (Name,
+    Position, Team, ADP, Position Rank, Consensus ADP, Sleeper ADP, ESPN ADP,
+    FantasyPros ADP), plus a redundant generic `ADP` column that must never
+    override the real, specific Consensus ADP column."""
+    ranking = _ranking()
+    csv_text = (
+        "Name,Position,Team,ADP,Position Rank,Consensus ADP,Sleeper ADP,ESPN ADP,FantasyPros ADP\n"
+        "QB 0,QB,TST,9.9,1,1.5,1.4,2.1,1.8\n"
+        "RB 0,RB,TST,9.9,1,2.5,2.2,2.7,2.4\n"
+        "Unknown Player,WR,TST,9.9,1,5.0,,5.1,5.2\n"
+    )
+    preview = preview_owner_paste_adp(ranking.profile, ranking, csv_text, "SLEEPER", _manual_assets())
+    assert preview["parserMode"] == "CSV_MULTI_PLATFORM"
+    assert preview["matchedRows"] == 2
+    assert preview["sourceRows"] == 3
+    # The generic `ADP` column (9.9 for every row) must never win over the
+    # real, specific `Consensus ADP` column.
+    assert preview["parsedRows"][0]["consensus_adp"] == 1.5
+    assert preview["parsedRows"][0]["selected_adp"] == 1.4
+    snapshot = save_owner_paste_adp(
+        tmp_path, ranking.profile, ranking, csv_text, "CONSENSUS", "Owner CSV", _manual_assets()
+    )
+    assert snapshot.provider == "OWNER_PASTE_CONSENSUS"
+    active = load_adp_snapshot(tmp_path, ranking.profile)
+    assert active.provider == "OWNER_PLATFORM_AUTO_SLEEPER"
+    assert active.by_player_id["QB-0"].overall_adp == 1.4
+    assert active.by_player_id["RB-0"].overall_adp == 2.2
+
+    breakdown = owner_platform_provider_breakdown(tmp_path)
+    assert breakdown["QB-0"] == {"consensus": 1.5, "sleeper": 1.4, "espn": 2.1, "fantasypros": 1.8}
+
+
+def test_owner_platform_csv_simple_backward_compatible_format(tmp_path) -> None:
+    """The old, simple `Name, Position, ADP` shape (no per-provider columns)
+    must keep working -- the generic ADP maps to Consensus, so it resolves
+    the same way for every league regardless of platform."""
+    ranking = _ranking()
+    csv_text = "Name,Position,ADP\nQB 0,QB,1.5\nRB 0,RB,2.5\n"
+    rows, mode, warnings = _owner_platform_rows(csv_text)
+    assert mode == "CSV_MULTI_PLATFORM"
+    assert not warnings
+    assert rows[0] == {"player": "QB 0", "position": "QB", "consensus": "1.5"}
+    preview = preview_owner_paste_adp(ranking.profile, ranking, csv_text, "CONSENSUS", _manual_assets())
+    assert preview["matchedRows"] == 2
 
 
 def test_owner_platform_plain_text_split_and_compact_parser(tmp_path) -> None:
@@ -1079,6 +1130,28 @@ def test_save_udk_position_rankings_merges_additively_across_positions(tmp_path)
     assert {row["position"] for row in loaded["positions"]} == {"QB", "RB"}
     assert _udk_position(loaded, "QB")["entries"][0]["playerId"] == "QB-0"
     assert _udk_position(loaded, "RB")["entries"][0]["playerId"] == "RB-0"
+
+
+def test_ballers_snapshot_is_real_global_not_per_profile(tmp_path) -> None:
+    """NWR DATA-IMPORT UX FIX (2026-09-08, directive section 3): Ballers is
+    owner-owned reference data, imported once, shared identically across
+    every local Redraft league -- not the prior per-profile
+    `udk_provider_cache/<profile_id>.json` scheme (verified: no owner
+    import had ever actually been made under that scheme, so there was
+    nothing to migrate)."""
+    ranking = _ranking()
+    csv_text = _udk_csv([("QB 0", "TST", "2.06", "locked")])
+    save_udk_position_rankings(tmp_path, ranking.profile, ranking, csv_text, _manual_assets())
+    # A completely different, real profile_id must see the exact same
+    # snapshot -- no re-import, no per-profile isolation.
+    other_profile = replace(ranking.profile, profile_id="a-totally-different-league")
+    loaded_original = load_udk_rankings(tmp_path, ranking.profile.profile_id)
+    loaded_other = load_udk_rankings(tmp_path, other_profile.profile_id)
+    assert loaded_original == loaded_other
+    assert _udk_position(loaded_other, "QB")["entries"][0]["playerId"] == "QB-0"
+    # One real, global on-disk artifact -- never a stale-vs-current split.
+    assert (tmp_path / "ballers_snapshot" / "snapshot.json").is_file()
+    assert not (tmp_path / "udk_provider_cache").exists()
 
 
 # --- NWR class-time hardening, section 7: versioning/rollback and preview

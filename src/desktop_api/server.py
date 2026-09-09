@@ -18,6 +18,12 @@ from src.application.contracts import contract_envelope, error_contract
 from src.application.desktop_facade import DesktopBackendFacade, FacadeError, FacadePayload
 
 BODY_LIMIT_BYTES = 256 * 1024
+# NWR DATA-IMPORT UX FIX (2026-09-08): a real Ballers cheat sheet PDF (or a
+# real, full multi-position CSV) genuinely exceeds the default 256 KB JSON
+# body cap once base64-encoded -- the underlying parsers already accept up
+# to 4 MB (UDK CSV/PDF) themselves; this just lets that real ceiling reach
+# the HTTP layer instead of being silently rejected first at 256 KB.
+UDK_BODY_LIMIT_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_TARGET_BYTES = 4096
 MIN_TOKEN_LENGTH = 32
 STARTUP_PROTOCOL = "nwr-desktop-startup-v1"
@@ -38,7 +44,9 @@ _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
 _REDRAFT_DRAFT_ADVANCE = re.compile(r"^/api/v1/redraft/draft/([^/]+)/advance$")
 _REDRAFT_ADP_IMPORT = re.compile(r"^/api/v1/redraft/adp/([^/]+)/import$")
 _REDRAFT_ADP_REFRESH = re.compile(r"^/api/v1/redraft/adp/([^/]+)/refresh$")
+_REDRAFT_UDK_PREVIEW = re.compile(r"^/api/v1/redraft/udk/([^/]+)/preview$")
 _REDRAFT_UDK_IMPORT = re.compile(r"^/api/v1/redraft/udk/([^/]+)/import$")
+_REDRAFT_UDK_PDF_IMPORT = re.compile(r"^/api/v1/redraft/udk-pdf/([^/]+)/import$")
 # NWR LAST PRE-DRAFT BLOCKER CLOSURE: the real "all 32 teams' current
 # K/DST" UDK snapshot importer, separate from the skill-position rankings
 # route above -- previously wired nowhere.
@@ -638,9 +646,21 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 profile_id=unquote(adp_refresh_match.group(1)),
             )
             return self.server.facade.redraft_bootstrap()
+        udk_preview_match = _REDRAFT_UDK_PREVIEW.fullmatch(path)
+        if method == "POST" and udk_preview_match:
+            body = self._json_body(max_bytes=UDK_BODY_LIMIT_BYTES)
+            self._reject_unknown_fields(body, {"csvText", "pdfBase64"})
+            csv_text = body.get("csvText", "")
+            pdf_base64 = body.get("pdfBase64", "")
+            if not isinstance(csv_text, str) or not isinstance(pdf_base64, str):
+                raise self._invalid_body("csvText and pdfBase64 must be strings.")
+            return self.server.facade.preview_ballers_import(
+                profile_id=unquote(udk_preview_match.group(1)),
+                csv_text=csv_text, pdf_base64=pdf_base64,
+            )
         udk_import_match = _REDRAFT_UDK_IMPORT.fullmatch(path)
         if method == "POST" and udk_import_match:
-            body = self._json_body()
+            body = self._json_body(max_bytes=UDK_BODY_LIMIT_BYTES)
             self._reject_unknown_fields(body, {"csvText"})
             if not isinstance(body.get("csvText"), str):
                 raise self._invalid_body("csvText must be a string.")
@@ -649,9 +669,20 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 csv_text=body["csvText"],
             )
             return self.server.facade.redraft_bootstrap()
+        udk_pdf_import_match = _REDRAFT_UDK_PDF_IMPORT.fullmatch(path)
+        if method == "POST" and udk_pdf_import_match:
+            body = self._json_body(max_bytes=UDK_BODY_LIMIT_BYTES)
+            self._reject_unknown_fields(body, {"pdfBase64"})
+            if not isinstance(body.get("pdfBase64"), str):
+                raise self._invalid_body("pdfBase64 must be a string.")
+            self.server.facade.import_udk_pdf_rankings(
+                profile_id=unquote(udk_pdf_import_match.group(1)),
+                pdf_base64=body["pdfBase64"],
+            )
+            return self.server.facade.redraft_bootstrap()
         udk_kdst_import_match = _REDRAFT_UDK_KDST_IMPORT.fullmatch(path)
         if method == "POST" and udk_kdst_import_match:
-            body = self._json_body()
+            body = self._json_body(max_bytes=UDK_BODY_LIMIT_BYTES)
             self._reject_unknown_fields(body, {"csvText"})
             if not isinstance(body.get("csvText"), str):
                 raise self._invalid_body("csvText must be a string.")
@@ -926,7 +957,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.NOT_FOUND,
             )
 
-    def _json_body(self, *, allow_empty: bool = False) -> dict[str, Any]:
+    def _json_body(self, *, allow_empty: bool = False, max_bytes: int = BODY_LIMIT_BYTES) -> dict[str, Any]:
         raw_length = self.headers.get("Content-Length")
         if raw_length is None:
             if allow_empty:
@@ -938,7 +969,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             raise self._invalid_body("Content-Length is invalid.") from exc
         if length < 0:
             raise self._invalid_body("Content-Length is invalid.")
-        if length > BODY_LIMIT_BYTES:
+        if length > max_bytes:
             raise RequestContractError(
                 "REQUEST_BODY_TOO_LARGE",
                 "The JSON request body is too large.",

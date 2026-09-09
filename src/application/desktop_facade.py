@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import os
 import tempfile
@@ -145,6 +147,8 @@ from src.services.redraft_draft_room_v1_service import (
     build_draft_room_payload,
     import_owner_adp_csv,
     load_udk_rankings,
+    parse_udk_position_csv,
+    parse_udk_position_pdf,
     rollback_udk_position_rankings,
     save_udk_position_pdf_rankings,
     save_udk_position_rankings,
@@ -158,6 +162,7 @@ from src.services.redraft_draft_room_v1_service import (
     ingest_read_only_sleeper_pick,
     load_adp_snapshot,
     load_room_state,
+    owner_platform_provider_breakdown,
     owner_platform_snapshot_status,
     owner_pick_and_advance,
     refresh_fantasy_football_calculator_adp,
@@ -1968,6 +1973,15 @@ class DesktopBackendFacade:
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
                 "ownerPlatformSnapshot": owner_platform_snapshot_status(self.redraft_root, selected),
+                "marketProviderAdp": {
+                    player_id: {
+                        "consensus": values.get("consensus"),
+                        "sleeper": values.get("sleeper"),
+                        "espn": values.get("espn"),
+                        "fantasypros": values.get("fantasypros"),
+                    }
+                    for player_id, values in owner_platform_provider_breakdown(self.redraft_root).items()
+                },
                 "manualAssets": [
                     {
                         "playerId": str(asset.get("player_id") or ""),
@@ -3316,10 +3330,18 @@ class DesktopBackendFacade:
                 csv_text,
                 manual_assets,
             )
-        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+        # NWR DATA-IMPORT UX FIX (2026-09-08, directive section 18): the real,
+        # specific validation reason (e.g. "ADP CSV is missing columns: X") is
+        # a deliberate, human-authored, safe-to-show message -- it must reach
+        # the owner, not be swallowed into one generic sentence that gives no
+        # actionable next step. Only genuine I/O/persistence failures (which
+        # could carry a raw path) stay generic.
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_ADP_IMPORT_FAILED", str(exc), status=409) from exc
+        except (OSError, RedraftPersistenceError) as exc:
             raise FacadeError(
                 "REDRAFT_ADP_IMPORT_FAILED",
-                "The owner-supplied ADP CSV was rejected without changing NWR rankings.",
+                "The owner-supplied ADP CSV could not be saved.",
                 status=409,
             ) from exc
         return FacadePayload(
@@ -3331,6 +3353,57 @@ class DesktopBackendFacade:
                     "matched": len(snapshot.entries),
                     "unmatched": list(snapshot.unmatched),
                     "sourceSha256": snapshot.source_sha256,
+                }
+            }
+        )
+
+    def preview_ballers_import(
+        self, *, profile_id: str, csv_text: str = "", pdf_base64: str = "",
+    ) -> FacadePayload:
+        """NWR DATA-IMPORT UX FIX (2026-09-08, directive section 2): a real
+        preview-before-activate step for the Ballers cheat sheet, matching
+        the same real pattern the owner platform ADP snapshot already uses
+        (preview -> owner reviews match/coverage -> explicit activate).
+        Never persists -- `parse_udk_position_csv`/`parse_udk_position_pdf`
+        are read-only parsers; this method's whole job is calling one of
+        them and returning the result, never calling `save_udk_position_
+        *_rankings`. Exactly one of `csv_text`/`pdf_base64` is expected."""
+        self._require_mode("redraft")
+        if bool(csv_text.strip()) == bool(pdf_base64.strip()):
+            raise FacadeError(
+                "REDRAFT_UDK_PREVIEW_INVALID",
+                "Provide exactly one of csvText or pdfBase64.",
+                status=400,
+            )
+        profile, ranking, manual_assets = self._redraft_room_context(profile_id)
+        try:
+            if csv_text.strip():
+                preview = parse_udk_position_csv(profile, ranking, csv_text, manual_assets)
+                source_format = "CSV"
+            else:
+                pdf_bytes = base64.b64decode(pdf_base64, validate=True)
+                preview = parse_udk_position_pdf(profile, ranking, pdf_bytes, manual_assets)
+                source_format = "PDF"
+        except (ValueError, binascii.Error) as exc:
+            raise FacadeError(
+                "REDRAFT_UDK_PDF_UNREADABLE", f"The UDK PDF upload was not valid base64 data: {exc}", status=400
+            ) from exc
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_UDK_PREVIEW_FAILED", str(exc), status=409) from exc
+        return FacadePayload(
+            data={
+                "ballersPreview": {
+                    "sourceFormat": preview.get("sourceFormat", source_format),
+                    "sourceRows": preview["sourceRows"],
+                    "matchedRows": preview["matchedRows"],
+                    "unmatched": preview["unmatched"][:40],
+                    "warnings": preview["warnings"][:40],
+                    "sourceSha256": preview["sourceSha256"],
+                    "perPositionCounts": preview.get("perPositionCounts", {}),
+                    "duplicateRows": preview.get("duplicateRows", [])[:20],
+                    "positions": {
+                        position: entries[:20] for position, entries in preview["positions"].items()
+                    },
                 }
             }
         )
@@ -3348,43 +3421,58 @@ class DesktopBackendFacade:
             result = save_udk_position_rankings(
                 self.redraft_root, profile, ranking, csv_text, manual_assets,
             )
-        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_UDK_IMPORT_FAILED", str(exc), status=409) from exc
+        except (OSError, RedraftPersistenceError) as exc:
             raise FacadeError(
                 "REDRAFT_UDK_IMPORT_FAILED",
-                "The UDK CSV was rejected without changing NWR rankings.",
+                "The UDK CSV could not be saved.",
                 status=409,
             ) from exc
         return FacadePayload(data={"udk": result})
 
-    def import_udk_pdf_rankings(self, *, profile_id: str, pdf_path: str) -> FacadePayload:
-        """NWR class-time autonomous hardening, section 7: `parse_udk_
-        position_pdf`/`save_udk_position_pdf_rankings` have existed since
-        the post-draft overnight repair (real, fixture-tested, real-
-        sample structural fidelity BLOCKED_PENDING_OWNER_SAMPLE -- see
+    def import_udk_pdf_rankings(self, *, profile_id: str, pdf_base64: str) -> FacadePayload:
+        """NWR class-time autonomous hardening, section 7, superseded by the
+        NWR DATA-IMPORT UX FIX (2026-09-08): `parse_udk_position_pdf`/
+        `save_udk_position_pdf_rankings` have existed since the post-draft
+        overnight repair (real, fixture-tested, real-sample structural
+        fidelity BLOCKED_PENDING_OWNER_SAMPLE -- see
         docs/codex/NWR_PROSPECTIVE_2026_FREEZE_V2_20260908.md) but were
         never reachable from any facade method -- CSV was the only real
-        owner-facing UDK import path. This closes that gap: same file-
-        path convention as `import_udk_unmodeled_skill_assets` (the
-        frontend stages the owner's picked file to a local path first),
-        same shared persistence/versioning as the CSV path
+        owner-facing UDK import path.
+
+        Transport changed from a local `pdf_path` (the original,
+        never-actually-wired design, matching `import_udk_unmodeled_skill_
+        assets`'s own convention) to base64-encoded bytes: this method had
+        zero real HTTP route or frontend caller before this fix, and a real
+        search of this codebase found no Tauri native file-dialog plugin
+        installed anywhere (`@tauri-apps/plugin-dialog` is not a
+        dependency) -- a `pdf_path` design would have required adding one.
+        A standard `<input type="file">` already gives the browser/webview
+        direct byte access with zero native plugin, exactly like the
+        existing CSV import's `file.text()` -- this uses the same real,
+        already-working mechanism, just base64-encoded for a binary
+        payload. Same shared persistence/versioning as the CSV path
         (`_persist_udk_preview`), same identity-matching rules -- no
         second, parallel PDF-specific matching implementation."""
         self._require_mode("redraft")
         try:
-            pdf_bytes = Path(pdf_path).read_bytes()
-        except OSError as exc:
+            pdf_bytes = base64.b64decode(pdf_base64, validate=True)
+        except (ValueError, binascii.Error) as exc:
             raise FacadeError(
-                "REDRAFT_UDK_PDF_UNREADABLE", f"Could not read the UDK PDF file: {exc}", status=400
+                "REDRAFT_UDK_PDF_UNREADABLE", f"The UDK PDF upload was not valid base64 data: {exc}", status=400
             ) from exc
         profile, ranking, manual_assets = self._redraft_room_context(profile_id)
         try:
             result = save_udk_position_pdf_rankings(
                 self.redraft_root, profile, ranking, pdf_bytes, manual_assets,
             )
-        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_UDK_IMPORT_FAILED", str(exc), status=409) from exc
+        except (OSError, RedraftPersistenceError) as exc:
             raise FacadeError(
                 "REDRAFT_UDK_IMPORT_FAILED",
-                "The UDK PDF was rejected without changing NWR rankings.",
+                "The UDK PDF could not be saved.",
                 status=409,
             ) from exc
         return FacadePayload(data={"udk": result})
@@ -3448,10 +3536,12 @@ class DesktopBackendFacade:
             preview = preview_owner_paste_adp(
                 profile, ranking, paste_text, selected_source, manual_assets, root=self.redraft_root
             )
-        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_PREVIEW_FAILED", str(exc), status=409) from exc
+        except (OSError, RedraftPersistenceError) as exc:
             raise FacadeError(
                 "REDRAFT_PASTE_ADP_PREVIEW_FAILED",
-                "The pasted platform ADP table was rejected without changing any local state.",
+                "The pasted platform ADP table could not be parsed. No local state changed.",
                 status=409,
             ) from exc
         return FacadePayload(data={
@@ -3477,8 +3567,10 @@ class DesktopBackendFacade:
                 self.redraft_root, profile, ranking, paste_text, selected_source,
                 source_label, manual_assets, activate=False,
             )
-        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_PASTE_ADP_SAVE_FAILED", "The pasted platform ADP snapshot was not saved.", status=409) from exc
+        except RedraftValidationError as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_SAVE_FAILED", str(exc), status=409) from exc
+        except (OSError, RedraftPersistenceError) as exc:
+            raise FacadeError("REDRAFT_PASTE_ADP_SAVE_FAILED", "The pasted platform ADP snapshot could not be saved.", status=409) from exc
         return self.redraft_bootstrap()
 
     def activate_redraft_paste_adp(self, *, profile_id: str) -> FacadePayload:

@@ -733,6 +733,13 @@ export interface AdpStatus {
   message: string;
 }
 
+export interface MarketProviderAdp {
+  consensus: number | null;
+  sleeper: number | null;
+  espn: number | null;
+  fantasypros: number | null;
+}
+
 export interface PasteAdpPreview {
   selectedSource: "CONSENSUS" | "SLEEPER" | "ESPN" | "FANTASYPROS";
   sourceRows: number;
@@ -1168,6 +1175,12 @@ export interface UdkPositionSnapshot {
   importedAtUtc: string;
   sourceSha256: string;
   sourceRows: number;
+  // NWR DATA-IMPORT UX FIX (2026-09-08): the real backend
+  // (load_udk_rankings) already returns both of these; the TS contract
+  // had been narrower than reality since this snapshot shape was
+  // introduced.
+  sourceFormat?: "CSV" | "PDF";
+  historyCount?: number;
 }
 
 export interface UdkRankings {
@@ -1177,6 +1190,22 @@ export interface UdkRankings {
   // passes through server-side. Verified live against the running
   // desktop API, not merely assumed.
   positions: UdkPositionSnapshot[];
+}
+
+// NWR DATA-IMPORT UX FIX (2026-09-08, directive section 2): the real
+// preview-before-activate response for a Ballers/UDK import (CSV or PDF).
+export interface BallersPreview {
+  sourceFormat: "CSV" | "PDF";
+  sourceRows: number;
+  matchedRows: number;
+  unmatched: string[];
+  warnings: string[];
+  sourceSha256: string;
+  perPositionCounts: Record<string, number>;
+  duplicateRows: string[];
+  // Capped sample per position (server-side) -- perPositionCounts above
+  // carries the real, full counts.
+  positions: Record<string, UdkPlayerEntry[]>;
 }
 
 export interface RedraftBootstrap {
@@ -1194,6 +1223,14 @@ export interface RedraftBootstrap {
   replacementLevels: ReplacementLevel[];
   draftBoard: DraftBoard | null;
   ownerPlatformSnapshot?: OwnerPlatformSnapshotStatus;
+  // NWR DATA-IMPORT UX FIX (2026-09-08, directive section 11): the real,
+  // per-provider raw values behind the global owner platform snapshot,
+  // keyed by NWR player id -- for a compact "Sleeper: 72.0, ESPN: 117.0..."
+  // detail view (Compare/Player Drawer). The active league's own single
+  // resolved column (source/overallAdp on rankings/DraftBoard) remains the
+  // one real value used for Value/Reach/Cost-of-Waiting; this is read-only
+  // supplementary detail, never a second source of truth.
+  marketProviderAdp?: Record<string, MarketProviderAdp>;
   manualAssets?: ManualDraftAsset[];
   udkRankings?: UdkRankings;
   externalConsensus?: ExternalConsensusStatus;

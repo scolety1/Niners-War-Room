@@ -26,7 +26,7 @@ const NAVIGATION: NavigationGroup[] = [
   // removed from pages.tsx -- "/" redirects to this room instead.
   { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] },
   { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
-  { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "ADP Providers", path: "/adp", icon: "activity" }] },
+  { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "Market Data", path: "/adp", icon: "activity" }] },
   { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
   { label: "System", items: [{ label: "Projection & Data Health", path: "/data-health", icon: "health" }] },
 ];

@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { PasteAdpPreview, RedraftBootstrap } from "@nwr/contracts";
+import type { BallersPreview, PasteAdpPreview, RedraftBootstrap } from "@nwr/contracts";
 import { Button, ErrorState, PageHeader, Panel, StatusBadge } from "@nwr/ui";
 import { useEffect, useState } from "react";
 
@@ -20,6 +20,13 @@ export function platformCoverageText(platformCoverage: PlatformCoverage) {
     const coverage = platformCoverage[key] ?? platformCoverage[key.toUpperCase()];
     return `${label}: ${coverage?.available ?? 0}/${coverage?.total ?? 0}`;
   }).join(" · ");
+}
+
+export function parserModeLabel(mode: string | undefined) {
+  if (mode === "CSV_MULTI_PLATFORM") return "CSV";
+  if (mode === "MARKDOWN_TABLE") return "Markdown table";
+  if (mode === "RESPONSIVE_PLATFORM_CLIPBOARD") return "Plain-text";
+  return "Platform table";
 }
 
 export function detectedPlatform(profile: RedraftBootstrap["activeProfile"]) {
@@ -62,15 +69,33 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
     catch (reason) { fail(reason, "The ADP provider action could not be completed."); }
     finally { setWorking(""); }
   };
-  const preview = async () => {
-    if (!activeProfile || !pasteText.trim() || working) return;
+  const preview = async (overrideText?: string) => {
+    const text = overrideText ?? pasteText;
+    if (!activeProfile || !text.trim() || working) return;
     setWorking("paste-preview"); setError(null); setMessage("");
     try {
-      const result = await client.previewRedraftPasteAdp(activeProfile.profileId, pasteText, "CONSENSUS");
+      const result = await client.previewRedraftPasteAdp(activeProfile.profileId, text, "CONSENSUS");
       setPastePreview(result.pastePreview);
-      setMessage(`${result.pastePreview.parserMode === "PLAIN_TEXT_BLOCK" ? "Plain-text" : "Markdown"} parse: ${result.pastePreview.matchedRows}/${result.pastePreview.sourceRows} safe player matches.`);
-    } catch (reason) { fail(reason, "The pasted platform table could not be parsed."); }
+      setMessage(`${parserModeLabel(result.pastePreview.parserMode)} parse: ${result.pastePreview.matchedRows}/${result.pastePreview.sourceRows} safe player matches.`);
+    } catch (reason) { fail(reason, "The platform table could not be parsed."); }
     finally { setWorking(""); }
+  };
+  // NWR DATA-IMPORT UX FIX (2026-09-08): a real, multi-platform CSV export
+  // (Name, Position, Team, ADP, Position Rank, Consensus ADP, Sleeper ADP,
+  // ESPN ADP, FantasyPros ADP) now parses through the exact same backend
+  // pipeline as a pasted table (_owner_platform_rows tries CSV first) --
+  // no new route/client method, just a file-read into the same textarea +
+  // preview flow so the owner sees the same match/coverage review before
+  // saving, whether they pasted or uploaded.
+  const importMultiPlatformCsv = async (file: File | undefined) => {
+    if (!file || !activeProfile || working) return;
+    setError(null); setMessage("");
+    try {
+      const text = await file.text();
+      setPasteText(text);
+      setPasteLabel(file.name.replace(/\.csv$/i, ""));
+      await preview(text);
+    } catch (reason) { fail(reason, `${file.name} could not be read.`); }
   };
   const importCsv = async (file: File | undefined) => {
     if (!file || !activeProfile || working) return;
@@ -87,8 +112,62 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
     finally { setWorking(""); }
   };
 
+  // NWR DATA-IMPORT UX FIX (2026-09-08, directive sections 1-4): the real
+  // Ballers/UDK CSV+PDF parser/versioning pipeline already existed
+  // (parse_udk_position_csv/parse_udk_position_pdf, save_udk_position_
+  // *_rankings, rollback_udk_position_rankings) -- this closes the one
+  // real owner-facing gap: no obvious import control, no preview-before-
+  // activate step, and a PDF-only path with zero route/UI at all. One
+  // control handles any position mix (QB/RB/WR/TE/K/DST) in one file --
+  // positions actually present are read from the file itself.
+  const ballersRankings = data.udkRankings;
+  const [ballersPreview, setBallersPreview] = useState<BallersPreview | null>(null);
+  const [ballersFileName, setBallersFileName] = useState("");
+  const [ballersPayload, setBallersPayload] = useState<{ csvText?: string; pdfBase64?: string } | null>(null);
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.readAsDataURL(file);
+  });
+  const previewBallers = async (file: File | undefined) => {
+    if (!file || !activeProfile || working) return;
+    setWorking("ballers-preview"); setError(null); setMessage(""); setBallersPreview(null); setBallersPayload(null);
+    try {
+      const isPdf = file.name.toLowerCase().endsWith(".pdf");
+      const payload = isPdf ? { pdfBase64: await readFileAsBase64(file) } : { csvText: await file.text() };
+      const result = await client.previewBallersImport(activeProfile.profileId, payload);
+      setBallersPreview(result.ballersPreview);
+      setBallersFileName(file.name);
+      setBallersPayload(payload);
+      setMessage(`Ballers preview: ${result.ballersPreview.matchedRows}/${result.ballersPreview.sourceRows} safe player matches across ${Object.keys(result.ballersPreview.perPositionCounts).length} position(s).`);
+    } catch (reason) { fail(reason, `${file.name} could not be parsed as a Ballers cheat sheet.`); }
+    finally { setWorking(""); }
+  };
+  const activateBallers = async () => {
+    if (!activeProfile || !ballersPayload || working) return;
+    setWorking("ballers-activate"); setError(null); setMessage("");
+    try {
+      const next = ballersPayload.pdfBase64
+        ? await client.importUdkPdfRankings(activeProfile.profileId, ballersPayload.pdfBase64)
+        : await client.importUdkRankings(activeProfile.profileId, ballersPayload.csvText || "");
+      onUpdate(next);
+      setMessage(`Ballers cheat sheet activated from ${ballersFileName}. This global snapshot now feeds every local Redraft league; NWR ranks/projections did not change.`);
+      setBallersPreview(null); setBallersPayload(null); setBallersFileName("");
+    } catch (reason) { fail(reason, "The Ballers cheat sheet could not be activated."); }
+    finally { setWorking(""); }
+  };
+  const cancelBallersPreview = () => { setBallersPreview(null); setBallersPayload(null); setBallersFileName(""); setMessage(""); };
+  const rollbackBallersPosition = async (position: string) => {
+    if (!activeProfile || working) return;
+    await run("ballers-rollback", () => client.rollbackUdkPositionRankings(activeProfile.profileId, position), `Rolled ${position} back to its previous Ballers import.`);
+  };
+
   return <div className="adp-providers-page" aria-busy={Boolean(working)}>
-    <PageHeader eyebrow={activeProfile ? `Active League · ${leagueFormat(activeProfile)}` : "Provider settings · local only"} title="ADP Providers" description="Manage draft-market timing separately from NWR rankings and projections. Changes here never write to Sleeper." status={<><StatusBadge tone={adp?.available ? "safe" : "review"} label={providerLabel(adp)} /><StatusBadge tone="safe" label="NWR ranks unchanged" /></>} />
+    <PageHeader eyebrow={activeProfile ? `Active League · ${leagueFormat(activeProfile)}` : "Provider settings · local only"} title="Market Data" description="Manage draft-market timing (ADP) and Ballers/UDK reference rankings separately from NWR rankings and projections. Changes here never write to Sleeper." status={<><StatusBadge tone={adp?.available ? "safe" : "review"} label={providerLabel(adp)} /><StatusBadge tone="safe" label="NWR ranks unchanged" /></>} />
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <p aria-live="polite" className="profile-feedback">{message}</p>
     <Panel title="Active ADP source" eyebrow="Compact in Draft Room · detail here">
@@ -97,13 +176,18 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
       <div className="profile-edit-actions"><Button disabled={!activeProfile || Boolean(working)} icon="activity" onClick={() => void run("adp-refresh", () => client.refreshRedraftAdp(activeProfile!.profileId), "Fantasy Football Calculator ADP refreshed locally. NWR ranks did not change.")}>{working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}</Button><Button disabled={!activeProfile || Boolean(working)} icon="undo" variant="secondary" onClick={() => void run("paste-clear", () => client.clearRedraftPasteAdp(activeProfile!.profileId), "This league now uses its automatic platform column again. FFC remains the fallback.")}>{working === "paste-clear" ? "Clearing…" : "Clear league override"}</Button></div>
     </Panel>
     <div className="adp-provider-grid">
-      <Panel title="Global Owner Platform Snapshot" eyebrow="Paste once · use across Redraft leagues">
-        <p>Paste one full platform ADP table. NWR safely matches players once and stores the Consensus, Sleeper, ESPN, and FantasyPros columns together for every local Redraft league. It never changes rankings, projections, or Sleeper data.</p>
-        <div className="form-grid"><label className="form-field"><span>Source label</span><input disabled={Boolean(working)} value={pasteLabel} onChange={(event) => setPasteLabel(event.target.value)} /></label><div className="form-field"><span>Parser modes</span><small>Markdown table first; plain-text player blocks are accepted when no table header is present.</small></div></div>
-        <label className="form-field"><span>Raw pasted text</span><textarea disabled={Boolean(working)} rows={10} wrap="off" style={{ fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", whiteSpace: "pre", overflowX: "auto" }} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); setPreviewLimit(25); }} placeholder={"| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |\n\nor plain text:\nWR13\nExample Player\n18.4 19.1 17.8 18.0"} /></label>
+      <Panel title="Import Multi-Platform ADP" eyebrow="Import once · use across every Redraft league">
+        <p>Import one full platform ADP snapshot — CSV file, or paste a markdown table or plain-text clipboard block. NWR safely matches players once and stores the Consensus, Sleeper, ESPN, and FantasyPros columns together for every local Redraft league. It never changes rankings, projections, or Sleeper data.</p>
+        {snapshot?.available ? <p className="boundary-note">Current snapshot: {snapshot.importedAtUtc ? new Date(snapshot.importedAtUtc).toLocaleDateString() : "—"} · {snapshot.rowCount} rows.</p> : null}
+        <div className="form-grid">
+          <label className="file-action">Choose multi-platform ADP CSV<input accept=".csv,text/csv" disabled={!activeProfile || Boolean(working)} onChange={(event) => void importMultiPlatformCsv(event.target.files?.[0])} type="file" /></label>
+          <label className="form-field"><span>Source label</span><input disabled={Boolean(working)} value={pasteLabel} onChange={(event) => setPasteLabel(event.target.value)} /></label>
+          <div className="form-field"><span>Parser modes</span><small>A real CSV file is recognized directly; markdown tables and plain-text player blocks are also accepted when pasted below.</small></div>
+        </div>
+        <label className="form-field"><span>Raw pasted text (or the file's own contents, once chosen above)</span><textarea disabled={Boolean(working)} rows={10} wrap="off" style={{ fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", whiteSpace: "pre", overflowX: "auto" }} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); setPreviewLimit(25); }} placeholder={"Name,Position,Team,ADP,Position Rank,Consensus ADP,Sleeper ADP,ESPN ADP,FantasyPros ADP\nExample Player,RB,KC,3.2,1,3.2,2.9,4.1,3.7\n\nor a markdown table:\n| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |\n\nor plain text:\nWR13\nExample Player\n18.4 19.1 17.8 18.0"} /></label>
         <div className="profile-edit-actions"><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void preview()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void run("paste-save", () => client.saveRedraftPasteAdp(activeProfile!.profileId, pasteText, "CONSENSUS", pasteLabel), "Global owner platform snapshot saved locally. Each league can now choose its column.")}>{working === "paste-save" ? "Saving…" : "Save global snapshot"}</Button></div>
-        {pastePreview ? <div className="copy-muted"><div className="metric-grid"><div><strong>{pastePreview.sourceRows}</strong><small>Parsed rows</small></div><div><strong>{pastePreview.matchedRows}</strong><small>Matched</small></div><div><strong>{pastePreview.unmatched.length}</strong><small>Unmatched</small></div><div><strong>{pastePreview.rows.filter((row) => String(row.matchSource || "") === "OWNER_APPROVED").length}</strong><small>Owner-approved</small></div><div><strong>{platformCoverageText(pastePreview.platformCoverage)}</strong><small>Platform coverage</small></div><div><strong>{activeColumn}</strong><small>{activeProfile?.leagueName || "—"} · {detectedPlatformLabel}</small></div></div><small>Fallback: {activeColumn} → Consensus → FFC → Unavailable · {pastePreview.parserMode === "RESPONSIVE_PLATFORM_CLIPBOARD" ? "Responsive clipboard" : "Markdown table"}</small><div className="profile-edit-actions"><Button variant={previewFilter === "ALL" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("ALL"); setPreviewLimit(25); }}>All rows</Button><Button variant={previewFilter === "MATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MATCHED"); setPreviewLimit(25); }}>Matched</Button><Button variant={previewFilter === "UNMATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("UNMATCHED"); setPreviewLimit(25); }}>Unmatched</Button><Button variant={previewFilter === "AMBIGUOUS" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("AMBIGUOUS"); setPreviewLimit(25); }}>Ambiguous</Button><Button variant={previewFilter === "MISSING" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MISSING"); setPreviewLimit(25); }}>Missing active platform</Button></div><div className="draft-board-scroll"><table><thead><tr><th>Row</th><th>Pos rank</th><th>Player</th><th>Team</th><th>Consensus</th><th>Sleeper</th><th>ESPN</th><th>FantasyPros</th><th>Match status / source</th><th>Matched NWR player</th><th>Reason / review</th></tr></thead><tbody>{previewRows.slice(0, previewLimit).map((row) => <tr key={String(row.sourceRowIndex)}><td>{String(row.sourceRowIndex ?? "—")}</td><td>{String(row.positionRank ?? row.position ?? "—")}</td><td>{String(row.playerName ?? "—")}</td><td>{String(row.sourceTeam ?? "—")}</td><td>{String(row.consensusAdp ?? "—")}</td><td>{String(row.sleeperAdp ?? "—")}</td><td>{String(row.espnAdp ?? "—")}</td><td>{String(row.fantasyprosAdp ?? "—")}</td><td>{String(row.matchStatus ?? "—")} · {String(row.matchSource ?? "UNMATCHED")}</td><td>{String(row.matchedNwrPlayerName ?? "—")}</td><td>{String(row.unmatchedReason ?? (row[`${activeColumn.toLowerCase()}Adp`] == null ? "Selected column missing; Consensus/FFC fallback may apply" : "Matched"))}{Array.isArray(row.candidateSuggestions) ? row.candidateSuggestions.map((value) => { const candidate = value as Record<string, unknown>; return <div key={String(candidate.playerId)}><small>{String(candidate.playerName)} · {String(candidate.position)} · {String(candidate.team || "—")} · {String(candidate.confidence)}</small><Button disabled={Boolean(working) || String(candidate.position) !== String(row.position)} variant="secondary" onClick={() => void approveCandidate(row, candidate)}>Approve ADP-only match</Button></div>; }) : null}</td></tr>)}</tbody></table></div>{previewRows.length > previewLimit ? <Button variant="secondary" onClick={() => setPreviewLimit((value) => value + 25)}>Show 25 more</Button> : null}{previewFilter === "UNMATCHED" ? pastePreview.unmatched.slice(0, 12).map((warning) => <small key={warning}>{warning}</small>) : null}</div> : null}
-        {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {snapshot.parserMode || "unknown"} parser, hash {snapshot.rawHash.slice(0, 12)}… <small>{platformCoverageText(snapshot.platformCoverage)}</small></p> : null}
+        {pastePreview ? <div className="copy-muted"><div className="metric-grid"><div><strong>{pastePreview.sourceRows}</strong><small>Parsed rows</small></div><div><strong>{pastePreview.matchedRows}</strong><small>Matched</small></div><div><strong>{pastePreview.unmatched.length}</strong><small>Unmatched</small></div><div><strong>{pastePreview.rows.filter((row) => String(row.matchSource || "") === "OWNER_APPROVED").length}</strong><small>Owner-approved</small></div><div><strong>{platformCoverageText(pastePreview.platformCoverage)}</strong><small>Platform coverage</small></div><div><strong>{activeColumn}</strong><small>{activeProfile?.leagueName || "—"} · {detectedPlatformLabel}</small></div></div><small>Fallback: {activeColumn} → Consensus → FFC → Unavailable · {parserModeLabel(pastePreview.parserMode)}</small><div className="profile-edit-actions"><Button variant={previewFilter === "ALL" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("ALL"); setPreviewLimit(25); }}>All rows</Button><Button variant={previewFilter === "MATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MATCHED"); setPreviewLimit(25); }}>Matched</Button><Button variant={previewFilter === "UNMATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("UNMATCHED"); setPreviewLimit(25); }}>Unmatched</Button><Button variant={previewFilter === "AMBIGUOUS" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("AMBIGUOUS"); setPreviewLimit(25); }}>Ambiguous</Button><Button variant={previewFilter === "MISSING" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MISSING"); setPreviewLimit(25); }}>Missing active platform</Button></div><div className="draft-board-scroll"><table><thead><tr><th>Row</th><th>Pos rank</th><th>Player</th><th>Team</th><th>Consensus</th><th>Sleeper</th><th>ESPN</th><th>FantasyPros</th><th>Match status / source</th><th>Matched NWR player</th><th>Reason / review</th></tr></thead><tbody>{previewRows.slice(0, previewLimit).map((row) => <tr key={String(row.sourceRowIndex)}><td>{String(row.sourceRowIndex ?? "—")}</td><td>{String(row.positionRank ?? row.position ?? "—")}</td><td>{String(row.playerName ?? "—")}</td><td>{String(row.sourceTeam ?? "—")}</td><td>{String(row.consensusAdp ?? "—")}</td><td>{String(row.sleeperAdp ?? "—")}</td><td>{String(row.espnAdp ?? "—")}</td><td>{String(row.fantasyprosAdp ?? "—")}</td><td>{String(row.matchStatus ?? "—")} · {String(row.matchSource ?? "UNMATCHED")}</td><td>{String(row.matchedNwrPlayerName ?? "—")}</td><td>{String(row.unmatchedReason ?? (row[`${activeColumn.toLowerCase()}Adp`] == null ? "Selected column missing; Consensus/FFC fallback may apply" : "Matched"))}{Array.isArray(row.candidateSuggestions) ? row.candidateSuggestions.map((value) => { const candidate = value as Record<string, unknown>; return <div key={String(candidate.playerId)}><small>{String(candidate.playerName)} · {String(candidate.position)} · {String(candidate.team || "—")} · {String(candidate.confidence)}</small><Button disabled={Boolean(working) || String(candidate.position) !== String(row.position)} variant="secondary" onClick={() => void approveCandidate(row, candidate)}>Approve ADP-only match</Button></div>; }) : null}</td></tr>)}</tbody></table></div>{previewRows.length > previewLimit ? <Button variant="secondary" onClick={() => setPreviewLimit((value) => value + 25)}>Show 25 more</Button> : null}{previewFilter === "UNMATCHED" ? pastePreview.unmatched.slice(0, 12).map((warning) => <small key={warning}>{warning}</small>) : null}</div> : null}
+        {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {parserModeLabel(snapshot.parserMode)} parser, hash {snapshot.rawHash.slice(0, 12)}… <small>{platformCoverageText(snapshot.platformCoverage)}</small></p> : null}
       </Panel>
       <Panel title="League Platform Selection" eyebrow="Per league · global snapshot remains unchanged">
         <p>This league is detected as <strong>{snapshot?.detectedPlatform || detectedPlatformLabel}</strong>. Auto follows the connected provider: Sleeper → Sleeper, ESPN → ESPN, FantasyPros → FantasyPros, otherwise Consensus.</p>
@@ -117,5 +201,47 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
         <p className="boundary-note">No provider import changes rankings, projections, CPU strategy rules, or Sleeper data.</p>
       </Panel>
     </div>
+    <Panel title="Import Ballers Cheat Sheet" eyebrow="Import once · use across every Redraft league">
+      <p>Import the owner's Fantasy Footballers Podcast UDK cheat sheet — CSV or PDF, any position mix (QB/RB/WR/TE/K/DST) in one file. NWR safely matches players once; the same active snapshot then feeds Suggestions, Cheat Sheets, Compare, and the Player Drawer for every local Redraft league. Ballers stays reference-only for QB/RB/WR/TE — it never changes NWR Rank, Player Score, Team Score, Championship Equity, RAV, or Pick Score. For K/DST it remains the explicit reference/fallback until NWR has a promoted direct K/DST model — no NWR Player Score is ever fabricated for K/DST.</p>
+      {ballersRankings && ballersRankings.positions.length > 0 ? (
+        <p className="boundary-note">
+          Current Ballers snapshot: {ballersRankings.positions.map((p) => `${p.position} ${p.entries.length}`).join(" · ")}
+          {" — "}imported {ballersRankings.positions[0]?.importedAtUtc ? new Date(ballersRankings.positions[0].importedAtUtc).toLocaleString() : "—"}
+        </p>
+      ) : <p className="boundary-note">No Ballers cheat sheet imported yet.</p>}
+      <label className="file-action">Choose Ballers cheat sheet (CSV or PDF)<input accept=".csv,text/csv,.pdf,application/pdf" disabled={!activeProfile || Boolean(working)} onChange={(event) => void previewBallers(event.target.files?.[0])} type="file" /></label>
+      {ballersPreview ? (
+        <div className="copy-muted">
+          <div className="metric-grid">
+            <div><strong>{ballersFileName}</strong><small>Source file</small></div>
+            <div><strong>{ballersPreview.sourceFormat}</strong><small>Format</small></div>
+            <div><strong>{ballersPreview.sourceSha256.slice(0, 12)}…</strong><small>Source hash</small></div>
+            <div><strong>{ballersPreview.sourceRows}</strong><small>Total rows</small></div>
+            <div><strong>{ballersPreview.matchedRows}</strong><small>Matched</small></div>
+            <div><strong>{ballersPreview.unmatched.length}</strong><small>Unmatched</small></div>
+            <div><strong>{ballersPreview.duplicateRows.length}</strong><small>Duplicate</small></div>
+          </div>
+          <p>
+            Position counts: {(["QB", "RB", "WR", "TE", "K", "DST"] as const).map((position) => `${position} ${ballersPreview.perPositionCounts[position] ?? 0}`).join(" · ")}
+          </p>
+          <p className="boundary-note">Fields detected: {Object.keys(ballersPreview.positions[Object.keys(ballersPreview.positions)[0] || ""]?.[0] ?? {}).length > 0 ? "Rank, Position Rank, Tier, ADP, Risk, Upside, Points, Outlook, Dynasty, Team, Bye" : "—"} — fields not present in the source file are never invented.</p>
+          {ballersPreview.unmatched.length > 0 ? <details><summary>Unmatched rows ({ballersPreview.unmatched.length})</summary>{ballersPreview.unmatched.slice(0, 20).map((warning) => <small key={warning}>{warning}<br /></small>)}</details> : null}
+          {ballersPreview.duplicateRows.length > 0 ? <details><summary>Duplicate rows ({ballersPreview.duplicateRows.length})</summary>{ballersPreview.duplicateRows.map((warning) => <small key={warning}>{warning}<br /></small>)}</details> : null}
+          <div className="profile-edit-actions">
+            <Button disabled={Boolean(working)} icon="check" onClick={() => void activateBallers()}>{working === "ballers-activate" ? "Activating…" : "Activate Ballers Cheat Sheet"}</Button>
+            <Button disabled={Boolean(working)} variant="secondary" onClick={cancelBallersPreview}>Cancel</Button>
+          </div>
+        </div>
+      ) : null}
+      {ballersRankings && ballersRankings.positions.some((p) => (p.historyCount ?? 0) > 0) ? (
+        <div className="profile-edit-actions">
+          {ballersRankings.positions.filter((p) => (p.historyCount ?? 0) > 0).map((p) => (
+            <Button key={p.position} disabled={Boolean(working)} variant="secondary" onClick={() => void rollbackBallersPosition(p.position)}>
+              {working === "ballers-rollback" ? "Rolling back…" : `Roll back ${p.position}`}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </Panel>
   </div>;
 }

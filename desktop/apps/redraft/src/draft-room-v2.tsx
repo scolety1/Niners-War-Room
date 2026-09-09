@@ -28,6 +28,7 @@ import type {
   KhaHistoricalReplayPreview,
   LeagueProfile,
   MetricStatus,
+  MarketProviderAdp,
   PlayerStatusOverride,
   RedraftBootstrap,
   RedraftExternalIntelligence,
@@ -1659,6 +1660,7 @@ export function DraftRoomV2Page({
             currentPick={board?.currentPick ?? null}
             teamCount={data.activeProfile?.teamCount ?? null}
             adpTeamCount={board?.adp?.teamCount ?? null}
+            udkById={udkById}
           />
         ) : null}
         {tab === "REPLAY" ? (
@@ -1699,6 +1701,7 @@ export function DraftRoomV2Page({
           intel={drawerEntry}
           udkEntry={drawerUdkEntry}
           candidate={drawerCandidate}
+          marketProviderAdp={data.marketProviderAdp?.[drawerPlayerId]}
           currentTeamScore={decisionBundle && decisionBundle.available ? decisionBundle.currentTeamScore.percentile : null}
           staleAlertData={Boolean(externalIntel?.stale)}
           staleAlertHours={externalIntel?.snapshotAgeHours ?? null}
@@ -3347,6 +3350,7 @@ function CompareTab({
   currentPick,
   teamCount,
   adpTeamCount,
+  udkById,
 }: {
   rows: CompareRow[];
   summary: string;
@@ -3359,6 +3363,12 @@ function CompareTab({
   currentPick: number | null;
   teamCount: number | null;
   adpTeamCount: number | null;
+  // NWR DATA-IMPORT UX FIX (2026-09-08, directive section 4): Compare had
+  // zero Ballers/UDK reference at all -- the same shared, authoritative
+  // map every other real surface (Suggestions/Cheat Sheets/Player Drawer)
+  // already resolves from. Reference only -- never blended into NWR Rank/
+  // Player Score/Pick Score/etc. above.
+  udkById?: Map<string, UdkPlayerEntry>;
 }) {
   const [addQuery, setAddQuery] = useState("");
   const existingIds = rows.map((row) => row.playerId);
@@ -3441,6 +3451,11 @@ function CompareTab({
             { key: "overallAdp", label: "Market / ADP", sort: "number", render: (row) => {
               const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, teamCount);
               return <span title={adp.title}>{adp.text}</span>;
+            } },
+            { key: "ballers", label: "Ballers", titleHint: "Fantasy Footballers UDK -- reference only, never blended into NWR Rank/Player Score/Pick Score/etc.", sort: "number", render: (row) => {
+              const entry = udkById?.get(String(row.playerId));
+              if (!entry) return "—";
+              return <span title={`ADP ${entry.adpRaw || "—"} · Risk ${entry.risk ?? "—"} · Upside ${entry.upside ?? "—"}`}>#{entry.rank ?? "—"} · Tier {entry.tier ?? "—"}</span>;
             } },
             { key: "teamScoreDelta", label: "Team", titleHint: "Team Score Δ -- research-grade simulation, not a calibrated production score.", sort: "number", render: (row) => row.teamScoreDelta == null ? "Not evaluated" : `${row.teamScoreDelta as number >= 0 ? "+" : ""}${formatNumber(row.teamScoreDelta as number, 1)}` },
             { key: "equityGain", label: "Championship", titleHint: "Championship Equity Δ -- simulated research estimate.", sort: "number", render: (row) => row.equityGain == null ? "Not evaluated" : `${row.equityGain as number >= 0 ? "+" : ""}${formatNumber((row.equityGain as number) * 100, 2)} pp` },
@@ -3612,6 +3627,7 @@ function PlayerDrawer({
   // the post-draft overnight repair) now both reachable from here.
   statusOverrides = [],
   onSubmitStatusOverride,
+  marketProviderAdp,
 }: {
   playerId: string;
   ranking: RedraftBootstrap["rankings"][number] | undefined;
@@ -3645,6 +3661,7 @@ function PlayerDrawer({
     sources: string[];
     correctedTeam?: string;
   }) => void;
+  marketProviderAdp?: MarketProviderAdp | undefined;
 }) {
   const playerScore = candidate?.playerScore ?? (ranking ? ranking.replacementAdjustedValue : null);
   const activeStatusOverrides = useMemo(
@@ -3798,6 +3815,19 @@ function PlayerDrawer({
       <details className="player-drawer__section">
         <summary>Details</summary>
         <p>NWR Rank #{ranking?.overallRank ?? "—"} · {ranking?.overallTierLabel ?? "—"} · Expected round {ranking?.expectedRound ?? "—"}</p>
+        {marketProviderAdp ? (
+          // NWR DATA-IMPORT UX FIX (2026-09-08, directive section 11): the
+          // real, per-provider raw ADP values from the global owner
+          // platform snapshot -- reference only; the league's own active
+          // column (shown above as "Market ADP") remains the one real
+          // value driving Value/Reach/Cost-of-Waiting.
+          <p className="boundary-note">
+            Consensus: {marketProviderAdp.consensus != null ? formatNumber(marketProviderAdp.consensus, 1) : "—"}
+            {" · "}Sleeper: {marketProviderAdp.sleeper != null ? formatNumber(marketProviderAdp.sleeper, 1) : "—"}
+            {" · "}ESPN: {marketProviderAdp.espn != null ? formatNumber(marketProviderAdp.espn, 1) : "—"}
+            {" · "}FantasyPros: {marketProviderAdp.fantasypros != null ? formatNumber(marketProviderAdp.fantasypros, 1) : "—"}
+          </p>
+        ) : null}
         {candidate ? (
           <>
             <p>Pick Score is EXPERIMENTAL — historically validated but not yet independently audited. Team Score and Championship Equity are RESEARCH-labeled simulation estimates, not calibrated probabilities.</p>

@@ -1059,12 +1059,16 @@ UDK_MAX_HISTORY_VERSIONS = 5
 def _persist_udk_preview(
     root: str | Path, profile: LeagueProfile, preview: dict[str, Any]
 ) -> dict[str, Any]:
-    """Shared persistence for a UDK preview, however it was parsed (CSV or
-    PDF) -- merges additively into any prior import for this profile so
-    importing a QB-only file does not erase a previously-imported RB
-    file. Provenance (provider, imported_at, source hash, source format)
-    travels with every position bucket so the UI can always disclose
-    "UDK, imported <time>" distinct from NWR's own rankings.
+    """Shared persistence for a UDK/Ballers preview, however it was parsed
+    (CSV or PDF) -- merges additively into the ONE real, global Ballers
+    snapshot (shared across every local Redraft league, per directive
+    section 3) so importing a QB-only file does not erase a previously
+    -imported RB file. Provenance (provider, imported_at, source hash,
+    source format) travels with every position bucket so the UI can
+    always disclose "UDK, imported <time>" distinct from NWR's own
+    rankings. `profile` is used only for identity matching in the
+    caller's own `parse_udk_position_csv`/`parse_udk_position_pdf` --
+    storage itself is not scoped to any one profile.
 
     NWR class-time hardening, section 7: activation now keeps a real,
     bounded version history PER POSITION (the directive's own "versioned
@@ -1075,7 +1079,7 @@ def _persist_udk_preview(
     restore it. A position with no prior import has no history to push;
     the first real activation for a position never has anything to roll
     back to, which is the correct, honest behavior."""
-    path = _udk_rankings_path(root, profile.profile_id)
+    path = _ballers_snapshot_path(root)
     existing: dict[str, Any] = {}
     try:
         if path.exists():
@@ -1099,7 +1103,7 @@ def _persist_udk_preview(
             "sourceRows": len(entries),
             "history": history,
         }
-    document = {"profileId": profile.profile_id, "positions": positions}
+    document = {"positions": positions}
     try:
         _atomic_json(path, document)
     except OSError as exc:
@@ -1125,7 +1129,7 @@ def rollback_udk_position_rankings(
     silently no-ops) if that position has no import at all, or has no
     history to roll back to (e.g. its only real import so far)."""
     normalized_position = _normalized_position(position)
-    path = _udk_rankings_path(root, profile_id)
+    path = _ballers_snapshot_path(root)
     try:
         document = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -1141,7 +1145,7 @@ def rollback_udk_position_rankings(
         )
     restored, remaining_history = history[0], history[1:]
     positions[normalized_position] = {**restored, "history": remaining_history}
-    document = {"profileId": profile_id, "positions": positions}
+    document = {"positions": positions}
     try:
         _atomic_json(path, document)
     except OSError as exc:
@@ -1203,7 +1207,7 @@ def load_udk_rankings(root: str | Path, profile_id: str) -> dict[str, Any]:
     every prior version's full entry list on every load would bloat the
     payload for no consumer that reads it. Only a real `historyCount`
     (how many versions are available to roll back to) is exposed."""
-    path = _udk_rankings_path(root, profile_id)
+    path = _ballers_snapshot_path(root)
     positions_by_key: dict[str, Any] = {}
     if path.exists():
         try:
@@ -3028,8 +3032,17 @@ def _owner_paste_raw_path(root: str | Path, profile_id: str) -> Path:
     return Path(root) / "adp_provider_cache" / "owner_paste" / f"{profile_id}.md"
 
 
-def _udk_rankings_path(root: str | Path, profile_id: str) -> Path:
-    return Path(root) / "udk_provider_cache" / f"{profile_id}.json"
+# NWR DATA-IMPORT UX FIX (2026-09-08, directive section 3): Ballers/UDK
+# reference data is real, owner-owned data -- imported once, the SAME for
+# every local Redraft league, exactly like the owner platform ADP snapshot
+# above. Previously keyed by profile_id (`udk_provider_cache/<profile_id>.
+# json`); no owner import had ever actually been made under that scheme
+# (verified directly against the real state root before this change), so
+# there is nothing to migrate. A single global path removes the real risk
+# the directive explicitly names: "one surface reading stale Ballers while
+# another reads current."
+def _ballers_snapshot_path(root: str | Path) -> Path:
+    return Path(root) / "ballers_snapshot" / "snapshot.json"
 
 
 def _owner_platform_snapshot_path(root: str | Path) -> Path:
@@ -3293,6 +3306,39 @@ def owner_platform_snapshot_status(root: str | Path, profile: LeagueProfile | No
     }
 
 
+def owner_platform_provider_breakdown(root: str | Path) -> dict[str, dict[str, float | None]]:
+    """NWR DATA-IMPORT UX FIX (2026-09-08, directive section 11): the global
+    owner platform snapshot already stores all four real provider columns
+    per row (`_save_owner_platform_snapshot`'s own `rows`) -- this exposes
+    them keyed by the real, matched NWR player id, for a compact per-player
+    detail view (Compare/Player Drawer) to show "Sleeper: 72.0, ESPN: 117.0,
+    ..." without blending providers into one number. The active league
+    column used for Value/Reach/Cost-of-Waiting stays exactly what
+    `load_adp_snapshot`/`AdpEntry.overall_adp` already resolve -- this is
+    read-only supplementary detail, never a second source of truth."""
+    path = _owner_platform_snapshot_path(root)
+    if not path.is_file():
+        return {}
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {}
+    breakdown: dict[str, dict[str, float | None]] = {}
+    for row in document.get("rows", []):
+        if not isinstance(row, Mapping) or row.get("match_status") != "MATCHED":
+            continue
+        player_id = str(row.get("matched_nwr_player_id") or "")
+        if not player_id:
+            continue
+        breakdown[player_id] = {
+            "consensus": _paste_number(row.get("consensus_adp")),
+            "sleeper": _paste_number(row.get("sleeper_adp")),
+            "espn": _paste_number(row.get("espn_adp")),
+            "fantasypros": _paste_number(row.get("fantasypros_adp")),
+        }
+    return breakdown
+
+
 def _paste_selected_source(value: str) -> str:
     selected = str(value or "").strip().upper().replace(" ", "")
     if selected not in PASTE_PLATFORM_COLUMNS:
@@ -3331,7 +3377,76 @@ def _paste_table_rows(paste_text: str) -> list[dict[str, str]]:
     return rows
 
 
+# NWR DATA-IMPORT UX FIX (2026-09-08): the real owner multi-platform ADP export
+# is a genuine, comma-delimited CSV (`Name, Position, Team, ADP, Position Rank,
+# Consensus ADP, Sleeper ADP, ESPN ADP, FantasyPros ADP`) -- neither the
+# markdown-pipe-table parser nor the scraped-plain-text-block parser below
+# recognize it (no `|` characters; not a short numeric-only clipboard block),
+# so it fell through to the rigid, single-column `import_owner_adp_csv` and was
+# rejected there. Reuses the exact same downstream row shape
+# (`position, player, team, consensus, sleeper, espn, fantasypros`) the other
+# two parsers already produce, so `preview_owner_paste_adp`/`save_owner_paste_adp`
+# and everything they feed (global snapshot storage, per-league AUTO selection,
+# matching) needed zero changes -- this is purely a new ingestion adapter, not
+# a new parser/storage system.
+CSV_PLATFORM_HEADER_ALIASES = {
+    "name": "player", "player": "player", "playername": "player",
+    "position": "position", "pos": "position",
+    "team": "team", "nflteam": "team",
+    "adp": "consensus",
+    "consensusadp": "consensus", "consensus": "consensus",
+    "sleeperadp": "sleeper", "sleeper": "sleeper",
+    "espnadp": "espn", "espn": "espn",
+    "fantasyprosadp": "fantasypros", "fantasypros": "fantasypros", "fpros": "fantasypros",
+    "positionrank": "",  # real, present, deliberately not needed downstream
+}
+
+
+def _csv_platform_rows(csv_text: str) -> tuple[list[dict[str, str]], list[str]]:
+    """Real CSV ingestion for the multi-platform ADP snapshot. Returns
+    (rows, warnings); an empty `rows` list (never an exception) means "this
+    text is not a recognizable platform CSV", so the caller can fall through
+    to the markdown/plain-text parsers below -- never a hard failure just
+    because the owner pasted something else instead."""
+    try:
+        reader = csv.reader(io.StringIO(csv_text.lstrip("﻿")))
+        header = next(reader)
+    except (csv.Error, StopIteration):
+        return [], []
+    canonical = [CSV_PLATFORM_HEADER_ALIASES.get(re.sub(r"[^a-z0-9]", "", value.lower()), "") for value in header]
+    if "player" not in canonical or "position" not in canonical:
+        return [], []
+    # A real generic `adp` column maps to `consensus` above -- but only as a
+    # backward-compatible fallback for a file with no real per-provider
+    # columns. A file that carries BOTH a generic `adp` column and a real,
+    # specific `consensus adp` column must use the specific one; blank the
+    # generic column out of `canonical` up front so the per-row loop below
+    # never has to choose between two "consensus" values.
+    consensus_indexes = [index for index, key in enumerate(canonical) if key == "consensus"]
+    if len(consensus_indexes) > 1:
+        generic_indexes = [
+            index for index in consensus_indexes
+            if re.sub(r"[^a-z0-9]", "", header[index].lower()) == "adp"
+        ]
+        for index in generic_indexes[: len(consensus_indexes) - 1]:
+            canonical[index] = ""
+    warnings: list[str] = []
+    rows: list[dict[str, str]] = []
+    for line_number, cells in enumerate(reader, start=2):
+        if not cells or all(not str(value or "").strip() for value in cells):
+            continue
+        if len(cells) != len(canonical):
+            warnings.append(f"CSV line {line_number}: column count does not match the header; row skipped")
+            continue
+        row = {key: str(value or "").strip() for key, value in zip(canonical, cells) if key}
+        rows.append(row)
+    return rows, warnings
+
+
 def _owner_platform_rows(paste_text: str) -> tuple[list[dict[str, str]], str, list[str]]:
+    csv_rows, csv_warnings = _csv_platform_rows(paste_text)
+    if csv_rows:
+        return csv_rows, "CSV_MULTI_PLATFORM", csv_warnings
     markdown_rows = _paste_table_rows(paste_text)
     if markdown_rows:
         return markdown_rows, "MARKDOWN_TABLE", []

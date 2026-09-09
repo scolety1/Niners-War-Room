@@ -39,16 +39,37 @@ def _facade_with_profile(tmp_path: Path) -> tuple[DesktopBackendFacade, str]:
     return facade, profile_id
 
 
-def test_import_udk_pdf_rankings_rejects_an_unreadable_path_before_touching_ranking(
+def test_import_udk_pdf_rankings_rejects_invalid_base64_before_touching_ranking(
     tmp_path: Path,
 ) -> None:
-    """Proves the file is validated BEFORE `_redraft_room_context` runs --
-    this must reject with the real, specific PDF error, not a ranking/
-    profile error, even with no governed snapshot installed at all."""
+    """NWR DATA-IMPORT UX FIX (2026-09-08): transport changed from a local
+    `pdf_path` (never actually reachable -- no Tauri file-dialog plugin
+    exists in this product) to base64-encoded bytes, matching the existing,
+    already-working `<input type="file">` + `file.text()` pattern the CSV
+    import already uses. Proves the upload is validated BEFORE
+    `_redraft_room_context` runs -- this must reject with the real,
+    specific PDF error, not a ranking/profile error, even with no governed
+    snapshot installed at all."""
     facade, profile_id = _facade_with_profile(tmp_path)
     with pytest.raises(FacadeError) as exc_info:
-        facade.import_udk_pdf_rankings(profile_id=profile_id, pdf_path=str(tmp_path / "missing.pdf"))
+        facade.import_udk_pdf_rankings(profile_id=profile_id, pdf_base64="not valid base64!!")
     assert exc_info.value.code == "REDRAFT_UDK_PDF_UNREADABLE"
+
+
+def test_preview_ballers_import_requires_exactly_one_of_csv_or_pdf(tmp_path: Path) -> None:
+    """NWR DATA-IMPORT UX FIX (2026-09-08, directive section 2): the real
+    preview-before-activate step. This validation runs BEFORE
+    `_redraft_room_context` (same real ordering as the PDF-unreadable
+    check above), so it is real, direct facade coverage without needing
+    the governed-projection-snapshot fixture this file's own module
+    docstring already explains is out of scope here."""
+    facade, profile_id = _facade_with_profile(tmp_path)
+    with pytest.raises(FacadeError) as exc_info:
+        facade.preview_ballers_import(profile_id=profile_id)
+    assert exc_info.value.code == "REDRAFT_UDK_PREVIEW_INVALID"
+    with pytest.raises(FacadeError) as exc_info:
+        facade.preview_ballers_import(profile_id=profile_id, csv_text="a", pdf_base64="b")
+    assert exc_info.value.code == "REDRAFT_UDK_PREVIEW_INVALID"
 
 
 def test_rollback_udk_position_rankings_closes_the_real_facade_gap(tmp_path: Path) -> None:

@@ -3,6 +3,7 @@ import {
   CONTRACT_VERSION,
   type ApiEnvelope,
   type ApiErrorBody,
+  type BallersPreview,
   type DesktopMode,
   type DynastyBootstrap,
   type DynastyComparison,
@@ -386,10 +387,33 @@ export class NwrApiClient {
     });
   }
 
+  // NWR DATA-IMPORT UX FIX (2026-09-08, directive section 2): a real
+  // preview-before-activate step, matching the existing owner-platform ADP
+  // paste preview -- never persists.
+  previewBallersImport(profileId: string, input: { csvText?: string; pdfBase64?: string }): Promise<{ ballersPreview: BallersPreview }> {
+    return this.request(`/api/v1/redraft/udk/${encodeURIComponent(profileId)}/preview`, {
+      method: "POST",
+      body: JSON.stringify({ csvText: input.csvText ?? "", pdfBase64: input.pdfBase64 ?? "" }),
+    });
+  }
+
   importUdkRankings(profileId: string, csvText: string): Promise<RedraftBootstrap> {
     return this.request(`/api/v1/redraft/udk/${encodeURIComponent(profileId)}/import`, {
       method: "POST",
       body: JSON.stringify({ csvText }),
+    });
+  }
+
+  // NWR DATA-IMPORT UX FIX (2026-09-08): base64-encoded bytes, not a local
+  // file path -- this method had zero real route/caller before this fix,
+  // and no Tauri native file-dialog plugin exists anywhere in this
+  // product. A standard `<input type="file">` already gives the browser/
+  // webview byte access with zero native plugin, exactly like the
+  // existing CSV import's `file.text()`.
+  importUdkPdfRankings(profileId: string, pdfBase64: string): Promise<RedraftBootstrap> {
+    return this.request(`/api/v1/redraft/udk-pdf/${encodeURIComponent(profileId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ pdfBase64 }),
     });
   }
 
