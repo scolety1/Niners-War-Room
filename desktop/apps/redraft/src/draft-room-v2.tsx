@@ -132,12 +132,13 @@ export interface SuggestionRow {
 
 /**
  * The Suggestions surface's real candidate list IS the DecisionBundle's
- * own candidate list -- default-sorted by Pick Score descending (section
- * 6), never re-derived from ADP-edge alone (which the directive warns
- * can let a deep market target dominate). NWR rank / market ADP columns
- * are enrichment looked up from the already-fetched rankings, not a
- * second candidate-selection pass. Returns [] (never fabricated rows)
- * when the bundle is unavailable -- the caller renders the real reason.
+ * own candidate list, already ordered by the backend's canonical comparator
+ * (marginal roster utility, then Pick Score, raw decision utility, and stable
+ * player ID). The UI must not re-sort by the rounded/collapsed Pick Score:
+ * genuine no-spread candidates all display 50.0, and doing so discards the
+ * backend's honest secondary signal. NWR rank / market ADP columns are
+ * enrichment only, not a second candidate-selection pass. Returns [] when
+ * the bundle is unavailable -- the caller renders the real reason.
  */
 export function buildSuggestionsRows(
   decisionBundle: DecisionBundle | null | undefined,
@@ -147,9 +148,7 @@ export function buildSuggestionsRows(
 ): SuggestionRow[] {
   if (!decisionBundle || !decisionBundle.available) return [];
   const rankingById = new Map(rankings.map((row) => [row.playerId, row]));
-  return [...decisionBundle.candidates]
-    .sort((a, b) => b.pickScore - a.pickScore)
-    .map((candidate) => {
+  return decisionBundle.candidates.map((candidate) => {
       const ranking = rankingById.get(candidate.playerId);
       const intel = intelById.get(candidate.playerId);
       const rav = rawActionValueById.get(candidate.playerId);
@@ -539,8 +538,7 @@ export function assignRosterSlots(
  */
 export function findCloseCall(rows: SuggestionRow[], threshold = 3): { a: SuggestionRow; b: SuggestionRow } | null {
   if (rows.length < 2) return null;
-  const sorted = [...rows].sort((x, y) => y.pickScore - x.pickScore);
-  const [a, b] = sorted;
+  const [a, b] = rows;
   if (!a || !b) return null;
   return Math.abs(a.pickScore - b.pickScore) <= threshold ? { a, b } : null;
 }
@@ -562,9 +560,8 @@ export interface PickNowBanner {
 
 export function findPickNow(rows: SuggestionRow[], closeCallThreshold = 3): PickNowBanner | null {
   if (rows.length === 0) return null;
-  const sorted = [...rows].sort((x, y) => y.pickScore - x.pickScore);
-  const top = sorted[0];
-  const runnerUp = sorted[1] ?? null;
+  const top = rows[0];
+  const runnerUp = rows[1] ?? null;
   if (!top) return null;
   const isCloseCall = runnerUp != null && Math.abs(top.pickScore - runnerUp.pickScore) <= closeCallThreshold;
   const label = top.pickScoreTiedNoSpread

@@ -197,16 +197,16 @@ describe("buildSuggestionsRows", () => {
     { playerId: "p2", playerName: "Deep Sleeper", position: "WR", team: "DET", overallRank: 90, overallAdp: null, expectedPick: null },
   ] as any;
 
-  it("maps DecisionBundle candidates into rows, sorted by Pick Score descending", () => {
+  it("maps DecisionBundle candidates without discarding backend order", () => {
     const bundle = _availableBundle([
       _candidate({ playerId: "p2", playerName: "Deep Sleeper", position: "WR", pickScore: 40, makeItBackProbability: null }),
       _candidate({ playerId: "p1", pickScore: 94 }),
     ]);
     const rows = buildSuggestionsRows(bundle, rankings, new Map());
     expect(rows).toHaveLength(2);
-    expect(rows[0]!.playerId).toBe("p1");
-    expect(rows[0]!.pickScore).toBe(94);
-    expect(rows[1]!.playerId).toBe("p2");
+    expect(rows[0]!.playerId).toBe("p2");
+    expect(rows[0]!.pickScore).toBe(40);
+    expect(rows[1]!.playerId).toBe("p1");
   });
 
   it("enriches candidates with real NWR rank / market data from rankings", () => {
@@ -585,13 +585,13 @@ describe("findPickNow", () => {
     expect(findPickNow([])).toBeNull();
   });
 
-  it("always picks the same row-1 candidate the Pick-Score-sorted table already leads with", () => {
+  it("uses the backend-promoted row even when another row has a higher Pick Score", () => {
     const rows = [
       _candidate({ playerId: "a", pickScore: 40 }),
       _candidate({ playerId: "b", pickScore: 99 }),
       _candidate({ playerId: "c", pickScore: 70 }),
     ] as any;
-    expect(findPickNow(rows, 3)?.row.playerId).toBe("b");
+    expect(findPickNow(rows, 3)?.row.playerId).toBe("a");
   });
 });
 
