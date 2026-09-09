@@ -33,6 +33,26 @@ export function buildCheatSheetCsv(data: RedraftBootstrap, rows: RedraftRanking[
   return [headers, ...records].map((record) => record.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
 
+// NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive section
+// 11): a compact, real, read-only status line -- Cheat Sheets consumes the
+// active global Ballers/market data, it never manages the source.
+export function ballersStatusText(data: RedraftBootstrap): string {
+  const positions = data.udkRankings?.positions ?? [];
+  if (positions.length === 0) return "Ballers: not imported";
+  const rows = positions.reduce((sum, position) => sum + position.entries.length, 0);
+  const latest = positions.reduce((latestTime, position) => position.importedAtUtc > latestTime ? position.importedAtUtc : latestTime, "");
+  const date = latest ? new Date(latest).toLocaleDateString() : "—";
+  return `Ballers: ${date} · ${rows} rows`;
+}
+
+export function marketStatusText(data: RedraftBootstrap): string {
+  const adp = data.draftBoard?.adp;
+  if (!adp?.available) return "Market: unavailable";
+  const provider = data.ownerPlatformSnapshot?.activeColumn || adp.source.replace(/^Owner-imported /i, "").replace(/ ADP.*$/i, "");
+  const date = adp.sourceDate ? new Date(adp.sourceDate).toLocaleDateString() : adp.dateWindow || "—";
+  return `Market: ${provider} · ${date}`;
+}
+
 export function CheatSheetPage({
   data,
   // Optional, defaulted: the standalone "#/cheat-sheet" browse/export
@@ -46,12 +66,6 @@ export function CheatSheetPage({
   onDraft = () => {},
   onQueue = () => {},
   onPlayerClick = () => {},
-  onImportUdk,
-  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll back
-  // to the previous version" facade capability existed but had no UI --
-  // optional/defaulted so the standalone "#/cheat-sheet" route (which has
-  // no live mutation plumbing today) keeps working unchanged.
-  onRollbackUdk,
 }: {
   data: RedraftBootstrap;
   canRecordPick?: boolean;
@@ -60,8 +74,6 @@ export function CheatSheetPage({
   onDraft?: (playerId: string) => void;
   onQueue?: (playerId: string) => void;
   onPlayerClick?: (playerId: string, event: React.MouseEvent) => void;
-  onImportUdk: (file: File | undefined) => void;
-  onRollbackUdk?: (position: string) => void;
 }) {
   const [sheet, setSheet] = useState("Overall");
   // "Source" only ever offers UDK for a position the owner has actually
@@ -150,16 +162,17 @@ export function CheatSheetPage({
         title="Cheat Sheet"
         description="A printable and exportable board built from the active league's governed current-season rankings."
         status={<><StatusBadge tone="safe" label={data.activeProfile.leagueName} /><StatusBadge tone="safe" label={`${isManual ? manualRows.length : udkForSheet && source === "UDK" ? udkVisibleEntries.length : visible.length} players`} /></>}
-        actions={
-          <>
-            <label className="file-action">
-              Import UDK CSV
-              <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportUdk(event.target.files?.[0])} type="file" />
-            </label>
-            <Button icon="board" onClick={exportCsv}>Export CSV</Button>
-          </>
-        }
+        actions={<Button icon="board" onClick={exportCsv}>Export NWR Cheat Sheet CSV</Button>}
       />
+      {/* NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08): Cheat
+          Sheets consumes active data, it does not manage the source --
+          Import UDK CSV/rollback moved to Market Data / ADP (single
+          control-center, directive section 2). This status line links
+          there instead of duplicating any import control here. */}
+      <p className="boundary-note">
+        {ballersStatusText(data)} · {marketStatusText(data)} ·{" "}
+        <a href="#/adp">Manage in Market Data / ADP</a>
+      </p>
       <Panel title={`${data.activeProfile.leagueName} · ${data.activeProfile.season}`} eyebrow={`${data.activeProfile.teamCount} teams · ${data.activeProfile.scoring.reception} PPR · ${data.activeProfile.scoring.tePremium} TE premium`}>
         <div className="toolbar">
           <SegmentedControl label="Sheet" options={SHEETS} value={sheet} onChange={(value) => { setSheet(value); setSource("NWR"); }} />
@@ -193,18 +206,7 @@ export function CheatSheetPage({
               UDK's own position rank/tier — NOT NWR's overall rank, and its Risk/Upside/ADP are provider
               context, not NWR calibrated confidence. ADP is shown exactly as UDK printed it (source team
               count unknown) — never reinterpreted as this league's own round.pick.
-              {onRollbackUdk ? (
-                <>
-                  {" "}
-                  <Button
-                    variant="ghost"
-                    disabled={Boolean(working)}
-                    onClick={() => onRollbackUdk(sheet)}
-                  >
-                    Roll back {sheet} to previous import
-                  </Button>
-                </>
-              ) : null}
+              {" "}Rollback moved to <a href="#/adp">Market Data / ADP</a>.
             </p>
             <DataTable
               columns={[

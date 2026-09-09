@@ -53,6 +53,7 @@ import { NwrApiError, type NwrApiClient, type RedraftDecisionBundleV2CandidateRe
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CheatSheetPage } from "./cheat-sheet";
+import { detectedPlatform } from "./adp-providers";
 import { rosterFormat, scoringFormat } from "./league-context";
 // Reused, not rebuilt (section 9 -- REUSE FIRST): the exact global,
 // position-filter-ignoring pick search and keyboard-navigation helpers the
@@ -934,13 +935,21 @@ export function DraftRoomV2Page({
       setWorking("");
     }
   };
+  // NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+  // section 6): previously called client.importRedraftAdp -- the OLD,
+  // rigid single-column importer (real columns: player, position, source,
+  // scoring_format, team_count, date). Rewired to the real, global
+  // multi-platform pipeline (the same one the /adp page's own "Import
+  // Multi-Platform ADP" already uses) -- CSV_MULTI_PLATFORM is
+  // auto-detected server-side, and the old simple Name/Position/ADP shape
+  // still works (generic ADP maps to Consensus). No new route/parser.
   const importAdp = async (file: File | undefined) => {
     if (!file || !data.activeProfileId) return;
     setWorking("adp-import");
     setMutationError(null);
     try {
       const csvText = await file.text();
-      onUpdate(await client.importRedraftAdp(data.activeProfileId, csvText));
+      onUpdate(await client.saveRedraftPasteAdp(data.activeProfileId, csvText, "CONSENSUS", file.name.replace(/\.csv$/i, "")));
     } catch (reason) {
       setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${file.name} could not be imported.`));
     } finally {
@@ -1002,20 +1011,10 @@ export function DraftRoomV2Page({
     }
   };
 
-  // NWR NEXT-DRAFT FINAL BLOCKER CLOSURE (section 8): the real "roll back
-  // one position's UDK import" facade capability existed but had no UI.
-  const rollbackUdk = async (position: string) => {
-    if (!data.activeProfileId) return;
-    setWorking("udk-rollback");
-    setMutationError(null);
-    try {
-      onUpdate(await client.rollbackUdkPositionRankings(data.activeProfileId, position));
-    } catch (reason) {
-      setMutationError(reason instanceof NwrApiError ? reason : new NwrApiError(`${position} could not be rolled back.`));
-    } finally {
-      setWorking("");
-    }
-  };
+  // NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+  // section 1): rollback is now a Market Data / ADP-only control (the
+  // /adp page's own "Roll back <position>" buttons) -- removed the
+  // duplicate here, matching "no duplicate primary controls."
 
   // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): a real gap found
   // while building the exact 16-round acceptance mock -- the only real,
@@ -1447,10 +1446,12 @@ export function DraftRoomV2Page({
         <RoomControls
           open={roomControlsOpen}
           onToggle={() => setRoomControlsOpen((value) => !value)}
+          data={data}
           adp={board.adp}
           working={working}
           onRefreshAdp={() => void refreshAdp()}
           onImportAdp={(file) => void importAdp(file)}
+          onImportBallers={(file) => void importUdk(file)}
           needsKdstImport={Boolean((data.activeProfile?.roster.k ?? 0) > 0 || (data.activeProfile?.roster.dst ?? 0) > 0)}
           onImportUdkKdst={(file) => void importUdkKdst(file)}
         />
@@ -1627,8 +1628,6 @@ export function DraftRoomV2Page({
             onDraft={(playerId) => void mark(playerId)}
             onQueue={toggleQueue}
             onPlayerClick={onPlayerClick}
-            onImportUdk={(file) => void importUdk(file)}
-            onRollbackUdk={(position) => void rollbackUdk(position)}
           />
         ) : null}
         {tab === "BOARD" ? (
@@ -1822,70 +1821,99 @@ function CompactOnClockRow({
  * reimplemented. Less-frequent than Undo/Restart, so it lives in one
  * compact expansion rather than permanent header space.
  */
+// NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+// section 1): this IS the "single obvious place" for market data status --
+// real, compact ACTIVE LEAGUE MARKET / BALLERS / K-DST summary plus quick
+// import shortcuts, with the full preview/rollback/per-provider-selection
+// experience (already built) one click away at /adp. Import UDK CSV moved
+// out of Cheat Sheets into this exact panel (section 2); the old rigid
+// single-column ADP importer was rewired to the real global multi-platform
+// pipeline (section 6); K/DST UDK import demoted to an explicit fallback
+// (section 5) -- never implying the owner must upload K/DST twice when an
+// active Ballers file already covers it.
 function RoomControls({
   open,
   onToggle,
+  data,
   adp,
   working,
   onRefreshAdp,
   onImportAdp,
+  onImportBallers,
   needsKdstImport,
   onImportUdkKdst,
 }: {
   open: boolean;
   onToggle: () => void;
+  data: RedraftBootstrap;
   adp: AdpStatus | undefined;
   working: string;
   onRefreshAdp: () => void;
   onImportAdp: (file: File | undefined) => void;
+  onImportBallers: (file: File | undefined) => void;
   // NWR LAST PRE-DRAFT BLOCKER CLOSURE (section 2): shown only when the
-  // active league's roster actually configures a K or DST slot -- this
-  // real, evidence-based "all 32 teams' current K/DST" import is the
-  // ONLY general-purpose K/DST source any manually-configured (non-
-  // Fantasy-Gamers-Sleeper) league has ever had access to.
+  // active league's roster actually configures a K or DST slot.
   needsKdstImport: boolean;
   onImportUdkKdst: (file: File | undefined) => void;
 }) {
+  const ballersPositions = data.udkRankings?.positions ?? [];
+  const ballersRows = ballersPositions.reduce((sum, position) => sum + position.entries.length, 0);
+  const ballersHasKdst = ballersPositions.some((position) => (position.position === "K" || position.position === "DST") && position.entries.length > 0);
+  const ballersDate = ballersPositions.length
+    ? new Date(ballersPositions.reduce((latest, position) => position.importedAtUtc > latest ? position.importedAtUtc : latest, "")).toLocaleDateString()
+    : "";
+  const activeMarket = data.ownerPlatformSnapshot?.activeColumn || detectedPlatform(data.activeProfile);
+  const marketIsAuto = (data.ownerPlatformSnapshot?.leagueSelection || "AUTO") === "AUTO";
+  const kdstManualCount = (data.manualAssets ?? []).filter((asset) => asset.position === "K" || asset.position === "DST").length;
   return (
     <section className="draft-room-v2-room-controls">
-      {/* NWR FINAL OWNER-FEEDBACK RECONCILIATION: renamed from "Room
-          Controls" -- the owner's own complaint used that exact phrase for
-          the WHOLE broken start/restart flow (now DraftSetupSurface,
-          reached via the "Draft Setup" button), which was visually
-          stacked directly above/below this unrelated ADP-refresh/import
-          panel. Same component, same real client.refreshRedraftAdp /
-          client.importRedraftAdp calls -- label only, so the two surfaces
-          are never conflated again. */}
       <button type="button" className="draft-room-v2-room-controls__toggle" onClick={onToggle} aria-expanded={open}>
         Market Data / ADP <Icon name="chevron" size={11} />
       </button>
       {open ? (
         <div className="draft-room-v2-room-controls__body">
-          <Button disabled={Boolean(working)} variant="secondary" onClick={onRefreshAdp}>
-            {working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}
-          </Button>
-          <Button variant="secondary" onClick={() => { window.location.hash = "#/adp"; }}>
-            Paste Rankings / ADP
-          </Button>
-          <label className="file-action">
-            Import owner ADP CSV
-            <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportAdp(event.target.files?.[0])} type="file" />
-          </label>
           <p className="boundary-note">
+            <strong>Active league market:</strong>{" "}
+            {marketIsAuto ? `Auto → ${activeMarket}` : `${activeMarket} (league override)`}
+            {" · "}
             {adp?.available
-              ? `${adp.source} · ${adp.dateWindow || adp.sourceDate}${adp.sampleSize ? ` · ${adp.sampleSize.toLocaleString()} drafts` : ""}. ADP is market-timing context only -- it never changes NWR rank.`
-              : "No market ADP loaded yet. ADP is optional market-timing context and never changes NWR value rank."}
+              ? `${adp.source} · ${adp.dateWindow || adp.sourceDate}`
+              : "No market ADP loaded yet"}
+            . Market timing only -- never changes NWR value rank.
           </p>
-          {needsKdstImport ? (
+          <p className="boundary-note">
+            <strong>Ballers / UDK:</strong>{" "}
+            {ballersRows > 0 ? `${ballersDate} · ${ballersRows} rows (${ballersPositions.map((p) => `${p.position} ${p.entries.length}`).join(", ")})` : "Not imported"}
+          </p>
+          <p className="boundary-note">
+            <strong>K/DST reference:</strong>{" "}
+            {ballersHasKdst ? "Ballers rankings active" : kdstManualCount > 0 ? "Manual fallback active" : "K/DST reference unavailable"}
+          </p>
+          <div className="profile-edit-actions">
+            <Button disabled={Boolean(working)} variant="secondary" onClick={onRefreshAdp}>
+              {working === "adp-refresh" ? "Refreshing…" : "Refresh FFC ADP"}
+            </Button>
+            <label className="file-action">
+              Import Multi-Platform ADP CSV
+              <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportAdp(event.target.files?.[0])} type="file" />
+            </label>
+            <label className="file-action">
+              Import Ballers / UDK CSV
+              <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportBallers(event.target.files?.[0])} type="file" />
+            </label>
+            <Button variant="secondary" onClick={() => { window.location.hash = "#/adp"; }}>
+              Open Market Data / ADP →
+            </Button>
+          </div>
+          {needsKdstImport && !ballersHasKdst ? (
             <>
               <label className="file-action">
-                Import UDK K/DST CSV
+                Import K/DST fallback CSV
                 <input accept=".csv,text/csv" disabled={Boolean(working)} onChange={(event) => onImportUdkKdst(event.target.files?.[0])} type="file" />
               </label>
               <p className="boundary-note">
-                This league rosters K and/or DST. NWR does not score K/DST -- import a real UDK K/DST
-                snapshot (all 32 current NFL teams' kickers and defenses) to draft them here. Never
-                blended into NWR rank/score.
+                Only needed when the active Ballers file does not include K/DST. NWR does not score
+                K/DST either way -- never blended into NWR rank/score.
               </p>
             </>
           ) : null}

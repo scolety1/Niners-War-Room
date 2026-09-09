@@ -22,6 +22,40 @@ export function platformCoverageText(platformCoverage: PlatformCoverage) {
   }).join(" · ");
 }
 
+// NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+// section 10): explicit, honestly-named exports of already-loaded owner
+// data -- never raw PDF content, only normalized CSV NWR already parsed.
+function csvCell(value: unknown): string {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportBallersCsv(data: RedraftBootstrap) {
+  const headers = ["Position", "Player", "Team", "Bye", "Rank", "Tier", "ADP", "Risk", "Upside", "Points", "Outlook"];
+  const rows = (data.udkRankings?.positions ?? []).flatMap((position) =>
+    position.entries.map((entry) => [entry.position, entry.playerName, entry.team, entry.byeWeek, entry.rank ?? "", entry.tier ?? "", entry.adpRaw, entry.risk ?? "", entry.upside ?? "", entry.points ?? "", entry.outlook]),
+  );
+  downloadCsv("nwr_ballers_udk_snapshot.csv", [headers, ...rows].map((record) => record.map(csvCell).join(",")).join("\r\n") + "\r\n");
+}
+
+function exportMarketAdpCsv(data: RedraftBootstrap) {
+  const headers = ["PlayerId", "Player", "Position", "Team", "Consensus", "Sleeper", "ESPN", "FantasyPros"];
+  const byId = new Map(data.rankings.map((row) => [row.playerId, row]));
+  const rows = Object.entries(data.marketProviderAdp ?? {}).map(([playerId, values]) => {
+    const ranking = byId.get(playerId);
+    return [playerId, ranking?.playerName ?? "", ranking?.position ?? "", ranking?.team ?? "", values.consensus ?? "", values.sleeper ?? "", values.espn ?? "", values.fantasypros ?? ""];
+  });
+  downloadCsv("nwr_multiplatform_adp_snapshot.csv", [headers, ...rows].map((record) => record.map(csvCell).join(",")).join("\r\n") + "\r\n");
+}
+
 export function parserModeLabel(mode: string | undefined) {
   if (mode === "CSV_MULTI_PLATFORM") return "CSV";
   if (mode === "MARKDOWN_TABLE") return "Markdown table";
@@ -97,10 +131,14 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
       await preview(text);
     } catch (reason) { fail(reason, `${file.name} could not be read.`); }
   };
-  const importCsv = async (file: File | undefined) => {
-    if (!file || !activeProfile || working) return;
-    await run("csv-import", () => file.text().then((csvText) => client.importRedraftAdp(activeProfile.profileId, csvText)), `Imported owner ADP from ${file.name}; NWR ranks did not change.`);
-  };
+  // NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+  // sections 3 & 6): the old "Import owner ADP CSV" panel called
+  // client.importRedraftAdp directly -- a rigid single-column importer with
+  // no preview step, fully superseded by importMultiPlatformCsv above
+  // (same file input, but routes through the real preview-before-activate
+  // flow and already accepts the old simple Name/Position/ADP shape as well
+  // as full multi-platform files). Removed to avoid a duplicate primary
+  // control and a path that could silently activate a malformed file.
   const approveCandidate = async (row: Record<string, unknown>, candidate: Record<string, unknown>) => {
     if (!activeProfile || working) return;
     setWorking("manual-match"); setError(null); setMessage("");
@@ -170,6 +208,7 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
     <PageHeader eyebrow={activeProfile ? `Active League · ${leagueFormat(activeProfile)}` : "Provider settings · local only"} title="Market Data" description="Manage draft-market timing (ADP) and Ballers/UDK reference rankings separately from NWR rankings and projections. Changes here never write to Sleeper." status={<><StatusBadge tone={adp?.available ? "safe" : "review"} label={providerLabel(adp)} /><StatusBadge tone="safe" label="NWR ranks unchanged" /></>} />
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <p aria-live="polite" className="profile-feedback">{message}</p>
+    <h3 className="market-data-group-heading">Market / ADP</h3>
     <Panel title="Active ADP source" eyebrow="Compact in Draft Room · detail here">
       <dl className="adp-details"><div><dt>Current source</dt><dd>{adp?.available ? adp.source : "No active ADP snapshot"}</dd></div><div><dt>Freshness</dt><dd>{adp?.freshness ?? "UNAVAILABLE"}</dd></div><div><dt>Source date</dt><dd>{adp?.dateWindow || adp?.sourceDate || "—"}</dd></div><div><dt>Player matches</dt><dd>{adp?.available ? `${adp.matchedPlayers}/${adp.sourcePlayers ?? adp.rankingPlayers}` : "—"}</dd></div><div><dt>Priority</dt><dd>Active owner platform column → Consensus → FFC → owner CSV → disclosed fallback</dd></div><div><dt>Boundary</dt><dd>Market timing only; NWR value rank and projections remain authoritative.</dd></div></dl>
       {adp?.lastRefreshError ? <p className="boundary-note">Last FFC refresh: {adp.lastRefreshError}</p> : null}
@@ -185,7 +224,7 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
           <div className="form-field"><span>Parser modes</span><small>A real CSV file is recognized directly; markdown tables and plain-text player blocks are also accepted when pasted below.</small></div>
         </div>
         <label className="form-field"><span>Raw pasted text (or the file's own contents, once chosen above)</span><textarea disabled={Boolean(working)} rows={10} wrap="off" style={{ fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", whiteSpace: "pre", overflowX: "auto" }} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); setPreviewLimit(25); }} placeholder={"Name,Position,Team,ADP,Position Rank,Consensus ADP,Sleeper ADP,ESPN ADP,FantasyPros ADP\nExample Player,RB,KC,3.2,1,3.2,2.9,4.1,3.7\n\nor a markdown table:\n| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |\n\nor plain text:\nWR13\nExample Player\n18.4 19.1 17.8 18.0"} /></label>
-        <div className="profile-edit-actions"><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void preview()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void run("paste-save", () => client.saveRedraftPasteAdp(activeProfile!.profileId, pasteText, "CONSENSUS", pasteLabel), "Global owner platform snapshot saved locally. Each league can now choose its column.")}>{working === "paste-save" ? "Saving…" : "Save global snapshot"}</Button></div>
+        <div className="profile-edit-actions"><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void preview()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void run("paste-save", () => client.saveRedraftPasteAdp(activeProfile!.profileId, pasteText, "CONSENSUS", pasteLabel), "Global owner platform snapshot saved locally. Each league can now choose its column.")}>{working === "paste-save" ? "Saving…" : "Save global snapshot"}</Button><Button disabled={!snapshot?.available} variant="secondary" icon="board" onClick={() => exportMarketAdpCsv(data)}>Export Market ADP CSV</Button></div>
         {pastePreview ? <div className="copy-muted"><div className="metric-grid"><div><strong>{pastePreview.sourceRows}</strong><small>Parsed rows</small></div><div><strong>{pastePreview.matchedRows}</strong><small>Matched</small></div><div><strong>{pastePreview.unmatched.length}</strong><small>Unmatched</small></div><div><strong>{pastePreview.rows.filter((row) => String(row.matchSource || "") === "OWNER_APPROVED").length}</strong><small>Owner-approved</small></div><div><strong>{platformCoverageText(pastePreview.platformCoverage)}</strong><small>Platform coverage</small></div><div><strong>{activeColumn}</strong><small>{activeProfile?.leagueName || "—"} · {detectedPlatformLabel}</small></div></div><small>Fallback: {activeColumn} → Consensus → FFC → Unavailable · {parserModeLabel(pastePreview.parserMode)}</small><div className="profile-edit-actions"><Button variant={previewFilter === "ALL" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("ALL"); setPreviewLimit(25); }}>All rows</Button><Button variant={previewFilter === "MATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MATCHED"); setPreviewLimit(25); }}>Matched</Button><Button variant={previewFilter === "UNMATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("UNMATCHED"); setPreviewLimit(25); }}>Unmatched</Button><Button variant={previewFilter === "AMBIGUOUS" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("AMBIGUOUS"); setPreviewLimit(25); }}>Ambiguous</Button><Button variant={previewFilter === "MISSING" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MISSING"); setPreviewLimit(25); }}>Missing active platform</Button></div><div className="draft-board-scroll"><table><thead><tr><th>Row</th><th>Pos rank</th><th>Player</th><th>Team</th><th>Consensus</th><th>Sleeper</th><th>ESPN</th><th>FantasyPros</th><th>Match status / source</th><th>Matched NWR player</th><th>Reason / review</th></tr></thead><tbody>{previewRows.slice(0, previewLimit).map((row) => <tr key={String(row.sourceRowIndex)}><td>{String(row.sourceRowIndex ?? "—")}</td><td>{String(row.positionRank ?? row.position ?? "—")}</td><td>{String(row.playerName ?? "—")}</td><td>{String(row.sourceTeam ?? "—")}</td><td>{String(row.consensusAdp ?? "—")}</td><td>{String(row.sleeperAdp ?? "—")}</td><td>{String(row.espnAdp ?? "—")}</td><td>{String(row.fantasyprosAdp ?? "—")}</td><td>{String(row.matchStatus ?? "—")} · {String(row.matchSource ?? "UNMATCHED")}</td><td>{String(row.matchedNwrPlayerName ?? "—")}</td><td>{String(row.unmatchedReason ?? (row[`${activeColumn.toLowerCase()}Adp`] == null ? "Selected column missing; Consensus/FFC fallback may apply" : "Matched"))}{Array.isArray(row.candidateSuggestions) ? row.candidateSuggestions.map((value) => { const candidate = value as Record<string, unknown>; return <div key={String(candidate.playerId)}><small>{String(candidate.playerName)} · {String(candidate.position)} · {String(candidate.team || "—")} · {String(candidate.confidence)}</small><Button disabled={Boolean(working) || String(candidate.position) !== String(row.position)} variant="secondary" onClick={() => void approveCandidate(row, candidate)}>Approve ADP-only match</Button></div>; }) : null}</td></tr>)}</tbody></table></div>{previewRows.length > previewLimit ? <Button variant="secondary" onClick={() => setPreviewLimit((value) => value + 25)}>Show 25 more</Button> : null}{previewFilter === "UNMATCHED" ? pastePreview.unmatched.slice(0, 12).map((warning) => <small key={warning}>{warning}</small>) : null}</div> : null}
         {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {parserModeLabel(snapshot.parserMode)} parser, hash {snapshot.rawHash.slice(0, 12)}… <small>{platformCoverageText(snapshot.platformCoverage)}</small></p> : null}
       </Panel>
@@ -195,12 +234,8 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
         <p className="boundary-note">Missing selected-column values use Consensus, then FFC, then show unavailable. Sleeper is always owner-imported and read-only.</p>
         <div className="profile-edit-actions"><Button disabled={!activeProfile || !snapshot?.available || Boolean(working)} icon="draft" onClick={() => void run("platform-selection", () => client.setRedraftOwnerPlatformSelection(activeProfile!.profileId, leagueSelection), `Active platform selection set to ${leagueSelection === "AUTO" ? "Auto" : leagueSelection}.`)}>{working === "platform-selection" ? "Activating…" : "Activate for this league"}</Button></div>
       </Panel>
-      <Panel title="Import owner ADP CSV" eyebrow="Local file · explicit import">
-        <p>Import a local owner-provided ADP CSV when a platform export is more convenient than a paste. It affects market timing only.</p>
-        <label className="file-action">Choose owner ADP CSV<input accept=".csv,text/csv" disabled={!activeProfile || Boolean(working)} onChange={(event) => void importCsv(event.target.files?.[0])} type="file" /></label>
-        <p className="boundary-note">No provider import changes rankings, projections, CPU strategy rules, or Sleeper data.</p>
-      </Panel>
     </div>
+    <h3 className="market-data-group-heading">Ballers / UDK <small>(also feeds K/DST reference — see Draft Room · Market Data / ADP)</small></h3>
     <Panel title="Import Ballers Cheat Sheet" eyebrow="Import once · use across every Redraft league">
       <p>Import the owner's Fantasy Footballers Podcast UDK cheat sheet — CSV or PDF, any position mix (QB/RB/WR/TE/K/DST) in one file. NWR safely matches players once; the same active snapshot then feeds Suggestions, Cheat Sheets, Compare, and the Player Drawer for every local Redraft league. Ballers stays reference-only for QB/RB/WR/TE — it never changes NWR Rank, Player Score, Team Score, Championship Equity, RAV, or Pick Score. For K/DST it remains the explicit reference/fallback until NWR has a promoted direct K/DST model — no NWR Player Score is ever fabricated for K/DST.</p>
       {ballersRankings && ballersRankings.positions.length > 0 ? (
@@ -209,7 +244,10 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
           {" — "}imported {ballersRankings.positions[0]?.importedAtUtc ? new Date(ballersRankings.positions[0].importedAtUtc).toLocaleString() : "—"}
         </p>
       ) : <p className="boundary-note">No Ballers cheat sheet imported yet.</p>}
-      <label className="file-action">Choose Ballers cheat sheet (CSV or PDF)<input accept=".csv,text/csv,.pdf,application/pdf" disabled={!activeProfile || Boolean(working)} onChange={(event) => void previewBallers(event.target.files?.[0])} type="file" /></label>
+      <div className="profile-edit-actions">
+        <label className="file-action">Choose Ballers cheat sheet (CSV or PDF)<input accept=".csv,text/csv,.pdf,application/pdf" disabled={!activeProfile || Boolean(working)} onChange={(event) => void previewBallers(event.target.files?.[0])} type="file" /></label>
+        <Button disabled={!ballersRankings || ballersRankings.positions.length === 0} variant="secondary" icon="board" onClick={() => exportBallersCsv(data)}>Export Ballers / UDK CSV</Button>
+      </div>
       {ballersPreview ? (
         <div className="copy-muted">
           <div className="metric-grid">

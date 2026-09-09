@@ -105,7 +105,7 @@ export function RedraftApp() {
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
       <Route path="/compare" element={<ComparePage data={data} />} />
-      <Route path="/cheat-sheet" element={<CheatSheetPage data={data} onImportUdk={(file) => { if (file && client && data.activeProfileId) void file.text().then((csvText) => client.importUdkRankings(data.activeProfileId!, csvText)).then(update); }} />} />
+      <Route path="/cheat-sheet" element={<CheatSheetPage data={data} />} />
       <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
       <Route path="/adp" element={<AdpProvidersPage client={client} data={data} onUpdate={update} />} />
       <Route path="/weekly-tools" element={<WeeklyToolsPage client={client} data={data} />} />

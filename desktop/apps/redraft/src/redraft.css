@@ -178,6 +178,12 @@
 .profile-create-footer p { color: var(--muted); font-size: 8px; line-height: 1.45; margin: 0; max-width: 320px; }
 .profile-feedback { color: var(--positive); margin: 0 0 12px; min-height: 1.25rem; }
 .adp-provider-grid { display: grid; gap: 11px; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .8fr); margin-top: 11px; }
+/* NWR PRE-DRAFT MARKET DATA / ADP UX CLEANUP (2026-09-08, directive
+   section 13): light internal hierarchy for the Market Data page --
+   Market/ADP vs Ballers/UDK -- without a new nav page or tabs. */
+.market-data-group-heading { color: var(--muted); font-size: 10px; letter-spacing: .04em; margin: 20px 0 8px; text-transform: uppercase; }
+.market-data-group-heading:first-of-type { margin-top: 14px; }
+.market-data-group-heading small { color: var(--muted); font-size: 9px; letter-spacing: 0; text-transform: none; }
 .adp-details { display: grid; gap: 1px; grid-template-columns: repeat(3, 1fr); margin: 0; }
 .adp-details div { background: rgba(255, 255, 255, .018); border: 1px solid rgba(255, 255, 255, .05); min-height: 58px; padding: 9px; }
 .adp-details dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
