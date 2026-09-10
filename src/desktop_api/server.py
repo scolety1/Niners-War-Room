@@ -533,11 +533,14 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             return self.server.facade.redraft_kdst_streamer(week=week)
         if method == "POST" and path == _WEEKLY_PROJECTIONS:
             body = self._json_body()
-            self._reject_unknown_fields(body, {"week"})
+            self._reject_unknown_fields(body, {"week", "forceRefresh"})
             week = body.get("week")
             if type(week) is not int:
                 raise self._invalid_body("week must be an integer.")
-            return self.server.facade.redraft_weekly_projections(week=week)
+            force_refresh = body.get("forceRefresh", False)
+            if type(force_refresh) is not bool:
+                raise self._invalid_body("forceRefresh must be a boolean when provided.")
+            return self.server.facade.redraft_weekly_projections(week=week, force_refresh=force_refresh)
         if method == "POST" and path == _WEEKLY_LINEUP:
             body = self._json_body()
             self._reject_unknown_fields(body, {"week"})

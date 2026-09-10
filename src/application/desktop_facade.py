@@ -211,7 +211,10 @@ from src.services.redraft_roster_legality_service import evaluate_draft_pick_leg
 from src.services.weekly_projection_service import (
     WeeklyProjectionError,
     build_weekly_projection_rows,
-    fetch_sleeper_weekly_projections,
+)
+from src.services.weekly_projection_provider_service import (
+    default_weekly_projection_provider,
+    get_weekly_projections,
 )
 from src.services.weekly_lineup_optimizer_service import (
     build_roster_candidates,
@@ -2600,15 +2603,22 @@ class DesktopBackendFacade:
             }
         )
 
-    def redraft_weekly_projections(self, *, week: int) -> FacadePayload:
-        """Real, live, per-player weekly projections (NWR Overnight V3, Lane 1/2).
+    def redraft_weekly_projections(self, *, week: int, force_refresh: bool = False) -> FacadePayload:
+        """Real, live, per-player weekly projections (NWR Overnight V3, Lane 1/2;
+        provider-abstraction pass 2026-09-10).
 
-        Source: Sleeper's public, undocumented `projections/nfl/...` endpoint
-        (see `weekly_projection_service.py` module docstring for the full
-        honesty disclosure -- undocumented, non-commercial, no coverage or
-        scoring-format guarantee). Never writes to Sleeper. Fetched live on
-        every call -- there is no local cache to go silently stale; a fetch
-        failure raises rather than ever re-serving a prior week's numbers.
+        Source: whichever `WeeklyProjectionProvider` is currently wired in
+        `weekly_projection_provider_service.default_weekly_projection_
+        provider()` -- today that is Sleeper's public, undocumented
+        `projections/nfl/...` endpoint (TEMPORARY/STOPGAP per owner
+        governance decision 2026-09-10; see `weekly_projection_service.py`
+        module docstring for the full honesty disclosure). This method
+        never imports `SleeperHttpClient` for projections and never calls
+        the provider directly -- `get_weekly_projections()` owns fetch,
+        schema validation, a short-TTL cache, and stale-snapshot fail-safe
+        behavior. Never writes to Sleeper. A fetch/validation failure with
+        no usable recent snapshot raises rather than fabricating or
+        silently reusing a different week's numbers.
         """
 
         self._require_mode("redraft")
@@ -2626,8 +2636,14 @@ class DesktopBackendFacade:
             ranking_rows = []
         try:
             sleeper = SleeperHttpClient()
-            raw_projections = fetch_sleeper_weekly_projections(
-                season=selected.season, week=week, http=sleeper
+            raw_projections, health = get_weekly_projections(
+                provider=default_weekly_projection_provider(),
+                season=selected.season,
+                week=week,
+                season_type="regular",
+                league_id=league_id,
+                redraft_root=self.redraft_root,
+                force_refresh=force_refresh,
             )
             players = sleeper.get_json("players/nfl")
             result = build_weekly_projection_rows(
@@ -2639,13 +2655,14 @@ class DesktopBackendFacade:
                 week=week,
                 season_type="regular",
                 league_id=league_id,
+                fetched_at=health.retrieved_at,
             )
         except (WeeklyProjectionError, OSError, ValueError) as exc:
             raise FacadeError(
                 "WEEKLY_PROJECTIONS_READ_FAILED",
-                "Sleeper weekly-projection or player data could not be read. No local or "
+                "Weekly-projection or Sleeper player data could not be read. No local or "
                 "remote state was changed. This week's projections are UNAVAILABLE, not "
-                "silently reused from a prior fetch.",
+                f"silently reused from a prior fetch or a season-long substitute. ({exc})",
                 status=503,
             ) from exc
         return FacadePayload(
@@ -2660,6 +2677,7 @@ class DesktopBackendFacade:
                 "unmatched": result.unmatched,
                 "ambiguous": result.ambiguous,
                 "totalPlayersInSource": result.total_players_in_source,
+                "providerHealth": health.to_dict(),
                 "rows": [
                     {
                         "canonicalPlayerId": row.canonical_player_id,
@@ -2704,15 +2722,19 @@ class DesktopBackendFacade:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
             players = sleeper.get_json("players/nfl")
-            raw_projections = fetch_sleeper_weekly_projections(
-                season=selected.season, week=week, http=sleeper
+            raw_projections, weekly_health = get_weekly_projections(
+                provider=default_weekly_projection_provider(),
+                season=selected.season,
+                week=week,
+                season_type="regular",
+                league_id=league_id,
+                redraft_root=self.redraft_root,
             )
         except (WeeklyProjectionError, OSError, ValueError) as exc:
             raise FacadeError(
                 "WEEKLY_LINEUP_READ_FAILED",
                 "Sleeper roster or weekly-projection data could not be read. No local or "
-                "remote state was changed. This week's lineup is UNAVAILABLE, not silently "
-                "computed from stale data.",
+                f"remote state was changed. This week's lineup is UNAVAILABLE. ({exc})",
                 status=503,
             ) from exc
         if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
@@ -2738,6 +2760,7 @@ class DesktopBackendFacade:
             week=week,
             season_type="regular",
             league_id=league_id,
+            fetched_at=weekly_health.retrieved_at,
         )
         status_overrides = load_status_overrides(self.repo_root)
         candidates = build_roster_candidates(
@@ -2774,6 +2797,7 @@ class DesktopBackendFacade:
                 "matched": projection_result.matched,
                 "unmatched": projection_result.unmatched,
                 "ambiguous": projection_result.ambiguous,
+                "providerHealth": weekly_health.to_dict(),
                 "projectedTotal": lineup.projected_total,
                 "unprojectedStarterCount": lineup.unprojected_starter_count,
                 "starters": [
@@ -2895,18 +2919,25 @@ class DesktopBackendFacade:
 
         weekly_by_sleeper_id = None
         weekly_source_status = None
+        weekly_provider_health = None
         if mode == "THIS_WEEK":
             try:
-                raw_projections = fetch_sleeper_weekly_projections(
-                    season=selected.season, week=week, http=sleeper
+                raw_projections, weekly_health = get_weekly_projections(
+                    provider=default_weekly_projection_provider(),
+                    season=selected.season,
+                    week=week,
+                    season_type="regular",
+                    league_id=league_id,
+                    redraft_root=self.redraft_root,
                 )
                 projection_result = build_weekly_projection_rows(
                     raw_projections=raw_projections, players=players, ranking_rows=ranking_rows,
                     scoring=selected.scoring, season=selected.season, week=week,
-                    season_type="regular", league_id=league_id,
+                    season_type="regular", league_id=league_id, fetched_at=weekly_health.retrieved_at,
                 )
                 weekly_by_sleeper_id = {row.sleeper_player_id: row for row in projection_result.rows}
                 weekly_source_status = projection_result.source_status
+                weekly_provider_health = weekly_health.to_dict()
             except (WeeklyProjectionError, OSError, ValueError) as exc:
                 raise FacadeError(
                     "WAIVERS_WEEKLY_DATA_UNAVAILABLE",
@@ -2989,6 +3020,7 @@ class DesktopBackendFacade:
                 "mode": mode,
                 "week": week,
                 "weeklySourceStatus": weekly_source_status,
+                "weeklyProviderHealth": weekly_provider_health,
                 "rankingWarning": ranking_warning,
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
                 "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
