@@ -3344,6 +3344,27 @@ class DesktopBackendFacade:
             opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
             status_overrides=status_overrides,
         )
+        if results:
+            top = results[0]
+            self._record_decision_trace_safe(
+                profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
+                tool="TRADE_FINDER", engine_version="trade_finder_service-v1", data_versions={},
+                roster_state_player_ids=list(own_resolved.canonical_player_ids),
+                recommendation={
+                    "myGivePlayerId": top.my_give_player_id,
+                    "opponentGivePlayerId": top.opponent_give_player_id,
+                    "opponentRosterId": top.opponent_roster_id,
+                    "myNetMarginalUtility": top.my_evaluation.net_marginal_utility,
+                },
+                alternatives=[
+                    {
+                        "myGivePlayerId": candidate.my_give_player_id,
+                        "opponentGivePlayerId": candidate.opponent_give_player_id,
+                        "opponentRosterId": candidate.opponent_roster_id,
+                    }
+                    for candidate in results[1:6]
+                ],
+            )
         return FacadePayload(
             data={
                 "leagueId": league_id,
