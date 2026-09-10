@@ -1,0 +1,149 @@
+{
+  "results": [
+    {
+      "shape": "10PPR_slot5",
+      "reference": {
+        "policy": "reference",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 1,
+          "WR": 8,
+          "RB": 3,
+          "TE": 2
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 8
+      },
+      "challenger": {
+        "policy": "challenger",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 1,
+          "WR": 5,
+          "RB": 5,
+          "TE": 3
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 5
+      }
+    },
+    {
+      "shape": "8_1QB",
+      "reference": {
+        "policy": "reference",
+        "n_picks": 14,
+        "position_counts": {
+          "WR": 10,
+          "QB": 1,
+          "RB": 2,
+          "TE": 1
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 10
+      },
+      "challenger": {
+        "policy": "challenger",
+        "n_picks": 14,
+        "position_counts": {
+          "WR": 6,
+          "QB": 1,
+          "RB": 4,
+          "TE": 3
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 6
+      }
+    },
+    {
+      "shape": "12_1QB",
+      "reference": {
+        "policy": "reference",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 1,
+          "WR": 10,
+          "RB": 2,
+          "TE": 1
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 10
+      },
+      "challenger": {
+        "policy": "challenger",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 1,
+          "WR": 6,
+          "RB": 4,
+          "TE": 3
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 6
+      }
+    },
+    {
+      "shape": "16_1QB",
+      "reference": {
+        "policy": "reference",
+        "n_picks": 14,
+        "position_counts": {
+          "WR": 9,
+          "RB": 3,
+          "TE": 1,
+          "QB": 1
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 9
+      },
+      "challenger": {
+        "policy": "challenger",
+        "n_picks": 14,
+        "position_counts": {
+          "WR": 5,
+          "RB": 5,
+          "TE": 3,
+          "QB": 1
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 5
+      }
+    },
+    {
+      "shape": "12_Superflex",
+      "reference": {
+        "policy": "reference",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 2,
+          "WR": 9,
+          "RB": 2,
+          "TE": 1
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 9
+      },
+      "challenger": {
+        "policy": "challenger",
+        "n_picks": 14,
+        "position_counts": {
+          "QB": 2,
+          "WR": 6,
+          "RB": 4,
+          "TE": 2
+        },
+        "illegal_recommendations": 0,
+        "kdst_complete": false,
+        "max_single_position": 6
+      }
+    }
+  ]
+}

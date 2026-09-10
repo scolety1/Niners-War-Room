@@ -46,9 +46,32 @@ from src.services.shadow_numeric_authorities_service import (
     evaluate_cost_of_waiting_v2,
     evaluate_pick_candidates,
     label_pick_decisions,
-    marginal_roster_utility,
+    marginal_roster_utility_v2,
     team_score,
 )
+
+# NWR Overnight V3 strategic-model-validation resume (2026-09-09, this
+# session): `marginal_roster_utility_v2` PROMOTED over `marginal_roster_
+# utility` (v1) as the live candidate-ordering signal. `marginal_roster_
+# utility` (v1) itself is left byte-for-byte unchanged in shadow_numeric_
+# authorities_service.py -- only this wiring point moved. Real evidence
+# (full detail in docs/codex/overnight_v3/NWR_STRATEGIC_MODEL_VALIDATION_
+# V1_FINDINGS.md): a parity-proven cross-worktree harness against the
+# frozen historical-tuning corpus (work/nwr-full-historical-tuning-v1,
+# commit 9132f501/current HEAD 33327ee3) across TWO independent roster-
+# depth regimes (51 paired observations at a 6-round shape: mean delta
+# +38.39, win rate 27/42=64.3%; 21 paired observations at an 11-round
+# shape: mean delta +35.7, win rate 11/18=61.1%; no season in either
+# regressed beyond its own preregistered-style tolerance), a 2-season
+# Superflex smoke (2/2 wins, sane QB counts, 100% legal), and a 5-shape
+# blind draft battery (10PPR-slot5/8-1QB/12-1QB/16-1QB/12-Superflex)
+# showing v2 materially reduces single-position concentration in EVERY
+# shape (max-single-position count roughly halved: 8->5, 10->6, 10->6,
+# 9->5, 9->6) with zero illegal recommendations. This REVERSES the sign
+# of the immediately prior pass's own preregistered 9-observation result
+# (mean delta -24.56, 5/9 wins) -- that result is preserved, not
+# discarded, and the reversal is explained by sample size/corpus power,
+# not a contradiction (see the findings doc's reconciliation section).
 
 DECISION_BUNDLE_VERSION = "decision-bundle-v1"
 
@@ -173,13 +196,13 @@ def _safe_marginal_utility(
     ranking: RankingResult,
     manual_assets: Sequence[Mapping[str, Any]],
 ) -> float | None:
-    """Wraps the real, promoted `marginal_roster_utility()` defensively --
+    """Wraps the real, promoted `marginal_roster_utility_v2()` defensively --
     an experimental-turned-promoted signal must never be allowed to crash
     the real DecisionBundle response; any failure here means this
     candidate falls back to pick_score ordering (see
     `_candidate_sort_key`), never a crash or a fabricated value."""
     try:
-        return marginal_roster_utility(
+        return marginal_roster_utility_v2(
             player_id, current_owner_player_ids, profile, ranking, manual_assets,
         ).utility
     except Exception:

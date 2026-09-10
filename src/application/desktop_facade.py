@@ -4988,18 +4988,26 @@ def _decision_bundle_payload(
     additive `marginalRosterUtility` explanation block per candidate
     (explain_marginal_roster_reason + marginal_roster_utility).
 
-    PROMOTION UPDATE: marginal_roster_utility passed its real,
+    PROMOTION UPDATE: marginal_roster_utility (v1) passed its real,
     preregistered walk-forward evaluation (4 real historical seasons x
     12 real draft slots; see
-    docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md) and is
-    now the PRIMARY candidate ORDER (`_candidate_sort_key` in
+    docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md) and
+    became the PRIMARY candidate ORDER (`_candidate_sort_key` in
     decision_bundle_service.py) -- `bundle.candidates` already arrives
     here in marginal-utility order, this function does not re-sort.
     `pickScore`'s own VALUE is completely unchanged; only which
-    candidate is first/what "NWR PICK NOW" means was promoted. This
-    block remains additional, disclosed context (the full explanation,
-    not just the sort-driving number), not a second, undisclosed
-    policy."""
+    candidate is first/what "NWR PICK NOW" means was promoted.
+
+    NWR OVERNIGHT V3 strategic-model-validation resume (2026-09-09):
+    `marginal_roster_utility_v2` further PROMOTED over v1 as the live
+    sort signal in `decision_bundle_service.py` -- see that module's own
+    wiring comment for the full evidence trail. This explanation block
+    must use the SAME function that actually drove `bundle.candidates`'
+    order, or the banner/row explanation shown to the owner would
+    describe a different number than the one that produced the
+    ordering -- a real, user-visible consistency bug if left on v1.
+    Still additional, disclosed context (the full explanation, not just
+    the sort-driving number), not a second, undisclosed policy."""
     rows_by_id = {row.player_id: row for row in ranking.rows}
     manual_by_id = {
         str(asset.get("player_id") or ""): asset for asset in manual_assets
@@ -5007,7 +5015,7 @@ def _decision_bundle_payload(
     metric_status_payload = _metric_status_payload
     marginal_utility_fn = None
     if profile is not None:
-        from src.services.shadow_numeric_authorities_service import marginal_roster_utility as _mru
+        from src.services.shadow_numeric_authorities_service import marginal_roster_utility_v2 as _mru
         marginal_utility_fn = _mru
 
     def candidate_payload(candidate: Any) -> dict[str, Any]:
@@ -5030,7 +5038,7 @@ def _decision_bundle_payload(
                     "becomesStarter": result.becomes_starter,
                     "benchRedundancyBefore": result.bench_redundancy_before,
                     "explanation": result.explanation,
-                    "label": "MARGINAL ROSTER UTILITY — PROMOTED: the real, walk-forward-validated basis for this recommendation's order",
+                    "label": "MARGINAL ROSTER UTILITY V2 — PROMOTED: the real, walk-forward-validated basis for this recommendation's order",
                 }
             except Exception:
                 # Never let an experimental, additive field break the real
