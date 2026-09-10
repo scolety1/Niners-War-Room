@@ -744,3 +744,50 @@
 .player-drawer__section p, .player-drawer__section ul { font-size: 12px; margin: 6px 0 0; }
 .drawer-warnings { color: var(--warn, #d3a954); font-size: 11px; margin: 6px 0 0; padding-left: 16px; }
 .drawer-warnings li { margin: 2px 0; }
+
+/* NWR in-season UI pass (2026-09-10): Weekly Home / Start-Sit / Waivers /
+   Trade Analysis / Trade Finder / provider status line. */
+.nwr-actions-list { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.nwr-actions-list li { align-items: center; background: rgba(255, 255, 255, .025); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 10px; grid-template-columns: 26px 1fr auto; padding: 9px 12px; }
+.nwr-actions-list__index { align-items: center; background: var(--gold-dim); border-radius: 50%; color: var(--gold-bright); display: flex; font-size: 10px; font-weight: 700; height: 22px; justify-content: center; width: 22px; }
+.nwr-actions-list strong { display: block; font-size: 11px; }
+.nwr-actions-list small { color: var(--muted); display: block; font-size: 8.5px; margin-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
+.nwr-actions-list a { color: var(--violet-bright); font-size: 9.5px; text-decoration: none; white-space: nowrap; }
+.nwr-actions-list a:hover { text-decoration: underline; }
+
+.provider-status-line { margin: 8px 0; }
+.provider-status-line--unavailable { margin: 8px 0; }
+.provider-status-line__toggle { align-items: center; background: transparent; border: 0; color: var(--text-soft); cursor: pointer; display: flex; font-size: 9.5px; gap: 8px; padding: 4px 0; text-align: left; }
+.provider-status-line__toggle span:nth-child(2) { flex: 1; }
+.provider-status-line__detail { background: rgba(255, 255, 255, .025); border: 1px solid var(--line); border-radius: 10px; margin-top: 4px; padding: 8px 12px; }
+
+.trade-side-picker { display: flex; flex-direction: column; gap: 6px; }
+.trade-side-picker h3 { color: var(--gold-bright); font-size: 10px; letter-spacing: .06em; margin: 0 0 4px; text-transform: uppercase; }
+.trade-side-picker__results { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; list-style: none; margin: 0; max-height: 180px; overflow-y: auto; padding: 4px; position: relative; z-index: 2; }
+.trade-side-picker__results li button { background: transparent; border: 0; color: var(--text); cursor: pointer; display: block; font-size: 10px; padding: 6px 8px; text-align: left; width: 100%; }
+.trade-side-picker__results li button:hover { background: var(--violet-dim); border-radius: 6px; }
+.trade-side-picker__selected { display: flex; flex-direction: column; gap: 5px; list-style: none; margin: 4px 0 0; padding: 0; }
+.trade-side-picker__selected li { align-items: center; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: 8px; display: flex; font-size: 10px; justify-content: space-between; padding: 6px 10px; }
+.trade-side-picker__selected button { background: transparent; border: 0; color: var(--crimson); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 2px; }
+
+.trade-finder-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.trade-finder-card { background: rgba(18, 16, 25, .92); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
+.trade-finder-card header { align-items: center; display: flex; justify-content: space-between; }
+.trade-finder-card header strong { font-size: 11px; }
+.trade-finder-card p { font-size: 9.5px; margin: 0; }
+.trade-finder-card a { color: var(--violet-bright); font-size: 9.5px; margin-top: 4px; text-decoration: none; }
+.trade-finder-card a:hover { text-decoration: underline; }
+
+.opponent-roster-trade-link { background: transparent; border: 0; color: var(--text); cursor: pointer; text-decoration: none; }
+.opponent-roster-trade-link:hover { color: var(--violet-bright); text-decoration: underline; }
+
+.lean-banner--safe { border-color: rgba(87, 200, 154, .35); }
+.lean-banner--safe strong { color: var(--green); }
+.lean-banner--review strong { color: var(--gold-bright); }
+.lean-banner--blocked { border-color: rgba(225, 72, 87, .35); }
+.lean-banner--blocked strong { color: var(--crimson); }
+
+@media (max-width: 720px) {
+  .trade-side-picker,
+  .nwr-actions-list li { grid-template-columns: 1fr; }
+}
