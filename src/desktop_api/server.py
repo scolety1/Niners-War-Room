@@ -44,6 +44,7 @@ _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _WAIVERS = "/api/v1/redraft/waivers"
 _TRADE_ANALYSIS = "/api/v1/redraft/trade-analysis"
 _TRADE_FINDER = "/api/v1/redraft/trade-finder"
+_WEEKLY_HOME_ACTIONS = "/api/v1/redraft/weekly-home-actions"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
@@ -579,6 +580,13 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             return self.server.facade.redraft_trade_analysis(
                 gives_sleeper_player_ids=gives, receives_sleeper_player_ids=receives
             )
+        if method == "POST" and path == _WEEKLY_HOME_ACTIONS:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"week"})
+            week = body.get("week")
+            if type(week) is not int:
+                raise self._invalid_body("week must be an integer.")
+            return self.server.facade.redraft_weekly_home_actions(week=week)
         practical_match = _PRACTICAL_MOCK_START.fullmatch(path)
         if method == "POST" and practical_match:
             body = self._json_body(allow_empty=True)

@@ -3249,6 +3249,122 @@ class DesktopBackendFacade:
             }
         )
 
+    def redraft_weekly_home_actions(self, *, week: int) -> FacadePayload:
+        """"NWR ACTIONS" -- Weekly League Home's action-ranking section
+        (NWR Overnight V3, Lane 12). Composes the real facade methods this
+        pass already built/verified (Start/Sit, Waivers, Trade Finder,
+        K/DST Streamer) rather than re-deriving any of their logic --
+        each sub-call's own real honesty/failure-fallback behavior is
+        reused as-is. Any sub-call that is genuinely unavailable (no
+        Sleeper league, no governed ranking, weekly data unavailable, etc.)
+        is reported as such in `unavailableSections`, never silently
+        dropped or faked. Read-only throughout.
+
+        Ranking is by real, disclosed category priority (this week's
+        locked-in lineup decisions first, since they have a real deadline;
+        then roster-building moves; then streamers) rather than a single
+        fabricated cross-category numeric score -- these are heterogeneous
+        units (projected points vs. marginal utility vs. ECR) that this
+        app does not have a real, validated way to directly compare.
+        """
+
+        self._require_mode("redraft")
+        actions: list[dict[str, Any]] = []
+        unavailable: list[dict[str, str]] = []
+
+        try:
+            lineup_payload = self.redraft_weekly_lineup(week=week).data
+            for swap in lineup_payload.get("swaps", []):
+                actions.append(
+                    {
+                        "category": "START_SIT",
+                        "priority": 1,
+                        "summary": swap["summary"],
+                        "detail": swap,
+                    }
+                )
+            for slot in lineup_payload.get("starters", []):
+                if slot.get("closeCall"):
+                    actions.append(
+                        {
+                            "category": "START_SIT_CLOSE_CALL",
+                            "priority": 2,
+                            "summary": (
+                                f"CLOSE CALL at {slot['slotType']}: "
+                                f"{slot['player']['playerName'] if slot['player'] else 'empty slot'} "
+                                f"vs {slot.get('closeCallAlternative')} (margin {slot.get('closeCallMargin')})"
+                            ),
+                            "detail": slot,
+                        }
+                    )
+        except FacadeError as exc:
+            unavailable.append({"section": "START_SIT", "reason": exc.message})
+
+        try:
+            waivers_payload = self.redraft_waivers(mode="REST_OF_SEASON").data
+            top_adds = [
+                candidate for candidate in waivers_payload.get("addCandidates", [])
+                if candidate.get("marginalUtility") and candidate["marginalUtility"] > 0
+            ][:3]
+            for candidate in top_adds:
+                actions.append(
+                    {
+                        "category": "WAIVER",
+                        "priority": 3,
+                        "summary": (
+                            f"Consider adding {candidate['playerName']} "
+                            f"(marginal utility {candidate['marginalUtility']:.1f})"
+                        ),
+                        "detail": candidate,
+                    }
+                )
+        except FacadeError as exc:
+            unavailable.append({"section": "WAIVER", "reason": exc.message})
+
+        try:
+            trade_payload = self.redraft_trade_finder().data
+            for candidate in trade_payload.get("candidates", [])[:2]:
+                actions.append(
+                    {
+                        "category": "TRADE",
+                        "priority": 4,
+                        "summary": (
+                            f"Possible trade: your {candidate['myGivePlayerName']} for "
+                            f"{candidate['opponentTeamName']}'s {candidate['opponentGivePlayerName']}"
+                        ),
+                        "detail": candidate,
+                    }
+                )
+        except FacadeError as exc:
+            unavailable.append({"section": "TRADE", "reason": exc.message})
+
+        try:
+            kdst_payload = self.redraft_kdst_streamer(week=week).data
+            for position, action_rows in kdst_payload.get("positions", {}).items():
+                for row in action_rows:
+                    if row.get("recommendation") == "ADD":
+                        actions.append(
+                            {
+                                "category": "STREAMER",
+                                "priority": 5,
+                                "summary": f"Stream {position}: {row.get('playerName', row.get('player_name', ''))}",
+                                "detail": row,
+                            }
+                        )
+                        break  # one real top streamer suggestion per position, not the whole board
+        except FacadeError as exc:
+            unavailable.append({"section": "STREAMER", "reason": exc.message})
+
+        actions.sort(key=lambda action: action["priority"])
+        return FacadePayload(
+            data={
+                "week": week,
+                "actions": actions,
+                "unavailableSections": unavailable,
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
     def activate_redraft_profile(self, profile_id: str) -> FacadePayload:
         self._require_mode("redraft")
         normalized = self._profile_id(profile_id)
