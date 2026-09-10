@@ -2603,6 +2603,90 @@ class DesktopBackendFacade:
             }
         )
 
+    def redraft_my_roster(self) -> FacadePayload:
+        """The owner's OWN current Sleeper roster, with both the Sleeper
+        player id and (where identity-matched) the NWR canonical player id
+        on every row (in-season UI pass, 2026-09-10). Built because Trade
+        Analysis's real API takes Sleeper player ids for the "I give" side
+        and no existing read exposed the owner's own roster -- Free Agents
+        explicitly excludes rostered players, Opponent Rosters explicitly
+        excludes the owner. Read-only: never writes to Sleeper.
+        """
+
+        self._require_mode("redraft")
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        ranking_warning = ""
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+            ranking_warning = (
+                "NWR rankings are unavailable for this profile; roster rows are shown "
+                "without a canonical NWR identity match."
+            )
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "REDRAFT_MY_ROSTER_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state was changed.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError(
+                "REDRAFT_MY_ROSTER_READ_FAILED", "Sleeper roster response is malformed.", status=503
+            )
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)), None
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "REDRAFT_MY_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.", status=409
+            )
+        resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        starter_ids = {str(value) for value in own_roster.get("starters") or []}
+        rows: list[dict[str, Any]] = []
+        for raw_id in own_roster.get("players") or []:
+            sleeper_id = str(raw_id)
+            catalog_entry = players.get(sleeper_id) if isinstance(players, Mapping) else None
+            canonical_id = resolved.canonical_id_by_sleeper_id.get(sleeper_id, "")
+            if isinstance(catalog_entry, Mapping):
+                position = str(catalog_entry.get("position") or "")
+                team = str(catalog_entry.get("team") or "").upper().strip()
+                name = resolved.player_names_by_canonical_id.get(canonical_id) or str(
+                    catalog_entry.get("full_name") or catalog_entry.get("search_full_name") or sleeper_id
+                )
+            else:
+                position, team, name = "", "", sleeper_id
+            rows.append(
+                {
+                    "sleeperPlayerId": sleeper_id,
+                    "canonicalPlayerId": canonical_id or None,
+                    "playerName": name,
+                    "position": position,
+                    "team": team,
+                    "starter": sleeper_id in starter_ids,
+                    "identityStatus": "MATCHED" if canonical_id else "UNMATCHED_IDENTITY",
+                }
+            )
+        rows.sort(key=lambda row: (not row["starter"], row["position"], row["playerName"]))
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "roster": rows,
+                "rankingWarning": ranking_warning,
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
     def redraft_weekly_projections(self, *, week: int, force_refresh: bool = False) -> FacadePayload:
         """Real, live, per-player weekly projections (NWR Overnight V3, Lane 1/2;
         provider-abstraction pass 2026-09-10).

@@ -912,6 +912,242 @@ export interface RedraftOpponentRostersResult {
   writeBehavior: string;
 }
 
+// ---------------------------------------------------------------------------
+// In-season UI pass (2026-09-10): Start/Sit, Waivers/Add-Drop/FAAB, Redraft
+// Trade Analysis, Trade Finder, and the canonical weekly-projection
+// provider-health block every one of them now carries. These mirror the
+// exact facade payload shapes in src/application/desktop_facade.py
+// (redraft_weekly_projections / redraft_weekly_lineup / redraft_waivers /
+// redraft_trade_analysis / redraft_trade_finder / redraft_weekly_home_
+// actions) field-for-field -- no client-side renaming.
+// ---------------------------------------------------------------------------
+
+export interface WeeklyProjectionProviderHealth {
+  schemaVersion: number;
+  provider: string;
+  sourceEndpoint: string;
+  integrationStatus: string;
+  season: number;
+  week: number;
+  seasonType: string;
+  leagueId: string;
+  retrievedAt: string;
+  schemaFingerprint: string;
+  payloadHash: string;
+  totalRows: number;
+  nonzeroProjectionRows: number;
+  status: "OK" | "DEGRADED" | "UNAVAILABLE";
+  freshness: "LIVE" | "STALE";
+  servedFromCache: boolean;
+  issues: string[];
+}
+
+export interface WeeklyProjectionRow {
+  canonicalPlayerId: string;
+  sleeperPlayerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  projectedPoints: number | null;
+  scoringContext: "NWR_LEAGUE_SCORING" | "SLEEPER_PROVIDER_SCORING";
+  identityMatch: "MATCHED" | "UNMATCHED" | "AMBIGUOUS";
+  gp: number | null;
+  sourceAsOf: string;
+}
+
+export interface WeeklyProjectionsResult {
+  season: number;
+  week: number;
+  leagueId: string;
+  source: string;
+  sourceStatus: "OK" | "UNAVAILABLE";
+  sourceAsOf: string;
+  matched: number;
+  unmatched: number;
+  ambiguous: number;
+  totalPlayersInSource: number;
+  providerHealth: WeeklyProjectionProviderHealth;
+  rows: WeeklyProjectionRow[];
+  writeBehavior: string;
+}
+
+export interface WeeklyLineupSlotPlayer {
+  sleeperPlayerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  projectedPoints: number | null;
+}
+
+export interface WeeklyLineupSlot {
+  slotType: string;
+  player: WeeklyLineupSlotPlayer | null;
+  status: string;
+  closeCall: boolean;
+  closeCallAlternative: string | null;
+  closeCallMargin: number | null;
+}
+
+export interface WeeklyLineupBenchPlayer {
+  sleeperPlayerId: string;
+  playerName: string;
+  position: string;
+  projectedPoints: number | null;
+}
+
+export interface WeeklyLineupSwap {
+  slotType: string;
+  startPlayer: string;
+  benchPlayer: string;
+  projectedDelta: number;
+  summary: string;
+}
+
+export interface WeeklyLineupResult {
+  season: number;
+  week: number;
+  leagueId: string;
+  sourceStatus: "OK" | "UNAVAILABLE";
+  sourceAsOf: string;
+  matched: number;
+  unmatched: number;
+  ambiguous: number;
+  providerHealth: WeeklyProjectionProviderHealth;
+  projectedTotal: number;
+  unprojectedStarterCount: number;
+  starters: WeeklyLineupSlot[];
+  bench: WeeklyLineupBenchPlayer[];
+  excluded: Array<{ sleeperPlayerId: string; playerName: string; position: string }>;
+  swaps: WeeklyLineupSwap[];
+  writeBehavior: string;
+}
+
+export interface WaiverAddCandidate {
+  sleeperPlayerId: string;
+  canonicalPlayerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  rosReplacementValue: number | null;
+  rosOverallRank: number | null;
+  weeklyProjectedPoints: number | null;
+  marginalUtility: number | null;
+  becomesStarter: boolean;
+  marginalUtilityExplanation: string;
+  identityStatus: string;
+  faabBidLowDollars: number | null;
+  faabBidHighDollars: number | null;
+  faabUrgency: "HIGH" | "MEDIUM" | "LOW" | null;
+  faabRationale: string | null;
+}
+
+export interface WaiverDropCandidate {
+  canonicalPlayerId: string;
+  playerName: string;
+  position: string;
+  marginalUtility: number | null;
+  explanation: string;
+}
+
+export interface WaiverAddDropPairing {
+  add: WaiverAddCandidate;
+  drop: WaiverDropCandidate | null;
+  netMarginalUtility: number | null;
+}
+
+export interface WaiversResult {
+  leagueId: string;
+  mode: "THIS_WEEK" | "REST_OF_SEASON";
+  week: number | null;
+  weeklySourceStatus: string | null;
+  weeklyProviderHealth: WeeklyProjectionProviderHealth | null;
+  rankingWarning: string;
+  unmatchedRosterSleeperPlayerIds: string[];
+  addCandidates: WaiverAddCandidate[];
+  dropCandidates: WaiverDropCandidate[];
+  addDropPairings: WaiverAddDropPairing[];
+  writeBehavior: string;
+}
+
+export interface TradePlayerImpact {
+  playerId: string;
+  playerName: string;
+  position: string;
+  rosReplacementValue: number | null;
+  marginalUtility: number | null;
+  becomesStarter: boolean;
+  statusFlag: string | null;
+}
+
+export interface TradeAnalysisResult {
+  leagueId: string;
+  gives: TradePlayerImpact[];
+  receives: TradePlayerImpact[];
+  rosValueDelta: number;
+  netMarginalUtility: number;
+  startingLineupValueBefore: number;
+  startingLineupValueAfter: number;
+  startingLineupValueDelta: number;
+  benchContingencyValueBefore: number;
+  benchContingencyValueAfter: number;
+  starterHolesBefore: string[];
+  starterHolesAfter: string[];
+  positionRedundancyBefore: Record<string, number>;
+  positionRedundancyAfter: Record<string, number>;
+  riskFlags: string[];
+  championshipEquityNote: string | null;
+  writeBehavior: string;
+}
+
+export interface TradeFinderCandidate {
+  myGivePlayerId: string;
+  myGivePlayerName: string;
+  opponentGivePlayerId: string;
+  opponentGivePlayerName: string;
+  opponentRosterId: string;
+  opponentTeamName: string;
+  myNetMarginalUtility: number;
+  opponentNetMarginalUtility: number;
+  myRosValueDelta: number;
+}
+
+export interface TradeFinderResult {
+  leagueId: string;
+  candidates: TradeFinderCandidate[];
+  writeBehavior: string;
+}
+
+export interface WeeklyHomeAction {
+  category: "START_SIT" | "START_SIT_CLOSE_CALL" | "WAIVER" | "TRADE" | "STREAMER";
+  priority: number;
+  summary: string;
+  detail: Record<string, unknown>;
+}
+
+export interface WeeklyHomeActionsResult {
+  week: number;
+  actions: WeeklyHomeAction[];
+  unavailableSections: Array<{ section: string; reason: string }>;
+  writeBehavior: string;
+}
+
+export interface RedraftMyRosterPlayer {
+  sleeperPlayerId: string;
+  canonicalPlayerId: string | null;
+  playerName: string;
+  position: string;
+  team: string;
+  starter: boolean;
+  identityStatus: "MATCHED" | "UNMATCHED_IDENTITY";
+}
+
+export interface RedraftMyRosterResult {
+  leagueId: string;
+  roster: RedraftMyRosterPlayer[];
+  rankingWarning: string;
+  writeBehavior: string;
+}
+
 export interface RedraftSleeperResyncResult {
   profile: LeagueProfile;
   rosterSnapshot: {

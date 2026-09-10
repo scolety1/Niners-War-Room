@@ -47,6 +47,7 @@ _TRADE_FINDER = "/api/v1/redraft/trade-finder"
 _WEEKLY_HOME_ACTIONS = "/api/v1/redraft/weekly-home-actions"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
+_REDRAFT_MY_ROSTER = "/api/v1/redraft/my-roster"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
@@ -248,6 +249,9 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "GET" and path == _REDRAFT_OPPONENT_ROSTERS:
             return self.server.facade.redraft_opponent_rosters()
+
+        if method == "GET" and path == _REDRAFT_MY_ROSTER:
+            return self.server.facade.redraft_my_roster()
 
         if method == "GET" and path == _TRADE_FINDER:
             return self.server.facade.redraft_trade_finder()

@@ -25,17 +25,24 @@ import {
   type RedraftHistoricalReplayPreviewResponse,
   type RedraftExternalIntelligenceResponse,
   type RedraftFreeAgentsResult,
+  type RedraftMyRosterResult,
   type RedraftOpponentRostersResult,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
   type RuntimeDescriptor,
+  type TradeAnalysisResult,
   type TradeBriefExport,
   type TradeBriefInput,
+  type TradeFinderResult,
   type TeamWindow,
   type TradeDecision,
   type TradeSaveResult,
   type TradeScenarioInput,
   type TradeWorkspace,
+  type WaiversResult,
+  type WeeklyHomeActionsResult,
+  type WeeklyLineupResult,
+  type WeeklyProjectionsResult,
 } from "@nwr/contracts";
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -294,6 +301,10 @@ export class NwrApiClient {
 
   redraftOpponentRosters(): Promise<RedraftOpponentRostersResult> {
     return this.request("/api/v1/redraft/opponent-rosters");
+  }
+
+  redraftMyRoster(): Promise<RedraftMyRosterResult> {
+    return this.request("/api/v1/redraft/my-roster");
   }
 
   activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {
@@ -647,6 +658,59 @@ export class NwrApiClient {
 
   kdstStreamer(week: number): Promise<KdstStreamerResult> {
     return this.request("/api/v1/redraft/kdst/streamer", {
+      method: "POST",
+      body: JSON.stringify({ week }),
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // In-season UI pass (2026-09-10): Start/Sit, Waivers/Add-Drop/FAAB,
+  // Redraft Trade Analysis, Trade Finder, Weekly Home Actions. All six
+  // read-only against Sleeper -- see writeBehavior on every result.
+  // -------------------------------------------------------------------
+
+  redraftWeeklyProjections(week: number, options?: { forceRefresh?: boolean }): Promise<WeeklyProjectionsResult> {
+    return this.request("/api/v1/redraft/weekly-projections", {
+      method: "POST",
+      body: JSON.stringify({ week, ...(options?.forceRefresh ? { forceRefresh: true } : {}) }),
+    });
+  }
+
+  redraftWeeklyLineup(week: number): Promise<WeeklyLineupResult> {
+    return this.request("/api/v1/redraft/weekly-lineup", {
+      method: "POST",
+      body: JSON.stringify({ week }),
+    });
+  }
+
+  redraftWaivers(options: {
+    mode: "THIS_WEEK" | "REST_OF_SEASON";
+    week?: number;
+    remainingBudgetDollars?: number;
+    weeksRemaining?: number;
+    totalBudgetDollars?: number;
+  }): Promise<WaiversResult> {
+    const body: Record<string, unknown> = { mode: options.mode };
+    if (options.week !== undefined) body.week = options.week;
+    if (options.remainingBudgetDollars !== undefined) body.remainingBudgetDollars = options.remainingBudgetDollars;
+    if (options.weeksRemaining !== undefined) body.weeksRemaining = options.weeksRemaining;
+    if (options.totalBudgetDollars !== undefined) body.totalBudgetDollars = options.totalBudgetDollars;
+    return this.request("/api/v1/redraft/waivers", { method: "POST", body: JSON.stringify(body) });
+  }
+
+  redraftTradeAnalysis(givesSleeperPlayerIds: string[], receivesSleeperPlayerIds: string[]): Promise<TradeAnalysisResult> {
+    return this.request("/api/v1/redraft/trade-analysis", {
+      method: "POST",
+      body: JSON.stringify({ givesSleeperPlayerIds, receivesSleeperPlayerIds }),
+    });
+  }
+
+  redraftTradeFinder(): Promise<TradeFinderResult> {
+    return this.request("/api/v1/redraft/trade-finder");
+  }
+
+  redraftWeeklyHomeActions(week: number): Promise<WeeklyHomeActionsResult> {
+    return this.request("/api/v1/redraft/weekly-home-actions", {
       method: "POST",
       body: JSON.stringify({ week }),
     });

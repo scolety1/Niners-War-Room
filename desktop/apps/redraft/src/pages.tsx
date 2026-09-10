@@ -265,7 +265,7 @@ export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: 
   </>;
 }
 
-const FREE_AGENT_COLUMNS: TableColumn[] = [
+export const FREE_AGENT_COLUMNS: TableColumn[] = [
   { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
   { key: "overallRank", label: "NWR rank", sort: "number", align: "right", render: (row) => row.overallRank == null ? "Unranked" : `#${String(row.overallRank)}` },
   { key: "positionRank", label: "Pos rank", sort: "number", render: (row) => row.positionRank == null ? "—" : `${String(row.position)}${String(row.positionRank)}` },
@@ -274,13 +274,7 @@ const FREE_AGENT_COLUMNS: TableColumn[] = [
   { key: "rosterStatus", label: "Sleeper status", sort: "text", render: () => <StatusBadge tone="safe" label="Available" /> },
 ];
 
-export const WEEKLY_HOME_BLOCKED_CAPABILITIES = [
-  { label: "Start / Sit", reason: "a governed weekly-projection model" },
-  { label: "Skill-position waivers", reason: "a governed weekly-projection and waiver-value model" },
-  { label: "Trades", reason: "a governed Redraft weekly-trade model; Dynasty keeper trade logic remains isolated" },
-] as const;
-
-function useFreeAgents(client: NwrApiClient, profileId: string | null) {
+export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
   const [result, setResult] = useState<RedraftFreeAgentsResult | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
   const [working, setWorking] = useState(false);
@@ -306,7 +300,7 @@ export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: R
     {working ? <p className="draft-feedback">Reading current Sleeper rosters…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
-    {result ? <Panel title={`${result.freeAgents.length} unrostered players`} eyebrow="AVAILABLE · all fantasy positions"><DataTable columns={FREE_AGENT_COLUMNS} rows={result.freeAgents as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
+    {result ? <Panel title={`${result.freeAgents.length} unrostered players`} eyebrow="AVAILABLE · all fantasy positions" action={isSleeper ? <div className="profile-edit-actions"><Link to="/waivers">Open Waiver analysis</Link><Link to="/compare">Open Compare</Link></div> : undefined}><DataTable columns={FREE_AGENT_COLUMNS} rows={result.freeAgents as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
   </>;
 }
 
@@ -322,36 +316,37 @@ export function OpponentRostersPage({ client, data }: { client: NwrApiClient; da
     });
     return () => { active = false; };
   }, [client, data.activeProfileId, data.activeProfile?.provider]);
+  const isSleeper = data.activeProfile?.provider === "sleeper";
   const columns: TableColumn[] = [
-    { key: "playerName", label: "Player", sort: "text" },
+    {
+      key: "playerName",
+      label: "Player",
+      sort: "text",
+      render: (row) => isSleeper
+        ? <Link
+            className="opponent-roster-trade-link"
+            title={`Add ${String(row.playerName)} to a Trade Analysis "I receive" side`}
+            to={`/trade-analysis?receiveSleeperId=${encodeURIComponent(String(row.sleeperPlayerId))}&receiveName=${encodeURIComponent(String(row.playerName))}`}
+          >
+            {String(row.playerName)}
+          </Link>
+        : String(row.playerName),
+    },
     { key: "position", label: "Position", sort: "text" },
     { key: "team", label: "NFL team", sort: "text" },
     { key: "starter", label: "Lineup", sort: "text", render: (row) => row.starter ? <StatusBadge tone="safe" label="Starter" /> : "Bench" },
   ];
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation." status={<StatusBadge tone={result ? "safe" : data.activeProfile?.provider === "sleeper" ? "review" : "blocked"} label={result ? `${result.opponents.length} opponents` : "Live source"} />} />
+    <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={result ? "safe" : data.activeProfile?.provider === "sleeper" ? "review" : "blocked"} label={result ? `${result.opponents.length} opponents` : "Live source"} />} />
     {data.activeProfile?.provider !== "sleeper" ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live opponent-roster source." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {isSleeper ? <div className="profile-edit-actions"><Link to="/trade-finder">Open Trade Finder (auto-search all opponents)</Link></div> : null}
     {result?.opponents.map((opponent) => <Panel key={opponent.rosterId} title={opponent.teamName} eyebrow={`${opponent.players.length} players · roster ${opponent.rosterId}`}><DataTable columns={columns} rows={opponent.players as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} />{opponent.unresolvedSleeperPlayerIds.length ? <p className="copy-muted">Unresolved Sleeper IDs: {opponent.unresolvedSleeperPlayerIds.join(", ")}</p> : null}</Panel>)}
   </>;
 }
 
-export function LeagueHomePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const { result: freeAgents, error: freeAgentError, working } = useFreeAgents(client, data.activeProfile?.provider === "sleeper" ? data.activeProfileId : null);
-  const [week, setWeek] = useState(1);
-  const [streamers, setStreamers] = useState<KdstStreamerResult | null>(null);
-  const [streamerError, setStreamerError] = useState<NwrApiError | null>(null);
-  const loadStreamers = async () => {
-    setStreamerError(null);
-    try { setStreamers(await client.kdstStreamer(week)); }
-    catch (reason) { setStreamerError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST recommendations could not be read.")); }
-  };
-  const topAction = (position: "K" | "DST") => streamers?.positions[position].find((row) => row.recommendation === "ADD" || row.recommendation === "START") ?? null;
-  return <>
-    <PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"} title="Weekly League Home" description="What needs attention this week, limited to data and decisions NWR can support honestly today." status={<StatusBadge tone={data.status.tone} label={data.health.status || "Review"} />} />
-    <div className="metric-grid"><MetricCard label="Data Health" value={data.status.ready ? "Ready" : "Review"} detail={data.status.sourceAsOf || "Projection date unavailable"} icon="health" tone={data.status.ready ? "cyan" : "gold"} /><MetricCard label="Free agents" value={freeAgents?.freeAgents.length ?? (working ? "Reading…" : "Unavailable")} detail="Live Sleeper roster state" icon="players" tone="violet" /><MetricCard label="K/DST" value={data.externalConsensus?.configured ? "Available" : "Provider blocked"} detail="FantasyPros ECR only" icon="target" tone="gold" /></div>
-    <Panel title="K/DST streamer" eyebrow="Real external ECR · live roster status"><div className="profile-edit-actions"><label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label><Button disabled={!data.externalConsensus?.configured || data.activeProfile?.provider !== "sleeper"} onClick={() => void loadStreamers()}>Get week {week}</Button></div>{!data.externalConsensus?.configured ? <p className="copy-muted">Unavailable until an owner-authorized FantasyPros API key is configured.</p> : null}{streamerError ? <ErrorState message={streamerError.message} recovery={streamerError.recoveryAction} /> : null}{streamers ? <div className="metric-grid">{(["K", "DST"] as const).map((position) => { const row = topAction(position); return <MetricCard key={position} label={`${position} action`} value={row?.playerName ?? "No available action"} detail={row ? `${row.recommendation} · ECR ${row.ecr}` : "Live roster filter returned no add/start"} icon="target" tone="cyan" />; })}</div> : null}<Link to="/weekly-tools">Open full K/DST table</Link></Panel>
-    <Panel title="Top free agents" eyebrow="Live Sleeper availability · existing NWR season values">{freeAgentError ? <ErrorState message={freeAgentError.message} recovery={freeAgentError.recoveryAction} /> : null}{freeAgents ? <DataTable columns={FREE_AGENT_COLUMNS} rows={freeAgents.freeAgents.slice(0, 12) as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /> : null}<div className="profile-edit-actions"><Link to="/free-agents">Open full free-agent pool</Link><Link to="/opponent-rosters">Open opponent rosters</Link></div></Panel>
-    <Panel title="Coming soon" eyebrow="Explicit dependency blockers"><dl className="health-list">{WEEKLY_HOME_BLOCKED_CAPABILITIES.map((capability) => <div key={capability.label}><dt>{capability.label}</dt><dd><StatusBadge tone="blocked" label={`Coming soon — blocked on ${capability.reason}`} /></dd></div>)}</dl></Panel>
-  </>;
-}
+// NWR in-season UI pass (2026-09-10): the old "coming soon, blocked on a
+// governed weekly-projection model" LeagueHomePage is retired -- Start/Sit,
+// Waivers, and Trade are now real, live capabilities. See WeeklyHomePage in
+// ./in-season.tsx, which composes redraftWeeklyHomeActions with this same
+// free-agent read.
