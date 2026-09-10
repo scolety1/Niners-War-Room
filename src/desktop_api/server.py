@@ -43,6 +43,7 @@ _WEEKLY_PROJECTIONS = "/api/v1/redraft/weekly-projections"
 _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _WAIVERS = "/api/v1/redraft/waivers"
 _TRADE_ANALYSIS = "/api/v1/redraft/trade-analysis"
+_TRADE_FINDER = "/api/v1/redraft/trade-finder"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
@@ -246,6 +247,9 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "GET" and path == _REDRAFT_OPPONENT_ROSTERS:
             return self.server.facade.redraft_opponent_rosters()
+
+        if method == "GET" and path == _TRADE_FINDER:
+            return self.server.facade.redraft_trade_finder()
 
         if method == "GET" and path == "/api/v1/redraft/historical-replay/kha-2026-09-02":
             return self.server.facade.redraft_historical_replay_preview()

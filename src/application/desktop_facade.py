@@ -225,6 +225,7 @@ from src.services.waiver_engine_service import (
     suggest_faab_bids,
 )
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
+from src.services.trade_finder_service import find_win_win_trades
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -3090,6 +3091,103 @@ class DesktopBackendFacade:
                 "positionRedundancyAfter": dict(evaluation.position_redundancy_after),
                 "riskFlags": list(evaluation.risk_flags),
                 "championshipEquityNote": evaluation.championship_equity_note,
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_trade_finder(self) -> FacadePayload:
+        """Trade Finder (NWR Overnight V3, Lane 8) -- only built because
+        Lane 7 shipped and Opponent Rosters is a real, live capability.
+        Read-only: never writes to Sleeper, never proposes a trade against
+        an opponent without a real, live opponent roster read.
+        """
+
+        self._require_mode("redraft")
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            raise FacadeError(
+                "TRADE_FINDER_RANKINGS_UNAVAILABLE",
+                "NWR rankings are unavailable for this profile; Trade Finder requires the "
+                "governed ranking.",
+                status=409,
+            ) from exc
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            users = sleeper.get_json(f"league/{league_id}/users")
+            players = sleeper.get_json("players/nfl")
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_FINDER_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError("TRADE_FINDER_READ_FAILED", "Sleeper roster response is malformed.", status=503)
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "TRADE_FINDER_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
+                status=409,
+            )
+        own_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        opponent_rows = sleeper_opponent_rosters(
+            rosters=rosters, users=users, players=players, owner_user_id=owner_user_id
+        )
+        opponents: list[dict[str, Any]] = []
+        for opponent in opponent_rows:
+            opp_sleeper_ids = [str(row["sleeperPlayerId"]) for row in opponent["players"]]
+            opp_resolved = resolve_roster_canonical_ids(
+                roster_sleeper_player_ids=opp_sleeper_ids, players_catalog=players,
+                ranking_rows=ranking_rows,
+            )
+            opponents.append(
+                {
+                    "rosterId": opponent["rosterId"],
+                    "teamName": opponent["teamName"],
+                    "canonicalIds": opp_resolved.canonical_player_ids,
+                    "names": opp_resolved.player_names_by_canonical_id,
+                    "positions": opp_resolved.player_positions_by_canonical_id,
+                }
+            )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        status_overrides = load_status_overrides(self.repo_root)
+        results = find_win_win_trades(
+            my_roster_canonical_ids=own_resolved.canonical_player_ids,
+            my_player_names=own_resolved.player_names_by_canonical_id,
+            my_player_positions=own_resolved.player_positions_by_canonical_id,
+            opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
+            status_overrides=status_overrides,
+        )
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "candidates": [
+                    {
+                        "myGivePlayerId": candidate.my_give_player_id,
+                        "myGivePlayerName": candidate.my_give_player_name,
+                        "opponentGivePlayerId": candidate.opponent_give_player_id,
+                        "opponentGivePlayerName": candidate.opponent_give_player_name,
+                        "opponentRosterId": candidate.opponent_roster_id,
+                        "opponentTeamName": candidate.opponent_team_name,
+                        "myNetMarginalUtility": candidate.my_evaluation.net_marginal_utility,
+                        "opponentNetMarginalUtility": candidate.opponent_evaluation.net_marginal_utility,
+                        "myRosValueDelta": candidate.my_evaluation.ros_value_delta,
+                    }
+                    for candidate in results
+                ],
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
