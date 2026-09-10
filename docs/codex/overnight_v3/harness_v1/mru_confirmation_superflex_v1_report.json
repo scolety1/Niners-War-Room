@@ -1,0 +1,1434 @@
+{
+  "roster": {
+    "qb": 1,
+    "rb": 2,
+    "wr": 2,
+    "te": 1,
+    "flex": 1,
+    "superflex": 1,
+    "k": 0,
+    "dst": 0,
+    "bench_size": 3
+  },
+  "total_rounds": 11,
+  "team_count": 10,
+  "dev_seasons": [
+    2012,
+    2013,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "slots": [
+    1,
+    5,
+    10
+  ],
+  "n_total": 48,
+  "n_skipped": 1,
+  "skipped": [
+    {
+      "season": 2012,
+      "reason": "insufficient real players: 84 < 110"
+    }
+  ],
+  "observations": [
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027974",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0026345",
+        "nwr_gsis_00-0028052",
+        "nwr_gsis_00-0030525",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0027981",
+        "nwr_gsis_00-0029626",
+        "nwr_gsis_00-0028064"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1101.94,
+      "position_counts": {
+        "QB": 4,
+        "WR": 4,
+        "TE": 1,
+        "RB": 2
+      },
+      "max_single_position_count": 4,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0024334",
+        "nwr_gsis_00-0026345",
+        "nwr_gsis_00-0027996",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0025418",
+        "nwr_gsis_00-0024813",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0029708",
+        "nwr_gsis_00-0022942"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1399.98,
+      "position_counts": {
+        "QB": 3,
+        "WR": 5,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027974",
+        "nwr_gsis_00-0024466",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0026901",
+        "nwr_gsis_00-0030525",
+        "nwr_gsis_00-0027006",
+        "nwr_gsis_00-0024813",
+        "nwr_gsis_00-0027135",
+        "nwr_gsis_00-0029626"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1127.74,
+      "position_counts": {
+        "QB": 4,
+        "WR": 4,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 4,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0028002",
+        "nwr_gsis_00-0024466",
+        "nwr_gsis_00-0026901",
+        "nwr_gsis_00-0027531",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0025418",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0029708",
+        "nwr_gsis_00-0022942"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1227.78,
+      "position_counts": {
+        "QB": 3,
+        "WR": 5,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027974",
+        "nwr_gsis_00-0023496",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0026901",
+        "nwr_gsis_00-0027006",
+        "nwr_gsis_00-0029664",
+        "nwr_gsis_00-0027135",
+        "nwr_gsis_00-0028083",
+        "nwr_gsis_00-0029626"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1285.74,
+      "position_counts": {
+        "QB": 4,
+        "WR": 4,
+        "TE": 1,
+        "RB": 2
+      },
+      "max_single_position_count": 4,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2013,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0023496",
+        "nwr_gsis_00-0026144",
+        "nwr_gsis_00-0026901",
+        "nwr_gsis_00-0027690",
+        "nwr_gsis_00-0025418",
+        "nwr_gsis_00-0029683",
+        "nwr_gsis_00-0029708",
+        "nwr_gsis_00-0029262",
+        "nwr_gsis_00-0022942"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1306.1200000000001,
+      "position_counts": {
+        "QB": 3,
+        "WR": 5,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0031503",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0031375",
+        "nwr_gsis_00-0027981",
+        "nwr_gsis_00-0031339",
+        "nwr_gsis_00-0027006"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1224.1000000000001,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029615",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0029854",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0031325",
+        "nwr_gsis_00-0027981",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0026498"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1373.72,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0031503",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0032417",
+        "nwr_gsis_00-0027981",
+        "nwr_gsis_00-0031339",
+        "nwr_gsis_00-0027006"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1211.6000000000001,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029615",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0025418",
+        "nwr_gsis_00-0028064",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0026345",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0026498",
+        "nwr_gsis_00-0028118"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1176.6,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0031503",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0032417",
+        "nwr_gsis_00-0028002",
+        "nwr_gsis_00-0031339",
+        "nwr_gsis_00-0031387"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1245.6000000000001,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2017,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0026143",
+        "nwr_gsis_00-0029615",
+        "nwr_gsis_00-0031045",
+        "nwr_gsis_00-0027966",
+        "nwr_gsis_00-0030472",
+        "nwr_gsis_00-0027685",
+        "nwr_gsis_00-0031382",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0026498",
+        "nwr_gsis_00-0028118"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1335.2,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0031590",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0024389",
+        "nwr_gsis_00-0033951",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0026345"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1158.32,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027656",
+        "nwr_gsis_00-0031590",
+        "nwr_gsis_00-0033857",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0028087",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0022924",
+        "nwr_gsis_00-0023436"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1419.18,
+      "position_counts": {
+        "QB": 5,
+        "TE": 1,
+        "RB": 3,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0024389",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0026345",
+        "nwr_gsis_00-0028064"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1169.72,
+      "position_counts": {
+        "QB": 5,
+        "WR": 3,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027029",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0030061",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0022924",
+        "nwr_gsis_00-0023436"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1500.48,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0029668",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0033881",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0026345",
+        "nwr_gsis_00-0028064"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1245.82,
+      "position_counts": {
+        "QB": 5,
+        "WR": 3,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2018,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0023459",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0027029",
+        "nwr_gsis_00-0030506",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0032058",
+        "nwr_gsis_00-0033881",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0026498",
+        "nwr_gsis_00-0022924",
+        "nwr_gsis_00-0023436"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1441.54,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "TE": 2,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0034837",
+        "nwr_gsis_00-0034753",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0032780"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1581.3799999999999,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0032764",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0032144",
+        "nwr_gsis_00-0034837",
+        "nwr_gsis_00-0033881",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0034857"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1667.16,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0032764",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0031428",
+        "nwr_gsis_00-0034753",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0034348"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1779.48,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0032764",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0033932",
+        "nwr_gsis_00-0033699",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0034753",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0034857"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1885.76,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0032764",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0034753",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0034348"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1766.08,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2019,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0032764",
+        "nwr_gsis_00-0033288",
+        "nwr_gsis_00-0033118",
+        "nwr_gsis_00-0033932",
+        "nwr_gsis_00-0031428",
+        "nwr_gsis_00-0031382",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0034857"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1733.16,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "TE": 1,
+        "WR": 3
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0031235",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0036328",
+        "nwr_gsis_00-0033110",
+        "nwr_gsis_00-0031062"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1256.1,
+      "position_counts": {
+        "QB": 5,
+        "WR": 3,
+        "RB": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033594",
+        "nwr_gsis_00-0031235",
+        "nwr_gsis_00-0035250",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0032950",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1269.16,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0032241",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033009",
+        "nwr_gsis_00-0036328",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1376.52,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0033594",
+        "nwr_gsis_00-0031235",
+        "nwr_gsis_00-0035250",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0032950",
+        "nwr_gsis_00-0027939",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1269.16,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0032241",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0036328",
+        "nwr_gsis_00-0029293",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1558.6599999999999,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2020,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0032241",
+        "nwr_gsis_00-0030496",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0031547",
+        "nwr_gsis_00-0027942",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0032950",
+        "nwr_gsis_00-0027061",
+        "nwr_gsis_00-0027939"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1369.76,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0034184",
+        "nwr_gsis_00-0034681",
+        "nwr_gsis_00-0033932",
+        "nwr_gsis_00-0035719",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0035644"
+      ],
+      "fully_realized": false,
+      "oracle_realized_optimal_lineup_value": null,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0034837",
+        "nwr_gsis_00-0032063",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0034184",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0029701",
+        "nwr_gsis_00-0036389",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0035644"
+      ],
+      "fully_realized": false,
+      "oracle_realized_optimal_lineup_value": null,
+      "position_counts": {
+        "QB": 5,
+        "WR": 2,
+        "RB": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0034184",
+        "nwr_gsis_00-0033932",
+        "nwr_gsis_00-0035719",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": false,
+      "oracle_realized_optimal_lineup_value": null,
+      "position_counts": {
+        "QB": 5,
+        "RB": 2,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0035685",
+        "nwr_gsis_00-0035243",
+        "nwr_gsis_00-0032063",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0034827",
+        "nwr_gsis_00-0029701",
+        "nwr_gsis_00-0036389",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1501.54,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0029263",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0034184",
+        "nwr_gsis_00-0032144",
+        "nwr_gsis_00-0035719",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": false,
+      "oracle_realized_optimal_lineup_value": null,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2021,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0036275",
+        "nwr_gsis_00-0035243",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0033921",
+        "nwr_gsis_00-0033932",
+        "nwr_gsis_00-0029701",
+        "nwr_gsis_00-0036389",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0033110"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1476.94,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0036355",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0035700",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0037258",
+        "nwr_gsis_00-0030578",
+        "nwr_gsis_00-0036309",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0033090"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1637.02,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033856",
+        "nwr_gsis_00-0035700",
+        "nwr_gsis_00-0036973",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0033090"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1722.02,
+      "position_counts": {
+        "QB": 4,
+        "RB": 3,
+        "WR": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 4,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0036355",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0035700",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0037258",
+        "nwr_gsis_00-0035250",
+        "nwr_gsis_00-0036309",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0033090"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1643.22,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0035719",
+        "nwr_gsis_00-0036567",
+        "nwr_gsis_00-0035700",
+        "nwr_gsis_00-0037258",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0033077",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0033090"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1642.82,
+      "position_counts": {
+        "QB": 4,
+        "WR": 3,
+        "RB": 3,
+        "TE": 1
+      },
+      "max_single_position_count": 4,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0036355",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0035228",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0037258",
+        "nwr_gsis_00-0035250",
+        "nwr_gsis_00-0032211",
+        "nwr_gsis_00-0030431",
+        "nwr_gsis_00-0033090"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1445.02,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2022,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033553",
+        "nwr_gsis_00-0035685",
+        "nwr_gsis_00-0035657",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0036309",
+        "nwr_gsis_00-0034383",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0037012",
+        "nwr_gsis_00-0036212"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1419.52,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0036389",
+        "nwr_gsis_00-0036442",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0033293",
+        "nwr_gsis_00-0033553",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0036906",
+        "nwr_gsis_00-0033921",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0033885"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1488.96,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 1,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0036389",
+        "nwr_gsis_00-0035700",
+        "nwr_gsis_00-0033293",
+        "nwr_gsis_00-0034972",
+        "nwr_gsis_00-0031408",
+        "nwr_gsis_00-0034775",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0035710",
+        "nwr_gsis_00-0030565",
+        "nwr_gsis_00-0033885"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1520.62,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0036442",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0034972",
+        "nwr_gsis_00-0033553",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0037256",
+        "nwr_gsis_00-0035216",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0034383"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1519.8600000000001,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 5,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033897",
+        "nwr_gsis_00-0033293",
+        "nwr_gsis_00-0034972",
+        "nwr_gsis_00-0033288",
+        "nwr_gsis_00-0031408",
+        "nwr_gsis_00-0037247",
+        "nwr_gsis_00-0035710",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0030565"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1585.46,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "TE": 1,
+        "WR": 2
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V1_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0036442",
+        "nwr_gsis_00-0034796",
+        "nwr_gsis_00-0035243",
+        "nwr_gsis_00-0033553",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0037256",
+        "nwr_gsis_00-0031236",
+        "nwr_gsis_00-0034348",
+        "nwr_gsis_00-0034383"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1506.76,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    },
+    {
+      "season": 2023,
+      "team_count": 10,
+      "draft_slot": 10,
+      "strategy_name": "MRU_V2_BRIDGE",
+      "roster_player_ids": [
+        "nwr_gsis_00-0034857",
+        "nwr_gsis_00-0033873",
+        "nwr_gsis_00-0033897",
+        "nwr_gsis_00-0033293",
+        "nwr_gsis_00-0035243",
+        "nwr_gsis_00-0038124",
+        "nwr_gsis_00-0034775",
+        "nwr_gsis_00-0033537",
+        "nwr_gsis_00-0035710",
+        "nwr_gsis_00-0029604",
+        "nwr_gsis_00-0034383"
+      ],
+      "fully_realized": true,
+      "oracle_realized_optimal_lineup_value": 1313.42,
+      "position_counts": {
+        "QB": 5,
+        "RB": 3,
+        "WR": 2,
+        "TE": 1
+      },
+      "max_single_position_count": 5,
+      "n_rounds_total": 11
+    }
+  ],
+  "elapsed_seconds": 62.4
+}
