@@ -2521,6 +2521,51 @@ class DesktopBackendFacade:
                 "remote state was changed.",
                 status=503,
             ) from exc
+        own_roster_player_ids: list[str] = []
+        if isinstance(rosters, list):
+            own_roster = next(
+                (
+                    roster
+                    for roster in rosters
+                    if isinstance(roster, Mapping)
+                    and str(roster.get("owner_id") or "") == str(owner_user_id)
+                ),
+                None,
+            )
+            if own_roster is not None:
+                own_roster_player_ids = [str(value) for value in own_roster.get("players") or []]
+        for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
+            actions = positions.get(position) or []
+            add_action = next(
+                (action for action in actions if action.get("recommendation") == "ADD"), None
+            )
+            top_action = add_action or (actions[0] if actions else None)
+            if top_action is None:
+                continue
+            self._record_decision_trace_safe(
+                profile_id=selected.profile_id, league_id=league_id, season=selected.season,
+                week=week, tool=tool_name, engine_version="fantasypros_kdst_consensus_service-v1",
+                data_versions={"provider": status.authority},
+                roster_state_player_ids=own_roster_player_ids,
+                recommendation={
+                    "playerName": top_action.get("playerName"),
+                    "team": top_action.get("team"),
+                    "ecr": top_action.get("ecr"),
+                    "tier": top_action.get("tier"),
+                    "recommendation": top_action.get("recommendation"),
+                    "rosterStatus": top_action.get("rosterStatus"),
+                },
+                alternatives=[
+                    {
+                        "playerName": action.get("playerName"),
+                        "team": action.get("team"),
+                        "ecr": action.get("ecr"),
+                        "recommendation": action.get("recommendation"),
+                    }
+                    for action in actions[:6]
+                    if action is not top_action
+                ],
+            )
         return FacadePayload(
             data={
                 "authority": status.authority,

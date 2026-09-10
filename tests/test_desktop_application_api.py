@@ -25,6 +25,8 @@ from src.services.nwr_pure_experiment_service import (
     read_correction_records,
     read_decision_receipts,
 )
+from src.services.fantasypros_kdst_consensus_service import ConsensusRow
+from src.services.in_season_decision_trace_service import load_decision_traces
 from src.services.outcome_v3_display_service import load_outcome_v3_display
 from src.services.owner_test_instrumentation_service import read_owner_test_events
 from src.services.redraft_engine_v1_service import (
@@ -1664,6 +1666,107 @@ def test_facade_sync_redraft_sleeper_picks_wires_through_to_draft_board(
     facade.activate_redraft_profile(local_id)
     with pytest.raises(FacadeError, match="requires a profile imported from Sleeper"):
         facade.sync_redraft_sleeper_picks(profile_id=local_id)
+
+
+def test_redraft_kdst_streamer_records_a_decision_trace_for_k_and_dst(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Final acceptance V4, section 8: K/DST Streamer recommendations must
+    land in the existing in-season decision-trace ledger
+    (`in_season_decision_trace_service.py`), the same append-only jsonl
+    format Start/Sit, Waivers, FAAB, and Trade Finder already use. No live
+    network call is made -- Sleeper and FantasyPros are monkeypatched at
+    the desktop_facade module level, exercising only NWR's own wiring."""
+
+    store = tmp_path / "redraft-store"
+    facade = DesktopBackendFacade(repo_root=REPO_ROOT, mode="redraft", redraft_root=store)
+    created = facade.create_redraft_profile(
+        preset_key="12_TEAM_1QB_HALF_PPR", league_name="KDST Trace League"
+    )
+    profile_id = created.data["profile"]["profileId"]
+    facade.activate_redraft_profile(profile_id)
+    profile = load_profile(store, profile_id)
+    save_profile(store, replace(profile, provider="sleeper", provider_league_id="9999"))
+
+    receipt_dir = store / "sleeper_imports"
+    receipt_dir.mkdir(parents=True, exist_ok=True)
+    (receipt_dir / f"{profile_id}.json").write_text(
+        json.dumps({"league": {"league_id": "9999"}, "owner": {"user_id": "owner-1"}}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        desktop_facade_module,
+        "fantasypros_provider_status",
+        lambda: SimpleNamespace(
+            configured=True, authority="EXTERNAL CONSENSUS — FANTASYPROS", message="ok"
+        ),
+    )
+
+    def _fake_get_json(self: Any, path: str) -> Any:
+        if path == "league/9999/rosters":
+            return [
+                {"owner_id": "owner-1", "players": ["k-1"], "starters": ["k-1"]},
+                {"owner_id": "owner-2", "players": ["d-1"], "starters": []},
+            ]
+        if path == "players/nfl":
+            return {
+                "k-1": {"full_name": "Kicker One", "position": "K", "team": "SF"},
+                "d-1": {"full_name": "Seahawks", "position": "DEF", "team": "SEA"},
+            }
+        raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
+
+    monkeypatch.setattr(desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json)
+
+    def _fake_consensus_rankings(
+        self: Any, *, season: int, position: str, week: int, scoring: str
+    ) -> tuple[ConsensusRow, ...]:
+        if position == "K":
+            # Only one candidate, already the owner's own starter -- exercises
+            # the "no ADD action present" fallback-to-top-row branch.
+            return (ConsensusRow("fp-k-1", "Kicker One", "K", "SF", 1, 1, week, season),)
+        # One candidate rostered by an opponent (ROSTERED_ELSEWHERE, not the
+        # owner's), one truly available -- exercises the real ADD-selection
+        # branch.
+        return (
+            ConsensusRow("fp-d-1", "Seahawks", "DST", "SEA", 3, 1, week, season),
+            ConsensusRow("fp-d-2", "Free Defense", "DST", "GB", 4, 1, week, season),
+        )
+
+    monkeypatch.setattr(
+        desktop_facade_module.FantasyProsConsensusClient,
+        "consensus_rankings",
+        _fake_consensus_rankings,
+    )
+
+    result = facade.redraft_kdst_streamer(week=1)
+    assert result.data["writeBehavior"] == "NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES"
+
+    traces = load_decision_traces(store, profile_id)
+    by_tool = {trace.tool: trace for trace in traces}
+    assert set(by_tool) == {"K_STREAMER", "DST_STREAMER"}
+
+    k_trace = by_tool["K_STREAMER"]
+    assert k_trace.league_id == "9999"
+    assert k_trace.week == 1
+    assert k_trace.engine_version == "fantasypros_kdst_consensus_service-v1"
+    assert k_trace.roster_state_player_ids == ("k-1",)
+    # No ADD candidate exists (Kicker One is already the owner's own
+    # starter) -- the trace records the real top row (START), not a
+    # fabricated ADD, and no future-outcome field is present.
+    assert k_trace.recommendation["recommendation"] == "START"
+    assert k_trace.recommendation["playerName"] == "Kicker One"
+    assert k_trace.alternatives == ()
+    assert k_trace.status == "RECOMMENDED"
+    assert k_trace.owner_action is None
+    assert "actualPoints" not in k_trace.recommendation and "wasCorrect" not in k_trace.recommendation
+
+    dst_trace = by_tool["DST_STREAMER"]
+    assert dst_trace.recommendation["recommendation"] == "ADD"
+    assert dst_trace.recommendation["playerName"] == "Free Defense"
+    assert any(alt["playerName"] == "Seahawks" for alt in dst_trace.alternatives)
+    assert dst_trace.status == "RECOMMENDED"
+    assert dst_trace.owner_action is None
 
 
 def test_facade_catch_up_preview_and_apply_wire_through_to_draft_board(
