@@ -39,6 +39,8 @@ _SLEEPER_REDRAFT_RESYNC = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/sleeper
 _PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical-mock$")
 _REDRAFT_NWR_PURE_MODE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/nwr-pure-mode$")
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
+_WEEKLY_PROJECTIONS = "/api/v1/redraft/weekly-projections"
+_WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
@@ -522,6 +524,20 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if type(week) is not int:
                 raise self._invalid_body("week must be an integer.")
             return self.server.facade.redraft_kdst_streamer(week=week)
+        if method == "POST" and path == _WEEKLY_PROJECTIONS:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"week"})
+            week = body.get("week")
+            if type(week) is not int:
+                raise self._invalid_body("week must be an integer.")
+            return self.server.facade.redraft_weekly_projections(week=week)
+        if method == "POST" and path == _WEEKLY_LINEUP:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"week"})
+            week = body.get("week")
+            if type(week) is not int:
+                raise self._invalid_body("week must be an integer.")
+            return self.server.facade.redraft_weekly_lineup(week=week)
         practical_match = _PRACTICAL_MOCK_START.fullmatch(path)
         if method == "POST" and practical_match:
             body = self._json_body(allow_empty=True)

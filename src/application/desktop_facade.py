@@ -208,6 +208,15 @@ from src.services.redraft_engine_v1_service import (
     utc_now,
 )
 from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
+from src.services.weekly_projection_service import (
+    WeeklyProjectionError,
+    build_weekly_projection_rows,
+    fetch_sleeper_weekly_projections,
+)
+from src.services.weekly_lineup_optimizer_service import (
+    build_roster_candidates,
+    optimize_weekly_lineup,
+)
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -2577,6 +2586,219 @@ class DesktopBackendFacade:
             data={
                 "leagueId": league_id,
                 "opponents": list(opponents),
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_weekly_projections(self, *, week: int) -> FacadePayload:
+        """Real, live, per-player weekly projections (NWR Overnight V3, Lane 1/2).
+
+        Source: Sleeper's public, undocumented `projections/nfl/...` endpoint
+        (see `weekly_projection_service.py` module docstring for the full
+        honesty disclosure -- undocumented, non-commercial, no coverage or
+        scoring-format guarantee). Never writes to Sleeper. Fetched live on
+        every call -- there is no local cache to go silently stale; a fetch
+        failure raises rather than ever re-serving a prior week's numbers.
+        """
+
+        self._require_mode("redraft")
+        if not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18:
+            raise FacadeError(
+                "WEEKLY_PROJECTIONS_WEEK_INVALID", "Week must be an integer from 1 through 18."
+            )
+        selected, league_id, _owner_user_id = self._active_sleeper_context()
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+        try:
+            sleeper = SleeperHttpClient()
+            raw_projections = fetch_sleeper_weekly_projections(
+                season=selected.season, week=week, http=sleeper
+            )
+            players = sleeper.get_json("players/nfl")
+            result = build_weekly_projection_rows(
+                raw_projections=raw_projections,
+                players=players,
+                ranking_rows=ranking_rows,
+                scoring=selected.scoring,
+                season=selected.season,
+                week=week,
+                season_type="regular",
+                league_id=league_id,
+            )
+        except (WeeklyProjectionError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "WEEKLY_PROJECTIONS_READ_FAILED",
+                "Sleeper weekly-projection or player data could not be read. No local or "
+                "remote state was changed. This week's projections are UNAVAILABLE, not "
+                "silently reused from a prior fetch.",
+                status=503,
+            ) from exc
+        return FacadePayload(
+            data={
+                "season": result.season,
+                "week": result.week,
+                "leagueId": result.league_id,
+                "source": result.source,
+                "sourceStatus": result.source_status,
+                "sourceAsOf": result.source_as_of,
+                "matched": result.matched,
+                "unmatched": result.unmatched,
+                "ambiguous": result.ambiguous,
+                "totalPlayersInSource": result.total_players_in_source,
+                "rows": [
+                    {
+                        "canonicalPlayerId": row.canonical_player_id,
+                        "sleeperPlayerId": row.sleeper_player_id,
+                        "playerName": row.player_name,
+                        "position": row.position,
+                        "team": row.team,
+                        "projectedPoints": row.projected_points,
+                        "scoringContext": row.scoring_context,
+                        "identityMatch": row.identity_match,
+                        "gp": row.gp,
+                        "sourceAsOf": row.source_as_of,
+                    }
+                    for row in result.rows
+                ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_weekly_lineup(self, *, week: int) -> FacadePayload:
+        """Start/Sit: the owner's own legal optimal lineup for one real week
+        (NWR Overnight V3, Lane 3). Only reachable because Lane 1/2's live
+        Sleeper weekly-projection source made this honestly buildable --
+        three prior overnight passes on this branch left this BLOCKED.
+        Read-only: never writes a lineup to Sleeper.
+        """
+
+        self._require_mode("redraft")
+        if not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18:
+            raise FacadeError(
+                "WEEKLY_LINEUP_WEEK_INVALID", "Week must be an integer from 1 through 18."
+            )
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+            raw_projections = fetch_sleeper_weekly_projections(
+                season=selected.season, week=week, http=sleeper
+            )
+        except (WeeklyProjectionError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "WEEKLY_LINEUP_READ_FAILED",
+                "Sleeper roster or weekly-projection data could not be read. No local or "
+                "remote state was changed. This week's lineup is UNAVAILABLE, not silently "
+                "computed from stale data.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError(
+                "WEEKLY_LINEUP_READ_FAILED", "Sleeper roster response is malformed.", status=503
+            )
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "WEEKLY_LINEUP_ROSTER_NOT_FOUND",
+                "The owner's Sleeper roster could not be found in this league.",
+                status=409,
+            )
+        projection_result = build_weekly_projection_rows(
+            raw_projections=raw_projections,
+            players=players,
+            ranking_rows=ranking_rows,
+            scoring=selected.scoring,
+            season=selected.season,
+            week=week,
+            season_type="regular",
+            league_id=league_id,
+        )
+        status_overrides = load_status_overrides(self.repo_root)
+        candidates = build_roster_candidates(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            starter_sleeper_player_ids=[str(value) for value in own_roster.get("starters") or []],
+            projection_rows=projection_result.rows,
+            status_overrides=status_overrides,
+        )
+        lineup = optimize_weekly_lineup(
+            candidates=candidates, roster=selected.roster, status_overrides=status_overrides
+        )
+        return FacadePayload(
+            data={
+                "season": selected.season,
+                "week": week,
+                "leagueId": league_id,
+                "sourceStatus": projection_result.source_status,
+                "sourceAsOf": projection_result.source_as_of,
+                "matched": projection_result.matched,
+                "unmatched": projection_result.unmatched,
+                "ambiguous": projection_result.ambiguous,
+                "projectedTotal": lineup.projected_total,
+                "unprojectedStarterCount": lineup.unprojected_starter_count,
+                "starters": [
+                    {
+                        "slotType": slot.slot_type,
+                        "player": (
+                            {
+                                "sleeperPlayerId": slot.player.sleeper_player_id,
+                                "playerName": slot.player.player_name,
+                                "position": slot.player.position,
+                                "team": slot.player.team,
+                                "projectedPoints": slot.player.projected_points,
+                            }
+                            if slot.player
+                            else None
+                        ),
+                        "status": slot.status,
+                        "closeCall": slot.close_call,
+                        "closeCallAlternative": slot.close_call_alternative,
+                        "closeCallMargin": slot.close_call_margin,
+                    }
+                    for slot in lineup.starters
+                ],
+                "bench": [
+                    {
+                        "sleeperPlayerId": candidate.sleeper_player_id,
+                        "playerName": candidate.player_name,
+                        "position": candidate.position,
+                        "projectedPoints": candidate.projected_points,
+                    }
+                    for candidate in lineup.bench
+                ],
+                "excluded": [
+                    {
+                        "sleeperPlayerId": candidate.sleeper_player_id,
+                        "playerName": candidate.player_name,
+                        "position": candidate.position,
+                    }
+                    for candidate in lineup.excluded
+                ],
+                "swaps": [
+                    {
+                        "slotType": swap.slot_type,
+                        "startPlayer": swap.start_player,
+                        "benchPlayer": swap.bench_player,
+                        "projectedDelta": swap.projected_delta,
+                        "summary": swap.summary,
+                    }
+                    for swap in lineup.swaps_vs_current
+                ],
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
