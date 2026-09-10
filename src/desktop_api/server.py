@@ -42,6 +42,7 @@ _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _WEEKLY_PROJECTIONS = "/api/v1/redraft/weekly-projections"
 _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _WAIVERS = "/api/v1/redraft/waivers"
+_TRADE_ANALYSIS = "/api/v1/redraft/trade-analysis"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
@@ -562,6 +563,18 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                         raise self._invalid_body(f"{json_key} must be an integer when provided.")
                     kwargs[py_key] = value
             return self.server.facade.redraft_waivers(**kwargs)
+        if method == "POST" and path == _TRADE_ANALYSIS:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"givesSleeperPlayerIds", "receivesSleeperPlayerIds"})
+            gives = body.get("givesSleeperPlayerIds")
+            receives = body.get("receivesSleeperPlayerIds")
+            if not isinstance(gives, list) or not all(isinstance(value, str) for value in gives):
+                raise self._invalid_body("givesSleeperPlayerIds must be a list of strings.")
+            if not isinstance(receives, list) or not all(isinstance(value, str) for value in receives):
+                raise self._invalid_body("receivesSleeperPlayerIds must be a list of strings.")
+            return self.server.facade.redraft_trade_analysis(
+                gives_sleeper_player_ids=gives, receives_sleeper_player_ids=receives
+            )
         practical_match = _PRACTICAL_MOCK_START.fullmatch(path)
         if method == "POST" and practical_match:
             body = self._json_body(allow_empty=True)

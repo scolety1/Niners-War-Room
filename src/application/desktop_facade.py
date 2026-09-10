@@ -224,6 +224,7 @@ from src.services.waiver_engine_service import (
     resolve_roster_canonical_ids,
     suggest_faab_bids,
 )
+from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -2971,6 +2972,124 @@ class DesktopBackendFacade:
                     }
                     for pairing in pairings
                 ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_trade_analysis(
+        self, *, gives_sleeper_player_ids: Sequence[str], receives_sleeper_player_ids: Sequence[str]
+    ) -> FacadePayload:
+        """Redraft Trade Analysis (NWR Overnight V3, Lane 7) -- explicitly
+        unblocked regardless of the weekly-source lane. Roster-before vs.
+        roster-after, real ROS/marginal-utility/position-redundancy/status
+        impact -- never a sum-of-player-values single score. Read-only:
+        never writes to Sleeper.
+        """
+
+        self._require_mode("redraft")
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            raise FacadeError(
+                "TRADE_ANALYSIS_RANKINGS_UNAVAILABLE",
+                "NWR rankings are unavailable for this profile; trade analysis requires the "
+                "governed ranking to compute real roster/marginal-utility impact.",
+                status=409,
+            ) from exc
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_ANALYSIS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError(
+                "TRADE_ANALYSIS_READ_FAILED", "Sleeper roster response is malformed.", status=503
+            )
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "TRADE_ANALYSIS_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
+                status=409,
+            )
+        own_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        gives_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in gives_sleeper_player_ids],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        receives_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in receives_sleeper_player_ids],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        if gives_resolved.unmatched_sleeper_player_ids or receives_resolved.unmatched_sleeper_player_ids:
+            raise FacadeError(
+                "TRADE_ANALYSIS_IDENTITY_UNRESOLVED",
+                "One or more traded players could not be identity-matched to the governed "
+                "ranking pool: gives="
+                f"{list(gives_resolved.unmatched_sleeper_player_ids)}, receives="
+                f"{list(receives_resolved.unmatched_sleeper_player_ids)}.",
+                status=409,
+            )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        status_overrides = load_status_overrides(self.repo_root)
+        try:
+            evaluation = evaluate_trade(
+                roster_before_ids=own_resolved.canonical_player_ids,
+                gives_ids=gives_resolved.canonical_player_ids,
+                receives_ids=receives_resolved.canonical_player_ids,
+                profile=selected, ranking=ranking, manual_assets=manual_assets,
+                status_overrides=status_overrides,
+            )
+        except TradeAnalysisError as exc:
+            raise FacadeError("TRADE_ANALYSIS_INVALID", str(exc), status=422) from exc
+
+        def _side_payload(impacts):
+            return [
+                {
+                    "playerId": impact.player_id,
+                    "playerName": impact.player_name,
+                    "position": impact.position,
+                    "rosReplacementValue": impact.ros_replacement_value,
+                    "marginalUtility": impact.marginal_utility,
+                    "becomesStarter": impact.becomes_starter,
+                    "statusFlag": impact.status_flag,
+                }
+                for impact in impacts
+            ]
+
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "gives": _side_payload(evaluation.gives),
+                "receives": _side_payload(evaluation.receives),
+                "rosValueDelta": evaluation.ros_value_delta,
+                "netMarginalUtility": evaluation.net_marginal_utility,
+                "startingLineupValueBefore": evaluation.starting_lineup_value_before,
+                "startingLineupValueAfter": evaluation.starting_lineup_value_after,
+                "startingLineupValueDelta": evaluation.starting_lineup_value_delta,
+                "benchContingencyValueBefore": evaluation.bench_contingency_value_before,
+                "benchContingencyValueAfter": evaluation.bench_contingency_value_after,
+                "starterHolesBefore": list(evaluation.starter_holes_before),
+                "starterHolesAfter": list(evaluation.starter_holes_after),
+                "positionRedundancyBefore": dict(evaluation.position_redundancy_before),
+                "positionRedundancyAfter": dict(evaluation.position_redundancy_after),
+                "riskFlags": list(evaluation.risk_flags),
+                "championshipEquityNote": evaluation.championship_equity_note,
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )

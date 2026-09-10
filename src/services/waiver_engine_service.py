@@ -59,6 +59,7 @@ class ResolvedRoster:
     player_names_by_canonical_id: dict[str, str]
     player_positions_by_canonical_id: dict[str, str]
     unmatched_sleeper_player_ids: tuple[str, ...]
+    canonical_id_by_sleeper_id: dict[str, str]
 
 
 def resolve_roster_canonical_ids(
@@ -85,6 +86,7 @@ def resolve_roster_canonical_ids(
     names: dict[str, str] = {}
     positions: dict[str, str] = {}
     unmatched: list[str] = []
+    by_sleeper_id: dict[str, str] = {}
     for raw_id in roster_sleeper_player_ids:
         sleeper_id = str(raw_id)
         catalog_entry = players_catalog.get(sleeper_id)
@@ -104,11 +106,13 @@ def resolve_roster_canonical_ids(
         canonical_ids.append(canonical_id)
         names[canonical_id] = name
         positions[canonical_id] = position
+        by_sleeper_id[sleeper_id] = canonical_id
     return ResolvedRoster(
         canonical_player_ids=tuple(canonical_ids),
         player_names_by_canonical_id=names,
         player_positions_by_canonical_id=positions,
         unmatched_sleeper_player_ids=tuple(unmatched),
+        canonical_id_by_sleeper_id=by_sleeper_id,
     )
 
 
