@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftExternalIntelligenceEntry, RedraftFreeAgentsResult, RedraftOpponentRostersResult, RedraftRanking } from "@nwr/contracts";
+import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftExternalIntelligenceEntry, RedraftOpponentRostersResult, RedraftRanking } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -18,10 +18,11 @@ import {
   formatNumber,
   normalizeCommandSearch,
 } from "@nwr/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { draftFormat, leagueFormat } from "./league-context";
+import { FREE_AGENT_COLUMNS, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
 const DRAFT_ROOM_POSITION_OPTIONS = ["ALL", "FLEX", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -196,9 +197,14 @@ export function TiersPage({ data }: { data: RedraftBootstrap }) {
   return <><PageHeader eyebrow="Draft board · Value cliffs" title="Tiers & Position Rooms" description="Evidence-gap overall tiers and position-specific rooms stay separate, stable, and bounded for draft-day scanning." status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.activeProfile?.leagueName ?? "No active profile"} /><StatusBadge tone="safe" label={`${visibleRows.length} of ${filteredRows.length} shown`} /></>} /><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b></article>)}</div></Panel>; })}</div></>;
 }
 
-export function ComparePage({ data }: { data: RedraftBootstrap }) {
+const COMPARE_MODES = ["Rest of Season", "This Week", "Roster Fit", "Trade"] as const;
+type CompareMode = (typeof COMPARE_MODES)[number];
+
+export function ComparePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [left, setLeft] = useState(data.rankings[0]?.playerId ?? "");
   const [right, setRight] = useState(data.rankings[1]?.playerId ?? "");
+  const [mode, setMode] = useState<CompareMode>("Rest of Season");
+  const [week, setWeek] = useState(1);
   useEffect(() => {
     setLeft(data.rankings[0]?.playerId ?? "");
     setRight(data.rankings[1]?.playerId ?? "");
@@ -206,7 +212,64 @@ export function ComparePage({ data }: { data: RedraftBootstrap }) {
   const a = data.rankings.find((row) => row.playerId === left);
   const b = data.rankings.find((row) => row.playerId === right);
   const options = data.rankings.map((row) => ({ value: row.playerId, label: `#${row.overallRank} ${row.playerName} · ${row.position}${row.positionRank}` }));
-  return <><PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile"} title={`${data.activeProfile?.leagueName ?? "Redraft"} Player Compare`} description="Compare projection, replacement value, tier, and confidence inside the active league. Dynasty authority is never consulted." status={<><StatusBadge tone="safe" label="Current season" /><StatusBadge tone="safe" label="League specific" /></>} /><Panel title="Choose two players" eyebrow="Admitted ranking universe"><div className="compare-selectors"><SelectField label="Player A" value={left} onChange={setLeft} options={options} /><span><Icon name="compare" /></span><SelectField label="Player B" value={right} onChange={setRight} options={options} /></div></Panel>{a && b ? <CompareCards players={[a, b]} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}</>;
+  const isSleeper = data.activeProfile?.provider === "sleeper";
+
+  const weeklyLoader = useCallback(
+    () => (isSleeper && mode === "This Week" ? client.redraftWeeklyProjections(week) : null),
+    [client, isSleeper, mode, week],
+  );
+  const { result: weekly, error: weeklyError } = useAsync(weeklyLoader, [isSleeper, mode, week]);
+
+  const waiversLoader = useCallback(
+    () => (isSleeper && mode === "Roster Fit" ? client.redraftWaivers({ mode: "REST_OF_SEASON" }) : null),
+    [client, isSleeper, mode],
+  );
+  const { result: waivers, error: waiversError } = useAsync(waiversLoader, [isSleeper, mode]);
+  const myRosterLoader = useCallback(
+    () => (isSleeper && mode === "Roster Fit" ? client.redraftMyRoster() : null),
+    [client, isSleeper, mode],
+  );
+  const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, mode]);
+
+  const weeklyRowFor = (playerId: string) => weekly?.rows.find((row) => row.canonicalPlayerId === playerId) ?? null;
+  const rosterFitFor = (playerId: string) => {
+    const onRoster = myRoster?.roster.find((row) => row.canonicalPlayerId === playerId);
+    if (onRoster) return { label: "Already on your roster", detail: onRoster.starter ? "Currently starting" : "Currently benched" };
+    const candidate = waivers?.addCandidates.find((row) => row.canonicalPlayerId === playerId);
+    if (candidate) return { label: candidate.becomesStarter ? "Would become a starter if added" : "Available, bench-only fit", detail: `Marginal utility ${formatNumber(candidate.marginalUtility ?? 0, 1)}` };
+    return { label: "Not a current free agent on this league", detail: "Rostered by an opponent, or not identity-matched" };
+  };
+
+  return <>
+    <PageHeader
+      eyebrow={data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile"}
+      title={`${data.activeProfile?.leagueName ?? "Redraft"} Player Compare`}
+      description="Compare projection, replacement value, tier, and confidence inside the active league. Dynasty authority is never consulted."
+      status={<><StatusBadge tone="safe" label="Current season" /><StatusBadge tone="safe" label="League specific" /></>}
+    />
+    <Panel title="Choose two players" eyebrow="Admitted ranking universe">
+      <div className="compare-selectors"><SelectField label="Player A" value={left} onChange={setLeft} options={options} /><span><Icon name="compare" /></span><SelectField label="Player B" value={right} onChange={setRight} options={options} /></div>
+      <div className="toolbar">
+        <SegmentedControl label="Mode" options={COMPARE_MODES as unknown as string[]} value={mode} onChange={(value) => setMode(value as CompareMode)} />
+        {mode === "This Week" ? <label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label> : null}
+      </div>
+      {!isSleeper && mode !== "Rest of Season" ? <p className="copy-muted">This mode requires an active Sleeper league.</p> : null}
+    </Panel>
+    {a && b ? <CompareCards players={[a, b]} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}
+    {a && b && mode === "This Week" && isSleeper ? <Panel title="This week" eyebrow={weekly ? `Week ${weekly.week}` : "Reading…"}>
+      {weeklyError ? <ErrorState message={weeklyError.message} recovery={weeklyError.recoveryAction} /> : null}
+      {weekly ? <div className="compare-card-grid">{[a, b].map((player) => { const row = weeklyRowFor(player.playerId); return <article key={player.playerId}><header><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong></header><div><span>Projected points</span><strong>{row?.projectedPoints == null ? "—" : formatNumber(row.projectedPoints, 1)}</strong></div><div><span>Identity match</span><strong>{row?.identityMatch ?? "UNMATCHED"}</strong></div><div><span>Scoring context</span><strong>{row?.scoringContext ?? "—"}</strong></div></article>; })}</div> : null}
+      {weekly ? <p className="copy-muted">Weekly projections: {weekly.providerHealth.provider} · updated {weekly.sourceAsOf}</p> : null}
+    </Panel> : null}
+    {a && b && mode === "Roster Fit" && isSleeper ? <Panel title="Roster fit" eyebrow="Your league only">
+      {waiversError ? <ErrorState message={waiversError.message} recovery={waiversError.recoveryAction} /> : null}
+      <div className="compare-card-grid">{[a, b].map((player) => { const fit = rosterFitFor(player.playerId); return <article key={player.playerId}><header><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong></header><div><span>Fit</span><strong>{fit.label}</strong></div><div><span>Detail</span><strong>{fit.detail}</strong></div></article>; })}</div>
+    </Panel> : null}
+    {a && b && mode === "Trade" ? <Panel title="Trade" eyebrow="Opens the full Trade Analysis workspace">
+      <p className="copy-muted">Compare does not embed a full trade evaluation -- that needs your live Sleeper roster and a specific opponent's roster, which Trade Analysis reads directly. Open it, then search for "{a.playerName}" and "{b.playerName}" there.</p>
+      <Link to="/trade-analysis">Open Trade Analysis</Link>
+    </Panel> : null}
+  </>;
 }
 
 function CompareCards({ players }: { players: [RedraftRanking, RedraftRanking] }) {
@@ -229,22 +292,39 @@ export function DataHealthPage({ data, onReload }: { data: RedraftBootstrap; onR
   return <><PageHeader eyebrow="System · Current-season authority" title="Projection & Data Health" description="Governed projection admission, profile validation, replacement calculation, and local runtime status." status={<><StatusBadge tone={data.status.tone} label={health.status || "Review"} /><StatusBadge tone="safe" label="Dynasty isolated" /></>} actions={<Button icon="activity" onClick={onReload}>Reload local snapshot</Button>} /><section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft V1 · Review authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p></div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section><div className="metric-grid"><MetricCard label="Ranked players" value={health.rankedPlayers} detail="Active profile" icon="board" tone="gold" /><MetricCard label="Blocked rows" value={health.blockedPlayers} detail="Visible, never imputed" icon="alert" tone="crimson" /><MetricCard label="Profiles" value={data.profiles.length} detail="Redraft namespace" icon="profile" tone="violet" /><MetricCard label="External network" value="OFF" detail="Local runtime only" icon="shield" tone="cyan" /></div><div className="split-view"><Panel title="Readiness checks" eyebrow="Deterministic validation"><dl className="health-list"><div><dt>Player universe</dt><dd><StatusBadge tone={health.playerUniverseAvailable ? "safe" : "blocked"} label={health.playerUniverseAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Current forecast</dt><dd><StatusBadge tone={health.currentSeasonForecastAvailable ? "safe" : "blocked"} label={health.currentSeasonForecastAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Scoring profile</dt><dd><StatusBadge tone={health.scoringProfileValid ? "safe" : "blocked"} label={health.scoringProfileValid ? "Valid" : "Invalid"} /></dd></div><div><dt>Replacement model</dt><dd><StatusBadge tone={health.replacementCalculationValid ? "safe" : "blocked"} label={health.replacementCalculationValid ? "Valid" : "Blocked"} /></dd></div></dl></Panel><Panel title="Desktop safeguards" eyebrow="Windows desktop"><dl className="health-list"><div><dt>Connection</dt><dd>Local computer only</dd></div><div><dt>Saved state</dt><dd>Redraft isolated</dd></div><div><dt>Cloud dependency</dt><dd>None</dd></div><div><dt>Streamlit fallback</dt><dd>Preserved</dd></div></dl></Panel></div>{data.notices.map((notice, index) => <div className={`alert-strip alert-strip--${notice.tone}`} key={`${notice.title}-${index}`}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}{health.messages.map((message, index) => <div className="alert-strip" key={`health-${index}-${message}`}>{message}</div>)}</>;
 }
 
+const STREAMER_HORIZON_OPTIONS = ["This Week", "Next 2", "Next 3"] as const;
+type StreamerHorizon = (typeof STREAMER_HORIZON_OPTIONS)[number];
+const STREAMER_HORIZON_WEEKS: Record<StreamerHorizon, number> = { "This Week": 1, "Next 2": 2, "Next 3": 3 };
+
 export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [week, setWeek] = useState(1);
-  const [result, setResult] = useState<KdstStreamerResult | null>(null);
+  const [horizon, setHorizon] = useState<StreamerHorizon>("This Week");
+  const [results, setResults] = useState<KdstStreamerResult[]>([]);
   const [error, setError] = useState<NwrApiError | null>(null);
   const [working, setWorking] = useState(false);
   const provider = data.externalConsensus;
   useEffect(() => {
-    setResult(null);
+    setResults([]);
     setError(null);
   }, [data.activeProfileId]);
   const load = async () => {
     if (working || !provider?.configured) return;
-    setWorking(true); setError(null);
-    try { setResult(await client.kdstStreamer(week)); }
-    catch (reason) { setError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources.")); }
-    finally { setWorking(false); }
+    setWorking(true); setError(null); setResults([]);
+    const weekCount = STREAMER_HORIZON_WEEKS[horizon];
+    const loaded: KdstStreamerResult[] = [];
+    try {
+      // Sequential, not parallel -- STREAMER_HORIZON_WEEKS caps this at 3
+      // real FantasyPros ECR reads, never a burst against the provider.
+      for (let offset = 0; offset < weekCount; offset += 1) {
+        const targetWeek = Math.min(18, week + offset);
+        loaded.push(await client.kdstStreamer(targetWeek));
+      }
+      setResults(loaded);
+    } catch (reason) {
+      setError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources."));
+    } finally {
+      setWorking(false);
+    }
   };
   const columns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
@@ -254,41 +334,22 @@ export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: 
     { key: "recommendation", label: "Action", sort: "text", render: (row) => <StatusBadge tone={String(row.recommendation) === "ADD" || String(row.recommendation) === "START" ? "safe" : "review"} label={String(row.recommendation)} /> },
   ];
   return <>
-    <PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a Sleeper league"} title={`${data.activeProfile?.leagueName ?? "Redraft"} — Weekly Tools`} description="External K/DST consensus from FantasyPros, filtered against the active Sleeper roster. NWR does not calculate a K/DST score or combine ECR with Redraft projections." status={<StatusBadge tone={provider?.configured ? "review" : "blocked"} label={provider?.configured ? "Provider configured" : "Provider key required"} />} />
+    <PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a Sleeper league"} title={`${data.activeProfile?.leagueName ?? "Redraft"} — Weekly Tools`} description="External K/DST consensus from FantasyPros, filtered against the active Sleeper roster. NWR does not calculate a K/DST score or combine ECR with Redraft projections -- provider-scored data only." status={<StatusBadge tone={provider?.configured ? "review" : "blocked"} label={provider?.configured ? "Provider configured" : "Provider key required"} />} />
     <Panel title="External consensus authority" eyebrow={provider?.authority ?? "EXTERNAL CONSENSUS — FANTASYPROS"}>
       <p>{provider?.message ?? "Provider status is unavailable."}</p>
       <p className="copy-muted">Use a FantasyPros API key authorized for your account in the local Desktop environment, then restart. No API key is shown, stored in a profile, or sent to Sleeper.</p>
-      <div className="profile-edit-actions"><label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label><Button disabled={!provider?.configured || working || !data.activeProfile} icon="activity" onClick={() => void load()}>{working ? "Reading…" : "Refresh K/DST ECR"}</Button></div>
+      <div className="profile-edit-actions">
+        <label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label>
+        <SegmentedControl label="Horizon" options={STREAMER_HORIZON_OPTIONS as unknown as string[]} value={horizon} onChange={(value) => setHorizon(value as StreamerHorizon)} />
+        <Button disabled={!provider?.configured || working || !data.activeProfile} icon="activity" onClick={() => void load()}>{working ? "Reading…" : `Refresh K/DST ECR (${horizon})`}</Button>
+      </div>
     </Panel>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-    {result ? <><p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · ECR only; schedule, betting, weather, and hidden weights are not used.</p>{(["K", "DST"] as const).map((position) => <Panel key={position} title={`${position} streamer actions`} eyebrow="FantasyPros ECR · Sleeper availability"><DataTable columns={columns} rows={result.positions[position] as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.playerName)}-${String(row.ecr)}`} /></Panel>)}</> : null}
+    {results.map((result) => <div key={result.week}>
+      <p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · provider-scored ECR only; schedule, betting, weather, and hidden weights are not used.</p>
+      {(["K", "DST"] as const).map((position) => <Panel key={`${result.week}-${position}`} title={`Week ${result.week} · ${position} streamer actions`} eyebrow="FantasyPros ECR (provider-scored) · Sleeper availability"><DataTable columns={columns} rows={result.positions[position] as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.playerName)}-${String(row.ecr)}`} /></Panel>)}
+    </div>)}
   </>;
-}
-
-export const FREE_AGENT_COLUMNS: TableColumn[] = [
-  { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
-  { key: "overallRank", label: "NWR rank", sort: "number", align: "right", render: (row) => row.overallRank == null ? "Unranked" : `#${String(row.overallRank)}` },
-  { key: "positionRank", label: "Pos rank", sort: "number", render: (row) => row.positionRank == null ? "—" : `${String(row.position)}${String(row.positionRank)}` },
-  { key: "projectedPoints", label: "Season points", sort: "number", align: "right", render: (row) => row.projectedPoints == null ? "—" : formatNumber(Number(row.projectedPoints), 1) },
-  { key: "replacementAdjustedValue", label: "Replacement value", sort: "number", align: "right", render: (row) => row.replacementAdjustedValue == null ? "—" : formatNumber(Number(row.replacementAdjustedValue), 1) },
-  { key: "rosterStatus", label: "Sleeper status", sort: "text", render: () => <StatusBadge tone="safe" label="Available" /> },
-];
-
-export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
-  const [result, setResult] = useState<RedraftFreeAgentsResult | null>(null);
-  const [error, setError] = useState<NwrApiError | null>(null);
-  const [working, setWorking] = useState(false);
-  useEffect(() => {
-    let active = true;
-    setResult(null); setError(null);
-    if (!profileId) return undefined;
-    setWorking(true);
-    void client.redraftFreeAgents().then((value) => { if (active) setResult(value); }).catch((reason) => {
-      if (active) setError(reason instanceof NwrApiError ? reason : new NwrApiError("Free agents could not be read."));
-    }).finally(() => { if (active) setWorking(false); });
-    return () => { active = false; };
-  }, [client, profileId]);
-  return { result, error, working };
 }
 
 export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {

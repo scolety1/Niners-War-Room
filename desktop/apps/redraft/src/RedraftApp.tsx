@@ -9,12 +9,25 @@ import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { leagueFormat } from "./league-context";
 import { LeaguesPage } from "./leagues";
-import { ComparePage, DataHealthPage, FreeAgentsPage, LeagueHomePage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 
 const NAVIGATION: NavigationGroup[] = [
-  { label: "League workspace", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }, { label: "Free Agents", path: "/free-agents", icon: "players" }, { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" }] },
+  {
+    label: "League workspace",
+    items: [
+      { label: "Weekly Home", path: "/league-home", icon: "home" },
+      { label: "Start / Sit", path: "/lineup", icon: "board" },
+      { label: "Waivers", path: "/waivers", icon: "activity" },
+      { label: "My Roster", path: "/my-roster", icon: "profile" },
+      { label: "Free Agents", path: "/free-agents", icon: "players" },
+      { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" },
+      { label: "Trade Analysis", path: "/trade-analysis", icon: "trade" },
+      { label: "Trade Finder", path: "/trade-finder", icon: "search" },
+    ],
+  },
   // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
   // at /draft-room-v2 is the "Draft Room" surface. It originally existed
   // alongside an older single-page "Legacy Draft Room", hidden from this
@@ -130,7 +143,12 @@ export function RedraftApp() {
           the room stays one click away via nav). */}
       <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/league-home" : "/leagues"} />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
-      <Route path="/league-home" element={<LeagueHomePage client={client} data={data} />} />
+      <Route path="/league-home" element={<WeeklyHomePage client={client} data={data} />} />
+      <Route path="/lineup" element={<LineupPage client={client} data={data} />} />
+      <Route path="/waivers" element={<WaiversPage client={client} data={data} />} />
+      <Route path="/my-roster" element={<MyRosterPage client={client} data={data} />} />
+      <Route path="/trade-analysis" element={<TradeAnalysisPage client={client} data={data} />} />
+      <Route path="/trade-finder" element={<TradeFinderPage client={client} data={data} />} />
       <Route path="/free-agents" element={<FreeAgentsPage client={client} data={data} />} />
       <Route path="/opponent-rosters" element={<OpponentRostersPage client={client} data={data} />} />
       <Route path="/draft-room-v2" element={data.activeProfileId
@@ -153,7 +171,7 @@ export function RedraftApp() {
         : <Navigate replace to="/leagues" />} />
       <Route path="/rankings" element={<RankingsPage data={data} />} />
       <Route path="/tiers" element={<TiersPage data={data} />} />
-      <Route path="/compare" element={<ComparePage data={data} />} />
+      <Route path="/compare" element={<ComparePage client={client} data={data} />} />
       <Route path="/cheat-sheet" element={<CheatSheetPage data={data} />} />
       <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
       <Route path="/adp" element={<AdpProvidersPage client={client} data={data} onUpdate={update} />} />
