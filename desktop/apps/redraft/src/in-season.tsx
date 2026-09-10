@@ -418,7 +418,7 @@ export function MyRosterPage({ client, data }: { client: NwrApiClient; data: Red
 
 type TradeSide = { sleeperPlayerId: string; name: string };
 
-function verdictFor(result: TradeAnalysisResult): { label: string; tone: "safe" | "review" | "blocked" } {
+export function verdictFor(result: TradeAnalysisResult): { label: string; tone: "safe" | "review" | "blocked" } {
   const netUtility = result.netMarginalUtility;
   const rosValue = result.rosValueDelta;
   if (netUtility > 0 && rosValue >= 0) return { label: "Improves my roster", tone: "safe" };
