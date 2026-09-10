@@ -217,6 +217,13 @@ from src.services.weekly_lineup_optimizer_service import (
     build_roster_candidates,
     optimize_weekly_lineup,
 )
+from src.services.waiver_engine_service import (
+    pair_add_drop,
+    rank_drop_candidates,
+    rank_waiver_candidates,
+    resolve_roster_canonical_ids,
+    suggest_faab_bids,
+)
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -2798,6 +2805,171 @@ class DesktopBackendFacade:
                         "summary": swap.summary,
                     }
                     for swap in lineup.swaps_vs_current
+                ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_waivers(
+        self,
+        *,
+        mode: str,
+        week: int | None = None,
+        remaining_budget_dollars: int = 100,
+        weeks_remaining: int = 14,
+        total_budget_dollars: int = 100,
+    ) -> FacadePayload:
+        """Waivers + Add/Drop pairing + FAAB bid ranges (NWR Overnight V3,
+        Lanes 4/5/6). REST_OF_SEASON is buildable regardless of the weekly
+        source (ROS value already exists via NWR's governed ranking).
+        THIS_WEEK requires a real week and is honestly unavailable
+        otherwise -- never fabricated. Read-only: never writes to Sleeper.
+        """
+
+        self._require_mode("redraft")
+        if mode not in {"THIS_WEEK", "REST_OF_SEASON"}:
+            raise FacadeError("WAIVERS_MODE_INVALID", "mode must be THIS_WEEK or REST_OF_SEASON.")
+        if mode == "THIS_WEEK" and (not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18):
+            raise FacadeError(
+                "WAIVERS_WEEK_REQUIRED", "THIS_WEEK mode requires a real week from 1 through 18."
+            )
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        ranking_warning = ""
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            raise FacadeError(
+                "WAIVERS_RANKINGS_UNAVAILABLE",
+                "NWR rankings are unavailable for this profile; waiver ranking requires the "
+                "governed ranking to compute real marginal roster utility.",
+                status=409,
+            ) from exc
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            players = sleeper.get_json("players/nfl")
+            free_agents = sleeper_free_agent_pool(rosters=rosters, players=players, rankings=ranking_rows)
+        except (FantasyProsProviderError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "WAIVERS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError("WAIVERS_READ_FAILED", "Sleeper roster response is malformed.", status=503)
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "WAIVERS_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.", status=409
+            )
+        resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+
+        weekly_by_sleeper_id = None
+        weekly_source_status = None
+        if mode == "THIS_WEEK":
+            try:
+                raw_projections = fetch_sleeper_weekly_projections(
+                    season=selected.season, week=week, http=sleeper
+                )
+                projection_result = build_weekly_projection_rows(
+                    raw_projections=raw_projections, players=players, ranking_rows=ranking_rows,
+                    scoring=selected.scoring, season=selected.season, week=week,
+                    season_type="regular", league_id=league_id,
+                )
+                weekly_by_sleeper_id = {row.sleeper_player_id: row for row in projection_result.rows}
+                weekly_source_status = projection_result.source_status
+            except (WeeklyProjectionError, OSError, ValueError) as exc:
+                raise FacadeError(
+                    "WAIVERS_WEEKLY_DATA_UNAVAILABLE",
+                    "THIS WEEK mode is honestly unavailable -- the real weekly projection fetch "
+                    f"failed ({exc}). Use REST_OF_SEASON mode instead.",
+                    status=503,
+                ) from exc
+
+        add_candidates = rank_waiver_candidates(
+            free_agents=free_agents, owner_roster_canonical_ids=resolved.canonical_player_ids,
+            profile=selected, ranking=ranking, manual_assets=manual_assets, mode=mode,
+            weekly_projections_by_sleeper_id=weekly_by_sleeper_id, limit=25,
+        )
+        drop_candidates = rank_drop_candidates(
+            roster_canonical_ids=resolved.canonical_player_ids, profile=selected, ranking=ranking,
+            manual_assets=manual_assets, player_names=resolved.player_names_by_canonical_id,
+            player_positions=resolved.player_positions_by_canonical_id,
+        )
+        pairings = pair_add_drop(add_candidates=add_candidates, drop_candidates=drop_candidates, top_n=10)
+        faab_bids = suggest_faab_bids(
+            candidates=add_candidates, remaining_budget_dollars=remaining_budget_dollars,
+            weeks_remaining=weeks_remaining, total_budget_dollars=total_budget_dollars,
+        )
+        faab_by_id = {bid.canonical_player_id: bid for bid in faab_bids}
+
+        def _candidate_payload(candidate):
+            bid = faab_by_id.get(candidate.canonical_player_id)
+            return {
+                "sleeperPlayerId": candidate.sleeper_player_id,
+                "canonicalPlayerId": candidate.canonical_player_id,
+                "playerName": candidate.player_name,
+                "position": candidate.position,
+                "team": candidate.team,
+                "rosReplacementValue": candidate.ros_replacement_value,
+                "rosOverallRank": candidate.ros_overall_rank,
+                "weeklyProjectedPoints": candidate.weekly_projected_points,
+                "marginalUtility": candidate.marginal_utility,
+                "becomesStarter": candidate.becomes_starter,
+                "marginalUtilityExplanation": candidate.marginal_utility_explanation,
+                "identityStatus": candidate.identity_status,
+                "faabBidLowDollars": bid.bid_low_dollars if bid else None,
+                "faabBidHighDollars": bid.bid_high_dollars if bid else None,
+                "faabUrgency": bid.urgency if bid else None,
+                "faabRationale": bid.rationale if bid else None,
+            }
+
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "mode": mode,
+                "week": week,
+                "weeklySourceStatus": weekly_source_status,
+                "rankingWarning": ranking_warning,
+                "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
+                "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
+                "dropCandidates": [
+                    {
+                        "canonicalPlayerId": drop.canonical_player_id,
+                        "playerName": drop.player_name,
+                        "position": drop.position,
+                        "marginalUtility": drop.marginal_utility,
+                        "explanation": drop.explanation,
+                    }
+                    for drop in drop_candidates
+                ],
+                "addDropPairings": [
+                    {
+                        "add": _candidate_payload(pairing.add),
+                        "drop": (
+                            {
+                                "canonicalPlayerId": pairing.drop.canonical_player_id,
+                                "playerName": pairing.drop.player_name,
+                                "position": pairing.drop.position,
+                                "marginalUtility": pairing.drop.marginal_utility,
+                            }
+                            if pairing.drop
+                            else None
+                        ),
+                        "netMarginalUtility": pairing.net_marginal_utility,
+                    }
+                    for pairing in pairings
                 ],
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }

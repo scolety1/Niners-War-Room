@@ -41,6 +41,7 @@ _REDRAFT_NWR_PURE_MODE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/nwr-pure
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
 _WEEKLY_PROJECTIONS = "/api/v1/redraft/weekly-projections"
 _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
+_WAIVERS = "/api/v1/redraft/waivers"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
@@ -538,6 +539,29 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if type(week) is not int:
                 raise self._invalid_body("week must be an integer.")
             return self.server.facade.redraft_weekly_lineup(week=week)
+        if method == "POST" and path == _WAIVERS:
+            body = self._json_body()
+            self._reject_unknown_fields(
+                body, {"mode", "week", "remainingBudgetDollars", "weeksRemaining", "totalBudgetDollars"}
+            )
+            mode = body.get("mode")
+            if mode not in {"THIS_WEEK", "REST_OF_SEASON"}:
+                raise self._invalid_body("mode must be THIS_WEEK or REST_OF_SEASON.")
+            week = body.get("week")
+            if week is not None and type(week) is not int:
+                raise self._invalid_body("week must be an integer when provided.")
+            kwargs: dict[str, Any] = {"mode": mode, "week": week}
+            for json_key, py_key in (
+                ("remainingBudgetDollars", "remaining_budget_dollars"),
+                ("weeksRemaining", "weeks_remaining"),
+                ("totalBudgetDollars", "total_budget_dollars"),
+            ):
+                if json_key in body:
+                    value = body.get(json_key)
+                    if type(value) is not int:
+                        raise self._invalid_body(f"{json_key} must be an integer when provided.")
+                    kwargs[py_key] = value
+            return self.server.facade.redraft_waivers(**kwargs)
         practical_match = _PRACTICAL_MOCK_START.fullmatch(path)
         if method == "POST" and practical_match:
             body = self._json_body(allow_empty=True)
