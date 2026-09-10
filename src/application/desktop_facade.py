@@ -226,6 +226,7 @@ from src.services.waiver_engine_service import (
 )
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
 from src.services.trade_finder_service import find_win_win_trades
+from src.services.in_season_decision_trace_service import record_decision_trace
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -2748,6 +2749,21 @@ class DesktopBackendFacade:
         lineup = optimize_weekly_lineup(
             candidates=candidates, roster=selected.roster, status_overrides=status_overrides
         )
+        self._record_decision_trace_safe(
+            profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
+            tool="START_SIT", engine_version="weekly_lineup_optimizer_service-v1",
+            data_versions={"weekly_projection_source": projection_result.source},
+            roster_state_player_ids=[candidate.sleeper_player_id for candidate in candidates],
+            recommendation={
+                "projectedTotal": lineup.projected_total,
+                "starters": [
+                    slot.player.sleeper_player_id for slot in lineup.starters if slot.player
+                ],
+            },
+            alternatives=[
+                {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
+            ],
+        )
         return FacadePayload(
             data={
                 "season": selected.season,
@@ -2915,6 +2931,36 @@ class DesktopBackendFacade:
             weeks_remaining=weeks_remaining, total_budget_dollars=total_budget_dollars,
         )
         faab_by_id = {bid.canonical_player_id: bid for bid in faab_bids}
+        self._record_decision_trace_safe(
+            profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
+            tool="WAIVER", engine_version="waiver_engine_service-v1",
+            data_versions={"mode": mode},
+            roster_state_player_ids=list(resolved.canonical_player_ids),
+            free_agent_state_player_ids=[candidate.sleeper_player_id for candidate in add_candidates],
+            recommendation={
+                "topAdd": add_candidates[0].player_name if add_candidates else None,
+                "topAddCanonicalId": add_candidates[0].canonical_player_id if add_candidates else None,
+            },
+            alternatives=[
+                {"playerName": candidate.player_name, "marginalUtility": candidate.marginal_utility}
+                for candidate in add_candidates[:5]
+            ],
+        )
+        if add_candidates:
+            top_bid = faab_by_id.get(add_candidates[0].canonical_player_id)
+            if top_bid is not None:
+                self._record_decision_trace_safe(
+                    profile_id=selected.profile_id, league_id=league_id, season=selected.season,
+                    week=week, tool="FAAB", engine_version="waiver_engine_service-v1",
+                    data_versions={"mode": mode},
+                    roster_state_player_ids=list(resolved.canonical_player_ids),
+                    recommendation={
+                        "playerName": top_bid.player_name,
+                        "bidLowDollars": top_bid.bid_low_dollars,
+                        "bidHighDollars": top_bid.bid_high_dollars,
+                        "urgency": top_bid.urgency,
+                    },
+                )
 
         def _candidate_payload(candidate):
             bid = faab_by_id.get(candidate.canonical_player_id)
@@ -3058,6 +3104,17 @@ class DesktopBackendFacade:
             )
         except TradeAnalysisError as exc:
             raise FacadeError("TRADE_ANALYSIS_INVALID", str(exc), status=422) from exc
+        self._record_decision_trace_safe(
+            profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
+            tool="TRADE", engine_version="redraft_trade_analysis_service-v1", data_versions={},
+            roster_state_player_ids=list(own_resolved.canonical_player_ids),
+            recommendation={
+                "gives": [impact.player_id for impact in evaluation.gives],
+                "receives": [impact.player_id for impact in evaluation.receives],
+                "netMarginalUtility": evaluation.net_marginal_utility,
+                "rosValueDelta": evaluation.ros_value_delta,
+            },
+        )
 
         def _side_payload(impacts):
             return [
@@ -4701,6 +4758,36 @@ class DesktopBackendFacade:
         if local_candidate.is_file():
             return local_candidate
         return (self.repo_root / FROZEN_DYNASTY_BOARD_RELATIVE).resolve()
+
+    def _record_decision_trace_safe(
+        self,
+        *,
+        profile_id: str,
+        league_id: str,
+        season: int,
+        week: int | None,
+        tool: str,
+        engine_version: str,
+        data_versions: dict[str, str],
+        roster_state_player_ids: list[str],
+        recommendation: dict[str, Any],
+        alternatives: list[dict[str, Any]] | None = None,
+        free_agent_state_player_ids: list[str] | None = None,
+    ) -> None:
+        """Best-effort in-season decision-trace logging (NWR Overnight V3,
+        Lane 18) -- never allowed to break the actual recommendation
+        response it is logging. A logging failure is swallowed, not
+        surfaced as a facade error."""
+
+        try:
+            record_decision_trace(
+                self.redraft_root, profile_id, league_id=league_id, season=season, week=week,
+                tool=tool, engine_version=engine_version, data_versions=data_versions,
+                roster_state_player_ids=roster_state_player_ids, recommendation=recommendation,
+                alternatives=alternatives or [], free_agent_state_player_ids=free_agent_state_player_ids,
+            )
+        except Exception:  # noqa: BLE001 - audit logging must never break a real recommendation
+            pass
 
     def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
         selected = active_profile(self.redraft_root)
