@@ -5,6 +5,7 @@ import {
   draftFormat,
   leagueFormat,
   leagueKeyFor,
+  legacyRedirectTarget,
   resolveLeagueHomeSubpath,
   resolveLeagueLifecycle,
 } from "./league-context";
@@ -91,5 +92,27 @@ describe("resolveLeagueHomeSubpath", () => {
     expect(resolveLeagueHomeSubpath(fantasyGamers, null, "IN_SEASON")).toBe("home");
     const complete = board({ configured: true, drafted: new Array(150).fill("p") });
     expect(resolveLeagueHomeSubpath(fantasyGamers, complete, "PRE_DRAFT")).toBe("draft");
+  });
+});
+
+// Directive invariant I: "old routes redirect correctly during migration".
+describe("legacyRedirectTarget", () => {
+  it("sends an old flat path into the active league's scoped route, same subpage", () => {
+    expect(legacyRedirectTarget("profile-fantasy-gamers", "lineup")).toBe(
+      "/league/profile-fantasy-gamers/lineup",
+    );
+    expect(legacyRedirectTarget("profile-fantasy-gamers", "tiers")).toBe(
+      "/league/profile-fantasy-gamers/tiers",
+    );
+  });
+
+  it("sends to the league chooser when no league is active", () => {
+    expect(legacyRedirectTarget(null, "lineup")).toBe("/leagues");
+  });
+
+  it("URL-encodes the active profile id", () => {
+    expect(legacyRedirectTarget("id with spaces", "waivers")).toBe(
+      "/league/id%20with%20spaces/waivers",
+    );
   });
 });

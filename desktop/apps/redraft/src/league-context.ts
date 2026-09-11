@@ -52,6 +52,22 @@ export function resolveLeagueLifecycle(
  * to the Draft workspace (there is nothing else meaningful to show yet);
  * IN_SEASON/OFFSEASON go to League Home.
  */
+/**
+ * Directive invariant I ("old routes redirect correctly during
+ * migration"). Pure so it's testable without rendering: given the
+ * currently active league (if any) and the legacy sub-page a flat route
+ * used to render directly, returns the exact compatibility-redirect
+ * target. `null` activeProfileId sends the owner to the league chooser
+ * rather than a broken/empty scoped route.
+ */
+export function legacyRedirectTarget(
+  activeProfileId: string | null,
+  subpath: string,
+): string {
+  if (!activeProfileId) return "/leagues";
+  return `/league/${encodeURIComponent(activeProfileId)}/${subpath}`;
+}
+
 export function resolveLeagueHomeSubpath(
   profile: Pick<LeagueProfile, "archived" | "teamCount" | "draft">,
   draftBoard: DraftBoard | null | undefined,

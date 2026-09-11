@@ -164,6 +164,32 @@ query) never survives a league switch either.
   only proven in the Draft Room this pass; see `player-drawer-core.tsx`'s
   own module docstring and the final handoff's PARTIAL disclosure.
 
+## Characterization test invariants (directive section 10)
+
+Honest status per invariant, with the real test evidence for each --
+some are verified by an automated test, some only by code review + the
+later rendered Chrome acceptance pass (this repo has no React-rendering
+test infrastructure at all: `desktop/vitest.config.ts` runs `environment:
+"node"` and only collects `*.test.ts`, never `*.test.tsx` -- every
+existing test in this codebase, before and after this pass, is a
+pure-function/logic test, not a component-render test).
+
+| # | Invariant | Status | Evidence |
+|---|---|---|---|
+| A | Opening an in-season league does not auto-navigate to Draft Room | **PASS** | `league-context.test.ts` ("sends an in-season league to League Home, not the Draft Room"); real bug found + fixed in `leagues.tsx` |
+| B | Every major decision identifies league + snapshot | **PARTIAL** | `leagueSnapshotId` wired into 5/5 in-season tools + the standalone context endpoint (unit-tested); Draft's DecisionBundle uses its own separate, older provenance system, not this one -- see `DECISION_CONTRACTS.md` |
+| C | Every recommendation can expose a trace ID | **PASS for in-season tools** | `_record_decision_trace_safe` now returns the real id; live-mocked proof via `test_kdst_streamer_response_carries_trace_ids_and_league_snapshot_id`; Draft has no trace id (unchanged, out of scope) |
+| D | Every recommendation communicates stale/unavailable required data | **PASS (pre-existing + extended)** | `providerHealth`/`issues` already existed (`weekly_projection_provider_service` tests, 15 pre-existing); `decisionEnvelope.issues` now carries the same signal for Start/Sit and Waivers |
+| E | Player status is consistent across Draft/Lineup/Waivers/Trades | **NOT YET SATISFIED, disclosed** | The one authority (`PlayerAvailabilityStatus`) now exists and is real, but NO product surface was migrated to consume it this pass -- each still renders its own local heuristic. See `DATA_AUTHORITY.md`. |
+| F | Weekly Home uses one LeagueSnapshot | **NOT ARCHITECTURALLY GUARANTEED, disclosed** | `WeeklyHomePage` composes 3 independent facade calls (`redraftWeeklyHomeActions`, `redraftWeeklyLineup`, `redraftFreeAgents`), each computing its own `leagueSnapshotId` from its own live roster read within the same request -- in practice near-identical (same request, sub-second apart) but no single snapshot value is threaded through and asserted equal. A real follow-up, not silently claimed done. |
+| G | Switching leagues cannot leak prior league state | **PASS** | Real bug found + fixed: 6 `useAsync` call sites missing `data.activeProfileId` in their dependency arrays (`in-season.tsx`, `pages.tsx`); `LeagueScopedPage` also keys its rendered subtree by `leagueKey` |
+| H | A deep link always resolves the same league | **PASS (unit-tested design), pending live confirmation** | `LeagueScopedPage`'s activation-on-mismatch gate; `resolveLeagueHomeSubpath`/`resolveLeagueLifecycle` unit tests; full confidence needs the rendered Chrome pass (section 12) |
+| I | Old routes redirect correctly during migration | **PASS** | `legacyRedirectTarget` pure function, unit-tested (`league-context.test.ts`); every legacy flat route now uses it via `LegacyRedirect` |
+
+Two invariants (E, F) are honestly NOT fully satisfied by this pass and
+are called out as PRE-UI BLOCKERS REMAINING in the final handoff rather
+than rounded up to PASS.
+
 ## Where to look next
 
 - `LEAGUE_CONTEXT.md` -- LeagueWorkspaceContext, lifecycle resolver rules,

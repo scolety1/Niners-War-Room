@@ -7,7 +7,7 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } fr
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
-import { leagueFormat, leagueKeyFor, resolveLeagueHomeSubpath } from "./league-context";
+import { leagueFormat, legacyRedirectTarget, resolveLeagueHomeSubpath } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
@@ -228,8 +228,7 @@ export function RedraftApp() {
  * scoped route when a league is active; otherwise sends the owner to the
  * league chooser rather than a broken/empty scoped route. */
 function LegacyRedirect({ data, subpath }: { data: RedraftBootstrap; subpath: string }) {
-  if (!data.activeProfileId) return <Navigate replace to="/leagues" />;
-  return <Navigate replace to={`/league/${encodeURIComponent(data.activeProfileId)}/${subpath}`} />;
+  return <Navigate replace to={legacyRedirectTarget(data.activeProfileId, subpath)} />;
 }
 
 /** ONE gate every league-scoped route passes through (directive section 1,
