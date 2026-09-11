@@ -68,10 +68,17 @@ not, and did not need to be, replaced; the directive's "no duplicate
 per-surface status transformations unless presentation-only" bar is met.
 Frontend CONSUMPTION of the new `playerAvailabilityStatus` field in the
 UI itself is proven for Lineup/Waivers via the new global Player Detail
-drawer (see below); Draft/Trade Analysis/Trade Finder carry the field on
-the wire, typed in `@nwr/contracts`, but no frontend UI reads it yet in
-those three surfaces -- a real, disclosed, scoped-down remainder, not
-silently claimed done.
+drawer (see below). **CLOSURE pass part 3 (2026-09-10) closed the
+remaining gap**: Draft's Suggestions table (a new "Status" column) and
+its own draft-specific PlayerDrawer (a new "Availability" stat), Trade
+Analysis's impact table (a new "Availability" column), and Trade
+Finder's candidate cards (a badge on each side) now all render this same
+field -- reusing ONE new shared mapping,
+`playerAvailabilityBadgeTone()`/`playerAvailabilityBadgeLabel()`
+(`player-detail-state.ts`), which the global drawer itself was also
+refactored to use instead of its own inline ternary. No surface computes
+a second status transformation; every render traces back to the same
+`PlayerAvailabilityStatus` authority.
 
 ## Weekly projections (unchanged this pass)
 

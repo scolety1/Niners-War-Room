@@ -50,6 +50,76 @@ UNCHANGED judgment from the original pass (it already has its own hash/
 provenance system, and reopening draft-recommendation modeling stays out
 of scope) -- not a gap this closure pass left open by omission.
 
+## Draft's exclusion, re-examined (CLOSURE pass part 3, 2026-09-10,
+## directive section 3)
+
+The directive asked this pass to actually read Draft's real recommendation/
+provenance code and judge honestly whether staying separate is still
+justified, rather than re-stamp the prior pass's conclusion unexamined.
+Read: `desktop_facade.py::redraft_decision_bundle{,_v2}`,
+`decision_bundle_live_service.py`, `score_provenance_service.py`,
+`in_season_decision_trace_service.py`.
+
+**Verdict: VALIDATED -- the exclusion is a real architectural difference,
+not deferred effort.** Three concrete, code-level reasons:
+
+1. **Draft's own provenance is already a richer, purpose-built system,
+   not a gap.** `ScoreProvenance` (`score_provenance_service.py`) bundles
+   13 real fields (`leagueProfileHash`, `rosterStateHash`,
+   `availablePlayerHash`, `universeHash`, `projectionModelVersion`,
+   `marketSnapshotHash`, `featureSetVersion`, `teamScoreVersion`,
+   `championshipEquityVersion`, `pickScoreVersion`, `optimizerVersion`,
+   `seed`, `simulationCount`) into one hashed `bundleHash`, purpose-built
+   for a full-candidate-set SIMULATION result (directive section 28,
+   predates this pass entirely). `LeagueSnapshot`'s `leagueSnapshotId` is
+   deliberately lighter -- one id over `{scoringProfileHash,
+   rosterStateHash, week, extra}` (see `LEAGUE_CONTEXT.md`) -- built for a
+   single-roster-read in-season tool. Wrapping Draft in the envelope would
+   not ADD reproducibility; it would either duplicate the richer hash
+   Draft already has under a second, less detailed name, or silently
+   drop fields the existing system already proves.
+2. **Draft has no backend-declared single recommendation to put in
+   `primaryRecommendation`.** Every migrated tool (Start/Sit, Waivers,
+   Trade Analysis, Trade Finder, K/DST Streamer) computes exactly one
+   real recommendation (or a small explicit candidate set) server-side.
+   Draft's `DecisionBundle` returns an ordered field of MANY live
+   candidates, each carrying its own `pickScore`/`teamScoreAfter`/
+   `equityGain`/`metricStatus`/`uncertainty` -- richer, per-candidate
+   confidence information than the envelope's single coarse
+   `confidenceState` (`HIGH`/`NOMINAL`/`LOW`/`UNAVAILABLE`) could
+   represent without a real information loss. "NWR PICK NOW" (the closest
+   thing to a single recommendation) is a FRONTEND-computed UI banner
+   (`findPickNow` in `draft-room-v2.tsx`, row 1 of the already-sorted
+   candidate list) -- the backend itself never designates one candidate as
+   canonical. Forcing a `primaryRecommendation` field would mean either
+   inventing a new backend concept Draft's real interaction contract does
+   not use, or faking it from frontend logic -- neither is a real
+   architecture improvement.
+3. **The trace-id schema this pass extended is genuinely the wrong
+   shape for Draft.** `in_season_decision_trace_service.TOOL_TYPES`
+   (`START_SIT`, `WAIVER`, `ADD_DROP`, `FAAB`, `TRADE`, `K_STREAMER`,
+   `DST_STREAMER`) is a WEEK-scoped taxonomy -- `DecisionTraceRecord.week`
+   is a real, load-bearing field for every existing member. A draft pick
+   has no week. Giving Draft a `traceId` through this same schema would
+   require inventing a `DRAFT` tool type with `week` permanently `null`
+   and `alternatives`/`recommendation` shapes that don't match any other
+   member -- a real, non-trivial schema change, not the small addition
+   the other 5 tools got. Draft's real, permanent, append-only pick
+   record already exists -- the draft board itself (`draft_boards/
+   <profile_id>.json`) -- which is arguably a MORE complete trace (every
+   real pick, forever) than a `traceId` would add.
+
+This is not "the same conclusion restated" -- it is a genuine re-
+examination that could have gone the other way (e.g. if Draft's
+provenance had turned out to be a thin, incomplete stub, migrating it
+would have been the honest answer). It didn't: Draft's own system is
+real, tested (`score_provenance_service.py`'s own test suite,
+pre-existing), and already exceeds what the envelope would add. No code
+change follows from this section -- the correct action, per the
+directive's own instruction not to force uniformity onto a genuinely
+different contract, is to leave Draft as-is and document why precisely
+(this section), which is what this CLOSURE pass part 3 did.
+
 ### K/DST Streamer's `traceIds` (plural)
 
 One streamer call produces up to two real recommendations (K and DST),
