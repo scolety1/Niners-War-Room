@@ -36,17 +36,19 @@ Frontend: `DecisionResultEnvelope` in
 |---|---|---|---|
 | Start/Sit (`redraft_weekly_lineup`) | YES | YES | **YES** |
 | Waivers/Add-Drop/FAAB (`redraft_waivers`) | YES | YES | **YES** |
-| Trade Analysis (`redraft_trade_analysis`) | YES | YES | not yet |
-| Trade Finder (`redraft_trade_finder`) | YES | YES | not yet |
-| K/DST Streamer (`redraft_kdst_streamer`) | YES (`traceIds`, plural -- see below) | YES | not yet |
-| Draft (`redraft_decision_bundle{,_v2}`) | no (has its own, older, separate provenance system -- see `DATA_AUTHORITY.md`) | no | not yet |
+| Trade Analysis (`redraft_trade_analysis`) | YES | YES | **YES** (CLOSURE pass, 2026-09-10) |
+| Trade Finder (`redraft_trade_finder`) | YES | YES | **YES** (CLOSURE pass, 2026-09-10) |
+| K/DST Streamer (`redraft_kdst_streamer`) | YES (`traceIds`, plural -- see below) | YES | **YES**, one per position (`decisionEnvelopes`, CLOSURE pass) |
+| Draft (`redraft_decision_bundle{,_v2}`) | no (has its own, older, separate provenance system -- see `DATA_AUTHORITY.md`) | no | not yet, deliberately |
 
-This is a real, honest PARTIAL against the directive's five-tool order --
-two of five have the full envelope; three more have the identification
-fields (`traceId`/`leagueSnapshotId`) a future pass can build the full
-envelope on top of without new plumbing; Draft was correctly left
-untouched (it already has its own hash/provenance system, and reopening
-draft-recommendation modeling was explicitly out of this pass's scope).
+CLOSURE pass (2026-09-10) update: all five in-season/trade tools the
+directive named now have the full envelope. Trade Analysis's `alternatives`
+is honestly `[]` -- it evaluates exactly the one proposed trade an owner
+submitted, it does not generate alternative trades (that is Trade
+Finder's job). Draft remains deliberately without this envelope, an
+UNCHANGED judgment from the original pass (it already has its own hash/
+provenance system, and reopening draft-recommendation modeling stays out
+of scope) -- not a gap this closure pass left open by omission.
 
 ### K/DST Streamer's `traceIds` (plural)
 
@@ -83,6 +85,14 @@ signals each tool already had -- never a new score:
   has no usable projection; `NOMINAL` otherwise.
 - Waivers: `LOW` if THIS_WEEK projections are `STALE`; `UNAVAILABLE` with
   zero add candidates; `NOMINAL` otherwise.
+- Trade Analysis (CLOSURE pass): `LOW` if any traded player carries a
+  real status flag or the evaluation raised a real roster-construction
+  risk flag; `NOMINAL` otherwise.
+- Trade Finder (CLOSURE pass): `NOMINAL` when a real win-win candidate
+  was found across every live opponent roster; `UNAVAILABLE` when none
+  was (never fabricated).
+- K/DST Streamer (CLOSURE pass): `NOMINAL` per position when a real
+  ADD/top candidate exists; `UNAVAILABLE` per position otherwise.
 
 This is explicitly a heuristic over existing freshness/coverage signals,
 the same honesty posture the directive requires elsewhere in this

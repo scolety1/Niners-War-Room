@@ -160,9 +160,15 @@ query) never survives a league switch either.
   anywhere) and adding one was judged out of this pass's architecture-only
   scope.
 - Full adoption of the universal player primitive (directive section 8)
-  across Lineup/Waivers/Trades/Players/Free Agents/Opponent Rosters --
-  only proven in the Draft Room this pass; see `player-drawer-core.tsx`'s
-  own module docstring and the final handoff's PARTIAL disclosure.
+  across Trades/Free Agents/Opponent Rosters/Players-Rankings-Compare --
+  the 2026-09-10 CLOSURE pass built the real, reusable, league-aware
+  primitive (`player-detail-state.ts`/`player-detail-context.tsx`/
+  `player-detail-drawer.tsx`) and adopted it into Lineup and Waivers on
+  top of the original pass's Draft Room identity-header extraction; the
+  remaining surfaces are real, disclosed follow-up work, not silently
+  dropped -- see `player-drawer-core.tsx`'s and `player-detail-
+  drawer.tsx`'s own module docstrings and the final handoff's PARTIAL
+  disclosure.
 
 ## Rendered acceptance pass (directive section 12)
 
@@ -250,15 +256,62 @@ pure-function/logic test, not a component-render test).
 | B | Every major decision identifies league + snapshot | **PARTIAL** | `leagueSnapshotId` wired into 5/5 in-season tools + the standalone context endpoint (unit-tested); Draft's DecisionBundle uses its own separate, older provenance system, not this one -- see `DECISION_CONTRACTS.md` |
 | C | Every recommendation can expose a trace ID | **PASS for in-season tools** | `_record_decision_trace_safe` now returns the real id; live-mocked proof via `test_kdst_streamer_response_carries_trace_ids_and_league_snapshot_id`; Draft has no trace id (unchanged, out of scope) |
 | D | Every recommendation communicates stale/unavailable required data | **PASS (pre-existing + extended)** | `providerHealth`/`issues` already existed (`weekly_projection_provider_service` tests, 15 pre-existing); `decisionEnvelope.issues` now carries the same signal for Start/Sit and Waivers |
-| E | Player status is consistent across Draft/Lineup/Waivers/Trades | **NOT YET SATISFIED, disclosed** | The one authority (`PlayerAvailabilityStatus`) now exists and is real, but NO product surface was migrated to consume it this pass -- each still renders its own local heuristic. See `DATA_AUTHORITY.md`. |
-| F | Weekly Home uses one LeagueSnapshot | **NOT ARCHITECTURALLY GUARANTEED, disclosed** | `WeeklyHomePage` composes 3 independent facade calls (`redraftWeeklyHomeActions`, `redraftWeeklyLineup`, `redraftFreeAgents`), each computing its own `leagueSnapshotId` from its own live roster read within the same request -- in practice near-identical (same request, sub-second apart) but no single snapshot value is threaded through and asserted equal. A real follow-up, not silently claimed done. |
+| E | Player status is consistent across Draft/Lineup/Waivers/Trades | **PASS (backend); frontend UI consumption PARTIAL** | CLOSURE pass (2026-09-10): the one authority (`PlayerAvailabilityStatus`) is now attached to Draft/Lineup/Waivers/Trade-Analysis/Trade-Finder's own rows via one shared facade helper (`_player_availability_status_map()`); proven byte-identical/consistently-keyed by `tests/test_player_availability_status_consumer_consistency.py`. Frontend UI reads it via the new global Player Detail drawer for Lineup/Waivers only -- Draft/Trade Analysis/Trade Finder carry the field on the wire (typed) but no UI reads it yet there. See `DATA_AUTHORITY.md`. |
+| F | Weekly Home uses one LeagueSnapshot | **PASS** | CLOSURE pass (2026-09-10): `redraft_weekly_home_actions` now embeds the SAME `lineup`/`freeAgents` sub-payloads it already computed internally to build its action list, and surfaces ONE top-level `leagueSnapshotId` (the lineup sub-call's own real id). `WeeklyHomePage` renders every decision card from this single response -- the second `redraftWeeklyLineup` call and the `useFreeAgents` hook were removed from this page. Proven by `tests/test_weekly_home_single_snapshot.py`. A live IN_SEASON render with real Sleeper data was NOT exercised (same disclosed governance-receipt/no-safe-test-league constraint as section 12 below) -- verified by facade-instance-level sub-call mocking instead. |
 | G | Switching leagues cannot leak prior league state | **PASS** | Real bug found + fixed: 6 `useAsync` call sites missing `data.activeProfileId` in their dependency arrays (`in-season.tsx`, `pages.tsx`); `LeagueScopedPage` also keys its rendered subtree by `leagueKey`; the header "Switch league" control confirmed live in the rendered Chrome pass (section 12), including a second real bug (stuck loading state) found and fixed there |
 | H | A deep link always resolves the same league | **PASS** | Unit tests + confirmed live in the rendered Chrome pass (section 12): a direct deep link to a non-active league activates and renders it correctly, including surviving a hard browser refresh -- this exact flow also surfaced and led to fixing the two real bugs documented in section 12 |
 | I | Old routes redirect correctly during migration | **PASS** | `legacyRedirectTarget` pure function, unit-tested (`league-context.test.ts`); every legacy flat route now uses it via `LegacyRedirect`; 9 legacy paths confirmed live in the rendered Chrome pass (section 12), each redirecting to the correct scoped route with identical content |
 
-Two invariants (E, F) are honestly NOT fully satisfied by this pass and
-are called out as PRE-UI BLOCKERS REMAINING in the final handoff rather
-than rounded up to PASS.
+Two invariants (E, F) were honestly NOT fully satisfied by the original
+pass and were called out as PRE-UI BLOCKERS REMAINING. The 2026-09-10
+CLOSURE pass closed both at the backend/architecture level (E's
+remaining gap is frontend UI adoption breadth for the player-detail
+primitive, disclosed above and in `DATA_AUTHORITY.md`/`DECISION_
+CONTRACTS.md`, not the authority or its wiring).
+
+## CLOSURE pass (2026-09-10): the 5 identified blockers
+
+This pass finished exactly the 5 blockers the original pass disclosed as
+remaining, then re-ran the structure-freeze gate:
+
+1. **Governance reconciliation** (read-only) -- see `DATA_AUTHORITY.md`'s
+   "Governance reconciliation" section. Verdict:
+   `DIFFERENT_ARTIFACT_TEST_SEED_EXPIRED`. Not renewed, not blocking.
+2. **PlayerAvailabilityStatus consumption** -- wired into Draft/Lineup/
+   Waivers/Trade Analysis/Trade Finder (backend); see invariant E above.
+3. **Weekly Home single snapshot** -- see invariant F above.
+4. **DecisionResultEnvelope completion** -- Trade Analysis, Trade Finder,
+   and K/DST Streamer (one envelope per position) now have the full
+   envelope, matching Start/Sit and Waivers. Draft deliberately remains
+   without it (unchanged judgment from the original pass -- it already
+   has its own, older, separate hash/provenance system). See `DECISION_
+   CONTRACTS.md`.
+5. **Global Player Detail primitive** -- a real, reusable, league-aware
+   primitive now exists (`player-detail-state.ts`/`player-detail-
+   context.tsx`/`player-detail-drawer.tsx`), mounted once app-wide
+   (singleton -- never two competing drawers) and wired into Lineup and
+   Waivers. Draft Room's own existing drawer is deliberately untouched
+   (deeply draft-specific, already reuses `PlayerIdentityHeader`). Trade
+   Analysis/Trade Finder/Free Agents/Opponent Rosters/Players-Rankings-
+   Compare are NOT wired to it yet -- a real, disclosed, scoped-down
+   remainder.
+
+A bounded live-rendered check (local QA profiles only, isolated store,
+never the owner's real leagues) confirmed: clean launch, league chooser,
+local-profile creation, Draft Room PRE_DRAFT routing with the honest
+governance-blocked error surfacing correctly, Lineup/Waivers/Trade
+Analysis/Trade Finder/My Roster/Weekly Home/Data Health all rendering
+their honest degraded states with zero console errors, legacy-route
+redirects, and league-switching context isolation -- all with the new
+code active. It could NOT exercise the new code's SLEEPER-dependent
+paths live (the Lineup/Waivers "View" trigger opening the drawer with
+real data, a real IN_SEASON IN-SEASON landing, real player rows) because
+no safe test Sleeper league is available in this environment and the
+owner's real leagues are explicitly off-limits this pass -- the exact
+same disclosed constraint as this pass's Draft render. Backend behavior
+for those paths is proven by facade-level tests instead (see each
+component's test file). See the final handoff for the exact freeze
+verdict.
 
 ## Where to look next
 

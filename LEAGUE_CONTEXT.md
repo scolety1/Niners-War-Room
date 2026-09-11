@@ -116,6 +116,15 @@ Wired into (as of this pass): `redraft_weekly_lineup` (Start/Sit),
 `redraft_kdst_streamer`, and the standalone `redraft_league_workspace_
 context`. See `DECISION_CONTRACTS.md` for the exact field per tool.
 
+**CLOSURE pass update (2026-09-10):** `redraft_weekly_home_actions`
+(Weekly Home) now ALSO surfaces this exact id at its top level -- taken
+from its own internal `redraft_weekly_lineup` sub-call (which it already
+made to build its action list), not independently recomputed. Every
+decision card Weekly Home renders (actions, the embedded `lineup`
+sub-payload, the embedded `freeAgents` sub-payload) derives from this
+ONE response, closing the directive-section-3 gap the original pass left
+open (see `PRODUCT_ARCHITECTURE.md` invariant F).
+
 ## Context isolation
 
 `LeagueScopedPage` (`RedraftApp.tsx`) activates the target league before

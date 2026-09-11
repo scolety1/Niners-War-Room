@@ -52,14 +52,26 @@ availability_statuses` as a second composed source without any consumer
 needing to change -- the same "wrap, don't fork" instruction this module
 follows for the override mechanism itself.
 
-**Not yet done this pass:** no product surface (Draft/Lineup/Waivers/
-Trades) was migrated to CONSUME this new authority -- each still renders
-its own local status heuristic (e.g. `weekly-shared.tsx`'s `statusTone`,
-a UI-only string-matching heuristic with no shared backend authority
-behind it, and the Draft Drawer's own separate status-override display).
-This is disclosed as a real gap in the final handoff (PLAYER STATUS
-AUTHORITY: the authority itself is built and live; consumer migration is
-NOT done).
+**CLOSURE pass update (2026-09-10):** every major owner-facing surface
+now attaches this SAME authority (via a new shared facade helper,
+`DesktopBackendFacade._player_availability_status_map()`, keyed by
+canonical player id) to its own already-computed rows: Draft
+(`redraft_decision_bundle{,_v2}`), Lineup (`redraft_weekly_lineup`),
+Waivers (`redraft_waivers`), Trade Analysis (`redraft_trade_analysis`),
+Trade Finder (`redraft_trade_finder`). See `tests/test_player_
+availability_status_consumer_consistency.py` for the proof (byte-
+identical to the standalone authority endpoint, keyed consistently, no
+surface invented a competing lookup). `weekly-shared.tsx`'s `statusTone`
+remains a legitimate PRESENTATION-only mapping (string -> UI tone/color)
+of the engine's own already-override-derived `status` string -- it was
+not, and did not need to be, replaced; the directive's "no duplicate
+per-surface status transformations unless presentation-only" bar is met.
+Frontend CONSUMPTION of the new `playerAvailabilityStatus` field in the
+UI itself is proven for Lineup/Waivers via the new global Player Detail
+drawer (see below); Draft/Trade Analysis/Trade Finder carry the field on
+the wire, typed in `@nwr/contracts`, but no frontend UI reads it yet in
+those three surfaces -- a real, disclosed, scoped-down remainder, not
+silently claimed done.
 
 ## Weekly projections (unchanged this pass)
 
@@ -77,6 +89,43 @@ identification on top of the tools that call it.
 Existing `AdpSnapshot` machinery (`load_adp_snapshot`,
 `redraft_bootstrap`'s `draftBoard.adp` field), unchanged. Reflected as
 its own `MARKET_ADP` category in the new Data Health authority (below).
+
+## Governance reconciliation (CLOSURE pass, 2026-09-10, directive section 1)
+
+Read-only investigation, no auto-renewal performed. Compared this worktree's
+expired bundled seed (`docs/hq/model/nwr_redraft_2026_rookie_projection_
+candidate_v1_20260809/NWR_DATA_GOVERNANCE.json`, `source_sha256
+e483caae...`, combined 608 rows [530 veteran + 78 rookie], `valid_until
+2026-09-09`) against the real-install Freeze V7 governed snapshot
+(`docs/codex/NWR_PROSPECTIVE_2026_FREEZE_V7_20260908.md`, commit
+`0ae4b039`, in the `draft-upgrade-hq` worktree lineage) previously
+identified as valid through 2026-10-08.
+
+**Verdict: `DIFFERENT_ARTIFACT_TEST_SEED_EXPIRED`.** These are NOT the same
+governed artifact:
+
+| | This worktree's bundled seed | Freeze V7 real install |
+|---|---|---|
+| Admitted universe | 608 (530 veteran + 78 rookie) | 564 (491 veteran + 73 rookie) |
+| Veteran source_sha256 | `6ee6dbff...` | `29f3c2e8...` (a1505742's fresh admission) |
+| Rookie source_as_of | 2026-07-30 | 2026-09-08 (independently re-governed) |
+| Combined source_sha256 | `e483caae...` | not a single combined artifact -- installed via `install_projection_snapshot()` |
+| valid_until | 2026-09-09 (expired) | veteran candidate `docs/codex/nwr_redraft_2026_projection_admission_CANDIDATE_v3_20260908/NWR_DATA_GOVERNANCE.json` shows `valid_until 2026-10-08`, but that candidate (`source_sha256 29f3c2e8...`) is ALSO not what `desktop_facade.REDRAFT_SEED_SHA256` (`e483caae...`) checks against |
+
+Even if the Freeze V7 veteran candidate's approval is still nominally
+valid through 2026-10-08, it covers a genuinely different artifact
+(different row count, different source hashes) than the one this
+worktree's `redraft_engine_v1_service` actually validates against
+(`REDRAFT_SEED_SHA256` in `desktop_facade.py` is hardcoded to the OLD
+608-combined snapshot's hash). Copying the Freeze V7 artifact in would
+ALSO require a code change to that hardcoded constant -- a data-admission/
+engineering change, not something this architecture-only pass may do
+unilaterally. Per the directive, this expired seed is left as-is; it does
+not block the architecture work in this pass, all of which is testable
+structurally (pure-function tests, honest-degradation facade tests,
+source-level wiring proofs) without live rankings data -- see
+`DECISION_CONTRACTS.md`'s and `tests/test_desktop_facade_architecture_
+wiring.py`'s own disclosures of this exact, unrelated, pre-existing gap.
 
 ## Draft-day rest-of-season projections
 
