@@ -879,6 +879,10 @@ export interface KdstStreamerResult {
   // `positions` above -- never a dict keyed by "K"/"DST".
   leagueSnapshotId?: string;
   traceIds?: Array<{ position: "K" | "DST"; traceId: string }>;
+  // NWR pre-UI architecture CLOSURE pass (directive section 4): one
+  // DecisionResultEnvelope PER POSITION -- same flat-list reasoning as
+  // `positions`/`traceIds` above.
+  decisionEnvelopes?: Array<{ position: "K" | "DST"; decisionEnvelope: DecisionResultEnvelope }>;
 }
 
 export interface RedraftFreeAgent {
@@ -986,10 +990,15 @@ export interface WeeklyProjectionsResult {
 
 export interface WeeklyLineupSlotPlayer {
   sleeperPlayerId: string;
+  canonicalPlayerId: string | null;
   playerName: string;
   position: string;
   team: string;
   projectedPoints: number | null;
+  /** NWR pre-UI architecture CLOSURE pass (directive section 2): the
+   * canonical PlayerAvailabilityStatus authority, `null` when this player
+   * carries no known status issue -- see DATA_AUTHORITY.md. */
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
 export interface WeeklyLineupSlot {
@@ -1003,9 +1012,11 @@ export interface WeeklyLineupSlot {
 
 export interface WeeklyLineupBenchPlayer {
   sleeperPlayerId: string;
+  canonicalPlayerId: string | null;
   playerName: string;
   position: string;
   projectedPoints: number | null;
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
 export interface WeeklyLineupSwap {
@@ -1057,7 +1068,13 @@ export interface WeeklyLineupResult {
   unprojectedStarterCount: number;
   starters: WeeklyLineupSlot[];
   bench: WeeklyLineupBenchPlayer[];
-  excluded: Array<{ sleeperPlayerId: string; playerName: string; position: string }>;
+  excluded: Array<{
+    sleeperPlayerId: string;
+    canonicalPlayerId: string | null;
+    playerName: string;
+    position: string;
+    playerAvailabilityStatus: PlayerAvailabilityStatus | null;
+  }>;
   swaps: WeeklyLineupSwap[];
   writeBehavior: string;
 }
@@ -1079,6 +1096,7 @@ export interface WaiverAddCandidate {
   faabBidHighDollars: number | null;
   faabUrgency: "HIGH" | "MEDIUM" | "LOW" | null;
   faabRationale: string | null;
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
 export interface WaiverDropCandidate {
@@ -1087,6 +1105,7 @@ export interface WaiverDropCandidate {
   position: string;
   marginalUtility: number | null;
   explanation: string;
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
 export interface WaiverAddDropPairing {
@@ -1120,12 +1139,14 @@ export interface TradePlayerImpact {
   marginalUtility: number | null;
   becomesStarter: boolean;
   statusFlag: string | null;
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
 export interface TradeAnalysisResult {
   leagueId: string;
   traceId?: string | null;
   leagueSnapshotId?: string;
+  decisionEnvelope?: DecisionResultEnvelope;
   gives: TradePlayerImpact[];
   receives: TradePlayerImpact[];
   rosValueDelta: number;
@@ -1147,8 +1168,10 @@ export interface TradeAnalysisResult {
 export interface TradeFinderCandidate {
   myGivePlayerId: string;
   myGivePlayerName: string;
+  myGivePlayerAvailabilityStatus: PlayerAvailabilityStatus | null;
   opponentGivePlayerId: string;
   opponentGivePlayerName: string;
+  opponentGivePlayerAvailabilityStatus: PlayerAvailabilityStatus | null;
   opponentRosterId: string;
   opponentTeamName: string;
   myNetMarginalUtility: number;
@@ -1160,6 +1183,7 @@ export interface TradeFinderResult {
   leagueId: string;
   traceId?: string | null;
   leagueSnapshotId?: string;
+  decisionEnvelope?: DecisionResultEnvelope;
   candidates: TradeFinderCandidate[];
   writeBehavior: string;
 }
@@ -1293,6 +1317,10 @@ export interface DecisionBundleCandidate {
   playerId: string;
   playerName: string;
   position: string;
+  // NWR pre-UI architecture CLOSURE pass (directive section 2): the
+  // canonical PlayerAvailabilityStatus authority, null when this player
+  // carries no known status issue -- see DATA_AUTHORITY.md.
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
   playerScore: number | null;
   teamScoreAfter: number;
   teamScoreDelta: number;

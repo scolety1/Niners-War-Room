@@ -13,6 +13,8 @@ import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, Ranki
 import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
+import { PlayerDetailProvider } from "./player-detail-context";
+import { PlayerDetailDrawer } from "./player-detail-drawer";
 
 const NAVIGATION: NavigationGroup[] = [
   {
@@ -125,7 +127,14 @@ export function RedraftApp() {
   }, [data]);
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><LoadingScreen label="Opening Redraft command center" /></div>;
   if (!data || !client) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><div className="standalone-state"><ErrorState message={error?.message ?? "The governed Redraft service is unavailable."} recovery={error?.recoveryAction} onRetry={reload} /></div></div>;
-  return <AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+  // NWR pre-UI architecture CLOSURE pass (directive section 5):
+  // PlayerDetailProvider/PlayerDetailDrawer are mounted ONCE here, above
+  // the router -- a true app-wide singleton, so the same player can
+  // never show two competing detail drawers regardless of which route
+  // opened it, and the drawer survives a route change (e.g. clicking a
+  // "View" link inside it) without being unmounted.
+  return <PlayerDetailProvider><AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+    <PlayerDetailDrawer client={client} />
     {location.pathname === "/leagues" ? null : <ActiveLeagueSelector client={client} data={data} onUpdate={update} />}
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
@@ -225,7 +234,7 @@ export function RedraftApp() {
 
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
-  </AppShell>;
+  </AppShell></PlayerDetailProvider>;
 }
 
 /** Compatibility redirect for a legacy flat path (directive invariant I).

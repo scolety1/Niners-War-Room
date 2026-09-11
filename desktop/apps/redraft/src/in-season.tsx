@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { leagueFormat } from "./league-context";
+import { usePlayerDetailOpener } from "./player-detail-context";
 import {
   ACTION_CATEGORY_LABEL,
   ACTION_CATEGORY_LINK,
@@ -159,11 +160,20 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   const [week, setWeek] = useState(1);
   const loader = useCallback(() => (isSleeper ? client.redraftWeeklyLineup(week) : null), [client, isSleeper, week]);
   const { result, error, working, reload } = useAsync(loader, [isSleeper, week, data.activeProfileId]);
+  // NWR pre-UI architecture CLOSURE pass (directive section 5): the same
+  // global Player Detail primitive Waivers uses below -- see
+  // player-detail-context.tsx.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "LINEUP");
 
   const benchColumns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text" },
     { key: "position", label: "Pos", sort: "text" },
     { key: "projectedPoints", label: "Proj pts", sort: "number", align: "right", render: (row) => row.projectedPoints == null ? "—" : formatNumber(Number(row.projectedPoints), 1) },
+    {
+      key: "view", label: "", render: (row) => (
+        <Button variant="ghost" onClick={() => openPlayerDetail({ playerId: String(row.canonicalPlayerId ?? row.sleeperPlayerId), playerName: String(row.playerName), position: String(row.position) })}>View</Button>
+      ),
+    },
   ];
 
   return <>
@@ -199,6 +209,19 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
                 tone={slot.closeCall ? "review" : statusTone(slot.status)}
                 label={slot.closeCall ? `CLOSE CALL vs ${slot.closeCallAlternative ?? "alt"} (${formatNumber(slot.closeCallMargin ?? 0, 1)})` : slot.status}
               />
+              {slot.player ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => openPlayerDetail({
+                    playerId: slot.player!.canonicalPlayerId ?? slot.player!.sleeperPlayerId,
+                    playerName: slot.player!.playerName,
+                    position: slot.player!.position,
+                    team: slot.player!.team,
+                  })}
+                >
+                  View
+                </Button>
+              ) : null}
             </article>
           ))}
         </div>
@@ -318,6 +341,9 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
   const dropRows = useMemo(() => (result?.dropCandidates ?? []).filter((row) => position === "ALL" || row.position === position), [result, position]);
   const pairingRows = useMemo(() => (result?.addDropPairings ?? []).filter((row) => position === "ALL" || row.add.position === position), [result, position]);
   const selectedAdd = result?.addCandidates.find((row) => row.canonicalPlayerId === selectedAddId) ?? null;
+  // NWR pre-UI architecture CLOSURE pass (directive section 5): the same
+  // global Player Detail primitive Lineup uses above.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "WAIVER");
 
   const addColumns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
@@ -335,6 +361,11 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
           ${String(row.faabBidLowDollars)}–${String(row.faabBidHighDollars)}{" "}
           <StatusBadge tone={FAAB_URGENCY_TONE[String(row.faabUrgency)] ?? "review"} label={String(row.faabUrgency ?? "")} />
         </span>
+      ),
+    },
+    {
+      key: "playerDetail", label: "", render: (row) => (
+        <Button variant="ghost" onClick={() => openPlayerDetail({ playerId: String(row.canonicalPlayerId), playerName: String(row.playerName), position: String(row.position), team: String(row.team) })}>View</Button>
       ),
     },
     { key: "action", label: "", render: (row) => <Button variant="secondary" onClick={() => setSelectedAddId(String(row.canonicalPlayerId))}>View Add/Drop</Button> },
