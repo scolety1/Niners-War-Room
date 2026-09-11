@@ -48,6 +48,13 @@ _WEEKLY_HOME_ACTIONS = "/api/v1/redraft/weekly-home-actions"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
 _REDRAFT_MY_ROSTER = "/api/v1/redraft/my-roster"
+# NWR pre-UI architecture pass (2026-09-10, directive sections 1/5/6): new
+# read-only surfaces -- LeagueWorkspaceContext, the PlayerAvailabilityStatus
+# authority, and the real runtime Data Health authority. Additive; every
+# pre-existing route above is unchanged.
+_REDRAFT_LEAGUE_WORKSPACE_CONTEXT = "/api/v1/redraft/league-workspace-context"
+_REDRAFT_PLAYER_AVAILABILITY_STATUS = "/api/v1/redraft/player-availability-status"
+_REDRAFT_DATA_HEALTH = "/api/v1/redraft/data-health"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
@@ -252,6 +259,15 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "GET" and path == _REDRAFT_MY_ROSTER:
             return self.server.facade.redraft_my_roster()
+
+        if method == "GET" and path == _REDRAFT_LEAGUE_WORKSPACE_CONTEXT:
+            return self.server.facade.redraft_league_workspace_context()
+
+        if method == "GET" and path == _REDRAFT_PLAYER_AVAILABILITY_STATUS:
+            return self.server.facade.redraft_player_availability_status()
+
+        if method == "GET" and path == _REDRAFT_DATA_HEALTH:
+            return self.server.facade.redraft_data_health()
 
         if method == "GET" and path == _TRADE_FINDER:
             return self.server.facade.redraft_trade_finder()

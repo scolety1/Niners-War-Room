@@ -229,7 +229,18 @@ from src.services.waiver_engine_service import (
 )
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
 from src.services.trade_finder_service import find_win_win_trades
-from src.services.in_season_decision_trace_service import record_decision_trace
+from src.services.in_season_decision_trace_service import load_decision_traces, record_decision_trace
+from src.services.decision_envelope_service import build_decision_envelope
+from src.services.league_workspace_context_service import (
+    build_league_workspace_context,
+    compute_league_snapshot_id,
+    compute_roster_state_hash,
+    compute_scoring_profile_hash,
+)
+from src.services.player_availability_status_service import (
+    load_player_availability_statuses,
+    player_availability_authority_health,
+)
 from src.services.rookie_draft_eligibility_service import (
     LIVE_IDENTITY_RELATIVE,
     load_rookie_draft_eligibility_overlay,
@@ -2534,6 +2545,7 @@ class DesktopBackendFacade:
             )
             if own_roster is not None:
                 own_roster_player_ids = [str(value) for value in own_roster.get("players") or []]
+        trace_ids: list[dict[str, str]] = []
         for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
             actions = positions.get(position) or []
             add_action = next(
@@ -2542,7 +2554,7 @@ class DesktopBackendFacade:
             top_action = add_action or (actions[0] if actions else None)
             if top_action is None:
                 continue
-            self._record_decision_trace_safe(
+            position_trace_id = self._record_decision_trace_safe(
                 profile_id=selected.profile_id, league_id=league_id, season=selected.season,
                 week=week, tool=tool_name, engine_version="fantasypros_kdst_consensus_service-v1",
                 data_versions={"provider": status.authority},
@@ -2566,11 +2578,25 @@ class DesktopBackendFacade:
                     if action is not top_action
                 ],
             )
+            if position_trace_id:
+                # Flat list, not a {"K": ..., "DST": ...} dict -- the same
+                # camelCase-key-mangling hazard already documented just
+                # below for `positions` applies here too.
+                trace_ids.append({"position": position, "traceId": position_trace_id})
+        # NWR pre-UI architecture pass (directive section 3): identification
+        # only this pass -- see DECISION_CONTRACTS.md.
+        kdst_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(own_roster_player_ids),
+            week=week,
+        )
         return FacadePayload(
             data={
                 "authority": status.authority,
                 "week": week,
                 "leagueId": league_id,
+                "traceIds": trace_ids,
+                "leagueSnapshotId": kdst_league_snapshot_id,
                 # Flat lists, not a dict keyed by "K"/"DST": the generic
                 # camelCase JSON-key transform (public_json_value /
                 # camel_case_key in contracts.py) mangles literal data keys
@@ -2915,7 +2941,7 @@ class DesktopBackendFacade:
         lineup = optimize_weekly_lineup(
             candidates=candidates, roster=selected.roster, status_overrides=status_overrides
         )
-        self._record_decision_trace_safe(
+        trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
             tool="START_SIT", engine_version="weekly_lineup_optimizer_service-v1",
             data_versions={"weekly_projection_source": projection_result.source},
@@ -2930,6 +2956,54 @@ class DesktopBackendFacade:
                 {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
             ],
         )
+        # NWR pre-UI architecture pass (directive sections 3-4): identify
+        # the exact decision state this recommendation was computed from,
+        # and speak the owner-facing DecisionResultEnvelope contract on top
+        # of the real fields already computed above -- nothing here is
+        # recomputed or replaces the engine's own real response below.
+        weekly_health_dict = weekly_health.to_dict()
+        league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(
+                [candidate.sleeper_player_id for candidate in candidates]
+            ),
+            week=week,
+        )
+        if weekly_health_dict.get("freshness") == "STALE":
+            confidence_state, confidence_basis = (
+                "LOW",
+                "Weekly projections are STALE; the last known-good snapshot was reused.",
+            )
+        elif lineup.unprojected_starter_count:
+            confidence_state, confidence_basis = (
+                "LOW",
+                f"{lineup.unprojected_starter_count} starter(s) have no usable weekly projection.",
+            )
+        else:
+            confidence_state, confidence_basis = (
+                "NOMINAL",
+                "Every starter has a live weekly projection this week.",
+            )
+        swap_rows = [
+            {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
+        ]
+        decision_envelope = build_decision_envelope(
+            task="START_SIT",
+            profile_id=selected.profile_id,
+            league_snapshot_id=league_snapshot_id,
+            primary_recommendation=swap_rows[0] if swap_rows else None,
+            alternatives=swap_rows[1:],
+            rationale=(
+                f"{len(swap_rows)} recommended change(s) vs. Sleeper's current starters."
+                if swap_rows
+                else "Sleeper's current starters already match NWR's optimal lineup for this week."
+            ),
+            confidence_state=confidence_state,
+            confidence_basis=confidence_basis,
+            data_health={"weeklyProjections": weekly_health_dict},
+            trace_id=trace_id,
+            issues=list(weekly_health_dict.get("issues") or []),
+        )
         return FacadePayload(
             data={
                 "season": selected.season,
@@ -2941,6 +3015,9 @@ class DesktopBackendFacade:
                 "unmatched": projection_result.unmatched,
                 "ambiguous": projection_result.ambiguous,
                 "providerHealth": weekly_health.to_dict(),
+                "traceId": trace_id,
+                "leagueSnapshotId": league_snapshot_id,
+                "decisionEnvelope": decision_envelope.to_dict(),
                 "projectedTotal": lineup.projected_total,
                 "unprojectedStarterCount": lineup.unprojected_starter_count,
                 "starters": [
@@ -3105,7 +3182,7 @@ class DesktopBackendFacade:
             weeks_remaining=weeks_remaining, total_budget_dollars=total_budget_dollars,
         )
         faab_by_id = {bid.canonical_player_id: bid for bid in faab_bids}
-        self._record_decision_trace_safe(
+        waiver_trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
             tool="WAIVER", engine_version="waiver_engine_service-v1",
             data_versions={"mode": mode},
@@ -3157,6 +3234,62 @@ class DesktopBackendFacade:
                 "faabRationale": bid.rationale if bid else None,
             }
 
+        # NWR pre-UI architecture pass (directive sections 3-4): snapshot
+        # identity + the owner-facing DecisionResultEnvelope, built on the
+        # real fields already computed above -- Waivers is the second tool
+        # in the directive's stated migration order (Start/Sit, then
+        # Waivers/Add-Drop/FAAB).
+        waivers_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(resolved.canonical_player_ids)),
+            week=week,
+        )
+        top_add = add_candidates[0] if add_candidates else None
+        top_pairing = next(iter(pairings), None)
+        if weekly_provider_health and weekly_provider_health.get("freshness") == "STALE":
+            waivers_confidence_state, waivers_confidence_basis = (
+                "LOW",
+                "This-week weekly projections are STALE; the last known-good snapshot was reused.",
+            )
+        elif not add_candidates:
+            waivers_confidence_state, waivers_confidence_basis = (
+                "UNAVAILABLE",
+                "No add candidates were found for this league/mode.",
+            )
+        else:
+            waivers_confidence_state, waivers_confidence_basis = (
+                "NOMINAL",
+                "Ranked from the governed NWR ranking and a live Sleeper free-agent read.",
+            )
+        waivers_envelope = build_decision_envelope(
+            task="WAIVER",
+            profile_id=selected.profile_id,
+            league_snapshot_id=waivers_league_snapshot_id,
+            primary_recommendation=(
+                {
+                    "addPlayerName": top_add.player_name,
+                    "addCanonicalPlayerId": top_add.canonical_player_id,
+                    "marginalUtility": top_add.marginal_utility,
+                    "dropPlayerName": top_pairing.drop.player_name if top_pairing and top_pairing.drop else None,
+                }
+                if top_add
+                else None
+            ),
+            alternatives=[
+                {"addPlayerName": candidate.player_name, "marginalUtility": candidate.marginal_utility}
+                for candidate in add_candidates[1:5]
+            ],
+            rationale=(
+                f"Top marginal-utility add: {top_add.player_name} ({top_add.marginal_utility:.1f})."
+                if top_add
+                else "No positive marginal-utility add candidate was found."
+            ),
+            confidence_state=waivers_confidence_state,
+            confidence_basis=waivers_confidence_basis,
+            data_health={"weeklyProjections": weekly_provider_health} if weekly_provider_health else None,
+            trace_id=waiver_trace_id,
+            issues=list((weekly_provider_health or {}).get("issues") or []),
+        )
         return FacadePayload(
             data={
                 "leagueId": league_id,
@@ -3165,6 +3298,9 @@ class DesktopBackendFacade:
                 "weeklySourceStatus": weekly_source_status,
                 "weeklyProviderHealth": weekly_provider_health,
                 "rankingWarning": ranking_warning,
+                "traceId": waiver_trace_id,
+                "leagueSnapshotId": waivers_league_snapshot_id,
+                "decisionEnvelope": waivers_envelope.to_dict(),
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
                 "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
                 "dropCandidates": [
@@ -3279,7 +3415,7 @@ class DesktopBackendFacade:
             )
         except TradeAnalysisError as exc:
             raise FacadeError("TRADE_ANALYSIS_INVALID", str(exc), status=422) from exc
-        self._record_decision_trace_safe(
+        trade_trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
             tool="TRADE", engine_version="redraft_trade_analysis_service-v1", data_versions={},
             roster_state_player_ids=list(own_resolved.canonical_player_ids),
@@ -3289,6 +3425,14 @@ class DesktopBackendFacade:
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "rosValueDelta": evaluation.ros_value_delta,
             },
+        )
+        # NWR pre-UI architecture pass (directive section 3): identification
+        # only this pass -- Trade Analysis is not yet migrated to the full
+        # DecisionResultEnvelope (see DECISION_CONTRACTS.md).
+        trade_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
         )
 
         def _side_payload(impacts):
@@ -3308,6 +3452,8 @@ class DesktopBackendFacade:
         return FacadePayload(
             data={
                 "leagueId": league_id,
+                "traceId": trade_trace_id,
+                "leagueSnapshotId": trade_league_snapshot_id,
                 "gives": _side_payload(evaluation.gives),
                 "receives": _side_payload(evaluation.receives),
                 "rosValueDelta": evaluation.ros_value_delta,
@@ -3403,9 +3549,10 @@ class DesktopBackendFacade:
             opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
             status_overrides=status_overrides,
         )
+        trade_finder_trace_id: str | None = None
         if results:
             top = results[0]
-            self._record_decision_trace_safe(
+            trade_finder_trace_id = self._record_decision_trace_safe(
                 profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
                 tool="TRADE_FINDER", engine_version="trade_finder_service-v1", data_versions={},
                 roster_state_player_ids=list(own_resolved.canonical_player_ids),
@@ -3424,9 +3571,18 @@ class DesktopBackendFacade:
                     for candidate in results[1:6]
                 ],
             )
+        # NWR pre-UI architecture pass (directive section 3): identification
+        # only this pass -- see DECISION_CONTRACTS.md.
+        trade_finder_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
+        )
         return FacadePayload(
             data={
                 "leagueId": league_id,
+                "traceId": trade_finder_trace_id,
+                "leagueSnapshotId": trade_finder_league_snapshot_id,
                 "candidates": [
                     {
                         "myGivePlayerId": candidate.my_give_player_id,
@@ -3444,6 +3600,265 @@ class DesktopBackendFacade:
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
+
+    def redraft_league_workspace_context(self) -> FacadePayload:
+        """LeagueWorkspaceContext for the active profile (NWR pre-UI
+        architecture pass, directive section 1). Read-only, wraps the
+        SAME draft-board/roster machinery `redraft_bootstrap` and
+        `redraft_my_roster` already use -- performs one live Sleeper
+        roster read (only for a Sleeper profile with a valid import
+        receipt) so `rosterStateHash`/`leagueSnapshotId` reflect real,
+        current state rather than a stale bootstrap snapshot.
+        """
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "REDRAFT_PROFILE_REQUIRED", "No active Redraft league profile.", status=409
+            )
+        draft_configured = False
+        drafted_count = 0
+        current_pick: int | None = None
+        total_draft_picks = max(0, selected.team_count) * max(0, selected.draft.rounds)
+        issues: list[str] = [
+            "Current NFL week is not automatically sourced in this repository; each "
+            "in-season page takes week as an explicit input.",
+        ]
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            manual_assets = self._manual_assets_for_profile(selected.profile_id)
+            adp_snapshot = load_adp_snapshot(self.redraft_root, selected)
+            room_state = load_room_state(self.redraft_root, selected, ranking, manual_assets)
+            draft_board_payload = build_draft_room_payload(
+                selected, ranking, manual_assets, adp_snapshot, room_state
+            )
+            draft_configured = bool(draft_board_payload.get("configured"))
+            drafted_count = len(draft_board_payload.get("drafted") or [])
+            current_pick = draft_board_payload.get("currentPick")
+        except (FacadeError, OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            issues.append(f"Draft board state could not be read: {exc}")
+
+        roster_player_ids: list[str] | None = None
+        sync_status = "NOT_APPLICABLE"
+        if selected.provider == "sleeper" and selected.provider_league_id:
+            sync_status = "LIVE"
+            try:
+                _selected, league_id, owner_user_id = self._active_sleeper_context()
+                sleeper = SleeperHttpClient()
+                rosters = sleeper.get_json(f"league/{league_id}/rosters")
+                own_roster = next(
+                    (
+                        roster
+                        for roster in rosters
+                        if isinstance(roster, Mapping)
+                        and str(roster.get("owner_id") or "") == str(owner_user_id)
+                    ),
+                    None,
+                )
+                if own_roster is not None:
+                    roster_player_ids = [str(value) for value in own_roster.get("players") or []]
+                else:
+                    sync_status = "DEGRADED"
+                    issues.append("The owner's Sleeper roster could not be found in this league.")
+            except (FacadeError, OSError, ValueError) as exc:
+                sync_status = "DEGRADED"
+                issues.append(f"Live Sleeper roster read failed: {exc}")
+
+        context = build_league_workspace_context(
+            profile=selected,
+            draft_configured=draft_configured,
+            drafted_count=drafted_count,
+            total_draft_picks=total_draft_picks,
+            current_pick=current_pick,
+            current_week=None,
+            roster_player_ids=roster_player_ids,
+            sync_status=sync_status,
+            sync_as_of=selected.updated_at_utc or None,
+            issues=issues,
+        )
+        return FacadePayload(data=context.to_dict())
+
+    def redraft_player_availability_status(self) -> FacadePayload:
+        """PlayerAvailabilityStatus authority (directive section 5) -- a
+        broad, distinct read model built on top of the existing manual
+        `current_player_status_overrides_service`. See
+        `player_availability_status_service.py`'s module docstring for
+        why this stays honest rather than fabricating an injury feed this
+        repository does not have."""
+
+        self._require_mode("redraft")
+        statuses = load_player_availability_statuses(self.repo_root)
+        health = player_availability_authority_health(self.repo_root)
+        return FacadePayload(
+            data={
+                "statuses": [status.to_dict() for status in statuses],
+                "authorityHealth": health,
+            }
+        )
+
+    def redraft_data_health(self) -> FacadePayload:
+        """Real runtime Data Health authority (directive section 6),
+        replacing the old bootstrap-only `health` block's stale
+        network/local-only assumptions (see `DATA_AUTHORITY.md`). Every
+        category reuses an already-existing engine/service -- this method
+        performs no new computation of its own, only composes and reports.
+        """
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        categories: list[dict[str, Any]] = []
+
+        def _category(
+            name: str,
+            status: str,
+            source: str | None,
+            last_update: str | None,
+            freshness: str,
+            degradation_reason: str | None,
+            impact: str,
+        ) -> None:
+            categories.append(
+                {
+                    "category": name,
+                    "status": status,
+                    "source": source,
+                    "lastUpdate": last_update,
+                    "freshness": freshness,
+                    "degradationReason": degradation_reason,
+                    "impactOnRecommendations": impact,
+                }
+            )
+
+        if selected is None:
+            _category(
+                "LEAGUE_SYNC", "UNAVAILABLE", None, None, "UNKNOWN",
+                "No active league profile.", "No recommendation in this app can be computed.",
+            )
+            for name in (
+                "WEEKLY_PROJECTIONS", "ROS_PROJECTIONS", "MARKET_ADP", "PLAYER_STATUS",
+                "DECISION_ENGINE", "SNAPSHOT",
+            ):
+                _category(
+                    name, "UNAVAILABLE", None, None, "UNKNOWN",
+                    "No active league profile.", "Unavailable until a league is chosen.",
+                )
+            return FacadePayload(data={"categories": categories, "generatedAtUtc": utc_now()})
+
+        is_sleeper = selected.provider == "sleeper" and bool(selected.provider_league_id)
+        _category(
+            "LEAGUE_SYNC",
+            "OK" if is_sleeper else "NOT_APPLICABLE",
+            selected.provider,
+            selected.updated_at_utc or None,
+            "CURRENT" if is_sleeper else "LOCAL_ONLY",
+            None if is_sleeper else "This profile is local/manually managed; no live provider sync.",
+            "None." if is_sleeper else "Roster/opponent/free-agent reads are unavailable for local profiles.",
+        )
+
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_ready = ranking.ready
+            _category(
+                "ROS_PROJECTIONS",
+                "OK" if ranking_ready else "DEGRADED",
+                "NWR governed projection snapshot",
+                ranking.generated_at_utc,
+                "CURRENT" if ranking_ready else "STALE",
+                None if ranking_ready else ("; ".join(ranking.errors) or "Rankings are not ready."),
+                "None." if ranking_ready else "Rest-of-season Waivers/Trades/Rankings/Compare/Cheat Sheet degrade.",
+            )
+        except FacadeError as exc:
+            _category(
+                "ROS_PROJECTIONS", "UNAVAILABLE", "NWR governed projection snapshot", None,
+                "UNKNOWN", exc.message, "Rest-of-season tools are blocked.",
+            )
+
+        if is_sleeper:
+            try:
+                _selected, league_id, _owner_user_id = self._active_sleeper_context()
+                _raw_projections, weekly_health = get_weekly_projections(
+                    provider=default_weekly_projection_provider(),
+                    season=selected.season, week=1, season_type="regular",
+                    league_id=league_id, redraft_root=self.redraft_root,
+                )
+                health_dict = weekly_health.to_dict()
+                _category(
+                    "WEEKLY_PROJECTIONS", health_dict.get("status") or "UNKNOWN",
+                    health_dict.get("provider"), health_dict.get("retrievedAt"),
+                    health_dict.get("freshness") or "UNKNOWN",
+                    "; ".join(health_dict.get("issues") or []) or None,
+                    (
+                        "Start/Sit and THIS_WEEK Waivers are using a stale snapshot."
+                        if health_dict.get("freshness") == "STALE"
+                        else "None."
+                    ),
+                )
+            except (FacadeError, WeeklyProjectionError, OSError, ValueError) as exc:
+                _category(
+                    "WEEKLY_PROJECTIONS", "UNAVAILABLE", "Sleeper (approved temporary/stopgap provider)",
+                    None, "UNKNOWN", str(exc), "Start/Sit and THIS_WEEK Waivers are blocked.",
+                )
+        else:
+            _category(
+                "WEEKLY_PROJECTIONS", "NOT_APPLICABLE", None, None, "UNKNOWN",
+                "No active Sleeper league.", "Weekly (This-Week) tools are unavailable for this profile.",
+            )
+
+        try:
+            adp_snapshot = load_adp_snapshot(self.redraft_root, selected)
+            adp_available = adp_snapshot is not None and bool(getattr(adp_snapshot, "source", ""))
+            _category(
+                "MARKET_ADP", "OK" if adp_available else "UNAVAILABLE",
+                getattr(adp_snapshot, "source", None) if adp_snapshot else None, None,
+                "CURRENT" if adp_available else "UNKNOWN",
+                None if adp_available else "No ADP snapshot is imported for this profile.",
+                "None." if adp_available else "Draft-day Value/Reach/Cost-of-Waiting fields degrade.",
+            )
+        except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
+            _category(
+                "MARKET_ADP", "UNAVAILABLE", None, None, "UNKNOWN", str(exc),
+                "Draft-day ADP-dependent fields degrade.",
+            )
+
+        status_health = player_availability_authority_health(self.repo_root)
+        _category(
+            "PLAYER_STATUS", "OK", status_health["authority"], None, "MANUAL",
+            "; ".join(status_health.get("issues") or []) or None,
+            "Availability zeroing reflects only manually curated, individually sourced entries.",
+        )
+
+        try:
+            traces = load_decision_traces(self.redraft_root, selected.profile_id)
+            latest = max((trace.recorded_at_utc for trace in traces), default=None)
+            _category(
+                "DECISION_ENGINE", "OK" if traces else "NO_ACTIVITY",
+                "in_season_decision_trace_service (Start/Sit, Waivers, FAAB, Trade Analysis, "
+                "Trade Finder, K/DST Streamer)",
+                latest, "CURRENT" if traces else "NONE",
+                None if traces else "No decision has been recorded for this profile yet.",
+                "None." if traces else "No trace evidence exists yet for this profile.",
+            )
+        except Exception as exc:  # noqa: BLE001 - a health check must never crash the page
+            _category(
+                "DECISION_ENGINE", "UNAVAILABLE", "in_season_decision_trace_service", None,
+                "UNKNOWN", str(exc), "Decision-engine activity cannot be verified.",
+            )
+
+        try:
+            context_payload = self.redraft_league_workspace_context().data
+            _category(
+                "SNAPSHOT", "OK", "league_workspace_context_service",
+                context_payload.get("syncAsOf"), "CURRENT", None,
+                "None." if not context_payload.get("issues") else "; ".join(context_payload["issues"]),
+            )
+        except Exception as exc:  # noqa: BLE001
+            _category(
+                "SNAPSHOT", "UNAVAILABLE", "league_workspace_context_service", None,
+                "UNKNOWN", str(exc), "Recommendations cannot be tied to an identified snapshot.",
+            )
+
+        return FacadePayload(data={"categories": categories, "generatedAtUtc": utc_now()})
 
     def redraft_weekly_home_actions(self, *, week: int) -> FacadePayload:
         """"NWR ACTIONS" -- Weekly League Home's action-ranking section
@@ -5085,21 +5500,29 @@ class DesktopBackendFacade:
         recommendation: dict[str, Any],
         alternatives: list[dict[str, Any]] | None = None,
         free_agent_state_player_ids: list[str] | None = None,
-    ) -> None:
+    ) -> str | None:
         """Best-effort in-season decision-trace logging (NWR Overnight V3,
         Lane 18) -- never allowed to break the actual recommendation
         response it is logging. A logging failure is swallowed, not
-        surfaced as a facade error."""
+        surfaced as a facade error.
+
+        NWR pre-UI architecture pass (directive section 4 / invariant C,
+        "every recommendation can expose a trace ID"): now returns the
+        real `trace_id` on success (or `None` on a swallowed failure) so
+        callers can surface it in their own response -- previously this
+        always returned `None` and no caller's HTTP response exposed the
+        trace id it had just written."""
 
         try:
-            record_decision_trace(
+            record = record_decision_trace(
                 self.redraft_root, profile_id, league_id=league_id, season=season, week=week,
                 tool=tool, engine_version=engine_version, data_versions=data_versions,
                 roster_state_player_ids=roster_state_player_ids, recommendation=recommendation,
                 alternatives=alternatives or [], free_agent_state_player_ids=free_agent_state_player_ids,
             )
+            return record.trace_id
         except Exception:  # noqa: BLE001 - audit logging must never break a real recommendation
-            pass
+            return None
 
     def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
         selected = active_profile(self.redraft_root)

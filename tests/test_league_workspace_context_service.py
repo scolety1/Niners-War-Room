@@ -15,7 +15,9 @@ def _profile():
 
 def test_scoring_profile_hash_is_stable_for_identical_rules():
     profile_a = _profile()
-    profile_b = replace(_profile(), profile_id="a-totally-different-id", league_name="Different Name")
+    profile_b = replace(
+        _profile(), profile_id="a-totally-different-id", league_name="Different Name"
+    )
     assert compute_scoring_profile_hash(profile_a) == compute_scoring_profile_hash(profile_b)
 
 
@@ -55,8 +57,12 @@ def test_league_snapshot_id_changes_when_roster_state_changes():
 def test_league_snapshot_id_changes_when_week_changes():
     scoring_hash = compute_scoring_profile_hash(_profile())
     roster_hash = compute_roster_state_hash(["1", "2"])
-    week1 = compute_league_snapshot_id(scoring_profile_hash=scoring_hash, roster_state_hash=roster_hash, week=1)
-    week2 = compute_league_snapshot_id(scoring_profile_hash=scoring_hash, roster_state_hash=roster_hash, week=2)
+    week1 = compute_league_snapshot_id(
+        scoring_profile_hash=scoring_hash, roster_state_hash=roster_hash, week=1
+    )
+    week2 = compute_league_snapshot_id(
+        scoring_profile_hash=scoring_hash, roster_state_hash=roster_hash, week=2
+    )
     assert week1 != week2
 
 
@@ -79,7 +85,8 @@ def test_build_league_workspace_context_in_season_with_live_roster():
     context = build_league_workspace_context(
         profile=_profile(), draft_configured=True, drafted_count=180,
         total_draft_picks=180, current_pick=None, current_week=3,
-        roster_player_ids=["10", "20", "30"], sync_status="LIVE", sync_as_of="2026-09-10T00:00:00+00:00",
+        roster_player_ids=["10", "20", "30"], sync_status="LIVE",
+        sync_as_of="2026-09-10T00:00:00+00:00",
         issues=["Current NFL week is not automatically sourced."],
     )
     assert context.lifecycle == "IN_SEASON"

@@ -65,7 +65,8 @@ def resolve_league_lifecycle(
     if current_pick is not None:
         return LifecycleResolution(
             "LIVE_DRAFT",
-            "The draft board shows an active current-pick pointer and the draft is not yet complete.",
+            "The draft board shows an active current-pick pointer and the draft "
+            "is not yet complete.",
         )
     return LifecycleResolution(
         "LIVE_DRAFT",

@@ -75,7 +75,9 @@ def build_decision_envelope(
     issues: Sequence[str] = (),
 ) -> DecisionResultEnvelope:
     if confidence_state not in CONFIDENCE_STATES:
-        raise ValueError(f"confidence_state must be one of {CONFIDENCE_STATES}, got {confidence_state!r}")
+        raise ValueError(
+            f"confidence_state must be one of {CONFIDENCE_STATES}, got {confidence_state!r}"
+        )
     return DecisionResultEnvelope(
         task=task,
         profile_id=profile_id,
