@@ -166,7 +166,12 @@ export function RedraftApp() {
       <Route path="/tiers" element={<LegacyRedirect data={data} subpath="tiers" />} />
       <Route path="/compare" element={<LegacyRedirect data={data} subpath="compare" />} />
       <Route path="/cheat-sheet" element={<LegacyRedirect data={data} subpath="cheat-sheet" />} />
-      <Route path="/profile" element={<LegacyRedirect data={data} subpath="profile" />} />
+      {/* NOT a LegacyRedirect: ProfilePage is the create-a-new-league UI
+          too (leagues.tsx's "Set up a league" button lands here with NO
+          active league yet), so it must stay reachable regardless of
+          league-activation state. It also doubles as the active league's
+          scoped edit view at /league/:leagueKey/profile below. */}
+      <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
       <Route path="/adp" element={<LegacyRedirect data={data} subpath="adp" />} />
       <Route path="/weekly-tools" element={<LegacyRedirect data={data} subpath="weekly-tools" />} />
       <Route path="/data-health" element={<LegacyRedirect data={data} subpath="data-health" />} />
@@ -280,8 +285,23 @@ function LeagueScopedPage({
         if (active) setActivationError("This league could not be opened. It may have been removed.");
       })
       .finally(() => {
-        if (active) setActivating(false);
-        inFlightFor.current = null;
+        // NWR pre-UI architecture pass -- real bug found live in the
+        // rendered acceptance pass (section 12): `setActivating(false)`
+        // must run UNCONDITIONALLY here, not gated behind `active`. The
+        // `active`/cleanup guard exists to stop a SUPERSEDED request from
+        // overwriting fresher data via `onUpdate` -- but reusing that same
+        // guard to also suppress clearing the loading spinner meant that
+        // whenever this effect's own successful `onUpdate` immediately
+        // triggered a re-render (activeProfileId now matching, isActive
+        // true), the resulting cleanup set `active = false` BEFORE this
+        // `.finally()` ran, so `setActivating(false)` was silently
+        // skipped -- and the replacement effect invocation early-returns
+        // on `isActive` without ever touching `activating` either. Net
+        // effect: "Opening <league>…" never cleared, live-reproduced by
+        // switching leagues from the header control. Only reset the
+        // in-flight guard for THIS attempt, not a newer superseding one.
+        setActivating(false);
+        if (inFlightFor.current === leagueKey) inFlightFor.current = null;
       });
     return () => {
       active = false;
