@@ -1,13 +1,13 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, KhaHistoricalReplayPreview, LeagueProfile, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
-import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome, EmptyState } from "@nwr/ui";
+import type { CommandItem, KhaHistoricalReplayPreview, LeagueLifecycle, LeagueProfile, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
+import { AppShell, Button, EmptyState, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
-import { leagueFormat, legacyRedirectTarget, resolveLeagueHomeSubpath } from "./league-context";
+import { legacyRedirectTarget, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
@@ -15,38 +15,71 @@ import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 import { PlayerDetailProvider } from "./player-detail-context";
 import { PlayerDetailDrawer } from "./player-detail-drawer";
+import { FreshnessIndicator, ShellIdentity } from "./shell-identity";
 
-const NAVIGATION: NavigationGroup[] = [
-  {
-    label: "League workspace",
-    items: [
-      { label: "Weekly Home", path: "/league-home", icon: "home" },
-      { label: "Start / Sit", path: "/lineup", icon: "board" },
-      { label: "Waivers", path: "/waivers", icon: "activity" },
-      { label: "My Roster", path: "/my-roster", icon: "profile" },
-      { label: "Free Agents", path: "/free-agents", icon: "players" },
-      { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" },
-      { label: "Trade Analysis", path: "/trade-analysis", icon: "trade" },
-      { label: "Trade Finder", path: "/trade-finder", icon: "search" },
-    ],
-  },
-  // Consolidation pass (NWR Draft Room GUI Consolidation): the tabbed room
-  // at /draft-room-v2 is the "Draft Room" surface. It originally existed
-  // alongside an older single-page "Legacy Draft Room", hidden from this
-  // nav/command-palette array (and thus the Ctrl+K palette, both built
-  // from it) once the owner started using the new room for a real draft,
-  // then kept dormant at "/" as an emergency rollback through that draft.
-  // NWR post-draft overnight (phase 23, "remove Legacy for real"): the
-  // real draft is complete, capability parity was confirmed (Draft Setup/
-  // slot/restart/Refresh FFC ADP/Paste Rankings-ADP/Import owner ADP CSV
-  // all already exist here), and the Legacy component itself is now
-  // removed from pages.tsx -- "/" redirects to this room instead.
-  { label: "Draft command", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] },
-  { label: "Player board", items: [{ label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" }, { label: "Tiers & Positions", path: "/tiers", icon: "layers" }, { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" }, { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" }] },
-  { label: "League", items: [{ label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" }, { label: "Market Data", path: "/adp", icon: "activity" }] },
-  { label: "Weekly tools", items: [{ label: "K/DST Streamer", path: "/weekly-tools", icon: "target" }] },
-  { label: "System", items: [{ label: "Projection & Data Health", path: "/data-health", icon: "health" }] },
-];
+/**
+ * NWR UI foundation pass (2026-09-10, directive Phase 3): the canonical
+ * owner task map HOME / DRAFT / LINEUP / IMPROVE TEAM / TRADES / PLAYERS /
+ * LEAGUE, already documented as the architectural truth in
+ * `PRODUCT_ARCHITECTURE.md`'s "Canonical owner task map" (written by the
+ * pre-UI structure-freeze pass, never implemented in the nav itself until
+ * now). Every route below already existed -- this only relabels/regroups
+ * the SAME flat legacy paths the nav always used (each already resolves
+ * to the active league's scoped route via `legacyRedirectTarget`) into
+ * the canonical buckets, and reorders the buckets by the active league's
+ * real lifecycle (directive: "responsive to lifecycle... don't hide
+ * routes entirely without strong reason" -- nothing below is hidden,
+ * only reordered/labeled).
+ */
+const NAV_HOME: NavigationGroup = { label: "Home", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }] };
+const NAV_DRAFT: NavigationGroup = { label: "Draft", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] };
+const NAV_LINEUP: NavigationGroup = { label: "Lineup", items: [{ label: "Start / Sit", path: "/lineup", icon: "board" }] };
+const NAV_IMPROVE: NavigationGroup = {
+  label: "Improve Team",
+  items: [
+    { label: "Waivers", path: "/waivers", icon: "activity" },
+    { label: "Free Agents", path: "/free-agents", icon: "players" },
+    { label: "K/DST Streamer", path: "/weekly-tools", icon: "target" },
+  ],
+};
+const NAV_TRADES: NavigationGroup = {
+  label: "Trades",
+  items: [
+    { label: "Trade Analysis", path: "/trade-analysis", icon: "trade" },
+    { label: "Trade Finder", path: "/trade-finder", icon: "search" },
+  ],
+};
+const NAV_PLAYERS: NavigationGroup = {
+  label: "Players",
+  items: [
+    { label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" },
+    { label: "Tiers & Positions", path: "/tiers", icon: "layers" },
+    { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" },
+    { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" },
+    { label: "Market Data", path: "/adp", icon: "activity" },
+  ],
+};
+const NAV_LEAGUE: NavigationGroup = {
+  label: "League",
+  items: [
+    { label: "My Roster", path: "/my-roster", icon: "profile" },
+    { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" },
+    { label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" },
+    { label: "Data Health", path: "/data-health", icon: "health" },
+  ],
+};
+
+/** Lifecycle-aware nav ordering (directive Phase 3): PRE_DRAFT/LIVE_DRAFT
+ * make Draft the dominant/current task; IN_SEASON emphasizes Home/Lineup/
+ * Improve Team; OFFSEASON shifts toward Draft/Players/League (history,
+ * research) per the directive's own wording. No active league yet uses
+ * the same order as PRE_DRAFT -- Draft is the very next real task after
+ * creating/importing a league. */
+function buildNavigation(lifecycle: LeagueLifecycle | null): NavigationGroup[] {
+  if (lifecycle === "IN_SEASON") return [NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_PLAYERS, NAV_LEAGUE, NAV_DRAFT];
+  if (lifecycle === "OFFSEASON") return [NAV_DRAFT, NAV_PLAYERS, NAV_LEAGUE, NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES];
+  return [NAV_DRAFT, NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_PLAYERS, NAV_LEAGUE];
+}
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "nwr-redraft-sidebar-collapsed";
 
@@ -59,7 +92,6 @@ function readStoredSidebarCollapsed(): boolean {
 }
 
 export function RedraftApp() {
-  const location = useLocation();
   const [client, setClient] = useState<NwrApiClient | null>(null);
   const [data, setData] = useState<RedraftBootstrap | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
@@ -120,11 +152,19 @@ export function RedraftApp() {
   }, [client, statusOverridesReloadKey]);
   const update = useCallback((next: RedraftBootstrap) => setData(next), []);
   const reloadStatusOverrides = useCallback(() => setStatusOverridesReloadKey((key) => key + 1), []);
+  // NWR UI foundation pass (directive Phase 3): the nav is reordered by
+  // the active league's real lifecycle, using the exact same shared
+  // resolver every other lifecycle-aware surface in this app already
+  // uses -- never a second lifecycle heuristic.
+  const lifecycle: LeagueLifecycle | null = data?.activeProfile
+    ? resolveLeagueLifecycle(data.activeProfile, data.draftBoard)
+    : null;
+  const navigation = useMemo(() => buildNavigation(lifecycle), [lifecycle]);
   const commands = useMemo<CommandItem[]>(() => {
-    const tools = NAVIGATION.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
+    const tools = navigation.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
     const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position, row.team, `tier ${row.tier}`] }));
     return [...tools, ...players];
-  }, [data]);
+  }, [data, navigation]);
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><LoadingScreen label="Opening Redraft command center" /></div>;
   if (!data || !client) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Redraft" /><div className="standalone-state"><ErrorState message={error?.message ?? "The governed Redraft service is unavailable."} recovery={error?.recoveryAction} onRetry={reload} /></div></div>;
   // NWR pre-UI architecture CLOSURE pass (directive section 5):
@@ -133,9 +173,13 @@ export function RedraftApp() {
   // never show two competing detail drawers regardless of which route
   // opened it, and the drawer survives a route change (e.g. clicking a
   // "View" link inside it) without being unmounted.
-  return <PlayerDetailProvider><AppShell commands={commands} contextLabel={data.activeProfile ? `Redraft · ${leagueFormat(data.activeProfile)}` : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={NAVIGATION} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} title="Niners War Room — Redraft">
+  // NWR UI foundation pass (directive Phase 3): league identity now lives
+  // in the sidebar's actual top-left (`sidebarIdentity`, under the brand
+  // lockup) and the four freshness pills collapse into one quiet header
+  // chip (`statusExtra`) -- replacing the old full-width `ActiveLeagueSelector`
+  // content-area bar that used to compete with every page's real content.
+  return <PlayerDetailProvider><AppShell commands={commands} contextLabel={data.activeProfile ? "Redraft workspace" : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={navigation} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sidebarIdentity={<ShellIdentity client={client} data={data} onUpdate={update} />} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} statusExtra={<FreshnessIndicator data={data} />} title="Niners War Room — Redraft">
     <PlayerDetailDrawer client={client} />
-    {location.pathname === "/leagues" ? null : <ActiveLeagueSelector client={client} data={data} onUpdate={update} />}
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
@@ -336,134 +380,3 @@ function LeagueScopedPage({
   return <div key={leagueKey}>{children}</div>;
 }
 
-/** NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Active League header
- * cleanup"): the owner's screenshot showed a broken box -- the full
- * league/profile name repeated (once as a large heading, again inside the
- * Switch selector's own selected-option text), an ADP badge overlapping
- * the Switch control, no Projections freshness (shown elsewhere, in the
- * window title bar only), and a "Draft board ready" badge that was
- * HARD-CODED to always read ready regardless of real status. This is now
- * the one compact row the owner specified: League/Practice Name (ellipsis
- * + full-name tooltip, never a raw technical ID in prime text) · compact
- * league format · Switch · ADP status · Projections status · real
- * draft-board-ready status. */
-function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
-  // NWR DRAFT-DAY CONFIGURATION (section 12, "Fix the Switch League
-  // control"): a native <select> was the underlying problem -- its own
-  // OPEN dropdown popup sizes itself to the widest option text (a full,
-  // never-truncated league name, e.g.
-  // "TEMPORARY_QA_CONFIG_UNVERIFIED_REAL_LEAGUE_SETTINGS (10-team)") with
-  // no CSS override available in any browser, so it rendered far wider
-  // than the compact header and clipped/overflowed at the owner's real
-  // desktop width no matter how the closed control itself was bounded.
-  // Replaced with a compact button + our own bounded menu, so both the
-  // closed affordance and the open menu stay inside a fixed max-width
-  // with the league list scrolling internally instead of stretching the
-  // header.
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const active = data.activeProfile;
-  const location = useLocation();
-  const navigate = useNavigate();
-  const switchLeague = async (profileId: string) => {
-    if (!profileId || profileId === data.activeProfileId || working) return;
-    setMenuOpen(false);
-    setWorking(true); setError("");
-    // NWR pre-UI architecture pass (directive invariant G, "switching
-    // leagues cannot leak prior league state"): if the owner is on a
-    // league-scoped deep link (`/league/<old>/...`), rewrite the URL's
-    // league-key segment to the NEW profile FIRST, before activation
-    // resolves -- otherwise `LeagueScopedPage` would see a URL still
-    // naming the old league and try to reactivate it right back,
-    // fighting this switch. Any other (legacy flat) path is left alone;
-    // its page re-renders from the new `data` once `onUpdate` resolves.
-    const pathSegments = location.pathname.split("/");
-    if (pathSegments[1] === "league" && pathSegments[2]) {
-      const rest = pathSegments.slice(3).join("/");
-      navigate(`/league/${encodeURIComponent(profileId)}/${rest}${location.search}`, { replace: true });
-    }
-    try { onUpdate(await client.activateRedraftProfile(profileId)); }
-    catch { setError("League switch could not be saved. The current workspace remains active."); }
-    finally { setWorking(false); }
-  };
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const onEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
-    document.addEventListener("mousedown", onOutside);
-    document.addEventListener("keydown", onEscape);
-    return () => {
-      document.removeEventListener("mousedown", onOutside);
-      document.removeEventListener("keydown", onEscape);
-    };
-  }, [menuOpen]);
-  const adp = data.draftBoard?.adp;
-  const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
-  const projectionsLabel = data.status.sourceAsOf ? `Projections: ${data.status.sourceAsOf}` : "Projections: unavailable";
-  const readyLabel = data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required";
-  // NWR FINAL OWNER-FEEDBACK CLOSURE (section 9, "Freshness -- all four
-  // categories"): Identity/Team is a REAL, already-computed signal
-  // (`health.playerUniverseAvailable` + `health.lastGeneratedTimestamp`)
-  // that previously had no owner-facing surface at all -- never
-  // fabricated, never merged with Projections (a separate, independently
-  // stale/fresh field). News/status freshness already has its own real,
-  // separate surface (the "News Nh stale" chip in Suggestions) -- kept
-  // there rather than duplicated here, so this row stays compact instead
-  // of growing back into the giant box the owner already rejected.
-  const identityLabel = data.health?.playerUniverseAvailable
-    ? `Identity: ${data.health.lastGeneratedTimestamp || "current"}`
-    : "Identity: unavailable";
-  return <section className="active-league-selector" aria-label="Active League">
-    <div className="active-league-selector__identity">
-      <span>Active League</span>
-      <Link className="active-league-selector__chooser-link" title="Open league chooser" to="/leagues">
-        <strong title={active?.leagueName ?? undefined}>{active?.leagueName ?? "Choose a league"}</strong>
-      </Link>
-      <small>{active ? leagueFormat(active, false) : "Create or import a Redraft league profile"}</small>
-      {error ? <em role="status">{error}</em> : null}
-    </div>
-    <div className="active-league-selector__switch" ref={menuRef}>
-      <button
-        type="button"
-        className="active-league-selector__switch-btn"
-        disabled={working || !data.profiles.length}
-        aria-haspopup="listbox"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
-      >
-        Switch league <span aria-hidden="true">{menuOpen ? "▴" : "▾"}</span>
-      </button>
-      {menuOpen ? (
-        <ul className="active-league-selector__switch-menu" role="listbox" aria-label="Available leagues">
-          {data.profiles.map((profile) => {
-            const isActive = profile.profileId === data.activeProfileId;
-            return (
-              <li key={profile.profileId}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  className={isActive ? "active-league-selector__switch-option active-league-selector__switch-option--active" : "active-league-selector__switch-option"}
-                  title={profile.leagueName}
-                  onClick={() => void switchLeague(profile.profileId)}
-                >
-                  {profile.leagueName}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </div>
-    <div className="active-league-selector__badges">
-      <span className={data.health?.playerUniverseAvailable ? "active-league-adp" : "active-league-adp active-league-adp--review"} title="Real, current-team player identity data -- separate from projections, ADP, and news freshness.">{identityLabel}</span>
-      <span className={`active-league-adp ${adp?.available ? "" : "active-league-adp--review"}`}>{adpLabel}</span>
-      <span className="active-league-adp">{projectionsLabel}</span>
-      <span className={data.status.ready ? "active-league-ready" : "active-league-adp active-league-adp--review"}>{readyLabel}</span>
-    </div>
-  </section>;
-}

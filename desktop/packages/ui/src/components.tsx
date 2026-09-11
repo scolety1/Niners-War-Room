@@ -80,10 +80,22 @@ interface AppShellProps {
   // horizontal room during a live draft) passes them.
   sidebarCollapsed?: boolean;
   onToggleSidebarCollapsed?: () => void;
+  // NWR UI foundation pass (2026-09-10, directive Phase 3 -- league
+  // shell). Both optional and additive, following the exact pattern
+  // above: a caller that doesn't pass them (Dynasty, today) renders
+  // byte-for-byte as before. `sidebarIdentity` renders directly under the
+  // brand lockup -- the shell's actual top-left -- so a product with a
+  // real "current workspace" concept (Redraft's active league) can make
+  // that the first thing the owner reads, ahead of the generic mode
+  // ribbon. `statusExtra` renders in the header's signal cluster, ahead of
+  // the existing health badge/source clock, for a compact, click-for-
+  // detail freshness indicator instead of permanent raw status text.
+  sidebarIdentity?: ReactNode;
+  statusExtra?: ReactNode;
 }
 
 export function AppShell(props: AppShellProps) {
-  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children, sidebarCollapsed = false, onToggleSidebarCollapsed } = props;
+  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children, sidebarCollapsed = false, onToggleSidebarCollapsed, sidebarIdentity, statusExtra } = props;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const commandTrigger = useRef<HTMLButtonElement>(null);
@@ -123,6 +135,7 @@ export function AppShell(props: AppShellProps) {
           </button>
         ) : null}
         <div className="brand-lockup"><div className="brand-lockup__crest" aria-hidden="true"><span>SF</span><i /></div><div><strong>Niners War Room</strong><span>{mode}</span></div></div>
+        {sidebarIdentity}
         <div className="mode-ribbon"><i /><span>{contextLabel}</span></div>
         <nav aria-label={`${title} navigation`} className="sidebar__nav">
           {navigation.map((group) => <div className="nav-group" key={group.label}><span className="nav-group__label">{group.label}</span>{group.items.map((item) => <NavLink className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} key={item.path} title={sidebarCollapsed ? item.label : undefined} to={item.path}><Icon name={item.icon} size={17} /><span>{item.label}</span>{item.shortcut ? <kbd>{item.shortcut}</kbd> : null}<Icon name="chevron" size={13} /></NavLink>)}</div>)}
@@ -130,7 +143,7 @@ export function AppShell(props: AppShellProps) {
         <div className="sidebar__footer"><div className="profile-chip"><div className="profile-chip__avatar">GM</div><div><span>Active context</span><strong>{profileLabel}</strong></div></div><div className="local-lock"><Icon name="shield" size={14} /> Local only · protected session</div></div>
       </aside>
       <button aria-label="Close navigation" className={`sidebar-scrim ${mobileNavOpen ? "sidebar-scrim--visible" : ""}`} onClick={() => setMobileNavOpen(false)} />
-      <section className="workspace"><header className="status-bar"><button aria-label="Open navigation" className="mobile-nav-trigger" onClick={() => setMobileNavOpen(true)}><Icon name="layers" /></button><button aria-expanded={paletteOpen} aria-haspopup="dialog" className="command-trigger" onClick={() => setPaletteOpen(true)} ref={commandTrigger}><Icon name="search" size={16} /><span>Search players or jump to a tool</span><kbd>Ctrl K</kbd></button><div className="status-bar__signals"><StatusBadge tone={healthTone} label={healthLabel} pulse /><span className="source-clock"><Icon name="activity" size={14} />{sourceAsOf || "Source date unavailable"}</span></div></header><main className="workspace__content" id="main-content" ref={content}>{children}</main></section>
+      <section className="workspace"><header className="status-bar"><button aria-label="Open navigation" className="mobile-nav-trigger" onClick={() => setMobileNavOpen(true)}><Icon name="layers" /></button><button aria-expanded={paletteOpen} aria-haspopup="dialog" className="command-trigger" onClick={() => setPaletteOpen(true)} ref={commandTrigger}><Icon name="search" size={16} /><span>Search players or jump to a tool</span><kbd>Ctrl K</kbd></button><div className="status-bar__signals">{statusExtra}<StatusBadge tone={healthTone} label={healthLabel} pulse /><span className="source-clock"><Icon name="activity" size={14} />{sourceAsOf || "Source date unavailable"}</span></div></header><main className="workspace__content" id="main-content" ref={content}>{children}</main></section>
     </div>
     <CommandPalette commands={commands} onClose={closePalette} open={paletteOpen} />
   </div>;

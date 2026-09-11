@@ -26,20 +26,31 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { leagueFormat } from "./league-context";
+import { DecisionExplain } from "./decision-explain";
+import { explainHomeAction } from "./home-action-explain";
+import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 import {
-  ACTION_CATEGORY_LABEL,
   ACTION_CATEGORY_LINK,
   FAAB_URGENCY_TONE,
   FREE_AGENT_COLUMNS,
   ProviderStatusLine,
   RefreshProjectionsButton,
   WeekControl,
+  formatClock,
   statusTone,
   useAsync,
 } from "./weekly-shared";
+
+const HOME_MAX_ACTIONS = 5;
+
+const LIFECYCLE_STAGE_LABEL: Record<string, string> = {
+  PRE_DRAFT: "Pre-Draft",
+  LIVE_DRAFT: "Live Draft",
+  IN_SEASON: "In Season",
+  OFFSEASON: "Offseason",
+};
 
 /**
  * NWR in-season owner UI pass (2026-09-10). Owner governance for this file:
@@ -88,42 +99,88 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
     : null;
 
   const activeName = data.activeProfile?.leagueName ?? "Choose a league";
+  const lifecycle = data.activeProfile ? resolveLeagueLifecycle(data.activeProfile, data.draftBoard) : null;
+  // NWR UI foundation pass (directive Phase 4): only 3-5 meaningful
+  // prioritized actions, never a dumped full list -- `actions.actions` is
+  // already priority-sorted server-side (see redraft_weekly_home_actions),
+  // so this is a display cap on already-ranked data, not a new ranking.
+  const shownActions = (actions?.actions ?? []).slice(0, HOME_MAX_ACTIONS);
+  const hiddenActionCount = Math.max(0, (actions?.actions.length ?? 0) - shownActions.length);
+  const freshnessNote = lineup?.providerHealth
+    ? `${lineup.providerHealth.provider} · updated ${formatClock(lineup.providerHealth.retrievedAt)}${lineup.providerHealth.freshness === "STALE" ? " (stale)" : ""}`
+    : null;
 
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
       title={`${activeName} · Week ${week}`}
-      description="Real, ranked in-season actions NWR can support honestly this week for YOUR roster -- never a filled quota. Opponent matchup scoring is not part of the current Sleeper integration, so this view does not claim a live head-to-head score."
+      description="What needs your attention this week -- not a stats dashboard. Opponent matchup scoring is not part of the current Sleeper integration, so this view does not claim a live head-to-head score."
       status={<StatusBadge tone={data.status.tone} label={data.health.status || "Review"} />}
       actions={<WeekControl week={week} onChange={setWeek} />}
     />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Weekly in-season tools (Start/Sit, Waivers, Trade, streamers) require an active Sleeper-imported league. Choose or import one." action={<Link to="/leagues">Open league chooser</Link>} /> : null}
     {isSleeper ? <>
-      <Panel title="NWR Actions" eyebrow={actionsWorking ? "Reading live data…" : actions ? `${actions.actions.length} ranked action${actions.actions.length === 1 ? "" : "s"}` : "—"}>
-        {actionsError ? <ErrorState message={actionsError.message} recovery={actionsError.recoveryAction} /> : null}
-        {actions && actions.actions.length === 0 ? <EmptyState title="No high-priority actions right now" message="Lineup, waivers, trades, and streamers were all checked live -- none returned anything worth flagging this week." /> : null}
-        {actions && actions.actions.length > 0 ? (
-          <ol className="nwr-actions-list">
-            {actions.actions.map((action, index) => {
-              const link = ACTION_CATEGORY_LINK[action.category];
-              return (
-                <li key={`${action.category}-${index}`}>
-                  <span className="nwr-actions-list__index">{index + 1}</span>
-                  <div><strong>{action.summary}</strong><small>{ACTION_CATEGORY_LABEL[action.category] ?? action.category}</small></div>
-                  {link ? <Link to={link}>Open</Link> : null}
-                </li>
-              );
-            })}
-          </ol>
-        ) : null}
-        {actions?.unavailableSections.length ? (
-          <div className="alert-strip">
-            <strong>Some sections unavailable</strong>
-            <span>{actions.unavailableSections.map((section) => `${section.section}: ${section.reason}`).join(" · ")}</span>
+      {/* THIS WEEK strip (Phase 4 top block): only real, already-available
+          signals -- league/team identity, week, lifecycle stage, data
+          freshness. No opponent/record fields are shown -- this app has no
+          live head-to-head score source (see the page description above),
+          and fabricating one here would contradict it. */}
+      <section className="nwr-this-week" aria-label="This week">
+        <div className="nwr-this-week__item"><span>League</span><strong>{activeName}</strong></div>
+        <div className="nwr-this-week__item"><span>Week</span><strong>{week}</strong></div>
+        {lifecycle ? <div className="nwr-this-week__item"><span>Stage</span><strong>{LIFECYCLE_STAGE_LABEL[lifecycle] ?? lifecycle}</strong></div> : null}
+        <div className="nwr-this-week__spacer" />
+        {freshnessNote ? <div className="nwr-this-week__item"><span>Data</span><strong>{freshnessNote}</strong></div> : null}
+      </section>
+
+      <h2 className="nwr-text-section-heading" style={{ margin: "0 0 8px" }}>NWR Actions</h2>
+      {actionsError ? <ErrorState message={actionsError.message} recovery={actionsError.recoveryAction} /> : null}
+      {actionsWorking ? <p className="draft-feedback">Reading live data…</p> : null}
+      {actions && shownActions.length === 0 ? (
+        <div className="nwr-home-settled">
+          <div>
+            <strong>You're set for now.</strong>
+            <span>Lineup, waivers, trades, and streamers were all checked live -- none returned anything worth flagging this week.</span>
           </div>
-        ) : null}
-      </Panel>
-      <div className="split-view">
+        </div>
+      ) : null}
+      {shownActions.length > 0 ? (
+        <div className="nwr-action-grid">
+          {shownActions.map((action, index) => {
+            const explanation = explainHomeAction(action);
+            const link = ACTION_CATEGORY_LINK[action.category];
+            const tone = explanation.confidence === "LOW" ? "warning" : "recommended";
+            return (
+              <DecisionExplain
+                key={`${action.category}-${index}`}
+                eyebrow={explanation.categoryLabel}
+                headline={explanation.doThis}
+                why={explanation.why}
+                secondaryWhy={explanation.secondaryWhy}
+                alternative={explanation.alternative}
+                impact={explanation.expectedImpact}
+                freshness={freshnessNote}
+                confidence={explanation.confidence ?? null}
+                tone={tone}
+                actions={link ? <Link to={link}>Open</Link> : null}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+      {hiddenActionCount > 0 ? (
+        <p className="copy-muted" style={{ margin: "8px 0 0" }}>
+          Showing the top {shownActions.length} of {actions?.actions.length} ranked actions this week.
+        </p>
+      ) : null}
+      {actions?.unavailableSections.length ? (
+        <div className="alert-strip">
+          <strong>Some sections unavailable</strong>
+          <span>{actions.unavailableSections.map((section) => `${section.section}: ${section.reason}`).join(" · ")}</span>
+        </div>
+      ) : null}
+
+      <div className="split-view" style={{ marginTop: 18 }}>
         <Panel title="Projected lineup" eyebrow="THIS WEEK · Start/Sit summary" action={<Link to="/lineup">Open full Start/Sit</Link>}>
           {lineup ? <>
             <p className="draft-feedback">
@@ -136,7 +193,7 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
         </Panel>
         <Panel title="Top free agents" eyebrow="Live Sleeper availability" action={<Link to="/waivers">Open Waivers</Link>}>
           {freeAgentError ? <ErrorState message={freeAgentError.message} recovery={freeAgentError.recoveryAction} /> : null}
-          {freeAgents ? <DataTable columns={FREE_AGENT_COLUMNS} rows={freeAgents.freeAgents.slice(0, 8) as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /> : freeAgentsWorking ? <p className="draft-feedback">Reading…</p> : null}
+          {freeAgents ? <DataTable columns={FREE_AGENT_COLUMNS} rows={freeAgents.freeAgents.slice(0, 8) as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /> : freeAgentsWorking ? <p className="draft-feedback">Reading…</p> : <p className="copy-muted">Free agent data unavailable for week {week}.</p>}
         </Panel>
       </div>
       <div className="profile-edit-actions">

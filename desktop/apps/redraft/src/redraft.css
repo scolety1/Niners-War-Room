@@ -708,7 +708,14 @@
    The drawer itself is no longer the scroll container -- only its new
    `__body` wrapper is -- so the header and actions stay pinned via
    normal document flow (no scroll region above them to scroll away). */
-.player-drawer { background: var(--panel-bg, #14141c); border-left: 1px solid rgba(255,255,255,.1); bottom: 0; box-shadow: -8px 0 24px rgba(0,0,0,.35); display: flex; flex-direction: column; padding: 18px 0 0; position: fixed; right: 0; top: 0; width: 320px; z-index: 30; }
+/* NWR UI foundation pass (2026-09-10): `top: 0` put the drawer's own
+   fixed-position box flush with the true viewport top, underneath/behind
+   the native window title bar's control buttons (`.window-chrome`, 36px,
+   `--chrome-height`) -- a real, reproduced bug for any player whose name
+   wraps to two lines in the header (the first line rendered partially
+   obscured by the minimize/maximize/close controls). Starting the drawer
+   below the chrome instead fixes this for every player name length. */
+.player-drawer { background: var(--panel-bg, #14141c); border-left: 1px solid rgba(255,255,255,.1); bottom: 0; box-shadow: -8px 0 24px rgba(0,0,0,.35); display: flex; flex-direction: column; padding: 18px 0 0; position: fixed; right: 0; top: var(--chrome-height); width: 320px; z-index: 30; }
 .player-drawer__header { align-items: flex-start; display: flex; flex: 0 0 auto; gap: 8px; justify-content: space-between; padding: 0 18px 12px; }
 .player-drawer__header > div { min-width: 0; }
 .player-drawer__header strong { display: block; overflow-wrap: break-word; }
@@ -791,3 +798,137 @@
   .trade-side-picker,
   .nwr-actions-list li { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+   NWR UI FOUNDATION V1 (directive: ui/nwr-visual-redesign-v1)
+   Design tokens + shell/home/drawer components. Presentation-layer only --
+   extends the existing token set in @nwr/ui/styles.css (--gold/--violet/
+   --crimson/--cyan/--green/--muted/--line/...), never redefines it. Scoped
+   to redraft.css (Redraft only) so Dynasty's rendering is byte-for-byte
+   unaffected by this pass. See docs/codex/NWR_UI_DESIGN_SYSTEM_V1.md.
+   ========================================================================= */
+
+:root {
+  /* Semantic state tokens (Phase 2): color communicates status/urgency/
+     recommendation/selection, never decorative variety. Each maps onto an
+     already-existing base color -- no new palette. */
+  --nwr-recommended: var(--green);
+  --nwr-recommended-dim: var(--green-dim);
+  --nwr-alternative: var(--violet-bright);
+  --nwr-alternative-dim: var(--violet-dim);
+  --nwr-warning: var(--gold-bright);
+  --nwr-warning-dim: var(--gold-dim);
+  --nwr-unavailable: #ee7581;
+  --nwr-unavailable-dim: var(--crimson-dim);
+  --nwr-stale: #dfc17f;
+  --nwr-healthy: var(--green);
+  --nwr-close-call: #c9908a;
+  --nwr-rostered: var(--violet-bright);
+  --nwr-available: var(--cyan);
+
+  /* Spacing rhythm (Phase 2). */
+  --nwr-space-gutter: clamp(20px, 2.5vw, 38px);
+  --nwr-space-card: 16px;
+  --nwr-space-card-dense: 10px;
+  --nwr-space-section: 22px;
+}
+
+/* Typography scale (Phase 2) -- utility classes, applied directly rather
+   than via `font:` shorthand custom properties so font-family/line-height
+   never silently drop on a call site that forgets to also set them. */
+.nwr-text-recommendation-headline { font-size: 18px; font-weight: 650; letter-spacing: -.01em; line-height: 1.3; margin: 0; }
+.nwr-text-section-heading { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; margin: 0; text-transform: uppercase; }
+.nwr-text-meta { color: var(--muted); font-size: 11px; }
+.nwr-text-body { font-size: 13px; line-height: 1.55; }
+
+/* ---- League shell: sidebar identity block (Phase 3) --------------------
+   Top-left league identity -- league name (click -> chooser), lifecycle
+   stage, format, platform. Sits directly under the brand lockup so it
+   reads as the FIRST thing in the shell, ahead of the generic "REDRAFT"
+   mode ribbon (kept, smaller, immediately below). */
+.nwr-shell-identity { border-bottom: 1px solid var(--line); margin: 0 0 8px; padding: 0 17px 14px; }
+.nwr-shell-identity__eyebrow { color: var(--muted-2); display: block; font-size: 9px; font-weight: 700; letter-spacing: .12em; margin-bottom: 4px; text-transform: uppercase; }
+.nwr-shell-identity__link { background: none; border: 0; color: inherit; cursor: pointer; display: block; font: inherit; max-width: 100%; padding: 0; text-align: left; }
+.nwr-shell-identity__link strong { display: block; font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nwr-shell-identity__link:hover strong { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; }
+.nwr-shell-identity__meta { color: var(--muted); display: block; font-size: 11px; margin-top: 3px; }
+.nwr-shell-identity__stage { align-items: center; border-radius: 999px; display: inline-flex; font-size: 10px; font-weight: 700; gap: 5px; margin-top: 7px; padding: 3px 8px; text-transform: uppercase; letter-spacing: .04em; }
+.nwr-shell-identity__stage i { background: currentColor; border-radius: 50%; height: 5px; width: 5px; }
+.nwr-shell-identity__stage--draft { background: var(--nwr-warning-dim); color: var(--nwr-warning); }
+.nwr-shell-identity__stage--season { background: var(--nwr-recommended-dim); color: var(--nwr-recommended); }
+.nwr-shell-identity__stage--off { background: rgba(140,135,148,.14); color: var(--muted); }
+.nwr-shell-identity__switch { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 10.5px; margin-top: 8px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+.nwr-shell-identity__switch:hover { color: var(--text-soft); }
+.nwr-shell-identity__empty { color: var(--muted); font-size: 12px; }
+
+/* ---- League shell: compact freshness indicator (Phase 3) ---------------
+   Replaces a permanent 4-badge cluster (Identity/ADP/Projections/Ready)
+   with ONE quiet header chip; details live behind a click, never dumped
+   into the primary shell as raw provider diagnostics. */
+.nwr-freshness { position: relative; }
+.nwr-freshness__chip { align-items: center; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.09); border-radius: 999px; color: var(--muted); cursor: pointer; display: inline-flex; font-size: 11px; font-weight: 650; gap: 6px; padding: 6px 10px; }
+.nwr-freshness__chip i { background: currentColor; border-radius: 50%; height: 6px; width: 6px; }
+.nwr-freshness__chip--healthy { border-color: rgba(87,200,154,.3); color: var(--nwr-healthy); }
+.nwr-freshness__chip--warning { border-color: rgba(212,170,85,.32); color: var(--nwr-warning); }
+.nwr-freshness__chip--unavailable { border-color: rgba(225,72,87,.3); color: var(--nwr-unavailable); }
+.nwr-freshness__panel { background: #0d0b14; border: 1px solid rgba(184,146,244,.3); border-radius: 10px; box-shadow: 0 14px 32px rgba(0,0,0,.4); margin-top: 6px; max-width: 320px; padding: 10px; position: absolute; right: 0; top: 100%; width: max-content; z-index: 30; }
+.nwr-freshness__panel dl { display: grid; gap: 6px; margin: 0; }
+.nwr-freshness__panel div { align-items: baseline; display: flex; gap: 10px; justify-content: space-between; }
+.nwr-freshness__panel dt { color: var(--muted); font-size: 10.5px; }
+.nwr-freshness__panel dd { font-size: 11px; margin: 0; text-align: right; }
+
+/* ---- NWR Actions grid (Phase 4: Home) -----------------------------------
+   3-5 prioritized action cards, each a full DecisionExplain instance. */
+.nwr-action-grid { display: grid; gap: 10px; }
+
+/* ---- Decision explanation pattern (Phase 6) -----------------------------
+   RECOMMENDATION -> WHY -> ALTERNATIVE/UNCERTAINTY/DATA -> ADVANCED. */
+.nwr-explain { background: rgba(255,255,255,.02); border: 1px solid var(--line); border-left: 3px solid var(--line-strong); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; padding: 13px 15px; }
+.nwr-explain--recommended { border-left-color: var(--nwr-recommended); }
+.nwr-explain--warning { border-left-color: var(--nwr-warning); }
+.nwr-explain--alternative { border-left-color: var(--nwr-alternative); }
+.nwr-explain__head { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; }
+.nwr-explain__headline-block { min-width: 0; }
+.nwr-explain__eyebrow { color: var(--muted-2); display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; margin-bottom: 3px; text-transform: uppercase; }
+.nwr-explain__headline { font-size: 15px; font-weight: 650; line-height: 1.35; margin: 0; }
+.nwr-explain__why { color: var(--text-soft); font-size: 12.5px; line-height: 1.5; margin: 0; }
+.nwr-explain__why--secondary { color: var(--muted); }
+.nwr-explain__facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 0; }
+.nwr-explain__facts div { display: flex; gap: 5px; }
+.nwr-explain__facts dt { color: var(--muted-2); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.nwr-explain__facts dd { font-size: 11.5px; font-weight: 600; margin: 0; }
+.nwr-explain__advanced { border-top: 1px solid rgba(255,255,255,.06); margin-top: 2px; padding-top: 6px; }
+.nwr-explain__advanced summary { color: var(--muted); cursor: pointer; font-size: 10.5px; list-style: none; text-transform: uppercase; letter-spacing: .06em; }
+.nwr-explain__advanced summary::-webkit-details-marker { display: none; }
+.nwr-explain__advanced summary::before { content: "▸ "; }
+.nwr-explain__advanced[open] summary::before { content: "▾ "; }
+.nwr-explain__advanced-body { color: var(--muted); font-size: 11px; margin-top: 6px; }
+.nwr-explain__actions { display: flex; gap: 8px; margin-top: 2px; }
+
+/* "You're set for now" -- Home's zero-actions state (Phase 4): a real,
+   calm answer, never an empty card grid nor a filled quota. */
+.nwr-home-settled { align-items: center; background: var(--nwr-recommended-dim); border: 1px solid rgba(87,200,154,.25); border-radius: 12px; display: flex; gap: 12px; padding: 16px 18px; }
+.nwr-home-settled strong { color: var(--nwr-recommended); display: block; font-size: 15px; }
+.nwr-home-settled span { color: var(--text-soft); display: block; font-size: 12px; margin-top: 3px; }
+
+/* This-week strip (Phase 4 top block). */
+.nwr-this-week { align-items: center; background: linear-gradient(120deg, rgba(212,170,85,.09), rgba(18,15,27,.85)); border: 1px solid rgba(212,170,85,.18); border-radius: 12px; display: flex; flex-wrap: wrap; gap: 10px 22px; margin-bottom: 14px; padding: 14px 18px; }
+.nwr-this-week__item { min-width: 0; }
+.nwr-this-week__item span { color: var(--muted); display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.nwr-this-week__item strong { display: block; font-size: 14px; margin-top: 3px; }
+.nwr-this-week__spacer { flex: 1; }
+
+@media (max-width: 720px) {
+  .nwr-explain__head { flex-direction: column; }
+  .nwr-this-week { flex-direction: column; align-items: stretch; }
+}
+
+/* ---- Universal Player Drawer visual grammar (Phase 5) -------------------
+   Extends the existing `.player-drawer*` classes (unchanged) with the
+   header lede / status row / section grammar the directive asks for.
+   Progressive disclosure: primary layer (identity, status) always visible;
+   advanced/provenance stays inside the pre-existing collapsed
+   `.player-drawer__section` <details> pattern. */
+.player-drawer__lede { align-items: center; display: flex; gap: 8px; margin-top: 6px; }
+.player-drawer__ownership { background: rgba(255,255,255,.05); border-radius: 999px; color: var(--muted); font-size: 10px; font-weight: 650; padding: 3px 8px; text-transform: uppercase; letter-spacing: .04em; }
+.player-drawer__gap-note { background: rgba(255,255,255,.02); border: 1px dashed rgba(255,255,255,.12); border-radius: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 4px; padding: 9px 11px; }
