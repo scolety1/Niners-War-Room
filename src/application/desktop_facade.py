@@ -2987,6 +2987,11 @@ class DesktopBackendFacade:
         swap_rows = [
             {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
         ]
+        # NWR pre-UI architecture pass (directive section 2): the canonical
+        # PlayerAvailabilityStatus authority, same map every other migrated
+        # surface (Waivers, Trades, Draft) reads -- see
+        # `_player_availability_status_map`'s docstring.
+        availability_status_by_id = self._player_availability_status_map()
         decision_envelope = build_decision_envelope(
             task="START_SIT",
             profile_id=selected.profile_id,
@@ -3026,10 +3031,14 @@ class DesktopBackendFacade:
                         "player": (
                             {
                                 "sleeperPlayerId": slot.player.sleeper_player_id,
+                                "canonicalPlayerId": slot.player.canonical_player_id,
                                 "playerName": slot.player.player_name,
                                 "position": slot.player.position,
                                 "team": slot.player.team,
                                 "projectedPoints": slot.player.projected_points,
+                                "playerAvailabilityStatus": availability_status_by_id.get(
+                                    slot.player.canonical_player_id
+                                ),
                             }
                             if slot.player
                             else None
@@ -3044,17 +3053,25 @@ class DesktopBackendFacade:
                 "bench": [
                     {
                         "sleeperPlayerId": candidate.sleeper_player_id,
+                        "canonicalPlayerId": candidate.canonical_player_id,
                         "playerName": candidate.player_name,
                         "position": candidate.position,
                         "projectedPoints": candidate.projected_points,
+                        "playerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.canonical_player_id
+                        ),
                     }
                     for candidate in lineup.bench
                 ],
                 "excluded": [
                     {
                         "sleeperPlayerId": candidate.sleeper_player_id,
+                        "canonicalPlayerId": candidate.canonical_player_id,
                         "playerName": candidate.player_name,
                         "position": candidate.position,
+                        "playerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.canonical_player_id
+                        ),
                     }
                     for candidate in lineup.excluded
                 ],
@@ -3213,6 +3230,10 @@ class DesktopBackendFacade:
                     },
                 )
 
+        # NWR pre-UI architecture pass (directive section 2): the same
+        # canonical PlayerAvailabilityStatus map Lineup/Trades/Draft read.
+        availability_status_by_id = self._player_availability_status_map()
+
         def _candidate_payload(candidate):
             bid = faab_by_id.get(candidate.canonical_player_id)
             return {
@@ -3232,6 +3253,9 @@ class DesktopBackendFacade:
                 "faabBidHighDollars": bid.bid_high_dollars if bid else None,
                 "faabUrgency": bid.urgency if bid else None,
                 "faabRationale": bid.rationale if bid else None,
+                "playerAvailabilityStatus": availability_status_by_id.get(
+                    candidate.canonical_player_id
+                ),
             }
 
         # NWR pre-UI architecture pass (directive sections 3-4): snapshot
@@ -3310,6 +3334,9 @@ class DesktopBackendFacade:
                         "position": drop.position,
                         "marginalUtility": drop.marginal_utility,
                         "explanation": drop.explanation,
+                        "playerAvailabilityStatus": availability_status_by_id.get(
+                            drop.canonical_player_id
+                        ),
                     }
                     for drop in drop_candidates
                 ],
@@ -3322,6 +3349,9 @@ class DesktopBackendFacade:
                                 "playerName": pairing.drop.player_name,
                                 "position": pairing.drop.position,
                                 "marginalUtility": pairing.drop.marginal_utility,
+                                "playerAvailabilityStatus": availability_status_by_id.get(
+                                    pairing.drop.canonical_player_id
+                                ),
                             }
                             if pairing.drop
                             else None
@@ -3435,6 +3465,10 @@ class DesktopBackendFacade:
             week=None,
         )
 
+        # NWR pre-UI architecture pass (directive section 2): the same
+        # canonical PlayerAvailabilityStatus map Lineup/Waivers/Draft read.
+        availability_status_by_id = self._player_availability_status_map()
+
         def _side_payload(impacts):
             return [
                 {
@@ -3445,6 +3479,7 @@ class DesktopBackendFacade:
                     "marginalUtility": impact.marginal_utility,
                     "becomesStarter": impact.becomes_starter,
                     "statusFlag": impact.status_flag,
+                    "playerAvailabilityStatus": availability_status_by_id.get(impact.player_id),
                 }
                 for impact in impacts
             ]
@@ -3578,6 +3613,10 @@ class DesktopBackendFacade:
             roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
             week=None,
         )
+        # NWR pre-UI architecture pass (directive section 2): the same
+        # canonical PlayerAvailabilityStatus map Lineup/Waivers/Trade
+        # Analysis/Draft read.
+        availability_status_by_id = self._player_availability_status_map()
         return FacadePayload(
             data={
                 "leagueId": league_id,
@@ -3587,8 +3626,14 @@ class DesktopBackendFacade:
                     {
                         "myGivePlayerId": candidate.my_give_player_id,
                         "myGivePlayerName": candidate.my_give_player_name,
+                        "myGivePlayerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.my_give_player_id
+                        ),
                         "opponentGivePlayerId": candidate.opponent_give_player_id,
                         "opponentGivePlayerName": candidate.opponent_give_player_name,
+                        "opponentGivePlayerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.opponent_give_player_id
+                        ),
                         "opponentRosterId": candidate.opponent_roster_id,
                         "opponentTeamName": candidate.opponent_team_name,
                         "myNetMarginalUtility": candidate.my_evaluation.net_marginal_utility,
@@ -4706,6 +4751,7 @@ class DesktopBackendFacade:
                             for pick in room_state.get("picks", [])
                             if pick.get("team_slot") == room_state.get("owner_slot") and pick.get("player_id")
                         ),
+                        player_availability_status_by_id=self._player_availability_status_map(),
                     ),
                 }
             }
@@ -4811,7 +4857,10 @@ class DesktopBackendFacade:
             data={
                 "decisionBundleV2": {
                     "available": True, "speed": resolved_speed,
-                    **_decision_bundle_v2_payload(result, ranking),
+                    **_decision_bundle_v2_payload(
+                        result, ranking,
+                        player_availability_status_by_id=self._player_availability_status_map(),
+                    ),
                 }
             }
         )
@@ -5683,6 +5732,20 @@ class DesktopBackendFacade:
                 )
         return output
 
+    def _player_availability_status_map(self) -> dict[str, dict[str, Any]]:
+        """NWR pre-UI architecture pass (directive section 2): the ONE
+        canonical `PlayerAvailabilityStatus` authority, keyed by canonical
+        player id -- the same identity key `current_player_status_
+        overrides_service`/the governed ranking/every roster-candidate
+        engine already uses (`StatusOverride.player_id`, `RankingRow.
+        player_id`, `RosterCandidate.canonical_player_id`). Every
+        owner-facing surface below (Draft, Lineup, Waivers, Trades) reads
+        THIS same map rather than re-deriving its own status heuristic --
+        a player with no entry here has no known status issue (an absent
+        entry, never a fabricated "OK" value)."""
+        statuses = load_player_availability_statuses(self.repo_root)
+        return {status.player_id: status.to_dict() for status in statuses}
+
     @staticmethod
     def _profile_payload(profile: LeagueProfile) -> dict[str, Any]:
         return {
@@ -6400,6 +6463,7 @@ def _decision_bundle_payload(
     *,
     profile: Any = None,
     current_owner_player_ids: Sequence[str] = (),
+    player_availability_status_by_id: Mapping[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Converts a real decision_bundle_live_service DecisionBundle into the
     camelCase JSON shape Draft Room V2 consumes (Owner Test Candidate V1,
@@ -6445,6 +6509,12 @@ def _decision_bundle_payload(
     manual_by_id = {
         str(asset.get("player_id") or ""): asset for asset in manual_assets
     }
+    # NWR pre-UI architecture pass (directive section 2): the same
+    # canonical PlayerAvailabilityStatus map Lineup/Waivers/Trades read --
+    # optional/default-`None` so every existing caller that doesn't pass it
+    # gets byte-identical output (same pattern as `profile`/
+    # `current_owner_player_ids` above).
+    availability_status_by_id = player_availability_status_by_id or {}
     metric_status_payload = _metric_status_payload
     marginal_utility_fn = None
     if profile is not None:
@@ -6481,6 +6551,7 @@ def _decision_bundle_payload(
             "playerId": candidate.player_id,
             "playerName": row.player_name if row is not None else fallback_name,
             "position": row.position if row is not None else fallback_position,
+            "playerAvailabilityStatus": availability_status_by_id.get(candidate.player_id),
             "marginalRosterUtility": marginal_utility_payload,
             # The exact raw number _candidate_sort_key actually sorted by
             # (computed once in build_decision_bundle) -- distinct from
@@ -6549,7 +6620,12 @@ def _decision_bundle_payload(
     }
 
 
-def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
+def _decision_bundle_v2_payload(
+    bundle_v2: Any,
+    ranking: Any,
+    *,
+    player_availability_status_by_id: Mapping[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Converts a real `decision_bundle_service_v2.DecisionBundleV2` into
     the camelCase JSON shape a future Draft Room UI toggle would consume.
     Nests the complete, unmodified V1 payload under `v1` so a caller (or a
@@ -6570,6 +6646,10 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
     # `decision_quality_percentile` fields this payload already returns,
     # computes zero new values, and changes no candidate ordering.
     source_as_of = ranking.rows[0].source_as_of if ranking.rows else ""
+    # NWR pre-UI architecture pass (directive section 2): the same
+    # canonical PlayerAvailabilityStatus map every other migrated surface
+    # reads.
+    availability_status_by_id = player_availability_status_by_id or {}
 
     def candidate_v2_payload(candidate: Any) -> dict[str, Any]:
         v1_candidate = v1_by_id.get(candidate.player_id)
@@ -6580,6 +6660,7 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
         )
         return {
             "playerId": candidate.player_id,
+            "playerAvailabilityStatus": availability_status_by_id.get(candidate.player_id),
             "v2Status": candidate.v2_status,
             "teamScoreV2": candidate.team_score_v2,
             "championshipEquityV2": candidate.championship_equity_v2,
@@ -6599,7 +6680,10 @@ def _decision_bundle_v2_payload(bundle_v2: Any, ranking: Any) -> dict[str, Any]:
         "currentTeamScoreV2": bundle_v2.current_team_score_v2,
         "candidates": [candidate_v2_payload(c) for c in bundle_v2.candidates],
         "warnings": list(bundle_v2.warnings),
-        "v1": _decision_bundle_payload(bundle_v2.v1_bundle, ranking),
+        "v1": _decision_bundle_payload(
+            bundle_v2.v1_bundle, ranking,
+            player_availability_status_by_id=availability_status_by_id,
+        ),
     }
 
 
