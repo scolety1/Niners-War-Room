@@ -2546,12 +2546,18 @@ class DesktopBackendFacade:
             if own_roster is not None:
                 own_roster_player_ids = [str(value) for value in own_roster.get("players") or []]
         trace_ids: list[dict[str, str]] = []
+        top_actions_by_position: dict[str, dict[str, Any] | None] = {}
+        alternatives_by_position: dict[str, list[dict[str, Any]]] = {}
         for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
             actions = positions.get(position) or []
             add_action = next(
                 (action for action in actions if action.get("recommendation") == "ADD"), None
             )
             top_action = add_action or (actions[0] if actions else None)
+            top_actions_by_position[position] = top_action
+            alternatives_by_position[position] = [
+                action for action in actions[:6] if action is not top_action
+            ]
             if top_action is None:
                 continue
             position_trace_id = self._record_decision_trace_safe(
@@ -2583,13 +2589,45 @@ class DesktopBackendFacade:
                 # camelCase-key-mangling hazard already documented just
                 # below for `positions` applies here too.
                 trace_ids.append({"position": position, "traceId": position_trace_id})
-        # NWR pre-UI architecture pass (directive section 3): identification
-        # only this pass -- see DECISION_CONTRACTS.md.
         kdst_league_snapshot_id = compute_league_snapshot_id(
             scoring_profile_hash=compute_scoring_profile_hash(selected),
             roster_state_hash=compute_roster_state_hash(own_roster_player_ids),
             week=week,
         )
+        # NWR pre-UI architecture CLOSURE pass (directive section 4): K/DST
+        # Streamer is now migrated to the full DecisionResultEnvelope --
+        # one per position (K, DST), the same real reason `traceIds` is
+        # already plural rather than a {"K": ..., "DST": ...} dict (see the
+        # comment on `positions` below).
+        trace_id_by_position = {row["position"]: row["traceId"] for row in trace_ids}
+        decision_envelopes: list[dict[str, Any]] = []
+        for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
+            top_action = top_actions_by_position.get(position)
+            envelope = build_decision_envelope(
+                task=tool_name,
+                profile_id=selected.profile_id,
+                league_snapshot_id=kdst_league_snapshot_id,
+                primary_recommendation=top_action,
+                alternatives=alternatives_by_position.get(position) or [],
+                rationale=(
+                    f"{top_action.get('playerName')} ({top_action.get('team')}): "
+                    f"{top_action.get('recommendation')} per FantasyPros consensus ECR."
+                    if top_action is not None
+                    else f"No {position} streamer candidate was found this week."
+                ),
+                confidence_state="NOMINAL" if top_action is not None else "UNAVAILABLE",
+                confidence_basis=(
+                    "Ranked from live FantasyPros consensus ECR and a live Sleeper roster read."
+                    if top_action is not None
+                    else f"No {position} rows were returned by the FantasyPros consensus read."
+                ),
+                data_health=None,
+                trace_id=trace_id_by_position.get(position),
+                issues=[
+                    f"{len(unmatched.get(position, []))} unmatched Sleeper player id(s) for {position}."
+                ] if unmatched.get(position) else [],
+            )
+            decision_envelopes.append({"position": position, "decisionEnvelope": envelope.to_dict()})
         return FacadePayload(
             data={
                 "authority": status.authority,
@@ -2597,6 +2635,9 @@ class DesktopBackendFacade:
                 "leagueId": league_id,
                 "traceIds": trace_ids,
                 "leagueSnapshotId": kdst_league_snapshot_id,
+                # Flat list, not a {"K": ..., "DST": ...} dict -- same
+                # camelCase-key-mangling hazard as `positions`/`traceIds`.
+                "decisionEnvelopes": decision_envelopes,
                 # Flat lists, not a dict keyed by "K"/"DST": the generic
                 # camelCase JSON-key transform (public_json_value /
                 # camel_case_key in contracts.py) mangles literal data keys
@@ -3456,9 +3497,10 @@ class DesktopBackendFacade:
                 "rosValueDelta": evaluation.ros_value_delta,
             },
         )
-        # NWR pre-UI architecture pass (directive section 3): identification
-        # only this pass -- Trade Analysis is not yet migrated to the full
-        # DecisionResultEnvelope (see DECISION_CONTRACTS.md).
+        # NWR pre-UI architecture CLOSURE pass (directive section 4):
+        # Trade Analysis is now migrated to the full DecisionResultEnvelope
+        # -- built on the same real, already-computed evaluation fields
+        # below, never a new computation.
         trade_league_snapshot_id = compute_league_snapshot_id(
             scoring_profile_hash=compute_scoring_profile_hash(selected),
             roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
@@ -3484,11 +3526,60 @@ class DesktopBackendFacade:
                 for impact in impacts
             ]
 
+        gives_names = [impact.player_name for impact in evaluation.gives]
+        receives_names = [impact.player_name for impact in evaluation.receives]
+        any_status_flag = any(impact.status_flag for impact in (*evaluation.gives, *evaluation.receives))
+        if any_status_flag:
+            trade_confidence_state, trade_confidence_basis = (
+                "LOW",
+                "One or more traded players carry a real status flag (injury/availability) "
+                "affecting this evaluation.",
+            )
+        elif evaluation.risk_flags:
+            trade_confidence_state, trade_confidence_basis = (
+                "LOW",
+                f"Real roster-construction risk flag(s) raised: {', '.join(evaluation.risk_flags)}.",
+            )
+        else:
+            trade_confidence_state, trade_confidence_basis = (
+                "NOMINAL",
+                "Evaluated from the governed NWR ranking and the owner's live Sleeper roster; "
+                "no status or risk flags were raised.",
+            )
+        trade_analysis_envelope = build_decision_envelope(
+            task="TRADE",
+            profile_id=selected.profile_id,
+            league_snapshot_id=trade_league_snapshot_id,
+            primary_recommendation={
+                "gives": gives_names,
+                "receives": receives_names,
+                "netMarginalUtility": evaluation.net_marginal_utility,
+                "rosValueDelta": evaluation.ros_value_delta,
+            },
+            # Trade Analysis evaluates exactly the ONE proposed trade the
+            # owner submitted -- there is no real "alternative trade" this
+            # tool generates (that is Trade Finder's job, a separate,
+            # already-envelope-eligible tool below). An empty list is the
+            # honest, non-fabricated state, not an omission.
+            alternatives=[],
+            rationale=(
+                f"Net marginal utility {evaluation.net_marginal_utility:+.1f}, ROS value delta "
+                f"{evaluation.ros_value_delta:+.1f}."
+                + (f" Risk flags: {', '.join(evaluation.risk_flags)}." if evaluation.risk_flags else "")
+            ),
+            confidence_state=trade_confidence_state,
+            confidence_basis=trade_confidence_basis,
+            data_health=None,
+            trace_id=trade_trace_id,
+            issues=list(evaluation.risk_flags),
+        )
+
         return FacadePayload(
             data={
                 "leagueId": league_id,
                 "traceId": trade_trace_id,
                 "leagueSnapshotId": trade_league_snapshot_id,
+                "decisionEnvelope": trade_analysis_envelope.to_dict(),
                 "gives": _side_payload(evaluation.gives),
                 "receives": _side_payload(evaluation.receives),
                 "rosValueDelta": evaluation.ros_value_delta,
@@ -3617,11 +3708,55 @@ class DesktopBackendFacade:
         # canonical PlayerAvailabilityStatus map Lineup/Waivers/Trade
         # Analysis/Draft read.
         availability_status_by_id = self._player_availability_status_map()
+        # NWR pre-UI architecture CLOSURE pass (directive section 4): Trade
+        # Finder is now migrated to the full DecisionResultEnvelope, built
+        # on the same real, already-computed `results` above.
+        top_result = results[0] if results else None
+        trade_finder_envelope = build_decision_envelope(
+            task="TRADE_FINDER",
+            profile_id=selected.profile_id,
+            league_snapshot_id=trade_finder_league_snapshot_id,
+            primary_recommendation=(
+                {
+                    "myGivePlayerName": top_result.my_give_player_name,
+                    "opponentGivePlayerName": top_result.opponent_give_player_name,
+                    "opponentTeamName": top_result.opponent_team_name,
+                    "myNetMarginalUtility": top_result.my_evaluation.net_marginal_utility,
+                }
+                if top_result is not None
+                else None
+            ),
+            alternatives=[
+                {
+                    "myGivePlayerName": candidate.my_give_player_name,
+                    "opponentGivePlayerName": candidate.opponent_give_player_name,
+                    "opponentTeamName": candidate.opponent_team_name,
+                }
+                for candidate in results[1:6]
+            ],
+            rationale=(
+                f"Top win-win candidate: give {top_result.my_give_player_name}, receive "
+                f"{top_result.opponent_give_player_name} from {top_result.opponent_team_name} "
+                f"(my net marginal utility {top_result.my_evaluation.net_marginal_utility:+.1f})."
+                if top_result is not None
+                else "No win-win trade candidate was found across any opponent roster."
+            ),
+            confidence_state="NOMINAL" if top_result is not None else "UNAVAILABLE",
+            confidence_basis=(
+                "A real win-win candidate was found across every opponent's live Sleeper roster."
+                if top_result is not None
+                else "No candidate satisfied the win-win requirement (net positive for both sides)."
+            ),
+            data_health=None,
+            trace_id=trade_finder_trace_id,
+            issues=[],
+        )
         return FacadePayload(
             data={
                 "leagueId": league_id,
                 "traceId": trade_finder_trace_id,
                 "leagueSnapshotId": trade_finder_league_snapshot_id,
+                "decisionEnvelope": trade_finder_envelope.to_dict(),
                 "candidates": [
                     {
                         "myGivePlayerId": candidate.my_give_player_id,
