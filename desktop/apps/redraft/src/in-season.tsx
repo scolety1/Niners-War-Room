@@ -36,7 +36,6 @@ import {
   WeekControl,
   statusTone,
   useAsync,
-  useFreeAgents,
 } from "./weekly-shared";
 
 /**
@@ -62,16 +61,28 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
   const profileId = isSleeper ? data.activeProfileId : null;
   const [week, setWeek] = useState(1);
 
+  // NWR pre-UI architecture CLOSURE pass (directive section 3): ONE
+  // request builds the whole Home render -- `redraftWeeklyHomeActions` now
+  // embeds the SAME lineup/free-agent sub-payloads it already used
+  // internally to build the action list, under one shared
+  // `leagueSnapshotId`. This used to be 3 independent HTTP calls (this
+  // one, a second `redraftWeeklyLineup`, a third `redraftFreeAgents`),
+  // each performing its own live Sleeper roster read with no snapshot
+  // value threaded/asserted across them (PRODUCT_ARCHITECTURE.md
+  // invariant F). Do not reintroduce those extra calls here -- every
+  // decision card below must keep deriving from `actions.lineup`/
+  // `actions.freeAgents`, not a second fetch.
   const actionsLoader = useCallback(
     () => (profileId ? client.redraftWeeklyHomeActions(week) : null),
     [client, profileId, week],
   );
   const { result: actions, error: actionsError, working: actionsWorking } = useAsync(actionsLoader, [profileId, week]);
-
-  const lineupLoader = useCallback(() => (profileId ? client.redraftWeeklyLineup(week) : null), [client, profileId, week]);
-  const { result: lineup } = useAsync(lineupLoader, [profileId, week]);
-
-  const { result: freeAgents, error: freeAgentError, working: freeAgentsWorking } = useFreeAgents(client, profileId);
+  const lineup = actions?.lineup ?? null;
+  const freeAgents = actions?.freeAgents ?? null;
+  const freeAgentsWorking = actionsWorking;
+  const freeAgentError = !freeAgents && actions?.unavailableSections.some((section) => section.section === "FREE_AGENTS")
+    ? { message: actions.unavailableSections.find((section) => section.section === "FREE_AGENTS")?.reason ?? "Free agents unavailable.", recoveryAction: undefined as string | undefined }
+    : null;
 
   const activeName = data.activeProfile?.leagueName ?? "Choose a league";
 

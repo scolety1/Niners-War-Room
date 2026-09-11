@@ -1173,7 +1173,24 @@ export interface WeeklyHomeAction {
 
 export interface WeeklyHomeActionsResult {
   week: number;
+  /**
+   * NWR pre-UI architecture CLOSURE pass (directive section 3): the ONE
+   * snapshot id `lineup` was computed from -- every child decision card on
+   * a single Weekly Home render shares this exact value. `null` only when
+   * the lineup sub-call itself failed (see `unavailableSections`), never a
+   * fabricated placeholder.
+   */
+  leagueSnapshotId: string | null;
   actions: WeeklyHomeAction[];
+  /** The SAME sub-call this endpoint already used to build `actions` above
+   * -- render the "Projected lineup" panel from this, not a second,
+   * separately-fetched `redraftWeeklyLineup` call. `null` when unavailable
+   * (see `unavailableSections`). */
+  lineup: WeeklyLineupResult | null;
+  /** The SAME-request free-agent read -- render the "Top free agents"
+   * panel from this, not a separate `redraftFreeAgents` call. `null` when
+   * unavailable (see `unavailableSections`). */
+  freeAgents: RedraftFreeAgentsResult | null;
   unavailableSections: Array<{ section: string; reason: string }>;
   writeBehavior: string;
 }

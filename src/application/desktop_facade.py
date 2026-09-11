@@ -4057,11 +4057,30 @@ class DesktopBackendFacade:
         fabricated cross-category numeric score -- these are heterogeneous
         units (projected points vs. marginal utility vs. ECR) that this
         app does not have a real, validated way to directly compare.
+
+        NWR pre-UI architecture CLOSURE pass (directive section 3): Weekly
+        Home used to be composed client-side from THREE independent facade
+        calls (this one, a second `redraft_weekly_lineup`, a third
+        `redraft_free_agents`), each performing its own live Sleeper roster
+        read within the same page render -- in practice near-identical
+        (same request, sub-second apart) but no single snapshot value was
+        threaded through and asserted equal (PRODUCT_ARCHITECTURE.md
+        invariant F, "NOT ARCHITECTURALLY GUARANTEED"). This method already
+        called `redraft_weekly_lineup` internally to build the action list
+        above -- it now also embeds that SAME sub-call's full payload
+        (`lineup`) and a SAME-request free-agents read (`freeAgents`)
+        directly in this response, and surfaces ONE `leagueSnapshotId` (the
+        lineup sub-call's own real snapshot id) at the top level. The
+        frontend Weekly Home page now renders its lineup-summary and
+        free-agent panels from these embedded sub-payloads instead of
+        making two more separate HTTP calls -- one request, one snapshot,
+        every child decision card on this render provably shares it.
         """
 
         self._require_mode("redraft")
         actions: list[dict[str, Any]] = []
         unavailable: list[dict[str, str]] = []
+        lineup_payload: dict[str, Any] | None = None
 
         try:
             lineup_payload = self.redraft_weekly_lineup(week=week).data
@@ -4146,11 +4165,29 @@ class DesktopBackendFacade:
         except FacadeError as exc:
             unavailable.append({"section": "STREAMER", "reason": exc.message})
 
+        free_agents_payload: dict[str, Any] | None = None
+        try:
+            free_agents_payload = self.redraft_free_agents().data
+        except FacadeError as exc:
+            unavailable.append({"section": "FREE_AGENTS", "reason": exc.message})
+
         actions.sort(key=lambda action: action["priority"])
+        # NWR pre-UI architecture CLOSURE pass (directive section 3): the
+        # ONE snapshot id every embedded card on this render shares -- the
+        # real id `redraft_weekly_lineup` computed above from its own live
+        # roster read, `None` only when that sub-call itself failed (an
+        # honest, disclosed state via `unavailableSections`, never a
+        # fabricated placeholder id).
+        home_league_snapshot_id = (
+            lineup_payload.get("leagueSnapshotId") if lineup_payload is not None else None
+        )
         return FacadePayload(
             data={
                 "week": week,
+                "leagueSnapshotId": home_league_snapshot_id,
                 "actions": actions,
+                "lineup": lineup_payload,
+                "freeAgents": free_agents_payload,
                 "unavailableSections": unavailable,
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
