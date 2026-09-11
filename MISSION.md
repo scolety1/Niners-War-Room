@@ -1,5 +1,12 @@
 # Mission
 
+> **LEGACY NOTICE (2026-09-10):** This document describes the original
+> dynasty/keeper "Drop Deadline Command Center" concept. It predates, and
+> does not mention, the live desktop Redraft in-season product (weekly
+> lineup, waivers, trades, live Sleeper leagues) that exists in this repo
+> today. Kept unedited below as the historical record. See
+> `PRODUCT_ARCHITECTURE.md` for the current product.
+
 Build Niners Dynasty: War Room V1, a local-first Drop Deadline Command Center for one league and one primary user: the Niners co-owner.
 
 The app should answer:

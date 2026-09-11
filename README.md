@@ -1,5 +1,14 @@
 # Niners War Room
 
+> **LEGACY NOTICE (2026-09-10):** This document describes the original
+> Streamlit/CSV-pack V1 dynasty prototype. The live product today is a
+> React/Tauri desktop app with a real, live-Sleeper-integrated in-season
+> Redraft workspace (`desktop/apps/redraft`) that this document does not
+> mention at all. Kept unedited below as the accurate historical record
+> for that original product line, which still exists in this repo. The
+> current, accurate architecture for the whole product (including the
+> live desktop app) is `PRODUCT_ARCHITECTURE.md`.
+
 Niners War Room is a private, local-first dynasty decision-support application. V1
 uses admitted repository fixtures and optional repository-local data only. It does
 not require provider credentials, private league data, `LocalData`, or a live API to
