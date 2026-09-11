@@ -62,6 +62,7 @@ import { rosterFormat, scoringFormat } from "./league-context";
 // production Draft Room (pages.tsx) already ships and that fixed 23 real
 // SEARCH_FAILURE picks in the KHA draft reconciliation ledger.
 import { globalPickSearchRows, nextRapidCaptureIndex, type PickSearchAsset, type PickSearchCandidate } from "./pages";
+import { PlayerIdentityHeader } from "./player-drawer-core";
 
 // Primary modes (top-level, per the consolidation directive): the dense
 // actionable cockpit, the reusable Cheat Sheet, and the fixed-column board.
@@ -3807,13 +3808,15 @@ function PlayerDrawer({
   );
   return (
     <aside className="player-drawer" role="dialog" aria-label={`${ranking?.playerName ?? playerId} detail`}>
-      <div className="player-drawer__header">
-        <div>
-          <strong>{ranking?.playerName ?? candidate?.playerName ?? playerId}</strong>
-          <small>{String(ranking?.position ?? candidate?.position ?? "")} · {String(ranking?.team ?? "")}</small>
-        </div>
-        <Button variant="ghost" onClick={onClose}>Close</Button>
-      </div>
+      <PlayerIdentityHeader
+        identity={{
+          playerId,
+          playerName: String(ranking?.playerName ?? candidate?.playerName ?? playerId),
+          position: String(ranking?.position ?? candidate?.position ?? ""),
+          team: String(ranking?.team ?? ""),
+        }}
+        onClose={onClose}
+      />
       <div className="player-drawer__actions">
         <Button
           data-draft-action
