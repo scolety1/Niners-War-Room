@@ -81,15 +81,35 @@ its own `MARKET_ADP` category in the new Data Health authority (below).
 ## Draft-day rest-of-season projections
 
 The governed `RankingResult` (`generate_rankings`, unchanged). Real,
-disclosed, pre-existing environment gap found while testing this pass:
-**this worktree's default local store has no governed 2026 projection
-snapshot installed**, so a freshly created local profile's ranking is
-genuinely empty here (`ranking.ready == False`). This is the same gap
-already documented in `docs/codex/overnight_v3/
-NWR_PROSPECTIVE_2026_IN_SEASON_FREEZE_V2.md`'s "Known limitations" and
-reflected in this branch's 5-failure pre-existing test baseline -- not
-introduced by this pass, and every new endpoint this pass added degrades
-honestly against it (verified directly, see `DECISION_CONTRACTS.md`).
+disclosed, pre-existing environment gap found while testing this pass --
+and root-caused precisely, not just observed: the bundled seed CSV
+(`docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/
+GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv`) is present and its
+sha256 matches `desktop_facade.REDRAFT_SEED_SHA256` exactly -- the file
+itself is fine. Its governance approval receipt
+(`NWR_DATA_GOVERNANCE.json`) has `"valid_until": "2026-09-09"`, and
+`redraft_engine_v1_service`'s own receipt validator rejects it with
+`"Projection approval receipt has expired."` whenever `valid_until <
+today` -- today is 2026-09-10, one day past expiry. This is the exact
+same class of issue this repo's own history already shows recurring
+(the receipt's own `renewal_record` documents an earlier such expiry,
+renewed 2026-09-06 with explicit real owner authorization). Renewing it
+again requires the same real owner authorization this agent cannot
+self-issue -- consistent with this repo's own established practice, and
+explicitly out of this architecture-only pass's scope (renewing data
+governance is a data-admission action, not a routing/context/contracts
+change). Confirmed live: a freshly created local profile's ranking is
+genuinely empty in THIS environment (`ranking.ready == False`,
+`redraft_bootstrap().data.rankings == []`), and the real Draft Room
+UI surfaces the honest error "The active Redraft ranking is unavailable:
+Governed 2026 projection snapshot is missing." when a pick is attempted
+-- verified in the rendered Chrome acceptance pass (`PRODUCT_
+ARCHITECTURE.md`, section 12). This is the same gap already documented
+in `docs/codex/overnight_v3/NWR_PROSPECTIVE_2026_IN_SEASON_FREEZE_V2.md`'s
+"Known limitations" and reflected in this branch's 5-failure pre-existing
+test baseline -- not introduced by this pass, and every new endpoint
+this pass added degrades honestly against it (verified directly, see
+`DECISION_CONTRACTS.md`).
 
 ## Decision engine
 

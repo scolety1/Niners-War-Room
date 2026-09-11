@@ -164,6 +164,76 @@ query) never survives a league switch either.
   only proven in the Draft Room this pass; see `player-drawer-core.tsx`'s
   own module docstring and the final handoff's PARTIAL disclosure.
 
+## Rendered acceptance pass (directive section 12)
+
+Real Chrome session against a real running stack: backend
+(`scripts/run_nwr_desktop_api.py --port 18742 --mode redraft --repo-root
+<this worktree>`, dev token matching the frontend's own `browserRuntime()`
+fallback, isolated `NWR_REDRAFT_HOME` store inside this worktree's own
+`local_exports/`, confirmed never the owner's real AppData install) +
+frontend (`npm run dev:redraft`, Vite port 1422). Backend verified live
+via `curl /healthz` before touching the browser; store deleted afterward.
+
+Driven with two local QA profiles ("QA League A (pre-draft)", "QA League
+B (in-season)") -- never a real Sleeper import, never the owner's real
+leagues.
+
+**Two real, live-reproduced bugs found and fixed during this pass** (not
+caught by typecheck or the existing test suite, since this repo has no
+React-rendering test infrastructure -- see the characterization table
+below):
+
+1. `/profile` had been mechanically swept into the legacy-route ->
+   `/league/:activeProfileId/profile` redirect, but it's also the
+   create-a-new-league UI, reachable with NO active league. Reproduced
+   live: clicking "Set up a league" on the empty chooser bounced straight
+   back to the chooser. Fixed by keeping `/profile` a direct,
+   always-available route.
+2. `LeagueScopedPage`'s activation effect could get permanently stuck on
+   "Opening `<league>`…" after switching leagues via the header control --
+   a `.finally()` callback's `setActivating(false)` was incorrectly gated
+   behind the same stale-closure guard used to protect `onUpdate`.
+   Reproduced live (not a timing fluke -- also reproduced by reloading
+   the page with the target league already active) and fixed; see the
+   commit for the full trace.
+
+Both fixes verified live afterward: switching QA League A <-> QA League B
+via the header control renders the destination immediately; a direct
+deep link to the non-active league (invariant H) correctly activates and
+renders it, including surviving a hard browser refresh (F5).
+
+**What was verified live, rendered, with zero console errors across the
+whole session** (checked via `read_console_messages` after every
+navigation batch): league chooser -> create two local leagues -> all
+seven canonical `/league/:key/<bucket>` routes (home, draft, lineup,
+improve, trades, players, league) for both leagues; nine legacy flat
+routes (`/lineup`, `/tiers`, `/data-health`, `/free-agents`,
+`/opponent-rosters`, `/compare`, `/weekly-tools`, `/adp`,
+`/draft-room-v2`) each correctly redirecting into the active league's
+scoped route with identical content; the Draft Room's real setup screen
+(team count/slot/CPU-opponent controls); the new Data Health page's all
+seven categories rendering real, correct, honestly-degraded state; the
+header "Switch league" control; a direct deep link to a non-active
+league; a hard refresh on a league-scoped deep link.
+
+**Real, disclosed blocker found while testing, precisely root-caused
+(see `DATA_AUTHORITY.md`)**: the bundled 2026 projection seed's
+governance approval receipt expired 2026-09-09, one day before this
+session (2026-09-10) -- `redraft_engine_v1_service`'s own receipt
+validator rejects any receipt where `valid_until < today`. This blocks
+`RankingResult` generation for EVERY profile in this environment, which
+in turn means `draftBoard` is `None` for every profile (`redraft_
+bootstrap` only builds it `if ranking is not None`). Consequence: this
+session could not complete a real mock draft to reach a genuine
+backend-driven IN_SEASON lifecycle state, so the live-rendered pass
+verified PRE_DRAFT routing (Draft Room) end-to-end but NOT the
+IN_SEASON->League-Home transition end-to-end live -- that remains
+verified by unit tests only (`league-context.test.ts`) plus code review,
+not a live render. Renewing the governance receipt requires real owner
+authorization this agent cannot self-issue (the receipt's own history
+shows exactly this happening once before, with explicit owner
+authorization) -- out of this pass's scope to do unilaterally.
+
 ## Characterization test invariants (directive section 10)
 
 Honest status per invariant, with the real test evidence for each --
@@ -176,15 +246,15 @@ pure-function/logic test, not a component-render test).
 
 | # | Invariant | Status | Evidence |
 |---|---|---|---|
-| A | Opening an in-season league does not auto-navigate to Draft Room | **PASS** | `league-context.test.ts` ("sends an in-season league to League Home, not the Draft Room"); real bug found + fixed in `leagues.tsx` |
+| A | Opening an in-season league does not auto-navigate to Draft Room | **PASS (unit-tested); IN_SEASON case not live-rendered** | `league-context.test.ts` ("sends an in-season league to League Home, not the Draft Room"); real bug found + fixed in `leagues.tsx`; the rendered Chrome pass (section 12) confirmed PRE_DRAFT correctly stays on Draft Room live, but could not reach a genuine backend-driven IN_SEASON state to confirm the League-Home landing live (see section 12's disclosed blocker) |
 | B | Every major decision identifies league + snapshot | **PARTIAL** | `leagueSnapshotId` wired into 5/5 in-season tools + the standalone context endpoint (unit-tested); Draft's DecisionBundle uses its own separate, older provenance system, not this one -- see `DECISION_CONTRACTS.md` |
 | C | Every recommendation can expose a trace ID | **PASS for in-season tools** | `_record_decision_trace_safe` now returns the real id; live-mocked proof via `test_kdst_streamer_response_carries_trace_ids_and_league_snapshot_id`; Draft has no trace id (unchanged, out of scope) |
 | D | Every recommendation communicates stale/unavailable required data | **PASS (pre-existing + extended)** | `providerHealth`/`issues` already existed (`weekly_projection_provider_service` tests, 15 pre-existing); `decisionEnvelope.issues` now carries the same signal for Start/Sit and Waivers |
 | E | Player status is consistent across Draft/Lineup/Waivers/Trades | **NOT YET SATISFIED, disclosed** | The one authority (`PlayerAvailabilityStatus`) now exists and is real, but NO product surface was migrated to consume it this pass -- each still renders its own local heuristic. See `DATA_AUTHORITY.md`. |
 | F | Weekly Home uses one LeagueSnapshot | **NOT ARCHITECTURALLY GUARANTEED, disclosed** | `WeeklyHomePage` composes 3 independent facade calls (`redraftWeeklyHomeActions`, `redraftWeeklyLineup`, `redraftFreeAgents`), each computing its own `leagueSnapshotId` from its own live roster read within the same request -- in practice near-identical (same request, sub-second apart) but no single snapshot value is threaded through and asserted equal. A real follow-up, not silently claimed done. |
-| G | Switching leagues cannot leak prior league state | **PASS** | Real bug found + fixed: 6 `useAsync` call sites missing `data.activeProfileId` in their dependency arrays (`in-season.tsx`, `pages.tsx`); `LeagueScopedPage` also keys its rendered subtree by `leagueKey` |
-| H | A deep link always resolves the same league | **PASS (unit-tested design), pending live confirmation** | `LeagueScopedPage`'s activation-on-mismatch gate; `resolveLeagueHomeSubpath`/`resolveLeagueLifecycle` unit tests; full confidence needs the rendered Chrome pass (section 12) |
-| I | Old routes redirect correctly during migration | **PASS** | `legacyRedirectTarget` pure function, unit-tested (`league-context.test.ts`); every legacy flat route now uses it via `LegacyRedirect` |
+| G | Switching leagues cannot leak prior league state | **PASS** | Real bug found + fixed: 6 `useAsync` call sites missing `data.activeProfileId` in their dependency arrays (`in-season.tsx`, `pages.tsx`); `LeagueScopedPage` also keys its rendered subtree by `leagueKey`; the header "Switch league" control confirmed live in the rendered Chrome pass (section 12), including a second real bug (stuck loading state) found and fixed there |
+| H | A deep link always resolves the same league | **PASS** | Unit tests + confirmed live in the rendered Chrome pass (section 12): a direct deep link to a non-active league activates and renders it correctly, including surviving a hard browser refresh -- this exact flow also surfaced and led to fixing the two real bugs documented in section 12 |
+| I | Old routes redirect correctly during migration | **PASS** | `legacyRedirectTarget` pure function, unit-tested (`league-context.test.ts`); every legacy flat route now uses it via `LegacyRedirect`; 9 legacy paths confirmed live in the rendered Chrome pass (section 12), each redirecting to the correct scoped route with identical content |
 
 Two invariants (E, F) are honestly NOT fully satisfied by this pass and
 are called out as PRE-UI BLOCKERS REMAINING in the final handoff rather

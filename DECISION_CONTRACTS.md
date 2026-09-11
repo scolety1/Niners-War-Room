@@ -92,9 +92,12 @@ heuristic, not a validated severity model").
 ## Real test-environment limitation (disclosed)
 
 A freshly created local profile in this worktree has an EMPTY governed
-ranking (see `DATA_AUTHORITY.md`), which blocks `redraft_weekly_lineup`/
-`redraft_waivers`/`redraft_trade_analysis`/`redraft_trade_finder` from
-being exercised end-to-end in THIS environment regardless of this pass.
+ranking, because the bundled 2026 projection seed's governance approval
+receipt expired 2026-09-09 -- one day before this session (2026-09-10);
+see `DATA_AUTHORITY.md` for the exact, verified root cause. This blocks
+`redraft_weekly_lineup`/`redraft_waivers`/`redraft_trade_analysis`/
+`redraft_trade_finder` from being exercised end-to-end in THIS
+environment regardless of this pass.
 The new fields on those four are verified by:
 
 1. Pure-function unit tests on `league_workspace_context_service.py` /
