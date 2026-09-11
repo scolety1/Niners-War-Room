@@ -4,14 +4,17 @@ import {
   type ApiEnvelope,
   type ApiErrorBody,
   type BallersPreview,
+  type DataHealthReport,
   type DesktopMode,
   type DynastyBootstrap,
   type DynastyComparison,
   type DynastyWorkspace,
   type KdstStreamerResult,
+  type LeagueWorkspaceContext,
   type MetricStatus,
   type OwnerDecisionInput,
   type PersonalBoardInput,
+  type PlayerAvailabilityStatusResult,
   type PlayerDetail,
   type PlayerStatusOverride,
   type PlanningModuleId,
@@ -305,6 +308,19 @@ export class NwrApiClient {
 
   redraftMyRoster(): Promise<RedraftMyRosterResult> {
     return this.request("/api/v1/redraft/my-roster");
+  }
+
+  // NWR pre-UI architecture pass (2026-09-10, directive sections 1/5/6).
+  redraftLeagueWorkspaceContext(): Promise<LeagueWorkspaceContext> {
+    return this.request("/api/v1/redraft/league-workspace-context");
+  }
+
+  redraftPlayerAvailabilityStatus(): Promise<PlayerAvailabilityStatusResult> {
+    return this.request("/api/v1/redraft/player-availability-status");
+  }
+
+  redraftDataHealth(): Promise<DataHealthReport> {
+    return this.request("/api/v1/redraft/data-health");
   }
 
   activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {

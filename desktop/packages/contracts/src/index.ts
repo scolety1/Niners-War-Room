@@ -874,6 +874,11 @@ export interface KdstStreamerResult {
   positions: KdstStreamerRow[];
   unmatchedSleeperPlayerIds: KdstStreamerUnmatchedEntry[];
   writeBehavior: string;
+  // NWR pre-UI architecture pass (2026-09-10, directive section 3/C):
+  // identification fields, additive. Flat list for the same reason as
+  // `positions` above -- never a dict keyed by "K"/"DST".
+  leagueSnapshotId?: string;
+  traceIds?: Array<{ position: "K" | "DST"; traceId: string }>;
 }
 
 export interface RedraftFreeAgent {
@@ -1011,6 +1016,30 @@ export interface WeeklyLineupSwap {
   summary: string;
 }
 
+// NWR pre-UI architecture pass (2026-09-10, directive section 4): the
+// owner-facing DecisionResultEnvelope contract. Additive on top of each
+// tool's own real response shape -- never a replacement for it. Migrated
+// this pass: Start/Sit (WeeklyLineupResult), Waivers (WaiversResult).
+// Trade Analysis/Trade Finder/K-DST Streamer carry `traceId`/
+// `leagueSnapshotId` this same pass but not yet this full envelope; Draft
+// is untouched. See DECISION_CONTRACTS.md.
+export type DecisionConfidenceState = "HIGH" | "NOMINAL" | "LOW" | "UNAVAILABLE";
+
+export interface DecisionResultEnvelope {
+  task: string;
+  profileId: string;
+  leagueSnapshotId: string | null;
+  generatedAtUtc: string;
+  primaryRecommendation: Record<string, unknown> | null;
+  alternatives: Array<Record<string, unknown>>;
+  rationale: string;
+  confidenceState: DecisionConfidenceState;
+  confidenceBasis: string;
+  dataHealth: Record<string, unknown> | null;
+  traceId: string | null;
+  issues: string[];
+}
+
 export interface WeeklyLineupResult {
   season: number;
   week: number;
@@ -1021,6 +1050,9 @@ export interface WeeklyLineupResult {
   unmatched: number;
   ambiguous: number;
   providerHealth: WeeklyProjectionProviderHealth;
+  traceId?: string | null;
+  leagueSnapshotId?: string;
+  decisionEnvelope?: DecisionResultEnvelope;
   projectedTotal: number;
   unprojectedStarterCount: number;
   starters: WeeklyLineupSlot[];
@@ -1070,6 +1102,9 @@ export interface WaiversResult {
   weeklySourceStatus: string | null;
   weeklyProviderHealth: WeeklyProjectionProviderHealth | null;
   rankingWarning: string;
+  traceId?: string | null;
+  leagueSnapshotId?: string;
+  decisionEnvelope?: DecisionResultEnvelope;
   unmatchedRosterSleeperPlayerIds: string[];
   addCandidates: WaiverAddCandidate[];
   dropCandidates: WaiverDropCandidate[];
@@ -1089,6 +1124,8 @@ export interface TradePlayerImpact {
 
 export interface TradeAnalysisResult {
   leagueId: string;
+  traceId?: string | null;
+  leagueSnapshotId?: string;
   gives: TradePlayerImpact[];
   receives: TradePlayerImpact[];
   rosValueDelta: number;
@@ -1121,6 +1158,8 @@ export interface TradeFinderCandidate {
 
 export interface TradeFinderResult {
   leagueId: string;
+  traceId?: string | null;
+  leagueSnapshotId?: string;
   candidates: TradeFinderCandidate[];
   writeBehavior: string;
 }
@@ -1556,6 +1595,82 @@ export interface RedraftBootstrap {
   externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;
   notices: Notice[];
+}
+
+// ---------------------------------------------------------------------------
+// NWR pre-UI product-architecture hardening pass (2026-09-10): league
+// identity/lifecycle/snapshot, player availability authority, and data
+// health -- directive sections 1/2/3/5/6. See LEAGUE_CONTEXT.md,
+// DATA_AUTHORITY.md.
+// ---------------------------------------------------------------------------
+
+export type LeagueLifecycle = "PRE_DRAFT" | "LIVE_DRAFT" | "IN_SEASON" | "OFFSEASON";
+
+export interface LeagueWorkspaceContext {
+  profileId: string;
+  provider: "local" | "sleeper" | "espn" | "fantasypros";
+  providerLeagueId: string | null;
+  season: number;
+  lifecycle: LeagueLifecycle;
+  lifecycleBasis: string;
+  currentWeek: number | null;
+  scoringProfileHash: string;
+  rosterStateHash: string | null;
+  leagueSnapshotId: string;
+  syncStatus: "LIVE" | "DEGRADED" | "NOT_APPLICABLE";
+  syncAsOf: string | null;
+  issues: string[];
+}
+
+export interface PlayerAvailabilityStatus {
+  playerId: string;
+  playerName: string;
+  statusCategory: "OUT_FOR_SEASON" | "NOT_WITH_TEAM" | "ADMINISTRATIVE_EXEMPT" | "TEAM_CORRECTION";
+  injuryDesignation: string | null;
+  practiceState: string | null;
+  irPupNfi: string | null;
+  suspension: boolean;
+  administrativeExempt: boolean;
+  released: boolean;
+  currentTeam: string | null;
+  reason: string;
+  source: string;
+  sourceAsOf: string;
+  overrideKind: string;
+}
+
+export interface PlayerAvailabilityStatusResult {
+  statuses: PlayerAvailabilityStatus[];
+  authorityHealth: {
+    authority: string;
+    automatedFeed: boolean;
+    entryCount: number;
+    issues: string[];
+  };
+}
+
+export type DataHealthCategoryName =
+  | "LEAGUE_SYNC"
+  | "WEEKLY_PROJECTIONS"
+  | "ROS_PROJECTIONS"
+  | "MARKET_ADP"
+  | "PLAYER_STATUS"
+  | "DECISION_ENGINE"
+  | "SNAPSHOT";
+
+export interface DataHealthCategory {
+  category: DataHealthCategoryName;
+  status: "OK" | "DEGRADED" | "UNAVAILABLE" | "NOT_APPLICABLE" | "NO_ACTIVITY";
+  source: string | null;
+  lastUpdate: string | null;
+  freshness: string;
+  degradationReason: string | null;
+  impactOnRecommendations: string;
+}
+
+export interface DataHealthReport {
+  categories: DataHealthCategory[];
+  generatedAtUtc: string;
 }
 
 export interface NavigationItem {
