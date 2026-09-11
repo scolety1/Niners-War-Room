@@ -859,12 +859,20 @@ export interface KdstStreamerRow {
   recommendation: "START" | "HOLD" | "ROSTERED_ELSEWHERE" | "ADD" | "ALTERNATIVE";
 }
 
+export interface KdstStreamerUnmatchedEntry {
+  position: "K" | "DST";
+  sleeperPlayerId: string;
+}
+
 export interface KdstStreamerResult {
   authority: string;
   week: number;
   leagueId: string;
-  positions: Record<"K" | "DST", KdstStreamerRow[]>;
-  unmatchedSleeperPlayerIds: Record<"K" | "DST", string[]>;
+  // Flat list, not a dict keyed by "K"/"DST" -- the desktop API's generic
+  // camelCase JSON-key transform mangles literal data keys like "K"/"DST"
+  // (e.g. "DST" -> "dST"). Each row carries its own `position` field.
+  positions: KdstStreamerRow[];
+  unmatchedSleeperPlayerIds: KdstStreamerUnmatchedEntry[];
   writeBehavior: string;
 }
 

@@ -347,7 +347,7 @@ export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: 
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {results.map((result) => <div key={result.week}>
       <p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · provider-scored ECR only; schedule, betting, weather, and hidden weights are not used.</p>
-      {(["K", "DST"] as const).map((position) => <Panel key={`${result.week}-${position}`} title={`Week ${result.week} · ${position} streamer actions`} eyebrow="FantasyPros ECR (provider-scored) · Sleeper availability"><DataTable columns={columns} rows={result.positions[position] as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.playerName)}-${String(row.ecr)}`} /></Panel>)}
+      {(["K", "DST"] as const).map((position) => <Panel key={`${result.week}-${position}`} title={`Week ${result.week} · ${position} streamer actions`} eyebrow="FantasyPros ECR (provider-scored) · Sleeper availability"><DataTable columns={columns} rows={result.positions.filter((row) => row.position === position) as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.playerName)}-${String(row.ecr)}`} /></Panel>)}
     </div>)}
   </>;
 }

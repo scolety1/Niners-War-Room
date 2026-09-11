@@ -2571,8 +2571,22 @@ class DesktopBackendFacade:
                 "authority": status.authority,
                 "week": week,
                 "leagueId": league_id,
-                "positions": positions,
-                "unmatchedSleeperPlayerIds": unmatched,
+                # Flat lists, not a dict keyed by "K"/"DST": the generic
+                # camelCase JSON-key transform (public_json_value /
+                # camel_case_key in contracts.py) mangles literal data keys
+                # like "K" -> "k" and "DST" -> "dST" because it treats every
+                # dict key as a schema field name to camelCase -- a real,
+                # live-reproduced crash (DataTable rendering
+                # `result.positions["K"]` as undefined) found verifying this
+                # pass against the real Fantasy Gamers league. Each row
+                # already self-identifies its position, so a flat list is
+                # both the fix and the simpler shape.
+                "positions": [*positions["K"], *positions["DST"]],
+                "unmatchedSleeperPlayerIds": [
+                    {"position": position, "sleeperPlayerId": sleeper_id}
+                    for position in ("K", "DST")
+                    for sleeper_id in unmatched[position]
+                ],
                 "writeBehavior": "NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES",
             }
         )

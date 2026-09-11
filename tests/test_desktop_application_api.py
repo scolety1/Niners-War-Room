@@ -1742,6 +1742,26 @@ def test_redraft_kdst_streamer_records_a_decision_trace_for_k_and_dst(
     result = facade.redraft_kdst_streamer(week=1)
     assert result.data["writeBehavior"] == "NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES"
 
+    # Real bug found live against the owner's actual Fantasy Gamers league
+    # (Final Acceptance V4): `positions` and `unmatchedSleeperPlayerIds`
+    # used to be dicts keyed by the literal position codes "K"/"DST" --
+    # the generic camelCase JSON-key transform in
+    # `application/contracts.py` (`camel_case_key`) mangles those into
+    # "k"/"dST" because it treats every dict key as a schema field name,
+    # not literal data. That crashed the K/DST Streamer page
+    # (`WeeklyToolsPage`'s `DataTable`) with a real, reproduced
+    # `TypeError: Cannot read properties of undefined (reading 'map')`.
+    # Both fields are now flat lists immune to key-casing; each row/entry
+    # carries its own "position" field instead.
+    assert isinstance(result.data["positions"], list)
+    assert {row["position"] for row in result.data["positions"]} == {"K", "DST"}
+    assert {row["playerName"] for row in result.data["positions"]} == {
+        "Kicker One",
+        "Seahawks",
+        "Free Defense",
+    }
+    assert isinstance(result.data["unmatchedSleeperPlayerIds"], list)
+
     traces = load_decision_traces(store, profile_id)
     by_tool = {trace.tool: trace for trace in traces}
     assert set(by_tool) == {"K_STREAMER", "DST_STREAMER"}
