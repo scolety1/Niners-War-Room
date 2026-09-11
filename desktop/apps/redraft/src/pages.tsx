@@ -218,18 +218,18 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
     () => (isSleeper && mode === "This Week" ? client.redraftWeeklyProjections(week) : null),
     [client, isSleeper, mode, week],
   );
-  const { result: weekly, error: weeklyError } = useAsync(weeklyLoader, [isSleeper, mode, week]);
+  const { result: weekly, error: weeklyError } = useAsync(weeklyLoader, [isSleeper, mode, week, data.activeProfileId]);
 
   const waiversLoader = useCallback(
     () => (isSleeper && mode === "Roster Fit" ? client.redraftWaivers({ mode: "REST_OF_SEASON" }) : null),
     [client, isSleeper, mode],
   );
-  const { result: waivers, error: waiversError } = useAsync(waiversLoader, [isSleeper, mode]);
+  const { result: waivers, error: waiversError } = useAsync(waiversLoader, [isSleeper, mode, data.activeProfileId]);
   const myRosterLoader = useCallback(
     () => (isSleeper && mode === "Roster Fit" ? client.redraftMyRoster() : null),
     [client, isSleeper, mode],
   );
-  const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, mode]);
+  const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, mode, data.activeProfileId]);
 
   const weeklyRowFor = (playerId: string) => weekly?.rows.find((row) => row.canonicalPlayerId === playerId) ?? null;
   const rosterFitFor = (playerId: string) => {
@@ -287,9 +287,71 @@ function CompareCards({ players }: { players: [RedraftRanking, RedraftRanking] }
   return <div className="redraft-compare"><section className="lean-banner"><span>NWR redraft lean</span><strong>{preferred.playerName}</strong><p>Ranks higher for this league profile. Use the full projection, replacement, tier, and confidence context together.</p></section><div className="compare-card-grid">{players.map((player) => <article key={player.playerId}><header><span className="position-pill">{player.position}</span><div><strong>{player.playerName}</strong><small>{player.team} · Current season</small></div><b>#{player.overallRank}</b></header>{dimensions.map((dimension) => <div key={dimension.label}><span>{dimension.label}</span><strong>{dimension.value(player)}</strong></div>)}</article>)}</div></div>;
 }
 
-export function DataHealthPage({ data, onReload }: { data: RedraftBootstrap; onReload: () => void }) {
+const DATA_HEALTH_CATEGORY_LABEL: Record<string, string> = {
+  LEAGUE_SYNC: "League sync",
+  WEEKLY_PROJECTIONS: "Weekly projections",
+  ROS_PROJECTIONS: "Rest-of-season projections",
+  MARKET_ADP: "Market / ADP",
+  PLAYER_STATUS: "Player status",
+  DECISION_ENGINE: "Decision engine",
+  SNAPSHOT: "Snapshot",
+};
+
+function dataHealthTone(status: string): "safe" | "review" | "blocked" {
+  if (status === "OK") return "safe";
+  if (status === "DEGRADED" || status === "NO_ACTIVITY") return "review";
+  if (status === "NOT_APPLICABLE") return "review";
+  return "blocked";
+}
+
+/** NWR pre-UI architecture pass (2026-09-10, directive section 6): real
+ * runtime health across League Sync / Weekly Projections / ROS
+ * Projections / Market ADP / Player Status / Decision Engine / Snapshot,
+ * replacing the OLD hardcoded "External network: OFF · Local runtime
+ * only · Streamlit fallback: Preserved" block -- stale copy that no
+ * longer matched this app's real live Sleeper/FantasyPros integration
+ * (see DATA_AUTHORITY.md). The prior draft-readiness metrics (ranked/
+ * blocked player counts, the four validation checks) are kept below,
+ * unchanged -- still real, still useful, just no longer presented as if
+ * they were the WHOLE picture. */
+export function DataHealthPage({ client, data, onReload }: { client: NwrApiClient; data: RedraftBootstrap; onReload: () => void }) {
   const health = data.health;
-  return <><PageHeader eyebrow="System · Current-season authority" title="Projection & Data Health" description="Governed projection admission, profile validation, replacement calculation, and local runtime status." status={<><StatusBadge tone={data.status.tone} label={health.status || "Review"} /><StatusBadge tone="safe" label="Dynasty isolated" /></>} actions={<Button icon="activity" onClick={onReload}>Reload local snapshot</Button>} /><section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft V1 · Review authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p></div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section><div className="metric-grid"><MetricCard label="Ranked players" value={health.rankedPlayers} detail="Active profile" icon="board" tone="gold" /><MetricCard label="Blocked rows" value={health.blockedPlayers} detail="Visible, never imputed" icon="alert" tone="crimson" /><MetricCard label="Profiles" value={data.profiles.length} detail="Redraft namespace" icon="profile" tone="violet" /><MetricCard label="External network" value="OFF" detail="Local runtime only" icon="shield" tone="cyan" /></div><div className="split-view"><Panel title="Readiness checks" eyebrow="Deterministic validation"><dl className="health-list"><div><dt>Player universe</dt><dd><StatusBadge tone={health.playerUniverseAvailable ? "safe" : "blocked"} label={health.playerUniverseAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Current forecast</dt><dd><StatusBadge tone={health.currentSeasonForecastAvailable ? "safe" : "blocked"} label={health.currentSeasonForecastAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Scoring profile</dt><dd><StatusBadge tone={health.scoringProfileValid ? "safe" : "blocked"} label={health.scoringProfileValid ? "Valid" : "Invalid"} /></dd></div><div><dt>Replacement model</dt><dd><StatusBadge tone={health.replacementCalculationValid ? "safe" : "blocked"} label={health.replacementCalculationValid ? "Valid" : "Blocked"} /></dd></div></dl></Panel><Panel title="Desktop safeguards" eyebrow="Windows desktop"><dl className="health-list"><div><dt>Connection</dt><dd>Local computer only</dd></div><div><dt>Saved state</dt><dd>Redraft isolated</dd></div><div><dt>Cloud dependency</dt><dd>None</dd></div><div><dt>Streamlit fallback</dt><dd>Preserved</dd></div></dl></Panel></div>{data.notices.map((notice, index) => <div className={`alert-strip alert-strip--${notice.tone}`} key={`${notice.title}-${index}`}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}{health.messages.map((message, index) => <div className="alert-strip" key={`health-${index}-${message}`}>{message}</div>)}</>;
+  const healthLoader = useCallback(() => client.redraftDataHealth(), [client, data.activeProfileId]);
+  const { result: dataHealth, error: dataHealthError, working: dataHealthWorking, reload: reloadDataHealth } = useAsync(healthLoader, [client, data.activeProfileId]);
+  return <>
+    <PageHeader
+      eyebrow="System · Real runtime authority"
+      title="Data Health"
+      description="Real, current status for every data/decision authority this workspace depends on -- source, freshness, and what it degrades if unavailable. Not a network-off local-only claim; this app makes live Sleeper/FantasyPros calls where a league requires them."
+      status={<><StatusBadge tone={data.status.tone} label={health.status || "Review"} /></>}
+      actions={<div className="profile-edit-actions"><Button icon="activity" variant="secondary" onClick={() => { onReload(); reloadDataHealth(); }} disabled={dataHealthWorking}>{dataHealthWorking ? "Reading…" : "Refresh"}</Button></div>}
+    />
+    {dataHealthError ? <ErrorState message={dataHealthError.message} recovery={dataHealthError.recoveryAction} /> : null}
+    {dataHealth ? (
+      <div className="split-view">
+        {dataHealth.categories.map((category) => (
+          <Panel
+            key={category.category}
+            title={DATA_HEALTH_CATEGORY_LABEL[category.category] ?? category.category}
+            eyebrow={category.source ?? "No source"}
+            action={<StatusBadge tone={dataHealthTone(category.status)} label={category.status.replaceAll("_", " ")} />}
+          >
+            <dl className="health-list">
+              <div><dt>Last update</dt><dd>{category.lastUpdate ?? "unavailable"}</dd></div>
+              <div><dt>Freshness</dt><dd>{category.freshness}</dd></div>
+              <div><dt>Impact if degraded</dt><dd>{category.impactOnRecommendations}</dd></div>
+            </dl>
+            {category.degradationReason ? <p className="copy-muted">{category.degradationReason}</p> : null}
+          </Panel>
+        ))}
+      </div>
+    ) : dataHealthWorking ? <p className="draft-feedback">Reading real runtime health…</p> : null}
+    <section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft · Draft-readiness authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p></div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section>
+    <div className="metric-grid"><MetricCard label="Ranked players" value={health.rankedPlayers} detail="Active profile" icon="board" tone="gold" /><MetricCard label="Blocked rows" value={health.blockedPlayers} detail="Visible, never imputed" icon="alert" tone="crimson" /><MetricCard label="Profiles" value={data.profiles.length} detail="Redraft namespace" icon="profile" tone="violet" /></div>
+    <Panel title="Readiness checks" eyebrow="Deterministic validation"><dl className="health-list"><div><dt>Player universe</dt><dd><StatusBadge tone={health.playerUniverseAvailable ? "safe" : "blocked"} label={health.playerUniverseAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Current forecast</dt><dd><StatusBadge tone={health.currentSeasonForecastAvailable ? "safe" : "blocked"} label={health.currentSeasonForecastAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Scoring profile</dt><dd><StatusBadge tone={health.scoringProfileValid ? "safe" : "blocked"} label={health.scoringProfileValid ? "Valid" : "Invalid"} /></dd></div><div><dt>Replacement model</dt><dd><StatusBadge tone={health.replacementCalculationValid ? "safe" : "blocked"} label={health.replacementCalculationValid ? "Valid" : "Blocked"} /></dd></div></dl></Panel>
+    {data.notices.map((notice, index) => <div className={`alert-strip alert-strip--${notice.tone}`} key={`${notice.title}-${index}`}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}
+    {health.messages.map((message, index) => <div className="alert-strip" key={`health-${index}-${message}`}>{message}</div>)}
+  </>;
 }
 
 const STREAMER_HORIZON_OPTIONS = ["This Week", "Next 2", "Next 3"] as const;

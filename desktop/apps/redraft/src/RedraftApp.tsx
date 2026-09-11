@@ -1,13 +1,13 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, KhaHistoricalReplayPreview, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
-import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import type { CommandItem, KhaHistoricalReplayPreview, LeagueProfile, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
+import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome, EmptyState } from "@nwr/ui";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
-import { leagueFormat } from "./league-context";
+import { leagueFormat, leagueKeyFor, resolveLeagueHomeSubpath } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
@@ -130,56 +130,182 @@ export function RedraftApp() {
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
     <Routes>
-      {/* NWR post-draft overnight (phase 23, "remove Legacy for real"): the
-          owner has now used the consolidated Draft Room V2 through a real
-          draft and considers it the product. Confirmed capability parity
-          first (Draft Setup/slot/restart, Refresh FFC ADP, Paste Rankings/
-          ADP, Import owner ADP CSV all already exist in DraftRoomV2Page) --
-          the Legacy DraftRoomPage component itself is removed from
-          pages.tsx (git history is the rollback path). "/" now redirects
-          to the chooser until a league is active; once active, "/" lands on
-          the real Weekly League Home (NWR Overnight V3, Lane 2/3 merge:
-          previously the room itself, now an honest weekly landing page --
-          the room stays one click away via nav). */}
-      <Route path="/" element={<Navigate replace to={data.activeProfileId ? "/league-home" : "/leagues"} />} />
+      {/* NWR pre-UI product-architecture hardening pass (2026-09-10,
+          directive sections 1/2/7): `/league/:leagueKey/*` is now the
+          CANONICAL, deep-linkable route tree -- see LEAGUE_CONTEXT.md.
+          Every flat legacy path below (`/lineup`, `/waivers`, ...) is now
+          a compatibility redirect INTO that tree, preserving the exact
+          same destination page it always rendered (directive invariant
+          I). "/" and the league chooser both resolve where to land via
+          the lifecycle resolver (`resolveLeagueHomeSubpath`) instead of
+          a hardcoded target -- this is the fix for a real, reproduced bug
+          this pass found: opening ANY league (including an already-
+          in-season one) used to unconditionally navigate to the Draft
+          Room (invariant A). */}
+      <Route path="/" element={<Navigate replace to={
+        data.activeProfileId && data.activeProfile
+          ? `/league/${encodeURIComponent(data.activeProfileId)}/${resolveLeagueHomeSubpath(data.activeProfile, data.draftBoard)}`
+          : "/leagues"
+      } />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
-      <Route path="/league-home" element={<WeeklyHomePage client={client} data={data} />} />
-      <Route path="/lineup" element={<LineupPage client={client} data={data} />} />
-      <Route path="/waivers" element={<WaiversPage client={client} data={data} />} />
-      <Route path="/my-roster" element={<MyRosterPage client={client} data={data} />} />
-      <Route path="/trade-analysis" element={<TradeAnalysisPage client={client} data={data} />} />
-      <Route path="/trade-finder" element={<TradeFinderPage client={client} data={data} />} />
-      <Route path="/free-agents" element={<FreeAgentsPage client={client} data={data} />} />
-      <Route path="/opponent-rosters" element={<OpponentRostersPage client={client} data={data} />} />
-      <Route path="/draft-room-v2" element={data.activeProfileId
-        ? <DraftRoomV2Page
-            key={data.activeProfileId}
-            client={client}
-            data={data}
-            onUpdate={update}
-            globalSidebarCollapsed={sidebarCollapsed}
-            onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed}
-            statusOverrides={statusOverrides}
-            onStatusOverridesChanged={reloadStatusOverrides}
-            historicalReplay={historicalReplay}
-            setHistoricalReplay={setHistoricalReplay}
-            historicalReplayLoading={historicalReplayLoading}
-            setHistoricalReplayLoading={setHistoricalReplayLoading}
-            historicalReplayError={historicalReplayError}
-            setHistoricalReplayError={setHistoricalReplayError}
-          />
-        : <Navigate replace to="/leagues" />} />
-      <Route path="/rankings" element={<RankingsPage data={data} />} />
-      <Route path="/tiers" element={<TiersPage data={data} />} />
-      <Route path="/compare" element={<ComparePage client={client} data={data} />} />
-      <Route path="/cheat-sheet" element={<CheatSheetPage data={data} />} />
-      <Route path="/profile" element={<ProfilePage client={client} data={data} onUpdate={update} />} />
-      <Route path="/adp" element={<AdpProvidersPage client={client} data={data} onUpdate={update} />} />
-      <Route path="/weekly-tools" element={<WeeklyToolsPage client={client} data={data} />} />
-      <Route path="/data-health" element={<DataHealthPage data={data} onReload={reload} />} />
+
+      {/* Compatibility redirects (directive invariant I): each old flat
+          path resolves to the SAME sub-page inside the currently active
+          league's scoped route -- content is unchanged, only the URL
+          gains a real league identity. */}
+      <Route path="/league-home" element={<LegacyRedirect data={data} subpath="home" />} />
+      <Route path="/lineup" element={<LegacyRedirect data={data} subpath="lineup" />} />
+      <Route path="/waivers" element={<LegacyRedirect data={data} subpath="waivers" />} />
+      <Route path="/my-roster" element={<LegacyRedirect data={data} subpath="my-roster" />} />
+      <Route path="/trade-analysis" element={<LegacyRedirect data={data} subpath="trade-analysis" />} />
+      <Route path="/trade-finder" element={<LegacyRedirect data={data} subpath="trade-finder" />} />
+      <Route path="/free-agents" element={<LegacyRedirect data={data} subpath="free-agents" />} />
+      <Route path="/opponent-rosters" element={<LegacyRedirect data={data} subpath="opponent-rosters" />} />
+      <Route path="/draft-room-v2" element={<LegacyRedirect data={data} subpath="draft" />} />
+      <Route path="/rankings" element={<LegacyRedirect data={data} subpath="rankings" />} />
+      <Route path="/tiers" element={<LegacyRedirect data={data} subpath="tiers" />} />
+      <Route path="/compare" element={<LegacyRedirect data={data} subpath="compare" />} />
+      <Route path="/cheat-sheet" element={<LegacyRedirect data={data} subpath="cheat-sheet" />} />
+      <Route path="/profile" element={<LegacyRedirect data={data} subpath="profile" />} />
+      <Route path="/adp" element={<LegacyRedirect data={data} subpath="adp" />} />
+      <Route path="/weekly-tools" element={<LegacyRedirect data={data} subpath="weekly-tools" />} />
+      <Route path="/data-health" element={<LegacyRedirect data={data} subpath="data-health" />} />
+
+      {/* Canonical league-scoped route tree. `:leagueKey` is the target
+          league's profileId -- deep-linking here always resolves that
+          SAME league regardless of what was previously globally active
+          (directive invariant H), because `LeagueScopedPage` activates it
+          on mismatch before rendering anything underneath. Includes the
+          section-7 canonical task-map aliases (home/draft/lineup/improve/
+          trades/players/league) alongside every existing concrete page so
+          no working route is lost -- see PRODUCT_ARCHITECTURE.md. */}
+      <Route path="/league/:leagueKey/home" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyHomePage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/lineup" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LineupPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WaiversPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WaiversPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeAnalysisPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trades" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeAnalysisPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trade-finder" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeFinderPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/free-agents" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><FreeAgentsPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/opponent-rosters" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><OpponentRostersPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/draft" element={<LeagueScopedPage client={client} data={data} onUpdate={update}>
+        <DraftRoomV2Page
+          key={data.activeProfileId ?? "draft-room"}
+          client={client}
+          data={data}
+          onUpdate={update}
+          globalSidebarCollapsed={sidebarCollapsed}
+          onToggleGlobalSidebarCollapsed={toggleSidebarCollapsed}
+          statusOverrides={statusOverrides}
+          onStatusOverridesChanged={reloadStatusOverrides}
+          historicalReplay={historicalReplay}
+          setHistoricalReplay={setHistoricalReplay}
+          historicalReplayLoading={historicalReplayLoading}
+          setHistoricalReplayLoading={setHistoricalReplayLoading}
+          historicalReplayError={historicalReplayError}
+          setHistoricalReplayError={setHistoricalReplayError}
+        />
+      </LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/rankings" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><RankingsPage data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/players" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><RankingsPage data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/tiers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TiersPage data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/compare" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ComparePage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/cheat-sheet" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><CheatSheetPage data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/profile" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ProfilePage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/adp" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><AdpProvidersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/weekly-tools" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyToolsPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/data-health" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><DataHealthPage client={client} data={data} onReload={reload} /></LeagueScopedPage>} />
+
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   </AppShell>;
+}
+
+/** Compatibility redirect for a legacy flat path (directive invariant I).
+ * Resolves to the SAME sub-page inside the currently active league's
+ * scoped route when a league is active; otherwise sends the owner to the
+ * league chooser rather than a broken/empty scoped route. */
+function LegacyRedirect({ data, subpath }: { data: RedraftBootstrap; subpath: string }) {
+  if (!data.activeProfileId) return <Navigate replace to="/leagues" />;
+  return <Navigate replace to={`/league/${encodeURIComponent(data.activeProfileId)}/${subpath}`} />;
+}
+
+/** ONE gate every league-scoped route passes through (directive section 1,
+ * invariant H: "a deep link always resolves the same league"). Reads
+ * `:leagueKey` from the URL, and:
+ * - unknown leagueKey -> an honest "League not found" state, never a
+ *   silently wrong league.
+ * - known but not currently active -> activates it (a real API call,
+ *   `activateRedraftProfile`) before rendering anything underneath, so a
+ *   deep link or a bookmark can never show stale data from whatever
+ *   league happened to be active before (invariant G).
+ * - already active -> renders immediately, no extra round trip.
+ * The rendered subtree is keyed by `leagueKey` so page-local state (a
+ * selected week, a search query, ...) never survives a league switch. */
+function LeagueScopedPage({
+  client,
+  data,
+  onUpdate,
+  children,
+}: {
+  client: NwrApiClient;
+  data: RedraftBootstrap;
+  onUpdate: (data: RedraftBootstrap) => void;
+  children: ReactNode;
+}) {
+  const { leagueKey } = useParams<{ leagueKey: string }>();
+  const [activating, setActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const inFlightFor = useRef<string | null>(null);
+  const targetProfile: LeagueProfile | undefined = data.profiles.find(
+    (profile) => profile.profileId === leagueKey,
+  );
+  const isActive = Boolean(leagueKey) && data.activeProfileId === leagueKey;
+
+  useEffect(() => {
+    if (!leagueKey || !targetProfile || isActive) return undefined;
+    if (inFlightFor.current === leagueKey) return undefined;
+    inFlightFor.current = leagueKey;
+    setActivating(true);
+    setActivationError(null);
+    let active = true;
+    void client
+      .activateRedraftProfile(leagueKey)
+      .then((next) => {
+        if (!active) return;
+        onUpdate(next);
+      })
+      .catch(() => {
+        if (active) setActivationError("This league could not be opened. It may have been removed.");
+      })
+      .finally(() => {
+        if (active) setActivating(false);
+        inFlightFor.current = null;
+      });
+    return () => {
+      active = false;
+    };
+  }, [client, leagueKey, targetProfile, isActive, onUpdate]);
+
+  if (!leagueKey || !targetProfile) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="League not found"
+        message="This league link doesn't match any saved profile. It may have been removed or renamed."
+        action={<Link to="/leagues">Open league chooser</Link>}
+      />
+    );
+  }
+  if (activationError) {
+    return <ErrorState message={activationError} recovery="Open the league chooser and select the league again." />;
+  }
+  if (!isActive || activating) {
+    return <LoadingScreen label={`Opening ${targetProfile.leagueName}…`} />;
+  }
+  return <div key={leagueKey}>{children}</div>;
 }
 
 /** NWR FINAL OWNER-FEEDBACK RECONCILIATION (P0, "Active League header
@@ -211,10 +337,25 @@ function ActiveLeagueSelector({ client, data, onUpdate }: { client: NwrApiClient
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const active = data.activeProfile;
+  const location = useLocation();
+  const navigate = useNavigate();
   const switchLeague = async (profileId: string) => {
     if (!profileId || profileId === data.activeProfileId || working) return;
     setMenuOpen(false);
     setWorking(true); setError("");
+    // NWR pre-UI architecture pass (directive invariant G, "switching
+    // leagues cannot leak prior league state"): if the owner is on a
+    // league-scoped deep link (`/league/<old>/...`), rewrite the URL's
+    // league-key segment to the NEW profile FIRST, before activation
+    // resolves -- otherwise `LeagueScopedPage` would see a URL still
+    // naming the old league and try to reactivate it right back,
+    // fighting this switch. Any other (legacy flat) path is left alone;
+    // its page re-renders from the new `data` once `onUpdate` resolves.
+    const pathSegments = location.pathname.split("/");
+    if (pathSegments[1] === "league" && pathSegments[2]) {
+      const rest = pathSegments.slice(3).join("/");
+      navigate(`/league/${encodeURIComponent(profileId)}/${rest}${location.search}`, { replace: true });
+    }
     try { onUpdate(await client.activateRedraftProfile(profileId)); }
     catch { setError("League switch could not be saved. The current workspace remains active."); }
     finally { setWorking(false); }

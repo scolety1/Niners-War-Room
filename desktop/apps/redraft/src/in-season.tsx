@@ -147,7 +147,7 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const [week, setWeek] = useState(1);
   const loader = useCallback(() => (isSleeper ? client.redraftWeeklyLineup(week) : null), [client, isSleeper, week]);
-  const { result, error, working, reload } = useAsync(loader, [isSleeper, week]);
+  const { result, error, working, reload } = useAsync(loader, [isSleeper, week, data.activeProfileId]);
 
   const benchColumns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text" },
@@ -300,7 +300,7 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       : null),
     [client, isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget],
   );
-  const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget]);
+  const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget, data.activeProfileId]);
 
   const positions = ["ALL", ...new Set((result?.addCandidates ?? []).map((row) => row.position))];
   const addRows = useMemo(() => (result?.addCandidates ?? []).filter((row) => position === "ALL" || row.position === position), [result, position]);
@@ -387,7 +387,7 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
 export function MyRosterPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const loader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
-  const { result, error, working } = useAsync(loader, [isSleeper]);
+  const { result, error, working } = useAsync(loader, [isSleeper, data.activeProfileId]);
   const columns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text" },
     { key: "position", label: "Pos", sort: "text" },
@@ -479,9 +479,9 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
   const [working, setWorking] = useState(false);
 
   const myRosterLoader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
-  const { result: myRoster } = useAsync(myRosterLoader, [isSleeper]);
+  const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, data.activeProfileId]);
   const opponentsLoader = useCallback(() => (isSleeper ? client.redraftOpponentRosters() : null), [client, isSleeper]);
-  const { result: opponents } = useAsync(opponentsLoader, [isSleeper]);
+  const { result: opponents } = useAsync(opponentsLoader, [isSleeper, data.activeProfileId]);
 
   const giveCandidates: TradeSide[] = useMemo(
     () => (myRoster?.roster ?? []).map((player) => ({ sleeperPlayerId: player.sleeperPlayerId, name: `${player.playerName} (${player.position})` })),
@@ -609,7 +609,7 @@ function TradeFinderCard({ candidate }: { candidate: TradeFinderCandidate }) {
 export function TradeFinderPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const loader = useCallback(() => (isSleeper ? client.redraftTradeFinder() : null), [client, isSleeper]);
-  const { result, error, working, reload } = useAsync(loader, [isSleeper]);
+  const { result, error, working, reload } = useAsync(loader, [isSleeper, data.activeProfileId]);
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}

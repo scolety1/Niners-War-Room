@@ -4,9 +4,7 @@ import { Button, EmptyState, ErrorState, Icon, PageHeader } from "@nwr/ui";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { leagueFormat, leagueIdentityFormat } from "./league-context";
-
-const LEAGUE_WORKSPACE_PATH = "/draft-room-v2";
+import { leagueFormat, leagueIdentityFormat, resolveLeagueHomeSubpath } from "./league-context";
 
 export function LeaguesPage({
   client,
@@ -30,7 +28,16 @@ export function LeaguesPage({
     try {
       const next = await client.activateRedraftProfile(profile.profileId);
       onUpdate(next);
-      navigate(LEAGUE_WORKSPACE_PATH);
+      // NWR pre-UI architecture pass (directive section 2, invariant A):
+      // this used to unconditionally navigate every opened league to
+      // /draft-room-v2 -- a real, reproduced bug that dropped the owner
+      // into the Draft Room even for an already-in-season league. Now
+      // resolved by the ONE lifecycle authority, using the FRESH bootstrap
+      // this same activation call just returned (so it reflects the
+      // league that was just opened, not whatever was active before).
+      const activatedProfile = next.activeProfile ?? profile;
+      const subpath = resolveLeagueHomeSubpath(activatedProfile, next.draftBoard);
+      navigate(`/league/${encodeURIComponent(profile.profileId)}/${subpath}`);
     } catch (reason) {
       setError(reason instanceof NwrApiError
         ? reason
