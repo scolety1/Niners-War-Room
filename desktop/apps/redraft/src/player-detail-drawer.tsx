@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 
 import { PlayerIdentityHeader } from "./player-drawer-core";
 import { usePlayerDetail } from "./player-detail-context";
-import { derivePlayerDetailBackbone } from "./player-detail-state";
+import {
+  derivePlayerDetailBackbone,
+  playerAvailabilityBadgeLabel,
+  playerAvailabilityBadgeTone,
+} from "./player-detail-state";
 
 /**
  * Global Player Detail drawer (NWR pre-UI architecture CLOSURE pass,
@@ -62,8 +66,8 @@ export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
             <>
               <p>
                 <StatusBadge
-                  tone={backbone.status.statusCategory === "OUT_FOR_SEASON" ? "blocked" : "review"}
-                  label={backbone.status.statusCategory.replace(/_/g, " ")}
+                  tone={playerAvailabilityBadgeTone(backbone.status)}
+                  label={playerAvailabilityBadgeLabel(backbone.status)}
                 />
               </p>
               <p>{backbone.status.reason}</p>

@@ -4,6 +4,8 @@ import type { PlayerAvailabilityStatus } from "@nwr/contracts";
 import {
   derivePlayerDetailBackbone,
   isSamePlayerDetailTarget,
+  playerAvailabilityBadgeLabel,
+  playerAvailabilityBadgeTone,
   togglePlayerDetail,
   type PlayerDetailTarget,
 } from "./player-detail-state";
@@ -114,5 +116,36 @@ describe("derivePlayerDetailBackbone", () => {
     const a = derivePlayerDetailBackbone(target({ leagueKey: "league-a", source: "LINEUP" }), statuses);
     const b = derivePlayerDetailBackbone(target({ leagueKey: "league-b", source: "TRADE" }), statuses);
     expect(a.status).toBe(b.status);
+  });
+});
+
+// NWR pre-UI architecture CLOSURE pass (directive section 2): the ONE
+// shared status -> badge tone/label mapping now reused by Draft's
+// Suggestions table + PlayerDrawer, Trade Analysis's impact tables, Trade
+// Finder's candidate cards, and this primitive's own global drawer.
+describe("playerAvailabilityBadgeTone", () => {
+  it("reads 'safe' for an absent status -- never a fabricated OK label, but a real no-issue tone", () => {
+    expect(playerAvailabilityBadgeTone(null)).toBe("safe");
+  });
+
+  it("reads 'blocked' for OUT_FOR_SEASON -- the one real season-ending kind", () => {
+    expect(playerAvailabilityBadgeTone(status({ statusCategory: "OUT_FOR_SEASON" }))).toBe("blocked");
+  });
+
+  it.each(["NOT_WITH_TEAM", "ADMINISTRATIVE_EXEMPT", "TEAM_CORRECTION"] as const)(
+    "reads 'review' (not 'blocked' or 'safe') for the non-season-ending kind %s",
+    (statusCategory) => {
+      expect(playerAvailabilityBadgeTone(status({ statusCategory }))).toBe("review");
+    },
+  );
+});
+
+describe("playerAvailabilityBadgeLabel", () => {
+  it("returns a human-readable 'No status issue' for an absent status", () => {
+    expect(playerAvailabilityBadgeLabel(null)).toBe("No status issue");
+  });
+
+  it("de-underscores the real statusCategory verbatim, never paraphrasing it", () => {
+    expect(playerAvailabilityBadgeLabel(status({ statusCategory: "NOT_WITH_TEAM" }))).toBe("NOT WITH TEAM");
   });
 });

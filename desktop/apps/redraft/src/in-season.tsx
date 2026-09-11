@@ -3,6 +3,7 @@ import type {
   RedraftBootstrap,
   TradeAnalysisResult,
   TradeFinderCandidate,
+  TradePlayerImpact,
   WaiverAddCandidate,
   WaiverDropCandidate,
   WaiversResult,
@@ -27,6 +28,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
+import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 import {
   ACTION_CATEGORY_LABEL,
   ACTION_CATEGORY_LINK,
@@ -524,6 +526,12 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
   const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, data.activeProfileId]);
   const opponentsLoader = useCallback(() => (isSleeper ? client.redraftOpponentRosters() : null), [client, isSleeper]);
   const { result: opponents } = useAsync(opponentsLoader, [isSleeper, data.activeProfileId]);
+  // NWR pre-UI architecture CLOSURE pass (directive sections 1-2): the
+  // same global Player Detail primitive Lineup/Waivers use, reused here
+  // rather than a second drawer -- and the same shared status-badge
+  // mapping (player-detail-state.ts) Draft/Trade Finder use below, not a
+  // third, surface-local transformation.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "TRADE_ANALYSIS");
 
   const giveCandidates: TradeSide[] = useMemo(
     () => (myRoster?.roster ?? []).map((player) => ({ sleeperPlayerId: player.sleeperPlayerId, name: `${player.playerName} (${player.position})` })),
@@ -569,6 +577,31 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
     { key: "marginalUtility", label: "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
     { key: "becomesStarter", label: "Becomes starter", sort: "text", render: (row) => row.becomesStarter ? <StatusBadge tone="safe" label="Yes" /> : "No" },
     { key: "statusFlag", label: "Status/risk", sort: "text", render: (row) => row.statusFlag ? <StatusBadge tone="review" label={String(row.statusFlag)} /> : "—" },
+    {
+      // NWR pre-UI architecture CLOSURE pass (directive section 2): the
+      // canonical PlayerAvailabilityStatus authority, already attached to
+      // this row by the facade's shared `_player_availability_status_map()`
+      // helper -- rendered here, never a second status heuristic.
+      key: "playerAvailabilityStatus", label: "Availability", sort: "text",
+      render: (row) => {
+        const status = (row as unknown as TradePlayerImpact).playerAvailabilityStatus;
+        return (
+          <span title={status?.reason ?? "No status issue is recorded for this player in NWR's canonical availability authority."}>
+            <StatusBadge tone={playerAvailabilityBadgeTone(status)} label={playerAvailabilityBadgeLabel(status)} />
+          </span>
+        );
+      },
+    },
+    {
+      key: "playerDetail", label: "", render: (row) => (
+        <Button
+          variant="ghost"
+          onClick={() => openPlayerDetail({ playerId: String(row.playerId), playerName: String(row.playerName), position: String(row.position) })}
+        >
+          View
+        </Button>
+      ),
+    },
   ];
 
   const verdict = result ? verdictFor(result) : null;
@@ -625,7 +658,13 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
 // Trade Finder
 // ---------------------------------------------------------------------------
 
-function TradeFinderCard({ candidate }: { candidate: TradeFinderCandidate }) {
+function TradeFinderCard({
+  candidate,
+  onViewPlayer,
+}: {
+  candidate: TradeFinderCandidate;
+  onViewPlayer: (player: { playerId: string; playerName: string }) => void;
+}) {
   const fits = candidate.myNetMarginalUtility > 0 && candidate.opponentNetMarginalUtility > 0;
   return (
     <article className="trade-finder-card">
@@ -633,8 +672,16 @@ function TradeFinderCard({ candidate }: { candidate: TradeFinderCandidate }) {
         <strong>vs. {candidate.opponentTeamName}</strong>
         <StatusBadge tone={fits ? "safe" : "review"} label={fits ? "Mutual improvement" : "One-sided"} />
       </header>
-      <p>You send: <strong>{candidate.myGivePlayerName}</strong></p>
-      <p>You receive: <strong>{candidate.opponentGivePlayerName}</strong></p>
+      <p>
+        You send: <strong>{candidate.myGivePlayerName}</strong>{" "}
+        <StatusBadge tone={playerAvailabilityBadgeTone(candidate.myGivePlayerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(candidate.myGivePlayerAvailabilityStatus)} />{" "}
+        <Button variant="ghost" onClick={() => onViewPlayer({ playerId: candidate.myGivePlayerId, playerName: candidate.myGivePlayerName })}>View</Button>
+      </p>
+      <p>
+        You receive: <strong>{candidate.opponentGivePlayerName}</strong>{" "}
+        <StatusBadge tone={playerAvailabilityBadgeTone(candidate.opponentGivePlayerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(candidate.opponentGivePlayerAvailabilityStatus)} />{" "}
+        <Button variant="ghost" onClick={() => onViewPlayer({ playerId: candidate.opponentGivePlayerId, playerName: candidate.opponentGivePlayerName })}>View</Button>
+      </p>
       <p className="copy-muted">
         Why it may fit: {fits
           ? "both sides' real marginal roster utility improves under NWR's evaluator."
@@ -652,6 +699,11 @@ export function TradeFinderPage({ client, data }: { client: NwrApiClient; data: 
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const loader = useCallback(() => (isSleeper ? client.redraftTradeFinder() : null), [client, isSleeper]);
   const { result, error, working, reload } = useAsync(loader, [isSleeper, data.activeProfileId]);
+  // NWR pre-UI architecture CLOSURE pass (directive sections 1-2): the
+  // same global Player Detail primitive as Trade Analysis above -- a
+  // candidate card's "View" opens the exact same drawer/authority, no
+  // second player-detail system for Trade Finder.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "TRADE_FINDER");
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
@@ -663,6 +715,6 @@ export function TradeFinderPage({ client, data }: { client: NwrApiClient; data: 
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Trade Finder needs your live roster and every live opponent roster." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result && result.candidates.length === 0 ? <EmptyState title="No win-win candidates found" message="NWR's evaluator did not find any 1-for-1 package where both sides' real marginal utility improves right now." /> : null}
-    {result && result.candidates.length ? <div className="trade-finder-grid">{result.candidates.map((candidate, index) => <TradeFinderCard key={`${candidate.opponentRosterId}-${candidate.myGivePlayerId}-${index}`} candidate={candidate} />)}</div> : null}
+    {result && result.candidates.length ? <div className="trade-finder-grid">{result.candidates.map((candidate, index) => <TradeFinderCard key={`${candidate.opponentRosterId}-${candidate.myGivePlayerId}-${index}`} candidate={candidate} onViewPlayer={(player) => openPlayerDetail({ playerId: player.playerId, playerName: player.playerName, position: "" })} />)}</div> : null}
   </>;
 }

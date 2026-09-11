@@ -29,6 +29,7 @@ import type {
   LeagueProfile,
   MetricStatus,
   MarketProviderAdp,
+  PlayerAvailabilityStatus,
   PlayerStatusOverride,
   RedraftBootstrap,
   RedraftExternalIntelligence,
@@ -63,6 +64,7 @@ import { rosterFormat, scoringFormat } from "./league-context";
 // SEARCH_FAILURE picks in the KHA draft reconciliation ledger.
 import { globalPickSearchRows, nextRapidCaptureIndex, type PickSearchAsset, type PickSearchCandidate } from "./pages";
 import { PlayerIdentityHeader } from "./player-drawer-core";
+import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 
 // Primary modes (top-level, per the consolidation directive): the dense
 // actionable cockpit, the reusable Cheat Sheet, and the fixed-column board.
@@ -107,6 +109,12 @@ export interface SuggestionRow {
   playerName: string;
   position: string;
   team: string;
+  // NWR pre-UI architecture CLOSURE pass (directive section 2): the
+  // canonical PlayerAvailabilityStatus authority, already attached to
+  // this candidate by the facade's shared `_player_availability_status_
+  // map()` helper -- the same authority Lineup/Waivers/Trade Analysis/
+  // Trade Finder render, never a second Draft-local status heuristic.
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
   nwrRank: number | null;
   marketExpectedPick: number | null;
   playerScore: number | null;
@@ -172,6 +180,7 @@ export function buildSuggestionsRows(
         playerName: candidate.playerName,
         position: candidate.position,
         team: ranking?.team ?? "",
+        playerAvailabilityStatus: candidate.playerAvailabilityStatus,
         nwrRank: ranking?.overallRank ?? null,
         marketExpectedPick: ranking?.expectedPick ?? ranking?.overallAdp ?? null,
         playerScore: candidate.playerScore,
@@ -2225,6 +2234,23 @@ function SuggestionsTab({
         <small>{String(row.team)} · {String(row.position)}</small>
       </span>
     ) },
+    {
+      // NWR pre-UI architecture CLOSURE pass (directive section 2): the
+      // canonical PlayerAvailabilityStatus authority, rendered here for
+      // the first time on the Suggestions table -- same shared tone/label
+      // mapping every other surface uses, never a Draft-local heuristic.
+      // Only a real status issue takes visible space; an absent status
+      // renders nothing (never a fabricated "OK" badge on every row).
+      key: "playerAvailabilityStatus", label: "Status", sort: "text", render: (row) => {
+        const status = (row as unknown as SuggestionRow).playerAvailabilityStatus;
+        if (!status) return null;
+        return (
+          <span title={status.reason}>
+            <StatusBadge tone={playerAvailabilityBadgeTone(status)} label={playerAvailabilityBadgeLabel(status)} />
+          </span>
+        );
+      },
+    },
     { key: "pickScore", label: "Pick Score", titleHint: "Pick Score — EXPERIMENTAL: the historically-validated but not yet independently audited combined recommendation.", sort: "number", render: (row) => {
       const ps = formatPickScore(row.pickScore as number, Boolean(row.pickScoreTiedNoSpread));
       const status = (row.metricStatus as Record<string, MetricStatus> | undefined)?.pickScore;
@@ -3874,6 +3900,10 @@ function PlayerDrawer({
           <div className="player-drawer__stat">
             <span>Action</span>
             <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action} />
+          </div>
+          <div className="player-drawer__stat" title={candidate.playerAvailabilityStatus?.reason ?? "No status issue is recorded for this player in NWR's canonical availability authority."}>
+            <span>Availability</span>
+            <StatusBadge tone={playerAvailabilityBadgeTone(candidate.playerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(candidate.playerAvailabilityStatus)} />
           </div>
         </div>
       ) : (

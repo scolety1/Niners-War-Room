@@ -71,6 +71,28 @@ export const FREE_AGENT_COLUMNS: TableColumn[] = [
   { key: "rosterStatus", label: "Sleeper status", sort: "text", render: () => <StatusBadge tone="safe" label="Available" /> },
 ];
 
+/**
+ * NWR pre-UI architecture CLOSURE pass (directive section 1): one shared
+ * "append a global Player Detail 'View' trigger" column-builder, reused by
+ * every table-based surface adopting the primitive this pass (Free Agents,
+ * Opponent Rosters, Players/Rankings) instead of each hand-rolling its own
+ * View column. `row` is the table's own already-rendered row object (its
+ * real identity fields are already on it -- no extra fetch).
+ */
+export function appendPlayerDetailColumn(
+  columns: TableColumn[],
+  onView: (row: Record<string, unknown>) => void,
+): TableColumn[] {
+  return [
+    ...columns,
+    {
+      key: "playerDetail",
+      label: "",
+      render: (row) => <Button variant="ghost" onClick={() => onView(row)}>View</Button>,
+    },
+  ];
+}
+
 export function formatClock(iso: string | null | undefined): string {
   if (!iso) return "unavailable";
   const parsed = new Date(iso);

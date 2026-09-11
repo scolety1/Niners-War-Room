@@ -85,3 +85,29 @@ export function derivePlayerDetailBackbone(
     status,
   };
 }
+
+/**
+ * ONE shared status -> badge-tone/label mapping (directive section 2,
+ * CLOSURE pass): every surface that renders the canonical
+ * `PlayerAvailabilityStatus` inline (Draft's Suggestions table + its own
+ * PlayerDrawer, Trade Analysis's impact tables, Trade Finder's candidate
+ * cards, and this primitive's own global drawer below) reuses these two
+ * pure functions instead of each re-deriving its own tone/label -- the
+ * exact "no duplicate per-surface status transformation" bar `DATA_
+ * AUTHORITY.md` already holds `weekly-shared.tsx`'s `statusTone` to.
+ * `OUT_FOR_SEASON` is the only kind severe enough to read "blocked"; the
+ * other three real kinds (`NOT_WITH_TEAM`, `ADMINISTRATIVE_EXEMPT`,
+ * `TEAM_CORRECTION`) are real but non-blocking, so they read "review" --
+ * never fabricated as "safe", since an absent status (not present at all
+ * in the authority) is the only genuinely "safe"/no-issue case.
+ */
+export function playerAvailabilityBadgeTone(
+  status: PlayerAvailabilityStatus | null,
+): "safe" | "review" | "blocked" {
+  if (!status) return "safe";
+  return status.statusCategory === "OUT_FOR_SEASON" ? "blocked" : "review";
+}
+
+export function playerAvailabilityBadgeLabel(status: PlayerAvailabilityStatus | null): string {
+  return status ? status.statusCategory.replace(/_/g, " ") : "No status issue";
+}

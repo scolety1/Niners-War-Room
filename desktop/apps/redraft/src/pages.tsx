@@ -22,7 +22,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { draftFormat, leagueFormat } from "./league-context";
-import { FREE_AGENT_COLUMNS, useAsync, useFreeAgents } from "./weekly-shared";
+import { usePlayerDetailOpener } from "./player-detail-context";
+import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
 const DRAFT_ROOM_POSITION_OPTIONS = ["ALL", "FLEX", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -184,7 +185,20 @@ export function RankingsPage({ data }: { data: RedraftBootstrap }) {
   const practical = Boolean(data.activeProfile?.practicalMode);
   const activeName = data.activeProfile?.leagueName ?? "Active League";
   const activeFormat = data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile";
-  return <><PageHeader eyebrow={activeFormat} title={`${activeName} Rankings`} description={practical ? "Major QB/RB/WR/TE scoring rules are modeled. Five uncommon events are omitted; K/DST are separate manual assets." : "Current-season projection value, dynamic replacement level, confidence, and tiers for this active league."} status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={`${data.rankings.length} ranked players`} />{practical ? <StatusBadge tone="review" label="Approximate scoring" /> : <StatusBadge tone="safe" label="League specific" />}</>} /><Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={rankingColumns()} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel></>;
+  // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
+  // global Player Detail primitive as every other adopted surface --
+  // Players/Rankings was a real, disclosed remaining adoption gap.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_RANKINGS");
+  const columns = useMemo(
+    () => appendPlayerDetailColumn(rankingColumns(), (row) => openPlayerDetail({
+      playerId: String(row.playerId),
+      playerName: String(row.playerName),
+      position: String(row.position),
+      team: String(row.team),
+    })),
+    [openPlayerDetail],
+  );
+  return <><PageHeader eyebrow={activeFormat} title={`${activeName} Rankings`} description={practical ? "Major QB/RB/WR/TE scoring rules are modeled. Five uncommon events are omitted; K/DST are separate manual assets." : "Current-season projection value, dynamic replacement level, confidence, and tiers for this active league."} status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={`${data.rankings.length} ranked players`} />{practical ? <StatusBadge tone="review" label="Approximate scoring" /> : <StatusBadge tone="safe" label="League specific" />}</>} /><Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel></>;
 }
 
 export function TiersPage({ data }: { data: RedraftBootstrap }) {
@@ -194,7 +208,11 @@ export function TiersPage({ data }: { data: RedraftBootstrap }) {
   const visibleRows = useMemo(() => withDepth(filteredRows, depth), [depth, filteredRows]);
   const tierFor = (row: RedraftRanking) => position === "ALL" ? row.tier : row.positionTier;
   const tiers = Array.from(new Set(visibleRows.map(tierFor))).sort((a, b) => a - b);
-  return <><PageHeader eyebrow="Draft board · Value cliffs" title="Tiers & Position Rooms" description="Evidence-gap overall tiers and position-specific rooms stay separate, stable, and bounded for draft-day scanning." status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.activeProfile?.leagueName ?? "No active profile"} /><StatusBadge tone="safe" label={`${visibleRows.length} of ${filteredRows.length} shown`} /></>} /><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b></article>)}</div></Panel>; })}</div></>;
+  // NWR pre-UI architecture CLOSURE pass (directive section 1): same
+  // global Player Detail primitive as Rankings above -- Tiers was a real,
+  // disclosed remaining adoption gap.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_TIERS");
+  return <><PageHeader eyebrow="Draft board · Value cliffs" title="Tiers & Position Rooms" description="Evidence-gap overall tiers and position-specific rooms stay separate, stable, and bounded for draft-day scanning." status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.activeProfile?.leagueName ?? "No active profile"} /><StatusBadge tone="safe" label={`${visibleRows.length} of ${filteredRows.length} shown`} /></>} /><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b><Button variant="ghost" onClick={() => openPlayerDetail({ playerId: row.playerId, playerName: row.playerName, position: row.position, team: row.team })}>View</Button></article>)}</div></Panel>; })}</div></>;
 }
 
 const COMPARE_MODES = ["Rest of Season", "This Week", "Roster Fit", "Trade"] as const;
@@ -213,6 +231,10 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
   const b = data.rankings.find((row) => row.playerId === right);
   const options = data.rankings.map((row) => ({ value: row.playerId, label: `#${row.overallRank} ${row.playerName} · ${row.position}${row.positionRank}` }));
   const isSleeper = data.activeProfile?.provider === "sleeper";
+  // NWR pre-UI architecture CLOSURE pass (directive section 1): same
+  // global Player Detail primitive as Rankings/Tiers above -- Compare was
+  // a real, disclosed remaining adoption gap.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_COMPARE");
 
   const weeklyLoader = useCallback(
     () => (isSleeper && mode === "This Week" ? client.redraftWeeklyProjections(week) : null),
@@ -255,7 +277,7 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
       </div>
       {!isSleeper && mode !== "Rest of Season" ? <p className="copy-muted">This mode requires an active Sleeper league.</p> : null}
     </Panel>
-    {a && b ? <CompareCards players={[a, b]} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}
+    {a && b ? <CompareCards players={[a, b]} onViewPlayer={(player) => openPlayerDetail({ playerId: player.playerId, playerName: player.playerName, position: player.position, team: player.team })} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}
     {a && b && mode === "This Week" && isSleeper ? <Panel title="This week" eyebrow={weekly ? `Week ${weekly.week}` : "Reading…"}>
       {weeklyError ? <ErrorState message={weeklyError.message} recovery={weeklyError.recoveryAction} /> : null}
       {weekly ? <div className="compare-card-grid">{[a, b].map((player) => { const row = weeklyRowFor(player.playerId); return <article key={player.playerId}><header><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong></header><div><span>Projected points</span><strong>{row?.projectedPoints == null ? "—" : formatNumber(row.projectedPoints, 1)}</strong></div><div><span>Identity match</span><strong>{row?.identityMatch ?? "UNMATCHED"}</strong></div><div><span>Scoring context</span><strong>{row?.scoringContext ?? "—"}</strong></div></article>; })}</div> : null}
@@ -272,7 +294,13 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
   </>;
 }
 
-function CompareCards({ players }: { players: [RedraftRanking, RedraftRanking] }) {
+function CompareCards({
+  players,
+  onViewPlayer,
+}: {
+  players: [RedraftRanking, RedraftRanking];
+  onViewPlayer: (player: RedraftRanking) => void;
+}) {
   const preferred = players.slice().sort((a, b) => a.overallRank - b.overallRank)[0]!;
   const dimensions: Array<{ label: string; value: (row: RedraftRanking) => string }> = [
     { label: "Overall rank", value: (row) => `#${row.overallRank}` },
@@ -284,7 +312,7 @@ function CompareCards({ players }: { players: [RedraftRanking, RedraftRanking] }
     { label: "Tier", value: (row) => String(row.tier) },
     { label: "Confidence", value: (row) => row.confidence },
   ];
-  return <div className="redraft-compare"><section className="lean-banner"><span>NWR redraft lean</span><strong>{preferred.playerName}</strong><p>Ranks higher for this league profile. Use the full projection, replacement, tier, and confidence context together.</p></section><div className="compare-card-grid">{players.map((player) => <article key={player.playerId}><header><span className="position-pill">{player.position}</span><div><strong>{player.playerName}</strong><small>{player.team} · Current season</small></div><b>#{player.overallRank}</b></header>{dimensions.map((dimension) => <div key={dimension.label}><span>{dimension.label}</span><strong>{dimension.value(player)}</strong></div>)}</article>)}</div></div>;
+  return <div className="redraft-compare"><section className="lean-banner"><span>NWR redraft lean</span><strong>{preferred.playerName}</strong><p>Ranks higher for this league profile. Use the full projection, replacement, tier, and confidence context together.</p></section><div className="compare-card-grid">{players.map((player) => <article key={player.playerId}><header><span className="position-pill">{player.position}</span><div><strong>{player.playerName}</strong><small>{player.team} · Current season</small></div><b>#{player.overallRank}</b></header>{dimensions.map((dimension) => <div key={dimension.label}><span>{dimension.label}</span><strong>{dimension.value(player)}</strong></div>)}<Button variant="ghost" onClick={() => onViewPlayer(player)}>View</Button></article>)}</div></div>;
 }
 
 const DATA_HEALTH_CATEGORY_LABEL: Record<string, string> = {
@@ -417,13 +445,26 @@ export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: 
 export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const { result, error, working } = useFreeAgents(client, data.activeProfile?.provider === "sleeper" ? data.activeProfileId : null);
   const isSleeper = data.activeProfile?.provider === "sleeper";
+  // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
+  // global Player Detail primitive Lineup/Waivers/Trades use -- Free
+  // Agents was a real, disclosed remaining adoption gap, now closed.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "FREE_AGENTS");
+  const columns = useMemo(
+    () => appendPlayerDetailColumn(FREE_AGENT_COLUMNS, (row) => openPlayerDetail({
+      playerId: String(row.playerId ?? row.sleeperPlayerId),
+      playerName: String(row.playerName),
+      position: String(row.position),
+      team: String(row.team),
+    })),
+    [openPlayerDetail],
+  );
   return <>
     <PageHeader eyebrow="Live Sleeper league state" title="Free Agents" description="Players currently on no roster in this league. Existing NWR season rank/value is shown when an exact identity match exists; unmatched players stay explicitly unranked." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Sleeper profile required"} />} />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live roster source, so NWR will not fabricate availability." /> : null}
     {working ? <p className="draft-feedback">Reading current Sleeper rosters…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
-    {result ? <Panel title={`${result.freeAgents.length} unrostered players`} eyebrow="AVAILABLE · all fantasy positions" action={isSleeper ? <div className="profile-edit-actions"><Link to="/waivers">Open Waiver analysis</Link><Link to="/compare">Open Compare</Link></div> : undefined}><DataTable columns={FREE_AGENT_COLUMNS} rows={result.freeAgents as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
+    {result ? <Panel title={`${result.freeAgents.length} unrostered players`} eyebrow="AVAILABLE · all fantasy positions" action={isSleeper ? <div className="profile-edit-actions"><Link to="/waivers">Open Waiver analysis</Link><Link to="/compare">Open Compare</Link></div> : undefined}><DataTable columns={columns} rows={result.freeAgents as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
   </>;
 }
 
@@ -440,6 +481,12 @@ export function OpponentRostersPage({ client, data }: { client: NwrApiClient; da
     return () => { active = false; };
   }, [client, data.activeProfileId, data.activeProfile?.provider]);
   const isSleeper = data.activeProfile?.provider === "sleeper";
+  // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
+  // global Player Detail primitive as every other adopted surface --
+  // Opponent Rosters was a real, disclosed remaining adoption gap. Kept
+  // alongside (not instead of) the existing "add to Trade Analysis" link,
+  // which is real, context-specific value this surface already had.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "OPPONENT_ROSTERS");
   const columns: TableColumn[] = [
     {
       key: "playerName",
@@ -458,6 +505,16 @@ export function OpponentRostersPage({ client, data }: { client: NwrApiClient; da
     { key: "position", label: "Position", sort: "text" },
     { key: "team", label: "NFL team", sort: "text" },
     { key: "starter", label: "Lineup", sort: "text", render: (row) => row.starter ? <StatusBadge tone="safe" label="Starter" /> : "Bench" },
+    {
+      key: "playerDetail", label: "", render: (row) => (
+        <Button
+          variant="ghost"
+          onClick={() => openPlayerDetail({ playerId: String(row.sleeperPlayerId), playerName: String(row.playerName), position: String(row.position), team: String(row.team) })}
+        >
+          View
+        </Button>
+      ),
+    },
   ];
   return <>
     <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={result ? "safe" : data.activeProfile?.provider === "sleeper" ? "review" : "blocked"} label={result ? `${result.opponents.length} opponents` : "Live source"} />} />
