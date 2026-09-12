@@ -12,9 +12,132 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Two commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
-(Work Unit 0 + P0-1, then P0-2 below) -- run `git log -1` for the exact
-hash.
+Three commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+(Work Unit 0 + P0-1, then P0-2, then P0-3 below) -- run `git log -1` for the
+exact hash.
+
+## P0-3 (real backend + Sleeper + packaged Tauri release gate) -- 2026-09-12
+
+**Two separate, honest verdicts -- do not blend them:**
+
+- **PACKAGING GATE: BLOCKED (pre-existing, not a regression).**
+  `npm run check:resources` fails for the `redraft` app: the bundled
+  `NWR_DATA_GOVERNANCE.json` governance receipt legitimately contains the
+  real owner's name in its own audit trail (`"approved_by"`/`"renewed_by"`),
+  which the same script's owner-privacy guard (`ownerMarkers`) forbids in
+  any bundled resource. Verified this predates the whole shift
+  (`git diff --stat 003d0dd4 HEAD -- desktop/scripts
+  desktop/apps/redraft/src-tauri/tauri.windows.conf.json` was empty before
+  this pass's own fix below) -- not caused by Worker 2's seed migration or
+  anything in this shift. Did NOT bypass or weaken the privacy guard to
+  force a build through; that is a real product/governance decision for the
+  owner (e.g. redact the bundled copy, or keep the receipt out of the
+  distributable bundle and verify it a different way), not something a
+  verification pass should decide unilaterally. Separately confirmed the
+  Rust/Tauri toolchain itself is NOT the blocker: PyInstaller successfully
+  built the real Python sidecar exe (147MB,
+  `desktop/binaries/nwr-desktop-api-x86_64-pc-windows-msvc.exe`, gitignored)
+  and `cargo check` in `desktop/apps/redraft/src-tauri` compiles cleanly
+  (~55s cold, ~1s warm) -- both bundle nothing, so neither hits the privacy
+  conflict.
+  - **Real, disclosed fix made along the way (not the privacy conflict
+    itself, a different bug found while investigating it):** the Windows
+    resource-bundle map (`tauri.windows.conf.json`) and its allowlist mirror
+    (`check-resource-allowlists.mjs`) still pointed at the OLD 608-row
+    bundled seed after Worker 2's P0-2 migrated the runtime facade to
+    Freeze V7 (564 rows) -- a native build attempted before this fix would
+    have bundled stale, already-expired-approval seed data into the
+    installer. Both files now correctly point at
+    `docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/`.
+    This did NOT unblock `check:resources` (the owner-marker conflict is
+    separate and present on either seed generation's governance receipt).
+
+- **BRIDGE SMOKE: PASS (real backend, real production frontend build, real
+  read-only Sleeper league).** Since a full native bundle is blocked (above),
+  built and verified the fallback the directive names: a real production
+  `vite build` served by `vite preview`, talking to the REAL Python desktop
+  API backend process (`scripts/run_nwr_desktop_api.py`, not mocked
+  `window.fetch`) over real loopback HTTP with the real auth handshake. Ran
+  the full click-through smoke flow live in Chrome against a REAL read-only
+  Sleeper league ("Fantasy Gamers", league ID `1312983576827920384`, found
+  via the owner's own real AppData profile record -- read-only filesystem
+  inspection only, never written to): league chooser, Sleeper import/sync,
+  Home, Lineup, Improve Team, Trades, Players (real 564-row Freeze V7 board,
+  Player Drawer opens with real detail), League/My Roster (real 15-player
+  roster)/Data Health, Draft Room (real not-yet-started board state,
+  `configured:false` -- never clicked "Start Draft"), a full page reload
+  (restart-equivalent), a cold deep link straight to a sub-route, and a real
+  league switch (created a second isolated local profile, switched back).
+  Every surface rendered real backend data; only exception is the one real
+  bug found (next bullet). **ROS-DATA STATUS:** distinct from the above --
+  Sleeper Weekly projections/League sync both showed `OK`/`CURRENT`/`LIVE`
+  on Data Health for this profile; Market/ADP correctly showed `UNAVAILABLE`
+  (no ADP snapshot imported into this fresh isolated profile -- an expected
+  gap for a brand-new import, not a bug).
+  - **Real bug found and disclosed, NOT fixed (backend out of scope for this
+    pass):** `POST /api/v1/redraft/weekly-home-actions` (the Weekly Home
+    "NWR Actions" panel) returns HTTP 500 for a Sleeper-imported profile
+    with an active roster. Reproduced directly:
+    `DesktopBackendFacade.redraft_weekly_home_actions`
+    (`src/application/desktop_facade.py:4181`) still assumes
+    `redraft_kdst_streamer(...).data["positions"]` is a dict keyed by
+    position; it is actually a list of decision-envelope rows --
+    `AttributeError: 'list' object has no attribute 'items'`. The frontend
+    degrades honestly ("Command center unavailable") rather than fabricating
+    data. NOT reproduced against a fresh local-preset profile with no
+    roster (the STREAMER section is likely only reached once a roster
+    exists).
+
+**Sleeper safety (0 writes, verified with real evidence, not just an
+assertion):** structural -- `SleeperHttpClient` (`src/services/
+sleeper_import_service.py`) defines only `get_json()` via
+`urllib.request.urlopen()` (GET, no `data=` payload; no write method exists
+on the class at all). Grep -- no POST/PUT/PATCH/DELETE call site anywhere in
+`src/` targets `api.sleeper.app`. Before/after -- fetched `league`,
+`rosters`, `users` directly from `api.sleeper.app` immediately before and
+immediately after the real import call and diffed: byte-identical on every
+field, every time (both the manual pass and the scripted pass, run
+separately). All writes this session touched a fresh, isolated
+`local_exports/redraft_v1/` inside this worktree only -- the owner's real
+`%LOCALAPPDATA%\com.ninerswarroom.redraft` install was read from exactly
+once (one profile JSON + one sleeper_imports receipt JSON, both read-only,
+to discover the real league ID/username to use) and never written to.
+
+**Latency (real, single-session measurements; a `bootstrap`/Home cold vs.
+warm pair and a cold-vs-warm Player Drawer pair were the only ones with
+repeat samples -- see the script's JSON report for the full set):**
+
+| Surface | Time |
+| --- | --- |
+| Production `vite build` (cold launch's frontend half) | ~0.3-0.6 s |
+| Backend process start -> first successful `/api/v1/bootstrap` | ~1-2 s (polled) |
+| `bootstrap` (Home) cold | ~215-300 ms |
+| `bootstrap` (Home) warm | ~213-320 ms |
+| Real Sleeper league-open/import (`sleeper/import`) | ~1.0-2.7 s |
+| Player Drawer first open (real click, Chrome) | visually instant (<1 render frame; no separate network call -- drawer reads already-fetched rankings data client-side) |
+| Player Drawer second open (warm) | same -- no network round-trip either time |
+| Improve Team tab switch (Targets, real 25-candidate list) | ~1-2 s to "Reading..." resolve |
+| Trade Finder | ~1.6-9.3 s (widest spread observed; heaviest computed endpoint) |
+| Draft refresh (bootstrap's inline `draftBoard`) | included in `bootstrap` above -- no separate endpoint |
+
+**For Worker 4 (automatic NFL week/matchup/standings context):** Weekly Home
+today shows `"Fantasy Gamers · Week 1"` and an `NFL WEEK` field defaulting to
+`1` regardless of the real current calendar date (today is 2026-09-12,
+several weeks into a real season by kickoff conventions) -- worth checking
+whether that is this project's real, intentional manual-week-selection
+design (there is a visible `NFL WEEK` input the owner sets by hand) or a gap
+your work unit is meant to close. Also inherit the disclosed
+`weekly-home-actions` 500 bug above if your work touches that surface.
+
+**Files changed this pass:**
+`desktop/apps/redraft/src-tauri/tauri.windows.conf.json`,
+`desktop/scripts/check-resource-allowlists.mjs` (both packaging-manifest
+path fixes only, described above), `desktop/scripts/
+nwr_release_gate_smoke.ps1` (new, the repeatable release-gate script),
+`docs/codex/post_ui_v1/NWR_RELEASE_GATE_CHECKLIST.md` (new). **Zero** files
+under `src/` (backend/model) touched beyond Worker 2's already-committed
+migration -- confirmed via `git diff --stat 003d0dd4 HEAD -- src/` showing
+only Worker 2's prior commit's changes, none from this pass.
 
 ## P0-2 (projection governance reconciliation) -- 2026-09-12
 

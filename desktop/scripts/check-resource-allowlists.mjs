@@ -23,9 +23,15 @@ const allowlists = {
     "docs/hq/model/nwr_unified_research_preview_v1_20260808/UNIFIED_DYNASTY_RESEARCH_PREVIEW.csv",
   ],
   redraft: [
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/BLOCKED_2026_ROOKIES.csv",
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv",
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/NWR_DATA_GOVERNANCE.json",
+    // NWR_POST_UI_WORKER_3: updated to Freeze V7 (564 rows) to match
+    // desktop_facade.py's REDRAFT_SEED_* constants, migrated by Worker 2's
+    // P0-2 projection governance reconciliation (commit 8d540127). The old
+    // candidate_v1_20260809/*_608_* paths below were stale as of that
+    // migration and would have bundled expired-approval seed data into a
+    // native package build.
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/BLOCKED_2026_ROOKIES.csv",
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv",
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/NWR_DATA_GOVERNANCE.json",
   ],
 };
 
