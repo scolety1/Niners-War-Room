@@ -62,6 +62,21 @@ export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
   const { active, closePlayerDetail } = usePlayerDetail();
   const [statuses, setStatuses] = useState<readonly PlayerAvailabilityStatus[]>([]);
 
+  // NWR UI expansion pass (2026-09-12, Lineup surface interaction trial):
+  // real bug found live -- this global drawer had no Escape-to-close
+  // wiring at all (every other dismissible overlay in this app, e.g. the
+  // shell's Switch League menu and freshness popover, already closes on
+  // Escape). Fixed here once, in the shared primitive, since every
+  // surface that opens this same drawer inherits the fix.
+  useEffect(() => {
+    if (!active) return undefined;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closePlayerDetail();
+    };
+    document.addEventListener("keydown", onEscape);
+    return () => document.removeEventListener("keydown", onEscape);
+  }, [active, closePlayerDetail]);
+
   useEffect(() => {
     if (!active) return;
     let cancelled = false;

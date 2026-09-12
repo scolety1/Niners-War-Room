@@ -28,6 +28,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
+import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
@@ -223,6 +224,12 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   // global Player Detail primitive Waivers uses below -- see
   // player-detail-context.tsx.
   const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "LINEUP");
+  // Same freshness-note shape Weekly Home already derives from this exact
+  // providerHealth field -- one shared vocabulary for "how current is
+  // this" across surfaces, not a second one invented here.
+  const freshnessNote = result?.providerHealth
+    ? `${result.providerHealth.provider} · updated ${formatClock(result.providerHealth.retrievedAt)}${result.providerHealth.freshness === "STALE" ? " (stale)" : ""}`
+    : null;
 
   const benchColumns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text" },
@@ -249,7 +256,46 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
       <ProviderStatusLine health={result.providerHealth} />
       {result.swaps.length ? (
         <Panel title="Recommended changes" eyebrow={`${result.swaps.length} change${result.swaps.length === 1 ? "" : "s"} vs. Sleeper's current starters`}>
-          <ol className="nwr-actions-list">{result.swaps.map((swap, index) => <li key={index}><span className="nwr-actions-list__index">{index + 1}</span><div><strong>{swap.summary}</strong><small>{SLOT_LABEL[swap.slotType] ?? swap.slotType}</small></div></li>)}</ol>
+          {/* NWR UI expansion pass (Lineup surface): only real decisions --
+              a swap only exists when NWR's optimal starter differs from
+              Sleeper's current one (redraft_weekly_lineup's own `swaps`
+              field, unchanged) -- rendered with the same decision grammar
+              Weekly Home uses, so a close call reads as visually distinct
+              (tone="warning") from a confident recommendation
+              (tone="recommended"), never a bare list. */}
+          <div className="nwr-action-grid">
+            {result.swaps.map((swap, index) => {
+              const resultingSlot = findResultingSlot(swap, result.starters);
+              const explanation = explainLineupSwap(swap, resultingSlot);
+              return (
+                <DecisionExplain
+                  key={`${swap.slotType}-${index}`}
+                  eyebrow={SLOT_LABEL[swap.slotType] ?? swap.slotType}
+                  headline={explanation.headline}
+                  why={explanation.why}
+                  alternative={explanation.alternative}
+                  impact={explanation.impact}
+                  status={explanation.status ? { tone: statusTone(explanation.status), label: explanation.status } : null}
+                  freshness={freshnessNote}
+                  confidence={explanation.confidence}
+                  tone={explanation.tone}
+                  actions={resultingSlot?.player ? (
+                    <Button
+                      variant="ghost"
+                      onClick={() => openPlayerDetail({
+                        playerId: resultingSlot.player!.canonicalPlayerId ?? resultingSlot.player!.sleeperPlayerId,
+                        playerName: resultingSlot.player!.playerName,
+                        position: resultingSlot.player!.position,
+                        team: resultingSlot.player!.team,
+                      })}
+                    >
+                      View {swap.startPlayer}
+                    </Button>
+                  ) : null}
+                />
+              );
+            })}
+          </div>
         </Panel>
       ) : (
         <Panel title="Recommended changes" eyebrow="0 changes"><EmptyState title="Already optimal" message="Sleeper's current starters already match NWR's optimal lineup for this week." /></Panel>
@@ -257,7 +303,7 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
       <Panel title="Starting lineup" eyebrow={`Projected total ${formatNumber(result.projectedTotal, 1)} pts`}>
         <div className="tier-player-grid">
           {result.starters.map((slot, index) => (
-            <article key={index}>
+            <article key={index} className={slot.closeCall ? "tier-player-grid__article--close-call" : undefined}>
               <span>{SLOT_LABEL[slot.slotType] ?? slot.slotType}</span>
               <div>
                 <strong>{slot.player?.playerName ?? "Empty slot"}</strong>

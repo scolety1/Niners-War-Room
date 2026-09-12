@@ -42,6 +42,7 @@ export function DecisionExplain({
   alternative,
   confidence,
   impact,
+  status,
   freshness,
   advanced,
   actions,
@@ -54,6 +55,12 @@ export function DecisionExplain({
   alternative?: string | null;
   confidence?: DecisionExplainConfidence | null;
   impact?: string | null;
+  /** A player/roster health-status fact, distinct from `confidence`
+   * (which is NWR's own certainty about the recommendation) -- e.g. the
+   * recommended starter's real injury/availability status. Optional and
+   * additive: callers that don't pass it (Home) render byte-for-byte as
+   * before. */
+  status?: { tone: "safe" | "review" | "blocked" | "offline"; label: string } | null;
   freshness?: string | null;
   advanced?: ReactNode;
   actions?: ReactNode;
@@ -72,10 +79,11 @@ export function DecisionExplain({
       </header>
       <p className="nwr-explain__why">{why}</p>
       {secondaryWhy ? <p className="nwr-explain__why nwr-explain__why--secondary">{secondaryWhy}</p> : null}
-      {(impact || alternative || freshness) ? (
+      {(impact || alternative || status || freshness) ? (
         <dl className="nwr-explain__facts">
           {impact ? <div><dt>Expected impact</dt><dd>{impact}</dd></div> : null}
           {alternative ? <div><dt>Alternative</dt><dd>{alternative}</dd></div> : null}
+          {status ? <div><dt>Status</dt><dd><StatusBadge tone={status.tone} label={status.label} /></dd></div> : null}
           {freshness ? <div><dt>Data</dt><dd>{freshness}</dd></div> : null}
         </dl>
       ) : null}

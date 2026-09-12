@@ -140,6 +140,14 @@
 .tier-player-grid article strong { display: block; font-size: 9px; }
 .tier-player-grid article small { color: var(--muted); display: block; font-size: 7.5px; margin-top: 2px; }
 .tier-player-grid article > b { color: var(--gold-bright); font-size: 9px; }
+/* NWR UI expansion pass (Lineup surface): a starting slot NWR's own
+   projection still marks as a real, small-margin close call (the exact
+   same `slot.closeCall` signal Lineup's badge and Home's
+   START_SIT_CLOSE_CALL card already read) gets the same close-call accent
+   token `.nwr-explain--warning` uses -- reused, not a second color. Every
+   other (uncontested) starter keeps the plain, quiet card above. */
+.tier-player-grid article--close-call,
+.tier-player-grid__article--close-call { border-color: rgba(201,144,138,.4); border-left: 3px solid var(--nwr-close-call); }
 
 .compare-selectors { align-items: end; display: grid; gap: 13px; grid-template-columns: 1fr 38px 1fr; }
 .compare-selectors > span { align-items: center; background: var(--violet-dim); border: 1px solid rgba(154, 108, 255, .2); border-radius: 50%; color: var(--violet-bright); display: flex; height: 34px; justify-content: center; margin-bottom: 1px; width: 34px; }
