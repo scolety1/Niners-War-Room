@@ -92,10 +92,20 @@ interface AppShellProps {
   // detail freshness indicator instead of permanent raw status text.
   sidebarIdentity?: ReactNode;
   statusExtra?: ReactNode;
+  // NWR UI foundation-propagation pass (2026-09-11, directive Phase 1
+  // nav-active-route fix). Optional and additive: when a caller passes
+  // the canonical active nav path (Redraft computes it via
+  // `resolveActiveNavPath` because its routes redirect through
+  // `/league/:leagueKey/...`, which NavLink's own prefix match cannot see
+  // past), that item is highlighted directly instead of relying on
+  // NavLink's own `isActive`. A caller that never passes it (Dynasty,
+  // whose routes are flat and already match NavLink's own logic) renders
+  // byte-for-byte as before.
+  activeNavPath?: string | null;
 }
 
 export function AppShell(props: AppShellProps) {
-  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children, sidebarCollapsed = false, onToggleSidebarCollapsed, sidebarIdentity, statusExtra } = props;
+  const { mode, title, contextLabel, navigation, commands, sourceAsOf, healthTone, healthLabel, profileLabel, children, sidebarCollapsed = false, onToggleSidebarCollapsed, sidebarIdentity, statusExtra, activeNavPath } = props;
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const commandTrigger = useRef<HTMLButtonElement>(null);
@@ -138,7 +148,7 @@ export function AppShell(props: AppShellProps) {
         {sidebarIdentity}
         <div className="mode-ribbon"><i /><span>{contextLabel}</span></div>
         <nav aria-label={`${title} navigation`} className="sidebar__nav">
-          {navigation.map((group) => <div className="nav-group" key={group.label}><span className="nav-group__label">{group.label}</span>{group.items.map((item) => <NavLink className={({ isActive }) => `nav-item ${isActive ? "nav-item--active" : ""}`} key={item.path} title={sidebarCollapsed ? item.label : undefined} to={item.path}><Icon name={item.icon} size={17} /><span>{item.label}</span>{item.shortcut ? <kbd>{item.shortcut}</kbd> : null}<Icon name="chevron" size={13} /></NavLink>)}</div>)}
+          {navigation.map((group) => <div className="nav-group" key={group.label}><span className="nav-group__label">{group.label}</span>{group.items.map((item) => <NavLink className={({ isActive }) => `nav-item ${(activeNavPath !== undefined ? activeNavPath === item.path : isActive) ? "nav-item--active" : ""}`} key={item.path} title={sidebarCollapsed ? item.label : undefined} to={item.path}><Icon name={item.icon} size={17} /><span>{item.label}</span>{item.shortcut ? <kbd>{item.shortcut}</kbd> : null}<Icon name="chevron" size={13} /></NavLink>)}</div>)}
         </nav>
         <div className="sidebar__footer"><div className="profile-chip"><div className="profile-chip__avatar">GM</div><div><span>Active context</span><strong>{profileLabel}</strong></div></div><div className="local-lock"><Icon name="shield" size={14} /> Local only · protected session</div></div>
       </aside>

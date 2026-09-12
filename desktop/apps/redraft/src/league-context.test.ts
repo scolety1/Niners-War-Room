@@ -6,6 +6,7 @@ import {
   leagueFormat,
   leagueKeyFor,
   legacyRedirectTarget,
+  resolveActiveNavPath,
   resolveLeagueHomeSubpath,
   resolveLeagueLifecycle,
 } from "./league-context";
@@ -114,5 +115,53 @@ describe("legacyRedirectTarget", () => {
     expect(legacyRedirectTarget("id with spaces", "waivers")).toBe(
       "/league/id%20with%20spaces/waivers",
     );
+  });
+});
+
+// NWR UI foundation-propagation pass (2026-09-11, directive Phase 1):
+// the known bug -- Rankings highlighted Cheat Sheet in the left nav
+// instead of Rankings. Root cause was NavLink's own prefix match against
+// a legacy flat nav path (`/rankings`) never seeing past the
+// `/league/:leagueKey/...` redirect every one of those paths now goes
+// through (confirmed with react-router's own `matchPath`: every legacy
+// nav path returned `null` against a scoped pathname, not merely the
+// wrong one). This exercises the canonical fix directly, independent of
+// react-router or any rendering.
+describe("resolveActiveNavPath", () => {
+  const playersNavPaths = ["/rankings", "/tiers", "/compare", "/cheat-sheet", "/adp"];
+
+  it("resolves Rankings active on the scoped Rankings route, not Cheat Sheet or any sibling", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/rankings", playersNavPaths)).toBe("/rankings");
+  });
+
+  it("resolves Tiers, Compare, and Market (adp) each to their own nav item", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/tiers", playersNavPaths)).toBe("/tiers");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/compare", playersNavPaths)).toBe("/compare");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/adp", playersNavPaths)).toBe("/adp");
+  });
+
+  it("resolves Cheat Sheet active only on its own scoped route", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/cheat-sheet", playersNavPaths)).toBe("/cheat-sheet");
+  });
+
+  it("still matches a literal, non-redirected path (no active league yet)", () => {
+    expect(resolveActiveNavPath("/profile", ["/profile", "/rankings"])).toBe("/profile");
+  });
+
+  it("maps a canonical task-map alias route back to the nav item sharing its page", () => {
+    // /league/:key/players renders the same RankingsPage as /rankings (see RedraftApp.tsx).
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/players", playersNavPaths)).toBe("/rankings");
+    // /league/:key/improve and /league/:key/league and /league/:key/trades similarly alias.
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/improve", ["/waivers"])).toBe("/waivers");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/league", ["/my-roster"])).toBe("/my-roster");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/trades", ["/trade-analysis"])).toBe("/trade-analysis");
+  });
+
+  it("returns null on the league chooser, where no nav item should be active", () => {
+    expect(resolveActiveNavPath("/leagues", playersNavPaths)).toBeNull();
+  });
+
+  it("returns null for a scoped subpath no nav item maps to", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/unknown-subpath", playersNavPaths)).toBeNull();
   });
 });

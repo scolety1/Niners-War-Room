@@ -78,6 +78,81 @@ export function resolveLeagueHomeSubpath(
   return "draft";
 }
 
+/**
+ * NWR UI foundation-propagation pass (2026-09-11, directive Phase 1 --
+ * "known bug": Rankings highlighted Cheat Sheet in the left nav instead
+ * of Rankings). Root cause: every sidebar nav item still points at its
+ * legacy flat path (e.g. `/rankings`), but that path is now a
+ * compatibility redirect (`LegacyRedirect`) into the canonical
+ * `/league/:leagueKey/<subpath>` route tree -- the browser's real
+ * location after redirect is `/league/<key>/rankings`, which does not
+ * literally start with `/rankings`, so react-router's own NavLink
+ * `isActive` (a plain prefix match against `to`) never matches ANY
+ * league-scoped nav item (confirmed empirically with react-router's own
+ * `matchPath` against a scoped pathname before writing this fix -- every
+ * candidate returned `null`, not merely the "wrong" one). This is the ONE
+ * canonical mapping from a nav item's legacy path to the route subpath it
+ * ultimately renders -- consumed by nav active-state resolution below.
+ * Keep in sync with the `<Route path="/x" element={<LegacyRedirect .../>}>`
+ * list in RedraftApp.tsx (that list is the other, pre-existing place this
+ * same mapping already existed implicitly, one entry per route).
+ */
+export const NAV_LEGACY_PATH_SUBPATH: Record<string, string> = {
+  "/league-home": "home",
+  "/lineup": "lineup",
+  "/waivers": "waivers",
+  "/my-roster": "my-roster",
+  "/trade-analysis": "trade-analysis",
+  "/trade-finder": "trade-finder",
+  "/free-agents": "free-agents",
+  "/opponent-rosters": "opponent-rosters",
+  "/draft-room-v2": "draft",
+  "/rankings": "rankings",
+  "/tiers": "tiers",
+  "/compare": "compare",
+  "/cheat-sheet": "cheat-sheet",
+  "/profile": "profile",
+  "/adp": "adp",
+  "/weekly-tools": "weekly-tools",
+  "/data-health": "data-health",
+};
+
+/**
+ * The canonical owner-task-map route aliases (`/league/:key/league`,
+ * `/improve`, `/players`, `/trades`) render the SAME page as an existing
+ * concrete subpath (see RedraftApp.tsx) but are not any nav item's own
+ * legacy path -- map each alias back to the concrete subpath it shares a
+ * page with so a deep link to an alias URL still highlights the matching
+ * nav item instead of nothing.
+ */
+export const ROUTE_ALIAS_SUBPATH: Record<string, string> = {
+  league: "my-roster",
+  improve: "waivers",
+  players: "rankings",
+  trades: "trade-analysis",
+};
+
+/**
+ * The one canonical resolver behind sidebar nav active-state: given the
+ * browser's real current pathname and the full set of nav item paths,
+ * returns whichever nav item path should render as active, or `null` if
+ * none apply (e.g. the league chooser). Pure and independent of
+ * react-router's own matching so it is correct for BOTH a literal,
+ * non-redirected path (`/leagues`, `/profile` with no active league) and
+ * a post-redirect scoped path (`/league/<key>/rankings`) -- replaces
+ * relying on NavLink's own prefix match, which cannot see past the
+ * redirect (see the mapping above for why).
+ */
+export function resolveActiveNavPath(pathname: string, navPaths: readonly string[]): string | null {
+  const literal = navPaths.find((path) => pathname === path || pathname.startsWith(`${path}/`));
+  if (literal) return literal;
+  const scoped = /^\/league\/[^/]+\/([^/]+)/.exec(pathname);
+  const rawSubpath = scoped?.[1];
+  if (!rawSubpath) return null;
+  const subpath = ROUTE_ALIAS_SUBPATH[rawSubpath] ?? rawSubpath;
+  return navPaths.find((path) => NAV_LEGACY_PATH_SUBPATH[path] === subpath) ?? null;
+}
+
 export function scoringFormat(profile: LeagueProfile): string {
   if (profile.scoring.reception === 1) return "PPR";
   if (profile.scoring.reception === 0.5) return "Half-PPR";

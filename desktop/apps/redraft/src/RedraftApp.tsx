@@ -2,12 +2,12 @@ import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client
 import type { CommandItem, KhaHistoricalReplayPreview, LeagueLifecycle, LeagueProfile, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
 import { AppShell, Button, EmptyState, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
-import { legacyRedirectTarget, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
+import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
 import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
@@ -160,6 +160,19 @@ export function RedraftApp() {
     ? resolveLeagueLifecycle(data.activeProfile, data.draftBoard)
     : null;
   const navigation = useMemo(() => buildNavigation(lifecycle), [lifecycle]);
+  // NWR UI foundation-propagation pass (directive Phase 1, nav-active-
+  // route bug fix): resolve which nav item is active from the ONE
+  // canonical mapping (`resolveActiveNavPath`) rather than NavLink's own
+  // prefix match, which cannot see past the `/league/:leagueKey/...`
+  // redirect every legacy flat nav path now goes through -- see
+  // league-context.ts for why. `useLocation` here (not `data.activeProfile`
+  // routing state) so this reacts to every navigation, including client-
+  // side ones that don't reload `data`.
+  const location = useLocation();
+  const activeNavPath = useMemo(
+    () => resolveActiveNavPath(location.pathname, navigation.flatMap((group) => group.items.map((item) => item.path))),
+    [location.pathname, navigation],
+  );
   const commands = useMemo<CommandItem[]>(() => {
     const tools = navigation.flatMap((group) => group.items).map((item) => ({ id: `nav:${item.path}`, label: item.label, detail: `Open ${item.label}`, path: item.path, icon: item.icon, keywords: ["redraft", "current season"] }));
     const players = (data?.rankings ?? []).map((row) => ({ id: `player:${row.playerId}`, label: row.playerName, detail: `${row.position}${row.positionRank} · #${row.overallRank} · ${row.team}`, path: `/rankings?player=${encodeURIComponent(row.playerId)}`, icon: "players", keywords: [row.position, row.team, `tier ${row.tier}`] }));
@@ -178,7 +191,7 @@ export function RedraftApp() {
   // lockup) and the four freshness pills collapse into one quiet header
   // chip (`statusExtra`) -- replacing the old full-width `ActiveLeagueSelector`
   // content-area bar that used to compete with every page's real content.
-  return <PlayerDetailProvider><AppShell commands={commands} contextLabel={data.activeProfile ? "Redraft workspace" : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={navigation} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sidebarIdentity={<ShellIdentity client={client} data={data} onUpdate={update} />} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} statusExtra={<FreshnessIndicator data={data} />} title="Niners War Room — Redraft">
+  return <PlayerDetailProvider><AppShell activeNavPath={activeNavPath} commands={commands} contextLabel={data.activeProfile ? "Redraft workspace" : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={navigation} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sidebarIdentity={<ShellIdentity client={client} data={data} onUpdate={update} />} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} statusExtra={<FreshnessIndicator data={data} />} title="Niners War Room — Redraft">
     <PlayerDetailDrawer client={client} />
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
