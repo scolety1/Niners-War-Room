@@ -1,0 +1,8 @@
+season,draft_pick,draft_round,draft_name,draft_position,player_id,current_name,current_position,current_team,current_status,identity_method,identity_conflict,projection_status,block_reason
+2026,159,5,Max Bredeson,TE,00-0041081,Max Bredeson,RB,MIN,ACT,EXACT_PFR_ID_BRIDGE,False,BLOCKED,draft position conflicts with current factual registry position
+2026,169,5,Riley Nowakowski,TE,00-0041398,Riley Nowakowski,FB,PIT,ACT,EXACT_PFR_ID_BRIDGE,False,BLOCKED,draft position conflicts with current factual registry position
+2026,170,5,Joe Royer,TE,00-0041087,Joe Royer,TE,CLE,RSN,EXACT_PFR_ID_BRIDGE,False,BLOCKED,current factual roster status is not a currently-rostered status
+2026,199,6,Emmanuel Henderson Jr.,WR,00-0040895,Emmanuel Henderson Jr.,WR,SEA,DEV,EXACT_PFR_ID_BRIDGE,False,BLOCKED,current factual roster status is not a currently-rostered status
+2026,204,6,Lewis Bond,WR,00-0041467,Lewis Bond,WR,HOU,DEV,EXACT_PFR_ID_BRIDGE,False,BLOCKED,current factual roster status is not a currently-rostered status
+2026,218,7,Anthony Smith,WR,00-0040900,Anthony Smith,WR,DAL,DEV,EXACT_PFR_ID_BRIDGE,False,BLOCKED,current factual roster status is not a currently-rostered status
+2026,245,7,Jam Miller,RB,,,,,,UNRESOLVED,False,BLOCKED,exact current GSIS identity unresolved

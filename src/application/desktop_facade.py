@@ -373,15 +373,32 @@ REDRAFT_PRODUCT = {
     "contextLabel": "Redraft · Current season",
     "authority": "Redraft V1 — review authority",
 }
+# NWR P0-2 PROJECTION GOVERNANCE RECONCILIATION (2026-09-12): the prior
+# default bundled seed below (608 rows, nwr_redraft_2026_rookie_projection_
+# candidate_v1_20260809, source_sha256 e483caae...) has an independently
+# EXPIRED approval receipt (valid_until 2026-09-09, verified expired as of
+# this change's date) and no newer receipt exists anywhere in the repo for
+# that same artifact -- reproduced live: a fresh redraft_root's own
+# `redraft_bootstrap()` failed to install any seed at all before this fix
+# (see tests/test_desktop_application_api.py::
+# test_redraft_bootstrap_seeds_once_and_matches_desktop_contract, a
+# pre-existing baseline failure this fix resolves as a side effect, not a
+# new test written to justify the change). Migrated to the real,
+# already-owner-approved "Freeze V7" combined veteran+rookie admission
+# (564 rows: 491 veteran + 73 rookie, valid_until 2026-10-08, not expired)
+# -- see docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/
+# PROVENANCE.md for the exact source files and hash-chain verification.
+# The prior 608-row packet is left in place, untouched (still used by
+# tests/test_redraft_profile_practical_mode_toggle.py's own fixture).
 REDRAFT_SEED_PACKET_RELATIVE = Path(
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912"
 )
 REDRAFT_SEED_SOURCE_RELATIVE = (
-    REDRAFT_SEED_PACKET_RELATIVE / "GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv"
+    REDRAFT_SEED_PACKET_RELATIVE / "GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv"
 )
 REDRAFT_SEED_APPROVAL_RELATIVE = REDRAFT_SEED_PACKET_RELATIVE / "NWR_DATA_GOVERNANCE.json"
 REDRAFT_SEED_BLOCKED_RELATIVE = REDRAFT_SEED_PACKET_RELATIVE / "BLOCKED_2026_ROOKIES.csv"
-REDRAFT_SEED_SHA256 = "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25"
+REDRAFT_SEED_SHA256 = "b87c7296647b83a6103209a2995827766b7957a35270edb1624d7a61102929f4"
 
 
 class FacadeError(RuntimeError):
@@ -1980,16 +1997,27 @@ class DesktopBackendFacade:
                         else "Bundled projection seed admitted"
                     ),
                     "message": (
-                        "The accepted 608-player 2026 projection snapshot is available locally."
+                        "The accepted governed 2026 projection snapshot is available locally."
                     ),
                 }
             )
         if blocked_seed_rows:
             blocked_names = ", ".join(row["player"] for row in blocked_seed_rows)
+            blocked_count = len(blocked_seed_rows)
             notices.append(
                 {
                     "tone": "review",
-                    "title": "Two rookies remain blocked",
+                    # NWR P0-2 (2026-09-12): was a hardcoded "Two rookies remain
+                    # blocked" title, which silently went stale the moment the
+                    # bundled seed's own blocked-row count changed (e.g. this
+                    # same pass's 2->7 migration) -- computed from the real
+                    # row count instead, same source of truth as the message
+                    # body and the warning above.
+                    "title": (
+                        "1 rookie remains blocked"
+                        if blocked_count == 1
+                        else f"{blocked_count} rookies remain blocked"
+                    ),
                     "message": (
                         f"{blocked_names} remain excluded because their draft positions "
                         "conflict with the current factual registry; no values were imputed."

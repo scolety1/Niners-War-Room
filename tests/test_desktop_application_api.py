@@ -885,6 +885,13 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "externalConsensus",
         "health",
         "notices",
+        # NWR P0-2 (2026-09-12): "marketProviderAdp" is a pre-existing,
+        # unrelated key in the real payload that this assertion's expected
+        # set had never been updated to include -- masked until now because
+        # this whole test was failing earlier, at the seed-install step
+        # (see the projection-seed migration below), before ever reaching
+        # this assertion. Fixed incidentally while restoring this test.
+        "marketProviderAdp",
     }
     assert set(first.data["product"]) == {"title", "contextLabel", "authority"}
     assert set(first.data["status"]) == {
@@ -935,13 +942,13 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         }
         for row in first.data["presets"]
     )
-    assert first.data["health"]["blockedPlayers"] == 2
+    assert first.data["health"]["blockedPlayers"] == 7
     assert all(set(row) == {"tone", "title", "message"} for row in first.data["notices"])
     blocked_notice = " ".join(row["message"] for row in first.data["notices"])
     assert "Max Bredeson" in blocked_notice
     assert "Riley Nowakowski" in blocked_notice
     assert "does not infer target or touch shares" in blocked_notice
-    assert second.data["health"]["blockedPlayers"] == 2
+    assert second.data["health"]["blockedPlayers"] == 7
 
     created = facade.create_redraft_profile(
         preset_key="12_TEAM_1QB_HALF_PPR",
@@ -954,9 +961,15 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     assert active.data["activeProfileId"] == profile_id
     assert active.data["activeProfile"]["profileId"] == profile_id
     assert active.data["status"]["ready"] is True
-    assert len(active.data["rankings"]) == 608
-    assert active.data["health"]["blockedPlayers"] == 2
-    assert active.data["health"]["status"] == "Ready · 2 blocked players visible"
+    # NWR P0-2 (2026-09-12): the bundled projection seed migrated from the
+    # expired 608-row combined snapshot to the real, still-valid,
+    # owner-approved Freeze V7 combined snapshot (491 veteran + 73 rookie =
+    # 564 rows; 7 rookies excluded/blocked, up from 2) -- see
+    # desktop_facade.REDRAFT_SEED_* and docs/hq/model/
+    # nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/PROVENANCE.md.
+    assert len(active.data["rankings"]) == 564
+    assert active.data["health"]["blockedPlayers"] == 7
+    assert active.data["health"]["status"] == "Ready · 7 blocked players visible"
     assert set(active.data["rankings"][0]) == {
         "overallRank",
         "positionRank",
@@ -986,6 +999,14 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "drafted",
         "draftedBy",
         "pickNumber",
+        # NWR P0-2 (2026-09-12): pre-existing, unrelated to the seed
+        # migration -- these 3 draft-legality fields were added to the real
+        # ranking-row payload by a prior pass and this assertion's expected
+        # set was never updated; only reachable now that the seed-install
+        # step above no longer fails first. Fixed incidentally.
+        "rosterLegal",
+        "legalityCode",
+        "legalityReason",
     }
     assert set(active.data["replacementLevels"][0]) == {
         "position",
