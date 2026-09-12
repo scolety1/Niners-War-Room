@@ -4,6 +4,7 @@ import {
   DRAFT_ROOM_ACCEPTANCE_LABELS,
   globalPickSearchRows,
   nextRapidCaptureIndex,
+  noRankingsExplanation,
   type PickSearchAsset,
   rankingSearchRows,
 } from "./pages";
@@ -216,5 +217,43 @@ describe("Draft Room owner acceptance surface", () => {
       "Paste Rankings / ADP",
       "ADP unavailable",
     ]);
+  });
+});
+
+// NWR UI expansion pass (2026-09-12, Worker 8 -- failure/degraded states):
+// `noRankingsExplanation` is the one honest, plain-language reason
+// RankingsContent/TiersContent/Draft Room's leftpane Players list all show
+// when `data.rankings` is genuinely empty (a missing/blocked governed
+// projection snapshot -- a real, common condition in this worktree, not a
+// hypothetical). Never fabricated: it reuses `data.status.summary` first,
+// falls back to the first real `data.health.messages` entry, and only
+// falls back to a generic-but-still-honest sentence when neither carries
+// real text.
+describe("noRankingsExplanation", () => {
+  it("prefers the real status summary when present", () => {
+    expect(
+      noRankingsExplanation({
+        status: { summary: "The bundled governed projection snapshot is missing." } as never,
+        health: { messages: ["a different message"] } as never,
+      }),
+    ).toBe("The bundled governed projection snapshot is missing.");
+  });
+
+  it("falls back to the first real health message when status has no summary", () => {
+    expect(
+      noRankingsExplanation({
+        status: { summary: "" } as never,
+        health: { messages: ["Player universe is blocked."] } as never,
+      }),
+    ).toBe("Player universe is blocked.");
+  });
+
+  it("never returns an empty explanation when neither source carries real text", () => {
+    expect(
+      noRankingsExplanation({
+        status: { summary: "" } as never,
+        health: { messages: [] } as never,
+      }),
+    ).toBe("NWR has no admitted ranking to show for this league right now.");
   });
 });

@@ -1766,3 +1766,251 @@ harness.html`) were deleted before this commit -- neither shipped.
   AppData install; a future session driving the real shipped app would
   still need a different, real-window-level approach for that specific
   target.
+
+## Work Unit 8 -- Failure / Degraded States (2026-09-12)
+
+**Start HEAD:** `b64508e2`. **Result:** COMPLETE.
+
+### Method
+
+Reused Work Unit 7's own documented `<iframe>` viewport-control technique
+(a small temporary `qa-app-loader.html` at the redraft app's project root,
+patching `window.fetch` before `main.tsx`'s first call, loaded inside a
+temporary `public/qa-viewport-harness.html` iframe host) to real-render
+each of the 9 named failure scenarios against a real local Vite dev
+server, zero real network calls, zero backend process started. Both
+temporary files were deleted before this commit -- neither shipped (same
+precedent as Work Unit 7's own harness files).
+
+### FAILURE STATES AUDITED
+
+1. **Weekly projection provider unavailable / stale** -- already honest.
+   `weekly-shared.tsx`'s `ProviderStatusLine` shows a real
+   LIVE/STALE badge, provider/integration-status/source-endpoint/coverage
+   detail, and an explicit "live fetch failed; showing the last known-good
+   snapshot" sentence when stale. Used consistently across Lineup/Improve
+   Team Targets/Compare This-Week. No fix needed.
+2. **Stale weekly projection (past freshness window)** -- same component,
+   same finding. No fix needed.
+3. **League sync stale/failed** -- already honest, per Work Unit 5's own
+   real DEGRADED-state render (League workspace's SYNC tab + Overview's
+   sync-health fact, both independently reflecting a degraded
+   `LeagueWorkspaceContext`). Re-confirmed by reading `league.tsx`/
+   `league-summary.ts` fresh rather than re-rendering a second time this
+   pass (no code in this path changed since Work Unit 5). No fix needed.
+4. **Player status unavailable** -- **real bug found and fixed** (see
+   below). The global `PlayerDetailDrawer` silently converted a genuine
+   authority-fetch FAILURE into the exact same "nothing to flag" state as
+   a real, honest absence of any status issue -- an owner could not tell
+   "confirmed clear" from "could not be checked."
+5. **No waiver candidates** -- already honest. Improve Team's Targets/
+   Add-Drop/FAAB tabs each show a specific, real `EmptyState` explaining
+   why (no add candidate beats a rostered player under real marginal
+   utility / no pairing matches the position filter / no bid carries a
+   real FAAB estimate). No fix needed.
+6. **No trade candidates** -- already honest. Trades' Find Trades tab
+   shows "No win-win candidates found" with a real explanation of what was
+   checked. No fix needed.
+7. **No streamer recommendation** -- already honest. Improve Team's
+   Streamers tab has three layered honest states (no provider key
+   configured / no streamer read yet / no candidate at a specific
+   position for the requested week). No fix needed.
+8. **Zero NWR Actions on Home** -- already honest. Weekly Home shows "You're
+   set for now... Lineup, waivers, trades, and streamers were all checked
+   live -- none returned anything worth flagging this week," not a blank
+   section. No fix needed.
+9. **Draft data unavailable (missing governed projection snapshot)** --
+   **real bugs found and fixed** (see below), a genuinely common condition
+   in this worktree (`data.rankings: []` whenever the active league's
+   ranking is not ready -- confirmed by reading `desktop_facade.py`'s own
+   redraft-bootstrap builder, backend read-only, never modified). Draft
+   Room's own Suggestions/PICK NOW card already handled the DecisionBundle
+   half of this honestly (pre-existing "DecisionBundle unavailable" +
+   real reason, confirmed unchanged by live render) -- the gap was in the
+   surfaces that read `data.rankings` directly.
+
+### ISSUES FOUND AND FIXED
+
+1. **`PlayerDetailDrawer` (`player-detail-drawer.tsx`) conflated a real
+   status-authority fetch FAILURE with a genuine "nothing to flag"
+   absence.** Before: the `.catch()` on `client.redraftPlayerAvailabilityStatus()`
+   set `statuses` to `[]`, the exact same shape `derivePlayerDetailBackbone`
+   produces when the authority has no entry for a player -- so a real
+   endpoint outage rendered the SAME "No status issue is recorded... a
+   real, honest 'nothing to flag' state" copy as an actual all-clear. Live-
+   verified before fixing (a QA scenario making the endpoint return 503):
+   the drawer showed a "NO STATUS ISSUE" badge and the all-clear sentence
+   for a player who was never actually checked. Fixed with a new
+   `statusUnavailable` boolean, set on the catch path and reset on every
+   new open, rendering a distinct "STATUS UNKNOWN" badge (`review` tone)
+   and an honest "could not be reached... this is NOT confirmation that
+   nothing is wrong... Close and reopen to retry" message. Live-reverified:
+   the failure case now shows "STATUS UNKNOWN" with the honest message,
+   and the true no-issue case (endpoint succeeds, no entry for the player)
+   was re-checked immediately after and still shows the original, correct
+   "NO STATUS ISSUE" copy -- a real regression check, not assumed.
+2. **`RankingsContent` (`pages.tsx`) showed a misleading generic message
+   when the league had NO governed ranking at all.** Before: with
+   `data.rankings.length === 0` (a missing/blocked governed projection
+   snapshot), the page fell straight into `DataTable`'s default "No rows
+   match this view" -- indistinguishable from a search/position filter
+   just narrowing to zero, and telling the owner nothing about the real,
+   systemic cause. Fixed with a new shared `noRankingsExplanation`/
+   `NoGovernedRankings` pair (pure function + `EmptyState`) that surfaces
+   the SAME already-computed, honest, plain-language reason the Data
+   Health page already shows (`data.status.summary`, falling back to
+   `data.health.messages[0]`, falling back to a still-honest generic
+   sentence -- never fabricated), plus an explicit "your live Sleeper
+   roster, waivers, trades, and league tools are unaffected" reassurance
+   and an "Open Data Health" action. Live-verified via the QA harness
+   (a real `status.summary`/`health.messages` blocked fixture): renders
+   exactly the intended message, zero horizontal overflow, zero console
+   errors.
+3. **`TiersContent` (`pages.tsx`) rendered a completely BLANK area with NO
+   message at all** whenever `tiers` was empty -- the most severe finding
+   this pass, matching the directive's own named worst case ("a blank box
+   with no explanation"). This happened both for the system-wide
+   no-governed-ranking case above AND, independently, whenever a position/
+   depth filter combination genuinely matched zero tiers (a real, distinct
+   gap the old code never handled either). Fixed: `data.rankings.length
+   === 0` now shows the same `NoGovernedRankings` component as Rankings;
+   a genuinely filtered-to-zero `tiers` array now shows an honest "No
+   tiers to show... widen board depth or choose a different position room"
+   `EmptyState` instead of nothing. Live-reverified: the position/tier
+   toolbar still renders (so the owner can immediately change the filter
+   that caused it), the body below it now always shows either real tiers,
+   the honest system-wide message, or the honest filtered-empty message.
+4. **Draft Room's leftpane `PlayersTab` (`draft-room-v2.tsx`, the
+   Rankings sub-tab of the Rankings/Teams/Queue pane) had the same
+   generic-message gap as `RankingsContent`.** Before: `data.rankings.length
+   === 0` fell into the same `DataTable` default "No rows match this
+   view" mid-draft, with no reason shown anywhere on that pane (the main
+   Suggestions pane's own "DecisionBundle unavailable" message, confirmed
+   already-honest and unchanged, does not cover this separate leftpane
+   list). Fixed with the same honest message (no navigation action added
+   here deliberately -- Draft Room is a dense, self-contained live-draft
+   workspace per its own established design precedent, and mid-draft is
+   not the moment to route the owner away to Data Health). Live-verified
+   inside an in-progress mock draft room (a real `configured:true`
+   `DraftBoard` QA fixture): the leftpane Rankings tab shows the honest
+   message, the main Suggestions pane independently and correctly still
+   shows its own pre-existing "DecisionBundle unavailable" card, zero
+   console errors, zero horizontal overflow.
+
+### SURFACES CONFIRMED ALREADY HANDLING FAILURE HONESTLY (no fix needed)
+
+Weekly projection freshness/unavailability (`ProviderStatusLine`, all
+consuming surfaces); League sync stale/failed (League workspace SYNC tab +
+Overview, Work Unit 5); Improve Team's Targets/Add-Drop/FAAB/Streamers
+empty states; Trades' Find Trades empty state; Home's zero-actions
+"You're set for now" state; Compare's "Two players required" empty state
+(re-read fresh this pass -- already an honest, non-misleading message for
+its own narrower "need 2 players selected" condition, left unchanged);
+Draft Room's own Suggestions/PICK NOW DecisionBundle-unavailable path
+(Work Unit 6, re-confirmed live unchanged this pass); the global
+`OwnerErrorBoundary` (a real, reproduced-safe top-level catch for any
+otherwise-uncaught render exception, confirmed by reading it fresh --
+out of this pass's scope to restructure into per-surface boundaries, a
+real, disclosed architectural choice this presentation-only pass did not
+change).
+
+### Trial matrix executed
+
+Real-rendered via the iframe technique at 1280x900 (a single representative
+width -- this pass's scope is failure/degraded CONTENT correctness, not a
+fifth viewport-width audit already closed by Work Unit 7): Rankings/Tiers/
+Compare each in both a normal (5-player) and a real zero-ranking
+(`status.tone: "blocked"`, real `status.summary`/`health.messages` text)
+bootstrap fixture, requiring a full page reload between fixtures (static
+bootstrap data, not a live-togglable scenario switch -- same constraint
+Work Unit 4 documented for its own two-fixture Players trial); Draft Room
+inside a real in-progress mock draft (`DraftBoard.configured: true`) under
+the same zero-ranking fixture; the global Player Drawer opened under both
+a normal player-availability-status fixture and one where that endpoint
+returns a real 503, from the Rankings "View" entry point, with an explicit
+regression re-check of the true no-issue case immediately afterward (not
+assumed unaffected). Every state: zero console errors (checked via
+`read_console_messages(onlyErrors)` after a fresh reload, not carried over
+from a stale tracking window), `document.documentElement.scrollWidth ===
+clientWidth` (no horizontal overflow), and an explicit `/undefined|NaN|
+\[object Object\]/` body-text regex check (false in every state, not
+eyeballed).
+
+### Tests
+
+`pages.test.ts` (+3 tests, new `describe("noRankingsExplanation")` block):
+prefers the real `status.summary`; falls back to the first real
+`health.messages` entry when summary is empty; never returns an empty
+explanation when neither source carries real text (the honest generic
+fallback). The `player-detail-drawer.tsx` and `draft-room-v2.tsx` fixes
+were verified live only (real DOM/badge/text checks, both the failure
+path AND an explicit regression check of the unaffected success path) --
+consistent with this repo's own established precedent for this file
+(`player-detail-drawer.tsx`'s ORIGINAL Escape-to-close/focus fixes in Work
+Units 1 and 7 were likewise never unit-tested; `packages/ui`/this
+component tree has no React-Testing-Library-style render-test
+infrastructure at all). `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`: clean. `npx vitest run --no-file-parallelism`
+from the monorepo root (`desktop/`, both apps): **278/278 passing** (275
+baseline + 3 new, 0 regressions).
+
+### Backend/model files changed
+
+NONE. `git diff --stat b64508e2 HEAD -- src/`: empty (confirmed
+explicitly). Full diff: 4 files modified, all under `desktop/apps/
+redraft/src` -- `draft-room-v2.tsx`, `pages.test.ts`, `pages.tsx`,
+`player-detail-drawer.tsx`. The two temporary QA files used to drive this
+session's own rendering (`apps/redraft/qa-app-loader.html`,
+`apps/redraft/public/qa-viewport-harness.html`) were deleted before this
+commit -- neither shipped.
+
+### Console errors
+
+**0** across every state rendered this pass (checked cumulatively after
+each fresh iframe reload, not just per-state).
+
+### Open issues for the next worker (Worker 9: endurance QA)
+
+- **`data.notices` (a real, already-backend-populated `Notice[]` array on
+  every bootstrap response) is only ever rendered by the Data Health
+  page** (`pages.tsx` line ~419) -- confirmed by a whole-repo grep before
+  writing this pass's own fixes. Every other surface silently ignores it,
+  even though it can carry real, owner-relevant, surface-agnostic
+  messages (e.g. "Two rookies remain blocked", "Draft rounds do not match
+  roster capacity"). This pass deliberately did NOT plumb it into every
+  surface globally (a much larger, cross-cutting architectural change,
+  arguably a shell-level concern rather than a per-surface one) -- it
+  fixed the two most severe, concretely-named consequences of the same
+  underlying "no governed ranking" condition (Rankings/Tiers/Draft Room's
+  leftpane) rather than attempting a system-wide notices-banner redesign.
+  A future pass could consider surfacing `data.notices` (or at minimum
+  any `tone: "blocked"`/`"review"` entries) as a persistent shell-level
+  banner, the same way `FreshnessIndicator`'s chip already gives a small,
+  clickable signal for the same underlying `status.ready`/`health.
+  playerUniverseAvailable` fields.
+- **`CompareContent`'s "Two players required" empty state does not
+  distinguish "the league has zero governed rankings at all" from "you
+  just haven't picked two yet"** -- re-read fresh this pass and judged an
+  acceptable, non-misleading message for its own narrower condition (it
+  is never shown as a false all-clear), so left unchanged; a future pass
+  could still make it explicitly say "no governed ranking is available"
+  in the zero-rankings case specifically, mirroring `NoGovernedRankings`.
+- **The `OwnerErrorBoundary` is one single top-level boundary per app**
+  (mounted once in `main.tsx`, confirmed by reading it fresh) -- ANY
+  otherwise-uncaught render exception anywhere in the tree still reloads
+  the entire window, not just the failing surface. This is a real,
+  disclosed, pre-existing architectural choice (not changed this pass,
+  out of the "presentation only, don't restructure error-handling
+  architecture" spirit of the hard boundary) that a future pass could
+  reconsider -- e.g. a per-route boundary so a crash in one surface does
+  not blank the whole app.
+- **This pass did not attempt a full per-state x per-width matrix** (the
+  9 scenarios were real-rendered at one representative width, 1280x900,
+  per Work Unit 7's own note that a full 8-surface x ~4-8-state x 4-width
+  matrix is a separate, larger undertaking) -- if a future pass wants
+  failure-state widths specifically re-verified at 768/900/1180/1440px,
+  that remains open, though none of this pass's fixes are width-sensitive
+  (`EmptyState`/`ErrorState` reuse the same responsive-safe primitives
+  every prior Work Unit already exercised at all four widths).
+- Per this pass's own scope, Worker 9 (endurance QA: league-switch
+  cycles, nav loops, drawer cycles, deep-link refreshes) is next.

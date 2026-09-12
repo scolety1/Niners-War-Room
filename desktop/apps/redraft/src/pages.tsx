@@ -157,6 +157,34 @@ function rankingColumns(compact = false): TableColumn[] {
   return compact ? base.slice(0, 6) : [...base, { key: "sourceAsOf", label: "Source as of", sort: "text" }];
 }
 
+/**
+ * NWR UI expansion pass (2026-09-12, Worker 8 -- failure/degraded states):
+ * `data.rankings` is genuinely empty whenever the active league's ranking
+ * is not ready -- a real, common condition in this worktree (a missing or
+ * blocked governed projection snapshot), not a hypothetical edge case.
+ * Before this fix, RankingsContent fell through into an empty DataTable's
+ * generic "No rows match this view" (indistinguishable from a search/
+ * filter just narrowing to zero) and TiersContent rendered a completely
+ * blank `.tier-stack` with no message at all. `data.status.summary`
+ * (falling back to the first real `data.health.messages` entry) is the
+ * SAME already-computed, honest, plain-language reason the Data Health
+ * page already shows -- reused here, never fabricated or duplicated.
+ */
+export function noRankingsExplanation(data: Pick<RedraftBootstrap, "status" | "health">): string {
+  return data.status.summary || data.health.messages[0] || "NWR has no admitted ranking to show for this league right now.";
+}
+
+function NoGovernedRankings({ data }: { data: RedraftBootstrap }) {
+  return (
+    <EmptyState
+      icon="alert"
+      title="No governed ranking available"
+      message={`${noRankingsExplanation(data)} Your live Sleeper roster, waivers, trades, and league tools are unaffected -- only ranked-player views need this data.`}
+      action={<Link to="/data-health">Open Data Health</Link>}
+    />
+  );
+}
+
 function rankingsPageHeader(data: RedraftBootstrap) {
   const practical = Boolean(data.activeProfile?.practicalMode);
   const activeName = data.activeProfile?.leagueName ?? "Active League";
@@ -213,6 +241,9 @@ export function RankingsContent({ data }: { data: RedraftBootstrap }) {
     })),
     [openPlayerDetail],
   );
+  if (data.rankings.length === 0) {
+    return <Panel title="Current-season board" eyebrow="0 ranked players"><NoGovernedRankings data={data} /></Panel>;
+  }
   return <Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel>;
 }
 
@@ -234,7 +265,20 @@ export function TiersContent({ data }: { data: RedraftBootstrap }) {
   // global Player Detail primitive as Rankings above -- Tiers was a real,
   // disclosed remaining adoption gap.
   const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_TIERS");
-  return <><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b><Button variant="ghost" onClick={() => openPlayerDetail({ playerId: row.playerId, playerName: row.playerName, position: row.position, team: row.team })}>View</Button></article>)}</div></Panel>; })}</div></>;
+  // NWR UI expansion pass (2026-09-12, Worker 8 -- failure/degraded
+  // states): a real bug found before any live render, by reading this
+  // against the "blank box" failure mode the directive named explicitly --
+  // `tiers` can be empty either because the league has NO governed ranking
+  // at all (see `NoGovernedRankings` above) OR because the current
+  // position/depth filter genuinely matches nothing; the old code rendered
+  // an empty `.tier-stack` (zero `<Panel>`s, literally nothing) in BOTH
+  // cases with no explanation whatsoever.
+  const body = data.rankings.length === 0
+    ? <NoGovernedRankings data={data} />
+    : tiers.length === 0
+      ? <EmptyState title="No tiers to show" message={`No ranked ${position === "ALL" ? "" : `${position} `}players fall within the current board depth. Widen board depth above, or choose a different position room.`} />
+      : <div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b><Button variant="ghost" onClick={() => openPlayerDetail({ playerId: row.playerId, playerName: row.playerName, position: row.position, team: row.team })}>View</Button></article>)}</div></Panel>; })}</div>;
+  return <><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div>{body}</>;
 }
 
 export function TiersPage({ data }: { data: RedraftBootstrap }) {

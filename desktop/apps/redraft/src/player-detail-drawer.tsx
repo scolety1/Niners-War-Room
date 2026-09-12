@@ -89,6 +89,17 @@ const SOURCE_LABEL: Record<string, string> = {
 export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
   const { active, closePlayerDetail } = usePlayerDetail();
   const [statuses, setStatuses] = useState<readonly PlayerAvailabilityStatus[]>([]);
+  // NWR UI expansion pass (2026-09-12, Worker 8 -- failure/degraded
+  // states): a real, found-before-any-live-render bug -- the status fetch
+  // below silently caught a failure by setting `statuses` to `[]`, the
+  // exact SAME shape `derivePlayerDetailBackbone` produces for "the
+  // authority has no entry for this player" (a genuine, honest, safe
+  // no-issue case). A real endpoint failure (the authority itself
+  // unreachable) was therefore indistinguishable from "nothing to flag" --
+  // the owner would see a false all-clear instead of an honest "status
+  // could not be checked". Tracked separately so the two cases render
+  // differently below.
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
   const drawerRef = useRef<HTMLElement | null>(null);
 
   // NWR Work Unit 7 (responsive/a11y hardening): real, reproduced gap --
@@ -123,13 +134,17 @@ export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
+    setStatusUnavailable(false);
     client
       .redraftPlayerAvailabilityStatus()
       .then((result) => {
         if (!cancelled) setStatuses(result.statuses);
       })
       .catch(() => {
-        if (!cancelled) setStatuses([]);
+        if (!cancelled) {
+          setStatuses([]);
+          setStatusUnavailable(true);
+        }
       });
     return () => { cancelled = true; };
   }, [client, active?.leagueKey, active?.playerId]);
@@ -149,15 +164,22 @@ export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
       <PlayerIdentityHeader identity={backbone.identity} onClose={closePlayerDetail} />
       <div className="player-drawer__lede" style={{ padding: "0 18px 12px" }}>
         <StatusBadge
-          tone={playerAvailabilityBadgeTone(backbone.status)}
-          label={playerAvailabilityBadgeLabel(backbone.status)}
+          tone={statusUnavailable ? "review" : playerAvailabilityBadgeTone(backbone.status)}
+          label={statusUnavailable ? "Status unknown" : playerAvailabilityBadgeLabel(backbone.status)}
         />
         <span className="player-drawer__ownership">Opened from {sourceLabel}</span>
       </div>
       <div className="player-drawer__body">
         <section>
           <h3>Status / News</h3>
-          {backbone.status ? (
+          {statusUnavailable ? (
+            <p className="copy-muted">
+              NWR's canonical availability authority could not be reached, so no status could be
+              checked for this player -- this is NOT confirmation that nothing is wrong. Everything
+              else in this drawer (identity, opened-from context) is unaffected. Close and reopen
+              to retry.
+            </p>
+          ) : backbone.status ? (
             <>
               <p className="nwr-text-body">{backbone.status.reason}</p>
               <p className="copy-muted">Source: {backbone.status.source} · as of {backbone.status.sourceAsOf}</p>

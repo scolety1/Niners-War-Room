@@ -3066,6 +3066,15 @@ function PlayersTab({
 }) {
   const [position, setPosition] = useState("ALL");
   const rows = data.rankings.filter((row) => !row.drafted && (position === "ALL" || row.position === position));
+  // NWR UI expansion pass (2026-09-12, Worker 8 -- failure/degraded
+  // states): `data.rankings` is genuinely empty whenever the governed
+  // projection snapshot is missing/blocked (a real, common condition in
+  // this worktree -- see `pages.tsx`'s own `NoGovernedRankings`, the same
+  // root cause). Before this fix this table fell straight through into
+  // its generic "No rows match this view" empty message -- indistinguishable
+  // from a position filter narrowing to zero -- with no honest reason
+  // shown anywhere on this pane.
+  const noGovernedRanking = data.rankings.length === 0;
   const columns: TableColumn[] = compact
     ? [
         { key: "playerName", label: "Player", sort: "text", render: (row) => (
@@ -3123,18 +3132,27 @@ function PlayersTab({
       ))}
     </div>
   );
+  const table = noGovernedRanking ? (
+    <EmptyState
+      icon="alert"
+      title="No governed ranking available"
+      message={`${data.status.summary || data.health.messages[0] || "NWR has no admitted ranking to show for this league right now."} Manual assets, the draft board, and recording picks are unaffected.`}
+    />
+  ) : (
+    <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
+  );
   if (compact) {
     return (
       <div className="draft-room-v2-leftpane__section">
         {positionFilter}
-        <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
+        {table}
       </div>
     );
   }
   return (
     <Panel title="Players" eyebrow={`${rows.length} undrafted players`}>
       {positionFilter}
-      <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.playerId)} />
+      {table}
     </Panel>
   );
 }
