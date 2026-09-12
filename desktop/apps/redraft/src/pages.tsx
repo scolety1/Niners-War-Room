@@ -415,6 +415,19 @@ export function dataHealthTone(status: string): "safe" | "review" | "blocked" {
   return "blocked";
 }
 
+// P0-1 (post-UI hardening pass, 2026-09-12): a real, pre-existing latent
+// crash site -- DataHealthCategory.status is typed as a non-optional enum,
+// but a degraded/malformed backend payload (a schema-drift or partial
+// response) can genuinely omit it at runtime. Both DataHealthPage and
+// league.tsx's Sync tab called `.replaceAll("_", " ")` directly on this
+// field with no guard; a missing/undefined status threw a raw TypeError
+// past `dataHealthTone` (which is already safe -- plain `===` checks) and
+// into the top-level OwnerErrorBoundary. Never fabricates a status; an
+// honest "Unknown" label is shown instead of crashing.
+export function dataHealthStatusLabel(status: string | null | undefined): string {
+  return status ? status.replaceAll("_", " ") : "Unknown";
+}
+
 /** NWR pre-UI architecture pass (2026-09-10, directive section 6): real
  * runtime health across League Sync / Weekly Projections / ROS
  * Projections / Market ADP / Player Status / Decision Engine / Snapshot,
@@ -445,7 +458,7 @@ export function DataHealthPage({ client, data, onReload }: { client: NwrApiClien
             key={category.category}
             title={DATA_HEALTH_CATEGORY_LABEL[category.category] ?? category.category}
             eyebrow={category.source ?? "No source"}
-            action={<StatusBadge tone={dataHealthTone(category.status)} label={category.status.replaceAll("_", " ")} />}
+            action={<StatusBadge tone={dataHealthTone(category.status)} label={dataHealthStatusLabel(category.status)} />}
           >
             <dl className="health-list">
               <div><dt>Last update</dt><dd>{category.lastUpdate ?? "unavailable"}</dd></div>

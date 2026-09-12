@@ -7,7 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import { MyRosterContent } from "./in-season";
 import { leagueFormat, leagueIdentityFormat, providerFormat, scoringFormat } from "./league-context";
 import { formatCurrentWeek, rosterCompositionRows, scoringSummaryGroups, syncHealthLabel, syncHealthTone } from "./league-summary";
-import { dataHealthTone, OpponentRostersContent } from "./pages";
+import { dataHealthStatusLabel, dataHealthTone, OpponentRostersContent } from "./pages";
 import { editableProfile, ProfileEditor, type EditableProfile } from "./profile";
 import { useAsync } from "./weekly-shared";
 
@@ -338,7 +338,7 @@ function LeagueSyncTab({
     </Panel>
     {syncCategory ? (
       <Panel
-        action={<StatusBadge tone={dataHealthTone(syncCategory.status)} label={syncCategory.status.replaceAll("_", " ")} />}
+        action={<StatusBadge tone={dataHealthTone(syncCategory.status)} label={dataHealthStatusLabel(syncCategory.status)} />}
         eyebrow={syncCategory.source ?? "No source"}
         title="League sync detail"
       >

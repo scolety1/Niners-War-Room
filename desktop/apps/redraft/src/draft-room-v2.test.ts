@@ -751,6 +751,31 @@ describe("actionToBadgeTone", () => {
   it("never silently reuses another action's tone for an unrecognized label", () => {
     expect(actionToBadgeTone("UNSCORED")).toBe("review");
   });
+
+  // P0-1 (post-UI hardening pass, 2026-09-12): a real, pre-existing latent
+  // crash site. DecisionBundleCandidate.action is typed as a non-optional
+  // `string`, but the Player Drawer's Action stat read `candidate.action`
+  // straight off a real DecisionBundle payload with no guard -- a
+  // degraded/malformed backend response (this pass reproduced it with a
+  // real fixture: `{ ...candidate, action: undefined }`) genuinely omits
+  // this field at runtime despite the contract's declared type.
+  // `.toUpperCase()` on that undefined value threw a raw TypeError past
+  // the top-level OwnerErrorBoundary. Every other call site already
+  // coerced via `String(row.action)` first; this one did not.
+  it("degrades honestly to the generic 'review' tone instead of throwing when action is undefined", () => {
+    expect(() => actionToBadgeTone(undefined)).not.toThrow();
+    expect(actionToBadgeTone(undefined)).toBe("review");
+  });
+
+  it("degrades honestly to the generic 'review' tone instead of throwing when action is null", () => {
+    expect(() => actionToBadgeTone(null)).not.toThrow();
+    expect(actionToBadgeTone(null)).toBe("review");
+  });
+
+  it("reproduces the real crash with the exact pre-fix expression, proving the guard is load-bearing", () => {
+    const malformedAction = undefined as unknown as string;
+    expect(() => malformedAction.toUpperCase()).toThrow(TypeError);
+  });
 });
 
 describe("resolveDisplayAction", () => {

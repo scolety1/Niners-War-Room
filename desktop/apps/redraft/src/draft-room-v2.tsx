@@ -2642,7 +2642,20 @@ export function resolveDisplayAction(
   return normalized === "TAKE NOW" ? "GOOD_VALUE" : action;
 }
 
-export function actionToBadgeTone(action: string): BadgeTone {
+// P0-1 (post-UI hardening pass, 2026-09-12): a real, pre-existing latent
+// crash site. `action` is a non-optional `string` per DecisionBundleCandidate,
+// but the one unguarded call site (the Player Drawer's Action stat) reads
+// `candidate.action` straight off a real DecisionBundle payload -- a
+// degraded/malformed backend response can genuinely omit this field at
+// runtime despite the contract's declared type. `.toUpperCase()` on that
+// undefined value threw a raw TypeError past the top-level OwnerErrorBoundary.
+// Every other call site already coerces via `String(row.action)` first
+// (safe, if leaky); this one did not. Widened to accept the real runtime
+// shape rather than only the declared one, and null/undefined honestly
+// falls to the existing generic "review" tone -- never a fabricated
+// TAKE_NOW/WAIT tone.
+export function actionToBadgeTone(action: string | null | undefined): BadgeTone {
+  if (!action) return "review";
   const normalized = action.toUpperCase().replace(/_/g, " ");
   if (normalized === "TAKE NOW") return "ready"; // GREEN
   if (normalized === "GOOD VALUE") return "review"; // AMBER -- "Consider now"
@@ -3978,7 +3991,7 @@ function PlayerDrawer({
           </div>
           <div className="player-drawer__stat">
             <span>Action</span>
-            <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action} />
+            <StatusBadge tone={actionToBadgeTone(candidate.action)} label={candidate.action || "Unknown"} />
           </div>
           <div className="player-drawer__stat" title={candidate.playerAvailabilityStatus?.reason ?? "No status issue is recorded for this player in NWR's canonical availability authority."}>
             <span>Availability</span>

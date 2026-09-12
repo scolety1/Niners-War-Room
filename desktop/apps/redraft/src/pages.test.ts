@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  dataHealthStatusLabel,
+  dataHealthTone,
   DRAFT_ROOM_ACCEPTANCE_LABELS,
   globalPickSearchRows,
   nextRapidCaptureIndex,
@@ -255,5 +257,38 @@ describe("noRankingsExplanation", () => {
         health: { messages: [] } as never,
       }),
     ).toBe("NWR has no admitted ranking to show for this league right now.");
+  });
+});
+
+// P0-1 (post-UI hardening pass, 2026-09-12): a real, pre-existing latent
+// crash site -- DataHealthCategory.status is typed as a non-optional enum,
+// but a degraded/malformed backend payload can genuinely omit it at
+// runtime. DataHealthPage and league.tsx's Sync tab both called
+// `.replaceAll("_", " ")` directly on this field; a missing status threw a
+// raw TypeError past the top-level OwnerErrorBoundary (only caught there,
+// never guarded at the source -- confirmed by reproducing it with a real
+// malformed fixture before this fix landed). Both call sites now go
+// through `dataHealthStatusLabel`.
+describe("dataHealthStatusLabel (P0-1 regression: undefined DataHealthCategory.status)", () => {
+  it("formats a real status by replacing underscores with spaces", () => {
+    expect(dataHealthStatusLabel("NO_ACTIVITY")).toBe("NO ACTIVITY");
+    expect(dataHealthStatusLabel("OK")).toBe("OK");
+  });
+
+  it("reproduces the real crash with the exact pre-fix expression, proving the guard is load-bearing", () => {
+    const malformedCategory = { status: undefined } as unknown as { status: string };
+    expect(() => malformedCategory.status.replaceAll("_", " ")).toThrow(TypeError);
+  });
+
+  it("degrades honestly to 'Unknown' instead of throwing when status is undefined", () => {
+    expect(dataHealthStatusLabel(undefined)).toBe("Unknown");
+  });
+
+  it("degrades honestly to 'Unknown' instead of throwing when status is null", () => {
+    expect(dataHealthStatusLabel(null)).toBe("Unknown");
+  });
+
+  it("never fabricates a confident tone for a missing status -- falls to the existing 'blocked' branch", () => {
+    expect(dataHealthTone(undefined as unknown as string)).toBe("blocked");
   });
 });
