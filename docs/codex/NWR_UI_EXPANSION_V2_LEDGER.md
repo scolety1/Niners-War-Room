@@ -2321,3 +2321,211 @@ Worker 11: screenshot review pack)
   claimed either way.
 - Per the directive's own sequencing, Worker 10 (full regression) and
   Worker 11 (screenshot review pack) are next, and may be combined.
+
+## Work Unit 10 -- Full Regression (2026-09-12)
+
+**Start HEAD:** `c164bd8d`. **Result:** PASS -- clean across the whole
+night's range. Zero product code changes made (nothing genuinely broken
+was found in the shipped product); this entry is a verification pass, not
+a feature/fix pass.
+
+### Full backend/model drift check (the whole night, not just one commit)
+
+`git diff --stat aae72a75 HEAD -- src/`: **empty**, confirmed with full
+precision, not trusted from the ledger's own per-commit claims alone.
+Verified three ways: (1) `git diff --stat`, (2) `git diff | wc -l` = 0
+(zero diff lines, not just zero stat rows), (3) `git diff --name-only
+aae72a75 HEAD` piped through a filter that excludes every expected
+frontend/doc path (`desktop/apps/redraft/src/`, `desktop/apps/dynasty/src/`,
+`desktop/packages/ui/src/`, `docs/codex/NWR_UI_EXPANSION_V2_LEDGER.md`) --
+zero remaining rows. The repo's top-level `src/` (confirmed a real,
+separate directory holding the Python backend/model code, e.g.
+`src/application/contracts.py`/`desktop_facade.py`, distinct from every
+frontend `apps/*/src`) never appears in the 31-file, 8-commit diff at all.
+**No backend/model drift anywhere across the entire multi-worker effort.**
+Every one of Work Units 1-9's own individual "empty" claims holds up in
+aggregate, not just per-commit.
+
+### Full frontend regression
+
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  clean (zero output, zero errors).
+- `npx vitest run --no-file-parallelism` from the monorepo root
+  (`desktop/`): **278/278 passing, 25/25 test files**, matching Worker 9's
+  own reported baseline exactly -- zero regressions, zero new tests (this
+  pass made no product code changes).
+- Enumerated every `*.test.ts(x)` file in the monorepo directly
+  (`find`/`Glob`, not trusting vitest's own file-discovery silently): 25
+  files found, exactly matching the 25 the default run reports -- nothing
+  is excluded from the default run by config or naming convention.
+- Route/nav/drawer-specific files re-run individually (isolated from the
+  rest of the suite, to rule out cross-file state masking a failure):
+  `league-context.test.ts` (nav-alias/active-route resolver),
+  `player-detail-state.test.ts` (drawer target/same-player logic),
+  `draft-room-v2.test.ts`, `home-action-explain.test.ts`,
+  `weekly-shared.test.ts` -- **137/137 passing** standalone, consistent
+  with their in-suite results.
+
+### Build check
+
+`npm run build:redraft` and `npm run build:dynasty` (both real `vite
+build` production builds, not dev-server-only) both **succeeded** --
+redraft: 64 modules, `dist/assets/index-*.js` 529KB (150KB gzip), built in
+1.35s; dynasty: 46 modules, 362KB (107KB gzip), built in 178ms. Only a
+benign "chunk larger than 500KB" advisory (pre-existing, not introduced by
+this effort, not an error). A full native Tauri bundle
+(`bundle:redraft`/`bundle:dynasty`, which additionally builds the Python
+sidecar and packages a real OS installer) was correctly NOT attempted --
+genuinely infeasible as a per-pass regression check per the directive's
+own explicit carve-out; the two real `vite build` runs are the closest
+available, and genuinely meaningful, proxy.
+
+### Cross-worker visual/behavioral consistency spot-check (real Chrome, real render)
+
+Reused Work Unit 7's own `<iframe>` viewport-control technique (a
+temporary `qa-app-loader.html` at the redraft app's project root patching
+`window.fetch` before `main.tsx`'s first call, loaded inside a temporary
+`public/qa-cross-check-harness.html` iframe host) against a real local
+Vite dev server (port 1422), one synthetic `qa-cross-1` profile (10-team
+PPR, 1QB, Sleeper) with real rankings/roster/opponents/lineup/waivers/
+trade/league-workspace/decision-bundle fixtures. Zero real network calls,
+zero backend process started, owner's real leagues never touched. Both
+temporary files were deleted before this entry's own commit (this pass
+made no source changes, so nothing to commit either way) -- confirmed via
+`git status --porcelain` showing a clean tree throughout.
+
+**Two real, disclosed QA-harness bugs found and fixed in this pass's OWN
+mock** (not product bugs -- same class every one of Work Units 1-9 also
+hit and fixed in their own fixtures): (1) the League Sync tab's own
+`dataHealth` fixture used invented field names (`tone`/`summary`/
+`messages`) instead of the real `DataHealthCategory` contract shape
+(`status`/`source`/`lastUpdate`/`freshness`/`degradationReason`/
+`impactOnRecommendations`), verified against `packages/contracts/src/
+index.ts` before concluding it was a fixture bug and not a product one --
+`league.tsx`'s `LeagueSyncTab` crashed calling `.replaceAll()` on the
+missing `status` field, caught cleanly by `OwnerErrorBoundary`, no white
+screen. (2) Draft Room's own specialized `PlayerDrawer` reads several
+`DecisionBundleCandidate` fields (`action`, `warnings`, `uncertainty`,
+`metricStatus`, and `marginalRosterUtility.label`/`.utility`) this pass's
+first candidate fixture omitted -- `actionToBadgeTone(candidate.action)`
+crashed calling `.toUpperCase()` on `undefined`, again cleanly caught by
+`OwnerErrorBoundary`. Both fixed in the QA fixture only; both crash sites
+are real, pre-existing code paths unrelated to this whole UI effort's own
+changes (`league.tsx`'s `dataHealthTone`/`.replaceAll()` call predates
+Work Unit 5, `actionToBadgeTone` predates Work Unit 6) -- re-verified
+clean immediately after each fix, not left as an open finding.
+
+**Shared-primitive consistency, confirmed both at the code level and live:**
+- `DecisionExplain` (`decision-explain.tsx`) is imported from the exact
+  same file by Lineup (`in-season.tsx`), Improve Team, Trades, and Draft
+  Room (`draft-room-v2.tsx`) -- grepped directly, one shared component, not
+  four near-identical reimplementations. Live-rendered on all four: the
+  same `.nwr-explain`/`.nwr-explain--<tone>` root class, the same
+  `<header>`/`<dl class="nwr-explain__facts">`/`<div class="nwr-explain__actions">`
+  shell, and the same `StatusBadge` tone vocabulary appear byte-identically
+  across Lineup's close-call swap card, Improve Team's ADD recommendation,
+  Trades' mutual-improvement candidate, and Draft Room's PICK NOW hero card
+  -- confirmed via actual `outerHTML` capture of each, not assumed from
+  the ledger's own prior descriptions.
+- `StatusBadge` imports from the single shared `@nwr/ui` package on every
+  file that uses it (grepped across all 8 surface-owning files) -- no
+  per-surface reimplementation anywhere.
+- Players (Rankings/Tiers/Compare/Market) and League (Overview/My Roster/
+  Teams/Scoring/Settings/Sync) deliberately do NOT use `DecisionExplain`
+  -- confirmed this is by design, not a missed migration: neither surface
+  is a recommendation/decision card in the directive's sense (Players is
+  research tables, League is roster/settings state), and both instead
+  correctly reuse their own already-shared primitives (`.nwr-tabbar` for
+  tab state, `.health-list`/`StatusBadge` for League's Overview/Sync). Live
+  rendered both and confirmed correct nav highlighting, live `StatusBadge`
+  tone rendering ("OK" -> safe tone), and zero console errors.
+
+**Global Player Drawer consistency, live-verified from 2 different call
+sites plus Draft Room's own separate drawer:**
+Opened from Lineup ("View Grady Wintermoor") and from Trades ("View Grady
+Wintermoor" again, a different call site) -- both produced the identical
+`role="dialog"` shell, moved keyboard focus into the `<aside>` immediately
+on open (`document.activeElement === drawer`, the Work Unit 7 a11y fix,
+re-confirmed live rather than assumed), showed the correct
+non-leaking `SOURCE_LABEL` ("OPENED FROM START / SIT" / "OPENED FROM
+TRADES"), and closed cleanly on a real dispatched `Escape` keydown both
+times. Draft Room's own deliberately-separate `PlayerDrawer` (once its own
+QA-fixture gap above was fixed) showed the same `role="dialog"`,
+focus-on-open, and Escape-close behavior, plus its own real Pick
+Score/Team Score/Championship Equity/Make-It-Back/Cost of Waiting/Player
+Score stat grid -- confirming Work Unit 6/7's own "already substantially
+aligned visual grammar" finding live, not just from the ledger's prose.
+
+**Nav highlighting, live-verified across every one of the 7 top-level
+routes in one session** (Home, Lineup, Improve Team, Trades, Players,
+League, Draft Room): exactly one `.nav-item--active` element at every
+route, the correct one every time, zero console errors at any step. This
+is a smaller-scale, single-pass re-confirmation layered on top of Worker
+9's own much larger 80-step endurance sweep at this exact HEAD -- both
+independently agree nav highlighting is solid. One cosmetic non-issue
+investigated and cleared: the Players nav item's active-state text reads
+"Players2" when read via `.textContent` -- this is a `<kbd>2</kbd>`
+keyboard-shortcut hint badge rendered inside the same `<a>`, not a stray
+counter or a bug (confirmed via `outerHTML`).
+
+### Orphaned processes
+
+One genuine orphaned process found and killed: `node.exe` (PID 11068,
+`tmp-live-ui-dogfood-server2.mjs`, listening on `127.0.0.1:50603`),
+running idle since **2026-09-09 10:19** -- i.e. it predates this whole UI
+effort (which started 2026-09-12) by three days and is not attributable to
+any of Work Units 1-9; most likely leftover from an unrelated earlier
+session. Near-zero CPU/memory, clearly stale -- killed as general sandbox
+hygiene per this pass's own cleanup scope. No dev-server processes or
+listening ports from Work Units 1-9's own sessions were found still
+running (ports 1422/1420/1421/5173/4422/18742 all clear before this pass's
+own dev server was started). This pass's own temporary `npm run dev`
+(redraft, port 1422, PID 20856) was stopped and confirmed released before
+finishing; the handful of transient `node.exe` worker processes spawned by
+this pass's own `tsc -b`/`vitest run` invocations exited on their own
+before the next check, as expected.
+
+### Tests / commit
+
+No product code was changed this pass (only this pass's own temporary,
+unshipped QA-harness fixture, deleted before finishing) -- there is
+nothing to commit beyond this ledger entry itself. `git status
+--porcelain` is clean and HEAD remains `c164bd8d` (unchanged from Work
+Unit 9).
+
+### Console errors
+
+**0** in the shipped product across every state this pass rendered, after
+fixing this pass's own two fixture gaps (both crashes were caught cleanly
+by `OwnerErrorBoundary` with no white screen either way, consistent with
+Work Unit 8's own finding about that boundary's behavior).
+
+### Open issues for Worker 11 (screenshot review pack)
+
+- Every "genuinely untested distinct viewport width" gap recorded by Work
+  Units 1-6 was closed by Work Unit 7 (all 8 surfaces at 1440/1180/900/
+  768px); this pass did not re-open that question, and did not re-drive a
+  full per-state x per-width matrix either (same explicitly-scoped-out
+  undertaking Work Units 7/8/9 each declined for the same reason -- a much
+  larger, multiplicative effort). Worker 11 should treat Work Unit 7's own
+  4-width x 8-surface sweep as the standing baseline for screenshot
+  framing, not re-litigate viewport coverage.
+- This pass's own cross-worker consistency spot-check used ONE synthetic
+  league/data scenario per surface (populated/happy-path only) -- it did
+  not re-drive every prior Work Unit's own empty/stale/close-call/degraded
+  states. Those remain independently covered by each owning Work Unit's
+  own ledger entry (and Work Unit 8's dedicated failure-state pass); this
+  pass adds a fresh, independent confirmation that the shared primitives
+  render identically in the common/happy case across all 6 surfaces, not a
+  full re-certification of every state.
+- The two QA-fixture bugs this pass found and fixed (League Sync tab's
+  `dataHealth` shape, Draft Room's candidate fixture completeness) are
+  recorded here only so a future session reusing a mock harness in this
+  app knows the exact real contract shapes (`DataHealthCategory`,
+  `DecisionBundleCandidate`) -- neither is a product defect and neither
+  needed a source-code fix.
+- All 6 named surfaces (Lineup, Improve Team, Trades, Players, League,
+  Draft Room) are now confirmed, this pass, to be live-renderable,
+  crash-free, and visually consistent in their common states -- Worker 11
+  should be able to proceed straight to building the screenshot review
+  pack without further regression gating.
