@@ -5,11 +5,18 @@ import { useEffect, useState } from "react";
 
 import { leagueFormat, leagueIdentityFormat } from "./league-context";
 
-type EditableProfile = Omit<RedraftProfileUpdateInput, "draft"> & {
+// NWR UI expansion pass (2026-09-12, League surface): `editableProfile`/
+// `ProfileEditor` gained `export` here so the new unified League workspace's
+// SETTINGS tab (league.tsx) can reuse this EXACT editor -- same roster/
+// scoring/draft-settings form, same `updateRedraftProfile` contract call --
+// rather than a second, drifting reimplementation. `ProfilePage` itself
+// (the multi-profile chooser/create/import flow) is otherwise unchanged and
+// stays reachable at its own route for creating/importing/switching leagues.
+export type EditableProfile = Omit<RedraftProfileUpdateInput, "draft"> & {
   draft: RedraftProfileUpdateInput["draft"] & { rosterLimits?: Record<string, number> };
 };
 
-function editableProfile(profile: LeagueProfile): EditableProfile {
+export function editableProfile(profile: LeagueProfile): EditableProfile {
   return {
     leagueName: profile.leagueName,
     teamCount: profile.teamCount,
@@ -175,7 +182,7 @@ export function ProfilePage({
   </>;
 }
 
-function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working }: { edit: EditableProfile; disabled: boolean; onChange: (value: EditableProfile) => void; onDuplicate: () => void; onSave: () => void; working: string }) {
+export function ProfileEditor({ edit, disabled, onChange, onDuplicate, onSave, working }: { edit: EditableProfile; disabled: boolean; onChange: (value: EditableProfile) => void; onDuplicate: () => void; onSave: () => void; working: string }) {
   const number = (value: string) => Number(value);
   const rosterField = (key: keyof RedraftProfileUpdateInput["roster"], label: string) => <label className="form-field"><span>{label}</span><input disabled={disabled} min={0} max={40} type="number" value={edit.roster[key]} onChange={(event) => onChange({ ...edit, roster: { ...edit.roster, [key]: number(event.target.value) } })} /></label>;
   const scoringField = (key: keyof RedraftProfileUpdateInput["scoring"], label: string, step = 0.5) => <label className="form-field"><span>{label}</span><input disabled={disabled} step={step} type="number" value={edit.scoring[key]} onChange={(event) => onChange({ ...edit, scoring: { ...edit.scoring, [key]: number(event.target.value) } })} /></label>;

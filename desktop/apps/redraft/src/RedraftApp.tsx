@@ -8,9 +8,10 @@ import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
-import { DataHealthPage, FreeAgentsPage, OpponentRostersPage, WeeklyToolsPage } from "./pages";
-import { LineupPage, MyRosterPage, WeeklyHomePage } from "./in-season";
+import { DataHealthPage, FreeAgentsPage, WeeklyToolsPage } from "./pages";
+import { LineupPage, WeeklyHomePage } from "./in-season";
 import { ImproveTeamPage } from "./improve-team";
+import { LeagueWorkspacePage } from "./league";
 import { PlayersPage } from "./players";
 import { TradesPage } from "./trades";
 import { DraftRoomV2Page } from "./draft-room-v2";
@@ -75,12 +76,24 @@ const NAV_PLAYERS: NavigationGroup = {
     { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" },
   ],
 };
+// NWR UI expansion pass (2026-09-12, League surface): ONE nav item, not
+// two -- My Roster/Opponent Rosters are now tabs (OVERVIEW/MY ROSTER/
+// TEAMS/SCORING/SETTINGS/SYNC) inside a single unified `LeagueWorkspacePage`
+// workspace (see league.tsx), same consolidation shape as Improve Team/
+// Trades/Players. `/my-roster` is reused as the entry path unchanged (no
+// route-table/alias churn beyond the new `ROUTE_ALIAS_SUBPATH` entry in
+// league-context.ts) -- its scoped route now renders `LeagueWorkspacePage`
+// instead of the old standalone `MyRosterPage` (in-season.tsx, left in
+// place unrouted). "Manage Leagues" (`ProfilePage`, unchanged) and "Data
+// Health" (`DataHealthPage`, unchanged) stay their own separate items --
+// genuinely distinct surfaces (create/import/switch leagues; whole-system
+// data diagnostics), not folded into "what is THIS league" -- see the
+// module doc in league.tsx for why.
 const NAV_LEAGUE: NavigationGroup = {
   label: "League",
   items: [
-    { label: "My Roster", path: "/my-roster", icon: "profile" },
-    { label: "Opponent Rosters", path: "/opponent-rosters", icon: "layers" },
-    { label: "Profile & Scoring", path: "/profile", icon: "settings", shortcut: "4" },
+    { label: "League", path: "/my-roster", icon: "profile", shortcut: "4" },
+    { label: "Manage Leagues", path: "/profile", icon: "settings" },
     { label: "Data Health", path: "/data-health", icon: "health" },
   ],
 };
@@ -270,13 +283,13 @@ export function RedraftApp() {
       <Route path="/league/:leagueKey/lineup" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LineupPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LeagueWorkspacePage client={client} data={data} onUpdate={update} defaultTab="roster" /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LeagueWorkspacePage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trades" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trade-finder" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} defaultTab="find" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/free-agents" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><FreeAgentsPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/opponent-rosters" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><OpponentRostersPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/opponent-rosters" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LeagueWorkspacePage client={client} data={data} onUpdate={update} defaultTab="teams" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/draft" element={<LeagueScopedPage client={client} data={data} onUpdate={update}>
         <DraftRoomV2Page
           key={data.activeProfileId ?? "draft-room"}

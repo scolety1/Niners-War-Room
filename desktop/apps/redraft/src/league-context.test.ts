@@ -174,6 +174,20 @@ describe("resolveActiveNavPath", () => {
     expect(resolveActiveNavPath("/league/profile-fantasy-gamers/trade-finder", ["/trade-analysis"])).toBe("/trade-analysis");
   });
 
+  // NWR UI expansion pass (2026-09-12, League surface): My Roster/Opponent
+  // Rosters collapsed into one "League" nav item (path "/my-roster"),
+  // unified into one LeagueWorkspacePage. Exercised against the REAL
+  // post-consolidation League nav path list -- same precedent as the
+  // Players-surface test above for /tiers, /compare, /adp.
+  it("resolves the legacy /opponent-rosters subpath to the one League nav item (League surface, unified into one LeagueWorkspacePage)", () => {
+    const leagueNavPaths = ["/my-roster", "/profile", "/data-health"];
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/my-roster", leagueNavPaths)).toBe("/my-roster");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/opponent-rosters", leagueNavPaths)).toBe("/my-roster");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/league", leagueNavPaths)).toBe("/my-roster");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/profile", leagueNavPaths)).toBe("/profile");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/data-health", leagueNavPaths)).toBe("/data-health");
+  });
+
   // NWR UI expansion pass (2026-09-12, Players surface): Rankings/Tiers &
   // Positions/Compare/Market Data collapsed into one "Players" nav item
   // (path "/rankings"), unified into one PlayersPage. Exercised against

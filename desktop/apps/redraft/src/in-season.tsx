@@ -39,6 +39,7 @@ import {
   ProviderStatusLine,
   RefreshProjectionsButton,
   WeekControl,
+  appendPlayerDetailColumn,
   formatClock,
   statusTone,
   useAsync,
@@ -534,31 +535,60 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
 // with live Sleeper identity).
 // ---------------------------------------------------------------------------
 
-export function MyRosterPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+// NWR UI expansion pass (2026-09-12, League surface): split into an
+// exported `MyRosterContent` (no `PageHeader` of its own) + a thin
+// `MyRosterPage` wrapper, same shape as the Players/Improve Team/Trades
+// consolidations before it -- pure extraction plus one real bug fix (see
+// below), zero other behavior change. `MyRosterContent` is what the new
+// unified League workspace's MY ROSTER tab actually renders (league.tsx);
+// `MyRosterPage` is kept as an unrouted legacy fallback.
+export function MyRosterContent({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const loader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
   const { result, error, working } = useAsync(loader, [isSleeper, data.activeProfileId]);
-  const columns: TableColumn[] = [
-    { key: "playerName", label: "Player", sort: "text" },
-    { key: "position", label: "Pos", sort: "text" },
-    { key: "team", label: "Team", sort: "text" },
-    { key: "starter", label: "Lineup", sort: "text", render: (row) => row.starter ? <StatusBadge tone="safe" label="Starter" /> : "Bench" },
-    { key: "identityStatus", label: "NWR identity", sort: "text", render: (row) => row.identityStatus === "MATCHED" ? <StatusBadge tone="safe" label="Matched" /> : <StatusBadge tone="review" label="Unmatched" /> },
-    {
-      key: "action", label: "", render: (row) => (
-        <Link to={`/trade-analysis?giveSleeperId=${encodeURIComponent(String(row.sleeperPlayerId))}&giveName=${encodeURIComponent(String(row.playerName))}`}>
-          Add to Trade Analysis
-        </Link>
-      ),
-    },
-  ];
+  // Real bug found and fixed (before any live render, by reading this
+  // component against the directive's "players clickable -> Player
+  // Drawer" requirement): My Roster had NO drawer/"View" wiring at all,
+  // unlike every other roster/table surface already adopted (Opponent
+  // Rosters, Free Agents, Rankings, ...) -- confirmed by reading the
+  // pre-existing component before assuming otherwise. Added the same
+  // global primitive, alongside (not instead of) the existing "Add to
+  // Trade Analysis" link.
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "MY_ROSTER");
+  const columns: TableColumn[] = useMemo(
+    () => appendPlayerDetailColumn(
+      [
+        { key: "playerName", label: "Player", sort: "text" },
+        { key: "position", label: "Pos", sort: "text" },
+        { key: "team", label: "Team", sort: "text" },
+        { key: "starter", label: "Lineup", sort: "text", render: (row) => row.starter ? <StatusBadge tone="safe" label="Starter" /> : "Bench" },
+        { key: "identityStatus", label: "NWR identity", sort: "text", render: (row) => row.identityStatus === "MATCHED" ? <StatusBadge tone="safe" label="Matched" /> : <StatusBadge tone="review" label="Unmatched" /> },
+        {
+          key: "action", label: "", render: (row) => (
+            <Link to={`/trade-analysis?giveSleeperId=${encodeURIComponent(String(row.sleeperPlayerId))}&giveName=${encodeURIComponent(String(row.playerName))}`}>
+              Add to Trade Analysis
+            </Link>
+          ),
+        },
+      ],
+      (row) => openPlayerDetail({ playerId: String(row.sleeperPlayerId), playerName: String(row.playerName), position: String(row.position), team: String(row.team) }),
+    ),
+    [openPlayerDetail],
+  );
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="My Roster" description="Your current live Sleeper roster. Read-only." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Sleeper profile required"} />} />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live roster source." /> : null}
     {working ? <p className="draft-feedback">Reading current Sleeper roster…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
     {result ? <Panel title={`${result.roster.length} rostered players`} eyebrow="Read-only"><DataTable columns={columns} rows={result.roster as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
+  </>;
+}
+
+export function MyRosterPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+  const isSleeper = data.activeProfile?.provider === "sleeper";
+  return <>
+    <PageHeader eyebrow="Live Sleeper league state" title="My Roster" description="Your current live Sleeper roster. Read-only." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Sleeper profile required"} />} />
+    <MyRosterContent client={client} data={data} />
   </>;
 }
 

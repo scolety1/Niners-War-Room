@@ -360,7 +360,11 @@ const DATA_HEALTH_CATEGORY_LABEL: Record<string, string> = {
   SNAPSHOT: "Snapshot",
 };
 
-function dataHealthTone(status: string): "safe" | "review" | "blocked" {
+// NWR UI expansion pass (2026-09-12, League surface): exported so the new
+// unified League workspace's SYNC tab (league.tsx) can render the real
+// LEAGUE_SYNC data-health category with the exact same tone mapping this
+// page already uses, rather than a second, drifting one.
+export function dataHealthTone(status: string): "safe" | "review" | "blocked" {
   if (status === "OK") return "safe";
   if (status === "DEGRADED" || status === "NO_ACTIVITY") return "review";
   if (status === "NOT_APPLICABLE") return "review";
@@ -506,7 +510,15 @@ export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: R
   </>;
 }
 
-export function OpponentRostersPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+// NWR UI expansion pass (2026-09-12, League surface): split into an
+// exported `OpponentRostersContent` (no `PageHeader` of its own) + a thin
+// `OpponentRostersPage` wrapper, same shape as `RankingsPage`/`TiersPage`/
+// `ComparePage`/`MarketDataContent` before it -- pure extraction, zero
+// behavior change to the opponent-roster read/render logic itself.
+// `OpponentRostersContent` is what the new unified League workspace's
+// TEAMS tab actually renders (league.tsx); `OpponentRostersPage` is kept as
+// an unrouted legacy fallback.
+export function OpponentRostersContent({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [result, setResult] = useState<RedraftOpponentRostersResult | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
   useEffect(() => {
@@ -555,11 +567,18 @@ export function OpponentRostersPage({ client, data }: { client: NwrApiClient; da
     },
   ];
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={result ? "safe" : data.activeProfile?.provider === "sleeper" ? "review" : "blocked"} label={result ? `${result.opponents.length} opponents` : "Live source"} />} />
     {data.activeProfile?.provider !== "sleeper" ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live opponent-roster source." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {isSleeper ? <div className="profile-edit-actions"><Link to="/trade-finder">Open Trade Finder (auto-search all opponents)</Link></div> : null}
     {result?.opponents.map((opponent) => <Panel key={opponent.rosterId} title={opponent.teamName} eyebrow={`${opponent.players.length} players · roster ${opponent.rosterId}`}><DataTable columns={columns} rows={opponent.players as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} />{opponent.unresolvedSleeperPlayerIds.length ? <p className="copy-muted">Unresolved Sleeper IDs: {opponent.unresolvedSleeperPlayerIds.join(", ")}</p> : null}</Panel>)}
+  </>;
+}
+
+export function OpponentRostersPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+  const isSleeper = data.activeProfile?.provider === "sleeper";
+  return <>
+    <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={isSleeper ? "review" : "blocked"} label={isSleeper ? "Live source" : "Sleeper profile required"} />} />
+    <OpponentRostersContent client={client} data={data} />
   </>;
 }
 

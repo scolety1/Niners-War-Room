@@ -65,6 +65,14 @@ const SOURCE_LABEL: Record<string, string> = {
   TRADE_FINDER: "Trade Finder",
   FREE_AGENTS: "Free Agents",
   OPPONENT_ROSTERS: "Opponent Rosters",
+  // NWR UI expansion pass (2026-09-12, League surface): My Roster never had
+  // Player Drawer wiring at all before this pass (a real, disclosed gap,
+  // not a regression) -- without this entry, opening the drawer from it
+  // would fall back to the raw "MY_ROSTER" string, the same
+  // internal-language leak class fixed for IMPROVE_TEAM/TRADES/
+  // PLAYERS_MARKET. Found before any live render, by reading this map
+  // against the new call site in in-season.tsx.
+  MY_ROSTER: "My Roster",
   PLAYERS_RANKINGS: "Players / Rankings",
   PLAYERS_TIERS: "Players / Tiers",
   PLAYERS_COMPARE: "Players / Compare",

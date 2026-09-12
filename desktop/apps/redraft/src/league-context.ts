@@ -151,6 +151,15 @@ export const ROUTE_ALIAS_SUBPATH: Record<string, string> = {
   tiers: "rankings",
   compare: "rankings",
   adp: "rankings",
+  // NWR UI expansion pass (2026-09-12, League surface): `/opponent-rosters`
+  // now shares the SAME page as `/my-roster` (the unified
+  // `LeagueWorkspacePage`, opened to its TEAMS tab) rather than a separate
+  // standalone page -- same reasoning as every alias above. Without this,
+  // a deep link or bookmark to `/opponent-rosters` would resolve the nav
+  // active-state to nothing (the exact bug class the Work Unit 0
+  // canonical-resolver fix targeted) once the "My Roster"/"Opponent
+  // Rosters" nav items collapsed into one "League" item.
+  "opponent-rosters": "my-roster",
 };
 
 /**

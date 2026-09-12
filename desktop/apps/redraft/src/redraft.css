@@ -964,3 +964,16 @@
   .nwr-tabbar { gap: 2px 14px; }
   .nwr-tabbar__tab { margin-right: 0; }
 }
+
+/* =========================================================================
+   LEAGUE V1 (directive: ui/nwr-visual-redesign-v1, League surface,
+   2026-09-12). One workspace unifying My Roster/Teams/Scoring/Settings/
+   Sync under OVERVIEW/MY ROSTER/TEAMS/SCORING/SETTINGS/SYNC tabs (reuses
+   `.nwr-tabbar` above, unchanged). The Scoring tab's grouped read-only
+   rule display is the one genuinely new layout this pass needed; every
+   other visual choice reuses existing `.panel`/`.health-list`/
+   `.player-drawer__section` components unchanged -- no second competing
+   card/table system, no new color.
+   ========================================================================= */
+.league-scoring-groups { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.league-scoring-group h3 { color: var(--gold-bright); font-size: 10px; letter-spacing: .06em; margin: 0 0 4px; text-transform: uppercase; }

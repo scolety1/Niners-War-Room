@@ -905,3 +905,285 @@ modified + 1 new, all under `desktop/apps/redraft/src` -- `RedraftApp.tsx`,
   attempted this pass -- Players' full scope fit within this session, so
   no partial-completion handoff is needed here, but the next worker should
   proceed to League per the directive's stated order.
+
+## Work Unit 5 -- League (2026-09-12)
+
+**Start HEAD:** `8e314f8f`. **Result:** COMPLETE.
+
+### Foundation verification (Work Unit 0)
+Confirmed, not rebuilt: the shared drawer Escape-to-close fix (Work Unit 1)
+applies here too -- live-verified from three real entry points (My Roster's
+new `View` action, Teams'/Opponent Rosters' existing `View` action twice,
+once per player, to prove reopen-a-different-player), zero extra wiring
+needed. `npx tsc -b` and `npx vitest run` (apps/redraft alone) both clean at
+the start head (215/215 -- 201 baseline the Players entry reported plus its
+own +14, 0 regressions before this pass's own changes).
+
+### What changed (League surface)
+- **`league.tsx`** (new): `LeagueWorkspacePage`, the single workspace
+  replacing the previously separately-built My Roster / Opponent Rosters /
+  Profile & Scoring pages in the nav. Tab state lives in a `?tab=` query
+  param (shareable/deep-linkable), default `overview`, same pattern as
+  Players/Improve Team/Trades. Six tabs:
+  - **OVERVIEW**: the directive's compact top-level summary (league name,
+    my roster size, platform, team count, scoring format, current week,
+    sync health) as one `.health-list` panel, with every provider/internal/
+    debug detail (profile id, identity string, lifecycle basis, scoring/
+    roster-state hashes, snapshot id, sync-as-of, raw issues) demoted into a
+    collapsed `<details className="player-drawer__section">` disclosure --
+    the exact reused progressive-disclosure pattern the design system
+    already documents for the Player Drawer, not a new one-off component.
+  - **MY ROSTER** / **TEAMS**: render the extracted `MyRosterContent`
+    (in-season.tsx) / `OpponentRostersContent` (pages.tsx) directly -- see
+    the real bug fix below for My Roster.
+  - **SCORING**: a new, presentation-only read-only display
+    (`scoringSummaryGroups`/`rosterCompositionRows`, league-summary.ts) of
+    EVERY real scoring rule on the active profile grouped as Passing/
+    Rushing/Receiving/Other/Bonuses -- including several fields
+    (yards-per-point thresholds, first-down/return/fumble rules, bonuses)
+    the existing roster/scoring EDIT form never exposed anywhere, read-only
+    or otherwise. One "Edit in Settings" cross-tab jump button (same
+    precedent as Improve Team's Targets -> Add/Drop and Trades' Find
+    Trades -> Analyze).
+  - **SETTINGS**: reuses `ProfileEditor` + `editableProfile` directly from
+    `profile.tsx` (both gained `export` for this reuse) -- the exact same
+    roster/scoring/draft-settings form and `client.updateRedraftProfile`/
+    `client.duplicateRedraftProfile` contract calls `ProfilePage` already
+    made, zero behavior change to the editor itself.
+  - **SYNC**: combines the real `LeagueWorkspaceContext` (`currentWeek`/
+    `syncStatus`/`syncAsOf`/`issues` -- see the real gap-closure below) with
+    the real `LEAGUE_SYNC` category of the existing Data Health report
+    (`client.redraftDataHealth()`, reused via a newly-`export`ed
+    `dataHealthTone` from pages.tsx, not duplicated) and the real Sleeper
+    "Refresh from Sleeper" resync action (`client.resyncSleeperRedraftProfile`,
+    same call `ProfilePage` already made).
+  - `ProfilePage` (multi-profile create/import/duplicate/switch/Practical
+    Mock flow) is DELIBERATELY NOT folded in here -- it answers "manage MY
+    LEAGUES" (plural), a genuinely different question from this workspace's
+    "what is THIS league" (singular). It stays reachable at its own nav
+    item, relabeled "Manage Leagues" (path `/profile` unchanged). "Data
+    Health" also stays separate -- a genuinely broader whole-system
+    diagnostic (weekly/ROS projections, market ADP, player status, decision
+    engine, snapshot), not specific to this one league; only its real
+    `LEAGUE_SYNC` category is reused (see SYNC above). Both choices are the
+    same "keep a genuinely distinct surface separate" precedent Players used
+    for Cheat Sheet.
+- **`league-summary.ts`** (new): pure derivation, same family as
+  `lineup-explain.ts`/`improve-team-explain.ts`/`trades-explain.ts` --
+  `syncHealthTone`/`syncHealthLabel` (LIVE/DEGRADED/NOT_APPLICABLE ->
+  safe/review/offline), `formatCurrentWeek` (honest "Not available" for
+  `null`, never a fabricated week), `scoringSummaryGroups`,
+  `rosterCompositionRows` (omits zero-count Superflex/K/DST slots rather
+  than showing a confusing "0"). 13 new unit tests
+  (`league-summary.test.ts`).
+- **`in-season.tsx`**: `MyRosterPage` split into an exported
+  `MyRosterContent` (no `PageHeader`) + a thin wrapper of the same name kept
+  as an unrouted legacy fallback -- same shape as every prior consolidation.
+  See the real bug fix below for what else changed here.
+- **`pages.tsx`**: `OpponentRostersPage` split the same way into
+  `OpponentRostersContent` + a thin wrapper; `dataHealthTone` gained
+  `export` for SYNC-tab reuse.
+- **`profile.tsx`**: `editableProfile`/`EditableProfile`/`ProfileEditor`
+  gained `export` for SETTINGS-tab reuse. `ProfilePage` itself is otherwise
+  completely unchanged.
+- **`RedraftApp.tsx`**: `NAV_LEAGUE` collapsed from 4 items (My Roster/
+  Opponent Rosters/Profile & Scoring/Data Health) to 3 (League/Manage
+  Leagues/Data Health) -- My Roster and Opponent Rosters merged into the
+  one new "League" item, reusing the existing `/my-roster` path unchanged
+  (same precedent as Improve Team reusing `/waivers`) and inheriting the
+  `shortcut: "4"` the old "Profile & Scoring" item carried. The
+  `/league/:leagueKey/my-roster`, `/league/:leagueKey/league` (the
+  canonical task-map alias -- previously a placeholder rendering
+  `MyRosterPage`, now the real thing), and `/league/:leagueKey/opponent-rosters`
+  scoped routes all now render `LeagueWorkspacePage` (with `defaultTab`
+  `"roster"`/unset-`"overview"`/`"teams"` respectively) instead of the old
+  standalone pages. `MyRosterPage`/`OpponentRostersPage` are unrouted, not
+  deleted (same precedent as `RankingsPage`/`TiersPage`/`ComparePage`/
+  `AdpProvidersPage` after Players).
+- **`league-context.ts`**: added one `ROUTE_ALIAS_SUBPATH` entry
+  (`"opponent-rosters": "my-roster"`) so `/league/:key/opponent-rosters`
+  still highlights the one "League" nav item instead of nothing -- same
+  reasoning as every prior alias (`improve`/`trade-finder`/`tiers`/
+  `compare`/`adp`). One new regression test in `league-context.test.ts`
+  exercising the real post-consolidation League nav array.
+- **`player-detail-drawer.tsx`**: added a `MY_ROSTER` entry to
+  `SOURCE_LABEL` (found before any live render, by reading the map against
+  the new call site) -- see the real bug fix below.
+- **`redraft.css`**: `.league-scoring-groups`/`.league-scoring-group h3`
+  (2 rules, ~4 lines) for the Scoring tab's grouped layout -- the one
+  genuinely new visual pattern this pass needed; every other choice reuses
+  `.panel`/`.health-list`/`.player-drawer__section`/`.nwr-tabbar` unchanged.
+
+### Real bugs found and fixed
+1. **My Roster had NO Player Drawer wiring at all** (found before any live
+   render, by reading `MyRosterPage` against the directive's "players
+   clickable -> Player Drawer" requirement) -- unlike every other roster/
+   table surface already adopted (Opponent Rosters, Free Agents, Rankings,
+   ...), confirmed by reading the pre-existing component rather than
+   assuming otherwise. Fixed by adding the same global
+   `usePlayerDetailOpener`/`appendPlayerDetailColumn` primitive, alongside
+   (not instead of) the existing "Add to Trade Analysis" link -- live-
+   verified: opens, shows "OPENED FROM MY ROSTER" (not a raw source-code
+   leak, since the matching `SOURCE_LABEL` entry was added in the same
+   pass), closes via X/Escape, reopens a different player cleanly.
+2. **`LeagueWorkspaceContext` (`currentWeek`/`syncStatus`/`syncAsOf`/
+   `issues`) was fetched by NO frontend surface anywhere** (confirmed by a
+   whole-repo search before writing `league-summary.ts`) despite the client
+   method (`redraftLeagueWorkspaceContext`) and full contract type already
+   existing -- the same class of "real backend field, never surfaced"
+   finding the Players pass made for the ADP-preview `View` action. Closed
+   by wiring it into OVERVIEW's "Current week"/"Sync health" facts and the
+   new SYNC tab, read-only, its semantics untouched (this pass's hard
+   boundary).
+3. **`player-detail-drawer.tsx`'s `SOURCE_LABEL` map had no `MY_ROSTER`
+   entry** -- see bug 1. Found before any live render, by reading the map
+   against the new call site (same discipline as every prior pass's own
+   pre-render `SOURCE_LABEL` catches).
+
+### Trial matrix executed
+**Viewport method (safety constraint):** `mcp__claude-in-chrome__resize_window`
+was tested first, requesting 1180x900 -- `window.innerWidth` stayed fixed at
+**1424** (confirmed via a real JS check, not assumed, both before AND after
+the resize call, which reported "success" but changed nothing real) --
+matching Work Unit 3's own recorded value exactly (a plausible same-display
+coincidence across sessions, not a claim the tool works). Per the
+directive's explicit fallback, real rendering was done at the one width
+this sandbox's browser actually renders (**1424px, real Chrome, real DOM**,
+via a real local Vite dev server + a real fetch-mock, no backend process
+started).
+- **1424px (real, rendered)**: states A (My Roster populated -- 3 players,
+  one a real 55-character WR name, MATCHED/UNMATCHED identity badges both
+  present) / B (Teams -- 2 real opponent rosters, one a 68-character team
+  name, one genuinely empty with an honest "No rows match this view" and an
+  unresolved-Sleeper-id note) / C (Scoring -- all 5 rule groups incl.
+  Bonuses, honest singular "1 pt"/"None" TE-premium formatting) / D
+  (Settings -- the full roster/scoring/draft editor, a real `Save & refresh
+  rankings` round trip against the mock `updateRedraftProfile` endpoint,
+  confirmed via the real "Scoring, roster, and draft settings saved..."
+  feedback string) / E (Sync -- healthy: LIVE badge, real `Refresh from
+  Sleeper` round trip confirmed via its own real feedback string) / F (Sync
+  -- stale/degraded: toggled a `window.__NWR_LEAGUE_QA__.sync = "degraded"`
+  QA flag and remounted the Sync tab by switching away and back -- both the
+  Connection & Sync panel AND the League Sync Detail panel independently
+  showed DEGRADED, with real degradation-reason/issue text, and the
+  Overview tab's own Sync-health fact updated to "Degraded" on its own next
+  mount) / G (long league name AND long player/team names baked into every
+  fixture simultaneously, present across every tab and the sidebar identity
+  block, the page title, and the Player Drawer) were all rendered and
+  verified: zero console errors across the entire session (checked
+  cumulatively, not just per-state -- only Vite HMR/React-DevTools debug/
+  info lines appeared, no errors or warnings), `document.documentElement.
+  scrollWidth === clientWidth` (no horizontal overflow) confirmed by JS in
+  every state including the long-name stress state, correct "League" nav
+  highlighting throughout, real Save/Duplicate/Resync round trips exercised
+  against the mock (not just rendered idle).
+- **1440px / 1180px / 900px**: code-review only (real render not possible
+  here). `.health-list` (dt/dd flex row), `.nwr-tabbar` (flex-wrap),
+  `.profile-edit-grid` (the pre-existing Settings editor, unchanged), and
+  the two new `.league-scoring-groups` rules (`repeat(auto-fit,
+  minmax(200px,1fr))`, no fixed widths) are the same already-reviewed-safe
+  primitives every prior Work Unit exercised at other real widths; no new
+  narrow-width risk identified from reading the CSS. Same disclosed class
+  of gap every prior entry recorded -- no session in this whole effort has
+  yet rendered the SAME width live as another (958/884/1424/1164/1424px
+  across five sessions).
+
+### Interaction trials
+Player Drawer opened from My Roster (`View`, the new wiring) and from Teams/
+Opponent Rosters (`View`, twice -- Opponent Star Player then Opponent Bench
+Guy, from the SAME panel, to prove reopening a different player replaces
+rather than stacks: `document.querySelectorAll('.player-drawer').length`
+stayed 1 throughout); closed via the header X (Teams entry point) and via
+Escape (My Roster entry point, and again after the keyboard-only open
+below); a real keyboard-only round trip (`button.focus()` + `Enter` opened
+it, confirmed via `document.activeElement`/`.player-drawer` presence, not
+assumed). Switched among all six League tabs repeatedly (Overview -> My
+Roster -> Teams -> Scoring -> Settings -> Sync -> Overview) with the
+`?tab=` URL updating correctly and the correct tab highlighted every time,
+plus a real cross-tab jump (Scoring's "Edit in Settings" button ->
+`?tab=settings`). Navigated League -> Weekly Home (via the sidebar nav) ->
+back to League (via a second click on the "League" nav item, landing on
+`/my-roster`'s own default "My Roster" tab) with zero console errors each
+way. Separately verified the legacy `/opponent-rosters` flat path resolves
+to the League workspace's Teams tab AND correctly highlights the "League"
+nav item (the alias fix, live-confirmed, not just unit-tested). Regression-
+spot-checked "Manage Leagues" (`/profile`, unchanged `ProfilePage`, still
+shows the real active profile/create-preset/import-Sleeper/Practical-Mock
+panels) and "Data Health" (`/data-health`, unchanged `DataHealthPage`) --
+both still render correctly and highlight their own nav items, confirming
+the nav consolidation did not strand either surface.
+
+### Data used
+100% mocked, zero real network calls, zero backend process started --
+`window.fetch` patched at the browser-console level (the same mechanism
+Work Units 1-4 used and disclosed, including the Players pass's `input
+instanceof URL` fix, reused here since this app's `request()` always calls
+`fetch(new URL(...), ...)`) for one synthetic `qa-league-1` profile serving
+`/api/v1/bootstrap`, `/api/v1/redraft/my-roster`,
+`/api/v1/redraft/opponent-rosters`, `/api/v1/redraft/league-workspace-context`
+(a `window.__NWR_LEAGUE_QA__.sync` flag switches its `syncStatus`/`syncAsOf`/
+`issues` between LIVE/DEGRADED on the NEXT mount, no reload needed since tab
+switching already unmounts/remounts each tab's content), `/api/v1/redraft/data-health`
+(same flag drives its `LEAGUE_SYNC` category), `/api/v1/redraft/player-availability-status`,
+and the three real profile-mutation endpoints (`.../edit`, `.../duplicate`,
+`.../sleeper-resync`, each echoing a real merged/updated profile back
+through the same `RedraftBootstrap` shape the real backend returns); every
+other path returns a typed 404 envelope so nothing can hang. The owner's
+real Fantasy Gamers/403/Tester leagues and AppData install were never
+touched or read.
+
+### Tests
+`league-summary.test.ts` (13 tests, new): sync-status tone/label mapping
+for all three real `syncStatus` values, honest `null`-week formatting,
+scoring-group composition (incl. the honest "None" TE-premium case and the
+real bonus-append case), and the honest zero-count Superflex/K/DST omission
+in roster composition. One new test in `league-context.test.ts` (the
+`opponent-rosters` alias regression, exercised against the real
+post-consolidation League nav array). `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`: clean. `npx vitest run --no-file-parallelism`
+run from the MONOREPO ROOT (`desktop/`, both apps, per this pass's own
+directive): **264/264 passing**. Run from `apps/redraft` alone: **215/215**
+(201 baseline the Players entry reported + 14 new [13 + 1], 0 regressions).
+This directly reconciles the 201-vs-249 discrepancy the Players entry
+flagged: the monorepo-root run includes `apps/dynasty` (264 − 215 = 49
+Dynasty tests) in addition to Redraft's own suite -- confirmed empirically
+by running both scopes back to back in this session, not inferred. Every
+prior entry's "249" (Trades) and similar higher counts were very likely
+monorepo-root runs; Players' "201"/"200" was a `apps/redraft`-scoped run.
+Both scopes are internally consistent; there is no real regression hiding
+in the gap.
+
+### Backend/model files changed
+NONE. `git diff --stat 8e314f8f -- src/`: empty. Full diff: 8 files
+modified + 3 new, all under `desktop/apps/redraft/src` -- `RedraftApp.tsx`,
+`in-season.tsx`, `league-context.test.ts`, `league-context.ts`, `pages.tsx`,
+`player-detail-drawer.tsx`, `profile.tsx`, `redraft.css` (modified);
+`league-summary.ts`, `league-summary.test.ts`, `league.tsx` (new).
+
+### Open issues for the next worker
+- **No real "my team name" field exists anywhere in the contracts**
+  (`LeagueProfile`, `LeagueWorkspaceContext`, `RedraftMyRosterResult` all
+  lack one) for a Sleeper-sourced roster -- confirmed by reading every
+  candidate type before designing the Overview summary. Rather than
+  fabricate one, OVERVIEW's "My roster" fact honestly shows the rostered-
+  player COUNT once loaded (or "Not tracked for a Local/ESPN profile") --
+  a disclosed, real contract gap, not a bug this presentation-only pass can
+  close (would need a new backend field).
+- **900px/1180px/1440px genuinely untested as distinct regimes for
+  League** (see Trial matrix above) -- same disclosed class of gap every
+  prior entry recorded; no session across all five Work Units has yet
+  rendered the SAME width live as another.
+- `MyRosterPage`/`OpponentRostersPage` (the pre-consolidation pages) are
+  still live source code but, like Trades'/Players' own predecessors, NO
+  route in `RedraftApp.tsx` points to either any more -- genuinely
+  unrouted/unreachable from the app, kept only as source-level fallbacks
+  per that same precedent.
+- Per the directive's own hard boundary, this pass never wrote to
+  `LeagueWorkspaceContext` or changed its semantics -- only read it
+  (a new, additive frontend consumer of an already-existing, previously-
+  unused backend contract/endpoint).
+- Per the directive's explicit instruction, Draft Room was NOT attempted
+  by this pass. With League now complete, every UI-expansion surface named
+  in this effort (Lineup, Improve Team, Trades, Players, League) is done;
+  Draft Room remains the one deliberately-separate, differently-owned
+  surface for a future pass.
