@@ -997,3 +997,15 @@
    ========================================================================= */
 .league-scoring-groups { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .league-scoring-group h3 { color: var(--gold-bright); font-size: 10px; letter-spacing: .06em; margin: 0 0 4px; text-transform: uppercase; }
+
+/* =========================================================================
+   P1-2 (2026-09-12): Multi-League Attention Center -- a cross-league,
+   read-only overview (see attention-center-page.tsx). Reuses the SAME
+   Panel/DataTable/StatusBadge primitives every other page already uses;
+   the only new rule needed is a compact, bulletless list for the per-
+   league "why" column (each row's real flags), rendered inside a
+   DataTable cell.
+   ========================================================================= */
+.attention-center { display: flex; flex-direction: column; gap: 16px; }
+.attention-center__flag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.attention-center__flag-list li { font-size: 11px; }

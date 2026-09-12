@@ -12,9 +12,161 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Four commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
-(Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1 below) -- run
+Five commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+(Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2 below) -- run
 `git log -1` for the exact hash.
+
+## P1-2 (Multi-League Attention Center) -- 2026-09-12
+
+**COMPLETE.** A read-only cross-league overview ("which of my leagues needs
+me?") built strictly on top of the existing single-league architecture --
+**zero backend/`src/` files touched** (confirmed via `git diff --stat
+82118caa HEAD -- src/`, empty). Every read reuses an already-existing,
+already-tested endpoint (`activateRedraftProfile`, `redraftDataHealth`,
+`redraftLeagueWorkspaceContext`, and, Sleeper-only, `redraftMyRoster`/
+`redraftFreeAgents`/`redraftOpponentRosters`) -- the Start/Sit, Waiver,
+Trade Finder, and K/DST Streamer engines are never called by this page, per
+the directive's own explicit performance boundary.
+
+**The core mechanical problem:** this app's backend has exactly ONE active-
+profile pointer, and every per-league read implicitly reads whichever
+profile is currently active -- there is no "read league B without
+activating it" endpoint. Cross-league aggregation therefore means
+activating each league in turn, reading its cheap facts, then restoring
+whichever profile was active before the aggregation started.
+`desktop/apps/redraft/src/attention-center.ts` (new, pure/orchestration,
+no JSX) is the one place that does this:
+- Sequential (never parallel) per-league reads, each independently
+  try/caught (`fetchLeagueAttention`) so one league's failure (network
+  down, a since-removed profile) never aborts the others.
+- An unconditional `finally` restores the original active profile,
+  regardless of success/partial-failure -- returns the RESTORE call's own
+  fresh bootstrap (`restoredBootstrap`), never an intermediate value
+  observed mid-loop; the page's one `onUpdate` call uses exactly that.
+- A module-level serialization queue (`attentionCenterQueue`) forces every
+  call to `runAttentionCenterAggregation` to fully complete (including its
+  own restore) before the next one starts, so even a UI bug that fired two
+  overlapping runs could never interleave their `activateRedraftProfile`
+  calls against the single shared pointer. The page component also has its
+  own in-flight guard (button disabled while working, generation-counter
+  discard of a superseded run's display) as a first layer.
+- 12 dedicated regression tests in `attention-center.test.ts` exercise this
+  exact risk class with a fake client that tracks a mutable "currently
+  active" variable (mirroring the real backend): full activation-order
+  proof, per-league reads bucketed by which profile was ACTUALLY active
+  when they ran (would catch any cross-contamination), restore-after-one-
+  league-fails, restore-after-activate-itself-fails, no-original-profile
+  edge case, and a rapid-double-trigger test proving zero interleaving.
+
+**Signals used (cheap/cached only, confirmed NOT full-engine):**
+`redraft_data_health` (already-composed status authority -- LEAGUE_SYNC
+going UNAVAILABLE is the only URGENT case; every other degraded category
+is WATCH, since a missing ADP import or no decision-trace activity yet is
+routine, not a fire -- **a real severity-calibration bug found and fixed
+during this pass's own live check**, see below), `LeagueWorkspaceContext`
+(P1-1's real matchup/standings/playoff/issues fields -- a live draft in
+progress is URGENT, a real reported issue is WATCH, an imminent real
+playoff-start week is the only "deadline" this app tracks anywhere and is
+WATCH), `RedraftMyRosterResult.identityStatus` (an unresolved player
+identity, WATCH), and the existing ranked free-agent list (a top-60-overall
+free agent sitting unowned, WATCH -- a disclosed heuristic threshold, same
+pattern as `statusTone` in weekly-shared.tsx; NOT the REST_OF_SEASON Waiver
+engine's FAAB/matchup modeling).
+
+**Cross-league player search:** name-substring (case-insensitive), answers
+exactly the directive's own phrasing -- "League A: rostered by you /
+League B: available / League C: rostered by opponent / League D:
+unavailable/unknown." Sleeper leagues build ownership from the same
+my-roster/opponent-rosters/free-agents reads above; local/manual leagues
+reuse the SAME bootstrap `rankings`+`draftBoard.teams` the activation call
+already returned (`drafted`/`draftedBy`, and `teams.find(t => t.owner)` to
+tell "you" from an opponent) -- no extra read for local leagues at all. A
+league that could not be read, or a name matching nothing in a league that
+loaded fine, both resolve to `UNKNOWN` -- never a fabricated "available".
+
+**Real, live-rendered verification (NOT fixture-only):** stood up the real
+backend (`scripts/run_nwr_desktop_api.py`, isolated `local_exports/
+redraft_v1/` inside this worktree -- confirmed via `redraft_store_root`'s
+own default, never the owner's real AppData install) + `vite dev`, and
+drove it live in Chrome against this worktree's own **5 real saved
+profiles already sitting in `local_exports/redraft_v1/`** from prior
+workers' sessions (4 local fixture profiles + the real, real-Sleeper-backed
+"Fantasy Gamers" league) -- a genuine 5-league, mixed-provider set, not
+synthesized for this pass. Confirmed live:
+- All 5 leagues render with real per-league detail -- Fantasy Gamers
+  showed a REAL finding: 3 rostered players unmatched to an NWR identity
+  (NE, Ka'imi Fairbairn, Marvin Harrison) and a real free agent (Jared
+  Goff, #41 overall) -- and the real standings ("#9 of 10", matching
+  Worker 4's own P1-1 finding exactly).
+- **The severity-calibration bug above was found live**, not in a unit
+  test: the first render showed all 5 leagues "NEEDS YOU NOW" purely
+  because every profile lacked an ADP import -- correct per the naive
+  per-category rule but useless as a signal (everything looks equally on
+  fire). Fixed (LEAGUE_SYNC-only URGENT) and reconfirmed live: 0
+  URGENT / 5 WATCH, correctly differentiated.
+- Cross-league search for "Caleb Williams" (a real Fantasy Gamers roster
+  player) correctly showed "Rostered by you" for Fantasy Gamers and
+  "Available" for the 4 (undrafted) local profiles; "Jared Goff" (a real
+  free agent) showed "Available" everywhere.
+- **State-leakage, live (not just unit-tested):** ran the full 5-league
+  aggregation with Fantasy Gamers active beforehand -- confirmed via
+  direct backend `bootstrap` call afterward that `activeProfileId` was
+  still Fantasy Gamers. Then switched the REAL active league to "NWR QA
+  Local Test League", re-ran the full aggregation again, and confirmed
+  (both in the UI and via a direct backend call) the active profile
+  restored to "NWR QA Local Test League", not Fantasy Gamers and not
+  whatever was last iterated. Restored the worktree's active profile back
+  to Fantasy Gamers afterward (its state before this pass began).
+- Weekly Home (P1-1's own surface) re-checked afterward and still renders
+  its real matchup/standings ("Brown Town & Big Mike" vs "Puka's Bitches",
+  6.0-25.4, #9) with zero console errors -- no regression.
+- Zero console errors across every page load this pass touched.
+- Sleeper zero-writes: fetched `league`/`rosters`/`users` directly from
+  `api.sleeper.app` immediately before and after this pass's live check;
+  byte-identical (`diff` confirmed) on all three.
+- Both the backend and `vite dev` processes were stopped at the end;
+  `Get-NetTCPConnection` confirmed no listener on 18742/1422 afterward.
+
+**Performance:** the 5-league aggregation (4 local + 1 real Sleeper, the
+Sleeper league alone issuing 3 extra live reads) completed in **3.0-3.4
+real seconds**, shown live in the page's own header. This is a manual
+"check on my leagues" surface (a Refresh button, not a hot path/polling
+loop), so multi-second sequential HTTP is an accepted, disclosed tradeoff
+for correctness (sequential, never parallel, to protect the single active-
+profile pointer) over speed.
+
+**Files changed:** `desktop/apps/redraft/src/attention-center.ts` (new,
+pure logic + orchestration), `attention-center.test.ts` (new, 28 tests),
+`attention-center-page.tsx` (new, the page component -- named
+`-page.tsx` rather than `.tsx` because `attention-center.ts`/`.tsx` in the
+same directory is an unresolvable module-resolution collision, discovered
+via a real `tsc` failure), `RedraftApp.tsx` (+1 import, +1 nav item under
+the existing League group, +1 top-level non-league-scoped route --
+same pattern as `/leagues`), `redraft.css` (+3 rules, reuses every existing
+Panel/DataTable/StatusBadge primitive). **Zero** files under `src/`
+touched.
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext` semantics (read from via the existing contract
+fields only, no restructuring), the lifecycle resolver,
+`DecisionResultEnvelope`, `PlayerAvailabilityStatus` authority -- all
+untouched. The Start/Sit, Waiver, Trade Finder, and K/DST Streamer engines
+are never invoked by this page, confirmed by construction (the module doc
+in attention-center.ts lists exactly which endpoints it calls) and by the
+real 3.0-3.4s measured latency (a full per-league engine sweep across 5
+leagues, per Worker 3's own latency table for Trade Finder alone at up to
+9.3s/league, would have taken far longer). No merge/push/deploy.
+
+**Open issues for Worker 6 (Trade Package Generator):** none blocking.
+Two small, disclosed, non-blocking notes: (1) the waiver-opportunity
+free-agent-rank-60 threshold and the playoff-deadline imminence window (0-1
+weeks) are both undocumented-elsewhere heuristics local to this page, easy
+to tune later if the owner wants a different sensitivity; (2) this pass did
+NOT add a second, fixture-driven Chrome QA harness for the "one league's
+read fails outright" (network-down) scenario -- that path is thoroughly
+covered by `attention-center.test.ts`'s fake-client regression tests
+instead (same disclosed tradeoff pattern P1-1 used for its own edge cases).
 
 ## P1-1 (automatic NFL week + matchup/standings/playoff context) -- 2026-09-12
 

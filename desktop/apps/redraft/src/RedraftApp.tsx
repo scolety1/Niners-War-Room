@@ -4,6 +4,7 @@ import { AppShell, Button, EmptyState, ErrorState, LoadingScreen, WindowChrome }
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
+import { AttentionCenterPage } from "./attention-center-page";
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
@@ -89,10 +90,17 @@ const NAV_PLAYERS: NavigationGroup = {
 // genuinely distinct surfaces (create/import/switch leagues; whole-system
 // data diagnostics), not folded into "what is THIS league" -- see the
 // module doc in league.tsx for why.
+// P1-2 (2026-09-12, Multi-League Attention Center): a genuinely global,
+// non-league-scoped surface -- like "Manage Leagues"/"Data Health" below,
+// it deliberately does NOT render inside `/league/:leagueKey/*` (see
+// attention-center.tsx's module doc), so it lives in this same "whole-
+// system" bucket of the League group rather than needing its own nav
+// group.
 const NAV_LEAGUE: NavigationGroup = {
   label: "League",
   items: [
     { label: "League", path: "/my-roster", icon: "profile", shortcut: "4" },
+    { label: "Attention Center", path: "/attention-center", icon: "shield" },
     { label: "Manage Leagues", path: "/profile", icon: "settings" },
     { label: "Data Health", path: "/data-health", icon: "health" },
   ],
@@ -243,6 +251,11 @@ export function RedraftApp() {
           : "/leagues"
       } />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
+      {/* P1-2 (2026-09-12): a global, non-league-scoped cross-league
+          overview -- deliberately NOT under `/league/:leagueKey/*` (same
+          reasoning as `/leagues` above: it spans every profile, so it
+          cannot be scoped to one). See attention-center.tsx. */}
+      <Route path="/attention-center" element={<AttentionCenterPage client={client} data={data} onUpdate={update} />} />
 
       {/* Compatibility redirects (directive invariant I): each old flat
           path resolves to the SAME sub-page inside the currently active
