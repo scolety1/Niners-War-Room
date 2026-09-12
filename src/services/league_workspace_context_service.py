@@ -41,6 +41,15 @@ class LeagueWorkspaceContext:
     sync_status: str
     sync_as_of: str | None
     issues: tuple[str, ...]
+    # P1-1 (2026-09-12): additive-only real, directly-sourced Sleeper
+    # context -- each is None when unavailable (no provider, read failed,
+    # or malformed response), never a fabricated/simulated value. Built by
+    # `sleeper_league_context_service.py`; this module only plumbs the
+    # already-built dicts through, same "zero new I/O here" contract as
+    # every other field on this dataclass.
+    matchup: dict[str, Any] | None = None
+    standings: dict[str, Any] | None = None
+    playoff: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -57,6 +66,9 @@ class LeagueWorkspaceContext:
             "syncStatus": self.sync_status,
             "syncAsOf": self.sync_as_of,
             "issues": list(self.issues),
+            "matchup": self.matchup,
+            "standings": self.standings,
+            "playoff": self.playoff,
         }
 
 
@@ -124,6 +136,9 @@ def build_league_workspace_context(
     sync_status: str,
     sync_as_of: str | None,
     issues: Sequence[str] = (),
+    matchup: Mapping[str, Any] | None = None,
+    standings: Mapping[str, Any] | None = None,
+    playoff: Mapping[str, Any] | None = None,
 ) -> LeagueWorkspaceContext:
     lifecycle_resolution = resolve_league_lifecycle(
         archived=profile.archived,
@@ -154,4 +169,7 @@ def build_league_workspace_context(
         sync_status=sync_status,
         sync_as_of=sync_as_of,
         issues=tuple(issues),
+        matchup=dict(matchup) if matchup is not None else None,
+        standings=dict(standings) if standings is not None else None,
+        playoff=dict(playoff) if playoff is not None else None,
     )

@@ -1,8 +1,21 @@
-import type { LeagueProfile, LeagueWorkspaceContext } from "@nwr/contracts";
+import type {
+  LeaguePlayoffContext,
+  LeagueProfile,
+  LeagueStandingsContext,
+  LeagueStandingsRow,
+  LeagueWeekMatchupContext,
+  LeagueWorkspaceContext,
+} from "@nwr/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  describeOwnerBracketEntry,
   formatCurrentWeek,
+  formatRecord,
+  formatStandingsRank,
+  matchupStatusText,
+  ownerStandingsRow,
+  playoffStatusText,
   rosterCompositionRows,
   scoringSummaryGroups,
   syncHealthLabel,
@@ -124,6 +137,110 @@ describe("scoringSummaryGroups", () => {
     );
     const bonuses = groups.find((group) => group.title === "Bonuses");
     expect(bonuses?.rows).toEqual([{ label: "100+ Yard Rushing Game", value: "3 pts" }]);
+  });
+});
+
+describe("ownerStandingsRow / formatRecord / formatStandingsRank", () => {
+  function standingsRow(overrides: Partial<LeagueStandingsRow> = {}): LeagueStandingsRow {
+    return {
+      rosterId: 1, teamName: "Me", wins: 5, losses: 2, ties: 0,
+      pointsFor: 800, pointsAgainst: 700, isOwner: false, ...overrides,
+    };
+  }
+
+  it("finds the owner's row by the isOwner flag", () => {
+    const standings: LeagueStandingsContext = {
+      rows: [standingsRow({ teamName: "Rival" }), standingsRow({ teamName: "Me", isOwner: true })],
+      ownerRank: 2,
+    };
+    expect(ownerStandingsRow(standings)?.teamName).toBe("Me");
+    expect(ownerStandingsRow(null)).toBeNull();
+  });
+
+  it("formats a record without ties, and with ties only when real", () => {
+    expect(formatRecord(standingsRow({ wins: 5, losses: 2, ties: 0 }))).toBe("5-2");
+    expect(formatRecord(standingsRow({ wins: 5, losses: 2, ties: 1 }))).toBe("5-2-1");
+    expect(formatRecord(null)).toBe("Unavailable");
+  });
+
+  it("formats rank as honest text or null when standings/rank are unavailable", () => {
+    expect(formatStandingsRank({ rows: [standingsRow(), standingsRow()], ownerRank: 1 })).toBe("#1 of 2");
+    expect(formatStandingsRank({ rows: [standingsRow()], ownerRank: null })).toBeNull();
+    expect(formatStandingsRank(null)).toBeNull();
+  });
+});
+
+describe("matchupStatusText", () => {
+  function matchup(overrides: Partial<LeagueWeekMatchupContext> = {}): LeagueWeekMatchupContext {
+    return {
+      week: 4, hasOpponent: true, ownerPoints: 100, opponentRosterId: 2,
+      opponentTeamName: "Rival", opponentPoints: 90, note: null, ...overrides,
+    };
+  }
+
+  it("returns null (render the real score instead) when a real opponent exists", () => {
+    expect(matchupStatusText(matchup())).toBeNull();
+  });
+
+  it("surfaces the real bye-week/unavailable note instead of a blank matchup", () => {
+    expect(matchupStatusText(matchup({ hasOpponent: false, note: "Bye week -- no opponent is scheduled this week." })))
+      .toBe("Bye week -- no opponent is scheduled this week.");
+  });
+
+  it("is honest about a missing matchup context entirely", () => {
+    expect(matchupStatusText(null)).toBeNull();
+  });
+});
+
+describe("describeOwnerBracketEntry / playoffStatusText", () => {
+  function playoff(overrides: Partial<LeaguePlayoffContext> = {}): LeaguePlayoffContext {
+    return {
+      leagueStatus: "in_season", playoffWeekStart: 15, inPlayoffs: false,
+      bracketAvailable: false, bracket: [], ...overrides,
+    };
+  }
+
+  it("is null for a non-playoff-state league with no generated bracket", () => {
+    expect(describeOwnerBracketEntry(playoff(), 1)).toBeNull();
+  });
+
+  it("describes the owner's real in-progress bracket matchup", () => {
+    const context = playoff({
+      inPlayoffs: true,
+      bracketAvailable: true,
+      bracket: [{
+        round: 1, team1RosterId: 1, team1TeamName: "Me", team2RosterId: 2, team2TeamName: "Rival",
+        winnerRosterId: null, winnerTeamName: null, involvesOwner: true,
+      }],
+    });
+    expect(describeOwnerBracketEntry(context, 1)).toBe("Playoff round 1: vs Rival.");
+  });
+
+  it("describes a real completed bracket result (won/lost), never a prediction", () => {
+    const won = playoff({
+      inPlayoffs: true, bracketAvailable: true,
+      bracket: [{
+        round: 1, team1RosterId: 1, team1TeamName: "Me", team2RosterId: 2, team2TeamName: "Rival",
+        winnerRosterId: 1, winnerTeamName: "Me", involvesOwner: true,
+      }],
+    });
+    expect(describeOwnerBracketEntry(won, 1)).toBe("Playoff round 1: won vs Rival.");
+
+    const lost = playoff({
+      inPlayoffs: true, bracketAvailable: true,
+      bracket: [{
+        round: 1, team1RosterId: 1, team1TeamName: "Me", team2RosterId: 2, team2TeamName: "Rival",
+        winnerRosterId: 2, winnerTeamName: "Rival", involvesOwner: true,
+      }],
+    });
+    expect(describeOwnerBracketEntry(lost, 1)).toBe("Playoff round 1: lost vs Rival.");
+  });
+
+  it("reports the real regular-season/playoff status, never a simulated odds claim", () => {
+    expect(playoffStatusText(playoff({ inPlayoffs: true }))).toBe("In the playoffs.");
+    expect(playoffStatusText(playoff({ inPlayoffs: false, playoffWeekStart: 15 }))).toBe("Playoffs start Week 15.");
+    expect(playoffStatusText(playoff({ inPlayoffs: false, playoffWeekStart: null }))).toBeNull();
+    expect(playoffStatusText(null)).toBeNull();
   });
 });
 

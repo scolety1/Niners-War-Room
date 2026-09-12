@@ -30,6 +30,14 @@ import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
 import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
+import {
+  describeOwnerBracketEntry,
+  formatRecord,
+  formatStandingsRank,
+  matchupStatusText,
+  ownerStandingsRow,
+  playoffStatusText,
+} from "./league-summary";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 import {
@@ -43,6 +51,7 @@ import {
   formatClock,
   statusTone,
   useAsync,
+  useLeagueWorkspaceContext,
 } from "./weekly-shared";
 
 const HOME_MAX_ACTIONS = 5;
@@ -68,6 +77,18 @@ const SLOT_LABEL: Record<string, string> = {
   QB: "QB", RB: "RB", WR: "WR", TE: "TE", FLEX: "FLEX", SUPERFLEX: "SUPERFLEX", K: "K", DST: "DST",
 };
 
+// P1-1 (2026-09-12): real record/points-for standings, straight off
+// LeagueWorkspaceContext.standings (Sleeper's own roster `settings`
+// block) -- no simulated finish or playoff-odds column.
+const STANDINGS_COLUMNS: TableColumn[] = [
+  { key: "teamName", label: "Team", sort: "text", render: (row) => <span>{row.isOwner ? <strong>{String(row.teamName)} (you)</strong> : String(row.teamName)}</span> },
+  { key: "wins", label: "W", sort: "number", align: "right" },
+  { key: "losses", label: "L", sort: "number", align: "right" },
+  { key: "ties", label: "T", sort: "number", align: "right" },
+  { key: "pointsFor", label: "Points for", sort: "number", align: "right", render: (row) => formatNumber(Number(row.pointsFor), 1) },
+  { key: "pointsAgainst", label: "Points against", sort: "number", align: "right", render: (row) => formatNumber(Number(row.pointsAgainst), 1) },
+];
+
 // ---------------------------------------------------------------------------
 // Weekly Home
 // ---------------------------------------------------------------------------
@@ -75,7 +96,23 @@ const SLOT_LABEL: Record<string, string> = {
 export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
   const profileId = isSleeper ? data.activeProfileId : null;
-  const [week, setWeek] = useState(1);
+
+  // P1-1 (2026-09-12): the provider-known current NFL week (from Sleeper's
+  // own live state, read via LeagueWorkspaceContext) is now the DEFAULT
+  // authority for "what week is it" -- manual entry (WeekControl below) is
+  // only a FALLBACK for when the provider is unavailable (a non-Sleeper
+  // profile, or a failed read), not the default it used to be
+  // (hardcoded `useState(1)`). `manualWeekOverride` stays `null` until the
+  // owner explicitly changes it, and is reset on every league switch so a
+  // previous league's manual choice never leaks into a newly opened one.
+  const { result: context, error: contextError } = useLeagueWorkspaceContext(client, data.activeProfileId);
+  const providerWeek = context?.currentWeek ?? null;
+  const [manualWeekOverride, setManualWeekOverride] = useState<number | null>(null);
+  useEffect(() => {
+    setManualWeekOverride(null);
+  }, [data.activeProfileId]);
+  const week = manualWeekOverride ?? providerWeek ?? 1;
+  const usingProviderWeek = manualWeekOverride === null && providerWeek !== null;
 
   // NWR pre-UI architecture CLOSURE pass (directive section 3): ONE
   // request builds the whole Home render -- `redraftWeeklyHomeActions` now
@@ -112,28 +149,79 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
     ? `${lineup.providerHealth.provider} · updated ${formatClock(lineup.providerHealth.retrievedAt)}${lineup.providerHealth.freshness === "STALE" ? " (stale)" : ""}`
     : null;
 
+  const ownerRow = ownerStandingsRow(context?.standings);
+  // Sleeper pre-seeds an empty bracket skeleton (mostly null team slots)
+  // well before the actual playoffs -- real data, but noisy/premature to
+  // lead with during the regular season. Only surface the owner's actual
+  // bracket matchup once the league has really reached its playoff weeks;
+  // otherwise show the plain "Playoffs start Week N" fact instead.
+  const bracketNote = context?.playoff?.inPlayoffs
+    ? describeOwnerBracketEntry(context.playoff, ownerRow?.rosterId)
+    : null;
+  const playoffNote = bracketNote ?? playoffStatusText(context?.playoff);
+  const matchupNote = matchupStatusText(context?.matchup);
+
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
       title={`${activeName} · Week ${week}`}
-      description="What needs your attention this week -- not a stats dashboard. Opponent matchup scoring is not part of the current Sleeper integration, so this view does not claim a live head-to-head score."
+      description="What needs your attention this week -- not a stats dashboard. Matchup, record, and standings below reflect only what Sleeper directly reports; nothing here is simulated or predicted."
       status={<StatusBadge tone={data.status.tone} label={data.health.status || "Review"} />}
-      actions={<WeekControl week={week} onChange={setWeek} />}
+      actions={<div className="profile-edit-actions">
+        <WeekControl week={week} onChange={setManualWeekOverride} label={usingProviderWeek ? "NFL week (auto)" : "NFL week (manual)"} />
+        {manualWeekOverride !== null && providerWeek !== null && manualWeekOverride !== providerWeek ? (
+          <Button variant="ghost" onClick={() => setManualWeekOverride(null)}>Use current week ({providerWeek})</Button>
+        ) : null}
+      </div>}
     />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Weekly in-season tools (Start/Sit, Waivers, Trade, streamers) require an active Sleeper-imported league. Choose or import one." action={<Link to="/leagues">Open league chooser</Link>} /> : null}
     {isSleeper ? <>
-      {/* THIS WEEK strip (Phase 4 top block): only real, already-available
-          signals -- league/team identity, week, lifecycle stage, data
-          freshness. No opponent/record fields are shown -- this app has no
-          live head-to-head score source (see the page description above),
-          and fabricating one here would contradict it. */}
+      {/* THIS WEEK strip (Phase 4 top block, extended by P1-1): only real,
+          already-available signals -- league/team identity, week,
+          lifecycle stage, data freshness, plus (when Sleeper directly
+          reports them) this week's opponent/score and the owner's
+          record. Opponent/score/record are omitted entirely, never
+          fabricated, when the provider doesn't have them (see
+          `LeagueWorkspaceContext.matchup`/`.standings`, both nullable). */}
       <section className="nwr-this-week" aria-label="This week">
         <div className="nwr-this-week__item"><span>League</span><strong>{activeName}</strong></div>
         <div className="nwr-this-week__item"><span>Week</span><strong>{week}</strong></div>
         {lifecycle ? <div className="nwr-this-week__item"><span>Stage</span><strong>{LIFECYCLE_STAGE_LABEL[lifecycle] ?? lifecycle}</strong></div> : null}
+        {/* The matchup/score below are always for the provider's real
+            current week (`context.matchup.week`), independent of the
+            "Week" figure above -- which, once the owner manually
+            overrides it (fallback control), drives ONLY the lineup/
+            free-agent projections and can legitimately differ. The
+            explicit "(Wk N)" label keeps that unambiguous rather than
+            implying stale-week matchup data belongs to a different week. */}
+        {context?.matchup?.hasOpponent ? (
+          <div className="nwr-this-week__item"><span>Opponent (Wk {context.matchup.week})</span><strong>{context.matchup.opponentTeamName}</strong></div>
+        ) : null}
+        {context?.matchup?.hasOpponent && context.matchup.ownerPoints != null && context.matchup.opponentPoints != null ? (
+          <div className="nwr-this-week__item"><span>Score (Wk {context.matchup.week})</span><strong>{formatNumber(context.matchup.ownerPoints, 1)} – {formatNumber(context.matchup.opponentPoints, 1)}</strong></div>
+        ) : null}
+        {ownerRow ? (
+          <div className="nwr-this-week__item"><span>Record</span><strong>{formatRecord(ownerRow)}{formatStandingsRank(context?.standings) ? ` (${formatStandingsRank(context?.standings)})` : ""}</strong></div>
+        ) : null}
         <div className="nwr-this-week__spacer" />
         {freshnessNote ? <div className="nwr-this-week__item"><span>Data</span><strong>{freshnessNote}</strong></div> : null}
       </section>
+      {contextError ? <ErrorState message={contextError.message} recovery={contextError.recoveryAction} /> : null}
+      {matchupNote || playoffNote ? (
+        <p className="copy-muted" style={{ margin: "0 0 14px" }}>
+          {[matchupNote, playoffNote].filter(Boolean).join(" · ")}
+        </p>
+      ) : null}
+
+      {context?.standings ? (
+        <Panel title="Standings" eyebrow="Real Sleeper wins/losses/points-for" action={<Link to="/league">Open League</Link>}>
+          <DataTable
+            columns={STANDINGS_COLUMNS}
+            rows={context.standings.rows as unknown as Array<Record<string, unknown>>}
+            rowKey={(row) => String(row.rosterId)}
+          />
+        </Panel>
+      ) : null}
 
       <h2 className="nwr-text-section-heading" style={{ margin: "0 0 8px" }}>NWR Actions</h2>
       {actionsError ? <ErrorState message={actionsError.message} recovery={actionsError.recoveryAction} /> : null}

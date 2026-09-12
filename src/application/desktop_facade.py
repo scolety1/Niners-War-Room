@@ -254,6 +254,13 @@ from src.services.rookie_veteran_dynasty_bridge_service import (
     load_redraft_bridge_context,
 )
 from src.services.sleeper_import_service import SleeperHttpClient
+from src.services.sleeper_league_context_service import (
+    build_playoff_context,
+    build_standings_context,
+    build_week_matchup_context,
+    parse_current_nfl_week,
+    team_name_by_roster_id,
+)
 from src.services.sleeper_redraft_owner_service import (
     SleeperRedraftImportError,
     import_sleeper_redraft_profile,
@@ -3829,10 +3836,7 @@ class DesktopBackendFacade:
         drafted_count = 0
         current_pick: int | None = None
         total_draft_picks = max(0, selected.team_count) * max(0, selected.draft.rounds)
-        issues: list[str] = [
-            "Current NFL week is not automatically sourced in this repository; each "
-            "in-season page takes week as an explicit input.",
-        ]
+        issues: list[str] = []
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
             manual_assets = self._manual_assets_for_profile(selected.profile_id)
@@ -3849,11 +3853,17 @@ class DesktopBackendFacade:
 
         roster_player_ids: list[str] | None = None
         sync_status = "NOT_APPLICABLE"
+        current_week: int | None = None
+        matchup_context: dict[str, Any] | None = None
+        standings_context: dict[str, Any] | None = None
+        playoff_context: dict[str, Any] | None = None
         if selected.provider == "sleeper" and selected.provider_league_id:
             sync_status = "LIVE"
+            own_roster: Mapping[str, Any] | None = None
+            rosters: Any = []
+            sleeper = SleeperHttpClient()
             try:
                 _selected, league_id, owner_user_id = self._active_sleeper_context()
-                sleeper = SleeperHttpClient()
                 rosters = sleeper.get_json(f"league/{league_id}/rosters")
                 own_roster = next(
                     (
@@ -3873,17 +3883,86 @@ class DesktopBackendFacade:
                 sync_status = "DEGRADED"
                 issues.append(f"Live Sleeper roster read failed: {exc}")
 
+            # P1-1 (2026-09-12): automatic NFL week, read live from
+            # Sleeper's own `GET /state/nfl` -- the real provider fact
+            # that had no wrapper anywhere in this repository before this
+            # pass (see `league_lifecycle_service.py`'s disclosed gap).
+            # A failed or malformed read just leaves `current_week` None,
+            # same honest degrade as every other field here.
+            try:
+                state = sleeper.get_json("state/nfl")
+                current_week = parse_current_nfl_week(state)
+                if current_week is None:
+                    issues.append(
+                        "Sleeper's current-NFL-state response did not include a usable week."
+                    )
+            except (FacadeError, OSError, ValueError) as exc:
+                issues.append(f"Current NFL week could not be read from Sleeper: {exc}")
+
+            if own_roster is not None:
+                own_roster_id = own_roster.get("roster_id")
+                try:
+                    users = sleeper.get_json(f"league/{league_id}/users")
+                except (FacadeError, OSError, ValueError) as exc:
+                    users = []
+                    issues.append(f"Sleeper league users could not be read: {exc}")
+                team_names = team_name_by_roster_id(rosters, users)
+
+                standings_context = build_standings_context(
+                    rosters=rosters, team_names=team_names, own_roster_id=own_roster_id
+                )
+
+                if current_week is not None:
+                    try:
+                        matchups = sleeper.get_json(f"league/{league_id}/matchups/{current_week}")
+                        matchup_context = build_week_matchup_context(
+                            week=current_week,
+                            own_roster_id=own_roster_id,
+                            matchups=matchups,
+                            team_names=team_names,
+                        )
+                    except (FacadeError, OSError, ValueError) as exc:
+                        issues.append(
+                            f"Matchup data could not be read for week {current_week}: {exc}"
+                        )
+
+                try:
+                    league_doc = sleeper.get_json(f"league/{league_id}")
+                except (FacadeError, OSError, ValueError) as exc:
+                    league_doc = None
+                    issues.append(f"League status could not be read from Sleeper: {exc}")
+                if league_doc is not None:
+                    try:
+                        winners_bracket = sleeper.get_json(f"league/{league_id}/winners_bracket")
+                    except (FacadeError, OSError, ValueError):
+                        winners_bracket = []
+                    playoff_context = build_playoff_context(
+                        league=league_doc,
+                        winners_bracket=winners_bracket,
+                        team_names=team_names,
+                        own_roster_id=own_roster_id,
+                        current_week=current_week,
+                    )
+        else:
+            issues.append(
+                "Current NFL week is not automatically sourced for this league's provider "
+                "(Sleeper only); each in-season page takes week as an explicit input."
+            )
+
         context = build_league_workspace_context(
             profile=selected,
             draft_configured=draft_configured,
             drafted_count=drafted_count,
             total_draft_picks=total_draft_picks,
             current_pick=current_pick,
-            current_week=None,
+            current_week=current_week,
             roster_player_ids=roster_player_ids,
             sync_status=sync_status,
             sync_as_of=selected.updated_at_utc or None,
             issues=issues,
+            matchup=matchup_context,
+            standings=standings_context,
+            playoff=playoff_context,
         )
         return FacadePayload(data=context.to_dict())
 

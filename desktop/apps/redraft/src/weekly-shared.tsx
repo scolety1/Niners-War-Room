@@ -1,5 +1,9 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { RedraftFreeAgentsResult, WeeklyProjectionProviderHealth } from "@nwr/contracts";
+import type {
+  LeagueWorkspaceContext,
+  RedraftFreeAgentsResult,
+  WeeklyProjectionProviderHealth,
+} from "@nwr/contracts";
 import { Button, StatusBadge, formatNumber, type TableColumn } from "@nwr/ui";
 import { useEffect, useState, type DependencyList } from "react";
 
@@ -60,6 +64,20 @@ export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { result, error, working } = useAsync<RedraftFreeAgentsResult>(loader, [client, profileId]);
   return { result, error, working };
+}
+
+/**
+ * P1-1 (2026-09-12): the read-only `LeagueWorkspaceContext` fetch, shared
+ * so every in-season surface that needs the provider-known current
+ * week/matchup/standings/playoff context (currently Weekly Home) reads it
+ * the same way instead of hand-rolling a second fetch. Re-fetches
+ * whenever `profileId` changes -- switching leagues never carries a
+ * previous league's context forward.
+ */
+export function useLeagueWorkspaceContext(client: NwrApiClient, profileId: string | null) {
+  const loader = () => (profileId ? client.redraftLeagueWorkspaceContext() : null);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useAsync<LeagueWorkspaceContext>(loader, [client, profileId]);
 }
 
 export const FREE_AGENT_COLUMNS: TableColumn[] = [

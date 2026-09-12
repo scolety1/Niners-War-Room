@@ -12,9 +12,162 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Three commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
-(Work Unit 0 + P0-1, then P0-2, then P0-3 below) -- run `git log -1` for the
-exact hash.
+Four commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+(Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1 below) -- run
+`git log -1` for the exact hash.
+
+## P1-1 (automatic NFL week + matchup/standings/playoff context) -- 2026-09-12
+
+**Gap confirmed exactly as Worker 3 flagged, then closed.** Verified fresh
+(not assumed): `redraft_league_workspace_context`
+(`src/application/desktop_facade.py`) hardcoded `current_week=None` on
+every call, and `league_lifecycle_service.py`'s own module docstring
+already disclosed "no wrapper around Sleeper's `GET /v1/state/nfl` or
+equivalent exists anywhere in `src/services`". Weekly Home's `NFL WEEK`
+field was a bare `useState(1)`, never wired to anything real. Both are
+now fixed: `src/services/sleeper_league_context_service.py` (new) wraps
+Sleeper's real `state/nfl`, per-week `matchups`, `rosters` (`settings`
+wins/losses/points), `league` (status/playoff settings), and
+`winners_bracket` endpoints as pure functions over already-fetched JSON;
+`desktop_facade.py`'s `redraft_league_workspace_context` performs the
+actual (try/except-guarded, never-crashing) reads and threads the results
+through three new additive fields on `LeagueWorkspaceContext`:
+`matchup`, `standings`, `playoff` (frozen-dataclass fields with real
+defaults, `to_dict()`/`build_league_workspace_context()` extended --
+every OTHER existing field/semantic on `LeagueWorkspaceContext` and the
+lifecycle resolver were read-only, untouched, per the hard boundary).
+
+**Raw facts only, honestly disclosed as such:** every field is `None`/
+empty when Sleeper doesn't directly report it (non-Sleeper provider, a
+failed HTTP read, a bye week, an unresolvable opponent, no bracket
+generated yet) -- nothing is inferred, estimated, or simulated. The one
+derived boolean (`playoff.inPlayoffs`) is a plain
+`currentWeek >= playoffWeekStart` comparison over two raw provider
+integers, not a prediction; no Championship Equity, no simulated playoff
+odds were built (explicitly out of scope per the directive).
+
+**Frontend:** `LeagueWorkspaceContext` contract gains `matchup`/
+`standings`/`playoff` (additive-only; `packages/contracts/src/index.ts`).
+Weekly Home (`in-season.tsx`) now fetches the context via a new shared
+`useLeagueWorkspaceContext` hook (`weekly-shared.tsx`) and:
+- Defaults its week to `context.currentWeek` (provider) with the existing
+  `WeekControl` demoted to an explicit, clearly-labeled FALLBACK
+  ("NFL week (auto)" vs "NFL week (manual)", with a "Use current week
+  (N)" reset action) -- manual entry no longer wins by default.
+- Resets that manual override on every league switch (`useEffect` keyed
+  on `data.activeProfileId`) so no override leaks between leagues.
+- Shows opponent/score (explicitly labeled "(Wk N)" -- the PROVIDER's
+  real current week, independent of a manually browsed projections
+  week, so the two numbers are never conflated), the owner's record/
+  rank, a real Sleeper standings table, and (only once the league has
+  actually reached its playoff weeks -- Sleeper pre-seeds an empty
+  bracket skeleton months early, which would otherwise be a confusing,
+  premature "Playoff round 2: opponent not yet determined" during Week
+  1) the owner's real bracket matchup or a plain "Playoffs start Week N"
+  otherwise.
+- All new pure derivation (`ownerStandingsRow`, `formatRecord`,
+  `formatStandingsRank`, `matchupStatusText`, `describeOwnerBracketEntry`,
+  `playoffStatusText`) lives in `league-summary.ts`, unit-tested in
+  `league-summary.test.ts` (same file/pattern the prior League-surface
+  pass already established for `formatCurrentWeek`).
+- Added one small, disclosed routing fix found along the way: the new
+  Standings panel's "Open League" link needed a `/league` legacy-redirect
+  route (`RedraftApp.tsx`) -- every other bare-path link in this file
+  already had one, `/league` simply hadn't been added yet (no prior
+  surface linked there).
+
+**Verification:**
+- New backend unit tests: `tests/test_sleeper_league_context_service.py`
+  (19 tests, pure functions -- parse-week, team-name resolution, matchup
+  bye-week/unavailable/opponent-unresolvable, standings sort/rank,
+  playoff non-playoff/playoff/malformed-input cases).
+- New backend facade-wiring tests (mocked Sleeper, same pattern as
+  `test_desktop_facade_architecture_wiring.py`'s existing KDST test):
+  `tests/test_league_workspace_context_sleeper_p1_1.py` (6 tests --
+  current-week-populated, bye-week, playoff-state-with-bracket,
+  provider-unavailable/OSError fallback, local/non-Sleeper honest
+  "not automatically sourced", and a real league-SWITCH test asserting
+  League A's matchup/standings never appear in League B's context).
+- New frontend unit tests appended to `league-summary.test.ts` (10
+  tests covering the same edge cases as the backend, at the display
+  layer).
+- `pytest tests/test_sleeper_league_context_service.py
+  tests/test_league_workspace_context_sleeper_p1_1.py
+  tests/test_league_workspace_context_service.py
+  tests/test_desktop_facade_architecture_wiring.py
+  tests/test_desktop_application_api.py`: 86 passed, 4 failed -- the
+  SAME 4 pre-existing `test_desktop_application_api.py` failures P0-2
+  already documented (confirmed via an A/B `git stash` comparison
+  showing identical failures before/after this pass's changes); zero
+  new failures.
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  clean.
+- `npx vitest run --no-file-parallelism`: **296/296 passing, 25/25
+  files** (286 baseline from Worker 1 + 10 new).
+- **Real, live-rendered confirmation (real Sleeper, not a fixture):**
+  used `desktop/scripts/nwr_release_gate_smoke.ps1 -KeepRunning
+  -SleeperLeagueId 1312983576827920384 -SleeperUsername scolety`
+  (Worker 3's own release-gate script, unmodified) to stand up the real
+  backend + a real production `vite build`/`vite preview`, then drove it
+  live in Chrome (read-only, real "Fantasy Gamers" league). Confirmed:
+  `currentWeek: 1` (real, non-hardcoded), a real live matchup ("Brown
+  Town & Big Mike" vs "Puka's Bitches", 6.0-25.4), a real 10-row
+  standings table (owner correctly bolded, ranked #9), "Playoffs start
+  Week 15." (real settings, correctly NOT showing the pre-seeded bracket
+  skeleton in Week 1), the manual-override fallback control working
+  exactly as designed (auto->manual->reset-to-auto, verified by
+  screenshot at each step), and the new `/league` route. Zero console
+  errors (verified with console tracking armed across two separate page
+  loads). Both processes (backend + vite preview) were stopped and their
+  full process trees killed at the end of this pass -- confirmed via
+  `Get-NetTCPConnection` showing ports 1422/18742 in `TimeWait`/no
+  listener, not left running. Did NOT additionally build a fixture-based
+  Chrome harness for the bye-week/playoff-state edge cases (the prior
+  UI-expansion effort's `window.fetch`-patched QA-harness technique) --
+  those are covered instead by the backend facade-wiring tests' mocked-
+  Sleeper scenarios above (bye week, playoff-state-with-real-bracket) and
+  the frontend pure-function unit tests exercising the exact same
+  display logic Home renders; a real fixture-harness Chrome pass for
+  those specific shapes is a disclosed, not-yet-done option for a future
+  pass if a live visual (not just unit-tested) confirmation of those
+  specific edge cases is wanted.
+
+**Sleeper safety (0 writes):** every new read (`state/nfl`,
+`league/{id}/matchups/{week}`, `league/{id}/users`, `league/{id}`,
+`league/{id}/winners_bracket`) goes through the existing `SleeperHttpClient
+.get_json()` (GET-only, no write method exists on the class, same
+structural guarantee prior workers already verified). The live-rendered
+check above used the release-gate script's own real-league before/after
+byte-diff (already run, already verified identical) plus this pass's own
+real-time observation of the rendered app -- no new write surface was
+introduced.
+
+**Files changed:** `src/services/sleeper_league_context_service.py`
+(new), `src/application/desktop_facade.py`
+(`redraft_league_workspace_context` only),
+`src/services/league_workspace_context_service.py` (additive fields
+only), `desktop/packages/contracts/src/index.ts` (additive types only),
+`desktop/apps/redraft/src/weekly-shared.tsx` (new
+`useLeagueWorkspaceContext` hook), `desktop/apps/redraft/src/
+league-summary.ts` (+6 pure functions), `desktop/apps/redraft/src/
+in-season.tsx` (`WeeklyHomePage` only), `desktop/apps/redraft/src/
+RedraftApp.tsx` (+1 legacy-redirect route), plus the three new/extended
+test files above. Nothing under `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`'s OTHER fields, the lifecycle resolver,
+`DecisionResultEnvelope`, or `PlayerAvailabilityStatus` was touched.
+
+**For Worker 5 (Multi-League Attention Center):** `LeagueWorkspaceContext`
+now carries real per-league `matchup`/`standings`/`playoff` -- likely
+directly reusable for an attention center that needs to summarize
+multiple leagues' current state at a glance (fetch the context once per
+league, same shape every time). The pre-existing
+`weekly-home-actions` 500 bug (Worker 3's finding) is still open and
+NOT touched by this pass -- it's a separate endpoint from
+`league-workspace-context` and was never in this pass's path except as
+something to watch for; it degrades honestly (frontend shows "Command
+center unavailable" rather than crashing) and was reproduced again,
+unchanged, during this pass's own live-rendered check.
 
 ## P0-3 (real backend + Sleeper + packaged Tauri release gate) -- 2026-09-12
 

@@ -1,4 +1,11 @@
-import type { LeagueProfile, LeagueWorkspaceContext } from "@nwr/contracts";
+import type {
+  LeaguePlayoffContext,
+  LeagueProfile,
+  LeagueStandingsContext,
+  LeagueStandingsRow,
+  LeagueWeekMatchupContext,
+  LeagueWorkspaceContext,
+} from "@nwr/contracts";
 
 /**
  * NWR UI expansion pass (2026-09-12, League surface): pure derivation, same
@@ -38,6 +45,65 @@ export function syncHealthLabel(status: LeagueWorkspaceContext["syncStatus"]): s
 
 export function formatCurrentWeek(week: number | null): string {
   return week === null ? "Not available" : `Week ${week}`;
+}
+
+// ---------------------------------------------------------------------------
+// P1-1 (2026-09-12): pure helpers over the new, additive
+// matchup/standings/playoff fields on LeagueWorkspaceContext. Every branch
+// here reflects a real Sleeper-reported fact or an honest "unavailable" --
+// nothing is inferred, estimated, or simulated (no championship equity, no
+// playoff odds).
+// ---------------------------------------------------------------------------
+
+export function ownerStandingsRow(standings: LeagueStandingsContext | null | undefined): LeagueStandingsRow | null {
+  return standings?.rows.find((row) => row.isOwner) ?? null;
+}
+
+export function formatRecord(row: LeagueStandingsRow | null | undefined): string {
+  if (!row) return "Unavailable";
+  return row.ties > 0 ? `${row.wins}-${row.losses}-${row.ties}` : `${row.wins}-${row.losses}`;
+}
+
+export function formatStandingsRank(standings: LeagueStandingsContext | null | undefined): string | null {
+  if (!standings || standings.ownerRank == null) return null;
+  return `#${standings.ownerRank} of ${standings.rows.length}`;
+}
+
+/** Honest text for the matchup card -- a real opponent/score line when
+ * Sleeper reports one, otherwise the real reason it can't (bye week,
+ * provider unavailable, not yet generated) rather than a blank space. */
+export function matchupStatusText(matchup: LeagueWeekMatchupContext | null | undefined): string | null {
+  if (!matchup) return null;
+  if (!matchup.hasOpponent) return matchup.note ?? "No matchup available for this week.";
+  return null;
+}
+
+/** The owner's own current-round playoff bracket entry, described from
+ * real Sleeper bracket data only (`involvesOwner`/`winnerRosterId` are
+ * both computed server-side from the raw bracket, not inferred here). */
+export function describeOwnerBracketEntry(
+  playoff: LeaguePlayoffContext | null | undefined,
+  ownerRosterId: LeagueStandingsRow["rosterId"] | null | undefined,
+): string | null {
+  if (!playoff?.bracketAvailable) return null;
+  const entry = playoff.bracket.find((row) => row.involvesOwner);
+  if (!entry) return null;
+  const roundLabel = entry.round != null ? `Playoff round ${entry.round}` : "Playoff bracket";
+  const opponentName = entry.team1RosterId === ownerRosterId ? entry.team2TeamName : entry.team1TeamName;
+  if (!opponentName) return `${roundLabel}: opponent not yet determined.`;
+  if (entry.winnerRosterId != null) {
+    const ownerWon = entry.winnerRosterId === ownerRosterId;
+    return `${roundLabel}: ${ownerWon ? "won" : "lost"} vs ${opponentName}.`;
+  }
+  return `${roundLabel}: vs ${opponentName}.`;
+}
+
+/** Real league-status text, never a simulated playoff-odds claim. */
+export function playoffStatusText(playoff: LeaguePlayoffContext | null | undefined): string | null {
+  if (!playoff) return null;
+  if (playoff.inPlayoffs) return "In the playoffs.";
+  if (playoff.playoffWeekStart != null) return `Playoffs start Week ${playoff.playoffWeekStart}.`;
+  return null;
 }
 
 export interface LeagueSummaryRow {

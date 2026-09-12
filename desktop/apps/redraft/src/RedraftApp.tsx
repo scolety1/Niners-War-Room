@@ -249,6 +249,10 @@ export function RedraftApp() {
           league's scoped route -- content is unchanged, only the URL
           gains a real league identity. */}
       <Route path="/league-home" element={<LegacyRedirect data={data} subpath="home" />} />
+      {/* P1-1 (2026-09-12): Weekly Home's new Standings panel links here
+          (League Workspace's Overview tab) -- same legacy-redirect
+          precedent as every other bare-path link in this file. */}
+      <Route path="/league" element={<LegacyRedirect data={data} subpath="league" />} />
       <Route path="/lineup" element={<LegacyRedirect data={data} subpath="lineup" />} />
       <Route path="/waivers" element={<LegacyRedirect data={data} subpath="waivers" />} />
       <Route path="/my-roster" element={<LegacyRedirect data={data} subpath="my-roster" />} />

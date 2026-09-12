@@ -1651,6 +1651,58 @@ export interface RedraftBootstrap {
 
 export type LeagueLifecycle = "PRE_DRAFT" | "LIVE_DRAFT" | "IN_SEASON" | "OFFSEASON";
 
+// P1-1 (2026-09-12): raw, directly-sourced Sleeper matchup/standings/
+// playoff context -- additive-only fields on LeagueWorkspaceContext below.
+// Every field is null/empty when Sleeper doesn't directly provide the
+// fact (no provider, a failed read, an unresolvable opponent); nothing
+// here is inferred, estimated, or simulated. `inPlayoffs` is a plain
+// currentWeek >= playoffWeekStart comparison over two raw provider
+// integers, not a prediction.
+export interface LeagueWeekMatchupContext {
+  week: number;
+  hasOpponent: boolean;
+  ownerPoints: number | null;
+  opponentRosterId: number | string | null;
+  opponentTeamName: string | null;
+  opponentPoints: number | null;
+  note: string | null;
+}
+
+export interface LeagueStandingsRow {
+  rosterId: number | string | null;
+  teamName: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  isOwner: boolean;
+}
+
+export interface LeagueStandingsContext {
+  rows: LeagueStandingsRow[];
+  ownerRank: number | null;
+}
+
+export interface LeaguePlayoffBracketEntry {
+  round: number | null;
+  team1RosterId: number | string | null;
+  team1TeamName: string | null;
+  team2RosterId: number | string | null;
+  team2TeamName: string | null;
+  winnerRosterId: number | string | null;
+  winnerTeamName: string | null;
+  involvesOwner: boolean;
+}
+
+export interface LeaguePlayoffContext {
+  leagueStatus: string | null;
+  playoffWeekStart: number | null;
+  inPlayoffs: boolean;
+  bracketAvailable: boolean;
+  bracket: LeaguePlayoffBracketEntry[];
+}
+
 export interface LeagueWorkspaceContext {
   profileId: string;
   provider: "local" | "sleeper" | "espn" | "fantasypros";
@@ -1665,6 +1717,9 @@ export interface LeagueWorkspaceContext {
   syncStatus: "LIVE" | "DEGRADED" | "NOT_APPLICABLE";
   syncAsOf: string | null;
   issues: string[];
+  matchup: LeagueWeekMatchupContext | null;
+  standings: LeagueStandingsContext | null;
+  playoff: LeaguePlayoffContext | null;
 }
 
 export interface PlayerAvailabilityStatus {
