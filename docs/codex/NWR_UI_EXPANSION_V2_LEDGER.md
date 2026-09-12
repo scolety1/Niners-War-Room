@@ -165,3 +165,256 @@ NONE. `git diff --stat` from `aae72a75`: 4 files modified + 2 new, all under
   independently re-rendered this pass to confirm.
 - Draft Room's own separate `PlayerDrawer` (draft-room-v2.tsx) is untouched,
   as before -- still a distinct, deliberately out-of-scope component.
+
+## Work Unit 2 -- Improve Team (2026-09-12)
+
+**Start HEAD:** `854d637b`. **Result:** COMPLETE (all 5 tabs).
+
+### Foundation verification (Work Unit 0)
+Confirmed, not rebuilt: the shared drawer Escape-to-close fix (Work Unit 1)
+DOES apply here -- spot-checked live from three different Improve Team
+entry points (Targets card, Streamers card, All Free Agents table) with
+zero extra wiring needed, since every one of them calls the same
+`usePlayerDetailOpener`/`PlayerDetailDrawer` primitive. `npx tsc -b` and
+`npx vitest run` both clean at the start head (216/216, the exact count the
+Work Unit 1 entry reported).
+
+### What changed (Improve Team surface)
+- **`improve-team-explain.ts`** (new): pure derivation, same family as
+  `home-action-explain.ts`/`lineup-explain.ts`. `explainWaiverTarget` maps a
+  real `WaiverAddCandidate` (+ its `WaiverAddDropPairing` if one exists, +
+  mode, + a real next-best alternative candidate the caller supplies) to the
+  directive's exact grammar: headline ("ADD X" or "ADD X / DROP Y"), WHY
+  (the backend's own `marginalUtilityExplanation`), BID (`faabBidLowDollars`-
+  `faabBidHighDollars` + urgency, honestly `null` when the backend supplied
+  no estimate), THIS WEEK impact (only populated in THIS_WEEK mode -- never
+  fabricated in REST_OF_SEASON), ROS impact (replacement value + marginal
+  utility + net-vs-drop when a pairing exists), ALTERNATIVE (a real
+  next-ranked candidate, never invented). `explainStreamerPlay` does the
+  same for a `KdstStreamerRow`, reusing `home-action-explain.ts`'s own
+  STREAMER why-text verbatim and mapping the real `recommendation` enum
+  onto `DecisionExplain`'s existing tone vocabulary (`ALTERNATIVE` ->
+  `tone="alternative"`, not a new one). 15 new unit tests.
+- **`decision-explain.tsx`**: three new optional props (`bid`,
+  `thisWeekImpact`, `rosImpact`), additive -- existing Home/Lineup call
+  sites pass none of these and render byte-for-byte as before. Lets one
+  card show a split week-vs-season impact plus a bid fact, per the
+  directive's grammar, without inventing a second explanation component.
+- **`improve-team.tsx`** (new): `ImproveTeamPage`, the single workspace
+  replacing the old separately-built Waivers/Free Agents/K-DST Streamer
+  pages in the nav. Tab state lives in a `?tab=` query param (shareable/
+  deep-linkable), default `targets`. All 5 tabs implemented:
+  - **TARGETS**: up to 10 capped `DecisionExplain` cards (mirrors Home's
+    own "top N of M" capped-display pattern) over the real `WaiversResult`,
+    each with a "View <player>" action into the global Player Drawer and an
+    "Open in Add/Drop" action that switches tabs AND pre-selects that
+    candidate in Add/Drop's own detail view -- a real cross-tab link, not
+    two disconnected screens.
+  - **ADD-DROP**: the full browse/pairing workflow (Available to add /
+    Add-Drop pairings / Consider dropping + the existing `AddDropDetail`
+    panel, now exported from `in-season.tsx` and reused here rather than
+    rebuilt) -- the deep-comparison counterpart to Targets' curated top
+    picks, both reading the SAME `WaiversResult`.
+  - **FAAB**: budget-planning view -- 3 `MetricCard`s (remaining/weeks/
+    per-week budget), the FAAB settings panel, and every real bid candidate
+    as a `DecisionExplain` card sorted by the backend's own urgency signal,
+    each carrying an urgency status badge via the existing
+    `FAAB_URGENCY_TONE` mapping (no new tone invented).
+  - **STREAMERS**: the top real K/DST recommendation per position as a
+    `DecisionExplain` card (same visual language as Targets/FAAB, per the
+    directive -- "not feel like a different app"), plus the full FantasyPros
+    ECR comparison table below for a deep positional read. The original
+    `WeeklyToolsPage` never had Player Drawer wiring at all (confirmed by
+    reading it before assuming otherwise) -- this tab adds it new, via a
+    synthetic `kdst-<position>-<playerName>` id (`KdstStreamerRow` carries
+    no canonical id; this is an honest, disclosed synthetic identity, not a
+    fabricated one -- see the code comment).
+  - **ALL FREE AGENTS**: the browse/deep-search mode of the same workspace
+    -- the existing `RedraftFreeAgentsResult` table plus a new client-side
+    name/team search filter, one panel instead of a whole separate page.
+  - `STREAMER_HORIZON_OPTIONS`/`_WEEKS`/`StreamerHorizon` exported from
+    `pages.tsx` (was file-local) and reused rather than reimplemented.
+- **`RedraftApp.tsx`**: `NAV_IMPROVE` collapsed from 3 nav items (Waivers/
+  Free Agents/K-DST Streamer) to 1 ("Improve Team", reusing the existing
+  `/waivers` path unchanged -- zero nav-active-route-resolver changes
+  needed, see `league-context.ts`'s existing `ROUTE_ALIAS_SUBPATH.improve
+  = "waivers"`/`NAV_LEGACY_PATH_SUBPATH["/waivers"] = "waivers"`, both left
+  untouched and still correct). Both the `/league/:leagueKey/waivers` and
+  `/league/:leagueKey/improve` scoped routes now render `ImproveTeamPage`
+  instead of the old standalone `WaiversPage`. `WaiversPage`/`FreeAgentsPage`/
+  `WeeklyToolsPage` themselves are untouched and still reachable at their
+  own flat/scoped routes as harmless legacy fallbacks (no longer linked
+  from nav) -- deliberately not deleted, in case a next pass wants to
+  retire them outright.
+- **`weekly-shared.tsx`**: Home's `ACTION_CATEGORY_LINK` for `WAIVER`/
+  `STREAMER` now points into the unified workspace (`/waivers?tab=targets`,
+  `/waivers?tab=streamers`) instead of the old separate pages.
+- **`redraft.css`**: new `.nwr-tabbar`/`.nwr-tabbar__tab(--active)` (one
+  small additive component, ~10 lines) -- the one genuinely new visual
+  pattern this pass needed (a tab bar for one workspace's sections); every
+  other visual choice inside each tab reuses existing `.nwr-explain`/
+  `.panel`/`.metric-grid`/`.toolbar`/`.data-table-wrap` components
+  unchanged.
+
+### Real bugs found and fixed
+1. **`player-detail-drawer.tsx`'s `SOURCE_LABEL` map had no `IMPROVE_TEAM`
+   entry** (found before any live render, by reading the map against the
+   new call site) -- without it, opening the drawer from ANY Improve Team
+   tab would have shown "Opened from IMPROVE_TEAM" verbatim, the exact
+   internal-language leak the Foundation pass's Phase 5 already fixed for
+   every other surface. Added `IMPROVE_TEAM: "Improve Team"`.
+2. **`LegacyRedirect` (RedraftApp.tsx) dropped the query string** on every
+   flat-path compatibility redirect (found live, mid-trial, when a `?tab=`
+   deep link silently landed on the default tab). `/waivers?tab=streamers`
+   would resolve to `/league/<key>/waivers` with NO `tab` param at all,
+   since the redirect built its target from `legacyRedirectTarget(...)`
+   alone and never looked at `location.search`. This is what makes Home's
+   own `ACTION_CATEGORY_LINK` `?tab=...` links (and any future flat link
+   carrying a query string) actually work through the redirect. Fixed by
+   appending `location.search` (already-imported `useLocation`, no new
+   import needed).
+3. **Streamers tab had zero Player Drawer wiring** -- not a regression (the
+   original `WeeklyToolsPage` never had it either, confirmed by reading it
+   first), but a real gap against this pass's own required interaction
+   trial matrix ("Open Player Drawer from each tab ... Streamers"). Added
+   a synthetic-id-based `View` action to both the card and the table (see
+   above).
+
+### Trial matrix executed
+**Viewport method (safety constraint):** `mcp__claude-in-chrome__resize_window`
+was tested first, requesting 1440x900 -- `window.innerWidth` stayed fixed
+at 884 (confirmed via a real JS check, not assumed), consistent with the
+Lineup pass's own recorded finding in a different sandbox session (958px
+there). Per the directive's explicit fallback, real rendering was done at
+the one width this sandbox's browser actually renders (**884px, real
+Chrome, real DOM**) -- notably a NEW regime vs. Work Unit 1's 958px: 884px
+sits BELOW the app's `930px` mobile-off-canvas-sidebar breakpoint, so this
+pass's real render exercises the off-canvas sidebar (confirmed live --
+sidebar opens as a scrim overlay, `.sidebar` width 244px, zero horizontal
+overflow via `scrollWidth === innerWidth` JS check) that Work Unit 1
+explicitly flagged as never independently verified.
+- **884px (real, rendered)**: all 5 tabs, states A (populated)/B (empty)/C
+  (stale weekly projections, THIS_WEEK mode only)/D (long league/player/
+  team-name stress) plus the streamer-specific empty state and the
+  no-free-agent state -- 8 distinct data scenarios in total, each
+  JS-verified for `scrollWidth === innerWidth` (no horizontal overflow) and
+  no `undefined`/`NaN` leaks, zero console errors on a clean baseline (see
+  below for one transient, self-explained exception).
+- **1440px / 1180px**: code-review only (real render not possible here).
+  Every tab reuses existing, already-reviewed-safe responsive primitives
+  unchanged (`.metric-grid` -- explicit `repeat(4,...)` -> `repeat(2,...)`
+  at <=1180px; `.toolbar` -- `flex-wrap`; `.data-table-wrap` -- its own
+  `overflow:auto` + `max-width:100%`, confirmed empirically at 884px that
+  wide tables never breach the page; `.nwr-action-grid` -- single-column).
+  The one new class this pass added, `.nwr-tabbar`, is a plain
+  `flex-wrap` row with no fixed widths, and was confirmed live to fit on
+  ONE line at 884px -- strictly more room exists at 1180/1440px, so no new
+  risk identified from reading the CSS.
+- **900px**: NOT independently re-rendered as a THIRD distinct width from
+  884px -- both sit on the same side of the `930px` off-canvas threshold
+  (below it), so 884px's real render already exercises the same CSS regime
+  900px would. Disclosed as the same class of gap Work Unit 1 recorded for
+  a width it could not reach, just inverted (this pass reached the
+  narrow/mobile regime live; the two mid/wide regimes are code-review
+  only).
+
+States A/B/C/D were driven via a `window.__NWR_QA__` scenario switch
+(`waiversScenario`/`streamerScenario`/`freeAgentsScenario` in
+`{normal|empty|stale}`) read at mock-fetch time, so each state could be
+exercised without re-injecting the whole fixture -- Targets/Add-Drop/FAAB
+were each verified in both their populated and empty forms, Targets
+additionally in THIS_WEEK mode (real "becomes starter" impact text) and in
+the stale/degraded mode (STALE badge + ranking-unavailable alert strip,
+both rendered correctly together).
+
+### Interaction trials
+Player Drawer opened from all 4 required entry points (Targets card,
+Streamers card, Streamers table row, All Free Agents table row) plus
+Add-Drop's own detail panel; closed via the header X, via Escape (a real,
+live spot-check that Work Unit 1's shared-primitive fix benefits this
+surface too, not assumed), and via keyboard (Tab to a "View" button, Enter
+to open; Tab again moved focus correctly onto the next card's own action).
+Reopening a different player while one was already open correctly replaced
+it (toggle-to-different-player, not stacked). All 5 tabs were switched
+between repeatedly (Targets -> Add/Drop -> FAAB -> Streamers -> All Free
+Agents -> Targets) with the `?tab=` URL updating correctly each time and
+zero console errors. Navigated Improve Team -> Weekly Home -> back to
+Improve Team via real URL navigation with zero console errors and correct
+remount-driven refetch (used deliberately to re-exercise the Free Agents
+empty state, which has no manual refresh control of its own).
+
+**One transient console error, explained and excluded from the final
+count**: mid-session, while iterating on the Streamers tab's drawer-wiring
+fix, Vite's Hot Module Replacement briefly threw
+`ReferenceError: STREAMER_TABLE_COLUMNS is not defined` twice while
+hot-swapping the edited module against a still-mounted component instance
+-- a dev-server-only HMR artifact (confirmed by a subsequent hard
+navigation + full reload immediately after, which produced a clean,
+error-free boot and every trial below was re-run from that clean
+baseline). This can only happen while editing source with the page open in
+a dev server; it cannot occur in the shipped Tauri build (no HMR there)
+and did not occur on any fresh load. Reported here for honesty rather than
+silently omitted.
+
+### Data used
+100% mocked, zero real network calls, zero backend process started --
+`window.fetch` patched at the browser-console level (the same mechanism
+Work Unit 1 used and disclosed) for a synthetic `qa-improve-1` profile,
+serving `/api/v1/bootstrap`, `/api/v1/redraft/waivers`,
+`/api/v1/redraft/free-agents`, `/api/v1/redraft/kdst/streamer`,
+`/api/v1/redraft/player-availability-status`,
+`/api/v1/redraft/status-overrides`, `/api/v1/redraft/weekly-home-actions`
+(a minimal stub, only for the Home round-trip nav check),
+`/api/v1/redraft/opponent-rosters`, and `/api/v1/redraft/my-roster`; every
+other path returns a typed 404 envelope so nothing can hang. The owner's
+real Fantasy Gamers/403/Tester leagues and AppData install were never
+touched or read.
+
+### Tests
+`improve-team-explain.test.ts` (15 tests, new): ADD/DROP headline
+composition with and without a pairing, bid formatting and its honest
+`null` case, THIS_WEEK vs REST_OF_SEASON impact (never fabricated in the
+wrong mode), a real next-best alternative vs. the honest no-alternative
+case, the generic-why fallback, and the full streamer-recommendation ->
+tone/verb mapping including the ALTERNATIVE-to-`tone="alternative"` reuse.
+`npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean.
+`npx vitest run --no-file-parallelism`: 231/231 passing (216 baseline + 15
+new, 0 regressions).
+
+### Backend/model files changed
+NONE. `git diff --stat 854d637b HEAD -- src/`: empty. Full diff: 7 files
+modified + 3 new, all under `desktop/apps/redraft/src` --
+`RedraftApp.tsx`, `decision-explain.tsx`, `in-season.tsx`, `pages.tsx`,
+`player-detail-drawer.tsx`, `redraft.css`, `weekly-shared.tsx` (modified);
+`improve-team-explain.ts`, `improve-team-explain.test.ts`, `improve-team.tsx`
+(new).
+
+### Open issues for the next worker
+- **900px genuinely untested as a distinct regime from 884px** (both sit
+  below the same `930px` threshold) -- if a future pass gets a working
+  browser-native resize method, re-verify Improve Team (and every other
+  surface) at true 900px AND at a real 1180/1440px, since neither this
+  pass nor Work Unit 1 has rendered the SAME width live.
+  1440px/1180px here are code-review-only, same disclosed class of gap.
+- **Minor, pre-existing, NOT fixed this pass** (found live, out of narrow
+  scope): `AddDropDetail`'s FAAB recommendation paragraph
+  (`{add.faabRationale}. Not a mathematically exact bid...`) double-periods
+  whenever the backend's own `faabRationale` string already ends in a
+  period (e.g. "Multiple teams likely bidding this week.." rendered
+  live). Pure existing-code cosmetic formatting, not introduced by this
+  pass, not overflow/undefined -- flagged rather than silently left, but
+  out of this surface's scope to fix a shared string-formatting
+  convention.
+- `WaiversPage`/`FreeAgentsPage`/`WeeklyToolsPage` (the pre-consolidation
+  pages) are still live code, reachable at their own flat/scoped routes,
+  just no longer linked from anywhere in the app now that nav and Home
+  both point into `ImproveTeamPage`. Deliberately left in place rather
+  than deleted (lowest-risk choice for this pass); a future pass could
+  retire them outright once confident nothing external depends on the old
+  URLs.
+- Streamers' synthetic `kdst-<position>-<playerName>` player-drawer id
+  (see above) will never resolve a match against the real
+  `PlayerAvailabilityStatus` authority even when a real status exists for
+  that K/DST -- an honest, disclosed limitation of `KdstStreamerRow`
+  carrying no canonical id, not something this presentation-only pass can
+  fix (would need a real backend id added to that contract).

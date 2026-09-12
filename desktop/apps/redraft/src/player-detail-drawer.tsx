@@ -49,6 +49,13 @@ import {
 const SOURCE_LABEL: Record<string, string> = {
   LINEUP: "Start / Sit",
   WAIVER: "Waivers",
+  // NWR UI expansion pass (2026-09-12, Improve Team surface): without this
+  // entry, opening the drawer from ANY Improve Team tab would fall back to
+  // the raw `active.source` string ("IMPROVE_TEAM") in the "Opened from"
+  // line -- exactly the internal-language leak Phase 5 already fixed for
+  // every other surface. Found before any live render, by reading this
+  // map against the new call site in improve-team.tsx.
+  IMPROVE_TEAM: "Improve Team",
   TRADE_ANALYSIS: "Trade Analysis",
   TRADE_FINDER: "Trade Finder",
   FREE_AGENTS: "Free Agents",

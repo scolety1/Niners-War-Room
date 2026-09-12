@@ -382,9 +382,12 @@ export function DataHealthPage({ client, data, onReload }: { client: NwrApiClien
   </>;
 }
 
-const STREAMER_HORIZON_OPTIONS = ["This Week", "Next 2", "Next 3"] as const;
-type StreamerHorizon = (typeof STREAMER_HORIZON_OPTIONS)[number];
-const STREAMER_HORIZON_WEEKS: Record<StreamerHorizon, number> = { "This Week": 1, "Next 2": 2, "Next 3": 3 };
+// Exported for the Improve Team workspace's own STREAMERS tab
+// (`improve-team.tsx`), which reuses this exact horizon vocabulary rather
+// than inventing a second one.
+export const STREAMER_HORIZON_OPTIONS = ["This Week", "Next 2", "Next 3"] as const;
+export type StreamerHorizon = (typeof STREAMER_HORIZON_OPTIONS)[number];
+export const STREAMER_HORIZON_WEEKS: Record<StreamerHorizon, number> = { "This Week": 1, "Next 2": 2, "Next 3": 3 };
 
 export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [week, setWeek] = useState(1);

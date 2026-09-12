@@ -347,7 +347,10 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
 // Waivers + Add/Drop + FAAB
 // ---------------------------------------------------------------------------
 
-function AddDropDetail({
+// Exported for the Improve Team workspace (`improve-team.tsx`), which
+// reuses this exact panel for its own ADD-DROP tab -- one detail view,
+// not a second competing one.
+export function AddDropDetail({
   add,
   waivers,
   mode,

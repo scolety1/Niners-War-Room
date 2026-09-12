@@ -42,6 +42,9 @@ export function DecisionExplain({
   alternative,
   confidence,
   impact,
+  bid,
+  thisWeekImpact,
+  rosImpact,
   status,
   freshness,
   advanced,
@@ -55,6 +58,16 @@ export function DecisionExplain({
   alternative?: string | null;
   confidence?: DecisionExplainConfidence | null;
   impact?: string | null;
+  /** A suggested-bid fact (e.g. FAAB), distinct from `impact` -- Improve
+   * Team's own "BID $X-Y" grammar. Optional and additive: existing callers
+   * (Home, Lineup) never pass this and render byte-for-byte as before. */
+  bid?: string | null;
+  /** Split week-scoped vs. season-scoped impact, for surfaces where both
+   * are real and distinct (Improve Team's "THIS WEEK <impact> / ROS
+   * <impact>" grammar) -- rendered as two separate fact rows instead of
+   * the generic `impact` row when present. Optional and additive. */
+  thisWeekImpact?: string | null;
+  rosImpact?: string | null;
   /** A player/roster health-status fact, distinct from `confidence`
    * (which is NWR's own certainty about the recommendation) -- e.g. the
    * recommended starter's real injury/availability status. Optional and
@@ -79,8 +92,11 @@ export function DecisionExplain({
       </header>
       <p className="nwr-explain__why">{why}</p>
       {secondaryWhy ? <p className="nwr-explain__why nwr-explain__why--secondary">{secondaryWhy}</p> : null}
-      {(impact || alternative || status || freshness) ? (
+      {(impact || bid || thisWeekImpact || rosImpact || alternative || status || freshness) ? (
         <dl className="nwr-explain__facts">
+          {bid ? <div><dt>Suggested bid</dt><dd>{bid}</dd></div> : null}
+          {thisWeekImpact ? <div><dt>This week</dt><dd>{thisWeekImpact}</dd></div> : null}
+          {rosImpact ? <div><dt>Rest of season</dt><dd>{rosImpact}</dd></div> : null}
           {impact ? <div><dt>Expected impact</dt><dd>{impact}</dd></div> : null}
           {alternative ? <div><dt>Alternative</dt><dd>{alternative}</dd></div> : null}
           {status ? <div><dt>Status</dt><dd><StatusBadge tone={status.tone} label={status.label} /></dd></div> : null}

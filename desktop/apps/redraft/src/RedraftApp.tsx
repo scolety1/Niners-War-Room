@@ -10,7 +10,8 @@ import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
-import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WaiversPage, WeeklyHomePage } from "./in-season";
+import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WeeklyHomePage } from "./in-season";
+import { ImproveTeamPage } from "./improve-team";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 import { PlayerDetailProvider } from "./player-detail-context";
@@ -34,13 +35,16 @@ import { FreshnessIndicator, ShellIdentity } from "./shell-identity";
 const NAV_HOME: NavigationGroup = { label: "Home", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }] };
 const NAV_DRAFT: NavigationGroup = { label: "Draft", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] };
 const NAV_LINEUP: NavigationGroup = { label: "Lineup", items: [{ label: "Start / Sit", path: "/lineup", icon: "board" }] };
+// NWR UI expansion pass (2026-09-12, Improve Team surface): ONE nav item,
+// not three -- Waivers/Add-Drop/FAAB/Streamers/Free Agents are now tabs
+// inside a single unified `ImproveTeamPage` workspace (see improve-team.tsx)
+// rather than separate destinations that only shared a nav group. `/waivers`
+// is reused as the entry path unchanged (no route-table/alias churn) --
+// its scoped route now renders `ImproveTeamPage` instead of the old
+// standalone `WaiversPage` (below).
 const NAV_IMPROVE: NavigationGroup = {
   label: "Improve Team",
-  items: [
-    { label: "Waivers", path: "/waivers", icon: "activity" },
-    { label: "Free Agents", path: "/free-agents", icon: "players" },
-    { label: "K/DST Streamer", path: "/weekly-tools", icon: "target" },
-  ],
+  items: [{ label: "Improve Team", path: "/waivers", icon: "activity" }],
 };
 const NAV_TRADES: NavigationGroup = {
   label: "Trades",
@@ -252,8 +256,8 @@ export function RedraftApp() {
           no working route is lost -- see PRODUCT_ARCHITECTURE.md. */}
       <Route path="/league/:leagueKey/home" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyHomePage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/lineup" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LineupPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WaiversPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WaiversPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeAnalysisPage client={client} data={data} /></LeagueScopedPage>} />
@@ -297,9 +301,19 @@ export function RedraftApp() {
 /** Compatibility redirect for a legacy flat path (directive invariant I).
  * Resolves to the SAME sub-page inside the currently active league's
  * scoped route when a league is active; otherwise sends the owner to the
- * league chooser rather than a broken/empty scoped route. */
+ * league chooser rather than a broken/empty scoped route.
+ *
+ * NWR UI expansion pass (2026-09-12, Improve Team surface) -- real bug
+ * found and fixed: this previously dropped the original URL's query
+ * string entirely, so a link like `/waivers?tab=streamers` (Home's own
+ * `ACTION_CATEGORY_LINK`, see weekly-shared.tsx) would silently land on
+ * `/league/<key>/waivers` with NO `tab` param, defaulting to the wrong
+ * tab. Preserving `location.search` through the redirect is what makes
+ * every `?tab=...` deep link into the unified Improve Team workspace
+ * actually work. */
 function LegacyRedirect({ data, subpath }: { data: RedraftBootstrap; subpath: string }) {
-  return <Navigate replace to={legacyRedirectTarget(data.activeProfileId, subpath)} />;
+  const location = useLocation();
+  return <Navigate replace to={`${legacyRedirectTarget(data.activeProfileId, subpath)}${location.search}`} />;
 }
 
 /** ONE gate every league-scoped route passes through (directive section 1,
