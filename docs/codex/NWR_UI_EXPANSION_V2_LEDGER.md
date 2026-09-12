@@ -2606,3 +2606,72 @@ image set to review rather than a re-hash of this ledger's own prose. No
 further UI work was attempted or is required from this pass; the polish
 gaps collected above remain open for whichever future pass the owner
 chooses to prioritize.
+
+## Work Unit 12 -- Final Synthesis / Freeze Decision (2026-09-12)
+
+**Start HEAD:** `1dd068a3` (Work Unit 11's own docs-only commit). **Result:**
+FREEZE CUT, with an explicit, named carve-out -- not a full unconditional
+"everything is done" freeze. No product code changed this pass.
+
+### Re-verification at the true final HEAD
+
+Re-ran every check Work Unit 10 already ran, one more time, at the true
+final HEAD (`1dd068a3`, two commits past Work Unit 10's `c2b771a0`):
+- `git diff --stat aae72a75 HEAD -- src/`: empty, and `git diff aae72a75 HEAD
+  -- src/ | wc -l` = 0 (zero diff lines, not just zero stat rows).
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean.
+- `npx vitest run --no-file-parallelism` (monorepo root): **278/278
+  passing, 25/25 test files** -- exact match to Work Unit 10's reported
+  numbers, zero drift from the two docs-only commits since.
+- `npm run build:redraft` / `npm run build:dynasty`: both succeeded (real
+  `vite build` production builds), matching Work Unit 10's own build report
+  (redraft 64 modules/529KB, dynasty 46 modules/362KB, same benign
+  >500KB-chunk advisory, no new warnings).
+- `git status --porcelain`: clean before and after this pass's own
+  verification commands.
+
+### Freeze decision
+
+Read all 11 prior ledger entries in full plus the 22-screenshot review pack.
+Judged the effort against the ORIGINAL freeze criteria (propagation of the
+new UI system through the owner product, not final aesthetic polish) rather
+than inflating the verdict. Five of six named surfaces (Lineup, Improve
+Team, Trades, Players, League) are genuinely COMPLETE. Draft Room is
+genuinely PARTIAL -- its primary pick hierarchy (the decision-critical part)
+is migrated and tested; Board/Queue/Teams/Cheat-Sheet were confirmed
+functional and already substantially token-aligned but were not deep-
+migrated, per Work Unit 6's own explicit, stated priority choice.
+
+**Decision: cut the freeze, but name Draft Room's remainder explicitly as an
+open carve-out rather than implying full completion.** This is judged
+"coherent enough" for what this freeze means (system propagated through the
+product) -- not "coherent enough" to claim Draft Room's visual migration is
+finished, which would be dishonest. Wrote
+`docs/codex/NWR_UI_EXPANSION_FREEZE_V1.md` recording: HEAD, design tokens,
+shell, Home, Lineup, Improve Team, Trades, Players, League, Draft Room (with
+its exact partial status spelled out), Player Drawer(s), responsive
+behavior, empty/error/degraded states, accessibility assumptions, known
+visual TODOs, a consolidated 24-item real-bug list pulled from all 11 prior
+entries (plus 5 disclosed QA-tooling-only bugs and 1 flagged-but-unfixed
+latent pre-existing product defect surfaced by Work Unit 10's own fixture
+work), a consolidated 12-item remaining-gaps list, and 2 genuine owner
+visual-taste questions (not padded to 5 -- this was a coherence pass, not a
+new-taste-decision pass).
+
+### Hard boundaries re-confirmed
+
+No merge/push/deploy performed. No backend/model file read or touched by
+this pass. The owner's real leagues and AppData install were not touched.
+`marginal_roster_utility_v2`, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext` semantics, the lifecycle resolver,
+`DecisionResultEnvelope` semantics, `PlayerAvailabilityStatus` authority, and
+provider architecture were not modified by this pass or any of the 11 prior
+ones (re-confirmed via the empty `src/` diff above).
+
+### Handoff
+
+This is the final entry in this ledger for this overnight effort. The full
+morning report for the human owner is a separate message, not a repo file,
+per this task's own instructions -- see the freeze document above for
+everything a future session needs to resume Draft Room's remaining
+migration or any other open gap.
