@@ -2529,3 +2529,80 @@ Work Unit 8's own finding about that boundary's behavior).
   crash-free, and visually consistent in their common states -- Worker 11
   should be able to proceed straight to building the screenshot review
   pack without further regression gating.
+
+## Work Unit 11 -- Screenshot Review Pack (2026-09-12)
+
+**Start HEAD:** `c2b771a0`. **Result:** COMPLETE. **Final HEAD:** `c2b771a0`
+(unchanged -- capture-only pass, no capture-blocking issue was hit that
+needed a source fix).
+
+### Method
+
+Reused Work Unit 7's own documented `<iframe>` viewport-control technique
+(a temporary `qa-app-loader.html` at the redraft app's project root,
+patching `window.fetch` before `main.tsx`'s first call; a temporary
+`public/qa-review-harness.html` iframe host) against a real local
+`npm run dev:redraft` server (port 1422), one synthetic `qa-review-1`
+profile (10-team PPR Sleeper, 24 players across 6 positions incl. a
+54-character stress name) plus two more synthetic profiles for the League
+chooser grid. Zero real network calls, zero backend process started; the
+owner's real Fantasy Gamers/403/Tester leagues and AppData install were
+never touched or read. Both temporary files were deleted before this entry
+-- neither shipped, confirmed via `git status --porcelain` clean before and
+after.
+
+One real, disclosed harness addition beyond Work Unit 7's own recorded
+technique: this session's outer Chrome window was itself stuck at a small,
+fixed size (~958x910px, the same class of "resize_window does nothing"
+finding every prior pass recorded for other things) too small to fit a
+1440px-wide render without cropping. Fixed by adding a CSS
+`transform: scale()` on the iframe element itself, computed to fit the
+whole page (width AND height) into the available window -- this only
+changes how big the already-real, pixel-exact render *looks* in the
+screenshot; `contentWindow.innerWidth` inside the iframe stays exact at the
+stated target throughout (re-verified live at every capture, not assumed).
+Also fixed a real fixture-authoring bug in this pass's own mock (same class
+every prior Work Unit's own harness hit): `RANKINGS[].drafted` was not kept
+in sync with the mock draft board's own `drafted` list, which would have
+shown an already-picked player as still available in Rankings -- corrected
+with a small post-processing pass over the fixture data before use.
+
+### Screenshots
+
+22 real, rendered screenshots captured (9 at 1440px, 4 at 1180px, 5 at
+900px, 4 special states: empty Home, League Sync DEGRADED, a Lineup
+`ErrorState`, and a long-player-name stress case) covering all 8 named
+surfaces (League chooser, Home, Lineup, Improve Team, Trades, Players,
+League, Draft Room) plus both Player Drawers (the global one and Draft
+Room's own specialized one). Zero console errors across the entire capture
+session (checked cumulatively). Full list, per-shot descriptions, a
+collected list of known visual-polish gaps/TODOs pulled from all 10 prior
+workers' own ledger entries, and a real-vs-V1-foundation-pack delta section
+are in `NWR_UI_OVERNIGHT_V2_REVIEW_PACK.md`, saved alongside the images
+under this session's scratchpad (not committed to the repo -- artifacts
+outside the repo, per this task's own instructions):
+`C:\Users\CODEX-~1\AppData\Local\Temp\claude\C--NWR-Niners-War-Room\73e6052b-0875-45e0-8c65-6e7ac0e890f3\scratchpad\ui_overnight_v2_review_pack\`.
+
+### Tests
+
+`npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean,
+re-confirmed after this pass's own temporary QA files were deleted. No
+vitest run was needed (no product code changed) -- consistent with this
+pass's own "capture-only, no code fix required" outcome.
+
+### Backend/model files changed
+
+NONE. No `src/` files were read or touched this pass beyond what earlier
+Work Units already documented reading. `git status --porcelain` was clean
+before this entry's own commit and after.
+
+### Freeze-decision handoff
+
+This is the last content-producing worker before the final freeze decision.
+All 6 named UI-expansion surfaces (Lineup, Improve Team, Trades, Players,
+League, Draft Room) are now real-rendered, screenshot-documented, and
+regression-clean at `c2b771a0` -- the owner has a genuine, browser-only
+image set to review rather than a re-hash of this ledger's own prose. No
+further UI work was attempted or is required from this pass; the polish
+gaps collected above remain open for whichever future pass the owner
+chooses to prioritize.
