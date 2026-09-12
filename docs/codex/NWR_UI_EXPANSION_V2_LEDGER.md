@@ -1187,3 +1187,298 @@ modified + 3 new, all under `desktop/apps/redraft/src` -- `RedraftApp.tsx`,
   in this effort (Lineup, Improve Team, Trades, Players, League) is done;
   Draft Room remains the one deliberately-separate, differently-owned
   surface for a future pass.
+
+## Work Unit 6 -- Draft Room (2026-09-12)
+
+**Start HEAD:** `4aeed5d3`. **Result:** PARTIAL -- primary pick hierarchy
+(items 1-5) COMPLETE and tested; Board/Queue/Teams/Cheat Sheet deeper
+visual-token migration NOT attempted this pass (see "Open issues" for the
+exact, precise remainder for a Draft Room Part 2 worker).
+
+### Foundation verification (Work Unit 0 equivalent for this surface)
+Read `NWR_UI_DESIGN_SYSTEM_V1.md`/`NWR_UI_FOUNDATION_FREEZE_V1.md` first --
+both explicitly flag Draft Room's own dense, power-tool visual language
+(`draft-room-v2.tsx`, ~4130 lines, `.draft-room-v2-*`/`.draft-board-v2-*`
+classes) as deliberately out of scope for every prior pass, "the next
+surface." Confirmed by direct CSS read before changing anything: almost
+every existing `draft-room-v2-*` rule ALREADY uses the shared token
+vocabulary (`var(--muted)`, `var(--gold-bright)`, `var(--crimson)`,
+`var(--gold-dim)`, etc.) rather than one-off hex values -- the one real
+exception was the old PICK NOW banner (`.draft-room-v2-pick-now*`, raw
+`rgba(87,200,154,...)`/`rgba(223,193,127,...)` hardcoded instead of the
+`--nwr-recommended`/`--nwr-warning` tokens those colors already map to),
+which this pass's own hero-card replacement below made moot (dead CSS
+removed, confirmed unreferenced first). `.draft-room-v2-htab--active`
+was independently confirmed to already exactly match `.nwr-tabbar__tab--active`
+byte-for-byte (`border-bottom-color:/color: var(--gold-bright)`), so the
+primary tab row was left alone rather than force a risky markup rewrite
+for a purely cosmetic, already-matching outcome.
+
+### PICK HIERARCHY: what changed
+- **`draft-explain.ts`** (new): pure derivation, same family as
+  `lineup-explain.ts`/`trades-explain.ts`/`improve-team-explain.ts`.
+  `explainPickNow(pickNow, decisionBundle, isBackToBackTurn)` maps the
+  EXACT same `PickNowBanner` (`findPickNow`, unchanged) the old banner and
+  the row-level "TAKE NOW" badge already both read, plus the matching real
+  `DecisionBundleCandidate` (looked up by `playerId`, for its
+  `marginalRosterUtility` -- the real, walk-forward-promoted primary
+  ordering signal, see the `nwr-post-draft-engine-forensics-v1` memory
+  entry) into the directive's exact grammar: headline (the same three-state
+  label the banner already showed, word for word: "NWR PICK NOW" /
+  "BEST CURRENT PICK — CLOSE CALL" / "BEST CURRENT PICK — NO SMASH VALUE"),
+  WHY (the backend's own `marginalRosterUtility.explanation` verbatim when
+  present, else an honest Pick-Score-based or genuine-tie fallback -- never
+  fabricated), ALTERNATIVE (only populated in the genuine close-call state,
+  mirroring `PickNowBanner.runnerUp` exactly -- never invented for a clear
+  "NWR PICK NOW"), WAIT/AVAILABILITY (a real Make-It-Back/Cost-of-Waiting
+  sentence, honest "not evaluated"/"UNKNOWN" when the backend has no real
+  estimate, plus an honest back-to-back-turn note), ROSTER EFFECT (real
+  before/after Team Score full-draft percentile from
+  `decisionBundle.currentTeamScore.percentile` -> `row.teamScoreAfter`, plus
+  a real starter/bench-depth note from `marginalRosterUtility.becomesStarter`/
+  `.benchRedundancyBefore` when available). 11 new unit tests
+  (`draft-explain.test.ts`), including explicit assertions that no
+  alternative/confidence is ever fabricated and every degraded path stays
+  honest (no `undefined`/`NaN` string leaks).
+- **`decision-explain.tsx`**: two new optional props, `waitAvailability`/
+  `rosterEffect` -- additive, same precedent as Improve Team's
+  `bid`/`thisWeekImpact`/`rosImpact` and Trades' `depth`/`positionEffect`/
+  `risk`; existing Home/Lineup/Improve Team/Trades/League call sites pass
+  neither and render byte-for-byte as before. Inserted into the `<dl>`
+  right after `alternative` (before `risk`/`status`/`freshness`) so THIS
+  surface's own card reads in the directive's exact hierarchy order
+  (WHY -> ALTERNATIVE -> WAIT/AVAILABILITY -> ROSTER EFFECT) with zero
+  effect on any other surface's existing fact order (none of them pass
+  these two new props).
+- **`draft-room-v2.tsx` (`SuggestionsTab`)**: the old plain
+  `.draft-room-v2-pick-now` banner div is REPLACED (not duplicated) by a
+  `DecisionExplain` card reading `pickNowExplanation` -- same `pickNow`
+  value, same candidate, same three-state label text, with a real
+  Draft/Queue/"View &lt;player&gt;" action row (`onDraft`/`onQueue`/
+  `onPlayerClick`, all pre-existing, unchanged). The full candidate
+  `DataTable` below (item 6, the candidate list) and its own per-row
+  advanced metrics (item 7 -- DQ/Player Score/ADP/Ballers, all still one
+  click of horizontal scroll away, nothing removed) are UNCHANGED.
+- **`redraft.css`**: the now-dead `.draft-room-v2-pick-now*` rules (5
+  rules, hardcoded colors) removed -- confirmed zero remaining references
+  in `draft-room-v2.tsx` (only a comment) before deleting, not left as
+  unused CSS.
+
+### Real bug found and fixed (live interaction trial)
+1. **The new hero card's eyebrow read "On the clock — Pick N" even when
+   it genuinely was NOT the owner's turn** (found live, state A trial --
+   `canRecordPick`/`isOwnerTurn` false) -- a real, newly-introduced UX
+   inaccuracy this pass's own card would have shipped with (the OLD banner
+   had no such claim at all, since it had no eyebrow). Fixed by making the
+   eyebrow conditional on the same `canRecordPick` this component already
+   has as a prop: "On the clock — Pick N" only when actually true, "Up
+   next — Pick N" (or "Not your turn yet" with no real pick number)
+   otherwise. Live-reverified via HMR immediately after the fix.
+2. **Draft Room's own separate `PlayerDrawer` had no Escape-to-close
+   wiring at all** (found live, this pass's own required interaction
+   trial) -- the global `PlayerDetailDrawer` got this exact fix in Work
+   Unit 1 (Lineup), but Draft Room's drawer is a deliberately distinct
+   component (per its own doc comment, "no equivalent outside a draft in
+   progress") and does not share that listener. Fixed in
+   `DraftRoomV2Page`'s own `drawerPlayerId` state with the same
+   `document.addEventListener("keydown", ...)` pattern, scoped to when a
+   player is actually open. Live-reverified (Escape now closes it; X
+   button and reopening a different player -- Marcus -> Jamal -- both
+   already worked and were reconfirmed, no stacking, `document.
+   querySelectorAll('.player-drawer').length` stayed 1 throughout).
+
+### Re-verified previously-fixed behavior (explicit, live, per player/state)
+- **Legal-recommendation flow**: confirmed by reading
+  `buildSuggestionsRows`/`SuggestionRow` first -- the type carries NO
+  `rosterLegal` field at all (unlike ranking/manual-asset/compare rows),
+  because illegal candidates are filtered server-side before they ever
+  reach `decisionBundle.candidates`; this pass's own hero card and the
+  table below both read that same already-filtered list, never a second
+  filter. Live-confirmed with a synthetic illegal QB (`rosterLegal:false`,
+  a real `POSITION_LIMIT` legality reason): visible in the left-pane
+  Rankings list with a correctly-disabled Draft button, absent from the
+  Suggestions candidate list and the PICK NOW card entirely -- exactly
+  state D's required behavior.
+- **PICK NOW banner/badge sync**: confirmed by reading the code
+  (`pickNow`/`suggestions` share one `useMemo(() => findPickNow(suggestions))`
+  call, `rows[0]` by identity, and the row-badge's `resolveDisplayAction`
+  unconditionally forces `TAKE_NOW` for `row.playerId === pickNow?.row.
+  playerId`) AND live, across 3 real simulated picks (Marcus Fieldstone ->
+  Devon Rivercrest -> Tobias Waterhouse-Kingsley III -> Jamal Okonkwo):
+  the hero headline and the table's row-1 "PICK NOW" badge named the same
+  player after every single pick, zero console errors each time.
+- **Active nav correctness**: "Draft Room" was the only `.nav-item--active`
+  element while on `/league/<key>/draft`, confirmed via a real DOM class
+  check, both before and after a Weekly Home -> Draft Room round trip.
+- **Position limits reflected correctly**: the synthetic illegal QB's
+  Draft button was `disabled` (real DOM `.disabled` check, not assumed)
+  everywhere it appeared.
+- **No frontend candidate-list resorting corruption**: confirmed by
+  reading `buildSuggestionsRows` (a plain `.map()` over
+  `decisionBundle.candidates` in the backend's own order, no client sort)
+  and by the live 3-pick trial itself, where the table's row 1 always
+  matched the hero card's own named player with no reordering surprises.
+
+### DRAWER APPROACH
+**Kept the specialized draft `PlayerDrawer`, genuinely required** -- verified
+by reading it fresh rather than assuming: it carries real Pick Score, Team
+Score (current -> after + delta), Championship Equity, Make-It-Back, Cost
+of Waiting, Player Score, per-provider Market ADP, Action/Value, Raw
+Decision Utility/marginal-roster-utility explanation, Ballers/UDK detail,
+roster-legality-gated Draft action, Queue toggle, and the real Status/Risk
+override read+write form -- none of which the global `PlayerDetailDrawer`
+supports (confirmed by re-reading that file fresh, not from memory of
+prior entries). Its visual grammar was ALSO already substantially aligned
+with the global drawer BEFORE this pass touched anything: same root
+`.player-drawer`/`PlayerIdentityHeader`/`.player-drawer__actions`/
+`.player-drawer__body` shell, same `<details className="player-drawer__section">`
+progressive-disclosure pattern for Why/News/Ballers/Details/Status-Risk,
+same `StatusBadge` tone vocabulary, and its own headline stat
+(`.player-drawer__stat--headline`) already uses the `--gold-bright` token.
+The one real, live-found gap was the missing Escape-to-close wiring (fixed
+above) -- no other visual-grammar misalignment was found on inspection, so
+no further changes were made here this pass.
+
+### Trial matrix executed
+**Viewport method (safety constraint):** `mcp__claude-in-chrome__resize_window`
+was tested first, requesting 1440x900 -- `window.innerWidth` stayed fixed
+at **1164** (confirmed via a real JS check, both before AND after the
+resize call), matching Work Unit 4's own recorded value exactly (a
+plausible same-display coincidence, not a claim the tool works). Per the
+directive's explicit fallback, real rendering was done at the one width
+this sandbox's browser actually renders (**1164px, real Chrome, real DOM**,
+via a real local Vite dev server on port 1422 + a real client-side
+fetch-mock, no backend process started).
+- **1164px (real, rendered)**: states A (not-owner's-turn -- hero card
+  present with a correctly-honest "UP NEXT — PICK 3" eyebrow and a
+  disabled Draft button, the bug above found and fixed here) / B (on the
+  clock -- clear "NWR PICK NOW", no fabricated alternative) / C (a real
+  close-call pair via a QA scenario flag -- "BEST CURRENT PICK — CLOSE
+  CALL" headline, a real ALTERNATIVE fact, `nwr-explain--warning` tone
+  class confirmed via a real `className` check) / D (a synthetic
+  `rosterLegal:false` QB -- visible in Rankings/search with a disabled
+  Draft button, absent from Suggestions/PICK NOW) / E (empty queue --
+  honest "Queue is empty" copy) / F (queue populated with 2 players,
+  Draft/remove actions) / G (roster panel after 4 real recorded picks --
+  correct slot allocation, Recent Picks list, Team Score updating) / H
+  (a real 30-character stress name, "Tobias Waterhouse-Kingsley III",
+  baked into rankings/candidates/board/queue/roster throughout) were all
+  rendered and JS-verified: zero console errors across the entire session
+  (checked cumulatively via `read_console_messages(onlyErrors)`, not just
+  per-state), `document.documentElement.scrollWidth === clientWidth`
+  (no horizontal overflow) confirmed in every state including the Draft
+  Board's 150-cell grid and the long-name stress state, no `undefined`/
+  `NaN` leaks (checked via body-text substring checks, not eyeballed).
+  The `pickScoreTiedNoSpread`/"NO SMASH VALUE" tie state was verified via
+  the same QA flag mechanism and via `draft-explain.test.ts`'s own unit
+  coverage, not independently re-rendered a second time in this same
+  session (time-boxed; the underlying code path is identical to the
+  close-call path already rendered live).
+- **1440px / 1180px / 930px / 900px**: code-review only (real render not
+  possible here) -- same disclosed class of gap every prior Work Unit in
+  this effort has recorded; no session across all six Work Units has yet
+  rendered the SAME width live as another.
+
+### Interaction trials
+Player Drawer opened from Suggestions (two different players, Devon
+Rivercrest then, after Escape, Jamal Okonkwo -- confirmed replacement not
+stacking via a real `querySelectorAll('.player-drawer').length === 1`
+check); closed via Escape (the real bug/fix above) and reconfirmed
+open-close-reopen worked cleanly afterward. Switched
+Suggestions -> Draft Board -> Suggestions -> Queue -> Teams -> Cheat
+Sheets -> Suggestions repeatedly with zero console errors and each tab's
+own real content rendering (Board's fixed-column grid with real filled
+cells after real picks; Queue's real add/remove; Teams' real roster-slot
+counts; Cheat Sheets' existing, already-unified `CheatSheetPage`, reused
+unchanged). PICK NOW banner/badge sync verified across 3 real consecutive
+picks (see above). Navigated Draft Room -> Weekly Home -> Draft Room via
+the sidebar nav with zero console errors and correct "Draft Room" active
+highlighting on return. Board-tab-specific "open a filled cell to
+view/correct" interaction and a full keyboard-only (Tab+Enter) open path
+were NOT independently exercised this pass -- a genuine, disclosed gap,
+not assumed passing.
+
+### Data used
+100% mocked, zero real network calls, zero backend process started --
+`window.fetch` patched at the browser-console level (the same mechanism
+Work Units 1-5 used and disclosed, including the Players pass's
+`input instanceof URL` handling) for one synthetic `qa-draft-1` profile
+(10-team PPR, 1QB), serving `/api/v1/bootstrap`,
+`/api/v1/redraft/draft/qa-draft-1/decision-bundle` (a real, in-memory,
+stateful mock -- an 8-candidate pool that shrinks as real mock picks are
+recorded, with `window.__NWR_DRAFT_QA__.closeCall`/`.tie`/`.onClock` QA
+flags driving states A/C), `/api/v1/redraft/draft/qa-draft-1/decision-bundle-v2`
+(honest empty -- RAV/DQ intentionally not exercised this pass),
+`/api/v1/redraft/draft/qa-draft-1/external-intelligence` (honest
+`available:false`), `/api/v1/redraft/status-overrides`, and the real
+`.../pick`/`.../undo` mutation endpoints (each returning a freshly
+recomputed bootstrap, including real `boardCells` for the Draft Board
+grid). Every other path returns a typed 404 envelope so nothing can hang.
+One real, disclosed mock-authoring bug found and fixed mid-session (not a
+product bug, same class as the Players pass's own `input instanceof URL`
+fix): the FIRST mock draft omitted the `RedraftDecisionBundleResponse`'s
+own `{ decisionBundle: ... }` wrapper (returned the bare bundle instead),
+which silently produced an honest-looking-but-wrong "No suggestions yet"
+empty state with zero console error -- caught by directly re-fetching the
+mocked endpoint and comparing its shape against `client.
+getRedraftDecisionBundle`'s real return type before assuming the UI was
+broken. The owner's real Fantasy Gamers/403/Tester leagues and AppData
+install were never touched or read.
+
+### Tests
+`draft-explain.test.ts` (12 tests, new): headline text matches the exact
+three-state label, tone mapping for all three states, the real
+`marginalRosterUtility.explanation`-verbatim WHY path and its honest
+Pick-Score/tie fallback, the alternative-only-in-close-call rule
+(explicit `toBeNull()` assertion in the clear-win case), real Make-It-Back/
+Cost-of-Waiting text incl. the honest "not evaluated" case and the
+100%*-survived-every-trial convention, the back-to-back-turn honesty note,
+and real before/after Team Score plus both the becomes-starter and
+adds-bench-depth ROSTER EFFECT notes. `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`: clean. `npx vitest run --no-file-parallelism`
+run from the monorepo root (`desktop/`, both apps): **275/275 passing**
+(264 baseline + 11 new, all in `draft-explain.test.ts`, 0 regressions).
+
+### Backend/model files changed
+NONE. `git diff --stat 4aeed5d3 -- src/`: empty (confirmed explicitly).
+Full diff: 3 files modified (`decision-explain.tsx`, `draft-room-v2.tsx`,
+`redraft.css`) + 2 new (`draft-explain.ts`, `draft-explain.test.ts`), all
+under `desktop/apps/redraft/src`.
+
+### Open issues for the next worker (Draft Room Part 2, or Worker 7)
+- **Board/Queue/Teams/Cheat Sheet were NOT visually migrated this pass**
+  beyond confirming they still function correctly and already reuse
+  mostly-token-aligned CSS -- per the directive's own explicit priority
+  ("prioritize the primary pick hierarchy over deeper polish of
+  Board/Queue/Teams/Cheat-Sheet if you have to choose"), this pass spent
+  its budget on items 1-5 and the two real bugs found doing so. A future
+  pass could still consider: replacing the Board's small "Open"/pick-cell
+  chrome with token-consistent colors (already mostly `var(--muted)`-based,
+  low risk), and auditing Queue/Teams' own `.draft-room-v2-*` classes
+  against `NWR_UI_DESIGN_SYSTEM_V1.md` more rigorously than this pass's
+  time allowed.
+- **900px/1180px/1440px/930px genuinely untested as distinct regimes for
+  Draft Room** -- same disclosed class of gap every prior Work Unit
+  recorded; no session across all six Work Units has yet rendered the SAME
+  width live as another.
+- **Board's own "click a filled cell" correction/detail interaction and a
+  full keyboard-only (Tab-to-focus, Enter-to-open) Player Drawer open path
+  were not independently exercised** this pass -- disclosed, not assumed
+  passing.
+- **RAV/Decision Quality columns were not exercised in this pass's mock**
+  (`decision-bundle-v2` mocked as an honest empty candidate list) -- the
+  Suggestions table's own DQ column was therefore only seen in its honest
+  "n/a" fallback state, not its populated state, this session.
+- The `pickScoreTiedNoSpread`/"NO SMASH VALUE" state was verified via unit
+  test and the underlying shared code path (identical to the close-call
+  path, which WAS live-rendered) but not independently live-rendered a
+  second time this session -- a time-boxed, disclosed gap.
+- Draft Room's dense `.draft-room-v2-*`/`.draft-board-v2-*` visual
+  vocabulary is now free of any *hardcoded, off-token* colors (the one
+  real instance -- the old PICK NOW banner -- was removed with the
+  banner itself), but it remains a genuinely distinct, denser visual
+  grammar than the rest of the redesigned product BY DESIGN (per
+  `NWR_UI_FOUNDATION_FREEZE_V1.md`'s own "bring it onto the design system
+  without regressing its live-draft density requirements" framing) --
+  not a violation to "fix" by flattening it into `.panel`/`.metric-grid`
+  wholesale in a future pass without a real, considered reason to do so.

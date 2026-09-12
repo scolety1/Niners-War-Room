@@ -55,6 +55,8 @@ export function DecisionExplain({
   depth,
   positionEffect,
   risk,
+  waitAvailability,
+  rosterEffect,
   status,
   freshness,
   advanced,
@@ -86,6 +88,18 @@ export function DecisionExplain({
   /** Trades' own "POSITION EFFECT" fact -- starter holes and position
    * redundancy before/after. Optional and additive, same as `depth`. */
   positionEffect?: string | null;
+  /** Draft Room's own "WAIT / AVAILABILITY" fact -- the real Cost of
+   * Waiting / Make-It-Back read for the recommended candidate (should the
+   * owner wait, will this player still be there?). Optional and additive:
+   * existing callers (Home, Lineup, Improve Team, Trades) never pass this
+   * and render byte-for-byte as before. */
+  waitAvailability?: string | null;
+  /** Draft Room's own "ROSTER EFFECT" fact -- the real Team Score
+   * before/after (full-draft-completion horizon, same one the candidate
+   * table already shows) plus a real starter/bench-depth note from the
+   * backend's own `marginalRosterUtility`, when available. Optional and
+   * additive, same as `waitAvailability`. */
+  rosterEffect?: string | null;
   /** A real, backend-supplied risk-flag summary, distinct from `status`
    * (a single player's health/availability) -- e.g. Trade Analysis's own
    * `riskFlags`. `null` is an honest "no risk flags recorded", never a
@@ -115,7 +129,7 @@ export function DecisionExplain({
       </header>
       <p className="nwr-explain__why">{why}</p>
       {secondaryWhy ? <p className="nwr-explain__why nwr-explain__why--secondary">{secondaryWhy}</p> : null}
-      {(impact || bid || thisWeekImpact || rosImpact || depth || positionEffect || risk || alternative || status || freshness) ? (
+      {(impact || bid || thisWeekImpact || rosImpact || depth || positionEffect || risk || alternative || waitAvailability || rosterEffect || status || freshness) ? (
         <dl className="nwr-explain__facts">
           {bid ? <div><dt>Suggested bid</dt><dd>{bid}</dd></div> : null}
           {thisWeekImpact ? <div><dt>This week</dt><dd>{thisWeekImpact}</dd></div> : null}
@@ -124,6 +138,8 @@ export function DecisionExplain({
           {positionEffect ? <div><dt>Position effect</dt><dd>{positionEffect}</dd></div> : null}
           {impact ? <div><dt>Expected impact</dt><dd>{impact}</dd></div> : null}
           {alternative ? <div><dt>Alternative</dt><dd>{alternative}</dd></div> : null}
+          {waitAvailability ? <div><dt>Wait / availability</dt><dd>{waitAvailability}</dd></div> : null}
+          {rosterEffect ? <div><dt>Roster effect</dt><dd>{rosterEffect}</dd></div> : null}
           {risk ? <div><dt>Risk</dt><dd>{risk}</dd></div> : null}
           {status ? <div><dt>Status</dt><dd><StatusBadge tone={status.tone} label={status.label} /></dd></div> : null}
           {freshness ? <div><dt>Data</dt><dd>{freshness}</dd></div> : null}

@@ -57,6 +57,8 @@ import { CheatSheetPage } from "./cheat-sheet";
 import { detectedPlatform } from "./adp-providers";
 import { formatRoundPick, formatAdpRoundPick } from "./adp-format";
 import { buildUdkEntryById } from "./ballers-shared";
+import { DecisionExplain } from "./decision-explain";
+import { explainPickNow } from "./draft-explain";
 import { rosterFormat, scoringFormat } from "./league-context";
 // Reused, not rebuilt (section 9 -- REUSE FIRST): the exact global,
 // position-filter-ignoring pick search and keyboard-navigation helpers the
@@ -895,6 +897,23 @@ export function DraftRoomV2Page({
     window.addEventListener("keydown", onSlash);
     return () => window.removeEventListener("keydown", onSlash);
   }, [compareIds.length, tab]);
+
+  // NWR UI expansion pass (2026-09-12, Draft Room surface, Work Unit 6):
+  // real bug found live during this pass's own required interaction trial
+  // -- this room's own separate `PlayerDrawer` had no Escape-to-close
+  // wiring, unlike the global `PlayerDetailDrawer` (fixed by the Lineup
+  // pass, Work Unit 1) every other surface's drawer already inherits.
+  // Fixed here, in this room's own drawer state, since the two drawers are
+  // deliberately separate components (see `PlayerDrawer`'s own doc
+  // comment) and do not share one Escape listener.
+  useEffect(() => {
+    if (!drawerPlayerId) return undefined;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawerPlayerId(null);
+    };
+    document.addEventListener("keydown", onEscape);
+    return () => document.removeEventListener("keydown", onEscape);
+  }, [drawerPlayerId]);
 
   const mark = async (playerId: string) => {
     if (!data.activeProfileId) return;
@@ -2373,23 +2392,48 @@ function SuggestionsTab({
     }] : []),
   ];
   const unavailableReason = decisionBundle && !decisionBundle.available ? decisionBundle.reason : null;
+  // NWR UI expansion pass (2026-09-12, Draft Room surface, Work Unit 6):
+  // the primary pick-hierarchy grammar (NWR PICK NOW -> WHY -> ALTERNATIVE
+  // -> WAIT/AVAILABILITY -> ROSTER EFFECT) every other surface's own
+  // top-of-page recommendation already uses -- replaces the old plain
+  // `.draft-room-v2-pick-now` banner. Reads the exact same `pickNow` value
+  // the table below leads with (see `explainPickNow`'s own doc comment);
+  // never a second, competing candidate-selection policy.
+  const pickNowExplanation = pickNow ? explainPickNow(pickNow, decisionBundle, isBackToBackTurn) : null;
   return (
     <>
-      {pickNow ? (
-        <div
-          className={pickNow.label === "NWR PICK NOW" ? "draft-room-v2-pick-now" : "draft-room-v2-pick-now draft-room-v2-pick-now--close"}
-          title="The same row-1 candidate the table below already leads with, by Pick Score -- never a second, hidden policy."
-        >
-          <strong>{pickNow.label}:</strong> {pickNow.row.playerName} ({pickNow.row.position})
-          {pickNow.runnerUp ? <span> — vs. {pickNow.runnerUp.playerName}</span> : null}
-          {isBackToBackTurn ? (
-            <span
-              className="draft-room-v2-pick-now__back-to-back"
-              title="Zero opponents pick between this turn and your own next turn -- your next selection is immediate, not N picks away."
-            >
-              {" "}· YOU PICK AGAIN IMMEDIATELY
-            </span>
-          ) : null}
+      {pickNow && pickNowExplanation ? (
+        <div className="nwr-action-grid" style={{ marginBottom: 8 }}>
+          <DecisionExplain
+            eyebrow={canRecordPick
+              ? (currentPick != null ? `On the clock — Pick ${currentPick}` : "On the clock")
+              : (currentPick != null ? `Up next — Pick ${currentPick}` : "Not your turn yet")}
+            headline={pickNowExplanation.headline}
+            why={pickNowExplanation.why}
+            alternative={pickNowExplanation.alternative}
+            waitAvailability={pickNowExplanation.waitAvailability}
+            rosterEffect={pickNowExplanation.rosterEffect}
+            tone={pickNowExplanation.tone}
+            actions={<>
+              <Button
+                data-draft-action
+                disabled={!canRecordPick || Boolean(working)}
+                variant="primary"
+                onClick={() => onDraft(pickNow.row.playerId)}
+              >
+                {working === pickNow.row.playerId ? "Saving…" : "Draft"}
+              </Button>
+              <Button variant="ghost" onClick={() => onQueue(pickNow.row.playerId)}>
+                {queuedIds.includes(pickNow.row.playerId) ? "Queued" : "Queue"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={(event) => onPlayerClick(pickNow.row.playerId, event as unknown as React.MouseEvent)}
+              >
+                View {pickNow.row.playerName}
+              </Button>
+            </>}
+          />
         </div>
       ) : null}
       {(positionDemand.length > 0 || externalIntel?.stale || closeCall || scarcityCounterfactual) ? (
