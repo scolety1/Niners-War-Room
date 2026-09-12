@@ -2014,3 +2014,310 @@ each fresh iframe reload, not just per-state).
   every prior Work Unit already exercised at all four widths).
 - Per this pass's own scope, Worker 9 (endurance QA: league-switch
   cycles, nav loops, drawer cycles, deep-link refreshes) is next.
+
+## Work Unit 9 -- Endurance QA (2026-09-12)
+
+**Start HEAD:** `77b95bcb`. **Result:** COMPLETE -- 2 real bugs found and
+fixed via genuine repeated-cycling endurance testing, not manufactured.
+
+### Method
+
+Reused Work Unit 7/8's own `<iframe>` viewport-control technique (a
+temporary `qa-app-loader.html` at the redraft app's project root,
+patching `window.fetch` before `main.tsx`'s first call; a temporary
+`public/qa-endurance-harness.html` iframe host) against a real local Vite
+dev server, zero real network calls, zero backend process started. Both
+temporary files were deleted before this commit -- neither shipped (same
+precedent as Work Units 7/8).
+
+Three distinct synthetic QA league profiles, all Sleeper-provider/
+IN_SEASON (drafted/complete), each with its own fully independent roster,
+free agents, opponents (x2), scoring format, and team count so any
+cross-league leakage would be immediately, textually obvious (every
+player/team name is literally prefixed with the league's own name):
+`qa-league-a` "Alpha Anchors" (10-team PPR, 1QB), `qa-league-b` "Bravo
+Blitz" (12-team Half-PPR, Superflex), `qa-league-c` "Charlie Chaos"
+(8-team Standard, 1QB). The mock server keeps one mutable
+`activeProfileId`, exactly like the real backend, so `POST .../activate`
+genuinely changes what every other endpoint returns.
+
+**A real, load-bearing QA-harness bug found and fixed before any trial
+could run at all:** the mock `window.fetch` override read `input.url` to
+recover the request path, which works for a `Request` object but not for
+a plain `URL` instance (`NwrApiClient.request()` passes a `URL`, which
+has `.href`, not `.url`) -- every request threw inside the mock itself,
+surfacing as the generic "local NWR service is not available yet"
+error screen. Fixed in the harness (`input.href ?? input.url ??
+String(input)`) -- a QA-tooling bug, not a product bug, but recorded
+here since it blocked everything until diagnosed.
+
+**A real, load-bearing sandbox condition confirmed and worked around:**
+`document.hidden === true` for this automation tab throughout the
+session (Chrome backgrounds a tab it isn't actively compositing to the
+screen). This throttles `setTimeout`-based polling unpredictably (single
+switches were timed at 1-21+ seconds using a naive `setTimeout` poll loop
+for what is actually a synchronous React state update) -- several early
+CDP tool calls hit the 45-second command timeout purely from this, not
+from any app slowness. Diagnosed with `performance.now()` timing plus a
+direct `document.hidden` check (not assumed), then fixed by switching all
+polling to a `MutationObserver`-driven wait (DOM mutations from a
+synchronous click-triggered re-render are not subject to timer
+throttling) -- after the fix, real switches consistently completed in
+single-digit milliseconds. Recorded for the next session's benefit: any
+future endurance/rapid-cycling QA pass in this same sandbox should use
+mutation-driven waits, not `setTimeout` polling, or it will misdiagnose
+throttling artifacts as product hangs (as this pass nearly did, twice,
+before checking `document.hidden`).
+
+### REAL BUGS FOUND AND FIXED
+
+1. **`shell-identity.tsx` (`ShellIdentity.switchLeague`): a stale,
+   superseded league-activation response could silently overwrite a
+   fresher one.** This handler navigates to the new league-scoped URL
+   *before* its own `activateRedraftProfile` call resolves (by design,
+   invariant G). Live-reproduced with an artificially delayed mock
+   response: click "Switch league" -> League B (slow), then -- before it
+   resolves -- follow a different route to League C (a deep link,
+   bookmark, or command-palette result; the Switch-league button's own
+   `disabled={working}` already blocks a second click through the *same*
+   control, so this needed a *different* navigation path, which
+   `LeagueScopedPage`'s own independent activation effect handles).
+   League C's own (faster) activation would land first and correctly
+   activate C -- then League B's stale response landed moments later with
+   **no guard at all**, silently clobbering the identity/roster/scoring
+   back to B while the URL still read C. `LeagueScopedPage`'s own
+   activation effect already guards its `onUpdate` against exactly this
+   (via a cleanup-set flag); this handler had no equivalent. Fixed with a
+   per-call request-generation ref (`switchRequestRef`) -- a response only
+   updates shared state when it is still the most recently requested
+   switch; `setWorking(false)` stays unconditional so a superseded
+   request can never leave the Switch-league button stuck disabled.
+   Live-reverified with the identical delayed-response repro: final state
+   now lands and stays on the newer league (C), zero flicker back to B,
+   zero console errors.
+2. **`player-detail-context.tsx`/`RedraftApp.tsx`: the global Player
+   Drawer did not close when the active league changed underneath it.**
+   `PlayerDetailProvider` is a true app-wide singleton mounted above the
+   router (by design, directive section 5 -- so the same player never
+   shows two competing drawers). Live-reproduced: open the drawer for a
+   League A player from the My Roster table, then switch to League B via
+   the Switch-league control *without* closing it first -- the drawer
+   stayed open showing League A's player, silently, with the sidebar
+   already reading "Bravo Blitz". `player-detail-state.ts`'s own
+   `isSamePlayerDetailTarget` already documents this exact invariant
+   ("switching leagues ... is always a real state change") but nothing
+   enforced it outside the same-player toggle path. Fixed by giving
+   `PlayerDetailProvider` an optional `activeLeagueKey` prop (wired from
+   `RedraftApp.tsx` as `data.activeProfileId`) and a `useEffect` that
+   clears `active` whenever it no longer matches the open target's own
+   `leagueKey` -- additive/optional, so a caller that omits the prop
+   renders unchanged. Live-reverified: the same repro now closes the
+   drawer automatically on switch (zero console errors); a regression
+   check confirmed the drawer does NOT close on an unrelated re-render on
+   the *same* league (opened the freshness popover twice with the drawer
+   open -- drawer persisted correctly, then closed cleanly via Escape).
+3. **`RedraftApp.tsx` (`LeagueScopedPage`'s activation effect): a cold
+   deep-link boot to a non-default league could get PERMANENTLY stuck on
+   "Opening `<league>`..."**, found via Trial D (deep-link/refresh), the
+   most severe finding this pass. Root cause: the effect's own
+   "is this response still wanted" guard was a fresh closure variable
+   (`let active = true`, flipped by the effect's cleanup) rather than the
+   `inFlightFor` ref already used to prevent a duplicate fetch. React 18
+   StrictMode (this app's own `main.tsx` wrapper, development only)
+   intentionally double-invokes an effect on mount -- cleanup fires
+   between the two invocations even though nothing real changed. Only the
+   FIRST invocation's fetch actually runs (the second correctly
+   early-returns via `inFlightFor`) -- but by the time that fetch
+   resolved, the first invocation's OWN cleanup had already flipped its
+   closure's `active` to `false`, so `.then()` silently discarded a
+   perfectly good, successful activation response. `isActive` then never
+   became `true`, `activating` still cleared via the (correctly)
+   unconditional `finally()`, and since no dependency ever changes again,
+   the effect never re-fires -- a genuine, permanent stuck loading
+   screen, not a transient flash, live-reproduced 100% on a fresh cold
+   boot directly to `/league/qa-league-b/home` (mock default profile is
+   `qa-league-a`, so this is the ordinary "deep-link to a non-default
+   league" case, not a contrived edge case). Fixed by keying the "is this
+   still wanted" check on `inFlightFor.current` itself (a ref, so it
+   survives an intervening StrictMode cleanup intact) instead of a fresh
+   closure flag -- correct for the real-supersession case exactly as
+   before (a genuinely newer `leagueKey` overwrites `inFlightFor.current`,
+   so an older response's check now correctly fails) and additionally
+   correct for the StrictMode-double-invoke case, which the old closure
+   flag was not. Live-reverified: 5/5 fresh cold boots directly to
+   `/league/qa-league-b/home` now activate Bravo cleanly with zero stuck
+   state, zero leakage, zero console errors; the full 7-route x5-reload
+   Trial D battery (35 reloads, previously 2 anomalous results before
+   this fix -- see Trial D below) came back 35/35 clean immediately after.
+
+### TRIAL A -- LEAGUE SWITCHING ENDURANCE
+
+**20 full A->B->C->A cycles executed (60 switches), the directive's own
+"20 if fixture setup makes that easy" ceiling** -- fixture setup (3
+independent synthetic leagues, a stateful mock activate endpoint) made
+this genuinely easy once the harness's own URL-object bug (above) was
+fixed. Result: **0 failures, 0 leakage, 0 missing-own-roster, 0 new
+console errors** across all 60 switches, checked on the League workspace
+My Roster tab (the richest single-page check: league name + scoring
+format + real roster player names together) plus the sidebar identity
+chip every switch. A supplementary targeted rotation (not part of the 60)
+independently re-verified Teams/opponents (both directions, Bravo and
+Charlie, each showing only its own two real opponent rosters, zero
+leakage) and Improve Team's FAAB tab: a manually-customized numeric field
+on League C's FAAB panel reset to its real component default after
+switching to League A (confirmed it did NOT carry the customized value
+forward), with zero leaked free-agent names from the prior league --
+expected, since `ImproveTeamPage`'s FAAB inputs are local component state
+under `<div key={leagueKey}>`, which fully remounts on a league switch;
+this is a real, positive confirmation of that remount discipline, not a
+newly-introduced behavior. One early false-positive in this
+pass's OWN test script (not a product bug): reading page text
+*immediately* after the sidebar name updates can catch a genuine,
+momentary stale-render window before that page's own separate async
+table fetch resolves (a real "flash of old content while refetching," not
+a stuck state) -- re-verified by waiting for the target's OWN roster text
+specifically rather than just the sidebar, which came back 60/60 clean;
+documented rather than silently corrected away, since a future pass
+should know this class of check needs the extra wait. The two real bugs
+above (#1 stale-response overwrite, #2 stale drawer) were found via
+*deliberately adversarial* variations on this same trial (an artificially
+delayed mock response; a drawer left open across a switch), not the
+plain 60-cycle sweep itself, which was already clean once both fixes
+landed.
+
+### TRIAL B -- FULL NAVIGATION LOOP
+
+**10 full loops executed (80 steps: Home -> Lineup -> Improve Team ->
+Trades -> Players -> League -> Draft -> Home, x10)**, the directive's
+exact minimum. Result: **0 failures, 0 stuck "Opening..." states, 0
+duplicate drawers, 0 duplicate command palettes, exactly one correct
+active nav item at every single step, 0 new console errors** -- tracked
+cumulatively across the whole loop (drained after each step, summed), not
+reset per page. Draft Room's own hint text needed correcting mid-session
+to account for this fixture's draft being already `complete` ("Draft
+complete", not "PICK NOW") -- a QA-script correction, not a product
+finding.
+
+### TRIAL C -- PLAYER DRAWER ENDURANCE
+
+**33 real open/close cycles executed** (directive minimum: 30), across
+**15 distinct players**, spanning Lineup, Improve Team (Targets),
+Trades (Find Trades), Players (Rankings), League (My Roster + Opponent
+Rosters) -- alternating Escape and the header's "Close" control (this
+primitive's own X-equivalent; confirmed via `player-drawer-core.tsx`,
+there is no separate icon-only X, "Close" is the one dismiss control) on
+alternating cycles. Result: **0 failures to open, 0 failures to close, 0
+duplicate drawers, 0 wrong-player renders (every drawer's shown name was
+verified to trace back to the exact row/card that was clicked, not just
+"a" name), 0 new console errors.** Two pages were honestly **not**
+exercised via a direct "View" action and are disclosed rather than
+silently skipped: **Weekly Home** (this pass's own fixture only populated
+WAIVER/TRADE action categories, and those render an "Open" cross-link
+into another workspace rather than a direct drawer-opening "View" --
+Work Unit 1's own ledger entry confirms a real START_SIT/
+START_SIT_CLOSE_CALL action DOES carry a "View `<player>`" action in the
+real app; this pass's fixture simply didn't include one, a QA-fixture
+gap, not a re-tested-and-passing claim) and **Trades' default Analyze
+tab** (empty by design until two sides are picked -- Trades' *other* tab,
+Find Trades, was fully tested and is included in the 33). Long-name/
+title-bar-collision stress was **not independently re-driven this pass**
+-- Work Units 1, 4, and 7 already live-verified this exact concern (a
+52-76 character stress name) for this same global drawer at multiple
+widths with zero overflow; no code touched by this pass changes drawer
+layout, so this pass relied on that standing verification rather than
+repeating it.
+
+### TRIAL D -- DEEP-LINK / REFRESH TRIALS
+
+**All 7 canonical routes, 5 reloads each = 35 total**, exactly the
+directive's minimum per route (`/league/:leagueKey/home`, `/lineup`,
+`/improve`, `/trades`, `/players`, `/league`, `/draft`, each resolved
+against the real `qa-league-a` profile). Reload used a real, fresh
+iframe navigation (`about:blank` bounce, per Work Unit 7's own documented
+gotcha) for "direct-load", plus a separate spot-check using a genuine
+`iframe.contentWindow.location.reload()` call (a TRUE browser refresh,
+not the src-reset technique) on one route to confirm it behaves
+identically -- it did. **Before the Work Unit 3 fix above: 2 of the first
+35 reloads (one on `trades`, one on `draft`) landed on an unexpected
+route** (`opponent-rosters` and the legacy `#/lineup` respectively) with
+no error state and no stuck screen -- re-investigated with an isolated,
+hash-verifying retry wrapper on the SAME route (5 additional clean
+reloads, one of which needed exactly one retry), consistent with a rare
+timing artifact of this pass's own about:blank-bounce reload *technique*
+under the sandbox's confirmed background-tab throttling, not a
+reproducible app defect on its own -- flagged rather than silently
+waved away. **After landing the `LeagueScopedPage` fix (bug #3 above),
+the full 35-reload battery was re-run clean end to end: 0 wrong routes, 0
+wrong active league, 0 wrong nav, 0 stuck "Opening...", 0 error states, 0
+new console errors.** A dedicated "implicit-profile drift" check (the
+directive's own named concern) was run explicitly: a cold boot directly
+to `/league/qa-league-b/home`, where the mock's own persisted default
+profile is `qa-league-a` (i.e. the backend's own last-active profile
+differs from what the URL asks for) -- correctly resolves to, and stays
+on, League B, 5/5, with zero leakage of League A's identity/roster. This
+is the exact scenario bug #3 was breaking permanently before the fix.
+
+### TESTS
+
+`npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+clean. `npx vitest run --no-file-parallelism` from the monorepo root
+(`desktop/`, both apps): **278/278 passing, 0 regressions, 0 new tests**
+-- consistent with this repo's own established precedent (see Work Units
+1, 7, 8) for files with no React-Testing-Library-style render-test
+infrastructure: `shell-identity.tsx`, `player-detail-context.tsx`, and
+`RedraftApp.tsx`'s `LeagueScopedPage` have never had a unit/render test,
+and all three fixes here are effect-timing/state-management behavior
+(a request-generation race, a cross-cutting auto-close effect, a
+StrictMode-safe ref-based guard) that this pass verified live with real
+DOM/state checks (including an artificially-delayed mock response to
+force the exact race window, and a direct `document.hidden`/
+`performance.now()` check rather than assuming the sandbox's timing
+behavior) instead of inventing new test infrastructure for one pass.
+
+### CONSOLE ERRORS (CUMULATIVE ACROSS ALL TRIALS)
+
+**0.** Tracked via an in-page `window.__NWR_QA_ERRORS__` capture
+(uncaught exceptions, unhandled promise rejections, and every
+`console.error` call, including `OwnerErrorBoundary`'s own
+`componentDidCatch`) drained and accumulated into a session-wide counter
+after every reload/action across all four trials -- not reset per trial,
+not reset per page, not assumed from a single spot-check.
+
+### Backend/model files changed
+
+NONE. `git diff --stat 77b95bcb HEAD -- src/`: empty (confirmed
+explicitly, and again after this commit). Full diff: 3 files modified,
+all under `desktop/apps/redraft/src` -- `RedraftApp.tsx`,
+`player-detail-context.tsx`, `shell-identity.tsx`. The two temporary QA
+files used to drive this session's own rendering
+(`apps/redraft/qa-app-loader.html`, `apps/redraft/public/qa-endurance-
+harness.html`) were deleted before this commit -- neither shipped, and
+neither ever entered git (confirmed via `git status --porcelain` showing
+only the three real source files).
+
+### Open issues for the next worker (Worker 10: full regression /
+Worker 11: screenshot review pack)
+
+- **Trial C's Weekly Home coverage is fixture-limited, not app-verified**
+  (see above) -- a future pass with a fixture that includes a real
+  START_SIT/START_SIT_CLOSE_CALL Home action should independently confirm
+  its documented "View `<player>`" action still opens the (now
+  league-aware-auto-closing) global drawer correctly.
+- **This pass's own reload technique (the `about:blank` bounce) has a
+  rare, disclosed timing flakiness** under this sandbox's confirmed
+  background-tab timer throttling (2 anomalous reloads out of the first
+  35, both resolved and not reproduced in 40 additional reloads after)
+  -- worth keeping the "hash-verifying retry" pattern documented in this
+  session's own scratch script if a future pass reuses the iframe
+  reload technique for a large batch of reloads.
+- **The StrictMode-specific nature of bug #3** means it is only
+  confirmed to reproduce against this DEV Vite server (where
+  `<React.StrictMode>` double-invokes effects) -- the fix is correct and
+  strictly more robust regardless (a ref-based guard is not weaker than a
+  closure flag in production, where StrictMode's double-invoke does not
+  happen), but this pass could not exercise the real Tauri-packaged
+  production build to independently confirm the ORIGINAL bug was also
+  reachable there via some other re-render trigger. Disclosed rather than
+  claimed either way.
+- Per the directive's own sequencing, Worker 10 (full regression) and
+  Worker 11 (screenshot review pack) are next, and may be combined.

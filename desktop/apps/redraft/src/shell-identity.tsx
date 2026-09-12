@@ -52,11 +52,37 @@ export function ShellIdentity({
   const active = data.activeProfile;
   const location = useLocation();
   const navigate = useNavigate();
+  // NWR UI expansion pass, Work Unit 9 (endurance QA) -- real, reproduced
+  // race found via rapid league-switch cycling: this handler navigates to
+  // the new league-scoped URL BEFORE its own `activateRedraftProfile` call
+  // resolves (by design, per invariant G above). If the owner then follows
+  // a DIFFERENT route to another league while that request is still in
+  // flight (a deep link, a bookmark, browser back/forward, or a command-
+  // palette result -- any path that does not go through this same
+  // `switchLeague`, which the disabled Switch-league button already blocks
+  // for a second click), `LeagueScopedPage`'s own independent activation
+  // effect (RedraftApp.tsx) can finish FIRST and correctly set the newer
+  // league active -- only for THIS handler's now-stale response to land
+  // moments later and silently clobber it back to the original target,
+  // briefly (and, if the owner is not still on a route that re-triggers
+  // `LeagueScopedPage`'s own self-correcting effect, indefinitely) showing
+  // the wrong league's identity/roster/scoring. Confirmed live with an
+  // artificially delayed mock response; `LeagueScopedPage`'s own effect
+  // already guards its `onUpdate` call against exactly this kind of
+  // supersession (via its `active`/cleanup flag) -- this handler had no
+  // equivalent guard at all. Fixed the same way: a per-call request id,
+  // so a response only ever updates shared state when it is still the
+  // most recently requested switch. `setWorking(false)` stays unconditional
+  // (purely local UI state, safe to reset even for a superseded request --
+  // gating it too would risk leaving the Switch-league button stuck
+  // disabled if a request resolved out of order).
+  const switchRequestRef = useRef(0);
 
   const switchLeague = async (profileId: string) => {
     if (!profileId || profileId === data.activeProfileId || working) return;
     setMenuOpen(false);
     setWorking(true); setError("");
+    const requestId = ++switchRequestRef.current;
     // Directive invariant G ("switching leagues cannot leak prior league
     // state"), unchanged from the prior ActiveLeagueSelector: rewrite a
     // league-scoped deep link's leagueKey segment to the new profile
@@ -66,9 +92,14 @@ export function ShellIdentity({
       const rest = pathSegments.slice(3).join("/");
       navigate(`/league/${encodeURIComponent(profileId)}/${rest}${location.search}`, { replace: true });
     }
-    try { onUpdate(await client.activateRedraftProfile(profileId)); }
-    catch { setError("League switch could not be saved. The current workspace remains active."); }
-    finally { setWorking(false); }
+    try {
+      const next = await client.activateRedraftProfile(profileId);
+      if (switchRequestRef.current === requestId) onUpdate(next);
+    } catch {
+      if (switchRequestRef.current === requestId) setError("League switch could not be saved. The current workspace remains active.");
+    } finally {
+      setWorking(false);
+    }
   };
 
   useEffect(() => {

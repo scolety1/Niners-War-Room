@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
   isSamePlayerDetailTarget,
@@ -28,8 +28,31 @@ interface PlayerDetailContextValue {
 
 const PlayerDetailContext = createContext<PlayerDetailContextValue | null>(null);
 
-export function PlayerDetailProvider({ children }: { children: ReactNode }) {
+export function PlayerDetailProvider({
+  children,
+  activeLeagueKey = null,
+}: {
+  children: ReactNode;
+  // NWR UI expansion pass, Work Unit 9 (endurance QA) -- real, reproduced
+  // bug found via league-switch endurance cycling: this provider is a
+  // true app-wide singleton mounted ABOVE the router (see RedraftApp.tsx's
+  // own module doc), so nothing ever closed an already-open drawer when
+  // the ACTIVE LEAGUE changed underneath it -- switching leagues while a
+  // drawer was open left it showing the PRIOR league's player, silently,
+  // with no visual signal anything was wrong. `player-detail-state.ts`'s
+  // own `isSamePlayerDetailTarget` already documents this exact invariant
+  // ("switching leagues ... is always a real state change") but nothing
+  // enforced it outside the same-player toggle path. Optional and
+  // additive -- a caller that omits this prop (none exist today, but this
+  // keeps the primitive usable standalone/in a future test) renders
+  // byte-for-byte as before, just without the auto-close.
+  activeLeagueKey?: string | null;
+}) {
   const [active, setActive] = useState<PlayerDetailTarget | null>(null);
+
+  useEffect(() => {
+    setActive((current) => (current && current.leagueKey !== activeLeagueKey ? null : current));
+  }, [activeLeagueKey]);
 
   const openPlayerDetail = useCallback((target: PlayerDetailTarget) => {
     setActive((current) => togglePlayerDetail(current, target));

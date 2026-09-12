@@ -220,7 +220,7 @@ export function RedraftApp() {
   // lockup) and the four freshness pills collapse into one quiet header
   // chip (`statusExtra`) -- replacing the old full-width `ActiveLeagueSelector`
   // content-area bar that used to compete with every page's real content.
-  return <PlayerDetailProvider><AppShell activeNavPath={activeNavPath} commands={commands} contextLabel={data.activeProfile ? "Redraft workspace" : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={navigation} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sidebarIdentity={<ShellIdentity client={client} data={data} onUpdate={update} />} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} statusExtra={<FreshnessIndicator data={data} />} title="Niners War Room — Redraft">
+  return <PlayerDetailProvider activeLeagueKey={data.activeProfileId}><AppShell activeNavPath={activeNavPath} commands={commands} contextLabel={data.activeProfile ? "Redraft workspace" : "Redraft · Choose a league"} healthLabel={data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required"} healthTone={data.status.tone} mode="redraft" navigation={navigation} onToggleSidebarCollapsed={toggleSidebarCollapsed} profileLabel={data.activeProfile?.leagueName ?? "Choose league profile"} sidebarCollapsed={sidebarCollapsed} sidebarIdentity={<ShellIdentity client={client} data={data} onUpdate={update} />} sourceAsOf={data.status.sourceAsOf ? `Projections ${data.status.sourceAsOf}` : "Projection date unavailable"} statusExtra={<FreshnessIndicator data={data} />} title="Niners War Room — Redraft">
     <PlayerDetailDrawer client={client} />
     {error ? <div className="alert-strip alert-strip--blocked refresh-failure" role="alert"><strong>Snapshot refresh failed</strong><span>{error.message} The last successfully loaded Redraft snapshot remains on screen.</span><Button disabled={refreshing} icon="undo" onClick={reload} variant="secondary">Retry</Button></div> : null}
     {!error && refreshing ? <div aria-live="polite" className="alert-strip refresh-failure"><strong>Refreshing</strong><span>Checking the local Redraft snapshot…</span></div> : null}
@@ -379,38 +379,45 @@ function LeagueScopedPage({
     inFlightFor.current = leagueKey;
     setActivating(true);
     setActivationError(null);
-    let active = true;
+    // NWR UI expansion pass, Work Unit 9 (endurance QA) -- real, reproduced
+    // bug found via deep-link/cold-boot cycling: a per-invocation closure
+    // flag (previously `let active = true`, reset to false by this exact
+    // effect's OWN cleanup) is NOT a reliable "is this response still
+    // wanted" guard, because React 18 StrictMode (development only, this
+    // app's own `main.tsx` wrapper) intentionally double-invokes an
+    // effect on mount -- cleanup fires between the two invocations even
+    // though nothing real changed. The FIRST invocation's fetch is the
+    // only one that actually runs (the SECOND early-returns via
+    // `inFlightFor`, correctly avoiding a duplicate request) -- but the
+    // first invocation's own cleanup had already flipped its closure's
+    // `active` to false by the time that fetch resolved, so its `.then()`
+    // silently discarded a perfectly good response, and `isActive` never
+    // became true. `activating` still cleared via the unconditional
+    // `finally()` below (see the pre-existing comment this replaces for
+    // that half of the history), but with `isActive` permanently false and
+    // no dependency ever changing again, the effect never re-fires --
+    // live-reproduced as a PERMANENT "Opening <league>…" screen on a cold
+    // deep-link boot, not just a transient flash. Fixed by keying the
+    // guard on `inFlightFor.current` itself (a ref, so it is NOT reset by
+    // an intervening StrictMode cleanup) instead of a fresh closure
+    // variable -- a response only applies when it is still the one
+    // in-flight request this component cares about, which is exactly as
+    // true after a StrictMode double-invoke as it is for a real,
+    // independent supersession by a newer leagueKey.
     void client
       .activateRedraftProfile(leagueKey)
       .then((next) => {
-        if (!active) return;
+        if (inFlightFor.current !== leagueKey) return;
         onUpdate(next);
       })
       .catch(() => {
-        if (active) setActivationError("This league could not be opened. It may have been removed.");
+        if (inFlightFor.current === leagueKey) setActivationError("This league could not be opened. It may have been removed.");
       })
       .finally(() => {
-        // NWR pre-UI architecture pass -- real bug found live in the
-        // rendered acceptance pass (section 12): `setActivating(false)`
-        // must run UNCONDITIONALLY here, not gated behind `active`. The
-        // `active`/cleanup guard exists to stop a SUPERSEDED request from
-        // overwriting fresher data via `onUpdate` -- but reusing that same
-        // guard to also suppress clearing the loading spinner meant that
-        // whenever this effect's own successful `onUpdate` immediately
-        // triggered a re-render (activeProfileId now matching, isActive
-        // true), the resulting cleanup set `active = false` BEFORE this
-        // `.finally()` ran, so `setActivating(false)` was silently
-        // skipped -- and the replacement effect invocation early-returns
-        // on `isActive` without ever touching `activating` either. Net
-        // effect: "Opening <league>…" never cleared, live-reproduced by
-        // switching leagues from the header control. Only reset the
-        // in-flight guard for THIS attempt, not a newer superseding one.
         setActivating(false);
         if (inFlightFor.current === leagueKey) inFlightFor.current = null;
       });
-    return () => {
-      active = false;
-    };
+    return undefined;
   }, [client, leagueKey, targetProfile, isActive, onUpdate]);
 
   if (!leagueKey || !targetProfile) {
