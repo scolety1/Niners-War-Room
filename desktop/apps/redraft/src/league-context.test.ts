@@ -134,10 +134,23 @@ describe("resolveActiveNavPath", () => {
     expect(resolveActiveNavPath("/league/profile-fantasy-gamers/rankings", playersNavPaths)).toBe("/rankings");
   });
 
-  it("resolves Tiers, Compare, and Market (adp) each to their own nav item", () => {
-    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/tiers", playersNavPaths)).toBe("/tiers");
-    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/compare", playersNavPaths)).toBe("/compare");
-    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/adp", playersNavPaths)).toBe("/adp");
+  // NWR UI expansion pass (2026-09-12, Players surface): this used to read
+  // "resolves Tiers, Compare, and Market (adp) each to their own nav item"
+  // and assert each resolved to itself -- true when Rankings/Tiers &
+  // Positions/Compare/Market Data were four separate nav items. That real
+  // nav item no longer exists (all four collapsed into one "Players" item,
+  // path "/rankings", unified into one PlayersPage -- same consolidation
+  // shape as Improve Team/Trades); `ROUTE_ALIAS_SUBPATH` now aliases
+  // tiers/compare/adp back to "rankings" UNCONDITIONALLY (independent of
+  // which navPaths list is passed in, same as the pre-existing `improve`/
+  // `trade-finder` aliases), so this fixture -- which still lists "/tiers",
+  // "/compare", "/adp" as if they were still real, separate nav items --
+  // now correctly resolves all three to "/rankings" instead. This is the
+  // intended, current product behavior, not a regression.
+  it("resolves Tiers, Compare, and Market (adp) to the one Players nav item, not to separate items (Players surface, unified into one PlayersPage)", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/tiers", playersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/compare", playersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/adp", playersNavPaths)).toBe("/rankings");
   });
 
   it("resolves Cheat Sheet active only on its own scoped route", () => {
@@ -159,6 +172,22 @@ describe("resolveActiveNavPath", () => {
 
   it("resolves the legacy /trade-finder subpath to the same Trades nav item (Trades surface, unified into one TradesPage)", () => {
     expect(resolveActiveNavPath("/league/profile-fantasy-gamers/trade-finder", ["/trade-analysis"])).toBe("/trade-analysis");
+  });
+
+  // NWR UI expansion pass (2026-09-12, Players surface): Rankings/Tiers &
+  // Positions/Compare/Market Data collapsed into one "Players" nav item
+  // (path "/rankings"), unified into one PlayersPage. Exercised against
+  // the REAL post-consolidation nav path list (just "/rankings" and
+  // "/cheat-sheet" -- not the pre-consolidation five-item list the earlier
+  // tests above still use to prove the resolver's general behavior).
+  it("resolves the legacy /tiers, /compare, and /adp subpaths to the one Players nav item (Players surface, unified into one PlayersPage)", () => {
+    const consolidatedPlayersNavPaths = ["/rankings", "/cheat-sheet"];
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/rankings", consolidatedPlayersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/tiers", consolidatedPlayersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/compare", consolidatedPlayersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/adp", consolidatedPlayersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/players", consolidatedPlayersNavPaths)).toBe("/rankings");
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/cheat-sheet", consolidatedPlayersNavPaths)).toBe("/cheat-sheet");
   });
 
   it("returns null on the league chooser, where no nav item should be active", () => {

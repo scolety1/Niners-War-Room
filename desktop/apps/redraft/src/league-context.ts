@@ -137,6 +137,20 @@ export const ROUTE_ALIAS_SUBPATH: Record<string, string> = {
   // a deep link or bookmark to `/trade-finder` still highlights the one
   // "Trades" nav item instead of nothing.
   "trade-finder": "trade-analysis",
+  // NWR UI expansion pass (2026-09-12, Players surface): `/tiers`,
+  // `/compare`, and `/adp` now share the SAME page as `/rankings` (the
+  // unified `PlayersPage`, opened to its TIERS/COMPARE/MARKET tab
+  // respectively) rather than three separate standalone pages -- same
+  // reasoning as `improve` -> `waivers` and `trade-finder` ->
+  // `trade-analysis` above. Without these, a deep link or bookmark to any
+  // of the three would resolve the nav active-state to nothing (the exact
+  // bug class the Work Unit 0 canonical-resolver fix targeted, here
+  // reproduced fresh by this pass's own nav consolidation, not left over
+  // from before it) once the "Rankings"/"Tiers & Positions"/"Compare"/
+  // "Market Data" nav items collapsed into one "Players" item.
+  tiers: "rankings",
+  compare: "rankings",
+  adp: "rankings",
 };
 
 /**

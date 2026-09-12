@@ -68,6 +68,14 @@ const SOURCE_LABEL: Record<string, string> = {
   PLAYERS_RANKINGS: "Players / Rankings",
   PLAYERS_TIERS: "Players / Tiers",
   PLAYERS_COMPARE: "Players / Compare",
+  // NWR UI expansion pass (2026-09-12, Players surface): the unified
+  // Market tab (players.tsx -> adp-providers.tsx's `MarketDataContent`)
+  // opens the drawer from a real matched-player row in the ADP import
+  // preview table -- without this entry it would fall back to the raw
+  // "PLAYERS_MARKET" string, the same internal-language leak class fixed
+  // for IMPROVE_TEAM/TRADES. Found before any live render, by reading this
+  // map against the new call site.
+  PLAYERS_MARKET: "Players / Market",
 };
 
 export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {

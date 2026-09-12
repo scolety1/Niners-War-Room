@@ -157,7 +157,25 @@ function rankingColumns(compact = false): TableColumn[] {
   return compact ? base.slice(0, 6) : [...base, { key: "sourceAsOf", label: "Source as of", sort: "text" }];
 }
 
-export function RankingsPage({ data }: { data: RedraftBootstrap }) {
+function rankingsPageHeader(data: RedraftBootstrap) {
+  const practical = Boolean(data.activeProfile?.practicalMode);
+  const activeName = data.activeProfile?.leagueName ?? "Active League";
+  const activeFormat = data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile";
+  return <PageHeader eyebrow={activeFormat} title={`${activeName} Rankings`} description={practical ? "Major QB/RB/WR/TE scoring rules are modeled. Five uncommon events are omitted; K/DST are separate manual assets." : "Current-season projection value, dynamic replacement level, confidence, and tiers for this active league."} status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={`${data.rankings.length} ranked players`} />{practical ? <StatusBadge tone="review" label="Approximate scoring" /> : <StatusBadge tone="safe" label="League specific" />}</>} />;
+}
+
+/**
+ * NWR UI expansion pass (2026-09-12, Players surface): the Rankings board
+ * itself, split out from its own `PageHeader` so the new unified
+ * `PlayersPage` workspace (players.tsx) can render ONE shared header above
+ * all four modes (Rankings/Tiers/Compare/Market) instead of repeating one
+ * per tab -- same shape as `improve-team.tsx`/`trades.tsx`. `RankingsPage`
+ * below is kept as an unrouted legacy fallback (same precedent as
+ * `WaiversPage` after the Improve Team pass) -- no route in RedraftApp.tsx
+ * points to it any more; `/rankings`'s scoped route now renders
+ * `PlayersPage`.
+ */
+export function RankingsContent({ data }: { data: RedraftBootstrap }) {
   const [searchParams] = useSearchParams();
   const requestedPlayer = searchParams.get("player");
   const requestedName = data.rankings.find((row) => row.playerId === requestedPlayer)?.playerName ?? "";
@@ -182,9 +200,6 @@ export function RankingsPage({ data }: { data: RedraftBootstrap }) {
     setDepth("100");
     setTableResetKey((value) => value + 1);
   };
-  const practical = Boolean(data.activeProfile?.practicalMode);
-  const activeName = data.activeProfile?.leagueName ?? "Active League";
-  const activeFormat = data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile";
   // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
   // global Player Detail primitive as every other adopted surface --
   // Players/Rankings was a real, disclosed remaining adoption gap.
@@ -198,10 +213,17 @@ export function RankingsPage({ data }: { data: RedraftBootstrap }) {
     })),
     [openPlayerDetail],
   );
-  return <><PageHeader eyebrow={activeFormat} title={`${activeName} Rankings`} description={practical ? "Major QB/RB/WR/TE scoring rules are modeled. Five uncommon events are omitted; K/DST are separate manual assets." : "Current-season projection value, dynamic replacement level, confidence, and tiers for this active league."} status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={`${data.rankings.length} ranked players`} />{practical ? <StatusBadge tone="review" label="Approximate scoring" /> : <StatusBadge tone="safe" label="League specific" />}</>} /><Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel></>;
+  return <Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel>;
 }
 
-export function TiersPage({ data }: { data: RedraftBootstrap }) {
+export function RankingsPage({ data }: { data: RedraftBootstrap }) {
+  return <>{rankingsPageHeader(data)}<RankingsContent data={data} /></>;
+}
+
+// NWR UI expansion pass (2026-09-12, Players surface): split out from its
+// own `PageHeader`, same reasoning as `RankingsContent` above.
+// `TiersPage` below is kept as an unrouted legacy fallback.
+export function TiersContent({ data }: { data: RedraftBootstrap }) {
   const [position, setPosition] = useState("ALL");
   const [depth, setDepth] = useState("100");
   const filteredRows = useMemo(() => data.rankings.filter((row) => position === "ALL" || row.position === position), [data.rankings, position]);
@@ -212,13 +234,20 @@ export function TiersPage({ data }: { data: RedraftBootstrap }) {
   // global Player Detail primitive as Rankings above -- Tiers was a real,
   // disclosed remaining adoption gap.
   const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_TIERS");
-  return <><PageHeader eyebrow="Draft board · Value cliffs" title="Tiers & Position Rooms" description="Evidence-gap overall tiers and position-specific rooms stay separate, stable, and bounded for draft-day scanning." status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.activeProfile?.leagueName ?? "No active profile"} /><StatusBadge tone="safe" label={`${visibleRows.length} of ${filteredRows.length} shown`} /></>} /><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b><Button variant="ghost" onClick={() => openPlayerDetail({ playerId: row.playerId, playerName: row.playerName, position: row.position, team: row.team })}>View</Button></article>)}</div></Panel>; })}</div></>;
+  return <><div className="toolbar"><SegmentedControl label="Position room" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /></div><div className="tier-stack">{tiers.map((tier) => { const players = visibleRows.filter((row) => tierFor(row) === tier); const title = position === "ALL" ? players[0]?.overallTierLabel : players[0]?.positionTierLabel; return <Panel key={tier} title={title ?? `Tier ${tier}`} eyebrow={`${players.length} shown`}><div className="tier-player-grid">{players.map((row) => <article key={row.playerId}><span>{row.overallRank}</span><div><strong>{row.playerName}</strong><small>{row.team} · {row.position}{row.positionRank} · {row.positionTierLabel}</small></div><b>{formatNumber(row.replacementAdjustedValue, 1)}</b><Button variant="ghost" onClick={() => openPlayerDetail({ playerId: row.playerId, playerName: row.playerName, position: row.position, team: row.team })}>View</Button></article>)}</div></Panel>; })}</div></>;
+}
+
+export function TiersPage({ data }: { data: RedraftBootstrap }) {
+  return <><PageHeader eyebrow="Draft board · Value cliffs" title="Tiers & Position Rooms" description="Evidence-gap overall tiers and position-specific rooms stay separate, stable, and bounded for draft-day scanning." status={<><StatusBadge tone={data.rankings.length ? "safe" : "blocked"} label={data.activeProfile?.leagueName ?? "No active profile"} /><StatusBadge tone="safe" label={`${data.rankings.length} ranked players`} /></>} /><TiersContent data={data} /></>;
 }
 
 const COMPARE_MODES = ["Rest of Season", "This Week", "Roster Fit", "Trade"] as const;
 type CompareMode = (typeof COMPARE_MODES)[number];
 
-export function ComparePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+// NWR UI expansion pass (2026-09-12, Players surface): split out from its
+// own `PageHeader`, same reasoning as `RankingsContent`/`TiersContent`
+// above. `ComparePage` below is kept as an unrouted legacy fallback.
+export function CompareContent({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [left, setLeft] = useState(data.rankings[0]?.playerId ?? "");
   const [right, setRight] = useState(data.rankings[1]?.playerId ?? "");
   const [mode, setMode] = useState<CompareMode>("Rest of Season");
@@ -263,12 +292,6 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
   };
 
   return <>
-    <PageHeader
-      eyebrow={data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile"}
-      title={`${data.activeProfile?.leagueName ?? "Redraft"} Player Compare`}
-      description="Compare projection, replacement value, tier, and confidence inside the active league. Dynasty authority is never consulted."
-      status={<><StatusBadge tone="safe" label="Current season" /><StatusBadge tone="safe" label="League specific" /></>}
-    />
     <Panel title="Choose two players" eyebrow="Admitted ranking universe">
       <div className="compare-selectors"><SelectField label="Player A" value={left} onChange={setLeft} options={options} /><span><Icon name="compare" /></span><SelectField label="Player B" value={right} onChange={setRight} options={options} /></div>
       <div className="toolbar">
@@ -291,6 +314,18 @@ export function ComparePage({ client, data }: { client: NwrApiClient; data: Redr
       <p className="copy-muted">Compare does not embed a full trade evaluation -- that needs your live Sleeper roster and a specific opponent's roster, which Trade Analysis reads directly. Open it, then search for "{a.playerName}" and "{b.playerName}" there.</p>
       <Link to="/trade-analysis">Open Trade Analysis</Link>
     </Panel> : null}
+  </>;
+}
+
+export function ComparePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+  return <>
+    <PageHeader
+      eyebrow={data.activeProfile ? leagueFormat(data.activeProfile, false) : "Choose a league profile"}
+      title={`${data.activeProfile?.leagueName ?? "Redraft"} Player Compare`}
+      description="Compare projection, replacement value, tier, and confidence inside the active league. Dynasty authority is never consulted."
+      status={<><StatusBadge tone="safe" label="Current season" /><StatusBadge tone="safe" label="League specific" /></>}
+    />
+    <CompareContent client={client} data={data} />
   </>;
 }
 

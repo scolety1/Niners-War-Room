@@ -1,9 +1,10 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type { BallersPreview, PasteAdpPreview, RedraftBootstrap } from "@nwr/contracts";
 import { Button, ErrorState, PageHeader, Panel, StatusBadge } from "@nwr/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { leagueFormat } from "./league-context";
+import { usePlayerDetailOpener } from "./player-detail-context";
 
 type LeagueSelection = "AUTO" | "CONSENSUS" | "SLEEPER" | "ESPN" | "FANTASYPROS" | "DISABLED";
 
@@ -70,7 +71,18 @@ export function detectedPlatform(profile: RedraftBootstrap["activeProfile"]) {
   return "Consensus";
 }
 
-export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
+/**
+ * NWR UI expansion pass (2026-09-12, Players surface): the Market Data
+ * body itself, split out from its own `PageHeader` so the new unified
+ * `PlayersPage` workspace (players.tsx) can render ONE shared header above
+ * all four modes (Rankings/Tiers/Compare/Market) instead of repeating one
+ * per tab -- same shape as `RankingsContent`/`TiersContent`/`CompareContent`
+ * in pages.tsx. `AdpProvidersPage` below is kept as an unrouted legacy
+ * fallback (same precedent as `WaiversPage` after the Improve Team pass)
+ * -- no route in RedraftApp.tsx points to it any more; `/adp`'s scoped
+ * route now renders `PlayersPage` with its Market tab selected.
+ */
+export function MarketDataContent({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
   const [working, setWorking] = useState("");
   const [error, setError] = useState<NwrApiError | null>(null);
   const [message, setMessage] = useState("");
@@ -93,6 +105,17 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
     if (previewFilter === "MISSING") return row[`${activeColumn.toLowerCase()}Adp`] == null;
     return true;
   });
+  // NWR UI expansion pass (2026-09-12, Players surface): the ADP preview
+  // table already shows a real matched NWR player per row -- the directive's
+  // "all players clickable" requirement applies here too, not just to
+  // Rankings/Tiers/Compare. `matchedNwrPlayerId` is a real backend field
+  // (`matched_nwr_player_id`, camelCased at the API boundary -- confirmed
+  // by reading `redraft_draft_room_v1_service.py`), so this is a real
+  // identity, not a synthetic one. Position/team come from the already-
+  // loaded governed rankings (the row itself does not always carry them),
+  // same lookup shape as `exportMarketAdpCsv` above.
+  const rankingById = useMemo(() => new Map(data.rankings.map((row) => [row.playerId, row])), [data.rankings]);
+  const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_MARKET");
   const [leagueSelection, setLeagueSelection] = useState<LeagueSelection>("AUTO");
   useEffect(() => setLeagueSelection((snapshot?.leagueSelection || "AUTO") as LeagueSelection), [snapshot?.leagueSelection, activeProfile?.profileId]);
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof NwrApiError ? reason : new NwrApiError(fallback));
@@ -205,7 +228,6 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
   };
 
   return <div className="adp-providers-page" aria-busy={Boolean(working)}>
-    <PageHeader eyebrow={activeProfile ? `Active League · ${leagueFormat(activeProfile)}` : "Provider settings · local only"} title="Market Data" description="Manage draft-market timing (ADP) and Ballers/UDK reference rankings separately from NWR rankings and projections. Changes here never write to Sleeper." status={<><StatusBadge tone={adp?.available ? "safe" : "review"} label={providerLabel(adp)} /><StatusBadge tone="safe" label="NWR ranks unchanged" /></>} />
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     <p aria-live="polite" className="profile-feedback">{message}</p>
     <h3 className="market-data-group-heading">Market / ADP</h3>
@@ -225,7 +247,7 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
         </div>
         <label className="form-field"><span>Raw pasted text (or the file's own contents, once chosen above)</span><textarea disabled={Boolean(working)} rows={10} wrap="off" style={{ fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", whiteSpace: "pre", overflowX: "auto" }} value={pasteText} onChange={(event) => { setPasteText(event.target.value); setPastePreview(null); setPreviewLimit(25); }} placeholder={"Name,Position,Team,ADP,Position Rank,Consensus ADP,Sleeper ADP,ESPN ADP,FantasyPros ADP\nExample Player,RB,KC,3.2,1,3.2,2.9,4.1,3.7\n\nor a markdown table:\n| Position | Player | Consensus | Sleeper | ESPN | FantasyPros |\n| --- | --- | ---: | ---: | ---: | ---: |\n| RB1 | Example Player | 3.2 | — | 4.1 | 3.7 |\n\nor plain text:\nWR13\nExample Player\n18.4 19.1 17.8 18.0"} /></label>
         <div className="profile-edit-actions"><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="activity" onClick={() => void preview()} variant="secondary">{working === "paste-preview" ? "Parsing…" : "Preview parse"}</Button><Button disabled={!activeProfile || !pasteText.trim() || Boolean(working)} icon="check" onClick={() => void run("paste-save", () => client.saveRedraftPasteAdp(activeProfile!.profileId, pasteText, "CONSENSUS", pasteLabel), "Global owner platform snapshot saved locally. Each league can now choose its column.")}>{working === "paste-save" ? "Saving…" : "Save global snapshot"}</Button><Button disabled={!snapshot?.available} variant="secondary" icon="board" onClick={() => exportMarketAdpCsv(data)}>Export Market ADP CSV</Button></div>
-        {pastePreview ? <div className="copy-muted"><div className="metric-grid"><div><strong>{pastePreview.sourceRows}</strong><small>Parsed rows</small></div><div><strong>{pastePreview.matchedRows}</strong><small>Matched</small></div><div><strong>{pastePreview.unmatched.length}</strong><small>Unmatched</small></div><div><strong>{pastePreview.rows.filter((row) => String(row.matchSource || "") === "OWNER_APPROVED").length}</strong><small>Owner-approved</small></div><div><strong>{platformCoverageText(pastePreview.platformCoverage)}</strong><small>Platform coverage</small></div><div><strong>{activeColumn}</strong><small>{activeProfile?.leagueName || "—"} · {detectedPlatformLabel}</small></div></div><small>Fallback: {activeColumn} → Consensus → FFC → Unavailable · {parserModeLabel(pastePreview.parserMode)}</small><div className="profile-edit-actions"><Button variant={previewFilter === "ALL" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("ALL"); setPreviewLimit(25); }}>All rows</Button><Button variant={previewFilter === "MATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MATCHED"); setPreviewLimit(25); }}>Matched</Button><Button variant={previewFilter === "UNMATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("UNMATCHED"); setPreviewLimit(25); }}>Unmatched</Button><Button variant={previewFilter === "AMBIGUOUS" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("AMBIGUOUS"); setPreviewLimit(25); }}>Ambiguous</Button><Button variant={previewFilter === "MISSING" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MISSING"); setPreviewLimit(25); }}>Missing active platform</Button></div><div className="draft-board-scroll"><table><thead><tr><th>Row</th><th>Pos rank</th><th>Player</th><th>Team</th><th>Consensus</th><th>Sleeper</th><th>ESPN</th><th>FantasyPros</th><th>Match status / source</th><th>Matched NWR player</th><th>Reason / review</th></tr></thead><tbody>{previewRows.slice(0, previewLimit).map((row) => <tr key={String(row.sourceRowIndex)}><td>{String(row.sourceRowIndex ?? "—")}</td><td>{String(row.positionRank ?? row.position ?? "—")}</td><td>{String(row.playerName ?? "—")}</td><td>{String(row.sourceTeam ?? "—")}</td><td>{String(row.consensusAdp ?? "—")}</td><td>{String(row.sleeperAdp ?? "—")}</td><td>{String(row.espnAdp ?? "—")}</td><td>{String(row.fantasyprosAdp ?? "—")}</td><td>{String(row.matchStatus ?? "—")} · {String(row.matchSource ?? "UNMATCHED")}</td><td>{String(row.matchedNwrPlayerName ?? "—")}</td><td>{String(row.unmatchedReason ?? (row[`${activeColumn.toLowerCase()}Adp`] == null ? "Selected column missing; Consensus/FFC fallback may apply" : "Matched"))}{Array.isArray(row.candidateSuggestions) ? row.candidateSuggestions.map((value) => { const candidate = value as Record<string, unknown>; return <div key={String(candidate.playerId)}><small>{String(candidate.playerName)} · {String(candidate.position)} · {String(candidate.team || "—")} · {String(candidate.confidence)}</small><Button disabled={Boolean(working) || String(candidate.position) !== String(row.position)} variant="secondary" onClick={() => void approveCandidate(row, candidate)}>Approve ADP-only match</Button></div>; }) : null}</td></tr>)}</tbody></table></div>{previewRows.length > previewLimit ? <Button variant="secondary" onClick={() => setPreviewLimit((value) => value + 25)}>Show 25 more</Button> : null}{previewFilter === "UNMATCHED" ? pastePreview.unmatched.slice(0, 12).map((warning) => <small key={warning}>{warning}</small>) : null}</div> : null}
+        {pastePreview ? <div className="copy-muted"><div className="metric-grid"><div><strong>{pastePreview.sourceRows}</strong><small>Parsed rows</small></div><div><strong>{pastePreview.matchedRows}</strong><small>Matched</small></div><div><strong>{pastePreview.unmatched.length}</strong><small>Unmatched</small></div><div><strong>{pastePreview.rows.filter((row) => String(row.matchSource || "") === "OWNER_APPROVED").length}</strong><small>Owner-approved</small></div><div><strong>{platformCoverageText(pastePreview.platformCoverage)}</strong><small>Platform coverage</small></div><div><strong>{activeColumn}</strong><small>{activeProfile?.leagueName || "—"} · {detectedPlatformLabel}</small></div></div><small>Fallback: {activeColumn} → Consensus → FFC → Unavailable · {parserModeLabel(pastePreview.parserMode)}</small><div className="profile-edit-actions"><Button variant={previewFilter === "ALL" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("ALL"); setPreviewLimit(25); }}>All rows</Button><Button variant={previewFilter === "MATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MATCHED"); setPreviewLimit(25); }}>Matched</Button><Button variant={previewFilter === "UNMATCHED" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("UNMATCHED"); setPreviewLimit(25); }}>Unmatched</Button><Button variant={previewFilter === "AMBIGUOUS" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("AMBIGUOUS"); setPreviewLimit(25); }}>Ambiguous</Button><Button variant={previewFilter === "MISSING" ? "primary" : "secondary"} onClick={() => { setPreviewFilter("MISSING"); setPreviewLimit(25); }}>Missing active platform</Button></div><div className="draft-board-scroll"><table><thead><tr><th>Row</th><th>Pos rank</th><th>Player</th><th>Team</th><th>Consensus</th><th>Sleeper</th><th>ESPN</th><th>FantasyPros</th><th>Match status / source</th><th>Matched NWR player</th><th>Reason / review</th><th></th></tr></thead><tbody>{previewRows.slice(0, previewLimit).map((row) => { const matched = rankingById.get(String(row.matchedNwrPlayerId ?? "")); return <tr key={String(row.sourceRowIndex)}><td>{String(row.sourceRowIndex ?? "—")}</td><td>{String(row.positionRank ?? row.position ?? "—")}</td><td>{String(row.playerName ?? "—")}</td><td>{String(row.sourceTeam ?? "—")}</td><td>{String(row.consensusAdp ?? "—")}</td><td>{String(row.sleeperAdp ?? "—")}</td><td>{String(row.espnAdp ?? "—")}</td><td>{String(row.fantasyprosAdp ?? "—")}</td><td>{String(row.matchStatus ?? "—")} · {String(row.matchSource ?? "UNMATCHED")}</td><td>{String(row.matchedNwrPlayerName ?? "—")}</td><td>{String(row.unmatchedReason ?? (row[`${activeColumn.toLowerCase()}Adp`] == null ? "Selected column missing; Consensus/FFC fallback may apply" : "Matched"))}{Array.isArray(row.candidateSuggestions) ? row.candidateSuggestions.map((value) => { const candidate = value as Record<string, unknown>; return <div key={String(candidate.playerId)}><small>{String(candidate.playerName)} · {String(candidate.position)} · {String(candidate.team || "—")} · {String(candidate.confidence)}</small><Button disabled={Boolean(working) || String(candidate.position) !== String(row.position)} variant="secondary" onClick={() => void approveCandidate(row, candidate)}>Approve ADP-only match</Button></div>; }) : null}</td><td>{matched ? <Button variant="ghost" onClick={() => openPlayerDetail({ playerId: matched.playerId, playerName: matched.playerName, position: matched.position, team: matched.team })}>View</Button> : null}</td></tr>; })}</tbody></table></div>{previewRows.length > previewLimit ? <Button variant="secondary" onClick={() => setPreviewLimit((value) => value + 25)}>Show 25 more</Button> : null}{previewFilter === "UNMATCHED" ? pastePreview.unmatched.slice(0, 12).map((warning) => <small key={warning}>{warning}</small>) : null}</div> : null}
         {snapshot?.available ? <p className="boundary-note">Stored snapshot: {snapshot.rowCount} rows, {snapshot.matchedRows ?? "—"} safe matches, {parserModeLabel(snapshot.parserMode)} parser, hash {snapshot.rawHash.slice(0, 12)}… <small>{platformCoverageText(snapshot.platformCoverage)}</small></p> : null}
       </Panel>
       <Panel title="League Platform Selection" eyebrow="Per league · global snapshot remains unchanged">
@@ -282,4 +304,13 @@ export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiCli
       ) : null}
     </Panel>
   </div>;
+}
+
+export function AdpProvidersPage({ client, data, onUpdate }: { client: NwrApiClient; data: RedraftBootstrap; onUpdate: (data: RedraftBootstrap) => void }) {
+  const activeProfile = data.activeProfile;
+  const adp = data.draftBoard?.adp;
+  return <>
+    <PageHeader eyebrow={activeProfile ? `Active League · ${leagueFormat(activeProfile)}` : "Provider settings · local only"} title="Market Data" description="Manage draft-market timing (ADP) and Ballers/UDK reference rankings separately from NWR rankings and projections. Changes here never write to Sleeper." status={<><StatusBadge tone={adp?.available ? "safe" : "review"} label={providerLabel(adp)} /><StatusBadge tone="safe" label="NWR ranks unchanged" /></>} />
+    <MarketDataContent client={client} data={data} onUpdate={onUpdate} />
+  </>;
 }

@@ -5,13 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
 import { assertRedraftBootstrap } from "./bootstrap-guard";
-import { AdpProvidersPage } from "./adp-providers";
 import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
-import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
+import { DataHealthPage, FreeAgentsPage, OpponentRostersPage, WeeklyToolsPage } from "./pages";
 import { LineupPage, MyRosterPage, WeeklyHomePage } from "./in-season";
 import { ImproveTeamPage } from "./improve-team";
+import { PlayersPage } from "./players";
 import { TradesPage } from "./trades";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
@@ -58,14 +58,21 @@ const NAV_TRADES: NavigationGroup = {
   label: "Trades",
   items: [{ label: "Trades", path: "/trade-analysis", icon: "trade" }],
 };
+// NWR UI expansion pass (2026-09-12, Players surface): ONE nav item, not
+// four -- Rankings/Tiers & Positions/Compare/Market Data are now tabs
+// (RANKINGS/TIERS/COMPARE/MARKET) inside a single unified `PlayersPage`
+// workspace (see players.tsx), same consolidation shape as Improve Team
+// and Trades. `/rankings` is reused as the entry path unchanged (no
+// route-table/alias churn beyond the new `ROUTE_ALIAS_SUBPATH` entries in
+// league-context.ts) -- its scoped route now renders `PlayersPage` instead
+// of the old standalone `RankingsPage` (pages.tsx, left in place unrouted).
+// Cheat Sheet stays its own separate nav item/page -- a different,
+// already-unified consumer surface, out of this consolidation's scope.
 const NAV_PLAYERS: NavigationGroup = {
   label: "Players",
   items: [
-    { label: "Rankings", path: "/rankings", icon: "board", shortcut: "2" },
-    { label: "Tiers & Positions", path: "/tiers", icon: "layers" },
-    { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" },
+    { label: "Players", path: "/rankings", icon: "board", shortcut: "2" },
     { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" },
-    { label: "Market Data", path: "/adp", icon: "activity" },
   ],
 };
 const NAV_LEAGUE: NavigationGroup = {
@@ -288,13 +295,13 @@ export function RedraftApp() {
           setHistoricalReplayError={setHistoricalReplayError}
         />
       </LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/rankings" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><RankingsPage data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/players" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><RankingsPage data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/tiers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TiersPage data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/compare" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ComparePage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/rankings" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/players" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/tiers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="tiers" /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/compare" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="compare" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/cheat-sheet" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><CheatSheetPage data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/profile" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ProfilePage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/adp" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><AdpProvidersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/adp" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="market" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/weekly-tools" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyToolsPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/data-health" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><DataHealthPage client={client} data={data} onReload={reload} /></LeagueScopedPage>} />
 

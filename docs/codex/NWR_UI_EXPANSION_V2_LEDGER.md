@@ -648,3 +648,260 @@ modified + 3 new, all under `desktop/apps/redraft/src` --
   no partial-completion handoff is needed here, but the next worker
   should still start from Players (not League) per the directive's stated
   order.
+
+## Work Unit 4 -- Players (2026-09-12)
+
+**Start HEAD:** `129a1231`. **Result:** COMPLETE (all 4 modes).
+
+### Foundation verification (Work Unit 0)
+Confirmed, not rebuilt: the shared drawer Escape-to-close fix (Work Unit 1)
+applies here too -- live-verified from all three required entry points
+(Rankings row action, Tiers grid card, Compare card) plus a fourth
+(Market's new ADP-preview-row action, see below), zero extra wiring
+needed. The nav active-route resolver fix (Work Unit 0) was ALREADY
+correct for the pre-consolidation five-item Players nav (Rankings/Tiers &
+Positions/Compare/Cheat Sheet/Market Data each already resolved to its own
+nav item, confirmed by reading `resolveActiveNavPath`/`NAV_LEGACY_PATH_
+SUBPATH` before changing anything) -- see "RANKINGS NAV BUG STATUS" below
+for what this pass's OWN consolidation then required. `npx tsc -b` and
+`npx vitest run` both clean at the start head (200/200 in `apps/redraft`
+alone -- the exact scope this pass measures against; the prior three
+entries' higher counts, up to 249, evidently included `apps/dynasty`
+and/or a different test-runner scope not reproduced when running vitest
+from `apps/redraft` directly).
+
+### What changed (Players surface)
+- **`players.tsx`** (new): `PlayersPage`, the single workspace replacing
+  the previously separately-built Rankings / Tiers & Positions / Compare /
+  Market Data pages in the nav. Tab state lives in a `?tab=` query param
+  (shareable/deep-linkable), default `rankings`, same pattern as Improve
+  Team/Trades. All four tabs render the exact same content the old
+  standalone pages rendered (see the `pages.tsx`/`adp-providers.tsx` split
+  below) under ONE shared `PageHeader`("Players") and ONE `.nwr-tabbar`
+  (RANKINGS/TIERS/COMPARE/MARKET) instead of four separate page headers.
+  Cheat Sheet is deliberately NOT a fifth tab here -- it stays its own
+  separate nav item/page, per the directive's own SEARCH/RANKINGS/TIERS/
+  COMPARE/MARKET-ADP scope list (Cheat Sheet was already unified
+  separately, see the "Combined Cheat Sheet V1" memory entry) and per a
+  fresh read of `cheat-sheet.tsx` confirming it is a genuinely distinct
+  consumer surface (Ballers/NWR/Market blend for a draft-day sheet), not a
+  fifth research mode of this one.
+- **`pages.tsx`**: `RankingsPage`/`TiersPage`/`ComparePage` each split into
+  an exported `*Content` function (no `PageHeader` of its own) plus a thin
+  wrapper of the same original name that composes `PageHeader` +
+  `*Content` -- same shape as `AddDropDetail`/`TradeSidePicker` being
+  exported for reuse in prior passes. `RankingsContent`/`TiersContent`/
+  `CompareContent` are what `PlayersPage` actually renders; `RankingsPage`/
+  `TiersPage`/`ComparePage` themselves are kept as unrouted legacy
+  fallbacks (same precedent as `WaiversPage` after Improve Team) -- no
+  route in RedraftApp.tsx points to any of them any more. Zero behavior
+  change to any of the three tabs' own logic (filters, Compare's 4 modes,
+  Tiers' position rooms) -- this was a pure extraction, not a rewrite.
+- **`adp-providers.tsx`**: same split -- `AdpProvidersPage`'s body became
+  `MarketDataContent` (exported, no `PageHeader`), with `AdpProvidersPage`
+  now a thin wrapper kept as an unrouted legacy fallback. Also: the ADP
+  paste-preview table's "Matched NWR player" column had a real, matched
+  player identity (`matchedNwrPlayerId`, a real backend field --
+  `matched_nwr_player_id`, camelCased at the API boundary by
+  `camel_case_key`/`public_json_value` in `src/application/contracts.py`,
+  confirmed by reading the backend before assuming the casing) with NO
+  Player Drawer wiring at all. Added a `View` action per matched row
+  (looked up against the already-loaded governed rankings for
+  position/team, same lookup shape `exportMarketAdpCsv` already used) --
+  the directive's "all players clickable" requirement applies to Market's
+  real player rows too, not just Rankings/Tiers/Compare.
+- **`RedraftApp.tsx`**: `NAV_PLAYERS` collapsed from 5 items (Rankings/
+  Tiers & Positions/Compare/Cheat Sheet/Market Data) to 2 (Players/Cheat
+  Sheet) -- Cheat Sheet untouched, the other four merged into one
+  "Players" nav item reusing the existing `/rankings` path unchanged (same
+  precedent as Improve Team reusing `/waivers`, Trades reusing
+  `/trade-analysis`). The five scoped routes (`rankings`/`players`/`tiers`/
+  `compare`/`adp`) now all render `PlayersPage` (with `defaultTab` set for
+  `tiers`/`compare`/`adp` so each flat URL still opens on its own mode,
+  same `defaultTab` pattern Trades used for `/trade-finder`) instead of
+  the four old standalone pages. `RankingsPage`/`TiersPage`/`ComparePage`/
+  `AdpProvidersPage` are unrouted, not deleted.
+- **`league-context.ts`**: added three `ROUTE_ALIAS_SUBPATH` entries
+  (`tiers`/`compare`/`adp` -> `rankings`) so the now-shared `/tiers`,
+  `/compare`, `/adp` routes still highlight the one "Players" nav item
+  instead of nothing -- same reasoning as `improve` -> `waivers` and
+  `trade-finder` -> `trade-analysis`.
+- **`player-detail-drawer.tsx`**: added a `PLAYERS_MARKET` entry to
+  `SOURCE_LABEL` (found before any live render, by reading the map against
+  the new Market-tab call site) -- without it, opening the drawer from a
+  matched ADP-preview row would have shown "Opened from PLAYERS_MARKET"
+  verbatim, the same internal-language leak class fixed for
+  `IMPROVE_TEAM`/`TRADES`. `PLAYERS_RANKINGS`/`PLAYERS_TIERS`/
+  `PLAYERS_COMPARE` were already present from the earlier CLOSURE pass.
+
+### RANKINGS NAV BUG STATUS
+**Already fixed, verified, then a NEW variant introduced by this pass's
+OWN consolidation was found and fixed in the same canonical resolver.**
+Before touching anything, live-rendered `/rankings`, `/tiers`, `/compare`,
+and `/adp` under the pre-existing five-item nav and confirmed each
+correctly highlighted its OWN nav item (Rankings/Tiers & Positions/
+Compare/Market Data), not Cheat Sheet or each other -- the Work Unit 0 fix
+holds. Collapsing those four into one "Players" nav item then
+NECESSARILY changed what "correct" means for `/tiers`/`/compare`/`/adp`
+(they must now resolve to the ONE surviving "Players" item, not to
+themselves) -- without the new `ROUTE_ALIAS_SUBPATH` entries above, all
+three would have resolved to nothing (the exact bug class Work Unit 0
+fixed, freshly reproduced by this pass's own nav change, not left over
+from before it). Fixed in the ONE canonical resolver (`league-context.ts`),
+not a per-page patch, and live-verified on a second synthetic league
+profile: `/rankings`, `/tiers`, `/compare`, and `/adp` (with
+`defaultTab="market"`) all correctly highlight "Players" and open their
+intended tab. A pre-existing generic resolver test
+(`resolveActiveNavPath > resolves Tiers, Compare, and Market (adp) each to
+their own nav item`) asserted the PRE-consolidation behavior against a
+fixture (`playersNavPaths`) that still lists four separate items -- since
+`ROUTE_ALIAS_SUBPATH` aliases unconditionally (independent of which
+navPaths list is passed, matching how `improve`/`trade-finder` already
+worked), that specific assertion is now factually describing removed
+product behavior; updated in place (title and expectations) with a
+comment explaining why, rather than left to silently regress or deleted.
+A second, new test exercises the REAL post-consolidation nav array
+(`["/rankings", "/cheat-sheet"]`) directly.
+
+### Trial matrix executed
+**Viewport method (safety constraint):** `mcp__claude-in-chrome__resize_window`
+was tested first, requesting 1440x900 -- `window.innerWidth` stayed fixed
+at **1164** (confirmed via a real JS check, not assumed) -- a FOURTH
+distinct value across this effort's four sessions (958px Work Unit 1,
+884px Work Unit 2, 1424px Work Unit 3, 1164px here), reconfirming the tool
+does not actually change the viewport in this sandbox. Per the directive's
+explicit fallback, real rendering was done at the one width this
+sandbox's browser actually renders (**1164px, real Chrome, real DOM**).
+1164px sits between the `@nwr/ui` shell's own `930px` (off-canvas sidebar)
+and `1180px` (sidebar narrows to 218px) breakpoints, so -- like Work Unit
+1's 958px -- it exercises the narrow-inline-sidebar regime, NOT a new
+regime relative to Work Unit 1, though it is a new real width relative to
+Work Units 2 (884px, below 930px) and 3 (1424px, above 1180px).
+- **1164px (real, rendered)**: states A (populated Rankings, 48 synthetic
+  players across 6 positions) / B (populated Tiers) / C (populated
+  Compare, all 4 modes exercised: Rest of Season, This Week, Roster Fit,
+  Trade) / D (populated Market -- active ADP source, owner platform
+  snapshot, Ballers panel, plus a live paste-preview round trip with a
+  real matched row) / E (empty search -- "Christianeuxaviera..." typed
+  into Rankings, 1 of 48 matched, verified live rather than assumed) / F
+  (missing market data -- a SEPARATE synthetic league/bootstrap fixture
+  with `adp.available:false` and no `ownerPlatformSnapshot`, since this is
+  static bootstrap data rather than a live-togglable scenario switch; a
+  full second page load, not a scenario flag) / G (long player name
+  stress -- a real 76-character WR name baked into the main fixture,
+  present across Rankings/Tiers/Compare/the Player Drawer) were all
+  rendered and JS-verified: zero console errors across the entire session
+  (checked cumulatively at the end, not just per-state), zero horizontal
+  overflow (`document.documentElement.scrollWidth <= clientWidth + 1`)
+  in every state including the long-name stress and the wide ADP-preview
+  table (which scrolls inside its own `.draft-board-scroll` container, not
+  the page), zero `undefined`/`NaN`/`[object Object]` leaks (checked via a
+  body-text regex each time, not eyeballed), correct nav ("Players")
+  highlighted for all four modes checked repeatedly.
+- **1440px / 1180px / 900px / 720px**: code-review only (real render not
+  possible here). `.nwr-tabbar` (Improve Team's pre-existing component,
+  reused unchanged) already narrows its own margins at `720px`
+  (redraft.css); `.tier-player-grid`/`.compare-card-grid`/`.metric-grid`/
+  `.data-table-wrap` are the same already-reviewed-safe primitives prior
+  Work Units exercised at other real widths. No new CSS was added by this
+  pass beyond the Market tab's one new preview-table `<th>`/`<td>` pair,
+  which reuses the existing `.draft-board-scroll` overflow container. This
+  is the same disclosed class of gap every prior entry recorded -- no
+  session in this effort has yet rendered the SAME width live as another,
+  and 900px/1440px/1180px specifically remain unverified live for Players.
+
+### Interaction trials
+Player Drawer opened from FOUR entry points (Rankings row action, Tiers
+grid card, Compare card, and the new Market ADP-preview-row action --
+exceeding the directive's "at least 3 of 5" requirement) -- closed via the
+header X (Tiers entry point) and via Escape (Rankings, Compare, and Market
+entry points; a real `document.dispatchEvent(keydown Escape)` check each
+time, not assumed), reopened a different player from a different tab
+correctly (no stacking -- a fresh `.player-drawer` each time, verified by
+reading its content, not just presence). Switched among all four tabs
+repeatedly (Rankings -> Tiers -> Compare -> Market -> Rankings) with the
+`?tab=` URL updating correctly and the correct tab/nav-item highlighted
+every time. Used the real global command palette (Ctrl+K equivalent --
+the "Search players or jump to a tool" trigger), typed a player name,
+selected the real result, and confirmed it landed on `/rankings?player=
+<id>` inside this unified workspace with the Rankings search box
+pre-filled and the table correctly filtered to that one player -- the
+directive's "global search should naturally lead into this area"
+requirement, live-verified rather than assumed from the route shape
+alone. Navigated Players -> Weekly Home -> back to Players via the
+sidebar nav twice, each round trip resetting cleanly to the Rankings
+default tab with zero console errors.
+
+### Data used
+100% mocked, zero real network calls, zero backend process started --
+`window.fetch` patched at the browser-console level (the same mechanism
+Work Units 1-3 used and disclosed), for TWO synthetic profiles across two
+separate page loads (a full reload is required between them since this is
+static bootstrap data, not a live scenario switch): `qa-players-1` (a
+sleeper-provider, 48-player fixture across 6 positions plus the long-name
+stress player, full ADP/owner-platform-snapshot/Ballers/marketProviderAdp
+data, serving `/api/v1/bootstrap`, `/api/v1/redraft/my-roster`,
+`/api/v1/redraft/waivers`, `/api/v1/redraft/weekly-projections`,
+`/api/v1/redraft/player-availability-status`,
+`/api/v1/redraft/status-overrides`, and (added mid-session)
+`/api/v1/redraft/adp/*/paste/preview`) and `qa-players-2` (a local-
+provider, 12-player fixture with `adp.available:false` and no
+`ownerPlatformSnapshot`/`marketProviderAdp`/`udkRankings`, for the honest
+missing-market-data state F); every other path returns a typed 404
+envelope so nothing can hang. The owner's real Fantasy Gamers/403/Tester
+leagues and AppData install were never touched or read. One real, disclosed
+mock-authoring bug found and fixed mid-session (not a product bug): the
+first fetch-patch draft assumed `input.url` would be set for a `URL`-typed
+`fetch` argument (it is not -- only `Request` objects have `.url`; the
+app's `request()` method passes a `URL`), which silently 404'd every
+mocked call; fixed by branching on `input instanceof URL` before falling
+back to `.url`.
+
+### Tests
+One test updated in place + one new test in `league-context.test.ts` (see
+"RANKINGS NAV BUG STATUS" above for what changed and why): the pre-
+existing "resolves Tiers, Compare, and Market (adp) each to their own nav
+item" test now asserts the current, correct post-consolidation behavior
+(all three resolve to `/rankings`) with a comment explaining the prior
+behavior it replaces; a new test exercises the real, minimal
+post-consolidation nav array directly. No new pure-logic module was
+introduced for Players (unlike Lineup/Improve Team/Trades' own `*-explain.
+ts` files) -- Players' tab-selection logic mirrors Improve Team's/Trades'
+own `?tab=` resolution exactly and, consistent with that same precedent,
+was verified via the live interaction trials above rather than a
+duplicate isolated unit test. `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`: clean. `npx vitest run --no-file-parallelism`
+(run from `apps/redraft`): 201/201 passing (200 baseline + 1 net new, 0
+regressions -- see the Foundation-verification note above on why this
+pass's own baseline count differs from prior entries' reported numbers).
+
+### Backend/model files changed
+NONE. `git diff --stat 129a1231 -- src/`: empty. Full diff: 6 files
+modified + 1 new, all under `desktop/apps/redraft/src` -- `RedraftApp.tsx`,
+`adp-providers.tsx`, `league-context.test.ts`, `league-context.ts`,
+`pages.tsx`, `player-detail-drawer.tsx` (modified); `players.tsx` (new).
+
+### Open issues for the next worker
+- **900px/1180px/1440px/720px genuinely untested as distinct regimes for
+  Players** (see Trial matrix above) -- if a future pass gets a working
+  browser-native resize method, re-verify Players (and ideally revisit
+  every surface) at each of those, since no session in this whole effort
+  has yet rendered the SAME width live as another.
+- **Market tab's ADP-preview `View` action is new, narrow-scope**: it only
+  resolves for a row whose `matchedNwrPlayerId` matches an already-loaded
+  ranking (the common case); an `OWNER_APPROVED`-matched row whose
+  candidate came from `candidateSuggestions` (a different, not-yet-
+  activated match) does not get a `View` action -- an honest, disclosed
+  scope boundary (the directive's "all players clickable" reading applied
+  to the table's OWN already-resolved matched identity, not every
+  candidate suggestion nested inside a cell), not a bug.
+- `RankingsPage`/`TiersPage`/`ComparePage`/`AdpProvidersPage` (the
+  pre-consolidation pages) are still live source code but, unlike Improve
+  Team's `FreeAgentsPage`/`WeeklyToolsPage`, NO route in `RedraftApp.tsx`
+  points to any of these four any more (same as Trades' `TradeAnalysisPage`/
+  `TradeFinderPage`) -- they are genuinely unrouted/unreachable from the
+  app, kept only as source-level fallbacks per that same precedent.
+- Per the directive's own scope boundary, League (and Draft Room) were not
+  attempted this pass -- Players' full scope fit within this session, so
+  no partial-completion handoff is needed here, but the next worker should
+  proceed to League per the directive's stated order.
