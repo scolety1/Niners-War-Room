@@ -109,14 +109,25 @@ export function AppShell(props: AppShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const commandTrigger = useRef<HTMLButtonElement>(null);
+  const mobileNavTrigger = useRef<HTMLButtonElement>(null);
   const content = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const closePalette = () => { setPaletteOpen(false); window.setTimeout(() => commandTrigger.current?.focus(), 0); };
+  // NWR Work Unit 7 (responsive/a11y hardening): real, reproduced gap --
+  // the off-canvas mobile sidebar (<930px) is a genuine drawer/overlay
+  // (its own scrim, closable by clicking the scrim) but, unlike the
+  // command palette right below it and every other drawer/menu in this
+  // app, had no Escape-to-close wiring at all. Live-confirmed missing
+  // before this fix (Escape left `sidebar--open` on the class list).
+  // Focus-restore to the trigger button mirrors `closePalette`'s own
+  // precedent exactly.
+  const closeMobileNav = () => { setMobileNavOpen(false); window.setTimeout(() => mobileNavTrigger.current?.focus(), 0); };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); if (paletteOpen) closePalette(); else setPaletteOpen(true); }
       if (event.key === "Escape" && paletteOpen) closePalette();
+      if (event.key === "Escape" && mobileNavOpen) closeMobileNav();
       if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && !paletteOpen && !/INPUT|SELECT|TEXTAREA/.test((event.target as HTMLElement)?.tagName ?? "")) {
         const item = navigation.flatMap((group) => group.items).find((candidate) => candidate.shortcut === event.key);
         if (item) { event.preventDefault(); navigate(item.path); }
@@ -124,7 +135,7 @@ export function AppShell(props: AppShellProps) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [navigate, navigation, paletteOpen]);
+  }, [navigate, navigation, paletteOpen, mobileNavOpen]);
   useLayoutEffect(() => {
     content.current?.scrollTo({ behavior: "auto", left: 0, top: 0 });
   }, [location.pathname, location.search]);
@@ -152,8 +163,8 @@ export function AppShell(props: AppShellProps) {
         </nav>
         <div className="sidebar__footer"><div className="profile-chip"><div className="profile-chip__avatar">GM</div><div><span>Active context</span><strong>{profileLabel}</strong></div></div><div className="local-lock"><Icon name="shield" size={14} /> Local only · protected session</div></div>
       </aside>
-      <button aria-label="Close navigation" className={`sidebar-scrim ${mobileNavOpen ? "sidebar-scrim--visible" : ""}`} onClick={() => setMobileNavOpen(false)} />
-      <section className="workspace"><header className="status-bar"><button aria-label="Open navigation" className="mobile-nav-trigger" onClick={() => setMobileNavOpen(true)}><Icon name="layers" /></button><button aria-expanded={paletteOpen} aria-haspopup="dialog" className="command-trigger" onClick={() => setPaletteOpen(true)} ref={commandTrigger}><Icon name="search" size={16} /><span>Search players or jump to a tool</span><kbd>Ctrl K</kbd></button><div className="status-bar__signals">{statusExtra}<StatusBadge tone={healthTone} label={healthLabel} pulse /><span className="source-clock"><Icon name="activity" size={14} />{sourceAsOf || "Source date unavailable"}</span></div></header><main className="workspace__content" id="main-content" ref={content}>{children}</main></section>
+      <button aria-label="Close navigation" className={`sidebar-scrim ${mobileNavOpen ? "sidebar-scrim--visible" : ""}`} onClick={closeMobileNav} />
+      <section className="workspace"><header className="status-bar"><button aria-label="Open navigation" className="mobile-nav-trigger" onClick={() => setMobileNavOpen(true)} ref={mobileNavTrigger}><Icon name="layers" /></button><button aria-expanded={paletteOpen} aria-haspopup="dialog" className="command-trigger" onClick={() => setPaletteOpen(true)} ref={commandTrigger}><Icon name="search" size={16} /><span>Search players or jump to a tool</span><kbd>Ctrl K</kbd></button><div className="status-bar__signals">{statusExtra}<StatusBadge tone={healthTone} label={healthLabel} pulse /><span className="source-clock"><Icon name="activity" size={14} />{sourceAsOf || "Source date unavailable"}</span></div></header><main className="workspace__content" id="main-content" ref={content}>{children}</main></section>
     </div>
     <CommandPalette commands={commands} onClose={closePalette} open={paletteOpen} />
   </div>;

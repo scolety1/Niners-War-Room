@@ -3876,8 +3876,25 @@ function PlayerDrawer({
     () => statusOverrides.filter((override) => override.playerId === playerId),
     [statusOverrides, playerId],
   );
+  // NWR Work Unit 7 (responsive/a11y hardening): the same real, reproduced
+  // gap fixed in the global `player-detail-drawer.tsx` this same pass --
+  // opening this room's own separate drawer never moved keyboard focus
+  // into it, so a keyboard/screen-reader user had no signal they had
+  // entered a dialog. `tabIndex={-1}` below makes the `<aside>` a valid
+  // one-time programmatic focus target without joining the normal Tab
+  // order.
+  const drawerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    drawerRef.current?.focus();
+  }, [playerId]);
   return (
-    <aside className="player-drawer" role="dialog" aria-label={`${ranking?.playerName ?? playerId} detail`}>
+    <aside
+      className="player-drawer"
+      role="dialog"
+      aria-label={`${ranking?.playerName ?? playerId} detail`}
+      tabIndex={-1}
+      ref={drawerRef}
+    >
       <PlayerIdentityHeader
         identity={{
           playerId,

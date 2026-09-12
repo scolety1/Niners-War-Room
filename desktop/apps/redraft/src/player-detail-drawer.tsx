@@ -1,7 +1,7 @@
 import type { NwrApiClient } from "@nwr/api-client";
 import type { PlayerAvailabilityStatus } from "@nwr/contracts";
 import { Button, StatusBadge } from "@nwr/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PlayerIdentityHeader } from "./player-drawer-core";
 import { usePlayerDetail } from "./player-detail-context";
@@ -89,6 +89,21 @@ const SOURCE_LABEL: Record<string, string> = {
 export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
   const { active, closePlayerDetail } = usePlayerDetail();
   const [statuses, setStatuses] = useState<readonly PlayerAvailabilityStatus[]>([]);
+  const drawerRef = useRef<HTMLElement | null>(null);
+
+  // NWR Work Unit 7 (responsive/a11y hardening): real, reproduced gap --
+  // opening this drawer left keyboard focus wherever it already was (the
+  // trigger "View" button, still technically focused but now visually
+  // behind the drawer overlay), so a keyboard/screen-reader user had no
+  // signal they had entered a new dialog and had to Tab blindly to find
+  // it. Moves focus onto the dialog itself on open (the standard WAI-ARIA
+  // dialog pattern) -- `tabIndex={-1}` below makes the otherwise
+  // non-interactive `<aside>` a valid, one-time programmatic focus target
+  // without adding it to the normal Tab order.
+  useEffect(() => {
+    if (!active) return;
+    drawerRef.current?.focus();
+  }, [active?.playerId, active?.source]);
 
   // NWR UI expansion pass (2026-09-12, Lineup surface interaction trial):
   // real bug found live -- this global drawer had no Escape-to-close
@@ -124,7 +139,13 @@ export function PlayerDetailDrawer({ client }: { client: NwrApiClient }) {
   const sourceLabel = SOURCE_LABEL[active.source] ?? active.source;
 
   return (
-    <aside className="player-drawer" role="dialog" aria-label={`${backbone.identity.playerName} detail`}>
+    <aside
+      className="player-drawer"
+      role="dialog"
+      aria-label={`${backbone.identity.playerName} detail`}
+      tabIndex={-1}
+      ref={drawerRef}
+    >
       <PlayerIdentityHeader identity={backbone.identity} onClose={closePlayerDetail} />
       <div className="player-drawer__lede" style={{ padding: "0 18px 12px" }}>
         <StatusBadge

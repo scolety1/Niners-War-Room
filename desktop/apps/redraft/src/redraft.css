@@ -601,6 +601,28 @@
 .draft-room-v2-recent-picks__pick { color: var(--muted); flex: 0 0 34px; font-size: 9.5px; font-variant-numeric: tabular-nums; }
 .draft-room-v2-rightpane__next-turn { background: rgba(154,108,255,.12); border-radius: 6px; color: inherit; font-size: 10.5px; margin: 0; padding: 5px 7px; }
 
+/* NWR Work Unit 7 (responsive/a11y hardening): real, reproduced bug --
+   `.draft-room-v2-workspace`'s three panes (240px leftpane, flexible
+   content, 260px rightpane) had NO responsive handling at all, unlike
+   every other consolidated surface's own narrow-width collapse. Below
+   1180px (the same threshold `packages/ui/src/styles.css` already uses
+   for its own major layout collapse -- not a one-off invented value) the
+   flexible center column was squeezed to ~366px at 1180px and an
+   unusable ~191px at 768px (both real, rendered, JS-measured widths),
+   crushing the PICK NOW card and truncating player/team names. Fixed by
+   stacking the three panes into one column, with the PICK NOW/candidate
+   content promoted to the top via `order` (the owner's most important
+   content, not buried under the full rankings list) -- Rankings/Queue/
+   Teams and the roster panel each keep their own internal scroll via
+   their existing `max-height`/`overflow-y` rules, just capped shorter so
+   a stacked page does not require excessive scrolling. */
+@media (max-width: 1180px) {
+  .draft-room-v2-workspace { flex-direction: column; }
+  .draft-room-v2-content { order: -1; }
+  .draft-room-v2-leftpane,
+  .draft-room-v2-rightpane { flex: 0 0 auto; max-height: 320px; width: 100%; }
+}
+
 /* Compact self-contained draft-slot setup (never requires Legacy). */
 .draft-room-v2-setup { align-items: flex-end; display: flex; flex-wrap: wrap; gap: 12px; }
 /* `min-width: 0` overrides the flex default of `min-width: auto`, which

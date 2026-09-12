@@ -1482,3 +1482,287 @@ under `desktop/apps/redraft/src`.
   without regressing its live-draft density requirements" framing) --
   not a violation to "fix" by flattening it into `.panel`/`.metric-grid`
   wholesale in a future pass without a real, considered reason to do so.
+
+## Work Unit 7 -- Responsive + Accessibility Hardening (2026-09-12)
+
+**Start HEAD:** `21887693`. **Result:** COMPLETE.
+
+### VIEWPORT CONTROL -- SOLVED (read this first)
+
+Six straight sessions recorded `mcp__claude-in-chrome__resize_window` as
+broken and fell back to code review for every width they could not
+physically render (958/884/1424/1164/1424px across five sessions, never
+the same twice). This pass re-confirmed that finding in ~10 seconds
+(`resize_window(1440,900)` on this session's own stuck-at-1424px window
+left `window.innerWidth` at 1424, before and after) and then found a
+**genuine, exact, reliable fix**, verified with real `window.innerWidth`/
+`matchMedia` checks, not the tool's own reported success:
+
+**An `<iframe>` is a separate browsing context with its own `window`, so
+its `contentWindow.innerWidth` reflects the iframe element's own CSS box
+width -- completely independent of the outer Chrome window's stuck size.**
+Concretely: a small static harness page (`<iframe id="frame">` + a
+`setSize(w,h)` helper, temporarily added under `public/` during this
+session and deleted before the final commit -- it is NOT part of the
+shipped product) with the real app loaded inside the iframe at an
+explicit `style.width`/`style.height`. Verified exact and reliable across
+all four required widths in one pass:
+```
+target 1440 -> iframe contentWindow.innerWidth = 1440 (exact)
+target 1180 -> iframe contentWindow.innerWidth = 1180 (exact)
+target  900 -> iframe contentWindow.innerWidth =  900 (exact)
+target  768 -> iframe contentWindow.innerWidth =  768 (exact)
+```
+Screenshots and `computer` click/scroll coordinates work normally through
+it (it is real, on-screen, rendered page content, not an off-screen
+buffer) -- confirmed live by clicking "Draft"/"View player" buttons and
+opening/closing the Player Drawer entirely inside the iframe. This
+captures ONLY the browser tab's own rendered content, never the OS
+desktop -- no window-level screenshot or OS input was used anywhere in
+this pass, satisfying the same safety constraint every prior session
+correctly enforced.
+
+One real gotcha for whoever reuses this: the app's own React entry
+(`index.html`'s `<script type="module" src="/src/main.tsx">`) needs
+Vite's React-refresh preamble, which Vite only injects into HTML files it
+processes as a page **root** (project-root `*.html`), not into a file
+served from `public/` (public/ files are copied byte-for-byte, untouched
+-- loading `main.tsx` under a `public/`-served HTML throws "@vitejs/
+plugin-react can't detect preamble"). The fix is trivial: put the
+app-loader HTML file at the app's project root (same level as
+`index.html`), not under `public/`; only the plain iframe-hosting harness
+page itself (no React) is safe under `public/`. Also: setting
+`iframe.src` to the identical URL string it already holds does **not**
+reload it (a real trap that silently re-tested stale, pre-fix state
+early in this session) -- always bounce through `about:blank` first, or
+otherwise force a real navigation, before re-checking a route after
+editing source or the mock.
+
+This is a real, durable, zero-risk technique (pure DOM, no CDP hacks, no
+extension permissions) that should let every future UI session in this
+product render genuine, exact target widths instead of code-review
+guessing. CDP `Emulation.setDeviceMetricsOverride` (approach 2) was
+confirmed unreachable: no remote-debugging port is open on this machine
+(`netstat` -- no `9222`-class listener) and in-page JS has no
+`chrome.debugger` access (`typeof chrome.debugger === "undefined"` in the
+page context, as expected -- that API is extension-only, not exposed to
+page scripts even inside the extension's own automated tab). `tabs_create_
+mcp` (approach 3) takes no width/height parameter at all. The iframe
+technique supersedes needing approach 4 (matchMedia-only regime proof)
+since it gives pixel-exact real width, not just regime confirmation.
+
+### Mock data for rendering
+
+Same disclosed pattern every prior Work Unit used (`window.fetch`
+patched to serve hand-authored fixtures, zero real network calls, zero
+backend process started, owner's real leagues never touched) -- adapted
+here as a classic, render-blocking `<script>` at the top of the app-loader
+HTML (so it patches `fetch` before `main.tsx`'s first call, rather than a
+browser-console injection racing the app's own effects). One synthetic
+`qa-viewport-1` profile (10-team PPR, Sleeper), 24 rankings across all 6
+positions including one 52-character stress name/68-character stress team
+(also carrying a real `PlayerAvailabilityStatus`), covering bootstrap,
+my-roster, opponent-rosters, free-agents, weekly-lineup, waivers,
+weekly-home-actions, trade-analysis, trade-finder, kdst/streamer,
+league-workspace-context, data-health, player-availability-status,
+status-overrides, weekly-projections, an always-active `DecisionBundle`
+(8 candidates, one flagged unavailable) and an always-configured/
+in-progress `draftBoard` so Draft Room's live Suggestions view -- not the
+pre-draft setup screen -- was what got exercised.
+
+One real, disclosed mock-authoring bug found and fixed mid-session (not a
+product bug, same class as two prior Work Units' own analogous catches):
+`weeklyHomeActions()`'s five `WeeklyHomeAction.detail` fields were
+authored as empty `{}` placeholders; `home-action-explain.ts` reads them
+as the REAL typed sub-object per category (`WeeklyLineupSwap`/
+`WeeklyLineupSlot`/`WaiverAddCandidate`/`TradeFinderCandidate`/
+`KdstStreamerRow`) and crashed (`Cannot read properties of undefined
+(reading 'toFixed')`, real `OwnerErrorBoundary` trip on Weekly Home) --
+fixed by populating each `detail` from the SAME already-built
+`lineup`/`waivers`/`tradeFinder`/`kdstStreamer` mock objects, confirmed
+clean on retest.
+
+### Surfaces audited
+
+All 8 top-level surfaces (League chooser `/leagues`, Home, Lineup,
+Improve Team, Trades, Players/Rankings, League workspace, Draft Room) at
+all four required widths (1440/1180/900/768px), each real-rendered (not
+code-reviewed) via the iframe technique above, JS-verified for
+`document.documentElement.scrollWidth <= clientWidth + 1` (no horizontal
+page overflow) and no `undefined`/`NaN`/`[object Object]` text leaks at
+every width. This is the first Work Unit in this whole effort to render
+the SAME four widths, all real, across every surface in one session --
+every prior entry's own "genuinely untested distinct regime" gap for
+900/1180/1440/768 is now closed for the top-level layout question (nav/
+page-level overflow); see Open Issues below for what is deliberately
+still narrower in scope (per-state/per-scenario re-verification).
+
+Both Player Drawers (the global `PlayerDetailDrawer` and Draft Room's own
+specialized `PlayerDrawer`) opened and closed at 768px and 1440px;
+Escape-close and width re-verified on both.
+
+### Objective issues found and fixed
+
+1. **Draft Room's three-pane workspace had no responsive handling at
+   all** -- real, reproduced, most severe finding this pass.
+   `.draft-room-v2-workspace` is a plain flex row with a fixed 240px
+   leftpane (Rankings/Teams/Queue) and a fixed 260px rightpane
+   ("Drafting as" roster panel); the flexible center column (the PICK NOW
+   card + full candidate table -- the room's own primary hierarchy,
+   Work Unit 6's whole focus) was measured, live, at only **366px wide at
+   1180px and an unusable 191px at 768px**, crushing the PICK NOW card
+   into unreadable slivers and truncating every player/team name (visible
+   live: "#4 Tobias Waterhouse-Kingsley A..." / "The Fighting Armadillos
+   of North Metro..."). No media query anywhere in `redraft.css`
+   addressed `.draft-room-v2-workspace`/`-leftpane`/`-rightpane` -- a real
+   gap, not a regression. Fixed with one new `@media (max-width: 1180px)`
+   block (`redraft.css`, matching the SAME threshold `packages/ui/src/
+   styles.css` already uses for its own major layout collapse, not an
+   invented value): the three panes stack into one column, with
+   `.draft-room-v2-content` promoted to the top via `order: -1` (the
+   owner's most important content first, not buried under the full
+   rankings list), and the leftpane/rightpane capped to `max-height:
+   320px` with their own existing `overflow-y: auto` so a stacked page
+   does not require excessive scrolling. Live-reverified at 768/900/1180:
+   PICK NOW card and the full candidate table (PICK/PLAYER/STATUS/PICK
+   SCORE/ACTION, all columns) now render at full page width, the
+   52-character stress name wraps cleanly with its status badge visible,
+   and the stacked Rankings/roster panels each keep independent scroll in
+   the correct order (content first, then Rankings, then roster).
+   Confirmed NOT reachable/needed above 1180px (the original 3-column
+   layout has ample room at 1440px). One residual, disclosed, pre-existing
+   condition -- not introduced or worsened by this fix, see Open Issues.
+
+### Accessibility issues found and fixed
+
+2. **Neither Player Drawer moved keyboard focus into itself on open.**
+   Live-verified before fixing: opening the GLOBAL drawer left
+   `document.activeElement` on the "View" button that triggered it (now
+   visually behind the drawer overlay); opening DRAFT ROOM'S drawer left
+   focus on `<body>` entirely (worse -- no focused element at all). Either
+   way, a keyboard/screen-reader user had zero signal they had entered a
+   new dialog and had to Tab blindly to discover it -- a real violation of
+   the standard WAI-ARIA dialog pattern (both drawers already correctly
+   carry `role="dialog"`/`aria-label`, just never moved focus). Fixed
+   identically in both components (`player-detail-drawer.tsx`,
+   `draft-room-v2.tsx`'s `PlayerDrawer`): `tabIndex={-1}` on the `<aside>`
+   (a valid one-time programmatic focus target, not added to the normal
+   Tab order) plus a `useEffect` that calls `.focus()` on it keyed to the
+   open player/source. Live-reverified on both: `document.activeElement`
+   is now the `<aside role="dialog">` itself immediately on open, at
+   768px and 1440px; Escape-close and reopen-a-different-player both
+   re-confirmed still correct afterward; no visible focus ring appears on
+   the drawer itself (`outline-style: none` in its existing CSS -- a
+   silent, correct default, not something this pass needed to add).
+3. **The off-canvas mobile sidebar (<930px, `packages/ui`'s shared
+   `AppShell`) had no Escape-to-close wiring at all** -- a real,
+   reproduced gap in the ONE most likely place the directive asked to
+   double check ("confirm it's universal"). Live-confirmed broken before
+   fixing: opening it via the hamburger trigger then dispatching a real
+   `Escape` keydown left `sidebar--open` on the class list, unchanged.
+   This is a genuine drawer/overlay (its own scrim, already closable by
+   clicking the scrim) sitting right next to the command palette's own
+   Escape handler in the exact same `useEffect` -- just never wired.
+   Fixed in `components.tsx` (`AppShell`, shared by BOTH the Redraft and
+   Dynasty apps): added `mobileNavOpen` to the existing global keydown
+   handler, closing it and restoring focus to the hamburger trigger
+   button (`mobileNavTrigger` ref), mirroring `closePalette`'s own
+   existing focus-restore precedent exactly. Live-reverified at 900px:
+   Escape now closes it and focus lands back on the trigger button
+   (`document.activeElement === trigger`, checked directly, not assumed).
+
+### Escape-close universality
+
+**Confirmed universal, with one real gap found and fixed.** Explicitly
+re-verified live this pass: global Player Drawer (Escape confirmed at
+768px and 1440px), Draft Room's own Player Drawer (Escape confirmed at
+768px and 1440px, on top of Work Unit 6's own prior fix), and the
+mobile off-canvas sidebar (Escape was NOT wired -- fixed above, now
+confirmed). Not independently re-clicked this pass (no code or behavior
+change touched them, and multiple prior Work Units already live-verified
+each): the command palette (`Ctrl+K`) and the Switch League menu -- both
+already had working Escape handlers read directly in `components.tsx`/
+prior ledger entries before concluding no further action was needed here.
+
+### Contrast / hover-only-info spot check
+
+Not a regression risk this pass introduced, but explicitly checked per
+the directive: `packages/ui/src/styles.css` already carries a global
+`button:focus-visible, a:focus-visible, input:focus-visible, select:
+focus-visible` visible focus ring (plus dedicated ones for sortable
+table headers and clickable table rows) -- focus states are visible
+app-wide already, nothing to add. Grepped every `title={...}` tooltip
+usage across `apps/redraft/src` (cheat-sheet.tsx, draft-room-v2.tsx): in
+every instance found, the tooltip is SUPPLEMENTARY detail on top of
+already-visible text/color (e.g. `<span title={adp.title}>{adp.text}</span>`,
+a roster-overflow slot showing its real `have/need` numbers as always-
+visible text with the explanation only as a hover bonus) -- no critical
+information found that is hover-exclusive.
+
+### Tests
+
+`npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean.
+`npx vitest run --no-file-parallelism` from the monorepo root (`desktop/`,
+both apps): **275/275 passing** (0 regressions, 0 new -- see below for why
+no new test file was added). No new pure-logic module was introduced this
+pass (unlike Lineup/Improve Team/Trades/League/Draft Room's own
+`*-explain.ts` files) -- every fix this pass is either a pure CSS media
+query or a component-level DOM/focus-management behavior change in files
+this repo has never covered with a render-level unit test (`player-
+detail-drawer.tsx`'s ORIGINAL Escape-to-close fix in Work Unit 1, and
+Draft Room's own analogous fix in Work Unit 6, were likewise verified only
+via live interaction trial, never a unit test -- `packages/ui` itself
+has no React-Testing-Library-style component-render test infrastructure
+at all, only pure-logic modules like `command-search.test.ts`/`table-
+sort.test.ts`). This pass follows that same established precedent:
+every fix was verified live, with real DOM/`window.innerWidth`/
+`document.activeElement`/class-list checks (not assumed, not screenshot-
+only), rather than inventing new test infrastructure for one pass.
+
+### Backend/model files changed
+
+NONE. `git diff --stat 21887693 HEAD -- src/`: empty (confirmed
+explicitly). Full diff: 4 files modified, all under `desktop/apps/
+redraft/src` and `desktop/packages/ui/src` -- `draft-room-v2.tsx`,
+`player-detail-drawer.tsx`, `redraft.css`, `components.tsx`. The two
+temporary QA files used to drive this session's own rendering
+(`apps/redraft/qa-app-loader.html`, `apps/redraft/public/qa-viewport-
+harness.html`) were deleted before this commit -- neither shipped.
+
+### Open issues for the next worker (Worker 8: failure/degraded states)
+
+- **The stacked Draft Room leftpane's own candidate/rankings mini-table
+  still needs its OWN horizontal scroll to reach the Draft/Queue action
+  buttons on its last column**, even at the widened (692px) stacked
+  width -- live-measured (`data-table-wrap` `scrollWidth` 760 > visible
+  width 692, `overflow-x: auto` already present and functional, same
+  established pattern every other wide DataTable in this app already
+  uses, e.g. Draft Room's own main candidate table one click of
+  horizontal scroll away per Work Unit 6's own note). Genuinely
+  pre-existing (this list was always a narrow ~240px sidebar column
+  before this pass; the underlying table's own column widths were never
+  audited for narrower fits) and reachable, not silently broken -- but
+  worth a real pass on that specific table's column widths for a future
+  session with headroom, since 692px "should" comfortably fit a 3-column
+  player list.
+- **This pass verified the TOP-LEVEL layout question (nav/page overflow,
+  drawer widths, the Draft Room pane collapse) at all four widths across
+  all 8 surfaces, but did NOT re-drive every prior Work Unit's own full
+  per-surface scenario matrix (empty/stale/degraded/close-call states,
+  etc.) at each of the four widths** -- that would be a much larger,
+  multiplicative undertaking (8 surfaces x ~4-8 states x 4 widths) outside
+  this pass's stated scope (objective responsive/a11y issues, not a full
+  scenario re-certification). Worker 8's own failure/degraded-state focus
+  is a natural place to re-cross this concern for the states it already
+  needs to build.
+- **Table column density inside the stacked Draft Room panes** (previous
+  bullet) aside, no other narrow-width table clipping was found at 768px
+  across the other 7 surfaces' own DataTables -- all already use the
+  established `.data-table-wrap { overflow-x: auto }` pattern correctly.
+- The iframe viewport-control technique documented above works for THIS
+  kind of testing (a real local Vite dev server rendering mocked data in
+  a controlled harness) -- it was not tried, and there was no need to try
+  it, against the real Tauri-packaged desktop app or the owner's real
+  AppData install; a future session driving the real shipped app would
+  still need a different, real-window-level approach for that specific
+  target.
