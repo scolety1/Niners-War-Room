@@ -12,7 +12,54 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-One commit on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Two commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+(Work Unit 0 + P0-1, then P0-2 below) -- run `git log -1` for the exact
+hash.
+
+## P0-2 (projection governance reconciliation) -- 2026-09-12
+
+**Classification: B.** Verified fresh (not from memory): this worktree's
+default bundled Redraft seed (608 rows, `e483caae...`) has a real,
+independently-confirmed EXPIRED approval (`valid_until` 2026-09-09; today
+is 2026-09-12) -- reproduced live with a standalone pytest run showing
+`redraft_bootstrap()` fails to install any seed at all in a fresh store.
+Found the real "Freeze V7" combined admission (491 veteran + 73 rookie =
+564 rows) already sitting in this branch's own history (commit `0ae4b039`
+verified an ancestor via `git merge-base --is-ancestor`), with its own
+already-existing, still-valid owner approval (`valid_until` 2026-10-08) at
+`docs/codex/nwr_redraft_2026_rookie_projection_admission_CANDIDATE_v2_20260908/
+MERGED_CURRENT_CANDIDATE.approval.json`. No new approval was created --
+migrated to that exact already-approved artifact.
+
+Found and fixed a real CRLF-vs-LF checkout hazard (this worktree's
+`core.autocrlf=true` would have silently broken the receipt's hash
+binding) by LF-normalizing a byte-identical copy into a new canonical
+packet (`docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/`,
+full provenance/hash-chain in its `PROVENANCE.md`) with a matching
+`.gitattributes eol=lf` rule. Updated `desktop_facade.py`'s
+`REDRAFT_SEED_*` constants and two presentation strings that would
+otherwise have gone stale under the new counts. Net pytest effect:
+`test_desktop_application_api.py` 5 -> 4 known failures (one genuinely
+fixed; the remaining 4 are pre-existing/unrelated, one of them now
+blocked only by this session's own `NWR_FANTASYPROS_API_KEY` env var, not
+this change). Zero new regressions confirmed via an A/B stash comparison
+across every other projection/redraft-engine/rookie test file. Frontend
+`tsc -b` clean, `vitest run`: 286/286 unchanged. Committed at commit
+(see `git log -1`); no merge/push/deploy.
+
+**For Worker 3 (packaged Tauri + real backend release gate):** a FRESH
+isolated `redraft_root` in this worktree now bootstraps real, current,
+non-expired governed 2026 projection data (564 players) instead of
+failing closed -- you do NOT need to stay on fixture/isolation paths for
+the Redraft projection layer specifically if your work needs it live.
+Everything else (Sleeper-linked Waivers/Trade Analysis/Trade Finder, the
+real owner AppData install) is unaffected/untouched by this change and
+still requires whatever isolation approach the prior UI-expansion workers
+already used.
+
+---
+
+Prior entry (Work Unit 0 + P0-1) below.
 (Work Unit 0 + P0-1, this entry) -- run `git log -1` in the worktree to get
 the exact hash; not hardcoded here to avoid this doc going stale the
 instant a future worker commits on top of it.
