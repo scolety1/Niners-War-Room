@@ -566,7 +566,13 @@ export function MyRosterPage({ client, data }: { client: NwrApiClient; data: Red
 // Redraft Trade Analysis
 // ---------------------------------------------------------------------------
 
-type TradeSide = { sleeperPlayerId: string; name: string };
+// NWR UI expansion pass (2026-09-12, Trades surface): exported so the new
+// unified `TradesPage` workspace (trades.tsx) can reuse the exact same
+// picker primitive rather than a second one -- this page's own
+// `TradeAnalysisPage`/`TradeFinderPage` below are otherwise left in place
+// unchanged as unrouted legacy fallbacks (same precedent as `WaiversPage`
+// after the Improve Team pass).
+export type TradeSide = { sleeperPlayerId: string; name: string };
 
 export function verdictFor(result: TradeAnalysisResult): { label: string; tone: "safe" | "review" | "blocked" } {
   const netUtility = result.netMarginalUtility;
@@ -576,7 +582,7 @@ export function verdictFor(result: TradeAnalysisResult): { label: string; tone: 
   return { label: "Close", tone: "review" };
 }
 
-function TradeSidePicker({
+export function TradeSidePicker({
   label,
   side,
   onAdd,

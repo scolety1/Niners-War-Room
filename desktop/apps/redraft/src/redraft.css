@@ -895,6 +895,10 @@
 .nwr-explain--recommended { border-left-color: var(--nwr-recommended); }
 .nwr-explain--warning { border-left-color: var(--nwr-warning); }
 .nwr-explain--alternative { border-left-color: var(--nwr-alternative); }
+/* NWR UI expansion pass (2026-09-12, Trades surface): a genuine "this
+   would hurt my roster" verdict, reusing the existing --nwr-unavailable
+   token (crimson family) -- no new color invented. */
+.nwr-explain--negative { border-left-color: var(--nwr-unavailable); }
 .nwr-explain__head { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; }
 .nwr-explain__headline-block { min-width: 0; }
 .nwr-explain__eyebrow { color: var(--muted-2); display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; margin-bottom: 3px; text-transform: uppercase; }

@@ -157,6 +157,10 @@ describe("resolveActiveNavPath", () => {
     expect(resolveActiveNavPath("/league/profile-fantasy-gamers/trades", ["/trade-analysis"])).toBe("/trade-analysis");
   });
 
+  it("resolves the legacy /trade-finder subpath to the same Trades nav item (Trades surface, unified into one TradesPage)", () => {
+    expect(resolveActiveNavPath("/league/profile-fantasy-gamers/trade-finder", ["/trade-analysis"])).toBe("/trade-analysis");
+  });
+
   it("returns null on the league chooser, where no nav item should be active", () => {
     expect(resolveActiveNavPath("/leagues", playersNavPaths)).toBeNull();
   });

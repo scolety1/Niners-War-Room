@@ -163,17 +163,19 @@ export const ACTION_CATEGORY_LABEL: Record<string, string> = {
   STREAMER: "Streamer",
 };
 
-// NWR UI expansion pass (2026-09-12, Improve Team surface): WAIVER and
-// STREAMER now land inside the unified Improve Team workspace at the
-// matching tab, instead of two separate single-purpose pages -- see
-// `improve-team.tsx`. `LegacyRedirect` (RedraftApp.tsx) now preserves the
-// query string through the compat redirect so `?tab=...` survives the
-// `/waivers` -> `/league/:leagueKey/waivers` hop.
+// NWR UI expansion pass (2026-09-12, Improve Team + Trades surfaces):
+// WAIVER/STREAMER land inside the unified Improve Team workspace and
+// TRADE lands inside the unified Trades workspace (FIND TRADES tab),
+// instead of separate single-purpose pages -- see `improve-team.tsx` /
+// `trades.tsx`. `LegacyRedirect` (RedraftApp.tsx) preserves the query
+// string through the compat redirect so `?tab=...` survives the
+// `/waivers` -> `/league/:leagueKey/waivers` (and `/trade-analysis` ->
+// `/league/:leagueKey/trade-analysis`) hop.
 export const ACTION_CATEGORY_LINK: Record<string, string> = {
   START_SIT: "/lineup",
   START_SIT_CLOSE_CALL: "/lineup",
   WAIVER: "/waivers?tab=targets",
-  TRADE: "/trade-finder",
+  TRADE: "/trade-analysis?tab=find",
   STREAMER: "/waivers?tab=streamers",
 };
 

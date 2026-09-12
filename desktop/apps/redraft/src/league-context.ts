@@ -130,6 +130,13 @@ export const ROUTE_ALIAS_SUBPATH: Record<string, string> = {
   improve: "waivers",
   players: "rankings",
   trades: "trade-analysis",
+  // NWR UI expansion pass (2026-09-12, Trades surface): `/trade-finder`
+  // now shares the SAME page as `/trade-analysis` (the unified
+  // `TradesPage`, opened to its FIND TRADES tab) rather than a separate
+  // standalone page -- same reasoning as `improve` -> `waivers` above, so
+  // a deep link or bookmark to `/trade-finder` still highlights the one
+  // "Trades" nav item instead of nothing.
+  "trade-finder": "trade-analysis",
 };
 
 /**

@@ -17,7 +17,14 @@ import { StatusBadge } from "@nwr/ui";
  * invents no new numbers or claims.
  */
 
-export type DecisionExplainTone = "recommended" | "warning" | "alternative" | "neutral";
+// NWR UI expansion pass (2026-09-12, Trades surface): "negative" is
+// additive -- a genuine fourth outcome (Home/Lineup/Improve Team's own
+// recommendations are always NWR's own top pick, so they never needed a
+// "this is a bad idea" tone; a trade the owner is evaluating can
+// genuinely score as one). Maps to the design system's existing
+// `--nwr-unavailable` token (crimson family, "blocked / cannot compute")
+// rather than inventing a new color.
+export type DecisionExplainTone = "recommended" | "warning" | "alternative" | "neutral" | "negative";
 export type DecisionExplainConfidence = "HIGH" | "NOMINAL" | "LOW" | "UNAVAILABLE";
 
 const CONFIDENCE_TONE: Record<DecisionExplainConfidence, "safe" | "review" | "blocked" | "offline"> = {
@@ -45,6 +52,9 @@ export function DecisionExplain({
   bid,
   thisWeekImpact,
   rosImpact,
+  depth,
+  positionEffect,
+  risk,
   status,
   freshness,
   advanced,
@@ -68,6 +78,19 @@ export function DecisionExplain({
    * the generic `impact` row when present. Optional and additive. */
   thisWeekImpact?: string | null;
   rosImpact?: string | null;
+  /** Trades' own "DEPTH" fact -- bench contingency value before/after a
+   * proposed trade. Optional and additive: existing callers (Home,
+   * Lineup, Improve Team) never pass this and render byte-for-byte as
+   * before. */
+  depth?: string | null;
+  /** Trades' own "POSITION EFFECT" fact -- starter holes and position
+   * redundancy before/after. Optional and additive, same as `depth`. */
+  positionEffect?: string | null;
+  /** A real, backend-supplied risk-flag summary, distinct from `status`
+   * (a single player's health/availability) -- e.g. Trade Analysis's own
+   * `riskFlags`. `null` is an honest "no risk flags recorded", never a
+   * fabricated "no risk" claim. Optional and additive. */
+  risk?: string | null;
   /** A player/roster health-status fact, distinct from `confidence`
    * (which is NWR's own certainty about the recommendation) -- e.g. the
    * recommended starter's real injury/availability status. Optional and
@@ -92,13 +115,16 @@ export function DecisionExplain({
       </header>
       <p className="nwr-explain__why">{why}</p>
       {secondaryWhy ? <p className="nwr-explain__why nwr-explain__why--secondary">{secondaryWhy}</p> : null}
-      {(impact || bid || thisWeekImpact || rosImpact || alternative || status || freshness) ? (
+      {(impact || bid || thisWeekImpact || rosImpact || depth || positionEffect || risk || alternative || status || freshness) ? (
         <dl className="nwr-explain__facts">
           {bid ? <div><dt>Suggested bid</dt><dd>{bid}</dd></div> : null}
           {thisWeekImpact ? <div><dt>This week</dt><dd>{thisWeekImpact}</dd></div> : null}
           {rosImpact ? <div><dt>Rest of season</dt><dd>{rosImpact}</dd></div> : null}
+          {depth ? <div><dt>Depth</dt><dd>{depth}</dd></div> : null}
+          {positionEffect ? <div><dt>Position effect</dt><dd>{positionEffect}</dd></div> : null}
           {impact ? <div><dt>Expected impact</dt><dd>{impact}</dd></div> : null}
           {alternative ? <div><dt>Alternative</dt><dd>{alternative}</dd></div> : null}
+          {risk ? <div><dt>Risk</dt><dd>{risk}</dd></div> : null}
           {status ? <div><dt>Status</dt><dd><StatusBadge tone={status.tone} label={status.label} /></dd></div> : null}
           {freshness ? <div><dt>Data</dt><dd>{freshness}</dd></div> : null}
         </dl>

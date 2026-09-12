@@ -418,3 +418,233 @@ modified + 3 new, all under `desktop/apps/redraft/src` --
   that K/DST -- an honest, disclosed limitation of `KdstStreamerRow`
   carrying no canonical id, not something this presentation-only pass can
   fix (would need a real backend id added to that contract).
+
+## Work Unit 3 -- Trades (2026-09-12)
+
+**Start HEAD:** `ce5c0d6e`. **Result:** COMPLETE (both tabs).
+
+### Foundation verification (Work Unit 0)
+Confirmed, not rebuilt: the shared drawer Escape-to-close fix (Work Unit 1)
+applies here too -- live-verified from both the Analyze tab's impact-table
+"View" action and Find Trades' candidate-card "View" actions, zero extra
+wiring needed (same `usePlayerDetailOpener`/`PlayerDetailDrawer`
+primitive). `LegacyRedirect`'s query-string preservation (Work Unit 2) is
+what makes `ACTION_CATEGORY_LINK.TRADE`'s own `?tab=find` deep link work
+through the `/trade-analysis` -> `/league/:key/trade-analysis` redirect --
+confirmed live, not assumed. `npx tsc -b` and `npx vitest run` both clean
+at the start head (231/231, the exact count Work Unit 2's entry reported).
+
+### What changed (Trades surface)
+- **`trades-explain.ts`** (new): pure derivation, same family as
+  `lineup-explain.ts`/`improve-team-explain.ts`. `tradeVerdictFor` mirrors
+  the pre-existing `verdictFor` (`in-season.tsx`) byte-for-byte for the
+  same two real signals (`netMarginalUtility`, `rosValueDelta`) --
+  deliberately duplicated rather than imported so this stays a pure,
+  dependency-free module like its siblings (the same choice
+  `explainStreamerPlay` already made for its own why-text). `IMPROVES MY
+  ROSTER` / `CLOSE` / `HURTS MY ROSTER` are the only three verdicts, never
+  a raw number. `explainTradeAnalysis` maps a real `TradeAnalysisResult` +
+  the backend's own confirmed give/receive player names to the directive's
+  exact grammar: eyebrow ("You give X / you receive Y"), headline (the
+  verdict), WHY (a verdict-specific rationale sentence), WEEKLY IMPACT
+  (starting lineup value before/after/delta), ROS IMPACT (net marginal
+  utility + ROS value delta + a real championship-equity note only when
+  supplied), DEPTH (bench contingency value before/after), POSITION EFFECT
+  (starter holes + position redundancy before/after), and an honest
+  `risk` (real backend `riskFlags`, `null` -- never a fabricated "no risk"
+  -- when the backend records none). `explainTradeFinderCandidate` maps a
+  real `TradeFinderCandidate` to "Send X for Y" / why-this-fits / a real
+  NWR-roster-impact string built ONLY from `myNetMarginalUtility`/
+  `myRosValueDelta`/`opponentNetMarginalUtility` -- no acceptance
+  probability is computed or shown anywhere, because the backend supplies
+  none (directive requirement, unit-tested explicitly). 17 new unit tests.
+- **`decision-explain.tsx`**: three new optional props (`depth`,
+  `positionEffect`, `risk`) and a new tone value, `"negative"` --
+  additive/backward-compatible, existing Home/Lineup/Improve Team call
+  sites pass none of these and render byte-for-byte as before. `negative`
+  is a genuine fourth outcome no prior surface needed (Home/Lineup/Improve
+  Team's cards are always NWR's own top pick; a trade the owner is
+  evaluating can genuinely score as bad), mapped onto the design system's
+  existing `--nwr-unavailable` token (crimson family) -- no new color
+  invented, one new 3-line CSS rule (`redraft.css`).
+- **`trades.tsx`** (new): `TradesPage`, the single workspace replacing the
+  old separately-built Trade Analysis/Trade Finder pages in the nav. Tab
+  state lives in a `?tab=` query param (`analyze` default, `find` for
+  Find Trades), same pattern as Improve Team. Both tabs implemented:
+  - **ANALYZE**: the same I-GIVE/I-RECEIVE `TradeSidePicker` workflow as
+    the pre-existing page (now exported from `in-season.tsx` and reused
+    here, not rebuilt), plus a single `DecisionExplain` verdict card
+    rendering the directive's exact before/after grammar (eyebrow/
+    headline/why/THIS WEEK/REST OF SEASON/DEPTH/POSITION EFFECT/RISK),
+    followed by the existing metric-card row, the real per-player You
+    Give/You Receive impact tables (Status/Availability badges + "View"
+    into the global Player Drawer, unchanged from the pre-existing page),
+    and the Position Redundancy panel. An honest "No trade analyzed yet"
+    `EmptyState` covers the empty-builder state without a special case.
+  - **FIND TRADES**: every real `TradeFinderCandidate` as a
+    `DecisionExplain` card (mutual-improvement -> `tone="recommended"`,
+    one-sided -> `tone="neutral"`, matching `explainTradeFinderCandidate`)
+    with opponent/you-send/you-receive (status badge + "View" into the
+    drawer for each side)/why-this-fits/NWR-roster-impact all present, and
+    a real "Open in Analyze" cross-tab action that pre-selects both sides
+    in Analyze's own picker state (no URL round trip, no auto-fetch --
+    the owner still takes the deliberate "Analyze trade" action, mirroring
+    Improve Team's own Targets -> Add/Drop jump).
+  - Query-param prefill (`giveSleeperId`/`giveName`/`receiveSleeperId`/
+    `receiveName`) is preserved unchanged from the pre-existing page, so
+    My Roster's "Add to Trade Analysis" and Opponent Rosters' "Add to
+    trade" links keep working against this new workspace without any
+    change to those call sites.
+- **`RedraftApp.tsx`**: `NAV_TRADES` collapsed from 2 nav items (Trade
+  Analysis/Trade Finder) to 1 ("Trades", reusing the existing
+  `/trade-analysis` path unchanged). All three scoped routes
+  (`/league/:key/trade-analysis`, `/trades`, `/trade-finder`) now render
+  `TradesPage` instead of the old standalone `TradeAnalysisPage`/
+  `TradeFinderPage` (`trade-finder`'s own route passes `defaultTab="find"`
+  so that specific URL still opens straight to Find Trades).
+  `TradeAnalysisPage`/`TradeFinderPage`/`verdictFor`/`TradeSidePicker`
+  themselves are untouched in `in-season.tsx` and still reachable at their
+  own flat/scoped routes as harmless legacy fallbacks (`TradeSide`/
+  `TradeSidePicker` gained `export` only, same precedent as
+  `AddDropDetail` after Work Unit 2) -- deliberately not deleted.
+- **`league-context.ts`**: added one `ROUTE_ALIAS_SUBPATH` entry
+  (`"trade-finder": "trade-analysis"`) so the now-shared `/trade-finder`
+  route still highlights the one "Trades" nav item instead of nothing --
+  same reasoning as the pre-existing `improve` -> `waivers` alias. One new
+  regression test in `league-context.test.ts`.
+- **`weekly-shared.tsx`**: Home's `ACTION_CATEGORY_LINK.TRADE` now points
+  at `/trade-analysis?tab=find` (the unified workspace's Find Trades tab)
+  instead of the old standalone `/trade-finder` page.
+- **`player-detail-drawer.tsx`**: added a `TRADES` entry to `SOURCE_LABEL`
+  (found before any live render, by reading the map against the new call
+  site) -- without it, opening the drawer from the new `TradesPage` would
+  have shown "Opened from TRADES" verbatim, the same internal-language
+  leak class Work Unit 2 fixed for `IMPROVE_TEAM`. `TRADE_ANALYSIS`/
+  `TRADE_FINDER` stay mapped for the untouched legacy pages.
+
+### Real bugs found and fixed
+Both found before any live render, by reading against the new call site
+(same discipline as Work Unit 2's own two pre-render catches):
+1. **`player-detail-drawer.tsx`'s `SOURCE_LABEL` map had no `TRADES`
+   entry** -- see above.
+2. **The new `/trade-finder` scoped route would have resolved the nav
+   active-state to nothing** once Trade Analysis/Trade Finder shared one
+   nav item -- `resolveActiveNavPath` had no alias mapping `trade-finder`
+   subpath back to the nav item's own `trade-analysis` subpath. Fixed via
+   the `ROUTE_ALIAS_SUBPATH` entry above; live-confirmed (`Trades`
+   highlights correctly on `/#/trade-finder`) and covered by a new
+   regression test.
+
+### Trial matrix executed
+**Viewport method (safety constraint):** `mcp__claude-in-chrome__resize_window`
+was tested first, requesting 1180x900 -- `window.innerWidth` stayed fixed
+at **1424** (confirmed via a real JS check, not assumed) -- a THIRD
+distinct value across this effort's three sessions (958px Work Unit 1,
+884px Work Unit 2, 1424px here), confirming again that this tool does not
+actually change the viewport in this sandbox. Per the directive's explicit
+fallback, real rendering was done at the one width this sandbox's browser
+actually renders (**1424px, real Chrome, real DOM**) -- notably the
+OPPOSITE regime from both prior sessions: 1424px sits ABOVE the app's
+`1180px` sidebar-narrowing breakpoint (full-width sidebar, the regime
+neither Work Unit 1 nor 2 rendered live), so this pass is a genuinely new,
+complementary real-render data point, not a repeat of the same regime.
+- **1424px (real, rendered)**: states A (positive trade, green
+  `IMPROVES MY ROSTER`) / B (negative trade, new crimson
+  `HURTS MY ROSTER`) / C (close/ambiguous, gold `CLOSE`) / D (empty trade
+  builder -- disabled Analyze button + honest "No trade analyzed yet"
+  empty state) / E (Find Trades, zero candidates) / F (long
+  player-name + long team-name + long risk-flag/championship-equity-note
+  text stress, both tabs) were all rendered and JS-verified: zero console
+  errors in every state, `document.documentElement.scrollWidth ===
+  clientWidth` (no horizontal overflow) confirmed by JS across every
+  state including the long-text stress state, no `undefined`/`NaN` leaks
+  (checked via a body-text regex, not eyeballed).
+- **1180px / 930px**: NOT independently re-rendered as distinct regimes --
+  code-review only. `.nwr-explain__facts` (flex-wrap) and
+  `.data-table-wrap` (its own `overflow:auto`) are the same
+  already-reviewed-safe primitives Work Units 1/2 already exercised at
+  narrower real widths; the two new optional `DecisionExplain` facts
+  (`depth`/`positionEffect`) and the `risk` fact use the identical `<dt>/
+  <dd>` markup as every existing fact, so no new narrow-width risk was
+  identified from reading the CSS. This is the same disclosed class of
+  gap both prior entries recorded, just inverted (this pass reached the
+  wide/full-sidebar regime live; the narrow/mobile regimes are
+  code-review only here).
+
+### Interaction trials
+Player Drawer opened from both required entry points (Analyze tab's
+You-Give impact-table "View" action, Find Trades' candidate-card
+you-send/you-receive "View" actions) -- closed via the header X, via
+Escape (including a real keyboard-only open-then-close: `.focus()` +
+`Enter` opened the drawer, `Escape` closed it, both verified via a real
+`document.activeElement`/`.player-drawer` JS check, not assumed), reopened
+a different player (correctly replaced, not stacked). Switched
+Analyze/Find-Trades repeatedly with the `?tab=` URL updating correctly
+each time and zero console errors. Navigated Trades -> Weekly Home -> back
+to Trades via the sidebar nav (remount-driven state reset confirmed
+correct, matching Work Unit 2's own documented Free-Agents-empty-state
+precedent) and separately via `/trade-finder` and `/trade-analysis?tab=find`
+direct hash navigation (both real regression-test targets above), all
+zero console errors.
+
+### Data used
+100% mocked, zero real network calls, zero backend process started --
+`window.fetch` patched at the browser-console level (the same mechanism
+Work Units 1/2 used and disclosed) for a synthetic `qa-trades-1` profile,
+serving `/api/v1/bootstrap`, `/api/v1/redraft/my-roster`,
+`/api/v1/redraft/opponent-rosters`, `/api/v1/redraft/trade-analysis`
+(echoing the real requested give/receive ids back as named players, with
+a `window.__NWR_TRADES_QA__.scenario` switch driving the
+positive/negative/close/long-names numeric response), `/api/v1/redraft/trade-finder`
+(`findScenario` switch for normal/empty), and
+`/api/v1/redraft/player-availability-status`; every other path returns a
+typed 404 envelope so nothing can hang. The owner's real Fantasy Gamers/
+403/Tester leagues and AppData install were never touched or read.
+
+### Tests
+`trades-explain.test.ts` (17 tests, new): all four verdict boundary
+conditions (including a genuinely zero/tiny change reading as `Close`,
+never a fabricated confident verdict), WEEKLY/ROS/DEPTH/POSITION EFFECT
+formatting against real `TradeAnalysisResult` fixtures, the real
+championship-equity-note append, the honest `risk: null` vs. real
+joined-risk-flags cases, all three verdict-specific WHY strings, the
+Find Trades headline/why/fits/tone mapping for both mutual and one-sided
+candidates, and an explicit assertion that the impact string never
+contains "probability" or "accept" (never fabricating an acceptance
+signal). One new test in `league-context.test.ts` (the `trade-finder`
+alias regression). `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`: clean. `npx vitest run
+--no-file-parallelism`: 249/249 passing (231 baseline + 18 new, 0
+regressions).
+
+### Backend/model files changed
+NONE. `git diff --stat ce5c0d6e HEAD -- src/`: empty. Full diff: 8 files
+modified + 3 new, all under `desktop/apps/redraft/src` --
+`RedraftApp.tsx`, `decision-explain.tsx`, `in-season.tsx`,
+`league-context.test.ts`, `league-context.ts`, `player-detail-drawer.tsx`,
+`redraft.css`, `weekly-shared.tsx` (modified); `trades-explain.ts`,
+`trades-explain.test.ts`, `trades.tsx` (new).
+
+### Open issues for the next worker
+- **1180px/930px genuinely untested as distinct regimes** (see above) --
+  if a future pass gets a working browser-native resize method, re-verify
+  Trades (and ideally revisit every surface) at a real 1180px and 930px,
+  since across all three Work Units so far no session has rendered the
+  SAME width live as another.
+- **Minor, pre-existing, NOT fixed this pass** (found live, out of narrow
+  scope, inherited unchanged from the old `TradeAnalysisPage`): the You
+  Give/You Receive impact tables have no client-side search/filter (not
+  needed at typical 1-3-player trade sizes, but would matter for a very
+  large multi-team/multi-player package) -- pure existing-code scope gap,
+  not introduced by this pass.
+- `TradeAnalysisPage`/`TradeFinderPage` (the pre-consolidation pages) are
+  still live code in `in-season.tsx`, reachable at their own flat/scoped
+  routes, just no longer linked from anywhere in the app now that nav and
+  Home both point into `TradesPage`. Deliberately left in place rather
+  than deleted (lowest-risk choice, same precedent as `WaiversPage`/
+  `FreeAgentsPage`/`WeeklyToolsPage` after Work Unit 2).
+- Per the directive's own scope boundary, Players and League were not
+  attempted this pass -- Trades' full scope fit within this session, so
+  no partial-completion handoff is needed here, but the next worker
+  should still start from Players (not League) per the directive's stated
+  order.

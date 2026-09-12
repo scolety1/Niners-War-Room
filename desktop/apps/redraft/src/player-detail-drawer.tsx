@@ -56,6 +56,11 @@ const SOURCE_LABEL: Record<string, string> = {
   // every other surface. Found before any live render, by reading this
   // map against the new call site in improve-team.tsx.
   IMPROVE_TEAM: "Improve Team",
+  // NWR UI expansion pass (2026-09-12, Trades surface): the new unified
+  // `TradesPage` opens the drawer with source "TRADES" from both its
+  // ANALYZE and FIND TRADES tabs. TRADE_ANALYSIS/TRADE_FINDER stay mapped
+  // below for the pre-existing pages, left in place unrouted.
+  TRADES: "Trades",
   TRADE_ANALYSIS: "Trade Analysis",
   TRADE_FINDER: "Trade Finder",
   FREE_AGENTS: "Free Agents",

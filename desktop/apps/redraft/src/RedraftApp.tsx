@@ -10,8 +10,9 @@ import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { ComparePage, DataHealthPage, FreeAgentsPage, OpponentRostersPage, RankingsPage, TiersPage, WeeklyToolsPage } from "./pages";
-import { LineupPage, MyRosterPage, TradeAnalysisPage, TradeFinderPage, WeeklyHomePage } from "./in-season";
+import { LineupPage, MyRosterPage, WeeklyHomePage } from "./in-season";
 import { ImproveTeamPage } from "./improve-team";
+import { TradesPage } from "./trades";
 import { DraftRoomV2Page } from "./draft-room-v2";
 import { ProfilePage } from "./profile";
 import { PlayerDetailProvider } from "./player-detail-context";
@@ -46,12 +47,16 @@ const NAV_IMPROVE: NavigationGroup = {
   label: "Improve Team",
   items: [{ label: "Improve Team", path: "/waivers", icon: "activity" }],
 };
+// NWR UI expansion pass (2026-09-12, Trades surface): ONE nav item, not
+// two -- Trade Analysis/Trade Finder are now tabs (ANALYZE/FIND TRADES)
+// inside a single unified `TradesPage` workspace (see trades.tsx), same
+// consolidation shape as Improve Team. `/trade-analysis` is reused as the
+// entry path unchanged (no route-table/alias churn) -- its scoped route
+// now renders `TradesPage` instead of the old standalone
+// `TradeAnalysisPage` (in-season.tsx, left in place unrouted).
 const NAV_TRADES: NavigationGroup = {
   label: "Trades",
-  items: [
-    { label: "Trade Analysis", path: "/trade-analysis", icon: "trade" },
-    { label: "Trade Finder", path: "/trade-finder", icon: "search" },
-  ],
+  items: [{ label: "Trades", path: "/trade-analysis", icon: "trade" }],
 };
 const NAV_PLAYERS: NavigationGroup = {
   label: "Players",
@@ -260,9 +265,9 @@ export function RedraftApp() {
       <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><MyRosterPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeAnalysisPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/trades" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeAnalysisPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/trade-finder" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradeFinderPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trades" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trade-finder" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} defaultTab="find" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/free-agents" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><FreeAgentsPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/opponent-rosters" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><OpponentRostersPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/draft" element={<LeagueScopedPage client={client} data={data} onUpdate={update}>
