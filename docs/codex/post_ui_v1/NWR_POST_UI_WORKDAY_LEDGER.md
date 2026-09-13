@@ -1721,3 +1721,356 @@ deploy performed.
    which is sufficient for a presentation/defensive-coding fix of this
    size and matches the directive's own test requirements, but is
    disclosed here as a real, not a hidden, scope choice.
+
+---
+
+## WORKER 11 -- FINAL SHIFT CONSOLIDATION (endurance + drift + release-gate
+re-verification + full regression) -- 2026-09-12/13
+
+**Scope: verification and consolidation only, per the governing directive.**
+No new feature work. No fix attempted unless a genuine NEW regression was
+found (none was). FINAL HEAD: `815a809eeef3880f7d5f2fbd25d9678e61745bba`
+(unchanged from Worker 10 -- this pass made no code commit). No merge,
+push, or deploy.
+
+### 1. FULL-SHIFT BACKEND/MODEL DRIFT CHECK (003d0dd4..HEAD)
+
+**Verdict: NONE OUTSIDE LEGITIMATE SCOPE.** `git diff --stat
+003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e HEAD -- src/` touches exactly 7
+files, all additive: `desktop_facade.py` (+686/-48),
+`desktop_api/server.py` (+70/-0), `in_season_decision_trace_service.py`
+(+131/-4), `league_workspace_context_service.py` (+18/-0, additive fields
+only), `live_player_intelligence_shadow_v1_service.py` (new, +373, inert
+per Worker 9's own hard-boundary proof), `sleeper_league_context_service.py`
+(new, +307), `trade_package_search_service.py` (new, +524). Every hard-
+boundary file confirmed **zero diff** across the whole shift:
+`redraft_roster_legality_service.py`, `league_lifecycle_service.py`,
+`player_lifecycle_service.py`, `decision_envelope_service.py`,
+`player_availability_status_service.py`, and
+`shadow_numeric_authorities_service.py` (which is where
+`marginal_roster_utility_v2`/`team_score`/`championship_equity`/
+`pick_score`/`evaluate_cost_of_waiting_v2` actually live -- confirmed via
+grep, this repo has no separate `marginal_roster_utility*.py` file; the
+directive's named path was a slight misdescription, verified against the
+real location instead) -- all `git diff --stat` empty against the same
+start head.
+
+**Line-by-line read of every removed/reordered line in `desktop_facade.py`
+(48 lines removed)** confirms every one is either (a) the P0-2 seed-
+constant migration (608-row expired packet -> Freeze V7 564-row
+already-approved packet, with its own dated commentary block), (b) a pure
+reordering of an EXISTING `compute_league_snapshot_id(...)` call (same
+three arguments, same function, moved a few lines earlier so a decision-
+trace call could pass the same already-computed value -- confirmed
+byte-identical inputs at 5 call sites: K/DST, Start/Sit, Waivers, Trade
+Analysis, Trade Finder), or (c) P1-1's real `current_week=None` literal
+replaced by a real, honestly-degrading Sleeper `state/nfl` read (empty/
+`None` on any failure, never fabricated). `league_workspace_context_
+service.py`'s diff is three new optional dataclass fields
+(`matchup`/`standings`/`playoff`) plumbed through unchanged existing
+parameters -- `resolve_league_lifecycle`'s own call is untouched.
+`in_season_decision_trace_service.py`'s diff is entirely inside the
+append-only audit ledger (new tool-type strings, two new optional/
+backward-compatible fields, a new `record_outcome` mirroring the existing
+`record_owner_action`) -- an audit/logging surface, not a scoring/legality
+authority. `server.py`'s diff is pure additive routing (3 new routes, all
+delegating to the corresponding new/existing facade methods with input
+validation preceding any Sleeper read). **Conclusion: P0-2's data-constant
+migration and P1-1/P1-3/P1-4/P1-5's new-feature backend additions are the
+ONLY things in the whole-shift `src/` diff -- no drift into scoring,
+legality, lifecycle, snapshot, envelope, or status-authority logic
+itself.**
+
+### 2. ENDURANCE TEST CONTRACT
+
+Two methods used, disclosed per trial (per the directive's own explicit
+permission to mix them):
+
+- **10 league-switch cycles -- REAL backend (HTTP, not mocked):** a
+  PowerShell script alternated `POST /api/v1/redraft/profiles/{id}/activate`
+  between the real Fantasy Gamers (Sleeper) profile and a real local
+  profile 10 times (20 activations), asserting HTTP 200 and the correct
+  `activeProfileId` after every call. **0 errors, 0 wrong-active-profile
+  results.** Original active profile (Fantasy Gamers) restored and
+  confirmed via a fresh `bootstrap` read afterward.
+  **+2 additional REAL UI-driven league-switch cycles** (Chrome, real
+  production preview): Fantasy Gamers -> "NWR QA Local Test League" (via
+  the real League Chooser card) -> back to Fantasy Gamers (via the
+  header's "Switch league" dropdown) -- confirmed the active-league
+  sidebar/header context updated correctly both times, the local
+  profile's own real Draft Room rendered (pre-draft, `Start Draft` never
+  clicked), and the data-notices chip's content was independently correct
+  per league with no residual content, matching every prior worker's own
+  state-leakage findings.
+- **10 nav loops -- REAL production preview (Chrome, client-side
+  `HashRouter` navigation, not full reloads):** an in-page script cycled
+  through 9 distinct routes (`/attention-center`,
+  `/league/:key/home|lineup|improve|trades|free-agents|rankings|
+  data-health|decision-history`, `/leagues`) 10 times (90 navigations),
+  with a global `error`/`unhandledrejection` listener armed for the whole
+  run. **0 errors, 0 rejections recorded across all 90 navigations**;
+  confirmed complete by the hash settling on the loop's own terminal route
+  and staying stable for 3+ seconds afterward.
+- **20 drawer cycles -- REAL production preview (Chrome):** 20 real
+  open/close cycles of the global Player Drawer from the Players/Rankings
+  page's "View" column (a different player each time as the underlying
+  row scrolled), toggled via the drawer's own "Close" control each time.
+  **Zero console messages of any kind** (not just zero errors) across the
+  full 20-cycle run; the table re-rendered cleanly with no residual
+  overlay/layout corruption after the final close.
+- **Deep-link reloads across the larger route set -- REAL production
+  preview (Chrome), genuine full browser navigations (new tab-level
+  `navigate` calls, not hash-only client-side changes):** cold-loaded
+  `/attention-center` (NEW route), `/league/:key/decision-history` (NEW
+  route, rendered the real 180-event Fantasy Gamers ledger), `/league/
+  :key/lineup`, `/league/:key/data-health`, `/league/:key/rankings`, and
+  `/league/:key/trades` (then exercised its "Find Trades" tab live -- see
+  below) -- **6/6 rendered correctly on a cold load, zero console messages
+  on every one.**
+- **Repeated multi-league aggregation reads (Attention Center) -- BOTH
+  methods:** (a) REAL backend HTTP: 3 full passes over all 8 real saved
+  profiles (Fantasy Gamers + 7 local), each pass reading `data-health` +
+  `league-workspace-context` + `decision-trace-history` per profile after
+  activating it -- **72 real backend calls, 0 non-200 responses, 0
+  cross-league leaks** (every `decision-trace-history` read's own
+  `profileId` matched the just-activated profile, every single time). (b)
+  REAL Chrome, real Attention Center page: 1 cold-load automatic
+  aggregation + 2 manual "Refresh" clicks, each a genuine sequential
+  8-league activate/read/restore sweep -- **3/3 completed** (3.8s, then
+  6.1s, real measured page-reported timings), consistently "0 need you
+  now / 8 worth a look" (correct given this environment's real, unchanged
+  7-blocked-rookie/no-ADP-import data state every prior worker already
+  disclosed), active profile (Fantasy Gamers) confirmed unaffected
+  afterward.
+- **New Trade Package Search surface (P1-3) re-exercised live, not just
+  navigated to:** ran a real FIND_WIN_WIN search against the real,
+  current Fantasy Gamers roster state -- **15 real candidates found
+  across 8 opponent rosters, 900 packages evaluated, correctly flagged
+  `SEARCH CAPPED`** -- confirming this surface still works correctly after
+  9 further workers' worth of changes on top of Worker 7's original
+  verification.
+
+All Sleeper contact this pass was structurally read-only (the same
+`SleeperHttpClient.get_json()`-only guarantee every prior worker already
+verified by construction); no `draft/start`, `draft/pick`, or any Sleeper
+write endpoint was ever called. Backend + preview processes (ports
+18742/1422) were stopped at the end; `Get-NetTCPConnection` confirmed no
+listener remained on either port afterward.
+
+### 3. PACKAGED-RELEASE GATE RE-VERIFICATION
+
+Ran Worker 3's own `nwr_release_gate_smoke.ps1 -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` unmodified.
+**Both previously-known findings reproduced in EXACTLY their documented
+form, neither fixed nor worsened:**
+- `npm run check:resources` still fails with the identical assertion --
+  `redraft allowlisted resource contains owner marker "Spencer Colety"` in
+  the same `NWR_DATA_GOVERNANCE.json` file under the same Freeze V7
+  bundled-seed path Worker 2/3 already identified. Native build attempt
+  skipped (not requested); `cargo check` still compiles cleanly (Rust
+  toolchain itself remains provably not the blocker).
+- `POST /api/v1/redraft/weekly-home-actions` still returns **HTTP 500**
+  for the real Sleeper-imported Fantasy Gamers profile with an active
+  roster, same root cause Worker 3 already pinpointed
+  (`redraft_kdst_streamer(...).data["positions"]` is a list, not a dict,
+  in `redraft_weekly_home_actions`) -- confirmed via the exact same error
+  string in this run's own log, not re-derived from memory. **Status:
+  confirmed unchanged -- not fixed, not worse.**
+- Bridge smoke itself: **PASS.** Real backend + real production `vite
+  build`/`vite preview`, real read-only Sleeper import (before/after
+  byte-diff of `league`/`rosters`/`users` against `api.sleeper.app`:
+  IDENTICAL, 0 writes), and every other surface smoke-tested by the
+  script (`league_workspace_context`, `my_roster`, `opponent_rosters`,
+  `data_health`, `player_availability_status`, `weekly_lineup_week1`,
+  `waivers`, `free_agents`, `trade_finder`) returned real 200s with real
+  data. This pass's own live Chrome checks above additionally exercised
+  the NEW surfaces the script itself doesn't click through (Attention
+  Center, Trade Package Search, Decision History, the data-notice strip)
+  -- all real, all rendering correctly.
+
+### 4. FULL REGRESSION
+
+- `npx vitest run --no-file-parallelism` (full monorepo, `desktop/`):
+  **362/362 passing, 28/28 files** -- matches Worker 10's own final count
+  exactly (no drift since the last commit, as expected with zero new
+  commits this pass).
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  **clean.**
+- `pytest tests/test_desktop_application_api.py`: **46 passed, 4 failed**
+  -- the SAME 4 pre-existing failures documented in this ledger's own
+  baseline since P0-2 (`test_dynasty_facade_composes_real_governed_
+  workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+  trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+  contract`, `test_facade_has_no_streamlit_or_app_component_dependency`),
+  confirmed by exact test-name match against the ledger's documented
+  baseline list, not re-derived from a stash diff this time (no code
+  changed this pass to diff against). Zero new failures.
+- `pytest` across every shift-touched backend suite in one run
+  (`test_sleeper_league_context_service`,
+  `test_league_workspace_context_sleeper_p1_1`,
+  `test_league_workspace_context_service`,
+  `test_in_season_decision_trace_service`,
+  `test_prospective_recommendation_ledger_v1`,
+  `test_trade_package_search_facade_wiring`,
+  `test_trade_package_search_service`, `test_trade_finder_service`,
+  `test_redraft_trade_analysis_service`,
+  `test_desktop_facade_architecture_wiring`,
+  `test_player_availability_status_consumer_consistency`,
+  `test_player_availability_status_service`,
+  `test_live_player_intelligence_shadow_v1_service`,
+  `test_decision_envelope_consumer_migration`): **131/131 passing.**
+- Native-Tauri packaging check: `check:resources` fails identically to
+  Worker 3's own documented finding (see section 3) -- confirmed via this
+  pass's own fresh run of the same script, not assumed unchanged.
+
+### CONSOLIDATED BUG LIST -- WHOLE SHIFT (found AND fixed, pulled from all
+10 prior entries)
+
+1. **(Work Unit 0/P0-1)** `LeagueSyncTab`/`DataHealthPage` crashed on a
+   malformed/missing `DataHealthCategory.status` (`.replaceAll()` on
+   `undefined`) -- fixed via a shared `dataHealthStatusLabel` helper (2
+   call sites, `league.tsx` + `pages.tsx`).
+2. **(Work Unit 0/P0-1)** Player Drawer's `actionToBadgeTone` crashed on a
+   malformed/missing `DecisionBundleCandidate.action` (`.toUpperCase()` on
+   `undefined`) -- fixed with a null-safe guard + honest "Unknown" label
+   fallback (`draft-room-v2.tsx`).
+3. **(P0-2)** The default bundled Redraft projection seed (608 rows) had
+   a real, independently-confirmed EXPIRED governance approval
+   (`valid_until` 2026-09-09), silently failing `redraft_bootstrap()` in
+   any fresh store -- fixed by migrating to the already-owner-approved
+   Freeze V7 packet (564 rows, `valid_until` 2026-10-08); no new approval
+   fabricated.
+4. **(P0-2)** A real CRLF-vs-LF checkout hazard would have silently
+   broken the Freeze V7 receipt's hash binding in this worktree
+   (`core.autocrlf=true`) -- fixed via a canonical LF-normalized packet +
+   `.gitattributes eol=lf` rule.
+5. **(P0-3)** The Windows native-bundle resource map and its allowlist
+   mirror still pointed at the OLD 608-row seed after P0-2's migration
+   (would have bundled stale, expired-approval data into a real installer)
+   -- fixed (both files repointed to the Freeze V7 path).
+6. **(P1-2)** Attention Center's first live render showed all 5 (later 8)
+   leagues as "NEEDS YOU NOW" purely because every profile lacked an ADP
+   import -- a real severity-calibration bug (a uniformly-"on fire" signal
+   is not a useful signal) -- fixed (only `LEAGUE_SYNC` degradation is
+   URGENT; every other category is WATCH).
+7. **(P1-4)** `TRADE_FINDER` and `TRADE_PACKAGE_SEARCH` were both already
+   being passed to `record_decision_trace(tool=...)` at real call sites,
+   but neither string was a member of the old `TOOL_TYPES` frozenset --
+   every such call silently raised `DecisionTraceError`, swallowed by the
+   facade's best-effort wrapper, so **both tools recorded zero real traces
+   in production** despite looking fully wired (a real `traceId: null`
+   every time) -- fixed (both added to `TOOL_TYPES`).
+
+**Found and explicitly DISCLOSED, deliberately left unfixed (out of each
+pass's own scope), still open as of this final pass:**
+
+8. **(P0-3, Worker 3)** `POST /api/v1/redraft/weekly-home-actions` returns
+   HTTP 500 for a Sleeper-imported profile with an active roster
+   (`redraft_kdst_streamer(...).data["positions"]` is a list, not a
+   dict). **Reconfirmed unchanged by this final pass.**
+9. **(P0-3, Worker 3)** `npm run check:resources` fails at the
+   owner-privacy/allowlist guard because the bundled governance receipt's
+   own audit trail legitimately contains the real owner's name -- a real
+   product/governance decision for the owner, not something any
+   verification pass should decide unilaterally. **Reconfirmed unchanged
+   by this final pass.**
+10. **(P1-3, Worker 6/7)** The old "Open in Analyze" cross-tab button
+    passes canonical (GSIS-style) player ids into an endpoint that
+    requires raw Sleeper ids -- always fails
+    (`TRADE_ANALYSIS_IDENTITY_UNRESOLVED`) for opponent-side players;
+    needs an additive `RedraftOpponentPlayer.canonicalPlayerId` backend
+    field to fix correctly. Not carried into the new Trade Package cards
+    (deliberately omitted there), not fixed at its original site.
+
+### OPEN ITEMS REMAINING -- WHOLE SHIFT (consolidated)
+
+1. `POST /api/v1/redraft/weekly-home-actions` 500 bug (item 8 above) --
+   real, disclosed, unfixed, confirmed unchanged by this pass.
+2. `check:resources` owner-marker privacy-gate block (item 9 above) --
+   real, disclosed, unfixed, confirmed unchanged by this pass; a genuine
+   owner/governance decision, not a code bug.
+3. "Open in Analyze" canonical-vs-Sleeper-id gap (item 10 above) --
+   real, disclosed, unfixed.
+4. Weekly starting-lineup impact is approximated (marginal-utility
+   model's own starting-lineup-value), not the real per-week lineup
+   optimizer, anywhere `evaluate_trade`/Trade Package Search render it --
+   disclosed by Worker 6, unchanged.
+5. Trade Package Search is capped at 2-for-2; 3+-player packages are
+   explicitly out of scope (Worker 6's disclosed boundary).
+6. `DRAFT` is a valid `TOOL_TYPES` member with no live call site wired
+   (Worker 8's disclosed remainder; draft recommendation logic is a hard
+   boundary, deliberately not touched).
+7. The append-only owner-action/outcome decision-trace write paths are
+   real and callable but no UI control captures either yet (Worker 8's
+   disclosed remainder).
+8. `shell-notices.ts`'s `ALWAYS_PRESENT_DISCLOSURE_TITLES` matches by
+   exact string against `desktop_facade.py`'s real notice titles -- a
+   real, disclosed fragility if that backend wording ever changes
+   (Worker 10).
+9. No genuinely "Current" (zero-issue) league exists anywhere in this
+   repo's real current data state (every profile still carries the same
+   real 7-blocked-rookie registry gap / missing ADP import) -- real,
+   correct, just not organically observable live right now (Worker 10).
+10. Dynasty app's own inline data-notices (`home.tsx`) were never given
+    the same shell-level compact-chip treatment as Redraft (Worker 10's
+    disclosed scope boundary).
+11. RotoWire/SportsDataIO/Sportradar remain real
+    `NEEDS_OWNER_CONTRACT` options if the owner wants a paid live
+    player-intelligence provider (Worker 9's bakeoff doc has the full
+    vendor list).
+12. The Live Player Intelligence shadow module
+    (`live_player_intelligence_shadow_v1_service.py`) is 100% inert and
+    unwired by design -- surfacing it anywhere in the UI is a new,
+    separate, deliberate future decision (Worker 9).
+13. `writeBehavior.replaceAll(...)` (2 sites,
+    `pages.tsx`/`improve-team.tsx`) and Dynasty's own `decisions.tsx` (2
+    sites) are structurally-identical-risk `.replaceAll()` call sites on
+    non-optional-`string` contract fields, deliberately left unhardened
+    (lower-confidence/lower-reachability than the two P0-1 fixed --
+    Worker 1's own disclosed triage).
+14. The Compare/Suggestions tables' `String(row.action)` coercion
+    (`draft-room-v2.tsx`) is crash-safe but not leak-safe -- a genuinely
+    missing `action` would render the literal string `"undefined"` rather
+    than an honest "Unknown" (Worker 1's disclosed cosmetic gap).
+15. Trade Package Search's softened-error trial state was confirmed via a
+    mocked trigger, not a fully organic live one, in Worker 7's own
+    session (Worker 7's disclosed remainder).
+
+### ISSUES FOUND AND FIXED THIS PASS
+
+None. This pass found zero new regressions -- every check (drift, both
+known release-gate findings, full regression) reproduced exactly the
+state every prior worker already documented.
+
+### CONSOLE ERRORS THIS PASS
+
+**0** -- across all Chrome-driven endurance trials (10 nav loops/90
+navigations, 20 drawer cycles, 6 deep-link reloads, 3 Attention Center
+aggregation runs, 1 live Trade Package Search, 2 UI league switches),
+checked via `read_console_messages` with no pattern filter (all message
+types, not just errors) after each trial group.
+
+### REAL OWNER STATE MODIFIED
+
+**NO.** Every league touched this pass was either the real, read-only
+Fantasy Gamers Sleeper league (structurally read-only client, before/
+after Sleeper byte-diff already proven by the smoke script itself) or
+this worktree's own pre-existing local test profiles (never the owner's
+real `%LOCALAPPDATA%\com.ninerswarroom.redraft` install, never touched
+this pass). No new profile was created. No draft was started/advanced on
+any profile. The active profile was restored to Fantasy Gamers (its
+state at the start of this pass) and confirmed via a fresh backend read
+before the backend was stopped.
+
+### READY FOR OWNER REVIEW
+
+**YES.** Ten prior workers' real, verified feature/fix work plus this
+final consolidation pass's whole-shift drift check, endurance contract,
+release-gate re-verification, and full regression all confirm the same
+honest picture: legitimate, scoped, hard-boundary-respecting backend
+additions only; zero drift into scoring/legality/lifecycle/snapshot/
+envelope/status-authority logic; the app survives realistic multi-league,
+multi-navigation, multi-drawer, cold-deep-link usage with zero console
+errors; and both real, disclosed remainders (`weekly-home-actions` 500,
+`check:resources` privacy gate) are exactly where they were at the start
+of this pass -- not fixed, not worse.
