@@ -4678,20 +4678,50 @@ class DesktopBackendFacade:
 
         try:
             kdst_payload = self.redraft_kdst_streamer(week=week).data
-            for position, action_rows in kdst_payload.get("positions", {}).items():
-                for row in action_rows:
-                    if row.get("recommendation") == "ADD":
-                        actions.append(
-                            {
-                                "category": "STREAMER",
-                                "priority": 5,
-                                "summary": f"Stream {position}: {row.get('playerName', row.get('player_name', ''))}",
-                                "detail": row,
-                            }
-                        )
-                        break  # one real top streamer suggestion per position, not the whole board
+            # NWR Post-UI closure pass (bug 1): `redraft_kdst_streamer` returns
+            # `positions` as a FLAT LIST of decision-envelope rows (each row
+            # self-identifies its own "position" key), not a
+            # {"K": [...], "DST": [...]} dict -- the same camelCase-key-
+            # mangling hazard already documented on `redraft_kdst_streamer`
+            # itself (see its own `positions`/`traceIds` comments). This call
+            # site still assumed the old dict shape and called `.items()` on
+            # a list, raising an uncaught `AttributeError` that propagated
+            # past this method's `except FacadeError` handlers into a bare
+            # HTTP 500 -- reproduced against a real Sleeper-imported active
+            # roster. Fixed by iterating the real list shape directly; a
+            # position's first "ADD" row is still its one top streamer
+            # suggestion (matches the prior per-position `break` exactly,
+            # since `streamer_actions` only ever marks one row per position
+            # as "ADD").
+            seen_streamer_positions: set[str] = set()
+            for row in kdst_payload.get("positions") or []:
+                row_position = row.get("position")
+                if row_position in seen_streamer_positions:
+                    continue
+                if row.get("recommendation") == "ADD":
+                    actions.append(
+                        {
+                            "category": "STREAMER",
+                            "priority": 5,
+                            "summary": f"Stream {row_position}: {row.get('playerName', row.get('player_name', ''))}",
+                            "detail": row,
+                        }
+                    )
+                    seen_streamer_positions.add(row_position)
         except FacadeError as exc:
             unavailable.append({"section": "STREAMER", "reason": exc.message})
+        except (AttributeError, TypeError, KeyError) as exc:
+            # Defensive, honest degradation only -- NOT a blanket try/except
+            # around the whole method. If the streamer payload's shape ever
+            # drifts again, this section is disclosed as unavailable rather
+            # than taking down every other real Weekly Home action (lineup,
+            # waivers, trades) with an uncaught 500.
+            unavailable.append(
+                {
+                    "section": "STREAMER",
+                    "reason": f"K/DST streamer actions were in an unexpected shape and were skipped ({exc}).",
+                }
+            )
 
         free_agents_payload: dict[str, Any] | None = None
         try:
