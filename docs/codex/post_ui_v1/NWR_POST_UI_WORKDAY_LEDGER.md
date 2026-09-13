@@ -12,10 +12,159 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Eight commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Nine commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
-backend, then P1-3 UI, then P1-4 below) -- run `git log -1` for the exact
-hash.
+backend, then P1-3 UI, then P1-4, then P1-5 below) -- run `git log -1` for
+the exact hash.
+
+## P1-5 (Live Player Intelligence Provider Bakeoff) -- 2026-09-12/13
+
+**Worker 9's scope: research only, plus shadow ingestion IF a genuinely
+free/admissible source existed.** No purchase, no API-key signup, no paid
+contract. Full research doc:
+`docs/codex/post_ui_v1/NWR_PLAYER_INTELLIGENCE_PROVIDER_BAKEOFF_V1.md`.
+
+**RotoWire, SportsDataIO, Sportradar -- all real, all researched, all
+NEEDS_OWNER_CONTRACT.** None has a self-serve free/cheap tier suitable for
+a live availability feed: RotoWire has no public pricing or self-serve
+signup at all (confirmed via its own syndication page and OpticOdds' real
+distribution docs -- "Your OpticOdds API Key will not work with RotoWire...
+contact sales"); SportsDataIO has a real ~$99-149/mo self-serve
+DiscoveryLab tier per third-party pricing trackers, but it is
+next-day-delayed (not real-time) and still a real recurring paid signup;
+Sportradar is fully enterprise/quote-gated with no public pricing found
+anywhere. FantasyData/FantasyPros (this repo's own prior May 2026 research,
+a different route/usage-data focus) remain the same NEEDS_OWNER_CONTRACT
+status, not re-priced this pass. A full vendor/contact/action list for the
+owner is in the doc.
+
+**Two REAL, free, admissible sources found beyond the three named
+providers -- ADMIT (shadow-only), and actually built:**
+1. **nflverse's official weekly injury report** (`injuries_<season>.csv`,
+   the same nflverse family this repo already trusts everywhere else) --
+   real, live-fetched Week 1 2026 file (182 rows) carries NWR's own
+   canonical `gsis_id` directly, real official `report_status`
+   (Out/Doubtful/Questionable) and, importantly, REAL populated
+   `practice_status` (Full/Limited/DNP -- 182/182 non-null) -- a genuine
+   practice-participation signal NWR's manual overrides don't track at
+   all. Covers 52/564 (9.2%) of the real canonical pool in Week 1, which
+   is EXPECTED to be small (only actually-injured players appear on the
+   report), and 100% of those 52 carry a real practice_status. Free, no
+   key, historical back to 2009. One real, disclosed schema-drift finding:
+   the published data dictionary describes a `date_modified` column that
+   is NOT present in the actual live-fetched file.
+2. **Sleeper's public `players/nfl` catalog** (the SAME free, keyless
+   endpoint this repo already calls elsewhere, and the same provider NWR
+   already reads live for real Sleeper leagues) -- real, live-fetched
+   catalog (12,227 players, 14.65MB, larger than the docs' stated ~5MB).
+   Real `injury_status`/`status` fields cover Questionable/IR/Out/PUP/
+   **Suspended (12 real cases)**/Doubtful; real `depth_chart_position/
+   order`. Real `gsis_id` field direct-matches 93/564 canonical players;
+   the SAME `_identity` name/position/team matcher
+   `waiver_engine_service.resolve_roster_canonical_ids` already uses
+   brings real identity-mapping feasibility to 481/564 = 85.3% of the
+   canonical pool. **`practice_participation` exists in the schema but is
+   empirically ~0% populated (1 non-null value out of 12,227 real
+   players)** -- correctly NOT treated as a practice-participation source;
+   nflverse fills that gap instead. Real caveat: free for NON-COMMERCIAL
+   use only per Sleeper's own docs -- fine for NWR today (a personal
+   desktop app), flagged for re-check if NWR is ever distributed/sold.
+   Sleeper's own docs require caching (fetch at most once/24h) -- enforced
+   for real by this pass's fetch script (verified live: an immediate
+   second fetch attempt was correctly SKIPPED).
+
+**Real comparison against NWR's 3 actual manual overrides on file** (run
+through this pass's shipped code, not estimated): Jayden Higgins
+(`SEASON_OUT`, ACL) -- Sleeper's live data independently corroborates
+every field (`status=Inactive`, `injury_status=IR`,
+`injury_body_part=Knee - ACL`, team `HOU`). Elijah Mitchell
+(`NOT_WITH_TEAM`) -- a real Sleeper entry exists (`team=None,
+injury_status=Questionable`) but the shipped matcher HONESTLY reports it as
+`UNMATCHED_NO_TEAM` rather than guessing an identity for a team-less
+player -- a real, concrete illustration of why manual verification must
+stay authoritative even when raw automated data exists. Kayshon Boutte
+(`TEAM_CORRECTION` -> HOU) -- Sleeper agrees on team but produces no shadow
+record at all (he's healthy; team corrections are outside this pass's
+injury/availability-signal scope by design, not a source failure).
+
+**Shadow ingestion built, genuinely inert (verified, not just asserted):**
+`src/services/live_player_intelligence_shadow_v1_service.py` (pure,
+network-free mapping/matching/report functions -- reuses the existing
+`_identity` normalizer, invents no new identity heuristic) +
+`scripts/fetch_live_player_intelligence_shadow_snapshot_v1.py` (the ONLY
+real network I/O, writes RAW snapshots to a new, clearly-separate,
+repo-wide-gitignored `local_exports/live_player_intelligence_shadow_v1/`
+location, nowhere near the real override config file) +
+`tests/test_live_player_intelligence_shadow_v1_service.py` (11 tests, all
+passing). Two hard-boundary proofs, both real: (1) a source-level static
+grep-style proof that `desktop_facade.py`/`server.py`/
+`player_availability_status_service.py`/`current_player_status_overrides_
+service.py`/`redraft_engine_v1_service.py`/`shadow_numeric_authorities_
+service.py` never import the new module; (2) calling the REAL
+`load_player_availability_statuses`/`player_availability_authority_health`
+functions before and after writing a real shadow snapshot probe file to
+the new location, asserting byte-identical (`==`) output both times.
+`git status --porcelain` before commit showed only 4 new files (the
+service, the script, the test file, the doc) -- zero existing files
+modified.
+
+**Precedence design (PROPOSAL ONLY, not implemented anywhere):**
+`MANUAL_VERIFIED_OVERRIDE` (always wins, unconditionally) >
+`AUTOMATED_SHADOW_SOURCE` (nflverse preferred for injury designation/
+practice state; Sleeper preferred for team/IR-PUP-Suspended/roster status;
+never auto-applied to any ranking/recommendation path) > `NO_SIGNAL`
+(default, today's real behavior). Also returned as structured data by
+`precedence_design()` for a future promotion pass to implement against
+directly. Promotion is explicitly a future, separate, deliberate decision
+-- not performed by this pass.
+
+**Tests:** `pytest tests/test_live_player_intelligence_shadow_v1_service.py`:
+11/11 passing. `pytest tests/test_player_availability_status_consumer_
+consistency.py tests/test_player_availability_status_service.py`: 25/25
+passing (unaffected, confirms no drift in the real authority this pass
+shadows). `pytest tests/test_desktop_application_api.py`: 46 passed, 4
+failed -- confirmed the SAME 4 pre-existing failures already documented in
+this ledger's own baseline (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`);
+zero new regressions. No frontend files touched -- `tsc -b`/`vitest run`
+not run (this pass's own stated condition for skipping them).
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/the lifecycle resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus`'s actual authority semantics were all either
+read-only (to understand the shape being shadowed) or genuinely untouched
+-- confirmed via `git status --porcelain` showing zero modified files, only
+4 new ones. No merge/push/deploy. No API key created or stored anywhere
+(`.env` does not exist in this worktree; `.env.example`'s
+`SPORTSDATAIO_API_KEY`/`ROTOWIRE_EXPORT_ROOT` placeholders remain empty,
+confirmed).
+
+**Disclosed, non-blocking:** this pass's own real fetch-script run left two
+real raw snapshot files under `local_exports/live_player_intelligence_
+shadow_v1/` (gitignored, not committed, same pattern as every other
+worker's local test-profile artifacts already disclosed elsewhere in this
+ledger) -- harmless, real evidence the fetch script works, not required for
+any test to pass (all tests use inline fixtures, no network).
+
+**Open issues for Worker 10 (Data Notice Strip / minor polish):**
+1. This pass's shadow module is 100% inert and unwired by design -- if a
+   future pass ever wants to surface shadow-source findings anywhere in
+   the UI (e.g. an optional "community source suggests X" hint, clearly
+   distinguished from NWR's own verified overrides), that is a new,
+   separate, deliberate decision this pass explicitly does not make or
+   recommend making.
+2. RotoWire/SportsDataIO/Sportradar all remain real, live options if the
+   owner wants to pursue a paid provider -- the exact vendor/contact/action
+   list is in the bakeoff doc's own table, not reproduced here.
+3. ESPN's unofficial API was noted but not deep-dived (no ToS, real risk)
+   -- a real, disclosed remainder if the two admitted free sources above
+   ever prove insufficient.
+4. FantasyData/FantasyPros pricing was not re-verified this pass (reused
+   this repo's own prior May 2026 research) -- a real, disclosed gap if a
+   future pass wants current 2026 numbers for those two specifically.
 
 ## P1-4 (Prospective Recommendation Ledger V1) -- 2026-09-12/13
 
