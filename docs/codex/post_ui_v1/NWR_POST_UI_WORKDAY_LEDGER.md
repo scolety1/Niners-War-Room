@@ -12,10 +12,199 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Ten commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Twelve commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
-backend, then P1-3 UI, then P1-4, then P1-5, then P2-1 below) -- run
-`git log -1` for the exact hash.
+backend, then P1-3 UI, then P1-4, then P1-5, then P2-1, then Worker 11's
+final shift consolidation (docs-only, no code commit), then Worker A's
+closure pass below) -- run `git log -1` for the exact hash.
+
+## Closure pass (bug 1: weekly-home-actions 500; bug 2: canonical-vs-Sleeper
+identity boundary) -- 2026-09-13
+
+**Worker A's scope: two real, previously-disclosed bugs only (branch
+`upgrade/nwr-post-ui-product-v1-20260912`, continuing directly on top of
+Worker 11's `e06e4a26`), bug-fix only, no new feature scope.** Both bugs
+were open items 1 and 3 in Worker 11's consolidated list (ledger items 8
+and 10). Two commits: `35c1adc5` (bug 1), `952787a8` (bug 2).
+
+**BUG 1 (P0) -- FIXED.** Root cause confirmed by direct reproduction (not
+assumed from the ledger): `redraft_weekly_home_actions`
+(`src/application/desktop_facade.py`) built its STREAMER section from
+`redraft_kdst_streamer(...).data["positions"]` assuming a
+`{"K": [...], "DST": [...]}` dict; it is actually a flat list of
+decision-envelope rows (each row self-identifying its own "position"
+field) -- a shape already established on `redraft_kdst_streamer` itself
+(to fix a different, already-resolved camelCase-key-mangling hazard) but
+never propagated to this one call site. The resulting `AttributeError`
+was not a `FacadeError`, so it escaped every existing `except FacadeError`
+handler and surfaced as a bare HTTP 500. Fixed by iterating the real flat
+list directly (functionally identical "first ADD row per position"
+behavior, verified against `streamer_actions()`'s own one-ADD-per-position
+guarantee), plus a second, narrow `except (AttributeError, TypeError,
+KeyError)` around ONLY the STREAMER section (not the whole method) so a
+future shape drift degrades that one section honestly instead of 500ing
+the whole response. Permanent regression fixture added
+(`tests/test_weekly_home_single_snapshot.py`) matching the real live
+response shape exactly, plus a second test proving a genuinely malformed
+shape still degrades honestly rather than crashing.
+
+**BUG 1 LIVE VERIFICATION:** real, read-only Fantasy Gamers Sleeper
+league -- `POST /api/v1/redraft/weekly-home-actions {"week":1}` ->
+HTTP 200 (was 500), 9 real actions (including 2 real STREAMER rows: "Stream
+K: Cam Little", "Stream DST: Jacksonville Jaguars"), `unavailableSections:
+[]`, a real non-null `leagueSnapshotId`. Independently re-confirmed via
+this project's own `nwr_release_gate_smoke.ps1` instrumented run against
+the same real league (`weekly_home_actions_week1 status=200`). Rendered
+live in Chrome (Weekly Home's "NWR Actions" panel), zero console messages
+on a fresh reload. Note: the 2 STREAMER rows are real but rank below this
+page's own top-5 display cutoff for this league's current 9-action set
+("Showing the top 5 of 9 ranked actions this week") -- confirmed present
+in the raw API response and via direct backend-level checks, not
+independently confirmed visible in the top 5 of THIS particular render
+(by design, not a bug).
+
+**BUG 2 -- FIXED.** Root cause traced to the actual identity boundary this
+codebase already establishes elsewhere: `RedraftMyRosterPlayer` carries
+both `sleeperPlayerId` (raw provider id) and `canonicalPlayerId` (NWR's own
+GSIS-style id); `RedraftOpponentPlayer` had ONLY `sleeperPlayerId`. Since
+`TradeFinderCandidate.myGivePlayerId`/`opponentGivePlayerId` are actually
+canonical ids (confirmed by reading `trade_finder_service.
+find_win_win_trades`, which operates entirely in canonical-id space), the
+old "Open in Analyze" button (`TradeFinderCard`, in-season.tsx) had no
+correct id to reach for and passed the canonical ones through
+`giveSleeperId`/`receiveSleeperId` query params straight into
+`redraftTradeAnalysis`, which requires real raw Sleeper ids -- an
+always-fails path (`TRADE_ANALYSIS_IDENTITY_UNRESOLVED`) for the opponent
+side. Fixed at the root: (1) `RedraftOpponentPlayer` now carries
+`canonicalPlayerId`/`identityStatus`, computed via the SAME
+`resolve_roster_canonical_ids` matcher every other canonical-id call site
+in this module already uses; (2) `TradeFinderCandidate` now ALSO carries
+`mySleeperPlayerId`/`opponentSleeperPlayerId`, reverse-mapped from the same
+resolution `redraft_trade_finder` already computes; (3) the "Open in
+Analyze" link now resolves through a new pure function
+(`tradeFinderAnalysisLinkTarget`, trades-explain.ts) using those real
+Sleeper ids, with an honest "unavailable" message (never a
+guaranteed-to-fail link, never a silent canonical-id substitution) when
+either side can't be resolved. **Nearby-instance search performed and
+disclosed:** every other `giveSleeperId=`/`receiveSleeperId=` link site
+(My Roster's "Add to Trade Analysis", Opponent Rosters' "Add to trade")
+already used real Sleeper ids correctly -- no other instance of this exact
+mistake found. The live "Find Trades" tab (trades.tsx,
+`TradePackageCandidate`) still deliberately has no "Open in Analyze"
+button at all (Worker 7's own prior disclosed omission, to avoid
+replicating this bug in the new UI) -- intentionally NOT added by this
+pass (would be new feature scope, not a bug fix); a future pass could
+revisit that now that the underlying id-boundary gap is closed.
+
+**BUG 2 LIVE VERIFICATION:** real Fantasy Gamers league --
+`GET /api/v1/redraft/opponent-rosters` now returns real
+`canonicalPlayerId`/`identityStatus` per opponent player (real MATCHED
+examples: Derrick Henry, Jaylen Warren; a real, honest
+UNMATCHED_IDENTITY case also observed for a K/DST/QB -- a real name-format
+gap, not hidden or fabricated around). `GET /api/v1/redraft/trade-finder`
+now returns distinct `mySleeperPlayerId`/`opponentSleeperPlayerId`
+alongside the pre-existing canonical ids on every real candidate. Direct
+A/B proof against the real backend: the FIXED path
+(`redraft-trade-analysis` called with the new real Sleeper ids) -> HTTP
+200 with correct real gives/receives; the OLD BUGGY path (same call with
+the canonical ids in the Sleeper params, exactly what the pre-fix button
+sent) -> HTTP 409 `TRADE_ANALYSIS_IDENTITY_UNRESOLVED`, confirming both
+the original failure mode and that the fix actually closes it.
+Render-tested live in Chrome: navigated to the real `/trade-analysis?
+giveSleeperId=...&receiveSleeperId=...` deep link built from the corrected
+real ids (the same contract the repaired button now produces) -- the
+Analyze tab pre-filled both players and produced a complete real
+before/after verdict on "Analyze trade", zero console messages across a
+fresh reload. Disclosed precisely: `TradeFinderCard`'s own button is
+UNROUTED in the current build (Find Trades is served by trades.tsx's own
+tab today; `TradeFinderPage`/`TradeFinderCard` remain an unrouted legacy
+fallback per an earlier worker's own disclosed consolidation, still read
+live by Weekly Home's TRADE action cards via `redraft_trade_finder`) --
+this render test exercises the same fixed query-param contract the button
+constructs, not a literal click on the button inside a currently-live
+route.
+
+**Tests:** `tests/test_redraft_identity_boundary_opponent_and_trade_finder.py`
+(new, 6 tests, real bootstrapped Freeze V7 governed ranking, real player
+rows -- not synthetic doubles): matched/unmatched-catalog/
+unmatched-ranking opponent rows, a Trade Finder candidate carrying correct
+per-side Sleeper ids, the full canonical-id action flow end to end (real
+success + the old-shape failure both proven), and a stale/wrong provider
+id caught by the existing check. `trades-explain.test.ts` (+5 tests):
+matched/unmatched/stale-id-never-substituted/end-to-end for
+`tradeFinderAnalysisLinkTarget`. `test_weekly_home_single_snapshot.py`
+(+2 tests, bug 1's regression fixture). `attention-center.test.ts`
+fixtures updated for the additive opponent-roster fields (no assertion
+changes).
+
+`npx vitest run --no-file-parallelism` (full monorepo): **367/367 passing,
+28/28 files** (362 baseline + 5 new `trades-explain.test.ts` tests; the +2
+`test_weekly_home_single_snapshot.py` tests and the +6 new identity-
+boundary test file are pytest, not vitest). `npx tsc -b
+apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean.
+`pytest tests/test_desktop_application_api.py`: 46 passed, 4 failed --
+confirmed the exact same 4 pre-existing failures this ledger's own
+baseline already documents; zero new regressions. Targeted pytest across
+every touched/adjacent backend suite (weekly home snapshot, the new
+identity-boundary file, architecture wiring, player-availability
+consumer consistency, trade finder, trade package search facade wiring):
+49/49 passing.
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality,
+`redraft_trade_analysis_service.evaluate_trade`/`trade_finder_service.
+find_win_win_trades`'s own math (read-only reuse of already-computed
+values), `LeagueSnapshot`/`LeagueWorkspaceContext`/the lifecycle
+resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics
+were never touched -- only additive fields were added to
+`RedraftOpponentPlayer`/`RedraftOpponentRostersResult`/
+`TradeFinderCandidate`. `git diff --stat e06e4a26 HEAD -- src/` touches
+exactly one file (`desktop_facade.py`), both hard-boundary-adjacent
+services (`trade_finder_service.py`, `redraft_trade_analysis_service.py`,
+`fantasypros_kdst_consensus_service.py`) show zero diff. No merge/push/
+deploy.
+
+**Sleeper writes: 0**, verified the same way every prior worker in this
+project has: structural (`SleeperHttpClient` defines only `get_json()`,
+no write method exists on the class), grep (no POST/PUT/PATCH/DELETE
+targets `api.sleeper.app` anywhere in `src/`), and a real before/after
+byte-diff of `league`/`rosters`/`users` fetched directly from
+`api.sleeper.app` around this session's live Sleeper import (via the
+release-gate smoke script's own instrumented check) -- IDENTICAL.
+
+**Open issues for the next worker (privacy-safe Tauri packaging design):**
+1. `npm run check:resources` still fails at the owner-privacy/allowlist
+   guard because the bundled `NWR_DATA_GOVERNANCE.json` governance
+   receipt's own audit trail legitimately contains the real owner's name
+   -- unchanged by this pass (out of scope; a real product/governance
+   decision for the owner, not a code bug this or any prior verification
+   pass should decide unilaterally). This is presumably central to the
+   next worker's own privacy-safe packaging design task.
+2. The live "Find Trades" tab (`TradePackageCandidate` cards, trades.tsx)
+   still has no "Open in Analyze" button -- the underlying id-boundary gap
+   this pass closed would now support adding one correctly (via the same
+   `youSend`/`youReceive` canonical ids plus a parallel Sleeper-id
+   resolution), but doing so was judged new feature scope, not a bug fix,
+   and was deliberately not attempted.
+3. `TradeFinderPage`/`TradeFinderCard` (in-season.tsx) remain an unrouted
+   legacy fallback -- fixed anyway per this pass's own directive (fix the
+   root cause, not just the reachable path), and still read live by
+   Weekly Home's own TRADE action cards via `redraft_trade_finder`
+   (`home-action-explain.ts`), but the "Open in Analyze" button itself
+   could not be click-tested inside a currently-live route; verified via
+   an equivalent live deep-link instead (see BUG 2 LIVE VERIFICATION
+   above) and via 6 new backend + 5 new frontend unit tests.
+4. The real K/DST/QB `UNMATCHED_IDENTITY` case observed live on Opponent
+   Rosters (bug 2 verification) is a real, disclosed name-format identity
+   gap in the existing `resolve_roster_canonical_ids` matcher (e.g. a
+   Sleeper D/ST catalog name not matching the ranking pool's own naming) --
+   not investigated further by this bug-fix-only pass; a future pass could
+   look at whether the identity matcher itself needs a D/ST-naming
+   improvement (a real, disclosed remainder, not new evidence of a
+   regression).
+5. Every other real, disclosed remainder from Worker 11's consolidated
+   "OPEN ITEMS REMAINING -- WHOLE SHIFT" list (items 2, 4-15) is untouched
+   and still open exactly as documented there.
 
 ## P2-1 (Data Notice Strip) -- 2026-09-12/13
 
