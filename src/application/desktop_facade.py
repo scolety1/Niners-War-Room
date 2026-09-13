@@ -229,6 +229,11 @@ from src.services.waiver_engine_service import (
 )
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
 from src.services.trade_finder_service import find_win_win_trades
+from src.services.trade_package_search_service import (
+    search_improve_position_packages,
+    search_target_player_packages,
+    search_win_win_packages,
+)
 from src.services.in_season_decision_trace_service import load_decision_traces, record_decision_trace
 from src.services.decision_envelope_service import build_decision_envelope
 from src.services.league_workspace_context_service import (
@@ -3812,6 +3817,271 @@ class DesktopBackendFacade:
                     }
                     for candidate in results
                 ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
+    def redraft_trade_package_search(
+        self,
+        *,
+        mode: str,
+        target_player_sleeper_id: str | None = None,
+        position: str | None = None,
+        limit: int | None = None,
+    ) -> FacadePayload:
+        """Trade Package Search (NWR Post-UI Product V1, P1-3) -- the SEARCH
+        layer Trade Finder lacked: generates bounded 1-for-1/2-for-1/
+        1-for-2/2-for-2 candidate packages across every real opponent
+        roster, scored by calling the SAME, unmodified
+        `redraft_trade_analysis_service.evaluate_trade` used by Trade
+        Analysis (never a new scoring formula). See
+        `src/services/trade_package_search_service.py` for the full
+        algorithm and
+        `docs/codex/post_ui_v1/TRADE_PACKAGE_SEARCH_QUALITY_GATES_P1_3.md`
+        for the preregistered quality gates every returned candidate
+        satisfies. No acceptance-probability field is ever computed.
+        Read-only: never writes to Sleeper.
+        """
+
+        self._require_mode("redraft")
+        if mode not in ("TARGET_PLAYER", "FIND_WIN_WIN", "IMPROVE_POSITION"):
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_INVALID_MODE",
+                "mode must be one of TARGET_PLAYER, FIND_WIN_WIN, IMPROVE_POSITION.",
+                status=422,
+            )
+        if mode == "TARGET_PLAYER" and not target_player_sleeper_id:
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_TARGET_REQUIRED",
+                "TARGET_PLAYER mode requires targetPlayerSleeperId.", status=422,
+            )
+        if mode == "IMPROVE_POSITION" and not position:
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_POSITION_REQUIRED",
+                "IMPROVE_POSITION mode requires position.", status=422,
+            )
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_RANKINGS_UNAVAILABLE",
+                "NWR rankings are unavailable for this profile; Trade Package Search requires "
+                "the governed ranking.",
+                status=409,
+            ) from exc
+        try:
+            sleeper = SleeperHttpClient()
+            rosters = sleeper.get_json(f"league/{league_id}/rosters")
+            users = sleeper.get_json(f"league/{league_id}/users")
+            players = sleeper.get_json("players/nfl")
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_READ_FAILED", "Sleeper roster response is malformed.", status=503
+            )
+        own_roster = next(
+            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
+                status=409,
+            )
+        own_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            players_catalog=players, ranking_rows=ranking_rows,
+        )
+        opponent_rows = sleeper_opponent_rosters(
+            rosters=rosters, users=users, players=players, owner_user_id=owner_user_id
+        )
+        opponents: list[dict[str, Any]] = []
+        for opponent in opponent_rows:
+            opp_sleeper_ids = [str(row["sleeperPlayerId"]) for row in opponent["players"]]
+            opp_resolved = resolve_roster_canonical_ids(
+                roster_sleeper_player_ids=opp_sleeper_ids, players_catalog=players,
+                ranking_rows=ranking_rows,
+            )
+            opponents.append(
+                {
+                    "rosterId": opponent["rosterId"],
+                    "teamName": opponent["teamName"],
+                    "canonicalIds": opp_resolved.canonical_player_ids,
+                    "names": opp_resolved.player_names_by_canonical_id,
+                    "positions": opp_resolved.player_positions_by_canonical_id,
+                }
+            )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        status_overrides = load_status_overrides(self.repo_root)
+        search_kwargs: dict[str, Any] = dict(
+            my_roster_canonical_ids=own_resolved.canonical_player_ids,
+            my_player_names=own_resolved.player_names_by_canonical_id,
+            my_player_positions=own_resolved.player_positions_by_canonical_id,
+            opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
+            status_overrides=status_overrides,
+        )
+        if limit is not None:
+            search_kwargs["limit"] = limit
+        if mode == "FIND_WIN_WIN":
+            result = search_win_win_packages(**search_kwargs)
+        elif mode == "IMPROVE_POSITION":
+            result = search_improve_position_packages(position=position, **search_kwargs)
+        else:
+            target_resolved = resolve_roster_canonical_ids(
+                roster_sleeper_player_ids=[str(target_player_sleeper_id)], players_catalog=players,
+                ranking_rows=ranking_rows,
+            )
+            if not target_resolved.canonical_player_ids:
+                raise FacadeError(
+                    "TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED",
+                    "The requested target player could not be identity-matched to the governed "
+                    "ranking pool.",
+                    status=409,
+                )
+            result = search_target_player_packages(
+                target_player_id=target_resolved.canonical_player_ids[0], **search_kwargs
+            )
+
+        availability_status_by_id = self._player_availability_status_map()
+
+        def _impact_payload(impact):
+            return {
+                "playerId": impact.player_id,
+                "playerName": impact.player_name,
+                "position": impact.position,
+                "rosReplacementValue": impact.ros_replacement_value,
+                "marginalUtility": impact.marginal_utility,
+                "becomesStarter": impact.becomes_starter,
+                "statusFlag": impact.status_flag,
+                "playerAvailabilityStatus": availability_status_by_id.get(impact.player_id),
+            }
+
+        def _evaluation_payload(evaluation):
+            return {
+                "gives": [_impact_payload(impact) for impact in evaluation.gives],
+                "receives": [_impact_payload(impact) for impact in evaluation.receives],
+                "rosValueDelta": evaluation.ros_value_delta,
+                "netMarginalUtility": evaluation.net_marginal_utility,
+                "startingLineupValueBefore": evaluation.starting_lineup_value_before,
+                "startingLineupValueAfter": evaluation.starting_lineup_value_after,
+                "startingLineupValueDelta": evaluation.starting_lineup_value_delta,
+                "benchContingencyValueBefore": evaluation.bench_contingency_value_before,
+                "benchContingencyValueAfter": evaluation.bench_contingency_value_after,
+                "starterHolesBefore": list(evaluation.starter_holes_before),
+                "starterHolesAfter": list(evaluation.starter_holes_after),
+                "positionRedundancyBefore": dict(evaluation.position_redundancy_before),
+                "positionRedundancyAfter": dict(evaluation.position_redundancy_after),
+                "riskFlags": list(evaluation.risk_flags),
+            }
+
+        candidates_payload = [
+            {
+                "opponentRosterId": candidate.opponent_roster_id,
+                "opponentTeamName": candidate.opponent_team_name,
+                "packageShape": candidate.package_shape,
+                "youSend": list(candidate.you_send),
+                "youSendNames": list(candidate.you_send_names),
+                "youReceive": list(candidate.you_receive),
+                "youReceiveNames": list(candidate.you_receive_names),
+                "ownerEvaluation": _evaluation_payload(candidate.owner_evaluation),
+                "opponentEvaluation": _evaluation_payload(candidate.opponent_evaluation),
+                "whyItHelpsYou": list(candidate.why_it_helps_you),
+                "whyItMayFitThem": list(candidate.why_it_may_fit_them),
+            }
+            for candidate in result.candidates
+        ]
+        search_trace_id: str | None = None
+        if result.candidates:
+            top = result.candidates[0]
+            search_trace_id = self._record_decision_trace_safe(
+                profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
+                tool="TRADE_PACKAGE_SEARCH", engine_version="trade_package_search_service-v1",
+                data_versions={},
+                roster_state_player_ids=list(own_resolved.canonical_player_ids),
+                recommendation={
+                    "mode": mode, "packageShape": top.package_shape,
+                    "youSend": list(top.you_send), "youReceive": list(top.you_receive),
+                    "opponentRosterId": top.opponent_roster_id,
+                    "ownerNetMarginalUtility": top.owner_evaluation.net_marginal_utility,
+                },
+                alternatives=[
+                    {
+                        "packageShape": c.package_shape, "youSend": list(c.you_send),
+                        "youReceive": list(c.you_receive), "opponentRosterId": c.opponent_roster_id,
+                    }
+                    for c in result.candidates[1:6]
+                ],
+            )
+        search_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
+        )
+        top_candidate = result.candidates[0] if result.candidates else None
+        search_envelope = build_decision_envelope(
+            task="TRADE_PACKAGE_SEARCH",
+            profile_id=selected.profile_id,
+            league_snapshot_id=search_league_snapshot_id,
+            primary_recommendation=(
+                {
+                    "packageShape": top_candidate.package_shape,
+                    "youSendNames": list(top_candidate.you_send_names),
+                    "youReceiveNames": list(top_candidate.you_receive_names),
+                    "opponentTeamName": top_candidate.opponent_team_name,
+                    "ownerNetMarginalUtility": top_candidate.owner_evaluation.net_marginal_utility,
+                }
+                if top_candidate is not None
+                else None
+            ),
+            alternatives=[
+                {
+                    "packageShape": c.package_shape, "youSendNames": list(c.you_send_names),
+                    "youReceiveNames": list(c.you_receive_names), "opponentTeamName": c.opponent_team_name,
+                }
+                for c in result.candidates[1:6]
+            ],
+            rationale=(
+                f"Top {mode} candidate: send {', '.join(top_candidate.you_send_names)}, receive "
+                f"{', '.join(top_candidate.you_receive_names)} from {top_candidate.opponent_team_name} "
+                f"(owner net marginal utility "
+                f"{top_candidate.owner_evaluation.net_marginal_utility:+.1f})."
+                if top_candidate is not None
+                else f"No {mode} candidate satisfied the preregistered quality gates across any "
+                "opponent roster."
+            ),
+            confidence_state="NOMINAL" if top_candidate is not None else "UNAVAILABLE",
+            confidence_basis=(
+                "A real candidate package satisfying every preregistered legality/utility/"
+                "dominance gate was found across the league's live Sleeper rosters."
+                if top_candidate is not None
+                else "No candidate satisfied the preregistered gates (legality, baseline utility, "
+                "non-dominance)."
+            ),
+            data_health=None,
+            trace_id=search_trace_id,
+            issues=[],
+        )
+        return FacadePayload(
+            data={
+                "leagueId": league_id,
+                "mode": mode,
+                "traceId": search_trace_id,
+                "leagueSnapshotId": search_league_snapshot_id,
+                "decisionEnvelope": search_envelope.to_dict(),
+                "candidates": candidates_payload,
+                "packagesEvaluated": result.packages_evaluated,
+                "opponentsSearched": result.opponents_searched,
+                "truncated": result.truncated,
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )

@@ -135,7 +135,9 @@ def test_every_migrated_surface_reads_the_same_helper_name() -> None:
     rather than five independently-drifting copies."""
     facade_source = inspect.getsource(desktop_facade_module)
     call_count = facade_source.count("self._player_availability_status_map()")
-    # Lineup, Waivers, Trade Analysis, Trade Finder, Draft v1, Draft v2 == 6.
-    assert call_count == 6, (
-        f"expected exactly 6 call sites (Lineup/Waivers/Trades x2/Draft x2), found {call_count}"
+    # Lineup, Waivers, Trade Analysis, Trade Finder, Draft v1, Draft v2,
+    # Trade Package Search (NWR Post-UI Product V1 P1-3) == 7.
+    assert call_count == 7, (
+        f"expected exactly 7 call sites (Lineup/Waivers/Trades x2/Draft x2/"
+        f"Trade Package Search), found {call_count}"
     )

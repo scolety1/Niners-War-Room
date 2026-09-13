@@ -12,9 +12,282 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Five commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
-(Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2 below) -- run
-`git log -1` for the exact hash.
+Six commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+(Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
+below) -- run `git log -1` for the exact hash.
+
+## P1-3 (Rich Trade Package Generator -- BACKEND/SEARCH half) -- 2026-09-12
+
+**Worker 6's scope only: the search/scoring backend.** A separate Worker 7
+owns the Trade Package UI + its own tests, built on top of what is
+documented here. Nothing under `desktop/` was touched by this pass
+(confirmed via `git status` -- zero frontend files in the diff); no `tsc`/
+`vitest` run was needed as a result (the directive's own stated condition
+for skipping it).
+
+**Preregistered quality gates, written and committed BEFORE the search
+module:** `docs/codex/post_ui_v1/TRADE_PACKAGE_SEARCH_QUALITY_GATES_P1_3.md`.
+Covers, with exact numbers: post-draft roster-size legality (NOT a change
+to `redraft_roster_legality_service.py`'s own draft-time rules), owner/
+opponent utility floors per mode, full-Pareto dominance filtering, dedup
+keying, the bounded-search pruning strategy and its hard caps, a real
+latency target, and an explicit "no acceptance probability, ever" rule.
+Every constant/rule in the implementation traces back to this doc; none
+were tuned after seeing results (fixture VALUES were tuned to realize
+specific intended scenarios -- e.g., "a real starter hole" -- verified by
+running the real, unmodified `evaluate_trade` before writing assertions;
+the gate thresholds/rules themselves were never touched after that).
+
+**What already existed vs. what was missing (verified fresh, not
+assumed):** `trade_finder_service.find_win_win_trades`
+(`src/services/trade_finder_service.py`) only ever generates 1-for-1
+packages (confirmed by reading its full body -- single `my_drop`/
+`their_drop` loop, no combination logic). `redraft_trade_analysis_service.
+evaluate_trade` (`src/services/redraft_trade_analysis_service.py`) already
+accepts arbitrary `gives_ids`/`receives_ids` LISTS and is a real,
+already-tested multi-player evaluator -- just never driven by a search
+layer that proposes multi-player packages. This pass builds exactly that
+missing search layer and changes NEITHER existing function's own math.
+
+**New file: `src/services/trade_package_search_service.py`.** Generates
+1-for-1, 2-for-1, 1-for-2, and 2-for-2 candidate packages across every real
+opponent roster, scoring every candidate by calling the SAME `evaluate_trade`
+TWICE (owner perspective, then the counterparty's) -- the identical pattern
+`find_win_win_trades` already uses for 1-for-1, just extended to bounded
+multi-player packages. Reuses, never duplicates:
+`waiver_engine_service.rank_drop_candidates` (weakest-first candidate
+ordering), `shadow_numeric_authorities_service._asset_pool` (real ROS value,
+read-only, for IMPROVE_POSITION's by-position ranking), and
+`redraft_roster_legality_service._normalized_position` (the canonical
+D/ST-vs-DEF-vs-DST normalization, reused rather than reinvented).
+
+**Pruning strategy (real, bounded, documented -- not brute force):** each
+side's candidate pool is capped to `DEFAULT_CANDIDATES_PER_SIDE` (6) players
+-- weakest-first (`rank_drop_candidates`) for FIND_WIN_WIN/TARGET_PLAYER
+filler slots, real-ROS-value-descending for IMPROVE_POSITION's by-position
+pool. Multi-player combos are built only from that bounded pool
+(`itertools.combinations`, sizes 1-2 -- 3+-player packages are an
+explicitly out-of-scope, disclosed remainder). A package is skipped BEFORE
+the expensive `evaluate_trade` call if either side's post-trade roster size
+would be illegal, or (IMPROVE_POSITION) it doesn't touch the requested
+position. Two hard caps stop the search early even with legal combinations
+remaining: `MAX_PACKAGES_EVALUATED_PER_OPPONENT` (120) and
+`MAX_TOTAL_PACKAGES_EVALUATED` (900) -- `TradePackageSearchResult.truncated`
+reports honestly when a cap was hit.
+
+**Modes implemented (all three, verified against real, individually-run
+`evaluate_trade` numbers before assertions were written -- not
+hand-guessed):**
+- `search_win_win_packages` (FIND_WIN_WIN) -- both sides' net marginal
+  utility must be strictly `> 0`. Verified: a real 1-for-2 candidate that
+  fills TWO real starter holes at once (WR and TE) from a single
+  deadweight throw-in, correctly surviving dominance against every
+  available 1-for-1 subset.
+- `search_target_player_packages` (TARGET_PLAYER) -- scoped to whichever
+  real roster actually holds the named player; no owner-utility floor
+  (the owner may rationally pay a cost), but the target's OWN marginal
+  utility to the owner must be positive, and the opponent's net utility
+  must be non-negative. Verified: a lone mediocre throw-in for a real
+  entrenched starter is correctly EXCLUDED (opponent net utility negative
+  under the real model), while adding a second throw-in that fills the
+  opponent's own real hole flips the same deal to a real, included
+  2-for-1 candidate -- both a 1-for-1 (a different single throw-in that
+  independently satisfies the gate) and a 2-for-1 shape are present in the
+  final result.
+- `search_improve_position_packages` (IMPROVE_POSITION) -- receive side is
+  always drawn from the opponent's own players AT the requested position
+  (ranked by real ROS value, a deliberately different signal than the
+  other two modes' "weakest bench" ordering); owner utility must be
+  strictly positive, opponent non-negative.
+
+**Candidate structures confirmed working:** 1-for-1, 2-for-1, 1-for-2, and
+2-for-2 all appear in real search output across the test suite (not just
+theoretically generated and immediately filtered away).
+
+**Quality gates enforced and directly tested:**
+- Legality: a NEW, disclosed post-draft roster-SIZE check (total slots =
+  `qb+rb+wr+te+flex+superflex+k+dst+bench_size`; position maxima are NOT
+  enforced, matching the existing disclosed design in
+  `redraft_trade_analysis_service.py`). Proven load-bearing with an exact
+  count, not just "no violation observed": a fixture with both rosters at
+  EXACT capacity evaluates precisely 52 of 100 raw combinations (every
+  size-mismatched 1-for-2/2-for-1 combo -- 48 of them -- pruned before
+  `evaluate_trade` ever runs).
+- Baseline utility + opponent-utility floors: directly unit-tested against
+  constructed `TradeEvaluation` stubs for every mode/edge case in the gates
+  doc (owner `<= 0`, opponent `== 0`/`< 0`, target-mode's target-impact
+  floor vs. its explicit lack of an owner-net floor).
+- Dominance filtering: a full pairwise Pareto sweep per opponent, unit-
+  tested directly (`_drop_dominated`) -- a strictly-worse bigger package is
+  removed; a bigger package that wins on either axis, or two incomparable
+  same-size packages, both survive.
+- Dedup: every candidate keyed by
+  `(opponent_roster_id, frozenset(gives), frozenset(receives))` in an
+  explicit seen-set; asserted zero duplicate keys in real search output.
+- No acceptance probability: confirmed by construction (the module never
+  computes one) and directly asserted against every real
+  `why_it_helps_you`/`why_it_may_fit_them` string in the test suite (no
+  "probability"/"accept" language appears anywhere).
+
+**Latency (real, measured, not estimated):** a realistic 12-team league (11
+opponents, each a full 15-player roster, default pruning constants) via
+`search_win_win_packages` completes in well under the preregistered 5-second
+target (asserted directly with `time.perf_counter()` in
+`test_pruning_and_latency_bounds_hold_on_a_realistic_12_team_league`; runs
+in a small fraction of a second in this environment -- see the test file
+for the exact wall-clock assertion, not hardcoded here to avoid this doc
+going stale).
+
+**Backend wiring for Worker 7 (a real, callable endpoint -- not just a
+library function):** `DesktopBackendFacade.redraft_trade_package_search`
+(`src/application/desktop_facade.py`) follows the EXACT same pattern as
+the existing `redraft_trade_finder`/`redraft_trade_analysis` methods
+(governed-ranking read, live Sleeper roster/user/player read via the
+existing read-only `SleeperHttpClient.get_json` -- no write method exists
+on that class, structurally impossible to write to Sleeper from here,
+`DecisionResultEnvelope` via the same unmodified `build_decision_envelope`,
+decision-trace recording, the same canonical
+`self._player_availability_status_map()` -- one more legitimate call site
+of the SAME existing helper, confirmed via the updated call-count assertion
+in `test_player_availability_status_consumer_consistency.py`, 6 -> 7, not a
+new competing helper). New HTTP route:
+`POST /api/v1/redraft/trade-package-search`
+(`src/desktop_api/server.py`), body `{mode, targetPlayerSleeperId?,
+position?, limit?}`. Input validation (invalid mode / missing
+target-for-TARGET_PLAYER / missing position-for-IMPROVE_POSITION) fails
+BEFORE any Sleeper read is attempted -- directly proven in
+`test_trade_package_search_facade_wiring.py` with a Sleeper mock that
+raises `AssertionError` if called, confirming the ordering, not just
+asserting it in prose.
+
+**OUTPUT SCHEMA FOR WORKER 7 (exact JSON shape of
+`POST /api/v1/redraft/trade-package-search`'s response `data`):**
+```
+{
+  "leagueId": string,
+  "mode": "FIND_WIN_WIN" | "TARGET_PLAYER" | "IMPROVE_POSITION",
+  "traceId": string | null,
+  "leagueSnapshotId": string,
+  "decisionEnvelope": DecisionResultEnvelope,  // task: "TRADE_PACKAGE_SEARCH", same shape as every other migrated tool
+  "candidates": [
+    {
+      "opponentRosterId": string,
+      "opponentTeamName": string,
+      "packageShape": "1-for-1" | "2-for-1" | "1-for-2" | "2-for-2",
+      "youSend": string[],           // canonical player ids
+      "youSendNames": string[],
+      "youReceive": string[],
+      "youReceiveNames": string[],
+      "ownerEvaluation": TradeEvaluationPayload,     // owner's own roster before/after -- see below
+      "opponentEvaluation": TradeEvaluationPayload,  // the counterparty's own roster before/after
+      "whyItHelpsYou": string[],       // structured, real-delta sentences (see gates doc section 8) -- NEVER an acceptance probability
+      "whyItMayFitThem": string[]      // same, computed from opponentEvaluation
+    }
+  ],
+  "packagesEvaluated": number,   // real evaluate_trade call count, respects the documented caps
+  "opponentsSearched": number,
+  "truncated": boolean,          // true if a hard search cap was hit before exhausting the space
+  "writeBehavior": "NO_SLEEPER_WRITES"
+}
+```
+`TradeEvaluationPayload` is byte-for-byte the SAME shape
+`POST /api/v1/redraft/trade-analysis` already returns for its own
+`gives`/`receives` (see `TradeAnalysisResult`/`TradePlayerImpact` in
+`desktop/packages/contracts/src/index.ts`, lines ~1134-1166) with one
+addition -- it also carries `gives`/`receives` (the per-player
+`TradePlayerImpact[]` for THAT side of THAT package), plus
+`rosValueDelta`, `netMarginalUtility`, `startingLineupValueBefore/After/
+Delta`, `benchContingencyValueBefore/After`, `starterHolesBefore/After`,
+`positionRedundancyBefore/After`, `riskFlags` -- all field names identical
+to `TradeAnalysisResult`'s, so Worker 7 can reuse or trivially extend that
+existing TS interface rather than re-deriving field names from scratch.
+**No TS contract types were added by this pass** (this pass touched zero
+files under `desktop/`) -- Worker 7 will need to add
+`TradePackageCandidate`/`TradePackageSearchResult` interfaces to
+`packages/contracts/src/index.ts` (trivially: mirror the JSON shape above,
+reusing `TradePlayerImpact` for the nested `gives`/`receives` arrays).
+
+**Request body reference:**
+`{"mode": "FIND_WIN_WIN"}` |
+`{"mode": "TARGET_PLAYER", "targetPlayerSleeperId": "<sleeper player id>"}` |
+`{"mode": "IMPROVE_POSITION", "position": "RB"}` -- `limit` (integer,
+optional) caps the returned candidate count on any mode (default 15).
+
+**Tests (all new, all real -- no existing test's assertions were loosened
+to make these pass):**
+- `tests/test_trade_package_search_service.py` (22 tests) -- the search
+  algorithm itself: legality (direct + a precise 52-of-100 end-to-end
+  pruning count), all three modes on individually-verified real-number
+  fixtures, gate functions direct-tested for every documented edge case,
+  dominance filtering direct-tested, dedup, combos generation, and the
+  latency/pruning-bound test.
+- `tests/test_trade_package_search_facade_wiring.py` (6 tests) -- the
+  facade method against the REAL governed ranking (564-row Freeze V7 seed,
+  installed via a real `redraft_bootstrap()` call in a fresh isolated
+  store, not a test double) with mocked Sleeper HTTP: well-formed empty
+  result on unmatched identities, all three validation-failure codes
+  (each proven to short-circuit BEFORE any Sleeper read), unresolved
+  target-identity error, and the structural "no write method exists"
+  guarantee.
+- One PRE-EXISTING test updated, not loosened:
+  `test_player_availability_status_consumer_consistency.py`'s
+  `test_every_migrated_surface_reads_the_same_helper_name` hardcodes the
+  exact count of `self._player_availability_status_map()` call sites (a
+  deliberate architecture guard against a second, competing helper) --
+  updated 6 -> 7 to count this pass's one new, legitimate reuse of the
+  SAME existing canonical helper.
+- `pytest tests/test_trade_package_search_service.py
+  tests/test_trade_package_search_facade_wiring.py
+  tests/test_trade_finder_service.py
+  tests/test_redraft_trade_analysis_service.py
+  tests/test_decision_envelope_consumer_migration.py
+  tests/test_desktop_facade_architecture_wiring.py
+  tests/test_player_availability_status_consumer_consistency.py`: 56/56
+  passing.
+- `pytest tests/test_desktop_application_api.py`: 46 passed, 4 failed --
+  confirmed via an A/B `git stash` comparison to be the EXACT SAME 4
+  pre-existing failures present before this pass's changes (byte-identical
+  failure set both times); zero new regressions.
+- Frontend: zero files under `desktop/` touched by this pass -- `tsc -b`/
+  `vitest run` were not run (the directive's own stated condition for
+  skipping them; reported here as instructed rather than silently
+  omitted).
+
+**Hard boundaries respected (read-only call sites only, verified by
+construction):** `marginal_roster_utility_v2`'s own computation, Team
+Score/Championship Equity/RAV/Pick Score, `redraft_roster_legality_
+service.py`'s own draft-time rules, `evaluate_trade`'s own single-package
+math (called, never modified -- `git diff` on
+`redraft_trade_analysis_service.py` and `trade_finder_service.py` is
+empty), `LeagueSnapshot`/`LeagueWorkspaceContext`/the lifecycle resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics, draft
+recommendation logic, waiver math. No merge/push/deploy.
+
+**Open issues for Worker 7 (Trade Package UI + tests):**
+1. Add `TradePackageCandidate`/`TradePackageSearchResult` TS interfaces to
+   `packages/contracts/src/index.ts` (see the exact shape documented
+   above) -- not done by this pass (zero frontend files touched).
+2. No UI surface calls `POST /api/v1/redraft/trade-package-search` yet --
+   the endpoint is real, tested, and live, but nothing in `desktop/apps/
+   redraft` renders it (matches the same "backend wired, no visible UI
+   toggle yet" pattern the big-draft-readiness pass used for Team Score
+   V2).
+3. Weekly starting-lineup impact is a disclosed, NOT-computed omission
+   (see the module docstring in `trade_package_search_service.py` for the
+   full reasoning -- `evaluate_trade` itself doesn't wire
+   `weekly_lineup_optimizer_service` for any caller today, confirmed by
+   reading its full body). A real follow-up if the owner wants it, but
+   would need real per-candidate weekly-projection reads across every
+   roster in the league and a latency re-check against the 5s target.
+4. 3+-player packages (3-for-2, 3-for-3, etc.) are explicitly out of
+   scope for this pass, per the directive's own permission to ship a
+   precisely-scoped remainder rather than something unbounded.
+5. `target_player_sleeper_id` resolution reuses
+   `resolve_roster_canonical_ids` on a single-element list -- correct, but
+   means an unmatched target returns a generic
+   `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED` error rather than a
+   friendlier "did you mean" -- fine for a backend contract, something
+   Worker 7's UI may want to soften.
 
 ## P1-2 (Multi-League Attention Center) -- 2026-09-12
 

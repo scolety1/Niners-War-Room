@@ -44,6 +44,11 @@ _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _WAIVERS = "/api/v1/redraft/waivers"
 _TRADE_ANALYSIS = "/api/v1/redraft/trade-analysis"
 _TRADE_FINDER = "/api/v1/redraft/trade-finder"
+# NWR Post-UI Product V1 (2026-09-12, P1-3): the multi-player trade
+# PACKAGE SEARCH layer (1-for-1/2-for-1/1-for-2/2-for-2) -- distinct from
+# both routes above (Trade Analysis evaluates one owner-submitted package;
+# Trade Finder only ever searched 1-for-1).
+_TRADE_PACKAGE_SEARCH = "/api/v1/redraft/trade-package-search"
 _WEEKLY_HOME_ACTIONS = "/api/v1/redraft/weekly-home-actions"
 _REDRAFT_FREE_AGENTS = "/api/v1/redraft/free-agents"
 _REDRAFT_OPPONENT_ROSTERS = "/api/v1/redraft/opponent-rosters"
@@ -603,6 +608,29 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             return self.server.facade.redraft_trade_analysis(
                 gives_sleeper_player_ids=gives, receives_sleeper_player_ids=receives
             )
+        if method == "POST" and path == _TRADE_PACKAGE_SEARCH:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"mode", "targetPlayerSleeperId", "position", "limit"})
+            mode = body.get("mode")
+            if not isinstance(mode, str):
+                raise self._invalid_body("mode must be a string.")
+            kwargs: dict[str, Any] = {"mode": mode}
+            if "targetPlayerSleeperId" in body:
+                target = body.get("targetPlayerSleeperId")
+                if not isinstance(target, str):
+                    raise self._invalid_body("targetPlayerSleeperId must be a string when provided.")
+                kwargs["target_player_sleeper_id"] = target
+            if "position" in body:
+                position = body.get("position")
+                if not isinstance(position, str):
+                    raise self._invalid_body("position must be a string when provided.")
+                kwargs["position"] = position
+            if "limit" in body:
+                limit = body.get("limit")
+                if type(limit) is not int:
+                    raise self._invalid_body("limit must be an integer when provided.")
+                kwargs["limit"] = limit
+            return self.server.facade.redraft_trade_package_search(**kwargs)
         if method == "POST" and path == _WEEKLY_HOME_ACTIONS:
             body = self._json_body()
             self._reject_unknown_fields(body, {"week"})
