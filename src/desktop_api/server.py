@@ -60,6 +60,13 @@ _REDRAFT_MY_ROSTER = "/api/v1/redraft/my-roster"
 _REDRAFT_LEAGUE_WORKSPACE_CONTEXT = "/api/v1/redraft/league-workspace-context"
 _REDRAFT_PLAYER_AVAILABILITY_STATUS = "/api/v1/redraft/player-availability-status"
 _REDRAFT_DATA_HEALTH = "/api/v1/redraft/data-health"
+# NWR Post-UI Product V1 (2026-09-12, P1-4): the Prospective Recommendation
+# Ledger's owner-facing read + the append-only owner-action/outcome write
+# paths -- all scoped to the CURRENTLY active Redraft profile, same as
+# every route above.
+_REDRAFT_DECISION_TRACE_HISTORY = "/api/v1/redraft/decision-trace-history"
+_REDRAFT_DECISION_TRACE_OWNER_ACTION = "/api/v1/redraft/decision-trace/owner-action"
+_REDRAFT_DECISION_TRACE_OUTCOME = "/api/v1/redraft/decision-trace/outcome"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
@@ -273,6 +280,41 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "GET" and path == _REDRAFT_DATA_HEALTH:
             return self.server.facade.redraft_data_health()
+
+        if method == "GET" and path == _REDRAFT_DECISION_TRACE_HISTORY:
+            return self.server.facade.redraft_decision_trace_history()
+
+        if method == "POST" and path == _REDRAFT_DECISION_TRACE_OWNER_ACTION:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"traceId", "action", "notes"})
+            trace_id = body.get("traceId")
+            action = body.get("action")
+            if not isinstance(trace_id, str) or not trace_id:
+                raise self._invalid_body("traceId must be a non-empty string.")
+            if not isinstance(action, str) or not action:
+                raise self._invalid_body("action must be a non-empty string.")
+            notes = body.get("notes", "")
+            if not isinstance(notes, str):
+                raise self._invalid_body("notes must be a string when provided.")
+            return self.server.facade.redraft_record_decision_trace_owner_action(
+                trace_id=trace_id, action=action, notes=notes,
+            )
+
+        if method == "POST" and path == _REDRAFT_DECISION_TRACE_OUTCOME:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"traceId", "outcome", "notes"})
+            trace_id = body.get("traceId")
+            outcome = body.get("outcome")
+            if not isinstance(trace_id, str) or not trace_id:
+                raise self._invalid_body("traceId must be a non-empty string.")
+            if not isinstance(outcome, str) or not outcome:
+                raise self._invalid_body("outcome must be a non-empty string.")
+            notes = body.get("notes", "")
+            if not isinstance(notes, str):
+                raise self._invalid_body("notes must be a string when provided.")
+            return self.server.facade.redraft_record_decision_trace_outcome(
+                trace_id=trace_id, outcome=outcome, notes=notes,
+            )
 
         if method == "GET" and path == _TRADE_FINDER:
             return self.server.facade.redraft_trade_finder()

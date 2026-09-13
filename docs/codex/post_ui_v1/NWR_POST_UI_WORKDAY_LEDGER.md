@@ -12,9 +12,237 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Seven commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Eight commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
-backend, then P1-3 UI below) -- run `git log -1` for the exact hash.
+backend, then P1-3 UI, then P1-4 below) -- run `git log -1` for the exact
+hash.
+
+## P1-4 (Prospective Recommendation Ledger V1) -- 2026-09-12/13
+
+**Worker 8's scope: make the existing in-season decision-trace ledger
+(`in_season_decision_trace_service.py`, built in an earlier overnight
+session, NWR Overnight V3 Lane 18) owner/product-useful.** Extended and
+reused that exact ledger -- no second, parallel trace system was built.
+Prospective only, per the directive: nothing retroactive was fabricated;
+every event this pass observed live was recorded from real, real-time tool
+calls against the real, already-populated "Fantasy Gamers" Sleeper league
+ledger (98 real events accumulated across this and prior workers' sessions
+against that one profile's `decision_traces/<profile_id>.jsonl` file).
+
+**A real, found bug closed:** `desktop_facade.py` already called
+`record_decision_trace(tool="TRADE_FINDER", ...)` (the legacy 1-for-1
+finder) and `record_decision_trace(tool="TRADE_PACKAGE_SEARCH", ...)`
+(Worker 6/7's new rich multi-player search) at real call sites -- but
+neither string was a member of the OLD `TOOL_TYPES` frozenset in
+`in_season_decision_trace_service.py`, so every such call silently raised
+`DecisionTraceError`, swallowed by the facade's own best-effort wrapper
+(`_record_decision_trace_safe`'s `except Exception: return None`). Both
+tools were recording **zero real traces in production** despite looking
+fully wired end to end (a real response `traceId` field that was always
+`None`). The governing directive's own phrasing ("Verify Worker 7's new
+Trade Package search (`TRADE_FINDER`) actually records a trace...") turned
+out to conflate the two -- the actual new Worker 6/7 feature's tool string
+is `TRADE_PACKAGE_SEARCH`, distinct from the pre-existing legacy
+`TRADE_FINDER` tool; **both were broken, both are now fixed.**
+
+**1. Schema extension (`in_season_decision_trace_service.py`):**
+- `TOOL_TYPES` gains `TRADE_FINDER`, `TRADE_PACKAGE_SEARCH` (closing the
+  bug above) and `DRAFT` (per the directive, schema-only -- see hard
+  boundary note below) alongside the seven pre-existing types
+  (`START_SIT`/`WAIVER`/`ADD_DROP`/`FAAB`/`TRADE`/`K_STREAMER`/
+  `DST_STREAMER`, all already correct and unchanged).
+- Two new additive, backward-compatible fields on every record:
+  `league_snapshot_id` (the same real `LeagueSnapshot` identity hash every
+  migrated tool's own `DecisionResultEnvelope` already computes -- moved
+  earlier in 6 call sites in `desktop_facade.py` so the SAME already-
+  computed value, not a second derivation, reaches the trace) and
+  `status_versions` (a real, honest fingerprint of the
+  `PlayerAvailabilityStatus` authority in effect -- reuses the already-
+  existing `player_availability_authority_health()` read, never a new
+  source, never a fabricated semantic version number). Both default to
+  `None`/`{}` for every pre-existing caller/row.
+- `generatedAt`/`league`/`leagueSnapshotId`/`traceId`/etc. (the directive's
+  literal field-name list) are the OUTWARD, camelCase History-surface
+  shape (`_decision_trace_history_event_payload`) -- the underlying Python
+  dataclass keeps its existing `recorded_at_utc`/`league_id`/`trace_id`
+  names for backward compatibility with every existing caller/test.
+
+**2. Append-only owner-action/outcome write path:**
+`record_owner_action` already existed (a prior session's contract) but had
+never been wired to any facade method or HTTP route -- now real and
+callable via `DesktopBackendFacade.redraft_record_decision_trace_owner_action`
++ `POST /api/v1/redraft/decision-trace/owner-action`. `record_outcome` is
+NEW (mirrors `record_owner_action` exactly), wired the same way via
+`redraft_record_decision_trace_outcome` + `POST /api/v1/redraft/decision-trace/outcome`
+-- real and directly tested (append-only, never mutates the original
+recommendation line, folds to one latest state per `trace_id` on read),
+but **nothing in this app's own UI calls it yet**, exactly as the directive
+anticipated ("even if nothing calls it yet -- define the contract"): no
+real 2026-season outcome exists for anything recorded so far. Verified live
+against the real Fantasy Gamers ledger, not just unit-tested (see below).
+A freshly recorded recommendation's own JSON row carries no `outcome` key
+at all (not even null) until a real `record_outcome` append happens --
+preserves the pre-existing `test_no_future_outcome_field_exists_on_the_
+record_shape` test's own stricter guarantee.
+
+**3. History/Review surface:** `DesktopBackendFacade.redraft_decision_trace_history()`
+(`GET /api/v1/redraft/decision-trace-history`, no parameters -- always
+resolves the CURRENTLY active profile itself, so there is no parameter
+through which a caller could request a different league's history) reads
+the ledger, newest first, and returns real events plus an honest
+`totalCount`. Frontend: a new "History" nav item (League group) ->
+`/league/:leagueKey/decision-history` -> `DecisionHistoryPage`
+(`decision-history.tsx`), a plain DataTable (Date / League(via context) /
+Decision / Recommendation / Owner action / Outcome status), built on pure,
+unit-tested derivation (`decision-history-format.ts` -- 18 new vitest
+tests) that never invents a summary field a tool didn't actually record.
+Zero-events state renders "Nothing recorded yet" with an honest message,
+not a spinner or blank page. No calibration/accuracy/"was NWR right"
+metric anywhere on the page -- an explicit disclosure line says so, and
+this was a deliberate choice, not an oversight (real 2026-season outcomes
+don't exist for anything recorded so far).
+
+**Verification -- REAL, live, not fixture-only (disclosed exactly which
+parts were real vs. unit-tested):**
+- Stood up the real backend + a real production `vite build`/`vite
+  preview` via Worker 3's own `nwr_release_gate_smoke.ps1 -KeepRunning
+  -SleeperLeagueId 1312983576827920384 -SleeperUsername scolety`
+  (unmodified; run from Windows PowerShell 5.1 -- `pwsh` is not installed
+  in this environment, a real, disclosed environment quirk, not a script
+  bug) against the real, read-only "Fantasy Gamers" Sleeper league.
+- Directly exercised the real, running backend via `Invoke-RestMethod`
+  (bearer token + Origin header, same pattern the smoke script itself
+  uses): confirmed `POST /api/v1/redraft/trade-package-search`
+  (`FIND_WIN_WIN`) and the smoke script's own `trade_finder`/`waivers`/
+  `weekly_lineup_week1`/`kdst` calls now all return a REAL non-null
+  `traceId` (previously `TRADE_FINDER`/`TRADE_PACKAGE_SEARCH` always
+  returned `null`). Read `GET /api/v1/redraft/decision-trace-history`
+  directly afterward: **98 real recorded events** for the real Fantasy
+  Gamers profile, spanning `START_SIT`/`WAIVER`/`FAAB`/`K_STREAMER`/
+  `DST_STREAMER`/`TRADE_FINDER`/`TRADE_PACKAGE_SEARCH` (accumulated across
+  this and prior sessions' real exercise of that one profile), each
+  carrying a real, non-null `leagueSnapshotId` and a real `statusVersions`
+  fingerprint. `TRADE` (Trade Analysis) was verified by code-reading + the
+  identical, already-proven-safe reordering pattern rather than a live
+  call -- a live attempt hit a real, unrelated pre-existing gap (opponent-
+  roster rows carry no `identityStatus`/`canonicalPlayerId` field, the same
+  known bug Worker 7's ledger entry already flagged for "Open in Analyze")
+  that made constructing a valid live gives/receives pair impractical in
+  the time available; not a gap in this pass's own trace-recording fix.
+- Exercised the real, live append-only owner-action write (`POST
+  .../decision-trace/owner-action`) and outcome write (`POST
+  .../decision-trace/outcome`) against a real recorded `TRADE_PACKAGE_
+  SEARCH` trace: confirmed live via a direct read of the real on-disk
+  `decision_traces/<profileId>.jsonl` file that the append produced
+  EXACTLY 3 lines for that one `trace_id` (`RECOMMENDED` ->
+  `OWNER_ACTION_RECORDED` -> `OUTCOME_RECORDED`), the original line byte-
+  identical/untouched, and the History read folding correctly to ONE
+  latest-state row (`totalCount` did not double-count the two appends).
+- **State-leakage check (this shift's own established paranoia), live, not
+  just unit-tested:** created a real second local profile ("P1-4 Leak
+  Check League") via the real backend, activated it, confirmed via a
+  direct `GET decision-trace-history` call that its `totalCount` was
+  genuinely `0` (not the Fantasy Gamers league's 98) -- then reactivated
+  Fantasy Gamers and confirmed its real 98 events were still intact,
+  unaffected. Same isolation independently proven at the pytest level
+  (`test_decision_trace_history_never_leaks_across_leagues`, two isolated
+  profiles, asserts both the facade read AND the raw on-disk ledger files
+  directly).
+- **Real, live-rendered Chrome confirmation:** the History page, reloaded
+  fresh (full page reload, not just a client-side route change), rendered
+  the real 98-event table for Fantasy Gamers with the exact live-appended
+  owner-action ("PROPOSED_TO_OPPONENT (live P1-4 verification)") and
+  outcome ("OUTCOME RECORDED" badge, "REJECTED_BY_O...") visible in their
+  real columns; switching to the fresh local profile rendered the real,
+  honest "Nothing recorded yet" empty state with zero events. **Zero
+  console messages of any kind** (not just zero errors) on a fresh full
+  reload of the History page. Both the backend and vite-preview processes
+  were stopped at the end (the preview's actual listening PID was a
+  `cmd.exe`-spawned child of the PID the smoke script itself reported --
+  same real teardown wrinkle Worker 7's ledger entry already documented --
+  found and killed correctly; confirmed via `Get-NetTCPConnection` showing
+  no listener on 18742/1422 afterward, only `TimeWait` remnants).
+- Two harmless local test profiles ("P1-4 Leak Check League" x2, created
+  while debugging a PowerShell scripting mistake during the live-check
+  above, not a product bug) were left in this worktree's own
+  `local_exports/redraft_v1/` store -- consistent with several other
+  accumulated local test profiles already present from prior workers'
+  sessions in the same store (e.g. "NWR QA Local Test League", "NWR
+  Release Gate Local Profile" x2); disclosed, not cleaned up (no delete/
+  archive facade action exists to remove a profile outright, only
+  `archived: true`, which was judged not worth a separate, out-of-scope
+  facade change for this pass).
+- Tests: `pytest tests/test_in_season_decision_trace_service.py
+  tests/test_prospective_recommendation_ledger_v1.py
+  tests/test_trade_package_search_facade_wiring.py
+  tests/test_trade_package_search_service.py tests/test_trade_finder_service.py
+  tests/test_redraft_trade_analysis_service.py
+  tests/test_desktop_facade_architecture_wiring.py
+  tests/test_player_availability_status_consumer_consistency.py`: 78/78
+  passing (15 + 10 new). `pytest tests/test_desktop_application_api.py`:
+  46 passed, 4 failed -- confirmed via an A/B `git stash` comparison to be
+  the EXACT SAME 4 pre-existing failures present before this pass (byte-
+  identical failure set both times); zero new regressions. `npx tsc -b
+  apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`: clean. `npx
+  vitest run --no-file-parallelism`: **354/354 passing, 27/27 files** (336
+  baseline from Worker 7's P1-3 UI pass + 18 new
+  `decision-history-format.test.ts` tests).
+
+**Files changed:** `src/services/in_season_decision_trace_service.py`
+(schema extension + `record_outcome`), `src/application/desktop_facade.py`
+(`_record_decision_trace_safe`/new `_status_versions_snapshot` helper, 6
+call-site reorderings to pass `league_snapshot_id`/`status_versions`, 3 new
+facade methods, 1 new module-level payload helper -- the search/scoring
+logic itself at every touched call site was read, never modified),
+`src/desktop_api/server.py` (3 new routes), `tests/test_in_season_decision_
+trace_service.py` (extended), `tests/test_prospective_recommendation_
+ledger_v1.py` (new), `desktop/packages/contracts/src/index.ts` (additive
+types), `desktop/packages/api-client/src/index.ts` (3 new client methods),
+`desktop/apps/redraft/src/decision-history.tsx` (new page),
+`desktop/apps/redraft/src/decision-history-format.ts` (new, pure
+derivation) + its test file, `desktop/apps/redraft/src/RedraftApp.tsx` (+1
+nav item, +2 routes), `desktop/apps/redraft/src/redraft.css` (+2 rules).
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/the lifecycle resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus` SEMANTICS, and Worker 6's trade-package
+search/scoring logic were all either read-only (the same already-computed
+values were reused, never recomputed) or genuinely untouched. `DRAFT`
+joining `TOOL_TYPES` is schema-only, deliberately -- no live call site was
+added inside the draft decision-bundle path (`redraft_decision_bundle`/
+`_decision_bundle_payload`), since that is squarely "draft recommendation
+logic" territory and a real, latency-benchmarked hot path; wiring it was
+judged out of this pass's scope, not merely deferred by oversight. No
+merge/push/deploy.
+
+**CALIBRATION METRICS: not claimed, deliberately.** Real season outcomes
+don't exist yet for anything this ledger has recorded (every event is
+prospective, from 2026-09-12/13 forward) -- no accuracy/calibration/"was
+NWR right" figure is computed, displayed, or implied anywhere in this
+pass's code, tests, or UI copy.
+
+**Open issues for Worker 9 (Live Player Intelligence provider
+bakeoff/shadow work):**
+1. `DRAFT` is a valid `TOOL_TYPES` member with no live call site --
+   wiring it (inside `redraft_decision_bundle`/`redraft_decision_bundle_v2`)
+   is a real, disclosed remainder for a future pass with the hard-boundary
+   context above already worked out.
+2. The pre-existing "Open in Analyze"/opponent-roster
+   `identityStatus`/`canonicalPlayerId` gap (Worker 7's ledger entry, still
+   real, still not fixed) also blocked an organic live `TRADE` (Trade
+   Analysis) trace-recording check this pass -- `TRADE`'s own trace/
+   `leagueSnapshotId`/`status_versions` wiring was verified by code-reading
+   + the identical proven-safe pattern instead; a future pass with that
+   gap closed could add a fully organic live check.
+3. Two harmless extra local test profiles ("P1-4 Leak Check League" x2)
+   sit in this worktree's local store, disclosed above -- no functional
+   impact, just worth knowing about if profile counts look surprising.
+4. The append-only owner-action/outcome write paths are real, tested, and
+   callable, but no UI control captures either yet (no "I did this"/"here's
+   what happened" button anywhere in the app) -- a real, disclosed product
+   opportunity for a future pass, not attempted here per the directive's
+   own "as far as is genuinely useful right now, no further" instruction.
 
 ## P1-3 (Rich Trade Package Generator -- UI half) -- 2026-09-12
 

@@ -1853,6 +1853,62 @@ export interface DataHealthReport {
   generatedAtUtc: string;
 }
 
+// P1-4 (2026-09-12, Prospective Recommendation Ledger): the existing
+// append-only in-season decision-trace ledger's owner-facing shape --
+// TRADE_FINDER/TRADE_PACKAGE_SEARCH/DRAFT joined the tool-type set this
+// pass (see in_season_decision_trace_service.py); DRAFT has no live call
+// site yet (draft recommendation logic is out of this pass's scope).
+export type DecisionTraceToolType =
+  | "START_SIT"
+  | "WAIVER"
+  | "ADD_DROP"
+  | "FAAB"
+  | "TRADE"
+  | "K_STREAMER"
+  | "DST_STREAMER"
+  | "TRADE_FINDER"
+  | "TRADE_PACKAGE_SEARCH"
+  | "DRAFT";
+
+export type DecisionTraceStatus = "RECOMMENDED" | "OWNER_ACTION_RECORDED" | "OUTCOME_RECORDED";
+
+export interface DecisionTraceOwnerAction {
+  action: string;
+  notes: string;
+}
+
+export interface DecisionTraceOutcome {
+  outcome: string;
+  notes: string;
+}
+
+export interface DecisionTraceHistoryEvent {
+  traceId: string;
+  league: string;
+  leagueSnapshotId: string | null;
+  season: number;
+  week: number | null;
+  decisionType: DecisionTraceToolType | string;
+  recommendation: Record<string, unknown>;
+  alternatives: Record<string, unknown>[];
+  engineVersion: string;
+  dataVersions: Record<string, string>;
+  statusVersions: Record<string, string>;
+  generatedAt: string;
+  status: DecisionTraceStatus | string;
+  ownerAction: DecisionTraceOwnerAction | null;
+  ownerActionRecordedAt: string | null;
+  outcome: DecisionTraceOutcome | null;
+  outcomeRecordedAt: string | null;
+}
+
+export interface DecisionTraceHistoryResult {
+  profileId: string;
+  leagueName: string;
+  totalCount: number;
+  events: DecisionTraceHistoryEvent[];
+}
+
 export interface NavigationItem {
   label: string;
   path: string;

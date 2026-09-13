@@ -6,6 +6,7 @@ import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-rou
 
 import { AttentionCenterPage } from "./attention-center-page";
 import { assertRedraftBootstrap } from "./bootstrap-guard";
+import { DecisionHistoryPage } from "./decision-history";
 import { CheatSheetPage } from "./cheat-sheet";
 import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
 import { LeaguesPage } from "./leagues";
@@ -96,11 +97,17 @@ const NAV_PLAYERS: NavigationGroup = {
 // attention-center.tsx's module doc), so it lives in this same "whole-
 // system" bucket of the League group rather than needing its own nav
 // group.
+// P1-4 (2026-09-12, Prospective Recommendation Ledger): "History" -- the
+// owner-facing read of the existing append-only decision-trace ledger for
+// the currently active league ("what did NWR tell me?"). Scoped to ONE
+// league at a time (like Data Health), so it lives in this same
+// whole-system-per-league bucket rather than needing its own nav group.
 const NAV_LEAGUE: NavigationGroup = {
   label: "League",
   items: [
     { label: "League", path: "/my-roster", icon: "profile", shortcut: "4" },
     { label: "Attention Center", path: "/attention-center", icon: "shield" },
+    { label: "History", path: "/decision-history", icon: "board" },
     { label: "Manage Leagues", path: "/profile", icon: "settings" },
     { label: "Data Health", path: "/data-health", icon: "health" },
   ],
@@ -287,6 +294,9 @@ export function RedraftApp() {
       <Route path="/adp" element={<LegacyRedirect data={data} subpath="adp" />} />
       <Route path="/weekly-tools" element={<LegacyRedirect data={data} subpath="weekly-tools" />} />
       <Route path="/data-health" element={<LegacyRedirect data={data} subpath="data-health" />} />
+      {/* P1-4 (2026-09-12): the History/Review surface -- same legacy-
+          redirect + league-scoped pattern as Data Health above. */}
+      <Route path="/decision-history" element={<LegacyRedirect data={data} subpath="decision-history" />} />
 
       {/* Canonical league-scoped route tree. `:leagueKey` is the target
           league's profileId -- deep-linking here always resolves that
@@ -334,6 +344,7 @@ export function RedraftApp() {
       <Route path="/league/:leagueKey/adp" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="market" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/weekly-tools" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyToolsPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/data-health" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><DataHealthPage client={client} data={data} onReload={reload} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/decision-history" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><DecisionHistoryPage client={client} data={data} /></LeagueScopedPage>} />
 
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

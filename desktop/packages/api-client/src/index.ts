@@ -5,6 +5,8 @@ import {
   type ApiErrorBody,
   type BallersPreview,
   type DataHealthReport,
+  type DecisionTraceHistoryEvent,
+  type DecisionTraceHistoryResult,
   type DesktopMode,
   type DynastyBootstrap,
   type DynastyComparison,
@@ -322,6 +324,38 @@ export class NwrApiClient {
 
   redraftDataHealth(): Promise<DataHealthReport> {
     return this.request("/api/v1/redraft/data-health");
+  }
+
+  // P1-4 (2026-09-12, Prospective Recommendation Ledger). Scoped to the
+  // currently active Redraft profile only -- see the facade method's own
+  // docstring for why there is no per-league parameter here.
+  redraftDecisionTraceHistory(): Promise<DecisionTraceHistoryResult> {
+    return this.request("/api/v1/redraft/decision-trace-history");
+  }
+
+  // Append-only write paths -- real and callable, though nothing in this
+  // app's UI calls either yet (no owner-action capture control exists,
+  // and no real 2026-season outcome exists yet to record).
+  redraftRecordDecisionTraceOwnerAction(
+    traceId: string,
+    action: string,
+    notes = "",
+  ): Promise<DecisionTraceHistoryEvent> {
+    return this.request("/api/v1/redraft/decision-trace/owner-action", {
+      method: "POST",
+      body: JSON.stringify({ traceId, action, notes }),
+    });
+  }
+
+  redraftRecordDecisionTraceOutcome(
+    traceId: string,
+    outcome: string,
+    notes = "",
+  ): Promise<DecisionTraceHistoryEvent> {
+    return this.request("/api/v1/redraft/decision-trace/outcome", {
+      method: "POST",
+      body: JSON.stringify({ traceId, outcome, notes }),
+    });
   }
 
   activateRedraftProfile(profileId: string): Promise<RedraftBootstrap> {

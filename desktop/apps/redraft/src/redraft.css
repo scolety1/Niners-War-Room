@@ -1009,3 +1009,11 @@
 .attention-center { display: flex; flex-direction: column; gap: 16px; }
 .attention-center__flag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .attention-center__flag-list li { font-size: 11px; }
+
+/* =========================================================================
+   P1-4 (2026-09-12, Prospective Recommendation Ledger): History page --
+   the only new rule needed stacks a status badge above its plain-language
+   outcome detail inside one DataTable cell.
+   ========================================================================= */
+.decision-history__status-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.decision-history__disclosure { margin-top: 12px; }

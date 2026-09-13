@@ -234,7 +234,13 @@ from src.services.trade_package_search_service import (
     search_target_player_packages,
     search_win_win_packages,
 )
-from src.services.in_season_decision_trace_service import load_decision_traces, record_decision_trace
+from src.services.in_season_decision_trace_service import (
+    DecisionTraceError,
+    load_decision_traces,
+    record_decision_trace,
+    record_outcome as record_decision_trace_outcome,
+    record_owner_action as record_decision_trace_owner_action,
+)
 from src.services.decision_envelope_service import build_decision_envelope
 from src.services.league_workspace_context_service import (
     build_league_workspace_context,
@@ -2585,6 +2591,18 @@ class DesktopBackendFacade:
             )
             if own_roster is not None:
                 own_roster_player_ids = [str(value) for value in own_roster.get("players") or []]
+        # NWR Post-UI Product V1 (P1-4): computed BEFORE the trace-recording
+        # loop below (moved up from its prior position after the loop) so
+        # every K/DST trace can carry the real `leagueSnapshotId` its own
+        # response already returns -- same real hash inputs, same value,
+        # just computed earlier; no behavior change to what this endpoint
+        # returns.
+        kdst_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(own_roster_player_ids),
+            week=week,
+        )
+        kdst_status_versions = self._status_versions_snapshot()
         trace_ids: list[dict[str, str]] = []
         top_actions_by_position: dict[str, dict[str, Any] | None] = {}
         alternatives_by_position: dict[str, list[dict[str, Any]]] = {}
@@ -2623,17 +2641,14 @@ class DesktopBackendFacade:
                     for action in actions[:6]
                     if action is not top_action
                 ],
+                league_snapshot_id=kdst_league_snapshot_id,
+                status_versions=kdst_status_versions,
             )
             if position_trace_id:
                 # Flat list, not a {"K": ..., "DST": ...} dict -- the same
                 # camelCase-key-mangling hazard already documented just
                 # below for `positions` applies here too.
                 trace_ids.append({"position": position, "traceId": position_trace_id})
-        kdst_league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(own_roster_player_ids),
-            week=week,
-        )
         # NWR pre-UI architecture CLOSURE pass (directive section 4): K/DST
         # Streamer is now migrated to the full DecisionResultEnvelope --
         # one per position (K, DST), the same real reason `traceIds` is
@@ -3022,6 +3037,17 @@ class DesktopBackendFacade:
         lineup = optimize_weekly_lineup(
             candidates=candidates, roster=selected.roster, status_overrides=status_overrides
         )
+        # NWR Post-UI Product V1 (P1-4): moved up from just after the trace
+        # call below (same real hash inputs/value, computed earlier) so the
+        # trace can carry the same `leagueSnapshotId` this endpoint's own
+        # response already returns.
+        league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(
+                [candidate.sleeper_player_id for candidate in candidates]
+            ),
+            week=week,
+        )
         trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
             tool="START_SIT", engine_version="weekly_lineup_optimizer_service-v1",
@@ -3036,6 +3062,8 @@ class DesktopBackendFacade:
             alternatives=[
                 {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
             ],
+            league_snapshot_id=league_snapshot_id,
+            status_versions=self._status_versions_snapshot(),
         )
         # NWR pre-UI architecture pass (directive sections 3-4): identify
         # the exact decision state this recommendation was computed from,
@@ -3043,13 +3071,6 @@ class DesktopBackendFacade:
         # of the real fields already computed above -- nothing here is
         # recomputed or replaces the engine's own real response below.
         weekly_health_dict = weekly_health.to_dict()
-        league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(
-                [candidate.sleeper_player_id for candidate in candidates]
-            ),
-            week=week,
-        )
         if weekly_health_dict.get("freshness") == "STALE":
             confidence_state, confidence_basis = (
                 "LOW",
@@ -3280,6 +3301,16 @@ class DesktopBackendFacade:
             weeks_remaining=weeks_remaining, total_budget_dollars=total_budget_dollars,
         )
         faab_by_id = {bid.canonical_player_id: bid for bid in faab_bids}
+        # NWR Post-UI Product V1 (P1-4): computed BEFORE both trace calls
+        # below (moved up from its prior position after them -- same real
+        # hash inputs/value) so WAIVER and FAAB can both carry the real
+        # `leagueSnapshotId` this endpoint's own response already returns.
+        waivers_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(resolved.canonical_player_ids)),
+            week=week,
+        )
+        waivers_status_versions = self._status_versions_snapshot()
         waiver_trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
             tool="WAIVER", engine_version="waiver_engine_service-v1",
@@ -3294,6 +3325,8 @@ class DesktopBackendFacade:
                 {"playerName": candidate.player_name, "marginalUtility": candidate.marginal_utility}
                 for candidate in add_candidates[:5]
             ],
+            league_snapshot_id=waivers_league_snapshot_id,
+            status_versions=waivers_status_versions,
         )
         if add_candidates:
             top_bid = faab_by_id.get(add_candidates[0].canonical_player_id)
@@ -3309,6 +3342,8 @@ class DesktopBackendFacade:
                         "bidHighDollars": top_bid.bid_high_dollars,
                         "urgency": top_bid.urgency,
                     },
+                    league_snapshot_id=waivers_league_snapshot_id,
+                    status_versions=waivers_status_versions,
                 )
 
         # NWR pre-UI architecture pass (directive section 2): the same
@@ -3343,12 +3378,8 @@ class DesktopBackendFacade:
         # identity + the owner-facing DecisionResultEnvelope, built on the
         # real fields already computed above -- Waivers is the second tool
         # in the directive's stated migration order (Start/Sit, then
-        # Waivers/Add-Drop/FAAB).
-        waivers_league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(list(resolved.canonical_player_ids)),
-            week=week,
-        )
+        # Waivers/Add-Drop/FAAB). `waivers_league_snapshot_id` was already
+        # computed above, before the WAIVER/FAAB trace calls (P1-4).
         top_add = add_candidates[0] if add_candidates else None
         top_pairing = next(iter(pairings), None)
         if weekly_provider_health and weekly_provider_health.get("freshness") == "STALE":
@@ -3526,6 +3557,17 @@ class DesktopBackendFacade:
             )
         except TradeAnalysisError as exc:
             raise FacadeError("TRADE_ANALYSIS_INVALID", str(exc), status=422) from exc
+        # NWR pre-UI architecture CLOSURE pass (directive section 4):
+        # Trade Analysis is now migrated to the full DecisionResultEnvelope
+        # -- built on the same real, already-computed evaluation fields
+        # below, never a new computation. NWR Post-UI Product V1 (P1-4):
+        # moved up from just after the trace call below (same real hash
+        # inputs/value) so the trace can carry the real `leagueSnapshotId`.
+        trade_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
+        )
         trade_trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=None,
             tool="TRADE", engine_version="redraft_trade_analysis_service-v1", data_versions={},
@@ -3536,15 +3578,8 @@ class DesktopBackendFacade:
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "rosValueDelta": evaluation.ros_value_delta,
             },
-        )
-        # NWR pre-UI architecture CLOSURE pass (directive section 4):
-        # Trade Analysis is now migrated to the full DecisionResultEnvelope
-        # -- built on the same real, already-computed evaluation fields
-        # below, never a new computation.
-        trade_league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
-            week=None,
+            league_snapshot_id=trade_league_snapshot_id,
+            status_versions=self._status_versions_snapshot(),
         )
 
         # NWR pre-UI architecture pass (directive section 2): the same
@@ -3715,6 +3750,17 @@ class DesktopBackendFacade:
             opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
             status_overrides=status_overrides,
         )
+        # NWR pre-UI architecture pass (directive section 3): identification
+        # only this pass -- see DECISION_CONTRACTS.md. NWR Post-UI Product
+        # V1 (P1-4): moved up from just after the trace call below (same
+        # real hash inputs/value) so the fix below (TRADE_FINDER now a real
+        # TOOL_TYPES member -- see in_season_decision_trace_service.py) can
+        # carry the real `leagueSnapshotId` too.
+        trade_finder_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
+        )
         trade_finder_trace_id: str | None = None
         if results:
             top = results[0]
@@ -3736,14 +3782,9 @@ class DesktopBackendFacade:
                     }
                     for candidate in results[1:6]
                 ],
+                league_snapshot_id=trade_finder_league_snapshot_id,
+                status_versions=self._status_versions_snapshot(),
             )
-        # NWR pre-UI architecture pass (directive section 3): identification
-        # only this pass -- see DECISION_CONTRACTS.md.
-        trade_finder_league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
-            week=None,
-        )
         # NWR pre-UI architecture pass (directive section 2): the same
         # canonical PlayerAvailabilityStatus map Lineup/Waivers/Trade
         # Analysis/Draft read.
@@ -4000,6 +4041,19 @@ class DesktopBackendFacade:
             }
             for candidate in result.candidates
         ]
+        # NWR Post-UI Product V1 (P1-4): moved up from just after the trace
+        # call below (same real hash inputs/value) so the fix below
+        # (TRADE_PACKAGE_SEARCH now a real TOOL_TYPES member -- see
+        # in_season_decision_trace_service.py; this bug meant Worker 6/7's
+        # new Trade Package Search recorded ZERO real traces despite
+        # looking fully wired) can carry the real `leagueSnapshotId` too.
+        # Trace-recording only -- the search/scoring logic above
+        # (`result.candidates`) is read, never touched.
+        search_league_snapshot_id = compute_league_snapshot_id(
+            scoring_profile_hash=compute_scoring_profile_hash(selected),
+            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
+            week=None,
+        )
         search_trace_id: str | None = None
         if result.candidates:
             top = result.candidates[0]
@@ -4021,12 +4075,9 @@ class DesktopBackendFacade:
                     }
                     for c in result.candidates[1:6]
                 ],
+                league_snapshot_id=search_league_snapshot_id,
+                status_versions=self._status_versions_snapshot(),
             )
-        search_league_snapshot_id = compute_league_snapshot_id(
-            scoring_profile_hash=compute_scoring_profile_hash(selected),
-            roster_state_hash=compute_roster_state_hash(list(own_resolved.canonical_player_ids)),
-            week=None,
-        )
         top_candidate = result.candidates[0] if result.candidates else None
         search_envelope = build_decision_envelope(
             task="TRADE_PACKAGE_SEARCH",
@@ -4253,6 +4304,106 @@ class DesktopBackendFacade:
                 "authorityHealth": health,
             }
         )
+
+    def redraft_decision_trace_history(self) -> FacadePayload:
+        """NWR Post-UI Product V1 (P1-4, Prospective Recommendation
+        Ledger): the owner-facing 'what did NWR tell me?' read of the
+        existing append-only decision-trace ledger
+        (`in_season_decision_trace_service.py`) for the CURRENTLY ACTIVE
+        Redraft profile only.
+
+        Read-only, no computation, no calibration metric of any kind --
+        real season outcomes don't exist yet for anything recorded so far
+        (every event is prospective, from 'now' forward), so this method
+        does not invent one. It is a faithful projection of already-
+        recorded rows, newest first.
+
+        Never a cross-league read: the ledger is one JSONL file per
+        `profile_id` (`_trace_path`), and this method always resolves the
+        CURRENTLY active profile itself (never a caller-supplied one) --
+        there is no parameter through which a caller could accidentally
+        request a different league's history."""
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "REDRAFT_PROFILE_REQUIRED", "No active Redraft profile is selected.", status=409,
+            )
+        records = load_decision_traces(self.redraft_root, selected.profile_id)
+        ordered = sorted(records, key=lambda record: record.recorded_at_utc, reverse=True)
+        return FacadePayload(
+            data={
+                "profileId": selected.profile_id,
+                "leagueName": selected.league_name,
+                "totalCount": len(ordered),
+                "events": [_decision_trace_history_event_payload(record) for record in ordered],
+            }
+        )
+
+    def redraft_record_decision_trace_owner_action(
+        self, *, trace_id: str, action: str, notes: str = "",
+    ) -> FacadePayload:
+        """NWR Post-UI Product V1 (P1-4): the append-only OWNER-ACTION write
+        path, exposed as a real, callable facade method (the underlying
+        `record_owner_action` contract already existed in
+        `in_season_decision_trace_service.py` -- this is the first facade/
+        HTTP wiring of it). Appends a NEW ledger line; the original
+        recommendation line is never mutated. Scoped to the CURRENTLY
+        active profile's own ledger only, matching every other trace call
+        in this file."""
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "REDRAFT_PROFILE_REQUIRED", "No active Redraft profile is selected.", status=409,
+            )
+        trace_id = str(trace_id or "").strip()
+        if not trace_id:
+            raise FacadeError("DECISION_TRACE_ID_REQUIRED", "A trace ID is required.", status=400)
+        action = str(action or "").strip()
+        if not action:
+            raise FacadeError("DECISION_TRACE_OWNER_ACTION_REQUIRED", "An owner action is required.", status=400)
+        try:
+            updated = record_decision_trace_owner_action(
+                self.redraft_root, selected.profile_id, trace_id, action=action, notes=str(notes or ""),
+            )
+        except DecisionTraceError as exc:
+            raise FacadeError("DECISION_TRACE_NOT_FOUND", str(exc), status=404) from exc
+        return FacadePayload(data=_decision_trace_history_event_payload(updated))
+
+    def redraft_record_decision_trace_outcome(
+        self, *, trace_id: str, outcome: str, notes: str = "",
+    ) -> FacadePayload:
+        """NWR Post-UI Product V1 (P1-4): the append-only OUTCOME write
+        path's facade wiring -- symmetric to
+        `redraft_record_decision_trace_owner_action` above. Defined and
+        real even though nothing in this app's UI calls it yet: no real
+        2026-season outcome exists yet for anything this ledger has
+        recorded, since this pass starts prospectively from 'now', not
+        retroactively. Appends a NEW ledger line; never mutates the
+        original recommendation line."""
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "REDRAFT_PROFILE_REQUIRED", "No active Redraft profile is selected.", status=409,
+            )
+        trace_id = str(trace_id or "").strip()
+        if not trace_id:
+            raise FacadeError("DECISION_TRACE_ID_REQUIRED", "A trace ID is required.", status=400)
+        outcome = str(outcome or "").strip()
+        if not outcome:
+            raise FacadeError("DECISION_TRACE_OUTCOME_REQUIRED", "An outcome is required.", status=400)
+        try:
+            updated = record_decision_trace_outcome(
+                self.redraft_root, selected.profile_id, trace_id, outcome=outcome, notes=str(notes or ""),
+            )
+        except DecisionTraceError as exc:
+            raise FacadeError("DECISION_TRACE_NOT_FOUND", str(exc), status=404) from exc
+        return FacadePayload(data=_decision_trace_history_event_payload(updated))
 
     def redraft_data_health(self) -> FacadePayload:
         """Real runtime Data Health authority (directive section 6),
@@ -6098,6 +6249,8 @@ class DesktopBackendFacade:
         recommendation: dict[str, Any],
         alternatives: list[dict[str, Any]] | None = None,
         free_agent_state_player_ids: list[str] | None = None,
+        league_snapshot_id: str | None = None,
+        status_versions: dict[str, str] | None = None,
     ) -> str | None:
         """Best-effort in-season decision-trace logging (NWR Overnight V3,
         Lane 18) -- never allowed to break the actual recommendation
@@ -6109,7 +6262,15 @@ class DesktopBackendFacade:
         real `trace_id` on success (or `None` on a swallowed failure) so
         callers can surface it in their own response -- previously this
         always returned `None` and no caller's HTTP response exposed the
-        trace id it had just written."""
+        trace id it had just written.
+
+        NWR Post-UI Product V1 (P1-4, Prospective Recommendation Ledger):
+        `league_snapshot_id`/`status_versions` are additive, optional
+        pass-throughs to `record_decision_trace` -- every existing caller
+        that omits them still records byte-for-byte the same trace as
+        before this pass. Callers that DO pass `league_snapshot_id` use
+        the exact same value their own response's `leagueSnapshotId` field
+        already computes, never a second, independently-derived one."""
 
         try:
             record = record_decision_trace(
@@ -6117,10 +6278,32 @@ class DesktopBackendFacade:
                 tool=tool, engine_version=engine_version, data_versions=data_versions,
                 roster_state_player_ids=roster_state_player_ids, recommendation=recommendation,
                 alternatives=alternatives or [], free_agent_state_player_ids=free_agent_state_player_ids,
+                league_snapshot_id=league_snapshot_id, status_versions=status_versions,
             )
             return record.trace_id
         except Exception:  # noqa: BLE001 - audit logging must never break a real recommendation
             return None
+
+    def _status_versions_snapshot(self) -> dict[str, str]:
+        """NWR Post-UI Product V1 (P1-4): a cheap, honest fingerprint of the
+        `PlayerAvailabilityStatus` authority in effect when a recommendation
+        was generated, for the decision-trace ledger's `status_versions`
+        field. Reads the SAME already-existing
+        `player_availability_authority_health` health check every Data
+        Health surface already calls -- never a new source, never touches
+        `PlayerAvailabilityStatus` semantics itself (read-only), never
+        fabricates a semantic version number where none exists (this
+        authority is a manually-curated override file, not a versioned
+        release -- see that module's own docstring)."""
+
+        try:
+            health = player_availability_authority_health(self.repo_root)
+        except Exception:  # noqa: BLE001 - never break a real recommendation over this
+            return {}
+        return {
+            "playerAvailabilityStatusAuthority": str(health.get("authority") or ""),
+            "playerAvailabilityStatusEntryCount": str(health.get("entryCount") or 0),
+        }
 
     def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
         selected = active_profile(self.redraft_root)
@@ -6909,6 +7092,38 @@ class DesktopBackendFacade:
             "lastGeneratedTimestamp": health.last_generated_timestamp,
             "messages": messages,
         }
+
+
+def _decision_trace_history_event_payload(record: Any) -> dict[str, Any]:
+    """NWR Post-UI Product V1 (P1-4): the owner-facing JSON shape for one
+    History/Review row -- a faithful, literal projection of an already-
+    recorded `DecisionTraceRecord`, field names matching the governing
+    directive's own list (`leagueSnapshotId`, `league`, `week`, decision
+    type, `recommendation`, `alternatives`, `engineVersion`,
+    `dataVersions`, `statusVersions`, `generatedAt`, `traceId`) plus
+    `season`/`status`/`ownerAction`/`outcome` for the History table.
+    Pure presentation -- computes nothing, infers nothing, never adds a
+    calibration/accuracy field the ledger itself doesn't carry."""
+
+    return {
+        "traceId": record.trace_id,
+        "league": record.league_id,
+        "leagueSnapshotId": record.league_snapshot_id,
+        "season": record.season,
+        "week": record.week,
+        "decisionType": record.tool,
+        "recommendation": record.recommendation,
+        "alternatives": list(record.alternatives),
+        "engineVersion": record.engine_version,
+        "dataVersions": dict(record.data_versions),
+        "statusVersions": dict(record.status_versions),
+        "generatedAt": record.recorded_at_utc,
+        "status": record.status,
+        "ownerAction": record.owner_action,
+        "ownerActionRecordedAt": record.owner_action_recorded_at_utc,
+        "outcome": record.outcome,
+        "outcomeRecordedAt": record.outcome_recorded_at_utc,
+    }
 
 
 def _metric_status_payload(status: Any) -> dict[str, Any]:
