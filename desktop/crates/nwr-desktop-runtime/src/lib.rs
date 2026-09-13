@@ -57,11 +57,24 @@ const DYNASTY_RESOURCE_FILES: [&str; 10] = [
     "docs/hq/model/nwr_unified_research_preview_v1_20260808/ROOKIE_VETERAN_NEIGHBORHOODS.csv",
     "docs/hq/model/nwr_unified_research_preview_v1_20260808/UNIFIED_DYNASTY_RESEARCH_PREVIEW.csv",
 ];
+// NWR_POST_UI_WORKER_B (privacy-safe packaging, 2026-09-13): this constant
+// was stale (still the retired candidate_v1_20260809 / 608-row packet) --
+// updated to the real Freeze V7 packet Worker 2's P0-2 pass already
+// migrated the runtime facade and the npm-side allowlist
+// (check-resource-allowlists.mjs) to. Also swapped the governance file from
+// the full canonical receipt (NWR_DATA_GOVERNANCE.json, which legitimately
+// carries the real owner's name in its own audit trail and is never
+// bundled) to the release-safe, PII-free, hash-bound admission summary
+// derived from it -- see
+// docs/codex/post_ui_v1/NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md. This list
+// must always name the exact same files as check-resource-allowlists.mjs's
+// `redraft` allowlist and tauri.windows.conf.json's resource map; a test in
+// tests/test_privacy_safe_packaging_bundle.py cross-checks all three.
 #[cfg(any(not(debug_assertions), test))]
 const REDRAFT_RESOURCE_FILES: [&str; 3] = [
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/BLOCKED_2026_ROOKIES.csv",
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv",
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809/NWR_DATA_GOVERNANCE.json",
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/BLOCKED_2026_ROOKIES.csv",
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv",
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/NWR_DATA_GOVERNANCE_RELEASE_SUMMARY.json",
 ];
 #[cfg(any(not(debug_assertions), test))]
 const FORBIDDEN_RESOURCE_TREES: [&str; 4] =

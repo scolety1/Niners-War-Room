@@ -5,10 +5,15 @@ import hashlib
 import json
 from collections import Counter
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
+from src.services.governance_release_summary_service import (
+    derive_release_admission_summary,
+    summary_json_bytes,
+)
 from src.services.redraft_engine_v1_service import (
     DraftContext,
     LeagueProfile,
@@ -26,6 +31,7 @@ from src.services.redraft_engine_v1_service import (
     duplicate_profile,
     generate_rankings,
     install_projection_snapshot,
+    install_projection_snapshot_from_release_summary,
     list_profiles,
     load_draft_board,
     load_profile,
@@ -221,6 +227,143 @@ def _write_approval(path: Path, source: Path, **overrides: object) -> None:
     }
     receipt.update(overrides)
     path.write_text(json.dumps(receipt), encoding="utf-8")
+
+
+def _fresh_projection_rows() -> list[dict[str, object]]:
+    """Same shape as `_projection_rows()`, but with `source_as_of` set to a
+    date that is always fresh relative to whenever this test actually runs
+    -- avoids the pre-existing, unrelated calendar-drift issue several other
+    tests in this file already carry (hardcoded `source_as_of` dates that
+    eventually fall outside the 30-day freshness window)."""
+
+    fresh_date = (datetime.now(UTC).date() - timedelta(days=1)).isoformat()
+    rows = _projection_rows()
+    for row in rows:
+        row["source_as_of"] = fresh_date
+    return rows
+
+
+def _write_canonical_receipt(path: Path, source: Path, **overrides: object) -> dict[str, object]:
+    """A full canonical governance receipt fixture -- same required shape as
+    the real NWR_DATA_GOVERNANCE.json, used only to derive a release-safe
+    summary from in these tests (never installed directly by the
+    release-summary install path)."""
+
+    receipt: dict[str, object] = {
+        "schema_version": 1,
+        "authority": "NWR_DATA_GOVERNANCE",
+        "approval_status": "APPROVED_FOR_REDRAFT_V1",
+        "season": 2026,
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "source_id": "test-governed-projections-2026-v1",
+        "approved_by": "Test Owner (independent test governance, not a real identity)",
+        "approved_at_utc": "2026-08-08T12:00:00+00:00",
+        "valid_until": (datetime.now(UTC).date() + timedelta(days=30)).isoformat(),
+        "admission_scope": "NWR_REDRAFT_2026_LIVE",
+        "component_sources_as_of": {"veterans": "2026-08-08", "rookies": "2026-08-08"},
+    }
+    receipt.update(overrides)
+    path.write_text(json.dumps(receipt), encoding="utf-8")
+    return receipt
+
+
+def _write_release_summary_from_receipt(path: Path, receipt: dict[str, object]) -> None:
+    receipt_bytes = json.dumps(receipt).encode("utf-8")
+    summary = derive_release_admission_summary(receipt, receipt_bytes)
+    path.write_bytes(summary_json_bytes(summary))
+
+
+def test_install_projection_snapshot_from_release_summary_installs_and_reloads(
+    tmp_path: Path,
+) -> None:
+    """The privacy-safe packaging install path: no full canonical receipt is
+    ever read or copied -- only the derived, PII-free summary."""
+
+    source = tmp_path / "incoming.csv"
+    receipt_path = tmp_path / "canonical_receipt.json"
+    summary_path = tmp_path / "release_summary.json"
+    store = tmp_path / "redraft-store"
+    _write_projection(source, _fresh_projection_rows())
+    receipt = _write_canonical_receipt(receipt_path, source)
+    _write_release_summary_from_receipt(summary_path, receipt)
+
+    installed = install_projection_snapshot_from_release_summary(store, 2026, source, summary_path)
+    assert installed.source_path == projection_snapshot_path(store, 2026)
+    assert not installed.errors
+    approval_installed = installed.source_path.with_suffix(".approval.json")
+    assert approval_installed.is_file()
+    installed_approval_text = approval_installed.read_text(encoding="utf-8")
+    assert "approved_by" not in installed_approval_text
+    assert "Test Owner" not in installed_approval_text
+    assert "NWR_GOVERNANCE_RELEASE_ADMISSION_SUMMARY" in installed_approval_text
+
+    manifest = json.loads(installed.source_path.with_suffix(".manifest.json").read_text(encoding="utf-8"))
+    assert manifest["admission_kind"] == "RELEASE_SUMMARY"
+    assert "approved_by" not in manifest
+
+    # Re-loading with require_manifest=True (the ongoing, every-mutating-call
+    # local-integrity gate) must take the release-summary branch and pass.
+    reloaded = load_projection_snapshot(installed.source_path, season=2026, require_manifest=True)
+    assert not reloaded.errors
+
+
+def test_install_projection_snapshot_from_release_summary_rejects_hash_mismatch(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "incoming.csv"
+    receipt_path = tmp_path / "canonical_receipt.json"
+    summary_path = tmp_path / "release_summary.json"
+    _write_projection(source, _fresh_projection_rows())
+    receipt = _write_canonical_receipt(receipt_path, source, source_sha256="0" * 64)
+    _write_release_summary_from_receipt(summary_path, receipt)
+
+    with pytest.raises(RedraftValidationError, match="does not bind"):
+        install_projection_snapshot_from_release_summary(
+            tmp_path / "store", 2026, source, summary_path
+        )
+
+
+def test_install_projection_snapshot_from_release_summary_rejects_expired(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "incoming.csv"
+    receipt_path = tmp_path / "canonical_receipt.json"
+    summary_path = tmp_path / "release_summary.json"
+    _write_projection(source, _fresh_projection_rows())
+    receipt = _write_canonical_receipt(receipt_path, source, valid_until="2020-01-01")
+    _write_release_summary_from_receipt(summary_path, receipt)
+
+    with pytest.raises(RedraftValidationError, match="expired"):
+        install_projection_snapshot_from_release_summary(
+            tmp_path / "store", 2026, source, summary_path
+        )
+
+
+def test_installed_release_summary_approval_copy_is_tamper_detected_on_reload(
+    tmp_path: Path,
+) -> None:
+    """Proves the ongoing local-integrity re-check (require_manifest=True,
+    run on every mutating Redraft operation) is not a no-op for the new
+    release-summary branch -- editing the installed local `.approval.json`
+    after install is caught on the very next load, exactly like the
+    full-receipt branch already guarantees."""
+
+    source = tmp_path / "incoming.csv"
+    receipt_path = tmp_path / "canonical_receipt.json"
+    summary_path = tmp_path / "release_summary.json"
+    store = tmp_path / "redraft-store"
+    _write_projection(source, _fresh_projection_rows())
+    receipt = _write_canonical_receipt(receipt_path, source)
+    _write_release_summary_from_receipt(summary_path, receipt)
+    installed = install_projection_snapshot_from_release_summary(store, 2026, source, summary_path)
+
+    approval_installed = installed.source_path.with_suffix(".approval.json")
+    tampered = json.loads(approval_installed.read_text(encoding="utf-8"))
+    tampered["valid_until"] = "2020-01-01"
+    approval_installed.write_text(json.dumps(tampered), encoding="utf-8")
+
+    reloaded = load_projection_snapshot(installed.source_path, season=2026, require_manifest=True)
+    assert any("expired" in error for error in reloaded.errors)
 
 
 @pytest.fixture()

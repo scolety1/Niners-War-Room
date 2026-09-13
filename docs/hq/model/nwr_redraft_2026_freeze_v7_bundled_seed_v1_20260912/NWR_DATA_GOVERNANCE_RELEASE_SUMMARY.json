@@ -1,0 +1,16 @@
+{
+  "admission_scope": "NWR_REDRAFT_2026_LIVE",
+  "approval_status": "APPROVED_FOR_REDRAFT_V1",
+  "authority": "NWR_DATA_GOVERNANCE",
+  "component_sources_as_of": {
+    "rookies": "2026-09-08 (fresh, same players registry pull as the veteran admission)",
+    "veterans": "2026-09-08 (unchanged from a1505742 -- veteran admission not reopened)"
+  },
+  "derived_from_canonical_receipt_sha256": "99fe36dcfb0ae64c2c7b3dd99ae51572322827ecdeb8a325224feb3c4fa7b6ea",
+  "kind": "NWR_GOVERNANCE_RELEASE_ADMISSION_SUMMARY",
+  "season": 2026,
+  "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V2",
+  "source_sha256": "b87c7296647b83a6103209a2995827766b7957a35270edb1624d7a61102929f4",
+  "summary_schema_version": 1,
+  "valid_until": "2026-10-08"
+}

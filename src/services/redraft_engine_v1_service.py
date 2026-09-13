@@ -14,6 +14,12 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from src.services.governance_release_summary_service import (
+    RELEASE_SUMMARY_KIND,
+    ReleaseSummaryError,
+    load_and_validate_release_admission_summary,
+)
+
 REDRAFT_AUTHORITY_LABEL = "REDRAFT V1 - REVIEW"
 DYNASTY_AUTHORITY_LABEL = "DYNASTY - LONG TERM"
 MODEL_FAMILY = "R2_FLEX_AWARE_REPLACEMENT"
@@ -668,6 +674,86 @@ def install_projection_snapshot(
     return load_projection_snapshot(destination, season=season, require_manifest=True)
 
 
+def install_projection_snapshot_from_release_summary(
+    root: str | Path,
+    season: int,
+    source: str | Path,
+    release_summary: str | Path,
+) -> ProjectionSnapshot:
+    """Install the bundled projection snapshot using a release-safe
+    admission summary instead of the full private governance receipt.
+
+    This is the seed-install path a packaged (Tauri-bundled) Redraft build
+    uses: the full canonical receipt (NWR_DATA_GOVERNANCE.json, whose own
+    audit trail legitimately contains the real owner's name) is deliberately
+    excluded from the distributable bundle -- see
+    docs/codex/post_ui_v1/NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md. The
+    summary is validated on its own reduced-but-complete field set (still
+    binds season + artifact hash + admission/approval state + expiry -- the
+    runtime-relevant facts `_validate_approval_receipt` also enforces) and
+    carries no human name, no local path, no other PII by construction.
+
+    `install_projection_snapshot` (full-receipt path) is entirely separate
+    and unmodified -- this function never calls it and never touches its
+    behavior.
+    """
+
+    source_path = Path(source).resolve()
+    snapshot = load_projection_snapshot(source_path, season=season)
+    if snapshot.errors:
+        raise RedraftValidationError(
+            "Projection snapshot failed validation: " + "; ".join(snapshot.errors)
+        )
+    summary_path = Path(release_summary).resolve()
+    try:
+        summary, summary_digest = load_and_validate_release_admission_summary(
+            summary_path,
+            season=season,
+            source_sha256=snapshot.source_sha256,
+            expected_authority=APPROVAL_AUTHORITY,
+            expected_approval_status=APPROVAL_STATUS,
+        )
+    except ReleaseSummaryError as exc:
+        raise RedraftValidationError(str(exc)) from exc
+    destination = projection_snapshot_path(root, season)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
+    approval_destination = destination.with_suffix(".approval.json")
+    approval_temporary = approval_destination.with_name(
+        f".{approval_destination.name}.{uuid4().hex}.tmp"
+    )
+    try:
+        shutil.copyfile(source_path, temporary)
+        shutil.copyfile(summary_path, approval_temporary)
+        os.replace(temporary, destination)
+        os.replace(approval_temporary, approval_destination)
+    except OSError as exc:
+        temporary.unlink(missing_ok=True)
+        approval_temporary.unlink(missing_ok=True)
+        raise RedraftPersistenceError(f"Could not install projection snapshot: {exc}") from exc
+    _atomic_json(
+        destination.with_suffix(".manifest.json"),
+        {
+            "schema_version": SCHEMA_VERSION,
+            "season": season,
+            "source_sha256": snapshot.source_sha256,
+            "player_rows": len(snapshot.players),
+            "blocked_rows": len(snapshot.blocked_rows),
+            "source_filename": source_path.name,
+            "admission_policy": "GOVERNED_CURRENT_SEASON_V1",
+            "admission_kind": "RELEASE_SUMMARY",
+            "approval_receipt_sha256": summary_digest,
+            "approval_authority": summary["authority"],
+            "approval_status": summary["approval_status"],
+            "approval_source_id": summary["source_id"],
+            "canonical_receipt_sha256": summary["derived_from_canonical_receipt_sha256"],
+            "valid_until": summary["valid_until"],
+            "installed_at_utc": utc_now(),
+        },
+    )
+    return load_projection_snapshot(destination, season=season, require_manifest=True)
+
+
 DRAFT_DAY_AUTHORIZATION_FILENAME = "DRAFT_DAY_AUTHORIZATION.json"
 DRAFT_DAY_AUTHORIZATION_LABEL = "OWNER_DRAFT_DAY_APPROVAL_2026_KHA"
 # NWR EMERGENCY RECOMMENDATION REPAIR (2026-09-07): the loader below used to
@@ -1016,6 +1102,22 @@ def _validate_approval_receipt(
     return receipt, hashlib.sha256(data).hexdigest()
 
 
+def _installed_approval_is_release_summary(approval_path: Path) -> bool:
+    """Detect, without raising, whether the installed ".approval.json" copy
+    is a release-safe admission summary rather than a full canonical
+    receipt. Any read/parse failure returns False, deferring to the
+    full-receipt branch's own (unchanged) error handling for a missing or
+    corrupt file -- this function only exists to pick a branch, never to
+    validate."""
+
+    try:
+        data = approval_path.read_bytes()
+        document = json.loads(data.decode("utf-8-sig"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return isinstance(document, dict) and document.get("kind") == RELEASE_SUMMARY_KIND
+
+
 def _projection_manifest_errors(
     source_path: Path,
     *,
@@ -1045,6 +1147,35 @@ def _projection_manifest_errors(
     }
     mismatches = [key for key, value in expected.items() if manifest.get(key) != value]
     approval_path = source_path.with_suffix(".approval.json")
+    if _installed_approval_is_release_summary(approval_path):
+        # NWR privacy-safe packaging (Worker B): the locally-installed
+        # ".approval.json" copy is a release-safe admission summary (a
+        # packaged-build seed install, or a dev install that deliberately
+        # used install_projection_snapshot_from_release_summary), not the
+        # full canonical receipt. Re-validate it on its own reduced field
+        # set -- this branch is fully separate from, and never weakens, the
+        # full-receipt branch below.
+        try:
+            summary, summary_digest = load_and_validate_release_admission_summary(
+                approval_path,
+                season=season,
+                source_sha256=digest,
+                expected_authority=APPROVAL_AUTHORITY,
+                expected_approval_status=APPROVAL_STATUS,
+            )
+        except ReleaseSummaryError as exc:
+            return [str(exc)]
+        approval_expected = {
+            "admission_kind": "RELEASE_SUMMARY",
+            "approval_receipt_sha256": summary_digest,
+            "approval_source_id": summary["source_id"],
+            "canonical_receipt_sha256": summary["derived_from_canonical_receipt_sha256"],
+            "valid_until": summary["valid_until"],
+        }
+        mismatches.extend(key for key, value in approval_expected.items() if manifest.get(key) != value)
+        return (
+            ["Installed projection manifest mismatch: " + ", ".join(mismatches)] if mismatches else []
+        )
     try:
         receipt, receipt_digest = _validate_approval_receipt(
             approval_path,

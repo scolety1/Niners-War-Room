@@ -12,11 +12,214 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Twelve commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Thirteen commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
 backend, then P1-3 UI, then P1-4, then P1-5, then P2-1, then Worker 11's
 final shift consolidation (docs-only, no code commit), then Worker A's
-closure pass below) -- run `git log -1` for the exact hash.
+closure pass, then Worker B's privacy-safe packaging pass below) -- run
+`git log -1` for the exact hash.
+
+## Privacy-safe packaging architecture + native package (Worker B) --
+2026-09-13
+
+**Worker B's scope: design and implement the privacy-safe Tauri packaging
+architecture item 9 (`check:resources` owner-marker block) left open by
+Worker 3/every worker since, then attempt the real native build.** Governance-
+sensitive task; did not touch the privacy guard's logic, did not edit the
+canonical governance receipt, did not add any name to a "safe" allowlist.
+Design doc: `docs/codex/post_ui_v1/NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md`.
+
+**Root cause, verified by reading the actual runtime (not assumed):** the
+bundled `NWR_DATA_GOVERNANCE.json` governance receipt legitimately carries
+the real owner's name in its own `approved_by` audit-trail field.
+`desktop_facade.py._ensure_redraft_projection_seed()` reads that exact file
+(relative to `self.repo_root`, which a packaged build resolves to Tauri's
+`resource_dir()` -- confirmed via `nwr-desktop-runtime/src/lib.rs`'s
+`resolve_repo_root()`) to perform the one-time first-run seed install via
+`redraft_engine_v1_service.install_projection_snapshot()`/
+`_validate_approval_receipt()`, which requires a full receipt shape
+(`approved_by`/`approved_at_utc` included, both non-empty). That is the only
+reason the full receipt was ever a packaging candidate. **A second,
+previously-undiscovered instance of the same drift was found while reading
+this path:** `nwr-desktop-runtime`'s own release-build startup gate
+(`REDRAFT_RESOURCE_FILES`) was ALSO stale -- still pointing at the retired
+608-row `candidate_v1_20260809` packet, not the Freeze V7 packet Worker 2's
+P0-2 pass and Worker 3's own npm-allowlist fix already migrated to. A
+packaged build attempted before this pass (even with the privacy conflict
+somehow bypassed) would have failed at Tauri startup with "bundled redraft
+resources are incomplete." Fixed as part of this same edit.
+
+**Architecture built (two artifacts, not one):**
+- **A. Private canonical receipt** -- untouched, unedited, stays in the repo
+  for provenance. `git diff` against it is empty (verified). Its content,
+  filename, and location are exactly as Worker 2 migrated it.
+- **B. Release-safe runtime admission summary (new)** --
+  `docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/
+  NWR_DATA_GOVERNANCE_RELEASE_SUMMARY.json`, deterministically derived by
+  `src/services/governance_release_summary_service.py`'s
+  `derive_release_admission_summary()` (built field-by-field from an
+  explicit allowlist -- `authority`/`approval_status`/`season`/`source_id`/
+  `source_sha256`/`valid_until`/`admission_scope`/`component_sources_as_of`
+  -- never a copy-then-strip of the input, so no future receipt field is
+  included by accident). Carries NO `approved_by`, NO `approved_at_utc`, NO
+  human name, NO local path. Hash-bound to the exact canonical receipt it
+  came from (`derived_from_canonical_receipt_sha256`) and to the exact
+  projection artifact it admits (`source_sha256`, same field/value the
+  canonical receipt itself uses) -- it cannot be silently repointed at a
+  different admission or a different projection snapshot. Regeneration
+  script: `scripts/derive_governance_release_summary.py` (also the
+  mechanism the drift test re-runs).
+
+**Runtime wiring:** `desktop_facade.py`'s bundled-seed install now reads
+ONLY the release summary (`REDRAFT_SEED_RELEASE_SUMMARY_RELATIVE`) via a
+new, separate `redraft_engine_v1_service.install_projection_snapshot_from_
+release_summary()` -- the original `install_projection_snapshot()`/
+`_validate_approval_receipt()` (full-receipt path) are byte-for-byte
+unmodified and remain correct for the manual admission page and their own
+existing test suite. `_projection_manifest_errors` (the ongoing local-
+integrity re-check run on every mutating Redraft operation via
+`require_manifest=True`) now detects, from the installed `.approval.json`'s
+own shape (`"kind"` field), which validator to re-run -- the full-receipt
+branch is untouched; only a new summary-shaped branch was added. Both dev
+and packaged builds now go through the identical summary-based seed-install
+path (no dev-vs-packaged divergence left in this logic -- the exact class
+of gap that caused the stale-Rust-constant bug above).
+
+**Files updated to point at the summary instead of the full receipt:**
+`desktop/apps/redraft/src-tauri/tauri.windows.conf.json` (Windows resource
+map), `desktop/scripts/check-resource-allowlists.mjs` (the `redraft`
+allowlist -- the guard's own `ownerMarkers`/`assertNoOwnerMarkers`/exact-
+match logic is completely unmodified), `desktop/crates/nwr-desktop-runtime/
+src/lib.rs` (`REDRAFT_RESOURCE_FILES`, also fixing the stale-path bug above
+in the same edit).
+
+**Tests (all new, all passing):**
+- `tests/test_governance_release_summary_service.py` (19 tests): the
+  committed summary regenerates byte-for-byte from the committed canonical
+  receipt (drift detection); the canonical receipt itself still carries
+  "Spencer Colety" untouched (proves nothing redacted it); the derived
+  summary never contains a forbidden field or owner marker;
+  `validate_release_admission_summary` accepts a well-formed match and
+  rejects: hash mismatch, season mismatch, expiry, wrong approval_status,
+  wrong kind, wrong schema version, missing field, a hand-reinserted
+  `approved_by`, and an owner-marker string smuggled into an allowed field.
+- `tests/test_privacy_safe_packaging_bundle.py` (6 tests): runs the ACTUAL
+  `node check-resource-allowlists.mjs` as a subprocess and asserts exit 0
+  (a real guard run, not logic-only); loads the actual
+  `tauri.windows.conf.json` resource map and asserts the private receipt's
+  path is absent / the summary's path is present; reads the actual bytes of
+  every bundled `redraft` resource file off disk and asserts none contain
+  an owner marker; cross-checks the Rust `REDRAFT_RESOURCE_FILES` constant
+  against the npm allowlist so the two file sets can never silently drift
+  apart again.
+- `tests/test_redraft_engine_v1_service.py` (+4 tests): a real end-to-end
+  install via `install_projection_snapshot_from_release_summary` that
+  reloads cleanly through `require_manifest=True`; installed `.approval.json`
+  proven to contain no `approved_by`/owner name; hash-mismatch and expired-
+  summary installs both correctly rejected; a tampered installed summary
+  (edited `valid_until`) is caught on the very next reload -- proves the
+  ongoing local-integrity re-check is not a no-op for the new branch.
+- Regression: `pytest tests/test_redraft_engine_v1_service.py` -- identical
+  pre-existing 3 failed/13 errors both before and after this pass (confirmed
+  via `git stash` A/B), a real, unrelated calendar-drift issue in that file's
+  own hardcoded `source_as_of` fixture dates (today is 2026-09-13; several
+  of that file's dates now exceed the 30-day freshness window) -- zero new
+  regressions, 4 new tests pass. `pytest tests/test_desktop_application_api.py`:
+  46 passed, 4 failed -- the exact same 4 pre-existing failures this
+  ledger's baseline already documents (confirmed by exact test-name match).
+  `pytest tests/test_desktop_facade_architecture_wiring.py tests/
+  test_player_availability_status_consumer_consistency.py tests/
+  test_player_availability_status_service.py`: 21/21 passing. `cargo test`
+  (nwr-desktop-runtime): 4/4 passing (parametric over the corrected resource
+  list, no test edits needed).
+
+**NATIVE PACKAGE: PASS.** `npm run check:resources` now passes cleanly for
+both apps (previously blocked for `redraft` only). Rebuilt the Python
+sidecar with `-Force` (fresh hash, reflects this pass's source changes) and
+ran the real `npm run tauri:build --workspace @nwr/redraft-desktop`
+end-to-end: cargo release build succeeded, both configured bundle targets
+produced real installers -- `target/release/bundle/nsis/Niners War Room —
+Redraft_1.0.8_x64-setup.exe` (NSIS) and `target/release/bundle/msi/Niners
+War Room — Redraft_1.0.8_x64_en-US.msi` (MSI), exit code 0, "Finished 2
+bundles."
+
+**PACKAGE PRIVACY SCAN: PASS (one minor, disclosed, unrelated finding).**
+The NSIS installer's payload is LZMA-compressed (a plain byte scan of the
+`.exe` finds nothing, compressed or not -- confirmed against a string known
+to be present); administratively extracted the MSI instead
+(`msiexec /a ... TARGETDIR=...`, a real, standard Windows extraction, not a
+formality) to inspect the actual installed payload: exactly 5 files ship --
+the 3 governance/projection resources (confirmed: the release summary, NOT
+the private receipt) and the two executables (sidecar + main app). Scanned
+every one of those 5 real files for owner names, the real owner's email,
+the real local AppData install path, Bearer/API-key/private-key patterns,
+`approved_by` (would only appear if the private receipt had leaked in), the
+real Sleeper league IDs this shift has used for live testing, and generic
+email addresses -- **zero matches on all of the above.** One separate,
+minor, disclosed finding: `nwr-redraft-war-room.exe` embeds the BUILD
+MACHINE's Windows account name (`codex-agent`, this sandbox's account, not
+the real owner's) ~44 times, exclusively inside standard Rust panic-location
+debug strings for THIRD-PARTY dependency crates (mio, tauri, serde, url,
+etc. -- their `~/.cargo/registry/...`/`~/.rustup/...` source paths, embedded
+by the Rust compiler by default). Verified this is generic Rust/Cargo
+toolchain behavior, not an NWR-specific leak: NWR's own crate
+(`nwr-desktop-runtime`) panic locations are relative
+(`crates\nwr-desktop-runtime\src\lib.rs`), not absolute, and neither
+`C:\NWR` nor `post-ui-product-v1` (this worktree's own path) appear anywhere
+in the binary. This is an existing property of any Rust/Tauri release build
+on any machine (not introduced or worsened by this pass), does not leak the
+real owner's identity in this particular build, and is a distinct
+architecture surface from the governance-receipt problem this pass was
+scoped to fix -- disclosed as an open item below rather than addressed here.
+
+**Files changed (all packaging/governance-projection, zero scoring/roster/
+draft-recommendation files):** `src/services/governance_release_summary_
+service.py` (new), `scripts/derive_governance_release_summary.py` (new),
+`docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/
+NWR_DATA_GOVERNANCE_RELEASE_SUMMARY.json` (new, generated), `src/services/
+redraft_engine_v1_service.py` (additive: one new install function, one new
+branch-detection helper, one new branch in `_projection_manifest_errors`;
+`install_projection_snapshot`/`_validate_approval_receipt` untouched),
+`src/application/desktop_facade.py` (seed-install wiring only),
+`desktop/apps/redraft/src-tauri/tauri.windows.conf.json`, `desktop/scripts/
+check-resource-allowlists.mjs`, `desktop/crates/nwr-desktop-runtime/src/
+lib.rs` (resource-list correctness, guard logic itself untouched), plus the
+three new/extended test files above and this design doc.
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/the lifecycle resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus` semantics were never touched or read beyond what
+was already necessary to trace the governance-receipt install path. No
+merge/push/deploy/push-to-origin.
+
+**Open issues for the next worker (real read-only release smoke rerun):**
+1. The real native package (NSIS + MSI, this pass's fresh build) sits at
+   `desktop/target/release/bundle/{nsis,msi}/` (gitignored, not committed) --
+   worth a real install-and-launch smoke test on a clean profile if the next
+   worker has time; this pass verified the build + a static content/privacy
+   scan of the extracted payload, not an actual install + first-run launch.
+2. **Build-machine-path disclosure (new finding, low severity, not fixed):**
+   the shipped `nwr-redraft-war-room.exe` embeds the building machine's
+   Windows account name inside third-party Rust dependency debug strings
+   (see PACKAGE PRIVACY SCAN above). If the owner ever wants zero
+   build-machine metadata in the shipped binary, the exact fix is a Cargo
+   build-config change -- e.g. `RUSTFLAGS="--remap-path-prefix=<cargo home>=
+   /cargo --remap-path-prefix=<rustup home>=/rustup"` (or a workspace
+   `.cargo/config.toml` `[build] rustflags` entry) applied to both desktop
+   apps' release profile -- NOT implemented by this pass (a real, generic
+   Rust-toolchain build-hygiene item, orthogonal to the governance-receipt
+   architecture this pass was scoped to fix, and a decision the owner should
+   make deliberately rather than have bundled into an unrelated privacy fix).
+3. The Python sidecar exe was rebuilt with `-Force` this pass (new hash,
+   reflects this session's backend changes) -- if a future pass rebuilds it
+   again, `desktop/binaries/*.sha256` will change again; this is expected
+   and not itself a regression signal.
+4. Every other real, disclosed remainder from Worker 11's/Worker A's
+   consolidated open-items lists (weekly-home-actions 500 is item 8 there --
+   unrelated to this pass, not touched; the "Open in Analyze" canonical-vs-
+   Sleeper id gap; etc.) is untouched and still open exactly as documented
+   there.
 
 ## Closure pass (bug 1: weekly-home-actions 500; bug 2: canonical-vs-Sleeper
 identity boundary) -- 2026-09-13

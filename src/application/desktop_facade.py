@@ -192,7 +192,7 @@ from src.services.redraft_engine_v1_service import (
     create_profile,
     duplicate_profile,
     generate_rankings,
-    install_projection_snapshot,
+    install_projection_snapshot_from_release_summary,
     list_profiles,
     load_draft_board,
     load_profile,
@@ -415,6 +415,22 @@ REDRAFT_SEED_SOURCE_RELATIVE = (
     REDRAFT_SEED_PACKET_RELATIVE / "GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv"
 )
 REDRAFT_SEED_APPROVAL_RELATIVE = REDRAFT_SEED_PACKET_RELATIVE / "NWR_DATA_GOVERNANCE.json"
+# NWR privacy-safe packaging (Worker B, 2026-09-13): the full canonical
+# receipt above (REDRAFT_SEED_APPROVAL_RELATIVE) legitimately contains the
+# real owner's name in its own audit trail and is therefore never a bundled
+# Tauri resource -- see
+# docs/codex/post_ui_v1/NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md. The
+# first-run bundled-seed install below reads ONLY this release-safe,
+# PII-free, hash-bound projection of that receipt
+# (governance_release_summary_service.derive_release_admission_summary),
+# in both dev and packaged builds, so the seed-install code path is
+# identical everywhere and the full receipt is never required at runtime by
+# this facade. REDRAFT_SEED_APPROVAL_RELATIVE itself is kept only as a
+# documented pointer to the actual source-of-truth receipt for provenance --
+# it is intentionally unused by _ensure_redraft_projection_seed below.
+REDRAFT_SEED_RELEASE_SUMMARY_RELATIVE = (
+    REDRAFT_SEED_PACKET_RELATIVE / "NWR_DATA_GOVERNANCE_RELEASE_SUMMARY.json"
+)
 REDRAFT_SEED_BLOCKED_RELATIVE = REDRAFT_SEED_PACKET_RELATIVE / "BLOCKED_2026_ROOKIES.csv"
 REDRAFT_SEED_SHA256 = "b87c7296647b83a6103209a2995827766b7957a35270edb1624d7a61102929f4"
 
@@ -1688,8 +1704,8 @@ class DesktopBackendFacade:
                     "the bundled seed was not installed.",
                 )
             source = self.repo_root / REDRAFT_SEED_SOURCE_RELATIVE
-            approval = self.repo_root / REDRAFT_SEED_APPROVAL_RELATIVE
-            if not source.is_file() or not approval.is_file():
+            release_summary = self.repo_root / REDRAFT_SEED_RELEASE_SUMMARY_RELATIVE
+            if not source.is_file() or not release_summary.is_file():
                 return False, (
                     "The governed bundled Redraft projection seed is unavailable; "
                     "rankings remain blocked.",
@@ -1704,11 +1720,11 @@ class DesktopBackendFacade:
                     "rankings remain blocked.",
                 )
             try:
-                snapshot = install_projection_snapshot(
+                snapshot = install_projection_snapshot_from_release_summary(
                     self.redraft_root,
                     2026,
                     source,
-                    approval,
+                    release_summary,
                 )
             except (OSError, RedraftPersistenceError, RedraftValidationError):
                 return False, (

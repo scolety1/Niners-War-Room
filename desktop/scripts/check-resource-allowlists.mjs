@@ -31,7 +31,17 @@ const allowlists = {
     // native package build.
     "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/BLOCKED_2026_ROOKIES.csv",
     "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv",
-    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/NWR_DATA_GOVERNANCE.json",
+    // NWR_POST_UI_WORKER_B (privacy-safe packaging, 2026-09-13): the full
+    // canonical governance receipt (NWR_DATA_GOVERNANCE.json) legitimately
+    // contains the real owner's name in its own audit trail
+    // (`approved_by`), which this script's own ownerMarkers check correctly
+    // refuses to bundle. This allowlist now names a separate,
+    // deterministically-derived, PII-free projection of that receipt
+    // instead -- see governance_release_summary_service.py and
+    // docs/codex/post_ui_v1/NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md. The
+    // canonical receipt itself stays in the repository for provenance but
+    // is never bundled into a distributable package.
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/NWR_DATA_GOVERNANCE_RELEASE_SUMMARY.json",
   ],
 };
 
