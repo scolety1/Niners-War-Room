@@ -11,6 +11,8 @@ from src.services.redraft_engine_v1_service import (
     ScoringSettings,
 )
 from src.services.waiver_engine_service import (
+    FAAB_URGENCY_TIER,
+    WaiverCandidate,
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
@@ -188,6 +190,64 @@ def test_faab_bids_taper_late_in_season() -> None:
 def test_faab_rejects_invalid_context() -> None:
     with pytest.raises(ValueError):
         suggest_faab_bids(candidates=(), remaining_budget_dollars=-1, weeks_remaining=5)
+
+
+def _candidate(canonical_id, marginal_utility, becomes_starter) -> WaiverCandidate:
+    return WaiverCandidate(
+        sleeper_player_id=f"s-{canonical_id}", canonical_player_id=canonical_id,
+        player_name=canonical_id, position="RB", team="TST",
+        ros_replacement_value=1.0, ros_overall_rank=1, weekly_projected_points=None,
+        marginal_utility=marginal_utility, becomes_starter=becomes_starter,
+        marginal_utility_explanation="fixture", identity_status="MATCHED",
+    )
+
+
+def test_faab_urgency_uses_the_shared_contracts_high_medium_low_scale() -> None:
+    """Regression test for the real, previously-shipping bug where this
+    module emitted STARTER_UPGRADE/BENCH_DEPTH/LOW_VALUE while the shared
+    contract (`contracts/src/index.ts`'s `faabUrgency` field) and the
+    frontend's `FAAB_URGENCY_TONE`/`FAAB_URGENCY_RANK` lookup tables (both
+    in the desktop app) only ever recognized HIGH/MEDIUM/LOW -- every real
+    urgency badge fell through to a fallback tone and the FAAB tab's
+    urgency sort silently did nothing. This test would have caught that
+    directly: it asserts the exact contract-facing string values, not just
+    that *some* string is present."""
+
+    candidates = (
+        _candidate("starter", 5.0, True),
+        _candidate("bench", 2.0, False),
+        _candidate("low", -1.0, False),
+    )
+    bids = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=14)
+    by_id = {bid.canonical_player_id: bid for bid in bids}
+    assert by_id["starter"].urgency == "HIGH"
+    assert by_id["bench"].urgency == "MEDIUM"
+    assert by_id["low"].urgency == "LOW"
+    # Every real suggestion must use one of the exact 3 contract-facing
+    # values -- never the old internal STARTER_UPGRADE/BENCH_DEPTH/LOW_VALUE
+    # vocabulary, and never anything else.
+    for bid in bids:
+        assert bid.urgency in {"HIGH", "MEDIUM", "LOW"}
+
+
+def test_faab_urgency_tier_maps_every_internal_reason_onto_the_contract_scale() -> None:
+    assert FAAB_URGENCY_TIER == {
+        "STARTER_UPGRADE": "HIGH",
+        "BENCH_DEPTH": "MEDIUM",
+        "LOW_VALUE": "LOW",
+    }
+
+
+def test_faab_urgency_for_unmatched_identity_is_the_contracts_low_value() -> None:
+    unmatched = WaiverCandidate(
+        sleeper_player_id="s-unmatched", canonical_player_id="", player_name="Unmatched",
+        position="RB", team="TST", ros_replacement_value=None, ros_overall_rank=None,
+        weekly_projected_points=None, marginal_utility=None, becomes_starter=False,
+        marginal_utility_explanation="MARGINAL_UTILITY_UNAVAILABLE_UNMATCHED_IDENTITY",
+        identity_status="UNMATCHED_IDENTITY",
+    )
+    bids = suggest_faab_bids(candidates=(unmatched,), remaining_budget_dollars=100, weeks_remaining=14)
+    assert bids[0].urgency == "LOW"
 
 
 def test_resolve_roster_canonical_ids_matches_and_reports_unmatched() -> None:

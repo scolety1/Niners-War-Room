@@ -26,11 +26,12 @@ Reuses, does not duplicate:
 
 What is deliberately NOT estimated, per the directive's own anti-fabrication
 rule: schedule/strength-of-schedule for general waiver ranking (a real,
-disclosed omission -- schedule context lives in the DST/K streamer lane,
-which has a real nflreadpy-backed matchup signal; general skill-position
-waiver ranking does not get a schedule boost invented here), and any
-"likely competition for this FAAB bid" acceptance probability (no real
-signal in this app estimates that).
+disclosed omission -- the DST/K streamer lane is pure FantasyPros ECR
+passthrough plus live Sleeper roster-ownership matching, it has no real
+schedule/matchup signal either; general skill-position waiver ranking does
+not get a schedule boost invented here), and any "likely competition for
+this FAAB bid" acceptance probability (no real signal in this app
+estimates that).
 """
 
 from __future__ import annotations
@@ -269,6 +270,21 @@ def pair_add_drop(
     return tuple(pairings)
 
 
+# NWR Post-Closure Fix V1: the contract-facing 3-tier urgency scale
+# (`weekly-shared.tsx`'s `FAAB_URGENCY_TONE`, `improve-team.tsx`'s
+# `FAAB_URGENCY_RANK`, and `contracts/src/index.ts`'s `faabUrgency` type) has
+# always promised HIGH/MEDIUM/LOW. This module's own real, more descriptive
+# internal reasoning (a starter-upgrade opportunity vs. bench depth vs. low
+# real value) maps onto that scale one-to-one and is still fully preserved
+# in the separate `rationale` string every caller already renders --
+# nothing informative is lost by exposing the tier here, not the reason.
+FAAB_URGENCY_TIER: dict[str, str] = {
+    "STARTER_UPGRADE": "HIGH",
+    "BENCH_DEPTH": "MEDIUM",
+    "LOW_VALUE": "LOW",
+}
+
+
 @dataclass(frozen=True)
 class FaabBidSuggestion:
     canonical_player_id: str
@@ -277,7 +293,7 @@ class FaabBidSuggestion:
     bid_high_pct: float
     bid_low_dollars: int
     bid_high_dollars: int
-    urgency: str  # STARTER_UPGRADE | BENCH_DEPTH | LOW_VALUE
+    urgency: str  # HIGH | MEDIUM | LOW -- the shared contract's 3-tier scale (see FAAB_URGENCY_TIER)
     percentile_in_pool: float | None
     rationale: str
 
@@ -311,14 +327,14 @@ def suggest_faab_bids(
                     canonical_player_id=candidate.canonical_player_id,
                     player_name=candidate.player_name,
                     bid_low_pct=0.0, bid_high_pct=0.0, bid_low_dollars=0, bid_high_dollars=0,
-                    urgency="LOW_VALUE", percentile_in_pool=None,
+                    urgency=FAAB_URGENCY_TIER["LOW_VALUE"], percentile_in_pool=None,
                     rationale="No real marginal-utility signal (unmatched identity) -- $0 suggested, not fabricated.",
                 )
             )
             continue
         rank = utilities.index(candidate.marginal_utility)
         percentile = 1.0 - (rank / max(1, len(utilities) - 1)) if len(utilities) > 1 else 1.0
-        urgency = "STARTER_UPGRADE" if candidate.becomes_starter else (
+        urgency_reason = "STARTER_UPGRADE" if candidate.becomes_starter else (
             "BENCH_DEPTH" if candidate.marginal_utility > 0 else "LOW_VALUE"
         )
         # Base range scales with real percentile standing in THIS pool, not
@@ -327,7 +343,7 @@ def suggest_faab_bids(
         # the range down (fewer real weeks left to realize the value).
         base_low = 0.02 + 0.28 * percentile
         base_high = 0.05 + 0.45 * percentile
-        urgency_multiplier = 1.4 if urgency == "STARTER_UPGRADE" else 1.0
+        urgency_multiplier = 1.4 if urgency_reason == "STARTER_UPGRADE" else 1.0
         season_taper = min(1.0, max(0.35, weeks_remaining / 14.0))
         low_pct = min(0.95, base_low * urgency_multiplier * season_taper)
         high_pct = min(0.98, base_high * urgency_multiplier * season_taper)
@@ -339,9 +355,9 @@ def suggest_faab_bids(
                 player_name=candidate.player_name,
                 bid_low_pct=round(low_pct, 3), bid_high_pct=round(high_pct, 3),
                 bid_low_dollars=low_dollars, bid_high_dollars=high_dollars,
-                urgency=urgency, percentile_in_pool=round(percentile, 3),
+                urgency=FAAB_URGENCY_TIER[urgency_reason], percentile_in_pool=round(percentile, 3),
                 rationale=(
-                    f"{'Real starter upgrade' if urgency == 'STARTER_UPGRADE' else 'Bench depth' if urgency == 'BENCH_DEPTH' else 'Low real value'}; "
+                    f"{'Real starter upgrade' if urgency_reason == 'STARTER_UPGRADE' else 'Bench depth' if urgency_reason == 'BENCH_DEPTH' else 'Low real value'}; "
                     f"marginal utility {candidate.marginal_utility:.1f} ranks at the {percentile:.0%} "
                     f"percentile of this week's real free-agent pool, {weeks_remaining} weeks remaining."
                 ),

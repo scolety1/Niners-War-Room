@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_CATEGORY_LABEL, ACTION_CATEGORY_LINK, formatClock, statusTone } from "./weekly-shared";
+import type { WaiverAddCandidate } from "@nwr/contracts";
+
+import { ACTION_CATEGORY_LABEL, ACTION_CATEGORY_LINK, FAAB_URGENCY_TONE, formatClock, statusTone } from "./weekly-shared";
 
 describe("statusTone (Start/Sit status heuristic)", () => {
   it("reads a healthy status as safe", () => {
@@ -27,6 +29,26 @@ describe("Weekly Home NWR Actions category maps", () => {
     for (const category of Object.keys(ACTION_CATEGORY_LABEL)) {
       expect(ACTION_CATEGORY_LINK[category]).toBeTruthy();
     }
+  });
+});
+
+describe("FAAB_URGENCY_TONE (regression: backend/contract enum mismatch)", () => {
+  it("covers every real value the shared contract's faabUrgency field allows, with no fallback needed", () => {
+    // Real, previously-shipping bug: the backend once emitted
+    // STARTER_UPGRADE/BENCH_DEPTH/LOW_VALUE while this table (and
+    // improve-team.tsx's FAAB_URGENCY_RANK) only recognized
+    // HIGH/MEDIUM/LOW, so every FAAB urgency badge fell through to the
+    // "review" fallback tone regardless of the real value. Typing the
+    // fixture as the real contract type (not a hand-rolled string) means
+    // this test fails to compile if the contract's literal union and this
+    // lookup table ever drift apart again.
+    const values: NonNullable<WaiverAddCandidate["faabUrgency"]>[] = ["HIGH", "MEDIUM", "LOW"];
+    for (const value of values) {
+      expect(FAAB_URGENCY_TONE[value]).toBeDefined();
+    }
+    expect(FAAB_URGENCY_TONE.HIGH).toBe("blocked");
+    expect(FAAB_URGENCY_TONE.MEDIUM).toBe("review");
+    expect(FAAB_URGENCY_TONE.LOW).toBe("safe");
   });
 });
 
