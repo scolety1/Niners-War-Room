@@ -3502,7 +3502,20 @@ class DesktopBackendFacade:
                 for candidate in add_candidates[1:5]
             ],
             rationale=(
-                f"Top marginal-utility add: {top_add.player_name} ({top_add.marginal_utility:.1f})."
+                (
+                    f"Top marginal-utility add: {top_add.player_name} ({top_add.marginal_utility:.1f})."
+                    if top_add.marginal_utility is not None
+                    # NWR Post-Closure Fixes V1 (Worker F): top_add can be a
+                    # genuinely UNMATCHED_IDENTITY candidate, whose
+                    # marginal_utility is legitimately None (no governed
+                    # ranking match to compute a utility from) -- guard
+                    # narrowly rather than let the f-string's `:.1f` format
+                    # spec raise TypeError on NoneType. Found by Worker E
+                    # while building test fixtures (see
+                    # NWR_POST_CLOSURE_LEDGER_V1.md).
+                    else f"Top add candidate: {top_add.player_name} (marginal utility unavailable -- "
+                    "identity unmatched to the governed ranking)."
+                )
                 if top_add
                 else "No positive marginal-utility add candidate was found."
             ),
