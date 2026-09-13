@@ -6,6 +6,10 @@ import {
   formatGeneratedAt,
   formatOutcome,
   formatOwnerAction,
+  OWNER_ACTION_DID_SOMETHING_ELSE,
+  OWNER_ACTION_DIDNT_ACT,
+  OWNER_ACTION_FOLLOWED_IT,
+  ownerActionOptionsForDecisionType,
   sortDecisionTraceEventsDesc,
   statusLabel,
   statusTone,
@@ -133,6 +137,42 @@ describe("statusTone / statusLabel", () => {
   it("never crashes on an unrecognized status", () => {
     expect(statusTone("SOMETHING_NEW")).toBe("review");
     expect(statusLabel("SOMETHING_NEW")).toBe("SOMETHING_NEW");
+  });
+});
+
+describe("ownerActionOptionsForDecisionType", () => {
+  it("gives START_SIT only the 2 lineup-appropriate options -- no 'Didn't act'", () => {
+    expect(ownerActionOptionsForDecisionType("START_SIT")).toEqual([
+      OWNER_ACTION_FOLLOWED_IT,
+      OWNER_ACTION_DID_SOMETHING_ELSE,
+    ]);
+  });
+
+  it("gives WAIVER and ADD_DROP the 3-option set including 'Didn't act'", () => {
+    expect(ownerActionOptionsForDecisionType("WAIVER")).toEqual([
+      OWNER_ACTION_FOLLOWED_IT,
+      OWNER_ACTION_DID_SOMETHING_ELSE,
+      OWNER_ACTION_DIDNT_ACT,
+    ]);
+    expect(ownerActionOptionsForDecisionType("ADD_DROP")).toEqual(
+      ownerActionOptionsForDecisionType("WAIVER"),
+    );
+  });
+
+  it("generalizes every other real tool type onto the same 3-option set (a disclosed taste call)", () => {
+    for (const decisionType of [
+      "FAAB", "TRADE", "TRADE_FINDER", "TRADE_PACKAGE_SEARCH", "K_STREAMER", "DST_STREAMER", "DRAFT",
+    ]) {
+      expect(ownerActionOptionsForDecisionType(decisionType)).toEqual(
+        ownerActionOptionsForDecisionType("WAIVER"),
+      );
+    }
+  });
+
+  it("never crashes for an unrecognized decision type -- falls back to the 3-option set", () => {
+    expect(ownerActionOptionsForDecisionType("SOMETHING_NEW")).toEqual(
+      ownerActionOptionsForDecisionType("WAIVER"),
+    );
   });
 });
 

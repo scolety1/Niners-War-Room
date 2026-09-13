@@ -1024,3 +1024,10 @@
    ========================================================================= */
 .decision-history__status-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .decision-history__disclosure { margin-top: 12px; }
+
+/* NWR Post-Closure Fixes V1 (Worker F): owner-action capture cell --
+   either "recorded value + Change" or the option-button row, both wrap
+   onto a second line on a narrow column rather than overflowing. */
+.decision-history__owner-action { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.decision-history__owner-action-change { min-height: 24px; padding: 0 8px; }
+.decision-history__owner-action--options .button { min-height: 26px; padding: 0 9px; font-size: 10px; }

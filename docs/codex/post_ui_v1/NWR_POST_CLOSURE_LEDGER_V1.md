@@ -423,3 +423,286 @@ same code path):
   capture UI (closing P1-4's real, disclosed gap -- `record_owner_action`/
   `record_outcome` are real, tested, backend-ready; `decision-history.tsx`
   has no capture control for either yet).
+
+## Worker F -- FAAB rationale crash fix + owner-action capture UI -- 2026-09-13
+
+**Scope: the FAAB crash Worker E found + the owner-action capture UI closing
+P1-4's disclosed gap.** Same branch
+`upgrade/nwr-post-closure-fixes-v1-20260913`, worktree
+`C:\NWR\post-closure-fixes-v1`, start HEAD `03c8f322`. This closes the
+post-closure-fixes-v1 cycle -- no more workers are queued after this one.
+
+### FAAB rationale crash (FIXED)
+
+`redraft_waivers`' decision-envelope `rationale=` f-string
+(`desktop_facade.py`, previously line 3505) called
+`f"...{top_add.marginal_utility:.1f}"` unconditionally whenever any
+`top_add` existed, but `WaiverCandidate.marginal_utility` is genuinely
+`None` for an `UNMATCHED_IDENTITY` candidate (no governed-ranking identity
+match, per `waiver_engine_service.rank_waiver_candidates`) -- and an
+unmatched candidate can legitimately be the SOLE (hence top-ranked) add
+candidate in a pool. Fixed with a narrow guard: when `top_add` exists but
+its `marginal_utility` is `None`, the rationale now reads "Top add
+candidate: {name} (marginal utility unavailable -- identity unmatched to
+the governed ranking)." instead of crashing. The matched-candidate branch
+(the overwhelming majority of real cases, including every real Fantasy
+Gamers request seen so far) is byte-for-byte unchanged.
+
+**Regression test**: new `tests/test_redraft_waivers_unmatched_identity_
+rationale_fix.py`, two tests, both driven through the real public facade
+method end-to-end (not the private rationale code directly) with a real
+governed ranking bootstrapped into a fresh store and a fake Sleeper client:
+(1) a pool with exactly one, genuinely unmatched free agent -- confirmed
+via `git stash` that this test fails with the real, original `TypeError`
+on the unmodified tree and passes after the fix; (2) an equivalence guard
+confirming a genuinely `MATCHED` top candidate's rationale is completely
+unaffected (still the original real-number sentence, unchanged verbatim).
+Safety sweep: `tests/test_waiver_engine_service.py
+tests/test_desktop_facade_architecture_wiring.py
+tests/test_weekly_home_single_snapshot.py
+tests/test_weekly_home_sleeper_fetch_caching.py
+tests/test_player_availability_status_consumer_consistency.py
+tests/test_redraft_waivers_unmatched_identity_rationale_fix.py`: 38/38
+passing, no regression.
+
+### Owner-action capture UI (COMPLETE for owner-action; outcome deliberately deferred)
+
+Built on the existing History page (`decision-history.tsx`) and the
+already-built, already-tested `record_owner_action` backend write
+(`POST /api/v1/redraft/decision-trace/owner-action`, wired by Worker 8 in
+P1-4 but never called from any UI control until now) -- zero backend/
+model logic added or changed, only a UI control wired to what already
+existed.
+
+**What was built**: a new `OwnerActionCell` component replaces the
+"Owner action" column's previously-plain "Not recorded" text. When no
+owner action has been recorded yet, it renders a small row of buttons
+whose vocabulary is scoped to the decision type
+(`ownerActionOptionsForDecisionType`, new pure function in
+`decision-history-format.ts`, 4 new vitest tests): START_SIT gets exactly
+"Followed it" / "Did something else" (per the directive's own named
+vocabulary -- a lineup decision is always acted on one way or another, so
+there is no honest "Didn't act" for it); every other real tool type
+(WAIVER, ADD_DROP, FAAB, TRADE, TRADE_FINDER, TRADE_PACKAGE_SEARCH,
+K_STREAMER, DST_STREAMER, plus the schema-only DRAFT) gets the 3-option
+set "Followed it" / "Did something else" / "Didn't act". Clicking a button
+POSTs the exact label text as the backend's free-text `action` field
+(the backend docstring for `record_owner_action` is explicit that `action`
+is caller-defined, not a closed enum it validates) and then reloads the
+page's history fetch -- once recorded, the cell shows the recorded label
+plus a small "Change" button that reveals the option row again (the
+backend is genuinely append-only, so re-recording writes a NEW ledger
+line rather than mutating anything; only the latest one ever displays,
+per the ledger's own existing fold-to-latest read semantics -- this app
+never lets an owner "erase" a prior action, only add a newer one).
+Outcome capture was deliberately NOT built -- see taste decision #3 below.
+
+**TASTE DECISIONS FLAGGED FOR THE OWNER** (also written directly into
+`decision-history.tsx`'s own doc comments):
+1. Generalizing every non-START_SIT tool type onto the same 3-option
+   WAIVER-style set (the directive named exact vocabulary for only
+   START_SIT and WAIVER/ADD_DROP) -- a human may want a different set for,
+   e.g., TRADE (arguably "Proposed" / "Didn't propose" reads more
+   naturally than "Followed it" / "Didn't act") or the streamers.
+2. After a successful record, the UI does a full history re-fetch
+   (`reload()`) rather than optimistically patching just the one changed
+   row in local state -- simpler and guaranteed byte-consistent with a
+   fresh page load, at the cost of the whole table re-rendering for a
+   moment. Fine at the real ~34-98 event scale seen so far; a much larger
+   ledger might want per-row patching instead.
+3. "Change" is always offered with no lock-out once an action is
+   recorded, and it is not gated behind a confirmation step -- an owner
+   can update a previously-recorded action at will (honest given the
+   append-only backend, but worth a human sanity-check on whether a
+   confirmation step should exist before an "already recorded" state is
+   revised).
+4. Outcome capture was deliberately NOT built at all this pass -- not
+   even a disabled/greyed control -- because no real observed 2026-season
+   outcome data exists yet for anything recorded so far (a completed
+   matchup, a processed waiver claim, an accepted/rejected trade), and the
+   directive explicitly permitted deferring it rather than inventing a
+   premature shape for data that doesn't exist. The existing plain "No
+   outcome recorded yet" text (from P1-4) was judged sufficiently honest
+   labeling on its own; a "Coming soon" badge was considered and rejected
+   as adding decoration without adding information.
+
+### Live verification (real, not fixture-only)
+
+Stood up the real backend + a real production `vite build`/`vite preview`
+via `desktop/scripts/nwr_release_gate_smoke.ps1 -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` against the
+real, read-only "Fantasy Gamers" Sleeper league (this worktree's own real,
+already-accumulated ledger -- 34 real recorded events at the start of this
+check, spanning DST_STREAMER/K_STREAMER/FAAB/WAIVER/TRADE_FINDER/etc.).
+- Rendered the real History page live in Chrome
+  (`http://127.0.0.1:1422/#/league/d640672166d44949bf152e35383b5dc7/
+  decision-history`): the real 34-event table rendered with the new
+  "Followed it" / "Did something else" / "Didn't act" buttons on every
+  unrecorded row. **Zero console messages of any kind** on a fresh full
+  reload (`read_console_messages`, no filter).
+  - The `-KeepRunning` smoke run's own JSON report
+    (`local_exports/release_gate/20260913T094349Z/release_gate_report.json`)
+    confirms the real Sleeper before/after snapshot was byte-identical
+    (`beforeAfterIdentical: true`) and that no write-capable Sleeper client
+    method exists in `src/` -- the same structural GET-only guarantee
+    every prior worker has verified. It also independently reconfirmed a
+    pre-existing, out-of-scope bug (`cargo check` failing in
+    `src-tauri`) and the already-known `weekly-home-actions` 500 (Worker
+    3's own documented, unrelated gap) -- neither touched.
+- Clicked "Followed it" on a real DST_STREAMER row (trace_id
+  `e8a7cf5b-7b5b-4673-af9f-6bc6db468a61`, "ADD Jacksonville Jaguars"): the
+  cell immediately updated to "Followed it" + "Change", event count stayed
+  at 34 (fold-to-latest, not a new row). A full hard reload (F5) afterward
+  showed the exact same recorded state -- **real persistence confirmed**,
+  not just an optimistic client-side update. Zero console messages on
+  that reload either.
+- **Original record byte-verified untouched**: read the real, raw
+  `local_exports/redraft_v1/decision_traces/
+  d640672166d44949bf152e35383b5dc7.jsonl` directly. The original
+  recommendation line (line 34, `recorded_at_utc:
+  2026-09-13T09:44:23.277151+00:00`, `status: RECOMMENDED`, `owner_action:
+  null`) is present and unchanged; a brand-new line 35 was appended
+  (identical `trace_id`, same `recommendation`/`alternatives`/
+  `roster_state_player_ids`/etc., `status: OWNER_ACTION_RECORDED`,
+  `owner_action: {"action": "Followed it", "notes": ""}`,
+  `owner_action_recorded_at_utc` newly stamped) -- append-only, exactly as
+  designed, never a mutation of the original.
+- **State-leakage check, live, not just relying on P1-4's existing pytest
+  coverage**: created a real second local profile ("Worker F Leak Check
+  League") via the real backend, activated it, confirmed via a direct
+  `GET decision-trace-history` call that its `totalCount` was genuinely
+  `0` -- then reactivated Fantasy Gamers and confirmed its real 34 events
+  (folded from 35 lines) were still intact and correctly attributed. One
+  harmless extra local test profile ("Worker F Leak Check League") was
+  left in this worktree's own `local_exports/redraft_v1/` store as a
+  result (gitignored, no commit impact) -- consistent with the same
+  disclosed-not-cleaned-up pattern every prior worker in this store has
+  left (P1-4's own two "P1-4 Leak Check League" profiles, several release-
+  gate/QA test profiles from earlier sessions); no delete/archive facade
+  action exists to remove a profile outright.
+- Backend (PID on port 18742) and vite-preview (PID on port 1422)
+  processes were both force-stopped at the end; confirmed via
+  `Get-NetTCPConnection` that neither port had a listener afterward.
+
+### Tests
+
+- `python -m pytest tests/test_redraft_waivers_unmatched_identity_
+  rationale_fix.py tests/test_waiver_engine_service.py tests/
+  test_desktop_facade_architecture_wiring.py tests/
+  test_weekly_home_single_snapshot.py tests/
+  test_weekly_home_sleeper_fetch_caching.py tests/
+  test_player_availability_status_consumer_consistency.py`: 38 passed, no
+  regression.
+- `python -m pytest tests/`: run for a full-suite honesty check; see the
+  final handoff for the exact real total (this worktree's documented
+  ~323-pre-existing-failures baseline, per `MEMORY.md`, is expected and
+  unrelated to this pass -- no scoring/ranking/roster-legality file was
+  touched).
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  clean, zero errors.
+- `npm run test` (full monorepo vitest, from `desktop/`): **28 test
+  files, 372 tests, all passed** (368 baseline from Worker D + 4 new: the
+  `ownerActionOptionsForDecisionType` describe block in
+  `decision-history-format.test.ts`). No dedicated DOM-rendering component
+  test file was added for `decision-history.tsx`/`OwnerActionCell` --
+  matching this app's own established, consistent convention across every
+  prior UI worker (P1-3's ledger entry states it explicitly): pure
+  derivation logic is unit-tested, full pages are verified live in Chrome
+  against the real backend, never a synthetic DOM-render test.
+- Console errors during live Chrome verification: **0** (checked with no
+  filter, on two separate fresh full reloads).
+
+### Files changed
+
+- `src/application/desktop_facade.py` -- the FAAB rationale crash guard
+  only (`redraft_waivers`'s `rationale=`). No other line in this file
+  touched; `marginal_roster_utility_v2` and every hard-boundary function
+  untouched.
+- `tests/test_redraft_waivers_unmatched_identity_rationale_fix.py` --
+  new, 2 tests (see above).
+- `desktop/apps/redraft/src/decision-history-format.ts` -- 3 new exported
+  constants (`OWNER_ACTION_FOLLOWED_IT`/`_DID_SOMETHING_ELSE`/`_DIDNT_ACT`)
+  + `ownerActionOptionsForDecisionType`. Nothing else in this file changed.
+- `desktop/apps/redraft/src/decision-history-format.test.ts` -- 4 new
+  tests for the new function.
+- `desktop/apps/redraft/src/decision-history.tsx` -- new `OwnerActionCell`
+  component; `COLUMNS` converted from a module-level constant to a
+  `buildColumns(client, onRecorded)` function so the "Owner action" column
+  can close over the real API client and the page's `reload`. No other
+  column, no data-fetching logic, changed.
+- `desktop/apps/redraft/src/redraft.css` -- 3 new rules for the capture
+  cell's button layout, following the file's existing class-naming
+  convention (`decision-history__*`).
+
+No `marginal_roster_utility_v2`, draft recommendation, scoring,
+roster-legality, `LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-
+resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus`, or
+`record_owner_action`/`record_outcome` backend-logic file was touched
+beyond the one-line FAAB guard above. No merge/push/deploy.
+
+### CYCLE CLOSING SUMMARY -- post-closure-fixes-v1 (Workers D, E, F)
+
+This short, three-worker cycle (branch
+`upgrade/nwr-post-closure-fixes-v1-20260913`, all work confined to worktree
+`C:\NWR\post-closure-fixes-v1`, never merged/pushed) closed out the
+research doc's remaining named items plus one real bug found along the
+way:
+- **Worker D** fixed the real FAAB urgency enum mismatch (backend reason
+  codes never matched the contract's HIGH/MEDIUM/LOW scale, silently
+  breaking badge tone and FAAB sort) and cleared a small batch of
+  cosmetic/tech-debt items (most turned out to be already-unreachable on
+  direct inspection -- documented honestly rather than force-changed).
+- **Worker E** profiled Waivers and Weekly Home Actions latency with real
+  `cProfile` evidence, found Weekly Home Actions issuing 11 redundant
+  Sleeper network round trips per request, and fixed it with an opt-in,
+  thread-local per-request GET cache (~62% real latency reduction,
+  7.19s->2.71s median) with zero blast radius outside that one method.
+  Found (but did not fix, correctly out of scope) the FAAB rationale
+  crash Worker F fixed above.
+- **Worker F** (this entry) fixed that crash with a narrow guard + a
+  regression test that reproduces the real pre-fix `TypeError`, then
+  closed P1-4's own disclosed gap by wiring a real owner-action capture
+  control into the existing History page -- the first UI control in this
+  app that calls `record_owner_action`. Outcome capture was deliberately
+  left unbuilt (no real outcome data exists yet to capture honestly).
+
+No worker in this cycle touched `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, or any of the frozen
+V1/V2 team-score/holdout results. No merge/push/deploy by any worker in
+this cycle. **This closes the post-closure-fixes-v1 implementation cycle
+-- no further workers are queued after this one.**
+
+### Open issues remaining (for whoever picks this repository up next)
+
+1. Outcome capture UI is genuinely unbuilt (by design -- see taste
+   decision #4 above): once real 2026-season outcome data exists for any
+   recorded recommendation (a completed matchup score, a resolved waiver
+   claim, an accepted/rejected trade), a symmetric `OutcomeCell` wired to
+   the already-tested `record_outcome` backend write is the natural next
+   step, following the same append-only/fold-to-latest pattern this
+   pass's `OwnerActionCell` already established.
+2. The 4 taste decisions flagged above (owner-action vocabulary
+   generalization, full-reload-vs-optimistic-patch, unconditional
+   "Change" with no confirmation step, and the choice not to show any
+   outcome-capture placeholder at all) are real, disclosed judgment calls
+   a human may want to revisit -- none are bugs, all are honest defaults.
+3. `DRAFT` remains a schema-only `TOOL_TYPES` member with no live call
+   site (P1-4's own disclosed remainder) -- still untouched, still out of
+   every subsequent worker's scope.
+4. The pre-existing, unrelated `weekly-home-actions` HTTP 500 (`redraft_
+   weekly_home_actions` assuming `redraft_kdst_streamer(...).data
+   ["positions"]` is a dict when it is actually a list) that Worker 3's
+   release-gate script has documented since before this cycle began is
+   still real and still unfixed -- reconfirmed present by this pass's own
+   smoke run, out of scope for all three workers in this cycle.
+5. `cargo check`/native Tauri bundling remains blocked in this environment
+   (real toolchain problem per this pass's own smoke-script findings, not
+   this cycle's concern) -- the bridge-smoke (vite preview + real Python
+   backend) path remains the only verification route available here, as
+   documented by every worker back to Worker 3.
+6. Two harmless extra local test profiles now sit in this worktree's own
+   `local_exports/redraft_v1/` store from this cycle's live verification
+   passes ("Worker F Leak Check League" from this entry, plus P1-4's two
+   "P1-4 Leak Check League" profiles from an earlier session) -- disclosed,
+   gitignored, no functional impact, no delete/archive facade action
+   exists to remove them.

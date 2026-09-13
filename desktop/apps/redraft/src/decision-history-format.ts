@@ -103,6 +103,41 @@ export function formatOwnerAction(event: DecisionTraceHistoryEvent): string {
   return notes ? `${action} (${notes})` : action;
 }
 
+/**
+ * NWR Post-Closure Fixes V1 (Worker F, owner-action capture UI): the exact
+ * label strings the capture buttons record. Sent verbatim as the backend's
+ * free-text `action` field (see `record_owner_action`'s own docstring --
+ * it is explicitly caller-defined, not a closed enum the backend
+ * validates), which is also exactly what `formatOwnerAction` above renders
+ * back -- so no separate display-label lookup table is needed on read.
+ */
+export const OWNER_ACTION_FOLLOWED_IT = "Followed it";
+export const OWNER_ACTION_DID_SOMETHING_ELSE = "Did something else";
+export const OWNER_ACTION_DIDNT_ACT = "Didn't act";
+
+/**
+ * Which owner-action options make sense for a given decision type.
+ *
+ * TASTE DECISION (flagged for the owner): the governing directive named
+ * exact vocabulary for only two cases -- START_SIT ("Followed it" / "Did
+ * something else", since a lineup decision is always acted on one way or
+ * another -- there is no "didn't act" for a lineup, the owner necessarily
+ * sets some lineup every week) and WAIVER/ADD_DROP ("Followed it" / "Did
+ * something else" / "Didn't act"). Every OTHER real tool type
+ * (FAAB/TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH/K_STREAMER/DST_STREAMER,
+ * plus the schema-only DRAFT) is generalized onto the same 3-option
+ * WAIVER-style set here, since each of those is also a real, discrete
+ * action the owner can decline to take (not submit the FAAB bid, not
+ * propose the trade, not start the streamer) -- a human may want to
+ * reconsider this generalization for any one of them.
+ */
+export function ownerActionOptionsForDecisionType(decisionType: string): string[] {
+  if (decisionType === "START_SIT") {
+    return [OWNER_ACTION_FOLLOWED_IT, OWNER_ACTION_DID_SOMETHING_ELSE];
+  }
+  return [OWNER_ACTION_FOLLOWED_IT, OWNER_ACTION_DID_SOMETHING_ELSE, OWNER_ACTION_DIDNT_ACT];
+}
+
 /** Honest, plain-language cell for "Outcome status" -- this pass records
  * no real outcome for anything yet (see the module doc on
  * in_season_decision_trace_service.py's `record_outcome`), so the default

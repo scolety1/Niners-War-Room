@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type { DecisionTraceHistoryEvent, RedraftBootstrap } from "@nwr/contracts";
 import {
@@ -17,10 +19,93 @@ import {
   formatGeneratedAt,
   formatOutcome,
   formatOwnerAction,
+  ownerActionOptionsForDecisionType,
   statusLabel,
   statusTone,
   summarizeRecommendation,
 } from "./decision-history-format";
+
+/**
+ * NWR Post-Closure Fixes V1 (Worker F): the owner-action capture control
+ * for one History row. Wires directly to the already-built, already-
+ * tested `record_owner_action` append-only backend write
+ * (`client.redraftRecordDecisionTraceOwnerAction`) -- this component adds
+ * no new backend logic, only a button.
+ *
+ * TASTE DECISIONS FLAGGED FOR THE OWNER:
+ * 1. After a successful record, this calls the page's `reload()` (a full
+ *    re-fetch of the history list) rather than optimistically patching
+ *    just this one row in local state. Simpler and guaranteed-consistent
+ *    with the real append-only ledger (what you see immediately after
+ *    clicking is byte-for-byte what a fresh page load would show), at the
+ *    cost of every row's cells re-rendering for a moment. With a few
+ *    hundred events at most this is not a real performance concern; a
+ *    much larger ledger might want per-row optimistic patching instead.
+ * 2. "Change" is always offered once an action is recorded -- there is no
+ *    hard lock-out. The backend is genuinely append-only (recording again
+ *    writes a NEW ledger line, the original recommendation and the first
+ *    owner-action line are never touched), so allowing a correction is
+ *    honest, not a mutation of history. But this does mean an owner can
+ *    record contradictory actions over time for the same recommendation;
+ *    only the LATEST one displays, per the backend's own fold-to-latest
+ *    read semantics.
+ */
+function OwnerActionCell({
+  client,
+  event,
+  onRecorded,
+}: {
+  client: NwrApiClient;
+  event: DecisionTraceHistoryEvent;
+  onRecorded: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const options = ownerActionOptionsForDecisionType(event.decisionType);
+
+  const record = async (action: string) => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await client.redraftRecordDecisionTraceOwnerAction(event.traceId, action);
+      setEditing(false);
+      onRecorded();
+    } catch (reason) {
+      setError(reason instanceof NwrApiError ? reason.message : "Could not record this action.");
+      setSubmitting(false);
+    }
+  };
+
+  if (event.ownerAction && !editing) {
+    return (
+      <div className="decision-history__owner-action">
+        <span>{formatOwnerAction(event)}</span>
+        <Button className="decision-history__owner-action-change" onClick={() => setEditing(true)} variant="ghost">
+          Change
+        </Button>
+        {error ? <small className="copy-muted">{error}</small> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="decision-history__owner-action decision-history__owner-action--options">
+      {options.map((option) => (
+        <Button disabled={submitting} key={option} onClick={() => record(option)} variant="secondary">
+          {option}
+        </Button>
+      ))}
+      {event.ownerAction ? (
+        <Button disabled={submitting} onClick={() => setEditing(false)} variant="ghost">
+          Cancel
+        </Button>
+      ) : null}
+      {submitting ? <small className="copy-muted" role="status">Recording…</small> : null}
+      {error ? <small className="copy-muted">{error}</small> : null}
+    </div>
+  );
+}
 
 /**
  * P1-4 (2026-09-12, Prospective Recommendation Ledger): the owner-facing
@@ -40,44 +125,63 @@ import {
  * data behind anything recorded so far, and inventing one would be
  * dishonest. "Owner action" / "Outcome" columns show the real recorded
  * value when present, and a plain, honest "Not recorded" / "No outcome
- * recorded yet" otherwise -- this app has no capture control for either
- * yet (see the facade's own `redraft_record_decision_trace_owner_action` /
- * `..._outcome` methods, real and callable, just not wired to any button
- * today).
+ * recorded yet" otherwise.
+ *
+ * NWR Post-Closure Fixes V1 (Worker F, 2026-09-13): the "Owner action"
+ * column now has a real capture control (see `OwnerActionCell` above),
+ * wired to the already-built `record_owner_action` backend write. The
+ * "Outcome status" column deliberately still has NO capture control --
+ * per the governing directive, a real "what happened" capture would need
+ * real, observed 2026-season outcome data (a completed matchup, a
+ * processed waiver claim, an accepted/rejected trade) that genuinely
+ * does not exist yet for anything recorded so far; forcing a UI for it
+ * now would mean inventing what it should look like rather than building
+ * it from a real need. The existing plain "No outcome recorded yet" text
+ * already says this honestly -- left as-is rather than adding a
+ * "Coming soon" badge on top of an already-honest message.
  */
 
-const COLUMNS: TableColumn[] = [
-  {
-    key: "generatedAt", label: "Date", sort: "text",
-    render: (row) => <span>{formatGeneratedAt(String(row.generatedAt))}</span>,
-  },
-  {
-    key: "decisionType", label: "Decision", sort: "text",
-    render: (row) => <span>{formatDecisionType(String(row.decisionType))}</span>,
-  },
-  { key: "week", label: "Week", align: "right", render: (row) => (row.week == null ? "—" : String(row.week)) },
-  {
-    key: "recommendation", label: "Recommendation",
-    render: (row) => <span>{summarizeRecommendation(row as unknown as DecisionTraceHistoryEvent)}</span>,
-  },
-  {
-    key: "ownerAction", label: "Owner action",
-    render: (row) => <span>{formatOwnerAction(row as unknown as DecisionTraceHistoryEvent)}</span>,
-  },
-  {
-    key: "status", label: "Outcome status",
-    render: (row) => (
-      <div className="decision-history__status-cell">
-        <StatusBadge tone={statusTone(String(row.status))} label={statusLabel(String(row.status))} />
-        <span className="copy-muted">{formatOutcome(row as unknown as DecisionTraceHistoryEvent)}</span>
-      </div>
-    ),
-  },
-];
+function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn[] {
+  return [
+    {
+      key: "generatedAt", label: "Date", sort: "text",
+      render: (row) => <span>{formatGeneratedAt(String(row.generatedAt))}</span>,
+    },
+    {
+      key: "decisionType", label: "Decision", sort: "text",
+      render: (row) => <span>{formatDecisionType(String(row.decisionType))}</span>,
+    },
+    { key: "week", label: "Week", align: "right", render: (row) => (row.week == null ? "—" : String(row.week)) },
+    {
+      key: "recommendation", label: "Recommendation",
+      render: (row) => <span>{summarizeRecommendation(row as unknown as DecisionTraceHistoryEvent)}</span>,
+    },
+    {
+      key: "ownerAction", label: "Owner action",
+      render: (row) => (
+        <OwnerActionCell
+          client={client}
+          event={row as unknown as DecisionTraceHistoryEvent}
+          onRecorded={onRecorded}
+        />
+      ),
+    },
+    {
+      key: "status", label: "Outcome status",
+      render: (row) => (
+        <div className="decision-history__status-cell">
+          <StatusBadge tone={statusTone(String(row.status))} label={statusLabel(String(row.status))} />
+          <span className="copy-muted">{formatOutcome(row as unknown as DecisionTraceHistoryEvent)}</span>
+        </div>
+      ),
+    },
+  ];
+}
 
 export function DecisionHistoryPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const loader = () => client.redraftDecisionTraceHistory();
   const { result, error, working, reload } = useAsync(loader, [client, data.activeProfileId]);
+  const columns = buildColumns(client, reload);
 
   return (
     <>
@@ -100,7 +204,7 @@ export function DecisionHistoryPage({ client, data }: { client: NwrApiClient; da
         ) : (
           <Panel title="Recorded recommendations" eyebrow={`${data.activeProfile?.leagueName ?? result.leagueName}`}>
             <DataTable
-              columns={COLUMNS}
+              columns={columns}
               rows={result.events as unknown as Array<Record<string, unknown>>}
               rowKey={(row) => String(row.traceId)}
               emptyMessage="No recommendation has been recorded for this league yet."
