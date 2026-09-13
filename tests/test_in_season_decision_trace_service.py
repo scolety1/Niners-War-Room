@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from src.services.in_season_decision_trace_service import (
+    DEDUP_WINDOW_SECONDS,
     TOOL_TYPES,
     DecisionTraceError,
     load_decision_traces,
@@ -195,6 +197,171 @@ def test_malformed_line_does_not_crash_the_whole_ledger_read(tmp_path) -> None:
         handle.write("not valid json at all\n")
     records = load_decision_traces(tmp_path, "profile-1")
     assert len(records) == 1
+
+
+# ---------------------------------------------------------------------------
+# NWR Post-UI Product V1 (Closure Worker C): a real, found pathological-
+# duplication bug -- every facade call site that records a trace is reached
+# from a plain page-mount/dependency-change frontend effect (Weekly Home,
+# Lineup, Waivers, Trade Finder, Find Trades), never gated behind an
+# explicit "record this" button, so a page refresh/remount previously wrote
+# a brand-new ledger line (and a brand-new random trace_id) for the exact
+# same underlying recommendation every single time. These tests cover the
+# fix's actual semantics: dedupe an immediate identical repeat, but never
+# lose a genuinely distinct event.
+# ---------------------------------------------------------------------------
+
+
+def test_repeated_identical_recommendation_within_window_is_deduped(tmp_path) -> None:
+    first = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={"mode": "REST_OF_SEASON"},
+        roster_state_player_ids=["p1", "p2"], free_agent_state_player_ids=["fa1"],
+        recommendation={"topAdd": "FA X", "topAddCanonicalId": "00-1"},
+        alternatives=[{"playerName": "FA Y"}],
+    )
+    second = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        # engine_version/data_versions deliberately differ here -- these are
+        # provenance-about-HOW-computed fields, not part of what makes a
+        # recommendation event distinct, so they must never defeat the
+        # dedup match on their own.
+        engine_version="v2", data_versions={"mode": "REST_OF_SEASON", "extra": "x"},
+        roster_state_player_ids=["p1", "p2"], free_agent_state_player_ids=["fa1"],
+        recommendation={"topAdd": "FA X", "topAddCanonicalId": "00-1"},
+        alternatives=[{"playerName": "FA Y"}],
+    )
+    assert second.trace_id == first.trace_id  # the existing record, not a new one
+
+    path = tmp_path / "decision_traces" / "profile-1.jsonl"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 1  # no duplicate line was ever written
+
+    reloaded = load_decision_traces(tmp_path, "profile-1")
+    assert len(reloaded) == 1
+
+
+def test_repeated_call_with_different_recommendation_content_is_not_deduped(tmp_path) -> None:
+    first = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    second = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        # A genuinely different top add -- the real underlying roster/data
+        # state changed, so this MUST be its own new event even though it
+        # arrives an instant later.
+        recommendation={"topAdd": "FA Z"},
+    )
+    assert second.trace_id != first.trace_id
+
+    path = tmp_path / "decision_traces" / "profile-1.jsonl"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 2
+
+
+def test_repeated_identical_recommendation_scoped_per_league_tool_week(tmp_path) -> None:
+    """The exact same recommendation content for a DIFFERENT league, tool,
+    or week is never deduped against an unrelated scope."""
+
+    kwargs = dict(
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    record_decision_trace(tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER", **kwargs)
+    record_decision_trace(tmp_path, "profile-1", league_id="lg2", season=2026, week=1, tool="WAIVER", **kwargs)
+    record_decision_trace(tmp_path, "profile-1", league_id="lg1", season=2026, week=2, tool="WAIVER", **kwargs)
+    record_decision_trace(tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="TRADE_FINDER", **kwargs)
+
+    reloaded = load_decision_traces(tmp_path, "profile-1")
+    assert len(reloaded) == 4  # every one of these is a genuinely distinct scope
+
+
+def test_repeated_identical_recommendation_across_different_weeks_is_not_confused(tmp_path) -> None:
+    """A WAIVER trace legitimately records BOTH a week-scoped (THIS_WEEK)
+    and a week-agnostic (REST_OF_SEASON, week=None) event for the same
+    league -- the dedup check must compare like-for-like on `week`, not
+    accidentally collapse or cross-contaminate the two."""
+
+    this_week = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    ros = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=None, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},  # identical content, but a different week scope
+    )
+    assert ros.trace_id != this_week.trace_id
+
+    # A second, later REST_OF_SEASON call with identical content DOES dedupe
+    # against the REST_OF_SEASON one specifically, not the THIS_WEEK one.
+    ros_again = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=None, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    assert ros_again.trace_id == ros.trace_id
+    assert len(load_decision_traces(tmp_path, "profile-1")) == 2
+
+
+def test_repeated_identical_recommendation_after_window_elapses_is_not_deduped(tmp_path) -> None:
+    first = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    path = tmp_path / "decision_traces" / "profile-1.jsonl"
+    # Backdate the just-written line's own timestamp past the dedup window
+    # -- simulates a real "the owner came back later and it's still the
+    # same recommendation" gap without mocking the clock. This ledger
+    # deliberately still records that as its own new event.
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    row = json.loads(lines[0])
+    row["recorded_at_utc"] = (
+        datetime.now(UTC) - timedelta(seconds=DEDUP_WINDOW_SECONDS + 60)
+    ).isoformat()
+    path.write_text(json.dumps(row, sort_keys=True) + "\n", encoding="utf-8")
+
+    second = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA X"},
+    )
+    assert second.trace_id != first.trace_id
+
+    lines_after = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines_after) == 2
+
+
+def test_alternating_content_never_loses_a_genuinely_distinct_event(tmp_path) -> None:
+    """A -> B -> A again, all within the dedup window: since dedup only
+    ever compares against the single MOST RECENT record in scope, the
+    third call (content A) does NOT match the second (content B) and is
+    correctly recorded as its own new event -- this ledger never
+    incorrectly merges a genuine revert/oscillation into an earlier line
+    just because the content happens to repeat."""
+
+    a1 = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA A"},
+    )
+    b = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA B"},
+    )
+    a2 = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"topAdd": "FA A"},
+    )
+    assert len({a1.trace_id, b.trace_id, a2.trace_id}) == 3
+    assert len(load_decision_traces(tmp_path, "profile-1")) == 3
 
 
 def test_no_future_outcome_field_exists_on_the_record_shape(tmp_path) -> None:

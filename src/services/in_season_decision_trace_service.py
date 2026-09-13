@@ -56,10 +56,36 @@ system --
   season outcome exists for anything recorded so far). Mirrors
   `record_owner_action` exactly -- appends a NEW line, never mutates the
   original recommendation line, never backdates a value into it.
+
+NWR Post-UI Product V1 (Closure Worker C, verification pass): a real
+pathological-duplication bug was FOUND and fixed here, not merely checked
+for. Every facade call site above is reached from a plain `useAsync`
+page-mount/dependency-change effect on the frontend (Weekly Home, Lineup,
+Waivers/Improve Team, Trade Finder, Find Trades), never gated behind an
+explicit "record this" button -- so a page refresh, a route remount, or
+even React StrictMode's dev-mode double-invoke calls the SAME facade
+method (and therefore `record_decision_trace`) again for the exact same
+underlying recommendation, with no code path that previously prevented a
+brand-new ledger line (and a brand-new random `trace_id`) every single
+time. `record_decision_trace` now recognizes an immediate repeat of the
+SAME recommendation (identical tool/week/roster-state/free-agent-state/
+recommendation/alternatives content, for the same league) recorded within
+`DEDUP_WINDOW_SECONDS` and returns the EXISTING record instead of
+appending a duplicate line -- idempotent, not lossy: any genuinely
+different content (a different top add, a different lineup swap, a
+different trade package -- the real, deterministic output of a changed
+roster/week/data state) still always gets a new line immediately, and an
+identical recommendation recorded again AFTER the window has elapsed also
+still gets a new line (this ledger does not silently collapse a
+legitimately time-separated "still recommended" event into its
+predecessor -- only a same-instant refresh/remount storm is collapsed).
+No historical line is ever deleted, edited, or backdated to implement
+this -- see `record_decision_trace`'s own docstring below.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -73,6 +99,55 @@ TOOL_TYPES = frozenset(
         "TRADE_FINDER", "TRADE_PACKAGE_SEARCH", "DRAFT",
     }
 )
+
+# NWR Post-UI Product V1 (Closure Worker C): how long a freshly-computed
+# recommendation with IDENTICAL content to the most recent recorded trace
+# for the same (league, tool, week) is treated as a duplicate of that same
+# recorded event rather than a new one. Sized to comfortably absorb a
+# refresh/remount storm (a slow reload, a React StrictMode double-invoke, a
+# few quick back-and-forth page visits) while staying far short of a
+# realistic "the owner came back later and the recommendation genuinely
+# hasn't changed yet" gap, which this ledger deliberately still records as
+# its own new event once the window has elapsed.
+DEDUP_WINDOW_SECONDS = 300
+
+
+def _content_fingerprint(
+    *,
+    tool: str,
+    week: int | None,
+    roster_state_player_ids: Sequence[str],
+    free_agent_state_player_ids: Sequence[str] | None,
+    recommendation: Mapping[str, Any],
+    alternatives: Sequence[Mapping[str, Any]],
+) -> str:
+    """A stable hash of everything that makes a recommendation event
+    genuinely distinct -- deliberately EXCLUDES `trace_id`/`recorded_at_utc`
+    (always fresh) and `league_snapshot_id`/`status_versions`/
+    `engine_version`/`data_versions` (provenance metadata about HOW the
+    recommendation was computed, not WHAT was recommended -- two identical
+    recommendations computed a few seconds apart on an unchanged roster
+    would otherwise never match on `league_snapshot_id`/timest-derived
+    fields alone). `roster_state_player_ids`/`free_agent_state_player_ids`
+    are sorted before hashing since they are set-like roster membership,
+    not an intentionally-ordered sequence -- the same real roster read
+    twice must fingerprint identically even if dict/set iteration order
+    ever differs between the two reads."""
+
+    payload = {
+        "tool": tool,
+        "week": week,
+        "roster_state_player_ids": sorted(str(value) for value in roster_state_player_ids),
+        "free_agent_state_player_ids": (
+            sorted(str(value) for value in free_agent_state_player_ids)
+            if free_agent_state_player_ids is not None
+            else None
+        ),
+        "recommendation": recommendation,
+        "alternatives": list(alternatives),
+    }
+    encoded = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 class DecisionTraceError(ValueError):
@@ -162,10 +237,56 @@ def record_decision_trace(
     league_snapshot_id: str | None = None,
     status_versions: Mapping[str, str] | None = None,
 ) -> DecisionTraceRecord:
+    """Appends a new RECOMMENDED line to the ledger -- UNLESS the most
+    recently recorded trace for this exact (league_id, tool, week) already
+    carries byte-identical recommendation content (see
+    `_content_fingerprint`) AND was recorded within `DEDUP_WINDOW_SECONDS`
+    of now, in which case that EXISTING record is returned as-is and no new
+    line is written. NWR Post-UI Product V1 (Closure Worker C): a real,
+    found fix for pathological page-refresh/remount duplication -- see the
+    module docstring. Never deletes, edits, or backdates any existing line;
+    a genuinely new recommendation (different content, or the same content
+    recorded again after the window elapses) is always appended as its own
+    new event, exactly as before this fix."""
+
     if tool not in TOOL_TYPES:
         raise DecisionTraceError(f"Unknown tool type: {tool!r}. Must be one of {sorted(TOOL_TYPES)}.")
     if not league_id or not profile_id:
         raise DecisionTraceError("league_id and profile_id are required.")
+
+    now = datetime.now(UTC)
+    fingerprint = _content_fingerprint(
+        tool=tool, week=week, roster_state_player_ids=roster_state_player_ids,
+        free_agent_state_player_ids=free_agent_state_player_ids,
+        recommendation=recommendation, alternatives=alternatives,
+    )
+    same_scope = [
+        existing
+        for existing in load_decision_traces(root, profile_id, tool=tool)
+        # Explicit `== week` (not relying on `load_decision_traces`'s own
+        # `week` filter, which treats `week=None` as "no week filter at
+        # all" -- some tools, e.g. WAIVER, legitimately record BOTH a
+        # week-scoped (THIS_WEEK) and a week-agnostic (REST_OF_SEASON,
+        # `week=None`) trace for the same league, and this dedup check must
+        # only ever compare like-for-like.
+        if existing.league_id == league_id and existing.week == week
+    ]
+    if same_scope:
+        most_recent = max(same_scope, key=lambda existing: existing.recorded_at_utc)
+        try:
+            most_recent_at = datetime.fromisoformat(most_recent.recorded_at_utc)
+        except ValueError:
+            most_recent_at = None
+        if most_recent_at is not None and abs((now - most_recent_at).total_seconds()) <= DEDUP_WINDOW_SECONDS:
+            existing_fingerprint = _content_fingerprint(
+                tool=most_recent.tool, week=most_recent.week,
+                roster_state_player_ids=most_recent.roster_state_player_ids,
+                free_agent_state_player_ids=most_recent.free_agent_state_player_ids,
+                recommendation=most_recent.recommendation, alternatives=most_recent.alternatives,
+            )
+            if existing_fingerprint == fingerprint:
+                return most_recent
+
     record = DecisionTraceRecord(
         trace_id=str(uuid4()),
         league_id=league_id,
