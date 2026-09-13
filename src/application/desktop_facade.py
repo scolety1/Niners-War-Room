@@ -2755,10 +2755,35 @@ class DesktopBackendFacade:
         )
 
     def redraft_opponent_rosters(self) -> FacadePayload:
-        """Return every non-owner roster for the active Sleeper league."""
+        """Return every non-owner roster for the active Sleeper league.
+
+        NWR Post-UI closure pass (bug 2): every opponent player row now also
+        carries a `canonicalPlayerId`/`identityStatus` pair -- the SAME
+        identity boundary `redraft_my_roster` already exposes via
+        `RedraftMyRosterPlayer.canonicalPlayerId`, computed with the SAME
+        `resolve_roster_canonical_ids` matcher every other canonical-id call
+        site in this module already uses (never a new identity heuristic).
+        This closes the real, previously-disclosed gap where opponent-side
+        players carried ONLY a raw Sleeper id, which is what let the old
+        "Open in Analyze" button (Trade Finder) grab a raw provider id where
+        a canonical one was actually needed -- see `trades-explain`/
+        `in-season.tsx` for the frontend half of this fix.
+        """
 
         self._require_mode("redraft")
-        _selected, league_id, owner_user_id = self._active_sleeper_context()
+        selected, league_id, owner_user_id = self._active_sleeper_context()
+        ranking_warning = ""
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+            ranking_warning = (
+                "NWR rankings are unavailable for this profile; opponent roster rows are shown "
+                "without a canonical NWR identity match."
+            )
         try:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
@@ -2776,10 +2801,34 @@ class DesktopBackendFacade:
                 "Sleeper opponent rosters could not be read. No local or remote state was changed.",
                 status=503,
             ) from exc
+        enriched_opponents: list[dict[str, Any]] = []
+        for opponent in opponents:
+            opp_sleeper_ids = [str(row["sleeperPlayerId"]) for row in opponent["players"]]
+            opp_resolved = resolve_roster_canonical_ids(
+                roster_sleeper_player_ids=opp_sleeper_ids, players_catalog=players,
+                ranking_rows=ranking_rows,
+            )
+            enriched_players = [
+                {
+                    **row,
+                    "canonicalPlayerId": opp_resolved.canonical_id_by_sleeper_id.get(
+                        str(row["sleeperPlayerId"])
+                    )
+                    or None,
+                    "identityStatus": (
+                        "MATCHED"
+                        if opp_resolved.canonical_id_by_sleeper_id.get(str(row["sleeperPlayerId"]))
+                        else "UNMATCHED_IDENTITY"
+                    ),
+                }
+                for row in opponent["players"]
+            ]
+            enriched_opponents.append({**opponent, "players": enriched_players})
         return FacadePayload(
             data={
                 "leagueId": league_id,
-                "opponents": list(opponents),
+                "opponents": enriched_opponents,
+                "rankingWarning": ranking_warning,
                 "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
@@ -3726,6 +3775,7 @@ class DesktopBackendFacade:
             rosters=rosters, users=users, players=players, owner_user_id=owner_user_id
         )
         opponents: list[dict[str, Any]] = []
+        sleeper_id_by_canonical_id_by_roster_id: dict[str, dict[str, str]] = {}
         for opponent in opponent_rows:
             opp_sleeper_ids = [str(row["sleeperPlayerId"]) for row in opponent["players"]]
             opp_resolved = resolve_roster_canonical_ids(
@@ -3741,6 +3791,22 @@ class DesktopBackendFacade:
                     "positions": opp_resolved.player_positions_by_canonical_id,
                 }
             )
+            # NWR Post-UI closure pass (bug 2): retained so the candidate
+            # payload below can carry each side's real raw Sleeper id
+            # alongside its canonical one -- the identity-boundary fix for
+            # the old "Open in Analyze" button, which incorrectly passed
+            # `myGivePlayerId`/`opponentGivePlayerId` (canonical) into an
+            # endpoint that requires raw Sleeper ids.
+            sleeper_id_by_canonical_id_by_roster_id[opponent["rosterId"]] = {
+                canonical_id: sleeper_id
+                for sleeper_id, canonical_id in opp_resolved.canonical_id_by_sleeper_id.items()
+            }
+        # NWR Post-UI closure pass (bug 2): reverse of `own_resolved`'s own
+        # sleeper-id -> canonical-id map, for the same reason as above.
+        own_sleeper_id_by_canonical_id = {
+            canonical_id: sleeper_id
+            for sleeper_id, canonical_id in own_resolved.canonical_id_by_sleeper_id.items()
+        }
         manual_assets = self._manual_assets_for_profile(selected.profile_id)
         status_overrides = load_status_overrides(self.repo_root)
         results = find_win_win_trades(
@@ -3841,11 +3907,27 @@ class DesktopBackendFacade:
                 "candidates": [
                     {
                         "myGivePlayerId": candidate.my_give_player_id,
+                        # NWR Post-UI closure pass (bug 2): the real raw
+                        # Sleeper id for this same player -- the identity-
+                        # boundary field the old "Open in Analyze" button
+                        # should have used instead of `myGivePlayerId`
+                        # (canonical) when calling `redraftTradeAnalysis`,
+                        # which requires raw Sleeper ids. `None` only if this
+                        # exact player was somehow not part of the resolved
+                        # owner roster (should not happen -- every candidate
+                        # is built FROM that same resolved roster -- but
+                        # never fabricated if it did).
+                        "mySleeperPlayerId": own_sleeper_id_by_canonical_id.get(
+                            candidate.my_give_player_id
+                        ),
                         "myGivePlayerName": candidate.my_give_player_name,
                         "myGivePlayerAvailabilityStatus": availability_status_by_id.get(
                             candidate.my_give_player_id
                         ),
                         "opponentGivePlayerId": candidate.opponent_give_player_id,
+                        "opponentSleeperPlayerId": sleeper_id_by_canonical_id_by_roster_id.get(
+                            candidate.opponent_roster_id, {}
+                        ).get(candidate.opponent_give_player_id),
                         "opponentGivePlayerName": candidate.opponent_give_player_name,
                         "opponentGivePlayerAvailabilityStatus": availability_status_by_id.get(
                             candidate.opponent_give_player_id

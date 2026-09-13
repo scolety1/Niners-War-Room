@@ -6,6 +6,7 @@ import {
   explainTradeAnalysis,
   explainTradeFinderCandidate,
   explainTradePackageCandidate,
+  tradeFinderAnalysisLinkTarget,
   tradeVerdictFor,
 } from "./trades-explain";
 import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation, TradePlayerImpact } from "@nwr/contracts";
@@ -127,10 +128,12 @@ describe("explainTradeAnalysis", () => {
 
 function finderCandidate(overrides: Partial<TradeFinderCandidate> = {}): TradeFinderCandidate {
   return {
-    myGivePlayerId: "give-1",
+    myGivePlayerId: "00-0012345",
+    mySleeperPlayerId: "5001",
     myGivePlayerName: "Wan'Dale Robinson",
     myGivePlayerAvailabilityStatus: null,
-    opponentGivePlayerId: "receive-1",
+    opponentGivePlayerId: "00-0067890",
+    opponentSleeperPlayerId: "6002",
     opponentGivePlayerName: "Bijan Robinson",
     opponentGivePlayerAvailabilityStatus: null,
     opponentRosterId: "roster-2",
@@ -167,6 +170,72 @@ describe("explainTradeFinderCandidate", () => {
     expect(explanation.impact).toBe("Your net marginal utility +2.4 · ROS value delta +3.2 · their net marginal utility +1.1");
     expect(explanation.impact.toLowerCase()).not.toContain("probability");
     expect(explanation.impact.toLowerCase()).not.toContain("accept");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// NWR Post-UI closure pass (bug 2): the "Open in Analyze" identity-boundary
+// fix. Before this pass, this link was built directly from
+// `candidate.myGivePlayerId`/`opponentGivePlayerId` -- NWR's own canonical
+// (GSIS-style) ids -- and handed to `redraftTradeAnalysis`, which requires
+// real raw Sleeper ids. That always failed
+// (`TRADE_ANALYSIS_IDENTITY_UNRESOLVED`) for the opponent side.
+// ---------------------------------------------------------------------------
+
+describe("tradeFinderAnalysisLinkTarget", () => {
+  it("a matched Sleeper player on both sides flows correctly: the link uses the REAL raw Sleeper ids, never the canonical ones", () => {
+    const target = tradeFinderAnalysisLinkTarget(finderCandidate());
+    expect(target.kind).toBe("ok");
+    expect(target.reason).toBeNull();
+    expect(target.href).toBe(
+      "/trade-analysis?giveSleeperId=5001&giveName=Wan%27Dale+Robinson&receiveSleeperId=6002&receiveName=Bijan+Robinson",
+    );
+    // The exact identity-boundary bug this pass fixes: the canonical ids
+    // must never leak into the query string in place of the Sleeper ones.
+    expect(target.href).not.toContain("00-0012345");
+    expect(target.href).not.toContain("00-0067890");
+  });
+
+  it("an unmatched player (no resolvable Sleeper id on the owner side) is an honest, disclosed failure -- never a crash, never a link that is guaranteed to fail", () => {
+    const target = tradeFinderAnalysisLinkTarget(finderCandidate({ mySleeperPlayerId: null }));
+    expect(target.kind).toBe("blocked");
+    expect(target.href).toBeNull();
+    expect(target.reason).toContain("could not be resolved to a live Sleeper roster id");
+  });
+
+  it("an unmatched player on the opponent side is handled the same honest way", () => {
+    const target = tradeFinderAnalysisLinkTarget(finderCandidate({ opponentSleeperPlayerId: null }));
+    expect(target.kind).toBe("blocked");
+    expect(target.href).toBeNull();
+  });
+
+  it("never silently substitutes a stale/wrong provider id (the canonical id) when the real Sleeper id is missing -- the exact original bug shape", () => {
+    // This is the literal shape of the original bug: a candidate whose only
+    // resolvable id is the canonical one, with no real Sleeper id known.
+    // The fix must refuse to build a link at all here, rather than falling
+    // back to `myGivePlayerId`/`opponentGivePlayerId` the way the old,
+    // broken version of this link did.
+    const target = tradeFinderAnalysisLinkTarget(
+      finderCandidate({ mySleeperPlayerId: null, opponentSleeperPlayerId: null }),
+    );
+    expect(target.kind).toBe("blocked");
+    expect(target.href).toBeNull();
+  });
+
+  it("full canonical-id action flow end to end: real player ids/names carried in full, ready for TradeAnalysisPage's own query-param prefill to pick up", () => {
+    const candidate = finderCandidate({
+      mySleeperPlayerId: "7777",
+      myGivePlayerName: "Player Give",
+      opponentSleeperPlayerId: "8888",
+      opponentGivePlayerName: "Player Receive",
+    });
+    const target = tradeFinderAnalysisLinkTarget(candidate);
+    expect(target.kind).toBe("ok");
+    const url = new URL(target.href as string, "https://example.test");
+    expect(url.searchParams.get("giveSleeperId")).toBe("7777");
+    expect(url.searchParams.get("giveName")).toBe("Player Give");
+    expect(url.searchParams.get("receiveSleeperId")).toBe("8888");
+    expect(url.searchParams.get("receiveName")).toBe("Player Receive");
   });
 });
 

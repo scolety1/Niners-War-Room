@@ -127,6 +127,54 @@ export interface TradeFinderExplanation {
   tone: DecisionExplainTone;
 }
 
+export type TradeFinderAnalysisLinkTarget =
+  /** Both sides resolved to a real raw Sleeper id -- safe to build the
+   * `/trade-analysis` deep link. */
+  | { kind: "ok"; href: string; reason: null }
+  /** At least one side's canonical id could not be resolved back to a real
+   * Sleeper id (should not happen in practice -- every candidate is built
+   * from an already-resolved roster -- but this is disclosed rather than
+   * crashing or silently sending a wrong/stale id across the provider
+   * boundary). */
+  | { kind: "blocked"; href: null; reason: string };
+
+/**
+ * NWR Post-UI closure pass (bug 2): the fix for the old "Open in Analyze"
+ * button, which built its `/trade-analysis` deep link directly from
+ * `TradeFinderCandidate.myGivePlayerId`/`opponentGivePlayerId` -- NWR's own
+ * canonical (GSIS-style) ids -- through the `giveSleeperId`/
+ * `receiveSleeperId` query params `TradeAnalysisPage` sends VERBATIM to
+ * `redraftTradeAnalysis`, an endpoint that requires real raw Sleeper ids.
+ * That always failed (`TRADE_ANALYSIS_IDENTITY_UNRESOLVED`) for the
+ * opponent side -- a real, previously-disclosed always-fails path.
+ *
+ * Fixed by resolving through the real raw Sleeper ids the backend now also
+ * returns alongside each canonical one (`mySleeperPlayerId`/
+ * `opponentSleeperPlayerId` -- see `DesktopBackendFacade.
+ * redraft_trade_finder`'s own reverse-lookup of the SAME
+ * `resolve_roster_canonical_ids` map every other canonical-id call site
+ * already uses), never re-derived or guessed client-side. An unresolved id
+ * on either side is reported honestly (`kind: "blocked"`) rather than
+ * building a link that is guaranteed to fail, or silently substituting the
+ * wrong (canonical) id as if it were a Sleeper one.
+ */
+export function tradeFinderAnalysisLinkTarget(candidate: TradeFinderCandidate): TradeFinderAnalysisLinkTarget {
+  if (!candidate.mySleeperPlayerId || !candidate.opponentSleeperPlayerId) {
+    return {
+      kind: "blocked",
+      href: null,
+      reason: "This candidate's player identity could not be resolved to a live Sleeper roster id -- Trade Analysis needs a real Sleeper id for both sides.",
+    };
+  }
+  const params = new URLSearchParams({
+    giveSleeperId: candidate.mySleeperPlayerId,
+    giveName: candidate.myGivePlayerName,
+    receiveSleeperId: candidate.opponentSleeperPlayerId,
+    receiveName: candidate.opponentGivePlayerName,
+  });
+  return { kind: "ok", href: `/trade-analysis?${params.toString()}`, reason: null };
+}
+
 export function explainTradeFinderCandidate(candidate: TradeFinderCandidate): TradeFinderExplanation {
   const fits = candidate.myNetMarginalUtility > 0 && candidate.opponentNetMarginalUtility > 0;
   return {

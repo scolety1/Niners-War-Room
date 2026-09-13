@@ -909,6 +909,17 @@ export interface RedraftFreeAgentsResult {
 
 export interface RedraftOpponentPlayer {
   sleeperPlayerId: string;
+  /** NWR Post-UI closure pass (bug 2): the same canonical-identity boundary
+   * `RedraftMyRosterPlayer.canonicalPlayerId` already exposes for the
+   * owner's own roster -- `null` when this opponent player could not be
+   * identity-matched to NWR's governed ranking pool (see
+   * `identityStatus`). Any UI action that hands a player id to a
+   * canonical-id-based endpoint (e.g. `redraftTradeAnalysis`'s "gives"/
+   * "receives" side) must resolve through THIS field, never
+   * `sleeperPlayerId` directly -- `sleeperPlayerId` is the raw provider id,
+   * only valid at an actual Sleeper-facing boundary. */
+  canonicalPlayerId: string | null;
+  identityStatus: "MATCHED" | "UNMATCHED_IDENTITY";
   playerName: string;
   position: string;
   team: string;
@@ -926,6 +937,7 @@ export interface RedraftOpponentRoster {
 export interface RedraftOpponentRostersResult {
   leagueId: string;
   opponents: RedraftOpponentRoster[];
+  rankingWarning: string;
   writeBehavior: string;
 }
 
@@ -1166,10 +1178,24 @@ export interface TradeAnalysisResult {
 }
 
 export interface TradeFinderCandidate {
+  /** NWR canonical player id (GSIS-style). Internal use only -- e.g. the
+   * global Player Drawer, which is canonical-id-based everywhere. Do NOT
+   * pass this to any endpoint that expects a raw Sleeper id (e.g.
+   * `redraftTradeAnalysis`'s gives/receives) -- use `mySleeperPlayerId`
+   * for that provider boundary instead (NWR Post-UI closure pass, bug 2:
+   * this exact confusion is what broke the old "Open in Analyze" button). */
   myGivePlayerId: string;
+  /** The real raw Sleeper id for the SAME player as `myGivePlayerId` --
+   * the correct id to use at an actual Sleeper-facing boundary. `null`
+   * only if this player could not be resolved back to a raw roster id
+   * (should not happen in practice; never fabricated if it did). */
+  mySleeperPlayerId: string | null;
   myGivePlayerName: string;
   myGivePlayerAvailabilityStatus: PlayerAvailabilityStatus | null;
   opponentGivePlayerId: string;
+  /** Same boundary distinction as `mySleeperPlayerId`, for the opponent
+   * side. */
+  opponentSleeperPlayerId: string | null;
   opponentGivePlayerName: string;
   opponentGivePlayerAvailabilityStatus: PlayerAvailabilityStatus | null;
   opponentRosterId: string;

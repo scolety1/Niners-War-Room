@@ -239,8 +239,8 @@ describe("buildLeagueOwnershipEntries", () => {
       roster: [{ sleeperPlayerId: "1", canonicalPlayerId: "c1", playerName: "Owner Player", position: "WR", team: "SF", starter: true, identityStatus: "MATCHED" }],
     };
     const opponents: RedraftOpponentRostersResult = {
-      leagueId: "L1", writeBehavior: "NO_SLEEPER_WRITES",
-      opponents: [{ rosterId: "2", ownerUserId: "u2", teamName: "Rival Team", players: [{ sleeperPlayerId: "5", playerName: "Rival Player", position: "RB", team: "KC", starter: true }], unresolvedSleeperPlayerIds: [] }],
+      leagueId: "L1", writeBehavior: "NO_SLEEPER_WRITES", rankingWarning: "",
+      opponents: [{ rosterId: "2", ownerUserId: "u2", teamName: "Rival Team", players: [{ sleeperPlayerId: "5", canonicalPlayerId: "c5", identityStatus: "MATCHED", playerName: "Rival Player", position: "RB", team: "KC", starter: true }], unresolvedSleeperPlayerIds: [] }],
     };
     const freeAgents: RedraftFreeAgentsResult = {
       leagueId: "L1", rankingWarning: "", writeBehavior: "NO_SLEEPER_WRITES",
@@ -368,7 +368,7 @@ function buildFakeClient(profileIds: string[]) {
     },
     async redraftOpponentRosters(): Promise<RedraftOpponentRostersResult> {
       recordRead("opponentRosters");
-      return { leagueId: currentActive ?? "", opponents: [], writeBehavior: "NO_SLEEPER_WRITES" };
+      return { leagueId: currentActive ?? "", opponents: [], rankingWarning: "", writeBehavior: "NO_SLEEPER_WRITES" };
     },
   };
   return {

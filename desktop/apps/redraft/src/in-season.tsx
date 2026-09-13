@@ -29,6 +29,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
 import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
+import { tradeFinderAnalysisLinkTarget } from "./trades-explain";
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
 import {
   describeOwnerBracketEntry,
@@ -918,9 +919,21 @@ function TradeFinderCard({
           : "only one side's marginal utility improves under NWR's evaluator -- the other team may not agree."}
       </p>
       <p>NWR impact: your net marginal utility {formatNumber(candidate.myNetMarginalUtility, 1)} · ROS value delta {formatNumber(candidate.myRosValueDelta, 1)} · their net marginal utility {formatNumber(candidate.opponentNetMarginalUtility, 1)}</p>
-      <Link to={`/trade-analysis?giveSleeperId=${encodeURIComponent(candidate.myGivePlayerId)}&giveName=${encodeURIComponent(candidate.myGivePlayerName)}&receiveSleeperId=${encodeURIComponent(candidate.opponentGivePlayerId)}&receiveName=${encodeURIComponent(candidate.opponentGivePlayerName)}`}>
-        Open in Trade Analysis
-      </Link>
+      {/* NWR Post-UI closure pass (bug 2): the old version of this link
+          built its query string directly from `candidate.myGivePlayerId`/
+          `opponentGivePlayerId` -- NWR's own canonical ids -- which
+          `TradeAnalysisPage` then sent to `redraftTradeAnalysis` as if they
+          were raw Sleeper ids, an always-fails identity-boundary bug for
+          the opponent side. `tradeFinderAnalysisLinkTarget` resolves the
+          real raw Sleeper id the backend now returns for each side instead
+          -- an unresolved id is disclosed honestly rather than building a
+          link guaranteed to fail. */}
+      {(() => {
+        const target = tradeFinderAnalysisLinkTarget(candidate);
+        return target.kind === "ok"
+          ? <Link to={target.href}>Open in Trade Analysis</Link>
+          : <p className="copy-muted" title={target.reason ?? undefined}>Open in Trade Analysis unavailable: {target.reason}</p>;
+      })()}
     </article>
   );
 }
