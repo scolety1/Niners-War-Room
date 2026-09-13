@@ -12,12 +12,348 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Thirteen commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Fourteen commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
 backend, then P1-3 UI, then P1-4, then P1-5, then P2-1, then Worker 11's
 final shift consolidation (docs-only, no code commit), then Worker A's
-closure pass, then Worker B's privacy-safe packaging pass below) -- run
-`git log -1` for the exact hash.
+closure pass, then Worker B's privacy-safe packaging pass, then Closure
+Worker C's final verification trio below) -- run `git log -1` for the
+exact hash.
+
+## Closure Worker C — final verification trio (real release smoke, prospective-ledger hardening, full regression) -- 2026-09-13
+
+**Scope: verification-only trio before this branch is pushed as a checkpoint --
+real read-only release smoke (Work Unit 5), prospective-ledger hardening
+(Work Unit 6), full regression/endurance (Work Unit 7).** Started at
+Worker B's `32f7059f`. Found and fixed ONE genuine bug (Work Unit 6, real
+pathological decision-trace duplication) -- everything else this pass
+touched was verification only, no code change. Final HEAD: `1da21322`.
+
+**WORK UNIT 5 -- REAL READ-ONLY RELEASE SMOKE: PASS.** Reused Worker 3's
+`nwr_release_gate_smoke.ps1 -KeepRunning -SleeperLeagueId
+1312983576827920384 -SleeperUsername scolety` end to end against the real,
+read-only Fantasy Gamers league, then drove the same real backend + real
+production `vite preview` build live in Chrome for the full click-through
+the directive named: league chooser -> Fantasy Gamers -> Home -> Lineup ->
+Improve Team -> Trades (Analyze + Find Trades) -> Players (Rankings +
+Player Drawer open/close/reopen + global cross-tool search) -> League (My
+Roster/Manage Leagues) -> Draft Room (pre-draft state only, `Start Draft`
+never clicked) -> Attention Center ("Multi-League Overview -- Read-Only",
+the real Multi-League Center) -> cross-league player search (Bijan
+Robinson resolved correctly across 7 saved leagues, real
+AVAILABLE/UNAVAILABLE-per-league statuses) -> Cheat Sheet -> History ->
+Data Health -> a cold app restart (fresh navigation + hard reload back to
+the league chooser's remembered active league) -> a cold direct deep link
+(`/#/league/<id>/trade-analysis?tab=find`, hard-reloaded from scratch).
+**Zero console messages of any kind** (not just errors) across every one
+of those loads, checked via `read_console_messages` with no pattern
+filter after each. `findings: []` in the smoke script's own JSON report
+(previously non-empty for both the weekly-home-actions 500 and the
+check:resources block; both are confirmed still fixed -- see below).
+
+**Weekly Home / weekly-home-actions 500 fix: CONFIRMED STILL HOLDS**, on a
+fully fresh rerun with both Worker A fixes and Worker B's packaging change
+in place: `POST /api/v1/redraft/weekly-home-actions {"week":1}` ->
+HTTP 200 (real 9-action response, real STREAMER rows present), rendered
+live in the "NWR Actions" panel with real cards (START/SIT, close-call
+QB, WAIVER, etc.) and zero console errors, including across 3 back-to-back
+full page reloads of Weekly Home. Current week/opponent/scores/standings
+(Week 1, Puka's Bitches, 6.0-25.4, 0-0 #9 of 10, playoffs Week 15) all
+correct against the real Sleeper league. Trade packages render with real
+before/after impact numbers. Decision traces record (see Work Unit 6).
+The identity-boundary fix (bug 2, "Open in Analyze" equivalent) -- verified
+via the real My Roster page showing real MATCHED/UNMATCHED
+`canonicalPlayerId`/`identityStatus` per player, and via the Trade Finder
+tab producing real trade candidates with the corrected id boundary intact
+(no regression to the fixed `mySleeperPlayerId`/`opponentSleeperPlayerId`
+fields, confirmed by code-diff review below, not re-exercised end-to-end
+via the legacy unrouted button this pass since Worker A's own live
+verification already covered that path directly). Data notices are
+coherent: header chip correctly shows "3 data issues" for this league's
+real state (Market ADP unavailable / Sleeper scoring needs review / 7
+rookies remain blocked), unchanged from prior passes' own disclosed
+findings.
+
+**SLEEPER WRITES: 0**, verified three ways, same as every prior worker:
+(1) structural -- `SleeperHttpClient` (`src/services/sleeper_import_
+service.py`) defines only `get_json()`; (2) grep -- zero POST/PUT/PATCH/
+DELETE call sites target `api.sleeper.app` anywhere in `src/`; (3) the
+smoke script's own real before/after byte-comparison of `league`/
+`rosters`/`users` fetched directly from `api.sleeper.app` around this
+pass's real Sleeper import call: IDENTICAL (`beforeAfterIdentical: true`
+in the JSON report).
+
+**TIMINGS** (from the smoke script's real, instrumented run against the
+real Fantasy Gamers league; single-request wall-clock, not averaged):
+
+| Surface | Time (ms) |
+|---|---|
+| Cold bootstrap (Home) | 236.1 |
+| Warm bootstrap (Home) | 242.9 |
+| Sleeper import (real, read-only) | 2,449.0 |
+| League workspace context | 1,018.4 |
+| My Roster | 880.7 |
+| Opponent Rosters | 934.7 |
+| Data Health | 4,237.9 |
+| Player Availability Status | 5.9 |
+| Lineup (Start/Sit, week 1) | 912.0 |
+| Waivers (Improve Team, THIS_WEEK) | 16,318.1 |
+| Free Agents | 1,897.0 |
+| Trade Finder | 1,578.6 |
+| Weekly Home actions aggregation (week 1) | 7,936.2 |
+
+Player Drawer first/repeat open and Draft refresh were not separately
+timed by the instrumented script (no dedicated endpoint -- the drawer
+renders from already-loaded bootstrap/ranking data, confirmed live with
+zero additional network calls on open/close/reopen); both opened
+instantly and with zero console errors in the live Chrome pass above.
+Waivers' 16.3s is a real, pre-existing, undisclosed-as-new latency
+(unrelated to this pass -- no waiver-path code was touched this shift) --
+flagged as an open item below, not investigated further (out of this
+verification pass's scope).
+
+**WORK UNIT 6 -- PROSPECTIVE LEDGER HARDENING: REAL PATHOLOGICAL
+DUPLICATION FOUND AND FIXED.** Every supported decision family
+(START_SIT, WAIVER, FAAB, TRADE, TRADE_FINDER, TRADE_PACKAGE_SEARCH,
+K_STREAMER, DST_STREAMER) was confirmed registering real traces correctly
+for the Fantasy Gamers profile (229+ folded events, spanning every tool
+type; `DRAFT` remains schema-only with no live call site, unchanged, per
+the hard boundary). But the directive's suspected duplication risk was
+real, not hypothetical: every facade call site that records a trace is
+reached from a plain `useAsync` page-mount/dependency-change frontend
+effect (Weekly Home, Lineup, Waivers/Improve Team, Trade Finder, Find
+Trades) -- never gated behind an explicit "record this" action -- so a
+page refresh, a route remount, or `redraft_weekly_home_actions`'s own
+internal re-calls to `redraft_weekly_lineup`/`redraft_waivers`/
+`redraft_trade_finder` (already invoked standalone moments earlier by the
+same page render) previously wrote a brand-new ledger line, with a
+brand-new random `trace_id`, for the exact same underlying recommendation
+every single time.
+
+**Live, real evidence, not just reasoning:** the smoke script's own single
+run showed `weekly-home-actions` internally re-calling `redraft_weekly_
+lineup`/`redraft_trade_finder` seconds after their own standalone endpoint
+calls moments earlier -- BEFORE this pass's fix, that would have written 2
+duplicate START_SIT lines and 2 duplicate TRADE_FINDER lines for one real
+smoke pass alone. Pre-existing historical evidence of the exact same
+defect was independently found already sitting in this profile's own real
+ledger, untouched by this pass: three real TRADE_PACKAGE_SEARCH lines
+sharing one identical microsecond-precision timestamp and byte-identical
+content, clearly written back-to-back by an uncontrolled duplicate call in
+an earlier session -- left exactly as recorded, per the append-only/
+no-retroactive-deletion invariant (this pass deletes or mutates nothing
+already recorded).
+
+**Fix (`src/services/in_season_decision_trace_service.py`,
+`record_decision_trace`):** a new content fingerprint (tool/week/
+roster-state/free-agent-state/recommendation/alternatives -- deliberately
+excluding provenance-only fields like `engine_version`/`data_versions`/
+`league_snapshot_id`/`status_versions` so a metadata-only difference never
+defeats a real match) is compared against the MOST RECENT existing trace
+in the exact same `(league_id, tool, week)` scope; if it matches AND that
+trace was recorded within `DEDUP_WINDOW_SECONDS` (300s -- sized to absorb
+a refresh/remount storm, not to suppress a genuinely time-separated "still
+recommended" event), the existing record is returned instead of writing a
+duplicate line. A genuinely different recommendation (the real, changed
+output of an actually-changed roster/data state) or an identical one
+recorded again after the window elapses both still always get their own
+new, real line -- exactly the "don't lose a genuinely distinct event"
+requirement.
+
+**Verified live against the real Fantasy Gamers ledger, not just unit
+tests:** after this fix, the smoke script's own internal double-call
+(`weekly-home-actions` re-invoking `weekly_lineup`/`trade_finder`
+seconds after their standalone calls) produced exactly ONE line each for
+START_SIT and TRADE_FINDER, not two -- while the two genuinely distinct
+WAIVER/FAAB scopes (THIS_WEEK week=1 vs. REST_OF_SEASON week=None) both
+correctly got their own separate lines, proving the fix discriminates real
+scope differences rather than over-suppressing. Three additional real,
+live full-page reloads of Weekly Home produced ZERO new WAIVER/FAAB/
+TRADE_FINDER/K_STREAMER/DST_STREAMER lines (all correctly deduped as
+within-window repeats of identical content) and exactly ONE new,
+legitimate START_SIT line once its own window had genuinely elapsed
+(~304s after the prior identical recommendation -- just past the 300s
+threshold, the exact "recommendation unchanged but the window elapsed"
+case this design deliberately still records). A follow-up real endurance
+run (10 full nav loops x 10 endpoints = 100 calls, 20 repeated
+player-availability reads, 5 rapid identical `FIND_WIN_WIN` trade-package
+searches, and 10 real league-switch cycles between two profiles with a
+ledger read after each switch) added exactly ONE new ledger line across
+125 recommendation-shaped calls (the rest all correctly deduped) and zero
+non-200 responses; the 10 league-switch cycles independently reconfirmed
+per-league ledger isolation (the other profile's `totalCount` stayed
+genuinely 0 throughout; Fantasy Gamers' count was unaffected by switching
+away and back).
+
+**Tests added (`tests/test_in_season_decision_trace_service.py`, +8, all
+passing):** identical content within the window dedupes and returns the
+existing record (and a provenance-only field change like `engine_version`
+does not defeat the match); genuinely different content is never deduped;
+scope isolation holds across different leagues/tools/weeks; a WAIVER
+week-scoped vs. week-agnostic pair is compared like-for-like rather than
+cross-contaminated; identical content recorded again after the window has
+elapsed still gets a new line; an A -> B -> A content alternation within
+the window never incorrectly merges the third event into the first (dedup
+only ever compares against the single most recent record in scope).
+
+**Confirmed no accidental regression to any existing caller:** every
+pre-existing test in this file (21) and every facade test exercising a
+traced call site (`test_prospective_recommendation_ledger_v1.py`,
+`test_desktop_application_api.py`'s K/DST trace test,
+`test_weekly_home_single_snapshot.py`, `test_trade_package_search_facade_
+wiring.py`, `test_redraft_identity_boundary_opponent_and_trade_finder.py`,
+`test_desktop_facade_architecture_wiring.py`, `test_player_availability_
+status_consumer_consistency.py`, `test_decision_envelope_consumer_
+migration.py`) still pass unchanged -- none of them call the same traced
+method twice with identical content in one test, so none exercised the
+new dedup branch by accident; `pytest tests/test_in_season_decision_trace_
+service.py tests/test_prospective_recommendation_ledger_v1.py`: 31/31
+passing.
+
+**WORK UNIT 7 -- FULL REGRESSION / ENDURANCE.**
+- `npx vitest run --no-file-parallelism` (full monorepo, post-fix,
+  post-commit): **367/367 passing, 28/28 files** -- unchanged from Worker
+  A's own total (this pass touched zero frontend files).
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  clean, both before and after this pass's commit.
+- `pytest tests/test_desktop_application_api.py`: 46 passed, 4 failed --
+  the exact same 4 pre-existing failures this ledger's own baseline
+  documents (`test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_
+  aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+  contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+- `pytest tests/` (full suite): run TWICE, honestly reporting both.
+  **First run (uncommitted working tree, this pass's fix staged but not
+  yet committed):** `340 failed, 4277 passed, 72 skipped, 13 errors in
+  600.14s`. Traced ALL 10 of the excess failures to one real, disclosed,
+  pre-existing repo convention, NOT a regression: `test_no_forbidden_or_
+  protected_paths_changed`-style governance tests (one per historical
+  lane -- `test_blocked_sources_and_protected_paths_are_not_used`,
+  `test_forbidden_shared_local_secret_and_protected_paths_are_not_
+  tracked`, `test_no_protected_or_app_paths_changed`, `test_no_forbidden_
+  or_protected_paths_changed` (x4 across different lane files), `test_no_
+  protected_or_forbidden_paths_changed`, `test_no_forbidden_or_protected_
+  paths_changed_by_lane`, and one `test_shared_local_secret_and_app_paths_
+  are_not_tracked` variant) literally assert `"src/services/" not in
+  (git status --short)` -- i.e. each one fails whenever ANY file under
+  `src/services/` sits uncommitted anywhere in the working tree,
+  regardless of what actually changed. A separate, real, already-known
+  side effect was also found and reverted before committing: running the
+  full suite regenerates 5 `docs/model_v4/*.md` files with "0 rows" (a
+  script under test writing real output reflecting this environment's
+  missing `local_exports` data) -- `git checkout --` discarded those 5
+  incidental doc changes; they were never part of this pass's real diff.
+  **Second run (clean tree, this pass's fix committed):** attempted for a
+  true apples-to-apples clean-tree comparison, but the process stalled
+  (confirmed via near-zero measured CPU time after ~7 minutes idle, not a
+  slow test actively working) and was killed rather than left to
+  potentially hang indefinitely -- a real, disclosed environment
+  flakiness this pass hit, not attributable to this pass's own change
+  (this exact fix's own targeted suites were independently re-run to
+  completion multiple times with no such stall -- see below). In place of
+  a completed second full run, the specific 10 tests identified above as
+  false failures were re-run directly against the now-committed, clean
+  tree: **8/8 passed** (2 of the 10 original failure names were exact
+  duplicates across different lane files and are covered by the same 8
+  distinct test IDs actually re-run), confirming the inflation was real
+  and is now resolved. Combined with the already-clean `vitest`/`tsc`
+  re-runs and the targeted `pytest` re-runs below (all against the
+  committed tree), this pass is confident the true clean-tree full-suite
+  count is in the neighborhood of `330 failed / ~4287 passed / 72
+  skipped / 13 errors` (340-10 / 4277+10, the 13 pre-existing
+  `test_redraft_engine_v1_service.py` calendar-drift errors unaffected by
+  either run) -- close to, and consistent with, this ledger's own
+  documented "~323 pre-existing failures" baseline (a few more than 323
+  is expected drift: today's date, 2026-09-13, pushes additional
+  hardcoded fixture dates in that same file outside their 30-day
+  freshness window, exactly as Worker B's own prior entry already
+  disclosed) -- not independently re-verified end-to-end in one single
+  completed run, disclosed exactly as such rather than overclaimed.
+- Targeted regression on every hard-boundary-adjacent scoring/legality
+  service (post-commit): `pytest tests/test_decision_bundle_service.py
+  tests/test_decision_bundle_service_v2.py tests/test_redraft_trade_
+  analysis_service.py tests/test_trade_finder_service.py tests/test_
+  trade_package_search_service.py tests/test_waiver_engine_service.py
+  tests/test_weekly_lineup_optimizer_service.py`: **72/72 passing**,
+  confirming zero regression to any file referencing `marginal_roster_
+  utility_v2` (all show zero diff across the whole `e06e4a26..HEAD` range
+  per the diff review below, independent of this test run).
+- **Native package:** `npm run check:resources` (via `node
+  desktop/scripts/check-resource-allowlists.mjs` directly) still passes
+  cleanly, both before and after this pass's commit. `cargo check` (from
+  `desktop/apps/redraft/src-tauri`) still compiles cleanly, both before
+  and after. The actual NSIS/MSI installers Worker B built (`desktop/
+  target/release/bundle/{nsis,msi}/`) are still present on disk, untouched
+  -- this pass's fix is backend Python logic only and was not rebuilt into
+  a fresh sidecar/native package (a full native rebuild was judged out of
+  scope for a verification-only fix with no packaging/frontend surface;
+  disclosed as an open item below).
+- **Web production build:** the real `vite build` + `vite preview` this
+  pass's own smoke run performed (via `nwr_release_gate_smoke.ps1`)
+  succeeded (368ms build, real production bundle served on port 1422) and
+  is the same build this pass's whole Chrome walkthrough exercised live.
+- **Endurance:** 10 full nav loops (10 endpoints x 10 = 100 calls: 0
+  non-200); 20 player-availability/drawer-equivalent reads (0 non-200); 10
+  league-switch cycles between two real profiles with a ledger read after
+  each switch (40 calls, 0 non-200, per-league isolation reconfirmed); 5
+  rapid identical trade-package searches (0 non-200, correctly deduped to
+  1 real ledger line); deep-link hard reloads across Home, Lineup,
+  Improve Team, Trades (Analyze + Find Trades), Players (+ Player Drawer
+  open/close/reopen), League/My Roster, Attention Center (+ cross-league
+  search), Draft Room, Cheat Sheet, History, and Data Health -- zero
+  console messages on every one. A cold app restart (fresh navigation +
+  hard reload) correctly restored the remembered active league.
+
+**FULL DIFF REVIEW (`e06e4a26..1da21322`, the whole closure pass, not just
+this pass's own commit):** read every changed file in full. Worker A's 2
+commits (STREAMER-shape 500 fix; canonical-vs-Sleeper identity-boundary
+fix, purely additive `canonicalPlayerId`/`identityStatus`/
+`mySleeperPlayerId`/`opponentSleeperPlayerId` fields) and Worker B's 1
+commit (privacy-safe governance-receipt packaging: a new release-summary
+service/script, a new install-from-summary function alongside the
+byte-for-byte-unmodified original, resource-map/allowlist/Rust-constant
+path corrections) plus this pass's 1 commit (additive dedup fix in the
+decision-trace ledger only) are the entire range. **Zero touches, direct
+or incidental, to `marginal_roster_utility_v2`, draft recommendation
+logic, scoring, roster legality, `LeagueSnapshot`/`LeagueWorkspaceContext`/
+the lifecycle resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus`
+semantics, `trade_finder_service.find_win_win_trades`'s own math, or
+`redraft_trade_analysis_service.evaluate_trade`'s own math** -- confirmed
+by direct reading of every file in the diff, not by trusting prior
+workers' own self-reports alone.
+
+**Hard boundaries respected.** No merge/push/deploy/push-to-origin.
+
+**CONSOLE ERRORS THIS PASS: 0** -- across every live Chrome-driven check
+(the full Work Unit 5 click-through, 3 Weekly Home reloads, 3 deep-link
+hard reloads), checked via `read_console_messages` with no pattern filter
+(all message types, not just errors).
+
+**Open issues for whoever picks this branch up next:**
+1. Waivers' real, measured 16.3s latency (THIS_WEEK mode, smoke-script
+   timing) is notably slower than every other traced surface -- not
+   investigated further by this verification-only pass (no waiver-path
+   code was touched this shift); worth a dedicated profiling pass if the
+   owner notices it in daily use.
+2. This pass's dedup fix is backend-Python-only and was NOT rebuilt into
+   a fresh native sidecar/package -- the NSIS/MSI installers on disk still
+   reflect Worker B's pre-dedup-fix build. Functionally harmless (the
+   dedup fix only changes how often a duplicate ledger LINE gets written,
+   never what the app displays or recommends), but a future native
+   rebuild should pick this fix up along with whatever else accumulates
+   before the owner actually installs a packaged build.
+3. Every other real, disclosed remainder from Worker A's/Worker B's own
+   "Open issues" lists (weekly-home-actions historically fixed and
+   reconfirmed here; the unrouted legacy `TradeFinderCard` button; the
+   real K/DST/QB `UNMATCHED_IDENTITY` name-format gap on Opponent Rosters;
+   the build-machine-path Rust debug-string disclosure; etc.) is untouched
+   and still open exactly as documented in those entries above.
+4. `local_exports/release_gate/20260913T071943Z/` (this pass's own real
+   smoke-run artifacts) and `local_exports/_wu7_endurance_result.json`
+   (this pass's endurance-script output) are gitignored, not committed --
+   confirmed via `git status --short` showing no such paths tracked.
+
+**READY TO PUSH AS CHECKPOINT: YES.**
 
 ## Privacy-safe packaging architecture + native package (Worker B) --
 2026-09-13
