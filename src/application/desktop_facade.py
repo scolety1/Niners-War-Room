@@ -523,6 +523,27 @@ class DesktopBackendFacade:
         self._comparable_leagues_lock = threading.RLock()
         self._comparable_leagues_key: tuple[str, str, str, int, int] | None = None
         self._comparable_leagues_value: list[Any] | None = None
+        # NWR Post-Closure Fix V1 (Worker E, latency profiling): a
+        # thread-local, OPT-IN, per-top-level-request cache for identical
+        # Sleeper GETs. `redraft_weekly_home_actions` fans out to five
+        # sub-facade calls (weekly lineup, waivers, trade finder, K/DST
+        # streamer, free agents) that each independently re-fetch the SAME
+        # `league/{id}/rosters` and `players/nfl` payloads within one HTTP
+        # request -- real cProfile evidence (see the ledger) showed 11
+        # separate `SleeperHttpClient.get_json` network round trips
+        # totalling ~11s of a ~13s request, almost entirely redundant.
+        # `threading.local()` (not a plain instance attribute) because
+        # `DesktopApiServer` is a `ThreadingHTTPServer`: this same facade
+        # instance is shared across concurrently-handled requests, so a
+        # bare `self._x = ...` cache would leak one request's in-flight
+        # cache into another's. The cache is `None` (disabled, pass
+        # straight through to a fresh `client.get_json(path)`) for EVERY
+        # caller except the one method that explicitly turns it on for the
+        # duration of its own call -- every other consumer of these five
+        # sub-facade methods (direct HTTP callers, tests) is completely
+        # unaffected and still gets a fresh fetch every time, exactly as
+        # before this change.
+        self._sleeper_fetch_cache_local = threading.local()
 
     def bootstrap(self) -> FacadePayload:
         if self.mode == "dynasty":
@@ -2567,8 +2588,8 @@ class DesktopBackendFacade:
             raise FacadeError("KDST_STREAMER_PROVIDER_UNAVAILABLE", status.message, status=409)
         try:
             sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             consensus = FantasyProsConsensusClient()
             positions: dict[str, list[dict[str, Any]]] = {}
             unmatched: dict[str, list[str]] = {}
@@ -2748,8 +2769,8 @@ class DesktopBackendFacade:
             )
         try:
             sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             free_agents = sleeper_free_agent_pool(
                 rosters=rosters,
                 players=players,
@@ -3050,8 +3071,8 @@ class DesktopBackendFacade:
             ranking_rows = []
         try:
             sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             raw_projections, weekly_health = get_weekly_projections(
                 provider=default_weekly_projection_provider(),
                 season=selected.season,
@@ -3295,8 +3316,8 @@ class DesktopBackendFacade:
             ) from exc
         try:
             sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             free_agents = sleeper_free_agent_pool(rosters=rosters, players=players, rankings=ranking_rows)
         except (FantasyProsProviderError, OSError, ValueError) as exc:
             raise FacadeError(
@@ -3762,9 +3783,9 @@ class DesktopBackendFacade:
             ) from exc
         try:
             sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            users = sleeper.get_json(f"league/{league_id}/users")
-            players = sleeper.get_json("players/nfl")
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            users = self._sleeper_get_json(sleeper, f"league/{league_id}/users")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "TRADE_FINDER_READ_FAILED",
@@ -4708,6 +4729,30 @@ class DesktopBackendFacade:
         unavailable: list[dict[str, str]] = []
         lineup_payload: dict[str, Any] | None = None
 
+        # NWR Post-Closure Fix V1 (Worker E, latency profiling): turn on
+        # the thread-local, per-request Sleeper GET cache (see
+        # `_sleeper_get_json`/`_sleeper_fetch_cache_local`) for the
+        # duration of this method's five sub-calls only, then always turn
+        # it back off in `finally` below -- every sub-call still runs its
+        # own real logic/validation/error-handling completely unchanged,
+        # it just reuses an already-fetched `rosters`/`players`/`users`
+        # response instead of re-issuing an identical live network GET.
+        self._sleeper_fetch_cache_local.cache = {}
+        try:
+            return self._redraft_weekly_home_actions_impl(
+                week=week, actions=actions, unavailable=unavailable, lineup_payload=lineup_payload,
+            )
+        finally:
+            self._sleeper_fetch_cache_local.cache = None
+
+    def _redraft_weekly_home_actions_impl(
+        self,
+        *,
+        week: int,
+        actions: list[dict[str, Any]],
+        unavailable: list[dict[str, str]],
+        lineup_payload: dict[str, Any] | None,
+    ) -> FacadePayload:
         try:
             lineup_payload = self.redraft_weekly_lineup(week=week).data
             for swap in lineup_payload.get("swaps", []):
@@ -6432,6 +6477,23 @@ class DesktopBackendFacade:
             "playerAvailabilityStatusAuthority": str(health.get("authority") or ""),
             "playerAvailabilityStatusEntryCount": str(health.get("entryCount") or 0),
         }
+
+    def _sleeper_get_json(self, client: SleeperHttpClient, path: str) -> Any:
+        """Pass-through to `client.get_json(path)`, EXCEPT when a caller
+        higher up the SAME thread's call stack (only
+        `redraft_weekly_home_actions` today) has opted a per-request cache
+        in via `_sleeper_fetch_cache_local`. Pure caching of an otherwise
+        byte-identical GET response within one real-time request window --
+        never changes what is returned, only how many times the same real
+        network fetch happens. See the `_sleeper_fetch_cache_local`
+        attribute comment in `__init__` for the full rationale."""
+
+        cache = getattr(self._sleeper_fetch_cache_local, "cache", None)
+        if cache is None:
+            return client.get_json(path)
+        if path not in cache:
+            cache[path] = client.get_json(path)
+        return cache[path]
 
     def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
         selected = active_profile(self.redraft_root)
