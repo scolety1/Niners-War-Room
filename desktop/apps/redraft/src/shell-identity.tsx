@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
+import { summarizeShellNotices } from "./shell-notices";
 
 /**
  * NWR UI foundation pass (2026-09-10, directive Phase 3 -- league shell).
@@ -179,11 +180,17 @@ export function ShellIdentity({
   );
 }
 
-/** Compact header freshness indicator (directive Phase 3): one chip, one
- * word of urgency, click for the real detail -- Identity/ADP/Projections/
- * Draft-board-ready, the exact same four already-computed signals the old
- * `ActiveLeagueSelector` badges showed, just no longer permanently
- * occupying primary shell space. */
+/** Compact, persistent header data-notice signal (directive Phase 3,
+ * extended by P2-1 -- Data Notice Strip, 2026-09-12/13): one chip, one
+ * honest word of urgency ("Current" / a single specific notice title /
+ * "N data issues"), visible from every surface via the shared `AppShell`
+ * status bar (`statusExtra`). Click opens a compact detail popover listing
+ * every real, owner-relevant notice this pass surfaces, plus a link into
+ * the existing full Data Health page for the complete picture -- no
+ * internal debug noise, provider plumbing, or technical jargon is
+ * rendered here (see shell-notices.ts's own doc for exactly what is
+ * excluded and why). All derivation is pure and unit-tested in
+ * `shell-notices.ts`; this component only renders its result. */
 export function FreshnessIndicator({ data }: { data: RedraftBootstrap }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -198,39 +205,42 @@ export function FreshnessIndicator({ data }: { data: RedraftBootstrap }) {
 
   if (!data.activeProfile) return null;
 
-  const adp = data.draftBoard?.adp;
-  const adpLabel = adp?.available ? `ADP: ${adp.source.replace(/^Owner-imported /i, "Owner ")} · ${adp.freshness ?? "cached"}` : "ADP: unavailable";
-  const projectionsLabel = data.status.sourceAsOf ? `Projections: ${data.status.sourceAsOf}` : "Projections: unavailable";
-  const readyLabel = data.status.ready ? "Draft board ready" : data.status.tone === "blocked" ? "Projections blocked" : "Review required";
-  const identityLabel = data.health?.playerUniverseAvailable
-    ? `Identity: ${data.health.lastGeneratedTimestamp || "current"}`
-    : "Identity: unavailable";
-
-  const issueCount = [adp?.available, data.status.ready, data.health?.playerUniverseAvailable]
-    .filter((value) => value === false).length;
-  const chipTone = data.status.tone === "blocked" ? "unavailable" : issueCount > 0 ? "warning" : "healthy";
-  const chipLabel = issueCount === 0 ? "Current" : `${issueCount} data issue${issueCount === 1 ? "" : "s"}`;
+  // Recomputed fresh from `data` on every render -- `data` itself is
+  // replaced wholesale on every league activation/switch (RedraftApp.tsx's
+  // `onUpdate`), so this can never show a previously-active league's
+  // notices after a switch (this shift's own established state-leakage
+  // paranoia).
+  const summary = summarizeShellNotices(data);
 
   return (
     <div className="nwr-freshness" ref={ref}>
       <button
         type="button"
-        className={`nwr-freshness__chip nwr-freshness__chip--${chipTone}`}
+        className={`nwr-freshness__chip nwr-freshness__chip--${summary.tone}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        title="Data freshness -- click for detail"
+        title="Data notices -- click for detail"
       >
-        <i />{chipTone === "healthy" ? "● " : "⚠ "}{chipLabel}
+        <i />{summary.tone === "healthy" ? "● " : "⚠ "}{summary.label}
       </button>
       {open ? (
-        <div className="nwr-freshness__panel" role="dialog" aria-label="Data freshness detail">
-          <dl>
-            <div><dt>Identity</dt><dd>{identityLabel.replace(/^Identity: /, "")}</dd></div>
-            <div><dt>Market ADP</dt><dd>{adpLabel.replace(/^ADP: /, "")}</dd></div>
-            <div><dt>Projections</dt><dd>{projectionsLabel.replace(/^Projections: /, "")}</dd></div>
-            <div><dt>Draft board</dt><dd>{readyLabel}</dd></div>
-          </dl>
+        <div className="nwr-freshness__panel" role="dialog" aria-label="Data notices">
+          {summary.count === 0 ? (
+            <p className="nwr-freshness__ok">All governed data sources are current.</p>
+          ) : (
+            <ul className="nwr-freshness__list">
+              {summary.items.map((item) => (
+                <li className={item.blocked ? "nwr-freshness__item nwr-freshness__item--blocked" : "nwr-freshness__item"} key={item.title}>
+                  <strong>{item.title}</strong>
+                  <span>{item.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link className="nwr-freshness__detail-link" onClick={() => setOpen(false)} to="/data-health">
+            Open Data Health →
+          </Link>
         </div>
       ) : null}
     </div>

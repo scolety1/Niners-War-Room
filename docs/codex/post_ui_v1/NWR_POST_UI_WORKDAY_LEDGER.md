@@ -12,10 +12,177 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Nine commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Ten commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
-backend, then P1-3 UI, then P1-4, then P1-5 below) -- run `git log -1` for
-the exact hash.
+backend, then P1-3 UI, then P1-4, then P1-5, then P2-1 below) -- run
+`git log -1` for the exact hash.
+
+## P2-1 (Data Notice Strip) -- 2026-09-12/13
+
+**Worker 10's scope: ONE compact, persistent shell-level data-notice
+signal, visible from every surface, click-through to the existing Data
+Health page.** Presentation only -- zero backend/`src/` files touched
+(confirmed via `git status --porcelain`, only `desktop/` files in the
+diff). `marginal_roster_utility_v2`, draft recommendation logic, scoring,
+roster legality, `LeagueSnapshot`/`LeagueWorkspaceContext`/the lifecycle
+resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus` were never
+touched or read for anything beyond what the existing header components
+already read.
+
+**Checked the directive's own lead first: `RedraftBootstrap.notices` is
+real and exactly as described** -- `DesktopBackendFacade.redraft_bootstrap`
+(`src/application/desktop_facade.py`, the `notices = [...]` block) already
+computes and returns it, and today it is rendered ONLY on the Data Health
+page (`pages.tsx`'s `DataHealthPage`, `data.notices.map(...)`). It is the
+right base data source, with one real, disclosed nuance: four of its
+entries ("Redraft is isolated from Dynasty", "Current-season evidence
+only", "Role-change context is not yet modeled", "External K/DST
+consensus boundary") are PERMANENT product-boundary disclosures --
+unconditionally appended every time, regardless of whether anything is
+actually wrong. Counting those as "issues" would mean the compact shell
+signal could never reach a calm "Current" state for anyone, and the
+K/DST-consensus one is also exactly the kind of external-provider
+plumbing the directive says this compact signal must not surface. This
+pass also found the shell's existing `FreshnessIndicator` header chip
+(`shell-identity.tsx`, built in the earlier UI-foundation pass) was
+ALREADY 80% of this work unit -- a compact "Current"/"N data issues" chip
+in the header status bar with a click-open popover -- just computed from
+3 hardcoded booleans (identity/ADP/ready) instead of the real notices
+array, and with no link into Data Health at all.
+
+**What was built (all in `desktop/apps/redraft/src/`, matching this app's
+own established convention of pure derivation unit-tested + presentation
+components verified live -- see `attention-center.ts`/`league-summary.ts`
+for the same pattern):**
+- NEW `shell-notices.ts`: `summarizeShellNotices(data: RedraftBootstrap)`,
+  a pure function combining (1) `data.notices` filtered to exclude the
+  four always-present disclosure titles above (an explicit, documented,
+  disclosed-as-fragile title set -- a real backend wording change to any
+  of the four would need this list updated too) and any `tone: "ready"`
+  entry, with (2) the pre-existing player-identity/market-ADP/draft-board-
+  readiness signals `FreshnessIndicator` already read (real, owner-relevant
+  gaps `data.notices` itself does not carry as notice rows -- kept rather
+  than dropped, per the directive's own "combine with something notices
+  doesn't cover" allowance). Returns `{count, label, tone, items}`:
+  `count===0` -> `"Current"`; `count===1` -> that one issue's own real
+  title (e.g. "PRACTICAL SCORING", "Market ADP unavailable", "1 rookie
+  remains blocked"); `count>1` -> `"N data issues"`. No new notice content
+  is invented anywhere -- this file only classifies and summarizes what
+  the backend already computed.
+- MODIFIED `shell-identity.tsx`'s `FreshnessIndicator`: now renders
+  `summarizeShellNotices(data)`'s label/tone on the chip (same header
+  status-bar slot, `AppShell`'s `statusExtra`, so it is genuinely visible
+  from every route), and its click-open popover now lists every real issue
+  (title + message) instead of the old fixed Identity/ADP/Projections/
+  Draft-board rows, plus an "Open Data Health →" link
+  (`react-router-dom` `Link` to `/data-health`, reusing the existing
+  legacy-redirect route -- no new route added) for click-through into the
+  full existing Data Health page.
+- MODIFIED `redraft.css`: replaced the now-unused `dl`/`dt`/`dd` panel
+  rules with `.nwr-freshness__list`/`__item`/`__item--blocked`/`__ok`/
+  `__detail-link`, reusing the exact same color tokens
+  (`--nwr-warning`/`--nwr-unavailable`/`--nwr-healthy`/`--violet-bright`)
+  every other status surface in this app already uses -- no new visual
+  language invented.
+- NEW `shell-notices.test.ts` (8 tests): all-healthy (always-present
+  disclosures correctly ignored), no-active-league, exactly-one-issue
+  (title becomes the label, tone "warning"), multiple issues (plain count,
+  tone "unavailable" once any issue is blocked-severity), unavailable-ADP
+  as its own single issue, a `status.tone==="blocked"` case as its own
+  single issue, an explicit state-leakage check (two different
+  `RedraftBootstrap` objects summarized back-to-back, asserting neither
+  leaks into the other and re-summarizing the first again afterward is
+  byte-identical -- this shift's own established paranoia, applied to a
+  pure function this time since there is no server state to isolate), and
+  the exclusion-list itself (all four disclosure titles, including one
+  given `tone: "blocked"`, correctly produce "Current").
+
+**Live-verified, not just unit-tested** (`desktop/scripts/
+nwr_release_gate_smoke.ps1 -KeepRunning`, real backend on 18742 + real
+production `vite build`/`vite preview` on 1422, driven live in Chrome):
+- Fresh local preset profile ("NWR Release Gate Local Profile"): header
+  chip showed real `"⚠ 3 data issues"`; click opened the panel listing the
+  real, live-computed "Market ADP unavailable" / "Draft rounds do not
+  match roster capacity" / "7 rookies remain blocked" (with the real 7
+  rookie names from this repo's actual bundled-seed blocked list, not a
+  placeholder), plus the "Open Data Health →" link. Clicking that link
+  navigated to the real Data Health page and closed the popover.
+- **State-leakage check, live, real leagues (stronger than a synthetic
+  fixture swap):** switched to the real "Fantasy Gamers" Sleeper league
+  (read-only activation, no Sleeper writes -- same guarantee every prior
+  worker's league-switch checks already established) -- the panel's
+  content correctly changed to that league's own real issues ("Market ADP
+  unavailable", "Sleeper scoring needs review" with its real explicit
+  field list, "7 rookies remain blocked") -- "Draft rounds do not match
+  roster capacity" (specific to the local profile's own 16-round
+  configuration) correctly disappeared. Switched to a second existing
+  local profile ("NWR QA Local Test League") and confirmed its own
+  independent 3-issue set rendered correctly, with no residual Fantasy
+  Gamers content.
+- Zero console messages of any kind (not just zero errors) on a full page
+  reload, checked via `read_console_messages`.
+- Did NOT achieve a live "Current" (zero-issue) state -- every profile in
+  this repo's current data state has at least the real "7 rookies remain
+  blocked" registry issue (the same admitted Freeze V7 gap Worker 2's
+  P0-2 pass already disclosed), so a genuine zero-issue league does not
+  exist in this environment today. The "Current"/all-healthy state is
+  real and correctly implemented (proven directly by 3 of the 8 unit
+  tests, including the exclusion-list test using every one of the four
+  real always-present disclosure titles verbatim), just not organically
+  reproducible live in this exact snapshot -- disclosed rather than
+  claimed as live-observed.
+- Backend + preview processes (PIDs on 18742/1422) stopped at the end;
+  confirmed via `Get-NetTCPConnection` that no listener remained on either
+  port afterward. The smoke script's own `check:resources` step failed for
+  the same pre-existing, already-disclosed owner-marker/allowlist conflict
+  every prior worker's packaging-gate attempt has hit (not caused by this
+  pass, not investigated further -- out of scope for a presentation-only
+  work unit). Its `local_exports/release_gate/...` report is gitignored,
+  confirmed via `git check-ignore -v`, not committed.
+
+**Tests:** `npx vitest run desktop/apps/redraft/src/shell-notices.test.ts
+--no-file-parallelism`: 8/8 passing. `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json` (from `desktop/`): clean. `npx vitest run
+--no-file-parallelism` (full monorepo): **362/362 passing, 28/28 files**
+(354 baseline from Worker 8's P1-4 pass + 8 new `shell-notices.test.ts`
+tests). `pytest` not run -- zero backend files touched (confirmed via
+`git status --porcelain`, no `src/`/`tests/` entries).
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/the lifecycle resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus` semantics were never touched -- this pass reads
+`data.notices`/`data.health`/`data.draftBoard.adp`/`data.status` exactly
+as the pre-existing `FreshnessIndicator`/`DataHealthPage` already did, and
+computes zero new business data (only classifies/summarizes what the
+backend already returns). No backend file in the diff. No merge/push/
+deploy.
+
+**Scope note, disclosed:** this pass covers the Redraft app only, matching
+every other worker's scope this entire shift. The separate, much smaller
+Dynasty app (`desktop/apps/dynasty/src/pages/home.tsx`) already renders
+its own `data.notices` inline as plain alert-strips on its Home page, with
+no shell-level chip -- untouched by this pass, a real, disclosed
+remainder if the owner ever wants the same treatment there.
+
+**Open issues for Worker 11 (endurance + packaged release verification):**
+1. No genuinely "Current" (zero-issue) league exists anywhere in this
+   repo's current data state (see the live-verification note above) --
+   worth knowing if a packaged-release walkthrough expects to see the calm
+   state; it is real and correct, just not currently reproducible without
+   either resolving the real 7-blocked-rookie registry gap or importing a
+   real ADP snapshot for a league whose draft rounds already match its
+   roster capacity.
+2. The `ALWAYS_PRESENT_DISCLOSURE_TITLES` exclusion set in
+   `shell-notices.ts` is matched by exact title string against
+   `desktop_facade.py`'s `redraft_bootstrap()` -- a real, disclosed
+   fragility: a future backend wording change to any of those four titles
+   needs this frontend list updated in the same pass, or that notice would
+   silently start counting as an "issue" everywhere.
+3. `check:resources` (the native-bundle privacy/allowlist gate) still
+   fails for the same pre-existing owner-marker conflict Worker 3's P1-1
+   pass already found and disclosed -- unchanged, not investigated further
+   by this presentation-only pass.
 
 ## P1-5 (Live Player Intelligence Provider Bakeoff) -- 2026-09-12/13
 

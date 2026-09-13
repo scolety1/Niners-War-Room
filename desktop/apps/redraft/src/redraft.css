@@ -900,10 +900,17 @@
 .nwr-freshness__chip--warning { border-color: rgba(212,170,85,.32); color: var(--nwr-warning); }
 .nwr-freshness__chip--unavailable { border-color: rgba(225,72,87,.3); color: var(--nwr-unavailable); }
 .nwr-freshness__panel { background: #0d0b14; border: 1px solid rgba(184,146,244,.3); border-radius: 10px; box-shadow: 0 14px 32px rgba(0,0,0,.4); margin-top: 6px; max-width: 320px; padding: 10px; position: absolute; right: 0; top: 100%; width: max-content; z-index: 30; }
-.nwr-freshness__panel dl { display: grid; gap: 6px; margin: 0; }
-.nwr-freshness__panel div { align-items: baseline; display: flex; gap: 10px; justify-content: space-between; }
-.nwr-freshness__panel dt { color: var(--muted); font-size: 10.5px; }
-.nwr-freshness__panel dd { font-size: 11px; margin: 0; text-align: right; }
+/* P2-1 (Data Notice Strip): the panel now lists the real, owner-relevant
+   notices `shell-notices.ts` computes (or an honest "current" line), plus
+   a link into the existing full Data Health page. */
+.nwr-freshness__ok { color: var(--nwr-healthy); font-size: 11px; margin: 0 0 8px; }
+.nwr-freshness__list { display: grid; gap: 8px; list-style: none; margin: 0 0 8px; max-width: 280px; padding: 0; }
+.nwr-freshness__item { border-left: 2px solid rgba(212,170,85,.4); display: grid; font-size: 10.5px; gap: 2px; padding-left: 8px; }
+.nwr-freshness__item strong { color: var(--nwr-warning); font-size: 10.5px; }
+.nwr-freshness__item span { color: var(--muted); line-height: 1.4; }
+.nwr-freshness__item--blocked { border-left-color: rgba(225,72,87,.5); }
+.nwr-freshness__item--blocked strong { color: var(--nwr-unavailable); }
+.nwr-freshness__detail-link { color: var(--violet-bright); display: inline-block; font-size: 10px; font-weight: 650; }
 
 /* ---- NWR Actions grid (Phase 4: Home) -----------------------------------
    3-5 prioritized action cards, each a full DecisionExplain instance. */
