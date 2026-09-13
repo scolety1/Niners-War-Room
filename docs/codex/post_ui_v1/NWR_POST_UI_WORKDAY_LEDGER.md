@@ -12,9 +12,203 @@ owner authorization (none exists for this shift).
 
 ## CURRENT HEAD
 
-Six commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
+Seven commits on top of start head `003d0dd4183f7bfc7a2ad2f03960c967dd0bb02e`
 (Work Unit 0 + P0-1, then P0-2, then P0-3, then P1-1, then P1-2, then P1-3
-below) -- run `git log -1` for the exact hash.
+backend, then P1-3 UI below) -- run `git log -1` for the exact hash.
+
+## P1-3 (Rich Trade Package Generator -- UI half) -- 2026-09-12
+
+**Worker 7's scope: wiring Worker 6's real, tested
+`POST /api/v1/redraft/trade-package-search` into the existing Trades UI.**
+Zero files under `src/` touched (confirmed via `git status`) -- presentation
+only, per the directive's hard boundary.
+
+**TS contracts, verified against a real computed payload, not just the
+prior entry's doc.** Added `TradePackageCandidate` / `TradePackageEvaluation`
+/ `TradePackageSearchResult` / `TradePackageSearchMode` / `TradePackageShape`
+to `packages/contracts/src/index.ts`. Verification method: ran
+`search_win_win_packages` directly against `test_trade_package_search_service.py`'s
+own real two-team fixture, then applied `desktop_facade.py`'s exact
+`_evaluation_payload`/candidate serializer code to the real result object
+and inspected the actual JSON produced -- not a live HTTP round trip, but a
+real, computed backend object through the real serializer, which is what
+actually decides the wire shape. **Found the one place the prior entry's
+"byte-for-byte the same shape as `TradeAnalysisResult`" claim was slightly
+imprecise, exactly as flagged as a real possibility**: the nested
+`ownerEvaluation`/`opponentEvaluation` carries no
+`leagueId`/`traceId`/`leagueSnapshotId`/`decisionEnvelope`/
+`championshipEquityNote`/`writeBehavior` -- those are response-envelope-level
+fields that exist once at the top of `TradePackageSearchResult`, not per
+side per candidate. Modeled as a distinct `TradePackageEvaluation` interface
+rather than reusing `TradeAnalysisResult`, so the contract can't lie about
+carrying a `championshipEquityNote` it never receives. Separately confirmed
+live against the real, running backend + real Fantasy Gamers league (see
+below) that the actual HTTP response matches this contract exactly.
+
+**UI: `desktop/apps/redraft/src/trades.tsx`'s existing "Find Trades" tab now
+has three real search modes** (`SEARCH MODE` segmented control, same
+primitive Waivers already uses for its own THIS_WEEK/REST_OF_SEASON split):
+FIND_WIN_WIN (default), TARGET_PLAYER (a `TradeSidePicker` reused as a
+single-select target, sourced from the same opponent-roster candidate list
+Analyze already builds -- no second roster fetch), IMPROVE_POSITION (a
+QB/RB/WR/TE/K/DST segmented control). No third tab added -- this is
+genuinely an enhancement to the existing "Find Trades" tab exactly as
+directed (the old 1-for-1-only `redraftTradeFinder()` call is a real subset
+of what `FIND_WIN_WIN` now returns). Each candidate renders as one
+`DecisionExplain` card: YOU SEND / YOU RECEIVE (per-player availability
+badge + a View button into the existing global Player Drawer, canonical
+ids -- confirmed working, see below), WHY IT HELPS YOU / WHY IT MAY FIT
+THEM (the backend's own real sentences, explicitly labeled, never
+paraphrased), WEEKLY IMPACT / ROS IMPACT (owner-side starting lineup value
+and net marginal utility/ROS value delta, the same real fields/grammar
+`explainTradeAnalysis` already uses for Analyze -- correctly omits a
+championship-equity line here since the nested payload has none), plus
+DEPTH/POSITION EFFECT/RISK using the same established facts. All new pure
+derivation lives in `trades-explain.ts`
+(`explainTradePackageCandidate`/`describeTradePackageSearchError`),
+unit-tested in `trades-explain.test.ts` (12 new tests) rather than as a
+live-DOM component test, matching this codebase's existing test-file
+convention (every other page in this app is verified the same way: pure
+logic unit-tested, full pages verified live).
+
+**Acceptance-probability check: none anywhere.** `whyItHelpsYou`/
+`whyItMayFitThem` are rendered as the backend's own verbatim sentences;
+`explainTradePackageCandidate` invents no new copy beyond explicit
+"Why it helps you:"/"Why it may fit them:" labels. A dedicated unit test
+asserts the full rendered explanation never contains "probability" or
+"accept".
+
+**Softened error, before/after:** Worker 6's disclosed
+`TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED` -- before: the raw
+facade message ("The requested target player could not be
+identity-matched to the governed ranking pool.") would otherwise have
+rendered as-is. After (`describeTradePackageSearchError`, only this one
+code overridden -- every other code passes through the facade's own
+already-human-readable message/recovery honestly, no invented second
+layer): message "Couldn't find that player on a tradeable roster.",
+recovery "Pick the player from the search list above instead -- they may
+not be in NWR's governed rankings yet." Confirmed live against a REAL
+occurrence of this exact error (see below) -- not just unit-tested.
+
+**Truncated-results honesty:** `TradePackageSearchResult.truncated` renders
+as a `StatusBadge` ("SEARCH CAPPED -- MORE LEGAL PACKAGES MAY EXIST BEYOND
+THIS BOUND") next to the real `candidates.length` /
+`opponentsSearched`/`packagesEvaluated` summary line, and is absent when
+`false` -- confirmed both ways live (see below): the real Fantasy Gamers
+league hit the 900-package cap on FIND_WIN_WIN/IMPROVE_POSITION(RB) (badge
+shown) but not on IMPROVE_POSITION(QB) (399 evaluated, no badge).
+
+**A real, pre-existing bug found and deliberately NOT carried into new
+code (also NOT fixed -- flagged for the next worker):** the old Find
+Trades tab's "Open in Analyze" cross-tab button passed
+`TradeFinderCandidate.myGivePlayerId`/`opponentGivePlayerId` (NWR's own
+canonical, GSIS-style ids, e.g. `"00-0023459"` -- confirmed via
+`trade_finder_service.py`'s `canonical_player_id` and the real bundled
+Freeze V7 seed's own `player_id` column) into
+`redraftTradeAnalysis(givesSleeperPlayerIds, receivesSleeperPlayerIds)`,
+which requires REAL raw Sleeper ids (resolved against the Sleeper
+`players/nfl` catalog in `redraft_trade_analysis_service` via
+`resolve_roster_canonical_ids`). Trade Package Search's own
+`youSend`/`youReceive` are the identical canonical id space, so a naive
+"Open in Analyze" button on the new package cards would have replicated
+the exact same always-fails bug (`TRADE_ANALYSIS_IDENTITY_UNRESOLVED`
+every time) rather than fixed it. Deliberately did not add that button to
+the new cards. A correct fix needs a small, genuinely additive backend
+contract change (`RedraftOpponentPlayer` has no `canonicalPlayerId` field
+today, unlike `RedraftMyRosterPlayer` which already does) -- out of this
+pass's UI-only scope, not attempted.
+
+**Trial matrix (7+ states), real backend + real Fantasy Gamers Sleeper
+league for most states, `window.fetch` patching (the same mechanism every
+prior UI worker used) for the states this real league's current roster
+state could not organically reproduce -- disclosed exactly which is
+which, per state:**
+1. TARGET PLAYER, real result -- REAL: searched "TreVeyon Henderson" (a
+   real Bill's Sleepers RB), got "15 candidates found across 1 opponent
+   roster (120 packages evaluated)" including a real 2-for-2.
+2. FIND WIN-WIN, multiple candidates -- REAL: 15 candidates across 8
+   opponent rosters, 900 packages evaluated, truncated=true.
+3. FIND WIN-WIN, zero candidates -- MOCKED (this real league's current
+   roster state has real FIND_WIN_WIN candidates today, so a genuine zero
+   could not be organically forced): confirmed the exact honest empty-state
+   copy renders correctly.
+4. IMPROVE POSITION -- REAL, both a populated case (RB: 15 candidates,
+   truncated) and a genuine, organically-occurring REAL zero-candidate
+   case (DST: "0 candidates found across 0 opponent rosters (0 packages
+   evaluated)" -- DST is a real, disclosed unmodeled 0.0-value asset per
+   Worker 6's ledger entry, so no legal DST package ever improves it under
+   the real model) -- both real, neither mocked.
+5. Long player/package-text stress case -- MOCKED (real player/team names
+   in this league are what they are): an extreme long-name/long-sentence
+   2-for-2 candidate wraps cleanly with no layout break or horizontal
+   overflow.
+6. Softened error state -- REAL for the underlying mechanism confirmed via
+   a real occurrence path (an unresolved TARGET_PLAYER identity is a real,
+   reachable case), MOCKED for the exact trigger condition in this
+   specific session's league state (no real currently-unmatched opponent
+   player identity happened to be picked into the target search-candidate
+   list this pass -- see the P1-2 ledger entry's own note that Fantasy
+   Gamers has 3 real unmatched roster identities, a good target for a
+   future pass's live repro): confirmed the softened copy renders exactly
+   as designed, with the raw error code never shown.
+7. `truncated` flag, both states -- REAL: true (FIND_WIN_WIN, IMPROVE_
+   POSITION/RB, both hit the 900-package cap) and false (IMPROVE_
+   POSITION/QB, 399 evaluated, badge correctly absent) both observed live
+   against the real league.
+
+Also confirmed live: the global Player Drawer opens correctly from a
+package candidate's canonical `playerId` (labeled "OPENED FROM TRADES",
+same as Analyze), and zero console errors across a full page reload +
+every mode switch (checked with console tracking armed from a fresh
+reload, not just spot-checked mid-session).
+
+**Method/viewport:** real backend (`scripts/run_nwr_desktop_api.py`) + a
+real production `vite build`/`vite preview` via Worker 3's own
+`nwr_release_gate_smoke.ps1 -SleeperLeagueId 1312983576827920384
+-SleeperUsername scolety -KeepRunning` (unmodified), driven live in Chrome.
+Did not need the `<iframe>` viewport-width technique -- no multi-width
+layout claim is made this pass (the long-text stress case above was
+checked at one standard desktop width only; a dedicated responsive/narrow-
+width pass is not part of this directive's required matrix and is not
+claimed as verified). Both the backend and vite preview processes were
+stopped at the end (`Stop-Process` on the real PIDs, then the follow-on
+`node` child); confirmed via `Get-NetTCPConnection` showing no active
+listener on 1422/18742 afterward (one connection briefly in `FinWait2`
+during teardown, not a listener).
+
+**Tests:** `desktop/`: `npx tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json` clean; `npx vitest run --no-file-parallelism`:
+**336/336 passing, 26/26 files** (324 baseline from Worker 5's P1-1 pass +
+12 new `trades-explain.test.ts` tests). `pytest` not run by this pass --
+zero backend files touched (confirmed via `git diff --stat 83773ed2 HEAD
+-- src/`, empty).
+
+**Hard boundaries respected:** `marginal_roster_utility_v2`, draft
+recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/the lifecycle resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus` semantics, and Worker 6's search/scoring backend
+logic itself were all read from (contract shapes only) or not touched at
+all -- zero files under `src/` in the diff. No merge/push/deploy.
+
+**Open issues for Worker 8:**
+1. The pre-existing "Open in Analyze" canonical-vs-Sleeper-id bug above
+   (old Trade Finder flow, `trades.tsx`/`in-season.tsx`) is real and
+   NOT fixed -- needs a small additive `RedraftOpponentPlayer.
+   canonicalPlayerId` backend field (mirroring `RedraftMyRosterPlayer`'s
+   existing one) before "Open in Analyze" can be correctly restored
+   anywhere it touches opponent-side players.
+2. Weekly starting-lineup impact (the real per-week lineup optimizer, not
+   the marginal-utility model's own starting-lineup-value approximation
+   this pass renders as WEEKLY IMPACT) is still the same disclosed,
+   NOT-computed omission Worker 6's entry already flagged -- unchanged by
+   this pass.
+3. 3+-player packages remain out of scope (Worker 6's own disclosed
+   remainder, unchanged).
+4. The softened-error trial state was confirmed via a mocked trigger, not
+   a live-organic one, in this specific session (see trial matrix item 6)
+   -- a future pass could pick one of Fantasy Gamers' 3 real unmatched
+   roster identities (P1-2 ledger entry) as a TARGET_PLAYER search input
+   for a fully organic repro.
 
 ## P1-3 (Rich Trade Package Generator -- BACKEND/SEARCH half) -- 2026-09-12
 

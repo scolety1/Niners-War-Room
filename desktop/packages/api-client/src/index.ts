@@ -39,6 +39,7 @@ import {
   type TradeFinderResult,
   type TeamWindow,
   type TradeDecision,
+  type TradePackageSearchResult,
   type TradeSaveResult,
   type TradeScenarioInput,
   type TradeWorkspace,
@@ -723,6 +724,19 @@ export class NwrApiClient {
 
   redraftTradeFinder(): Promise<TradeFinderResult> {
     return this.request("/api/v1/redraft/trade-finder");
+  }
+
+  redraftTradePackageSearch(options: {
+    mode: "FIND_WIN_WIN" | "TARGET_PLAYER" | "IMPROVE_POSITION";
+    targetPlayerSleeperId?: string;
+    position?: string;
+    limit?: number;
+  }): Promise<TradePackageSearchResult> {
+    const body: Record<string, unknown> = { mode: options.mode };
+    if (options.targetPlayerSleeperId !== undefined) body.targetPlayerSleeperId = options.targetPlayerSleeperId;
+    if (options.position !== undefined) body.position = options.position;
+    if (options.limit !== undefined) body.limit = options.limit;
+    return this.request("/api/v1/redraft/trade-package-search", { method: "POST", body: JSON.stringify(body) });
   }
 
   redraftWeeklyHomeActions(week: number): Promise<WeeklyHomeActionsResult> {

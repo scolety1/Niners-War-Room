@@ -1,4 +1,5 @@
-import type { TradeAnalysisResult, TradeFinderCandidate } from "@nwr/contracts";
+import type { NwrApiError } from "@nwr/api-client";
+import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation } from "@nwr/contracts";
 
 import type { DecisionExplainTone } from "./decision-explain";
 
@@ -137,4 +138,102 @@ export function explainTradeFinderCandidate(candidate: TradeFinderCandidate): Tr
     fits,
     tone: fits ? "recommended" : "neutral",
   };
+}
+
+// ---------------------------------------------------------------------------
+// TRADE PACKAGE SEARCH (P1-3, Worker 7) -- FIND WIN-WIN PACKAGES /
+// TARGET PLAYER / IMPROVE POSITION. Pure derivation over
+// `TradePackageCandidate`, unchanged from
+// `DesktopBackendFacade.redraft_trade_package_search` (Worker 6). Same
+// disclosed rule as every sibling in this file: never fabricates an
+// acceptance probability -- the backend computes none, in any mode, and
+// `whyItHelpsYou`/`whyItMayFitThem` are rendered verbatim (real, backend-
+// computed sentences), never paraphrased into "likely to accept" language.
+// ---------------------------------------------------------------------------
+
+export interface TradePackageExplanation {
+  /** "Send X, Y for A" -- the real package identity, built from the
+   * candidate's own confirmed `youSendNames`/`youReceiveNames`. */
+  headline: string;
+  tone: DecisionExplainTone;
+  /** WHY IT HELPS YOU -- the backend's own `whyItHelpsYou` sentences,
+   * joined and explicitly labeled. */
+  why: string;
+  /** WHY IT MAY FIT THEM -- the backend's own `whyItMayFitThem` sentences
+   * (computed from the opponent's own roster, never a promise the
+   * opponent will accept). */
+  secondaryWhy: string;
+  /** WEEKLY IMPACT -- the owner side's starting lineup value before/after,
+   * the same real signal `explainTradeAnalysis`'s own `weeklyImpact`
+   * already uses for the identical field on the single-package Trade
+   * Analysis workspace. */
+  thisWeekImpact: string;
+  /** ROS IMPACT -- owner net marginal utility + ROS value delta. Unlike
+   * `TradeAnalysisResult`, this nested evaluation carries no
+   * `championshipEquityNote` field (verified against a real computed
+   * payload, not assumed from the ledger's doc) -- nothing is appended
+   * here that the backend didn't actually send. */
+  rosImpact: string;
+  depth: string;
+  positionEffect: string;
+  risk: string | null;
+}
+
+function tradePackageToneFor(evaluation: TradePackageEvaluation): DecisionExplainTone {
+  const netUtility = evaluation.netMarginalUtility;
+  const rosValue = evaluation.rosValueDelta;
+  if (netUtility > 0 && rosValue >= 0) return "recommended";
+  if (netUtility < 0 && rosValue <= 0) return "negative";
+  return "warning";
+}
+
+export function explainTradePackageCandidate(candidate: TradePackageCandidate): TradePackageExplanation {
+  const owner = candidate.ownerEvaluation;
+
+  const thisWeekImpact = `Starting lineup value ${owner.startingLineupValueBefore.toFixed(1)} → ${owner.startingLineupValueAfter.toFixed(1)} (${formatSigned(owner.startingLineupValueDelta)})`;
+  const rosImpact = `Net marginal utility ${formatSigned(owner.netMarginalUtility)} · ROS value delta ${formatSigned(owner.rosValueDelta)}`;
+  const depth = `Bench contingency value ${owner.benchContingencyValueBefore.toFixed(1)} → ${owner.benchContingencyValueAfter.toFixed(1)}`;
+
+  const holesSummary = `Starter holes ${owner.starterHolesBefore.length} → ${owner.starterHolesAfter.length}${owner.starterHolesAfter.length ? ` (${owner.starterHolesAfter.join(", ")})` : ""}`;
+  const redundancyKeys = Array.from(new Set([...Object.keys(owner.positionRedundancyBefore), ...Object.keys(owner.positionRedundancyAfter)])).sort();
+  const redundancySummary = redundancyKeys.length
+    ? `Redundancy ${redundancyKeys.map((position) => `${position} ${owner.positionRedundancyBefore[position] ?? 0}→${owner.positionRedundancyAfter[position] ?? 0}`).join(", ")}`
+    : null;
+  const positionEffect = [holesSummary, redundancySummary].filter(Boolean).join(" · ");
+
+  return {
+    headline: `Send ${candidate.youSendNames.join(", ") || "—"} for ${candidate.youReceiveNames.join(", ") || "—"}`,
+    tone: tradePackageToneFor(owner),
+    why: `Why it helps you: ${candidate.whyItHelpsYou.length ? candidate.whyItHelpsYou.join(" ") : "NWR's evaluator found this package legal but recorded no specific reason."}`,
+    secondaryWhy: `Why it may fit them: ${candidate.whyItMayFitThem.length ? candidate.whyItMayFitThem.join(" ") : "NWR did not record a specific reason this may fit the other team."}`,
+    thisWeekImpact,
+    rosImpact,
+    depth,
+    positionEffect,
+    risk: owner.riskFlags.length ? owner.riskFlags.join(" · ") : null,
+  };
+}
+
+/** Softened, owner-friendly copy for Trade Package Search's own error
+ * codes -- specifically the disclosed
+ * `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED` open item (Worker 6's
+ * ledger entry, P1-3 open issue #5): a raw error code is never shown to
+ * the owner. Every other code falls back to the facade's own already-
+ * human-readable `message`/`recoveryAction` (e.g. "Sleeper roster/user/
+ * player data could not be read...") -- honest passthrough, not a second
+ * layer of invented copy for a case with no disclosed UX gap. */
+export interface SoftenedTradePackageSearchError {
+  message: string;
+  recovery: string;
+}
+
+const TRADE_PACKAGE_SEARCH_ERROR_COPY: Record<string, SoftenedTradePackageSearchError> = {
+  TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED: {
+    message: "Couldn't find that player on a tradeable roster.",
+    recovery: "Pick the player from the search list above instead -- they may not be in NWR's governed rankings yet.",
+  },
+};
+
+export function describeTradePackageSearchError(error: NwrApiError): SoftenedTradePackageSearchError {
+  return TRADE_PACKAGE_SEARCH_ERROR_COPY[error.code] ?? { message: error.message, recovery: error.recoveryAction };
 }

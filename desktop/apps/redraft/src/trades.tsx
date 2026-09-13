@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { RedraftBootstrap, TradeAnalysisResult, TradePlayerImpact } from "@nwr/contracts";
+import type { RedraftBootstrap, TradeAnalysisResult, TradePackageCandidate, TradePackageSearchMode, TradePlayerImpact } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -8,6 +8,7 @@ import {
   MetricCard,
   PageHeader,
   Panel,
+  SegmentedControl,
   StatusBadge,
   type TableColumn,
   formatNumber,
@@ -20,7 +21,7 @@ import { TradeSidePicker, type TradeSide } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
-import { explainTradeAnalysis, explainTradeFinderCandidate } from "./trades-explain";
+import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate } from "./trades-explain";
 import { useAsync } from "./weekly-shared";
 
 /**
@@ -117,22 +118,6 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
     }
   }, [client, gives, receives]);
 
-  // Find Trades' own "Open in Analyze" cross-tab jump (same shape as
-  // Improve Team's Targets -> Add/Drop link): pre-selects both sides of a
-  // real candidate package and switches tabs, but does not auto-fetch --
-  // the owner still takes the deliberate "Analyze trade" action, same as
-  // every other prefill path here.
-  const openInAnalyze = useCallback(
-    (give: TradeSide, receive: TradeSide) => {
-      setGives([give]);
-      setReceives([receive]);
-      setResult(null);
-      setAnalysisError(null);
-      setTab("analyze");
-    },
-    [setTab],
-  );
-
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
@@ -174,7 +159,7 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
       ) : null}
 
       {tab === "find" ? (
-        <FindTradesTab client={client} data={data} onOpenAnalyze={openInAnalyze} onOpenPlayer={openPlayerDetail} />
+        <FindTradesTab client={client} data={data} onOpenPlayer={openPlayerDetail} targetCandidates={receiveCandidates} />
       ) : null}
     </> : null}
   </>;
@@ -296,65 +281,174 @@ function AnalyzeTab({
 }
 
 // ---------------------------------------------------------------------------
-// FIND TRADES -- real win-win candidates, one DecisionExplain card per
-// candidate (opponent / you-send / you-receive / why-this-fits /
-// NWR-roster-impact). Never fabricates an acceptance probability -- the
-// backend supplies none.
+// FIND TRADES -- Trade Package Search (P1-3, Worker 6's backend), three
+// modes (FIND WIN-WIN PACKAGES / TARGET PLAYER / IMPROVE POSITION), each a
+// real, bounded, multi-player (1-for-1 through 2-for-2) candidate search
+// across every live opponent roster -- a real superset of the prior
+// 1-for-1-only Trade Finder this tab used to call directly (`TradeFinderResult`/
+// `explainTradeFinderCandidate` are unchanged and still power Weekly Home's
+// own "TRADE" action cards via a different endpoint -- see
+// `home-action-explain.ts` -- only THIS tab's data source changed). One
+// DecisionExplain card per candidate: YOU SEND / YOU RECEIVE / WHY IT HELPS
+// YOU / WHY IT MAY FIT THEM / WEEKLY IMPACT / ROS IMPACT. Never fabricates
+// an acceptance probability -- the backend supplies none, in any mode.
+//
+// Deliberately NO "Open in Analyze" cross-tab jump on these cards (the old
+// 1-for-1 Trade Finder flow had one): a real, pre-existing, NOT-fixed-here
+// bug was found while wiring this -- `youSend`/`youReceive` (and the old
+// `TradeFinderCandidate.myGivePlayerId`/`opponentGivePlayerId` before it)
+// are NWR's own canonical (GSIS-style, e.g. "00-0023459") player ids, not
+// raw Sleeper ids, but `redraftTradeAnalysis` requires raw Sleeper ids
+// (resolved against the Sleeper `players/nfl` catalog in
+// `redraft_trade_analysis_service`) -- reproduced live (see the ledger).
+// The owner's own "You send" side COULD be resolved via
+// `RedraftMyRosterPlayer.canonicalPlayerId`, but the opponent's "You
+// receive" side has no such field on `RedraftOpponentPlayer` today, so a
+// correct fix needs a small backend contract addition, not a UI-only
+// patch -- flagged for the next worker rather than shipped half-working
+// or silently left broken.
 // ---------------------------------------------------------------------------
+
+const PACKAGE_SEARCH_MODES: Array<{ key: TradePackageSearchMode; label: string }> = [
+  { key: "FIND_WIN_WIN", label: "Find win-win packages" },
+  { key: "TARGET_PLAYER", label: "Target a player" },
+  { key: "IMPROVE_POSITION", label: "Improve a position" },
+];
+
+const IMPROVE_POSITION_OPTIONS = ["QB", "RB", "WR", "TE", "K", "DST"];
 
 function FindTradesTab({
   client,
   data,
   onOpenPlayer,
-  onOpenAnalyze,
+  targetCandidates,
 }: {
   client: NwrApiClient;
   data: RedraftBootstrap;
   onOpenPlayer: PlayerViewer;
-  onOpenAnalyze: (give: TradeSide, receive: TradeSide) => void;
+  targetCandidates: TradeSide[];
 }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
-  const loader = useCallback(() => (isSleeper ? client.redraftTradeFinder() : null), [client, isSleeper]);
-  const { result, error, working, reload } = useAsync(loader, [isSleeper, data.activeProfileId]);
+  const [mode, setMode] = useState<TradePackageSearchMode>("FIND_WIN_WIN");
+  const [targetPlayer, setTargetPlayer] = useState<TradeSide | null>(null);
+  const [position, setPosition] = useState("RB");
+
+  const loader = useCallback(() => {
+    if (!isSleeper) return null;
+    if (mode === "TARGET_PLAYER" && !targetPlayer) return null;
+    return client.redraftTradePackageSearch({
+      mode,
+      ...(mode === "TARGET_PLAYER" && targetPlayer ? { targetPlayerSleeperId: targetPlayer.sleeperPlayerId } : {}),
+      ...(mode === "IMPROVE_POSITION" ? { position } : {}),
+    });
+  }, [client, isSleeper, mode, targetPlayer, position]);
+  const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, targetPlayer?.sleeperPlayerId, position, data.activeProfileId]);
+
+  const softenedError = error ? describeTradePackageSearchError(error) : null;
 
   return <>
-    <div className="toolbar">
-      <Button disabled={working} icon="activity" onClick={reload} variant="secondary">{working ? "Searching…" : "Refresh"}</Button>
-    </div>
-    {result ? <p className="copy-muted">{result.candidates.length} candidate{result.candidates.length === 1 ? "" : "s"} found across every live opponent roster.</p> : null}
-    {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-    {working && !result ? <p className="draft-feedback">Searching every live opponent roster for a real win-win…</p> : null}
-    {result && result.candidates.length === 0 ? (
-      <EmptyState title="No win-win candidates found" message="NWR's evaluator did not find any 1-for-1 package where both sides' real marginal utility improves right now." />
+    <SegmentedControl label="Search mode" options={PACKAGE_SEARCH_MODES.map((item) => item.key)} value={mode} onChange={(value) => setMode(value as TradePackageSearchMode)} />
+    <p className="copy-muted">{PACKAGE_SEARCH_MODES.find((item) => item.key === mode)?.label}</p>
+
+    {mode === "TARGET_PLAYER" ? (
+      <Panel title="Who do you want to target?">
+        <TradeSidePicker
+          label="Target player"
+          side={targetPlayer ? [targetPlayer] : []}
+          candidates={targetCandidates}
+          onAdd={(candidate) => setTargetPlayer(candidate)}
+          onRemove={() => setTargetPlayer(null)}
+        />
+      </Panel>
     ) : null}
-    {result && result.candidates.length ? (
+
+    {mode === "IMPROVE_POSITION" ? (
+      <SegmentedControl label="Position" options={IMPROVE_POSITION_OPTIONS} value={position} onChange={setPosition} />
+    ) : null}
+
+    <div className="toolbar">
+      <Button disabled={working || (mode === "TARGET_PLAYER" && !targetPlayer)} icon="activity" onClick={reload} variant="secondary">{working ? "Searching…" : "Refresh"}</Button>
+    </div>
+
+    {mode === "TARGET_PLAYER" && !targetPlayer ? (
+      <EmptyState title="Pick a player to target" message="Search the opponent roster above and pick a real player -- NWR will search every legal package (1-for-1 through 2-for-2) that could land them." />
+    ) : null}
+
+    {softenedError ? <ErrorState message={softenedError.message} recovery={softenedError.recovery} /> : null}
+    {working && !result ? <p className="draft-feedback">Searching every live opponent roster for a real package…</p> : null}
+
+    {result && !error ? (
+      <p className="copy-muted">
+        {result.candidates.length} candidate{result.candidates.length === 1 ? "" : "s"} found across {result.opponentsSearched} opponent roster{result.opponentsSearched === 1 ? "" : "s"} ({result.packagesEvaluated} package{result.packagesEvaluated === 1 ? "" : "s"} evaluated).{" "}
+        {result.truncated ? (
+          <StatusBadge tone="review" label="Search capped -- more legal packages may exist beyond this bound" />
+        ) : null}
+      </p>
+    ) : null}
+
+    {result && result.candidates.length === 0 && !error ? (
+      <EmptyState
+        title="No candidates found"
+        message={
+          mode === "FIND_WIN_WIN"
+            ? "NWR's evaluator did not find any legal package (1-for-1 through 2-for-2) across any opponent roster where both sides' real marginal utility improves right now."
+            : mode === "TARGET_PLAYER"
+              ? `NWR could not build a legal package for ${targetPlayer?.name ?? "that player"} where the trade partner's own real utility stays non-negative.`
+              : `NWR could not build a legal package that improves your ${position} spot without hurting the other team's roster, within the current search bounds.`
+        }
+      />
+    ) : null}
+
+    {result && !error && result.candidates.length ? (
       <div className="nwr-action-grid">
-        {result.candidates.map((candidate, index) => {
-          const explanation = explainTradeFinderCandidate(candidate);
-          return (
-            <DecisionExplain
-              actions={<>
-                <span className="copy-muted">You send:</span>
-                <StatusBadge tone={playerAvailabilityBadgeTone(candidate.myGivePlayerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(candidate.myGivePlayerAvailabilityStatus)} />
-                <Button onClick={() => onOpenPlayer({ playerId: candidate.myGivePlayerId, playerName: candidate.myGivePlayerName })} variant="ghost">View {candidate.myGivePlayerName}</Button>
-                <span className="copy-muted">You receive:</span>
-                <StatusBadge tone={playerAvailabilityBadgeTone(candidate.opponentGivePlayerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(candidate.opponentGivePlayerAvailabilityStatus)} />
-                <Button onClick={() => onOpenPlayer({ playerId: candidate.opponentGivePlayerId, playerName: candidate.opponentGivePlayerName })} variant="ghost">View {candidate.opponentGivePlayerName}</Button>
-                <Button onClick={() => onOpenAnalyze(
-                  { sleeperPlayerId: candidate.myGivePlayerId, name: candidate.myGivePlayerName },
-                  { sleeperPlayerId: candidate.opponentGivePlayerId, name: candidate.opponentGivePlayerName },
-                )} variant="secondary">Open in Analyze</Button>
-              </>}
-              eyebrow={`vs. ${candidate.opponentTeamName}`}
-              headline={explanation.headline}
-              impact={explanation.impact}
-              key={`${candidate.opponentRosterId}-${candidate.myGivePlayerId}-${index}`}
-              tone={explanation.tone}
-              why={explanation.why}
-            />
-          );
-        })}
+        {result.candidates.map((candidate, index) => (
+          <TradePackageCandidateCard
+            candidate={candidate}
+            key={`${candidate.opponentRosterId}-${candidate.packageShape}-${candidate.youSend.join(",")}-${candidate.youReceive.join(",")}-${index}`}
+            onOpenPlayer={onOpenPlayer}
+          />
+        ))}
       </div>
     ) : null}
   </>;
+}
+
+function TradePackageCandidateCard({
+  candidate,
+  onOpenPlayer,
+}: {
+  candidate: TradePackageCandidate;
+  onOpenPlayer: PlayerViewer;
+}) {
+  const explanation = explainTradePackageCandidate(candidate);
+  return (
+    <DecisionExplain
+      actions={<>
+        <span className="copy-muted">You send:</span>
+        {candidate.ownerEvaluation.gives.map((player) => (
+          <span key={player.playerId}>
+            <StatusBadge tone={playerAvailabilityBadgeTone(player.playerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(player.playerAvailabilityStatus)} />
+            <Button onClick={() => onOpenPlayer({ playerId: player.playerId, playerName: player.playerName, position: player.position })} variant="ghost">View {player.playerName}</Button>
+          </span>
+        ))}
+        <span className="copy-muted">You receive:</span>
+        {candidate.ownerEvaluation.receives.map((player) => (
+          <span key={player.playerId}>
+            <StatusBadge tone={playerAvailabilityBadgeTone(player.playerAvailabilityStatus)} label={playerAvailabilityBadgeLabel(player.playerAvailabilityStatus)} />
+            <Button onClick={() => onOpenPlayer({ playerId: player.playerId, playerName: player.playerName, position: player.position })} variant="ghost">View {player.playerName}</Button>
+          </span>
+        ))}
+      </>}
+      depth={explanation.depth}
+      eyebrow={`vs. ${candidate.opponentTeamName} · ${candidate.packageShape}`}
+      headline={explanation.headline}
+      positionEffect={explanation.positionEffect}
+      risk={explanation.risk}
+      rosImpact={explanation.rosImpact}
+      secondaryWhy={explanation.secondaryWhy}
+      thisWeekImpact={explanation.thisWeekImpact}
+      tone={explanation.tone}
+      why={explanation.why}
+    />
+  );
 }

@@ -1,7 +1,14 @@
+import { NwrApiError } from "@nwr/api-client";
 import { describe, expect, it } from "vitest";
 
-import { explainTradeAnalysis, explainTradeFinderCandidate, tradeVerdictFor } from "./trades-explain";
-import type { TradeAnalysisResult, TradeFinderCandidate, TradePlayerImpact } from "@nwr/contracts";
+import {
+  describeTradePackageSearchError,
+  explainTradeAnalysis,
+  explainTradeFinderCandidate,
+  explainTradePackageCandidate,
+  tradeVerdictFor,
+} from "./trades-explain";
+import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation, TradePlayerImpact } from "@nwr/contracts";
 
 function playerImpact(overrides: Partial<TradePlayerImpact> = {}): TradePlayerImpact {
   return {
@@ -160,5 +167,138 @@ describe("explainTradeFinderCandidate", () => {
     expect(explanation.impact).toBe("Your net marginal utility +2.4 · ROS value delta +3.2 · their net marginal utility +1.1");
     expect(explanation.impact.toLowerCase()).not.toContain("probability");
     expect(explanation.impact.toLowerCase()).not.toContain("accept");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TRADE PACKAGE SEARCH (P1-3, Worker 7)
+// ---------------------------------------------------------------------------
+
+function packageEvaluation(overrides: Partial<TradePackageEvaluation> = {}): TradePackageEvaluation {
+  return {
+    gives: [playerImpact({ playerId: "my-rb1", playerName: "My RB1", position: "RB" })],
+    receives: [playerImpact({ playerId: "opp-wr1", playerName: "Opp WR1", position: "WR" })],
+    rosValueDelta: 10.0,
+    netMarginalUtility: 60.0,
+    startingLineupValueBefore: 980.0,
+    startingLineupValueAfter: 1020.0,
+    startingLineupValueDelta: 40.0,
+    benchContingencyValueBefore: 130.0,
+    benchContingencyValueAfter: 80.0,
+    starterHolesBefore: ["WR 1/2", "TE 0/1"],
+    starterHolesAfter: ["TE 0/1"],
+    positionRedundancyBefore: { RB: 2, WR: 0 },
+    positionRedundancyAfter: { RB: 1, WR: 1 },
+    riskFlags: [],
+    ...overrides,
+  };
+}
+
+function packageCandidate(overrides: Partial<TradePackageCandidate> = {}): TradePackageCandidate {
+  return {
+    opponentRosterId: "2",
+    opponentTeamName: "Rival Team",
+    packageShape: "1-for-1",
+    youSend: ["my-rb1"],
+    youSendNames: ["My RB1"],
+    youReceive: ["opp-wr1"],
+    youReceiveNames: ["Opp WR1"],
+    ownerEvaluation: packageEvaluation(),
+    opponentEvaluation: packageEvaluation({ netMarginalUtility: 28.14, rosValueDelta: 10.0 }),
+    whyItHelpsYou: ["Net marginal roster utility +60.0.", "Fills real starter hole(s): WR 1/2."],
+    whyItMayFitThem: ["Net marginal roster utility +28.1."],
+    ...overrides,
+  };
+}
+
+describe("explainTradePackageCandidate", () => {
+  it("builds a real 'Send X for Y' headline from the candidate's own confirmed identity fields, supporting multi-player packages", () => {
+    const explanation = explainTradePackageCandidate(
+      packageCandidate({ youSendNames: ["My RB1", "My RB4"], youReceiveNames: ["Opp WR1"] }),
+    );
+    expect(explanation.headline).toBe("Send My RB1, My RB4 for Opp WR1");
+  });
+
+  it("labels WHY IT HELPS YOU / WHY IT MAY FIT THEM explicitly and joins the backend's own real sentences verbatim", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate());
+    expect(explanation.why).toBe("Why it helps you: Net marginal roster utility +60.0. Fills real starter hole(s): WR 1/2.");
+    expect(explanation.secondaryWhy).toBe("Why it may fit them: Net marginal roster utility +28.1.");
+  });
+
+  it("falls back to an honest 'no specific reason recorded' rather than fabricating one when the backend sends no sentences", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate({ whyItHelpsYou: [], whyItMayFitThem: [] }));
+    expect(explanation.why).toBe("Why it helps you: NWR's evaluator found this package legal but recorded no specific reason.");
+    expect(explanation.secondaryWhy).toBe("Why it may fit them: NWR did not record a specific reason this may fit the other team.");
+  });
+
+  it("never fabricates an acceptance probability anywhere in the rendered explanation", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate());
+    const rendered = [explanation.why, explanation.secondaryWhy, explanation.thisWeekImpact, explanation.rosImpact].join(" ").toLowerCase();
+    expect(rendered).not.toContain("probability");
+    expect(rendered).not.toContain("accept");
+  });
+
+  it("formats WEEKLY IMPACT from the owner side's real starting lineup value before/after/delta", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate());
+    expect(explanation.thisWeekImpact).toBe("Starting lineup value 980.0 → 1020.0 (+40.0)");
+  });
+
+  it("formats ROS IMPACT from the owner side's net marginal utility and ROS value delta -- never appending a championship-equity note (the nested evaluation carries no such field)", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate());
+    expect(explanation.rosImpact).toBe("Net marginal utility +60.0 · ROS value delta +10.0");
+  });
+
+  it("formats DEPTH and POSITION EFFECT from the owner side's real before/after values", () => {
+    const explanation = explainTradePackageCandidate(packageCandidate());
+    expect(explanation.depth).toBe("Bench contingency value 130.0 → 80.0");
+    expect(explanation.positionEffect).toBe("Starter holes 2 → 1 (TE 0/1) · Redundancy RB 2→1, WR 0→1");
+  });
+
+  it("leaves risk null rather than fabricating a 'no risk' claim when the backend records no risk flags", () => {
+    expect(explainTradePackageCandidate(packageCandidate()).risk).toBeNull();
+  });
+
+  it("joins real backend risk flags when present", () => {
+    const explanation = explainTradePackageCandidate(
+      packageCandidate({ ownerEvaluation: packageEvaluation({ riskFlags: ["Receiving player is Questionable"] }) }),
+    );
+    expect(explanation.risk).toBe("Receiving player is Questionable");
+  });
+
+  it("reads a real net-positive owner side as recommended, a net-negative side as negative, and a mixed-direction side as warning -- never fabricating a confident tone from a mixed signal", () => {
+    expect(explainTradePackageCandidate(packageCandidate()).tone).toBe("recommended");
+    expect(
+      explainTradePackageCandidate(
+        packageCandidate({ ownerEvaluation: packageEvaluation({ netMarginalUtility: -5, rosValueDelta: -2 }) }),
+      ).tone,
+    ).toBe("negative");
+    expect(
+      explainTradePackageCandidate(
+        packageCandidate({ ownerEvaluation: packageEvaluation({ netMarginalUtility: 5, rosValueDelta: -2 }) }),
+      ).tone,
+    ).toBe("warning");
+  });
+});
+
+describe("describeTradePackageSearchError", () => {
+  it("softens the disclosed TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED code into honest, owner-friendly copy -- never showing the raw error code", () => {
+    const error = new NwrApiError(
+      "The requested target player could not be identity-matched to the governed ranking pool.",
+      { code: "TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED", status: 409, recoveryAction: "Retry after checking Data Health." },
+    );
+    const softened = describeTradePackageSearchError(error);
+    expect(softened.message).toBe("Couldn't find that player on a tradeable roster.");
+    expect(softened.message.toLowerCase()).not.toContain("identity");
+    expect(softened.message).not.toContain("TRADE_PACKAGE_SEARCH");
+  });
+
+  it("passes through the facade's own already-human-readable message/recovery for every other real error code, honestly, rather than inventing a second layer of copy", () => {
+    const error = new NwrApiError(
+      "Sleeper roster/user/player data could not be read. No local or remote state was changed.",
+      { code: "TRADE_PACKAGE_SEARCH_READ_FAILED", status: 503, recoveryAction: "Retry after checking Data Health." },
+    );
+    const softened = describeTradePackageSearchError(error);
+    expect(softened.message).toBe(error.message);
+    expect(softened.recovery).toBe(error.recoveryAction);
   });
 });

@@ -1188,6 +1188,86 @@ export interface TradeFinderResult {
   writeBehavior: string;
 }
 
+/**
+ * NWR Post-UI Product V1, P1-3 (Rich Trade Package Generator -- Worker 7,
+ * UI half). Mirrors `DesktopBackendFacade.redraft_trade_package_search`'s
+ * real response (`src/application/desktop_facade.py`), verified against a
+ * real, live-computed payload (not just the ledger's prose description --
+ * see `TradePackageEvaluation` below for the one place the ledger's own
+ * "byte-for-byte the same shape as `TradeAnalysisResult`" claim was
+ * slightly imprecise).
+ */
+export type TradePackageSearchMode = "FIND_WIN_WIN" | "TARGET_PLAYER" | "IMPROVE_POSITION";
+export type TradePackageShape = "1-for-1" | "2-for-1" | "1-for-2" | "2-for-2";
+
+/**
+ * The per-side (owner or opponent) before/after evaluation nested inside a
+ * `TradePackageCandidate`. Field names are identical to
+ * `TradeAnalysisResult`'s own -- EXCEPT this nested shape carries no
+ * `leagueId`/`traceId`/`leagueSnapshotId`/`decisionEnvelope`/
+ * `championshipEquityNote`/`writeBehavior` (those are response-envelope-level
+ * concerns that only exist once, at the top of `TradePackageSearchResult`,
+ * not per side per candidate) -- confirmed directly against the facade's
+ * own `_evaluation_payload()` serializer, not assumed from the ledger's
+ * doc, which described it as "byte-for-byte the same" a little too
+ * strongly.
+ */
+export interface TradePackageEvaluation {
+  gives: TradePlayerImpact[];
+  receives: TradePlayerImpact[];
+  rosValueDelta: number;
+  netMarginalUtility: number;
+  startingLineupValueBefore: number;
+  startingLineupValueAfter: number;
+  startingLineupValueDelta: number;
+  benchContingencyValueBefore: number;
+  benchContingencyValueAfter: number;
+  starterHolesBefore: string[];
+  starterHolesAfter: string[];
+  positionRedundancyBefore: Record<string, number>;
+  positionRedundancyAfter: Record<string, number>;
+  riskFlags: string[];
+}
+
+export interface TradePackageCandidate {
+  opponentRosterId: string;
+  opponentTeamName: string;
+  packageShape: TradePackageShape;
+  /** Canonical NWR player ids (NOT raw Sleeper ids) -- same identity space
+   * `TradeAnalysisResult.gives[].playerId` already uses. */
+  youSend: string[];
+  youSendNames: string[];
+  youReceive: string[];
+  youReceiveNames: string[];
+  ownerEvaluation: TradePackageEvaluation;
+  opponentEvaluation: TradePackageEvaluation;
+  /** Structured, real-delta sentences computed by the backend from
+   * `ownerEvaluation`. Never an acceptance probability -- the backend
+   * computes none, in any mode. */
+  whyItHelpsYou: string[];
+  /** Same, computed from `opponentEvaluation`. Never an acceptance
+   * probability. */
+  whyItMayFitThem: string[];
+}
+
+export interface TradePackageSearchResult {
+  leagueId: string;
+  mode: TradePackageSearchMode;
+  traceId?: string | null;
+  leagueSnapshotId?: string;
+  decisionEnvelope?: DecisionResultEnvelope;
+  candidates: TradePackageCandidate[];
+  /** Real `evaluate_trade` call count for this search (respects the
+   * backend's documented hard caps). */
+  packagesEvaluated: number;
+  opponentsSearched: number;
+  /** True when a hard search cap was hit before the space was exhausted --
+   * render honestly; never imply the candidate list is complete when this
+   * is true. */
+  truncated: boolean;
+  writeBehavior: string;
+}
+
 export interface WeeklyHomeAction {
   category: "START_SIT" | "START_SIT_CLOSE_CALL" | "WAIVER" | "TRADE" | "STREAMER";
   priority: number;
