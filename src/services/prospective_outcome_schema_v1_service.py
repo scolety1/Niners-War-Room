@@ -68,6 +68,31 @@ def _round_or_none(value: float | None, digits: int = 2) -> float | None:
     return round(float(value), digits)
 
 
+def _points_by_player_list(mapping: Mapping[str, float | None]) -> list[dict[str, Any]]:
+    """Real bug found + fixed this pass (History UI V2 / Work Unit 15's
+    snake_case<->camelCase JSON-boundary property test): a dict KEYED BY a
+    literal player id (e.g. Sleeper's DST ids, which are bare team codes
+    like "NE") is exactly the shape this codebase has already been bitten
+    by more than once -- `application/contracts.py`'s generic
+    `camel_case_key` treats every dict key as a schema field name, not
+    literal data, and mangles an all-caps single-token key by lowercasing
+    only its first letter ("NE" -> "nE", "WR" -> "wR", "QB" -> "qB" -- see
+    `test_desktop_application_api.py`'s and
+    `test_redraft_draft_room_v1_service.py`'s own real, previously-found
+    instances of this exact bug class). Per that same established,
+    already-precedented fix (never modify the shared `camel_case_key`
+    itself -- narrowly change the call site to stop using a literal value
+    as a dict key), this returns a flat LIST of `{playerId, points}"`
+    objects instead of a dict keyed by player id -- immune to key-casing
+    entirely, since "playerId"/"points" are real, intentional field names,
+    never literal data. Sorted by player id for deterministic output."""
+
+    return [
+        {"playerId": str(player_id), "points": _round_or_none(points)}
+        for player_id, points in sorted(mapping.items(), key=lambda item: str(item[0]))
+    ]
+
+
 # ---------------------------------------------------------------------------
 # START_SIT
 # ---------------------------------------------------------------------------
@@ -108,10 +133,10 @@ class StartSitOutcomeDetail:
             "actualOnlyIds": list(self.actual_only_ids),
             "recommendedProjectedTotal": _round_or_none(self.recommended_projected_total),
             "actualPointsTotal": _round_or_none(self.actual_points_total),
-            "actualPointsByPlayerId": {
-                str(player_id): _round_or_none(points)
-                for player_id, points in self.actual_points_by_player_id.items()
-            },
+            # A LIST, not a dict keyed by player id -- see
+            # `_points_by_player_list`'s own docstring for the real bug
+            # this shape avoids.
+            "actualPointsByPlayer": _points_by_player_list(self.actual_points_by_player_id),
             "lineupOpportunityCost": _round_or_none(self.lineup_opportunity_cost),
         }
 
@@ -265,12 +290,11 @@ class TradeRealizedRosterOutcome:
     def to_dict(self) -> dict[str, Any]:
         return {
             "horizonWeeks": self.horizon_weeks,
-            "givesSubsequentPoints": {
-                str(pid): _round_or_none(pts) for pid, pts in self.gives_subsequent_points.items()
-            },
-            "receivesSubsequentPoints": {
-                str(pid): _round_or_none(pts) for pid, pts in self.receives_subsequent_points.items()
-            },
+            # LISTS, not dicts keyed by player id -- see
+            # `_points_by_player_list`'s own docstring for the real bug
+            # this shape avoids.
+            "givesSubsequentPointsByPlayer": _points_by_player_list(self.gives_subsequent_points),
+            "receivesSubsequentPointsByPlayer": _points_by_player_list(self.receives_subsequent_points),
             "netSubsequentPointsDelta": _round_or_none(self.net_subsequent_points_delta),
         }
 

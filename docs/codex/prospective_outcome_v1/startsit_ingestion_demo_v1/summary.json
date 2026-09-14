@@ -8,17 +8,44 @@
   "outcome": {
     "detail": {
       "actualOnlyIds": [],
-      "actualPointsByPlayerId": {
-        "11560": 37.26,
-        "3451": 9.0,
-        "6813": 25.1,
-        "7543": 14.8,
-        "7553": 0.0,
-        "8144": 28.2,
-        "9226": 10.6,
-        "9997": 26.0,
-        "NE": 6.0
-      },
+      "actualPointsByPlayer": [
+        {
+          "playerId": "11560",
+          "points": 37.26
+        },
+        {
+          "playerId": "3451",
+          "points": 9.0
+        },
+        {
+          "playerId": "6813",
+          "points": 25.1
+        },
+        {
+          "playerId": "7543",
+          "points": 14.8
+        },
+        {
+          "playerId": "7553",
+          "points": 0.0
+        },
+        {
+          "playerId": "8144",
+          "points": 28.2
+        },
+        {
+          "playerId": "9226",
+          "points": 10.6
+        },
+        {
+          "playerId": "9997",
+          "points": 26.0
+        },
+        {
+          "playerId": "NE",
+          "points": 6.0
+        }
+      ],
       "actualPointsTotal": 156.96,
       "actualStarterIds": [
         "11560",
@@ -62,6 +89,6 @@
   "ownerRosterId": 9,
   "realOwnerActualPointsTotal": 156.96,
   "reloadedRecordCount": 1,
-  "traceId": "7191923d-ce52-445a-8521-b55cdb0dfff2",
+  "traceId": "e2de40f5-3abf-4949-8942-acb6f384993e",
   "week": 1
 }
