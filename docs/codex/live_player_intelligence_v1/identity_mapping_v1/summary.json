@@ -1,0 +1,64 @@
+{
+  "NFLVERSE_DEPTH_CHARTS": {
+    "ambiguous": 0,
+    "coverageOfCanonicalPool": 0.8865,
+    "distinctCanonicalPlayersMatched": 500,
+    "matchedUniquely": 654,
+    "nameMismatch": 15,
+    "positionOutOfScope": 1447,
+    "primaryClassificationCounts": {
+      "MATCHED_GSIS_DIRECT": 653,
+      "MATCHED_NAME_POSITION_TEAM": 1,
+      "UNMATCHED": 121,
+      "UNMATCHED_POSITION_OUT_OF_SCOPE": 1447
+    },
+    "providerIdMismatch": 120,
+    "teamMismatch": 0,
+    "teamMismatchGenuine": 0,
+    "teamMismatchKnownCodeAlias": 0,
+    "totalRows": 2222,
+    "unmatched": 121
+  },
+  "NFLVERSE_OFFICIAL_INJURY_REPORT": {
+    "ambiguous": 0,
+    "coverageOfCanonicalPool": 0.0922,
+    "distinctCanonicalPlayersMatched": 52,
+    "matchedUniquely": 52,
+    "nameMismatch": 0,
+    "positionOutOfScope": 129,
+    "primaryClassificationCounts": {
+      "MATCHED_GSIS_DIRECT": 52,
+      "UNMATCHED": 1,
+      "UNMATCHED_POSITION_OUT_OF_SCOPE": 129
+    },
+    "providerIdMismatch": 1,
+    "teamMismatch": 0,
+    "teamMismatchGenuine": 0,
+    "teamMismatchKnownCodeAlias": 0,
+    "totalRows": 182,
+    "unmatched": 1
+  },
+  "SLEEPER_PUBLIC_PLAYERS_CATALOG": {
+    "ambiguous": 0,
+    "coverageOfCanonicalPool": 0.8635,
+    "distinctCanonicalPlayersMatched": 487,
+    "matchedUniquely": 488,
+    "nameMismatch": 4,
+    "positionOutOfScope": 7962,
+    "primaryClassificationCounts": {
+      "MATCHED_GSIS_DIRECT": 126,
+      "MATCHED_NAME_POSITION_TEAM": 362,
+      "TEAM_MISMATCH": 15,
+      "UNMATCHED": 406,
+      "UNMATCHED_NO_TEAM": 3356,
+      "UNMATCHED_POSITION_OUT_OF_SCOPE": 7962
+    },
+    "providerIdMismatch": 1197,
+    "teamMismatch": 15,
+    "teamMismatchGenuine": 1,
+    "teamMismatchKnownCodeAlias": 14,
+    "totalRows": 12227,
+    "unmatched": 3762
+  },
+  "canonicalPoolSize": 564
+}

@@ -1,0 +1,17 @@
+{
+  "benchmarkApproach": "nflverse official weekly injury report, real fresh pull, joined to NWR canonical pool via the existing _identity resolver",
+  "distinctTeams": 32,
+  "fetchedAtUtc": "2026-09-14T03:03:53.307691+00:00",
+  "notAFullyIndependentThirdPartySource": true,
+  "productionAdmissionIsASeparateGate9Decision": true,
+  "revisionEvidence": {
+    "changes": [],
+    "currentPullFetchedAtUtc": "2026-09-14T03:03:53.307691+00:00",
+    "priorPullFetchedAtUtc": "2026-09-14T02:52:46.888003+00:00",
+    "rowsChangedBetweenPulls": 0
+  },
+  "rowCount": 182,
+  "season": 2026,
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv",
+  "week": 1
+}
