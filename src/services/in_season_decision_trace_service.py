@@ -344,31 +344,46 @@ def record_owner_action(
 
 
 def record_outcome(
-    root: str | Path, profile_id: str, trace_id: str, *, outcome: str, notes: str = ""
+    root: str | Path,
+    profile_id: str,
+    trace_id: str,
+    *,
+    outcome: str,
+    notes: str = "",
+    detail: Mapping[str, Any] | None = None,
 ) -> DecisionTraceRecord:
     """The append-only OUTCOME write path (NWR Post-UI Product V1, P1-4).
 
     Mirrors `record_owner_action` exactly: appends a NEW line referencing
     the same `trace_id`, never edits or backdates the original
-    recommendation line. Defined as a real, usable contract even though no
-    real 2026-season outcome exists yet for anything this ledger has
-    recorded so far (every event recorded to date is prospective, from
-    'now' forward) -- nothing calls this function in production yet, and
-    that is the honest, correct state until a real observed result exists
-    to append. `outcome` is intentionally a free-text/caller-defined label
-    (e.g. "WON_MATCHUP", "PLAYER_STARTED_AS_RECOMMENDED") -- this module
-    computes no calibration metric over it; it only stores what actually
-    happened, later, as its own separate fact.
+    recommendation line. `outcome` stays a free-text/caller-defined summary
+    label (e.g. "WON_MATCHUP", "PLAYER_STARTED_AS_RECOMMENDED") for
+    backward compatibility with every existing caller -- this module still
+    computes no calibration metric over it.
+
+    NWR Prospective Outcome V1: `detail` is the new, OPTIONAL,
+    decision-type-specific structured payload (see
+    `prospective_outcome_schema_v1_service.py` -- one distinct dataclass
+    per decision type, e.g. `StartSitOutcomeDetail`/`WaiverOutcomeDetail`/
+    `FaabOutcomeDetail`, deliberately NOT one generic accuracy score).
+    Callers pass `detail=<schema>.to_detail_dict()`. Omitted (`None`, the
+    default) for full backward compatibility: no `detail` key is added to
+    the stored outcome payload at all when absent, so every pre-existing
+    caller/row/test that only ever passed `outcome`/`notes` round-trips
+    byte-for-byte the same as before this change.
     """
 
     existing = {record.trace_id: record for record in load_decision_traces(root, profile_id)}
     original = existing.get(trace_id)
     if original is None:
         raise DecisionTraceError(f"No decision trace found with id {trace_id!r} for profile {profile_id!r}.")
+    outcome_payload: dict[str, Any] = {"outcome": outcome, "notes": notes}
+    if detail is not None:
+        outcome_payload["detail"] = dict(detail)
     updated = replace(
         original,
         status="OUTCOME_RECORDED",
-        outcome={"outcome": outcome, "notes": notes},
+        outcome=outcome_payload,
         outcome_recorded_at_utc=datetime.now(UTC).isoformat(),
     )
     path = _trace_path(root, profile_id)

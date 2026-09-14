@@ -364,6 +364,80 @@ def test_alternating_content_never_loses_a_genuinely_distinct_event(tmp_path) ->
     assert len(load_decision_traces(tmp_path, "profile-1")) == 3
 
 
+# ---------------------------------------------------------------------------
+# NWR Prospective Outcome V1: `record_outcome`'s new optional `detail`
+# payload (decision-type-specific structured outcome fields, built by
+# prospective_outcome_schema_v1_service.py) -- append-only and backward-
+# compatible with every pre-existing caller that never passes it.
+# ---------------------------------------------------------------------------
+
+
+def test_record_outcome_without_detail_is_byte_identical_to_pre_existing_behavior(tmp_path) -> None:
+    """Backward compatibility: omitting `detail` must produce the exact
+    same outcome payload shape as before this pass -- no stray `detail`
+    key, not even a null one."""
+
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"add": "FA X"},
+    )
+    updated = record_outcome(tmp_path, "profile-1", record.trace_id, outcome="WON_MATCHUP", notes="close one")
+    assert updated.outcome == {"outcome": "WON_MATCHUP", "notes": "close one"}
+    assert "detail" not in updated.outcome
+
+
+def test_record_outcome_with_detail_appends_a_new_line_never_mutates_the_original(tmp_path) -> None:
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="START_SIT",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1", "p2"],
+        recommendation={"projectedTotal": 100.0, "starters": ["p1"]},
+    )
+    detail = {
+        "kind": "START_SIT_LINEUP_V1",
+        "recommendedStarterIds": ["p1"],
+        "actualStarterIds": ["p1"],
+        "lineupOpportunityCost": 0.0,
+    }
+    updated = record_outcome(
+        tmp_path, "profile-1", record.trace_id, outcome="STARTER_MATCHED_RECOMMENDATION", detail=detail,
+    )
+    assert updated.outcome["detail"] == detail
+    assert updated.outcome["detail"] is not detail  # a defensive copy, not the same live object
+
+    path = tmp_path / "decision_traces" / "profile-1.jsonl"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 2  # original recommendation line untouched, one new line appended
+    original_row = json.loads(lines[0])
+    assert "outcome" not in original_row  # the original recommendation line never gains an outcome key
+    assert original_row["recommendation"] == {"projectedTotal": 100.0, "starters": ["p1"]}
+
+    reloaded = load_decision_traces(tmp_path, "profile-1")
+    assert len(reloaded) == 1  # latest-state-per-trace-id folding, not duplicated
+    assert reloaded[0].outcome["detail"] == detail
+    assert reloaded[0].recommendation == {"projectedTotal": 100.0, "starters": ["p1"]}  # preserved verbatim
+
+
+def test_record_outcome_detail_round_trips_through_a_file_reload(tmp_path) -> None:
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="FAAB",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"], recommendation={},
+    )
+    detail = {
+        "kind": "FAAB_V1",
+        "recommendedPlayerId": "500",
+        "playerDecisionQuality": {"subsequentPoints": 15.0, "subsequentRosterUsageWeeks": 1, "horizonWeeks": 4},
+        "bidRangeCalibration": {
+            "suggestedBidLow": 5.0, "suggestedBidHigh": 10.0, "amountBid": 8.0, "won": True,
+            "actualWinningBid": 8.0, "bidWithinSuggestedRange": True, "marginVsActualWinningBid": 0.0,
+        },
+    }
+    record_outcome(tmp_path, "profile-1", record.trace_id, outcome="CLAIM_WON", detail=detail)
+    reloaded = load_decision_traces(tmp_path, "profile-1")[0]
+    assert reloaded.outcome["detail"] == detail
+    assert reloaded.status == "OUTCOME_RECORDED"
+
+
 def test_no_future_outcome_field_exists_on_the_record_shape(tmp_path) -> None:
     record = record_decision_trace(
         tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="START_SIT",
