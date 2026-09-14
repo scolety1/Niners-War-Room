@@ -402,6 +402,174 @@ semantics, or this cycle's admission/composition code was touched.
 
 ---
 
+## Worker 6 (separate pass, same worktree) -- History UI V2 (Work Unit 14) + boundary/property reliability pack (Work Unit 15)
+
+Continues directly from Worker 5's Prospective Outcome V1 pass (Start HEAD
+`47b3167e`). Real HEAD after this pass's 4 commits:
+`38f0d010` (bug fix) -> `fb2d7195` (History UI V2) -> `9656afdb` (stale-
+response guard) -> `79817841` (boundary/property test pack, this entry's
+own commit is a 5th, docs-only). Not merged, not pushed, not deployed.
+
+**A. Work Unit 14 -- History UI V2.** Extended (did not rebuild) the
+existing History page. `desktop/packages/contracts/src/index.ts` gained
+the 8 real outcome-detail TS interfaces as a `kind`-discriminated union,
+1:1 mirroring `prospective_outcome_schema_v1_service.py`'s own camelCase
+field names. `decision-history-format.ts` gained pure, exhaustively-tested
+section builders per decision type -- START_SIT shows
+`lineupOpportunityCost` + eligible bench alternatives at lock; FAAB renders
+`playerDecisionQuality`/`bidRangeCalibration` as genuinely SEPARATE
+sections; TRADE shows a realized-roster-outcome section ONLY when actually
+accepted; an unrecognized `kind` degrades to an honest raw-field fallback.
+`decision-history.tsx` renders this as a per-row, independently-
+expandable native `<details>` inside the existing "Outcome status" cell --
+no new shared UI-kit component, no DataTable behavior change. **No
+aggregate "NWR ACCURACY: X%" score is shown anywhere** -- confirmed by
+code review and by `hasSufficientSampleForRollup` (an unused, disclosed,
+conservative n>=20 gate a FUTURE pass would need to clear, never called
+this pass).
+
+**Live-verified against real data**: this pass checked the owner's actual
+production AppData store
+(`AppData/Local/com.ninerswarroom.redraft/state/redraft/`) and found ZERO
+existing `decision_traces/` ledger for the real Fantasy Gamers profile
+(`4c5f04762921420595e4d8c7cda76582`) -- Worker 5's own real START_SIT demo
+used an isolated throwaway root by design (its own docstring says so), and
+no "Worker F" owner-action-captured event exists for this profile in this
+local install either. Rather than write into the owner's real production
+ledger (a more invasive step than any prior worker in this cycle took, and
+not clearly authorized), this pass followed the SAME isolated-throwaway-
+root convention: `scripts/build_history_ui_v2_live_verification_v1.py`
+runs the full real pipeline (fetch real Week 1 2026 Sleeper matchup data,
+read-only -> `record_decision_trace` -> `ingest_start_sit_outcome` ->
+`record_outcome`) and projects the result through the EXACT real
+`_decision_trace_history_event_payload` shape the facade sends --
+committed at
+`docs/codex/live_player_intelligence_v1/history_ui_v2_live_verification_v1/
+real_decision_trace_history_event.json` and consumed directly (via a real
+TS JSON import, not a hand-typed approximation) by
+`decision-history-format.test.ts`'s live-data test.
+
+**A real bug was found by this live-verification step and fixed** (see
+part B below) -- the real Fantasy Gamers Week 1 2026 lineup genuinely
+includes a Sleeper DST whose id is the literal team code "NE", which
+exposed the exact camelCase-key-corruption bug class this saga has hit
+before.
+
+**B. Work Unit 15 -- boundary/property reliability pack.** 90 new Python
+tests (`tests/test_boundary_property_reliability_pack_v1.py`) + 4 new
+TS tests (`weekly-shared.test.ts`) across the 7 directive-named target
+classes -- full detail and the real historical bug each targets is in that
+Python file's own module docstring and the commit messages
+(`38f0d010`/`9656afdb`/`79817841`). `hypothesis` was checked and is NOT a
+dependency of this repo; no new dependency was added -- exhaustive
+`itertools.permutations` enumeration and small, representative/adversarial
+case sets stand in for it, each commented as such.
+
+**A genuine, real bug was found and fixed by this pass's own Group 3 test
+(the exact point of the exercise, not buried):**
+`StartSitOutcomeDetail.to_detail_dict()`'s `actualPointsByPlayerId` and
+`TradeRealizedRosterOutcome.to_dict()`'s `givesSubsequentPoints`/
+`receivesSubsequentPoints` were dicts KEYED BY a literal player id. Real
+Sleeper DST ids are bare team codes (e.g. "NE"), and the shared HTTP-
+boundary helper (`application/contracts.py`'s `camel_case_key`) treats
+every dict key as a schema field name, not literal data -- empirically
+verified live: `camel_case_key("NE") == "nE"`, `camel_case_key("WR") ==
+"wR"`. This is the SAME bug class already found and fixed elsewhere in
+this codebase more than once (`test_desktop_application_api.py`'s and
+`test_redraft_draft_room_v1_service.py`'s own real "K"/"DST"/"QB"
+key-mangling regressions, both predating this pass) -- and the SAME
+already-established fix was applied here: those three fields are now
+flat lists of `{playerId, points}` objects (renamed `actualPointsByPlayer`/
+`givesSubsequentPointsByPlayer`/`receivesSubsequentPointsByPlayer`),
+immune to key-casing entirely. Commit `38f0d010` is the fix (narrow,
+JSON-shape-only, zero ingestion/computation logic touched, all of Worker
+5's own pre-existing tests still pass unmodified since none asserted the
+old dict shape); commit `79817841`'s Group 3 tests are the real,
+end-to-end regression proof (`record_outcome` ->
+`_decision_trace_history_event_payload` -> `contract_envelope`, the real
+"NE" id survives intact). A minor, honest documentation-only discrepancy
+was also found while verifying Group 4 (not fixed, too low-value): Worker
+5's own ingestion-module docstring groups K_STREAMER/DST_STREAMER under
+"canonical-id space" in one sentence but "raw Sleeper ids, no resolution
+needed" in the next -- the real facade call site
+(`own_roster.get("players")`, a direct Sleeper roster read) confirms the
+SECOND sentence is the accurate one; this pass's own Group 4 test encodes
+the correct, verified id-space per tool.
+
+**Tests**: full monorepo `vitest run` -- 385 passed (28 files), up from
+372 at this pass's Start HEAD, zero failures. `tsc -b apps/dynasty/
+tsconfig.json apps/redraft/tsconfig.json` -- clean. `pytest -k
+"decision_trace or prospective_outcome or live_player_intelligence or
+boundary_property_reliability or composition or player_availability"` --
+269 passed, 0 failed. `tests/test_desktop_application_api.py` -- 46
+passed / 4 failed, the SAME 4 pre-existing failures Worker 4's own ledger
+entry already documented at this cycle's Start HEAD (test names:
+`test_dynasty_facade_composes_real_governed_workflows`,
+`test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+`test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+`test_facade_has_no_streamlit_or_app_component_dependency`) -- confirmed
+not a regression (none relate to decision-trace/prospective-outcome/
+composition/contracts, and the count matches exactly).
+
+**Hard boundary respected**: nothing under `marginal_roster_utility_v2`,
+draft recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/lifecycle-resolver/`DecisionResultEnvelope`/
+`PlayerAvailabilityStatus`'s actual behavior was touched. Worker 4/5's
+composition/outcome LOGIC is untouched and only tested (not modified) --
+the one exception, disclosed above, is the narrow JSON-shape-only fix to
+3 fields inside `prospective_outcome_schema_v1_service.py`'s
+`to_detail_dict()`/`to_dict()` output (never its computation), which is
+squarely what the directive's own hard-boundary clause anticipates
+("test it, don't modify its behavior unless you find a genuine bug, in
+which case fix narrowly and disclose").
+
+**Backend/model files changed**: `src/services/
+prospective_outcome_schema_v1_service.py` (the JSON-shape bug fix above,
+additive helper + 3 field renames in 2 `to_*dict()` methods only).
+Nothing else under `src/` was modified -- `desktop_facade.py`,
+`desktop_api/`, `in_season_decision_trace_service.py`,
+`prospective_outcome_ingestion_v1_service.py`, and every draft/scoring/
+roster-legality module are untouched this pass (all new Python is test-
+only or a standalone, non-pytest-exercised script, per this family's own
+established convention).
+
+**Open issues for the next worker** (per the outer directive's own list:
+real dogfood + performance + full acceptance + push):
+1. **No facade/orchestration wiring exists yet** (Worker 5's open item 1,
+   still open) -- the real orchestrator (fetch Sleeper data for the active
+   profile's league, call the right `ingest_*_outcome` for each completed-
+   week trace, append via `record_outcome`) is still not built. Until it
+   is, the real production ledger will keep recording zero real
+   `outcome.detail` payloads, and the new History UI V2 rendering will
+   keep showing nothing extra for real owner use (verified live only via
+   the isolated-throwaway-root mechanism this pass documents above).
+2. **Identity resolution for canonical-id decision types** (Worker 5's
+   open item 2, still open) -- WAIVER/ADD_DROP/FAAB/TRADE/TRADE_FINDER/
+   TRADE_PACKAGE_SEARCH still need a real canonical->Sleeper resolver
+   wired in before their ingestion functions can be called for real.
+3. **Player-name resolution on the History UI** was deliberately NOT
+   attempted this pass (raw ids shown, honestly labeled) -- see the taste-
+   decision comment in `decision-history.tsx`'s `OutcomeDetail` doc block;
+   building one risks exactly the canonical-vs-provider-id conflation bug
+   class Work Unit 15 targets, so it was left for a future pass with a
+   real, audited resolver available on this specific page.
+4. **The minor Worker-5-docstring inaccuracy** noted above (K_STREAMER/
+   DST_STREAMER id-space wording) is real but low-value -- not fixed this
+   pass, flagged for whoever next edits that docstring.
+5. **This pass did not launch a live browser render** (Chrome MCP) of the
+   History page against real bootstrapped data -- verification was tsc +
+   vitest + the real end-to-end backend pipeline (script -> committed
+   fixture -> frontend test consuming that exact real JSON), which
+   exercises the real rendering LOGIC against real data but never paints
+   actual pixels. Disclosed, not hidden -- worth a quick real-browser pass
+   before the next worker's "full acceptance" phase.
+6. Every other open item in Worker 5's own section above (bounded horizon
+   length, `dropped_player_subsequent_points`'s `None`-only limitation,
+   the full-transaction-window assumption) remains open, unrelated to this
+   pass's scope.
+
+---
+
 ## CYCLE CLOSING SUMMARY (Workers 1-4, whole Live Player Intelligence V1 cycle)
 
 Four real, current-season candidate signals were characterized end-to-end
